@@ -1,0 +1,1432 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>9amLeads — Mission Control</title>
+<meta name="description" content="9amLeads admin panel for managing lead generation, clients, and email campaigns.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕘</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{--bg:#0a0a0a;--bg2:#050505;--card:#111;--card2:#0d0d0d;--border:#1a1a1a;--border2:#222;--text:#fff;--text2:#ccc;--muted:#888;--muted2:#555;--primary:#0ea5e9;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif;--nav:72px;--sidebar:260px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--ff-b);background:var(--bg);color:var(--text);overflow:hidden;height:100vh;font-size:14px}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);height:100vh;background:var(--bg2);border-right:1px solid var(--border);position:fixed;left:0;top:0;display:flex;flex-direction:column;z-index:100}
+.sidebar-header{padding:20px 18px 16px;border-bottom:1px solid var(--border)}
+.sidebar-header .brand{font-family:var(--ff-h);font-size:20px;font-weight:800;display:flex;align-items:center;gap:10px}
+.sidebar-header .brand .icon{width:32px;height:32px;background:linear-gradient(135deg,var(--primary),#06b6d4);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:800}
+.sidebar-header .brand span{color:var(--primary)}
+.sidebar-header .subtitle{font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:2px;margin-top:4px}
+.sidebar-nav{flex:1;overflow-y:auto;padding:8px 0}
+.sidebar-nav .divider{padding:16px 18px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted2)}
+.sidebar-nav .item{display:flex;align-items:center;gap:10px;padding:10px 18px;color:var(--muted);cursor:pointer;transition:all .15s;border-left:3px solid transparent;font-size:13px}
+.sidebar-nav .item:hover{background:rgba(255,255,255,.03);color:var(--text)}
+.sidebar-nav .item.active{background:rgba(14,165,233,.08);color:var(--primary);border-left-color:var(--primary)}
+.sidebar-nav .item i{width:18px;text-align:center;font-size:14px}
+.sidebar-nav .item .badge{margin-left:auto;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;background:var(--primary);color:#fff}
+.sidebar-nav .item .badge.success{background:var(--success)}
+.sidebar-nav .item .badge.warning{background:var(--warning);color:#000}
+.sidebar-footer{padding:14px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--muted2)}
+.sidebar-footer .status-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:6px}
+.sidebar-footer .status-dot.live{background:var(--success);box-shadow:0 0 8px rgba(34,197,94,.4)}
+
+/* MAIN */
+.main{margin-left:var(--sidebar);height:100vh;overflow-y:auto;padding:28px 32px}
+.page{display:none}
+.page.active{display:block}
+h1{font-family:var(--ff-h);font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.page-header .subtitle{color:var(--muted);font-size:13px}
+.page-header .actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 22px}
+.stat .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.stat .value{font-family:var(--ff-h);font-size:28px;font-weight:700}
+.stat .change{font-size:12px;margin-top:4px;display:flex;align-items:center;gap:4px}
+.stat .change.up{color:var(--success)}
+.stat .change.down{color:var(--danger)}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px 24px;margin-bottom:16px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.card-header h3{font-family:var(--ff-h);font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.card-action{font-size:12px;color:var(--primary);cursor:pointer;padding:5px 12px;border-radius:6px;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.15);transition:all .2s}
+.card-action:hover{background:rgba(14,165,233,.15)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);background:var(--bg2)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2)}
+tr:hover td{background:rgba(255,255,255,.02)}
+
+/* PRODUCT CARDS */
+.product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.product-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px;position:relative;overflow:hidden;cursor:pointer;transition:all .2s;text-decoration:none;display:block}
+.product-card:hover{transform:translateY(-2px);border-color:var(--border2);background:var(--card2)}
+.product-card .p-top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.product-card .p-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.product-card .p-name{font-family:var(--ff-h);font-weight:700;font-size:15px}
+.product-card .p-desc{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:10px}
+.product-card .p-stats{display:flex;gap:12px;font-size:11px;color:var(--muted2)}
+.product-card .p-stats strong{color:var(--text2)}
+.product-card .p-status{position:absolute;top:14px;right:14px;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+
+/* BADGES */
+.badge{display:inline-flex;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;gap:4px;align-items:center}
+.badge-green{background:rgba(34,197,94,.1);color:var(--success);border:1px solid rgba(34,197,94,.15)}
+.badge-blue{background:rgba(14,165,233,.1);color:var(--primary);border:1px solid rgba(14,165,233,.15)}
+.badge-orange{background:rgba(255,107,53,.1);color:#ff6b35;border:1px solid rgba(255,107,53,.15)}
+.badge-purple{background:rgba(168,85,247,.1);color:#a855f7;border:1px solid rgba(168,85,247,.15)}
+.badge-cyan{background:rgba(6,182,212,.1);color:#06b6d4;border:1px solid rgba(6,182,212,.15)}
+.badge-indigo{background:rgba(99,102,241,.1);color:#6366f1;border:1px solid rgba(99,102,241,.15)}
+.badge-yellow{background:rgba(250,204,21,.1);color:#facc15;border:1px solid rgba(250,204,21,.15)}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;font-family:var(--ff-b)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{box-shadow:0 0 20px rgba(14,165,233,.3)}
+.btn-sm{padding:6px 12px;font-size:11px}
+.btn-success{background:var(--success);color:#000}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--text2)}
+
+/* ACTIVITY */
+.activity{padding:0}
+.activity-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:none}
+.activity-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:2px}
+.activity-text{flex:1;min-width:0}
+.activity-text .title{font-size:13px;font-weight:500}
+.activity-text .desc{font-size:11px;color:var(--muted);margin-top:1px}
+.activity-text .time{font-size:10px;color:var(--muted2);margin-top:3px}
+
+.show{display:block!important}
+@media(max-width:1024px){.product-grid{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}
+@media(max-width:768px){.sidebar{width:60px}.sidebar .brand{font-size:0}.sidebar .brand .icon{margin-right:0}.sidebar .divider,.sidebar .item span,.sidebar .item .badge,.sidebar .subtitle,.sidebar-footer span{display:none}.sidebar .item{padding:12px 20px}.sidebar:hover{width:var(--sidebar);z-index:200;box-shadow:0 0 60px rgba(0,0,0,.8)}.sidebar:hover .brand{font-size:18px}.sidebar:hover .divider,.sidebar:hover .item span,.sidebar:hover .item .badge,.sidebar:hover .subtitle,.sidebar:hover .sidebar-footer span{display:block}.main{margin-left:60px;padding:16px}.product-grid{grid-template-columns:1fr}}
+</style>
+</head><body>
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="brand"><div class="icon">9</div> 9am<span>Leads</span></div>
+    <div class="subtitle">Mission Control</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="divider">Overview</div>
+    <div class="item active" onclick="nav('overview')"><i class="fas fa-chart-pie"></i><span>Dashboard</span></div>
+    <div class="item" onclick="nav('products')"><i class="fas fa-th-large"></i><span>All Products</span></div>
+
+    <div class="divider">Moving Leads</div>
+    <div class="item" onclick="nav('moving')"><i class="fas fa-truck" style="color:#ff6b35"></i><span>Overview</span><span class="badge" id="mlBadge">0</span></div>
+    <div class="item" onclick="nav('m-clients')"><i class="fas fa-users"></i><span>Clients</span><span class="badge warning" id="mlClientsBadge">0</span></div>
+    <div class="item" onclick="nav('m-leads')"><i class="fas fa-list"></i><span>Leads</span></div>
+
+    <div class="divider">Probate Leads</div>
+    <div class="item" onclick="nav('probate')"><i class="fas fa-scale-balanced" style="color:#a855f7"></i><span>Overview</span><span class="badge" id="prBadge">0</span></div>
+    <div class="item" onclick="nav('p-clients')"><i class="fas fa-users"></i><span>Clients</span><span class="badge warning" id="prClientsBadge">0</span></div>
+    <div class="item" onclick="nav('p-leads')"><i class="fas fa-list"></i><span>Leads</span></div>
+
+    <div class="divider">New Business</div>
+    <div class="item" onclick="nav('newbiz')"><i class="fas fa-building" style="color:#06b6d4"></i><span>Overview</span><span class="badge" id="nbBadge">0</span></div>
+    <div class="item" onclick="nav('nb-clients')"><i class="fas fa-users"></i><span>Clients</span><span class="badge warning" id="nbClientsBadge">0</span></div>
+    <div class="item" onclick="nav('nb-leads')"><i class="fas fa-list"></i><span>Leads</span></div>
+
+    <div class="divider">Planning Permission</div>
+    <div class="item" onclick="nav('planning')"><i class="fas fa-draw-polygon" style="color:#10b981"></i><span>Overview</span><span class="badge" id="plBadge">0</span></div>
+    <div class="item" onclick="nav('pp-clients')"><i class="fas fa-users"></i><span>Clients</span><span class="badge warning" id="plClientsBadge">0</span></div>
+    <div class="item" onclick="nav('pp-leads')"><i class="fas fa-list"></i><span>Leads</span></div>
+
+    <div class="divider">Public Tenders</div>
+    <div class="item" onclick="nav('tenders')"><i class="fas fa-gavel" style="color:#6366f1"></i><span>Overview</span><span class="badge" id="tnBadge">0</span></div>
+    <div class="item" onclick="nav('t-clients')"><i class="fas fa-users"></i><span>Clients</span><span class="badge warning" id="tnClientsBadge">0</span></div>
+    <div class="item" onclick="nav('t-leads')"><i class="fas fa-list"></i><span>Leads</span></div>
+
+    <div class="divider">Tools</div>
+    <div class="item" onclick="nav('scrapers')"><i class="fas fa-robot"></i><span>Scrapers</span></div>
+    <div class="item" onclick="nav('delivery')"><i class="fas fa-envelope"></i><span>Delivery Log</span></div>
+    <div class="item" onclick="nav('settings')"><i class="fas fa-cog"></i><span>Settings</span></div>
+  </div>
+  <div class="sidebar-footer">
+    <span class="status-dot live"></span><span id="apiStatus">API: Checking...</span>
+    <span style="display:block;margin-top:6px;font-size:10px;color:var(--muted2)"><i class="fas fa-eye"></i> <span id="liveVisitors">0</span> live visitors</span>
+  </div>
+</div>
+
+<div class="main" id="main">
+
+<!-- ===== OVERVIEW ===== -->
+<div class="page active" id="page-overview">
+  <div class="page-header">
+    <div><h1>Dashboard</h1><div class="subtitle">9amLeads — overall business snapshot</div></div>
+    <div class="actions">
+      <button class="btn btn-outline" onclick="refreshAll()"><i class="fas fa-rotate"></i> Refresh</button>
+      <a href="http://localhost:8006/" class="btn btn-outline" title="Local dev server"><i class="fas fa-laptop"></i> Local</a>
+      <a href="https://www.9amleads.com" class="btn btn-primary" title="Live domain (DNS propagating)" id="domainLink"><i class="fas fa-globe"></i> www.9amleads.com</a>
+    </div>
+  </div>
+  <div class="stats" id="overviewStats"></div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header"><h3><i class="fas fa-box" style="color:var(--primary)"></i> Products at a Glance</h3></div>
+      <div id="productMiniGrid" class="product-grid"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3><i class="fas fa-bolt" style="color:var(--primary)"></i> Recent Activity</h3></div>
+      <div id="overviewActivity"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ALL PRODUCTS ===== -->
+<div class="page" id="page-products">
+  <div class="page-header"><div><h1>All Products</h1><div class="subtitle">Complete view of every 9amLeads product</div></div></div>
+  <div class="stats" id="allProductsStats"></div>
+  <div class="product-grid" id="allProductsGrid"></div>
+</div>
+
+<!-- ===== PRODUCT DETAIL PAGES ===== -->
+<div class="page" id="page-moving"><div class="product-detail" data-product="moving"></div></div>
+<div class="page" id="page-probate"><div class="product-detail" data-product="probate"></div></div>
+<div class="page" id="page-newbiz"><div class="product-detail" data-product="newbusiness"></div></div>
+<div class="page" id="page-planning"><div class="product-detail" data-product="planning"></div></div>
+<div class="page" id="page-tenders"><div class="product-detail" data-product="tenders"></div></div>
+
+<!-- ===== CLIENT PAGES ===== -->
+<div class="page" id="page-m-clients"><div class="client-list" data-product="moving" data-key="moving"></div></div>
+<div class="page" id="page-p-clients"><div class="client-list" data-product="probate" data-key="probate"></div></div>
+<div class="page" id="page-nb-clients"><div class="client-list" data-product="newbusiness" data-key="newbusiness"></div></div>
+<div class="page" id="page-pp-clients"><div class="client-list" data-product="planning" data-key="planning"></div></div>
+<div class="page" id="page-t-clients"><div class="client-list" data-product="tenders" data-key="tenders"></div></div>
+
+<!-- ===== LEAD PAGES ===== -->
+<div class="page" id="page-m-leads"><div class="lead-list" data-file="moving-leads" data-key="moving"></div></div>
+<div class="page" id="page-p-leads"><div class="lead-list" data-file="probate-leads" data-key="probate"></div></div>
+<div class="page" id="page-nb-leads"><div class="lead-list" data-file="newbusiness-leads" data-key="newbusiness"></div></div>
+<div class="page" id="page-pp-leads"><div class="lead-list" data-file="planning-leads.json" data-key="planning"></div></div>
+<div class="page" id="page-t-leads"><div class="lead-list" data-file="tenders-leads" data-key="tenders"></div></div>
+
+<!-- ===== SCRAPERS ===== -->
+<div class="page" id="page-scrapers">
+  <div class="page-header">
+    <div><h1>Lead Scrapers</h1><div class="subtitle">Configure and run scrapers for each business type</div></div>
+    <div class="actions">
+      <button class="btn btn-outline" onclick="loadScrapers()"><i class="fas fa-rotate"></i> Refresh</button>
+      <button class="btn btn-outline" onclick="document.getElementById('scraperHelp').classList.toggle('show')"><i class="fas fa-question-circle"></i> Help</button>
+    </div>
+  </div>
+
+  <div id="scraperHelp" style="display:none;margin-bottom:16px" class="show">
+    <div class="card" style="font-size:13px;color:var(--muted);line-height:1.7">
+      <strong style="color:var(--text)">How scrapers work:</strong><br>
+      Each business type has a pre-configured Apify actor that finds the right kind of leads.<br>
+      You can customise the search with your own instructions and set how many results you want.<br>
+      After scraping, the system enriches results with owner/director, marketing, and sales emails where possible.<br><br>
+      <strong style="color:var(--text)">Business Types:</strong><br>
+      <span style="color:#ff6b35">Moving Leads</span> → Removal companies, man-and-van operators, couriers<br>
+      <span style="color:#a855f7">Probate Leads</span> → Solicitors, will-writers, estate administrators<br>
+      <span style="color:#06b6d4">New Business</span> → Accountants, web designers, B2B services<br>
+      <span style="color:#10b981">Planning Permission</span> → Builders, architects, kitchen fitters, tradespeople<br>
+      <span style="color:#6366f1">Public Tenders</span> → Tender-ready businesses (IT, construction, cleaning)
+    </div>
+  </div>
+
+  <div id="dedupBanner"></div>
+  <div id="scraperConfigs"></div>
+  <div id="scraperProgress" style="display:none;margin-bottom:16px">
+    <div class="card">
+      <div class="card-header"><h3><i class="fas fa-spinner fa-spin" style="color:var(--primary)"></i> Scrape In Progress</h3></div>
+      <div id="scraperProgressBody">
+        <div style="margin-bottom:8px;font-size:13px;color:var(--muted)" id="scraperProgressText">Starting scrape...</div>
+        <div style="background:var(--bg2);border-radius:6px;height:6px;overflow:hidden;margin-bottom:12px"><div id="scraperProgressBar" style="width:0%;height:100%;background:linear-gradient(90deg,var(--primary),var(--success));border-radius:6px;transition:width .5s"></div></div>
+      </div>
+    </div>
+  </div>
+  <div id="scraperResults" style="display:none;margin-bottom:16px">
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fas fa-list" style="color:var(--success)"></i> <span id="scraperResultCount">0</span> Leads Found</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-success btn-sm" onclick="downloadScraperCSV()"><i class="fas fa-download"></i> CSV</button>
+          <button class="btn btn-primary btn-sm" onclick="saveScraperLeads()"><i class="fas fa-save"></i> Save to CRM</button>
+          <button class="btn btn-outline btn-sm" onclick="clearScraperResults()"><i class="fas fa-times"></i> Clear</button>
+        </div>
+      </div>
+      <div id="scraperCategorySummary" style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:4px"></div>
+      <div class="table-wrap" id="scraperResultsTableWrap">
+        <table><thead><tr>
+          <th>Business Name</th><th>Industry <span style="color:var(--muted2);font-weight:400">→ Brevo List</span></th><th>Owner/Director</th><th>Marketing Email</th><th>Sales Email</th><th>General Email</th><th>Phone</th><th>Website</th><th>Location</th>
+        </tr></thead><tbody id="scraperResultsBody"></tbody></table>
+      </div>
+      <div id="scraperResultsEmpty" style="text-align:center;padding:40px;color:var(--muted);display:none">No results. Run a scraper to find leads.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DELIVERY LOG ===== -->
+<div class="page" id="page-delivery">
+  <div class="page-header"><div><h1>Delivery Log</h1><div class="subtitle">9am email delivery history</div></div></div>
+  <div id="deliveryLog"></div>
+</div>
+
+<!-- ===== SETTINGS ===== -->
+<div class="page" id="page-settings">
+  <div class="page-header"><div><h1>Settings</h1><div class="subtitle">9amLeads configuration</div></div></div>
+  <div class="card"><h3 style="font-family:var(--ff-h);font-size:16px;margin-bottom:16px"><i class="fas fa-link" style="color:var(--primary)"></i> Quick Links</h3>
+    <div style="font-size:13px;color:var(--muted2);margin-bottom:10px">
+      <i class="fas fa-globe" style="color:var(--primary)"></i> Live domain: <strong>www.9amleads.com</strong> (DNS propagating)
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <a href="http://localhost:8006/" class="btn btn-outline" style="justify-content:center;padding:10px;font-size:12px"><i class="fas fa-laptop"></i> 9amLeads (Local)</a>
+      <a href="https://www.9amleads.com" class="btn btn-primary" style="justify-content:center;padding:10px;font-size:12px"><i class="fas fa-globe"></i> www.9amleads.com</a>
+      <a href="http://localhost:8004/" class="btn btn-outline" style="justify-content:center;padding:10px;font-size:12px"><i class="fas fa-truck"></i> Moving Leads</a>
+      <a href="http://localhost:8005/" class="btn btn-outline" style="justify-content:center;padding:10px;font-size:12px"><i class="fas fa-scale-balanced"></i> Probate Leads</a>
+      <a href="http://localhost:8007/" class="btn btn-outline" style="justify-content:center;padding:10px;font-size:12px"><i class="fas fa-building"></i> New Business</a>
+      <a href="http://localhost:8008/" class="btn btn-outline" style="justify-content:center;padding:10px;font-size:12px"><i class="fas fa-draw-polygon"></i> Planning</a>
+      <a href="http://localhost:8009/" class="btn btn-outline" style="justify-content:center;padding:10px;font-size:12px"><i class="fas fa-gavel"></i> Tenders</a>
+      <a href="http://localhost:8010/" class="btn btn-outline" style="justify-content:center;padding:10px;font-size:12px">Data API</a>
+    </div>
+  </div>
+  <div class="card"><h3 style="font-family:var(--ff-h);font-size:16px;margin-bottom:16px"><i class="fas fa-key" style="color:var(--primary)"></i> API Keys</h3>
+    <div class="two-col">
+      <div>
+        <label style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Apify API Token</label>
+        <input type="password" id="settingsApifyToken" class="card-action" style="width:100%;padding:8px 12px;font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--ff-b);outline:none" placeholder="apify_api_..." value="">
+        <button class="btn btn-primary btn-sm" onclick="saveApifyToken()" style="margin-top:8px"><i class="fas fa-save"></i> Save Token</button>
+        <span id="apifyTokenStatus" style="margin-left:8px;font-size:12px;color:var(--success);display:none">Saved</span>
+      </div>
+      <div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6">
+          Get your Apify API token from <a href="https://console.apify.com/account#/integrations" target="_blank" style="color:var(--primary)">Apify Console</a>.<br>
+          Required for running scrapers. The free tier includes $5 free usage/month.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="card"><h3 style="font-family:var(--ff-h);font-size:16px;margin-bottom:16px"><i class="fas fa-database" style="color:var(--primary)"></i> Data Storage</h3>
+    <div style="font-size:13px;color:var(--muted);line-height:1.8">
+      All customer profiles and leads are stored in <code style="background:var(--bg2);padding:2px 6px;border-radius:3px;font-size:12px">C:\Users\ketzm\mission control\data\</code><br>
+      Scraper scripts are in <code style="background:var(--bg2);padding:2px 6px;border-radius:3px;font-size:12px">C:\Users\ketzm\mission control\</code><br>
+      Product websites are served via Python HTTP servers on ports 8004-8009<br>
+      Data API runs on port 8010
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const API = 'http://localhost:8010';
+const DOMAIN = 'https://www.9amleads.com';
+const PRODUCTS = [
+  {key:'moving', name:'Moving Leads', port:8004, accent:'#ff6b35', icon:'fa-truck'},
+  {key:'probate', name:'Probate Leads', port:8005, accent:'#a855f7', icon:'fa-scale-balanced'},
+  {key:'newbusiness', name:'New Business', port:8007, accent:'#06b6d4', icon:'fa-building'},
+  {key:'planning', name:'Planning Permission', port:8008, accent:'#10b981', icon:'fa-draw-polygon'},
+  {key:'tenders', name:'Public Tenders', port:8009, accent:'#6366f1', icon:'fa-gavel'},
+];
+
+function nav(page) {
+  document.querySelectorAll('.item').forEach(i => i.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const el = document.querySelector('.item[onclick*="' + page + '"]');
+  if (el) el.classList.add('active');
+  var p = document.getElementById('page-' + page);
+  if (p) p.classList.add('active');
+}
+
+async function refreshAll() {
+  document.getElementById('apiStatus').textContent = 'API: Loading...';
+  await loadOverview();
+  await loadAllProducts();
+  for (const p of PRODUCTS) {
+    await loadProductDetail(p.key);
+    await loadClients(p.key);
+  }
+  document.getElementById('apiStatus').textContent = 'API: Live \u2713';
+}
+
+async function fetchAPI(path) {
+  try {
+    const r = await fetch(API + path, { timeout: 5000 });
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
+
+// ===== OVERVIEW =====
+async function loadOverview() {
+  const data = await fetchAPI('/api/products');
+  if (!data) { document.getElementById('overviewStats').innerHTML = '<div class="stat"><div class="label">API Status</div><div class="value" style="color:var(--danger)">Offline</div></div>'; return; }
+  
+  let totalLeads = 0, totalCustomers = 0, activeProducts = 0;
+  for (const [key, val] of Object.entries(data)) {
+    totalLeads += val.totalLeads || 0;
+    totalCustomers += val.customerCount || 0;
+    if (val.totalLeads > 0) activeProducts++;
+  }
+  
+  document.getElementById('overviewStats').innerHTML = `
+    <div class="stat"><div class="label">Products</div><div class="value" style="color:var(--primary)">${activeProducts}/${Object.keys(data).length}</div><div class="change up">Active</div></div>
+    <div class="stat"><div class="label">Total Leads</div><div class="value" style="color:var(--success)">${totalLeads.toLocaleString()}</div><div class="change up">Across all products</div></div>
+    <div class="stat"><div class="label">Customers</div><div class="value">${totalCustomers}</div><div class="change up">Active accounts</div></div>
+    <div class="stat"><div class="label">Deliveries Today</div><div class="value" style="color:var(--warning)">${totalCustomers * 2}</div><div class="change up">9am emails sent</div></div>
+  `;
+  
+  // Product mini grid
+  document.getElementById('productMiniGrid').innerHTML = PRODUCTS.map(p => {
+    const d = data[p.key] || {};
+    return `<a href="http://localhost:${p.port}/" class="product-card" style="border-left:3px solid ${p.accent}">
+      <div class="p-top"><div class="p-icon" style="background:${p.accent}15;color:${p.accent}"><i class="fas ${p.icon}"></i></div><div class="p-name" style="color:${p.accent}">${p.name}</div></div>
+      <div class="p-stats"><strong>${d.totalLeads || 0}</strong> leads · <strong>${d.customerCount || 0}</strong> clients</div>
+    </a>`;
+  }).join('');
+  
+  // Activity
+  const now = new Date();
+  document.getElementById('overviewActivity').innerHTML = [
+    { icon: 'fa-clock', color: 'var(--primary)', title: 'Last data scrape', desc: 'All products scanned', time: data.moving && data.moving.lastRun ? new Date(data.moving.lastRun).toLocaleTimeString() : 'Today' },
+    { icon: 'fa-download', color: 'var(--success)', title: totalLeads + ' leads stored', desc: 'Across ' + activeProducts + ' active products', time: 'Today' },
+    { icon: 'fa-envelope', color: 'var(--warning)', title: '9am deliveries sent', desc: 'Lead sheets emailed to ' + totalCustomers + ' customers', time: 'Today 9:02am' },
+  ].map(a => '<div class="activity-item"><div class="activity-icon" style="background:' + a.color + '15;color:' + a.color + '"><i class="fas ' + a.icon + '"></i></div><div class="activity-text"><div class="title">' + a.title + '</div><div class="desc">' + a.desc + '</div><div class="time">' + a.time + '</div></div></div>').join('');
+  
+  // Update badges
+  for (const [key, val] of Object.entries(data)) {
+    const b = document.getElementById(key === 'moving' ? 'mlBadge' : key === 'probate' ? 'prBadge' : key === 'newbusiness' ? 'nbBadge' : key === 'planning' ? 'plBadge' : key === 'tenders' ? 'tnBadge' : null);
+    if (b) b.textContent = val.totalLeads || 0;
+  }
+}
+
+// ===== ALL PRODUCTS =====
+async function loadAllProducts() {
+  const data = await fetchAPI('/api/products');
+  if (!data) return;
+  
+  let totalLeads = 0;
+  let html = '';
+  for (const [key, val] of Object.entries(data)) {
+    totalLeads += val.totalLeads || 0;
+    const p = PRODUCTS.find(x => x.key === key);
+    if (!p) continue;
+    html += `<div class="stat"><div class="label" style="color:${p.accent}">${p.name}</div>
+      <div class="value" style="color:${p.accent}">${val.totalLeads || 0}</div>
+      <div class="change up">${val.customerCount || 0} customers · Last run: ${val.lastRun ? new Date(val.lastRun).toLocaleTimeString() : 'Never'}</div></div>`;
+  }
+  document.getElementById('allProductsStats').innerHTML = html;
+  
+  document.getElementById('allProductsGrid').innerHTML = PRODUCTS.map(p => {
+    const d = data[p.key] || {};
+    return `<a href="http://localhost:${p.port}/" class="product-card" style="border-left:3px solid ${p.accent}">
+      <div class="p-top"><div class="p-icon" style="background:${p.accent}15;color:${p.accent}"><i class="fas ${p.icon}"></i></div><div class="p-name" style="color:${p.accent}">${p.name}</div>
+        <div class="p-status badge-${['green','orange','cyan','green','indigo'][PRODUCTS.indexOf(p)]}">${d.totalLeads > 0 ? 'Active' : 'No Data'}</div></div>
+      <div class="p-desc">${['Properties SSTC delivered daily','Probate grants from Gov.uk','Companies House registrations','Planning applications','Government contracts'][PRODUCTS.indexOf(p)]}</div>
+      <div class="p-stats"><strong>${d.totalLeads || 0}</strong> leads · <strong>${d.customerCount || 0}</strong> clients · Port <strong>${p.port}</strong></div>
+    </a>`;
+  }).join('');
+}
+
+// ===== PRODUCT DETAIL =====
+async function loadProductDetail(key) {
+  const data = await fetchAPI('/api/products');
+  if (!data) return;
+  const p = PRODUCTS.find(x => x.key === key);
+  const d = data[key] || {};
+  const el = document.querySelector('.product-detail[data-product="' + key + '"]');
+  if (!el) return;
+  
+  el.innerHTML = '<div class="page-header"><div><h1 style="color:' + p.accent + '">' + p.name + '</h1><div class="subtitle">Port ' + p.port + ' · ' + (d.totalLeads || 0) + ' total leads</div></div>' +
+    '<div class="actions"><a href="http://localhost:' + p.port + '/" class="btn btn-primary btn-sm"><i class="fas fa-external-link-alt"></i> Site</a>' +
+    '<a href="http://localhost:' + p.port + '/dashboard.html" class="btn btn-outline btn-sm">Dashboard</a></div></div>' +
+    '<div class="stats"><div class="stat"><div class="label">Total Leads</div><div class="value" style="color:' + p.accent + '">' + (d.totalLeads || 0) + '</div></div>' +
+    '<div class="stat"><div class="label">Customers</div><div class="value">' + (d.customerCount || 0) + '</div></div>' +
+    '<div class="stat"><div class="label">Last Run</div><div class="value" style="font-size:16px">' + (d.lastRun ? new Date(d.lastRun).toLocaleTimeString() : 'Never') + '</div></div>' +
+    '<div class="stat"><div class="label">Status</div><div class="value" style="color:var(--success);font-size:20px;display:flex;align-items:center;gap:8px"><span class="status-dot live" style="width:8px;height:8px"></span> Active</div></div></div>';
+}
+
+// ===== CLIENTS =====
+async function loadClients(key) {
+  const data = await fetchAPI('/api/customers/' + key);
+  if (!data) return;
+  
+  const badge = document.getElementById(key === 'moving' ? 'mlClientsBadge' : key === 'probate' ? 'prClientsBadge' : key === 'newbusiness' ? 'nbClientsBadge' : key === 'planning' ? 'plClientsBadge' : key === 'tenders' ? 'tnClientsBadge' : null);
+  const count = Object.keys(data).length;
+  if (badge) badge.textContent = count;
+  
+  const el = document.querySelector('.client-list[data-product="' + key + '"]');
+  if (!el) return;
+  const p = PRODUCTS.find(x => x.key === key);
+  
+  if (count === 0) {
+    el.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--muted)">No clients yet. Add a customer via the scraper CLI.</div>';
+    return;
+  }
+  
+  let table = '<div class="card"><div class="table-wrap"><table><tr><th>ID</th><th>Company</th><th>Email</th><th>Plan</th><th>Leads/Day</th><th>Areas</th><th>Actions</th></tr>';
+  for (const [id, c] of Object.entries(data)) {
+    table += '<tr><td style="color:var(--muted2)">' + id.slice(0, 12) + '</td><td><strong>' + (c.company || 'Unknown') + '</strong></td><td>' + (c.email || '') + '</td>' +
+      '<td><span class="badge badge-blue">' + (c.plan || 'N/A') + '</span></td><td>' + (c.leadsPerDay || '—') + '</td>' +
+      '<td>' + ((c.postcodes || c.counties || c.locations || c.keywords || ['—']).join(', ').slice(0, 30) + '...') + '</td>' +
+      '<td><button class="btn btn-outline btn-sm" onclick="alert(\'View customer details\')">View</button></td></tr>';
+  }
+  table += '</table></div></div>';
+  el.innerHTML = table;
+}
+
+// ===== SCRAPER STATE =====
+let scraperState = { running: false, results: [], configs: {}, knownBusinesses: [], knownDomains: new Set(), knownNames: new Set(), knownEmails: new Set() };
+const APIFY_TOKEN = 'apify_api_placeholder';
+
+function loadSavedScraperConfigs() {
+  try { scraperState.configs = JSON.parse(localStorage.getItem('9am_scraper_configs') || '{}'); } catch {}
+}
+
+function saveScraperConfig(key, config) {
+  scraperState.configs[key] = config;
+  localStorage.setItem('9am_scraper_configs', JSON.stringify(scraperState.configs));
+}
+
+const SCRAPER_TEMPLATES = {
+  moving: {
+    actorId: 'compass/crawler-google-places',
+    defaultQuery: 'removals company',
+    leadTypes: ['home', 'commercial', 'both'],
+    altQueries: [
+      'man with a van', 'man and van', 'courier', 'house removals', 'furniture removals',
+      'office removals', 'removal van', 'domestic removals', 'international removals',
+      'storage company', 'shipping company', 'parcel delivery', 'transport services',
+      'home removals', 'moving company', 'van and man', 'removals and storage',
+      'piano removals', 'fragile removals', 'packing service', 'house clearance'
+    ],
+    location: 'UK',
+    hint: 'Removal companies, man-and-van, couriers, storage, shipping, packing services',
+    emailHint: 'Looks for owner/director emails on company websites.',
+    brevoListId: '5'
+  },
+  probate: {
+    actorId: 'compass/crawler-google-places',
+    defaultQuery: 'probate solicitor',
+    altQueries: [
+      'will writing service', 'will writer', 'estate administration', 'probate lawyer',
+      'trust solicitor', 'probate practitioner', 'estate planning', 'inheritance tax advisor',
+      'probate consultant', 'probate genealogist', 'missing heir researcher',
+      'solicitor', 'law firm', 'conveyancing solicitor', 'family solicitor',
+      'legal executive', 'will and probate', 'estate executor', 'probate research',
+      'probate valuers', 'inheritance lawyer'
+    ],
+    location: 'UK',
+    hint: 'Solicitors, will-writers, estate administrators, probate researchers, trust lawyers',
+    emailHint: 'Finds practice manager, head of probate, and partner emails.',
+    brevoListId: '8'
+  },
+  newbusiness: {
+    actorId: 'compass/crawler-google-places',
+    defaultQuery: 'accountant',
+    altQueries: [
+      'bookkeeper', 'bookkeeping service', 'tax adviser', 'tax consultant',
+      'web designer', 'web developer', 'graphic designer', 'digital marketing agency',
+      'insurance broker', 'financial adviser', 'mortgage broker', 'estate agent',
+      'business consultant', 'management consultant', 'recruitment agency', 'hr consultancy',
+      'IT consultant', 'software developer', 'marketing agency', 'design agency',
+      'branding agency', 'photographer', 'videographer', 'pr agency',
+      'social media agency', 'seo agency', 'copywriter', 'virtual assistant',
+      'outsourcing company', 'b2b sales', 'lead generation', 'telemarketing'
+    ],
+    location: 'UK',
+    hint: 'Accountants, web designers, marketing agencies, consultants, insurance brokers, B2B services',
+    emailHint: 'Targets director, partner, and marketing manager emails.',
+    brevoListId: '7'
+  },
+  planning: {
+    actorId: 'compass/crawler-google-places',
+    defaultQuery: 'builder',
+    altQueries: [
+      'building company', 'building contractor', 'construction company', 'house builder',
+      'home extension builder', 'loft conversion', 'kitchen fitter', 'kitchen installer',
+      'bathroom fitter', 'bathroom installer', 'plumber', 'electrician', 'carpenter',
+      'joiner', 'roofer', 'roofing company', 'painter decorator', 'painter and decorator',
+      'plasterer', 'flooring company', 'tiler', 'landscaper', 'landscaping company',
+      'driveway company', 'patio builder', 'gardener', 'garden design',
+      'architect', 'architectural designer', 'structural engineer', 'surveyor',
+      'building surveyor', 'quantity surveyor', 'planning consultant', 'town planner',
+      'project manager construction', 'home renovation', 'property developer',
+      'extension specialist', 'conservatory company', 'window fitter', 'door installer',
+      'gas engineer', 'hvac engineer', 'heating engineer', 'solar panel installer',
+      'interior designer', 'kitchen designer', 'bathroom designer'
+    ],
+    location: 'UK',
+    hint: 'Builders, architects, tradespeople, kitchen/bathroom fitters, landscapers, engineers, surveyors',
+    emailHint: 'Finds owner/director emails and project manager contacts.',
+    brevoListId: '6'
+  },
+  tenders: {
+    actorId: 'compass/crawler-google-places',
+    defaultQuery: 'IT consultancy',
+    altQueries: [
+      'IT support', 'IT services', 'cyber security', 'managed services provider',
+      'construction company', 'civil engineering', 'building contractor', 'infrastructure',
+      'cleaning company', 'commercial cleaning', 'facilities management', 'waste management',
+      'security company', 'security services', 'cctv installation', 'fire safety',
+      'catering company', 'event catering', 'corporate catering', 'food service',
+      'recruitment agency', 'staffing agency', 'temp agency', 'employment agency',
+      'training company', 'consultancy', 'management consultancy', 'business consultancy',
+      'healthcare provider', 'care home', 'home care', 'medical equipment',
+      'printing company', 'office supplies', 'stationery supplier', 'promotional merchandise',
+      'logistics company', 'transport company', 'freight forwarding', 'warehousing',
+      'environmental consultancy', 'waste recycling', 'energy consultancy', 'solar installation',
+      'marketing agency', 'design agency', 'pr agency', 'communications agency'
+    ],
+    location: 'UK',
+    hint: 'Tender-ready businesses — IT, construction, cleaning, security, catering, recruitment, logistics, consulting',
+    emailHint: 'Targets bid managers, directors, and business development contacts.',
+    brevoListId: '9'
+  }
+};
+
+// ===== SCRAPER CONTROLS =====
+async function loadScrapers() {
+  loadSavedScraperConfigs();
+  const data = await fetchAPI('/api/products');
+  const el = document.getElementById('scraperConfigs');
+
+  document.getElementById('dedupBanner').innerHTML = showDedupBanner();
+  el.innerHTML = PRODUCTS.map(p => {
+    const tpl = SCRAPER_TEMPLATES[p.key] || {};
+    const d = (data && data[p.key]) || {};
+    const saved = scraperState.configs[p.key] || {};
+
+    return '<div class="card" style="border-left:3px solid ' + p.accent + ';margin-bottom:14px">' +
+      '<div class="card-header">' +
+        '<h3><i class="fas ' + p.icon + '" style="color:' + p.accent + '"></i> ' + p.name + '</h3>' +
+        '<div><span class="badge badge-green" id="scraperStatus-' + p.key + '" style="display:' + (d.totalLeads > 0 ? 'inline-flex' : 'none') + '">' + (d.totalLeads || 0) + ' leads</span></div>' +
+      '</div>' +
+
+      '<div class="two-col" style="margin-bottom:12px">' +
+        '<div>' +
+          '<label style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Search Query</label>' +
+          '<input type="text" id="sq-' + p.key + '" class="card-action" style="width:100%;padding:8px 12px;font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--ff-b);outline:none" placeholder="e.g. ' + tpl.defaultQuery + '" value="' + (saved.query || tpl.defaultQuery) + '">' +
+          '<div style="font-size:10px;color:var(--muted2);margin-top:4px">Suggestions: ' + tpl.altQueries.slice(0, 3).join(', ') + '</div>' +
+        '</div>' +
+        '<div>' +
+          '<label style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Location / Postcode</label>' +
+          '<input type="text" id="sl-' + p.key + '" class="card-action" style="width:100%;padding:8px 12px;font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--ff-b);outline:none" placeholder="Postcode, city, or region" value="' + (saved.location || tpl.location || 'UK') + '">' +
+        '</div>' +
+      '</div>' +
+
+      '<div style="margin-bottom:12px">' +
+        '<label style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Custom Instructions <span style="color:var(--muted);text-transform:none">(tell the scraper exactly what you want)</span></label>' +
+        '<textarea id="si-' + p.key + '" class="card-action" style="width:100%;padding:8px 12px;font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--ff-b);outline:none;resize:vertical;min-height:50px" placeholder="e.g. Only find companies with websites, skip big national chains, focus on independent firms">' + (saved.instructions || '') + '</textarea>' +
+      '</div>' +
+
+      (p.key === 'moving' ? '<div style="margin-bottom:12px">' +
+        '<label style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Lead Type <span style="color:var(--muted);text-transform:none">(what kind of moving leads to search for)</span></label>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+          '<label style="display:flex;align-items:center;gap:5px;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;background:' + (saved.leadType === 'commercial' ? 'rgba(14,165,233,.12)' : 'rgba(255,107,53,.08)') + ';border:1px solid ' + (saved.leadType === 'commercial' ? 'rgba(14,165,233,.25)' : 'rgba(255,107,53,.2)') + ';color:' + (saved.leadType === 'commercial' ? '#0ea5e9' : '#ff6b35') + ';font-weight:600"><input type="radio" name="lt-' + p.key + '" value="home" ' + (!saved.leadType || saved.leadType === 'home' ? 'checked' : '') + ' onchange="document.getElementById(\'sq-moving\').value=\'removals company\';document.getElementById(\'sl-moving\').value=\'UK\';document.getElementById(\'si-moving\').value=\'\'" style="accent-color:#ff6b35;width:14px;height:14px"> 🏠 Home Moves</label>' +
+          '<label style="display:flex;align-items:center;gap:5px;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;background:' + (saved.leadType === 'commercial' ? 'rgba(14,165,233,.12)' : 'rgba(34,197,94,.08)') + ';border:1px solid ' + (saved.leadType === 'commercial' ? 'rgba(14,165,233,.25)' : 'rgba(34,197,94,.2)') + ';color:' + (saved.leadType === 'commercial' ? '#0ea5e9' : '#22c55e') + ';font-weight:600"><input type="radio" name="lt-' + p.key + '" value="commercial" ' + (saved.leadType === 'commercial' ? 'checked' : '') + ' onchange="document.getElementById(\'sq-moving\').value=\'office relocation company\';document.getElementById(\'sl-moving\').value=\'UK\';document.getElementById(\'si-moving\').value=\'Focus on businesses that need office moving, commercial relocation, warehouse moving\'" style="accent-color:#0ea5e9;width:14px;height:14px"> 🏢 Commercial</label>' +
+          '<label style="display:flex;align-items:center;gap:5px;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);color:#a855f7;font-weight:600"><input type="radio" name="lt-' + p.key + '" value="both" ' + (saved.leadType === 'both' ? 'checked' : '') + ' onchange="document.getElementById(\'sq-moving\').value=\'removals office relocation\';document.getElementById(\'sl-moving\').value=\'UK\';document.getElementById(\'si-moving\').value=\'Find all types: residential removals companies AND commercial relocation businesses, office movers\'" style="accent-color:#a855f7;width:14px;height:14px"> ✅ Both</label>' +
+        '</div>' +
+      '</div>' : '') +
+
+      '<div class="two-col" style="margin-bottom:12px">' +
+        '<div>' +
+          '<label style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Max Leads</label>' +
+          '<div style="display:flex;align-items:center;gap:10px">' +
+            '<input type="range" id="sc-' + p.key + '" min="5" max="500" step="5" value="' + (saved.maxResults || 50) + '" oninput="document.getElementById(\'scl-\' + \'' + p.key + '\').textContent = this.value" style="flex:1;accent-color:' + p.accent + '">' +
+            '<span id="scl-' + p.key + '" style="font-size:16px;font-weight:700;color:' + p.accent + ';min-width:36px;text-align:right">' + (saved.maxResults || 50) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div>' +
+          '<label style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Find These Emails</label>' +
+          '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+            '<label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="se-owner-' + p.key + '" ' + (saved.emails?.owner !== false ? 'checked' : '') + '> Owner/Director</label>' +
+            '<label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="se-marketing-' + p.key + '" ' + (saved.emails?.marketing !== false ? 'checked' : '') + '> Marketing</label>' +
+            '<label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="se-sales-' + p.key + '" ' + (saved.emails?.sales !== false ? 'checked' : '') + '> Sales</label>' +
+            '<label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="se-general-' + p.key + '" ' + (saved.emails?.general !== false ? 'checked' : '') + '> General</label>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<details style="margin:10px 0 0;font-size:12px" ' + (saved.brevoListId ? 'open' : '') + '>' +
+        '<summary style="cursor:pointer;color:var(--muted2);font-weight:600;padding:6px 0"><i class="fas fa-envelope" style="color:' + p.accent + '"></i> Brevo Email List &nbsp;<span style="color:var(--muted);font-weight:400;font-size:11px">' + (saved.brevoListId ? 'List #' + saved.brevoListId : 'Not configured') + '</span></summary>' +
+        '<div class="two-col" style="margin-top:8px">' +
+          '<div>' +
+            '<label style="font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px">Brevo API Key</label>' +
+            '<input type="password" id="sb-key-' + p.key + '" class="card-action" style="width:100%;padding:6px 10px;font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:monospace;outline:none" placeholder="Your Brevo API key" value="' + (saved.brevoApiKey || '') + '">' +
+          '</div>' +
+          '<div>' +
+            '<label style="font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px">Brevo List ID</label>' +
+            '<div style="display:flex;gap:6px">' +
+              '<input type="number" id="sb-list-' + p.key + '" class="card-action" style="flex:1;padding:6px 10px;font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--ff-b);outline:none" placeholder="e.g. 4" value="' + (saved.brevoListId || tpl.brevoListId || '') + '">' +
+              '<button class="btn btn-outline btn-sm" onclick="saveBrevoConfig(\'' + p.key + '\')" style="padding:6px 10px"><i class="fas fa-check"></i></button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</details>' +
+
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+        '<button class="btn btn-success btn-sm" onclick="runScraper(\'' + p.key + '\')" id="runBtn-' + p.key + '"><i class="fas fa-play"></i> Run Scraper</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="saveScraperConfig(\'' + p.key + '\')"><i class="fas fa-save"></i> Save Config</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="pushToBrevo(\'' + p.key + '\')" id="pushBtn-' + p.key + '" ' + (scraperState.results.length === 0 ? 'disabled' : '') + '><i class="fas fa-upload"></i> Push to Brevo</button>' +
+        '<span style="font-size:11px;color:var(--muted2);margin-left:4px"><i class="fas fa-info-circle"></i> ' + tpl.hint + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function saveScraperConfig(key) {
+  const query = document.getElementById('sq-' + key)?.value || '';
+  const location = document.getElementById('sl-' + key)?.value || '';
+  const instructions = document.getElementById('si-' + key)?.value || '';
+  const maxResults = parseInt(document.getElementById('sc-' + key)?.value) || 50;
+  const emails = {
+    owner: document.getElementById('se-owner-' + key)?.checked || false,
+    marketing: document.getElementById('se-marketing-' + key)?.checked || false,
+    sales: document.getElementById('se-sales-' + key)?.checked || false,
+    general: document.getElementById('se-general-' + key)?.checked || false
+  };
+  const brevoApiKey = document.getElementById('sb-key-' + key)?.value || '';
+  const brevoListId = document.getElementById('sb-list-' + key)?.value || '';
+  const leadType = document.querySelector('input[name="lt-' + key + '"]:checked')?.value || 'home';
+  saveScraperConfig(key, { query, location, instructions, maxResults, emails, brevoApiKey, brevoListId, leadType, savedAt: new Date().toISOString() });
+  Toast.show('Config saved for ' + key, 'success');
+}
+
+function saveBrevoConfig(key) {
+  const brevoApiKey = document.getElementById('sb-key-' + key)?.value?.trim() || '';
+  const brevoListId = document.getElementById('sb-list-' + key)?.value?.trim() || '';
+  if (!brevoListId) { Toast('Enter a Brevo List ID', 'error'); return; }
+  const existing = scraperState.configs[key] || {};
+  saveScraperConfig(key, { ...existing, brevoApiKey, brevoListId });
+  Toast('Brevo config saved for ' + key + ' (List #' + brevoListId + ')', 'success');
+}
+
+// Industry-to-Brevo-list routing — maps specific business types to dedicated sub-lists
+const INDUSTRY_LIST_MAP = {
+  // Moving
+  'removal': 10, 'removals': 10, 'moving': 10, 'mover': 10, 'removal company': 10, 'van line': 10,
+  'man and van': 11, 'man with a van': 11, 'man&van': 11, 'man & van': 11,
+  'courier': 12, 'couriers': 12, 'delivery': 12, 'parcel': 12, 'same day': 12,
+  'storage': 13, 'warehouse': 13, 'self storage': 13, 'secure storage': 13,
+  'office': 14, 'commercial': 14, 'corporate': 14, 'business relocation': 14, 'office move': 14,
+  'packing': 15, 'packers': 15, 'packaging': 15, 'crating': 15,
+  'clearance': 16, 'house clearance': 16, 'waste removal': 16, 'rubbish removal': 16,
+  // Planning — Builders & Trades
+  'plumber': 17, 'plumbing': 17, 'drain': 17, 'heating engineer': 17,
+  'electrician': 18, 'electrical': 18, 'electrics': 18, 'sparky': 18,
+  'builder': 19, 'building': 19, 'construction': 19, 'building contractor': 19, 'house builder': 19, 'home builder': 19,
+  'architect': 20, 'architecture': 20, 'architectural': 20,
+  'roofer': 21, 'roofing': 21, 'roof': 21,
+  'painter': 22, 'decorator': 22, 'painting': 22, 'decoration': 22,
+  'landscaper': 23, 'landscaping': 23, 'garden': 23, 'gardener': 23, 'landscape': 23,
+  'kitchen': 24, 'kitchen fitter': 24, 'kitchen installer': 24,
+  'bathroom': 25, 'bathroom fitter': 25, 'bathroom installer': 25,
+  'carpenter': 26, 'joiner': 26, 'carpentry': 26, 'joinery': 26,
+  'flooring': 27, 'floor': 27, 'floor fitter': 27, 'flooring company': 27,
+  'plasterer': 28, 'plastering': 28,
+  'tiler': 29, 'tiling': 29, 'tile': 29,
+  'gas': 30, 'heating': 30, 'hvac': 30, 'boiler': 30, 'gas engineer': 30,
+  'solar': 31, 'renewable': 31, 'solar panel': 31,
+  'surveyor': 32, 'surveying': 32, 'quantity surveyor': 32, 'building surveyor': 32,
+  'interior': 33, 'interior design': 33, 'interior designer': 33,
+  'window': 34, 'windows': 34, 'double glazing': 34, 'window fitter': 34, 'door': 34,
+  'developer': 35, 'property developer': 35, 'property development': 35,
+  // New Business
+  'accountant': 36, 'accountancy': 36, 'accounting': 36, 'bookkeeper': 36, 'bookkeeping': 36, 'tax': 36, 'tax adviser': 36,
+  'web': 37, 'website': 37, 'web design': 37, 'web developer': 37, 'ecommerce': 37, 'shopify': 37,
+  'marketing': 38, 'digital marketing': 38, 'advertising': 38, 'media': 38,
+  'insurance': 39, 'insurance broker': 39, 'underwriter': 39,
+  'financial': 40, 'financial adviser': 40, 'mortgage': 40, 'wealth': 40, 'investment': 40, 'ifa': 40,
+  'it': 41, 'it consultant': 41, 'software': 41, 'it support': 41, 'cyber': 41, 'managed service': 41, 'tech': 41,
+  'recruitment': 42, 'recruiter': 42, 'staffing': 42, 'employment': 42, 'temp agency': 42, 'headhunter': 42,
+  'consultant': 43, 'consultancy': 43, 'business consultant': 43, 'management consultant': 43,
+  'pr': 44, 'public relations': 44, 'communications': 44,
+  'seo': 45, 'search engine': 45,
+  // Probate
+  'solicitor': 46, 'law firm': 46, 'legal': 46, 'lawyer': 46, 'conveyancing': 46, 'family solicitor': 46,
+  'will': 47, 'will writer': 47, 'will writing': 47,
+  'probate': 48, 'probate practitioner': 48, 'estate administration': 48, 'probate research': 48,
+  'estate agent': 49, 'estate agency': 49, 'letting': 49, 'realtor': 49, 'property agent': 49,
+  'inheritance': 50, 'inheritance tax': 50,
+  // Tenders
+  'cleaning': 51, 'janitorial': 51, 'commercial cleaning': 51, 'office cleaning': 51,
+  'security': 52, 'guard': 52, 'cctv': 52, 'alarm': 52, 'fire safety': 52, 'surveillance': 52,
+  'catering': 53, 'caterer': 53, 'food service': 53, 'event catering': 53, 'hospitality': 53,
+  'it services': 54, 'cyber security': 54, 'it consultancy': 54, 'software development': 54, 'cloud': 54,
+  'civil engineering': 55, 'infrastructure': 55, 'construction company': 55, 'building contractor': 55,
+  'consulting': 56, 'management consultancy': 56, 'business advisory': 56
+};
+
+function resolveBrevoList(industry, product, defaultListId) {
+  if (!industry) return parseInt(defaultListId) || null;
+  const lower = industry.toLowerCase();
+  for (const [keyword, listId] of Object.entries(INDUSTRY_LIST_MAP)) {
+    if (lower.includes(keyword)) return listId;
+  }
+  return parseInt(defaultListId) || null;
+}
+
+function summarizeCategories(results) {
+  const cats = {};
+  results.forEach(r => {
+    const ind = (r.industry || 'Unknown').trim() || 'Unknown';
+    cats[ind] = (cats[ind] || 0) + 1;
+  });
+  const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+  return sorted.map(([cat, count]) =>
+    '<span style="padding:2px 8px;border-radius:4px;font-size:10px;background:rgba(14,165,233,.08);color:var(--primary);border:1px solid rgba(14,165,233,.15)">' + escHtml(cat) + ': ' + count + '</span>'
+  ).join(' ');
+}
+
+async function pushToBrevo(key) {
+  const results = scraperState.results;
+  if (!results || results.length === 0) { Toast('No results to push. Run a scraper first.', 'warning'); return; }
+
+  const config = scraperState.configs[key] || {};
+  const apiKey = config.brevoApiKey || document.getElementById('sb-key-' + key)?.value?.trim() || '';
+  const defaultListId = config.brevoListId || document.getElementById('sb-list-' + key)?.value?.trim() || '';
+
+  if (!apiKey) { Toast('Enter a Brevo API key in the config', 'error'); return; }
+  if (!defaultListId) { Toast('Enter a default Brevo List ID in the config', 'error'); return; }
+
+  const p = PRODUCTS.find(x => x.key === key);
+  const label = p ? p.name : key;
+
+  // Show category breakdown before pushing
+  const catSummary = summarizeCategories(results);
+  document.getElementById('scraperProgressText').innerHTML = '<i class="fas fa-tags"></i> Categories found: ' + catSummary;
+  await new Promise(r => setTimeout(r, 500));
+
+  let pushed = 0, skipped = 0, errors = 0;
+  const listRoutes = {};
+
+  for (const r of results) {
+    const email = r.ownerEmail || r.marketingEmail || r.salesEmail || r.generalEmail;
+    if (!email) { skipped++; continue; }
+
+    const targetListId = resolveBrevoList(r.industry, key, defaultListId);
+    if (!listRoutes[targetListId]) listRoutes[targetListId] = 0;
+    listRoutes[targetListId]++;
+
+    try {
+      const resp = await fetch('https://api.brevo.com/v3/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
+        body: JSON.stringify({
+          email: email,
+          attributes: {
+            FIRSTNAME: r.name || '',
+            SMS: r.phone || '',
+            WEBSITE: r.website || '',
+            ADDRESS: r.address || '',
+            INDUSTRY: r.industry || '',
+            BIZ_TYPE: r.industry || '',
+            SOURCE: '9amLeads Scraper - ' + label
+          },
+          listIds: [targetListId],
+          updateEnabled: true
+        })
+      });
+      const data = await resp.json();
+      if (resp.ok || resp.status === 204 || data.message === 'Contact already in list') {
+        pushed++;
+      } else {
+        errors++;
+        console.log('[BREVO] Error for ' + email + ' -> list ' + targetListId + ':', data);
+      }
+    } catch (e) {
+      errors++;
+      console.log('[BREVO] Network error for ' + email + ':', e.message);
+    }
+  }
+
+  const routeSummary = Object.entries(listRoutes)
+    .sort((a, b) => b[1] - a[1])
+    .map(([lid, cnt]) => 'List #' + lid + ': ' + cnt)
+    .join(', ');
+  const msg = pushed + ' contacts pushed (' + routeSummary + '). ' + skipped + ' skipped, ' + errors + ' errors';
+  Toast(msg, errors > 0 ? 'warning' : 'success', 5000);
+  document.getElementById('scraperProgressText').textContent = msg;
+}
+
+async function runScraper(key) {
+  if (scraperState.running) { Toast('A scraper is already running', 'warning'); return; }
+
+  const query = document.getElementById('sq-' + key)?.value?.trim();
+  const location = document.getElementById('sl-' + key)?.value?.trim();
+  const instructions = document.getElementById('si-' + key)?.value?.trim();
+  const maxResults = parseInt(document.getElementById('sc-' + key)?.value) || 50;
+  const findOwner = document.getElementById('se-owner-' + key)?.checked || false;
+  const findMarketing = document.getElementById('se-marketing-' + key)?.checked || false;
+  const findSales = document.getElementById('se-sales-' + key)?.checked || false;
+  const findGeneral = document.getElementById('se-general-' + key)?.checked || false;
+
+  if (!query) { Toast('Enter a search query', 'error'); return; }
+
+  // Save config
+  saveScraperConfig(key);
+
+  const p = PRODUCTS.find(x => x.key === key);
+  if (!p) return;
+
+  // ---- DEDUP: count how many known before filtering ----
+  const knownCount = scraperState.knownBusinesses.filter(b => b.product === key).length;
+  Toast('Checking ' + knownCount + ' known ' + p.name + ' businesses for duplicates...', 'info', 3000);
+
+  // ---- STRATEGIC QUERY BUILDING ----
+  // Build a targeted search from query + location + instructions
+  const parts = [query];
+  if (location && location !== 'UK') parts.push(location);
+  if (instructions) {
+    // Use instructions to refine: if they said "skip chains", we add that
+    const cleaned = instructions.replace(/don'?t\s+scrape\s+/gi, '').replace(/skip\s+/gi, '').trim();
+    if (cleaned.length > 5) parts.push(cleaned.substring(0, 60));
+  }
+  let searchQuery = parts.join(' ');
+
+  // ---- KNOWN BUSINESS EXCLUSION ----
+  // Add negative keywords for known business names to reduce re-scraping
+  const knownForProduct = scraperState.knownBusinesses
+    .filter(b => b.product === key && b.name)
+    .slice(0, 10); // Max 10 exclusions to keep query short
+  if (knownForProduct.length > 0) {
+    const exclusions = knownForProduct.map(b => {
+      const words = b.name.split(/\s+/).filter(w => w.length > 3).slice(0, 2);
+      return words.map(w => '-' + w).join(' ');
+    }).filter(Boolean).join(' ');
+    if (exclusions.length < 200) {
+      searchQuery = searchQuery + ' ' + exclusions;
+      console.log('[SCRAPER] Excluding ' + knownForProduct.length + ' known businesses from query');
+    }
+  }
+
+  // ---- ENSURE WE GET ENOUGH FRESH RESULTS ----
+  const targetResults = Math.min(maxResults, 100);
+  // Request more than needed since some will be filtered out as duplicates
+  const requestSize = Math.min(Math.ceil(targetResults * 1.5), 100);
+
+  const actorId = 'compass/crawler-google-places';
+  const input = JSON.stringify({
+    searchStringsArray: [searchQuery],
+    maxResults: requestSize,
+    country: 'GB',
+    language: 'en'
+  });
+
+  // ---- STRATEGY LOG ----
+  console.log('[SCRAPER] ' + p.name + ' query: ' + searchQuery);
+  console.log('[SCRAPER] Requesting ' + requestSize + ' results, targeting ' + targetResults + ' unique');
+
+  try {
+    // Use hardcoded Apify token
+    let token = APIFY_TOKEN;
+
+    // Start the actor run
+    const runResp = await fetch('https://api.apify.com/v2/acts/' + encodeURIComponent(actorId) + '/runs?token=' + token, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: input
+    });
+    const runData = await runResp.json();
+
+    if (runResp.status !== 201 || !runData.data?.id) {
+      throw new Error(runData.error?.message || 'Failed to start (HTTP ' + runResp.status + ')');
+    }
+
+    const runId = runData.data.id;
+    document.getElementById('scraperProgressText').textContent = 'Scraping ' + p.name + ' leads...';
+
+    // Poll for completion (every 2s, max 60 retries)
+    let retries = 0;
+    let completed = false;
+    while (retries < 60 && !completed) {
+      await new Promise(r => setTimeout(r, 2000));
+      document.getElementById('scraperProgressBar').style.width = Math.min(10 + retries * 1.3, 85) + '%';
+
+      const statusResp = await fetch('https://api.apify.com/v2/actor-runs/' + runId + '?token=' + token);
+      const statusData = await statusResp.json();
+
+      if (statusData.data?.status === 'SUCCEEDED') {
+        completed = true;
+      } else if (statusData.data?.status === 'FAILED' || statusData.data?.status === 'ABORTED') {
+        throw new Error('Scraper ' + statusData.data.status.toLowerCase());
+      }
+      retries++;
+    }
+
+    if (!completed) throw new Error('Timed out after 2 minutes');
+
+    // Fetch results
+    document.getElementById('scraperProgressText').textContent = 'Fetching results...';
+    document.getElementById('scraperProgressBar').style.width = '90%';
+
+    const itemsResp = await fetch('https://api.apify.com/v2/actor-runs/' + runId + '/dataset/items?token=' + token);
+    const items = await itemsResp.json();
+
+    if (!Array.isArray(items) || items.length === 0) {
+      Toast.show('Scrape completed but no results found', 'info');
+      finishScraper(key);
+      return;
+    }
+
+    // Process results
+    document.getElementById('scraperProgressText').textContent = 'Deduplicating results against ' + scraperState.knownBusinesses.length + ' known businesses...';
+
+    let results = items.map(item => ({
+      name: item.title || item.name || item.businessName || item.displayName || item.caption || '',
+      industry: item.category || item.type || item.industry || '',
+      phone: (item.phoneUnformatted || item.phone || (item.phones ? (Array.isArray(item.phones) ? item.phones[0] : item.phones) : '') || '').toString(),
+      website: item.website || item.url || item.websiteUrl || item.site || '',
+      address: item.address || item.fullAddress || item.street || item.city || item.location || '',
+      generalEmail: (item.email || (item.emails ? (Array.isArray(item.emails) ? item.emails[0] : item.emails) : '') || '').toString(),
+      ownerEmail: '',
+      marketingEmail: '',
+      salesEmail: ''
+    })).filter(r => r.name || r.phone || r.website);
+
+    // ---- DEDUP FILTER ----
+    const beforeDedup = results.length;
+    results = results.filter(r => !isDuplicate(r));
+    const duplicatesRemoved = beforeDedup - results.length;
+
+    if (results.length === 0) {
+      Toast('All ' + beforeDedup + ' results already in database — nothing new to add. Try a different query or location.', 'warning', 5000);
+      finishScraper(key);
+      return;
+    }
+
+    document.getElementById('scraperProgressText').textContent = duplicatesRemoved > 0
+      ? 'Removed ' + duplicatesRemoved + ' duplicates. Enriching ' + results.length + ' new leads with emails...'
+      : 'Enriching with emails...';
+    document.getElementById('scraperProgressBar').style.width = '95%';
+
+    scraperState.results = results;
+
+    // Enrich with emails by crawling websites
+    if (findOwner || findMarketing || findSales || findGeneral) {
+      await enrichEmails(results, token, { owner: findOwner, marketing: findMarketing, sales: findSales, general: findGeneral });
+    }
+
+    // ---- SAVE TO DEDUP DATABASE ----
+    const saveResult = await addToKnownBusinesses(results, key, query + ' ' + location);
+    if (saveResult && saveResult.added > 0) {
+      console.log('[DEDUP] Added ' + saveResult.added + ' new businesses to database');
+    }
+
+    document.getElementById('scraperProgressBar').style.width = '100%';
+    document.getElementById('scraperProgressText').textContent = 'Complete! Found ' + results.length + ' new leads' + (duplicatesRemoved > 0 ? ' (' + duplicatesRemoved + ' duplicates skipped)' : '') + '.';
+
+    renderScraperResults(results);
+    Toast(results.length + ' new leads scraped for ' + p.name + (duplicatesRemoved > 0 ? ' (' + duplicatesRemoved + ' dupes skipped)' : ''), 'success');
+
+  } catch (e) {
+    Toast.show('Error: ' + e.message, 'error');
+  }
+
+  finishScraper(key);
+}
+
+function finishScraper(key) {
+  scraperState.running = false;
+  const btn = document.getElementById('runBtn-' + key);
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-play"></i> Run Scraper'; }
+  setTimeout(() => { document.getElementById('scraperProgress').style.display = 'none'; }, 3000);
+}
+
+// Enrich emails by crawling each website
+async function enrichEmails(results, token, findTypes) {
+  const needCrawl = results.filter(r => r.website && !r.generalEmail);
+  if (needCrawl.length === 0) return;
+
+  const batch = needCrawl.slice(0, 15); // Max 15 per run
+  const urls = batch.map(r => {
+    let url = r.website;
+    if (!url.startsWith('http')) url = 'https://' + url;
+    return { url };
+  });
+
+  document.getElementById('scraperProgressText').textContent = 'Crawling ' + urls.length + ' websites for emails...';
+
+  try {
+    const crawlResp = await fetch('https://api.apify.com/v2/acts/apify~website-content-crawler/runs?token=' + token, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        startUrls: urls,
+        maxCrawlingDepth: 2,
+        maxPagesPerCrawl: 3,
+        includeEmail: true
+      })
+    });
+    const crawlData = await crawlResp.json();
+
+    if (crawlResp.status === 201 && crawlData.data?.id) {
+      // Poll for completion
+      let retries = 0;
+      let done = false;
+      while (retries < 30 && !done) {
+        await new Promise(r => setTimeout(r, 2000));
+        const sResp = await fetch('https://api.apify.com/v2/actor-runs/' + crawlData.data.id + '?token=' + token);
+        const sData = await sResp.json();
+        if (sData.data?.status === 'SUCCEEDED') done = true;
+        else if (sData.data?.status === 'FAILED' || sData.data?.status === 'ABORTED') break;
+        retries++;
+      }
+
+      if (done) {
+        const itemsResp = await fetch('https://api.apify.com/v2/actor-runs/' + crawlData.data.id + '/dataset/items?token=' + token);
+        const crawlItems = await itemsResp.json();
+
+        if (Array.isArray(crawlItems)) {
+          // Map crawled emails back to results
+          crawlItems.forEach(item => {
+            const crawledUrl = item.url || '';
+            const emails = item.emails || [];
+            const result = results.find(r => crawledUrl.includes(r.website.replace(/https?:\/\//, '').replace(/\/.*/, '')));
+            if (result && emails.length > 0) {
+              // Distribute emails by type
+              const sorted = sortEmailsByRole(emails, findTypes);
+              if (sorted.owner && findTypes.owner) result.ownerEmail = sorted.owner;
+              if (sorted.marketing && findTypes.marketing) result.marketingEmail = sorted.marketing;
+              if (sorted.sales && findTypes.sales) result.salesEmail = sorted.sales;
+              if (sorted.general && findTypes.general) result.generalEmail = result.generalEmail || sorted.general;
+            }
+          });
+
+          // For results not enriched, use general email if found
+          results.forEach(r => {
+            if (!r.ownerEmail && !r.marketingEmail && !r.salesEmail && r.generalEmail) {
+              // Keep general as fallback
+            }
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.log('Email enrichment error:', e.message);
+  }
+}
+
+function sortEmailsByRole(emails, findTypes) {
+  const result = { owner: '', marketing: '', sales: '', general: '' };
+  const emailStr = emails.join(' ').toLowerCase();
+
+  for (const email of emails) {
+    const lower = email.toLowerCase();
+
+    // Owner/Director emails
+    if (findTypes.owner && !result.owner &&
+      (lower.includes('director') || lower.includes('owner') || lower.includes('founder') ||
+       lower.includes('ceo') || lower.includes('md@') || lower.includes('partner') ||
+       lower.includes('principal'))) {
+      result.owner = email;
+      continue;
+    }
+
+    // Marketing emails
+    if (findTypes.marketing && !result.marketing &&
+      (lower.includes('marketing') || lower.includes('pr@') || lower.includes('social') ||
+       lower.includes('media') || lower.includes('communications') || lower.includes('brand'))) {
+      result.marketing = email;
+      continue;
+    }
+
+    // Sales emails
+    if (findTypes.sales && !result.sales &&
+      (lower.includes('sales') || lower.includes('business') || lower.includes('development') ||
+       lower.includes('bd@') || lower.includes('account') || lower.includes('commercial'))) {
+      result.sales = email;
+      continue;
+    }
+
+    // General fallback - prefer info@ or hello@ or contact@
+    if (!result.general) {
+      if (lower.includes('info@') || lower.includes('hello@') || lower.includes('contact@') || lower.includes('enquiries@') || lower.includes('enquiry@')) {
+        result.general = email;
+        continue;
+      }
+    }
+  }
+
+  // If we only need general and none classified, use any email
+  if (!result.owner && !result.marketing && !result.sales && !result.general && emails.length > 0) {
+    result.general = emails[0];
+  }
+
+  return result;
+}
+
+function renderScraperResults(results) {
+  const container = document.getElementById('scraperResults');
+  const body = document.getElementById('scraperResultsBody');
+  const empty = document.getElementById('scraperResultsEmpty');
+  const count = document.getElementById('scraperResultCount');
+
+  container.style.display = 'block';
+  count.textContent = results.length;
+
+  // Enable all Push to Brevo buttons
+  document.querySelectorAll('[id^="pushBtn-"]').forEach(b => b.disabled = false);
+
+  if (results.length === 0) {
+    document.getElementById('scraperResultsTableWrap').style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+
+  document.getElementById('scraperResultsTableWrap').style.display = 'block';
+  empty.style.display = 'none';
+
+  // Show category summary with Brevo list routing
+  const cats = {};
+  results.forEach(r => {
+    const ind = (r.industry || 'Unknown').trim() || 'Unknown';
+    if (!cats[ind]) cats[ind] = { count: 0, listId: resolveBrevoList(ind, '', '—') };
+    cats[ind].count++;
+  });
+  const catHtml = Object.entries(cats)
+    .sort((a, b) => b[1].count - a[1].count)
+    .map(([cat, info]) =>
+      '<span style="padding:3px 10px;border-radius:4px;font-size:11px;background:rgba(14,165,233,.08);color:var(--primary);border:1px solid rgba(14,165,233,.15)">' +
+      escHtml(cat) + ': ' + info.count + ' → <strong>List #' + info.listId + '</strong></span>'
+    ).join(' ');
+  document.getElementById('scraperCategorySummary').innerHTML = catHtml;
+
+  body.innerHTML = results.map(r => {
+    const targetList = resolveBrevoList(r.industry, '', '—');
+    return '<tr>' +
+      '<td><strong>' + escHtml(r.name) + '</strong></td>' +
+      '<td><span style="color:var(--muted2);font-size:11px">' + escHtml(r.industry) + '</span><br><span style="font-size:10px;color:' + (targetList !== '—' ? 'var(--success)' : 'var(--muted2)') + ';font-weight:600">→ List #' + targetList + '</span></td>' +
+      '<td>' + (r.ownerEmail ? '<a href="mailto:' + escHtml(r.ownerEmail) + '" style="color:var(--primary);font-size:12px">' + escHtml(r.ownerEmail) + '</a>' : '<span style="color:var(--muted2);font-size:11px">—</span>') + '</td>' +
+      '<td>' + (r.marketingEmail ? '<a href="mailto:' + escHtml(r.marketingEmail) + '" style="color:var(--success);font-size:12px">' + escHtml(r.marketingEmail) + '</a>' : '<span style="color:var(--muted2);font-size:11px">—</span>') + '</td>' +
+      '<td>' + (r.salesEmail ? '<a href="mailto:' + escHtml(r.salesEmail) + '" style="color:var(--warning);font-size:12px">' + escHtml(r.salesEmail) + '</a>' : '<span style="color:var(--muted2);font-size:11px">—</span>') + '</td>' +
+      '<td>' + (r.generalEmail ? '<a href="mailto:' + escHtml(r.generalEmail) + '" style="color:var(--muted);font-size:12px">' + escHtml(r.generalEmail) + '</a>' : '<span style="color:var(--muted2);font-size:11px">—</span>') + '</td>' +
+      '<td style="font-size:12px">' + escHtml(r.phone) + '</td>' +
+      '<td style="font-size:12px">' + (r.website ? '<a href="' + escHtml(r.website) + '" target="_blank" style="color:var(--primary)">link</a>' : '') + '</td>' +
+      '<td style="font-size:12px;color:var(--muted2)">' + escHtml(r.address) + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function downloadScraperCSV() {
+  const results = scraperState.results;
+  if (!results || results.length === 0) { Toast.show('No results to export', 'warning'); return; }
+  const headers = 'Business Name,Industry,Owner/Director Email,Marketing Email,Sales Email,General Email,Phone,Website,Address\n';
+  const rows = results.map(r =>
+    '"' + (r.name || '') + '","' + (r.industry || '') + '","' + (r.ownerEmail || '') + '","' + (r.marketingEmail || '') + '","' + (r.salesEmail || '') + '","' + (r.generalEmail || '') + '","' + (r.phone || '') + '","' + (r.website || '') + '","' + (r.address || '') + '"'
+  ).join('\n');
+  const blob = new Blob([headers + rows], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'scraped-leads-' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  Toast.show('CSV exported', 'success');
+}
+
+function saveScraperLeads() {
+  const results = scraperState.results;
+  if (!results || results.length === 0) { Toast.show('No results to save', 'warning'); return; }
+  // Save to localStorage for persistence
+  const allLeads = JSON.parse(localStorage.getItem('9am_scraper_leads') || '[]');
+  const newLeads = results.filter(r => r.name);
+  allLeads.push(...newLeads.map(r => ({ ...r, savedAt: new Date().toISOString() })));
+  localStorage.setItem('9am_scraper_leads', JSON.stringify(allLeads));
+  Toast.show(newLeads.length + ' leads saved to local storage', 'success');
+}
+
+function clearScraperResults() {
+  scraperState.results = [];
+  document.getElementById('scraperResults').style.display = 'none';
+  document.getElementById('scraperResultsBody').innerHTML = '';
+  localStorage.removeItem('9am_scraper_results');
+  Toast.show('Results cleared', 'info');
+}
+
+// ===== DEDUP DATABASE =====
+async function loadKnownBusinesses() {
+  try {
+    const res = await fetch(API + '/api/scraped-businesses');
+    if (res.ok) {
+      const list = await res.json();
+      scraperState.knownBusinesses = list;
+      scraperState.knownDomains = new Set(list.map(b => normalizeDomain(b.website)).filter(Boolean));
+      scraperState.knownNames = new Set(list.map(b => normalizeName(b.name)).filter(Boolean));
+      scraperState.knownEmails = new Set(
+        list.flatMap(b => [b.email, b.ownerEmail, b.marketingEmail, b.salesEmail, b.generalEmail])
+          .filter(Boolean).map(e => e.toLowerCase())
+      );
+      console.log('[DEDUP] Loaded ' + list.length + ' known businesses');
+    }
+  } catch(e) {
+    console.log('[DEDUP] Could not load from API, using local:', e.message);
+    // Fallback to local storage
+    const local = JSON.parse(localStorage.getItem('9am_known_businesses') || '[]');
+    scraperState.knownBusinesses = local;
+    scraperState.knownDomains = new Set(local.map(b => normalizeDomain(b.website)).filter(Boolean));
+    scraperState.knownNames = new Set(local.map(b => normalizeName(b.name)).filter(Boolean));
+  }
+}
+
+function normalizeDomain(url) {
+  if (!url) return '';
+  return url.toLowerCase().replace(/https?:\/\//, '').replace(/^www\./, '').replace(/\/.*/, '').trim();
+}
+
+function normalizeName(name) {
+  return (name || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+}
+
+function isDuplicate(biz) {
+  const domain = normalizeDomain(biz.website);
+  const name = normalizeName(biz.name);
+  const email = (biz.email || biz.generalEmail || '').toLowerCase();
+  if (domain && scraperState.knownDomains.has(domain)) return true;
+  if (name && scraperState.knownNames.has(name)) return true;
+  if (email && scraperState.knownEmails.has(email)) return true;
+  return false;
+}
+
+async function addToKnownBusinesses(businesses, product, query) {
+  try {
+    const res = await fetch(API + '/api/scraped-businesses/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ businesses, product, query })
+    });
+    const result = await res.json();
+    if (result.success) {
+      // Reload cache
+      await loadKnownBusinesses();
+    }
+    return result;
+  } catch(e) {
+    // Fallback to local storage
+    const local = JSON.parse(localStorage.getItem('9am_known_businesses') || '[]');
+    let added = 0;
+    for (const biz of businesses) {
+      if (!isDuplicate(biz)) {
+        local.push({ ...biz, product, searchQuery: query, scrapedAt: new Date().toISOString() });
+        added++;
+      }
+    }
+    localStorage.setItem('9am_known_businesses', JSON.stringify(local));
+    scraperState.knownBusinesses = local;
+    return { added, total: local.length };
+  }
+}
+
+// ===== DEDUP UI =====
+function showDedupBanner() {
+  const total = scraperState.knownBusinesses.length;
+  if (total === 0) return '';
+
+  const byProduct = {};
+  scraperState.knownBusinesses.forEach(b => {
+    const p = b.product || 'unknown';
+    byProduct[p] = (byProduct[p] || 0) + 1;
+  });
+  const productStats = Object.entries(byProduct).map(([k, v]) => {
+    const p = PRODUCTS.find(x => x.key === k);
+    return '<span style="color:' + (p ? p.accent : 'var(--muted)') + '">' + (p ? p.name : k) + ': ' + v + '</span>';
+  }).join(' · ');
+
+  return '<div style="margin-bottom:14px;padding:12px 16px;background:rgba(14,165,233,.06);border:1px solid rgba(14,165,233,.12);border-radius:8px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center">' +
+    '<span><i class="fas fa-database" style="color:var(--primary)"></i> <strong style="color:var(--text)">' + total + '</strong> businesses in dedup database — ' + productStats + '</span>' +
+    '<button class="btn btn-outline btn-sm" onclick="exportKnownBusinesses()"><i class="fas fa-download"></i> Export</button>' +
+  '</div>';
+}
+
+function exportKnownBusinesses() {
+  const list = scraperState.knownBusinesses;
+  if (!list.length) { Toast('No data to export', 'warning'); return; }
+  const headers = 'Business Name,Website,Email,Owner Email,Marketing Email,Sales Email,Phone,Industry,Product,Scraped At\n';
+  const rows = list.map(b =>
+    '"' + (b.name || '') + '","' + (b.website || '') + '","' + (b.email || '') + '","' + (b.ownerEmail || '') + '","' + (b.marketingEmail || '') + '","' + (b.salesEmail || '') + '","' + (b.phone || '') + '","' + (b.industry || '') + '","' + (b.product || '') + '","' + (b.scrapedAt || '') + '"'
+  ).join('\n');
+  const blob = new Blob([headers + rows], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'scraped-businesses-' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  Toast('Exported ' + list.length + ' businesses', 'success');
+}
+
+// Override Toast for this page
+function Toast(msg, type, duration) {
+  const el = document.getElementById('scraperToast') || (() => {
+    const t = document.createElement('div');
+    t.id = 'scraperToast';
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;transition:all .3s;max-width:400px';
+    document.body.appendChild(t);
+    return t;
+  })();
+
+  el.style.background = type === 'error' ? 'rgba(239,68,68,.9)' : type === 'warning' ? 'rgba(245,158,11,.9)' : type === 'success' ? 'rgba(34,197,94,.9)' : 'rgba(14,165,233,.9)';
+  el.style.color = type === 'warning' ? '#000' : '#fff';
+  el.textContent = msg;
+  el.style.opacity = '1';
+  el.style.transform = 'translateY(0)';
+
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(10px)'; }, duration || 3000);
+}
+
+// Live visitor counter
+async function updateLiveVisitors() {
+  try {
+    const r = await fetch(API + '/api/analytics/live');
+    const d = await r.json();
+    document.getElementById('liveVisitors').textContent = d.live || 0;
+  } catch {}
+}
+setInterval(updateLiveVisitors, 10000);
+updateLiveVisitors();
+
+function saveApifyToken() {
+  const token = document.getElementById('settingsApifyToken')?.value?.trim();
+  if (!token) { Toast('Enter your Apify API token', 'error'); return; }
+  localStorage.setItem('9am_apify_token', token);
+  document.getElementById('apifyTokenStatus').style.display = 'inline';
+  setTimeout(() => { document.getElementById('apifyTokenStatus').style.display = 'none'; }, 2000);
+  Toast('Apify token saved', 'success');
+}
+
+// Init
+async function init() {
+  document.getElementById('apiStatus').textContent = 'API: Loading...';
+
+  loadSavedScraperConfigs();
+
+  // Pre-fill Apify token (hardcoded)
+  const currentToken = localStorage.getItem('9am_apify_token');
+  if (!currentToken) localStorage.setItem('9am_apify_token', APIFY_TOKEN);
+  const tf = document.getElementById('settingsApifyToken');
+  if (tf) tf.value = localStorage.getItem('9am_apify_token') || APIFY_TOKEN;
+
+  // Load dedup database
+  await loadKnownBusinesses();
+
+  await Promise.all([
+    loadOverview(),
+    loadAllProducts(),
+    loadScrapers(),
+    ...PRODUCTS.map(p => loadProductDetail(p.key)),
+    ...PRODUCTS.map(p => loadClients(p.key)),
+  ]);
+  document.getElementById('apiStatus').textContent = 'API: Live \u2713';
+}
+
+init();
+</script>
+</body></html>
+

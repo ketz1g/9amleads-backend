@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Customer Portal — MovingLeadsDaily</title>
+<meta name="description" content="Sign in to your 9amLeads account to access your daily lead sheets and dashboard.">
+<meta name="robots" content="noindex, nofollow">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f8fafc;color:#0f172a;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.login-card{background:#fff;border-radius:24px;padding:48px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.06);text-align:center}
+.login-card .logo{width:52px;height:52px;background:linear-gradient(135deg,#ff6b35,#e85d26);border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:800;margin:0 auto 20px}
+.login-card h1{font-size:24px;font-weight:800;margin-bottom:8px}
+.login-card p{color:#64748b;font-size:14px;margin-bottom:28px;line-height:1.6}
+.form-group{margin-bottom:16px;text-align:left}
+.form-group label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:#0f172a}
+.form-group input{width:100%;padding:14px 16px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:inherit;transition:border-color .2s}
+.form-group input:focus{outline:none;border-color:#ff6b35;box-shadow:0 0 0 4px rgba(255,107,53,0.1)}
+.btn{width:100%;padding:14px;background:linear-gradient(135deg,#ff6b35,#e85d26);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all .3s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,107,53,0.25)}
+.error{color:#ef4444;font-size:13px;margin-top:8px;display:none}
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:#94a3b8;font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#e2e8f0}
+.demo-box{background:#f8fafc;border-radius:10px;padding:16px;font-size:12px;color:#64748b;text-align:left;margin-top:12px}
+.demo-box code{font-size:11px;color:#ff6b35;font-weight:600}
+</style>
+</head>
+<body>
+<div style="background:#0a0a0a;border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;font-size:11px;text-align:center;font-family:Arial,sans-serif;">
+<span style="color:#888">Part of </span>
+<a href="/" style="color:#0ea5e9;font-weight:600">9amLeads</a>
+<span style="color:#555;margin:0 6px">|</span>
+<a href="/movingleadsdaily/" style="color:#888;text-decoration:none">Moving</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/probateleads/" style="color:#888;text-decoration:none">Probate</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/newbusinessalert/" style="color:#888;text-decoration:none">New Business</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/planningleads/" style="color:#888;text-decoration:none">Planning</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/tenders/" style="color:#888;text-decoration:none">Tenders</a>
+</div>
+<div class="login-card">
+<div class="logo">ML</div>
+<h1>Customer Portal</h1>
+<p>Enter your client ID or registered email to access your lead dashboard.</p>
+<div class="form-group">
+<label>Email or Client ID</label>
+<input type="text" id="login-id" placeholder="your@email.com" onkeydown="if(event.key==='Enter')login()">
+</div>
+<div id="login-error" class="error">Invalid credentials. Please try again or contact support.</div>
+<button class="btn" onclick="login()">Sign In →</button>
+<div class="divider">or</div>
+<div style="font-size:13px;color:#64748b">Try a demo account:</div>
+<div class="demo-box">
+<strong>Demo Client 1:</strong> <code>demo@movingleadsdaily.co.uk</code><br>
+<strong>Demo Client 2:</strong> <code>demo2@movingleadsdaily.co.uk</code>
+</div>
+</div>
+<script>
+function login() {
+  const id = document.getElementById('login-id').value.trim().toLowerCase();
+  if (!id) { document.getElementById('login-error').style.display = 'block'; return; }
+  
+  // Create a simple session token
+  const session = { clientId: id, loginTime: new Date().toISOString(), name: id.split('@')[0] || id };
+  localStorage.setItem('mld_portal_session', JSON.stringify(session));
+  
+  // Redirect to dashboard
+  window.location.href = '/portal/dashboard.html';
+}
+
+// Check if already logged in
+const session = localStorage.getItem('mld_portal_session');
+if (session) {
+  const data = JSON.parse(session);
+  document.getElementById('login-id').value = data.clientId;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pricing — Probate Leads</title>
+  <meta name="description" content="Simple, transparent pricing for daily probate grant alerts. From £247/month. No hidden fees. Start your 7-day free trial.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--primary:#a855f7;--primary-dark:#7c3aed;--primary-light:#c084fc;--bg:#000000;--bg-card:#0a0a0a;--bg-card-hover:#111111;--border:#1a1a1a;--border-hover:#2a2a2a;--text:#ffffff;--text-secondary:#a1a1aa;--text-muted:#52525b;--radius:12px;--radius-sm:8px;--radius-lg:16px;--radius-xl:24px;--shadow:0 4px 24px rgba(0,0,0,0.3);--transition:all 0.3s cubic-bezier(0.4,0,0.2,1);--font-heading:'Outfit',-apple-system,BlinkMacSystemFont,sans-serif;--font-body:'Inter',-apple-system,BlinkMacSystemFont,sans-serif}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--font-body);color:var(--text);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+    .container{max-width:1140px;margin:0 auto;padding:0 24px}
+    .section{padding:80px 0}
+    .section-title{font-family:var(--font-heading);font-size:36px;font-weight:800;margin-bottom:12px;letter-spacing:-0.5px;line-height:1.15;text-align:center}
+    .section-sub{text-align:center;color:var(--text-secondary);font-size:16px;max-width:600px;margin:0 auto 48px;line-height:1.7}
+    .gradient-text{background:linear-gradient(135deg,var(--primary),var(--primary-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    a{text-decoration:none;color:inherit}
+    img{max-width:100%;height:auto}
+
+    /* Navigation */
+    nav{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;max-width:1140px;margin:0 auto;position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06)}
+    .logo{display:flex;align-items:center;gap:10px;font-family:var(--font-heading);font-size:21px;font-weight:800;color:var(--text);letter-spacing:-0.5px}
+    .logo .mark{width:36px;height:36px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px}
+    .logo span{color:var(--primary)}
+    .nav-links{display:flex;align-items:center;gap:4px}
+    .nav-links a{padding:8px 16px;color:var(--text-secondary);font-weight:500;font-size:14px;transition:var(--transition);border-radius:var(--radius-sm)}
+    .nav-links a:hover{color:var(--text);background:rgba(255,255,255,0.04)}
+    .nav-links a.active{color:var(--primary)}
+    .nav-links .btn-nav{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff!important;padding:10px 22px;border-radius:var(--radius-sm);font-weight:600;box-shadow:0 4px 16px rgba(168,85,247,0.25)}
+    .nav-links .btn-nav:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(168,85,247,0.35)}
+    .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px;background:none;border:none;z-index:101}
+    .hamburger span{width:24px;height:2px;background:var(--text);border-radius:2px;transition:var(--transition)}
+
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:var(--radius-sm);font-weight:600;font-size:15px;cursor:pointer;border:none;transition:var(--transition);text-decoration:none;font-family:var(--font-body)}
+    .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 4px 16px rgba(168,85,247,0.25)}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(168,85,247,0.35)}
+    .btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border)}
+    .btn-secondary:hover{border-color:var(--primary);color:var(--primary);background:rgba(168,85,247,0.04)}
+
+    /* Page hero */
+    .page-hero{padding:120px 0 60px;text-align:center;position:relative;overflow:hidden;background:#000}
+    .page-hero .bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(168,85,247,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,0.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+    .page-hero .orb{position:absolute;width:400px;height:400px;border-radius:50%;background:var(--primary);opacity:0.05;filter:blur(80px);top:-150px;right:-100px;pointer-events:none}
+    .page-hero h1{font-family:var(--font-heading);font-size:42px;font-weight:900;margin-bottom:12px;position:relative}
+    .page-hero p{color:var(--text-secondary);font-size:17px;max-width:550px;margin:0 auto;position:relative}
+
+    /* Pricing */
+    .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1000px;margin:48px auto 0}
+    .pricing-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 28px;text-align:center;transition:var(--transition);position:relative}
+    .pricing-card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--border-hover)}
+    .pricing-card.featured{border-color:var(--primary);background:rgba(168,85,247,0.03);box-shadow:0 0 40px rgba(168,85,247,0.06)}
+    .pricing-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:6px 20px;border-radius:100px;font-size:12px;font-weight:700;font-family:var(--font-heading);letter-spacing:0.5px}
+    .pricing-card h3{font-family:var(--font-heading);font-size:22px;margin-bottom:8px}
+    .pricing-card .price{font-family:var(--font-heading);font-size:44px;font-weight:900;margin:16px 0 4px}
+    .pricing-card .price span{font-size:16px;font-weight:400;color:var(--text-muted)}
+    .pricing-card .pricing-save{display:inline-block;background:rgba(168,85,247,0.1);color:var(--primary);padding:4px 12px;border-radius:100px;font-size:12px;font-weight:600;margin-bottom:16px}
+    .pricing-card .pricing-desc{color:var(--text-muted);font-size:14px;margin-bottom:8px;line-height:1.5}
+    .pricing-card ul{text-align:left;margin:24px 0;list-style:none}
+    .pricing-card li{padding:8px 0;font-size:14px;color:var(--text-secondary);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+    .pricing-card li:last-child{border:none}
+    .pricing-card li i{color:var(--primary);font-size:12px;width:16px}
+    .pricing-card .btn{width:100%;justify-content:center;margin-top:8px}
+
+    /* Comparison table */
+    .compare-section{margin-top:64px}
+    .compare-section h2{font-family:var(--font-heading);font-size:28px;font-weight:800;text-align:center;margin-bottom:32px}
+    .compare-table{width:100%;border-collapse:collapse}
+    .compare-table th,.compare-table td{padding:14px 16px;text-align:left;border-bottom:1px solid var(--border);font-size:14px}
+    .compare-table th{color:var(--text-secondary);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:0.5px}
+    .compare-table td{color:var(--text-secondary)}
+    .compare-table .feature{color:var(--text);font-weight:500}
+    .compare-table .check{color:var(--primary)}
+    .compare-table .cross{color:var(--text-muted)}
+    .compare-table tr:hover td{background:rgba(255,255,255,0.02)}
+
+    /* FAQ */
+    .faq-container{max-width:700px;margin:40px auto 0}
+    .faq-item{padding:0;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;transition:var(--transition);background:var(--bg-card)}
+    .faq-item:hover{border-color:var(--border-hover)}
+    .faq-item.active{border-color:rgba(168,85,247,0.3)}
+    .faq-question{width:100%;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;background:none;border:none;font-size:15px;font-weight:600;color:var(--text);cursor:pointer;text-align:left;font-family:var(--font-body)}
+    .faq-question i{font-size:14px;color:var(--text-muted);transition:var(--transition)}
+    .faq-item.active .faq-question i{transform:rotate(180deg);color:var(--primary)}
+    .faq-answer{max-height:0;overflow:hidden;transition:max-height 0.3s ease}
+    .faq-item.active .faq-answer{max-height:300px}
+    .faq-answer p{padding:0 20px 18px;font-size:14px;color:var(--text-secondary);line-height:1.8}
+
+    /* CTA */
+    .cta-section{background:linear-gradient(135deg,#0a0a0a,#1a0a2e);text-align:center;padding:80px 24px;position:relative;overflow:hidden;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .cta-section::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(168,85,247,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,0.04) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+    .cta-section h2{font-family:var(--font-heading);font-size:36px;font-weight:800;margin-bottom:16px;position:relative}
+    .cta-section p{color:var(--text-secondary);max-width:500px;margin:0 auto 28px;font-size:16px;position:relative}
+    .cta-section .btn{position:relative}
+
+    /* Footer */
+    footer{background:#050505;color:var(--text-muted);padding:60px 0 0;border-top:1px solid var(--border)}
+    .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;max-width:1140px;margin:0 auto;padding:0 24px}
+    .footer-grid h4{color:var(--text-secondary);font-size:13px;font-weight:700;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-heading)}
+    .footer-grid a{display:block;color:var(--text-muted);font-size:14px;padding:5px 0;transition:var(--transition)}
+    .footer-grid a:hover{color:var(--primary-light)}
+    .footer-grid p{font-size:14px;line-height:1.7;margin-top:12px}
+    .footer-social{display:flex;gap:12px;margin-top:16px}
+    .footer-social a{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:16px;transition:var(--transition);text-decoration:none}
+    .footer-social a:hover{background:var(--primary);color:#fff}
+    .footer-bottom{text-align:center;padding:24px;margin-top:48px;border-top:1px solid var(--border);font-size:13px;max-width:1140px;margin-left:auto;margin-right:auto}
+
+    /* Animations */
+    [data-animate]{opacity:0;transform:translateY(24px);transition:opacity 0.6s ease,transform 0.6s ease}
+    [data-animate].visible{opacity:1;transform:translateY(0)}
+
+    /* Responsive */
+    @media(max-width:1024px){
+      .pricing-grid{grid-template-columns:1fr;max-width:400px}
+      .compare-table{display:block;overflow-x:auto}
+    }
+    @media(max-width:768px){
+      .section{padding:60px 0}
+      .page-hero h1{font-size:30px}
+      .hamburger{display:flex}
+      .nav-links{display:none;position:absolute;top:64px;left:0;right:0;background:rgba(0,0,0,0.95);backdrop-filter:blur(20px);flex-direction:column;padding:16px 24px;border-bottom:1px solid var(--border)}
+      .nav-links.open{display:flex}
+      .nav-links a{padding:12px 16px;margin:2px 0}
+      .footer-grid{grid-template-columns:1fr 1fr;gap:24px}
+      .section-title{font-size:28px}
+      .pricing-grid{max-width:100%}
+      .compare-table th,.compare-table td{padding:10px 8px;font-size:12px}
+    }
+    @media(max-width:480px){
+      .footer-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/probateleads/" class="logo"><div class="mark">⚖️</div> Probate <span>Leads</span></a>
+  <div class="nav-links" id="navLinks">
+    <a href="/probateleads/">Home</a>
+    <a href="/probateleads/about.html">About</a>
+    <a href="/probateleads/how-it-works.html">How It Works</a>
+    <a href="/probateleads/pricing.html" class="active">Pricing</a>
+    <a href="/probateleads/contact.html">Contact</a>
+    <a href="/probateleads/contact.html" class="btn-nav"><i class="fas fa-star"></i> Free Trial</a>
+  </div>
+  <button class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- PAGE HERO -->
+<section class="page-hero">
+  <div class="bg-grid"></div>
+  <div class="orb"></div>
+  <h1 data-animate>Simple, Transparent <span class="gradient-text">Pricing</span></h1>
+  <p data-animate>No hidden fees. No long-term contracts. Cancel anytime. Choose the plan that fits your business.</p>
+</section>
+
+<!-- PRICING CARDS -->
+<section class="section">
+  <div class="container">
+    <div class="pricing-grid">
+      <div class="pricing-card" data-animate>
+        <h3>Monthly</h3>
+        <div class="price">£247<span>/mo</span></div>
+        <p class="pricing-desc">Daily probate grant alerts in your chosen areas. Perfect for getting started.</p>
+        <ul>
+          <li><i class="fas fa-check"></i> Daily probate grant alerts</li>
+          <li><i class="fas fa-check"></i> Up to 5 postcode areas</li>
+          <li><i class="fas fa-check"></i> Email delivery every morning</li>
+          <li><i class="fas fa-check"></i> Full grant details (name, address, date)</li>
+          <li><i class="fas fa-check"></i> CSV export</li>
+          <li><i class="fas fa-check"></i> Email support</li>
+        </ul>
+        <a href="/probateleads/contact.html" class="btn btn-primary">Get Started</a>
+      </div>
+      <div class="pricing-card featured" data-animate>
+        <div class="pricing-badge">Most Popular</div>
+        <h3>Quarterly</h3>
+        <div class="price">£199<span>/mo</span></div>
+        <div class="pricing-save">Save £144/year</div>
+        <p class="pricing-desc">Billed quarterly at £597. Our best value plan with extra features.</p>
+        <ul>
+          <li><i class="fas fa-check"></i> Everything in Monthly</li>
+          <li><i class="fas fa-check"></i> Up to 10 postcode areas</li>
+          <li><i class="fas fa-check"></i> Priority support</li>
+          <li><i class="fas fa-check"></i> Early morning delivery</li>
+          <li><i class="fas fa-check"></i> Monthly performance report</li>
+          <li><i class="fas fa-check"></i> 7-day free trial included</li>
+        </ul>
+        <a href="/probateleads/contact.html" class="btn btn-primary">Start Free Trial</a>
+      </div>
+      <div class="pricing-card" data-animate>
+        <h3>Annual</h3>
+        <div class="price">£149<span>/mo</span></div>
+        <div class="pricing-save">Save £1,176/year</div>
+        <p class="pricing-desc">Billed annually at £1,788. Maximum savings and full feature access.</p>
+        <ul>
+          <li><i class="fas fa-check"></i> Everything in Quarterly</li>
+          <li><i class="fas fa-check"></i> Unlimited postcode areas</li>
+          <li><i class="fas fa-check"></i> API access</li>
+          <li><i class="fas fa-check"></i> Dedicated account manager</li>
+          <li><i class="fas fa-check"></i> White-label reporting</li>
+          <li><i class="fas fa-check"></i> 7-day free trial included</li>
+        </ul>
+        <a href="/probateleads/contact.html" class="btn btn-primary">Start Free Trial</a>
+      </div>
+    </div>
+
+    <!-- Comparison Table -->
+    <div class="compare-section" data-animate>
+      <h2>Plan <span class="gradient-text">Comparison</span></h2>
+      <div style="overflow-x:auto">
+        <table class="compare-table">
+          <thead>
+            <tr><th>Feature</th><th>Monthly</th><th>Quarterly</th><th>Annual</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="feature">Daily probate alerts</td><td class="check"><i class="fas fa-check"></i></td><td class="check"><i class="fas fa-check"></i></td><td class="check"><i class="fas fa-check"></i></td></tr>
+            <tr><td class="feature">Postcode areas</td><td>Up to 5</td><td>Up to 10</td><td>Unlimited</td></tr>
+            <tr><td class="feature">Email delivery</td><td class="check"><i class="fas fa-check"></i></td><td class="check"><i class="fas fa-check"></i></td><td class="check"><i class="fas fa-check"></i></td></tr>
+            <tr><td class="feature">Full grant details</td><td class="check"><i class="fas fa-check"></i></td><td class="check"><i class="fas fa-check"></i></td><td class="check"><i class="fas fa-check"></i></td></tr>
+            <tr><td class="feature">CSV export</td><td class="check"><i class="fas fa-check"></i></td><td class="check"><i class="fas fa-check"></i></td><td class="check"><i class="fas fa-check"></i></td></tr>
+            <tr><td class="feature">Priority support</td><td class="cross"><i class="fas fa-minus"></i></td><td class="check"><i class="fas fa-check"></i></td><td class="check"><i class="fas fa-check"></i></td></tr>
+            <tr><td class="feature">Monthly performance report</td><td class="cross"><i class="fas fa-minus"></i></td><td class="check"><i class="fas fa-check"></i></td><td class="check"><i class="fas fa-check"></i></td></tr>
+            <tr><td class="feature">API access</td><td class="cross"><i class="fas fa-minus"></i></td><td class="cross"><i class="fas fa-minus"></i></td><td class="check"><i class="fas fa-check"></i></td></tr>
+            <tr><td class="feature">Dedicated account manager</td><td class="cross"><i class="fas fa-minus"></i></td><td class="cross"><i class="fas fa-minus"></i></td><td class="check"><i class="fas fa-check"></i></td></tr>
+            <tr><td class="feature">White-label reporting</td><td class="cross"><i class="fas fa-minus"></i></td><td class="cross"><i class="fas fa-minus"></i></td><td class="check"><i class="fas fa-check"></i></td></tr>
+            <tr><td class="feature">Free trial</td><td class="cross"><i class="fas fa-minus"></i></td><td class="check"><i class="fas fa-check"></i></td><td class="check"><i class="fas fa-check"></i></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" style="background:var(--bg-card);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="container">
+    <h2 class="section-title" data-animate>Pricing <span class="gradient-text">FAQ</span></h2>
+    <p class="section-sub" data-animate>Common questions about our plans and billing.</p>
+    <div class="faq-container">
+      <div class="faq-item active" data-animate><button class="faq-question">Can I switch plans later? <i class="fas fa-chevron-down"></i></button><div class="faq-answer"><p>Absolutely. You can upgrade or downgrade at any time. If you upgrade mid-cycle, we'll pro-rate the difference. If you downgrade, your new rate applies from the next billing period.</p></div></div>
+      <div class="faq-item" data-animate><button class="faq-question">Is there a free trial? <i class="fas fa-chevron-down"></i></button><div class="faq-answer"><p>Yes! We offer a 7-day free trial on Quarterly and Annual plans. No credit card required. You'll receive full daily leads for your chosen areas. Cancel anytime during the trial — no charge, no questions asked.</p></div></div>
+      <div class="faq-item" data-animate><button class="faq-question">Can I cancel anytime? <i class="fas fa-chevron-down"></i></button><div class="faq-answer"><p>Yes. There are no long-term contracts or cancellation fees. Cancel from your dashboard or email us. We'll confirm within 24 hours. Your access continues until the end of your paid period.</p></div></div>
+      <div class="faq-item" data-animate><button class="faq-question">What payment methods do you accept? <i class="fas fa-chevron-down"></i></button><div class="faq-answer"><p>We accept all major credit and debit cards (Visa, Mastercard, Amex), plus bank transfer for Annual plans. All payments are processed securely via Stripe.</p></div></div>
+      <div class="faq-item" data-animate><button class="faq-question">Can I change my postcode areas? <i class="fas fa-chevron-down"></i></button><div class="faq-answer"><p>Yes, you can update your target areas at any time from your account dashboard. Add or remove postcodes as your business grows. Changes take effect from the next daily digest.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2 data-animate>Still Not Sure?</h2>
+  <p data-animate>Try us free for 7 days. No card required. See the quality of our leads before you commit.</p>
+  <a href="/probateleads/contact.html" class="btn btn-primary btn-lg" data-animate><i class="fas fa-rocket"></i> Start Free Trial</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="/probateleads/" class="logo" style="font-size:20px"><div class="mark">⚖️</div> Probate <span>Leads</span></a>
+      <p>Daily probate grant alerts for UK solicitors, estate agents, and financial advisors. Know who inherited before anyone else does.</p>
+      <div class="footer-social">
+        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+        <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+      </div>
+    </div>
+    <div><h4>Pages</h4><a href="/probateleads/">Home</a><a href="/probateleads/about.html">About</a><a href="/probateleads/how-it-works.html">How It Works</a><a href="/probateleads/pricing.html">Pricing</a><a href="/probateleads/contact.html">Contact</a></div>
+    <div><h4>Resources</h4><a href="/privacy.html">Privacy Policy</a><a href="/terms.html">Terms of Service</a><a href="/probateleads/contact.html">Support</a></div>
+    <div><h4>Contact</h4><p style="font-size:14px;line-height:1.7">Email: hello@probateleads.co.uk<br>Phone: 020 1234 5678<br>Mon-Fri 9am-6pm</p></div>
+  </div>
+  <div class="footer-bottom">© 2026 Probate Leads. All rights reserved. Made in the UK 🇬🇧</div>
+</footer>
+
+<script>
+document.querySelectorAll('.nav-links a').forEach(a => {
+  a.addEventListener('click', () => {
+    document.getElementById('navLinks').classList.remove('open');
+  });
+});
+window.addEventListener('scroll', () => {
+  document.querySelector('nav').style.borderBottomColor = window.scrollY > 20 ? 'rgba(255,255,255,0.06)' : 'transparent';
+});
+document.querySelectorAll('.faq-question').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.parentElement;
+    const wasActive = item.classList.contains('active');
+    item.parentElement.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+    if (!wasActive) item.classList.add('active');
+  });
+});
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
+</script>
+
+<!-- COOKIE CONSENT -->
+<div id="cookieConsent" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.95);backdrop-filter:blur(12px);padding:16px 24px;z-index:9999;display:none;border-top:1px solid rgba(255,255,255,0.06)">
+  <div style="max-width:1140px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+    <p style="font-size:13px;color:#a1a1aa;line-height:1.5;margin:0">We use cookies to improve your experience. By using this site you accept our <a href="/privacy.html" style="color:var(--primary);text-decoration:underline">Privacy Policy</a>.</p>
+    <button onclick="document.getElementById('cookieConsent').style.display='none';localStorage.setItem('ms_cookie_consent','1')" style="padding:8px 24px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap">Accept</button>
+  </div>
+</div>
+
+<button id="btop" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="position:fixed;bottom:80px;right:20px;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;font-size:16px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);opacity:0;visibility:hidden;transform:translateY(10px);transition:all 0.3s;z-index:999;display:flex;align-items:center;justify-content:center" aria-label="Back to top"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 15l-6-6-6 6"/></svg></button>
+
+<script>
+if(!localStorage.getItem('ms_cookie_consent'))document.getElementById('cookieConsent').style.display='flex';
+window.addEventListener('scroll',function(){var b=document.getElementById('btop');if(b){if(window.scrollY>400){b.style.opacity='1';b.style.visibility='visible';b.style.transform='translateY(0)'}else{b.style.opacity='0';b.style.visibility='hidden';b.style.transform='translateY(10px)'}}});
+</script>
+
+<a href="https://wa.me/440000000000?text=Hi%20I'd%20like%20to%20learn%20more" target="_blank" rel="noopener" aria-label="Contact us on WhatsApp" style="position:fixed;bottom:20px;right:20px;width:52px;height:52px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,0.3);z-index:998;text-decoration:none;transition:all 0.3s;font-size:24px" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+
+</body>
+</html>

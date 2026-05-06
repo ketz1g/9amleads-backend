@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pricing — Moving Leads Daily</title>
+  <meta name="description" content="Choose the plan that fits your removal business. Start with a free trial — no card required. Simple, transparent pricing from Moving Leads Daily.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --clr-primary:#ff6b35;--clr-primary-hover:#e85d26;--clr-primary-subtle:rgba(255,107,53,0.12);--clr-primary-glow:rgba(255,107,53,0.35);
+      --clr-bg:#000000;--clr-bg-alt:#050505;--clr-card:#0a0a0a;--clr-card-hover:#111111;
+      --clr-border:#1a1a1a;--clr-border-light:#2a2a2a;
+      --clr-text:#ffffff;--clr-text-secondary:#cccccc;--clr-muted:#888888;--clr-muted-dark:#555555;
+      --clr-glass:rgba(255,255,255,0.04);--clr-glass-border:rgba(255,255,255,0.08);
+      --ff-heading:'Outfit',sans-serif;--ff-body:'Inter',sans-serif;
+      --fw-regular:400;--fw-medium:500;--fw-semibold:600;--fw-bold:700;--fw-extrabold:800;--fw-black:900;
+      --lh-tight:1.1;--lh-relaxed:1.7;
+      --nav-height:72px;--max-width:1140px;
+      --radius-sm:6px;--radius-md:10px;--radius-lg:16px;--radius-xl:24px;--radius-full:9999px;
+      --shadow-sm:0 1px 3px rgba(0,0,0,0.4);--shadow-md:0 4px 14px rgba(0,0,0,0.5);--shadow-lg:0 10px 40px rgba(0,0,0,0.6);--shadow-xl:0 20px 60px rgba(0,0,0,0.7);
+      --shadow-primary:0 0 30px rgba(255,107,53,0.25);
+      --transition-fast:200ms cubic-bezier(0.4,0,0.2,1);--transition-base:350ms cubic-bezier(0.4,0,0.2,1)
+    }
+    html{scroll-behavior:smooth;font-size:16px}
+    body{font-family:var(--ff-body);font-size:1rem;font-weight:var(--fw-regular);line-height:1.5;color:var(--clr-text);background:var(--clr-bg);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    .container{max-width:var(--max-width);margin:0 auto;padding:0 24px}
+    .section-title{font-size:32px;font-weight:var(--fw-extrabold);text-align:center;margin-bottom:8px;font-family:var(--ff-heading);letter-spacing:-0.5px}
+    .section-sub{text-align:center;color:var(--clr-text-secondary);font-size:17px;max-width:600px;margin:0 auto 48px;line-height:var(--lh-relaxed)}
+    .gradient-text{background:linear-gradient(135deg,var(--clr-primary),#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    a{color:inherit;text-decoration:none}
+
+    /* NAV */
+    nav{display:flex;justify-content:space-between;align-items:center;padding:0 24px;height:var(--nav-height);max-width:var(--max-width);margin:0 auto;position:sticky;top:0;z-index:200;background:rgba(0,0,0,0.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--clr-glass-border)}
+    .logo{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:var(--fw-extrabold);color:var(--clr-text);font-family:var(--ff-heading);letter-spacing:-0.5px}
+    .logo .mark{width:36px;height:36px;background:linear-gradient(135deg,var(--clr-primary),var(--clr-primary-hover));border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:var(--fw-extrabold)}
+    .logo span{color:var(--clr-primary)}
+    .nav-links{display:flex;align-items:center;gap:4px}
+    .nav-links a{padding:8px 16px;color:var(--clr-text-secondary);font-weight:var(--fw-medium);font-size:14px;transition:var(--transition-base);border-radius:var(--radius-sm)}
+    .nav-links a:hover{color:var(--clr-primary);background:var(--clr-primary-subtle)}
+    .nav-links .active{color:var(--clr-primary)}
+    .nav-links .btn-nav{background:linear-gradient(135deg,var(--clr-primary),var(--clr-primary-hover));color:#fff!important;padding:10px 22px;border-radius:var(--radius-sm);font-weight:var(--fw-semibold);box-shadow:0 4px 16px var(--clr-primary-glow)}
+    .nav-links .btn-nav:hover{transform:translateY(-1px)}
+    .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px}
+    .hamburger span{width:24px;height:2px;background:var(--clr-text);border-radius:2px;transition:var(--transition-fast)}
+
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:var(--radius-sm);font-weight:var(--fw-semibold);font-size:15px;cursor:pointer;border:none;transition:var(--transition-base);font-family:var(--ff-body)}
+    .btn-primary{background:linear-gradient(135deg,var(--clr-primary),var(--clr-primary-hover));color:#fff;box-shadow:0 4px 16px var(--clr-primary-glow)}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--clr-primary-glow)}
+    .btn-outline{background:transparent;color:var(--clr-text);border:1.5px solid var(--clr-border)}
+    .btn-outline:hover{border-color:var(--clr-primary);color:var(--clr-primary);background:var(--clr-primary-subtle)}
+
+    /* HERO */
+    .hero{padding:100px 0 40px;text-align:center;position:relative;overflow:hidden;background:var(--clr-bg)}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,107,53,0.06) 0%,transparent 60%);pointer-events:none}
+    .hero h1{font-size:42px;font-weight:var(--fw-black);font-family:var(--ff-heading);letter-spacing:-1px;position:relative}
+    .hero p{color:var(--clr-text-secondary);font-size:18px;max-width:600px;margin:12px auto 0;position:relative}
+
+    /* PRICING */
+    .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin:48px 0}
+    .plan{background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-xl);padding:36px 28px;text-align:center;transition:var(--transition-base);position:relative}
+    .plan:hover{border-color:var(--clr-primary);transform:translateY(-4px);box-shadow:var(--shadow-primary);background:var(--clr-card-hover)}
+    .plan.featured{border-color:var(--clr-primary);box-shadow:0 0 40px rgba(255,107,53,0.1)}
+    .plan .popular{display:inline-block;background:linear-gradient(135deg,var(--clr-primary),var(--clr-primary-hover));color:#fff;font-size:11px;font-weight:var(--fw-bold);padding:4px 14px;border-radius:var(--radius-full);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px}
+    .plan .name{font-size:14px;font-weight:var(--fw-semibold);text-transform:uppercase;letter-spacing:1px;color:var(--clr-muted)}
+    .plan .price{font-size:44px;font-weight:var(--fw-extrabold);margin:8px 0 4px;font-family:var(--ff-heading)}
+    .plan .price span{font-size:16px;color:var(--clr-muted);font-weight:var(--fw-regular)}
+    .plan .period{color:var(--clr-muted-dark);font-size:14px;margin-bottom:20px}
+    .plan ul{list-style:none;padding:0;text-align:left;margin:20px 0}
+    .plan ul li{padding:8px 0;border-bottom:1px solid var(--clr-border);font-size:14px;color:var(--clr-text-secondary);display:flex;align-items:center;gap:8px}
+    .plan ul li::before{content:'\f00c';font-family:'Font Awesome 6 Free';font-weight:900;color:var(--clr-primary);font-size:12px}
+    .plan .btn{margin-top:12px;width:100%;justify-content:center}
+    .plan .paypal-link{margin-top:8px;font-size:12px;color:var(--clr-muted-dark)}
+    .plan .paypal-link a{color:var(--clr-info, #3b82f6)}
+
+    /* PAYMENT METHODS */
+    .payment-methods{display:flex;justify-content:center;align-items:center;gap:24px;margin:32px 0;padding:24px;background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-lg);flex-wrap:wrap}
+    .payment-methods span{font-size:20px;font-weight:var(--fw-bold);color:var(--clr-muted);font-family:var(--ff-heading)}
+    .payment-methods .pmt{display:flex;align-items:center;gap:8px;padding:8px 20px;background:var(--clr-bg-alt);border-radius:var(--radius-md);border:1px solid var(--clr-border);font-size:14px;font-weight:var(--fw-semibold)}
+    .payment-methods .pmt.stripe{color:#635bff}
+    .payment-methods .pmt.paypal{color:#0070ba}
+    .payment-methods .secure{font-size:12px;color:var(--clr-muted-dark)}
+
+    /* FAQ */
+    .faq-section{padding:60px 0}
+    .faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:32px}
+    .faq-item{background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-md);padding:20px;transition:var(--transition-base)}
+    .faq-item:hover{border-color:var(--clr-primary)}
+    .faq-item h4{font-size:14px;font-weight:var(--fw-semibold);margin-bottom:6px;font-family:var(--ff-heading)}
+    .faq-item p{font-size:13px;color:var(--clr-text-secondary);line-height:var(--lh-relaxed)}
+
+    /* FOOTER */
+    footer{background:#050505;border-top:1px solid var(--clr-border);color:var(--clr-muted);padding:60px 0}
+    footer .container{text-align:center;font-size:14px}
+    footer a{color:var(--clr-primary);transition:var(--transition-base)}
+    footer a:hover{text-decoration:underline}
+
+    /* ANIMATIONS */
+    [data-animate]{opacity:0;transform:translateY(30px);transition:opacity 0.7s ease,transform 0.7s ease}
+    [data-animate].visible{opacity:1;transform:translateY(0)}
+    [data-animate=scale]{transform:scale(0.9)}
+    [data-animate=scale].visible{transform:scale(1)}
+
+    ::-webkit-scrollbar{width:8px}
+    ::-webkit-scrollbar-track{background:#000}
+    ::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+    ::-webkit-scrollbar-thumb:hover{background:#555}
+
+    @media(max-width:768px){
+      .pricing-grid{grid-template-columns:1fr;max-width:400px;margin-left:auto;margin-right:auto}
+      .faq-grid{grid-template-columns:1fr}
+      .hero h1{font-size:32px}
+      .hamburger{display:flex}
+      .nav-links{display:none;position:absolute;top:var(--nav-height);left:0;right:0;background:rgba(0,0,0,0.95);flex-direction:column;padding:16px 24px;border-bottom:1px solid var(--clr-border)}
+      .nav-links.open{display:flex}
+      .nav-links a{margin:4px 0;padding:12px 16px}
+    }
+    @media(max-width:480px){
+      .hero h1{font-size:26px}
+      .payment-methods{flex-direction:column}
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/movingleadsdaily/" class="logo"><div class="mark">📦</div> Moving <span>Leads Daily</span></a>
+    <div class="nav-links" id="navLinks">
+      <a href="/movingleadsdaily/">Home</a>
+      <a href="/movingleadsdaily/how-it-works.html">How It Works</a>
+      <a href="/movingleadsdaily/pricing.html" class="active">Pricing</a>
+      <a href="/movingleadsdaily/contact.html">Contact</a>
+      <a href="/movingleadsdaily/contact.html" class="btn-nav"><i class="fas fa-bolt"></i> Get Started</a>
+    </div>
+    <button class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  </nav>
+
+  <section class="hero">
+    <div class="container">
+      <h1>Simple, Transparent <span class="gradient-text">Pricing</span></h1>
+      <p>Choose the plan that fits your removal business. Start with a free trial — no card required.</p>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="payment-methods" data-animate>
+      <span>Pay securely with</span>
+      <div class="pmt stripe"><i class="fas fa-credit-card"></i> Stripe</div>
+      <div class="pmt paypal"><i class="fab fa-paypal"></i> PayPal</div>
+      <span class="secure"><i class="fas fa-lock"></i> Secure payments · UK-based · Cancel anytime</span>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="plan" data-animate="scale">
+        <div class="name">Starter</div>
+        <div class="price">£29<span>/mo</span></div>
+        <div class="period">Up to 5 leads/week · 1 postcode area</div>
+        <ul>
+          <li>Up to 5 leads delivered to your inbox every morning</li>
+          <li>Daily email at 9am with fresh lead sheet</li>
+          <li>1 postcode area (e.g. SW1 or M1)</li>
+          <li>Property address &amp; move details</li>
+          <li>Online dashboard access</li>
+          <li>Cancel anytime</li>
+        </ul>
+        <a href="/movingleadsdaily/contact.html" class="btn btn-outline">Start Free Trial →</a>
+      </div>
+
+      <div class="plan featured" data-animate="scale">
+        <div class="popular">Most Popular</div>
+        <div class="name">Pro</div>
+        <div class="price">£79<span>/mo</span></div>
+        <div class="period">Up to 20 leads/week · 3 postcode areas</div>
+        <ul>
+          <li>Up to 20 leads delivered to your inbox every morning</li>
+          <li>Daily email at 9am with fresh lead sheet</li>
+          <li>Up to 3 postcode areas</li>
+          <li>Full contact details &amp; move timeline</li>
+          <li>SMS alerts for high-priority leads</li>
+          <li>Online dashboard with lead tracking</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="/movingleadsdaily/contact.html" class="btn btn-primary">Start Free Trial →</a>
+        <div class="paypal-link">or <a href="#">pay with PayPal</a></div>
+      </div>
+
+      <div class="plan" data-animate="scale">
+        <div class="name">Enterprise</div>
+        <div class="price">£149<span>/mo</span></div>
+        <div class="period">Up to 50 leads/week · Unlimited areas</div>
+        <ul>
+          <li>Up to 50 leads delivered to your inbox every morning</li>
+          <li>Daily email at 9am with fresh lead sheet</li>
+          <li>Unlimited postcode areas</li>
+          <li>Everything in Pro plus team access</li>
+          <li>API access for CRM integration</li>
+          <li>Dedicated account manager</li>
+        </ul>
+        <a href="/movingleadsdaily/contact.html" class="btn btn-outline">Contact Sales →</a>
+      </div>
+    </div>
+
+    <div class="faq-section" id="faq">
+      <h2 class="section-title">Frequently Asked <span class="gradient-text">Questions</span></h2>
+      <p class="section-sub">Everything you need to know about Moving Leads Daily</p>
+      <div class="faq-grid">
+        <div class="faq-item" data-animate><h4>Is there a free trial?</h4><p>Yes! Moving Leads Daily is free during our launch period. No card required to start receiving leads.</p></div>
+        <div class="faq-item" data-animate><h4>Can I cancel anytime?</h4><p>Absolutely. No contracts, no minimum commitment. Cancel from your dashboard with one click.</p></div>
+        <div class="faq-item" data-animate><h4>What payment methods do you accept?</h4><p>We accept all major debit/credit cards via Stripe, plus PayPal. All payments are processed securely.</p></div>
+        <div class="faq-item" data-animate><h4>How many leads will I get?</h4><p>Pro members get unlimited leads. The number depends on your area and competition. Most clients receive 20-50+ leads per week.</p></div>
+        <div class="faq-item" data-animate><h4>Can I try before paying?</h4><p>Yes! Start with our free Starter plan. Upgrade to Pro anytime when you're ready for more leads.</p></div>
+        <div class="faq-item" data-animate><h4>Is this connected to other services?</h4><p>Moving Leads Daily works alongside The Moving School and other removal industry services. We're building integrated solutions.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>© 2026 Moving Leads Daily. All rights reserved. | <a href="/movingleadsdaily/privacy.html">Privacy</a> | <a href="/movingleadsdaily/terms.html">Terms</a></p>
+    </div>
+  </footer>
+
+  <script>
+    const animObserver = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          animObserver.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('[data-animate]').forEach(el => animObserver.observe(el));
+
+    if (!localStorage.getItem('mld_cookie_consent')) {
+      document.getElementById('cookieConsent').style.display = 'flex';
+    }
+    window.addEventListener('scroll', function() {
+      var b = document.getElementById('btop');
+      if (b) {
+        if (window.scrollY > 400) { b.style.opacity = '1'; b.style.visibility = 'visible'; b.style.transform = 'translateY(0)'; }
+        else { b.style.opacity = '0'; b.style.visibility = 'hidden'; b.style.transform = 'translateY(10px)'; }
+      }
+    });
+  </script>
+
+  <div id="cookieConsent" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.95);backdrop-filter:blur(12px);padding:16px 24px;z-index:700;display:none;border-top:1px solid var(--clr-border, #1a1a1a)">
+    <div style="max-width:1140px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <p style="font-size:13px;color:#888;line-height:1.5;margin:0">We use cookies to improve your experience. By using this site you accept our <a href="/movingleadsdaily/privacy.html" style="color:var(--clr-primary, #ff6b35)">Privacy Policy</a>.</p>
+      <button onclick="document.getElementById('cookieConsent').style.display='none';localStorage.setItem('mld_cookie_consent','1')" style="padding:8px 24px;background:var(--clr-primary, #ff6b35);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap">Accept</button>
+    </div>
+  </div>
+
+  <button id="btop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top" style="position:fixed;bottom:80px;right:20px;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--clr-primary, #ff6b35),var(--clr-primary-hover, #e85d26));color:#fff;border:none;font-size:16px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.5);opacity:0;visibility:hidden;transform:translateY(10px);transition:all 0.3s;z-index:600;display:flex;align-items:center;justify-content:center">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 15l-6-6-6 6"/></svg>
+  </button>
+
+  <a href="https://wa.me/440000000000?text=Hi%20I%27d%20like%20to%20learn%20more" target="_blank" rel="noopener" aria-label="Contact us on WhatsApp" style="position:fixed;bottom:20px;right:20px;width:52px;height:52px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,0.3);z-index:600;text-decoration:none;transition:all 0.3s;font-size:24px" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+</body>
+</html>

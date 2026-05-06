@@ -1,0 +1,1017 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title id="pageTitle">9amLeads — Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕘</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{--accent:#ff6b35;--accent-glow:rgba(255,107,53,.3);--bg:#000;--card:#0a0a0a;--card2:#0d0d0d;--border:#1a1a1a;--border2:#222;--text:#fff;--muted:#888;--muted2:#555;--radius:12px;--radius-sm:8px;--radius-lg:16px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.hidden{display:none!important}
+
+/* LOGIN PAGE */
+#login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 0%,rgba(255,107,53,0.06) 0%,transparent 60%)}
+.login-box{width:100%;max-width:440px}
+.login-logo{text-align:center;margin-bottom:32px}
+.login-logo .logo-icon{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent));display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;margin:0 auto 16px;box-shadow:0 0 30px var(--accent-glow)}
+.login-logo h1{font-family:'Outfit',sans-serif;font-size:24px;font-weight:800}
+.login-logo p{color:var(--muted);font-size:14px;margin-top:4px}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px}
+.login-card h2{font-family:'Outfit',sans-serif;font-size:18px;margin-bottom:4px}
+.login-card .login-sub{color:var(--muted);font-size:13px;margin-bottom:24px}
+.form-group{margin-bottom:16px}
+.form-group label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px;font-weight:500}
+.form-group input{width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;transition:border-color .2s}
+.form-group input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;width:100%}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{box-shadow:0 0 30px var(--accent-glow);transform:translateY(-1px)}
+.btn-secondary{background:rgba(255,255,255,.05);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:rgba(255,255,255,.1)}
+.btn-sm{padding:8px 16px;width:auto;font-size:12px}
+.btn-xs{padding:4px 10px;width:auto;font-size:11px;border-radius:6px}
+.login-footer{text-align:center;margin-top:20px;font-size:13px;color:var(--muted)}
+.login-footer a{color:var(--accent);cursor:pointer}
+.login-footer a:hover{text-decoration:underline}
+.error-msg{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none}
+.success-msg{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);color:#4ade80;padding:14px;border-radius:8px;font-size:13px;margin-bottom:16px;text-align:center;display:none}
+
+/* DASHBOARD LAYOUT */
+.dash{display:flex;min-height:100vh}
+.sidebar{width:260px;background:var(--card);border-right:1px solid var(--border);padding:24px 16px;display:flex;flex-direction:column;position:fixed;height:100vh;z-index:100;transition:width .3s}
+.sidebar .brand{display:flex;align-items:center;gap:10px;font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;margin-bottom:32px}
+.sidebar .brand .brand-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent));display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;flex-shrink:0}
+.sidebar .brand span{color:var(--accent)}
+.sidebar .brand small{font-size:10px;font-weight:400;color:var(--muted);display:block;margin-top:-2px}
+.sidebar nav{flex:1;display:flex;flex-direction:column;gap:2px}
+.sidebar a{display:flex;align-items:center;gap:12px;padding:11px 14px;color:var(--muted);text-decoration:none;border-radius:8px;font-size:14px;transition:all .2s;cursor:pointer}
+.sidebar a i{width:18px;text-align:center;font-size:15px}
+.sidebar a:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.sidebar a.active{background:rgba(255,107,53,.1);color:var(--accent)}
+.sidebar a .badge-count{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.sidebar .user-section{padding:16px 0;border-top:1px solid var(--border);margin-top:auto}
+.sidebar .user-section .user-name{font-weight:600;font-size:13px;color:var(--text)}
+.sidebar .user-section .user-email{font-size:11px;color:var(--muted);margin-top:2px}
+.sidebar .user-section .user-plan{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:6px}
+.sidebar .user-section .user-plan .plan-badge{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:var(--accent);color:#fff}
+.main{margin-left:260px;flex:1;padding:28px 36px;max-width:1400px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+.header-left h1{font-family:'Outfit',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.5px}
+.header-left .subtitle{color:var(--muted);font-size:13px;margin-top:4px}
+.header-right{display:flex;align-items:center;gap:12px}
+.header-right .notif{width:38px;height:38px;border-radius:10px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;position:relative;transition:all .2s}
+.header-right .notif:hover{border-color:var(--accent);color:var(--accent)}
+.header-right .notif .dot{position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.header-right .avatar{width:38px;height:38px;border-radius:10px;background:rgba(255,107,53,.12);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700;font-size:14px;border:1px solid rgba(255,107,53,.2);cursor:pointer}
+.header-right .last-delivery{font-size:12px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;display:flex;align-items:center;gap:8px}
+.header-right .last-delivery i{color:var(--accent)}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;transition:border-color .3s}
+.stat-card:hover{border-color:rgba(255,255,255,.08)}
+.stat-card .stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:12px}
+.stat-card .stat-value{font-family:'Outfit',sans-serif;font-size:26px;font-weight:700;margin-bottom:2px}
+.stat-card .stat-label{font-size:12px;color:var(--muted)}
+.stat-card .stat-change{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:4px}
+.stat-card .stat-change.up{color:#4ade80}
+.stat-card .stat-change.down{color:#f87171}
+
+/* DELIVERY BANNER */
+.delivery-banner{background:rgba(255,107,53,.04);border:1px solid rgba(255,107,53,.12);border-radius:var(--radius);padding:18px 22px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.delivery-banner .del-icon{width:44px;height:44px;border-radius:10px;background:rgba(255,107,53,.1);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--accent);flex-shrink:0}
+.delivery-banner .del-info{flex:1;min-width:200px}
+.delivery-banner .del-info strong{color:var(--text)}
+.delivery-banner .del-info span{color:var(--muted);font-size:13px}
+.delivery-banner .del-time{font-size:12px;color:var(--muted)}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;margin-bottom:20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-header h3{font-family:'Outfit',sans-serif;font-size:16px;display:flex;align-items:center;gap:8px}
+.card-header .card-action{font-size:12px;color:var(--accent);cursor:pointer;padding:6px 12px;border-radius:6px;background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.15);transition:all .2s}
+.card-header .card-action:hover{background:rgba(255,107,53,.15)}
+.two-col{display:grid;grid-template-columns:2fr 1fr;gap:20px}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+table th{text-align:left;padding:10px 12px;font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+table td{padding:11px 12px;border-bottom:1px solid var(--border);color:#ccc}
+table tr:last-child td{border-bottom:none}
+table tr:hover td{background:rgba(255,255,255,.02)}
+.status{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.status.new{background:rgba(96,165,250,.12);color:#60a5fa;border:1px solid rgba(96,165,250,.2)}
+.status.contacted{background:rgba(250,204,21,.12);color:#facc15;border:1px solid rgba(250,204,21,.2)}
+.status.booked{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+.status.closed{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+
+/* SETTINGS */
+.settings-group{margin-bottom:20px}
+.settings-group h4{font-family:'Outfit',sans-serif;font-size:14px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.toggle-wrap{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.toggle-wrap:last-child{border-bottom:none}
+.toggle-wrap .toggle-label{font-size:13px}
+.toggle-wrap .toggle-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.toggle{width:40px;height:22px;border-radius:11px;background:var(--border);cursor:pointer;position:relative;transition:all .2s;flex-shrink:0}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:all .2s}
+.toggle.on::after{left:20px}
+.tags-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tag{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.15);font-size:11px;color:var(--accent)}
+.tag i{cursor:pointer;font-size:10px;opacity:.6}
+.tag i:hover{opacity:1}
+.usage-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin:8px 0 4px}
+.usage-bar .fill{height:100%;border-radius:3px;transition:width .5s;background:var(--accent)}
+.usage-stats{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+
+/* PLANS */
+.plan-card{background:#000;border:1px solid var(--border);border-radius:var(--radius);padding:24px;text-align:center}
+.plan-card .plan-name{font-family:'Outfit',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px}
+.plan-card .plan-price{font-family:'Outfit',sans-serif;font-size:34px;font-weight:800;color:var(--accent);margin:12px 0}
+.plan-card .plan-price span{font-size:15px;color:var(--muted);font-weight:400}
+.plan-card .plan-desc{color:var(--muted);font-size:12px;margin-bottom:14px;line-height:1.5}
+.plan-card ul{list-style:none;text-align:left;margin:14px 0;padding:0}
+.plan-card ul li{padding:7px 0;font-size:12px;color:#ccc;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.plan-card ul li:last-child{border-bottom:none}
+.plan-card ul li i{color:#4ade80;font-size:11px}
+
+/* ACTIVITY */
+.activity-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:none}
+.activity-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:2px}
+.activity-content{flex:1;min-width:0}
+.activity-content .act-title{font-size:13px;font-weight:500}
+.activity-content .act-desc{font-size:12px;color:var(--muted);margin-top:2px}
+.activity-content .act-time{font-size:11px;color:var(--muted2);margin-top:4px}
+
+/* SUBSCRIPTION PAGE */
+.sub-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+
+/* UNSELECT */
+.page{display:none}
+.page.active{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:768px){
+  .sidebar{width:60px;overflow:hidden}.sidebar:hover{width:260px;position:fixed;height:100vh;z-index:200;box-shadow:0 0 60px rgba(0,0,0,.8)}.sidebar .brand{font-size:0}.sidebar:hover .brand{font-size:18px}.sidebar .brand small,.sidebar a span{display:none}.sidebar:hover a span{display:inline}.sidebar .user-section .user-email,.sidebar .user-section .user-plan{display:none}.sidebar:hover .user-section .user-email,.sidebar:hover .user-section .user-plan{display:block}.main{margin-left:60px;padding:16px}.stats-grid{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}.sub-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}
+}
+</style>
+</head><body>
+
+<!-- LOGIN PAGE -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="logo-icon" id="loginLogo">9</div>
+      <h1 id="loginBrand">9am<span style="color:var(--accent)">Leads</span></h1>
+      <p id="loginProduct">Sign in to your dashboard</p>
+    </div>
+    <div class="login-card" id="loginCard">
+      <h2 id="loginTitle">Welcome back</h2>
+      <div class="login-sub" id="loginSub">Sign in to access your leads</div>
+      <div class="error-msg" id="loginError"></div>
+      <div class="success-msg" id="loginSuccess"></div>
+      <div id="loginForm">
+        <div class="form-group"><label>Email Address</label><input type="email" id="loginEmail" placeholder="you@company.co.uk"></div>
+        <div class="form-group"><label>Password</label><input type="password" id="loginPassword" placeholder="Enter your password"></div>
+        <button class="btn btn-primary" onclick="handleLogin()"><i class="fas fa-arrow-right"></i> Sign In</button>
+      </div>
+      <div id="signupForm" class="hidden">
+        <div class="form-row">
+          <div class="form-group"><label>Company Name</label><input type="text" id="regCompany" placeholder="Your Company Ltd"></div>
+          <div class="form-group"><label>Your Name</label><input type="text" id="regName" placeholder="John Smith"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Email Address</label><input type="email" id="regEmail" placeholder="you@company.co.uk"></div>
+          <div class="form-group"><label>Phone</label><input type="tel" id="regPhone" placeholder="020 1234 5678"></div>
+        </div>
+        <div id="regBizFields"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Password</label><input type="password" id="regPassword" placeholder="Create a password"></div>
+          <div class="form-group"><label>Confirm Password</label><input type="password" id="regConfirm" placeholder="Confirm password"></div>
+        </div>
+        <div class="form-group">
+          <label>How did you hear about us?</label>
+          <select id="regSource" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Inter',sans-serif">
+            <option value="">Select...</option>
+            <option value="google">Google Search</option>
+            <option value="referral">Referred by a friend/colleague</option>
+            <option value="social">Social Media (LinkedIn, Twitter, Facebook)</option>
+            <option value="email">Email Campaign</option>
+            <option value="competitor">Switching from another provider</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:8px">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:12px;color:var(--muted);line-height:1.5">
+            <input type="checkbox" id="regConsent" style="margin-top:3px;width:16px;height:16px;accent-color:var(--accent);flex-shrink:0">
+            I agree to receive daily lead emails at 9am and accept the <a href="http://localhost:8006/terms.html" target="_blank" style="color:var(--accent);text-decoration:underline">Terms of Service</a> and <a href="http://localhost:8006/privacy.html" target="_blank" style="color:var(--accent);text-decoration:underline">Privacy Policy</a>. I understand I can unsubscribe at any time.
+          </label>
+        </div>
+        <button class="btn btn-primary" onclick="handleSignup()"><i class="fas fa-gift"></i> Claim Your Free Week — Start Trial</button>
+        <div style="margin-top:10px;font-size:11px;color:var(--muted2);text-align:center;line-height:1.5">
+          <i class="fas fa-lock" style="color:var(--accent)"></i> Your data is secure. No spam. Unsubscribe with one click.
+        </div>
+      </div>
+      <div class="login-footer">
+        <span id="loginToggleText">Don't have an account? <a onclick="toggleAuthMode()">Start free trial</a></span>
+        <div style="margin-top:8px"><a onclick="toggleReset()" style="color:var(--muted2);font-size:12px;cursor:pointer">Forgot password?</a></div>
+      </div>
+    </div>
+    <div class="login-footer" style="margin-top:16px">
+      <a href="/">← Back to 9amLeads</a>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dash-page" class="hidden">
+<div class="dash">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon" id="dashLogo">9</div>
+      <div>9am<span>Leads</span><small id="dashProduct">Moving Leads</small></div>
+    </div>
+    <nav>
+      <a class="active" onclick="navigate('overview')"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+      <a onclick="navigate('leads')"><i class="fas fa-list"></i><span>My Leads</span><span class="badge-count" id="leadCount">0</span></a>
+      <a onclick="navigate('analytics')"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
+      <a onclick="navigate('settings')"><i class="fas fa-cog"></i><span>Settings</span></a>
+      <a onclick="navigate('subscription')"><i class="fas fa-credit-card"></i><span>Subscription</span></a>
+    </nav>
+    <div class="user-section">
+      <div class="user-name" id="dashUserName">Loading...</div>
+      <div class="user-email" id="dashUserEmail">Loading...</div>
+      <div class="user-plan"><span class="plan-badge" id="dashUserPlan">Pro</span> <span id="dashPlanDetail">20 leads/day</span></div>
+      <div style="font-size:10px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);color:var(--muted2)">
+        <a href="http://localhost:8006/" style="color:var(--muted);text-decoration:none">Local</a>
+        <span style="margin:0 4px;color:var(--muted2)">·</span>
+        <a href="https://www.9amleads.com" style="color:var(--accent);text-decoration:none">www.9amleads.com</a>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header>
+      <div class="header-left"><h1 id="pageTitle2">Dashboard</h1><div class="subtitle" id="pageSubtitle">Your leads at a glance</div></div>
+      <div class="header-right">
+        <div class="last-delivery"><i class="fas fa-clock"></i> <span id="lastDeliveryTime">Today 9:02am</span></div>
+        <div class="notif" onclick="toggleNotifications()"><i class="fas fa-bell"></i><div class="dot" id="notifCount">3</div></div>
+        <div class="avatar" id="dashAvatar" title="Logout" onclick="handleLogout()">U</div>
+      </div>
+    </header>
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="delivery-banner" id="deliveryBanner">
+        <div class="del-icon"><i class="fas fa-clock"></i></div>
+        <div class="del-info">
+          <strong id="deliveryTitle">Today's lead sheet delivered</strong><br>
+          <span id="deliveryDesc">Your fresh leads arrived at 9:02am. Ready to start calling.</span>
+        </div>
+        <div class="del-time" id="deliveryTime">Next: tomorrow 9am</div>
+      </div>
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(255,107,53,.12);color:var(--accent)"><i class="fas fa-users"></i></div>
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label" id="statTotalLabel">Total Leads</div>
+          <div class="stat-change up"><i class="fas fa-arrow-up"></i> <span id="statTotalChange">+12 this week</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(74,222,128,.12);color:#4ade80"><i class="fas fa-clock"></i></div>
+          <div class="stat-value" id="statNew">0</div>
+          <div class="stat-label" id="statNewLabel">New This Week</div>
+          <div class="stat-change up"><i class="fas fa-arrow-up"></i> <span id="statNewChange">+8 vs last week</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(96,165,250,.12);color:#60a5fa"><i class="fas fa-percentage"></i></div>
+          <div class="stat-value" id="statConversion">0%</div>
+          <div class="stat-label" id="statConversionLabel">Conversion Rate</div>
+          <div class="stat-change up"><i class="fas fa-arrow-up"></i> <span id="statConversionChange">+2.1% this month</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(250,204,21,.12);color:#facc15"><i class="fas fa-phone"></i></div>
+          <div class="stat-value" id="statContacted">0</div>
+          <div class="stat-label" id="statContactedLabel">Contacted</div>
+          <div class="stat-change up"><i class="fas fa-arrow-up"></i> <span id="statContactedChange">+5 this week</span></div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-bolt" style="color:var(--accent)"></i> Recent Activity</h3><div class="card-action" onclick="navigate('leads')">View All</div></div>
+          <div id="activityFeed"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-chart-simple" style="color:var(--accent)"></i> This Week</h3></div>
+          <div id="weeklyChart" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEADS PAGE -->
+    <div class="page" id="page-leads">
+      <header>
+        <div class="header-left"><h1>My Leads</h1><div class="subtitle" id="leadsSubtitle">Manage and track your leads</div></div>
+        <div class="header-right">
+          <input type="text" id="leadSearch" placeholder="Search leads..." style="padding:8px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:200px;font-family:'Inter',sans-serif" oninput="filterLeads()">
+          <button class="btn btn-secondary btn-sm" onclick="exportLeads()"><i class="fas fa-download"></i> Export</button>
+        </div>
+      </header>
+      <div class="card">
+        <div class="table-wrap">
+          <table id="leadsTable">
+            <thead><tr>
+              <th>#</th><th id="leadCol1">Address / Name</th><th id="leadCol2">Details</th><th id="leadCol3">Value</th><th>Status</th><th>Action</th>
+            </tr></thead>
+            <tbody id="leadsBody"></tbody>
+          </table>
+        </div>
+        <div id="leadsEmpty" class="hidden" style="text-align:center;padding:40px 20px;color:var(--muted);font-size:14px">
+          <div style="font-size:40px;margin-bottom:12px;opacity:.4"><i class="fas fa-inbox"></i></div>
+          <div style="font-weight:600;color:var(--text);margin-bottom:4px">No leads yet</div>
+          <div>Your first lead sheet will arrive at 9am tomorrow.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS PAGE -->
+    <div class="page" id="page-analytics">
+      <header><div class="header-left"><h1>Analytics</h1><div class="subtitle">Track your performance over time</div></div></header>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(74,222,128,.12);color:#4ade80"><i class="fas fa-check-circle"></i></div><div class="stat-value" id="anaBooked">0</div><div class="stat-label">Booked Jobs</div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(96,165,250,.12);color:#60a5fa"><i class="fas fa-phone"></i></div><div class="stat-value" id="anaCalls">0</div><div class="stat-label">Calls Made</div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(250,204,21,.12);color:#facc15"><i class="fas fa-pound-sign"></i></div><div class="stat-value" id="anaRevenue">£0</div><div class="stat-label">Est. Revenue</div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(255,107,53,.12);color:var(--accent)"><i class="fas fa-chart-line"></i></div><div class="stat-value" id="anaROI">0x</div><div class="stat-label">ROI Multiple</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card"><div class="card-header"><h3><i class="fas fa-calendar-week" style="color:var(--accent)"></i> Weekly Performance</h3></div><div id="weeklyBreakdown"></div></div>
+        <div class="card"><div class="card-header"><h3><i class="fas fa-tag" style="color:var(--accent)"></i> Top Areas</h3></div><div id="topAreas"></div></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <header><div class="header-left"><h1>Settings</h1><div class="subtitle">Manage your account and preferences</div></div></header>
+      <div class="card">
+        <div class="settings-group">
+          <h4><i class="fas fa-user" style="color:var(--accent)"></i> Account Details</h4>
+          <div id="accountSettings"></div>
+          <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="alert('Settings saved')">Save Changes</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="settings-group">
+          <h4><i class="fas fa-sliders-h" style="color:var(--accent)"></i> Lead Filters</h4>
+          <div id="filterSettings"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="settings-group">
+          <h4><i class="fas fa-bell" style="color:var(--accent)"></i> Notifications</h4>
+          <div class="toggle-wrap"><div><div class="toggle-label">Email Delivery</div><div class="toggle-desc">Receive lead sheets at 9am via email</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-wrap"><div><div class="toggle-label">SMS Alerts</div><div class="toggle-desc">Get instant SMS for high-priority leads</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-wrap"><div><div class="toggle-label">Weekly Summary</div><div class="toggle-desc">Receive a weekly performance digest every Monday</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-wrap"><div><div class="toggle-label">Browser Notifications</div><div class="toggle-desc">Get notified when new leads arrive</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBSCRIPTION PAGE -->
+    <div class="page" id="page-subscription">
+      <header><div class="header-left"><h1>Subscription</h1><div class="subtitle">Manage your plan and billing</div></div></header>
+      <div class="sub-grid">
+        <div class="plan-card" id="currentPlanCard">
+          <div class="plan-name" id="subPlanName">Pro Plan</div>
+          <div class="plan-price" id="subPlanPrice">£79<span>/mo</span></div>
+          <div class="plan-desc" id="subPlanDesc">Up to 20 leads per day, 3 postcode areas</div>
+          <div class="usage-bar"><div class="fill" id="subUsage" style="width:65%"></div></div>
+          <div class="usage-stats"><span id="subUsed">13 used today</span><span id="subLimit">20 limit</span></div>
+          <ul id="subFeatures"></ul>
+          <button class="btn btn-primary btn-sm" onclick="alert('Manage subscription in Stripe portal')">Manage Subscription</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-receipt" style="color:var(--accent)"></i> Billing History</h3></div>
+          <div id="billingHistory"></div>
+          <div style="margin-top:16px;font-size:12px;color:var(--muted)"><i class="fas fa-lock"></i> Secure payments via Stripe. Cancel anytime.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</div>
+
+<script>
+// === CONFIG ===
+const PRODUCTS = {
+  moving: { name: 'Removal Company', accent: '#ff6b35', icon: 'fa-truck', leadLabel: 'Address', detailLabel: 'Bedrooms', valueLabel: 'Price', leadType: 'Moving Leads', subtitle: 'Your daily moving leads at 9am' },
+  probate: { name: 'Solicitor & Estate Agent', accent: '#a855f7', icon: 'fa-scale-balanced', leadLabel: 'Deceased Name', detailLabel: 'County', valueLabel: 'Estate Value', leadType: 'Probate Leads', subtitle: 'Your daily probate grants at 9am' },
+  newbusiness: { name: 'Accountant & B2B Service', accent: '#06b6d4', icon: 'fa-building', leadLabel: 'Company Name', detailLabel: 'Location', valueLabel: 'Type', leadType: 'New Business Alerts', subtitle: 'Your daily new business leads at 9am' },
+  planning: { name: 'Architect & Builder', accent: '#10b981', icon: 'fa-draw-polygon', leadLabel: 'Address', detailLabel: 'Type', valueLabel: 'Value', leadType: 'Planning Permissions', subtitle: 'Your daily planning leads at 9am' },
+  tenders: { name: 'IT, Construction, Cleaning & More', accent: '#6366f1', icon: 'fa-gavel', leadLabel: 'Tender Title', detailLabel: 'Authority', valueLabel: 'Value', leadType: 'Public Tenders', subtitle: 'Your daily tender alerts at 9am' }
+};
+
+// Detect product from page path
+const path = window.location.pathname.toLowerCase();
+let productKey = 'moving';
+if (path.includes('probate')) productKey = 'probate';
+else if (path.includes('newbusiness') || path.includes('new-business')) productKey = 'newbusiness';
+else if (path.includes('planning')) productKey = 'planning';
+else if (path.includes('tender')) productKey = 'tenders';
+const PRODUCT = PRODUCTS[productKey];
+
+// Apply accent color
+document.documentElement.style.setProperty('--accent', PRODUCT.accent);
+document.documentElement.style.setProperty('--accent-glow', PRODUCT.accent + '44');
+
+// === AUTH ===
+let currentUser = null;
+
+function toggleAuthMode() {
+  const loginForm = document.getElementById('loginForm');
+  const signupForm = document.getElementById('signupForm');
+  const toggleText = document.getElementById('loginToggleText');
+  const title = document.getElementById('loginTitle');
+  const sub = document.getElementById('loginSub');
+  
+  if (signupForm.classList.contains('hidden')) {
+    loginForm.classList.add('hidden');
+    signupForm.classList.remove('hidden');
+    title.textContent = 'Start your free trial';
+    sub.textContent = 'No card required. Cancel anytime.';
+    toggleText.innerHTML = 'Already have an account? <a onclick="toggleAuthMode()">Sign in</a>';
+  } else {
+    loginForm.classList.remove('hidden');
+    signupForm.classList.add('hidden');
+    title.textContent = 'Welcome back';
+    sub.textContent = 'Sign in to access your leads';
+    toggleText.innerHTML = 'Don\'t have an account? <a onclick="toggleAuthMode()">Start free trial</a>';
+  }
+  hideErrors();
+}
+
+function showError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function showSuccess(msg) {
+  const el = document.getElementById('loginSuccess');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideErrors() {
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('loginSuccess').style.display = 'none';
+}
+
+var API_URL = window.location.hostname === 'localhost' ? 'http://localhost:8012' : '/api';
+
+function handleSignup() {
+  hideErrors();
+  const company = document.getElementById('regCompany').value.trim();
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirm = document.getElementById('regConfirm').value;
+  const source = document.getElementById('regSource').value;
+  const consent = document.getElementById('regConsent').checked;
+  
+  const biz1 = document.getElementById('regBiz1') ? document.getElementById('regBiz1').value.trim() : '';
+  const biz2 = document.getElementById('regBiz2') ? document.getElementById('regBiz2').value : '';
+  const biz3 = document.getElementById('regBiz3') ? document.getElementById('regBiz3').value : '';
+  
+  if (!company || !name || !email || !password) { showError('Please fill in all required fields'); return; }
+  if (password.length < 6) { showError('Password must be at least 6 characters'); return; }
+  if (password !== confirm) { showError('Passwords do not match'); return; }
+  if (!consent) { showError('Please agree to the Terms of Service and Privacy Policy to create your account.'); return; }
+  
+  // Try production API first
+  fetch(API_URL + '/api/auth/signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      company, name, email, phone, password,
+      product: productKey,
+      targetAreas: [biz1],
+      bizField2: biz2,
+      bizField3: biz3,
+      source: source || 'direct',
+      marketingConsent: consent
+    })
+  })
+  .then(r => r.json().then(data => ({ status: r.status, data })))
+  .then(({ status, data }) => {
+    if (status === 201 || status === 200) {
+      localStorage.setItem('9am_token', data.token);
+      localStorage.setItem('9am_session', JSON.stringify(data.customer));
+      currentUser = data.customer;
+      showSuccess('\u2705 Your free trial is now active! Your first leads will land in your inbox at 9am tomorrow morning. We\'ll send you a confirmation email shortly.');
+      setTimeout(enterDashboard, 1000);
+    } else if (status === 409) {
+      showError('An account with this email already exists. Please sign in.');
+    } else {
+      showError(data.error || 'Signup failed. Please try again.');
+    }
+  })
+  .catch(() => {
+    // Fallback to localStorage if API unavailable
+    var users = JSON.parse(localStorage.getItem('9am_users') || '{}');
+    if (users[email]) { showError('An account with this email already exists. Please sign in.'); return; }
+    users[email] = {
+      company, name, email, phone, password, product: productKey,
+      targetAreas: biz1, bizField2: biz2, bizField3: biz3,
+      source: source || 'direct', marketingConsent: consent,
+      plan: 'Free Trial', leadsPerDay: 20, createdAt: new Date().toISOString(),
+      trialEnds: new Date(Date.now() + 7 * 86400000).toISOString(),
+      leadType: PRODUCT.leadType, bizType: PRODUCT.name
+    };
+    localStorage.setItem('9am_users', JSON.stringify(users));
+    currentUser = users[email];
+    localStorage.setItem('9am_session', email);
+    showSuccess('Account created! Welcome to your ' + PRODUCT.name + ' dashboard.');
+    setTimeout(enterDashboard, 1000);
+  });
+}
+
+function handleLogin() {
+  hideErrors();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  
+  if (!email || !password) { showError('Please enter your email and password'); return; }
+  
+  // Try production API first
+  fetch(API_URL + '/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  })
+  .then(r => r.json().then(data => ({ status: r.status, data })))
+  .then(({ status, data }) => {
+    if (status === 200) {
+      localStorage.setItem('9am_token', data.token);
+      localStorage.setItem('9am_session', JSON.stringify(data.customer));
+      currentUser = data.customer;
+      enterDashboard();
+    } else {
+      showError(data.error || 'Invalid email or password');
+    }
+  })
+  .catch(() => {
+    // Fallback to localStorage
+    var users = JSON.parse(localStorage.getItem('9am_users') || '{}');
+    var user = users[email];
+    if (!user || user.password !== password) { showError('Invalid email or password'); return; }
+    currentUser = user;
+    localStorage.setItem('9am_session', email);
+    enterDashboard();
+  });
+}
+
+function upgradeSubscription() {
+  var plan = currentUser.plan || 'free_trial';
+  if (plan !== 'free_trial') { alert('You are already on the ' + plan + ' plan.'); return; }
+  
+  var token = localStorage.getItem('9am_token');
+  if (!token) { alert('Please sign in first.'); return; }
+  
+  // Open Stripe Checkout for Pro plan (default upgrade)
+  fetch(API_URL + '/api/create-checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify({ plan: 'pro' })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      // Fallback: try the subscribe endpoint directly
+      return fetch(API_URL + '/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ plan: 'pro' })
+      }).then(r => r.json()).then(d => {
+        if (d.success) {
+          alert(d.message);
+          currentUser.plan = 'pro';
+          document.getElementById('dashUserPlan').textContent = 'Pro';
+        } else {
+          alert(d.error || 'Upgrade failed. Please contact support.');
+        }
+      });
+    }
+  })
+  .catch(() => alert('Payment system unavailable. Please try again later.'));
+}
+
+function handleLogout() {
+  if (!confirm('Are you sure you want to sign out? You can always sign back in.')) return;
+  localStorage.removeItem('9am_token');
+  localStorage.removeItem('9am_session');
+  currentUser = null;
+  document.getElementById('dash-page').classList.add('hidden');
+  document.getElementById('login-page').classList.remove('hidden');
+  document.getElementById('loginForm').classList.remove('hidden');
+  document.getElementById('signupForm').classList.add('hidden');
+  document.getElementById('loginTitle').textContent = 'Welcome back';
+  document.getElementById('loginSub').textContent = 'Sign in to access your leads';
+  document.getElementById('loginToggleText').innerHTML = 'Don\'t have an account? <a onclick="toggleAuthMode()">Start free trial</a>';
+}
+
+var resetMode = false;
+
+// Business-specific signup fields
+var BIZ_FIELDS = {
+  moving: '<div class="form-group"><label>Target Postcodes</label><input type="text" id="regBiz1" placeholder="e.g. SW1, SW3, SW5, W1"></div><div class="form-row"><div class="form-group"><label>Fleet Size</label><select id="regBiz2" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="1">1 van (solo operator)</option><option value="2-5">2-5 vans</option><option value="5+">5+ vans</option></select></div><div class="form-group"><label>Service Type</label><select id="regBiz3" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="domestic">Domestic Removals</option><option value="commercial">Commercial Removals</option><option value="both">Both</option></select></div></div>',
+  probate: '<div class="form-group"><label>Target Counties</label><input type="text" id="regBiz1" placeholder="e.g. London, Surrey, Kent"></div><div class="form-row"><div class="form-group"><label>Practice Type</label><select id="regBiz2" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="solicitor">Solicitor</option><option value="estate-agent">Estate Agent</option><option value="financial-advisor">Financial Advisor</option><option value="house-clearer">House Clearer</option><option value="other">Other</option></select></div><div class="form-group"><label>Years in Business</label><select id="regBiz3" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="0-1">Less than 1 year</option><option value="1-3">1-3 years</option><option value="3-10">3-10 years</option><option value="10+">10+ years</option></select></div></div>',
+  newbusiness: '<div class="form-row"><div class="form-group"><label>Target Cities</label><input type="text" id="regBiz1" placeholder="e.g. London, Manchester, Birmingham"></div><div class="form-group"><label>Target Industries</label><select id="regBiz2" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="tech">Tech & Software</option><option value="construction">Construction</option><option value="retail">Retail & Ecommerce</option><option value="hospitality">Hospitality</option><option value="healthcare">Healthcare</option><option value="professional">Professional Services</option><option value="transport">Transport & Logistics</option><option value="creative">Creative & Media</option><option value="finance">Finance & Insurance</option></select></div></div><div class="form-group"><label>Your Service</label><select id="regBiz3" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="accounting">Accounting / Bookkeeping</option><option value="web-design">Web Design / Development</option><option value="insurance">Insurance Broker</option><option value="it-services">IT Services</option><option value="marketing">Marketing / SEO</option><option value="recruitment">Recruitment</option><option value="consulting">Consulting</option><option value="other">Other B2B Service</option></select></div>',
+  planning: '<div class="form-group"><label>Target Councils</label><input type="text" id="regBiz1" placeholder="e.g. Westminster, Camden, Kensington"></div><div class="form-row"><div class="form-group"><label>Your Profession</label><select id="regBiz2" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="architect">Architect</option><option value="builder">Builder / Contractor</option><option value="surveyor">Surveyor</option><option value="estate-agent">Estate Agent</option><option value="developer">Property Developer</option><option value="engineer">Structural Engineer</option><option value="other">Other</option></select></div><div class="form-group"><label>Project Types</label><select id="regBiz3" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="residential">Residential Extensions</option><option value="commercial">Commercial Developments</option><option value="new-build">New Builds</option><option value="renovation">Renovations</option><option value="all">All Types</option></select></div></div>',
+  tenders: '<div class="form-row"><div class="form-group"><label>Target Keywords</label><input type="text" id="regBiz1" placeholder="e.g. IT, Construction, Cleaning"></div><div class="form-group"><label>Your Industry</label><select id="regBiz2" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="it">IT & Technology</option><option value="construction">Construction</option><option value="cleaning">Cleaning & Janitorial</option><option value="catering">Catering</option><option value="consulting">Consultancy</option><option value="security">Security</option><option value="facilities">Facilities Management</option><option value="healthcare">Healthcare</option><option value="training">Training & Education</option><option value="other">Other</option></select></div></div><div class="form-group"><label>Contract Value Range</label><select id="regBiz3" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="small">£10k - £100k</option><option value="medium">£100k - £500k</option><option value="large">£500k - £1M</option><option value="enterprise">£1M+</option><option value="all">All Values</option></select></div>'
+};
+
+// Show business-specific fields on signup
+function showBizFields() {
+  var container = document.getElementById('regBizFields');
+  if (container && BIZ_FIELDS[productKey]) {
+    container.innerHTML = BIZ_FIELDS[productKey];
+  }
+}
+document.addEventListener('DOMContentLoaded', showBizFields);
+
+function toggleReset() {
+  resetMode = !resetMode;
+  document.getElementById('loginForm').innerHTML = resetMode ? 
+    '<div class="form-group"><label>Email Address</label><input type="email" id="resetEmail" placeholder="you@company.co.uk" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px"></div><button class="btn btn-primary" onclick="sendReset()"><i class="fas fa-paper-plane"></i> Send Reset Link</button><div style="margin-top:12px;text-align:center"><a onclick="toggleReset()" style="color:var(--muted);font-size:13px;cursor:pointer">Back to sign in</a></div>' :
+    '<div class="form-group"><label>Email Address</label><input type="email" id="loginEmail" placeholder="you@company.co.uk"></div><div class="form-group"><label>Password</label><input type="password" id="loginPassword" placeholder="Enter your password"></div><button class="btn btn-primary" onclick="handleLogin()"><i class="fas fa-arrow-right"></i> Sign In</button><div style="margin-top:12px;text-align:center"><a onclick="toggleReset()" style="color:var(--muted);font-size:12px;cursor:pointer">Forgot password?</a></div>';
+}
+
+function sendReset() {
+  var email = document.getElementById('resetEmail') ? document.getElementById('resetEmail').value : '';
+  if (!email) { showError('Please enter your email address'); return; }
+  var users = JSON.parse(localStorage.getItem('9am_users') || '{}');
+  if (!users[email]) { showError('No account found with this email'); return; }
+  showSuccess('Password reset link sent to ' + email + '. Check your inbox.');
+  setTimeout(toggleReset, 3000);
+}
+
+function enterDashboard() {
+  document.getElementById('login-page').classList.add('hidden');
+  document.getElementById('dash-page').classList.remove('hidden');
+  document.getElementById('dashUserName').textContent = currentUser.company;
+  document.getElementById('dashUserEmail').textContent = currentUser.email;
+  document.getElementById('dashUserPlan').textContent = currentUser.plan || 'Free Trial';
+  var trialEnds = currentUser.trialEnds ? new Date(currentUser.trialEnds) : null;
+  var daysLeft = trialEnds ? Math.ceil((trialEnds - new Date()) / 86400000) : 7;
+  document.getElementById('dashPlanDetail').textContent = (currentUser.plan === 'Free Trial' ? daysLeft + ' days left in trial' : currentUser.leadsPerDay + ' leads/day');
+  const initials = currentUser.company.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  document.getElementById('dashAvatar').textContent = initials;
+  document.getElementById('dashProduct').textContent = PRODUCT.leadType;
+  document.getElementById('pageTitle').textContent = PRODUCT.name + ' — 9amLeads Dashboard';
+  loadDashboardData();
+}
+
+function loadDashboardData() {
+  const API = 'http://localhost:8010';
+  const productMap = { moving: 'moving', probate: 'probate', newbusiness: 'newbusiness', planning: 'planning', tenders: 'tenders' };
+  const apiProduct = productMap[productKey] || 'moving';
+  const customerId = currentUser.email.replace(/[^a-zA-Z0-9]/g, '-');
+  
+  // Try to fetch real data from API
+  fetch(API + '/api/stats/' + apiProduct + '/' + customerId)
+    .then(r => r.json())
+    .then(stats => {
+      document.getElementById('statTotal').textContent = stats.totalLeads || 0;
+      document.getElementById('statNew').textContent = stats.newThisWeek || 0;
+      document.getElementById('statConversion').textContent = (stats.conversionRate || 0) + '%';
+      document.getElementById('statContacted').textContent = stats.contacted || 0;
+      document.getElementById('leadCount').textContent = stats.totalLeads || 0;
+      document.getElementById('anaBooked').textContent = stats.booked || 0;
+      document.getElementById('anaCalls').textContent = (stats.contacted || 0) + 12;
+      document.getElementById('anaRevenue').textContent = '\u00a3' + ((stats.booked || 0) * 1250).toLocaleString();
+      document.getElementById('anaROI').textContent = stats.conversionRate > 0 ? (stats.conversionRate / 10).toFixed(1) + 'x' : '0x';
+      if (stats.lastDelivery) {
+        const d = new Date(stats.lastDelivery);
+        document.getElementById('lastDeliveryTime').textContent = 'Today ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') + 'am';
+      }
+    })
+    .catch(() => {});
+  
+  // Fetch leads
+  fetch(API + '/api/leads/' + apiProduct + '/' + customerId)
+    .then(r => r.json())
+    .then(data => {
+      const leads = data.leads || [];
+      const mapped = leads.slice(0, 20).map(l => ({
+        col1: l.address || l.name || l.company || l.tenderTitle || 'Lead',
+        col2: l.bedrooms ? l.bedrooms + ' bed ' + (l.propertyType || '') : l.county || l.location || l.city || l.council || l.applicationType || l.authority || '',
+        col3: l.priceLabel || l.estateValueLabel || l.companyType || l.applicationValue || l.contractValue || '',
+        status: l.status || 'new',
+        statusLabel: (l.status || 'new').charAt(0).toUpperCase() + (l.status || 'new').slice(1)
+      }));
+      
+      if (mapped.length > 0) {
+        renderLeads(mapped);
+        renderActivity(mapped);
+        document.getElementById('deliveryTitle').textContent = 'Today\'s ' + PRODUCT.leadType + ' delivered';
+        document.getElementById('deliveryDesc').textContent = data.today + ' new ' + PRODUCT.leadType.toLowerCase() + ' arrived at 9:02am. Ready to start calling.';
+        document.getElementById('leadsSubtitle').textContent = data.today + ' new leads today — ' + data.total + ' total';
+      } else {
+        useSampleData();
+      }
+    })
+    .catch(() => useSampleData());
+  
+  // Update labels
+  document.getElementById('leadCol1').textContent = PRODUCT.leadLabel;
+  document.getElementById('leadCol2').textContent = PRODUCT.detailLabel;
+  document.getElementById('leadCol3').textContent = PRODUCT.valueLabel;
+  document.getElementById('statTotalLabel').textContent = 'Total Leads';
+  document.getElementById('statNewLabel').textContent = 'New This Week';
+  document.getElementById('statConversionLabel').textContent = 'Conversion';
+  document.getElementById('statContactedLabel').textContent = 'Contacted';
+  document.getElementById('leadsSubtitle').textContent = 'Manage your ' + PRODUCT.leadType.toLowerCase();
+  
+  renderWeeklyChart();
+  renderWeeklyBreakdown();
+  renderTopAreas();
+  renderBilling();
+  renderSubscription();
+  renderAccountSettings();
+  renderFilterSettings();
+}
+
+function useSampleData() {
+  const leads = generateSampleData();
+  renderLeads(leads);
+  renderActivity(leads);
+}
+
+function renderLeads(leads) {
+  const tbody = document.getElementById('leadsBody');
+  const empty = document.getElementById('leadsEmpty');
+  if (leads.length === 0) {
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  tbody.innerHTML = leads.map((l, i) => `<tr>
+    <td style="color:var(--muted2)">${i+1}</td>
+    <td style="font-weight:500">${l.col1}</td>
+    <td>${l.col2}</td>
+    <td style="color:#4ade80">${l.col3}</td>
+    <td><span class="status ${l.status}">${l.statusLabel}</span></td>
+    <td><button class="btn btn-xs ${l.status === 'new' ? 'btn-primary' : 'btn-secondary'}" onclick="updateLeadStatus(${i},'${l.status}')">${l.status === 'new' ? 'Mark Contacted' : l.status === 'contacted' ? 'Mark Booked' : 'View'}</button></td>
+  </tr>`).join('');
+}
+
+function renderActivity(leads) {
+  const feed = document.getElementById('activityFeed');
+  const activities = [];
+  const now = new Date();
+  for (let i = 0; i < Math.min(leads.length, 6); i++) {
+    const l = leads[i];
+    const mins = Math.floor(Math.random() * 120) + 5;
+    activities.push({
+      icon: l.status === 'new' ? 'fa-file-circle-plus' : l.status === 'contacted' ? 'fa-phone' : 'fa-check',
+      color: l.status === 'new' ? '#60a5fa' : l.status === 'contacted' ? '#facc15' : '#4ade80',
+      title: l.status === 'new' ? 'New lead received' : l.status === 'contacted' ? 'Lead contacted' : 'Job booked',
+      desc: l.col1,
+      time: mins + ' min ago'
+    });
+  }
+  activities.push({ icon: 'fa-clock', color: 'var(--accent)', title: 'Daily lead sheet delivered', desc: 'Your 9am lead sheet arrived', time: 'Today 9:02am' });
+  feed.innerHTML = activities.map(a => `
+    <div class="activity-item">
+      <div class="activity-icon" style="background:${a.color}15;color:${a.color}"><i class="fas ${a.icon}"></i></div>
+      <div class="activity-content"><div class="act-title">${a.title}</div><div class="act-desc">${a.desc}</div><div class="act-time">${a.time}</div></div>
+    </div>`).join('');
+}
+
+function renderWeeklyChart() {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const el = document.getElementById('weeklyChart');
+  el.innerHTML = days.map((d, i) => {
+    const val = Math.floor(Math.random() * 10) + 1;
+    return `<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--muted)">${d}</span><span>${val}</span></div>
+      <div class="usage-bar"><div class="fill" style="width:${val*10}%"></div></div></div>`;
+  }).join('');
+}
+
+function renderWeeklyBreakdown() {
+  const el = document.getElementById('weeklyBreakdown');
+  const weeks = ['This Week', 'Last Week', '2 Weeks Ago', '3 Weeks Ago'];
+  el.innerHTML = weeks.map((w, i) => {
+    const leads = Math.floor(Math.random() * 30) + 10;
+    const conv = Math.floor(Math.random() * 40) + 15;
+    return `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
+      <span style="color:var(--muted)">${w}</span>
+      <span><strong>${leads}</strong> leads</span>
+      <span style="color:#4ade80">${conv}% conv</span>
+    </div>`;
+  }).join('');
+}
+
+function renderTopAreas() {
+  const areas = productKey === 'moving' ? ['SW1', 'SW3', 'SW5', 'W8', 'W11'] :
+    productKey === 'probate' ? ['London', 'Surrey', 'Kent', 'Essex', 'Sussex'] :
+    productKey === 'newbusiness' ? ['London', 'Manchester', 'Birmingham', 'Leeds', 'Bristol'] :
+    productKey === 'planning' ? ['Westminster', 'Camden', 'Kensington', 'Tower Hamlets', 'Islington'] :
+    ['IT Services', 'Construction', 'Cleaning', 'Consultancy', 'Catering'];
+  const el = document.getElementById('topAreas');
+  el.innerHTML = areas.map(a => {
+    const pct = Math.floor(Math.random() * 40) + 10;
+    return `<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>${a}</span><span>${pct}%</span></div>
+      <div class="usage-bar"><div class="fill" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+}
+
+function renderBilling() {
+  const el = document.getElementById('billingHistory');
+  const months = ['Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026'];
+  el.innerHTML = months.map((m, i) => {
+    const price = productKey === 'probate' ? '197' : productKey === 'newbusiness' ? '97' : productKey === 'planning' ? '147' : productKey === 'tenders' ? '147' : '79';
+    return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+      <span>${m}</span><span style="color:#4ade80">Paid</span><span>\u00a3${price}</span></div>`;
+  }).join('');
+}
+
+function renderSubscription() {
+  const prices = { moving: 79, probate: 197, newbusiness: 97, planning: 147, tenders: 147 };
+  const limits = { moving: 20, probate: 15, newbusiness: 50, planning: 25, tenders: 15 };
+  const p = prices[productKey] || 79;
+  const l = limits[productKey] || 20;
+  var isTrial = currentUser.plan === 'Free Trial';
+  document.getElementById('subPlanName').textContent = isTrial ? 'Free Trial' : 'Pro Plan';
+  document.getElementById('subPlanPrice').innerHTML = isTrial ? '\u00a30<span>/mo</span>' : '\u00a3' + p + '<span>/mo</span>';
+  document.getElementById('subPlanDesc').textContent = isTrial ? '7-day free trial — ' + daysLeft + ' days remaining' : 'Up to ' + l + ' leads per day';
+  document.getElementById('subUsage').style.width = isTrial ? '35%' : '65%';
+  document.getElementById('subUsed').textContent = isTrial ? 'Trial: ' + daysLeft + ' days left' : Math.floor(l * 0.65) + ' used today';
+  document.getElementById('subLimit').textContent = isTrial ? '7 day trial' : l + ' limit';
+  const features = [
+    '<i class="fas fa-check"></i> Daily 9am email delivery',
+    '<i class="fas fa-check"></i> Full lead details',
+    '<i class="fas fa-check"></i> Online dashboard',
+    '<i class="fas fa-check"></i> CSV export',
+    '<i class="fas fa-check"></i> Priority support',
+    '<i class="fas fa-check"></i> Cancel anytime'
+  ];
+  document.getElementById('subFeatures').innerHTML = features.map(f => '<li>' + f + '</li>').join('');
+}
+
+function renderAccountSettings() {
+  const el = document.getElementById('accountSettings');
+  var biz2Label = {moving:'Fleet Size',probate:'Practice Type',newbusiness:'Industry',planning:'Profession',tenders:'Industry'};
+  var biz3Label = {moving:'Service Type',probate:'Years in Business',newbusiness:'Your Service',planning:'Project Type',tenders:'Contract Value'};
+  el.innerHTML = `
+    <div style="margin-bottom:16px;padding:14px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.12);border-radius:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="font-size:24px">🎁</div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-weight:600;font-size:14px">Free Trial Active</div>
+        <div style="font-size:12px;color:var(--muted)">Your 7-day trial ends ${currentUser.trialEnds ? new Date(currentUser.trialEnds).toLocaleDateString() : 'soon'}. Upgrade to keep receiving daily leads.</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="upgradeSubscription()"><i class="fas fa-arrow-right"></i> Upgrade Now</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Company Name</label><input type="text" value="${currentUser.company || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
+      <div class="form-group"><label>Contact Name</label><input type="text" value="${currentUser.name || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
+      <div class="form-group"><label>Email</label><input type="email" value="${currentUser.email || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
+      <div class="form-group"><label>Phone</label><input type="tel" value="${currentUser.phone || ''}" placeholder="020 1234 5678" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
+      <div class="form-group"><label>${PRODUCT.leadType} — Target Areas</label><input type="text" value="${currentUser.targetAreas || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
+      <div class="form-group"><label>${biz2Label[productKey] || 'Field'}</label><input type="text" value="${currentUser.bizField2 || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
+      <div class="form-group"><label>${biz3Label[productKey] || 'Field'}</label><input type="text" value="${currentUser.bizField3 || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
+      <div class="form-group"><label>How you found us</label><input type="text" value="${currentUser.source || 'Direct'}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
+    </div>`;
+}
+
+function renderFilterSettings() {
+  const el = document.getElementById('filterSettings');
+  const filters = productKey === 'moving' 
+    ? [{l:'Min Bedrooms',d:'1'},{l:'Max Bedrooms',d:'6'},{l:'Property Type',d:'All'}]
+    : productKey === 'probate'
+    ? [{l:'Min Estate Value',d:'£100,000'},{l:'With Property Only',d:'No'},{l:'Grant Type',d:'All'}]
+    : productKey === 'newbusiness'
+    ? [{l:'SIC Category',d:'All'},{l:'Company Type',d:'Ltd'},{l:'Min Employees',d:'1'}]
+    : productKey === 'planning'
+    ? [{l:'Application Type',d:'All'},{l:'Min Value',d:'£50,000'},{l:'Council',d:'All'}]
+    : [{l:'Keyword Category',d:'All'},{l:'Min Value',d:'£10,000'},{l:'Location',d:'UK'}];
+  el.innerHTML = filters.map(f => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:13px">${f.l}</span>
+      <span style="font-size:13px;color:var(--accent);font-weight:500">${f.d}</span>
+    </div>`).join('');
+}
+
+function filterLeads() {
+  // Simple filter - in production would search through leads
+}
+
+function exportLeads() {
+  alert('CSV export will download your leads');
+}
+
+function updateLeadStatus(idx, status) {
+  alert('Lead marked as ' + (status === 'new' ? 'contacted' : status === 'contacted' ? 'booked' : 'completed'));
+}
+
+function toggleNotifications() {
+  alert('You have 3 new notifications');
+}
+
+function navigate(page) {
+  document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.sidebar a[onclick*="${page}"]`)?.classList.add('active');
+  document.getElementById('page-' + page)?.classList.add('active');
+  document.getElementById('pageTitle2').textContent = page.charAt(0).toUpperCase() + page.slice(1);
+  const subs = { overview: PRODUCT.subtitle, leads: 'Manage your ' + PRODUCT.leadType.toLowerCase(), analytics: 'Track performance', settings: 'Account settings', subscription: 'Billing & plan' };
+  document.getElementById('pageSubtitle').textContent = subs[page] || '';
+}
+
+function generateSampleData() {
+  const data = {
+    moving: [
+      { col1: '123 Acacia Avenue, SW1', col2: '3 bed House', col3: '\u00a3850,000', status: 'new', statusLabel: 'New' },
+      { col1: '45 Buckingham Gate, SW1', col2: '2 bed Flat', col3: '\u00a3525,000', status: 'new', statusLabel: 'New' },
+      { col1: '78 Kings Road, SW3', col2: '4 bed Townhouse', col3: '\u00a31,950,000', status: 'contacted', statusLabel: 'Contacted' },
+      { col1: '12 Sloane Avenue, SW3', col2: '2 bed Maisonette', col3: '\u00a3675,000', status: 'new', statusLabel: 'New' },
+      { col1: '56 Old Brompton Road, SW5', col2: '3 bed Flat', col3: '\u00a3780,000', status: 'booked', statusLabel: 'Booked' },
+      { col1: '90 Earls Court Road, SW5', col2: '1 bed Flat', col3: '\u00a3425,000', status: 'contacted', statusLabel: 'Contacted' },
+      { col1: '23 Nevern Square, SW5', col2: '3 bed House', col3: '\u00a3920,000', status: 'new', statusLabel: 'New' },
+      { col1: '150 Victoria Street, SW1', col2: '2 bed Apartment', col3: '\u00a3650,000', status: 'new', statusLabel: 'New' }
+    ],
+    probate: [
+      { col1: 'Margaret Thompson', col2: 'London', col3: '\u00a3485,000', status: 'new', statusLabel: 'New' },
+      { col1: 'John Davies', col2: 'Surrey', col3: '\u00a3720,000', status: 'new', statusLabel: 'New' },
+      { col1: 'Patricia Williams', col2: 'Kent', col3: '\u00a3395,000', status: 'contacted', statusLabel: 'Contacted' },
+      { col1: 'Robert Brown', col2: 'London', col3: '\u00a31,200,000', status: 'booked', statusLabel: 'Booked' }
+    ],
+    newbusiness: [
+      { col1: 'TechSolve Ltd', col2: 'London', col3: 'Private Ltd', status: 'new', statusLabel: 'New' },
+      { col1: 'Green Energy Consultants', col2: 'Manchester', col3: 'Ltd', status: 'new', statusLabel: 'New' },
+      { col1: 'Prime Properties London', col2: 'London', col3: 'Ltd', status: 'contacted', statusLabel: 'Contacted' }
+    ],
+    planning: [
+      { col1: '45 Oak Avenue, SW1', col2: 'House Extension', col3: '\u00a375,000', status: 'new', statusLabel: 'New' },
+      { col1: '123 Park Lane, SW1', col2: 'New Build', col3: '\u00a32,500,000', status: 'new', statusLabel: 'New' },
+      { col1: '78 Cedar Road, SW3', col2: 'Loft Conversion', col3: '\u00a345,000', status: 'contacted', statusLabel: 'Contacted' }
+    ],
+    tenders: [
+      { col1: 'IT Support Services', col2: 'London Borough', col3: '\u00a3500,000', status: 'new', statusLabel: 'New' },
+      { col1: 'Building Maintenance', col2: 'Manchester CC', col3: '\u00a31,200,000', status: 'new', statusLabel: 'New' },
+      { col1: 'Cleaning Services', col2: 'NHS Trust', col3: '\u00a3750,000', status: 'contacted', statusLabel: 'Contacted' }
+    ]
+  };
+  return data[productKey] || data.moving;
+}
+
+// === INIT ===
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loginLogo').textContent = '9';
+  document.getElementById('loginBrand').innerHTML = '9am<span style="color:var(--accent)">Leads</span>';
+  document.getElementById('loginProduct').textContent = PRODUCT.name + ' Dashboard';
+  
+  // Try API session first
+  var token = localStorage.getItem('9am_token');
+  if (token) {
+    fetch(API_URL + '/api/auth/me', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(r => r.json())
+    .then(customer => {
+      if (customer && customer.id) {
+        currentUser = customer;
+        localStorage.setItem('9am_session', JSON.stringify(customer));
+        enterDashboard();
+        return;
+      }
+      fallbackToLocal();
+    })
+    .catch(() => fallbackToLocal());
+    return;
+  }
+  fallbackToLocal();
+});
+
+function fallbackToLocal() {
+  var session = localStorage.getItem('9am_session');
+  if (session) {
+    try {
+      var parsed = JSON.parse(session);
+      if (parsed && parsed.id) { currentUser = parsed; enterDashboard(); return; }
+    } catch(e) {
+      var users = JSON.parse(localStorage.getItem('9am_users') || '{}');
+      var user = users[session];
+      if (user) { currentUser = user; enterDashboard(); return; }
+    }
+  }
+  document.getElementById('login-page').classList.remove('hidden');
+}
+</script>
+</body></html>

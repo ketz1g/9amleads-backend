@@ -1,0 +1,30 @@
+{
+  "name": "mission-control",
+  "version": "1.0.0",
+  "description": "Automation hub for lead generation and business management.",
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node production_api_server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "engines": { "node": "20.x || 22.x || 23.x" },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.7",
+    "playwright": "^1.59.1",
+    "sharp": "^0.34.5",
+    "uuid": "^14.0.0"
+  }
+}
