@@ -231,7 +231,11 @@ app.use('/tenders', express.static(path.join(ROOT_DIR, 'tenders')));
 app.use('/portal', express.static(path.join(ROOT_DIR, 'portal')));
 app.use('/9amleadsmc', express.static(path.join(ROOT_DIR, '9amleadsmc')));
 app.use('/css', express.static(path.join(ROOT_DIR, 'css')));
+app.use('/assets', express.static(path.join(ROOT_DIR, 'assets')));
 app.use('/js', express.static(path.join(ROOT_DIR, 'js')));
+app.use('/founder', express.static(path.join(ROOT_DIR, '9amleads', 'founder')));
+app.use('/invest', express.static(path.join(ROOT_DIR, '9amleads', 'invest')));
+app.use('/9amleads', express.static(path.join(ROOT_DIR, '9amleads')));
 
 // Serve root from 9amleads directory
 app.get('/', (req, res) => {
