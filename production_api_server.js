@@ -18,6 +18,14 @@ const cron = require('node-cron');
 
 // ===== CONFIG =====
 const PORT = process.env.PORT || process.env.API_PORT || 8012;
+
+// Force redirect old paths to portal subdirectories (BEFORE all other routes)
+const REDIRECTS = { '/founder': '/portal/founder/', '/invest': '/portal/invest/', '/founder/': '/portal/founder/', '/invest/': '/portal/invest/' };
+app.use((req, res, next) => {
+  const target = REDIRECTS[req.path];
+  if (target) { res.redirect(target); return; }
+  next();
+});
 const JWT_SECRET = process.env.JWT_SECRET || '9amleads-prod-secret-2026';
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
