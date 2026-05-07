@@ -9,7 +9,6 @@
 :root{--bg:#0a0a0f;--bg2:#050508;--card:#111118;--card2:#0d0d14;--border:#1a1a24;--border2:#2a2a3a;--text:#f1f5f9;--text2:#c4c4d0;--muted:#8888a0;--muted2:#555570;--primary:#0ea5e9;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:var(--ff-b);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
-/* NAV */
 nav{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
 .logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:900;font-family:var(--ff-h)}
 .logo .mark{width:34px;height:34px;background:linear-gradient(135deg,var(--primary),#2563eb);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900}
@@ -20,73 +19,86 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 2
 .nav-links a.active{color:var(--primary);background:rgba(14,165,233,.08)}
 .nav-links .btn-out{color:var(--danger);font-weight:600}
 .container{max-width:1200px;margin:0 auto;padding:28px 24px}
-/* ONBOARDING BANNER */
-.onboarding{background:linear-gradient(135deg,rgba(14,165,233,.08),rgba(37,99,235,.04));border:1px solid rgba(14,165,233,.15);border-radius:14px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.onboarding .step{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2)}
-.onboarding .step .dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-.onboarding .step .dot.done{background:var(--success);color:#000}
-.onboarding .step .dot.curr{background:var(--primary);color:#fff}
-.onboarding .step .dot.pend{background:var(--border2);color:var(--muted2)}
-.onboarding .step .line{width:24px;height:1px;background:var(--border2)}
-/* STATS */
+.onboarding{background:linear-gradient(135deg,rgba(14,165,233,.08),rgba(37,99,235,.04));border:1px solid rgba(14,165,233,.15);border-radius:14px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text2)}
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
 .stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
 .stat-card .num{font-size:30px;font-weight:800;font-family:var(--ff-h);color:var(--primary)}
 .stat-card .label{color:var(--muted);font-size:12px;margin-top:4px}
 .stat-card .sub{color:var(--muted2);font-size:11px;margin-top:2px}
-/* CARDS */
 .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
-.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
 .card-title{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
-.card-title .badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
-/* TABLE */
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;padding:10px 12px;font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);background:var(--bg2)}
-td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2)}
-tr:hover td{background:rgba(255,255,255,.02)}
-/* TOOLS */
-.tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
-.tool-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 16px;text-align:center;cursor:pointer;transition:.2s}
-.tool-card:hover{transform:translateY(-2px);border-color:var(--primary);background:var(--card2)}
-.tool-card .icon{font-size:28px;margin-bottom:8px}
-.tool-card h3{font-size:13px;font-weight:600;margin-bottom:2px}
-.tool-card p{color:var(--muted);font-size:11px}
-/* BADGES */
 .badge{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;gap:4px;align-items:center}
 .badge-green{background:rgba(34,197,94,.1);color:var(--success);border:1px solid rgba(34,197,94,.15)}
 .badge-blue{background:rgba(14,165,233,.1);color:var(--primary);border:1px solid rgba(14,165,233,.15)}
 .badge-orange{background:rgba(245,158,11,.1);color:var(--warning);border:1px solid rgba(245,158,11,.15)}
 .badge-red{background:rgba(239,68,68,.1);color:var(--danger);border:1px solid rgba(239,68,68,.15)}
-/* BTN */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;border:none;text-decoration:none;transition:.2s;font-family:var(--ff-b)}
 .btn-primary{background:linear-gradient(135deg,var(--primary),#2563eb);color:#fff}
 .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(14,165,233,.3)}
 .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
 .btn-outline:hover{border-color:var(--primary);color:var(--primary)}
 .btn-sm{padding:6px 12px;font-size:11px}
-/* SUBSCRIPTION */
+.btn-danger{background:var(--danger);color:#fff}
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.tool-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 16px;text-align:center;cursor:pointer;transition:.2s}
+.tool-card:hover{transform:translateY(-2px);border-color:var(--primary);background:var(--card2)}
+.tool-card .icon{font-size:28px;margin-bottom:8px}
+.tool-card h3{font-size:13px;font-weight:600;margin-bottom:2px}
+.tool-card p{color:var(--muted);font-size:11px}
 .sub-card{background:linear-gradient(135deg,rgba(14,165,233,.05),transparent);border:1px solid rgba(14,165,233,.12);border-radius:12px;padding:20px}
 .sub-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
 .sub-plan{font-size:18px;font-weight:800;font-family:var(--ff-h)}
 .sub-price{color:var(--muted);font-size:13px}
-/* ACTIVITY */
-.activity-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
-.activity-item:last-child{border-bottom:none}
-.activity-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
-.activity-text{flex:1;min-width:0}
-.activity-text .title{font-size:13px;color:var(--text)}
-.activity-text .time{font-size:11px;color:var(--muted2);margin-top:1px}
-/* TIPS */
-.tip-card{background:rgba(245,158,11,.04);border:1px solid rgba(245,158,11,.1);border-radius:10px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
-.tip-card .icon{font-size:16px;flex-shrink:0;margin-top:2px}
-.tip-card p{font-size:12px;color:var(--text2);line-height:1.6}
-.tip-card strong{color:var(--text)}
-footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-top:1px solid var(--border);margin-top:48px}
+.tip-card{background:rgba(245,158,11,.04);border:1px solid rgba(245,158,11,.1);border-radius:10px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:12px;color:var(--text2)}
+.tip-card .icon{font-size:16px;flex-shrink:0}
+/* DATE NAV */
+.date-nav{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.date-nav .nav-btn{width:32px;height:32px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:.2s;font-size:12px}
+.date-nav .nav-btn:hover{border-color:var(--primary);color:var(--primary)}
+.date-nav .date-label{font-size:16px;font-weight:700;font-family:var(--ff-h);min-width:200px;text-align:center}
+.date-nav .today-btn{padding:5px 14px;border-radius:6px;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.12);color:var(--primary);font-size:11px;font-weight:600;cursor:pointer}
+.date-nav .today-btn:hover{background:rgba(14,165,233,.12)}
+/* DAY GROUP */
+.day-group{margin-bottom:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.day-header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:var(--bg2);border-bottom:1px solid var(--border);cursor:pointer;transition:.2s}
+.day-header:hover{background:rgba(255,255,255,.02)}
+.day-header .day-date{font-size:13px;font-weight:700}
+.day-header .day-count{font-size:12px;color:var(--muted)}
+.day-header .day-arrow{color:var(--muted2);font-size:10px;transition:.3s}
+.day-header.collapsed .day-arrow{transform:rotate(-90deg)}
+.day-body{padding:0}
+.day-body.collapsed{display:none}
+/* LEAD ROW */
+.lead-row{display:grid;grid-template-columns:1fr 100px 100px 90px 110px;gap:8px;padding:10px 18px;border-bottom:1px solid var(--border);align-items:center;font-size:12px;transition:.2s}
+.lead-row:last-child{border-bottom:none}
+.lead-row:hover{background:rgba(255,255,255,.02)}
+.lead-row .details{color:var(--text)}
+.lead-row .details small{color:var(--muted2);font-size:10px;display:block}
+.lead-row .value{color:var(--text2)}
+.lead-row .status{text-align:center}
 .empty-state{text-align:center;padding:48px 20px;color:var(--muted2);font-size:13px}
 .empty-state .icon{font-size:40px;margin-bottom:12px;opacity:.5}
-@media(max-width:768px){.stats-grid{grid-template-columns:1fr 1fr}.tools-grid{grid-template-columns:1fr 1fr}.onboarding{flex-direction:column;align-items:flex-start}}
-</style></head>
+footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-top:1px solid var(--border);margin-top:48px}
+footer a{color:var(--primary);text-decoration:none}
+/* CALENDAR POPUP */
+.cal-popup{position:absolute;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 12px 40px rgba(0,0,0,.4);width:260px;display:none}
+.cal-popup.show{display:block}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px}
+.cal-grid .cal-day{text-align:center;padding:6px 4px;border-radius:6px;font-size:12px;cursor:pointer;color:var(--text2);transition:.2s}
+.cal-grid .cal-day:hover{background:rgba(14,165,233,.08);color:var(--primary)}
+.cal-grid .cal-day.active{background:var(--primary);color:#fff}
+.cal-grid .cal-day.muted{color:var(--muted2)}
+.cal-grid .cal-day.today{background:rgba(14,165,233,.1);color:var(--primary);font-weight:700}
+.cal-grid .cal-header{text-align:center;padding:4px;font-size:10px;color:var(--muted2);font-weight:600;text-transform:uppercase}
+.cal-month-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.cal-month-nav span{font-size:13px;font-weight:700;font-family:var(--ff-h)}
+.cal-month-nav button{background:none;border:none;color:var(--text2);cursor:pointer;padding:4px 8px;font-size:14px}
+.cal-month-nav button:hover{color:var(--primary)}
+@media(max-width:768px){.lead-row{grid-template-columns:1fr 80px 70px 70px}.lead-row .status{display:none}.stats-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.stats-grid{grid-template-columns:1fr}}
+</style>
+</head>
 <body>
 <nav>
 <div class="logo"><div class="mark">9</div>9am<span>Leads</span></div>
@@ -97,29 +109,24 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 </nav>
 <div class="container">
 
-<!-- ONBOARDING STEPS -->
-<div class="onboarding" id="onboardingBanner">
-<div class="step"><div class="dot curr">1</div> <span>Account created</span></div>
-<div class="step"><span class="line"></span><div class="dot pend">2</div> <span>Set your target areas</span></div>
-<div class="step"><span class="line"></span><div class="dot pend">3</div> <span>Receive leads at 9am</span></div>
-<div class="step"><span class="line"></span><div class="dot pend">4</div> <span>Call &amp; convert</span></div>
-</div>
+<!-- ONBOARDING -->
+<div class="onboarding" id="onboardingBanner" style="display:none">Loading your dashboard...</div>
 
 <!-- STATS -->
-<div class="stats-grid">
+<div class="stats-grid" id="statsGrid">
 <div class="stat-card"><div class="num" id="stat-leads">0</div><div class="label">Total Leads</div><div class="sub">All time</div></div>
-<div class="stat-card"><div class="num" id="stat-new">0</div><div class="label">New This Week</div><div class="sub" id="stat-week-label">Last 7 days</div></div>
+<div class="stat-card"><div class="num" id="stat-new">0</div><div class="label">This Week</div><div class="sub" id="stat-week-label">Last 7 days</div></div>
 <div class="stat-card"><div class="num" id="stat-plan">Free</div><div class="label">Your Plan</div><div class="sub" id="stat-trial">7 days remaining</div></div>
-<div class="stat-card"><div class="num" id="stat-rate">0%</div><div class="label">Conversion</div><div class="sub">Contacted â†’ Booked</div></div>
+<div class="stat-card"><div class="num" id="stat-rate">0%</div><div class="label">Conversion</div><div class="sub">Contacted to Booked</div></div>
 </div>
 
 <!-- TIPS -->
 <div class="card" id="tipsSection">
 <div class="card-title"><i class="fas fa-lightbulb" style="color:var(--warning)"></i> Tips to Get Started</div>
 <div id="tipsContainer">
-<div class="tip-card"><div class="icon">ðŸ“ž</div><p><strong>Call within 30 minutes</strong> â€” Speed is your biggest advantage. Our data shows customers who call within 30 minutes of receiving leads convert at 3x the rate. Your leads are exclusive, but speed wins.</p></div>
-<div class="tip-card"><div class="icon">ðŸŽ¯</div><p><strong>Personalise your approach</strong> â€” Generic pitches lose. Reference their specific property, industry, or tender. Mention their location by name. Show them you have done your homework.</p></div>
-<div class="tip-card"><div class="icon">ðŸ“Š</div><p><strong>Track everything</strong> â€” Log every call, every quote, every booking. You will quickly see which areas and lead types deliver the best ROI, so you can focus your effort where it counts.</p></div>
+<div class="tip-card"><span class="icon">ðŸ“ž</span><div><strong>Call within 30 minutes</strong> â€” Speed is your biggest advantage. Customers who call within 30 minutes convert at 3x the rate.</div></div>
+<div class="tip-card"><span class="icon">ðŸŽ¯</span><div><strong>Personalise your approach</strong> â€” Reference their specific property, industry, or location. Show them you have done your homework.</div></div>
+<div class="tip-card"><span class="icon">ðŸ“Š</span><div><strong>Track everything</strong> â€” Log every call and booking. See which areas and lead types deliver the best ROI.</div></div>
 </div>
 </div>
 
@@ -127,9 +134,8 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="card">
 <div class="card-title"><i class="fas fa-rocket" style="color:var(--primary)"></i> Your Tools</div>
 <div class="tools-grid">
-<div class="tool-card" onclick="scrollToLeads()"><div class="icon">ðŸ“‹</div><h3>View Leads</h3><p>See all your leads at a glance</p></div>
-<div class="tool-card" onclick="downloadCSV()"><div class="icon">ðŸ“¥</div><h3>Download CSV</h3><p>Export leads to spreadsheet</p></div>
-<div class="tool-card" onclick="alert('Update your filters in Settings')"><div class="icon">ðŸ”</div><h3>Update Filters</h3><p>Change target areas</p></div>
+<div class="tool-card" onclick="scrollToLeads()"><div class="icon">ðŸ“‹</div><h3>View Leads</h3><p>See all your leads by day</p></div>
+<div class="tool-card" onclick="exportRange('csv')"><div class="icon">ðŸ“¥</div><h3>Export CSV</h3><p>Download leads as spreadsheet</p></div>
 <div class="tool-card" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'})"><div class="icon">âš¡</div><h3>Upgrade Plan</h3><p>Get more leads per day</p></div>
 </div>
 </div>
@@ -139,69 +145,79 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="card-header"><div class="card-title"><i class="fas fa-crown" style="color:var(--warning)"></i> Subscription</div></div>
 <div class="sub-card">
 <div class="sub-row">
-<div><span class="sub-plan" id="sub-plan-name">Free Trial</span><br><span class="sub-price" id="sub-price-info">20 leads/day</span></div>
+<div><span class="sub-plan" id="sub-plan-name">Free Trial</span><br><span class="sub-price" id="sub-price-info">5 leads/day</span></div>
 <div><span class="badge badge-orange" id="sub-badge">Trial</span></div>
 </div>
 <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-<button class="btn btn-primary btn-sm" onclick="checkout('starter')">Starter â€” 5 leads/day Â· Â£99/mo</button>
-<button class="btn btn-outline btn-sm" onclick="checkout('pro')">Growth â€” 15 leads/day Â· Â£249/mo</button>
-<button class="btn btn-outline btn-sm" onclick="checkout('enterprise')">Pro â€” 40 leads/day Â· Â£499/mo</button>
+<button class="btn btn-primary btn-sm" onclick="checkout('starter')">Starter â€” 5/day Â· Â£99/mo</button>
+<button class="btn btn-outline btn-sm" onclick="checkout('pro')">Growth â€” 15/day Â· Â£249/mo</button>
+<button class="btn btn-outline btn-sm" onclick="checkout('enterprise')">Pro â€” 40/day Â· Â£499/mo</button>
 </div>
 <div id="sub-msg" style="margin-top:8px;font-size:12px;color:var(--success);display:none"></div>
 </div>
 </div>
 
-<!-- LEADS -->
+<!-- LEADS SECTION -->
 <div class="card" id="leads-section">
 <div class="card-header">
-<div class="card-title"><i class="fas fa-list" style="color:var(--success)"></i> Your Leads</div>
-<div style="display:flex;gap:6px;flex-wrap:wrap">
-<button class="btn btn-outline btn-sm" onclick="downloadCSV()"><i class="fas fa-file-csv"></i> CSV</button>
-<button class="btn btn-outline btn-sm" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
-<button class="btn btn-outline btn-sm" onclick="downloadJSON()"><i class="fas fa-file-code"></i> JSON</button>
+<div class="card-title"><i class="fas fa-calendar-day" style="color:var(--success)"></i> <span id="leadTitle">Your Leads</span></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;position:relative">
+<button class="btn btn-outline btn-sm" onclick="toggleCal()"><i class="fas fa-calendar"></i> Calendar</button>
+<button class="btn btn-outline btn-sm" onclick="exportRange('csv')"><i class="fas fa-file-csv"></i> Export</button>
+<button class="btn btn-outline btn-sm" onclick="exportRange('json')"><i class="fas fa-file-code"></i> JSON</button>
+<div class="cal-popup" id="calPopup">
+<div class="cal-month-nav"><button onclick="calNav(-1)"><i class="fas fa-chevron-left"></i></button><span id="calMonthLabel">May 2026</span><button onclick="calNav(1)"><i class="fas fa-chevron-right"></i></button></div>
+<div class="cal-grid" id="calGrid"></div>
 </div>
 </div>
-<div id="leads-table-container"><div class="empty-state"><div class="icon">ðŸ“­</div>Your leads will appear here once your subscription activates.<br><span style="font-size:11px;color:var(--muted2)">New leads arrive at 9am every morning.</span></div></div>
-</div>
-
-<!-- ACTIVITY -->
-<div class="card">
-<div class="card-title"><i class="fas fa-bolt" style="color:var(--warning)"></i> Recent Activity</div>
-<div id="activityFeed"><div class="empty-state" style="padding:20px;font-size:12px">No activity yet. Your timeline will appear here as you use the platform.</div></div>
 </div>
 
+<!-- Date Navigation -->
+<div class="date-nav">
+<button class="today-btn" onclick="goToday()">Today</button>
+<button class="nav-btn" onclick="navDay(-1)"><i class="fas fa-chevron-left"></i></button>
+<div style="position:relative">
+<span class="date-label" id="dateLabel" style="cursor:pointer" onclick="toggleCal()">Loading...</span>
 </div>
-<footer>9am Leads Ltd &middot; <a href="https://9amleads.com" style="color:var(--primary);text-decoration:none">9amleads.com</a> &middot; <a href="/terms.html" style="color:var(--muted2);text-decoration:none">Terms</a> &middot; <a href="/privacy.html" style="color:var(--muted2);text-decoration:none">Privacy</a></footer>
+<button class="nav-btn" onclick="navDay(1)"><i class="fas fa-chevron-right"></i></button>
+<span style="font-size:12px;color:var(--muted2)" id="leadCount">0 leads</span>
+<select id="viewMode" style="margin-left:auto;padding:5px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;font-family:inherit;outline:none" onchange="switchView(this.value)">
+<option value="day">Day View</option>
+<option value="all">All Leads</option>
+</select>
+</div>
+
+<!-- Lead Groups -->
+<div id="leadGroups"><div class="empty-state"><div class="icon">ðŸ“­</div>Loading your leads...</div></div>
+</div>
+</div>
+
+<footer>9am Leads &middot; <a href="https://www.9amleads.com">9amleads.com</a> &middot; <a href="/terms.html">Terms</a> &middot; <a href="/privacy.html">Privacy</a></footer>
 
 <script>
-const API = localStorage.getItem('9am_api_url') || 'https://nineamleads-api.onrender.com';
+const API = 'https://www.9amleads.com';
 let currentUser = null;
+let leads = [];
+let viewDate = new Date();
+let calDate = new Date();
+let currentView = 'day';
 
 function logout() { localStorage.removeItem('mld_portal_session'); window.location.href = '/portal/'; }
-
-function getSession() {
-  const s = localStorage.getItem('mld_portal_session');
-  if (!s) { window.location.href = '/portal/'; return null; }
-  return JSON.parse(s);
-}
+function getSession() { const s = localStorage.getItem('mld_portal_session'); if (!s) { window.location.href = '/portal/'; return null; } return JSON.parse(s); }
 
 async function apiFetch(path, opts = {}) {
-  const session = getSession();
-  if (!session) return null;
+  const session = getSession(); if (!session) return null;
   try {
-    const r = await fetch(API + path, {
-      ...opts,
-      headers: { ...opts.headers, 'Authorization': 'Bearer ' + (session.token || '') }
-    });
-    return await r.json();
+    const r = await fetch(API + path, { ...opts, headers: { ...opts.headers, 'Authorization': 'Bearer ' + (session.token || '') } });
+    const d = await r.json();
+    // If unauthenticated but we have a local session, use demo mode
+    if (d.error && (d.error.includes('token') || d.error.includes('auth'))) return null;
+    return d;
   } catch { return null; }
 }
 
 async function loadDashboard() {
-  const session = getSession();
-  if (!session) return;
-
-  // Load subscription & stats
+  const session = getSession(); if (!session) return;
   const sub = await apiFetch('/api/subscription');
   if (sub) {
     document.getElementById('sub-plan-name').textContent = sub.plan === 'free_trial' ? 'Free Trial' : sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1);
@@ -211,119 +227,189 @@ async function loadDashboard() {
       const days = Math.ceil((new Date(sub.trial_ends) - new Date()) / 86400000);
       document.getElementById('stat-trial').textContent = days > 0 ? days + ' days remaining' : 'Expired';
     }
-    if (sub.plan !== 'free_trial') {
-      document.getElementById('onboardingBanner').innerHTML =
-        '<div style="font-size:13px;color:var(--success)"><i class="fas fa-check-circle"></i> You are on the <strong>' + sub.plan + '</strong> plan. Your leads arrive at 9am daily.</div>';
-    }
   }
 
-  // Load leads
-  const leads = await apiFetch('/api/leads');
-  if (leads && Array.isArray(leads)) {
+  const leadData = await apiFetch('/api/leads');
+  if (leadData && Array.isArray(leadData) && leadData.length > 0) {
+    leads = leadData;
     document.getElementById('stat-leads').textContent = leads.length;
-    const week = leads.filter(l => l.created_at && new Date(l.created_at) > new Date(Date.now() - 7*86400000)).length;
-    document.getElementById('stat-new').textContent = week;
-    
-    if (leads.length > 0) {
-      renderLeads(leads);
-      // Update onboarding
-      document.querySelector('.onboarding .step:nth-child(2) .dot').className = 'dot done';
-      document.querySelector('.onboarding .step:nth-child(2) .dot').textContent = 'âœ“';
-      document.querySelector('.onboarding .step:nth-child(3) .dot').className = 'dot curr';
-      document.querySelector('.onboarding .step:nth-child(3) .dot').textContent = '3';
-    }
+    document.getElementById('stat-new').textContent = leads.filter(l => l.created_at && new Date(l.created_at) > new Date(Date.now() - 7*86400000)).length;
+    renderLeads();
+    document.getElementById('onboardingBanner').style.display = 'none';
   } else {
     // Demo data
     generateDemoLeads(session);
   }
+  calcConversion();
+  updateOnboarding();
 }
 
 function generateDemoLeads(session) {
   const areas = ['SW1A 1AA', 'SW1E 5NA', 'W1B 1SH', 'N2 0EY', 'SE3 0QU', 'EC2A 4NE', 'NW1 4SA'];
   const types = ['House', 'Flat', 'Bungalow', 'Maisonette'];
-  const leads = [];
-  for (let i = 0; i < 6; i++) {
-    const d = new Date(); d.setDate(d.getDate() - Math.floor(Math.random() * 7));
+  leads = [];
+  for (let i = 0; i < 20; i++) {
+    const daysAgo = Math.floor(Math.random() * 14);
+    const d = new Date(); d.setDate(d.getDate() - daysAgo);
     leads.push({
-      data: JSON.stringify({
-        address: Math.floor(Math.random()*200)+1 + ' ' + ['Acacia Avenue','Victoria Road','Green Lane','Park Crescent','Oakwood Gardens','Market Street','Church Road'][i%7] + ', ' + areas[i%areas.length],
-        type: types[i%types.length],
-        price: 'Â£' + (Math.floor(Math.random()*900)+100) + ',000',
-        bedrooms: Math.floor(Math.random()*4)+1
-      }),
+      data: JSON.stringify({ address: Math.floor(Math.random()*200)+1 + ' ' + ['Acacia Avenue','Victoria Road','Green Lane','Park Crescent','Oakwood Gardens','Market Street','Church Road'][i%7] + ', ' + areas[i%areas.length], type: types[i%types.length], price: 'Â£' + (Math.floor(Math.random()*900)+100) + ',000', bedrooms: Math.floor(Math.random()*4)+1 }),
       status: ['new','new','new','contacted','booked'][i%5],
       created_at: d.toISOString()
     });
   }
   document.getElementById('stat-leads').textContent = leads.length;
   document.getElementById('stat-new').textContent = leads.filter(l => new Date(l.created_at) > new Date(Date.now()-7*86400000)).length;
-  renderLeads(leads);
+  renderLeads();
+  document.getElementById('onboardingBanner').style.display = 'none';
 }
 
-function renderLeads(leads) {
-  const c = document.getElementById('leads-table-container');
+function groupLeadsByDay(leadList) {
+  const groups = {};
+  leadList.forEach(l => {
+    const day = l.created_at ? new Date(l.created_at).toDateString() : 'Unknown';
+    if (!groups[day]) groups[day] = [];
+    groups[day].push(l);
+  });
+  const sorted = Object.entries(groups).sort((a, b) => new Date(b[0]) - new Date(a[0]));
+  return sorted;
+}
+
+function renderLeads() {
+  const container = document.getElementById('leadGroups');
+  const countEl = document.getElementById('leadCount');
+  const titleEl = document.getElementById('leadTitle');
+
+  if (leads.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">ðŸ“­</div>No leads yet. They will appear here at 9am.<br><span style="font-size:11px;color:var(--muted2)">New leads arrive every morning.</span></div>';
+    document.getElementById('dateLabel').textContent = 'No leads';
+    countEl.textContent = '0 leads';
+    return;
+  }
+
+  const groups = groupLeadsByDay(leads);
   const statusLabel = { new: '<span class="badge badge-blue">New</span>', contacted: '<span class="badge badge-orange">Contacted</span>', booked: '<span class="badge badge-green">Booked</span>', closed: '<span class="badge badge-green">Closed</span>', lost: '<span class="badge badge-red">Lost</span>' };
-  document.getElementById('stat-rate').textContent = leads.length > 0 ? Math.round((leads.filter(l => l.status === 'booked' || l.status === 'closed').length / leads.length) * 100) + '%' : '0%';
+  let html = '';
 
-  c.innerHTML = leads.length === 0
-    ? '<div class="empty-state"><div class="icon">ðŸ“­</div>No leads yet. They will appear here at 9am.</div>'
-    : '<div class="table-wrap"><table><thead><tr><th>Details</th><th>Type</th><th>Value</th><th>Status</th><th>Date</th></tr></thead><tbody>' +
-      leads.slice(0, 20).map(l => {
+  if (currentView === 'day') {
+    const today = viewDate.toDateString();
+    const todayLeads = leads.filter(l => l.created_at && new Date(l.created_at).toDateString() === today);
+    document.getElementById('dateLabel').textContent = viewDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    countEl.textContent = todayLeads.length + ' leads';
+
+    if (todayLeads.length === 0) {
+      html = '<div class="empty-state"><div class="icon">ðŸ“­</div>No leads for this day.</div>';
+    } else {
+      html += '<div class="day-group"><div class="day-header"><span class="day-date">' + viewDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + '</span><span class="day-count">' + todayLeads.length + ' leads</span></div><div class="day-body">';
+      todayLeads.forEach(l => {
         const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
-        return '<tr><td><strong>' + (d.address || l.address || 'â€”') + '</strong><br><span style="font-size:11px;color:var(--muted2)">' + (d.bedrooms ? d.bedrooms + ' bed' : '') + '</span></td>' +
-          '<td style="font-size:12px">' + (d.type || 'â€”') + '</td>' +
-          '<td style="font-size:12px">' + (d.price || 'â€”') + '</td>' +
-          '<td>' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</td>' +
-          '<td style="font-size:12px;color:var(--muted2)">' + (l.created_at ? new Date(l.created_at).toLocaleDateString() : 'â€”') + '</td></tr>';
-      }).join('') + '</tbody></table></div>';
+        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || 'â€”') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' Â· ' + d.type : '') + '</small></div><div class="value">' + (d.price || 'â€”') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div></div>';
+      });
+      html += '</div></div>';
+    }
+    titleEl.textContent = 'Daily Leads';
+  } else {
+    document.getElementById('dateLabel').textContent = 'All Leads';
+    countEl.textContent = leads.length + ' total';
+    titleEl.textContent = 'All Leads';
+    groups.forEach(([day, dayLeads]) => {
+      html += '<div class="day-group"><div class="day-header" onclick="this.classList.toggle(\'collapsed\');this.nextElementSibling.classList.toggle(\'collapsed\')"><span class="day-date">' + day + '</span><span class="day-count">' + dayLeads.length + ' leads</span><span class="day-arrow"><i class="fas fa-chevron-down"></i></span></div><div class="day-body">';
+      dayLeads.forEach(l => {
+        const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
+        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || 'â€”') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' Â· ' + d.type : '') + '</small></div><div class="value">' + (d.price || 'â€”') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div></div>';
+      });
+      html += '</div></div>';
+    });
+  }
+
+  container.innerHTML = html;
+  calcConversion();
 }
 
-function downloadCSV() {
-  const rows = document.querySelectorAll('#leads-table-container table tbody tr');
-  if (!rows.length) { alert('No leads to export'); return; }
-  let csv = 'Address,Type,Price,Bedrooms,Date\n';
-  rows.forEach(r => { const c = r.querySelectorAll('td'); if (c.length >= 5) csv += '"' + c[0].textContent + '","' + c[1].textContent + '","' + c[2].textContent + '","' + c[3].textContent + '","' + c[4].textContent + '"\n'; });
-  const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'my-leads.csv'; a.click();
+function calcConversion() {
+  const booked = leads.filter(l => l.status === 'booked' || l.status === 'closed').length;
+  document.getElementById('stat-rate').textContent = leads.length > 0 ? Math.round((booked / leads.length) * 100) + '%' : '0%';
 }
 
-function scrollToLeads() { document.getElementById('leads-section').scrollIntoView({ behavior: 'smooth' }); }
-
-function downloadPDF() {
-  const rows = document.querySelectorAll('#leads-table-container table tbody tr');
-  if (!rows.length) { alert('No leads to export'); return; }
-  let html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>9amLeads Export</title><style>body{font-family:Arial;padding:32px}h1{font-size:20px;margin-bottom:4px}.date{color:#666;font-size:13px;margin-bottom:24px}table{width:100%;border-collapse:collapse}th{text-align:left;padding:8px 10px;background:#0ea5e9;color:#fff;font-size:12px}td{padding:8px 10px;border-bottom:1px solid #e2e8f0;font-size:13px}tr:nth-child(even){background:#f8fafc}</style></head><body>';
-  html += '<h1>9amLeads â€” Lead Export</h1><p class="date">Exported ' + new Date().toLocaleDateString() + '</p><table><thead><tr><th>Details</th><th>Type</th><th>Value</th><th>Status</th><th>Date</th></tr></thead><tbody>';
-  rows.forEach(r => {
-    const c = r.querySelectorAll('td');
-    if (c.length >= 5) html += '<tr><td>' + c[0].textContent + '</td><td>' + c[1].textContent + '</td><td>' + c[2].textContent + '</td><td>' + c[3].textContent + '</td><td>' + c[4].textContent + '</td></tr>';
-  });
-  html += '</tbody></table></body></html>';
-  const blob = new Blob([html], { type: 'text/html' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '9amleads-leads.html'; a.click();
-  // For PDF, open in new window and print
-  const w = window.open(''); w.document.write(html); w.document.close(); w.print();
+function updateOnboarding() {
+  const el = document.getElementById('onboardingBanner');
+  const c = getSession();
+  if (leads.length > 0) el.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i> You have <strong>' + leads.length + '</strong> leads. Keep calling to convert them into bookings!';
+  else el.innerHTML = '<i class="fas fa-clock" style="color:var(--warning)"></i> Your leads will arrive at 9am tomorrow morning. Set your target areas in the meantime.';
 }
 
-function downloadJSON() {
-  const rows = document.querySelectorAll('#leads-table-container table tbody tr');
-  if (!rows.length) { alert('No leads to export'); return; }
-  const data = [];
-  rows.forEach(r => {
-    const c = r.querySelectorAll('td');
-    if (c.length >= 5) data.push({ details: c[0].textContent, type: c[1].textContent, value: c[2].textContent, status: c[3].textContent, date: c[4].textContent });
-  });
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '9amleads-leads.json'; a.click();
+function navDay(dir) {
+  viewDate.setDate(viewDate.getDate() + dir);
+  renderLeads();
+}
+
+function goToday() { viewDate = new Date(); renderLeads(); }
+
+function switchView(mode) {
+  currentView = mode;
+  renderLeads();
+}
+
+// Calendar
+function toggleCal() {
+  document.getElementById('calPopup').classList.toggle('show');
+  buildCal();
+}
+
+function buildCal() {
+  const year = calDate.getFullYear(), month = calDate.getMonth();
+  document.getElementById('calMonthLabel').textContent = calDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+  let html = '<div class="cal-header">S</div><div class="cal-header">M</div><div class="cal-header">T</div><div class="cal-header">W</div><div class="cal-header">T</div><div class="cal-header">F</div><div class="cal-header">S</div>';
+  for (let i = 0; i < firstDay; i++) html += '<div></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = new Date(year, month, d).toDateString();
+    const isToday = dateStr === today.toDateString();
+    const hasLeads = leads.some(l => l.created_at && new Date(l.created_at).toDateString() === dateStr);
+    const isActive = dateStr === viewDate.toDateString();
+    html += '<div class="cal-day' + (isActive ? ' active' : '') + (isToday ? ' today' : '') + '" onclick="pickCalDate(' + year + ',' + month + ',' + d + ')">' + d + (hasLeads ? '<span style="display:block;width:4px;height:4px;border-radius:50%;background:var(--primary);margin:1px auto"></span>' : '') + '</div>';
+  }
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function calNav(dir) { calDate.setMonth(calDate.getMonth() + dir); buildCal(); }
+
+function pickCalDate(y, m, d) { viewDate = new Date(y, m, d); document.getElementById('calPopup').classList.remove('show'); renderLeads(); }
+
+// Export
+function exportRange(format) {
+  if (leads.length === 0) { alert('No leads to export'); return; }
+  let exportLeads = leads;
+  if (currentView === 'day') {
+    const today = viewDate.toDateString();
+    exportLeads = leads.filter(l => l.created_at && new Date(l.created_at).toDateString() === today);
+  }
+  if (exportLeads.length === 0) { alert('No leads for the selected period'); return; }
+
+  if (format === 'csv') {
+    let csv = 'Address,Type,Price,Bedrooms,Status,Date\n';
+    exportLeads.forEach(l => {
+      const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
+      csv += '"' + (d.address || '') + '","' + (d.type || '') + '","' + (d.price || '') + '","' + (d.bedrooms || '') + '","' + (l.status || '') + '","' + (l.created_at ? new Date(l.created_at).toLocaleDateString() : '') + '"\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '9amleads-export.csv'; a.click();
+  } else {
+    const data = exportLeads.map(l => { const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {}); return { address: d.address || '', type: d.type || '', price: d.price || '', bedrooms: d.bedrooms || '', status: l.status || '', date: l.created_at || '' }; });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '9amleads-export.json'; a.click();
+  }
 }
 
 async function checkout(plan) {
-  const msg = document.getElementById('sub-msg');
-  msg.style.display = 'none';
+  const msg = document.getElementById('sub-msg'); msg.style.display = 'none';
   const data = await apiFetch('/api/create-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan }) });
   if (data && data.url) { window.location.href = data.url; }
   else { msg.style.display = 'block'; msg.style.color = 'var(--danger)'; msg.textContent = 'Error: ' + (data?.error || 'Checkout unavailable. Contact hello@9amleads.com'); }
 }
 
+function scrollToLeads() { document.getElementById('leads-section').scrollIntoView({ behavior: 'smooth' }); }
+
 loadDashboard();
+document.addEventListener('click', function(e) { const cal = document.getElementById('calPopup'); if (!e.target.closest('.cal-popup') && !e.target.closest('[onclick*="toggleCal"]') && !e.target.closest('[onclick*="buildCal"]')) cal.classList.remove('show'); });
 </script>
 </body></html>
