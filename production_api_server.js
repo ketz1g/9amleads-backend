@@ -217,16 +217,23 @@ app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 
 // Serve static frontend files
-const FRONTEND_DIR = path.join(__dirname);
+const FRONTEND_DIR = path.join(__dirname, '9amleads');
+const ROOT_DIR = __dirname;
 app.use(express.static(FRONTEND_DIR, { index: 'index.html' }));
+app.use(express.static(ROOT_DIR));
 // SPA fallback - serve index.html for unknown routes (but not API routes)
 app.get(/^\/(?!api\/).*$/, (req, res) => {
-  const filePath = path.join(FRONTEND_DIR, req.path === '/' ? 'index.html' : req.path);
-  if (fs.existsSync(filePath)) {
-    res.sendFile(filePath);
-  } else {
-    res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
+  const paths = [
+    path.join(FRONTEND_DIR, req.path === '/' ? 'index.html' : req.path),
+    path.join(FRONTEND_DIR, req.path, 'index.html'),
+    path.join(ROOT_DIR, req.path),
+    path.join(ROOT_DIR, req.path, 'index.html'),
+    path.join(FRONTEND_DIR, 'index.html')
+  ];
+  for (const p of paths) {
+    if (fs.existsSync(p)) { res.sendFile(p); return; }
   }
+  res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
 });
 
 // ===== AUTH ENDPOINTS =====
@@ -470,7 +477,7 @@ app.put('/api/settings', authMiddleware, (req, res) => {
 
 // ===== ADMIN ENDPOINTS =====
 
-// GET /api/admin/stats — overall system stats
+// GET /api/admin/stats â€” overall system stats
 app.get('/api/admin/stats', (req, res) => {
   const totalCustomers = db.prepare('SELECT COUNT(*) as count FROM customers').get();
   const freeTrials = db.prepare('SELECT COUNT(*) as count FROM customers WHERE plan = \'free_trial\'').get();
@@ -498,7 +505,7 @@ app.get('/api/admin/stats', (req, res) => {
   });
 });
 
-// GET /api/admin/customers — list all customers (paginated)
+// GET /api/admin/customers â€” list all customers (paginated)
 app.get('/api/admin/customers', (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 50;
@@ -631,16 +638,16 @@ function getCampaignEmailHTML(customer, template) {
   const productName = customer.lead_type || 'leads';
   
   const templates = {
-    trial_day1: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">✅</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Free Trial Is Active</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:20px">Your first ' + productName + ' will land in your inbox at <strong style="color:' + accent + '">9am tomorrow morning</strong>. Here\'s your daily routine for the next 7 days:</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:16px"><p style="color:#ccc;font-size:13px;line-height:2;margin:0">📥 <strong>9:00am</strong> — Lead sheet arrives in your inbox<br>📞 <strong>9:01am</strong> — You start calling hot leads<br>💰 <strong>9:30am</strong> — First quotes going out<br>✅ <strong>By noon</strong> — Bookings coming in</p></div><p style="color:#888;font-size:12px">No commitment. Cancel anytime. Your leads are exclusive to you.</p></div>',
-    trial_day3: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">How Are Your Leads Looking?</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:16px">You\'re 3 days in. Quick check-in:</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:12px"><p style="color:#ccc;font-size:13px;line-height:1.8;margin:0">✔ Are the leads relevant to your business?<br>✔ Is the volume what you expected?<br>✔ Have you called any yet?</p></div><p style="color:#888;font-size:13px;line-height:1.6">Reply to this email and let us know. Good or bad — we\'re here to help you get the most out of 9amLeads.<br><br><span style="color:' + accent + ';font-weight:600">💡 Tip:</span> Call within 30 minutes of receiving your leads. Speed is your biggest advantage.</p></div>',
+    trial_day1: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">âœ…</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Free Trial Is Active</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:20px">Your first ' + productName + ' will land in your inbox at <strong style="color:' + accent + '">9am tomorrow morning</strong>. Here\'s your daily routine for the next 7 days:</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:16px"><p style="color:#ccc;font-size:13px;line-height:2;margin:0">ðŸ“¥ <strong>9:00am</strong> â€” Lead sheet arrives in your inbox<br>ðŸ“ž <strong>9:01am</strong> â€” You start calling hot leads<br>ðŸ’° <strong>9:30am</strong> â€” First quotes going out<br>âœ… <strong>By noon</strong> â€” Bookings coming in</p></div><p style="color:#888;font-size:12px">No commitment. Cancel anytime. Your leads are exclusive to you.</p></div>',
+    trial_day3: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">How Are Your Leads Looking?</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:16px">You\'re 3 days in. Quick check-in:</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:12px"><p style="color:#ccc;font-size:13px;line-height:1.8;margin:0">âœ” Are the leads relevant to your business?<br>âœ” Is the volume what you expected?<br>âœ” Have you called any yet?</p></div><p style="color:#888;font-size:13px;line-height:1.6">Reply to this email and let us know. Good or bad â€” we\'re here to help you get the most out of 9amLeads.<br><br><span style="color:' + accent + ';font-weight:600">ðŸ’¡ Tip:</span> Call within 30 minutes of receiving your leads. Speed is your biggest advantage.</p></div>',
     trial_day5: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:16px">3 Tips to Convert More Leads</h2><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px 24px;margin-bottom:12px"><div style="margin-bottom:14px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:8px;float:left">1</div><div style="margin-left:40px"><strong style="color:#fff;font-size:14px">Call within 30 minutes</strong><br><span style="color:#888;font-size:13px">Speed is everything. Our data shows calling within 30 minutes triples your conversion rate.</span></div></div><div style="margin-bottom:14px;clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:8px;float:left">2</div><div style="margin-left:40px"><strong style="color:#fff;font-size:14px">Mention their specific situation</strong><br><span style="color:#888;font-size:13px">Reference their property, industry, or tender number. Generic pitches lose. Personalised pitches win.</span></div></div><div style="clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:8px;float:left">3</div><div style="margin-left:40px"><strong style="color:#fff;font-size:14px">Ask for the next step</strong><br><span style="color:#888;font-size:13px">Don\'t just send a quote. Book a call, schedule a visit, ask for the business. Close starts with asking.</span></div></div></div></div>',
-    trial_day7: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">⏳</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Free Trial Ends Tomorrow</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:20px">After tomorrow, your daily ' + productName + ' delivery will pause. Upgrade now to keep them flowing without interruption.</p><a href="http://localhost:8006/dashboard.html" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#e85d26);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:16px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Now — Keep Your Leads →</a><p style="color:#888;font-size:12px;margin-top:12px">Plans from just £29/month · Cancel anytime</p></div>',
-    trial_day9: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">⏸️</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Daily Leads Have Paused</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Your 7-day free trial has ended and your daily ' + productName + ' delivery has been paused.</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:16px"><p style="color:#ccc;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">To restart:</strong><br>1. Log into your dashboard<br>2. Choose your plan<br>3. Leads restart at 9am tomorrow</p></div><p style="color:#888;font-size:12px">Your lead history is still there. Nothing has been lost.</p></div>',
+    trial_day7: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">â³</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Free Trial Ends Tomorrow</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:20px">After tomorrow, your daily ' + productName + ' delivery will pause. Upgrade now to keep them flowing without interruption.</p><a href="http://localhost:8006/dashboard.html" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#e85d26);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:16px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Now â€” Keep Your Leads â†’</a><p style="color:#888;font-size:12px;margin-top:12px">Plans from just Â£29/month Â· Cancel anytime</p></div>',
+    trial_day9: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">â¸ï¸</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Daily Leads Have Paused</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Your 7-day free trial has ended and your daily ' + productName + ' delivery has been paused.</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:16px"><p style="color:#ccc;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">To restart:</strong><br>1. Log into your dashboard<br>2. Choose your plan<br>3. Leads restart at 9am tomorrow</p></div><p style="color:#888;font-size:12px">Your lead history is still there. Nothing has been lost.</p></div>',
     trial_day12: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Still Not Sure?</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:16px">We understand. Every business is different. Maybe the leads weren\'t quite right, or the timing wasn\'t perfect.</p><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Reply to this email and tell us what\'s holding you back. We\'ll help you figure out if 9amLeads is right for your ' + bizType + '.</p><p style="color:#888;font-size:12px">No sales pitch. Just honest, helpful advice.</p></div>',
-    trial_day16: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:16px">3 Businesses That Transformed Their Pipeline</h2><div style="display:inline-block;text-align:left;max-width:400px"><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 18px;margin-bottom:10px"><p style="color:#ccc;font-size:13px;line-height:1.6;margin:0">"Got 12 leads in my first week using 9amLeads. Converted 3. Made <strong style="color:' + accent + '">£3,600</strong> in additional revenue."</p></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 18px;margin-bottom:10px"><p style="color:#ccc;font-size:13px;line-height:1.6;margin:0">"We\'ve picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month using 9amLeads. Already covered our annual subscription 10x over."</p></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 18px"><p style="color:#ccc;font-size:13px;line-height:1.6;margin:0">"Won 2 contracts worth <strong style="color:' + accent + '">£1.4M</strong> in our first quarter. Best business decision we\'ve made."</p></div></div><p style="color:#888;font-size:13px;margin-top:16px">Your success story could be next. Your account is still waiting.</p></div>',
-    trial_day21: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">💝</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Come Back — 30% Off Your First Month</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Use code <strong style="color:' + accent + ';font-size:24px;letter-spacing:2px">WELCOME30</strong> at checkout for 30% off your first month.</p><p style="color:#888;font-size:13px">No commitment. Cancel anytime. Your ' + productName + ' restart at 9am tomorrow.</p></div>',
+    trial_day16: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:16px">3 Businesses That Transformed Their Pipeline</h2><div style="display:inline-block;text-align:left;max-width:400px"><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 18px;margin-bottom:10px"><p style="color:#ccc;font-size:13px;line-height:1.6;margin:0">"Got 12 leads in my first week using 9amLeads. Converted 3. Made <strong style="color:' + accent + '">Â£3,600</strong> in additional revenue."</p></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 18px;margin-bottom:10px"><p style="color:#ccc;font-size:13px;line-height:1.6;margin:0">"We\'ve picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month using 9amLeads. Already covered our annual subscription 10x over."</p></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 18px"><p style="color:#ccc;font-size:13px;line-height:1.6;margin:0">"Won 2 contracts worth <strong style="color:' + accent + '">Â£1.4M</strong> in our first quarter. Best business decision we\'ve made."</p></div></div><p style="color:#888;font-size:13px;margin-top:16px">Your success story could be next. Your account is still waiting.</p></div>',
+    trial_day21: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">ðŸ’</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Come Back â€” 30% Off Your First Month</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Use code <strong style="color:' + accent + ';font-size:24px;letter-spacing:2px">WELCOME30</strong> at checkout for 30% off your first month.</p><p style="color:#888;font-size:13px">No commitment. Cancel anytime. Your ' + productName + ' restart at 9am tomorrow.</p></div>',
     trial_day30: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Account Is Still Waiting</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Your account and lead history are still here. Nothing has been deleted. Upgrade anytime to reactivate your daily ' + productName + ' delivery at 9am.</p><p style="color:#888;font-size:13px">It takes 30 seconds. Your leads restart tomorrow.</p></div>',
-    trial_day60: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">⏰</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Last Chance — Account Will Be Archived</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Your account will be archived in 30 days. All your lead history will be preserved — but you\'ll need to contact us to reactivate.</p><p style="color:#888;font-size:13px">Upgrade now to keep everything active and your ' + productName + ' flowing at 9am every morning. This is your final notice.</p></div>',
+    trial_day60: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">â°</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Last Chance â€” Account Will Be Archived</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Your account will be archived in 30 days. All your lead history will be preserved â€” but you\'ll need to contact us to reactivate.</p><p style="color:#888;font-size:13px">Upgrade now to keep everything active and your ' + productName + ' flowing at 9am every morning. This is your final notice.</p></div>',
   };
   
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#000;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%"><tr><td style="background:#0a0a0a;padding:28px;border-bottom:3px solid ' + accent + ';text-align:center"><div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff"><span style="color:' + accent + '">9am</span>Leads</div><p style="color:#888;font-size:12px;margin-top:4px">' + customer.company + '</p></td></tr><tr><td style="background:#0a0a0a;padding:24px 28px">' + (templates[template] || templates.trial_day1) + '</td></tr><tr><td style="background:#0a0a0a;padding:20px 28px;border-top:1px solid #1a1a1a;text-align:center"><p style="color:#888;font-size:11px;margin:0">9am Leads Ltd \u00b7 Company No. 17168176 \u00b7 <a href="#" style="color:#888">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>';
@@ -667,7 +674,7 @@ cron.schedule('30 8 * * *', async () => {
         const isExpired = trialEnds && new Date() > trialEnds;
         const daysSinceTrialEnd = trialEnds ? Math.floor((new Date() - trialEnds) / 86400000) : 999;
         
-        // ---- CASE 1: Active trial or paid plan → send leads ----
+        // ---- CASE 1: Active trial or paid plan â†’ send leads ----
         if (!isExpired || customer.plan !== 'free_trial') {
           const limit = PLAN_LIMITS[customer.plan] ? PLAN_LIMITS[customer.plan].leads_per_day : (customer.leads_per_day || 20);
           
@@ -691,7 +698,7 @@ cron.schedule('30 8 * * *', async () => {
           }
         }
         
-        // ---- CASE 2: Trial just expired → send campaign email + mark ----
+        // ---- CASE 2: Trial just expired â†’ send campaign email + mark ----
         if (customer.plan === 'free_trial' && isExpired && daysSinceTrialEnd < 65) {
           // Find which campaign email to send based on days since trial ended
           let emailTemplate = null;
@@ -786,11 +793,11 @@ function stripeApiRequest(method, path, data) {
   });
 }
 
-// POST /api/create-checkout — create Stripe Checkout Session
+// POST /api/create-checkout â€” create Stripe Checkout Session
 app.post('/api/create-checkout', authMiddleware, async (req, res) => {
   try {
     if (!STRIPE_SECRET_KEY) {
-      return res.status(500).json({ error: 'Stripe not configured. Add keys in Settings → Stripe Payments.' });
+      return res.status(500).json({ error: 'Stripe not configured. Add keys in Settings â†’ Stripe Payments.' });
     }
 
     const { plan } = req.body;
@@ -838,7 +845,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
   }
 });
 
-// Stripe webhook — receives checkout.session.completed events
+// Stripe webhook â€” receives checkout.session.completed events
 // IMPORTANT: This route uses raw body parser for Stripe signature verification
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
@@ -907,7 +914,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           .run(uuidv4(), customerId, subscriptionId || '', plan);
       }
 
-      console.log('[WEBHOOK] Payment confirmed:', customer.email, '→', plan, '(product:', product + ')');
+      console.log('[WEBHOOK] Payment confirmed:', customer.email, 'â†’', plan, '(product:', product + ')');
     }
 
     res.json({ received: true });
@@ -917,7 +924,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   }
 });
 
-// POST /api/subscribe — upgrade current user's plan (after Stripe payment confirmed)
+// POST /api/subscribe â€” upgrade current user's plan (after Stripe payment confirmed)
 app.post('/api/subscribe', authMiddleware, async (req, res) => {
   const { plan, session_id } = req.body;
   const validPlans = ['starter', 'pro', 'enterprise'];
@@ -959,7 +966,7 @@ app.post('/api/subscribe', authMiddleware, async (req, res) => {
   });
 });
 
-// GET /api/subscription — check current subscription status
+// GET /api/subscription â€” check current subscription status
 app.get('/api/subscription', authMiddleware, (req, res) => {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
@@ -1003,7 +1010,7 @@ function normalizeName(name) {
   return (name || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
 }
 
-// GET /api/scraped-businesses — return all known businesses (for dedup client-side)
+// GET /api/scraped-businesses â€” return all known businesses (for dedup client-side)
 app.get('/api/scraped-businesses', (req, res) => {
   const { product } = req.query;
   let list = loadScrapedBusinesses();
@@ -1011,7 +1018,7 @@ app.get('/api/scraped-businesses', (req, res) => {
   res.json(list);
 });
 
-// POST /api/scraped-businesses/check — check which of the submitted businesses are new
+// POST /api/scraped-businesses/check â€” check which of the submitted businesses are new
 app.post('/api/scraped-businesses/check', (req, res) => {
   try {
     const { candidates } = req.body;
@@ -1050,7 +1057,7 @@ app.post('/api/scraped-businesses/check', (req, res) => {
   }
 });
 
-// POST /api/scraped-businesses/add — save newly scraped businesses
+// POST /api/scraped-businesses/add â€” save newly scraped businesses
 app.post('/api/scraped-businesses/add', (req, res) => {
   try {
     const { businesses, product, query } = req.body;
@@ -1098,7 +1105,7 @@ app.post('/api/scraped-businesses/add', (req, res) => {
   }
 });
 
-// GET /api/scraped-businesses/stats — dedup statistics
+// GET /api/scraped-businesses/stats â€” dedup statistics
 app.get('/api/scraped-businesses/stats', (req, res) => {
   const list = loadScrapedBusinesses();
   const byProduct = {};
@@ -1115,7 +1122,7 @@ app.get('/api/scraped-businesses/stats', (req, res) => {
 
 // ===== SCRAPER ENDPOINTS =====
 
-// POST /api/scrape-run — execute a scraper for a given product and store results
+// POST /api/scrape-run â€” execute a scraper for a given product and store results
 app.post('/api/scrape-run', async (req, res) => {
   try {
     const { product, query, location, instructions, maxResults, emails } = req.body;
@@ -1167,7 +1174,7 @@ app.post('/api/scrape-run', async (req, res) => {
   }
 });
 
-// GET /api/scrape-results — list all scrape runs
+// GET /api/scrape-results â€” list all scrape runs
 app.get('/api/scrape-results', (req, res) => {
   const configDir = path.join(DATA_DIR, 'scrape-runs');
   try {
@@ -1184,7 +1191,7 @@ app.get('/api/scrape-results', (req, res) => {
   }
 });
 
-// GET /api/scrape-results/:id — get a specific scrape run
+// GET /api/scrape-results/:id â€” get a specific scrape run
 app.get('/api/scrape-results/:id', (req, res) => {
   const filePath = path.join(DATA_DIR, 'scrape-runs', req.params.id + '.json');
   try {
@@ -1199,7 +1206,7 @@ app.get('/api/scrape-results/:id', (req, res) => {
   }
 });
 
-// POST /api/scrape-save — save scraped leads to customer records
+// POST /api/scrape-save â€” save scraped leads to customer records
 app.post('/api/scrape-save', async (req, res) => {
   try {
     const { product, leads } = req.body;
@@ -1260,10 +1267,10 @@ function generateLeadEmailHTML(customer, leads) {
     return '<tr><td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:13px">' + (data.address || data.name || data.company || data.tenderTitle || 'Lead') + '</td><td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:12px">' + (data.priceLabel || data.estateValueLabel || data.location || data.authority || '') + '</td></tr>';
   }).join('');
 
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#000;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%"><tr><td style="background:#0a0a0a;padding:32px;border-bottom:3px solid ' + accent + ';text-align:center"><div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:800;color:#fff"><span style="color:' + accent + '">9am</span>Leads</div><p style="color:#888;font-size:13px;margin-top:4px">' + customer.lead_type + ' — ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '</p></td></tr><tr><td style="background:#0a0a0a;padding:24px 32px"><div style="font-size:36px;font-weight:800;color:' + accent + ';font-family:Outfit,sans-serif">' + leads.length + '</div><div style="font-size:13px;color:#888;margin-bottom:16px">new leads today for ' + customer.company + '</div><p style="font-size:14px;color:#ccc;line-height:1.7">Good morning! Your daily lead sheet has arrived. Below are the new opportunities we\'ve found for you. Pick up the phone and start calling — you\'re the first to see these leads.</p></td></tr><tr><td style="background:#000;padding:0 32px"><table width="100%" cellpadding="0" cellspacing="0"><tr><th style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:11px;text-transform:uppercase;text-align:left;letter-spacing:.5px">Details</th><th style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:11px;text-transform:uppercase;text-align:left;letter-spacing:.5px">Value</th></tr>' + leadsHTML + '</table></td></tr><tr><td style="background:#0a0a0a;padding:24px 32px;border-top:1px solid #1a1a1a;text-align:center"><p style="color:#888;font-size:12px;margin:0">Delivered at 9am by 9amLeads · <a href="http://localhost:' + (8004 + ['moving','probate','newbusiness','planning','tenders'].indexOf(customer.product)) + '/dashboard.html" style="color:' + accent + '">View in Dashboard</a></p><p style="color:#555;font-size:11px;margin-top:6px">If you no longer wish to receive these emails, <a href="#" style="color:#888">unsubscribe here</a></p></td></tr></table></td></tr></table></body></html>';
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#000;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%"><tr><td style="background:#0a0a0a;padding:32px;border-bottom:3px solid ' + accent + ';text-align:center"><div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:800;color:#fff"><span style="color:' + accent + '">9am</span>Leads</div><p style="color:#888;font-size:13px;margin-top:4px">' + customer.lead_type + ' â€” ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '</p></td></tr><tr><td style="background:#0a0a0a;padding:24px 32px"><div style="font-size:36px;font-weight:800;color:' + accent + ';font-family:Outfit,sans-serif">' + leads.length + '</div><div style="font-size:13px;color:#888;margin-bottom:16px">new leads today for ' + customer.company + '</div><p style="font-size:14px;color:#ccc;line-height:1.7">Good morning! Your daily lead sheet has arrived. Below are the new opportunities we\'ve found for you. Pick up the phone and start calling â€” you\'re the first to see these leads.</p></td></tr><tr><td style="background:#000;padding:0 32px"><table width="100%" cellpadding="0" cellspacing="0"><tr><th style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:11px;text-transform:uppercase;text-align:left;letter-spacing:.5px">Details</th><th style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:11px;text-transform:uppercase;text-align:left;letter-spacing:.5px">Value</th></tr>' + leadsHTML + '</table></td></tr><tr><td style="background:#0a0a0a;padding:24px 32px;border-top:1px solid #1a1a1a;text-align:center"><p style="color:#888;font-size:12px;margin:0">Delivered at 9am by 9amLeads Â· <a href="http://localhost:' + (8004 + ['moving','probate','newbusiness','planning','tenders'].indexOf(customer.product)) + '/dashboard.html" style="color:' + accent + '">View in Dashboard</a></p><p style="color:#555;font-size:11px;margin-top:6px">If you no longer wish to receive these emails, <a href="#" style="color:#888">unsubscribe here</a></p></td></tr></table></td></tr></table></body></html>';
 }
 
-// POST /api/test/delivery — manually trigger delivery for one customer
+// POST /api/test/delivery â€” manually trigger delivery for one customer
 app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
@@ -1294,7 +1301,7 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   }
 });
 
-// GET /api/admin/export — export customers for marketing
+// GET /api/admin/export â€” export customers for marketing
 app.get('/api/admin/export', (req, res) => {
   const customers = db.prepare(`
     SELECT email, company, contact_name, phone, product, lead_type, business_type, 
