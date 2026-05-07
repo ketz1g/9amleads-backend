@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Automation hub for lead generation and business management.",
   "main": "index.js",
-  "engines": {
-    "node": ">=20"
-  },
   "scripts": {
     "start": "node production_api_server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
