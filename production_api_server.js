@@ -233,6 +233,13 @@ app.use('/9amleadsmc', express.static(path.join(ROOT_DIR, '9amleadsmc')));
 app.use('/css', express.static(path.join(ROOT_DIR, 'css')));
 app.use('/js', express.static(path.join(ROOT_DIR, 'js')));
 
+// Serve root from 9amleads directory
+app.get('/', (req, res) => {
+  const rootFile = path.join(ROOT_DIR, '9amleads', 'index.html');
+  try { if (fs.existsSync(rootFile)) { res.sendFile(rootFile); return; } } catch(e) {}
+  res.sendFile(path.join(ROOT_DIR, 'index.html'));
+});
+
 // SPA catch-all for all other routes
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) return;
