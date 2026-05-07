@@ -103,14 +103,17 @@ footer a{color:var(--primary);text-decoration:none}
 <nav>
 <div class="logo"><div class="mark">9</div>9am<span>Leads</span></div>
 <div class="nav-links">
+<a href="/" target="_blank">Home</a>
 <a href="/" class="active">Dashboard</a>
+<a href="/founder/" target="_blank">Founder</a>
+<a href="/invest/" target="_blank">Invest</a>
 <a href="#" id="logout-btn" class="btn-out" onclick="logout()">Sign Out</a>
 </div>
 </nav>
 <div class="container">
 
 <!-- ONBOARDING -->
-<div class="onboarding" id="onboardingBanner" style="display:none">Loading your dashboard...</div>
+<div class="onboarding" id="onboardingBanner"><i class="fas fa-spinner fa-spin" style="color:var(--primary)"></i> Loading your dashboard...</div>
 
 <!-- STATS -->
 <div class="stats-grid" id="statsGrid">
@@ -192,7 +195,13 @@ footer a{color:var(--primary);text-decoration:none}
 </div>
 </div>
 
-<footer>9am Leads &middot; <a href="https://www.9amleads.com">9amleads.com</a> &middot; <a href="/terms.html">Terms</a> &middot; <a href="/privacy.html">Privacy</a></footer>
+<footer>
+<a href="https://www.9amleads.com" style="color:var(--primary);font-weight:600;text-decoration:none">9amLeads.com</a> &middot;
+<a href="/founder/" style="color:var(--muted2);text-decoration:none">Founder</a> &middot;
+<a href="/invest/" style="color:var(--muted2);text-decoration:none">Invest</a> &middot;
+<a href="/terms.html" style="color:var(--muted2);text-decoration:none">Terms</a> &middot;
+<a href="/privacy.html" style="color:var(--muted2);text-decoration:none">Privacy</a>
+</footer>
 
 <script>
 const API = 'https://www.9amleads.com';
