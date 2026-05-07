@@ -221,6 +221,7 @@ const FRONTEND_DIR = path.join(__dirname, '9amleads');
 const ROOT_DIR = __dirname;
 app.use(express.static(FRONTEND_DIR, { index: 'index.html' }));
 app.use(express.static(ROOT_DIR));
+app.use(express.static(path.join(ROOT_DIR, '9amleads')));
 // SPA fallback - serve index.html for unknown routes (but not API routes)
 app.get(/^\/(?!api\/).*$/, (req, res) => {
   const paths = [
@@ -231,7 +232,7 @@ app.get(/^\/(?!api\/).*$/, (req, res) => {
     path.join(FRONTEND_DIR, 'index.html')
   ];
   for (const p of paths) {
-    if (fs.existsSync(p)) { res.sendFile(p); return; }
+    try { if (fs.existsSync(p)) { res.sendFile(p); return; } } catch(e) {}
   }
   res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
 });
