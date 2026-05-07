@@ -236,10 +236,20 @@ app.use('/js', express.static(path.join(ROOT_DIR, 'js')));
 // SPA catch-all for all other routes
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) return;
-  const filePath = path.join(FRONTEND_DIR, 'index.html');
-  try {
-    if (fs.existsSync(filePath)) { res.sendFile(filePath); return; }
-  } catch(e) {}
+  // Try to find the file in the 9amleads directory
+  const relativePath = req.path === '/' ? 'index.html' : req.path.replace(/^\//, '');
+  const candidates = [
+    path.join(FRONTEND_DIR, relativePath),
+    path.join(FRONTEND_DIR, relativePath, 'index.html'),
+    path.join(FRONTEND_DIR, 'index.html'),
+    path.join(ROOT_DIR, relativePath),
+    path.join(ROOT_DIR, relativePath, 'index.html'),
+  ];
+  for (const fp of candidates) {
+    try { if (fs.existsSync(fp)) { res.sendFile(fp); return; } } catch(e) {}
+  }
+  // Final fallback
+  try { res.sendFile(path.join(FRONTEND_DIR, 'index.html')); } catch(e) {}
   res.status(404).send('Page not found');
 });// ===== AUTH ENDPOINTS =====
 
