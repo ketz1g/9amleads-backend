@@ -220,6 +220,7 @@ app.use(express.json());
 const ROOT_DIR = __dirname;
 const FRONTEND_DIR = path.join(ROOT_DIR, '9amleads');
 app.use(express.static(FRONTEND_DIR, { index: 'index.html' }));
+app.use(express.static(ROOT_DIR));
 app.use('/9amleads', express.static(FRONTEND_DIR));
 
 // Static files from root (product pages, portal, etc)
