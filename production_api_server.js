@@ -213,8 +213,15 @@ function validateEmail(email) {
 
 // ===== APP =====
 const app = express();
-app.use(cors({ origin: '*', credentials: true }));
-app.use(express.json());
+// Redirect /founder -> /portal/founder and /invest -> /portal/invest
+const REDIRECT_MAP = { '/founder': '/portal/founder/', '/invest': '/portal/invest/', '/founder/': '/portal/founder/', '/invest/': '/portal/invest/' };
+app.use((req, res, next) => {
+  const target = REDIRECT_MAP[req.path];
+  if (target) { return res.redirect(target); }
+  next();
+});
+
+app.use(cors({ origin: '*', credentials: true }));app.use(express.json());
 
 // Serve static frontend files
 const ROOT_DIR = __dirname;
