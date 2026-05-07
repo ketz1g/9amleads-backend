@@ -217,27 +217,31 @@ app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 
 // Serve static frontend files
-const FRONTEND_DIR = path.join(__dirname, '9amleads');
 const ROOT_DIR = __dirname;
+const FRONTEND_DIR = path.join(ROOT_DIR, '9amleads');
 app.use(express.static(FRONTEND_DIR, { index: 'index.html' }));
-app.use(express.static(ROOT_DIR));
-app.use(express.static(path.join(ROOT_DIR, '9amleads')));
-// SPA fallback - serve index.html for unknown routes (but not API routes)
-app.get(/^\/(?!api\/).*$/, (req, res) => {
-  const paths = [
-    path.join(FRONTEND_DIR, req.path === '/' ? 'index.html' : req.path),
-    path.join(FRONTEND_DIR, req.path, 'index.html'),
-    path.join(ROOT_DIR, req.path),
-    path.join(ROOT_DIR, req.path, 'index.html'),
-    path.join(FRONTEND_DIR, 'index.html')
-  ];
-  for (const p of paths) {
-    try { if (fs.existsSync(p)) { res.sendFile(p); return; } } catch(e) {}
-  }
-  res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
-});
+app.use('/9amleads', express.static(FRONTEND_DIR));
 
-// ===== AUTH ENDPOINTS =====
+// Static files from root (product pages, portal, etc)
+app.use('/movingleadsdaily', express.static(path.join(ROOT_DIR, 'movingleadsdaily')));
+app.use('/probateleads', express.static(path.join(ROOT_DIR, 'probateleads')));
+app.use('/newbusinessalert', express.static(path.join(ROOT_DIR, 'newbusinessalert')));
+app.use('/planningleads', express.static(path.join(ROOT_DIR, 'planningleads')));
+app.use('/tenders', express.static(path.join(ROOT_DIR, 'tenders')));
+app.use('/portal', express.static(path.join(ROOT_DIR, 'portal')));
+app.use('/9amleadsmc', express.static(path.join(ROOT_DIR, '9amleadsmc')));
+app.use('/css', express.static(path.join(ROOT_DIR, 'css')));
+app.use('/js', express.static(path.join(ROOT_DIR, 'js')));
+
+// SPA catch-all for all other routes
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api/')) return;
+  const filePath = path.join(FRONTEND_DIR, 'index.html');
+  try {
+    if (fs.existsSync(filePath)) { res.sendFile(filePath); return; }
+  } catch(e) {}
+  res.status(404).send('Page not found');
+});// ===== AUTH ENDPOINTS =====
 
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
