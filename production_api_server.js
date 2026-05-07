@@ -246,8 +246,8 @@ app.get('/', (req, res) => {
 });
 
 // SPA catch-all for all other routes
-app.get('/{*path}', (req, res) => {
-  if (req.path.startsWith('/api/')) return;
+app.get('/{*path}', (req, res, next) => {
+  if (req.path.startsWith('/api/')) { next(); return; }
   // Try to find the file in the 9amleads directory
   const relativePath = req.path === '/' ? 'index.html' : req.path.replace(/^\//, '');
   const candidates = [
