@@ -86,18 +86,14 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <button class="btn btn-secondary" onclick="showSignup()">Don't have an account? Sign Up</button>
 </div>
 
-<div class="divider">Demo Access</div>
-<div class="demo-box">
-<strong>Demo Client 1:</strong> <code>demo@movingleadsdaily.co.uk</code><br>
-<strong>Demo Client 2:</strong> <code>demo2@movingleadsdaily.co.uk</code><br>
-<small>Enter any email to explore the dashboard with sample data.</small>
+<div class="divider">Secure Access</div>
+<div class="demo-box" style="border-color:rgba(14,165,233,0.12)">
+<strong>ðŸ”’ Password protected</strong><br>
+<small>Your account is secured with encrypted password storage. Sign up with a valid email and a password of at least 8 characters to access your dashboard.</small>
 </div>
 
-<div class="features">
-<div class="feature-item"><i class="fas fa-check-circle"></i> Daily leads at 9am</div>
-<div class="feature-item"><i class="fas fa-check-circle"></i> Exclusive to you</div>
-<div class="feature-item"><i class="fas fa-check-circle"></i> Performance dashboard</div>
-<div class="feature-item"><i class="fas fa-check-circle"></i> CSV export</div>
+<div class="footer-note" style="margin-top:10px;font-size:11px;color:var(--muted2);text-align:center">
+Already have an account? <a href="#" onclick="showLogin();return false" style="color:var(--primary)">Sign in here</a>
 </div>
 </div>
 
@@ -141,8 +137,8 @@ function signup() {
 }
 
 function login() {
-  const email = document.getElementById('login-email').value.trim().toLowerCase();
-  const password = document.getElementById('login-password').value;
+  const email = document.getElementById('login-email')?.value?.trim().toLowerCase() || '';
+  const password = document.getElementById('login-password')?.value || '';
   const error = document.getElementById('login-error');
   error.style.display = 'none';
 
@@ -156,9 +152,10 @@ function login() {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token: d.token, clientId: d.customer?.id || email, name: d.customer?.name || email, plan: d.customer?.plan || 'free_trial', email }));
       window.location.href = '/portal/dashboard.html';
     } else {
-      document.getElementById('login-error').style.display = 'block';
+      error.textContent = d.error || 'Invalid email or password. Please try again or create a new account.';
+      error.style.display = 'block';
     }
-  }).catch(() => { document.getElementById('login-error').style.display = 'block'; });
+  }).catch(() => { error.textContent = 'Could not connect to server. Please try again later.'; error.style.display = 'block'; });
 }
 </script>
 </body></html>
