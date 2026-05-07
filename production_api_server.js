@@ -22,6 +22,17 @@ const PORT = process.env.PORT || process.env.API_PORT || 8012;
 
 
 
+// ===== EXPRESS APP =====
+const app = express();
+
+// Redirect /founder -> /portal/founder and /invest -> /portal/invest (BEFORE static routes)
+const REDIRECT_MAP = { '/founder': '/portal/founder/', '/invest': '/portal/invest/', '/founder/': '/portal/founder/', '/invest/': '/portal/invest/' };
+app.use((req, res, next) => {
+  const target = REDIRECT_MAP[req.path];
+  if (target) { return res.redirect(target); }
+  next();
+});
+
 // Static files from root (product pages, portal, etc)
 app.use('/movingleadsdaily', express.static(path.join(ROOT_DIR, 'movingleadsdaily')));
 app.use('/probateleads', express.static(path.join(ROOT_DIR, 'probateleads')));
