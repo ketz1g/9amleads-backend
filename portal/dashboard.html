@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>My Dashboard — 9am Leads</title>
+<title>My Dashboard â€” 9am Leads</title>
 <meta name="description" content="Your 9amLeads customer dashboard. View your daily leads, track conversions, and manage your subscription.">
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -110,16 +110,16 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="stat-card"><div class="num" id="stat-leads">0</div><div class="label">Total Leads</div><div class="sub">All time</div></div>
 <div class="stat-card"><div class="num" id="stat-new">0</div><div class="label">New This Week</div><div class="sub" id="stat-week-label">Last 7 days</div></div>
 <div class="stat-card"><div class="num" id="stat-plan">Free</div><div class="label">Your Plan</div><div class="sub" id="stat-trial">7 days remaining</div></div>
-<div class="stat-card"><div class="num" id="stat-rate">0%</div><div class="label">Conversion</div><div class="sub">Contacted → Booked</div></div>
+<div class="stat-card"><div class="num" id="stat-rate">0%</div><div class="label">Conversion</div><div class="sub">Contacted â†’ Booked</div></div>
 </div>
 
 <!-- TIPS -->
 <div class="card" id="tipsSection">
 <div class="card-title"><i class="fas fa-lightbulb" style="color:var(--warning)"></i> Tips to Get Started</div>
 <div id="tipsContainer">
-<div class="tip-card"><div class="icon">📞</div><p><strong>Call within 30 minutes</strong> — Speed is your biggest advantage. Our data shows customers who call within 30 minutes of receiving leads convert at 3x the rate. Your leads are exclusive, but speed wins.</p></div>
-<div class="tip-card"><div class="icon">🎯</div><p><strong>Personalise your approach</strong> — Generic pitches lose. Reference their specific property, industry, or tender. Mention their location by name. Show them you have done your homework.</p></div>
-<div class="tip-card"><div class="icon">📊</div><p><strong>Track everything</strong> — Log every call, every quote, every booking. You will quickly see which areas and lead types deliver the best ROI, so you can focus your effort where it counts.</p></div>
+<div class="tip-card"><div class="icon">ðŸ“ž</div><p><strong>Call within 30 minutes</strong> â€” Speed is your biggest advantage. Our data shows customers who call within 30 minutes of receiving leads convert at 3x the rate. Your leads are exclusive, but speed wins.</p></div>
+<div class="tip-card"><div class="icon">ðŸŽ¯</div><p><strong>Personalise your approach</strong> â€” Generic pitches lose. Reference their specific property, industry, or tender. Mention their location by name. Show them you have done your homework.</p></div>
+<div class="tip-card"><div class="icon">ðŸ“Š</div><p><strong>Track everything</strong> â€” Log every call, every quote, every booking. You will quickly see which areas and lead types deliver the best ROI, so you can focus your effort where it counts.</p></div>
 </div>
 </div>
 
@@ -127,10 +127,10 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="card">
 <div class="card-title"><i class="fas fa-rocket" style="color:var(--primary)"></i> Your Tools</div>
 <div class="tools-grid">
-<div class="tool-card" onclick="scrollToLeads()"><div class="icon">📋</div><h3>View Leads</h3><p>See all your leads at a glance</p></div>
-<div class="tool-card" onclick="downloadCSV()"><div class="icon">📥</div><h3>Download CSV</h3><p>Export leads to spreadsheet</p></div>
-<div class="tool-card" onclick="alert('Update your filters in Settings')"><div class="icon">🔍</div><h3>Update Filters</h3><p>Change target areas</p></div>
-<div class="tool-card" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'})"><div class="icon">⚡</div><h3>Upgrade Plan</h3><p>Get more leads per day</p></div>
+<div class="tool-card" onclick="scrollToLeads()"><div class="icon">ðŸ“‹</div><h3>View Leads</h3><p>See all your leads at a glance</p></div>
+<div class="tool-card" onclick="downloadCSV()"><div class="icon">ðŸ“¥</div><h3>Download CSV</h3><p>Export leads to spreadsheet</p></div>
+<div class="tool-card" onclick="alert('Update your filters in Settings')"><div class="icon">ðŸ”</div><h3>Update Filters</h3><p>Change target areas</p></div>
+<div class="tool-card" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'})"><div class="icon">âš¡</div><h3>Upgrade Plan</h3><p>Get more leads per day</p></div>
 </div>
 </div>
 
@@ -143,9 +143,9 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div><span class="badge badge-orange" id="sub-badge">Trial</span></div>
 </div>
 <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-<button class="btn btn-primary btn-sm" onclick="checkout('starter')">Starter — 5 leads/day · £99/mo</button>
-<button class="btn btn-outline btn-sm" onclick="checkout('pro')">Growth — 15 leads/day · £249/mo</button>
-<button class="btn btn-outline btn-sm" onclick="checkout('enterprise')">Pro — 40 leads/day · £499/mo</button>
+<button class="btn btn-primary btn-sm" onclick="checkout('starter')">Starter â€” 5 leads/day Â· Â£99/mo</button>
+<button class="btn btn-outline btn-sm" onclick="checkout('pro')">Growth â€” 15 leads/day Â· Â£249/mo</button>
+<button class="btn btn-outline btn-sm" onclick="checkout('enterprise')">Pro â€” 40 leads/day Â· Â£499/mo</button>
 </div>
 <div id="sub-msg" style="margin-top:8px;font-size:12px;color:var(--success);display:none"></div>
 </div>
@@ -161,7 +161,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <button class="btn btn-outline btn-sm" onclick="downloadJSON()"><i class="fas fa-file-code"></i> JSON</button>
 </div>
 </div>
-<div id="leads-table-container"><div class="empty-state"><div class="icon">📭</div>Your leads will appear here once your subscription activates.<br><span style="font-size:11px;color:var(--muted2)">New leads arrive at 9am every morning.</span></div></div>
+<div id="leads-table-container"><div class="empty-state"><div class="icon">ðŸ“­</div>Your leads will appear here once your subscription activates.<br><span style="font-size:11px;color:var(--muted2)">New leads arrive at 9am every morning.</span></div></div>
 </div>
 
 <!-- ACTIVITY -->
@@ -228,7 +228,7 @@ async function loadDashboard() {
       renderLeads(leads);
       // Update onboarding
       document.querySelector('.onboarding .step:nth-child(2) .dot').className = 'dot done';
-      document.querySelector('.onboarding .step:nth-child(2) .dot').textContent = '✓';
+      document.querySelector('.onboarding .step:nth-child(2) .dot').textContent = 'âœ“';
       document.querySelector('.onboarding .step:nth-child(3) .dot').className = 'dot curr';
       document.querySelector('.onboarding .step:nth-child(3) .dot').textContent = '3';
     }
@@ -248,7 +248,7 @@ function generateDemoLeads(session) {
       data: JSON.stringify({
         address: Math.floor(Math.random()*200)+1 + ' ' + ['Acacia Avenue','Victoria Road','Green Lane','Park Crescent','Oakwood Gardens','Market Street','Church Road'][i%7] + ', ' + areas[i%areas.length],
         type: types[i%types.length],
-        price: '£' + (Math.floor(Math.random()*900)+100) + ',000',
+        price: 'Â£' + (Math.floor(Math.random()*900)+100) + ',000',
         bedrooms: Math.floor(Math.random()*4)+1
       }),
       status: ['new','new','new','contacted','booked'][i%5],
@@ -266,20 +266,20 @@ function renderLeads(leads) {
   document.getElementById('stat-rate').textContent = leads.length > 0 ? Math.round((leads.filter(l => l.status === 'booked' || l.status === 'closed').length / leads.length) * 100) + '%' : '0%';
 
   c.innerHTML = leads.length === 0
-    ? '<div class="empty-state"><div class="icon">📭</div>No leads yet. They will appear here at 9am.</div>'
+    ? '<div class="empty-state"><div class="icon">ðŸ“­</div>No leads yet. They will appear here at 9am.</div>'
     : '<div class="table-wrap"><table><thead><tr><th>Details</th><th>Type</th><th>Value</th><th>Status</th><th>Date</th></tr></thead><tbody>' +
       leads.slice(0, 20).map(l => {
         const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
-        return '<tr><td><strong>' + (d.address || l.address || '—') + '</strong><br><span style="font-size:11px;color:var(--muted2)">' + (d.bedrooms ? d.bedrooms + ' bed' : '') + '</span></td>' +
-          '<td style="font-size:12px">' + (d.type || '—') + '</td>' +
-          '<td style="font-size:12px">' + (d.price || '—') + '</td>' +
+        return '<tr><td><strong>' + (d.address || l.address || 'â€”') + '</strong><br><span style="font-size:11px;color:var(--muted2)">' + (d.bedrooms ? d.bedrooms + ' bed' : '') + '</span></td>' +
+          '<td style="font-size:12px">' + (d.type || 'â€”') + '</td>' +
+          '<td style="font-size:12px">' + (d.price || 'â€”') + '</td>' +
           '<td>' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</td>' +
-          '<td style="font-size:12px;color:var(--muted2)">' + (l.created_at ? new Date(l.created_at).toLocaleDateString() : '—') + '</td></tr>';
+          '<td style="font-size:12px;color:var(--muted2)">' + (l.created_at ? new Date(l.created_at).toLocaleDateString() : 'â€”') + '</td></tr>';
       }).join('') + '</tbody></table></div>';
 }
 
 function downloadCSV() {
-  const rows = document.querySelectorAll('#leads-table tbody tr');
+  const rows = document.querySelectorAll('#leads-table-container table tbody tr');
   if (!rows.length) { alert('No leads to export'); return; }
   let csv = 'Address,Type,Price,Bedrooms,Date\n';
   rows.forEach(r => { const c = r.querySelectorAll('td'); if (c.length >= 5) csv += '"' + c[0].textContent + '","' + c[1].textContent + '","' + c[2].textContent + '","' + c[3].textContent + '","' + c[4].textContent + '"\n'; });
@@ -289,10 +289,10 @@ function downloadCSV() {
 function scrollToLeads() { document.getElementById('leads-section').scrollIntoView({ behavior: 'smooth' }); }
 
 function downloadPDF() {
-  const rows = document.querySelectorAll('#leads-table tbody tr');
+  const rows = document.querySelectorAll('#leads-table-container table tbody tr');
   if (!rows.length) { alert('No leads to export'); return; }
   let html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>9amLeads Export</title><style>body{font-family:Arial;padding:32px}h1{font-size:20px;margin-bottom:4px}.date{color:#666;font-size:13px;margin-bottom:24px}table{width:100%;border-collapse:collapse}th{text-align:left;padding:8px 10px;background:#0ea5e9;color:#fff;font-size:12px}td{padding:8px 10px;border-bottom:1px solid #e2e8f0;font-size:13px}tr:nth-child(even){background:#f8fafc}</style></head><body>';
-  html += '<h1>9amLeads — Lead Export</h1><p class="date">Exported ' + new Date().toLocaleDateString() + '</p><table><thead><tr><th>Details</th><th>Type</th><th>Value</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+  html += '<h1>9amLeads â€” Lead Export</h1><p class="date">Exported ' + new Date().toLocaleDateString() + '</p><table><thead><tr><th>Details</th><th>Type</th><th>Value</th><th>Status</th><th>Date</th></tr></thead><tbody>';
   rows.forEach(r => {
     const c = r.querySelectorAll('td');
     if (c.length >= 5) html += '<tr><td>' + c[0].textContent + '</td><td>' + c[1].textContent + '</td><td>' + c[2].textContent + '</td><td>' + c[3].textContent + '</td><td>' + c[4].textContent + '</td></tr>';
@@ -305,7 +305,7 @@ function downloadPDF() {
 }
 
 function downloadJSON() {
-  const rows = document.querySelectorAll('#leads-table tbody tr');
+  const rows = document.querySelectorAll('#leads-table-container table tbody tr');
   if (!rows.length) { alert('No leads to export'); return; }
   const data = [];
   rows.forEach(r => {
