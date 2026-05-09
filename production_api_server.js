@@ -218,22 +218,16 @@ app.use(express.json());
 
 // Serve static frontend files
 const FRONTEND_DIR = path.join(__dirname, '9amleads');
+const ROOT_DIR = __dirname;
 app.use(express.static(FRONTEND_DIR, { index: 'index.html' }));
-
-// Serve product subdirectories (not the full ROOT_DIR, which exposes mission control)
-const PRODUCT_DIRS = ['movingleadsdaily', 'probateleads', 'newbusinessalert', 'newbusiness', 'planningleads', 'planningpermission', 'tenders', 'portal', 'moverstaff', 'vidamotor'];
-for (const dir of PRODUCT_DIRS) {
-  const dirPath = path.join(__dirname, dir);
-  if (fs.existsSync(dirPath)) {
-    app.use('/' + dir, express.static(dirPath, { index: 'index.html' }));
-  }
-}
-
+app.use(express.static(ROOT_DIR));
 // SPA fallback - serve index.html for unknown routes (but not API routes)
 app.get(/^\/(?!api\/).*$/, (req, res) => {
   const paths = [
     path.join(FRONTEND_DIR, req.path === '/' ? 'index.html' : req.path),
     path.join(FRONTEND_DIR, req.path, 'index.html'),
+    path.join(ROOT_DIR, req.path),
+    path.join(ROOT_DIR, req.path, 'index.html'),
     path.join(FRONTEND_DIR, 'index.html')
   ];
   for (const p of paths) {
