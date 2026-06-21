@@ -181,6 +181,14 @@ function searchPostcodes(query) {
     d.area_name.toLowerCase().includes(q) ||
     d.region.toLowerCase().includes(q)
   );
+  // If user typed an area code (e.g. "EN"), auto-expand that area
+  const areaMatch = allPostcodeAreas.find(a => a.area_code.toLowerCase() === q);
+  if (areaMatch && filtered.length === areaMatch.districts.length) {
+    expandedArea = areaMatch.area_code;
+    renderAllPostcodes();
+    dropdown.style.display = 'block';
+    return;
+  }
   renderPcSearchResults(filtered);
   dropdown.style.display = 'block';
 }
