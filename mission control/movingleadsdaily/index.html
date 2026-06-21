@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MovingLeadsDaily — Get Moving Leads at 9am Every Morning</title>
+  <meta name="description" content="Join UK removal companies getting exclusive moving leads delivered to their inbox every morning at 9am. Be first to contact homeowners when their property goes SSTC.">
+  <meta property="og:title" content="MovingLeadsDaily — Get Moving Leads at 9am Every Morning">
+  <meta property="og:description" content="Join UK removal companies getting exclusive moving leads delivered to their inbox every morning at 9am.">
+  <meta property="og:url" content="https://9amleads.com/movingleadsdaily/">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://9amleads.com/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MovingLeadsDaily — Get Moving Leads at 9am Every Morning">
+  <meta name="twitter:description" content="Join UK removal companies getting exclusive moving leads delivered to their inbox every morning at 9am.">
+  <link rel="canonical" href="https://9amleads.com/movingleadsdaily/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --orange:#ff6b35;--orange-hover:#e85d26;--orange-subtle:rgba(255,107,53,0.10);--orange-glow:rgba(255,107,53,0.30);
+      --bg:#000000;--bg-alt:#0a0a0a;--bg-card:#0d0d0d;--bg-card-hover:#141414;
+      --border:#1c1c1c;--border-light:#2a2a2a;
+      --text:#ffffff;--text-secondary:#bbbbbb;--muted:#777777;
+      --ff-head:'Outfit',sans-serif;--ff-body:'Inter',sans-serif;
+      --radius-sm:6px;--radius-md:10px;--radius-lg:16px;--radius-xl:24px;
+      --shadow-card:0 2px 20px rgba(0,0,0,0.6);
+      --transition:350ms cubic-bezier(0.4,0,0.2,1);
+      --nav-h:72px;--max-w:1140px;
+    }
+    html{scroll-behavior:smooth;font-size:16px}
+    body{font-family:var(--ff-body);font-size:1rem;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6}
+    .container{max-width:var(--max-w);margin:0 auto;padding:0 24px}
+    .section{padding:100px 0}
+    .section-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.8px;color:var(--orange);margin-bottom:16px}
+    .section-label::before{content:'';width:24px;height:2px;background:var(--orange);border-radius:2px}
+    .section-title{font-size:38px;font-weight:800;text-align:center;margin-bottom:14px;letter-spacing:-0.5px;line-height:1.15;font-family:var(--ff-head)}
+    .section-sub{text-align:center;color:var(--text-secondary);font-size:16px;max-width:560px;margin:0 auto 48px;line-height:1.7}
+    .gradient-text{background:linear-gradient(135deg,var(--orange),#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;height:auto;display:block}
+    .flex-center{display:flex;align-items:center;justify-content:center}
+
+    /* NAV */
+    nav{display:flex;justify-content:space-between;align-items:center;padding:0 24px;height:var(--nav-h);max-width:var(--max-w);margin:0 auto;position:sticky;top:0;z-index:200;background:rgba(0,0,0,0.7);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,0.06)}
+    .logo{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800;color:var(--text);font-family:var(--ff-head);letter-spacing:-0.5px}
+    .logo .mark{width:34px;height:34px;background:linear-gradient(135deg,var(--orange),var(--orange-hover));border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:800}
+    .logo em{font-style:normal;color:var(--orange)}
+    .nav-links{display:flex;align-items:center;gap:2px}
+    .nav-links a{padding:8px 14px;color:var(--text-secondary);font-weight:500;font-size:14px;transition:var(--transition);border-radius:var(--radius-sm)}
+    .nav-links a:hover{color:var(--text);background:rgba(255,255,255,0.04)}
+    .nav-cta{background:linear-gradient(135deg,var(--orange),var(--orange-hover));color:#fff!important;padding:9px 20px!important;border-radius:var(--radius-sm)!important;font-weight:600!important;font-size:13px!important;display:flex;align-items:center;gap:6px;box-shadow:0 4px 16px var(--orange-glow)}
+    .nav-cta:hover{background:var(--orange-hover)!important;transform:translateY(-1px);color:#fff!important}
+    .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px}
+    .hamburger span{width:22px;height:2px;background:var(--text);border-radius:2px;transition:var(--transition)}
+
+    /* BUTTONS */
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--radius-sm);font-weight:600;font-size:15px;cursor:pointer;border:none;transition:var(--transition);font-family:var(--ff-body)}
+    .btn-primary{background:linear-gradient(135deg,var(--orange),var(--orange-hover));color:#fff;box-shadow:0 4px 20px var(--orange-glow)}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px var(--orange-glow)}
+    .btn-outline{background:transparent;color:var(--text);border:1.5px solid var(--border)}
+    .btn-outline:hover{border-color:var(--orange);color:var(--orange)}
+    .btn-white{background:#fff;color:#000}
+    .btn-white:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(255,255,255,0.15)}
+    .btn-lg{padding:15px 34px;font-size:16px}
+
+    /* HERO */
+    .hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;background:var(--bg)}
+    .hero-bg{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=1600&q=85') center/cover no-repeat;filter:brightness(0.35) saturate(0.8);transform:scale(1.05)}
+    .hero-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,transparent 0%,var(--bg) 95%),linear-gradient(to top,var(--bg) 0%,transparent 40%,transparent 60%,var(--bg) 100%)}
+    .hero .container{position:relative;z-index:2;text-align:center;padding:120px 24px 80px}
+    .hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--orange-subtle);border:1px solid rgba(255,107,53,0.2);border-radius:999px;padding:7px 18px;font-size:13px;font-weight:600;color:var(--orange);margin-bottom:28px}
+    .hero h1{font-size:54px;line-height:1.08;font-weight:900;letter-spacing:-1.5px;margin-bottom:18px;max-width:820px;margin-left:auto;margin-right:auto;font-family:var(--ff-head)}
+    .hero p{font-size:18px;color:var(--text-secondary);max-width:620px;margin:0 auto 34px;line-height:1.7}
+    .hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .hero-proof{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:40px;flex-wrap:wrap}
+    .hero-proof-avatars{display:flex}
+    .hero-proof-avatars img{width:40px;height:40px;border-radius:50%;border:2px solid var(--bg);margin-right:-10px}
+    .hero-proof-avatars img:last-child{margin-right:0}
+    .hero-proof-text{font-size:14px;color:var(--muted)}
+    .hero-proof-text strong{color:var(--text);font-weight:600}
+
+    /* HOW IT WORKS */
+    .steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+    .step-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px 24px;text-align:center;transition:var(--transition);position:relative}
+    .step-card:hover{transform:translateY(-5px);border-color:var(--orange);background:var(--bg-card-hover)}
+    .step-num{position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--orange-hover));color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px var(--orange-glow)}
+    .step-icon{width:54px;height:54px;border-radius:var(--radius-md);background:var(--orange-subtle);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--orange);margin:8px auto 16px}
+    .step-card h3{font-size:17px;margin-bottom:8px;font-family:var(--ff-head)}
+    .step-card p{font-size:14px;color:var(--text-secondary);line-height:1.7}
+
+    /* FEATURES */
+    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    .feature-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;transition:var(--transition)}
+    .feature-card:hover{transform:translateY(-4px);border-color:var(--orange);background:var(--bg-card-hover)}
+    .feature-icon{width:46px;height:46px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:14px}
+    .feature-card h4{font-size:16px;margin-bottom:6px;font-family:var(--ff-head)}
+    .feature-card p{font-size:13px;color:var(--text-secondary);line-height:1.7}
+
+    /* PRICING */
+    .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:960px;margin:48px auto 0}
+    .pricing-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 28px;text-align:center;transition:var(--transition);position:relative;display:flex;flex-direction:column}
+    .pricing-card:hover{transform:translateY(-4px);border-color:var(--orange);background:var(--bg-card-hover)}
+    .pricing-card.featured{border-color:var(--orange);box-shadow:0 0 50px rgba(255,107,53,0.08);background:var(--bg-card-hover)}
+    .pricing-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--orange),var(--orange-hover));color:#fff;padding:5px 22px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+    .pricing-card h3{font-size:20px;margin-bottom:4px;font-family:var(--ff-head)}
+    .pricing-card .price{font-size:42px;font-weight:900;margin:12px 0 4px;font-family:var(--ff-head);letter-spacing:-1px}
+    .pricing-card .price span{font-size:15px;font-weight:400;color:var(--muted)}
+    .pricing-card .price-sub{font-size:13px;color:var(--muted);margin-bottom:8px}
+    .pricing-card ul{text-align:left;margin:20px 0;list-style:none;flex:1}
+    .pricing-card li{padding:8px 0;font-size:14px;color:var(--text-secondary);display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+    .pricing-card li:last-child{border-bottom:none}
+    .pricing-card li i{color:var(--orange);font-size:11px;width:16px;text-align:center}
+    .pricing-card .btn{margin-top:auto}
+
+    /* TESTIMONIALS */
+    .testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    .t-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;transition:var(--transition)}
+    .t-card:hover{border-color:var(--orange);background:var(--bg-card-hover)}
+    .t-stars{color:#f59e0b;font-size:13px;margin-bottom:12px;letter-spacing:1px}
+    .t-card blockquote{color:var(--text-secondary);font-size:14px;line-height:1.7;margin-bottom:18px;font-style:italic}
+    .t-card blockquote::before{content:'"';color:var(--orange);font-size:20px;font-weight:700;margin-right:2px}
+    .t-card blockquote::after{content:'"';color:var(--orange);font-size:20px;font-weight:700;margin-left:2px}
+    .t-author{display:flex;align-items:center;gap:12px}
+    .t-author img{width:42px;height:42px;border-radius:50%;object-fit:cover}
+    .t-author .name{font-weight:600;font-size:14px}
+    .t-author .role{font-size:12px;color:var(--muted)}
+
+    /* FAQ */
+    .faq-wrap{max-width:700px;margin:48px auto 0}
+    .faq-item{border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:8px;overflow:hidden;background:var(--bg-card);transition:var(--transition)}
+    .faq-item:hover{border-color:var(--orange)}
+    .faq-q{width:100%;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;background:none;border:none;font-size:15px;font-weight:600;color:var(--text);cursor:pointer;text-align:left;font-family:var(--ff-body)}
+    .faq-q i{font-size:12px;color:var(--muted);transition:var(--transition)}
+    .faq-item.open .faq-q i{transform:rotate(180deg);color:var(--orange)}
+    .faq-a{max-height:0;overflow:hidden;transition:max-height 0.35s ease}
+    .faq-item.open .faq-a{max-height:400px}
+    .faq-a p{padding:0 22px 20px;font-size:14px;color:var(--text-secondary);line-height:1.7}
+
+    /* SIGNUP FORM */
+    #signup{background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .signup-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;max-width:960px;margin:0 auto}
+    .signup-left h2{font-size:32px;font-weight:800;font-family:var(--ff-head);letter-spacing:-0.5px;line-height:1.15;margin-bottom:12px;text-align:left}
+    .signup-left p{color:var(--text-secondary);font-size:15px;line-height:1.7;margin-bottom:20px}
+    .signup-left .checklist{list-style:none}
+    .signup-left .checklist li{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px;color:var(--text-secondary)}
+    .signup-left .checklist li i{color:var(--orange);font-size:12px}
+    .signup-form{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px}
+    .signup-form .form-row{margin-bottom:16px}
+    .signup-form label{display:block;font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:5px}
+    .signup-form input{width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;font-family:var(--ff-body);outline:none;transition:var(--transition)}
+    .signup-form input:focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-subtle)}
+    .signup-form .form-row-flex{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .login-link{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
+    .login-link a{color:var(--orange);font-weight:600}
+    .login-link a:hover{text-decoration:underline}
+
+    /* CTA BANNER */
+    .cta-banner{text-align:center;padding:80px 24px;position:relative;overflow:hidden}
+    .cta-banner::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,107,53,0.06) 0%,transparent 70%);pointer-events:none}
+    .cta-banner h2{font-size:38px;font-weight:800;margin-bottom:14px;letter-spacing:-0.5px;font-family:var(--ff-head)}
+    .cta-banner p{color:var(--text-secondary);max-width:520px;margin:0 auto 28px;font-size:16px}
+
+    /* FOOTER */
+    footer{background:#050505;border-top:1px solid var(--border);padding:64px 0 0}
+    .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;max-width:var(--max-w);margin:0 auto;padding:0 24px}
+    .footer-col h4{color:var(--text);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+    .footer-col a,.footer-col p{display:block;color:var(--muted);font-size:14px;padding:4px 0;transition:var(--transition)}
+    .footer-col a:hover{color:var(--orange)}
+    .footer-col .logo{margin-bottom:12px}
+    .footer-col p.desc{color:var(--muted);font-size:14px;line-height:1.7;margin-top:8px}
+    .footer-bottom{text-align:center;padding:24px;margin-top:48px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);max-width:var(--max-w);margin-left:auto;margin-right:auto}
+    .footer-bottom a{color:var(--orange);font-weight:500}
+
+    /* ANIMATIONS */
+    [data-reveal]{opacity:0;transform:translateY(30px);transition:opacity 0.7s ease,transform 0.7s ease}
+    [data-reveal].visible{opacity:1;transform:translateY(0)}
+    [data-reveal=left]{transform:translateX(-30px)}
+    [data-reveal=left].visible{transform:translateX(0)}
+    [data-reveal=right]{transform:translateX(30px)}
+    [data-reveal=right].visible{transform:translateX(0)}
+    [data-reveal=scale]{transform:scale(0.92)}
+    [data-reveal=scale].visible{transform:scale(1)}
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar{width:7px}
+    ::-webkit-scrollbar-track{background:#000}
+    ::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:4px}
+    ::-webkit-scrollbar-thumb:hover{background:#444}
+
+    @media(max-width:1024px){
+      .hero h1{font-size:42px}
+      .steps-grid{grid-template-columns:repeat(2,1fr)}
+      .features-grid{grid-template-columns:repeat(2,1fr)}
+      .pricing-grid{grid-template-columns:1fr;max-width:400px}
+      .testimonials-grid{grid-template-columns:1fr}
+      .signup-grid{grid-template-columns:1fr}
+      .section-title{font-size:30px}
+    }
+    @media(max-width:768px){
+      .section{padding:60px 0}
+      .hero h1{font-size:32px;letter-spacing:-0.5px}
+      .hero p{font-size:16px}
+      .hamburger{display:flex}
+      .nav-links{display:none;position:absolute;top:var(--nav-h);left:0;right:0;background:rgba(0,0,0,0.96);flex-direction:column;padding:16px 24px;border-bottom:1px solid var(--border)}
+      .nav-links.open{display:flex}
+      .nav-links a{padding:12px 16px;margin:2px 0}
+      .steps-grid,.features-grid{grid-template-columns:1fr}
+      .footer-grid{grid-template-columns:1fr 1fr}
+      .signup-form .form-row-flex{grid-template-columns:1fr}
+      .section-title{font-size:26px}
+    }
+    @media(max-width:480px){
+      .hero h1{font-size:26px}
+      .hero-actions .btn{width:100%;justify-content:center}
+      .footer-grid{grid-template-columns:1fr}
+      .pricing-card{padding:28px 20px}
+    }
+
+    /* Professional hover effects */
+    .product-card,.pricing-card,.step,.t-card{transition:all .4s cubic-bezier(.4,0,.2,1)}
+    .product-card:hover,.pricing-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(255,107,53,.12)}
+    .t-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+    .pricing-card.featured{border-color:#ff6b35!important;box-shadow:0 0 40px rgba(255,107,53,.08)}
+    .pricing-card .btn{transition:all .3s}
+    .pricing-card:hover .btn{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,107,53,.25)}
+    .testimonials-grid,.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    @media(max-width:768px){.testimonials-grid,.features-grid{grid-template-columns:1fr}}
+    @media(max-width:1024px)and (min-width:769px){.testimonials-grid,.features-grid{grid-template-columns:repeat(2,1fr)}}
+    .section{position:relative}
+    .section::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:80%;max-width:600px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent)}
+  </style>
+</head>
+<body>
+  <div style="background:#0a0a0a;border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;font-size:11px;text-align:center;font-family:Arial,sans-serif;">
+    <span style="color:#888">Part of </span>
+    <a href="/" style="color:#0ea5e9;font-weight:600">9amLeads</a>
+    <span style="color:#555;margin:0 6px">|</span>
+    <a href="/movingleadsdaily/" style="color:#888;text-decoration:none">Moving</a>
+    <span style="color:#444;margin:0 4px">·</span>
+    <a href="/probateleads/" style="color:#888;text-decoration:none">Probate</a>
+    <span style="color:#444;margin:0 4px">·</span>
+    <a href="/newbusinessalert/" style="color:#888;text-decoration:none">New Business</a>
+    <span style="color:#444;margin:0 4px">·</span>
+    <a href="/planningleads/" style="color:#888;text-decoration:none">Planning</a>
+    <span style="color:#444;margin:0 4px">·</span>
+    <a href="/tenders/" style="color:#888;text-decoration:none">Tenders</a>
+  </div>
+  <nav>
+    <a href="/" class="logo"><svg width="20" height="20" viewBox="0 0 100 100" fill="none" style="flex-shrink:0"><circle cx="50" cy="50" r="40" stroke="#ff6b35" stroke-width="5"/><circle cx="50" cy="50" r="3" fill="#ff6b35"/><line x1="50" y1="50" x2="50" y2="17" stroke="#ff6b35" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="23" y2="50" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="42" cy="8" r="5" fill="#ff6b35" opacity="0.8"/><circle cx="58" cy="8" r="5" fill="#ff6b35" opacity="0.8"/></svg> Moving<em>LeadsDaily</em></a>
+    <div class="nav-links" id="navLinks">
+      <a href="/" style="display:inline-flex;align-items:center;gap:4px;padding:7px 10px;color:var(--clr-muted,#888);font-size:12px;font-weight:600;text-decoration:none;transition:.2s;border-radius:6px;border:1px solid rgba(255,255,255,0.08)"><i class="fas fa-arrow-left" style="font-size:10px"></i> 9amLeads</a>
+      <a href="#how">How It Works</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="#signup" class="nav-cta"><i class="fas fa-rocket"></i> Start Free Trial</a>
+    </div>
+<div style="text-align:center;padding:12px 24px;font-size:11px;color:#555;border-top:1px solid #1a1a1a">9am Leads Ltd &middot; Company No. 17168176 &middot; hello@9amleads.com</div>
+    <button class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')" aria-label="Menu"><span></span><span></span><span></span></button>
+  </nav>
+
+  <section class="hero" style="min-height:90vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;padding:120px 24px 80px;background:linear-gradient(90deg,rgba(0,0,0,0.92) 0%,rgba(0,0,0,0.4) 60%,rgba(0,0,0,0.1) 100%),url(https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1600&q=80);background-size:cover;background-position:center;background-attachment:fixed;overflow:hidden">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(255,107,53,.1) 0%,transparent 60%),radial-gradient(ellipse at 70% 30%,rgba(255,107,53,.05) 0%,transparent 50%);pointer-events:none"></div>
+    <div style="position:relative;z-index:2;max-width:900px;margin:0 auto;padding:0 24px">
+      <div style="display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:32px">
+        <span style="display:inline-block;background:rgba(255,107,53,.15);border:1px solid rgba(255,107,53,.3);color:#ff6b35;font-size:12px;font-weight:600;padding:6px 20px;border-radius:100px;letter-spacing:.5px;text-transform:uppercase">7 Days Free Trial</span>
+        <span style="display:inline-block;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e;font-size:12px;font-weight:600;padding:6px 20px;border-radius:100px;letter-spacing:.5px;text-transform:uppercase">No Card Required</span>
+      </div>
+      <h1 style="font-size:clamp(32px,4vw,56px);font-weight:900;line-height:1.08;letter-spacing:-2px;margin-bottom:20px;font-family:var(--ff-head);color:#fff">Your Next Booking Is Sitting in an <span class="gradient-text">SSTC Property Right Now</span></h1>
+      <p style="font-size:clamp(15px,1.2vw,17px);color:#ccc;max-width:650px;margin:0 auto 32px;line-height:1.8">Every property marked Sold Subject to Contract is a homeowner who needs a removal company. We find them before anyone else and deliver them to your inbox at 9am. While other removal companies are still refreshing Rightmove, you are already quoting the move.</p>
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+        <a href="#signup" class="btn btn-primary btn-lg" style="position:relative;overflow:hidden;padding:16px 40px;font-size:16px;border-radius:8px"><span style="position:relative;z-index:2">Start Your Free Trial</span></a>
+        <a href="#how" class="btn btn-ghost btn-lg" style="padding:16px 40px;font-size:16px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff">How It Works</a>
+      </div>
+    </div>
+      <div class="hero-proof">
+        <div class="hero-proof-avatars">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80" alt="" loading="lazy">
+          <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="" loading="lazy">
+          <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80" alt="" loading="lazy">
+          <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=80&q=80" alt="" loading="lazy">
+          <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80" alt="" loading="lazy">
+        </div>
+        <div class="hero-proof-text">Join <strong>UK removal companies</strong> already growing with MovingLeadsDaily</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div class="container">
+      <div class="section-label flex-center">The Real Cost of Waiting</div>
+      <h2 class="section-title">Every Hour You Wait, <span class="gradient-text">A Competitor  $pre = <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MovingLeadsDaily — Get Moving Leads at 9am Every Morning</title>
+  <meta name="description" content="Join UK removal companies getting exclusive moving leads delivered to their inbox every morning at 9am. Be first to contact homeowners when their property goes SSTC.">
+  <meta property="og:title" content="MovingLeadsDaily — Get Moving Leads at 9am Every Morning">
+  <meta property="og:description" content="Join UK removal companies getting exclusive moving leads delivered to their inbox every morning at 9am.">
+  <meta property="og:url" content="https://9amleads.com/movingleadsdaily/">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://9amleads.com/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MovingLeadsDaily — Get Moving Leads at 9am Every Morning">
+  <meta name="twitter:description" content="Join UK removal companies getting exclusive moving leads delivered to their inbox every morning at 9am.">
+  <link rel="canonical" href="https://9amleads.com/movingleadsdaily/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --orange:#ff6b35;--orange-hover:#e85d26;--orange-subtle:rgba(255,107,53,0.10);--orange-glow:rgba(255,107,53,0.30);
+      --bg:#000000;--bg-alt:#0a0a0a;--bg-card:#0d0d0d;--bg-card-hover:#141414;
+      --border:#1c1c1c;--border-light:#2a2a2a;
+      --text:#ffffff;--text-secondary:#bbbbbb;--muted:#777777;
+      --ff-head:'Outfit',sans-serif;--ff-body:'Inter',sans-serif;
+      --radius-sm:6px;--radius-md:10px;--radius-lg:16px;--radius-xl:24px;
+      --shadow-card:0 2px 20px rgba(0,0,0,0.6);
+      --transition:350ms cubic-bezier(0.4,0,0.2,1);
+      --nav-h:72px;--max-w:1140px;
+    }
+    html{scroll-behavior:smooth;font-size:16px}
+    body{font-family:var(--ff-body);font-size:1rem;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6}
+    .container{max-width:var(--max-w);margin:0 auto;padding:0 24px}
+    .section{padding:100px 0}
+    .section-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.8px;color:var(--orange);margin-bottom:16px}
+    .section-label::before{content:'';width:24px;height:2px;background:var(--orange);border-radius:2px}
+    .section-title{font-size:38px;font-weight:800;text-align:center;margin-bottom:14px;letter-spacing:-0.5px;line-height:1.15;font-family:var(--ff-head)}
+    .section-sub{text-align:center;color:var(--text-secondary);font-size:16px;max-width:560px;margin:0 auto 48px;line-height:1.7}
+    .gradient-text{background:linear-gradient(135deg,var(--orange),#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;height:auto;display:block}
+    .flex-center{display:flex;align-items:center;justify-content:center}
+
+    /* NAV */
+    nav{display:flex;justify-content:space-between;align-items:center;padding:0 24px;height:var(--nav-h);max-width:var(--max-w);margin:0 auto;position:sticky;top:0;z-index:200;background:rgba(0,0,0,0.7);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,0.06)}
+    .logo{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800;color:var(--text);font-family:var(--ff-head);letter-spacing:-0.5px}
+    .logo .mark{width:34px;height:34px;background:linear-gradient(135deg,var(--orange),var(--orange-hover));border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:800}
+    .logo em{font-style:normal;color:var(--orange)}
+    .nav-links{display:flex;align-items:center;gap:2px}
+    .nav-links a{padding:8px 14px;color:var(--text-secondary);font-weight:500;font-size:14px;transition:var(--transition);border-radius:var(--radius-sm)}
+    .nav-links a:hover{color:var(--text);background:rgba(255,255,255,0.04)}
+    .nav-cta{background:linear-gradient(135deg,var(--orange),var(--orange-hover));color:#fff!important;padding:9px 20px!important;border-radius:var(--radius-sm)!important;font-weight:600!important;font-size:13px!important;display:flex;align-items:center;gap:6px;box-shadow:0 4px 16px var(--orange-glow)}
+    .nav-cta:hover{background:var(--orange-hover)!important;transform:translateY(-1px);color:#fff!important}
+    .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px}
+    .hamburger span{width:22px;height:2px;background:var(--text);border-radius:2px;transition:var(--transition)}
+
+    /* BUTTONS */
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--radius-sm);font-weight:600;font-size:15px;cursor:pointer;border:none;transition:var(--transition);font-family:var(--ff-body)}
+    .btn-primary{background:linear-gradient(135deg,var(--orange),var(--orange-hover));color:#fff;box-shadow:0 4px 20px var(--orange-glow)}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px var(--orange-glow)}
+    .btn-outline{background:transparent;color:var(--text);border:1.5px solid var(--border)}
+    .btn-outline:hover{border-color:var(--orange);color:var(--orange)}
+    .btn-white{background:#fff;color:#000}
+    .btn-white:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(255,255,255,0.15)}
+    .btn-lg{padding:15px 34px;font-size:16px}
+
+    /* HERO */
+    .hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;background:var(--bg)}
+    .hero-bg{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=1600&q=85') center/cover no-repeat;filter:brightness(0.35) saturate(0.8);transform:scale(1.05)}
+    .hero-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,transparent 0%,var(--bg) 95%),linear-gradient(to top,var(--bg) 0%,transparent 40%,transparent 60%,var(--bg) 100%)}
+    .hero .container{position:relative;z-index:2;text-align:center;padding:120px 24px 80px}
+    .hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--orange-subtle);border:1px solid rgba(255,107,53,0.2);border-radius:999px;padding:7px 18px;font-size:13px;font-weight:600;color:var(--orange);margin-bottom:28px}
+    .hero h1{font-size:54px;line-height:1.08;font-weight:900;letter-spacing:-1.5px;margin-bottom:18px;max-width:820px;margin-left:auto;margin-right:auto;font-family:var(--ff-head)}
+    .hero p{font-size:18px;color:var(--text-secondary);max-width:620px;margin:0 auto 34px;line-height:1.7}
+    .hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .hero-proof{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:40px;flex-wrap:wrap}
+    .hero-proof-avatars{display:flex}
+    .hero-proof-avatars img{width:40px;height:40px;border-radius:50%;border:2px solid var(--bg);margin-right:-10px}
+    .hero-proof-avatars img:last-child{margin-right:0}
+    .hero-proof-text{font-size:14px;color:var(--muted)}
+    .hero-proof-text strong{color:var(--text);font-weight:600}
+
+    /* HOW IT WORKS */
+    .steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+    .step-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px 24px;text-align:center;transition:var(--transition);position:relative}
+    .step-card:hover{transform:translateY(-5px);border-color:var(--orange);background:var(--bg-card-hover)}
+    .step-num{position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--orange-hover));color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px var(--orange-glow)}
+    .step-icon{width:54px;height:54px;border-radius:var(--radius-md);background:var(--orange-subtle);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--orange);margin:8px auto 16px}
+    .step-card h3{font-size:17px;margin-bottom:8px;font-family:var(--ff-head)}
+    .step-card p{font-size:14px;color:var(--text-secondary);line-height:1.7}
+
+    /* FEATURES */
+    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    .feature-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;transition:var(--transition)}
+    .feature-card:hover{transform:translateY(-4px);border-color:var(--orange);background:var(--bg-card-hover)}
+    .feature-icon{width:46px;height:46px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:14px}
+    .feature-card h4{font-size:16px;margin-bottom:6px;font-family:var(--ff-head)}
+    .feature-card p{font-size:13px;color:var(--text-secondary);line-height:1.7}
+
+    /* PRICING */
+    .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:960px;margin:48px auto 0}
+    .pricing-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 28px;text-align:center;transition:var(--transition);position:relative;display:flex;flex-direction:column}
+    .pricing-card:hover{transform:translateY(-4px);border-color:var(--orange);background:var(--bg-card-hover)}
+    .pricing-card.featured{border-color:var(--orange);box-shadow:0 0 50px rgba(255,107,53,0.08);background:var(--bg-card-hover)}
+    .pricing-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--orange),var(--orange-hover));color:#fff;padding:5px 22px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+    .pricing-card h3{font-size:20px;margin-bottom:4px;font-family:var(--ff-head)}
+    .pricing-card .price{font-size:42px;font-weight:900;margin:12px 0 4px;font-family:var(--ff-head);letter-spacing:-1px}
+    .pricing-card .price span{font-size:15px;font-weight:400;color:var(--muted)}
+    .pricing-card .price-sub{font-size:13px;color:var(--muted);margin-bottom:8px}
+    .pricing-card ul{text-align:left;margin:20px 0;list-style:none;flex:1}
+    .pricing-card li{padding:8px 0;font-size:14px;color:var(--text-secondary);display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+    .pricing-card li:last-child{border-bottom:none}
+    .pricing-card li i{color:var(--orange);font-size:11px;width:16px;text-align:center}
+    .pricing-card .btn{margin-top:auto}
+
+    /* TESTIMONIALS */
+    .testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    .t-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;transition:var(--transition)}
+    .t-card:hover{border-color:var(--orange);background:var(--bg-card-hover)}
+    .t-stars{color:#f59e0b;font-size:13px;margin-bottom:12px;letter-spacing:1px}
+    .t-card blockquote{color:var(--text-secondary);font-size:14px;line-height:1.7;margin-bottom:18px;font-style:italic}
+    .t-card blockquote::before{content:'"';color:var(--orange);font-size:20px;font-weight:700;margin-right:2px}
+    .t-card blockquote::after{content:'"';color:var(--orange);font-size:20px;font-weight:700;margin-left:2px}
+    .t-author{display:flex;align-items:center;gap:12px}
+    .t-author img{width:42px;height:42px;border-radius:50%;object-fit:cover}
+    .t-author .name{font-weight:600;font-size:14px}
+    .t-author .role{font-size:12px;color:var(--muted)}
+
+    /* FAQ */
+    .faq-wrap{max-width:700px;margin:48px auto 0}
+    .faq-item{border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:8px;overflow:hidden;background:var(--bg-card);transition:var(--transition)}
+    .faq-item:hover{border-color:var(--orange)}
+    .faq-q{width:100%;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;background:none;border:none;font-size:15px;font-weight:600;color:var(--text);cursor:pointer;text-align:left;font-family:var(--ff-body)}
+    .faq-q i{font-size:12px;color:var(--muted);transition:var(--transition)}
+    .faq-item.open .faq-q i{transform:rotate(180deg);color:var(--orange)}
+    .faq-a{max-height:0;overflow:hidden;transition:max-height 0.35s ease}
+    .faq-item.open .faq-a{max-height:400px}
+    .faq-a p{padding:0 22px 20px;font-size:14px;color:var(--text-secondary);line-height:1.7}
+
+    /* SIGNUP FORM */
+    #signup{background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .signup-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;max-width:960px;margin:0 auto}
+    .signup-left h2{font-size:32px;font-weight:800;font-family:var(--ff-head);letter-spacing:-0.5px;line-height:1.15;margin-bottom:12px;text-align:left}
+    .signup-left p{color:var(--text-secondary);font-size:15px;line-height:1.7;margin-bottom:20px}
+    .signup-left .checklist{list-style:none}
+    .signup-left .checklist li{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px;color:var(--text-secondary)}
+    .signup-left .checklist li i{color:var(--orange);font-size:12px}
+    .signup-form{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px}
+    .signup-form .form-row{margin-bottom:16px}
+    .signup-form label{display:block;font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:5px}
+    .signup-form input{width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;font-family:var(--ff-body);outline:none;transition:var(--transition)}
+    .signup-form input:focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-subtle)}
+    .signup-form .form-row-flex{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .login-link{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
+    .login-link a{color:var(--orange);font-weight:600}
+    .login-link a:hover{text-decoration:underline}
+
+    /* CTA BANNER */
+    .cta-banner{text-align:center;padding:80px 24px;position:relative;overflow:hidden}
+    .cta-banner::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,107,53,0.06) 0%,transparent 70%);pointer-events:none}
+    .cta-banner h2{font-size:38px;font-weight:800;margin-bottom:14px;letter-spacing:-0.5px;font-family:var(--ff-head)}
+    .cta-banner p{color:var(--text-secondary);max-width:520px;margin:0 auto 28px;font-size:16px}
+
+    /* FOOTER */
+    footer{background:#050505;border-top:1px solid var(--border);padding:64px 0 0}
+    .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;max-width:var(--max-w);margin:0 auto;padding:0 24px}
+    .footer-col h4{color:var(--text);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+    .footer-col a,.footer-col p{display:block;color:var(--muted);font-size:14px;padding:4px 0;transition:var(--transition)}
+    .footer-col a:hover{color:var(--orange)}
+    .footer-col .logo{margin-bottom:12px}
+    .footer-col p.desc{color:var(--muted);font-size:14px;line-height:1.7;margin-top:8px}
+    .footer-bottom{text-align:center;padding:24px;margin-top:48px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);max-width:var(--max-w);margin-left:auto;margin-right:auto}
+    .footer-bottom a{color:var(--orange);font-weight:500}
+
+    /* ANIMATIONS */
+    [data-reveal]{opacity:0;transform:translateY(30px);transition:opacity 0.7s ease,transform 0.7s ease}
+    [data-reveal].visible{opacity:1;transform:translateY(0)}
+    [data-reveal=left]{transform:translateX(-30px)}
+    [data-reveal=left].visible{transform:translateX(0)}
+    [data-reveal=right]{transform:translateX(30px)}
+    [data-reveal=right].visible{transform:translateX(0)}
+    [data-reveal=scale]{transform:scale(0.92)}
+    [data-reveal=scale].visible{transform:scale(1)}
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar{width:7px}
+    ::-webkit-scrollbar-track{background:#000}
+    ::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:4px}
+    ::-webkit-scrollbar-thumb:hover{background:#444}
+
+    @media(max-width:1024px){
+      .hero h1{font-size:42px}
+      .steps-grid{grid-template-columns:repeat(2,1fr)}
+      .features-grid{grid-template-columns:repeat(2,1fr)}
+      .pricing-grid{grid-template-columns:1fr;max-width:400px}
+      .testimonials-grid{grid-template-columns:1fr}
+      .signup-grid{grid-template-columns:1fr}
+      .section-title{font-size:30px}
+    }
+    @media(max-width:768px){
+      .section{padding:60px 0}
+      .hero h1{font-size:32px;letter-spacing:-0.5px}
+      .hero p{font-size:16px}
+      .hamburger{display:flex}
+      .nav-links{display:none;position:absolute;top:var(--nav-h);left:0;right:0;background:rgba(0,0,0,0.96);flex-direction:column;padding:16px 24px;border-bottom:1px solid var(--border)}
+      .nav-links.open{display:flex}
+      .nav-links a{padding:12px 16px;margin:2px 0}
+      .steps-grid,.features-grid{grid-template-columns:1fr}
+      .footer-grid{grid-template-columns:1fr 1fr}
+      .signup-form .form-row-flex{grid-template-columns:1fr}
+      .section-title{font-size:26px}
+    }
+    @media(max-width:480px){
+      .hero h1{font-size:26px}
+      .hero-actions .btn{width:100%;justify-content:center}
+      .footer-grid{grid-template-columns:1fr}
+      .pricing-card{padding:28px 20px}
+    }
+
+    /* Professional hover effects */
+    .product-card,.pricing-card,.step,.t-card{transition:all .4s cubic-bezier(.4,0,.2,1)}
+    .product-card:hover,.pricing-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(255,107,53,.12)}
+    .t-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+    .pricing-card.featured{border-color:#ff6b35!important;box-shadow:0 0 40px rgba(255,107,53,.08)}
+    .pricing-card .btn{transition:all .3s}
+    .pricing-card:hover .btn{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,107,53,.25)}
+    .testimonials-grid,.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    @media(max-width:768px){.testimonials-grid,.features-grid{grid-template-columns:1fr}}
+    @media(max-width:1024px)and (min-width:769px){.testimonials-grid,.features-grid{grid-template-columns:repeat(2,1fr)}}
+    .section{position:relative}
+    .section::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:80%;max-width:600px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent)}
+  </style>
+</head>
+<body>
+  <div style="background:#0a0a0a;border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;font-size:11px;text-align:center;font-family:Arial,sans-serif;">
+    <span style="color:#888">Part of </span>
+    <a href="/" style="color:#0ea5e9;font-weight:600">9amLeads</a>
+    <span style="color:#555;margin:0 6px">|</span>
+    <a href="/movingleadsdaily/" style="color:#888;text-decoration:none">Moving</a>
+    <span style="color:#444;margin:0 4px">·</span>
+    <a href="/probateleads/" style="color:#888;text-decoration:none">Probate</a>
+    <span style="color:#444;margin:0 4px">·</span>
+    <a href="/newbusinessalert/" style="color:#888;text-decoration:none">New Business</a>
+    <span style="color:#444;margin:0 4px">·</span>
+    <a href="/planningleads/" style="color:#888;text-decoration:none">Planning</a>
+    <span style="color:#444;margin:0 4px">·</span>
+    <a href="/tenders/" style="color:#888;text-decoration:none">Tenders</a>
+  </div>
+  <nav>
+    <a href="/" class="logo"><svg width="20" height="20" viewBox="0 0 100 100" fill="none" style="flex-shrink:0"><circle cx="50" cy="50" r="40" stroke="#ff6b35" stroke-width="5"/><circle cx="50" cy="50" r="3" fill="#ff6b35"/><line x1="50" y1="50" x2="50" y2="17" stroke="#ff6b35" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="23" y2="50" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="42" cy="8" r="5" fill="#ff6b35" opacity="0.8"/><circle cx="58" cy="8" r="5" fill="#ff6b35" opacity="0.8"/></svg> Moving<em>LeadsDaily</em></a>
+    <div class="nav-links" id="navLinks">
+      <a href="/" style="display:inline-flex;align-items:center;gap:4px;padding:7px 10px;color:var(--clr-muted,#888);font-size:12px;font-weight:600;text-decoration:none;transition:.2s;border-radius:6px;border:1px solid rgba(255,255,255,0.08)"><i class="fas fa-arrow-left" style="font-size:10px"></i> 9amLeads</a>
+      <a href="#how">How It Works</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="#signup" class="nav-cta"><i class="fas fa-rocket"></i> Start Free Trial</a>
+    </div>
+<div style="text-align:center;padding:12px 24px;font-size:11px;color:#555;border-top:1px solid #1a1a1a">9am Leads Ltd &middot; Company No. 17168176 &middot; hello@9amleads.com</div>
+    <button class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')" aria-label="Menu"><span></span><span></span><span></span></button>
+  </nav>
+
+  <section class="hero" style="min-height:90vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;padding:120px 24px 80px;background:linear-gradient(90deg,rgba(0,0,0,0.92) 0%,rgba(0,0,0,0.4) 60%,rgba(0,0,0,0.1) 100%),url(https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1600&q=80);background-size:cover;background-position:center;background-attachment:fixed;overflow:hidden">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(255,107,53,.1) 0%,transparent 60%),radial-gradient(ellipse at 70% 30%,rgba(255,107,53,.05) 0%,transparent 50%);pointer-events:none"></div>
+    <div style="position:relative;z-index:2;max-width:900px;margin:0 auto;padding:0 24px">
+      <div style="display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:32px">
+        <span style="display:inline-block;background:rgba(255,107,53,.15);border:1px solid rgba(255,107,53,.3);color:#ff6b35;font-size:12px;font-weight:600;padding:6px 20px;border-radius:100px;letter-spacing:.5px;text-transform:uppercase">7 Days Free Trial</span>
+        <span style="display:inline-block;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e;font-size:12px;font-weight:600;padding:6px 20px;border-radius:100px;letter-spacing:.5px;text-transform:uppercase">No Card Required</span>
+      </div>
+      <h1 style="font-size:clamp(32px,4vw,56px);font-weight:900;line-height:1.08;letter-spacing:-2px;margin-bottom:20px;font-family:var(--ff-head);color:#fff">Your Next Booking Is Sitting in an <span class="gradient-text">SSTC Property Right Now</span></h1>
+      <p style="font-size:clamp(15px,1.2vw,17px);color:#ccc;max-width:650px;margin:0 auto 32px;line-height:1.8">Every property marked Sold Subject to Contract is a homeowner who needs a removal company. We find them before anyone else and deliver them to your inbox at 9am. While other removal companies are still refreshing Rightmove, you are already quoting the move.</p>
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+        <a href="#signup" class="btn btn-primary btn-lg" style="position:relative;overflow:hidden;padding:16px 40px;font-size:16px;border-radius:8px"><span style="position:relative;z-index:2">Start Your Free Trial</span></a>
+        <a href="#how" class="btn btn-ghost btn-lg" style="padding:16px 40px;font-size:16px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff">How It Works</a>
+      </div>
+    </div>
+      <div class="hero-proof">
+        <div class="hero-proof-avatars">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80" alt="" loading="lazy">
+          <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="" loading="lazy">
+          <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80" alt="" loading="lazy">
+          <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=80&q=80" alt="" loading="lazy">
+          <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80" alt="" loading="lazy">
+        </div>
+        <div class="hero-proof-text">Join <strong>UK removal companies</strong> already growing with MovingLeadsDaily</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div class="container">
+      <div class="section-label flex-center">The Real Cost of Waiting</div>
+      <h2 class="section-title">Every Hour You Wait, <span class="gradient-text">A Competitor Contacts First</span></h2>
+      <p class="section-sub">When a property goes SSTC, the homeowner needs a removal company immediately. The first company to contact wins the booking. Here is what happens when you are not first:</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:0 auto">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;text-align:center;border-top:3px solid #ef4444">
+          <div style="font-size:36px;margin-bottom:10px">⏰</div>
+          <h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-head)">You Lose the First-Mover Advantage</h4>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">The removal company that contacts within 30 minutes converts at 3x the rate. After 2 hours, the homeowner has usually booked someone else. Speed is everything in this industry.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;text-align:center;border-top:3px solid #ef4444">
+          <div style="font-size:36px;margin-bottom:10px">💰</div>
+          <h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-head)">You Pay More for the Same Leads</h4>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">Live lead platforms charge per lead and sell the same enquiry to multiple companies. You end up in a price war for every booking. MovingleadsDaily costs less than one lead on Bark per month.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;text-align:center;border-top:3px solid #ef4444">
+          <div style="font-size:36px;margin-bottom:10px">📉</div>
+          <h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-head)">You Waste Time Prospecting</h4>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">Most removal companies spend 6-10 hours a week searching for leads. That is time you could be on the phone quoting and booking. MovingleadsDaily eliminates prospecting entirely.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="container">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:800px;margin:0 auto;text-align:center">
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
+<div style="font-size:32px;margin-bottom:6px">📊</div>
+<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--primary)">500+</div>
+<div style="font-size:12px;color:var(--muted);margin-top:4px">UK Businesses Trust Us</div>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
+<div style="font-size:32px;margin-bottom:6px">⏰</div>
+<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--primary)">9am</div>
+<div style="font-size:12px;color:var(--muted);margin-top:4px">Daily Delivery</div>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
+<div style="font-size:32px;margin-bottom:6px">🔒</div>
+<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--primary)">100%</div>
+<div style="font-size:12px;color:var(--muted);margin-top:4px">Exclusive Leads</div>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
+<div style="font-size:32px;margin-bottom:6px">💰</div>
+<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--primary)">10x</div>
+<div style="font-size:12px;color:var(--muted);margin-top:4px">Average ROI</div>
+</div>
+</div>
+</div>
+</section>
+
+  <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div class="container">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:800px;margin:0 auto;text-align:center">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
+          <div style="font-size:32px;margin-bottom:6px">🚛</div>
+          <div style="font-size:28px;font-weight:900;font-family:var(--ff-head);color:var(--orange)">500+</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Removal Companies</div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
+          <div style="font-size:32px;margin-bottom:6px">🏠</div>
+          <div style="font-size:28px;font-weight:900;font-family:var(--ff-head);color:var(--orange)">10k+</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Properties Tracked</div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
+          <div style="font-size:32px;margin-bottom:6px">🔒</div>
+          <div style="font-size:28px;font-weight:900;font-family:var(--ff-head);color:var(--orange)">100%</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Exclusive Leads</div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
+          <div style="font-size:32px;margin-bottom:6px">⏰</div>
+          <div style="font-size:28px;font-weight:900;font-family:var(--ff-head);color:var(--orange)">9am</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Daily Delivery</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="how" style="position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+    <div class="container" style="position:relative;z-index:2">
+      <div class="section-label flex-center">How It Works</div>
+      <h2 class="section-title">Four Simple Steps to <span class="gradient-text">More Customers</span></h2>
+      <p class="section-sub">From setup to your first lead in under 10 minutes. No technical skills required.</p>
+      <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:32px">
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:100px;font-size:13px;font-weight:600;background:rgba(255,107,53,.1);color:#ff6b35;border:1px solid rgba(255,107,53,.2)"><i class="fas fa-home"></i> Home Moves</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:100px;font-size:13px;font-weight:600;background:rgba(14,165,233,.1);color:#0ea5e9;border:1px solid rgba(14,165,233,.2)"><i class="fas fa-building"></i> Commercial Relocations</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:100px;font-size:13px;font-weight:600;background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.2)"><i class="fas fa-check-double"></i> Both</span>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card" data-reveal><span class="step-num">1</span><div class="step-icon"><i class="fas fa-map-marker-alt"></i></div><h3>Choose Your Territory</h3><p>Tell us which UK postcodes you cover. We'll monitor every property that goes SSTC in your chosen areas.</p></div>
+        <div class="step-card" data-reveal><span class="step-num">2</span><div class="step-icon"><i class="fas fa-envelope-open-text"></i></div><h3>Check Your Inbox at 9am</h3><p>Every morning at 9am your exclusive lead sheet arrives. Addresses, move dates, and contact details — ready to go.</p></div>
+        <div class="step-card" data-reveal><span class="step-num">3</span><div class="step-icon"><i class="fas fa-phone-alt"></i></div><h3>Contact Homeowners First</h3><p>You're the first mover to contact — often within hours of the SSTC marker appearing. Speed wins the booking.</p></div>
+        <div class="step-card" data-reveal><span class="step-num">4</span><div class="step-icon"><i class="fas fa-chart-line"></i></div><h3>Track &amp; Grow</h3><p>Monitor your conversion rate, lead volume by area, and monthly ROI through your simple dashboard.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="features" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+    <div class="container" style="position:relative;z-index:2">
+      <div class="section-label flex-center">Everything You Need</div>
+      <h2 class="section-title">Built for Removal Companies, <span class="gradient-text">By Removal People</span></h2>
+      <p class="section-sub">Every feature designed to get you more bookings with less effort.</p>
+      <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:28px">
+        <span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:var(--orange-subtle);color:var(--orange);border:1px solid rgba(255,107,53,.15)">Removal companies</span>
+        <span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:var(--orange-subtle);color:var(--orange);border:1px solid rgba(255,107,53,.15)">Man &amp; van operators</span>
+        <span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:var(--orange-subtle);color:var(--orange);border:1px solid rgba(255,107,53,.15)">Couriers</span>
+        <span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(14,165,233,.1);color:#0ea5e9;border:1px solid rgba(14,165,233,.15)">Storage companies</span>
+        <span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(14,165,233,.1);color:#0ea5e9;border:1px solid rgba(14,165,233,.15)">Shipping companies</span>
+        <span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(14,165,233,.1);color:#0ea5e9;border:1px solid rgba(14,165,233,.15)">Furniture removals</span>
+        <span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(168,85,247,.1);color:#a855f7;border:1px solid rgba(168,85,247,.15)">Packing services</span>
+        <span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(168,85,247,.1);color:#a855f7;border:1px solid rgba(168,85,247,.15)">House clearance</span>
+        <span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(168,85,247,.1);color:#a855f7;border:1px solid rgba(168,85,247,.15)">Office relocation</span>
+        <span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.15)">International removals</span>
+        <span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.15)">Transport services</span>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card" data-reveal><div class="feature-icon" style="background:var(--orange-subtle);color:var(--orange)"><i class="fas fa-clock"></i></div><h4>9am Delivery</h4><p>Leads hit your inbox at 9am sharp every single morning. Same time, same place — build it into your daily routine.</p></div>
+        <div class="feature-card" data-reveal><div class="feature-icon" style="background:rgba(14,165,233,0.12);color:#0ea5e9"><i class="fas fa-shield-alt"></i></div><h4>Exclusive Territory</h4><p>Your postcodes are yours. No other removal company on our platform gets leads in your chosen territory.</p></div>
+        <div class="feature-card" data-reveal><div class="feature-icon" style="background:rgba(16,185,129,0.12);color:#10b981"><i class="fas fa-sliders-h"></i></div><h4>Property Filters</h4><p>Filter by property type, estimated move date, house value, and more. Only receive leads that match your services.</p></div>
+        <div class="feature-card" data-reveal><div class="feature-icon" style="background:rgba(168,85,247,0.12);color:#a855f7"><i class="fas fa-sms"></i></div><h4>SMS Alerts</h4><p>Get instant SMS notifications for hot leads. Be the first to contact — often within minutes of the lead being generated.</p></div>
+        <div class="feature-card" data-reveal><div class="feature-icon" style="background:rgba(234,179,8,0.12);color:#eab308"><i class="fas fa-chart-bar"></i></div><h4>Performance Dashboard</h4><p>See which areas perform best, track your conversion rates, and monitor your monthly lead volume at a glance.</p></div>
+        <div class="feature-card" data-reveal><div class="feature-icon" style="background:rgba(59,130,246,0.12);color:#3b82f6"><i class="fas fa-file-export"></i></div><h4>CSV Export</h4><p>Export your leads to CSV with one click. Import into your CRM, spreadsheets, or Google Sheets for deeper analysis.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div class="container">
+      <div class="section-label flex-center">What You Get Every Morning</div>
+      <h2 class="section-title">A Complete Lead Sheet at 9am. <span class="gradient-text">Nothing Less.</span></h2>
+      <p class="section-sub">Every lead sheet contains everything you need to start quoting immediately. No logging into portals. No searching. Just open your email and start selling.</p>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:800px;margin:0 auto">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 20px;display:flex;align-items:flex-start;gap:14px">
+          <div style="font-size:28px;flex-shrink:0">📍</div>
+          <div><h4 style="font-size:14px;font-weight:700;margin-bottom:4px;font-family:var(--ff-head)">Full Property Address</h4><p style="font-size:12px;color:var(--text-secondary);line-height:1.6">Exact property location so you know the area and can estimate travel time and costs immediately.</p></div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 20px;display:flex;align-items:flex-start;gap:14px">
+          <div style="font-size:28px;flex-shrink:0">🏠</div>
+          <div><h4 style="font-size:14px;font-weight:700;margin-bottom:4px;font-family:var(--ff-head)">Property Type &amp; Bedrooms</h4><p style="font-size:12px;color:var(--text-secondary);line-height:1.6">Know whether it is a 1-bed flat or a 5-bed house before you contact. Price your quote accurately from the start.</p></div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 20px;display:flex;align-items:flex-start;gap:14px">
+          <div style="font-size:28px;flex-shrink:0">💰</div>
+          <div><h4 style="font-size:14px;font-weight:700;margin-bottom:4px;font-family:var(--ff-head)">Estimated Property Value</h4><p style="font-size:12px;color:var(--text-secondary);line-height:1.6">Price banding helps you qualify leads before you contact. Focus your energy on high-value moves that maximise your revenue.</p></div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 20px;display:flex;align-items:flex-start;gap:14px">
+          <div style="font-size:28px;flex-shrink:0">📋</div>
+          <div><h4 style="font-size:14px;font-weight:700;margin-bottom:4px;font-family:var(--ff-head)">Agent &amp; Listing Details</h4><p style="font-size:12px;color:var(--text-secondary);line-height:1.6">Know which estate agent listed the property and the listing status. Use this to build relationships with local agents.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="trust-bar" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:40px 0;text-align:center">
+    <div class="container">
+      <p style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:24px;font-weight:600">Trusted by removal companies across the UK</p>
+      <div style="display:flex;justify-content:center;align-items:center;gap:40px;flex-wrap:wrap;opacity:.5">
+        <span style="font-family:var(--ff-head);font-size:20px;font-weight:700;color:#555;letter-spacing:-.5px">London Premier Removals</span>
+        <span style="font-family:var(--ff-head);font-size:20px;font-weight:700;color:#555;letter-spacing:-.5px">Davies Removals</span>
+        <span style="font-family:var(--ff-head);font-size:20px;font-weight:700;color:#555;letter-spacing:-.5px">Swift Moves</span>
+        <span style="font-family:var(--ff-head);font-size:20px;font-weight:700;color:#555;letter-spacing:-.5px">Wilson &amp; Sons</span>
+        <span style="font-family:var(--ff-head);font-size:20px;font-weight:700;color:#555;letter-spacing:-.5px">County Movers</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="section" id="pricing" style="position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1521791136064-2b8711a1cfb9?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+    <div class="container" style="position:relative;z-index:2">
+      <div class="section-label flex-center">Simple Pricing</div>
+      <h2 class="section-title">Transparent Plans. <span class="gradient-text">No Surprises.</span></h2>
+      <p class="section-sub">All plans include a 7-day free trial. No credit card required. Cancel anytime.</p>
+      <div class="pricing-grid">
+        <div class="pricing-card" data-reveal="scale">
+          <h3>Starter</h3>
+          <div class="price">£99<span>/mo</span></div>
+          <div class="price-sub">5 leads per day</div>
+          <ul>
+            <li><i class="fas fa-check"></i> 1 postcode territory</li>
+            <li><i class="fas fa-check"></i> Delivered to your inbox at 9am</li>
+            <li><i class="fas fa-check"></i> SSTC property alerts</li>
+            <li><i class="fas fa-check"></i> Email support</li>
+            <li><i class="fas fa-check"></i> 7-day free trial</li>
+          </ul>
+          <a href="#signup" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
+        </div>
+        <div class="pricing-card featured" data-reveal="scale">
+          <div class="pricing-badge">Most Popular</div>
+          <h3>Pro</h3>
+          <div class="price">£249<span>/mo</span></div>
+          <div class="price-sub">15 leads per day</div>
+          <ul>
+            <li><i class="fas fa-check"></i> 3 postcode territories</li>
+            <li><i class="fas fa-check"></i> Delivered to your inbox at 9am</li>
+            <li><i class="fas fa-check"></i> SSTC property alerts</li>
+            <li><i class="fas fa-check"></i> Property filters</li>
+            <li><i class="fas fa-check"></i> CSV export</li>
+            <li><i class="fas fa-check"></i> Priority email support</li>
+            <li><i class="fas fa-check"></i> 7-day free trial</li>
+          </ul>
+          <a href="#signup" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
+        </div>
+        <div class="pricing-card" data-reveal="scale">
+          <h3>Enterprise</h3>
+          <div class="price">£499<span>/mo</span></div>
+          <div class="price-sub">40 leads per day</div>
+          <ul>
+            <li><i class="fas fa-check"></i> Unlimited postcode territories</li>
+            <li><i class="fas fa-check"></i> Delivered to your inbox at 9am</li>
+            <li><i class="fas fa-check"></i> SSTC property alerts</li>
+            <li><i class="fas fa-check"></i> Commercial move alerts</li>
+            <li><i class="fas fa-check"></i> Property filters</li>
+            <li><i class="fas fa-check"></i> CSV export</li>
+            <li><i class="fas fa-check"></i> Performance dashboard</li>
+            <li><i class="fas fa-check"></i> Dedicated account manager</li>
+            <li><i class="fas fa-check"></i> 7-day free trial</li>
+          </ul>
+          <a href="#signup" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div class="container">
+      <div class="section-label flex-center">Built For Multiple Industries</div>
+      <h2 class="section-title">One Platform. <span class="gradient-text">Every Industry.</span></h2>
+      <p class="section-sub">9amLeads supports businesses across multiple sectors. If you rely on being first to contact new prospects, we have a lead stream for you.</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:800px;margin:0 auto">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px">🚛</div><div style="font-size:12px;font-weight:600;color:var(--text)">Removals</div></div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px">🔧</div><div style="font-size:12px;font-weight:600;color:var(--text)">Trades</div></div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px">🏠</div><div style="font-size:12px;font-weight:600;color:var(--text)">Estate Agents</div></div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px">⚖️</div><div style="font-size:12px;font-weight:600;color:var(--text)">Solicitors</div></div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px">💰</div><div style="font-size:12px;font-weight:600;color:var(--text)">Mortgage Brokers</div></div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px">🛡️</div><div style="font-size:12px;font-weight:600;color:var(--text)">Insurance</div></div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px">🧹</div><div style="font-size:12px;font-weight:600;color:var(--text)">Cleaning</div></div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px">📦</div><div style="font-size:12px;font-weight:600;color:var(--text)">Storage</div></div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px">🏢</div><div style="font-size:12px;font-weight:600;color:var(--text)">B2B Services</div></div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px">📋</div><div style="font-size:12px;font-weight:600;color:var(--text)">Agencies</div></div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px">🏪</div><div style="font-size:12px;font-weight:600;color:var(--text)">Franchises</div></div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px">📞</div><div style="font-size:12px;font-weight:600;color:var(--text)">Local Services</div></div>
+      </div>
+      <div style="text-align:center;margin-top:24px">
+        <p style="font-size:13px;color:var(--muted);max-width:600px;margin:0 auto">If your business relies on being first to contact new prospects, 9amLeads gives you the daily data and structure to win consistently.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+    <div class="container" style="position:relative;z-index:2">
+      <div class="section-label flex-center">Testimonials</div>
+      <h2 class="section-title">Trusted by UK <span class="gradient-text">Removal Companies</span></h2>
+      <p class="section-sub">Hear from the businesses that use MovingLeadsDaily to grow every day.</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
+        <div class="t-card" data-reveal style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px 18px">
+          <div class="t-stars" style="color:#f59e0b;font-size:12px;margin-bottom:6px">★★★★★</div>
+          <blockquote style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:8px;font-style:italic">"I was spending £2k a month on Bark with maybe one booking. Switched to MovingLeadsDaily and got 3 confirmed moves in my first week."</blockquote>
+          <div style="font-size:12px;color:var(--muted)">— Paul T., Paul's Removals, Leeds</div>
+        </div>
+        <div class="t-card" data-reveal style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px 18px">
+          <div class="t-stars" style="color:#f59e0b;font-size:12px;margin-bottom:6px">★★★★★</div>
+          <blockquote style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:8px;font-style:italic">"The 9am delivery is perfect. My team checks the leads with their morning tea. We contact within 30 minutes and book 1 in 3."</blockquote>
+          <div style="font-size:12px;color:var(--muted)">— Sarah H., Swift &amp; Smooth Moves, Bristol</div>
+        </div>
+        <div class="t-card" data-reveal style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px 18px">
+          <div class="t-stars" style="color:#f59e0b;font-size:12px;margin-bottom:6px">★★★★★</div>
+          <blockquote style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:8px;font-style:italic">"Contacts the night before, leads at 9am, quoting by 10am. This routine has transformed our sales process."</blockquote>
+          <div style="font-size:12px;color:var(--muted)">— Mike R., Capital Relocations, London</div>
+        </div>
+        <div class="t-card" data-reveal style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px 18px">
+          <div class="t-stars" style="color:#f59e0b;font-size:12px;margin-bottom:6px">★★★★★</div>
+          <blockquote style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:8px;font-style:italic">"The exclusivity is what sold me. No competing with 4 other removal companies for the same customer. Just me, first."</blockquote>
+          <div style="font-size:12px;color:var(--muted)">— Dave K., County Movers, Kent</div>
+        </div>
+      </div>
+      <div class="testimonials-grid">
+        <div class="t-card" data-reveal>
+          <div class="t-stars">★★★★★</div>
+          <blockquote>We were spending a fortune on Google Ads with mixed results. MovingLeadsDaily sends us 15-20 qualified leads a week and we know exactly where they come from. Our best marketing investment by far.</blockquote>
+          <div class="t-author">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80" alt="" loading="lazy">
+            <div><div class="name">Mark Davies</div><div class="role">Davies Removals, Manchester</div></div>
+          </div>
+        </div>
+        <div class="t-card" data-reveal>
+          <div class="t-stars">★★★★★</div>
+          <blockquote>The 9am delivery is a game changer. I check my leads with my morning coffee and have three quotes out before 10am. The speed of contacting SSTC homeowners first is everything in this industry.</blockquote>
+          <div class="t-author">
+            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="" loading="lazy">
+            <div><div class="name">James Wilson</div><div class="role">Wilson &amp; Sons Removals, Birmingham</div></div>
+          </div>
+        </div>
+        <div class="t-card" data-reveal>
+          <div class="t-stars">★★★★★</div>
+          <blockquote>I was sceptical about lead generation services, but the free trial convinced me. The territorial exclusivity means I'm not competing with other removal companies for the same leads. Converting at over 60%.</blockquote>
+          <div class="t-author">
+            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80" alt="" loading="lazy">
+            <div><div class="name">Tom Richards</div><div class="role">Swift Moves, London</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div class="container">
+      <div class="section-label flex-center">Why Businesses Choose MovingLeadsDaily</div>
+      <h2 class="section-title">Built for Business Growth. <span class="gradient-text">Not Just Lead Generation.</span></h2>
+      <p class="section-sub">Most lead generation platforms focus on selling the same enquiry to multiple businesses, creating competition, price wars, and lower conversion rates. MovingLeadsDaily is built differently.</p>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:800px;margin:0 auto">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px">
+          <div style="font-size:28px;margin-bottom:8px">🎯</div>
+          <h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-head)">Exclusive Opportunities, Not Shared Enquiries</h4>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">Other platforms sell the same lead to multiple removal companies. MovingLeadsDaily delivers fresh SSTC property data directly to you. You control the outreach, the timing, and the relationship.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px">
+          <div style="font-size:28px;margin-bottom:8px">📈</div>
+          <h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-head)">Build Your Own Pipeline</h4>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">Create a repeatable outreach system using fresh daily data, postcode targeting, and scalable workflows. Build a database of moving prospects that grows with your business.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px">
+          <div style="font-size:28px;margin-bottom:8px">🕐</div>
+          <h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-head)">Better Timing, Better Results</h4>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">Leads arrive at 9am every morning. Your team builds a daily routine around fresh outreach. No distractions, no bidding wars — just consistent action that drives revenue.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px">
+          <div style="font-size:28px;margin-bottom:8px">💰</div>
+          <h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-head)">Predictable Cost, Scalable Growth</h4>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">Fixed monthly pricing means no surprise costs. One removal booking covers your entire subscription. Scale up or down as your business grows.</p>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:28px">
+        <a href="#signup" class="btn btn-primary btn-lg"><i class="fas fa-gift"></i> Start Building Your Pipeline Today</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;opacity:.07;background:linear-gradient(135deg,#0ea5e9,#06b6d4);pointer-events:none"></div>
+    <div class="container" style="position:relative;z-index:2">
+      <div class="section-label flex-center" style="color:#0ea5e9">NEW — Commercial Leads</div>
+      <h2 class="section-title">Now Covering <span style="background:linear-gradient(135deg,#0ea5e9,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Commercial Moves Too</span></h2>
+      <p class="section-sub">Offices relocating. Businesses downsizing. Commercial property changing hands. Our new commercial lead stream opens up an entirely new revenue stream for your removal business.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:800px;margin:0 auto">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px 24px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--orange),#f97316)"></div>
+          <div style="font-size:32px;margin-bottom:12px">🏠</div>
+          <h3 style="font-size:18px;font-weight:700;font-family:var(--ff-head);margin-bottom:8px">Home Moves</h3>
+          <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px">Properties going SSTC in your target postcodes. Homeowners who need a removal company — contacted before anyone else.</p>
+          <ul style="list-style:none;font-size:13px;color:var(--muted);line-height:2">
+            <li><i class="fas fa-check" style="color:var(--orange);width:18px"></i> SSTC property alerts</li>
+            <li><i class="fas fa-check" style="color:var(--orange);width:18px"></i> Filter by property type</li>
+            <li><i class="fas fa-check" style="color:var(--orange);width:18px"></i> Estimated move dates</li>
+            <li><i class="fas fa-check" style="color:var(--orange);width:18px"></i> Contact details included</li>
+          </ul>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px 24px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#0ea5e9,#06b6d4)"></div>
+          <div style="font-size:32px;margin-bottom:12px">🏢</div>
+          <h3 style="font-size:18px;font-weight:700;font-family:var(--ff-head);margin-bottom:8px">Commercial Relocations</h3>
+          <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px">Businesses moving office, companies relocating HQ, commercial properties changing tenants. Higher value, fewer competitors.</p>
+          <ul style="list-style:none;font-size:13px;color:var(--muted);line-height:2">
+            <li><i class="fas fa-check" style="color:#0ea5e9;width:18px"></i> Office &amp; business relocations</li>
+            <li><i class="fas fa-check" style="color:#0ea5e9;width:18px"></i> Commercial property moves</li>
+            <li><i class="fas fa-check" style="color:#0ea5e9;width:18px"></i> Higher average job value</li>
+            <li><i class="fas fa-check" style="color:#0ea5e9;width:18px"></i> Less competition</li>
+          </ul>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:28px">
+        <p style="font-size:14px;color:var(--muted);margin-bottom:16px">Choose home moves, commercial, or both when you sign up. Separate pricing options available for each stream.</p>
+        <a href="#signup" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Start Free Trial — Choose Your Mix</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div class="container">
+      <div class="section-label flex-center">9amLeads vs The Competition</div>
+      <h2 class="section-title">Why MovingLeadsDaily <span class="gradient-text">Wins</span></h2>
+      <p class="section-sub">Most lead platforms sell the same lead to 3-5 businesses. MovingLeadsDaily gives you every lead exclusively — and you are always first to contact.</p>
+
+      <div style="max-width:900px;margin:32px auto;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <thead>
+      <tr style="border-bottom:2px solid var(--border-light)">
+      <th style="padding:14px 16px;text-align:left;color:var(--muted);font-weight:600"></th>
+      <th style="padding:14px 16px;text-align:center;color:var(--orange);font-weight:700;background:var(--orange-subtle);border-radius:8px 8px 0 0"><i class="fas fa-clock" style="margin-right:4px"></i> MovingLeadsDaily</th>
+      <th style="padding:14px 16px;text-align:center;color:var(--text-secondary);font-weight:600">Bark / RatedPeople</th>
+      <th style="padding:14px 16px;text-align:center;color:var(--text-secondary);font-weight:600">Google Ads</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:14px 16px;font-weight:600;color:var(--text)">Lead Exclusivity</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--success)"><i class="fas fa-check-circle"></i> Yours alone</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--muted)"><i class="fas fa-times-circle"></i> Sold to multiple</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--muted)"><i class="fas fa-times-circle"></i> Anyone can click</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:14px 16px;font-weight:600;color:var(--text)">Cost Per Lead</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--success);font-weight:700">&pound;0.42 - &pound;3.30</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--muted)">&pound;15 - &pound;50 each</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--muted)">&pound;5 - &pound;50 per click</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:14px 16px;font-weight:600;color:var(--text)">Monthly Cost (100 leads)</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--success);font-weight:700">&pound;99 - &pound;499 flat</td>
+      <td style="padding:14px 16px;text-align:center;color:#ef4444">&pound;1,500 - &pound;5,000+</td>
+      <td style="padding:14px 16px;text-align:center;color:#ef4444">&pound;500 - &pound;5,000+</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:14px 16px;font-weight:600;color:var(--text)">Compete On Price?</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--success)"><i class="fas fa-check-circle"></i> Never — first wins</td>
+      <td style="padding:14px 16px;text-align:center;color:#ef4444">Yes — customer picks cheapest</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--muted)">Yes — highest bidder</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:14px 16px;font-weight:600;color:var(--text)">Leads Arrive</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--success);font-weight:700">9am sharp daily</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--muted)">When customer posts</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--muted)">Anytime (unqualified)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:14px 16px;font-weight:600;color:var(--text)">You Choose Territory?</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--success);font-weight:700">Postcode targeting</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--muted)">No — national pool</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--muted)">Location targeting</td>
+      </tr>
+      <tr>
+      <td style="padding:14px 16px;font-weight:600;color:var(--text)">Free Trial</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--success);font-weight:700">7 days, no card</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--muted)">Limited or none</td>
+      <td style="padding:14px 16px;text-align:center;color:var(--muted)">None (pay per click)</td>
+      </tr>
+      </tbody>
+      </table>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:40px auto 0">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;text-align:center">
+      <div style="font-size:36px;margin-bottom:10px">🔒</div>
+      <h4 style="font-size:15px;font-weight:700;margin-bottom:8px;font-family:var(--ff-head)">Exclusive to You</h4>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7">On Bark and RatedPeople, 3-5 removal companies pay for the same lead. The homeowner compares quotes and picks the cheapest. You're paying to train your competition. MovingLeadsDaily gives you the lead exclusively.</p>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;text-align:center">
+      <div style="font-size:36px;margin-bottom:10px">📉</div>
+      <h4 style="font-size:15px;font-weight:700;margin-bottom:8px;font-family:var(--ff-head)">Fixed Pricing</h4>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7">Bark charges £15-50 per lead. Google Ads charges per click. One won job on MovingLeadsDaily covers your entire annual subscription. Predictable costs, predictable results.</p>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;text-align:center">
+      <div style="font-size:36px;margin-bottom:10px">⚡</div>
+      <h4 style="font-size:15px;font-weight:700;margin-bottom:8px;font-family:var(--ff-head)">9am Routine Wins</h4>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7">Leads arrive at 9am sharp. Your team contacts within minutes. No checking a dashboard, no bidding wars. Just contact and convert before competitors wake up.</p>
+      </div>
+      </div>
+
+      <div style="text-align:center;margin-top:40px;padding:32px;background:var(--orange-subtle);border:1px solid rgba(255,107,53,0.15);border-radius:var(--radius-lg);max-width:680px;margin-left:auto;margin-right:auto">
+      <h3 style="font-size:20px;font-weight:800;font-family:var(--ff-head);margin-bottom:10px;color:var(--text)">Try It Free — See the Difference</h3>
+      <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px">Other platforms won't give you a free trial — because their leads aren't exclusive. MovingLeadsDaily gives you <strong style="color:var(--text)">7 days of real, exclusive leads</strong> with no credit card. contact homeowners who have never heard from another removal company. That alone doubles your conversion rate.</p>
+      <a href="#signup" class="btn btn-primary btn-lg"><i class="fas fa-gift"></i> Claim Your Free Week</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div class="container">
+      <div class="section-label flex-center">Smarter Than Traditional Advertising</div>
+      <h2 class="section-title">Stop Relying on Expensive Ads. <span class="gradient-text">Start Building Your Pipeline.</span></h2>
+      <p class="section-sub" style="max-width:680px">Many removal businesses struggle with rising Google Ads costs, expensive lead marketplaces, shared enquiries, and unpredictable marketing ROI. MovingLeadsDaily gives you a proactive, scalable, and affordable alternative.</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:900px;margin:0 auto">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;text-align:center">
+          <div style="font-size:32px;margin-bottom:10px">📊</div>
+          <h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-head)">Proactive Lead Generation</h4>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">Instead of waiting for customers to find you through ads, you receive fresh daily SSTC property data delivered straight to your inbox. You control when and how you reach out.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;text-align:center">
+          <div style="font-size:32px;margin-bottom:10px">📈</div>
+          <h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-head)">Scalable Outreach System</h4>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">From a single postcode to nationwide coverage. Increase your lead volume as you grow without worrying about ad auction dynamics or rising CPCs.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;text-align:center">
+          <div style="font-size:32px;margin-bottom:10px">💰</div>
+          <h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-head)">Affordable &amp; Predictable</h4>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">Fixed monthly pricing from £99/mo. No per-click costs, no per-lead fees, no surprise charges. One removal booking covers your entire subscription.</p>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:28px">
+        <a href="#signup" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Grow Smarter With MovingLeadsDaily</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div class="container">
+      <div class="section-label flex-center">Who Uses MovingleadsDaily</div>
+      <h2 class="section-title">Built for Every Type of <span class="gradient-text">Moving Business</span></h2>
+      <p class="section-sub" style="max-width:700px">From solo operators with a single van to national removal companies with a fleet. MovingleadsDaily works for every size of moving business.</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;max-width:900px;margin:0 auto">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 20px;text-align:center">
+          <div style="font-size:32px;margin-bottom:8px">🚐</div>
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:4px;font-family:var(--ff-head)">Man &amp; Van Operators</h4>
+          <p style="font-size:12px;color:var(--text-secondary);line-height:1.6">Perfect for solo operators. Pick up 1-2 extra jobs per week and fill your diary without spending on advertising.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 20px;text-align:center">
+          <div style="font-size:32px;margin-bottom:8px">🚛</div>
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:4px;font-family:var(--ff-head)">Removal Companies</h4>
+          <p style="font-size:12px;color:var(--text-secondary);line-height:1.6">Established removal firms use MovingleadsDaily to fill their weekly schedule and reduce reliance on repeat business.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 20px;text-align:center">
+          <div style="font-size:32px;margin-bottom:8px">🏢</div>
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:4px;font-family:var(--ff-head)">Commercial Movers</h4>
+          <p style="font-size:12px;color:var(--text-secondary);line-height:1.6">Office relocations and business moves that pay 2-3x more than residential moves. Our commercial lead stream opens new revenue.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 20px;text-align:center">
+          <div style="font-size:32px;margin-bottom:8px">📦</div>
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:4px;font-family:var(--ff-head)">Storage Companies</h4>
+          <p style="font-size:12px;color:var(--text-secondary);line-height:1.6">Homeowners moving often need storage. Partner with removal companies or offer storage directly alongside moving services.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<section class="section" style="border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="container">
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Real Results</div>
+<h2 class="section-title">What Our Customers <span class="gradient">Say</span></h2>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:32px auto 0">
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px">
+<div style="color:#f59e0b;font-size:13px;margin-bottom:8px">★★★★★</div>
+<p style="font-size:14px;color:var(--text2);line-height:1.7;font-style:italic;margin-bottom:12px">"I was spending more on Google Ads in a week than I now spend on 9amLeads in a month. The quality is better and the leads are exclusive to me. Best decision I have made for my business."</p>
+<div style="font-size:13px;font-weight:600;color:var(--text)">Mark R.</div>
+<div style="font-size:12px;color:var(--muted)">Verified Customer</div>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px">
+<div style="color:#f59e0b;font-size:13px;margin-bottom:8px">★★★★★</div>
+<p style="font-size:14px;color:var(--text2);line-height:1.7;font-style:italic;margin-bottom:12px">"The 9am delivery changed our business. My team arrives, opens their email, and starts contacting immediately. No more wasted mornings prospecting. Our conversion rate has never been higher."</p>
+<div style="font-size:13px;font-weight:600;color:var(--text)">Lisa T.</div>
+<div style="font-size:12px;color:var(--muted)">Verified Customer</div>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px">
+<div style="color:#f59e0b;font-size:13px;margin-bottom:8px">★★★★★</div>
+<p style="font-size:14px;color:var(--text2);line-height:1.7;font-style:italic;margin-bottom:12px">"I tried Bark and other lead services before. The difference is night and day. Exclusive leads mean I am not competing with three other businesses for every enquiry. My close rate tripled."</p>
+<div style="font-size:13px;font-weight:600;color:var(--text)">Tom W.</div>
+<div style="font-size:12px;color:var(--muted)">Verified Customer</div>
+</div>
+</div>
+</div>
+</section>
+
+  <section class="section" id="faq">
+    <div class="container">
+      <div class="section-label flex-center">FAQ</div>
+      <h2 class="section-title">Frequently Asked <span class="gradient-text">Questions</span></h2>
+      <p class="section-sub">Everything you need to know about MovingLeadsDaily.</p>
+      <div class="faq-wrap">
+        <div class="faq-item open"><button class="faq-q" onclick="toggleFaq(this)">How does MovingLeadsDaily work? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>We track properties that go SSTC (Sold Subject to Contract) across the UK. When a property in your chosen territory goes SSTC, we send you the homeowner's details every morning at 9am. You contact them, quote for the move, and win the business before your competitors even know they're moving.</p></div></div>
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">What makes these leads different from other services? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Unlike PPC or directory listings where you compete with dozens of other removal companies, our leads give you first contact. The homeowner has just gone SSTC and needs a mover — you reach them at the perfect moment, before anyone else has called.</p></div></div>
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">How do I choose my territory? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>During setup you enter the postcode areas you cover. Start with your core area on the Starter plan, or cover multiple regions on Pro and Enterprise plans. You can adjust your territory at any time from your dashboard.</p></div></div>
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I try before I commit? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Absolutely. Every plan comes with a 7-day free trial — no credit card needed. You'll receive real leads in your inbox during the trial so you can see the quality for yourself before paying a penny.</p></div></div>
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">What types of moves do you cover? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>All residential property moves including house removals, flat moves, student moves, and rental property changes. We also cover commercial relocation leads. You can filter by property type and estimated move value.</p></div></div>
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I cancel anytime? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Yes — there are no long-term contracts. You can cancel from your dashboard at any time. Your access continues until the end of your billing period. No cancellation fees, no hassle.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div class="container">
+      <div class="section-label flex-center">Stop Fighting Over Shared Leads</div>
+      <h2 class="section-title">Fresh Data. Better Timing. <span class="gradient-text">More Customers.</span></h2>
+      <p class="section-sub">Stop paying to compete with other removal companies for the same enquiry. MovingLeadsDaily gives you fresh daily opportunities, better timing, and lower acquisition costs.</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:900px;margin:32px auto 0">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;text-align:center;border-top:3px solid var(--success)">
+          <div style="font-size:36px;margin-bottom:10px">🌅</div>
+          <h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-head)">Fresh Daily Opportunities</h4>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">New SSTC properties every day from across the UK. Nothing stale. Nothing recycled. Fresh moving data delivered straight to your inbox.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;text-align:center;border-top:3px solid var(--orange)">
+          <div style="font-size:36px;margin-bottom:10px">⏰</div>
+          <h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-head)">Delivered Before 9am</h4>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">Leads arrive at the same time every morning. Your team builds a daily rhythm around fresh outreach. First to see, first to contact, first to close.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;text-align:center;border-top:3px solid var(--success)">
+          <div style="font-size:36px;margin-bottom:10px">🎯</div>
+          <h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-head)">Postcode Targeting</h4>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">Target exactly the areas you serve. No paying for leads outside your territory. Every lead is a potential booking in your area.</p>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:900px;margin:20px auto 0">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px 20px;text-align:center">
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--success)">✓ Better Timing</h4>
+          <p style="font-size:12px;color:var(--muted)">Be first to contact every homeowner. No competition for the same move.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px 20px;text-align:center">
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--success)">✓ Lower Acquisition Costs</h4>
+          <p style="font-size:12px;color:var(--muted)">Fixed monthly pricing versus paying per lead or per click. Predictable and profitable.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px 20px;text-align:center">
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--success)">✓ Build Your Own Database</h4>
+          <p style="font-size:12px;color:var(--muted)">Every lead you contact becomes part of your pipeline. Your prospect database grows daily.</p>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:28px">
+        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;font-weight:600">Stop fighting over shared leads. Start building your own pipeline.</p>
+        <a href="#signup" class="btn btn-primary btn-lg"><i class="fas fa-gift"></i> Get Fresh Opportunities Delivered Daily</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-banner" style="position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+    <div style="position:relative;z-index:2">
+    <h2>Your Next Booking Starts With a <span class="gradient-text">Single Email at 9am</span></h2>
+    <p>Join 500+ UK removal companies who wake up to fresh, exclusive SSTC moving leads. No dashboards. No bidding. Just a daily list of homeowners who need your services right now.</p>
+    <a href="#signup" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Start Your Free Trial</a>
+    </div>
+  </section>
+
+<section class="section" style="padding:50px 0;background:var(--bg2);border-top:1px solid var(--border)">
+<div class="container">
+<div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;max-width:800px;margin:0 auto">
+<div style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 22px;flex:1;min-width:180px">
+<div style="font-size:28px">🔒</div>
+<div><div style="font-size:13px;font-weight:700">Exclusive to You</div><div style="font-size:11px;color:var(--muted)">No competition</div></div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 22px;flex:1;min-width:180px">
+<div style="font-size:28px">💳</div>
+<div><div style="font-size:13px;font-weight:700">No Card Needed</div><div style="font-size:11px;color:var(--muted)">Free 7-day trial</div></div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 22px;flex:1;min-width:180px">
+<div style="font-size:28px">⏰</div>
+<div><div style="font-size:13px;font-weight:700">9am Delivery</div><div style="font-size:11px;color:var(--muted)">Daily at 9am sharp</div></div>
+</div>
+</div>
+</div>
+</section>
+
+  <section id="signup" style="position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+    <div class="container section" style="position:relative;z-index:2">
+      <div class="signup-grid">
+        <div class="signup-left" data-reveal="left">
+          <div class="section-label">Get Started</div>
+          <h2>Start Your <span class="gradient-text">Free Trial</span> Today</h2>
+          <p>No credit card required. You'll receive your first leads tomorrow at 9am. Join UK removal companies already growing with MovingLeadsDaily.</p>
+          <ul class="checklist">
+            <li><i class="fas fa-check-circle"></i> 7 days free, no commitment</li>
+            <li><i class="fas fa-check-circle"></i> Real leads from day one</li>
+            <li><i class="fas fa-check-circle"></i> Cancel anytime — no fees</li>
+            <li><i class="fas fa-check-circle"></i> Dedicated onboarding support</li>
+          </ul>
+        </div>
+        <div class="signup-form" data-reveal="right">
+          <form onsubmit="event.preventDefault();alert('Trial account created! Check your email for login details.');">
+            <div class="form-row">
+              <label for="cname">Company Name</label>
+              <input type="text" id="cname" placeholder="e.g. Davies Removals" required>
+            </div>
+            <div class="form-row-flex">
+              <div class="form-row">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="you@company.co.uk" required>
+              </div>
+              <div class="form-row">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" placeholder="020 7123 4567" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <label for="postcodes">Target Postcodes</label>
+              <input type="text" id="postcodes" placeholder="e.g. SW1, SW3, SW5, W1 (comma separated)" required>
+            </div>
+            <div class="form-row">
+              <label>Lead Type</label>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.2);color:#ff6b35;font-weight:600"><input type="radio" name="leadType" value="home" checked style="accent-color:#ff6b35;width:16px;height:16px"> 🏠 Home Moves</label>
+                <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);color:#0ea5e9;font-weight:600"><input type="radio" name="leadType" value="commercial" style="accent-color:#0ea5e9;width:16px;height:16px"> 🏢 Commercial</label>
+                <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:#22c55e;font-weight:600"><input type="radio" name="leadType" value="both" style="accent-color:#22c55e;width:16px;height:16px"> ✅ Both</label>
+              </div>
+            </div>
+            <div class="form-row">
+              <label for="password">Create Password</label>
+              <input type="password" id="password" placeholder="Min. 8 characters" minlength="8" required>
+            </div>
+            <div style="margin:12px 0">
+              <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:12px;color:var(--muted);line-height:1.5">
+                <input type="checkbox" id="consent" required style="margin-top:3px;width:16px;height:16px;accent-color:#ff6b35;flex-shrink:0">
+                I agree to receive daily lead emails at 9am and accept the <a href="/9amleads/terms.html" target="_blank" style="color:#ff6b35;text-decoration:underline">Terms of Service</a> and <a href="/9amleads/privacy.html" target="_blank" style="color:#ff6b35;text-decoration:underline">Privacy Policy</a>. I understand I can unsubscribe at any time.
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg" style="width:100%;justify-content:center"><i class="fas fa-gift"></i> Claim Free Week — Start Trial</button>
+            <div style="margin-top:10px;font-size:11px;color:var(--muted2);text-align:center;line-height:1.5"><i class="fas fa-lock" style="color:#ff6b35"></i> Your data is secure. No spam. Unsubscribe anytime.</div>
+          </form>
+          <div class="login-link">Already have an account? <a href="dashboard.html">Log in</a></div>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 80%,rgba(255,107,53,.06) 0%,transparent 60%);pointer-events:none"></div>
+  </section>
+
+  <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border)">
+    <div class="container">
+      <div class="section-label flex-center">Built for Long-Term Growth</div>
+      <h2 class="section-title">More Than Leads. <span class="gradient-text">A Growth System.</span></h2>
+      <p class="section-sub" style="max-width:650px">MovingLeadsDaily is not just a lead source — it is a complete outbound sales infrastructure designed to help removal businesses build predictable, scalable revenue streams.</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:800px;margin:0 auto">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px 20px;text-align:center">
+          <div style="font-size:28px;margin-bottom:8px">🔄</div>
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:6px">Scalable Lead Generation</h4>
+          <p style="font-size:12px;color:var(--muted);line-height:1.6">Start with one postcode, scale nationwide. Your lead volume grows with your fleet capacity.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px 20px;text-align:center">
+          <div style="font-size:28px;margin-bottom:8px">📁</div>
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:6px">CRM-Ready Data</h4>
+          <p style="font-size:12px;color:var(--muted);line-height:1.6">Export leads in CSV or JSON. Import directly into your CRM. Build automated follow-up sequences.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px 20px;text-align:center">
+          <div style="font-size:28px;margin-bottom:8px">📬</div>
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:6px">Multi-Channel Outreach</h4>
+          <p style="font-size:12px;color:var(--muted);line-height:1.6">Supports direct mail campaigns, email outreach, outbound calling, and targeted sales sequences.</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px 20px;text-align:center">
+          <div style="font-size:28px;margin-bottom:8px">📍</div>
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:6px">Postcode Targeting</h4>
+          <p style="font-size:12px;color:var(--muted);line-height:1.6">Precision targeting by postcode area. Only receive leads in the locations your business actually serves.</p>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:28px">
+        <a href="#signup" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Start Building Your Pipeline Today</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-col">
+        <a href="/" class="logo"><svg width="18" height="18" viewBox="0 0 100 100" fill="none" style="flex-shrink:0"><circle cx="50" cy="50" r="40" stroke="#ff6b35" stroke-width="5"/><circle cx="50" cy="50" r="3" fill="#ff6b35"/><line x1="50" y1="50" x2="50" y2="17" stroke="#ff6b35" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="23" y2="50" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="42" cy="8" r="5" fill="#ff6b35" opacity="0.8"/><circle cx="58" cy="8" r="5" fill="#ff6b35" opacity="0.8"/></svg> Moving<em>LeadsDaily</em></a>
+        <p class="desc">The UK's leading moving lead generation service for removal companies. Get exclusive SSTC property leads delivered to your inbox every morning at 9am.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <a href="#how">How It Works</a>
+      <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+        <a href="#signup">Start Free Trial</a>
+        <a href="dashboard.html">Log In</a>
+        <a href="/9amleads/founder/">Meet the Founder</a>
+      </div>
+      <div class="footer-col">
+        <h4>Lead Types</h4>
+        <a href="/movingleadsdaily/">House Removals</a>
+        <a href="/movingleadsdaily/">Flat &amp; Apartment Moves</a>
+        <a href="/movingleadsdaily/">Commercial Relocations</a>
+        <a href="/movingleadsdaily/">Man With A Van</a>
+        <a href="/movingleadsdaily/">Student Moves</a>
+        <a href="/movingleadsdaily/">International Moves</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <p>hello@9amleads.com</p>
+        <p>020 1234 5678</p>
+        <p>Mon–Fri · 9am – 6pm</p>
+        <p style="margin-top:12px">Part of <a href="/" style="color:var(--orange);font-weight:600;display:inline">9amLeads</a></p>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 MovingLeadsDaily. A <a href="/">9amLeads</a> product. All rights reserved.</div>
+  </footer>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "MovingLeadsDaily",
+    "url": "https://9amleads.com/movingleadsdaily/"
+  }
+  </script>
+
+  <script>
+    function toggleFaq(btn) {
+      var item = btn.parentElement;
+      var was = item.classList.contains('open');
+      item.parentElement.querySelectorAll('.faq-item').forEach(function(i) { i.classList.remove('open'); });
+      if (!was) item.classList.add('open');
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('[data-reveal]').forEach(function(el) { observer.observe(el); });
+  </script>
+<img src="https://nineamleads-api.onrender.com/api/track?p=PATH" alt="" style="display:none" id="tracker">
+<script>document.getElementById('tracker').src = 'https://nineamleads-api.onrender.com/api/track?p=' + encodeURIComponent(window.location.pathname) + '&r=' + encodeURIComponent(document.referrer || '');</script>
+</body>
+</html>

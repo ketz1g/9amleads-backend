@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>9amLeads — New UK Companies in Your Inbox at 9am Daily</title>
+  <meta name="description" content="Get newly registered UK companies delivered to your inbox at 9am daily. Target by city, SIC code, and company type. Join 200+ UK accountants, web designers & B2B providers.">
+  <meta name="keywords" content="new business leads, company formation alerts, B2B leads UK, new company data, Companies House leads">
+  <meta property="og:title" content="9amLeads — New Companies in Your Inbox at 9am">
+  <meta property="og:description" content="Newly registered UK companies delivered at 9am daily. Be first to pitch.">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏢</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --clr-primary:#06b6d4;--clr-primary-hover:#0891b2;--clr-primary-subtle:rgba(6,182,212,0.12);--clr-primary-glow:rgba(6,182,212,0.35);
+      --clr-bg:#000000;--clr-bg-alt:#050505;--clr-card:#0a0a0a;--clr-card-hover:#111111;
+      --clr-border:#1a1a1a;--clr-border-light:#2a2a2a;
+      --clr-text:#ffffff;--clr-text-secondary:#cccccc;--clr-muted:#888888;--clr-muted-dark:#555555;
+      --clr-success:#22c55e;--clr-warning:#f59e0b;--clr-error:#ef4444;
+      --clr-glass:rgba(255,255,255,0.04);--clr-glass-border:rgba(255,255,255,0.08);--clr-glass-hover:rgba(255,255,255,0.07);
+      --ff-heading:'Outfit',sans-serif;--ff-body:'Inter',sans-serif;
+      --fs-sm:0.875rem;--fs-base:1rem;--fs-lg:1.125rem;--fs-xl:1.25rem;--fs-2xl:1.5rem;--fs-3xl:2rem;--fs-4xl:2.5rem;--fs-5xl:3.25rem;
+      --fw-regular:400;--fw-medium:500;--fw-semibold:600;--fw-bold:700;--fw-extrabold:800;--fw-black:900;
+      --lh-tight:1.1;--lh-normal:1.5;--lh-relaxed:1.7;
+      --nav-height:72px;--max-width:1140px;
+      --radius-sm:6px;--radius-md:10px;--radius-lg:16px;--radius-xl:24px;--radius-full:9999px;
+      --shadow-sm:0 1px 3px rgba(0,0,0,0.4);--shadow-md:0 4px 14px rgba(0,0,0,0.5);--shadow-lg:0 10px 40px rgba(0,0,0,0.6);
+      --shadow-primary:0 0 30px rgba(6,182,212,0.25);
+      --transition-fast:200ms cubic-bezier(0.4,0,0.2,1);--transition-base:350ms cubic-bezier(0.4,0,0.2,1);--transition-slow:500ms cubic-bezier(0.4,0,0.2,1)
+    }
+    html{scroll-behavior:smooth;font-size:16px}
+    body{font-family:var(--ff-body);font-size:var(--fs-base);font-weight:var(--fw-regular);line-height:var(--lh-normal);color:var(--clr-text);background:var(--clr-bg);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    .container{max-width:var(--max-width);margin:0 auto;padding:0 24px}
+    .section{padding:100px 0}
+    .section-label{display:inline-block;font-size:13px;font-weight:var(--fw-bold);text-transform:uppercase;letter-spacing:1.5px;color:var(--clr-primary);margin-bottom:12px}
+    .section-title{font-size:40px;font-weight:var(--fw-extrabold);text-align:center;margin-bottom:12px;letter-spacing:-0.5px;line-height:var(--lh-tight);font-family:var(--ff-heading)}
+    .section-sub{text-align:center;color:var(--clr-text-secondary);font-size:17px;max-width:600px;margin:0 auto 48px;line-height:var(--lh-relaxed)}
+    .gradient-text{background:linear-gradient(135deg,var(--clr-primary),#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    a{color:inherit;text-decoration:none}
+    nav{display:flex;justify-content:space-between;align-items:center;padding:0 24px;height:var(--nav-height);max-width:var(--max-width);margin:0 auto;position:sticky;top:0;z-index:200;background:rgba(0,0,0,0.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--clr-glass-border)}
+    .logo{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:var(--fw-extrabold);color:var(--clr-text);font-family:var(--ff-heading);letter-spacing:-0.5px}
+    .logo .mark{width:36px;height:36px;background:linear-gradient(135deg,var(--clr-primary),var(--clr-primary-hover));border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:var(--fw-extrabold)}
+    .logo span{color:var(--clr-primary)}
+    .nav-links{display:flex;align-items:center;gap:4px}
+    .nav-links a{padding:8px 16px;color:var(--clr-text-secondary);font-weight:var(--fw-medium);font-size:14px;transition:var(--transition-base);border-radius:var(--radius-sm)}
+    .nav-links a:hover{color:var(--clr-primary);background:var(--clr-primary-subtle)}
+    .nav-links .btn-nav{background:linear-gradient(135deg,var(--clr-primary),var(--clr-primary-hover));color:#fff!important;padding:10px 22px;border-radius:var(--radius-sm);font-weight:var(--fw-semibold);box-shadow:0 4px 16px var(--clr-primary-glow)}
+    .nav-links .btn-nav:hover{background:var(--clr-primary-hover);transform:translateY(-1px)}
+    .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px}
+    .hamburger span{width:24px;height:2px;background:var(--clr-text);border-radius:2px;transition:var(--transition-fast)}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:var(--radius-sm);font-weight:var(--fw-semibold);font-size:15px;cursor:pointer;border:none;transition:var(--transition-base);font-family:var(--ff-body)}
+    .btn-primary{background:linear-gradient(135deg,var(--clr-primary),var(--clr-primary-hover));color:#fff;box-shadow:0 4px 16px var(--clr-primary-glow)}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--clr-primary-glow)}
+    .btn-secondary{background:transparent;color:var(--clr-text);border:1.5px solid var(--clr-border)}
+    .btn-secondary:hover{border-color:var(--clr-primary);color:var(--clr-primary);background:var(--clr-primary-subtle)}
+    .btn-lg{padding:16px 36px;font-size:17px}
+    .hero{min-height:90vh;display:flex;align-items:center;position:relative;overflow:hidden;background:var(--clr-bg)}
+    .hero-bg{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80') center center/cover no-repeat}
+    .hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0.6) 50%,rgba(0,0,0,0.85) 100%),radial-gradient(ellipse at 30% 50%,rgba(6,182,212,0.12) 0%,transparent 60%),radial-gradient(ellipse at 70% 50%,rgba(6,182,212,0.06) 0%,transparent 60%);pointer-events:none}
+    .hero .container{position:relative;z-index:2;text-align:center;padding:120px 24px 80px}
+    .hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--clr-primary-subtle);border:1px solid rgba(6,182,212,0.25);border-radius:var(--radius-full);padding:8px 20px;font-size:13px;font-weight:var(--fw-semibold);color:var(--clr-primary);margin-bottom:24px;backdrop-filter:blur(4px)}
+    .hero h1{font-size:54px;line-height:var(--lh-tight);font-weight:var(--fw-black);letter-spacing:-1.5px;max-width:800px;margin:0 auto 20px;font-family:var(--ff-heading)}
+    .hero p{font-size:18px;color:var(--clr-text-secondary);max-width:650px;margin:0 auto 16px;line-height:var(--lh-relaxed)}
+    .hero .social-proof{margin-bottom:32px;color:var(--clr-muted);font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+    .hero .social-proof i{color:var(--clr-primary)}
+    .hero-buttons{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .hero-trust{display:flex;justify-content:center;align-items:center;gap:40px;margin-top:48px;flex-wrap:wrap;opacity:0.35}
+    .hero-trust span{font-size:13px;color:var(--clr-muted);text-transform:uppercase;letter-spacing:1px;font-weight:var(--fw-semibold)}
+    .hero-trust span i{margin-right:6px;color:var(--clr-primary);opacity:0.7}
+    .steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:48px}
+    .step-card{background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-lg);padding:32px 24px;text-align:center;transition:var(--transition-base)}
+    .step-card:hover{transform:translateY(-4px);border-color:var(--clr-primary);box-shadow:var(--shadow-primary);background:var(--clr-card-hover)}
+    .step-count{width:36px;height:36px;border-radius:50%;background:var(--clr-primary-subtle);border:1px solid rgba(6,182,212,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:var(--fw-bold);color:var(--clr-primary);margin:0 auto 16px;font-family:var(--ff-heading)}
+    .step-card h3{font-size:18px;margin-bottom:8px;font-family:var(--ff-heading)}
+    .step-card p{font-size:14px;color:var(--clr-text-secondary);line-height:var(--lh-relaxed)}
+    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+    .feature-card{background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-lg);padding:28px 24px;transition:var(--transition-base)}
+    .feature-card:hover{transform:translateY(-4px);border-color:var(--clr-primary);box-shadow:var(--shadow-primary);background:var(--clr-card-hover)}
+    .feature-icon{width:48px;height:48px;border-radius:var(--radius-md);background:var(--clr-primary-subtle);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--clr-primary);margin-bottom:16px}
+    .feature-card h4{font-size:17px;margin-bottom:8px;font-family:var(--ff-heading)}
+    .feature-card p{font-size:14px;color:var(--clr-text-secondary);line-height:var(--lh-relaxed)}
+    .testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+    .t-card{background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-lg);padding:28px;transition:var(--transition-base)}
+    .t-card:hover{border-color:var(--clr-primary);transform:translateY(-2px)}
+    .t-card .stars{color:#f59e0b;font-size:14px;margin-bottom:10px}
+    .t-card p{color:var(--clr-text-secondary);font-size:14px;line-height:var(--lh-relaxed);margin-bottom:16px;font-style:italic}
+    .t-card .author{font-weight:var(--fw-bold);font-size:14px}
+    .t-card .role{font-size:12px;color:var(--clr-muted)}
+    .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start}
+    .pricing-card{background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-xl);padding:32px 28px;transition:var(--transition-base);position:relative}
+    .pricing-card:hover{transform:translateY(-4px);border-color:var(--clr-primary);box-shadow:var(--shadow-primary)}
+    .pricing-card.featured{border-color:var(--clr-primary);background:linear-gradient(180deg,rgba(6,182,212,0.06),var(--clr-card))}
+    .pricing-card.featured .pricing-badge{display:inline-flex;align-items:center;gap:4px;background:var(--clr-primary);color:#fff;font-size:11px;font-weight:var(--fw-bold);text-transform:uppercase;letter-spacing:0.5px;padding:4px 12px;border-radius:var(--radius-full);margin-bottom:12px}
+    .pricing-card .plan-name{font-size:20px;font-weight:var(--fw-bold);font-family:var(--ff-heading);margin-bottom:4px}
+    .pricing-card .plan-desc{font-size:13px;color:var(--clr-muted);margin-bottom:16px}
+    .pricing-card .price{font-size:42px;font-weight:var(--fw-black);font-family:var(--ff-heading);margin-bottom:4px}
+    .pricing-card .price span{font-size:16px;font-weight:var(--fw-regular);color:var(--clr-muted)}
+    .pricing-card .price-sub{font-size:13px;color:var(--clr-muted);margin-bottom:20px}
+    .pricing-card .pricing-features{list-style:none;padding:0;margin:0 0 24px}
+    .pricing-card .pricing-features li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--clr-border);font-size:14px;color:var(--clr-text-secondary)}
+    .pricing-card .pricing-features li:last-child{border-bottom:none}
+    .pricing-card .pricing-features li i{color:var(--clr-primary);font-size:12px;width:16px;text-align:center}
+    .pricing-card .pricing-features li .na{color:var(--clr-muted-dark)}
+    .pricing-card .pricing-features li i.fa-times{color:var(--clr-muted-dark)}
+    .pricing-card .btn{width:100%;justify-content:center}
+    .faq-container{max-width:700px;margin:48px auto 0}
+    .faq-item{border:1px solid var(--clr-border);border-radius:var(--radius-md);margin-bottom:8px;overflow:hidden;background:var(--clr-card)}
+    .faq-question{width:100%;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;background:none;border:none;font-size:15px;font-weight:var(--fw-semibold);color:var(--clr-text);cursor:pointer;text-align:left;font-family:var(--ff-body)}
+    .faq-question i{font-size:14px;color:var(--clr-muted);transition:var(--transition-base)}
+    .faq-item.active .faq-question i{transform:rotate(180deg)}
+    .faq-answer{max-height:0;overflow:hidden;transition:max-height 0.35s ease}
+    .faq-item.active .faq-answer{max-height:300px}
+    .faq-answer p{padding:0 20px 18px;font-size:14px;color:var(--clr-text-secondary);line-height:1.8}
+    .cta-section{text-align:center;padding:100px 24px;position:relative;overflow:hidden;background:var(--clr-bg-alt)}
+    .cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(6,182,212,0.08) 0%,transparent 70%);pointer-events:none}
+    .cta-section .container{position:relative;z-index:2}
+    .cta-section h2{font-size:42px;font-weight:var(--fw-black);font-family:var(--ff-heading);margin-bottom:16px;letter-spacing:-0.5px}
+    .cta-section p{color:var(--clr-text-secondary);max-width:550px;margin:0 auto 32px;font-size:17px;line-height:var(--lh-relaxed)}
+    .cta-section .cta-badge{display:inline-flex;align-items:center;gap:8px;background:var(--clr-primary-subtle);border:1px solid rgba(6,182,212,0.2);border-radius:var(--radius-full);padding:8px 20px;font-size:13px;font-weight:var(--fw-semibold);color:var(--clr-primary);margin-bottom:20px}
+    .signup-section{padding:100px 0;position:relative}
+    .signup-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(6,182,212,0.05) 0%,transparent 70%);pointer-events:none}
+    .signup-section .container{position:relative;z-index:2}
+    .signup-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+    .signup-left h2{font-size:36px;font-weight:var(--fw-black);font-family:var(--ff-heading);margin-bottom:16px;letter-spacing:-0.5px;line-height:var(--lh-tight)}
+    .signup-left p{color:var(--clr-text-secondary);font-size:16px;line-height:var(--lh-relaxed);margin-bottom:24px}
+    .signup-left .benefits{list-style:none;padding:0}
+    .signup-left .benefits li{display:flex;align-items:center;gap:12px;padding:10px 0;font-size:15px;color:var(--clr-text-secondary)}
+    .signup-left .benefits li i{color:var(--clr-primary);width:18px;text-align:center}
+    .signup-form{background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-xl);padding:36px;box-shadow:var(--shadow-lg)}
+    .signup-form .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .signup-form .form-group{margin-bottom:16px}
+    .signup-form .form-group.full{grid-column:1/-1}
+    .signup-form label{display:block;font-size:13px;font-weight:var(--fw-semibold);color:var(--clr-text-secondary);margin-bottom:6px}
+    .signup-form input,.signup-form select{width:100%;padding:12px 14px;background:var(--clr-bg);border:1px solid var(--clr-border);border-radius:var(--radius-sm);color:var(--clr-text);font-size:14px;font-family:var(--ff-body);outline:none;transition:var(--transition-base)}
+    .signup-form input:focus,.signup-form select:focus{border-color:var(--clr-primary);box-shadow:0 0 0 3px var(--clr-primary-subtle)}
+    .signup-form input::placeholder{color:var(--clr-muted-dark)}
+    .signup-form select option{background:var(--clr-card);color:var(--clr-text)}
+    .signup-form .btn{width:100%;justify-content:center;margin-top:8px;padding:14px}
+    .signup-form .form-footnote{text-align:center;font-size:12px;color:var(--clr-muted);margin-top:12px}
+    .signup-form .login-link{text-align:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--clr-border);font-size:14px;color:var(--clr-muted)}
+    .signup-form .login-link a{color:var(--clr-primary);font-weight:var(--fw-semibold)}
+    .signup-form .login-link a:hover{text-decoration:underline}
+    footer{background:var(--clr-bg-alt);border-top:1px solid var(--clr-border);padding:60px 0 0}
+    .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;max-width:var(--max-width);margin:0 auto;padding:0 24px}
+    .footer-grid h4{color:var(--clr-text);font-size:13px;font-weight:var(--fw-bold);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .footer-grid a{display:block;color:var(--clr-muted);font-size:14px;padding:4px 0;transition:var(--transition-base)}
+    .footer-grid a:hover{color:var(--clr-primary)}
+    .footer-grid p{font-size:14px;line-height:var(--lh-relaxed);margin-top:12px;color:var(--clr-muted)}
+    .footer-grid .logo{margin-bottom:8px}
+    .footer-bottom{text-align:center;padding:24px;margin-top:48px;border-top:1px solid var(--clr-border);font-size:13px;color:var(--clr-muted-dark);max-width:var(--max-width);margin-left:auto;margin-right:auto}
+    .footer-bottom a{color:var(--clr-primary)}
+    .footer-bottom a:hover{text-decoration:underline}
+    .fade-in{opacity:0;transform:translateY(24px);transition:opacity 0.6s ease,transform 0.6s ease}
+    .fade-in.visible{opacity:1;transform:translateY(0)}
+    @media(max-width:1024px){.steps-grid,.pricing-grid{grid-template-columns:repeat(2,1fr)}.features-grid{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:38px}.signup-grid{grid-template-columns:1fr}}
+    @media(max-width:768px){.section{padding:60px 0}.section-title{font-size:28px}.hero h1{font-size:28px}.hero .social-proof{font-size:13px}.hero-trust{gap:20px}.hamburger{display:flex}.nav-links{display:none;position:absolute;top:72px;left:0;right:0;background:rgba(0,0,0,0.98);flex-direction:column;padding:16px;border-bottom:1px solid var(--clr-border);gap:0}.nav-links a{padding:12px 16px;border-radius:0;border-bottom:1px solid var(--clr-border)}.nav-links.open{display:flex}.steps-grid,.features-grid,.testimonials-grid,.pricing-grid,.footer-grid{grid-template-columns:1fr}.footer-grid{gap:24px}.cta-section h2{font-size:28px}.pricing-card.featured{order:-1}.signup-form .form-row{grid-template-columns:1fr}.signup-left h2{font-size:28px}.testimonials-grid{grid-template-columns:1fr}}
+  </style>
+<script type="application/ld+json">{
+  "@context":"https://schema.org",
+  "@type":"Product",
+  "name":"9amLeads",
+  "description":"Daily alerts of newly registered UK companies delivered to your inbox at 9am.",
+  "brand":{"@type":"Brand","name":"9amLeads"},
+  "offers":[
+    {"@type":"Offer","name":"Essential","price":"49","priceCurrency":"GBP","description":"1 city, 50 leads/day"},
+    {"@type":"Offer","name":"Pro","price":"97","priceCurrency":"GBP","description":"3 cities, 100 leads/day"},
+    {"@type":"Offer","name":"Enterprise","price":"197","priceCurrency":"GBP","description":"All UK, unlimited leads"}
+  ]
+}</script>
+</head>
+<body>
+
+<div style="background:#0a0a0a;border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;font-size:11px;text-align:center;font-family:Arial,sans-serif;">
+<span style="color:#888">Part of </span>
+<a href="/" style="color:#0ea5e9;font-weight:600">9amLeads</a>
+<span style="color:#555;margin:0 6px">|</span>
+<a href="/movingleadsdaily/" style="color:#888;text-decoration:none">Moving</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/probateleads/" style="color:#888;text-decoration:none">Probate</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/newbusinessalert/" style="color:#888;text-decoration:none">New Business</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/planningleads/" style="color:#888;text-decoration:none">Planning</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/tenders/" style="color:#888;text-decoration:none">Tenders</a>
+</div>
+
+<nav>
+  <a href="/newbusiness/" class="logo"><div class="mark">9L</div> 9am<span>Leads</span></a>
+  <div class="nav-links" id="navLinks">
+    <a href="#how-it-works">How It Works</a>
+    <a href="#features">Features</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#faq">FAQ</a>
+    <a href="#signup" class="btn-nav"><i class="fas fa-star"></i> Free Trial</a>
+  </div>
+  <button class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')" aria-label="Menu"><span></span><span></span><span></span></button>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="container">
+    <div class="hero-badge" style="background:rgba(34,197,94,.1)!important;border-color:rgba(34,197,94,.2)!important;color:#22c55e!important"><i class="fas fa-gift"></i> Free Trial — Thousands of Pounds Worth of Leads, Totally Free</div>
+      <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(34,197,94,.08);color:#22c55e;border:1px solid rgba(34,197,94,.15)"><i class="fas fa-check"></i> 7 days free</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(34,197,94,.08);color:#22c55e;border:1px solid rgba(34,197,94,.15)"><i class="fas fa-check"></i> No card required</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(34,197,94,.08);color:#22c55e;border:1px solid rgba(34,197,94,.15)"><i class="fas fa-check"></i> Cancel anytime</span>
+      </div>
+    <h1>New Companies Registered Yesterday.<br><span class="gradient-text">In Your Inbox at 9am.</span></h1>
+    <p>Every new LTD company needs an accountant, website, insurance, and banking. Be the first to reach them — before your competitors even know they exist.</p>
+    <div class="social-proof"><i class="fas fa-users"></i> Join 200+ UK accountants, web designers, and B2B companies already growing with 9amLeads</div>
+    <div class="hero-buttons">
+      <a href="#signup" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Start Free Trial</a>
+      <a href="#how-it-works" class="btn btn-secondary btn-lg"><i class="fas fa-play-circle"></i> How It Works</a>
+    </div>
+    <div class="hero-trust">
+      <span><i class="fas fa-calculator"></i> Accountants</span>
+      <span><i class="fas fa-code"></i> Web Designers</span>
+      <span><i class="fas fa-shield-alt"></i> Insurance Brokers</span>
+      <span><i class="fas fa-handshake"></i> B2B Services</span>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="how-it-works" style="position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+  <div class="container" style="position:relative;z-index:2">
+    <div class="section-label">Simple Process</div>
+    <h2 class="section-title">How It <span class="gradient-text">Works</span></h2>
+    <p class="section-sub">From Companies House to your inbox in 4 simple steps. Start receiving leads in minutes.</p>
+    <div class="steps-grid">
+      <div class="step-card fade-in">
+        <div class="step-count">01</div>
+        <h3>Choose Your Targets</h3>
+        <p>Select cities, SIC industries, and company types. Target tech startups in Manchester or retailers in London — you decide what fits your business.</p>
+      </div>
+      <div class="step-card fade-in">
+        <div class="step-count">02</div>
+        <h3>We Monitor Companies House</h3>
+        <p>Our system checks the official UK company register every 24 hours. Every new incorporation matching your criteria is captured and queued for delivery.</p>
+      </div>
+      <div class="step-card fade-in">
+        <div class="step-count">03</div>
+        <h3>Receive at 9am Daily</h3>
+        <p>Every morning at 9am you get a clean, formatted email with company names, addresses, SIC codes, and incorporation dates. Ready to action.</p>
+      </div>
+      <div class="step-card fade-in">
+        <div class="step-count">04</div>
+        <h3>Be First to Pitch</h3>
+        <p>New companies need services immediately — accounting, websites, insurance, banking. Reach them on day one, when they're actively looking.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background:var(--clr-bg-alt);position:relative;overflow:hidden" id="features">
+  <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+  <div class="container" style="position:relative;z-index:2">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything You Need to <span class="gradient-text">Win New Business</span></h2>
+    <p class="section-sub">Purpose-built for accountants, web designers, insurance brokers, and B2B service providers who want to grow their client base.</p>
+    <div class="features-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon"><i class="fas fa-clock"></i></div>
+        <h4>9am Delivery</h4>
+        <p>Every morning at 9am sharp, your leads arrive in a beautifully formatted email. No dashboards to check, no portals to log into — just open your inbox and start selling.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon"><i class="fas fa-filter"></i></div>
+        <h4>SIC Code Filtering</h4>
+        <p>Filter by industry using Companies House SIC codes. Tech, construction, retail, healthcare, hospitality, professional services — only receive companies in sectors you serve.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon"><i class="fas fa-map-marker-alt"></i></div>
+        <h4>City Targeting</h4>
+        <p>Target specific UK cities: London, Manchester, Birmingham, Leeds, Bristol, Edinburgh, Glasgow, and 20+ more. Or go UK-wide with the Enterprise plan.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon"><i class="fas fa-building"></i></div>
+        <h4>Company Type Filters</h4>
+        <p>Choose between LTD, PLC, CIC, LLP, and other company structures. Focus on the business types that are the best fit for your services.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
+        <h4>Dashboard</h4>
+        <p>Track your leads, manage filters, and view delivery history from your private dashboard. See lead volumes, trends, and conversion data at a glance.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon"><i class="fas fa-file-csv"></i></div>
+        <h4>CSV Export</h4>
+        <p>Export your leads to CSV for your CRM, spreadsheets, or email marketing tools. Works with HubSpot, Salesforce, Pipedrive, Mailchimp, and more.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="pricing" style="position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+  <div class="container" style="position:relative;z-index:2">
+    <div class="section-label">Pricing</div>
+    <h2 class="section-title">Simple, Transparent <span class="gradient-text">Pricing</span></h2>
+    <p class="section-sub">Choose the plan that matches your target area. All plans include a 7-day free trial — no credit card required.</p>
+    <div class="pricing-grid">
+      <div class="pricing-card fade-in">
+        <div class="plan-name">Essential</div>
+        <div class="plan-desc">For solo practitioners targeting one city</div>
+        <div class="price">&pound;49 <span>/mo</span></div>
+        <div class="price-sub">&pound;30 one-time setup</div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> 1 City / Region</li>
+          <li><i class="fas fa-check"></i> Up to 50 leads/day</li>
+          <li><i class="fas fa-check"></i> SIC code filtering</li>
+          <li><i class="fas fa-check"></i> Company type filters</li>
+          <li><i class="fas fa-check"></i> Daily 9am email</li>
+          <li><i class="fas fa-check"></i> CSV export</li>
+          <li><i class="fas fa-times"></i> <span class="na">Dashboard access</span></li>
+        </ul>
+        <a href="#signup" class="btn btn-secondary">Start Free Trial</a>
+      </div>
+      <div class="pricing-card featured fade-in">
+        <div class="pricing-badge"><i class="fas fa-crown"></i> Most Popular</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-desc">For growing firms covering multiple areas</div>
+        <div class="price">&pound;97 <span>/mo</span></div>
+        <div class="price-sub">No setup fee</div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> 3 Cities / Regions</li>
+          <li><i class="fas fa-check"></i> Up to 100 leads/day</li>
+          <li><i class="fas fa-check"></i> SIC code filtering</li>
+          <li><i class="fas fa-check"></i> Company type filters</li>
+          <li><i class="fas fa-check"></i> Daily 9am email</li>
+          <li><i class="fas fa-check"></i> CSV export</li>
+          <li><i class="fas fa-check"></i> Dashboard access</li>
+        </ul>
+        <a href="#signup" class="btn btn-primary">Start Free Trial</a>
+      </div>
+      <div class="pricing-card fade-in">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-desc">For agencies and firms covering the whole UK</div>
+        <div class="price">&pound;197 <span>/mo</span></div>
+        <div class="price-sub">No setup fee</div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> All UK Cities &amp; Regions</li>
+          <li><i class="fas fa-check"></i> Unlimited leads/day</li>
+          <li><i class="fas fa-check"></i> SIC code filtering</li>
+          <li><i class="fas fa-check"></i> Company type filters</li>
+          <li><i class="fas fa-check"></i> Daily 9am email</li>
+          <li><i class="fas fa-check"></i> CSV export</li>
+          <li><i class="fas fa-check"></i> Dashboard access</li>
+        </ul>
+        <a href="#signup" class="btn btn-secondary">Start Free Trial</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background:var(--clr-bg-alt);position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1521791136064-2b8711a1cfb9?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+  <div class="container" style="position:relative;z-index:2">
+    <div class="section-label">Testimonials</div>
+    <h2 class="section-title">Trusted by UK <span class="gradient-text">Professionals</span></h2>
+    <p class="section-sub">Join 200+ UK businesses using 9amLeads to grow their client base.</p>
+    <div class="testimonials-grid">
+      <div class="t-card fade-in">
+        <div class="stars">&starf;&starf;&starf;&starf;&starf;</div>
+        <p>"I get 20-30 new company alerts every week and convert about 3-4 into accounting clients. Reaching them on day one makes me look proactive — that alone wins the account."</p>
+        <div class="author">Sarah Mitchell</div>
+        <div class="role">Chartered Accountant &middot; Manchester</div>
+      </div>
+      <div class="t-card fade-in">
+        <div class="stars">&starf;&starf;&starf;&starf;&starf;</div>
+        <p>"I target new tech companies for web design. The SIC code filtering is spot-on — I only get leads that actually need my services. Best &pound;97 I spend each month."</p>
+        <div class="author">James Walker</div>
+        <div class="role">Web Designer &middot; London</div>
+      </div>
+      <div class="t-card fade-in">
+        <div class="stars">&starf;&starf;&starf;&starf;&starf;</div>
+        <p>"New businesses need insurance immediately. We've picked up 12 new commercial clients in our first month. This product pays for itself ten times over."</p>
+        <div class="author">David Chen</div>
+        <div class="role">Insurance Broker &middot; Birmingham</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="faq">
+  <div class="container">
+    <div class="section-label">FAQ</div>
+    <h2 class="section-title">Frequently Asked <span class="gradient-text">Questions</span></h2>
+    <p class="section-sub">Everything you need to know about 9amLeads.</p>
+    <div class="faq-container">
+      <div class="faq-item active">
+        <button class="faq-question">Where does the new company data come from? <i class="fas fa-chevron-down"></i></button>
+        <div class="faq-answer"><p>All data comes directly from <a href="https://www.gov.uk/government/organisations/companies-house" style="color:var(--clr-primary);text-decoration:underline">Companies House</a> — the official UK register of companies. Every LTD, CIC, PLC, and LLP incorporated in England, Wales, Scotland, or Northern Ireland is captured daily via their official API.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">How fresh is the data? <i class="fas fa-chevron-down"></i></button>
+        <div class="faq-answer"><p>We check Companies House every 24 hours. Companies incorporated today will appear in your next morning's 9am alert. Companies House updates their register throughout the day, so you're getting the most up-to-date data available outside their systems.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">Can I filter by industry or SIC code? <i class="fas fa-chevron-down"></i></button>
+        <div class="faq-answer"><p>Yes. Companies House assigns every company a SIC (Standard Industrial Classification) code on incorporation. You can filter by specific SIC codes or choose from curated categories: tech/software, construction, retail, hospitality, healthcare, professional services, transport, finance, creative, and ecommerce.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">How many leads will I get each day? <i class="fas fa-chevron-down"></i></button>
+        <div class="faq-answer"><p>UK-wide, approximately 50-100 new companies are incorporated daily. Depending on your SIC and location filters, you might receive 3-5 leads/day for a specific niche in one city, or 50+ for broader targeting. You can adjust your filters anytime to get the right volume.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">Is there a free trial? <i class="fas fa-chevron-down"></i></button>
+        <div class="faq-answer"><p>Absolutely. Every plan comes with a 7-day free trial — no credit card required, no commitment. If 9amLeads isn't right for you, simply cancel before the trial ends. We won't charge you a penny.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">How do I cancel? <i class="fas fa-chevron-down"></i></button>
+        <div class="faq-answer"><p>Cancel anytime from your dashboard or by emailing us. No notice period, no cancellation fees, no hard feelings. Your trial is genuinely free and there's no lock-in.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section" id="cta" style="position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+  <div class="container">
+    <div class="cta-badge"><i class="fas fa-rocket"></i> Start Today</div>
+    <h2>Ready to Fill Your Pipeline <span class="gradient-text">With Fresh Leads?</span></h2>
+    <p>Join 200+ UK professionals who start every day knowing exactly which new businesses need their services. Start your 7-day free trial now.</p>
+    <a href="#signup" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Start Free Trial</a>
+  </div>
+</section>
+
+<section class="signup-section" id="signup" style="position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+  <div class="container">
+    <div class="section-label">Get Started</div>
+    <h2 class="section-title">Start Your <span class="gradient-text">Free Trial</span></h2>
+    <p class="section-sub">No credit card required. Cancel anytime.</p>
+    <div class="signup-grid">
+      <div class="signup-left fade-in">
+        <h2>Be the first to reach <span class="gradient-text">new businesses</span> in your area.</h2>
+        <p>Join 200+ UK accountants, web designers, insurance brokers, and B2B service providers who start every day with fresh leads in their inbox.</p>
+        <ul class="benefits">
+          <li><i class="fas fa-check-circle"></i> 7-day free trial, no credit card needed</li>
+          <li><i class="fas fa-check-circle"></i> Cancel anytime — no lock-in contracts</li>
+          <li><i class="fas fa-check-circle"></i> Data direct from Companies House API</li>
+          <li><i class="fas fa-check-circle"></i> Setup in under 5 minutes</li>
+        </ul>
+      </div>
+      <div class="signup-form fade-in">
+        <form id="signupForm" onsubmit="event.preventDefault();alert('Thanks for signing up! We\'ll be in touch shortly to set up your free trial.');return false">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="company">Company Name</label>
+              <input type="text" id="company" placeholder="e.g. Mitchell &amp; Co Accountants" required>
+            </div>
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input type="email" id="email" placeholder="you@company.co.uk" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input type="tel" id="phone" placeholder="+44 7XXX XXXXXX" required>
+            </div>
+            <div class="form-group">
+              <label for="password">Create Password</label>
+              <input type="password" id="password" placeholder="Min. 8 characters" minlength="8" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="cities">Target Cities</label>
+              <select id="cities">
+                <option value="">Select cities...</option>
+                <option value="london">London</option>
+                <option value="manchester">Manchester</option>
+                <option value="birmingham">Birmingham</option>
+                <option value="leeds">Leeds</option>
+                <option value="bristol">Bristol</option>
+                <option value="edinburgh">Edinburgh</option>
+                <option value="glasgow">Glasgow</option>
+                <option value="liverpool">Liverpool</option>
+                <option value="sheffield">Sheffield</option>
+                <option value="newcastle">Newcastle</option>
+                <option value="nottingham">Nottingham</option>
+                <option value="uk-wide">UK-wide (Enterprise)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="industries">Target Industries</label>
+              <select id="industries">
+                <option value="">Select industries...</option>
+                <option value="all">All Industries</option>
+                <option value="tech">Tech &amp; Software</option>
+                <option value="construction">Construction</option>
+                <option value="retail">Retail &amp; Ecommerce</option>
+                <option value="hospitality">Hospitality</option>
+                <option value="healthcare">Healthcare</option>
+                <option value="professional">Professional Services</option>
+                <option value="transport">Transport &amp; Logistics</option>
+                <option value="finance">Finance &amp; Insurance</option>
+                <option value="creative">Creative &amp; Media</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin:12px 0">
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:12px;color:var(--muted);line-height:1.5">
+              <input type="checkbox" id="consent" required style="margin-top:3px;width:16px;height:16px;accent-color:#06b6d4;flex-shrink:0">
+              I agree to receive daily lead emails at 9am and accept the <a href="/terms.html" target="_blank" style="color:#06b6d4;text-decoration:underline">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:#06b6d4;text-decoration:underline">Privacy Policy</a>. I can unsubscribe anytime.
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%"><i class="fas fa-gift"></i> Claim Free Week — Start Trial</button>
+          <div style="margin-top:10px;font-size:11px;color:var(--muted2);text-align:center;line-height:1.5"><i class="fas fa-lock" style="color:#06b6d4"></i> Your data is secure. No spam. Unsubscribe anytime.</div>
+          <div class="login-link" style="margin-top:12px">Already have an account? <a href="dashboard.html">Log in</a></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div class="logo" style="font-size:20px"><div class="mark">9L</div> 9am<span>Leads</span></div>
+      <p>Daily new company leads delivered to your inbox at 9am. Data sourced from the official <a href="https://www.gov.uk/government/organisations/companies-house" style="color:var(--clr-primary)">Companies House</a> register.</p>
+      <p style="font-size:12px;color:var(--clr-muted-dark);margin-top:8px">Part of <a href="/" style="color:var(--clr-primary)">9amLeads</a> &mdash; Daily lead products for UK professionals.</p>
+    </div>
+    <div>
+      <h4>Product</h4>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="#signup">Free Trial</a>
+    </div>
+    <div>
+      <h4>Account</h4>
+      <a href="dashboard.html">Log In</a>
+      <a href="#signup">Sign Up</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <a href="mailto:hello@9amleads.com"><i class="fas fa-envelope"></i> hello@9amleads.com</a>
+      <a href="#"><i class="fas fa-phone"></i> 020 8XXX XXXX</a>
+      <p style="font-size:12px;margin-top:8px">Contains public sector information licensed under the Open Government Licence v3.0.</p>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    &copy; 2026 9amLeads. Part of <a href="/">9amLeads</a>. Made in the UK.
+  </div>
+<div style="text-align:center;padding:12px 24px;font-size:11px;color:#555;border-top:1px solid #1a1a1a">9am Leads Ltd &middot; Company No. 17168176 &middot; hello@9amleads.com</div></footer>
+
+<button id="btop" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="position:fixed;bottom:80px;right:20px;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--clr-primary),var(--clr-primary-hover));color:#fff;border:none;font-size:16px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.2);opacity:0;visibility:hidden;transform:translateY(10px);transition:all 0.3s;z-index:999;display:flex;align-items:center;justify-content:center" aria-label="Back to top">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 15l-6-6-6 6"/></svg>
+</button>
+
+<script>
+window.addEventListener('scroll',function(){var b=document.getElementById('btop');if(b){if(window.scrollY>400){b.style.opacity='1';b.style.visibility='visible';b.style.transform='translateY(0')}else{b.style.opacity='0';b.style.visibility='hidden';b.style.transform='translateY(10px')}}});
+document.querySelectorAll('.faq-question').forEach(function(btn){btn.addEventListener('click',function(){var item=btn.parentElement;var was=item.classList.contains('active');item.parentElement.querySelectorAll('.faq-item').forEach(function(i){i.classList.remove('active')});if(!was)item.classList.add('active')})});
+var fadeObserver=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');fadeObserver.unobserve(e.target)})},{threshold:0.15});
+document.querySelectorAll('.fade-in').forEach(function(el){fadeObserver.observe(el)});
+</script>
+
+</body>
+</html>

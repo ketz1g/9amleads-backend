@@ -1,0 +1,385 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Sign In | 9amLeads Customer Portal</title>
+<meta name="description" content="Sign in to your 9amLeads account to access your daily lead sheets, track conversions, and manage your subscription.">
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#f1f5f9;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 0%,rgba(14,165,233,0.04),transparent 60%)}
+.login-card{width:100%;max-width:420px;background:#11131f;border:1px solid #1e2030;border-radius:20px;padding:40px 36px;text-align:center}
+.logo{display:flex;align-items:center;justify-content:center;gap:10px;font-size:22px;font-weight:900;font-family:'Outfit',sans-serif;margin-bottom:6px}
+.logo .icon{width:42px;height:42px;background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:900;box-shadow:0 0 20px rgba(14,165,233,0.2)}
+.logo span{color:#0ea5e9}
+h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:6px}
+.sub{color:#8890a8;font-size:14px;margin-bottom:28px;line-height:1.6}
+.form-group{margin-bottom:16px;text-align:left}
+.form-group label{display:block;font-size:12px;font-weight:600;margin-bottom:5px;color:#c8cbd6;text-transform:uppercase;letter-spacing:.5px}
+.form-group input{width:100%;padding:13px 16px;background:#0f111a;border:1px solid #1e2030;border-radius:10px;font-size:14px;font-family:inherit;color:#f1f5f9;transition:border-color .2s;outline:none}
+.form-group input:focus{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,0.08)}
+.form-group input::placeholder{color:#5c6480}
+.btn{width:100%;padding:14px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;font-family:inherit}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(14,165,233,0.25)}
+.btn-secondary{background:transparent;border:1px solid #1e2030;color:#c8cbd6;margin-top:8px}
+.btn-secondary:hover{background:rgba(255,255,255,0.03);transform:none;box-shadow:none;border-color:#2a2d42}
+.error{color:#ef4444;font-size:13px;margin-top:8px;display:none;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.1);border-radius:8px;padding:10px 14px}
+.success{color:#22c55e;font-size:13px;margin-top:8px;display:none;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.1);border-radius:8px;padding:10px 14px}
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:#5c6480;font-size:11px;text-transform:uppercase;letter-spacing:1px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#1e2030}
+.features{margin:24px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left}
+.feature-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#8890a8;padding:6px 0}
+.feature-item i{color:#22c55e;font-size:10px}
+.demo-box{background:#0f111a;border:1px solid #1e2030;border-radius:10px;padding:14px 16px;font-size:12px;color:#8890a8;text-align:left;margin-top:12px;line-height:1.8}
+.demo-box strong{color:#c8cbd6}
+.demo-box code{color:#0ea5e9;font-weight:600;font-size:11px}
+.footer-text{text-align:center;margin-top:24px;font-size:12px;color:#5c6480}
+.footer-text a{color:#0ea5e9;text-decoration:none}
+@media(max-width:480px){.login-card{padding:28px 20px}.features{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div style="width:100%;max-width:420px;margin-bottom:16px;background:#0a0a0a;border:1px solid #1e2030;border-radius:10px;padding:8px 16px;font-size:11px;text-align:center;color:#8890a8">
+<span>Part of </span><a href="/" style="color:#0ea5e9;font-weight:600;text-decoration:none">9amLeads</a>
+<span style="color:#444;margin:0 6px">|</span>
+<a href="/movingleadsdaily/" style="color:#8890a8;text-decoration:none">Moving</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/probateleads/" style="color:#8890a8;text-decoration:none">Probate</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/newbusinessalert/" style="color:#8890a8;text-decoration:none">New Business</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/planningleads/" style="color:#8890a8;text-decoration:none">Planning</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/tenders/" style="color:#8890a8;text-decoration:none">Tenders</a>
+</div>
+
+<div style="position:fixed;top:16px;left:24px;z-index:10">
+<a href="/" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;color:#8890a8;font-size:13px;font-weight:600;text-decoration:none;border-radius:8px;transition:.2s;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)"><i class="fas fa-arrow-left" style="font-size:11px"></i> 9amLeads</a>
+</div>
+<div class="login-card">
+<div class="logo"><div class="icon">9</div>9am<span>Leads</span></div>
+<h1>Welcome Back</h1>
+<p class="sub">Sign in to your account to access your daily leads, dashboard, and subscription.</p>
+
+<div id="signup-form" style="display:block">
+<div class="form-group"><label>Full Name</label><input type="text" id="signup-name" placeholder="Your name" required></div>
+<div class="form-group"><label>Company Name</label><input type="text" id="signup-company" placeholder="Your company" required></div>
+<div class="form-group"><label>Email Address</label><input type="email" id="signup-email" placeholder="you@company.co.uk" required></div>
+<div class="form-group"><label>Create Password</label><input type="password" id="signup-password" placeholder="Min 8 characters" minlength="8" required></div>
+<div class="form-group"><label>Lead Type</label>
+<select id="signup-product" style="width:100%;padding:13px 16px;background:#0f111a;border:1px solid #1e2030;border-radius:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;transition:border-color .2s">
+<option value="moving">Moving Leads</option>
+<option value="probate">Probate Leads</option>
+<option value="newbusiness">New Business Alerts</option>
+<option value="planning">Planning Permission</option>
+<option value="tenders">Public Tenders</option>
+</select></div>
+<div class="form-group">
+  <label>Your Target Postcode Districts <span style="color:#8890a8;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(<span id="pc-count">0</span>/<span id="pc-max">5</span> selected <span id="pc-plan-name">on Free Trial</span>)</span></label>
+  <div style="font-size:11px;color:#5c6480;margin-bottom:8px;line-height:1.5">Pick individual postcode districts like <strong style="color:#8890a8">EN1</strong>, <strong style="color:#8890a8">EN2</strong>, <strong style="color:#8890a8">EN3</strong> — grouped by area. Search or browse below.</div>
+  <div id="pc-selector" style="position:relative">
+    <div id="pc-search-wrap" style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:10px;min-height:46px;cursor:text;align-items:center" onclick="document.getElementById('pc-input').focus()">
+      <div id="pc-tags" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+      <input type="text" id="pc-input" placeholder="Search districts like EN1, SW1, M1..." style="flex:1;min-width:120px;border:none;background:transparent;color:#f1f5f9;font-size:14px;font-family:inherit;outline:none;padding:2px 0" oninput="searchPostcodes(this.value)" onfocus="showPcDropdown()" onblur="setTimeout(hidePcDropdown,200)">
+    </div>
+    <div id="pc-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#11131f;border:1px solid #1e2030;border-top:none;border-radius:0 0 10px 10px;max-height:320px;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,0.4)"></div>
+  </div>
+  <div id="pc-availability-msg" style="font-size:11px;color:#8890a8;margin-top:6px;display:none"></div>
+</div>
+<div class="form-group" style="margin-bottom:8px">
+<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400;font-size:13px;color:var(--text2);line-height:1.5">
+<input type="checkbox" id="signup-consent" style="width:16px;height:16px;margin-top:2px;accent-color:#0ea5e9" checked>
+<span>I agree to receive daily lead emails and occasional updates from 9amLeads. You can unsubscribe at any time. <a href="/privacy.html" style="color:#0ea5e9;text-decoration:underline">Privacy Policy</a></span>
+</label>
+</div>
+<div id="signup-error" class="error"></div>
+<div id="signup-success" class="success">Account created! Redirecting to your dashboard...</div>
+<button class="btn" onclick="signup()"><i class="fas fa-rocket"></i> Create Free Account</button>
+<button class="btn btn-secondary" onclick="showLogin()">Already have an account? Sign In</button>
+</div>
+
+<div id="login-form" style="display:none">
+<div class="form-group"><label>Email Address</label><input type="email" id="login-email" placeholder="you@company.co.uk" onkeydown="if(event.key==='Enter')login()"></div>
+<div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')login()"></div>
+<div style="text-align:right;margin-top:-10px;margin-bottom:10px"><a href="/portal/reset-password.html" style="color:#8890a8;font-size:12px;text-decoration:none">Forgot password?</a></div>
+<div id="login-error" class="error">Invalid email or password. Please try again.</div>
+<button class="btn" onclick="login()"><i class="fas fa-arrow-right"></i> Sign In</button>
+<button class="btn btn-secondary" onclick="showSignup()">Don't have an account? Sign Up</button>
+</div>
+
+<div class="divider">Secure Access</div>
+<div class="demo-box" style="border-color:rgba(14,165,233,0.12)">
+<strong>🔒 Password protected</strong><br>
+<small>Your account is secured with encrypted password storage. Sign up with a valid email and a password of at least 8 characters to access your dashboard.</small>
+</div>
+
+<div class="footer-note" style="margin-top:10px;font-size:11px;color:var(--muted2);text-align:center">
+Already have an account? <a href="#" onclick="showLogin();return false" style="color:var(--primary)">Sign in here</a>
+</div>
+</div>
+
+<div class="footer-text">
+Free 7 day trial &middot; No card required &middot; <a href="/terms.html">Terms</a> &middot; <a href="/privacy.html">Privacy</a>
+</div>
+
+<script>
+const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:8012'
+  : 'https://www.9amleads.com';
+
+let allPostcodeAreas = [];
+let selectedPostcodes = [];
+let postcodeLimit = 5;
+let expandedArea = null;
+
+function showLogin() { document.getElementById('signup-form').style.display='none'; document.getElementById('login-form').style.display='block'; }
+function showSignup() { document.getElementById('signup-form').style.display='block'; document.getElementById('login-form').style.display='none'; }
+
+// ===== POSTCODE DISTRICT SELECTOR (Area → Districts drill-down) =====
+
+function loadPostcodes() {
+  const product = document.getElementById('signup-product').value;
+  fetch(API + '/api/postcodes?product=' + product)
+    .then(r => r.json())
+    .then(data => {
+      allPostcodeAreas = data.areas || [];
+      // Sort areas alphabetically
+      allPostcodeAreas.sort((a, b) => a.area_code.localeCompare(b.area_code));
+      // Sort districts within each area numerically
+      for (const area of allPostcodeAreas) {
+        area.districts.sort((a, b) => {
+          const numA = parseInt(a.code.replace(/[^0-9]/g, '')) || 0;
+          const numB = parseInt(b.code.replace(/[^0-9]/g, '')) || 0;
+          return numA - numB;
+        });
+      }
+      postcodeLimit = 5;
+      updatePcDisplay();
+    })
+    .catch(() => {});
+}
+
+function getAllDistricts() {
+  const all = [];
+  for (const area of allPostcodeAreas) {
+    for (const d of (area.districts || [])) {
+      all.push({ ...d, area_code: area.area_code, area_name: area.area_name, region: area.region });
+    }
+  }
+  return all;
+}
+
+function searchPostcodes(query) {
+  const dropdown = document.getElementById('pc-dropdown');
+  if (!query) { renderAllPostcodes(); return; }
+  const q = query.toLowerCase();
+  const all = getAllDistricts();
+  const filtered = all.filter(d =>
+    d.code.toLowerCase().includes(q) ||
+    d.name.toLowerCase().includes(q) ||
+    d.area_code.toLowerCase().includes(q) ||
+    d.area_name.toLowerCase().includes(q) ||
+    d.region.toLowerCase().includes(q)
+  );
+  renderPcSearchResults(filtered);
+  dropdown.style.display = 'block';
+}
+
+function showPcDropdown() {
+  renderAllPostcodes();
+  document.getElementById('pc-dropdown').style.display = 'block';
+}
+
+function hidePcDropdown() {
+  document.getElementById('pc-dropdown').style.display = 'none';
+}
+
+function renderAllPostcodes() {
+  const dropdown = document.getElementById('pc-dropdown');
+  const selected = selectedPostcodes.map(s => s.code);
+  let html = '';
+  if (!allPostcodeAreas.length) {
+    html = '<div style="padding:16px;color:#5c6480;font-size:13px;text-align:center">Loading postcode districts...</div>';
+  } else {
+    for (const area of allPostcodeAreas) {
+      const isExpanded = expandedArea === area.area_code;
+      const selectedInArea = selected.filter(s => s.startsWith(area.area_code));
+      html += '<div style="border-bottom:1px solid rgba(255,255,255,0.04)">';
+      // Area header row
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;transition:.1s"' +
+        'onmouseover="this.style.background=\'rgba(255,255,255,0.03)\'" onmouseout="this.style.background=\'transparent\'"' +
+        'onclick="toggleArea(\'' + area.area_code + '\')">' +
+        '<span style="width:20px;height:20px;border-radius:4px;border:1px solid #2a2d42;display:flex;align-items:center;justify-content:center;font-size:10px;color:#5c6480;transition:.2s" id="arrow-' + area.area_code + '">' + (isExpanded ? '▼' : '▶') + '</span>' +
+        '<span style="font-weight:700;font-size:13px;color:#f1f5f9;min-width:32px">' + area.area_code + '</span>' +
+        '<span style="color:#8890a8;font-size:12px;flex:1">' + area.area_name + ' <span style="color:#5c6480">· ' + area.region + '</span></span>' +
+        '<span style="font-size:10px;color:#5c6480">' + area.districts.length + ' districts</span>' +
+        (selectedInArea.length > 0 ? '<span style="font-size:10px;color:#0ea5e9;font-weight:600;margin-left:4px">' + selectedInArea.length + ' selected</span>' : '') +
+        '</div>';
+      // District rows (expandable)
+      if (isExpanded) {
+        html += '<div id="districts-' + area.area_code + '" style="padding-left:42px;padding-bottom:4px">';
+        for (const d of (area.districts || [])) {
+          const isSelected = selected.includes(d.code);
+          const isTaken = !d.available && !isSelected;
+          const isDisabled = isTaken || (!isSelected && selectedPostcodes.length >= postcodeLimit);
+          html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;cursor:' + (isDisabled ? 'not-allowed' : 'pointer') + ';opacity:' + (isDisabled ? '0.3' : '1') + ';border-radius:4px;transition:.1s" ' +
+            'onmouseover="this.style.background=\'rgba(255,255,255,0.03)\'" onmouseout="this.style.background=\'transparent\'" ' +
+            'onclick="' + (isDisabled ? '' : 'togglePc(\'' + d.code + '\',\'' + d.name.replace(/'/g, "\\'") + '\',\'' + area.region + '\')') + '"' +
+            '>' +
+            '<span style="width:16px;height:16px;border-radius:3px;border:1px solid ' + (isSelected ? '#0ea5e9' : (isTaken ? '#ef4444' : '#2a2d42')) + ';display:flex;align-items:center;justify-content:center;font-size:8px;color:' + (isSelected ? '#fff' : (isTaken ? '#ef4444' : 'transparent')) + ';background:' + (isSelected ? '#0ea5e9' : 'transparent') + '">' + (isSelected ? '\u2713' : (isTaken ? '\u2717' : '')) + '</span>' +
+            '<span style="font-weight:600;font-size:12px;color:#f1f5f9;min-width:44px">' + d.code + '</span>' +
+            '<span style="color:#8890a8;font-size:11px">' + d.name + '</span>' +
+            (isTaken ? '<span style="margin-left:auto;font-size:9px;color:#ef4444;font-weight:600">Taken</span>' : '') +
+            '</div>';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+  }
+  dropdown.innerHTML = html;
+}
+
+function renderPcSearchResults(items) {
+  const dropdown = document.getElementById('pc-dropdown');
+  const selected = selectedPostcodes.map(s => s.code);
+  if (items.length === 0) {
+    dropdown.innerHTML = '<div style="padding:16px;color:#5c6480;font-size:13px;text-align:center">No matching districts. Try EN1, SW1, M1...</div>';
+    return;
+  }
+  let html = '';
+  let lastArea = '';
+  for (const d of items) {
+    if (d.area_code !== lastArea) {
+      html += '<div style="padding:6px 14px 2px;font-size:10px;font-weight:700;color:#5c6480">' + d.area_code + ' — ' + d.area_name + '</div>';
+      lastArea = d.area_code;
+    }
+    const isSelected = selected.includes(d.code);
+    const isTaken = !d.available && !isSelected;
+    const isDisabled = isTaken || (!isSelected && selectedPostcodes.length >= postcodeLimit);
+    html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 14px;cursor:' + (isDisabled ? 'not-allowed' : 'pointer') + ';opacity:' + (isDisabled ? '0.3' : '1') + ';transition:.1s" ' +
+      'onmouseover="this.style.background=\'rgba(255,255,255,0.03)\'" onmouseout="this.style.background=\'transparent\'" ' +
+      'onclick="' + (isDisabled ? '' : 'togglePc(\'' + d.code + '\',\'' + d.name.replace(/'/g, "\\'") + '\',\'' + d.region + '\')') + '"' +
+      '>' +
+      '<span style="width:16px;height:16px;border-radius:3px;border:1px solid ' + (isSelected ? '#0ea5e9' : (isTaken ? '#ef4444' : '#2a2d42')) + ';display:flex;align-items:center;justify-content:center;font-size:8px;color:' + (isSelected ? '#fff' : (isTaken ? '#ef4444' : 'transparent')) + ';background:' + (isSelected ? '#0ea5e9' : 'transparent') + '">' + (isSelected ? '\u2713' : (isTaken ? '\u2717' : '')) + '</span>' +
+      '<span style="font-weight:600;font-size:12px;color:#f1f5f9;min-width:44px">' + d.code + '</span>' +
+      '<span style="color:#8890a8;font-size:11px">' + d.name + '</span>' +
+      (isTaken ? '<span style="margin-left:auto;font-size:9px;color:#ef4444;font-weight:600">Taken</span>' : '') +
+      '</div>';
+  }
+  dropdown.innerHTML = html;
+}
+
+function toggleArea(code) {
+  if (expandedArea === code) {
+    expandedArea = null;
+  } else {
+    expandedArea = code;
+  }
+  renderAllPostcodes();
+  document.getElementById('pc-dropdown').style.display = 'block';
+}
+
+function togglePc(code, name, region) {
+  const idx = selectedPostcodes.findIndex(s => s.code === code);
+  if (idx >= 0) {
+    selectedPostcodes.splice(idx, 1);
+  } else {
+    if (selectedPostcodes.length >= postcodeLimit) {
+      document.getElementById('pc-availability-msg').textContent = 'Free trial includes up to ' + postcodeLimit + ' districts. Upgrade for more.';
+      document.getElementById('pc-availability-msg').style.display = 'block';
+      setTimeout(() => document.getElementById('pc-availability-msg').style.display = 'none', 3000);
+      return;
+    }
+    selectedPostcodes.push({ code, name, region });
+  }
+  updatePcDisplay();
+  renderAllPostcodes();
+  document.getElementById('pc-input').focus();
+}
+
+function removePc(code) {
+  selectedPostcodes = selectedPostcodes.filter(s => s.code !== code);
+  updatePcDisplay();
+  renderAllPostcodes();
+}
+
+function updatePcDisplay() {
+  const tags = document.getElementById('pc-tags');
+  const count = document.getElementById('pc-count');
+  const max = document.getElementById('pc-max');
+  const planName = document.getElementById('pc-plan-name');
+  const input = document.getElementById('pc-input');
+  count.textContent = selectedPostcodes.length;
+  max.textContent = postcodeLimit;
+  planName.textContent = 'on Free Trial (5 districts)';
+
+  tags.innerHTML = selectedPostcodes.map(s =>
+    '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:6px;font-size:12px;color:#0ea5e9;font-weight:600">' +
+    s.code + ' ' + s.name +
+    '<span onclick="removePc(\'' + s.code + '\')" style="cursor:pointer;opacity:0.6;font-size:10px;margin-left:2px">\u2715</span></span>'
+  ).join('');
+
+  input.placeholder = selectedPostcodes.length >= postcodeLimit ? 'Max reached' : 'Search districts like EN1, SW1...';
+}
+
+document.getElementById('signup-product').addEventListener('change', loadPostcodes);
+
+// ===== SIGNUP =====
+
+function signup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const company = document.getElementById('signup-company').value.trim();
+  const email = document.getElementById('signup-email').value.trim().toLowerCase();
+  const password = document.getElementById('signup-password').value;
+  const product = document.getElementById('signup-product').value;
+  const consent = document.getElementById('signup-consent').checked;
+  const error = document.getElementById('signup-error');
+  const success = document.getElementById('signup-success');
+  error.style.display = 'none'; success.style.display = 'none';
+
+  if (!name || !company || !email || !password) { error.textContent = 'Please fill in all fields'; error.style.display = 'block'; return; }
+  if (password.length < 8) { error.textContent = 'Password must be at least 8 characters'; error.style.display = 'block'; return; }
+  if (selectedPostcodes.length === 0) { error.textContent = 'Please select at least one postcode district'; error.style.display = 'block'; return; }
+
+  fetch(API + '/api/auth/signup', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ company, name, email, phone: '', password, product, targetAreas: selectedPostcodes.map(s => s.code), source: 'web', marketingConsent: consent })
+  }).then(r => r.json()).then(d => {
+    if (d.token) {
+      localStorage.setItem('mld_portal_session', JSON.stringify({ token: d.token, clientId: d.customer?.id || email, name: d.customer?.name || name, plan: d.customer?.plan || 'free_trial', email, product: d.customer?.product || 'moving' }));
+      success.style.display = 'block';
+      setTimeout(() => window.location.href = '/portal/dashboard.html', 1000);
+    } else {
+      error.textContent = d.error || 'Signup failed. Please try again.';
+      error.style.display = 'block';
+    }
+  }).catch(e => { error.textContent = 'Could not connect to server. Please ensure you are connected to the internet.'; error.style.display = 'block'; });
+}
+
+// Load postcodes on page load
+loadPostcodes();
+
+function login() {
+  const email = document.getElementById('login-email')?.value?.trim().toLowerCase() || '';
+  const password = document.getElementById('login-password')?.value || '';
+  const error = document.getElementById('login-error');
+  error.style.display = 'none';
+
+  if (!email || !password) { error.style.display = 'block'; return; }
+
+  fetch(API + '/api/auth/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  }).then(r => r.json()).then(d => {
+    if (d.token) {
+      localStorage.setItem('mld_portal_session', JSON.stringify({ token: d.token, clientId: d.customer?.id || email, name: d.customer?.name || email, plan: d.customer?.plan || 'free_trial', email, product: d.customer?.product || 'moving' }));
+      window.location.href = '/portal/dashboard.html';
+    } else {
+      error.textContent = d.error || 'Invalid email or password. Please try again or create a new account.';
+      error.style.display = 'block';
+    }
+  }).catch(() => { error.textContent = 'Could not connect to server. Please try again later.'; error.style.display = 'block'; });
+}
+</script>
+</body></html>

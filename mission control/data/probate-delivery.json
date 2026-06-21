@@ -1,0 +1,882 @@
+{
+  "demo-solicitor": [
+    {
+      "customerId": "demo-solicitor",
+      "company": "Smith & Co Solicitors",
+      "email": "info@smithsolicitors.co.uk",
+      "date": "2026-06-20",
+      "generatedAt": "2026-06-20T13:28:58.270Z",
+      "totalLeads": 15,
+      "leadLimit": 15,
+      "leads": [
+        {
+          "name": "John Thompson",
+          "address": "116 High Street, Westminster, London",
+          "dateOfDeath": "2026-05-17",
+          "grantDate": "2026-06-16",
+          "estateValue": "£284,242",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Jones & Partners"
+        },
+        {
+          "name": "Margaret Hughes",
+          "address": "46 Station Road, Woking, Surrey",
+          "dateOfDeath": "2026-05-19",
+          "grantDate": "2026-06-18",
+          "estateValue": "£271,141",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Helen Wood",
+          "address": "89 Park Lane, Tunbridge Wells, Kent",
+          "dateOfDeath": "2026-05-01",
+          "grantDate": "2026-05-31",
+          "estateValue": "£273,395",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Richard Thompson",
+          "address": "128 Church Road, Camden, London",
+          "dateOfDeath": "2026-05-17",
+          "grantDate": "2026-06-16",
+          "estateValue": "£498,323",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Elizabeth Thomas",
+          "address": "112 London Road, Caterham, Surrey",
+          "dateOfDeath": "2026-05-19",
+          "grantDate": "2026-06-18",
+          "estateValue": "£221,122",
+          "hasProperty": true,
+          "grantType": "Letters of Administration",
+          "solicitor": "Jones & Partners"
+        },
+        {
+          "name": "James Cooper",
+          "address": "117 Green Lane, Folkestone, Kent",
+          "dateOfDeath": "2026-04-29",
+          "grantDate": "2026-05-29",
+          "estateValue": "£442,489",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Premier Wills"
+        },
+        {
+          "name": "David Walker",
+          "address": "105 Manor Road, Westminster, London",
+          "dateOfDeath": "2026-05-06",
+          "grantDate": "2026-06-05",
+          "estateValue": "£677,911",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Richard Khan",
+          "address": "36 King Street, Woking, Surrey",
+          "dateOfDeath": "2026-05-18",
+          "grantDate": "2026-06-17",
+          "estateValue": "£164,246",
+          "hasProperty": false,
+          "grantType": "Letters of Administration",
+          "solicitor": "Premier Wills"
+        },
+        {
+          "name": "Patricia Taylor",
+          "address": "140 Queen Street, Tunbridge Wells, Kent",
+          "dateOfDeath": "2026-04-26",
+          "grantDate": "2026-05-26",
+          "estateValue": "£687,725",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Joseph Khan",
+          "address": "128 Victoria Road, Camden, London",
+          "dateOfDeath": "2026-04-29",
+          "grantDate": "2026-05-29",
+          "estateValue": "£646,749",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "David Thompson",
+          "address": "139 Oak Avenue, Caterham, Surrey",
+          "dateOfDeath": "2026-04-23",
+          "grantDate": "2026-05-23",
+          "estateValue": "£821,894",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Premier Wills"
+        },
+        {
+          "name": "Dorothy Walker",
+          "address": "145 Cedar Close, Folkestone, Kent",
+          "dateOfDeath": "2026-04-22",
+          "grantDate": "2026-05-22",
+          "estateValue": "£427,531",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Helen Ward",
+          "address": "137 High Street, Westminster, London",
+          "dateOfDeath": "2026-05-20",
+          "grantDate": "2026-06-19",
+          "estateValue": "£520,782",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Joseph Brown",
+          "address": "62 Station Road, Woking, Surrey",
+          "dateOfDeath": "2026-05-21",
+          "grantDate": "2026-06-20",
+          "estateValue": "£643,190",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "City Law"
+        },
+        {
+          "name": "Charles Thomas",
+          "address": "141 Park Lane, Tunbridge Wells, Kent",
+          "dateOfDeath": "2026-04-25",
+          "grantDate": "2026-05-25",
+          "estateValue": "£465,396",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        }
+      ],
+      "summary": {
+        "total": 15,
+        "byCounty": {
+          "London": 5,
+          "Surrey": 5,
+          "Kent": 5
+        },
+        "byGrantType": {
+          "Grant of Probate": 13,
+          "Letters of Administration": 2
+        },
+        "withProperty": 9,
+        "totalEstateValue": 7046136
+      }
+    },
+    {
+      "customerId": "demo-solicitor",
+      "company": "Smith & Co Solicitors",
+      "email": "info@smithsolicitors.co.uk",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:59:36.166Z",
+      "totalLeads": 15,
+      "leadLimit": 15,
+      "leads": [
+        {
+          "name": "Robert Roberts",
+          "address": "150 High Street, Westminster, London",
+          "dateOfDeath": "2026-03-15",
+          "grantDate": "2026-04-14",
+          "estateValue": "£325,513",
+          "hasProperty": true,
+          "grantType": "Letters of Administration",
+          "solicitor": ""
+        },
+        {
+          "name": "Thomas Patel",
+          "address": "40 Station Road, Woking, Surrey",
+          "dateOfDeath": "2026-03-08",
+          "grantDate": "2026-04-07",
+          "estateValue": "£813,962",
+          "hasProperty": false,
+          "grantType": "Letters of Administration",
+          "solicitor": ""
+        },
+        {
+          "name": "Susan Ward",
+          "address": "41 Park Lane, Tunbridge Wells, Kent",
+          "dateOfDeath": "2026-03-15",
+          "grantDate": "2026-04-14",
+          "estateValue": "£632,930",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Thomas Jones",
+          "address": "97 Church Road, Camden, London",
+          "dateOfDeath": "2026-03-28",
+          "grantDate": "2026-04-27",
+          "estateValue": "£160,495",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Richard Green",
+          "address": "125 London Road, Caterham, Surrey",
+          "dateOfDeath": "2026-03-21",
+          "grantDate": "2026-04-20",
+          "estateValue": "£736,964",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Linda Wright",
+          "address": "102 Green Lane, Folkestone, Kent",
+          "dateOfDeath": "2026-03-28",
+          "grantDate": "2026-04-27",
+          "estateValue": "£267,219",
+          "hasProperty": true,
+          "grantType": "Letters of Administration",
+          "solicitor": "Smith & Co"
+        },
+        {
+          "name": "Joseph Khan",
+          "address": "63 Manor Road, Westminster, London",
+          "dateOfDeath": "2026-03-12",
+          "grantDate": "2026-04-11",
+          "estateValue": "£341,928",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Susan Roberts",
+          "address": "42 King Street, Woking, Surrey",
+          "dateOfDeath": "2026-04-06",
+          "grantDate": "2026-05-06",
+          "estateValue": "£189,584",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Patricia Khan",
+          "address": "67 Queen Street, Tunbridge Wells, Kent",
+          "dateOfDeath": "2026-03-15",
+          "grantDate": "2026-04-14",
+          "estateValue": "£175,190",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": "Legal Alliance"
+        },
+        {
+          "name": "Thomas Wood",
+          "address": "16 Victoria Road, Camden, London",
+          "dateOfDeath": "2026-03-18",
+          "grantDate": "2026-04-17",
+          "estateValue": "£545,467",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": "Premier Wills"
+        },
+        {
+          "name": "Thomas Evans",
+          "address": "143 Oak Avenue, Caterham, Surrey",
+          "dateOfDeath": "2026-03-28",
+          "grantDate": "2026-04-27",
+          "estateValue": "£671,259",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Richard Harris",
+          "address": "61 Cedar Close, Folkestone, Kent",
+          "dateOfDeath": "2026-03-25",
+          "grantDate": "2026-04-24",
+          "estateValue": "£640,479",
+          "hasProperty": false,
+          "grantType": "Letters of Administration",
+          "solicitor": "City Law"
+        },
+        {
+          "name": "Margaret Hill",
+          "address": "123 High Street, Westminster, London",
+          "dateOfDeath": "2026-03-25",
+          "grantDate": "2026-04-24",
+          "estateValue": "£311,551",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Richard Martin",
+          "address": "70 Station Road, Woking, Surrey",
+          "dateOfDeath": "2026-03-21",
+          "grantDate": "2026-04-20",
+          "estateValue": "£654,154",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "City Law"
+        },
+        {
+          "name": "Charles Turner",
+          "address": "126 Park Lane, Tunbridge Wells, Kent",
+          "dateOfDeath": "2026-03-31",
+          "grantDate": "2026-04-30",
+          "estateValue": "£204,901",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Jones & Partners"
+        }
+      ],
+      "summary": {
+        "total": 15,
+        "byCounty": {
+          "London": 5,
+          "Surrey": 5,
+          "Kent": 5
+        },
+        "byGrantType": {
+          "Letters of Administration": 4,
+          "Grant of Probate": 11
+        },
+        "withProperty": 7,
+        "totalEstateValue": 6671596
+      }
+    },
+    {
+      "customerId": "demo-solicitor",
+      "company": "Smith & Co Solicitors",
+      "email": "info@smithsolicitors.co.uk",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:18:40.189Z",
+      "totalLeads": 15,
+      "leadLimit": 15,
+      "leads": [
+        {
+          "name": "Richard Jones",
+          "address": "56 High Street, Westminster, London",
+          "dateOfDeath": "2026-03-22",
+          "grantDate": "2026-04-21",
+          "estateValue": "£202,868",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "City Law"
+        },
+        {
+          "name": "Thomas Walker",
+          "address": "55 Station Road, Woking, Surrey",
+          "dateOfDeath": "2026-04-05",
+          "grantDate": "2026-05-05",
+          "estateValue": "£878,135",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "John Thompson",
+          "address": "66 Park Lane, Tunbridge Wells, Kent",
+          "dateOfDeath": "2026-03-31",
+          "grantDate": "2026-04-30",
+          "estateValue": "£233,196",
+          "hasProperty": false,
+          "grantType": "Letters of Administration",
+          "solicitor": "Premier Wills"
+        },
+        {
+          "name": "Thomas Patel",
+          "address": "140 Church Road, Camden, London",
+          "dateOfDeath": "2026-04-05",
+          "grantDate": "2026-05-05",
+          "estateValue": "£716,154",
+          "hasProperty": true,
+          "grantType": "Letters of Administration",
+          "solicitor": ""
+        },
+        {
+          "name": "Jennifer Jackson",
+          "address": "112 London Road, Caterham, Surrey",
+          "dateOfDeath": "2026-03-19",
+          "grantDate": "2026-04-18",
+          "estateValue": "£912,532",
+          "hasProperty": true,
+          "grantType": "Letters of Administration",
+          "solicitor": ""
+        },
+        {
+          "name": "William Hill",
+          "address": "66 Green Lane, Folkestone, Kent",
+          "dateOfDeath": "2026-03-10",
+          "grantDate": "2026-04-09",
+          "estateValue": "£245,979",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Legal Alliance"
+        },
+        {
+          "name": "Thomas Thompson",
+          "address": "77 Manor Road, Westminster, London",
+          "dateOfDeath": "2026-03-14",
+          "grantDate": "2026-04-13",
+          "estateValue": "£663,686",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Premier Wills"
+        },
+        {
+          "name": "Jennifer Edwards",
+          "address": "103 King Street, Woking, Surrey",
+          "dateOfDeath": "2026-03-12",
+          "grantDate": "2026-04-11",
+          "estateValue": "£220,214",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Jones & Partners"
+        },
+        {
+          "name": "Richard Williams",
+          "address": "21 Queen Street, Tunbridge Wells, Kent",
+          "dateOfDeath": "2026-03-16",
+          "grantDate": "2026-04-15",
+          "estateValue": "£923,388",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Susan Thompson",
+          "address": "49 Victoria Road, Camden, London",
+          "dateOfDeath": "2026-03-17",
+          "grantDate": "2026-04-16",
+          "estateValue": "£897,453",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Thomas Khan",
+          "address": "76 Oak Avenue, Caterham, Surrey",
+          "dateOfDeath": "2026-03-13",
+          "grantDate": "2026-04-12",
+          "estateValue": "£557,369",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Jennifer Cooper",
+          "address": "54 Cedar Close, Folkestone, Kent",
+          "dateOfDeath": "2026-03-12",
+          "grantDate": "2026-04-11",
+          "estateValue": "£751,964",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Jones & Partners"
+        },
+        {
+          "name": "Joseph Davies",
+          "address": "64 High Street, Westminster, London",
+          "dateOfDeath": "2026-03-08",
+          "grantDate": "2026-04-07",
+          "estateValue": "£935,233",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Patricia Thomas",
+          "address": "146 Station Road, Woking, Surrey",
+          "dateOfDeath": "2026-03-26",
+          "grantDate": "2026-04-25",
+          "estateValue": "£366,008",
+          "hasProperty": false,
+          "grantType": "Letters of Administration",
+          "solicitor": "Premier Wills"
+        },
+        {
+          "name": "Charles Ward",
+          "address": "115 Park Lane, Tunbridge Wells, Kent",
+          "dateOfDeath": "2026-03-28",
+          "grantDate": "2026-04-27",
+          "estateValue": "£895,284",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        }
+      ],
+      "summary": {
+        "total": 15,
+        "byCounty": {
+          "London": 5,
+          "Surrey": 5,
+          "Kent": 5
+        },
+        "byGrantType": {
+          "Grant of Probate": 11,
+          "Letters of Administration": 4
+        },
+        "withProperty": 11,
+        "totalEstateValue": 9399463
+      }
+    }
+  ],
+  "_lastDelivery": "2026-06-20T13:28:58.354Z",
+  "estate-solicitors": [
+    {
+      "customerId": "estate-solicitors",
+      "company": "Estate Law Partners",
+      "email": "enquiries@estatelaw.co.uk",
+      "date": "2026-06-20",
+      "generatedAt": "2026-06-20T13:28:58.352Z",
+      "totalLeads": 15,
+      "leadLimit": 15,
+      "leads": [
+        {
+          "name": "Joseph Hughes",
+          "address": "114 High Street, Chelmsford, Essex",
+          "dateOfDeath": "2026-04-29",
+          "grantDate": "2026-05-29",
+          "estateValue": "£153,314",
+          "hasProperty": true,
+          "grantType": "Letters of Administration",
+          "solicitor": ""
+        },
+        {
+          "name": "Barbara Ali",
+          "address": "61 Station Road, Riverside, Hertfordshire",
+          "dateOfDeath": "2026-04-24",
+          "grantDate": "2026-05-24",
+          "estateValue": "£544,100",
+          "hasProperty": true,
+          "grantType": "Letters of Administration",
+          "solicitor": ""
+        },
+        {
+          "name": "Jennifer Ali",
+          "address": "148 Park Lane, Park Estate, Cambridgeshire",
+          "dateOfDeath": "2026-04-22",
+          "grantDate": "2026-05-22",
+          "estateValue": "£417,412",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Premier Wills"
+        },
+        {
+          "name": "Jennifer Green",
+          "address": "122 Church Road, Basildon, Essex",
+          "dateOfDeath": "2026-05-03",
+          "grantDate": "2026-06-02",
+          "estateValue": "£704,441",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Legal Alliance"
+        },
+        {
+          "name": "Barbara Brown",
+          "address": "121 London Road, Riverside, Hertfordshire",
+          "dateOfDeath": "2026-05-06",
+          "grantDate": "2026-06-05",
+          "estateValue": "£549,118",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Elizabeth Jackson",
+          "address": "62 Green Lane, Park Estate, Cambridgeshire",
+          "dateOfDeath": "2026-05-09",
+          "grantDate": "2026-06-08",
+          "estateValue": "£415,415",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "James Patel",
+          "address": "134 Manor Road, Chelmsford, Essex",
+          "dateOfDeath": "2026-04-23",
+          "grantDate": "2026-05-23",
+          "estateValue": "£317,033",
+          "hasProperty": true,
+          "grantType": "Letters of Administration",
+          "solicitor": "Premier Wills"
+        },
+        {
+          "name": "Mary Jones",
+          "address": "75 King Street, Riverside, Hertfordshire",
+          "dateOfDeath": "2026-05-07",
+          "grantDate": "2026-06-06",
+          "estateValue": "£916,367",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Mary Evans",
+          "address": "16 Queen Street, Park Estate, Cambridgeshire",
+          "dateOfDeath": "2026-05-12",
+          "grantDate": "2026-06-11",
+          "estateValue": "£866,711",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": "Jones & Partners"
+        },
+        {
+          "name": "Margaret Khan",
+          "address": "24 Victoria Road, Basildon, Essex",
+          "dateOfDeath": "2026-04-22",
+          "grantDate": "2026-05-22",
+          "estateValue": "£770,177",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Dorothy Roberts",
+          "address": "139 Oak Avenue, Riverside, Hertfordshire",
+          "dateOfDeath": "2026-05-17",
+          "grantDate": "2026-06-16",
+          "estateValue": "£929,459",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Premier Wills"
+        },
+        {
+          "name": "Thomas Evans",
+          "address": "150 Cedar Close, Park Estate, Cambridgeshire",
+          "dateOfDeath": "2026-05-12",
+          "grantDate": "2026-06-11",
+          "estateValue": "£644,082",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Jones & Partners"
+        },
+        {
+          "name": "Elizabeth Khan",
+          "address": "4 High Street, Chelmsford, Essex",
+          "dateOfDeath": "2026-05-14",
+          "grantDate": "2026-06-13",
+          "estateValue": "£935,350",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "William Evans",
+          "address": "20 Station Road, Riverside, Hertfordshire",
+          "dateOfDeath": "2026-05-08",
+          "grantDate": "2026-06-07",
+          "estateValue": "£459,515",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Charles Jones",
+          "address": "99 Park Lane, Park Estate, Cambridgeshire",
+          "dateOfDeath": "2026-05-14",
+          "grantDate": "2026-06-13",
+          "estateValue": "£715,833",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        }
+      ],
+      "summary": {
+        "total": 15,
+        "byCounty": {
+          "Essex": 5,
+          "Hertfordshire": 5,
+          "Cambridgeshire": 5
+        },
+        "byGrantType": {
+          "Letters of Administration": 3,
+          "Grant of Probate": 12
+        },
+        "withProperty": 14,
+        "totalEstateValue": 9338327
+      }
+    },
+    {
+      "customerId": "estate-solicitors",
+      "company": "Estate Law Partners",
+      "email": "enquiries@estatelaw.co.uk",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:18:47.866Z",
+      "totalLeads": 15,
+      "leadLimit": 15,
+      "leads": [
+        {
+          "name": "Margaret Martin",
+          "address": "54 High Street, Chelmsford, Essex",
+          "dateOfDeath": "2026-03-12",
+          "grantDate": "2026-04-11",
+          "estateValue": "£576,606",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Premier Wills"
+        },
+        {
+          "name": "John Walker",
+          "address": "21 Station Road, Riverside, Hertfordshire",
+          "dateOfDeath": "2026-03-10",
+          "grantDate": "2026-04-09",
+          "estateValue": "£372,381",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Jones & Partners"
+        },
+        {
+          "name": "Jennifer Hall",
+          "address": "17 Park Lane, Park Estate, Cambridgeshire",
+          "dateOfDeath": "2026-03-19",
+          "grantDate": "2026-04-18",
+          "estateValue": "£851,321",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Mary Cooper",
+          "address": "55 Church Road, Basildon, Essex",
+          "dateOfDeath": "2026-03-24",
+          "grantDate": "2026-04-23",
+          "estateValue": "£588,094",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Jennifer Williams",
+          "address": "59 London Road, Riverside, Hertfordshire",
+          "dateOfDeath": "2026-03-21",
+          "grantDate": "2026-04-20",
+          "estateValue": "£893,808",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Jones & Partners"
+        },
+        {
+          "name": "Linda Turner",
+          "address": "90 Green Lane, Park Estate, Cambridgeshire",
+          "dateOfDeath": "2026-03-19",
+          "grantDate": "2026-04-18",
+          "estateValue": "£361,673",
+          "hasProperty": true,
+          "grantType": "Letters of Administration",
+          "solicitor": ""
+        },
+        {
+          "name": "Margaret Ward",
+          "address": "49 Manor Road, Chelmsford, Essex",
+          "dateOfDeath": "2026-03-15",
+          "grantDate": "2026-04-14",
+          "estateValue": "£780,872",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Legal Alliance"
+        },
+        {
+          "name": "Joseph Wood",
+          "address": "104 King Street, Riverside, Hertfordshire",
+          "dateOfDeath": "2026-03-29",
+          "grantDate": "2026-04-28",
+          "estateValue": "£150,287",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": ""
+        },
+        {
+          "name": "Linda Walker",
+          "address": "132 Queen Street, Park Estate, Cambridgeshire",
+          "dateOfDeath": "2026-03-23",
+          "grantDate": "2026-04-22",
+          "estateValue": "£280,590",
+          "hasProperty": false,
+          "grantType": "Letters of Administration",
+          "solicitor": ""
+        },
+        {
+          "name": "Robert Clarke",
+          "address": "74 Victoria Road, Basildon, Essex",
+          "dateOfDeath": "2026-03-25",
+          "grantDate": "2026-04-24",
+          "estateValue": "£321,148",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": "Jones & Partners"
+        },
+        {
+          "name": "William Khan",
+          "address": "118 Oak Avenue, Riverside, Hertfordshire",
+          "dateOfDeath": "2026-04-05",
+          "grantDate": "2026-05-05",
+          "estateValue": "£816,076",
+          "hasProperty": true,
+          "grantType": "Letters of Administration",
+          "solicitor": "Smith & Co"
+        },
+        {
+          "name": "Mary Hall",
+          "address": "116 Cedar Close, Park Estate, Cambridgeshire",
+          "dateOfDeath": "2026-04-02",
+          "grantDate": "2026-05-02",
+          "estateValue": "£231,830",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Premier Wills"
+        },
+        {
+          "name": "Dorothy Green",
+          "address": "101 High Street, Chelmsford, Essex",
+          "dateOfDeath": "2026-04-03",
+          "grantDate": "2026-05-03",
+          "estateValue": "£358,781",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "City Law"
+        },
+        {
+          "name": "Robert Hill",
+          "address": "2 Station Road, Riverside, Hertfordshire",
+          "dateOfDeath": "2026-03-15",
+          "grantDate": "2026-04-14",
+          "estateValue": "£304,131",
+          "hasProperty": true,
+          "grantType": "Grant of Probate",
+          "solicitor": "Legal Alliance"
+        },
+        {
+          "name": "Thomas Cooper",
+          "address": "102 Park Lane, Park Estate, Cambridgeshire",
+          "dateOfDeath": "2026-03-25",
+          "grantDate": "2026-04-24",
+          "estateValue": "£458,094",
+          "hasProperty": false,
+          "grantType": "Grant of Probate",
+          "solicitor": "Jones & Partners"
+        }
+      ],
+      "summary": {
+        "total": 15,
+        "byCounty": {
+          "Essex": 5,
+          "Hertfordshire": 5,
+          "Cambridgeshire": 5
+        },
+        "byGrantType": {
+          "Grant of Probate": 12,
+          "Letters of Administration": 3
+        },
+        "withProperty": 10,
+        "totalEstateValue": 7345692
+      }
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "demo": {
+    "company": "ABC Accountants",
+    "email": "demo@newbusinessalert.co.uk",
+    "active": true,
+    "locations": [
+      "manchester",
+      "london"
+    ],
+    "locales": [
+      "manchester",
+      "london"
+    ],
+    "sicCodes": [
+      "70229"
+    ],
+    "sicFilters": "professional_services",
+    "companyTypes": [
+      "ltd"
+    ],
+    "sources": [
+      "Companies House"
+    ],
+    "plan": "Pro",
+    "leadsPerDay": 50,
+    "createdAt": "2026-05-06T08:38:13.926Z",
+    "lastDelivery": null,
+    "totalLeadsReceived": 0
+  },
+  "demo-accountant": {
+    "company": "ABC Accountants",
+    "email": "demo@accountants.com",
+    "active": true,
+    "locations": [
+      "london",
+      "manchester"
+    ],
+    "locales": [
+      "london",
+      "manchester"
+    ],
+    "sicCodes": [
+      "70229"
+    ],
+    "sicFilters": "professional_services",
+    "companyTypes": [
+      "ltd"
+    ],
+    "sources": [
+      "Companies House"
+    ],
+    "plan": "Pro",
+    "leadsPerDay": 50,
+    "createdAt": "2026-05-06T08:39:11.028Z",
+    "lastDelivery": null,
+    "totalLeadsReceived": 0
+  }
+}
