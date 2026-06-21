@@ -1,0 +1,39 @@
+{
+  "demo-tenders": {
+    "company": "ABC Construction Ltd",
+    "email": "info@abcconstruction.co.uk",
+    "active": true,
+    "keywords": [
+      "IT",
+      "construction",
+      "cleaning"
+    ],
+    "location": "UK",
+    "minValue": 0,
+    "maxValue": 0,
+    "cpvCodes": [],
+    "plan": "Pro",
+    "leadsPerDay": 15,
+    "createdAt": "2026-05-06T08:38:05.007Z",
+    "lastDelivery": null,
+    "totalLeadsReceived": 0
+  },
+  "demo-consultant": {
+    "company": "Premier Consulting",
+    "email": "info@premier.co.uk",
+    "active": true,
+    "keywords": [
+      "IT",
+      "Construction"
+    ],
+    "location": "UK",
+    "minValue": 0,
+    "maxValue": 0,
+    "cpvCodes": [],
+    "plan": "Pro",
+    "leadsPerDay": 15,
+    "createdAt": "2026-05-06T08:39:13.728Z",
+    "lastDelivery": null,
+    "totalLeadsReceived": 0
+  }
+}

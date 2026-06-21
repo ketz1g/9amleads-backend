@@ -1,0 +1,4 @@
+{
+  "assignments": {},
+  "_description": "Tracks which postcode districts are claimed by which customers. Key = district code (e.g., 'EN1'), value = { customer_id, product, assigned_at, status }"
+}

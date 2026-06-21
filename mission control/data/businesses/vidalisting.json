@@ -1,0 +1,187 @@
+{
+  "business": {
+    "id": "vidalisting",
+    "name": "VidaListing",
+    "type": "estate-agency",
+    "status": "active",
+    "health": "healthy",
+    "created": "2026-05-02"
+  },
+  "leads": [],
+  "customers": [],
+  "tasks": [],
+  "followUps": [],
+  "campaigns": [],
+  "templates": [
+    {
+      "id": 1,
+      "name": "New Lead Outreach",
+      "type": "email",
+      "subject": "Hi {{customer_name}}, Looking to Sell or Let?",
+      "body": "Hi {{customer_name}},\n\nThanks for your interest in VidaListing. We're here to help you sell or let your property.\n\nGet a free valuation: https://vidalisting.co.uk/valuation\n\nBest regards\nThe VidaListing Team"
+    },
+    {
+      "id": 2,
+      "name": "Follow-up",
+      "type": "email",
+      "subject": "Following up on your enquiry",
+      "body": "Hi {{customer_name}},\n\nI wanted to follow up on your recent enquiry. Have you had a chance to think about it?\n\nLet me know if you have any questions.\n\nBest regards\nThe VidaListing Team"
+    },
+    {
+      "id": 3,
+      "name": "Interested Lead",
+      "type": "email",
+      "subject": "Great choice! {{customer_name}}",
+      "body": "Hi {{customer_name}},\n\nGreat to hear you're interested! Let me arrange a convenient time for a property viewing.\n\nBest regards\nThe VidaListing Team"
+    },
+    {
+      "id": 4,
+      "name": "Not Interested Response",
+      "type": "email",
+      "subject": "No problem, {{customer_name}}",
+      "body": "Hi {{customer_name}},\n\nNo problem at all. If you change your mind in the future, we'd be happy to help.\n\nBest regards\nThe VidaListing Team"
+    },
+    {
+      "id": 5,
+      "name": "Complaint/Review",
+      "type": "email",
+      "subject": "RE: Your recent enquiry",
+      "body": "Hi {{customer_name}},\n\nThank you for reaching out. I'd like to personally look into this for you.\n\nCan you please provide more details so I can assist you better?\n\nBest regards\nThe VidaListing Team"
+    },
+    {
+      "id": 6,
+      "name": "General Reply",
+      "type": "email",
+      "subject": "RE: Your enquiry",
+      "body": "Hi {{customer_name}},\n\nThank you for getting in touch. How can I help you today?\n\nBest regards\nThe VidaListing Team"
+    }
+  ],
+  "knowledgeBase": [
+    {
+      "id": 1,
+      "category": "Services",
+      "title": "Sales",
+      "content": "Full estate agency sales service with professional photography and marketing."
+    },
+    {
+      "id": 2,
+      "category": "Services",
+      "title": "Lettings",
+      "content": "Full letting service including tenant find and management options."
+    },
+    {
+      "id": 3,
+      "category": "Services",
+      "title": "Property Management",
+      "content": "Comprehensive property management for landlords."
+    },
+    {
+      "id": 4,
+      "category": "Services",
+      "title": "Valuations",
+      "content": "Free, no-obligation property valuations."
+    },
+    {
+      "id": 5,
+      "category": "Opening Hours",
+      "title": "Opening Hours",
+      "content": "Mon-Fri: 9am-6pm, Sat: 9am-5pm, Sun: By appointment"
+    },
+    {
+      "id": 6,
+      "category": "Contact Details",
+      "title": "Contact",
+      "content": "Phone: 020 1234 5679, Email: hello@vidalisting.co.uk, Address: 124 High Street, London"
+    },
+    {
+      "id": 7,
+      "category": "Pricing Guidance",
+      "title": "Sales Fees",
+      "content": "Typical fee: 1.5% + VAT of sale price. No sale, no fee."
+    },
+    {
+      "id": 8,
+      "category": "Pricing Guidance",
+      "title": "Lettings Fees",
+      "content": "Typically 8-10% of monthly rent + VAT."
+    },
+    {
+      "id": 9,
+      "category": "Policies",
+      "title": "Client Money Protection",
+      "content": "Client money is protected through our designated client account."
+    },
+    {
+      "id": 10,
+      "category": "Policies",
+      "title": "Complaints Procedure",
+      "content": "We have a formal complaints procedure. Contact: complaints@vidalisting.co.uk"
+    }
+  ],
+  "designCenter": [],
+  "automationRules": [
+    {
+      "id": 1,
+      "name": "Lead Approved",
+      "trigger": "lead_status_changed",
+      "condition": "status = 'New'",
+      "action": "create_outreach_draft",
+      "enabled": true
+    },
+    {
+      "id": 2,
+      "name": "Follow-up Due",
+      "trigger": "followup_due",
+      "condition": "due_date = today",
+      "action": "create_task",
+      "enabled": true
+    },
+    {
+      "id": 3,
+      "name": "Lead Interested",
+      "trigger": "lead_status_changed",
+      "condition": "status = 'Interested'",
+      "action": "move_to_hot_leads",
+      "enabled": true
+    },
+    {
+      "id": 4,
+      "name": "Lead Rejected",
+      "trigger": "lead_status_changed",
+      "condition": "status = 'Not Interested'",
+      "action": "log_reason",
+      "enabled": true
+    },
+    {
+      "id": 5,
+      "name": "Duplicate Detected",
+      "trigger": "lead_created",
+      "condition": "email_exists",
+      "action": "mark_duplicate",
+      "enabled": true
+    }
+  ],
+  "subAgent": {
+    "name": "VidaListing Agent",
+    "status": "stopped",
+    "instructions": "You are the AI agent for VidaListing estate agency. Your role is to help with property lead management and customer enquiries.",
+    "dailyLimit": 100,
+    "autoScrape": false,
+    "autoFollowUp": false
+  },
+  "activityLog": [],
+  "analytics": {
+    "leadsByStatus": {},
+    "leadsBySource": {},
+    "conversionRate": 0,
+    "revenueWon": 0,
+    "revenueLost": 0,
+    "averageDealValue": 0
+  },
+  "settings": {
+    "leadLimit": 100,
+    "defaultStatus": "New",
+    "autoAssign": false,
+    "notifyOnNew": true
+  }
+}

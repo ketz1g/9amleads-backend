@@ -1,0 +1,187 @@
+{
+  "business": {
+    "id": "the-moving-school",
+    "name": "The Moving School",
+    "type": "education",
+    "status": "active",
+    "health": "healthy",
+    "created": "2026-05-02"
+  },
+  "leads": [],
+  "customers": [],
+  "tasks": [],
+  "followUps": [],
+  "campaigns": [],
+  "templates": [
+    {
+      "id": 1,
+      "name": "New Lead Outreach",
+      "type": "email",
+      "subject": "Hi {{customer_name}}, Ready to Learn to Drive?",
+      "body": "Hi {{customer_name}},\n\nThanks for your interest in The Moving School. We're here to help you pass your driving test first time.\n\nBook your first lesson: https://themovingschool.co.uk/book\n\nBest regards\nThe Moving School Team"
+    },
+    {
+      "id": 2,
+      "name": "Follow-up",
+      "type": "email",
+      "subject": "Following up on your enquiry",
+      "body": "Hi {{customer_name}},\n\nI wanted to follow up on your recent enquiry. Have you had a chance to think about it?\n\nLet me know if you have any questions.\n\nBest regards\nThe Moving School Team"
+    },
+    {
+      "id": 3,
+      "name": "Interested Lead",
+      "type": "email",
+      "subject": "Great choice! {{customer_name}}",
+      "body": "Hi {{customer_name}},\n\nGreat to hear you're interested! Let me arrange your first driving lesson.\n\nBest regards\nThe Moving School Team"
+    },
+    {
+      "id": 4,
+      "name": "Not Interested Response",
+      "type": "email",
+      "subject": "No problem, {{customer_name}}",
+      "body": "Hi {{customer_name}},\n\nNo problem at all. If you change your mind in the future, we'd be happy to help.\n\nBest regards\nThe Moving School Team"
+    },
+    {
+      "id": 5,
+      "name": "Complaint/Review",
+      "type": "email",
+      "subject": "RE: Your recent enquiry",
+      "body": "Hi {{customer_name}},\n\nThank you for reaching out. I'd like to personally look into this for you.\n\nCan you please provide more details so I can assist you better?\n\nBest regards\nThe Moving School Team"
+    },
+    {
+      "id": 6,
+      "name": "General Reply",
+      "type": "email",
+      "subject": "RE: Your enquiry",
+      "body": "Hi {{customer_name}},\n\nThank you for getting in touch. How can I help you today?\n\nBest regards\nThe Moving School Team"
+    }
+  ],
+  "knowledgeBase": [
+    {
+      "id": 1,
+      "category": "Services",
+      "title": "Driving Lessons",
+      "content": "Professional driving lessons for all levels. Intensive courses available."
+    },
+    {
+      "id": 2,
+      "category": "Services",
+      "title": "Intensive Courses",
+      "content": "1-4 week intensive driving courses. Pass in as little as 1 week."
+    },
+    {
+      "id": 3,
+      "category": "Services",
+      "title": "Refresher Lessons",
+      "content": "Refresher lessons for nervous drivers or those returning to driving."
+    },
+    {
+      "id": 4,
+      "category": "Services",
+      "title": "Mock Tests",
+      "content": "Realistic mock driving tests with feedback."
+    },
+    {
+      "id": 5,
+      "category": "Opening Hours",
+      "title": "Opening Hours",
+      "content": "Mon-Sun: 8am-8pm"
+    },
+    {
+      "id": 6,
+      "category": "Contact Details",
+      "title": "Contact",
+      "content": "Phone: 020 1234 5680, Email: hello@themovingschool.co.uk"
+    },
+    {
+      "id": 7,
+      "category": "Pricing Guidance",
+      "title": "Lesson Prices",
+      "content": "Single lesson: £40 per hour. Block of 10: £360. Intensive courses from £800."
+    },
+    {
+      "id": 8,
+      "category": "Pricing Guidance",
+      "title": "Intensive Prices",
+      "content": "1-week course: £800. 2-week course: £700. 4-week course: £600."
+    },
+    {
+      "id": 9,
+      "category": "Policies",
+      "title": "Booking Policy",
+      "content": "24 hours notice for cancellations. No refund for no-shows."
+    },
+    {
+      "id": 10,
+      "category": "Policies",
+      "title": "Instructor Policy",
+      "content": "All instructors are DVSA approved and DBS checked."
+    }
+  ],
+  "designCenter": [],
+  "automationRules": [
+    {
+      "id": 1,
+      "name": "Lead Approved",
+      "trigger": "lead_status_changed",
+      "condition": "status = 'New'",
+      "action": "create_outreach_draft",
+      "enabled": true
+    },
+    {
+      "id": 2,
+      "name": "Follow-up Due",
+      "trigger": "followup_due",
+      "condition": "due_date = today",
+      "action": "create_task",
+      "enabled": true
+    },
+    {
+      "id": 3,
+      "name": "Lead Interested",
+      "trigger": "lead_status_changed",
+      "condition": "status = 'Interested'",
+      "action": "move_to_hot_leads",
+      "enabled": true
+    },
+    {
+      "id": 4,
+      "name": "Lead Rejected",
+      "trigger": "lead_status_changed",
+      "condition": "status = 'Not Interested'",
+      "action": "log_reason",
+      "enabled": true
+    },
+    {
+      "id": 5,
+      "name": "Duplicate Detected",
+      "trigger": "lead_created",
+      "condition": "email_exists",
+      "action": "mark_duplicate",
+      "enabled": true
+    }
+  ],
+  "subAgent": {
+    "name": "The Moving School Agent",
+    "status": "stopped",
+    "instructions": "You are the AI agent for The Moving School driving academy. Your role is to help with student enrolments and customer enquiries.",
+    "dailyLimit": 100,
+    "autoScrape": false,
+    "autoFollowUp": false
+  },
+  "activityLog": [],
+  "analytics": {
+    "leadsByStatus": {},
+    "leadsBySource": {},
+    "conversionRate": 0,
+    "revenueWon": 0,
+    "revenueLost": 0,
+    "averageDealValue": 0
+  },
+  "settings": {
+    "leadLimit": 100,
+    "defaultStatus": "New",
+    "autoAssign": false,
+    "notifyOnNew": true
+  }
+}

@@ -1,0 +1,145 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin | 9amLeads</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#f1f5f9;padding:24px}
+.container{max-width:1000px;margin:0 auto}
+h1{font-size:28px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:4px}
+h1 span{color:#0ea5e9}
+.sub{color:#8890a8;font-size:14px;margin-bottom:24px}
+.card{background:#11131f;border:1px solid #1e2030;border-radius:14px;padding:20px;margin-bottom:16px}
+.card h3{font-size:14px;font-weight:700;margin-bottom:12px;color:#c8cbd6;text-transform:uppercase;letter-spacing:.5px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;color:#5c6480;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #1e2030}
+td{padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#c8cbd6}
+tr:hover td{background:rgba(255,255,255,0.02)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-trial{background:rgba(14,165,233,0.1);color:#0ea5e9}
+.badge-paid{background:rgba(34,197,94,0.1);color:#22c55e}
+.badge-moved{background:rgba(255,107,53,0.1);color:#ff6b35}
+.badge-probate{background:rgba(168,85,247,0.1);color:#a855f7}
+.badge-biz{background:rgba(6,182,212,0.1);color:#06b6d4}
+.badge-planning{background:rgba(16,185,129,0.1);color:#10b981}
+.badge-tenders{background:rgba(99,102,241,0.1);color:#6366f1}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:.2s;font-family:inherit;text-decoration:none}
+.btn-view{background:rgba(14,165,233,0.1);color:#0ea5e9;border:1px solid rgba(14,165,233,0.2)}
+.btn-view:hover{background:rgba(14,165,233,0.2)}
+.email-preview{background:#0a0a0a;border:1px solid #1e2030;border-radius:10px;padding:0;overflow:hidden;margin-bottom:12px}
+.email-preview iframe{width:100%;height:400px;border:none}
+.tabs{display:flex;gap:2px;margin-bottom:20px;background:#0f111a;border-radius:10px;padding:3px}
+.tab{padding:8px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:#5c6480;font-family:inherit;transition:.2s}
+.tab.active{background:#1e2030;color:#f1f5f9}
+.tab:hover:not(.active){color:#c8cbd6}
+.tab-content{display:none}
+.tab-content.active{display:block}
+</style>
+</head>
+<body>
+<div class="container">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+<div><h1>9am<span>Leads</span> Admin</h1><p class="sub" style="margin-bottom:0">Customer accounts &amp; email previews</p></div>
+<a href="/portal/" class="btn btn-view"><i class="fas fa-arrow-left"></i> Back to Portal</a>
+</div>
+
+<div class="tabs">
+<button class="tab active" onclick="switchTab('customers')">Customers</button>
+<button class="tab" onclick="switchTab('emails')">Email Previews</button>
+<button class="tab" onclick="switchTab('deliveries')">Delivery Log</button>
+</div>
+
+<div id="tab-customers" class="tab-content active">
+<div class="card">
+<h3><i class="fas fa-users"></i> Customer Accounts</h3>
+<table>
+<thead><tr>
+<th>Company</th><th>Email</th><th>Product</th><th>Plan</th><th>Target Areas</th><th>Leads</th><th>Action</th>
+</tr></thead>
+<tbody id="customer-table"></tbody>
+</table>
+</div>
+</div>
+
+<div id="tab-emails" class="tab-content">
+<div class="card">
+<h3><i class="fas fa-envelope"></i> Saved Email Previews</h3>
+<div id="email-list"></div>
+</div>
+</div>
+
+<div id="tab-deliveries" class="tab-content">
+<div class="card">
+<h3><i class="fas fa-history"></i> Delivery Log</h3>
+<table>
+<thead><tr><th>Time</th><th>Customer</th><th>Product</th><th>Leads</th><th>Status</th></tr></thead>
+<tbody id="delivery-table"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<script>
+const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:8012' : 'https://www.9amleads.com';
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelector('.tab[onclick*="' + name + '"]').classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+async function loginAs(customerId) {
+  // Creates a temporary admin token to view the customer dashboard
+  const r = await fetch(API + '/api/admin/impersonate', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ customer_id: customerId })
+  });
+  const d = await r.json();
+  if (d.token) {
+    // Store as session and redirect to dashboard
+    const payload = JSON.parse(atob(d.token.split('.')[1]));
+    localStorage.setItem('mld_portal_session', JSON.stringify({
+      token: d.token, clientId: customerId, name: payload.name || 'Admin',
+      plan: payload.plan || 'free_trial', email: payload.email || '',
+      product: payload.product || 'moving'
+    }));
+    window.location.href = '/portal/dashboard.html';
+  } else {
+    alert('Failed to login: ' + (d.error || 'unknown error'));
+  }
+}
+
+async function loadData() {
+  try {
+    // Load customers from health API
+    const health = await (await fetch(API + '/api/health')).json();
+    
+    // Load customers list
+    const custResp = await fetch(API + '/api/admin/customers');
+    const custData = custResp.ok ? await custResp.json() : { customers: [] };
+    const customers = custData.customers || [];
+    
+    const tbody = document.getElementById('customer-table');
+    tbody.innerHTML = '';
+    for (const c of customers) {
+      const areas = c.target_areas ? JSON.parse(c.target_areas).join(', ') : '';
+      const badgeClass = 'badge-' + (c.product === 'moving' ? 'moved' : c.product === 'probate' ? 'probate' : c.product === 'newbusiness' ? 'biz' : c.product === 'planning' ? 'planning' : c.product === 'tenders' ? 'tenders' : 'trial');
+      const planBadge = c.plan === 'free_trial' ? 'badge-trial' : 'badge-paid';
+      tbody.innerHTML += '<tr><td>' + (c.company || '') + '</td><td>' + c.email + '</td><td><span class="badge ' + badgeClass + '">' + (c.lead_type || c.product) + '</span></td><td><span class="badge ' + planBadge + '">' + (c.plan || '') + '</span></td><td style="font-size:11px;color:#8890a8">' + areas + '</td><td>' + (c.leads_count || 0) + '</td><td><button class="btn btn-view" onclick="loginAs(\'' + c.id + '\')"><i class="fas fa-eye"></i> Dashboard</button></td></tr>';
+    }
+    
+    if (customers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#5c6480;padding:24px">No customers found</td></tr>';
+    }
+  } catch (e) {
+    document.getElementById('customer-table').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#ef4444;padding:24px">Could not load customers: ' + e.message + '</td></tr>';
+  }
+}
+
+loadData();
+</script>
+</body></html>

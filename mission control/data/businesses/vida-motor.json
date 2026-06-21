@@ -1,0 +1,187 @@
+{
+  "business": {
+    "id": "vida-motor",
+    "name": "Vida Motor",
+    "type": "car-dealership",
+    "status": "active",
+    "health": "healthy",
+    "created": "2026-05-02"
+  },
+  "leads": [],
+  "customers": [],
+  "tasks": [],
+  "followUps": [],
+  "campaigns": [],
+  "templates": [
+    {
+      "id": 1,
+      "name": "New Lead Outreach",
+      "type": "email",
+      "subject": "Hi {{customer_name}}, Need a New Car?",
+      "body": "Hi {{customer_name}},\n\nThanks for your interest in Vida Motor. We'd love to help you find your perfect car.\n\nBook a test drive today: https://vidamotor.co.uk/test-drive\n\nBest regards\nThe Vida Motor Team"
+    },
+    {
+      "id": 2,
+      "name": "Follow-up",
+      "type": "email",
+      "subject": "Following up on your enquiry",
+      "body": "Hi {{customer_name}},\n\nI wanted to follow up on your recent enquiry. Have you had a chance to think about it?\n\nLet me know if you have any questions.\n\nBest regards\nThe Vida Motor Team"
+    },
+    {
+      "id": 3,
+      "name": "Interested Lead",
+      "type": "email",
+      "subject": "Great choice! {{customer_name}}",
+      "body": "Hi {{customer_name}},\n\nGreat to hear you're interested! Let me arrange a convenient time for you to come in and see the car.\n\nBest regards\nThe Vida Motor Team"
+    },
+    {
+      "id": 4,
+      "name": "Not Interested Response",
+      "type": "email",
+      "subject": "No problem, {{customer_name}}",
+      "body": "Hi {{customer_name}},\n\nNo problem at all. If you change your mind in the future, we'd be happy to help.\n\nBest regards\nThe Vida Motor Team"
+    },
+    {
+      "id": 5,
+      "name": "Complaint/Review",
+      "type": "email",
+      "subject": "RE: Your recent enquiry",
+      "body": "Hi {{customer_name}},\n\nThank you for reaching out. I'd like to personally look into this for you.\n\nCan you please provide more details so I can assist you better?\n\nBest regards\nThe Vida Motor Team"
+    },
+    {
+      "id": 6,
+      "name": "General Reply",
+      "type": "email",
+      "subject": "RE: Your enquiry",
+      "body": "Hi {{customer_name}},\n\nThank you for getting in touch. How can I help you today?\n\nBest regards\nThe Vida Motor Team"
+    }
+  ],
+  "knowledgeBase": [
+    {
+      "id": 1,
+      "category": "Services",
+      "title": "Car Sales",
+      "content": "We sell new and used cars from all major manufacturers."
+    },
+    {
+      "id": 2,
+      "category": "Services",
+      "title": "MOT Testing",
+      "content": "Full MOT testing service available. £45 for standard cars."
+    },
+    {
+      "id": 3,
+      "category": "Services",
+      "title": "Car Servicing",
+      "content": "Full servicing and maintenance for all vehicle makes."
+    },
+    {
+      "id": 4,
+      "category": "Services",
+      "title": "Vehicle Finance",
+      "content": "We offer competitive PCP and HP options through our finance partners."
+    },
+    {
+      "id": 5,
+      "category": "Opening Hours",
+      "title": "Opening Hours",
+      "content": "Mon-Fri: 9am-6pm, Sat: 9am-5pm, Sun: 10am-4pm"
+    },
+    {
+      "id": 6,
+      "category": "Contact Details",
+      "title": "Contact",
+      "content": "Phone: 020 1234 5678, Email: hello@vidamotor.co.uk, Address: 123 High Street, London"
+    },
+    {
+      "id": 7,
+      "category": "Pricing Guidance",
+      "title": "New Car Deposits",
+      "content": "Typically £500-£1000 deposit depending on vehicle price."
+    },
+    {
+      "id": 8,
+      "category": "Pricing Guidance",
+      "title": "Used Car Pricing",
+      "content": "Prices range from £5,000 to £50,000+ depending on age and mileage."
+    },
+    {
+      "id": 9,
+      "category": "Policies",
+      "title": "Returns Policy",
+      "content": "7-day cooling off period for new car orders. Used cars sold as seen."
+    },
+    {
+      "id": 10,
+      "category": "Policies",
+      "title": "Warranty",
+      "content": "New cars come with 3-year manufacturer warranty. Extended warranty available."
+    }
+  ],
+  "designCenter": [],
+  "automationRules": [
+    {
+      "id": 1,
+      "name": "Lead Approved",
+      "trigger": "lead_status_changed",
+      "condition": "status = 'New'",
+      "action": "create_outreach_draft",
+      "enabled": true
+    },
+    {
+      "id": 2,
+      "name": "Follow-up Due",
+      "trigger": "followup_due",
+      "condition": "due_date = today",
+      "action": "create_task",
+      "enabled": true
+    },
+    {
+      "id": 3,
+      "name": "Lead Interested",
+      "trigger": "lead_status_changed",
+      "condition": "status = 'Interested'",
+      "action": "move_to_hot_leads",
+      "enabled": true
+    },
+    {
+      "id": 4,
+      "name": "Lead Rejected",
+      "trigger": "lead_status_changed",
+      "condition": "status = 'Not Interested'",
+      "action": "log_reason",
+      "enabled": true
+    },
+    {
+      "id": 5,
+      "name": "Duplicate Detected",
+      "trigger": "lead_created",
+      "condition": "email_exists",
+      "action": "mark_duplicate",
+      "enabled": true
+    }
+  ],
+  "subAgent": {
+    "name": "Vida Motor Agent",
+    "status": "stopped",
+    "instructions": "You are the AI agent for Vida Motor car dealership. Your role is to help with lead management and customer enquiries.",
+    "dailyLimit": 100,
+    "autoScrape": false,
+    "autoFollowUp": false
+  },
+  "activityLog": [],
+  "analytics": {
+    "leadsByStatus": {},
+    "leadsBySource": {},
+    "conversionRate": 0,
+    "revenueWon": 0,
+    "revenueLost": 0,
+    "averageDealValue": 0
+  },
+  "settings": {
+    "leadLimit": 100,
+    "defaultStatus": "New",
+    "autoAssign": false,
+    "notifyOnNew": true
+  }
+}

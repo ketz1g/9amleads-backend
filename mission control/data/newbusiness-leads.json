@@ -1,0 +1,7083 @@
+{
+  "demo": [
+    {
+      "id": "NB17819621651930",
+      "companyName": "Liberty Holdings",
+      "registrationNumber": "18407365",
+      "address": "86 South Street, Manchester",
+      "postcode": "M20 RH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-22",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17819621651931",
+      "companyName": "Nexus Consulting",
+      "registrationNumber": "89177879",
+      "address": "122 Albert Road, London",
+      "postcode": "EC31 PI",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-04",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17819621651932",
+      "companyName": "London Solutions",
+      "registrationNumber": "43802335",
+      "address": "152 Church Street, Manchester",
+      "postcode": "M41 PL",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-03",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17819621651933",
+      "companyName": "Blue Ltd",
+      "registrationNumber": "51396506",
+      "address": "146 Queen Street, London",
+      "postcode": "SW98 JE",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-20",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17819621651934",
+      "companyName": "Thames Holdings",
+      "registrationNumber": "64013958",
+      "address": "120 South Street, Manchester",
+      "postcode": "M35 QE",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-19",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17819621651935",
+      "companyName": "Red Investments",
+      "registrationNumber": "29440015",
+      "address": "147 Oxford Road, London",
+      "postcode": "N57 VV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-16",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17819621651936",
+      "companyName": "Meridian Tech",
+      "registrationNumber": "83540004",
+      "address": "174 Church Road, Manchester",
+      "postcode": "M71 KA",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-22",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17819621651937",
+      "companyName": "York Capital",
+      "registrationNumber": "13236950",
+      "address": "192 Victoria Street, London",
+      "postcode": "N13 IR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-22",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17819621651938",
+      "companyName": "Oak Capital",
+      "registrationNumber": "43507663",
+      "address": "103 King Street, Manchester",
+      "postcode": "M47 HY",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-31",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17819621651939",
+      "companyName": "Alpha Properties",
+      "registrationNumber": "49469413",
+      "address": "10 King Street, London",
+      "postcode": "N89 BQ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-25",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519310",
+      "companyName": "Alpha Management",
+      "registrationNumber": "99186829",
+      "address": "37 High Street, Manchester",
+      "postcode": "M88 TG",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-11",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519311",
+      "companyName": "Jupiter Associates",
+      "registrationNumber": "42331044",
+      "address": "51 Oxford Road, London",
+      "postcode": "WC85 PM",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-22",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519312",
+      "companyName": "Integra Holdings",
+      "registrationNumber": "97036546",
+      "address": "69 Manor Road, Manchester",
+      "postcode": "M80 MW",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-14",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519313",
+      "companyName": "West Ventures",
+      "registrationNumber": "83406097",
+      "address": "2 New Street, London",
+      "postcode": "EC42 ID",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-27",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519314",
+      "companyName": "Zen Digital",
+      "registrationNumber": "78141762",
+      "address": "9 East Street, Manchester",
+      "postcode": "M40 WY",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-02",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519315",
+      "companyName": "Meridian Solutions",
+      "registrationNumber": "62594281",
+      "address": "74 Castle Street, London",
+      "postcode": "W43 EO",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-20",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519316",
+      "companyName": "Quantum Ventures",
+      "registrationNumber": "66578093",
+      "address": "148 West Street, Manchester",
+      "postcode": "M65 LF",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-05",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519317",
+      "companyName": "Meridian Consulting",
+      "registrationNumber": "54125697",
+      "address": "196 Green Lane, London",
+      "postcode": "E45 ZN",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-16",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519318",
+      "companyName": "Nexus Developments",
+      "registrationNumber": "91056911",
+      "address": "158 London Road, Manchester",
+      "postcode": "M19 TU",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-03",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519319",
+      "companyName": "Empire Enterprise",
+      "registrationNumber": "79791022",
+      "address": "45 Manor Road, London",
+      "postcode": "E77 PD",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-11",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519320",
+      "companyName": "Summit Tech",
+      "registrationNumber": "90259763",
+      "address": "191 King Street, Manchester",
+      "postcode": "M47 HX",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-03",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519321",
+      "companyName": "Gateway Investments",
+      "registrationNumber": "50145286",
+      "address": "139 Victoria Street, London",
+      "postcode": "SW90 XT",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-28",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519322",
+      "companyName": "North Limited",
+      "registrationNumber": "63312211",
+      "address": "100 King Street, Manchester",
+      "postcode": "M66 JP",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519323",
+      "companyName": "Oak Associates",
+      "registrationNumber": "41042244",
+      "address": "146 Richmond Road, London",
+      "postcode": "EC75 QG",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-28",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519324",
+      "companyName": "Crescent Ltd",
+      "registrationNumber": "24042312",
+      "address": "174 Green Lane, Manchester",
+      "postcode": "M78 KC",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-30",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519325",
+      "companyName": "Summit Holdings",
+      "registrationNumber": "39219597",
+      "address": "89 Richmond Road, London",
+      "postcode": "SE79 II",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-08",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519326",
+      "companyName": "Alpha Limited",
+      "registrationNumber": "46670117",
+      "address": "171 Queen Street, Manchester",
+      "postcode": "M31 DW",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-05",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519327",
+      "companyName": "Helix Management",
+      "registrationNumber": "34970881",
+      "address": "95 Waterloo Road, London",
+      "postcode": "SW86 BF",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-17",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519328",
+      "companyName": "Red Tech",
+      "registrationNumber": "64897051",
+      "address": "179 Mill Lane, Manchester",
+      "postcode": "M77 FF",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-17",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519329",
+      "companyName": "Keystone Solutions",
+      "registrationNumber": "38309774",
+      "address": "180 Queen Street, London",
+      "postcode": "WC32 QW",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-23",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519330",
+      "companyName": "West Digital",
+      "registrationNumber": "89178946",
+      "address": "47 Market Street, Manchester",
+      "postcode": "M81 SF",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-09",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519331",
+      "companyName": "Kensington Digital",
+      "registrationNumber": "81046439",
+      "address": "161 Albert Road, London",
+      "postcode": "W31 WS",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519332",
+      "companyName": "Kensington Services",
+      "registrationNumber": "47975432",
+      "address": "31 King Street, Manchester",
+      "postcode": "M24 TZ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-02",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519333",
+      "companyName": "Red Management",
+      "registrationNumber": "92291884",
+      "address": "178 Church Road, London",
+      "postcode": "W38 GO",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-31",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519334",
+      "companyName": "Core Consulting",
+      "registrationNumber": "69082109",
+      "address": "130 Church Street, Manchester",
+      "postcode": "M84 TW",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-20",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519335",
+      "companyName": "Xenon UK",
+      "registrationNumber": "27487985",
+      "address": "129 Albert Road, London",
+      "postcode": "WC31 TI",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-13",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519336",
+      "companyName": "Vertex Associates",
+      "registrationNumber": "31816781",
+      "address": "60 King Street, Manchester",
+      "postcode": "M40 KP",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-08",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519338",
+      "companyName": "Meridian Services",
+      "registrationNumber": "43796655",
+      "address": "69 London Road, Manchester",
+      "postcode": "M86 DZ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-07",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519339",
+      "companyName": "Quantum Ltd",
+      "registrationNumber": "58744070",
+      "address": "125 Manor Road, London",
+      "postcode": "WC35 DP",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-05",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519341",
+      "companyName": "Blue Ventures",
+      "registrationNumber": "60489431",
+      "address": "20 Bridge Street, London",
+      "postcode": "SW63 HJ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-04",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519342",
+      "companyName": "Red Developments",
+      "registrationNumber": "87143589",
+      "address": "71 Albert Road, Manchester",
+      "postcode": "M25 LC",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-16",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519343",
+      "companyName": "Junction Solutions",
+      "registrationNumber": "87637977",
+      "address": "39 Manor Road, London",
+      "postcode": "N22 BW",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-07",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519344",
+      "companyName": "Nexus Tech",
+      "registrationNumber": "99417632",
+      "address": "15 East Street, Manchester",
+      "postcode": "M80 SD",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-28",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519345",
+      "companyName": "Helix Partners",
+      "registrationNumber": "67330098",
+      "address": "154 West Street, London",
+      "postcode": "NW31 LT",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-06",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519347",
+      "companyName": "Digital Services",
+      "registrationNumber": "76488493",
+      "address": "129 Richmond Road, London",
+      "postcode": "W98 TD",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-16",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519348",
+      "companyName": "Phoenix Developments",
+      "registrationNumber": "54133388",
+      "address": "39 West Street, Manchester",
+      "postcode": "M57 EJ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-05",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB178196216519349",
+      "companyName": "London Partners",
+      "registrationNumber": "76226498",
+      "address": "150 Richmond Road, London",
+      "postcode": "E33 XO",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-11",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:25.193Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17780567135600",
+      "companyName": "Junction Digital",
+      "registrationNumber": "16022987",
+      "address": "102 Bridge Street, Manchester",
+      "postcode": "M79 LC",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-11",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17780567135601",
+      "companyName": "Nexus Limited",
+      "registrationNumber": "46091628",
+      "address": "35 Green Lane, London",
+      "postcode": "W62 ZJ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-02",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17780567135602",
+      "companyName": "Dover Management",
+      "registrationNumber": "90945040",
+      "address": "140 Oxford Road, Manchester",
+      "postcode": "M20 NM",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-26",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17780567135603",
+      "companyName": "Gateway Group",
+      "registrationNumber": "42296599",
+      "address": "63 Albert Road, London",
+      "postcode": "E58 RM",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-06",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17780567135604",
+      "companyName": "Horizon Enterprise",
+      "registrationNumber": "91490330",
+      "address": "139 Richmond Road, Manchester",
+      "postcode": "M95 FA",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-16",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17780567135605",
+      "companyName": "Meridian Consulting",
+      "registrationNumber": "56641601",
+      "address": "169 West Street, London",
+      "postcode": "E74 TA",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-25",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17780567135606",
+      "companyName": "Apex Management",
+      "registrationNumber": "77786542",
+      "address": "165 West Street, Manchester",
+      "postcode": "M91 KR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-15",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17780567135607",
+      "companyName": "Jupiter Developments",
+      "registrationNumber": "99328538",
+      "address": "189 Church Road, London",
+      "postcode": "EC27 YR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-19",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17780567135608",
+      "companyName": "Zen Partners",
+      "registrationNumber": "68674699",
+      "address": "74 Market Street, Manchester",
+      "postcode": "M30 BH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-02",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB17780567135609",
+      "companyName": "Blue Partners",
+      "registrationNumber": "31069448",
+      "address": "172 Richmond Road, London",
+      "postcode": "NW32 VJ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-25",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356010",
+      "companyName": "Global Advisory",
+      "registrationNumber": "84003860",
+      "address": "192 Green Lane, Manchester",
+      "postcode": "M79 OP",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-30",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356011",
+      "companyName": "Alpha Group",
+      "registrationNumber": "50842777",
+      "address": "20 Mill Lane, London",
+      "postcode": "SE69 AR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-28",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356012",
+      "companyName": "Global Tech",
+      "registrationNumber": "59597590",
+      "address": "2 Albert Road, Manchester",
+      "postcode": "M12 KI",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-26",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356013",
+      "companyName": "Keystone Properties",
+      "registrationNumber": "93563272",
+      "address": "83 Green Lane, London",
+      "postcode": "SW42 TQ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-15",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356014",
+      "companyName": "Summit Associates",
+      "registrationNumber": "60402115",
+      "address": "27 West Street, Manchester",
+      "postcode": "M97 DB",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-02",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356015",
+      "companyName": "Blue Developments",
+      "registrationNumber": "74382504",
+      "address": "163 Victoria Street, London",
+      "postcode": "SE65 VR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-08",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356016",
+      "companyName": "Elite Limited",
+      "registrationNumber": "91329022",
+      "address": "96 King Street, Manchester",
+      "postcode": "M85 MW",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-19",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356017",
+      "companyName": "Xenon Associates",
+      "registrationNumber": "66354274",
+      "address": "131 Castle Street, London",
+      "postcode": "W86 NM",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-30",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356018",
+      "companyName": "Global Solutions",
+      "registrationNumber": "74573865",
+      "address": "192 Church Street, Manchester",
+      "postcode": "M64 CV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-18",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356019",
+      "companyName": "Elite Holdings",
+      "registrationNumber": "82912115",
+      "address": "113 London Road, London",
+      "postcode": "SW57 RV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-20",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356020",
+      "companyName": "York Ventures",
+      "registrationNumber": "34385062",
+      "address": "154 Station Road, Manchester",
+      "postcode": "M24 EG",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-24",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356021",
+      "companyName": "Phoenix Limited",
+      "registrationNumber": "92564783",
+      "address": "71 West Street, London",
+      "postcode": "WC66 UU",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-02",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356022",
+      "companyName": "Fusion Enterprise",
+      "registrationNumber": "53877335",
+      "address": "106 North Street, Manchester",
+      "postcode": "M26 HV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-21",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356023",
+      "companyName": "Liberty Developments",
+      "registrationNumber": "95165902",
+      "address": "72 West Street, London",
+      "postcode": "NW73 JO",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356024",
+      "companyName": "Fusion Ltd",
+      "registrationNumber": "84619931",
+      "address": "71 Castle Street, Manchester",
+      "postcode": "M11 OE",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-02",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356025",
+      "companyName": "Quantum Enterprise",
+      "registrationNumber": "11553384",
+      "address": "142 Queen Street, London",
+      "postcode": "SE66 ES",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-07",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356026",
+      "companyName": "Crescent Tech",
+      "registrationNumber": "33556844",
+      "address": "74 Station Road, Manchester",
+      "postcode": "M79 IA",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-26",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356027",
+      "companyName": "Alpha Services",
+      "registrationNumber": "30382317",
+      "address": "57 Victoria Street, London",
+      "postcode": "NW27 KV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-02",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356028",
+      "companyName": "Crescent Limited",
+      "registrationNumber": "63158187",
+      "address": "99 Market Street, Manchester",
+      "postcode": "M68 FV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-16",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356029",
+      "companyName": "Horizon Ltd",
+      "registrationNumber": "98917783",
+      "address": "35 Albert Road, London",
+      "postcode": "N85 SQ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-12",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356030",
+      "companyName": "Empire Ventures",
+      "registrationNumber": "94719408",
+      "address": "194 New Street, Manchester",
+      "postcode": "M39 SB",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-26",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356031",
+      "companyName": "Helix Services",
+      "registrationNumber": "81610391",
+      "address": "79 Park Road, London",
+      "postcode": "SE71 ZI",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-30",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356032",
+      "companyName": "Vertex UK",
+      "registrationNumber": "29810488",
+      "address": "198 High Street, Manchester",
+      "postcode": "M19 KF",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-04",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356033",
+      "companyName": "Blue UK",
+      "registrationNumber": "68095731",
+      "address": "47 High Street, London",
+      "postcode": "N26 QI",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-09",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356034",
+      "companyName": "Thames Associates",
+      "registrationNumber": "80388224",
+      "address": "143 Market Street, Manchester",
+      "postcode": "M28 TA",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-26",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356035",
+      "companyName": "Island Developments",
+      "registrationNumber": "47448238",
+      "address": "52 West Street, London",
+      "postcode": "SW24 BC",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-27",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356036",
+      "companyName": "Liberty Advisory",
+      "registrationNumber": "85829831",
+      "address": "164 Richmond Road, Manchester",
+      "postcode": "M33 WU",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-14",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356037",
+      "companyName": "Thames Management",
+      "registrationNumber": "77501441",
+      "address": "69 Castle Street, London",
+      "postcode": "N61 LP",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-30",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356038",
+      "companyName": "Vertex Digital",
+      "registrationNumber": "53713289",
+      "address": "8 Oxford Road, Manchester",
+      "postcode": "M21 YU",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-14",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356039",
+      "companyName": "Horizon Consulting",
+      "registrationNumber": "80296847",
+      "address": "100 Church Road, London",
+      "postcode": "E19 OU",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-27",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356040",
+      "companyName": "Core Holdings",
+      "registrationNumber": "43815807",
+      "address": "137 Church Street, Manchester",
+      "postcode": "M75 OR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-20",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356041",
+      "companyName": "Alpha Ltd",
+      "registrationNumber": "25741153",
+      "address": "102 London Road, London",
+      "postcode": "E98 VP",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-21",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356042",
+      "companyName": "Beacon Tech",
+      "registrationNumber": "48294548",
+      "address": "114 Green Lane, Manchester",
+      "postcode": "M51 EM",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-22",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.560Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356043",
+      "companyName": "Liberty Ltd",
+      "registrationNumber": "14876544",
+      "address": "161 North Street, London",
+      "postcode": "W17 FX",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.561Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356144",
+      "companyName": "Empire Limited",
+      "registrationNumber": "28050475",
+      "address": "4 Bridge Street, Manchester",
+      "postcode": "M33 QB",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-16",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.561Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356145",
+      "companyName": "United Tech",
+      "registrationNumber": "54345320",
+      "address": "180 Station Road, London",
+      "postcode": "E80 MR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-28",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.561Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356146",
+      "companyName": "Helix UK",
+      "registrationNumber": "33715597",
+      "address": "150 Bridge Street, Manchester",
+      "postcode": "M50 AC",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-14",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.561Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356147",
+      "companyName": "Phoenix Properties",
+      "registrationNumber": "76072135",
+      "address": "179 Market Street, London",
+      "postcode": "WC68 XC",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-01",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.561Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356148",
+      "companyName": "Xenon Solutions",
+      "registrationNumber": "52733881",
+      "address": "110 High Street, Manchester",
+      "postcode": "M10 MN",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-30",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.561Z",
+      "customerId": "demo"
+    },
+    {
+      "id": "NB177805671356149",
+      "companyName": "Red Capital",
+      "registrationNumber": "54378743",
+      "address": "65 King Street, London",
+      "postcode": "SE63 QG",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-22",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:38:33.561Z",
+      "customerId": "demo"
+    }
+  ],
+  "_lastRun": "2026-06-20T13:29:46.811Z",
+  "demo-accountant": [
+    {
+      "id": "NB17819621868080",
+      "companyName": "Red Ventures",
+      "registrationNumber": "44512259",
+      "address": "78 Queen Street, London",
+      "postcode": "SE49 JM",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-18",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17819621868081",
+      "companyName": "Global Group",
+      "registrationNumber": "60738762",
+      "address": "85 East Street, Manchester",
+      "postcode": "M97 RG",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-18",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17819621868082",
+      "companyName": "Thames Associates",
+      "registrationNumber": "16356249",
+      "address": "185 West Street, London",
+      "postcode": "W11 LM",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-05",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17819621868083",
+      "companyName": "West Group",
+      "registrationNumber": "88110721",
+      "address": "93 Victoria Street, Manchester",
+      "postcode": "M86 DF",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-12",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17819621868084",
+      "companyName": "Global Properties",
+      "registrationNumber": "66195045",
+      "address": "26 Queen Street, London",
+      "postcode": "W83 LZ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-12",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17819621868085",
+      "companyName": "North Investments",
+      "registrationNumber": "94371050",
+      "address": "96 North Street, Manchester",
+      "postcode": "M88 KP",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-17",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17819621868086",
+      "companyName": "Crescent Management",
+      "registrationNumber": "26906570",
+      "address": "122 East Street, London",
+      "postcode": "E74 IH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-07",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17819621868087",
+      "companyName": "Jupiter Developments",
+      "registrationNumber": "28665225",
+      "address": "68 Victoria Street, Manchester",
+      "postcode": "M90 IR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17819621868088",
+      "companyName": "Liberty Holdings",
+      "registrationNumber": "26361130",
+      "address": "142 Green Lane, London",
+      "postcode": "NW84 JT",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-13",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17819621868089",
+      "companyName": "West Ltd",
+      "registrationNumber": "30975102",
+      "address": "74 Waterloo Road, Manchester",
+      "postcode": "M99 RJ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-05",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680810",
+      "companyName": "Zen Digital",
+      "registrationNumber": "83176427",
+      "address": "92 Green Lane, London",
+      "postcode": "WC42 SI",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-15",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680811",
+      "companyName": "Integra Tech",
+      "registrationNumber": "39840631",
+      "address": "187 King Street, Manchester",
+      "postcode": "M80 MQ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-02",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680812",
+      "companyName": "Beacon Advisory",
+      "registrationNumber": "82319585",
+      "address": "153 Bridge Street, London",
+      "postcode": "W84 IT",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-05",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680813",
+      "companyName": "Beacon Holdings",
+      "registrationNumber": "64324330",
+      "address": "63 King Street, Manchester",
+      "postcode": "M17 JT",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-20",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680814",
+      "companyName": "Apex Partners",
+      "registrationNumber": "88536119",
+      "address": "77 Mill Lane, London",
+      "postcode": "E18 EF",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-27",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680815",
+      "companyName": "North Ltd",
+      "registrationNumber": "11357588",
+      "address": "68 West Street, Manchester",
+      "postcode": "M80 VJ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-04",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680816",
+      "companyName": "Red Partners",
+      "registrationNumber": "31363898",
+      "address": "30 Market Street, London",
+      "postcode": "WC24 JR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680817",
+      "companyName": "North Solutions",
+      "registrationNumber": "32722094",
+      "address": "190 Market Street, Manchester",
+      "postcode": "M13 PY",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-22",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680818",
+      "companyName": "Liberty Management",
+      "registrationNumber": "67711978",
+      "address": "65 King Street, London",
+      "postcode": "WC89 QH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-18",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680819",
+      "companyName": "Vertex Solutions",
+      "registrationNumber": "58963413",
+      "address": "63 West Street, Manchester",
+      "postcode": "M45 IF",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-16",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680820",
+      "companyName": "Liberty Solutions",
+      "registrationNumber": "22351926",
+      "address": "16 Bridge Street, London",
+      "postcode": "EC11 UF",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-17",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680821",
+      "companyName": "Jupiter Group",
+      "registrationNumber": "73799003",
+      "address": "15 Market Street, Manchester",
+      "postcode": "M18 SJ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680822",
+      "companyName": "Thames Investments",
+      "registrationNumber": "76108252",
+      "address": "117 North Street, London",
+      "postcode": "SE60 JV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-20",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680823",
+      "companyName": "Horizon Developments",
+      "registrationNumber": "25515399",
+      "address": "48 West Street, Manchester",
+      "postcode": "M89 ZK",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-30",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680824",
+      "companyName": "Manchester Properties",
+      "registrationNumber": "17872044",
+      "address": "164 Queen Street, London",
+      "postcode": "NW10 KO",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-11",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680825",
+      "companyName": "Phoenix Partners",
+      "registrationNumber": "59807204",
+      "address": "63 East Street, Manchester",
+      "postcode": "M88 NV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-11",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680826",
+      "companyName": "Dover Developments",
+      "registrationNumber": "19944237",
+      "address": "96 Richmond Road, London",
+      "postcode": "NW67 JS",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-03",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680827",
+      "companyName": "Thames Ltd",
+      "registrationNumber": "94360390",
+      "address": "110 Richmond Road, Manchester",
+      "postcode": "M33 RT",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-02",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680828",
+      "companyName": "Horizon Limited",
+      "registrationNumber": "98171122",
+      "address": "180 Waterloo Road, London",
+      "postcode": "NW67 BN",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-14",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680829",
+      "companyName": "United Enterprise",
+      "registrationNumber": "22871380",
+      "address": "115 Church Road, Manchester",
+      "postcode": "M98 IX",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-12",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680830",
+      "companyName": "York Developments",
+      "registrationNumber": "99699594",
+      "address": "168 Queen Street, London",
+      "postcode": "W20 QH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-19",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680831",
+      "companyName": "Apex Properties",
+      "registrationNumber": "67014865",
+      "address": "177 Waterloo Road, Manchester",
+      "postcode": "M32 DR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-28",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680832",
+      "companyName": "Vertex Ventures",
+      "registrationNumber": "58994169",
+      "address": "75 West Street, London",
+      "postcode": "SE19 BC",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680833",
+      "companyName": "West Services",
+      "registrationNumber": "84961451",
+      "address": "57 Victoria Street, Manchester",
+      "postcode": "M51 GI",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-13",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680834",
+      "companyName": "Blue Partners",
+      "registrationNumber": "29738540",
+      "address": "175 New Street, London",
+      "postcode": "NW88 RY",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-01",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680835",
+      "companyName": "Dover Services",
+      "registrationNumber": "33581134",
+      "address": "123 Church Street, Manchester",
+      "postcode": "M12 FG",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-25",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680836",
+      "companyName": "Red Management",
+      "registrationNumber": "46818363",
+      "address": "88 New Street, London",
+      "postcode": "WC24 JX",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-02",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680837",
+      "companyName": "Oak Investments",
+      "registrationNumber": "17092143",
+      "address": "61 Castle Street, Manchester",
+      "postcode": "M43 ZK",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-25",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680838",
+      "companyName": "Digital Tech",
+      "registrationNumber": "78000251",
+      "address": "106 King Street, London",
+      "postcode": "N21 UW",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-15",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680840",
+      "companyName": "Dover Capital",
+      "registrationNumber": "36449933",
+      "address": "178 Bridge Street, London",
+      "postcode": "E86 XI",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-22",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.808Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680941",
+      "companyName": "Island Consulting",
+      "registrationNumber": "72025899",
+      "address": "99 Market Street, Manchester",
+      "postcode": "M94 WO",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-30",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.809Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680942",
+      "companyName": "Kensington Associates",
+      "registrationNumber": "50673128",
+      "address": "194 High Street, London",
+      "postcode": "SE49 IQ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-19",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.809Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680943",
+      "companyName": "Global Advisory",
+      "registrationNumber": "20273154",
+      "address": "66 Castle Street, Manchester",
+      "postcode": "M72 OB",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-05",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.809Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680944",
+      "companyName": "Quantum Group",
+      "registrationNumber": "92645120",
+      "address": "8 King Street, London",
+      "postcode": "N13 KV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-02",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.809Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680945",
+      "companyName": "Meridian Solutions",
+      "registrationNumber": "18139596",
+      "address": "48 Castle Street, Manchester",
+      "postcode": "M41 OK",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-25",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.809Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680946",
+      "companyName": "Gateway Capital",
+      "registrationNumber": "64252553",
+      "address": "164 Station Road, London",
+      "postcode": "EC43 DV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-26",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.809Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680947",
+      "companyName": "West Partners",
+      "registrationNumber": "62344123",
+      "address": "163 The Grove, Manchester",
+      "postcode": "M97 UI",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-20",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.809Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680948",
+      "companyName": "Liberty Developments",
+      "registrationNumber": "93246735",
+      "address": "103 London Road, London",
+      "postcode": "SE60 AR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-24",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.809Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB178196218680949",
+      "companyName": "Crescent Holdings",
+      "registrationNumber": "56868737",
+      "address": "3 Green Lane, Manchester",
+      "postcode": "M82 IH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-06-17",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-06-20T13:29:46.809Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780579762160",
+      "companyName": "York Ltd",
+      "registrationNumber": "62363034",
+      "address": "69 New Street, London",
+      "postcode": "SE41 RP",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-20",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780579762171",
+      "companyName": "Xenon Capital",
+      "registrationNumber": "67629086",
+      "address": "88 South Street, Manchester",
+      "postcode": "M55 KP",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-07",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780579762172",
+      "companyName": "Oak Management",
+      "registrationNumber": "24934704",
+      "address": "200 Waterloo Road, London",
+      "postcode": "EC20 RE",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-04",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780579762173",
+      "companyName": "Zen Limited",
+      "registrationNumber": "57371647",
+      "address": "124 Manor Road, Manchester",
+      "postcode": "M17 TP",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-26",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780579762174",
+      "companyName": "Phoenix Associates",
+      "registrationNumber": "19383303",
+      "address": "113 South Street, London",
+      "postcode": "SE39 ON",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-26",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780579762175",
+      "companyName": "London Associates",
+      "registrationNumber": "38371792",
+      "address": "16 New Street, Manchester",
+      "postcode": "M45 MX",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-07",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780579762176",
+      "companyName": "Alpha Digital",
+      "registrationNumber": "89347366",
+      "address": "155 Manor Road, London",
+      "postcode": "WC69 GU",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-25",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780579762177",
+      "companyName": "Summit UK",
+      "registrationNumber": "31905385",
+      "address": "15 London Road, Manchester",
+      "postcode": "M45 ID",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-21",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780579762178",
+      "companyName": "Quantum Properties",
+      "registrationNumber": "94837983",
+      "address": "137 Church Road, London",
+      "postcode": "SW32 EU",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-07",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780579762179",
+      "companyName": "Helix UK",
+      "registrationNumber": "81090064",
+      "address": "153 Green Lane, Manchester",
+      "postcode": "M60 LH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621710",
+      "companyName": "Island Developments",
+      "registrationNumber": "46132636",
+      "address": "180 Queen Street, London",
+      "postcode": "SW57 CC",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-13",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621711",
+      "companyName": "Fusion Limited",
+      "registrationNumber": "41642117",
+      "address": "175 London Road, Manchester",
+      "postcode": "M96 EE",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-26",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621712",
+      "companyName": "United UK",
+      "registrationNumber": "54790194",
+      "address": "198 The Grove, London",
+      "postcode": "SW93 QF",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-08",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621713",
+      "companyName": "Dover Ltd",
+      "registrationNumber": "96265830",
+      "address": "42 Manor Road, Manchester",
+      "postcode": "M91 SW",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-04",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621714",
+      "companyName": "Gateway Advisory",
+      "registrationNumber": "31769151",
+      "address": "131 Park Road, London",
+      "postcode": "E44 PZ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-01",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621715",
+      "companyName": "Crescent Tech",
+      "registrationNumber": "50614589",
+      "address": "81 London Road, Manchester",
+      "postcode": "M21 XI",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621716",
+      "companyName": "Meridian UK",
+      "registrationNumber": "80975023",
+      "address": "5 Station Road, London",
+      "postcode": "WC81 YH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-23",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621717",
+      "companyName": "Kensington Tech",
+      "registrationNumber": "20838338",
+      "address": "39 New Street, Manchester",
+      "postcode": "M62 MO",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621718",
+      "companyName": "Kensington Management",
+      "registrationNumber": "73780832",
+      "address": "16 Market Street, London",
+      "postcode": "SE99 SM",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-15",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621719",
+      "companyName": "North Solutions",
+      "registrationNumber": "24617633",
+      "address": "81 Richmond Road, Manchester",
+      "postcode": "M31 GI",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-30",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621720",
+      "companyName": "Phoenix Investments",
+      "registrationNumber": "79918066",
+      "address": "105 Green Lane, London",
+      "postcode": "N56 RP",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-15",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621721",
+      "companyName": "Crescent Limited",
+      "registrationNumber": "32232221",
+      "address": "194 East Street, Manchester",
+      "postcode": "M18 LC",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-20",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621722",
+      "companyName": "United Ltd",
+      "registrationNumber": "29841473",
+      "address": "79 Bridge Street, London",
+      "postcode": "SE83 IB",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-10",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621723",
+      "companyName": "North Advisory",
+      "registrationNumber": "31177465",
+      "address": "25 Waterloo Road, Manchester",
+      "postcode": "M94 TS",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-20",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621724",
+      "companyName": "Global Partners",
+      "registrationNumber": "21355019",
+      "address": "159 Albert Road, London",
+      "postcode": "EC77 GR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-22",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621725",
+      "companyName": "Integra Digital",
+      "registrationNumber": "16313104",
+      "address": "169 Oxford Road, Manchester",
+      "postcode": "M94 KF",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-23",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621726",
+      "companyName": "Blue Advisory",
+      "registrationNumber": "73006833",
+      "address": "122 London Road, London",
+      "postcode": "N76 LC",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-08",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621727",
+      "companyName": "York Developments",
+      "registrationNumber": "85714846",
+      "address": "11 Station Road, Manchester",
+      "postcode": "M75 GV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-01",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621728",
+      "companyName": "Elite UK",
+      "registrationNumber": "70039499",
+      "address": "156 Albert Road, London",
+      "postcode": "WC78 MB",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-05",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621729",
+      "companyName": "Digital UK",
+      "registrationNumber": "55497354",
+      "address": "162 Manor Road, Manchester",
+      "postcode": "M37 SW",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621730",
+      "companyName": "Apex Digital",
+      "registrationNumber": "96507193",
+      "address": "44 Church Street, London",
+      "postcode": "N92 AD",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-19",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621731",
+      "companyName": "Horizon Limited",
+      "registrationNumber": "61847070",
+      "address": "197 Queen Street, Manchester",
+      "postcode": "M29 VK",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-06",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621732",
+      "companyName": "Zen Tech",
+      "registrationNumber": "11713128",
+      "address": "98 Bridge Street, London",
+      "postcode": "NW18 JZ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621733",
+      "companyName": "Empire Developments",
+      "registrationNumber": "67765151",
+      "address": "72 Victoria Street, Manchester",
+      "postcode": "M73 WX",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-12",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621734",
+      "companyName": "Gateway Properties",
+      "registrationNumber": "36988261",
+      "address": "106 Queen Street, London",
+      "postcode": "WC33 EG",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-22",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621735",
+      "companyName": "Gateway Group",
+      "registrationNumber": "11346804",
+      "address": "47 Albert Road, Manchester",
+      "postcode": "M51 UN",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-04",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621736",
+      "companyName": "Core Ventures",
+      "registrationNumber": "36080682",
+      "address": "187 Richmond Road, London",
+      "postcode": "EC86 JM",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-21",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621737",
+      "companyName": "Summit Properties",
+      "registrationNumber": "22082438",
+      "address": "43 Manor Road, Manchester",
+      "postcode": "M30 XL",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-13",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621738",
+      "companyName": "Helix Advisory",
+      "registrationNumber": "24903892",
+      "address": "172 Green Lane, London",
+      "postcode": "EC32 NE",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-28",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621739",
+      "companyName": "Crescent Services",
+      "registrationNumber": "86870084",
+      "address": "150 Market Street, Manchester",
+      "postcode": "M88 BQ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-09",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621740",
+      "companyName": "Liberty Solutions",
+      "registrationNumber": "60550775",
+      "address": "76 Church Street, London",
+      "postcode": "SW67 JY",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-10",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621741",
+      "companyName": "Digital Associates",
+      "registrationNumber": "32995986",
+      "address": "138 North Street, Manchester",
+      "postcode": "M83 NW",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-18",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621742",
+      "companyName": "York UK",
+      "registrationNumber": "50609730",
+      "address": "174 Victoria Street, London",
+      "postcode": "EC98 YX",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-02",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621743",
+      "companyName": "First UK",
+      "registrationNumber": "35635623",
+      "address": "177 Waterloo Road, Manchester",
+      "postcode": "M35 DW",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-16",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621744",
+      "companyName": "Alpha Developments",
+      "registrationNumber": "60971783",
+      "address": "55 Mill Lane, London",
+      "postcode": "E59 ZV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-05",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621745",
+      "companyName": "Meridian Properties",
+      "registrationNumber": "31940220",
+      "address": "79 Oxford Road, Manchester",
+      "postcode": "M11 BH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-04",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621746",
+      "companyName": "Keystone Services",
+      "registrationNumber": "29614582",
+      "address": "193 Mill Lane, London",
+      "postcode": "WC68 QR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-20",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621747",
+      "companyName": "York Tech",
+      "registrationNumber": "86645621",
+      "address": "198 Green Lane, Manchester",
+      "postcode": "M22 FG",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621748",
+      "companyName": "London UK",
+      "registrationNumber": "44382610",
+      "address": "18 High Street, London",
+      "postcode": "EC43 XN",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805797621749",
+      "companyName": "Crescent Partners",
+      "registrationNumber": "45190866",
+      "address": "187 West Street, Manchester",
+      "postcode": "M36 KC",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-08",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:59:36.217Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780567607670",
+      "companyName": "Jupiter Holdings",
+      "registrationNumber": "66563612",
+      "address": "65 Waterloo Road, London",
+      "postcode": "SE49 HC",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.767Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780567607671",
+      "companyName": "Dover Digital",
+      "registrationNumber": "27100681",
+      "address": "151 Queen Street, Manchester",
+      "postcode": "M85 CM",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-24",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.767Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780567607672",
+      "companyName": "Fusion Investments",
+      "registrationNumber": "28974439",
+      "address": "111 Castle Street, London",
+      "postcode": "NW78 ZH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-26",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.767Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780567607673",
+      "companyName": "Xenon Developments",
+      "registrationNumber": "32873865",
+      "address": "181 Church Road, Manchester",
+      "postcode": "M66 EE",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-18",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.767Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780567607674",
+      "companyName": "First Digital",
+      "registrationNumber": "58918358",
+      "address": "28 Waterloo Road, London",
+      "postcode": "N45 OJ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-27",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.767Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780567607675",
+      "companyName": "York Investments",
+      "registrationNumber": "91231665",
+      "address": "54 Waterloo Road, Manchester",
+      "postcode": "M99 BQ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-18",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.767Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780567607686",
+      "companyName": "Keystone Investments",
+      "registrationNumber": "32014604",
+      "address": "179 Mill Lane, London",
+      "postcode": "EC60 CA",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-06",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780567607687",
+      "companyName": "Blue Ltd",
+      "registrationNumber": "13535990",
+      "address": "45 High Street, Manchester",
+      "postcode": "M81 QE",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780567607688",
+      "companyName": "Summit Capital",
+      "registrationNumber": "57826233",
+      "address": "93 Oxford Road, London",
+      "postcode": "W88 LZ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-07",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB17780567607689",
+      "companyName": "Oak Properties",
+      "registrationNumber": "85205165",
+      "address": "24 Park Road, Manchester",
+      "postcode": "M18 ER",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-30",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076810",
+      "companyName": "Quantum Consulting",
+      "registrationNumber": "73196528",
+      "address": "12 Green Lane, London",
+      "postcode": "SE49 DZ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-03",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076811",
+      "companyName": "Helix Advisory",
+      "registrationNumber": "24288195",
+      "address": "152 King Street, Manchester",
+      "postcode": "M66 EH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-03",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076812",
+      "companyName": "Junction Solutions",
+      "registrationNumber": "67202135",
+      "address": "187 Manor Road, London",
+      "postcode": "W43 QA",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-27",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076813",
+      "companyName": "Keystone Partners",
+      "registrationNumber": "21013169",
+      "address": "7 Church Street, Manchester",
+      "postcode": "M22 QA",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-27",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076814",
+      "companyName": "Vertex Investments",
+      "registrationNumber": "42859019",
+      "address": "162 Oxford Road, London",
+      "postcode": "EC44 MS",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-04",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076815",
+      "companyName": "Keystone Limited",
+      "registrationNumber": "92494046",
+      "address": "3 Castle Street, Manchester",
+      "postcode": "M38 MK",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-07",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076816",
+      "companyName": "Phoenix Associates",
+      "registrationNumber": "58991699",
+      "address": "168 Oxford Road, London",
+      "postcode": "WC71 TE",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-01",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076817",
+      "companyName": "Crescent Investments",
+      "registrationNumber": "35856771",
+      "address": "172 West Street, Manchester",
+      "postcode": "M48 KA",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-22",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076818",
+      "companyName": "Kensington Associates",
+      "registrationNumber": "56631680",
+      "address": "175 High Street, London",
+      "postcode": "SW52 AA",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-06",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076819",
+      "companyName": "Digital Consulting",
+      "registrationNumber": "75705632",
+      "address": "131 South Street, Manchester",
+      "postcode": "M42 CB",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-11",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076820",
+      "companyName": "Phoenix Developments",
+      "registrationNumber": "66950997",
+      "address": "196 Bridge Street, London",
+      "postcode": "SW74 UQ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-14",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076821",
+      "companyName": "United UK",
+      "registrationNumber": "18809120",
+      "address": "124 Oxford Road, Manchester",
+      "postcode": "M26 AB",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-12",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076822",
+      "companyName": "Kensington Advisory",
+      "registrationNumber": "38486118",
+      "address": "1 King Street, London",
+      "postcode": "NW43 HG",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-24",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076823",
+      "companyName": "Elite Capital",
+      "registrationNumber": "37690915",
+      "address": "111 Station Road, Manchester",
+      "postcode": "M98 ZH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-04",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076824",
+      "companyName": "First Holdings",
+      "registrationNumber": "15006478",
+      "address": "161 Mill Lane, London",
+      "postcode": "NW13 NB",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-07",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076825",
+      "companyName": "Digital Ltd",
+      "registrationNumber": "89717775",
+      "address": "182 Albert Road, Manchester",
+      "postcode": "M68 PJ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-14",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076826",
+      "companyName": "Apex Associates",
+      "registrationNumber": "48030728",
+      "address": "149 West Street, London",
+      "postcode": "EC13 HM",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-01",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076827",
+      "companyName": "Gateway Limited",
+      "registrationNumber": "95147702",
+      "address": "84 Green Lane, Manchester",
+      "postcode": "M64 MV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-10",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076828",
+      "companyName": "Apex Consulting",
+      "registrationNumber": "30213604",
+      "address": "25 Church Road, London",
+      "postcode": "N56 PL",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-06",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076829",
+      "companyName": "Integra Capital",
+      "registrationNumber": "27384861",
+      "address": "136 The Grove, Manchester",
+      "postcode": "M70 VB",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-05-01",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076830",
+      "companyName": "Quantum Tech",
+      "registrationNumber": "22850958",
+      "address": "103 Albert Road, London",
+      "postcode": "E10 JY",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-27",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076831",
+      "companyName": "Meridian Ltd",
+      "registrationNumber": "57703963",
+      "address": "110 Park Road, Manchester",
+      "postcode": "M15 TR",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-23",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076832",
+      "companyName": "Integra Holdings",
+      "registrationNumber": "14316099",
+      "address": "112 Manor Road, London",
+      "postcode": "W82 SO",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-13",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076833",
+      "companyName": "Thames UK",
+      "registrationNumber": "67671046",
+      "address": "140 The Grove, Manchester",
+      "postcode": "M40 DU",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-09",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076835",
+      "companyName": "Keystone Advisory",
+      "registrationNumber": "52886156",
+      "address": "159 New Street, Manchester",
+      "postcode": "M59 SE",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-09",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076836",
+      "companyName": "First Tech",
+      "registrationNumber": "37222758",
+      "address": "12 The Grove, London",
+      "postcode": "N72 GV",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-25",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076837",
+      "companyName": "Crescent Enterprise",
+      "registrationNumber": "31532405",
+      "address": "162 North Street, Manchester",
+      "postcode": "M88 TE",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-22",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076838",
+      "companyName": "Oak Group",
+      "registrationNumber": "87839379",
+      "address": "86 Bridge Street, London",
+      "postcode": "W39 QI",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-16",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076839",
+      "companyName": "Junction Group",
+      "registrationNumber": "31751579",
+      "address": "64 Church Road, Manchester",
+      "postcode": "M43 TZ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-09",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076840",
+      "companyName": "North Group",
+      "registrationNumber": "86904849",
+      "address": "198 Oxford Road, London",
+      "postcode": "SE25 NS",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-14",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076842",
+      "companyName": "First Investments",
+      "registrationNumber": "68625079",
+      "address": "15 Manor Road, London",
+      "postcode": "SE59 XQ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "cic",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-29",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076843",
+      "companyName": "North Holdings",
+      "registrationNumber": "96100398",
+      "address": "167 Waterloo Road, Manchester",
+      "postcode": "M62 RB",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-24",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076844",
+      "companyName": "Red Developments",
+      "registrationNumber": "84513427",
+      "address": "28 Queen Street, London",
+      "postcode": "SW79 UB",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-17",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076845",
+      "companyName": "Digital Partners",
+      "registrationNumber": "98887027",
+      "address": "144 Green Lane, Manchester",
+      "postcode": "M99 EL",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-20",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076846",
+      "companyName": "Global Ventures",
+      "registrationNumber": "41800558",
+      "address": "100 Victoria Street, London",
+      "postcode": "EC70 HH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "limited",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-12",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076847",
+      "companyName": "Keystone Enterprise",
+      "registrationNumber": "21215222",
+      "address": "128 London Road, Manchester",
+      "postcode": "M39 XJ",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-27",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076848",
+      "companyName": "North Consulting",
+      "registrationNumber": "32190624",
+      "address": "13 Park Road, London",
+      "postcode": "E69 XH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "ltd",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-09",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    },
+    {
+      "id": "NB177805676076849",
+      "companyName": "Quantum Partners",
+      "registrationNumber": "13118859",
+      "address": "182 Queen Street, Manchester",
+      "postcode": "M10 NH",
+      "sicCodes": [
+        "70229"
+      ],
+      "sicDescription": "Management consultancy activities",
+      "companyType": "plc",
+      "companyStatus": "active",
+      "dateIncorporated": "2026-04-28",
+      "directors": [
+        {
+          "name": "Director not yet appointed",
+          "role": "Waiting"
+        }
+      ],
+      "estimatedNeeds": [
+        "accounting",
+        "business insurance",
+        "website",
+        "banking"
+      ],
+      "source": "Companies House",
+      "scrapedAt": "2026-05-06T08:39:20.768Z",
+      "customerId": "demo-accountant"
+    }
+  ]
+}

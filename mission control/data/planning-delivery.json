@@ -1,0 +1,639 @@
+{
+  "demo-architect": [
+    {
+      "customerId": "demo-architect",
+      "company": "Design Build Ltd",
+      "email": "info@designbuild.co.uk",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:59:36.282Z",
+      "totalLeads": 25,
+      "leadLimit": 25,
+      "leads": [
+        {
+          "address": "55 Buckingham Gate A, SW1",
+          "postcode": "SW1",
+          "description": "Conversion of loft to living accommodation with roof lights at 55 Buckingham Gate A, SW1",
+          "applicantName": "Mrs Helen Baker",
+          "applicationType": "Change of Use",
+          "status": "Pending Consideration",
+          "council": "Westminster City Council",
+          "value": "£103,915",
+          "dateSubmitted": "2026-04-25"
+        },
+        {
+          "address": "1 Cadogan Square B, SW3",
+          "postcode": "SW3",
+          "description": "Rear dormer window and internal alterations at 1 Cadogan Square B, SW3",
+          "applicantName": "Kensington Estates Ltd",
+          "applicationType": "Full Planning Permission",
+          "status": "Pending Consideration",
+          "council": "Kensington and Chelsea Council",
+          "value": "£158,428",
+          "dateSubmitted": "2026-04-23"
+        },
+        {
+          "address": "75 Old Brompton Road C, SW5",
+          "postcode": "SW5",
+          "description": "Installation of replacement windows and doors at 75 Old Brompton Road C, SW5",
+          "applicantName": "Mrs Sarah Mitchell",
+          "applicationType": "Outline Planning Permission",
+          "status": "Pending Decision",
+          "council": "Kensington and Chelsea Council",
+          "value": "£114,413",
+          "dateSubmitted": "2026-04-29"
+        },
+        {
+          "address": "192 Horseferry Road, SW1",
+          "postcode": "SW1",
+          "description": "Construction of 2 semi-detached dwellings at 192 Horseferry Road, SW1",
+          "applicantName": "Mr Michael Brown",
+          "applicationType": "Householder Application",
+          "status": "Refused",
+          "council": "Westminster City Council",
+          "value": "£103,427",
+          "dateSubmitted": "2026-05-06"
+        },
+        {
+          "address": "130 Sydney Street, SW3",
+          "postcode": "SW3",
+          "description": "New boundary wall and gates at 130 Sydney Street, SW3",
+          "applicantName": "Mr Michael Brown",
+          "applicationType": "Full Planning Permission",
+          "status": "Pending Consideration",
+          "council": "Kensington and Chelsea Council",
+          "value": "£275,809",
+          "dateSubmitted": "2026-04-26"
+        },
+        {
+          "address": "59 Philbeach Gardens, SW5",
+          "postcode": "SW5",
+          "description": "Rear and side roof extension at 59 Philbeach Gardens, SW5",
+          "applicantName": "City & Country Developments",
+          "applicationType": "Listed Building Consent",
+          "status": "Under Consultation",
+          "council": "Kensington and Chelsea Council",
+          "value": "£287,091",
+          "dateSubmitted": "2026-05-02"
+        },
+        {
+          "address": "134 Dean Bradley Street A, SW1",
+          "postcode": "SW1",
+          "description": "Construction of 2 semi-detached dwellings at 134 Dean Bradley Street A, SW1",
+          "applicantName": "Riverside Developments Plc",
+          "applicationType": "Listed Building Consent",
+          "status": "Awaiting Site Visit",
+          "council": "Westminster City Council",
+          "value": "£358,962",
+          "dateSubmitted": "2026-04-25"
+        },
+        {
+          "address": "114 King's Road B, SW3",
+          "postcode": "SW3",
+          "description": "Construction of 6 apartments with underground parking at 114 King's Road B, SW3",
+          "applicantName": "Mr Michael Brown",
+          "applicationType": "Householder Application",
+          "status": "Awaiting Site Visit",
+          "council": "Kensington and Chelsea Council",
+          "value": "£405,464",
+          "dateSubmitted": "2026-05-02"
+        },
+        {
+          "address": "101 Old Brompton Road C, SW5",
+          "postcode": "SW5",
+          "description": "Rear dormer window and internal alterations at 101 Old Brompton Road C, SW5",
+          "applicantName": "David Wilson Properties Ltd",
+          "applicationType": "Householder Application",
+          "status": "Refused",
+          "council": "Kensington and Chelsea Council",
+          "value": "£376,775",
+          "dateSubmitted": "2026-05-04"
+        },
+        {
+          "address": "109 Birdcage Walk, SW1",
+          "postcode": "SW1",
+          "description": "Rear dormer window and internal alterations at 109 Birdcage Walk, SW1",
+          "applicantName": "Ms Emma Richardson",
+          "applicationType": "Certificate of Lawfulness",
+          "status": "Pending Consideration",
+          "council": "Westminster City Council",
+          "value": "£196,692",
+          "dateSubmitted": "2026-04-25"
+        },
+        {
+          "address": "171 Chelsea Embankment, SW3",
+          "postcode": "SW3",
+          "description": "Conversion of garage to habitable room at 171 Chelsea Embankment, SW3",
+          "applicantName": "Mr Andrew Clarke",
+          "applicationType": "Full Planning Permission",
+          "status": "Refused",
+          "council": "Kensington and Chelsea Council",
+          "value": "£283,637",
+          "dateSubmitted": "2026-04-28"
+        },
+        {
+          "address": "181 Great Smith Street A, SW1",
+          "postcode": "SW1",
+          "description": "New commercial unit (Class E) with associated parking at 181 Great Smith Street A, SW1",
+          "applicantName": "David Wilson Properties Ltd",
+          "applicationType": "Certificate of Lawfulness",
+          "status": "Pending Decision",
+          "council": "Westminster City Council",
+          "value": "£206,488",
+          "dateSubmitted": "2026-05-01"
+        },
+        {
+          "address": "116 Draycott Avenue B, SW3",
+          "postcode": "SW3",
+          "description": "Change of use from pub (Sui Generis) to dwellinghouse (C3) at 116 Draycott Avenue B, SW3",
+          "applicantName": "Premier Homes Ltd",
+          "applicationType": "Prior Notification",
+          "status": "Approved",
+          "council": "Kensington and Chelsea Council",
+          "value": "£158,934",
+          "dateSubmitted": "2026-04-26"
+        },
+        {
+          "address": "61 Old Brompton Road C, SW5",
+          "postcode": "SW5",
+          "description": "Conversion of loft to living accommodation with roof lights at 61 Old Brompton Road C, SW5",
+          "applicantName": "Kensington Estates Ltd",
+          "applicationType": "Outline Planning Permission",
+          "status": "Pending Consideration",
+          "council": "Kensington and Chelsea Council",
+          "value": "£371,997",
+          "dateSubmitted": "2026-04-27"
+        },
+        {
+          "address": "45 Victoria Street, SW1",
+          "postcode": "SW1",
+          "description": "Single storey rear extension at 45 Victoria Street, SW1",
+          "applicantName": "Mr James Thompson",
+          "applicationType": "Permitted Development",
+          "status": "Under Consultation",
+          "council": "Westminster City Council",
+          "value": "£148,924",
+          "dateSubmitted": "2026-05-06"
+        },
+        {
+          "address": "64 Sloane Avenue, SW3",
+          "postcode": "SW3",
+          "description": "Change of use from retail (Class E) to restaurant (Sui Generis) at 64 Sloane Avenue, SW3",
+          "applicantName": "Ms Emma Richardson",
+          "applicationType": "Change of Use",
+          "status": "Awaiting Site Visit",
+          "council": "Kensington and Chelsea Council",
+          "value": "£62,463",
+          "dateSubmitted": "2026-05-02"
+        },
+        {
+          "address": "102 Philbeach Gardens, SW5",
+          "postcode": "SW5",
+          "description": "Change of use from office (Class E) to residential (Class C3) at 102 Philbeach Gardens, SW5",
+          "applicantName": "Ms Nicola Adams",
+          "applicationType": "Prior Notification",
+          "status": "Pending Consideration",
+          "council": "Kensington and Chelsea Council",
+          "value": "£271,158",
+          "dateSubmitted": "2026-04-28"
+        },
+        {
+          "address": "156 Millbank A, SW1",
+          "postcode": "SW1",
+          "description": "Construction of 8 affordable homes at 156 Millbank A, SW1",
+          "applicantName": "Kensington Estates Ltd",
+          "applicationType": "Outline Planning Permission",
+          "status": "Under Consultation",
+          "council": "Westminster City Council",
+          "value": "£170,085",
+          "dateSubmitted": "2026-05-05"
+        },
+        {
+          "address": "17 Fulham Road B, SW3",
+          "postcode": "SW3",
+          "description": "Erection of garden room / home office at 17 Fulham Road B, SW3",
+          "applicantName": "Mr & Mrs Patel",
+          "applicationType": "Certificate of Lawfulness",
+          "status": "Pending Decision",
+          "council": "Kensington and Chelsea Council",
+          "value": "£166,108",
+          "dateSubmitted": "2026-04-25"
+        },
+        {
+          "address": "40 Old Brompton Road C, SW5",
+          "postcode": "SW5",
+          "description": "Rear and side roof extension at 40 Old Brompton Road C, SW5",
+          "applicantName": "David Wilson Properties Ltd",
+          "applicationType": "Permitted Development",
+          "status": "Pending Decision",
+          "council": "Kensington and Chelsea Council",
+          "value": "£234,459",
+          "dateSubmitted": "2026-04-26"
+        },
+        {
+          "address": "19 Buckingham Gate, SW1",
+          "postcode": "SW1",
+          "description": "Conversion of garage to habitable room at 19 Buckingham Gate, SW1",
+          "applicantName": "Mr Robert Shaw",
+          "applicationType": "Outline Planning Permission",
+          "status": "Pending Decision",
+          "council": "Westminster City Council",
+          "value": "£411,758",
+          "dateSubmitted": "2026-05-04"
+        },
+        {
+          "address": "194 Cadogan Square, SW3",
+          "postcode": "SW3",
+          "description": "Construction of 12 residential units with landscaping at 194 Cadogan Square, SW3",
+          "applicantName": "Mrs Helen Baker",
+          "applicationType": "Certificate of Lawfulness",
+          "status": "Under Consultation",
+          "council": "Kensington and Chelsea Council",
+          "value": "£54,816",
+          "dateSubmitted": "2026-05-03"
+        },
+        {
+          "address": "61 Philbeach Gardens, SW5",
+          "postcode": "SW5",
+          "description": "New agricultural building at 61 Philbeach Gardens, SW5",
+          "applicantName": "Mrs Helen Baker",
+          "applicationType": "Householder Application",
+          "status": "Pending Decision",
+          "council": "Kensington and Chelsea Council",
+          "value": "£109,042",
+          "dateSubmitted": "2026-05-01"
+        },
+        {
+          "address": "75 Horseferry Road A, SW1",
+          "postcode": "SW1",
+          "description": "Front porch extension at 75 Horseferry Road A, SW1",
+          "applicantName": "Mr Robert Shaw",
+          "applicationType": "Full Planning Permission",
+          "status": "Refused",
+          "council": "Westminster City Council",
+          "value": "£119,614",
+          "dateSubmitted": "2026-04-25"
+        },
+        {
+          "address": "95 Buckingham Gate A, SW1",
+          "postcode": "SW1",
+          "description": "Construction of 2 semi-detached dwellings at 95 Buckingham Gate A, SW1",
+          "applicantName": "Mr & Mrs Patel",
+          "applicationType": "Change of Use",
+          "status": "Awaiting Site Visit",
+          "council": "Westminster City Council",
+          "value": "£35,619",
+          "dateSubmitted": "2026-04-25"
+        }
+      ],
+      "summary": {
+        "total": 25,
+        "byPostcode": {
+          "SW1": 10,
+          "SW3": 8,
+          "SW5": 7
+        },
+        "byApplicationType": {
+          "Change of Use": 3,
+          "Full Planning Permission": 4,
+          "Outline Planning Permission": 4,
+          "Householder Application": 4,
+          "Listed Building Consent": 2,
+          "Certificate of Lawfulness": 4,
+          "Prior Notification": 2,
+          "Permitted Development": 2
+        },
+        "byStatus": {
+          "Pending Consideration": 6,
+          "Pending Decision": 6,
+          "Refused": 4,
+          "Under Consultation": 4,
+          "Awaiting Site Visit": 4,
+          "Approved": 1
+        },
+        "byCouncil": {
+          "Westminster City Council": 10,
+          "Kensington and Chelsea Council": 15
+        },
+        "totalEstimatedValue": 5186078
+      }
+    },
+    {
+      "customerId": "demo-architect",
+      "company": "Design Build Ltd",
+      "email": "info@designbuild.co.uk",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:39:22.243Z",
+      "totalLeads": 25,
+      "leadLimit": 25,
+      "leads": [
+        {
+          "address": "95 Buckingham Gate A, SW1",
+          "postcode": "SW1",
+          "description": "Construction of 2 semi-detached dwellings at 95 Buckingham Gate A, SW1",
+          "applicantName": "Mr & Mrs Patel",
+          "applicationType": "Change of Use",
+          "status": "Awaiting Site Visit",
+          "council": "Westminster City Council",
+          "value": "£35,619",
+          "dateSubmitted": "2026-04-25"
+        },
+        {
+          "address": "176 Cadogan Square B, SW3",
+          "postcode": "SW3",
+          "description": "Construction of 12 residential units with landscaping at 176 Cadogan Square B, SW3",
+          "applicantName": "Premier Homes Ltd",
+          "applicationType": "Listed Building Consent",
+          "status": "Refused",
+          "council": "Kensington and Chelsea Council",
+          "value": "£350,062",
+          "dateSubmitted": "2026-04-23"
+        },
+        {
+          "address": "11 Old Brompton Road C, SW5",
+          "postcode": "SW5",
+          "description": "Demolition of existing dwelling and construction of new dwelling at 11 Old Brompton Road C, SW5",
+          "applicantName": "Ms Emma Richardson",
+          "applicationType": "Householder Application",
+          "status": "Pending Consideration",
+          "council": "Kensington and Chelsea Council",
+          "value": "£331,751",
+          "dateSubmitted": "2026-05-04"
+        },
+        {
+          "address": "155 Horseferry Road, SW1",
+          "postcode": "SW1",
+          "description": "Change of use from retail (Class E) to restaurant (Sui Generis) at 155 Horseferry Road, SW1",
+          "applicantName": "Riverside Developments Plc",
+          "applicationType": "Householder Application",
+          "status": "Approved",
+          "council": "Westminster City Council",
+          "value": "£80,222",
+          "dateSubmitted": "2026-05-05"
+        },
+        {
+          "address": "11 Sydney Street, SW3",
+          "postcode": "SW3",
+          "description": "Construction of 12 residential units with landscaping at 11 Sydney Street, SW3",
+          "applicantName": "Riverside Developments Plc",
+          "applicationType": "Full Planning Permission",
+          "status": "Under Consultation",
+          "council": "Kensington and Chelsea Council",
+          "value": "£222,469",
+          "dateSubmitted": "2026-05-05"
+        },
+        {
+          "address": "135 Philbeach Gardens, SW5",
+          "postcode": "SW5",
+          "description": "Installation of air source heat pump at 135 Philbeach Gardens, SW5",
+          "applicantName": "Ms Nicola Adams",
+          "applicationType": "Householder Application",
+          "status": "Approved",
+          "council": "Kensington and Chelsea Council",
+          "value": "£263,670",
+          "dateSubmitted": "2026-05-02"
+        },
+        {
+          "address": "68 Dean Bradley Street A, SW1",
+          "postcode": "SW1",
+          "description": "Conversion of loft to living accommodation with roof lights at 68 Dean Bradley Street A, SW1",
+          "applicantName": "Mr James Thompson",
+          "applicationType": "Prior Notification",
+          "status": "Pending Decision",
+          "council": "Westminster City Council",
+          "value": "£315,751",
+          "dateSubmitted": "2026-04-30"
+        },
+        {
+          "address": "131 King's Road B, SW3",
+          "postcode": "SW3",
+          "description": "Conversion of garage to habitable room at 131 King's Road B, SW3",
+          "applicantName": "Premier Homes Ltd",
+          "applicationType": "Permitted Development",
+          "status": "Awaiting Site Visit",
+          "council": "Kensington and Chelsea Council",
+          "value": "£25,266",
+          "dateSubmitted": "2026-05-05"
+        },
+        {
+          "address": "41 Old Brompton Road C, SW5",
+          "postcode": "SW5",
+          "description": "Internal alterations and rear extension at 41 Old Brompton Road C, SW5",
+          "applicantName": "Mr & Mrs Patel",
+          "applicationType": "Householder Application",
+          "status": "Refused",
+          "council": "Kensington and Chelsea Council",
+          "value": "£238,477",
+          "dateSubmitted": "2026-05-01"
+        },
+        {
+          "address": "48 Birdcage Walk, SW1",
+          "postcode": "SW1",
+          "description": "Rear dormer window and internal alterations at 48 Birdcage Walk, SW1",
+          "applicantName": "Ms Emma Richardson",
+          "applicationType": "Outline Planning Permission",
+          "status": "Pending Consideration",
+          "council": "Westminster City Council",
+          "value": "£398,481",
+          "dateSubmitted": "2026-04-25"
+        },
+        {
+          "address": "124 Chelsea Embankment, SW3",
+          "postcode": "SW3",
+          "description": "Construction of a new detached dwelling at 124 Chelsea Embankment, SW3",
+          "applicantName": "Mr Robert Shaw",
+          "applicationType": "Certificate of Lawfulness",
+          "status": "Pending Consideration",
+          "council": "Kensington and Chelsea Council",
+          "value": "£301,261",
+          "dateSubmitted": "2026-05-06"
+        },
+        {
+          "address": "118 Philbeach Gardens, SW5",
+          "postcode": "SW5",
+          "description": "Construction of 12 residential units with landscaping at 118 Philbeach Gardens, SW5",
+          "applicantName": "Mr Robert Shaw",
+          "applicationType": "Permitted Development",
+          "status": "Pending Consideration",
+          "council": "Kensington and Chelsea Council",
+          "value": "£220,719",
+          "dateSubmitted": "2026-05-01"
+        },
+        {
+          "address": "120 Great Smith Street A, SW1",
+          "postcode": "SW1",
+          "description": "Change of use from pub (Sui Generis) to dwellinghouse (C3) at 120 Great Smith Street A, SW1",
+          "applicantName": "Premier Homes Ltd",
+          "applicationType": "Change of Use",
+          "status": "Awaiting Site Visit",
+          "council": "Westminster City Council",
+          "value": "£226,583",
+          "dateSubmitted": "2026-05-04"
+        },
+        {
+          "address": "114 Draycott Avenue B, SW3",
+          "postcode": "SW3",
+          "description": "Construction of 4 new dwellings with associated parking at 114 Draycott Avenue B, SW3",
+          "applicantName": "London Development Group",
+          "applicationType": "Permitted Development",
+          "status": "Under Consultation",
+          "council": "Kensington and Chelsea Council",
+          "value": "£328,116",
+          "dateSubmitted": "2026-05-02"
+        },
+        {
+          "address": "60 Old Brompton Road C, SW5",
+          "postcode": "SW5",
+          "description": "Construction of 8 affordable homes at 60 Old Brompton Road C, SW5",
+          "applicantName": "Mrs Helen Baker",
+          "applicationType": "Permitted Development",
+          "status": "Pending Decision",
+          "council": "Kensington and Chelsea Council",
+          "value": "£354,675",
+          "dateSubmitted": "2026-04-29"
+        },
+        {
+          "address": "115 Victoria Street, SW1",
+          "postcode": "SW1",
+          "description": "Conversion of garage to habitable room at 115 Victoria Street, SW1",
+          "applicantName": "London Development Group",
+          "applicationType": "Householder Application",
+          "status": "Refused",
+          "council": "Westminster City Council",
+          "value": "£383,879",
+          "dateSubmitted": "2026-05-03"
+        },
+        {
+          "address": "104 Sloane Avenue, SW3",
+          "postcode": "SW3",
+          "description": "Rear dormer window and internal alterations at 104 Sloane Avenue, SW3",
+          "applicantName": "Riverside Developments Plc",
+          "applicationType": "Outline Planning Permission",
+          "status": "Awaiting Site Visit",
+          "council": "Kensington and Chelsea Council",
+          "value": "£384,413",
+          "dateSubmitted": "2026-05-01"
+        },
+        {
+          "address": "138 Philbeach Gardens, SW5",
+          "postcode": "SW5",
+          "description": "Householder application for first floor side extension at 138 Philbeach Gardens, SW5",
+          "applicantName": "Riverside Developments Plc",
+          "applicationType": "Full Planning Permission",
+          "status": "Pending Decision",
+          "council": "Kensington and Chelsea Council",
+          "value": "£198,590",
+          "dateSubmitted": "2026-04-29"
+        },
+        {
+          "address": "133 Millbank A, SW1",
+          "postcode": "SW1",
+          "description": "Single storey rear extension at 133 Millbank A, SW1",
+          "applicantName": "Premier Homes Ltd",
+          "applicationType": "Certificate of Lawfulness",
+          "status": "Pending Consideration",
+          "council": "Westminster City Council",
+          "value": "£71,666",
+          "dateSubmitted": "2026-04-23"
+        },
+        {
+          "address": "155 Fulham Road B, SW3",
+          "postcode": "SW3",
+          "description": "Construction of 8 affordable homes at 155 Fulham Road B, SW3",
+          "applicantName": "Mr James Thompson",
+          "applicationType": "Outline Planning Permission",
+          "status": "Refused",
+          "council": "Kensington and Chelsea Council",
+          "value": "£166,625",
+          "dateSubmitted": "2026-04-29"
+        },
+        {
+          "address": "178 Old Brompton Road C, SW5",
+          "postcode": "SW5",
+          "description": "New commercial unit (Class E) with associated parking at 178 Old Brompton Road C, SW5",
+          "applicantName": "Ms Nicola Adams",
+          "applicationType": "Certificate of Lawfulness",
+          "status": "Under Consultation",
+          "council": "Kensington and Chelsea Council",
+          "value": "£63,046",
+          "dateSubmitted": "2026-05-01"
+        },
+        {
+          "address": "153 Buckingham Gate, SW1",
+          "postcode": "SW1",
+          "description": "Conversion of garage to habitable room at 153 Buckingham Gate, SW1",
+          "applicantName": "David Wilson Properties Ltd",
+          "applicationType": "Permitted Development",
+          "status": "Pending Decision",
+          "council": "Westminster City Council",
+          "value": "£135,299",
+          "dateSubmitted": "2026-04-25"
+        },
+        {
+          "address": "148 Cadogan Square, SW3",
+          "postcode": "SW3",
+          "description": "Change of use from office (Class E) to residential (Class C3) at 148 Cadogan Square, SW3",
+          "applicantName": "Premier Homes Ltd",
+          "applicationType": "Certificate of Lawfulness",
+          "status": "Refused",
+          "council": "Kensington and Chelsea Council",
+          "value": "£195,800",
+          "dateSubmitted": "2026-05-01"
+        },
+        {
+          "address": "164 Philbeach Gardens, SW5",
+          "postcode": "SW5",
+          "description": "Internal alterations and rear extension at 164 Philbeach Gardens, SW5",
+          "applicantName": "Mr & Mrs Patel",
+          "applicationType": "Listed Building Consent",
+          "status": "Under Consultation",
+          "council": "Kensington and Chelsea Council",
+          "value": "£139,012",
+          "dateSubmitted": "2026-05-04"
+        },
+        {
+          "address": "70 Horseferry Road A, SW1",
+          "postcode": "SW1",
+          "description": "Two storey side extension at 70 Horseferry Road A, SW1",
+          "applicantName": "David Wilson Properties Ltd",
+          "applicationType": "Certificate of Lawfulness",
+          "status": "Awaiting Site Visit",
+          "council": "Westminster City Council",
+          "value": "£21,350",
+          "dateSubmitted": "2026-05-03"
+        }
+      ],
+      "summary": {
+        "total": 25,
+        "byPostcode": {
+          "SW1": 9,
+          "SW3": 8,
+          "SW5": 8
+        },
+        "byApplicationType": {
+          "Change of Use": 2,
+          "Listed Building Consent": 2,
+          "Householder Application": 5,
+          "Full Planning Permission": 2,
+          "Prior Notification": 1,
+          "Permitted Development": 5,
+          "Outline Planning Permission": 3,
+          "Certificate of Lawfulness": 5
+        },
+        "byStatus": {
+          "Awaiting Site Visit": 5,
+          "Refused": 5,
+          "Pending Consideration": 5,
+          "Approved": 2,
+          "Under Consultation": 4,
+          "Pending Decision": 4
+        },
+        "byCouncil": {
+          "Westminster City Council": 9,
+          "Kensington and Chelsea Council": 16
+        },
+        "totalEstimatedValue": 5452802
+      }
+    }
+  ],
+  "_lastDelivery": "2026-05-06T08:59:36.282Z"
+}
