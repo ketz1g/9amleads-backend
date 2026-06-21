@@ -676,6 +676,13 @@ function searchTerritories(query) {
     d.name.toLowerCase().includes(q) ||
     d.area_code.toLowerCase().includes(q)
   );
+  // If user typed an area code, expand to show its districts
+  const areaMatch = allTerritoryAreas.find(a => a.area_code.toLowerCase() === q);
+  if (areaMatch && filtered.length === areaMatch.districts.length) {
+    territoryExpandedArea = areaMatch.area_code;
+    renderTerritoryFull();
+    return;
+  }
   renderTerritorySearchResults(filtered);
   dropdown.style.display = 'block';
 }

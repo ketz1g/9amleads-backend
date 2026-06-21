@@ -20,7 +20,7 @@ require('dotenv').config();
 
 // ===== CONFIG =====
 const PORT = process.env.PORT || process.env.API_PORT || 8012;
-const JWT_SECRET = process.env.JWT_SECRET || '9amleads-prod-secret';
+const JWT_SECRET = process.env.JWT_SECRET || '9amleads-prod-secret-2026';
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 const PUBLIC_URL = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
@@ -86,7 +86,7 @@ function validatePostcodes(postcodes, customerPlan, customerProduct, customerId,
   for (const pc of postcodes) {
     const upper = pc.toUpperCase();
     if (!districts[upper]) {
-      errors.push('"' + pc + '" is not a valid UK postcode district. Please pick a specific district like "' + (upper + '1') + '", not just the area code.');
+      errors.push('"' + pc + '" is not a specific postcode district. Please pick individual districts like "' + (upper + '1') + '", not the whole area.');
       continue;
     }
     const existing = assignments.assignments[upper];
