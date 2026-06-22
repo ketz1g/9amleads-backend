@@ -1,0 +1,29 @@
+# Local Netlify folder
+.netlify
+
+# OS files
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+

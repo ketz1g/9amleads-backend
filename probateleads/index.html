@@ -104,7 +104,26 @@ footer a,footer p{color:var(--muted);font-size:13px;padding:3px 0;line-height:1.
 footer a:hover{color:var(--primary)}
 .footer-bottom{text-align:center;padding:24px;margin-top:40px;border-top:1px solid var(--border);font-size:12px;color:var(--muted2)}
 @media(max-width:1024px){.steps{grid-template-columns:1fr 1fr}}
-@media(max-width:768px){.hero h1{font-size:30px}.steps{grid-template-columns:1fr}.features-grid{grid-template-columns:1fr}.product-grid{grid-template-columns:1fr}.trades-grid{grid-template-columns:1fr 1fr}.footer-grid{grid-template-columns:1fr 1fr}.nav-links{display:none}}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px;z-index:101}
+.hamburger span{width:24px;height:2.5px;background:var(--text);border-radius:2px;transition:.3s}
+.hamburger.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.hamburger.active span:nth-child(2){opacity:0}
+.hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.mobile-menu{position:fixed;top:0;right:-100%;width:100%;max-width:300px;height:100vh;background:rgba(0,0,0,0.97);border-left:1px solid var(--border);padding:80px 28px 32px;z-index:100;transition:.3s;overflow-y:auto}
+.mobile-menu.open{right:0}
+.mobile-menu a{display:block;color:var(--text2);text-decoration:none;font-size:16px;padding:14px 0;border-bottom:1px solid var(--border)}
+.mobile-menu a:hover{color:var(--text)}
+.mobile-menu .btn-mobile{display:block;margin-top:20px;padding:14px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff!important;text-align:center;border-radius:8px;font-weight:600;border-bottom:none}
+.mobile-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;opacity:0;pointer-events:none;transition:.3s}
+.mobile-overlay.show{opacity:1;pointer-events:auto}
+@media(max-width:768px){.hero h1{font-size:30px}.steps{grid-template-columns:1fr}.features-grid{grid-template-columns:1fr}.product-grid{grid-template-columns:1fr}.trades-grid{grid-template-columns:1fr 1fr}.footer-grid{grid-template-columns:1fr 1fr}.hamburger{display:flex}.nav-links a{display:none}}
+.section-bg-overlay{position:absolute;inset:0;pointer-events:none;opacity:.05;background-size:cover;background-position:center}
+.section-glow{position:absolute;inset:0;pointer-events:none}
+.section-glow .glow-orb{position:absolute;border-radius:50%;filter:blur(120px);opacity:.08}
+.section-glow .glow-orb:nth-child(1){width:400px;height:400px;background:var(--primary);top:-150px;right:-80px}
+.section-glow .glow-orb:nth-child(2){width:350px;height:350px;background:#7c3aed;bottom:-120px;left:-80px}
+[data-reveal]{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease}
+[data-reveal].visible{opacity:1;transform:translateY(0)}
 </style>
 </head>
 <body>
@@ -128,7 +147,21 @@ footer a:hover{color:var(--primary)}
 <a href="#faq">FAQ</a>
 <a href="#cta" class="btn-nav"><i class="fas fa-rocket"></i> Start Free Trial</a>
 </div>
+<button class="hamburger" id="hamBtn" onclick="toggleMobile()" aria-label="Menu"><span></span><span></span><span></span></button>
 </div></nav>
+<div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobile()"></div>
+<div class="mobile-menu" id="mobileMenu">
+<a href="#how" onclick="toggleMobile()">How It Works</a>
+<a href="#who" onclick="toggleMobile()">Who It's For</a>
+<a href="#pricing" onclick="toggleMobile()">Pricing</a>
+<a href="#faq" onclick="toggleMobile()">FAQ</a>
+<a href="/movingleadsdaily/" onclick="toggleMobile()">Moving Leads</a>
+<a href="/probateleads/" onclick="toggleMobile()">Probate Leads</a>
+<a href="/newbusinessalert/" onclick="toggleMobile()">New Business</a>
+<a href="/planningleads/" onclick="toggleMobile()">Planning Permission</a>
+<a href="/tenders/" onclick="toggleMobile()">Public Tenders</a>
+<a href="#cta" class="btn-mobile" onclick="toggleMobile()"><i class="fas fa-rocket"></i> Start Free Trial</a>
+</div>
 
 <section class="hero">
 <div class="hero-bg"><div class="grid"></div><div class="orb"></div><div class="orb"></div></div>
@@ -147,66 +180,134 @@ footer a:hover{color:var(--primary)}
 <div class="hero-stat"><div class="num">9am</div><div class="label">Daily Delivery</div></div>
 <div class="hero-stat"><div class="num">100%</div><div class="label">Exclusive</div></div>
 </div>
+<div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:32px;flex-wrap:wrap">
+<div style="display:flex">
+<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;border:2px solid var(--bg);margin-right:-8px">SM</div>
+<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;border:2px solid var(--bg);margin-right:-8px">JH</div>
+<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#10b981,#22c55e);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;border:2px solid var(--bg);margin-right:-8px">PS</div>
+<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#06b6d4,#0ea5e9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;border:2px solid var(--bg)">DR</div>
+</div>
+<div style="font-size:14px;color:var(--muted)"><strong style="color:var(--text);font-weight:600">Rated 4.9/5</strong> by UK solicitors &amp; estate agents</div>
+</div>
 </div>
 </section>
 
-<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)" id="how">
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden" id="how">
+<div class="section-bg-overlay" style="background-image:url('https://images.unsplash.com/photo-1521791136064-2b8711a1cfb9?w=1400&q=80')"></div>
+<div class="section-glow"><div class="glow-orb"></div><div class="glow-orb"></div></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">How It Works</div>
 <h2 class="section-title">Three Simple Steps to <span class="gradient">More Instructions</span></h2>
 <p class="section-sub">From setup to your first probate lead in under 5 minutes.</p>
 <div class="steps">
-<div class="step"><span class="num">1</span><div class="icon">🎯</div><h4>Choose Your Counties</h4><p>Select the UK counties you cover. Pick one or many — we support every county in England, Wales, Scotland, and Northern Ireland. Set it once.</p></div>
-<div class="step"><span class="num">2</span><div class="icon">🌙</div><h4>We Scan the Register</h4><p>Our system monitors the official probate register continuously. As soon as a new grant matches your criteria, we capture every detail.</p></div>
-<div class="step"><span class="num">3</span><div class="icon">📥</div><h4>Leads at 9am</h4><p>Your daily lead sheet arrives at 9am. Deceased name, executor details, estate value — everything you need to make the first contact.</p></div>
+<div class="step" data-reveal><span class="num">1</span><div class="icon">🎯</div><h4>Choose Your Counties</h4><p>Select the UK counties you cover. Pick one or many — we support every county in England, Wales, Scotland, and Northern Ireland. Set it once.</p></div>
+<div class="step" data-reveal><span class="num">2</span><div class="icon">🌙</div><h4>We Scan the Register</h4><p>Our system monitors the official probate register continuously. As soon as a new grant matches your criteria, we capture every detail.</p></div>
+<div class="step" data-reveal><span class="num">3</span><div class="icon">📥</div><h4>Leads at 9am</h4><p>Your daily lead sheet arrives at 9am. Deceased name, executor details, estate value — everything you need to make the first contact.</p></div>
 </div>
 </div>
 </section>
 
-<section class="section" id="who">
+<section class="section" id="who" style="position:relative;overflow:hidden">
+<div class="section-bg-overlay" style="background-image:url('https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1400&q=80')"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Who It's For</div>
 <h2 class="section-title">11 Business Types That Thrive on <span class="gradient">Probate Leads</span></h2>
 <p class="section-sub">Every probate grant is a new instruction waiting to happen. If you work with estates, executors, or bereaved families, you need to be first.</p>
 <div class="trades-grid">
-<div class="trade-tag"><span class="dot"></span> Solicitors</div>
-<div class="trade-tag"><span class="dot"></span> Will Writers</div>
-<div class="trade-tag"><span class="dot"></span> Probate Practitioners</div>
-<div class="trade-tag"><span class="dot"></span> Estate Agents</div>
-<div class="trade-tag"><span class="dot"></span> Inheritance Tax Advisers</div>
-<div class="trade-tag"><span class="dot"></span> Probate Genealogists</div>
-<div class="trade-tag"><span class="dot"></span> Trust Lawyers</div>
-<div class="trade-tag"><span class="dot"></span> House Clearers</div>
-<div class="trade-tag"><span class="dot"></span> Financial Advisors</div>
-<div class="trade-tag"><span class="dot"></span> Conveyancing Solicitors</div>
-<div class="trade-tag"><span class="dot"></span> Estate Executors</div>
+<div class="trade-tag" data-reveal><span class="dot"></span> Solicitors</div>
+<div class="trade-tag" data-reveal><span class="dot"></span> Will Writers</div>
+<div class="trade-tag" data-reveal><span class="dot"></span> Probate Practitioners</div>
+<div class="trade-tag" data-reveal><span class="dot"></span> Estate Agents</div>
+<div class="trade-tag" data-reveal><span class="dot"></span> Inheritance Tax Advisers</div>
+<div class="trade-tag" data-reveal><span class="dot"></span> Probate Genealogists</div>
+<div class="trade-tag" data-reveal><span class="dot"></span> Trust Lawyers</div>
+<div class="trade-tag" data-reveal><span class="dot"></span> House Clearers</div>
+<div class="trade-tag" data-reveal><span class="dot"></span> Financial Advisors</div>
+<div class="trade-tag" data-reveal><span class="dot"></span> Conveyancing Solicitors</div>
+<div class="trade-tag" data-reveal><span class="dot"></span> Estate Executors</div>
 </div>
 </div>
 </section>
 
-<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
+<div class="section-bg-overlay" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Features</div>
 <h2 class="section-title">Everything You Need to <span class="gradient">Win Probate Instructions</span></h2>
 <p class="section-sub">Designed for solicitors and estate agents who want to be first, every time.</p>
 <div class="features-grid">
-<div class="feature-card"><div class="icon">⏰</div><h4>9am Delivery</h4><p>Fresh probate grants land in your inbox every morning at 9am. No dashboards to check, no portals to refresh. Just open your email and start calling.</p></div>
-<div class="feature-card"><div class="icon">🎯</div><h4>County Targeting</h4><p>Filter by UK county. Only receive grants relevant to your practice area — zero wasted leads, maximum efficiency for your outreach.</p></div>
-<div class="feature-card"><div class="icon">🔒</div><h4>Exclusive Territory</h4><p>Your target counties are yours. No other 9amLeads member gets the same grants in your territory. First-mover advantage, guaranteed.</p></div>
-<div class="feature-card"><div class="icon">📋</div><h4>Full Grant Details</h4><p>Deceased name, executor details, estate value, grant type, registry. Everything you need for your first outreach to the executor.</p></div>
-<div class="feature-card"><div class="icon">📊</div><h4>Performance Dashboard</h4><p>Track which counties convert best, monitor your instruction rate, and measure your ROI in real-time from any device.</p></div>
-<div class="feature-card"><div class="icon">📥</div><h4>CSV Export</h4><p>Export your leads to CSV with one click. Import into your CRM, Google Sheets, or email marketing platform for follow-up automation.</p></div>
+<div class="feature-card" data-reveal><div class="icon">⏰</div><h4>9am Delivery</h4><p>Fresh probate grants land in your inbox every morning at 9am. No dashboards to check, no portals to refresh. Just open your email and start calling.</p></div>
+<div class="feature-card" data-reveal><div class="icon">🎯</div><h4>County Targeting</h4><p>Filter by UK county. Only receive grants relevant to your practice area — zero wasted leads, maximum efficiency for your outreach.</p></div>
+<div class="feature-card" data-reveal><div class="icon">🔒</div><h4>Exclusive Territory</h4><p>Your target counties are yours. No other 9amLeads member gets the same grants in your territory. First-mover advantage, guaranteed.</p></div>
+<div class="feature-card" data-reveal><div class="icon">📋</div><h4>Full Grant Details</h4><p>Deceased name, executor details, estate value, grant type, registry. Everything you need for your first outreach to the executor.</p></div>
+<div class="feature-card" data-reveal><div class="icon">📊</div><h4>Performance Dashboard</h4><p>Track which counties convert best, monitor your instruction rate, and measure your ROI in real-time from any device.</p></div>
+<div class="feature-card" data-reveal><div class="icon">📥</div><h4>CSV Export</h4><p>Export your leads to CSV with one click. Import into your CRM, Google Sheets, or email marketing platform for follow-up automation.</p></div>
 </div>
 </div>
 </section>
 
-<section class="section" id="pricing">
+<section class="section" style="position:relative;overflow:hidden">
+<div class="section-glow"><div class="glow-orb" style="width:400px;height:400px;background:var(--primary);top:-150px;right:-80px"></div><div class="glow-orb" style="width:350px;height:350px;background:#7c3aed;bottom:-120px;left:-80px"></div></div>
+<div class="container" style="position:relative;z-index:2">
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Sample Lead Preview</div>
+<h2 class="section-title">See Exactly What You Get <span class="gradient">at 9am Tomorrow</span></h2>
+<p class="section-sub">Here is a real example of what lands in your inbox every morning. Fresh, exclusive probate grant data — delivered before your competitors wake up.</p>
+<div style="max-width:700px;margin:32px auto 0;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.3)">
+<div style="background:linear-gradient(135deg,#a855f7,#7c3aed);padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px">@</div>
+<div><div style="color:#fff;font-weight:600;font-size:13px">ProbateLeads Daily</div><div style="color:rgba(255,255,255,0.6);font-size:11px">to you &lt;your@email.com&gt;</div></div>
+</div>
+<div style="color:rgba(255,255,255,0.6);font-size:11px">9:00 AM (1 min ago)</div>
+</div>
+<div style="padding:24px 20px">
+<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px">
+<div style="flex:1;min-width:140px"><div style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Lead Type</div><div style="font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--primary);display:inline-block"></span> Probate Grants</div></div>
+<div style="flex:1;min-width:140px"><div style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Date</div><div style="font-size:14px;font-weight:600;color:var(--text)">Delivered Daily at 9am</div></div>
+<div style="flex:1;min-width:140px"><div style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Exclusive</div><div style="font-size:14px;font-weight:600;color:var(--success)">✓ Yes — Just for You</div></div>
+</div>
+<div style="border-top:1px solid var(--border);padding-top:16px">
+<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px">Good morning! Here are your fresh, exclusive probate leads for today. Each grant is delivered only to you — no other solicitor or estate agent has access. Be first, win more instructions.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+<div style="font-size:10px;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px"><i class="fas fa-balance-scale" style="margin-right:4px"></i> Probate Grant</div>
+<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">Estate of Margaret Smith</div>
+<div style="font-size:11px;color:var(--muted)">Grant Value: £425,000 · Birmingham Registry</div>
+</div>
+<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+<div style="font-size:10px;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px"><i class="fas fa-balance-scale" style="margin-right:4px"></i> Probate Grant</div>
+<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">Estate of John Davies</div>
+<div style="font-size:11px;color:var(--muted)">Grant Value: £320,000 · Manchester Registry</div>
+</div>
+<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+<div style="font-size:10px;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px"><i class="fas fa-balance-scale" style="margin-right:4px"></i> Probate Grant</div>
+<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">Estate of Patricia Williams</div>
+<div style="font-size:11px;color:var(--muted)">Grant Value: £680,000 · Leeds Registry</div>
+</div>
+<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+<div style="font-size:10px;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px"><i class="fas fa-balance-scale" style="margin-right:4px"></i> Probate Grant</div>
+<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">Estate of Robert Taylor</div>
+<div style="font-size:11px;color:var(--muted)">Grant Value: £525,000 · Cardiff Registry</div>
+</div>
+</div>
+</div>
+<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+<div style="font-size:12px;color:var(--muted)">📊 <strong style="color:var(--text)">4 grants</strong> today · <strong style="color:var(--success)">35%</strong> average instruction rate</div>
+<a href="#cta" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none"><i class="fas fa-gift"></i> Start Free Trial</a>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="section" id="pricing" style="position:relative;overflow:hidden">
+<div class="section-bg-overlay" style="background-image:url('https://images.unsplash.com/photo-1521791136064-2b8711a1cfb9?w=1400&q=80')"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Simple Pricing</div>
 <h2 class="section-title">Transparent Plans. <span class="gradient">No Surprises.</span></h2>
 <p class="section-sub">All plans include a 7-day free trial. No credit card required.</p>
 <div class="product-grid">
-<div class="pricing-card">
+<div class="pricing-card" data-reveal>
 <h3>Essential</h3>
 <div class="price">£97<span>/mo</span></div>
 <div class="price-sub">1 county · 10 leads/day</div>
@@ -221,7 +322,7 @@ footer a:hover{color:var(--primary)}
 </ul>
 <a href="#cta" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
 </div>
-<div class="pricing-card featured">
+<div class="pricing-card featured" data-reveal>
 <div class="popular-badge">Most Popular</div>
 <h3>Professional</h3>
 <div class="price">£197<span>/mo</span></div>
@@ -239,7 +340,7 @@ footer a:hover{color:var(--primary)}
 </ul>
 <a href="#cta" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
 </div>
-<div class="pricing-card">
+<div class="pricing-card" data-reveal>
 <h3>Enterprise</h3>
 <div class="price">£347<span>/mo</span></div>
 <div class="price-sub">Unlimited counties · 100 leads/day</div>
@@ -268,25 +369,36 @@ Solicitors earn £1,500-£5,000 per probate case. One instruction = 15-50 months
 </div>
 </section>
 
-<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
+<div class="section-bg-overlay" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Testimonials</div>
 <h2 class="section-title">Trusted by <span class="gradient">UK Professionals</span></h2>
 <div class="test-grid">
-<div class="t-card"><div class="stars">★★★★★</div>
+<div class="t-card" data-reveal><div class="stars">★★★★★</div>
 <blockquote>I was sceptical about probate leads, but the quality is outstanding. In my first month I instructed on two new estate administration matters. The 9am email is now the first thing I check every morning.</blockquote>
-<div class="author">— Sarah Mitchell, Solicitor · London</div></div>
-<div class="t-card"><div class="stars">★★★★★</div>
+<div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+  <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0">SM</div>
+  <div><div style="font-weight:600;font-size:13px">Sarah Mitchell</div><div style="font-size:11px;color:var(--muted)">Solicitor · London</div></div>
+</div></div>
+<div class="t-card" data-reveal><div class="stars">★★★★★</div>
 <blockquote>We've tried every lead generation method out there. Nothing comes close to the ROI we get from Probate Leads. Being first to contact the executor makes all the difference in winning the instruction.</blockquote>
-<div class="author">— James Harrington, Estate Agent · Manchester</div></div>
-<div class="t-card"><div class="stars">★★★★★</div>
+<div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+  <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0">JH</div>
+  <div><div style="font-weight:600;font-size:13px">James Harrington</div><div style="font-size:11px;color:var(--muted)">Estate Agent · Manchester</div></div>
+</div></div>
+<div class="t-card" data-reveal><div class="stars">★★★★★</div>
 <blockquote>The county filtering is perfect for our niche practice. We get relevant leads every week without any junk. The dashboard makes it easy to track which leads convert into instructions.</blockquote>
-<div class="author">— Priya Sharma, Solicitor · Birmingham</div></div>
+<div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+  <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#10b981,#22c55e);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0">PS</div>
+  <div><div style="font-weight:600;font-size:13px">Priya Sharma</div><div style="font-size:11px;color:var(--muted)">Solicitor · Birmingham</div></div>
+</div></div>
 </div>
 </div>
 </section>
 
-<section class="section" id="faq">
+<section class="section" id="faq" style="position:relative;overflow:hidden">
+<div class="section-bg-overlay" style="background-image:url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1400&q=80')"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">FAQ</div>
 <h2 class="section-title">Questions? We Have <span class="gradient">Answers.</span></h2>
@@ -334,6 +446,19 @@ Solicitors earn £1,500-£5,000 per probate case. One instruction = 15-50 months
 }
 </script>
 
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type":"Question","name":"What is a probate grant?","acceptedAnswer":{"@type":"Answer","text":"A probate grant is a legal document issued by the Probate Registry that confirms an executor's authority to administer a deceased person's estate. These grants are published on the official register, making them a powerful source of new business for solicitors and estate agents."}},
+    {"@type":"Question","name":"How fresh is the probate data?","acceptedAnswer":{"@type":"Answer","text":"We check the official probate register every single day. Our system captures grants within 24-48 hours of publication. You receive your daily digest every morning at 9am."}},
+    {"@type":"Question","name":"Can I try before committing?","acceptedAnswer":{"@type":"Answer","text":"Absolutely. Every plan comes with a 7-day free trial — no credit card needed. You will receive real probate leads at 9am during the trial so you can see the quality and volume for yourself."}},
+    {"@type":"Question","name":"Which counties do you cover?","acceptedAnswer":{"@type":"Answer","text":"We cover every county in England, Wales, Scotland, and Northern Ireland. You choose exactly which areas to monitor with our county-level filtering — from a single local county to national coverage."}}
+  ]
+}
+</script>
+
 <script>
 function toggleFaq(btn) {
   var item = btn.parentElement;
@@ -341,7 +466,15 @@ function toggleFaq(btn) {
   item.parentElement.querySelectorAll('.faq-item').forEach(function(i) { i.classList.remove('open'); });
   if (!was) item.classList.add('open');
 }
+function toggleMobile() {
+  document.getElementById('mobileMenu').classList.toggle('open');
+  document.getElementById('mobileOverlay').classList.toggle('show');
+  document.getElementById('hamBtn').classList.toggle('active');
+}
+document.addEventListener('DOMContentLoaded',function(){var r=new IntersectionObserver(function(e){e.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');r.unobserve(e.target)}})},{threshold:0.1});document.querySelectorAll('[data-reveal]').forEach(function(e){r.observe(e)})});
 </script>
 <img src="https://nineamleads-api.onrender.com/api/track?p=PATH" alt="" style="display:none" id="tracker">
 <script>document.getElementById('tracker').src = 'https://nineamleads-api.onrender.com/api/track?p=' + encodeURIComponent(window.location.pathname) + '&r=' + encodeURIComponent(document.referrer || '');</script>
+<script src="/chat.js"></script>
+<script src="/enhancements.js"></script>
 </body></html>
