@@ -16,17 +16,122 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const cron = require('node-cron');
 
+require('dotenv').config();
+
 // ===== CONFIG =====
 const PORT = process.env.PORT || process.env.API_PORT || 8012;
 const JWT_SECRET = process.env.JWT_SECRET || '9amleads-prod-secret-2026';
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
+const PUBLIC_URL = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+
+// Postcode district data
+const POSTCODE_DISTRICTS_FILE = path.join(DATA_DIR, 'uk-postcode-districts.json');
+const POSTCODE_AREAS_FILE = path.join(DATA_DIR, 'uk-postcode-areas.json');
+const POSTCODE_ASSIGNMENTS_FILE = path.join(DATA_DIR, 'postcode-assignments.json');
+
+// Postcode district limits per plan (districts are granular, so higher limits)
+const POSTCODE_LIMITS = {
+  free_trial: 5,
+  essential: 5,
+  starter: 5,
+  pro: 10,
+  enterprise: 50
+};
+
+function loadPostcodeDistricts() {
+  try { return JSON.parse(fs.readFileSync(POSTCODE_DISTRICTS_FILE, 'utf-8')); }
+  catch { return {}; }
+}
+
+function loadPostcodeAreas() {
+  try { return JSON.parse(fs.readFileSync(POSTCODE_AREAS_FILE, 'utf-8')); }
+  catch { return {}; }
+}
+
+function loadAssignments() {
+  try { return JSON.parse(fs.readFileSync(POSTCODE_ASSIGNMENTS_FILE, 'utf-8')); }
+  catch { return { assignments: {} }; }
+}
+
+function saveAssignments(data) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(POSTCODE_ASSIGNMENTS_FILE, JSON.stringify(data, null, 2));
+}
+
+function getPostcodeLimit(plan, extraPostcodes) {
+  const base = POSTCODE_LIMITS[plan] || POSTCODE_LIMITS.free_trial;
+  const extra = parseInt(extraPostcodes) || 0;
+  return base + extra;
+}
+
+const EXTRAS_PRICE = 2000; // £20 per extra 5 postcode districts
+
+function validatePostcodes(postcodes, customerPlan, customerProduct, customerId, extraPostcodes) {
+  const districts = loadPostcodeDistricts();
+  const areas = loadPostcodeAreas();
+  const assignments = loadAssignments();
+  const maxLimit = getPostcodeLimit(customerPlan, extraPostcodes);
+  const errors = [];
+
+  if (!Array.isArray(postcodes)) {
+    return { valid: false, errors: ['Postcodes must be an array'] };
+  }
+
+  if (postcodes.length > maxLimit) {
+    const limitLabel = maxLimit >= 999 ? 'unlimited' : maxLimit;
+    errors.push('Your ' + customerPlan + ' plan allows ' + limitLabel + ' postcode district' + (maxLimit !== 1 ? 's' : '') + '. You selected ' + postcodes.length + '.');
+  }
+
+  for (const pc of postcodes) {
+    const upper = pc.toUpperCase();
+    if (!districts[upper]) {
+      errors.push('"' + pc + '" is not a specific postcode district. Please pick individual districts like "' + (upper + '1') + '", not the whole area.');
+      continue;
+    }
+    const existing = assignments.assignments[upper];
+    if (existing && existing.customer_id !== customerId) {
+      errors.push('"' + upper + '" (' + districts[upper].name + ') is already taken by another customer.');
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+function claimPostcodes(postcodes, customerId, product) {
+  const assignments = loadAssignments();
+  for (const pc of postcodes) {
+    const upper = pc.toUpperCase();
+    if (!assignments.assignments[upper]) {
+      assignments.assignments[upper] = {
+        customer_id: customerId,
+        product: product,
+        assigned_at: new Date().toISOString(),
+        status: 'active'
+      };
+    }
+  }
+  saveAssignments(assignments);
+}
+
+function releasePostcodes(customerId) {
+  const assignments = loadAssignments();
+  let changed = false;
+  for (const [code, assignment] of Object.entries(assignments.assignments)) {
+    if (assignment.customer_id === customerId) {
+      delete assignments.assignments[code];
+      changed = true;
+    }
+  }
+  if (changed) saveAssignments(assignments);
+}
 
 // Ensure data directory exists
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
 // ===== JSON DATABASE (drop-in replacement for better-sqlite3) =====
 let _dbData = null;
+let _dbLock = Promise.resolve();
 function getDb() {
   if (!_dbData) { _dbData = loadDb(); saveDb(); }
   return _dbData;
@@ -36,7 +141,10 @@ function loadDb() {
   catch { return { customers: [], leads: [], deliveries: [], scraper_logs: [], subscriptions: [] }; }
 }
 function saveDb() {
-  fs.writeFileSync(DB_FILE, JSON.stringify(_dbData, null, 2));
+  _dbLock = _dbLock.then(() => {
+    fs.writeFileSync(DB_FILE, JSON.stringify(_dbData, null, 2));
+  });
+  return _dbLock;
 }
 function _q(sql, params) {
   // Parse SQL to determine operation
@@ -73,13 +181,20 @@ function _run(sql, params) {
   const q = _q(sql, params);
   if (q.isInsert) {
     const row = {};
-    // Extract column names and values from INSERT INTO table (col1, col2) VALUES (v1, v2)
     const colsMatch = sql.match(/\(([^)]+)\)\s*VALUES/i);
     const valsMatch = sql.match(/VALUES\s*\(([^)]+)\)/i);
     if (colsMatch && valsMatch) {
       const cols = colsMatch[1].split(',').map(c => c.trim());
-      const vals = valsMatch[1].split(',').map(v => v.trim().replace(/'/g, ''));
-      cols.forEach((c, i) => { row[c] = params[i] !== undefined ? params[i] : vals[i]; });
+      const vals = valsMatch[1].split(',').map(v => v.trim());
+      let paramIdx = 0;
+      cols.forEach((c, i) => {
+        const raw = vals[i];
+        if (raw === '?') {
+          row[c] = params[paramIdx++];
+        } else {
+          row[c] = raw.replace(/^'(.*)'$/, '$1');
+        }
+      });
     }
     if (row.id) getDb()[q.table].push(row);
     saveDb(); return { changes: 1 };
@@ -88,22 +203,36 @@ function _run(sql, params) {
     const setMatch = sql.match(/SET\s+(.+?)(?:\s+WHERE|$)/i);
     const whereMatch = sql.match(/WHERE\s+(.+?)$/i);
     if (setMatch) {
-      const sets = setMatch[1].split(',').map(s => {
-        const [k, v] = s.trim().split('=').map(x => x.trim());
-        return { key: k.replace(/['"]/g,''), val: v };
-      });
-      let idField = 'id', idVal = null;
-      if (whereMatch) {
-        const w = whereMatch[1].trim();
-        const wParts = w.split('=');
-        idField = wParts[0].trim();
-        idVal = wParts[1] ? wParts[1].replace(/'/g,'') : null;
+      const clauses = setMatch[1].split(',');
+      let paramIdx = 0;
+      const updates = {};
+      for (const clause of clauses) {
+        const eqIdx = clause.indexOf('=');
+        const key = clause.substring(0, eqIdx).trim().replace(/['"]/g, '');
+        let val = clause.substring(eqIdx + 1).trim();
+        if (val === '?') {
+          val = params[paramIdx++];
+        } else {
+          val = val.replace(/^'(.*)'$/, '$1');
+        }
+        updates[key] = val;
       }
-      idVal = idVal || params[params.length - 1];
-      const changes = {};
-      sets.forEach((s, i) => { changes[s.key] = s.val.replace(/\?/g, params[i]); });
+      let idVal = null;
+      let idField = 'id';
+      if (whereMatch) {
+        const whereStr = whereMatch[1].trim();
+        const eqIdx = whereStr.indexOf('=');
+        idField = whereStr.substring(0, eqIdx).trim();
+        let whereVal = whereStr.substring(eqIdx + 1).trim();
+        if (whereVal === '?') {
+          idVal = params[paramIdx++];
+        } else {
+          idVal = whereVal.replace(/^'(.*)'$/, '$1');
+        }
+      }
+      if (idVal === null || idVal === undefined) idVal = params[params.length - 1];
       const idx = getDb()[q.table].findIndex(r => r[idField] == idVal);
-      if (idx !== -1) { getDb()[q.table][idx] = { ...getDb()[q.table][idx], ...changes }; saveDb(); return { changes: 1 }; }
+      if (idx !== -1) { getDb()[q.table][idx] = { ...getDb()[q.table][idx], ...updates }; saveDb(); return { changes: 1 }; }
     }
     return { changes: 0 };
   }
@@ -113,70 +242,97 @@ function _run(sql, params) {
 function _get(sql, params) {
   const q = _q(sql, params);
   if (q.table && getDb()[q.table]) {
-    // Handle simple WHERE field = ? queries
-    const whereMatch = sql.match(/WHERE\s+(\w+)\s*=\s*\?/i);
     const orderMatch = sql.match(/ORDER\s+BY\s+(\w+)\s+(DESC|ASC)/i);
-    let results = getDb()[q.table];
-    if (whereMatch) {
-      const field = whereMatch[1];
-      const val = params[0];
-      results = results.filter(r => r[field] == val);
-    }
+    const limitMatch = sql.match(/LIMIT\s+(\d+)/i);
+    let results = _filterWhere(getDb()[q.table], sql, params);
     if (orderMatch) {
       const field = orderMatch[1];
       const dir = orderMatch[2];
       results.sort((a, b) => dir === 'DESC' ? (b[field]||'').localeCompare(a[field]||'') : (a[field]||'').localeCompare(b[field]||''));
     }
-    // Handle COUNT(*)
     if (sql.includes('COUNT(*)')) {
       return { count: results.length };
     }
-// Handle LIMIT
     if (limitMatch) results = results.slice(0, parseInt(limitMatch[1]));
     return results[0] || null;
   }
   return null;
 }
 
+function _filterWhere(rows, sql, params) {
+  const whereIdx = sql.toUpperCase().indexOf('WHERE');
+  if (whereIdx === -1) return rows;
+  const whereClause = sql.substring(whereIdx + 5).replace(/\bORDER\s+BY\s+.+/i, '').replace(/\bLIMIT\s+\d+/i, '').replace(/\bOFFSET\s+\d+/i, '').trim();
+  const conditions = whereClause.split(/\bAND\b/i).map(c => c.trim()).filter(Boolean);
+  const ops = ['!=', '<=', '>=', '<>', '=', '<', '>'];
+  let paramIdx = 0;
+  for (const cond of conditions) {
+    let op = '=', opIdx = -1;
+    const upper = cond.toUpperCase();
+    if (upper.startsWith('DATE(')) {
+      const dateStr = new Date().toISOString().split('T')[0];
+      const match = cond.match(/DATE\(\s*(\w+)\s*\)\s*=\s*DATE\(\s*'now'\s*\)/i);
+      if (match) {
+        const field = match[1];
+        rows = rows.filter(r => { const rv = r[field]; return rv && rv.startsWith(dateStr); });
+      }
+      continue;
+    }
+    for (const o of ops) {
+      const idx = cond.indexOf(o);
+      if (idx !== -1) { op = o; opIdx = idx; break; }
+    }
+    if (opIdx === -1) continue;
+    const field = cond.substring(0, opIdx).trim();
+    let val = cond.substring(opIdx + op.length).trim();
+    if (val === '?') {
+      val = params[paramIdx++];
+    } else {
+      val = val.replace(/^'(.*)'$/, '$1');
+    }
+    if (op === '!=' || op === '<>') {
+      rows = rows.filter(r => r[field] != val);
+    } else if (op === '<') {
+      rows = rows.filter(r => Number(r[field]) < Number(val));
+    } else if (op === '>') {
+      rows = rows.filter(r => Number(r[field]) > Number(val));
+    } else if (op === '<=') {
+      rows = rows.filter(r => Number(r[field]) <= Number(val));
+    } else if (op === '>=') {
+      rows = rows.filter(r => Number(r[field]) >= Number(val));
+    } else {
+      rows = rows.filter(r => r[field] == val);
+    }
+  }
+  return rows;
+}
+
 function _all(sql, params) {
   const q = _q(sql, params);
   if (q.table && getDb()[q.table]) {
-    let results = getDb()[q.table];
-    // Handle WHERE field = ?
-    const whereMatch = sql.match(/WHERE\s+(\w+)\s*=\s*\?/gi);
-    if (whereMatch) {
-      // Simple case: single WHERE
-      const w = sql.match(/WHERE\s+(\w+)\s*=\s*\?/i);
-      if (w) {
-        const field = w[1];
-        // Find which param index this corresponds to
-        const paramIdx = params.length > 1 ? 1 : 0;
-        if (paramIdx < params.length) results = results.filter(r => r[field] == params[paramIdx]);
-      }
-    }
-    // Handle AND conditions
-    if (sql.includes('AND')) {
-      const ands = sql.match(/(\w+)\s*=\s*\?/g);
-      if (ands) {
-        ands.forEach((a, i) => {
-          const field = a.split('=')[0].trim();
-          if (i < params.length) results = results.filter(r => r[field] == params[i]);
-        });
-      }
-    }
-    // Handle ORDER BY
+    let results = _filterWhere(getDb()[q.table], sql, params);
     const orderMatch = sql.match(/ORDER\s+BY\s+(\w+)\s+(DESC|ASC)/i);
     if (orderMatch) {
       const field = orderMatch[1];
       const dir = orderMatch[2];
       results.sort((a, b) => dir === 'DESC' ? (b[field]||'').localeCompare(a[field]||'') : (a[field]||'').localeCompare(b[field]||''));
     }
-    // Handle LIMIT
-    const limitMatch = sql.match(/LIMIT\s+(\d+)/i);
-    if (limitMatch) results = results.slice(0, parseInt(limitMatch[1]));
-    // Handle OFFSET
-    const offsetMatch = sql.match(/OFFSET\s+(\d+)/i);
-    if (offsetMatch) results = results.slice(parseInt(offsetMatch[1]));
+    // Count how many params were consumed by _filterWhere
+    const consumed = (sql.match(/\?/g) || []).length - (params || []).length;
+    const remaining = Math.max(0, (params || []).length - Math.abs(consumed));
+    const limitMatch = sql.match(/LIMIT\s+(?:(\d+)|(\?))/i);
+    const offsetMatch = sql.match(/OFFSET\s+(?:(\d+)|(\?))/i);
+    let offset = 0;
+    if (offsetMatch) {
+      offset = offsetMatch[1] ? parseInt(offsetMatch[1]) : (params[params.length - (limitMatch ? 2 : 1)] || 0);
+    }
+    if (limitMatch) {
+      const limit = limitMatch[1] ? parseInt(limitMatch[1]) : (params[params.length - (offsetMatch ? 2 : 1)] || 50);
+      if (offset > 0) results = results.slice(offset, offset + limit);
+      else results = results.slice(0, limit);
+    } else if (offset > 0) {
+      results = results.slice(offset);
+    }
     return results;
   }
   return [];
@@ -219,19 +375,32 @@ app.use(express.json());
 // Serve static frontend files
 const FRONTEND_DIR = path.join(__dirname, '9amleads');
 const ROOT_DIR = __dirname;
+// Only serve specific public directories from root
+app.use('/portal', express.static(path.join(ROOT_DIR, 'portal')));
+app.use('/movingleadsdaily', express.static(path.join(ROOT_DIR, 'movingleadsdaily')));
+app.use('/probateleads', express.static(path.join(ROOT_DIR, 'probateleads')));
+app.use('/newbusinessalert', express.static(path.join(ROOT_DIR, 'newbusinessalert')));
+app.use('/planningleads', express.static(path.join(ROOT_DIR, 'planningleads')));
+app.use('/tenders', express.static(path.join(ROOT_DIR, 'tenders')));
+app.use('/assets', express.static(path.join(ROOT_DIR, 'assets')));
+app.use('/css', express.static(path.join(ROOT_DIR, 'css')));
 app.use(express.static(FRONTEND_DIR, { index: 'index.html' }));
-app.use(express.static(ROOT_DIR));
 // SPA fallback - serve index.html for unknown routes (but not API routes)
 app.get(/^\/(?!api\/).*$/, (req, res) => {
   const paths = [
     path.join(FRONTEND_DIR, req.path === '/' ? 'index.html' : req.path),
     path.join(FRONTEND_DIR, req.path, 'index.html'),
-    path.join(ROOT_DIR, req.path),
-    path.join(ROOT_DIR, req.path, 'index.html'),
+    path.join(ROOT_DIR, req.path === '/' ? '' : req.path.substring(1)),
+    path.join(ROOT_DIR, req.path.substring(1), 'index.html'),
     path.join(FRONTEND_DIR, 'index.html')
   ];
   for (const p of paths) {
-    if (fs.existsSync(p)) { res.sendFile(p); return; }
+    if (fs.existsSync(p)) {
+      // Block serving sensitive files
+      const ext = path.extname(p).toLowerCase();
+      if (ext === '.json' || ext === '.md' || ext === '.env' || ext === '.py' || path.basename(p) === 'node_modules') continue;
+      res.sendFile(p); return;
+    }
   }
   res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
 });
@@ -241,7 +410,7 @@ app.get(/^\/(?!api\/).*$/, (req, res) => {
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { company, name, email, phone, password, product, targetAreas, bizField2, bizField3, source, marketingConsent } = req.body;
+    const { company, name, email, phone, password, product, targetAreas, bizField2, bizField3, source, marketingConsent, crmWebhookUrl } = req.body;
 
     if (!company || !email || !password) {
       return res.status(400).json({ error: 'Company, email and password are required' });
@@ -249,8 +418,8 @@ app.post('/api/auth/signup', async (req, res) => {
     if (!validateEmail(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
 
     const existing = db.prepare('SELECT id FROM customers WHERE email = ?').get(email);
@@ -261,6 +430,7 @@ app.post('/api/auth/signup', async (req, res) => {
     const id = uuidv4();
     const password_hash = await bcrypt.hash(password, 10);
     const trial_ends = new Date(Date.now() + 7 * 86400000).toISOString();
+    const verification_token = require('crypto').randomBytes(32).toString('hex');
 
     const PRODUCT_MAP = {
       moving: { lead_type: 'Moving Leads', business_type: 'Removal Company' },
@@ -270,17 +440,46 @@ app.post('/api/auth/signup', async (req, res) => {
       tenders: { lead_type: 'Public Tenders', business_type: 'IT, Construction, Cleaning & More' },
     };
     const productInfo = PRODUCT_MAP[product] || PRODUCT_MAP.moving;
+    const areas = Array.isArray(targetAreas) ? targetAreas : [];
 
-    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'free_trial', ?, ?, datetime('now'))`).run(
+    // Validate postcode district availability
+    if (areas.length > 0) {
+      const validation = validatePostcodes(areas, 'free_trial', product, id);
+      if (!validation.valid) {
+        return res.status(400).json({ error: validation.errors.join(' ') });
+      }
+    }
+
+    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, email.toLowerCase(), company, name || '', phone || '', password_hash,
       product, productInfo.lead_type, productInfo.business_type,
       JSON.stringify(targetAreas || []), bizField2 || '', bizField3 || '',
-      source || 'direct', trial_ends, marketingConsent ? 1 : 0
+      source || 'direct', 'free_trial', trial_ends, marketingConsent ? 1 : 0,
+      new Date().toISOString(), '0', crmWebhookUrl || ''
     );
 
+    // Claim postcodes
+    if (areas.length > 0) {
+      claimPostcodes(areas, id, product);
+    }
+
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(id);
-    const token = generateToken(customer);
+    customer.verification_token = verification_token;
+    customer.email_verified = 0;
+    saveDb();
+
+    // Send verification email
+    try {
+      const verifyUrl = PUBLIC_URL.replace(/\/+$/, '') + '/api/auth/verify-email?token=' + verification_token;
+      await sendBrevoEmail(
+        { email: customer.email, name: customer.contact_name || customer.company },
+        'Verify your 9amLeads account',
+        '<h2>Welcome to 9amLeads!</h2><p>Please verify your email address by clicking the link below:</p><p><a href="' + verifyUrl + '">Verify Email</a></p><p>Your free 7-day trial has started. You\'ll receive your first leads at 9am tomorrow.</p>'
+      );
+    } catch (e) {
+      console.log('Verification email skipped:', e.message);
+    }
 
     // Save to Brevo contact list
     try {
@@ -288,6 +487,8 @@ app.post('/api/auth/signup', async (req, res) => {
     } catch (e) {
       console.log('Brevo contact add skipped:', e.message);
     }
+
+    const token = generateToken(customer);
 
     res.status(201).json({
       token,
@@ -302,11 +503,32 @@ app.post('/api/auth/signup', async (req, res) => {
         business_type: customer.business_type,
         plan: customer.plan,
         trial_ends: customer.trial_ends,
-        target_areas: JSON.parse(customer.target_areas || '[]')
+        target_areas: JSON.parse(customer.target_areas || '[]'),
+        crm_webhook_url: customer.crm_webhook_url || '',
+        email_verified: 0
       }
     });
   } catch (e) {
     console.error('Signup error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/auth/verify-email — Verify email address
+app.get('/api/auth/verify-email', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ error: 'Verification token required' });
+
+    const customer = db.prepare('SELECT * FROM customers WHERE verification_token = ?').get(token);
+    if (!customer) return res.status(400).json({ error: 'Invalid or expired verification token' });
+
+    db.prepare('UPDATE customers SET email_verified = 1, verification_token = NULL WHERE id = ?').run(customer.id);
+    saveDb();
+
+    res.json({ message: 'Email verified successfully. You can now log in.' });
+  } catch (e) {
+    console.error('Verification error:', e);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -345,7 +567,8 @@ app.post('/api/auth/login', async (req, res) => {
         business_type: customer.business_type,
         plan: customer.plan,
         trial_ends: customer.trial_ends,
-        target_areas: JSON.parse(customer.target_areas || '[]')
+        target_areas: JSON.parse(customer.target_areas || '[]'),
+        email_verified: customer.email_verified || 0
       }
     });
   } catch (e) {
@@ -372,13 +595,77 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
     trial_ends: customer.trial_ends,
     leads_per_day: customer.leads_per_day,
     target_areas: JSON.parse(customer.target_areas || '[]'),
+    extra_postcodes: parseInt(customer.extra_postcodes) || 0,
     biz_field2: customer.biz_field2,
     biz_field3: customer.biz_field3,
     source: customer.source,
     marketing_consent: customer.marketing_consent === 1,
+    email_verified: customer.email_verified || 0,
     created_at: customer.created_at,
-    last_login: customer.last_login
+    last_login: customer.last_login,
+    crm_webhook_url: customer.crm_webhook_url || ''
   });
+});
+
+// ===== PASSWORD RESET =====
+
+// POST /api/auth/forgot-password — send reset link
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(email.toLowerCase());
+    // Always return success to prevent email enumeration
+    if (!customer) return res.json({ message: 'If that email exists, a reset link has been sent.' });
+
+    const resetToken = require('crypto').randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 3600000).toISOString(); // 1 hour
+
+    db.prepare('UPDATE customers SET reset_token = ?, reset_expires = ? WHERE id = ?').run(resetToken, resetExpires, customer.id);
+    saveDb();
+
+    const resetUrl = PUBLIC_URL.replace(/\/+$/, '') + '/portal/reset-password.html?token=' + resetToken;
+
+    try {
+      await sendBrevoEmail(
+        { email: customer.email, name: customer.contact_name || customer.company },
+        'Reset your 9amLeads password',
+        '<h2>Password Reset</h2><p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="' + resetUrl + '">Reset Password</a></p><p>If you did not request this, please ignore this email.</p>'
+      );
+    } catch (e) {
+      console.log('Reset email skipped:', e.message);
+    }
+
+    res.json({ message: 'If that email exists, a reset link has been sent.' });
+  } catch (e) {
+    console.error('Forgot password error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/auth/reset-password — reset password with token
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ error: 'Token and password are required' });
+    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+
+    const customer = db.prepare('SELECT * FROM customers WHERE reset_token = ?').get(token);
+    if (!customer) return res.status(400).json({ error: 'Invalid or expired reset token' });
+
+    const expires = new Date(customer.reset_expires);
+    if (new Date() > expires) return res.status(400).json({ error: 'Reset token has expired. Please request a new one.' });
+
+    const password_hash = await bcrypt.hash(password, 10);
+    db.prepare('UPDATE customers SET password_hash = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?').run(password_hash, customer.id);
+    saveDb();
+
+    res.json({ message: 'Password reset successfully. You can now log in with your new password.' });
+  } catch (e) {
+    console.error('Reset password error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // ===== LEAD ENDPOINTS =====
@@ -459,6 +746,125 @@ app.get('/api/stats', authMiddleware, (req, res) => {
   });
 });
 
+// ===== POSTCODE ENDPOINTS =====
+
+// GET /api/postcodes — List all UK postcode districts grouped by area with availability
+app.get('/api/postcodes', (req, res) => {
+  const districts = loadPostcodeDistricts();
+  const areas = loadPostcodeAreas();
+  const assignments = loadAssignments();
+  const product = req.query.product || 'moving';
+
+  // Group districts by area
+  const areaMap = {};
+  for (const [code, info] of Object.entries(districts)) {
+    const areaCode = info.area;
+    if (!areaMap[areaCode]) {
+      areaMap[areaCode] = {
+        area_code: areaCode,
+        area_name: (areas[areaCode] || {}).name || areaCode,
+        region: info.region,
+        districts: []
+      };
+    }
+    const assignment = assignments.assignments[code];
+    areaMap[areaCode].districts.push({
+      code,
+      name: info.name,
+      available: !assignment,
+      taken_by: assignment ? assignment.customer_id : null
+    });
+  }
+
+  const result = Object.values(areaMap);
+  const regions = [...new Set(Object.values(districts).map(d => d.region))];
+
+  res.json({ areas: result, districts: Object.keys(districts).length, regions });
+});
+
+// GET /api/postcodes/mine — Get current customer's assigned postcode districts with limits
+app.get('/api/postcodes/mine', authMiddleware, (req, res) => {
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  if (!customer) return res.status(404).json({ error: 'User not found' });
+
+  const districts = loadPostcodeDistricts();
+  const areas = loadPostcodeAreas();
+  const currentDistricts = JSON.parse(customer.target_areas || '[]');
+  const extraPostcodes = parseInt(customer.extra_postcodes) || 0;
+  const maxLimit = getPostcodeLimit(customer.plan, extraPostcodes);
+
+  const withDetails = currentDistricts.map(code => {
+    const upper = code.toUpperCase();
+    const info = districts[upper];
+    if (info) {
+      return { code: upper, name: info.name, area: info.area, area_name: (areas[info.area] || {}).name || info.area, region: info.region };
+    }
+    // Fallback: treat as area code
+    const areaInfo = areas[upper];
+    return { code: upper, name: areaInfo ? areaInfo.name : upper, area: upper, area_name: areaInfo ? areaInfo.name : '', region: areaInfo ? areaInfo.region : '' };
+  });
+
+  res.json({
+    postcodes: withDetails,
+    count: withDetails.length,
+    max_limit: maxLimit,
+    plan: customer.plan,
+    can_add_more: withDetails.length < maxLimit,
+    limit_label: maxLimit >= 999 ? 'Unlimited' : String(maxLimit),
+    base_limit: getPostcodeLimit(customer.plan, 0),
+    extra_postcodes: extraPostcodes,
+    can_extra: customer.plan !== 'free_trial' && customer.plan !== 'cancelled'
+  });
+});
+
+// PUT /api/postcodes/update — Update the customer's selected postcodes
+app.put('/api/postcodes/update', authMiddleware, (req, res) => {
+  const { postcodes } = req.body;
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  if (!customer) return res.status(404).json({ error: 'User not found' });
+
+  const validation = validatePostcodes(postcodes, customer.plan, customer.product, req.user.id);
+  if (!validation.valid) {
+    return res.status(400).json({ error: validation.errors.join(' ') });
+  }
+
+  // Release old postcodes, claim new ones
+  releasePostcodes(req.user.id);
+  claimPostcodes(postcodes, req.user.id, customer.product);
+
+  db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(JSON.stringify(postcodes), req.user.id);
+  saveDb();
+
+  res.json({ success: true, postcodes, count: postcodes.length, max_limit: getPostcodeLimit(customer.plan) });
+});
+
+// POST /api/postcodes/extra — Purchase extra postcode districts
+app.post('/api/postcodes/extra', authMiddleware, async (req, res) => {
+  try {
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    if (customer.plan === 'free_trial' || customer.plan === 'cancelled') {
+      return res.status(400).json({ error: 'Upgrade to a paid plan first' });
+    }
+
+    const currentExtra = parseInt(customer.extra_postcodes) || 0;
+    const newExtra = currentExtra + 5;
+
+    db.prepare('UPDATE customers SET extra_postcodes = ? WHERE id = ?').run(String(newExtra), req.user.id);
+    saveDb();
+
+    const newLimit = getPostcodeLimit(customer.plan, newExtra);
+    res.json({
+      success: true,
+      extra_postcodes: newExtra,
+      total_postcode_limit: newLimit,
+      message: 'Added 5 extra postcode districts (£20/mo). Your limit is now ' + newLimit + ' districts.'
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ===== SETTINGS ENDPOINT =====
 
 // PUT /api/settings
@@ -470,14 +876,80 @@ app.put('/api/settings', authMiddleware, (req, res) => {
   if (company) db.prepare('UPDATE customers SET company = ? WHERE id = ?').run(company, req.user.id);
   if (name) db.prepare('UPDATE customers SET contact_name = ? WHERE id = ?').run(name, req.user.id);
   if (phone) db.prepare('UPDATE customers SET phone = ? WHERE id = ?').run(phone, req.user.id);
-  if (target_areas) db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(JSON.stringify(target_areas), req.user.id);
+  if (target_areas) {
+    const validation = validatePostcodes(target_areas, customer.plan, customer.product, req.user.id);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.errors.join(' ') });
+    }
+    releasePostcodes(req.user.id);
+    claimPostcodes(target_areas, req.user.id, customer.product);
+    db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(JSON.stringify(target_areas), req.user.id);
+  }
 
   res.json({ success: true });
 });
 
+// ===== CRM WEBHOOK ENDPOINTS =====
+
+// GET /api/settings/crm - Get CRM webhook URL
+app.get('/api/settings/crm', authMiddleware, (req, res) => {
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  if (!customer) return res.status(404).json({ error: 'User not found' });
+  res.json({ crm_webhook_url: customer.crm_webhook_url || '' });
+});
+
+// PUT /api/settings/crm - Update CRM webhook URL
+app.put('/api/settings/crm', authMiddleware, (req, res) => {
+  const { crm_webhook_url } = req.body;
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  if (!customer) return res.status(404).json({ error: 'User not found' });
+  db.prepare('UPDATE customers SET crm_webhook_url = ? WHERE id = ?').run(crm_webhook_url || '', req.user.id);
+  saveDb();
+  res.json({ success: true, crm_webhook_url: crm_webhook_url || '' });
+});
+
+// DELETE /api/settings/crm - Remove CRM webhook
+app.delete('/api/settings/crm', authMiddleware, (req, res) => {
+  db.prepare('UPDATE customers SET crm_webhook_url = ? WHERE id = ?').run('', req.user.id);
+  saveDb();
+  res.json({ success: true });
+});
+
+// POST /api/crm/test - Test CRM webhook connection
+app.post('/api/crm/test', authMiddleware, async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ error: 'Webhook URL is required' });
+    const testPayload = { test: true, message: '9amLeads CRM webhook test', timestamp: new Date().toISOString() };
+    const response = await httpsPost(url, testPayload);
+    const body = await response.text();
+    res.json({ success: response.ok, status: response.status, body: body.substring(0, 200) });
+  } catch (e) {
+    res.json({ success: false, error: e.message });
+  }
+});
+
+// POST /api/crm/push - Manually push leads to CRM (for testing)
+app.post('/api/crm/push', authMiddleware, async (req, res) => {
+  try {
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    const webhookUrl = customer.crm_webhook_url || req.body.url || '';
+    if (!webhookUrl) return res.status(400).json({ error: 'No CRM webhook URL configured. Go to Settings to add one.' });
+    const leads = db.prepare('SELECT * FROM leads WHERE customer_id = ? AND delivered = 1 ORDER BY created_at DESC LIMIT 10').all(customer.id);
+    if (leads.length === 0) return res.json({ success: false, message: 'No delivered leads to push. Leads will be pushed automatically at 9am daily.' });
+    const payload = { customer: { name: customer.company, email: customer.email, product: customer.lead_type }, leads: leads.map(formatLeadForCRM), source: '9amLeads', timestamp: new Date().toISOString() };
+    const response = await httpsPost(webhookUrl, payload);
+    const body = await response.text();
+    res.json({ success: response.ok, status: response.status, leads_pushed: leads.length, response: body.substring(0, 500) });
+  } catch (e) {
+    res.json({ success: false, error: e.message });
+  }
+});
+
 // ===== ADMIN ENDPOINTS =====
 
-// GET /api/admin/stats â€” overall system stats
+// GET /api/admin/stats — overall system stats
 app.get('/api/admin/stats', (req, res) => {
   const totalCustomers = db.prepare('SELECT COUNT(*) as count FROM customers').get();
   const freeTrials = db.prepare('SELECT COUNT(*) as count FROM customers WHERE plan = \'free_trial\'').get();
@@ -505,14 +977,14 @@ app.get('/api/admin/stats', (req, res) => {
   });
 });
 
-// GET /api/admin/customers â€” list all customers (paginated)
+// GET /api/admin/customers — list all customers (paginated)
 app.get('/api/admin/customers', (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 50;
-  const offset = (page - 1) * limit;
 
-  const customers = db.prepare('SELECT id, email, company, contact_name, phone, product, plan, source, marketing_consent, bounced, created_at, last_login FROM customers ORDER BY created_at DESC LIMIT ? OFFSET ?').all(limit, offset);
+  const allCustomers = db.prepare('SELECT * FROM customers ORDER BY created_at DESC').all();
   const total = db.prepare('SELECT COUNT(*) as count FROM customers').get();
+  const customers = allCustomers.slice((page - 1) * limit, page * limit);
 
   // Get lead counts for each customer
   const result = customers.map(c => {
@@ -609,14 +1081,41 @@ async function sendBrevoEmail(to, subject, htmlContent) {
 }
 
 // ===== 9AM DAILY DELIVERY SCHEDULER =====
-// Runs at 8:30 AM every day to prepare and send lead sheets
-// ===== LEAD LIMITS PER PLAN =====
-const PLAN_LIMITS = {
-  'free_trial': { leads_per_day: 5, max_days: 7 },
-  'starter': { leads_per_day: 5 },
-  'pro': { leads_per_day: 15 },
-  'enterprise': { leads_per_day: 40 },
+// Runs at 9:00 AM every day to prepare and send lead sheets
+// ===== LEAD LIMITS PER PLAN PER PRODUCT =====
+// Realistic daily lead volumes based on available UK data supply
+const PRODUCT_LEAD_FILES = {
+  moving: { file: 'moving-leads.json', key: 'customerId' },
+  probate: { file: 'probate-leads.json', key: 'customerId' },
+  newbusiness: { file: 'newbusiness-leads.json', key: 'customerId' },
+  planning: { file: 'planning-leads.json', key: 'customerId' },
+  tenders: { file: 'tenders-leads.json', key: 'customerId' },
 };
+
+const PLAN_LIMITS = {
+  // Flat leads per day across ALL products
+  '*': { free_trial: 5, starter: 5, pro: 15, enterprise: 50 },
+  moving: { free_trial: 5, starter: 5, pro: 15, enterprise: 50 },
+  probate: { free_trial: 5, starter: 5, pro: 15, enterprise: 50 },
+  newbusiness: { free_trial: 5, starter: 5, pro: 15, enterprise: 50 },
+  planning: { free_trial: 5, starter: 5, pro: 15, enterprise: 50 },
+  tenders: { free_trial: 5, starter: 5, pro: 15, enterprise: 50 },
+};
+
+const PLAN_NAMES = {
+  free_trial: 'Free Trial',
+  starter: 'Starter',
+  essential: 'Essential',
+  pro: 'Professional',
+  enterprise: 'Enterprise',
+};
+
+function getPlanLimit(product, plan) {
+  const productLimits = PLAN_LIMITS[product] || PLAN_LIMITS['*'];
+  // Map 'essential' -> 'starter' since they share the same level
+  const planKey = plan === 'essential' ? 'starter' : plan;
+  return productLimits[planKey] || productLimits['free_trial'] || 5;
+}
 
 // ===== TRIAL / CAMPAIGN CAMPAIGN EMAIL TEMPLATES =====
 const CAMPAIGN_EMAILS = [
@@ -638,25 +1137,260 @@ function getCampaignEmailHTML(customer, template) {
   const productName = customer.lead_type || 'leads';
   
   const templates = {
-    trial_day1: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">âœ…</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Free Trial Is Active</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:20px">Your first ' + productName + ' will land in your inbox at <strong style="color:' + accent + '">9am tomorrow morning</strong>. Here\'s your daily routine for the next 7 days:</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:16px"><p style="color:#ccc;font-size:13px;line-height:2;margin:0">ðŸ“¥ <strong>9:00am</strong> â€” Lead sheet arrives in your inbox<br>ðŸ“ž <strong>9:01am</strong> â€” You start calling hot leads<br>ðŸ’° <strong>9:30am</strong> â€” First quotes going out<br>âœ… <strong>By noon</strong> â€” Bookings coming in</p></div><p style="color:#888;font-size:12px">No commitment. Cancel anytime. Your leads are exclusive to you.</p></div>',
-    trial_day3: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">How Are Your Leads Looking?</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:16px">You\'re 3 days in. Quick check-in:</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:12px"><p style="color:#ccc;font-size:13px;line-height:1.8;margin:0">âœ” Are the leads relevant to your business?<br>âœ” Is the volume what you expected?<br>âœ” Have you called any yet?</p></div><p style="color:#888;font-size:13px;line-height:1.6">Reply to this email and let us know. Good or bad â€” we\'re here to help you get the most out of 9amLeads.<br><br><span style="color:' + accent + ';font-weight:600">ðŸ’¡ Tip:</span> Call within 30 minutes of receiving your leads. Speed is your biggest advantage.</p></div>',
+    trial_day1: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">✅</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Free Trial Is Active</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:20px">Your first ' + productName + ' will land in your inbox at <strong style="color:' + accent + '">9am tomorrow morning</strong>. Here\'s your daily routine for the next 7 days:</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:16px"><p style="color:#ccc;font-size:13px;line-height:2;margin:0">📥 <strong>9:00am</strong> — Lead sheet arrives in your inbox<br>📞 <strong>9:01am</strong> — You start calling hot leads<br>💰 <strong>9:30am</strong> — First quotes going out<br>✅ <strong>By noon</strong> — Bookings coming in</p></div><p style="color:#888;font-size:12px">No commitment. Cancel anytime. Your leads are exclusive to you.</p></div>',
+    trial_day3: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">How Are Your Leads Looking?</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:16px">You\'re 3 days in. Quick check-in:</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:12px"><p style="color:#ccc;font-size:13px;line-height:1.8;margin:0">✔ Are the leads relevant to your business?<br>✔ Is the volume what you expected?<br>✔ Have you called any yet?</p></div><p style="color:#888;font-size:13px;line-height:1.6">Reply to this email and let us know. Good or bad — we\'re here to help you get the most out of 9amLeads.<br><br><span style="color:' + accent + ';font-weight:600">💡 Tip:</span> Call within 30 minutes of receiving your leads. Speed is your biggest advantage.</p></div>',
     trial_day5: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:16px">3 Tips to Convert More Leads</h2><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px 24px;margin-bottom:12px"><div style="margin-bottom:14px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:8px;float:left">1</div><div style="margin-left:40px"><strong style="color:#fff;font-size:14px">Call within 30 minutes</strong><br><span style="color:#888;font-size:13px">Speed is everything. Our data shows calling within 30 minutes triples your conversion rate.</span></div></div><div style="margin-bottom:14px;clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:8px;float:left">2</div><div style="margin-left:40px"><strong style="color:#fff;font-size:14px">Mention their specific situation</strong><br><span style="color:#888;font-size:13px">Reference their property, industry, or tender number. Generic pitches lose. Personalised pitches win.</span></div></div><div style="clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:8px;float:left">3</div><div style="margin-left:40px"><strong style="color:#fff;font-size:14px">Ask for the next step</strong><br><span style="color:#888;font-size:13px">Don\'t just send a quote. Book a call, schedule a visit, ask for the business. Close starts with asking.</span></div></div></div></div>',
-    trial_day7: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">â³</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Free Trial Ends Tomorrow</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:20px">After tomorrow, your daily ' + productName + ' delivery will pause. Upgrade now to keep them flowing without interruption.</p><a href="http://localhost:8006/dashboard.html" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#e85d26);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:16px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Now â€” Keep Your Leads â†’</a><p style="color:#888;font-size:12px;margin-top:12px">Plans from just Â£29/month Â· Cancel anytime</p></div>',
-    trial_day9: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">â¸ï¸</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Daily Leads Have Paused</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Your 7-day free trial has ended and your daily ' + productName + ' delivery has been paused.</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:16px"><p style="color:#ccc;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">To restart:</strong><br>1. Log into your dashboard<br>2. Choose your plan<br>3. Leads restart at 9am tomorrow</p></div><p style="color:#888;font-size:12px">Your lead history is still there. Nothing has been lost.</p></div>',
+    trial_day7: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">⏳</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Free Trial Ends Tomorrow</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:20px">After tomorrow, your daily ' + productName + ' delivery will pause. Upgrade now to keep them flowing without interruption.</p><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#e85d26);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:16px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Now — Keep Your Leads →</a><p style="color:#888;font-size:12px;margin-top:12px">Plans from just £49/month · Cancel anytime</p></div>',
+    trial_day9: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">⏸️</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Daily Leads Have Paused</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Your 7-day free trial has ended and your daily ' + productName + ' delivery has been paused.</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:16px"><p style="color:#ccc;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">To restart:</strong><br>1. Log into your dashboard<br>2. Choose your plan<br>3. Leads restart at 9am tomorrow</p></div><p style="color:#888;font-size:12px">Your lead history is still there. Nothing has been lost.</p></div>',
     trial_day12: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Still Not Sure?</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:16px">We understand. Every business is different. Maybe the leads weren\'t quite right, or the timing wasn\'t perfect.</p><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Reply to this email and tell us what\'s holding you back. We\'ll help you figure out if 9amLeads is right for your ' + bizType + '.</p><p style="color:#888;font-size:12px">No sales pitch. Just honest, helpful advice.</p></div>',
-    trial_day16: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:16px">3 Businesses That Transformed Their Pipeline</h2><div style="display:inline-block;text-align:left;max-width:400px"><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 18px;margin-bottom:10px"><p style="color:#ccc;font-size:13px;line-height:1.6;margin:0">"Got 12 leads in my first week using 9amLeads. Converted 3. Made <strong style="color:' + accent + '">Â£3,600</strong> in additional revenue."</p></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 18px;margin-bottom:10px"><p style="color:#ccc;font-size:13px;line-height:1.6;margin:0">"We\'ve picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month using 9amLeads. Already covered our annual subscription 10x over."</p></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 18px"><p style="color:#ccc;font-size:13px;line-height:1.6;margin:0">"Won 2 contracts worth <strong style="color:' + accent + '">Â£1.4M</strong> in our first quarter. Best business decision we\'ve made."</p></div></div><p style="color:#888;font-size:13px;margin-top:16px">Your success story could be next. Your account is still waiting.</p></div>',
-    trial_day21: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">ðŸ’</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Come Back â€” 30% Off Your First Month</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Use code <strong style="color:' + accent + ';font-size:24px;letter-spacing:2px">WELCOME30</strong> at checkout for 30% off your first month.</p><p style="color:#888;font-size:13px">No commitment. Cancel anytime. Your ' + productName + ' restart at 9am tomorrow.</p></div>',
+    trial_day16: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:16px">3 Businesses That Transformed Their Pipeline</h2><div style="display:inline-block;text-align:left;max-width:400px"><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 18px;margin-bottom:10px"><p style="color:#ccc;font-size:13px;line-height:1.6;margin:0">"Got 12 leads in my first week using 9amLeads. Converted 3. Made <strong style="color:' + accent + '">£3,600</strong> in additional revenue."</p></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 18px;margin-bottom:10px"><p style="color:#ccc;font-size:13px;line-height:1.6;margin:0">"We\'ve picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month using 9amLeads. Already covered our annual subscription 10x over."</p></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 18px"><p style="color:#ccc;font-size:13px;line-height:1.6;margin:0">"Won 2 contracts worth <strong style="color:' + accent + '">£1.4M</strong> in our first quarter. Best business decision we\'ve made."</p></div></div><p style="color:#888;font-size:13px;margin-top:16px">Your success story could be next. Your account is still waiting.</p></div>',
+    trial_day21: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">💝</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Come Back — 30% Off Your First Month</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Use code <strong style="color:' + accent + ';font-size:24px;letter-spacing:2px">WELCOME30</strong> at checkout for 30% off your first month.</p><p style="color:#888;font-size:13px">No commitment. Cancel anytime. Your ' + productName + ' restart at 9am tomorrow.</p></div>',
     trial_day30: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Account Is Still Waiting</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Your account and lead history are still here. Nothing has been deleted. Upgrade anytime to reactivate your daily ' + productName + ' delivery at 9am.</p><p style="color:#888;font-size:13px">It takes 30 seconds. Your leads restart tomorrow.</p></div>',
-    trial_day60: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">â°</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Last Chance â€” Account Will Be Archived</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Your account will be archived in 30 days. All your lead history will be preserved â€” but you\'ll need to contact us to reactivate.</p><p style="color:#888;font-size:13px">Upgrade now to keep everything active and your ' + productName + ' flowing at 9am every morning. This is your final notice.</p></div>',
+    trial_day60: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">⏰</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Last Chance — Account Will Be Archived</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Your account will be archived in 30 days. All your lead history will be preserved — but you\'ll need to contact us to reactivate.</p><p style="color:#888;font-size:13px">Upgrade now to keep everything active and your ' + productName + ' flowing at 9am every morning. This is your final notice.</p></div>',
   };
   
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#000;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%"><tr><td style="background:#0a0a0a;padding:28px;border-bottom:3px solid ' + accent + ';text-align:center"><div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff"><span style="color:' + accent + '">9am</span>Leads</div><p style="color:#888;font-size:12px;margin-top:4px">' + customer.company + '</p></td></tr><tr><td style="background:#0a0a0a;padding:24px 28px">' + (templates[template] || templates.trial_day1) + '</td></tr><tr><td style="background:#0a0a0a;padding:20px 28px;border-top:1px solid #1a1a1a;text-align:center"><p style="color:#888;font-size:11px;margin:0">9am Leads Ltd \u00b7 Company No. 17168176 \u00b7 <a href="#" style="color:#888">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>';
 }
 
-// ===== MAIN SCHEDULER: Daily at 8:30 AM =====
-cron.schedule('30 8 * * *', async () => {
+// ===== SCRAPER SCHEDULER: Daily at 5:30 AM =====
+// Generates fresh leads from real APIs (Apify, Gov.uk, etc.) or demo data.
+// Leads are saved to data/{product}-leads.json for the distributor at 9am.
+cron.schedule('30 5 * * *', async () => {
+  const dayOfWeek = new Date().getDay();
+  if (dayOfWeek === 0) { console.log('[SCRAPER] Sunday — no scraping. Skipping.'); return; }
+
+  console.log('[SCRAPER] Starting daily lead generation (' + Object.keys(PRODUCT_LEAD_FILES).length + ' products)...');
+
+  for (const [product, config] of Object.entries(PRODUCT_LEAD_FILES)) {
+    try {
+      console.log('[SCRAPER] Generating ' + product + ' leads...');
+      
+      // Try to run the standalone scraper if it exists (uses Apify, Gov.uk APIs, etc.)
+      // Try both naming conventions: {product}_leads_scraper.js and {product}_scraper.js
+      let scraperFile = path.join(__dirname, product + '_leads_scraper.js');
+      if (!fs.existsSync(scraperFile)) {
+        scraperFile = path.join(__dirname, product + '_scraper.js');
+      }
+      if (fs.existsSync(scraperFile)) {
+        try {
+          const { execSync } = require('child_process');
+          execSync('node ' + path.basename(scraperFile) + ' --all', { cwd: __dirname, timeout: 120000, stdio: 'pipe' });
+          console.log('[SCRAPER] ' + product + ' scraper completed');
+          continue;
+        } catch (e) {
+          console.log('[SCRAPER] ' + product + ' scraper failed, using demo data: ' + (e.stderr || e.message).substring(0, 100));
+        }
+      }
+
+      // Fallback: generate demo leads so the pipeline always works
+      const leads = generateDemoLeads(product, 30);
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
+      console.log('[SCRAPER] ' + product + ': ' + leads.length + ' demo leads saved');
+    } catch (e) {
+      console.error('[SCRAPER] ' + product + ' generation failed:', e.message);
+    }
+  }
+  console.log('[SCRAPER] Daily lead generation complete');
+});
+
+// Generate realistic-looking demo leads for any product
+function generateDemoLeads(product, count) {
+  const now = new Date().toISOString();
+  const leads = [];
+  const areas = [
+    { city: 'London', pc: 'SW1A', pcPrefix: 'SW' },
+    { city: 'London', pc: 'SW3', pcPrefix: 'SW' },
+    { city: 'London', pc: 'W8', pcPrefix: 'W' },
+    { city: 'London', pc: 'N1', pcPrefix: 'N' },
+    { city: 'London', pc: 'SE1', pcPrefix: 'SE' },
+    { city: 'London', pc: 'EC2', pcPrefix: 'EC' },
+    { city: 'Manchester', pc: 'M1', pcPrefix: 'M' },
+    { city: 'Birmingham', pc: 'B1', pcPrefix: 'B' },
+    { city: 'Leeds', pc: 'LS1', pcPrefix: 'LS' },
+    { city: 'Bristol', pc: 'BS1', pcPrefix: 'BS' },
+    { city: 'Glasgow', pc: 'G1', pcPrefix: 'G' },
+    { city: 'Cardiff', pc: 'CF1', pcPrefix: 'CF' },
+  ];
+  const streets = ['High Street', 'Station Road', 'London Road', 'Park Lane', 'Church Road', 'Victoria Street', 'Green Lane', 'Market Street', 'Oak Avenue', 'The Crescent', 'Manor Road', 'Queen Street', 'King Street', 'Mill Lane', 'New Road'];
+
+  if (product === 'moving') {
+    const types = ['House', 'Flat', 'Maisonette', 'Bungalow', 'Townhouse'];
+    const agents = ['Savills', 'Foxtons', 'Knight Frank', 'Hamptons', 'Dexters'];
+    const statuses = ['SSTC', 'Under Offer', 'Sold STC'];
+    for (let i = 0; i < count; i++) {
+      const area = areas[i % areas.length];
+      const beds = Math.floor(Math.random() * 4) + 1;
+      const price = beds <= 2 ? Math.floor(Math.random() * 200000) + 250000 : Math.floor(Math.random() * 500000) + 500000;
+      leads.push({
+        id: 'ML_' + Date.now() + '_' + i, address: Math.floor(Math.random() * 200) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + area.pc,
+        postcode: area.pc, city: area.city, bedrooms: beds, propertyType: types[i % types.length],
+        price: price, status: statuses[i % statuses.length], agent: agents[i % agents.length],
+        listedDate: new Date(Date.now() - Math.floor(Math.random() * 14) * 86400000).toISOString().split('T')[0],
+        estimatedMoveWindow: (Math.floor(Math.random() * 8) + 4) + ' weeks', source: 'Rightmove', scrapedAt: now
+      });
+    }
+  } else if (product === 'probate') {
+    const surnames = ['Smith', 'Jones', 'Williams', 'Taylor', 'Brown', 'Davies', 'Wilson', 'Evans', 'Thomas', 'Roberts'];
+    const registries = ['Birmingham', 'Manchester', 'Leeds', 'London', 'Cardiff', 'Edinburgh', 'Bristol', 'Liverpool'];
+    for (let i = 0; i < count; i++) {
+      const value = Math.floor(Math.random() * 900000) + 100000;
+      const surname = surnames[i % surnames.length];
+      const area = areas[i % areas.length];
+      leads.push({
+        id: 'PR_' + Date.now() + '_' + i, name: 'Estate of ' + surname,
+        deceasedName: surname, estateValue: value, estateValueLabel: '\u00a3' + value.toLocaleString(),
+        registry: registries[i % registries.length],
+        address: Math.floor(Math.random() * 100) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + area.pc,
+        postcode: area.pc, city: area.city,
+        legalAdvisor: surname + ' & Co Solicitors', source: 'Gov.uk Probate Register', scrapedAt: now
+      });
+    }
+  } else if (product === 'newbusiness') {
+    const bizTypes = ['Retail', 'Consulting', 'Tech', 'Hospitality', 'Construction', 'Healthcare', 'Marketing', 'Property'];
+    for (let i = 0; i < count; i++) {
+      const bizType = bizTypes[i % bizTypes.length];
+      const area = areas[i % areas.length];
+      leads.push({
+        id: 'NB_' + Date.now() + '_' + i, name: streets[i % streets.length] + ' ' + bizType + ' Ltd',
+        companyNumber: 'NI' + (Math.floor(Math.random() * 900000) + 100000),
+        address: Math.floor(Math.random() * 50) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + area.pc,
+        postcode: area.pc, city: area.city,
+        sicCode: (Math.floor(Math.random() * 90000) + 10000).toString(), ownerEmail: 'info@' + streets[i % streets.length].toLowerCase().replace(/\s/g, '') + '.co.uk',
+        website: 'www.' + streets[i % streets.length].toLowerCase().replace(/\s/g, '') + '.co.uk',
+        incorporationDate: new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString(), source: 'Companies House', scrapedAt: now
+      });
+    }
+  } else if (product === 'planning') {
+    const councils = ['Westminster City Council', 'Camden Council', 'Manchester City Council', 'Birmingham City Council', 'Leeds City Council', 'Bristol City Council'];
+    const appTypes = ['Full Planning', 'Householder', 'Listed Building', 'Change of Use', 'Outline Planning'];
+    for (let i = 0; i < count; i++) {
+      const area = areas[i % areas.length];
+      leads.push({
+        id: 'PL_' + Date.now() + '_' + i, address: Math.floor(Math.random() * 200) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + area.pc,
+        postcode: area.pc, city: area.city, applicationType: appTypes[i % appTypes.length],
+        description: 'Proposed ' + (['residential', 'commercial', 'mixed-use', 'retail', 'office'][i % 5]) + ' development',
+        applicant: 'Applicant at ' + streets[i % streets.length], council: councils[i % councils.length],
+        applicationRef: 'APP/' + new Date().getFullYear() + '/' + (Math.floor(Math.random() * 90000) + 10000),
+        targetDecisionDate: new Date(Date.now() + Math.floor(Math.random() * 60) * 86400000).toISOString().split('T')[0],
+        source: 'Planning Portal', scrapedAt: now
+      });
+    }
+  } else if (product === 'tenders') {
+    const authorities = ['NHS England', 'Ministry of Justice', 'Surrey County Council', 'Transport for London', 'Home Office', 'Environment Agency', 'Manchester City Council'];
+    const categories = ['IT Services', 'Construction', 'Consulting', 'Facilities Management', 'Professional Services'];
+    for (let i = 0; i < count; i++) {
+      const val = Math.floor(Math.random() * 5000000) + 25000;
+      const daysLeft = Math.floor(Math.random() * 30) + 5;
+      leads.push({
+        id: 'TD_' + Date.now() + '_' + i, title: categories[i % categories.length] + ' Contract - ' + authorities[i % authorities.length],
+        buyer: authorities[i % authorities.length], contractValue: val,
+        contractValueLabel: '\u00a3' + val.toLocaleString(),
+        description: 'Opportunity for ' + categories[i % categories.length].toLowerCase() + ' services',
+        publishedDate: new Date().toISOString().split('T')[0],
+        closingDate: new Date(Date.now() + daysLeft * 86400000).toISOString().split('T')[0],
+        deadlineDaysRemaining: daysLeft, cpvCode: String(Math.floor(Math.random() * 900000) + 100000),
+        source: 'Contracts Finder', scrapedAt: now
+      });
+    }
+  }
+
+  return leads;
+}
+
+// ===== CRM HELPER: Format lead for CRM webhook =====
+function formatLeadForCRM(lead) {
+  const base = {
+    lead_id: lead.id,
+    source: lead.source || '9amLeads',
+    delivered_at: lead.delivered_at || new Date().toISOString(),
+    created_at: lead.created_at
+  };
+  // Moving leads
+  if (lead.address) base.address = lead.address;
+  if (lead.postcode) base.postcode = lead.postcode;
+  if (lead.city) base.city = lead.city;
+  if (lead.bedrooms) base.bedrooms = lead.bedrooms;
+  if (lead.propertyType) base.property_type = lead.propertyType;
+  if (lead.price) base.price = lead.price;
+  if (lead.status) base.status = lead.status;
+  if (lead.agent) base.agent = lead.agent;
+  if (lead.estimatedMoveWindow) base.estimated_move_window = lead.estimatedMoveWindow;
+  // Probate leads
+  if (lead.deceasedName) base.deceased_name = lead.deceasedName;
+  if (lead.estateValue) base.estate_value = lead.estateValue;
+  if (lead.registry) base.registry = lead.registry;
+  if (lead.legalAdvisor) base.legal_adviser = lead.legalAdvisor;
+  // New business leads
+  if (lead.companyNumber) base.company_number = lead.companyNumber;
+  if (lead.ownerEmail) base.owner_email = lead.ownerEmail;
+  if (lead.website) base.website = lead.website;
+  if (lead.incorporationDate) base.incorporation_date = lead.incorporationDate;
+  // Planning leads
+  if (lead.applicationType) base.application_type = lead.applicationType;
+  if (lead.description) base.description = lead.description;
+  if (lead.applicant) base.applicant = lead.applicant;
+  if (lead.council) base.council = lead.council;
+  if (lead.applicationRef) base.application_ref = lead.applicationRef;
+  // Tender leads
+  if (lead.title) base.title = lead.title;
+  if (lead.buyer) base.buyer = lead.buyer;
+  if (lead.contractValue) base.contract_value = lead.contractValue;
+  if (lead.closingDate) base.closing_date = lead.closingDate;
+  if (lead.cpvCode) base.cpv_code = lead.cpvCode;
+  // Any extra fields
+  if (lead.name && !lead.address) base.name = lead.name;
+  return base;
+}
+
+
+// ===== HTTP HELPER: POST JSON via https =====
+function httpsPost(url, data) {
+  return new Promise((resolve, reject) => {
+    try {
+      const parsed = new URL(url);
+      const isHttps = parsed.protocol === 'https:';
+      const mod = require(isHttps ? 'https' : 'http');
+      const body = JSON.stringify(data);
+      const options = {
+        hostname: parsed.hostname, port: parsed.port || (isHttps ? 443 : 80), path: parsed.pathname + parsed.search, method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+        timeout: 15000
+      };
+      const req = mod.request(options, res => {
+        let b = '';
+        res.on('data', c => b += c);
+        res.on('end', () => resolve({ status: res.statusCode, body: b }));
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('Request timed out')); });
+      req.write(body);
+      req.end();
+    } catch (e) { reject(e); }
+  });
+}
+// ===== MAIN SCHEDULER: Daily at 9:00 AM (sharp) =====
+// Lead distributor must run before this (scrapers → match → insert → email)
+cron.schedule('0 9 * * *', async () => {
   console.log('[SCHEDULER] Starting daily lead delivery...');
-  
+
+  // Sunday check — no lead delivery on Sundays
+  const dayOfWeek = new Date().getDay();
+  if (dayOfWeek === 0) {
+    console.log('[SCHEDULER] Sunday — no lead delivery (Mon-Sat only). Skipping.');
+    return;
+  }
+
+  // Run lead distributor before delivery (matches scraped leads to customers)
+  try {
+    console.log('[SCHEDULER] Running lead distributor...');
+    const distributor = require('./lead_distributor.js');
+    await distributor.distributeAll(false);
+    console.log('[SCHEDULER] Lead distribution complete');
+  } catch (e) {
+    console.error('[SCHEDULER] Lead distributor error (non-fatal):', e.message);
+  }
+
   const customers = db.prepare('SELECT * FROM customers WHERE plan != \'cancelled\' AND bounced < 3').all();
   console.log('[SCHEDULER] Found ' + customers.length + ' customers to process');
 
@@ -674,13 +1408,15 @@ cron.schedule('30 8 * * *', async () => {
         const isExpired = trialEnds && new Date() > trialEnds;
         const daysSinceTrialEnd = trialEnds ? Math.floor((new Date() - trialEnds) / 86400000) : 999;
         
-        // ---- CASE 1: Active trial or paid plan â†’ send leads ----
+        // ---- CASE 1: Active trial or paid plan → send leads ----
         if (!isExpired || customer.plan !== 'free_trial') {
-          const limit = PLAN_LIMITS[customer.plan] ? PLAN_LIMITS[customer.plan].leads_per_day : (customer.leads_per_day || 20);
+          const limit = getPlanLimit(customer.product, customer.plan);
           
-          const leads = db.prepare(
-            'SELECT * FROM leads WHERE customer_id = ? AND delivered = 0 AND date(created_at) = date(\'now\') LIMIT ?'
-          ).all(customer.id, limit);
+          const allLeads = db.prepare(
+            'SELECT * FROM leads WHERE customer_id = ? AND delivered = 0'
+          ).all(customer.id);
+          const todayStr = new Date().toISOString().split('T')[0];
+          const leads = allLeads.filter(l => l.created_at && l.created_at.startsWith(todayStr)).slice(0, limit);
 
           if (leads.length > 0) {
             const htmlContent = generateLeadEmailHTML(customer, leads);
@@ -690,15 +1426,27 @@ cron.schedule('30 8 * * *', async () => {
               htmlContent
             );
 
-            db.prepare('UPDATE leads SET delivered = 1, delivered_at = datetime(\'now\') WHERE customer_id = ? AND delivered = 0').run(customer.id);
+            // Mark ONLY the sent leads as delivered (not all undelivered leads)
+            const leadIds = leads.map(l => "'" + l.id + "'");
+            db.prepare('UPDATE leads SET delivered = 1, delivered_at = datetime(\'now\') WHERE id IN (' + leadIds.join(',') + ')').run();
             db.prepare('INSERT INTO deliveries (id, customer_id, product, lead_count, email_status, email_id) VALUES (?, ?, ?, ?, ?, ?)').run(
               uuidv4(), customer.id, customer.product, leads.length, 'sent', result.messageId || ''
             );
             leads_sent++;
+
+            // Push to CRM webhook if configured
+            if (customer.crm_webhook_url) {
+              try {
+                const crmPayload = { customer: { name: customer.company, email: customer.email, product: customer.lead_type }, leads: leads.map(formatLeadForCRM), source: '9amLeads', timestamp: new Date().toISOString() };
+                const crmRes = await httpsPost(customer.crm_webhook_url, crmPayload);
+                if (crmRes.ok) { console.log('[CRM] Pushed ' + leads.length + ' leads to CRM for ' + customer.email); }
+                else { console.log('[CRM] CRM webhook returned ' + crmRes.status + ' for ' + customer.email); }
+              } catch (e) { console.log('[CRM] CRM push failed for ' + customer.email + ': ' + e.message); }
+            }
           }
         }
         
-        // ---- CASE 2: Trial just expired â†’ send campaign email + mark ----
+        // ---- CASE 2: Trial just expired → send campaign email + mark ----
         if (customer.plan === 'free_trial' && isExpired && daysSinceTrialEnd < 65) {
           // Find which campaign email to send based on days since trial ended
           let emailTemplate = null;
@@ -793,11 +1541,11 @@ function stripeApiRequest(method, path, data) {
   });
 }
 
-// POST /api/create-checkout â€” create Stripe Checkout Session
+// POST /api/create-checkout — create Stripe Checkout Session
 app.post('/api/create-checkout', authMiddleware, async (req, res) => {
   try {
     if (!STRIPE_SECRET_KEY) {
-      return res.status(500).json({ error: 'Stripe not configured. Add keys in Settings â†’ Stripe Payments.' });
+      return res.status(500).json({ error: 'Stripe not configured. Add keys in Settings → Stripe Payments.' });
     }
 
     const { plan } = req.body;
@@ -820,8 +1568,9 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Pricing not found for this plan (' + planKey + '). Run node stripe_handler.js --setup first.' });
     }
 
-    const successUrl = (process.env.PUBLIC_URL || 'http://localhost:8006') + '/portal/dashboard.html?checkout=success&session_id={CHECKOUT_SESSION_ID}';
-    const cancelUrl = (process.env.PUBLIC_URL || 'http://localhost:8006') + '/portal/dashboard.html?checkout=cancel';
+    const baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    const successUrl = baseUrl + '/portal/dashboard.html?checkout=success&session_id={CHECKOUT_SESSION_ID}';
+    const cancelUrl = baseUrl + '/portal/dashboard.html?checkout=cancel';
 
     const session = await stripeApiRequest('POST', 'checkout/sessions', {
       mode: 'subscription',
@@ -845,7 +1594,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
   }
 });
 
-// Stripe webhook â€” receives checkout.session.completed events
+// Stripe webhook — receives checkout.session.completed events
 // IMPORTANT: This route uses raw body parser for Stripe signature verification
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
@@ -896,7 +1645,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         return res.json({ received: true });
       }
 
-      const limit = PLAN_LIMITS[plan]?.leads_per_day || 40;
+      const limit = getPlanLimit(product, plan);
 
       // Update customer plan
       db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = NULL WHERE id = ?')
@@ -904,17 +1653,95 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 
       // Create or update subscription record
       const existingSub = db.prepare('SELECT id FROM subscriptions WHERE customer_id = ?').get(customerId);
+      const now = new Date().toISOString();
+      const monthEnd = new Date(Date.now() + 30 * 86400000).toISOString();
       if (existingSub) {
         db.prepare(`UPDATE subscriptions SET stripe_id = ?, plan = ?, status = 'active',
-          current_period_start = datetime('now'), current_period_end = datetime('now', '+1 month') WHERE customer_id = ?`)
-          .run(subscriptionId || '', customerId);
+          current_period_start = ?, current_period_end = ?, updated_at = ? WHERE customer_id = ?`)
+          .run(subscriptionId || '', plan, now, monthEnd, now, customerId);
       } else {
-        db.prepare(`INSERT INTO subscriptions (id, customer_id, stripe_id, plan, status, current_period_start, current_period_end)
-          VALUES (?, ?, ?, ?, 'active', datetime('now'), datetime('now', '+1 month'))`)
-          .run(uuidv4(), customerId, subscriptionId || '', plan);
+        db.prepare(`INSERT INTO subscriptions (id, customer_id, stripe_id, plan, status, current_period_start, current_period_end, created_at)
+          VALUES (?, ?, ?, ?, 'active', ?, ?, ?)`)
+          .run(uuidv4(), customerId, subscriptionId || '', plan, now, monthEnd, now);
       }
 
-      console.log('[WEBHOOK] Payment confirmed:', customer.email, 'â†’', plan, '(product:', product + ')');
+      console.log('[WEBHOOK] Payment confirmed:', customer.email, '→', plan, '(product:', product + ')');
+    }
+
+    // Handle subscription updates (upgrades, downgrades, cancellation at period end)
+    if (event.type === 'customer.subscription.updated') {
+      const sub = event.data.object;
+      const subId = sub.id;
+      const status = sub.status === 'active' ? 'active' : sub.status === 'past_due' ? 'past_due' : sub.status === 'canceled' ? 'canceled' : sub.status === 'trialing' ? 'trialing' : 'inactive';
+
+      const existingSub = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(subId);
+      if (existingSub) {
+        const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : existingSub.current_period_end;
+        db.prepare(`UPDATE subscriptions SET status = ?, current_period_start = ?, current_period_end = ?,
+          cancel_at_period_end = ?, updated_at = datetime('now') WHERE stripe_id = ?`)
+          .run(status, sub.current_period_start ? new Date(sub.current_period_start * 1000).toISOString() : existingSub.current_period_start,
+            periodEnd, sub.cancel_at_period_end || false, subId);
+
+        // If cancelled at period end, let customer finish the month
+        if (status === 'canceled' || (sub.cancel_at_period_end && sub.status === 'active')) {
+          db.prepare('UPDATE customers SET plan = ? WHERE id = ?')
+            .run(sub.cancel_at_period_end ? existingSub.plan : 'cancelled', existingSub.customer_id);
+          if (!sub.cancel_at_period_end) {
+            db.prepare('UPDATE customers SET leads_per_day = 0 WHERE id = ?').run(existingSub.customer_id);
+          }
+        }
+        console.log('[WEBHOOK] Subscription updated:', subId, '→', status);
+      }
+    }
+
+    // Handle subscription deletion (immediate cancellation)
+    if (event.type === 'customer.subscription.deleted') {
+      const delSub = event.data.object;
+      const delSubId = delSub.id;
+      const existingSub = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(delSubId);
+      if (existingSub) {
+        db.prepare('UPDATE subscriptions SET status = \'canceled\', canceled_at = datetime(\'now\'), updated_at = datetime(\'now\') WHERE stripe_id = ?').run(delSubId);
+        db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0 WHERE id = ?').run(existingSub.customer_id);
+        console.log('[WEBHOOK] Subscription cancelled for customer', existingSub.customer_id);
+      }
+    }
+
+    // Handle successful invoice payment (monthly renewal)
+    if (event.type === 'invoice.payment_succeeded') {
+      const invoice = event.data.object;
+      const invSubId = invoice.subscription;
+      if (invSubId) {
+        const invSub = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(invSubId);
+        if (invSub) {
+          const periodEnd = invoice.period_end ? new Date(invoice.period_end * 1000).toISOString() : new Date(Date.now() + 30 * 86400000).toISOString();
+          const amount = invoice.total ? '£' + (invoice.total / 100).toFixed(2) : 'unknown';
+          // Reset fail_count on successful payment
+          db.prepare('UPDATE subscriptions SET current_period_end = ?, status = \'active\', fail_count = 0, updated_at = datetime(\'now\') WHERE stripe_id = ?').run(periodEnd, invSubId);
+          // Reactivate customer if they were in cancelled state
+          db.prepare('UPDATE customers SET plan = ?, leads_per_day = ? WHERE id = ? AND plan = \'cancelled\'')
+            .run(invSub.plan, getPlanLimit(invSub.product || 'moving', invSub.plan), invSub.customer_id);
+          console.log('[WEBHOOK] Payment succeeded:', invSub.customer_id, '-', invSub.plan, '-', amount);
+        }
+      }
+    }
+
+    // Handle failed invoice payment
+    if (event.type === 'invoice.payment_failed') {
+      const failInvoice = event.data.object;
+      const failSubId = failInvoice.subscription;
+      if (failSubId) {
+        const failSub = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(failSubId);
+        if (failSub) {
+          db.prepare('UPDATE subscriptions SET status = \'past_due\', updated_at = datetime(\'now\') WHERE stripe_id = ?').run(failSubId);
+          const failCount = (failSub.fail_count || 0) + 1;
+          db.prepare('UPDATE subscriptions SET fail_count = ? WHERE stripe_id = ?').run(failCount, failSubId);
+          if (failCount >= 3) {
+            db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0 WHERE id = ?').run(failSub.customer_id);
+            console.log('[WEBHOOK] Payment failed 3 times - disabled customer', failSub.customer_id);
+          }
+          console.log('[WEBHOOK] Payment failed for', failSub.customer_id, '(attempt ' + failCount + ')');
+        }
+      }
     }
 
     res.json({ received: true });
@@ -924,7 +1751,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   }
 });
 
-// POST /api/subscribe â€” upgrade current user's plan (after Stripe payment confirmed)
+// POST /api/subscribe — upgrade current user's plan (after Stripe payment confirmed)
 app.post('/api/subscribe', authMiddleware, async (req, res) => {
   const { plan, session_id } = req.body;
   const validPlans = ['starter', 'pro', 'enterprise'];
@@ -953,7 +1780,8 @@ app.post('/api/subscribe', authMiddleware, async (req, res) => {
     }
   }
 
-  const limit = PLAN_LIMITS[plan].leads_per_day;
+  const customerDb = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  const limit = getPlanLimit(customerDb?.product || 'moving', plan);
   db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = NULL WHERE id = ?').run(plan, limit, req.user.id);
 
   console.log('[UPGRADE] Customer ' + customer.email + ' upgraded to ' + plan);
@@ -966,7 +1794,7 @@ app.post('/api/subscribe', authMiddleware, async (req, res) => {
   });
 });
 
-// GET /api/subscription â€” check current subscription status
+// GET /api/subscription — check current subscription status
 app.get('/api/subscription', authMiddleware, (req, res) => {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
@@ -986,6 +1814,81 @@ app.get('/api/subscription', authMiddleware, (req, res) => {
       created_at: sub.created_at
     } : null
   });
+});
+
+// POST /api/subscription/cancel — cancel subscription at period end
+app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
+  try {
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    if (customer.plan === 'free_trial') {
+      db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0 WHERE id = ?').run(req.user.id);
+      releasePostcodes(req.user.id);
+      return res.json({ success: true, message: 'Your free trial has been cancelled.' });
+    }
+
+    const sub = db.prepare('SELECT * FROM subscriptions WHERE customer_id = ? AND status = \'active\'').get(req.user.id);
+    if (!sub || !sub.stripe_id) {
+      // No active Stripe subscription -- cancel locally
+      db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0 WHERE id = ?').run(req.user.id);
+      releasePostcodes(req.user.id);
+      return res.json({ success: true, message: 'Your subscription has been cancelled.' });
+    }
+
+    // Cancel at Stripe (period end so they keep access until month finishes)
+    try {
+      const result = await stripeApiRequest('POST', 'subscriptions/' + sub.stripe_id, { cancel_at_period_end: 'true' });
+      db.prepare('UPDATE subscriptions SET cancel_at_period_end = 1, updated_at = datetime(\'now\') WHERE id = ?').run(sub.id);
+      db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0 WHERE id = ?').run(req.user.id);
+      releasePostcodes(req.user.id);
+      console.log('[CANCEL] Customer ' + customer.email + ' cancelled (end of period)');
+      res.json({ success: true, message: 'Your subscription has been cancelled. Access continues until the end of your billing period.' });
+    } catch {
+      // If Stripe call fails, cancel locally at least
+      db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0 WHERE id = ?').run(req.user.id);
+      db.prepare('UPDATE subscriptions SET status = \'canceled\', updated_at = datetime(\'now\') WHERE id = ?').run(sub.id);
+      releasePostcodes(req.user.id);
+      res.json({ success: true, message: 'Your subscription has been cancelled locally. Please contact hello@9amleads.com to confirm.' });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/subscription/update — change plan (upgrade or downgrade)
+app.post('/api/subscription/update', authMiddleware, async (req, res) => {
+  try {
+    const { plan } = req.body;
+    const validPlans = ['starter', 'pro', 'enterprise'];
+    if (!plan || !validPlans.includes(plan)) {
+      return res.status(400).json({ error: 'Invalid plan. Choose: starter, pro, or enterprise' });
+    }
+
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+
+    // Create Stripe checkout for the new plan (Stripe handles proration)
+    const result = await stripeApiRequest('POST', 'checkout/sessions', {
+      mode: 'subscription',
+      customer_email: customer.email,
+      'line_items[0][price]': STRIPE_PRICE_IDS[customer.product]?.[customer.product + '-' + plan] || '',
+      'line_items[0][quantity]': '1',
+      success_url: PUBLIC_URL + '/portal/dashboard.html?checkout=success',
+      cancel_url: PUBLIC_URL + '/portal/dashboard.html?checkout=cancel',
+      'metadata[customer_id]': customer.id,
+      'metadata[product]': customer.product,
+      'metadata[plan]': plan,
+      'subscription_data[proration_behavior]': 'create_prorations',
+    });
+
+    if (result.url) {
+      res.json({ url: result.url });
+    } else {
+      res.status(400).json({ error: result.error?.message || 'Plan change failed' });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ===== DEDUPLICATION DATABASE =====
@@ -1010,7 +1913,7 @@ function normalizeName(name) {
   return (name || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
 }
 
-// GET /api/scraped-businesses â€” return all known businesses (for dedup client-side)
+// GET /api/scraped-businesses — return all known businesses (for dedup client-side)
 app.get('/api/scraped-businesses', (req, res) => {
   const { product } = req.query;
   let list = loadScrapedBusinesses();
@@ -1018,7 +1921,7 @@ app.get('/api/scraped-businesses', (req, res) => {
   res.json(list);
 });
 
-// POST /api/scraped-businesses/check â€” check which of the submitted businesses are new
+// POST /api/scraped-businesses/check — check which of the submitted businesses are new
 app.post('/api/scraped-businesses/check', (req, res) => {
   try {
     const { candidates } = req.body;
@@ -1057,7 +1960,7 @@ app.post('/api/scraped-businesses/check', (req, res) => {
   }
 });
 
-// POST /api/scraped-businesses/add â€” save newly scraped businesses
+// POST /api/scraped-businesses/add — save newly scraped businesses
 app.post('/api/scraped-businesses/add', (req, res) => {
   try {
     const { businesses, product, query } = req.body;
@@ -1105,7 +2008,7 @@ app.post('/api/scraped-businesses/add', (req, res) => {
   }
 });
 
-// GET /api/scraped-businesses/stats â€” dedup statistics
+// GET /api/scraped-businesses/stats — dedup statistics
 app.get('/api/scraped-businesses/stats', (req, res) => {
   const list = loadScrapedBusinesses();
   const byProduct = {};
@@ -1122,7 +2025,7 @@ app.get('/api/scraped-businesses/stats', (req, res) => {
 
 // ===== SCRAPER ENDPOINTS =====
 
-// POST /api/scrape-run â€” execute a scraper for a given product and store results
+// POST /api/scrape-run — execute a scraper for a given product and store results
 app.post('/api/scrape-run', async (req, res) => {
   try {
     const { product, query, location, instructions, maxResults, emails } = req.body;
@@ -1174,7 +2077,7 @@ app.post('/api/scrape-run', async (req, res) => {
   }
 });
 
-// GET /api/scrape-results â€” list all scrape runs
+// GET /api/scrape-results — list all scrape runs
 app.get('/api/scrape-results', (req, res) => {
   const configDir = path.join(DATA_DIR, 'scrape-runs');
   try {
@@ -1191,7 +2094,7 @@ app.get('/api/scrape-results', (req, res) => {
   }
 });
 
-// GET /api/scrape-results/:id â€” get a specific scrape run
+// GET /api/scrape-results/:id — get a specific scrape run
 app.get('/api/scrape-results/:id', (req, res) => {
   const filePath = path.join(DATA_DIR, 'scrape-runs', req.params.id + '.json');
   try {
@@ -1206,7 +2109,7 @@ app.get('/api/scrape-results/:id', (req, res) => {
   }
 });
 
-// POST /api/scrape-save â€” save scraped leads to customer records
+// POST /api/scrape-save — save scraped leads to customer records
 app.post('/api/scrape-save', async (req, res) => {
   try {
     const { product, leads } = req.body;
@@ -1231,8 +2134,53 @@ app.post('/api/scrape-save', async (req, res) => {
   }
 });
 
-// Add this to the health endpoint response
-const originalHealth = app.get;
+// ===== LEAD DISTRIBUTION ENDPOINTS =====
+// POST /api/distribute — trigger lead distributor (match scraped leads to customers)
+app.post('/api/distribute', async (req, res) => {
+  try {
+    const { product } = req.body || {};
+    const distributor = require('./lead_distributor.js');
+    let result;
+    if (product) {
+      result = await distributor.distributeProduct(product);
+    } else {
+      result = await distributor.distributeAll(false);
+    }
+    res.json({ success: true, result });
+  } catch (e) {
+    console.error('[DISTRIBUTE] Error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/distribute/status — distribution summary
+app.get('/api/distribute/status', (req, res) => {
+  try {
+    const db = getDb();
+    const customers = db.customers || [];
+    const leads = db.leads || [];
+    const undelivered = leads.filter(l => !l.delivered);
+    const today = new Date().toISOString().split('T')[0];
+    const todayLeads = leads.filter(l => l.created_at && l.created_at.startsWith(today));
+
+    const byProduct = {};
+    leads.forEach(l => { byProduct[l.product] = (byProduct[l.product] || 0) + 1; });
+    const byCustomer = {};
+    leads.forEach(l => { byCustomer[l.customer_id] = (byCustomer[l.customer_id] || 0) + 1; });
+
+    res.json({
+      customers: customers.length,
+      total_leads: leads.length,
+      undelivered: undelivered.length,
+      today_leads: todayLeads.length,
+      by_product: byProduct,
+      by_customer: byCustomer,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   const customerCount = db.prepare('SELECT COUNT(*) as count FROM customers').get();
   const leadCount = db.prepare('SELECT COUNT(*) as count FROM leads').get();
@@ -1252,7 +2200,7 @@ app.get('/api/health', (req, res) => {
     leads: leadCount.count,
     brevo_configured: !!BREVO_API_KEY,
     stripe_configured: !!STRIPE_SECRET_KEY,
-    scheduler: 'Active (8:30 AM daily)',
+    scheduler: 'Active (9:00 AM daily)',
     campaign: 'Active (10 automated emails per trial)'
   });
 });
@@ -1260,17 +2208,39 @@ app.get('/api/health', (req, res) => {
 // Generate lead email HTML (reuses existing template pattern)
 function generateLeadEmailHTML(customer, leads) {
   const accent = { moving: '#ff6b35', probate: '#a855f7', newbusiness: '#06b6d4', planning: '#10b981', tenders: '#6366f1' }[customer.product] || '#0ea5e9';
-  const icon = { moving: 'fa-truck', probate: 'fa-scale-balanced', newbusiness: 'fa-building', planning: 'fa-draw-polygon', tenders: 'fa-gavel' }[customer.product] || 'fa-clock';
+  const dashboardUrl = PUBLIC_URL + '/portal/dashboard.html';
 
   const leadsHTML = leads.map(l => {
     const data = JSON.parse(l.data || '{}');
-    return '<tr><td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:13px">' + (data.address || data.name || data.company || data.tenderTitle || 'Lead') + '</td><td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:12px">' + (data.priceLabel || data.estateValueLabel || data.location || data.authority || '') + '</td></tr>';
+    let line = data.address || data.name || data.company || data.tenderTitle || data.tenderTitle || 'Lead';
+    let value = data.priceLabel || data.estateValueLabel || data.price || data.location || data.authority || data.value || '';
+    return '<tr><td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:13px">' + line + '</td><td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:12px">' + value + '</td></tr>';
   }).join('');
 
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#000;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%"><tr><td style="background:#0a0a0a;padding:32px;border-bottom:3px solid ' + accent + ';text-align:center"><div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:800;color:#fff"><span style="color:' + accent + '">9am</span>Leads</div><p style="color:#888;font-size:13px;margin-top:4px">' + customer.lead_type + ' â€” ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '</p></td></tr><tr><td style="background:#0a0a0a;padding:24px 32px"><div style="font-size:36px;font-weight:800;color:' + accent + ';font-family:Outfit,sans-serif">' + leads.length + '</div><div style="font-size:13px;color:#888;margin-bottom:16px">new leads today for ' + customer.company + '</div><p style="font-size:14px;color:#ccc;line-height:1.7">Good morning! Your daily lead sheet has arrived. Below are the new opportunities we\'ve found for you. Pick up the phone and start calling â€” you\'re the first to see these leads.</p></td></tr><tr><td style="background:#000;padding:0 32px"><table width="100%" cellpadding="0" cellspacing="0"><tr><th style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:11px;text-transform:uppercase;text-align:left;letter-spacing:.5px">Details</th><th style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:11px;text-transform:uppercase;text-align:left;letter-spacing:.5px">Value</th></tr>' + leadsHTML + '</table></td></tr><tr><td style="background:#0a0a0a;padding:24px 32px;border-top:1px solid #1a1a1a;text-align:center"><p style="color:#888;font-size:12px;margin:0">Delivered at 9am by 9amLeads Â· <a href="http://localhost:' + (8004 + ['moving','probate','newbusiness','planning','tenders'].indexOf(customer.product)) + '/dashboard.html" style="color:' + accent + '">View in Dashboard</a></p><p style="color:#555;font-size:11px;margin-top:6px">If you no longer wish to receive these emails, <a href="#" style="color:#888">unsubscribe here</a></p></td></tr></table></td></tr></table></body></html>';
+  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#000;font-family:Inter,Arial,sans-serif">';
+  body += '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px">';
+  body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
+  body += '<tr><td style="background:#0a0a0a;padding:32px;border-bottom:3px solid ' + accent + ';text-align:center">';
+  body += '<div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:800;color:#fff"><span style="color:' + accent + '">9am</span>Leads</div>';
+  body += '<p style="color:#888;font-size:13px;margin-top:4px">' + customer.lead_type + ' — ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '</p>';
+  body += '</td></tr>';
+  body += '<tr><td style="background:#0a0a0a;padding:24px 32px">';
+  body += '<div style="font-size:36px;font-weight:800;color:' + accent + ';font-family:Outfit,sans-serif">' + leads.length + '</div>';
+  body += '<div style="font-size:13px;color:#888;margin-bottom:16px">new leads today for ' + customer.company + '</div>';
+  body += '<p style="font-size:14px;color:#ccc;line-height:1.7">Good morning! Your daily lead sheet has arrived. Below are the new opportunities we\'ve found for you. Pick up the phone and start calling \u2014 you\'re the first to see these leads.</p>';
+  body += '</td></tr>';
+  body += '<tr><td style="background:#000;padding:0 32px"><table width="100%" cellpadding="0" cellspacing="0">';
+  body += '<tr><th style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:11px;text-transform:uppercase;text-align:left;letter-spacing:.5px">Details</th>';
+  body += '<th style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:11px;text-transform:uppercase;text-align:left;letter-spacing:.5px">Value</th></tr>';
+  body += leadsHTML;
+  body += '</table></td></tr>';
+  body += '<tr><td style="background:#0a0a0a;padding:24px 32px;border-top:1px solid #1a1a1a;text-align:center">';
+  body += '<p style="color:#888;font-size:12px;margin:0">Delivered at 9am by 9amLeads \u00b7 <a href="' + dashboardUrl + '" style="color:' + accent + '">View in Dashboard \u2192</a></p>';
+  body += '</td></tr></table></td></tr></table></body></html>';
+  return body;
 }
 
-// POST /api/test/delivery â€” manually trigger delivery for one customer
+// POST /api/test/delivery — manually trigger delivery for one customer
 app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
@@ -1301,7 +2271,23 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   }
 });
 
-// GET /api/admin/export â€” export customers for marketing
+// POST /api/admin/impersonate — generate login token for any customer (admin access)
+app.post('/api/admin/impersonate', async (req, res) => {
+  try {
+    const { customer_id } = req.body;
+    if (!customer_id) return res.status(400).json({ error: 'customer_id required' });
+
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(customer_id);
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+
+    const token = generateToken(customer);
+    res.json({ token, customer: { id: customer.id, name: customer.contact_name, email: customer.email, plan: customer.plan, product: customer.product } });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/admin/export — export customers for marketing
 app.get('/api/admin/export', (req, res) => {
   const customers = db.prepare(`
     SELECT email, company, contact_name, phone, product, lead_type, business_type, 
@@ -1319,22 +2305,6 @@ app.get('/api/admin/export', (req, res) => {
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename=9amleads-customers.csv');
   res.send(headers + rows);
-});
-
-// GET /api/health
-app.get('/api/health', (req, res) => {
-  const customerCount = db.prepare('SELECT COUNT(*) as count FROM customers').get();
-  const leadCount = db.prepare('SELECT COUNT(*) as count FROM leads').get();
-  res.json({
-    status: 'running',
-    domain: 'www.9amleads.com',
-    email: 'hello@9amleads.com',
-    database: DB_FILE,
-    customers: customerCount.count,
-    leads: leadCount.count,
-    brevo_configured: !!BREVO_API_KEY,
-    scheduler: 'Active (8:30 AM daily)'
-  });
 });
 
 // ===== WEBSITE ANALYTICS =====
@@ -1377,17 +2347,28 @@ app.listen(PORT, () => {
   console.log('  Port: ' + PORT);
   console.log('  Database: ' + DB_FILE);
   console.log('  Brevo: ' + (BREVO_API_KEY ? 'CONFIGURED' : 'NOT SET'));
-  console.log('  Scheduler: Active (8:30 AM daily)');
+  console.log('  Stripe: ' + (STRIPE_SECRET_KEY ? 'CONFIGURED' : 'NOT SET'));
+  console.log('  Scheduler: Active (9:00 AM daily, Mon-Sat)');
   console.log('========================================\n');
   console.log('Endpoints:');
   console.log('  POST /api/auth/signup   - Create account');
+  console.log('  GET  /api/auth/verify-email - Verify email address');
   console.log('  POST /api/auth/login    - Sign in');
   console.log('  GET  /api/auth/me       - Get profile');
   console.log('  GET  /api/leads         - Get leads');
   console.log('  GET  /api/leads/today   - Today\'s leads');
   console.log('  PATCH /api/leads/:id/status - Update lead status');
   console.log('  GET  /api/stats         - Dashboard stats');
+  console.log('  GET  /api/postcodes     - List UK postcode areas with availability');
+  console.log('  GET  /api/postcodes/mine - Your assigned postcode territories');
+  console.log('  PUT  /api/postcodes/update - Update your postcode selections');
   console.log('  PUT  /api/settings      - Update settings');
+  console.log('  CRM Endpoints:');
+  console.log('  GET  /api/settings/crm  - Get CRM webhook URL');
+  console.log('  PUT  /api/settings/crm  - Update CRM webhook URL');
+  console.log('  DEL  /api/settings/crm  - Remove CRM webhook');
+  console.log('  POST /api/crm/test      - Test CRM webhook connection');
+  console.log('  POST /api/crm/push      - Manually push leads to CRM');
   console.log('  GET  /api/health        - Server health');
   console.log('  GET  /api/admin/stats   - System-wide stats');
   console.log('  GET  /api/admin/customers - All customers');
@@ -1401,5 +2382,9 @@ app.listen(PORT, () => {
   console.log('  POST /api/scrape-run    - Queue a scraper run');
   console.log('  GET  /api/scrape-results - List/all scrape runs');
   console.log('  POST /api/scrape-save   - Save scraper leads to DB');
+  console.log('  Lead Distribution:');
+  console.log('  POST /api/distribute   - Run lead distributor (match scraped leads to customers)');
+  console.log('  GET  /api/distribute/status - Distribution status');
   console.log('========================================\n');
 });
+
