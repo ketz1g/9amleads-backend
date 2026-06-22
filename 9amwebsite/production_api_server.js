@@ -1358,7 +1358,7 @@ function httpsPost(url, data) {
       const req = mod.request(options, res => {
         let b = '';
         res.on('data', c => b += c);
-        res.on('end', () => resolve({ status: res.statusCode, body: b }));
+        res.on('end', () => resolve({ status: res.statusCode, body: b, statusCode: res.statusCode }));
       });
       req.on('error', reject);
       req.on('timeout', () => { req.destroy(); reject(new Error('Request timed out')); });
@@ -2385,4 +2385,6 @@ app.listen(PORT, () => {
   console.log('  GET  /api/distribute/status - Distribution status');
   console.log('========================================\n');
 });
+
+
 
