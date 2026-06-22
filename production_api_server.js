@@ -922,8 +922,7 @@ app.post('/api/crm/test', authMiddleware, async (req, res) => {
     if (!url) return res.status(400).json({ error: 'Webhook URL is required' });
     const testPayload = { test: true, message: '9amLeads CRM webhook test', timestamp: new Date().toISOString() };
     const response = await httpsPost(url, testPayload);
-    const body = await response.text();
-    res.json({ success: response.ok, status: response.status, body: body.substring(0, 200) });
+    res.json({ success: response.status >= 200 && response.status < 300, status: response.status, body: (response.body || '').substring(0, 200) });
   } catch (e) {
     res.json({ success: false, error: e.message });
   }
@@ -940,8 +939,7 @@ app.post('/api/crm/push', authMiddleware, async (req, res) => {
     if (leads.length === 0) return res.json({ success: false, message: 'No delivered leads to push. Leads will be pushed automatically at 9am daily.' });
     const payload = { customer: { name: customer.company, email: customer.email, product: customer.lead_type }, leads: leads.map(formatLeadForCRM), source: '9amLeads', timestamp: new Date().toISOString() };
     const response = await httpsPost(webhookUrl, payload);
-    const body = await response.text();
-    res.json({ success: response.ok, status: response.status, leads_pushed: leads.length, response: body.substring(0, 500) });
+    res.json({ success: response.status >= 200 && response.status < 300, status: response.status, leads_pushed: leads.length, response: (response.body || '').substring(0, 500) });
   } catch (e) {
     res.json({ success: false, error: e.message });
   }
@@ -1439,7 +1437,7 @@ cron.schedule('0 9 * * *', async () => {
               try {
                 const crmPayload = { customer: { name: customer.company, email: customer.email, product: customer.lead_type }, leads: leads.map(formatLeadForCRM), source: '9amLeads', timestamp: new Date().toISOString() };
                 const crmRes = await httpsPost(customer.crm_webhook_url, crmPayload);
-                if (crmRes.ok) { console.log('[CRM] Pushed ' + leads.length + ' leads to CRM for ' + customer.email); }
+                if (crmRes.status >= 200 && crmRes.status < 300) { console.log('[CRM] Pushed ' + leads.length + ' leads to CRM for ' + customer.email); }
                 else { console.log('[CRM] CRM webhook returned ' + crmRes.status + ' for ' + customer.email); }
               } catch (e) { console.log('[CRM] CRM push failed for ' + customer.email + ': ' + e.message); }
             }
