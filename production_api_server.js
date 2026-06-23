@@ -1126,7 +1126,18 @@ const CAMPAIGN_EMAILS = [
   { day: 16, subject: '3 businesses that transformed their pipeline', template: 'trial_day16' },
   { day: 21, subject: 'Come back \u2014 30% off your first month', template: 'trial_day21' },
   { day: 30, subject: 'Your account is still waiting', template: 'trial_day30' },
-  { day: 60, subject: 'Last chance to reactivate your account', template: 'trial_day60' },
+  { day: 60, subject: 'Last chance to reactivate your account', template: 'trial_day60' }
+];
+
+// Paid customer email series (sent weekly after subscription starts)
+const PAID_EMAIL_SERIES = [
+  { week: 0, subject: 'Welcome to 9amLeads Premium \u2014 Your Leads Keep Flowing', template: 'paid_welcome' },
+  { week: 1, subject: 'Tip #1: The 30-Minute Rule \u2014 Why Speed Wins', template: 'paid_tip1' },
+  { week: 2, subject: 'Tip #2: Script That Converts \u2014 What To Say', template: 'paid_tip2' },
+  { week: 3, subject: 'Tip #3: Track Everything \u2014 Know What Works', template: 'paid_tip3' },
+  { week: 4, subject: 'Tip #4: Follow Up \u2014 The Money Is In The Second Call', template: 'paid_tip4' },
+  { week: 8, subject: 'Check-in: How many leads have you converted?', template: 'paid_checkin1' },
+  { week: 12, subject: 'You\u2019ve been with us 3 months \u2014 here\u2019s your impact', template: 'paid_checkin2' }
 ];
 
 function getCampaignEmailHTML(customer, template) {
@@ -1145,6 +1156,13 @@ function getCampaignEmailHTML(customer, template) {
     trial_day21: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">💝</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Come Back — 30% Off Your First Month</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Use code <strong style="color:' + accent + ';font-size:24px;letter-spacing:2px">WELCOME30</strong> at checkout for 30% off your first month.</p><p style="color:#888;font-size:13px">No commitment. Cancel anytime. Your ' + productName + ' restart at 9am tomorrow.</p></div>',
     trial_day30: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Your Account Is Still Waiting</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Your account and lead history are still here. Nothing has been deleted. Upgrade anytime to reactivate your daily ' + productName + ' delivery at 9am.</p><p style="color:#888;font-size:13px">It takes 30 seconds. Your leads restart tomorrow.</p></div>',
     trial_day60: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">⏰</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Last Chance — Account Will Be Archived</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:12px">Your account will be archived in 30 days. All your lead history will be preserved — but you\'ll need to contact us to reactivate.</p><p style="color:#888;font-size:13px">Upgrade now to keep everything active and your ' + productName + ' flowing at 9am every morning. This is your final notice.</p></div>',
+    paid_welcome: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">🎉</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Welcome to 9amLeads Premium</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:16px">You\'re now a paid subscriber. Your daily ' + productName + ' will keep arriving at 9am every morning <strong style="color:' + accent + '">without interruption</strong>.</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:12px"><p style="color:#ccc;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">Your Premium Benefits:</strong><br>📥 Daily leads at 9am every morning<br>🔒 Exclusive — no competition on your leads<br>📊 Dashboard access with full lead history<br>🔌 CRM integration — leads pushed to your CRM<br>📞 Priority support</p></div><p style="color:#888;font-size:12px">Over the next few weeks we\'ll send you tips and strategies to help you convert more leads. Keep an eye on your inbox.</p></div>',
+    paid_tip1: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:16px">Tip #1: The 30-Minute Rule</h2><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px 24px;margin-bottom:12px"><p style="color:#ccc;font-size:14px;line-height:1.7;margin:0">Why does speed matter so much? Because your lead is a real person who has just taken an action — their house went SSTC, they registered a new company, or a probate grant was issued. They\'re <strong style="color:#fff">actively looking for help right now</strong>.</p></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">1</div><div><strong style="color:#fff;font-size:14px">Set your alarm for 9:00am</strong><br><span style="color:#888;font-size:13px">When the lead email arrives, drop everything and make the call.</span></div></div></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">2</div><div><strong style="color:#fff;font-size:14px">Keep your script beside your phone</strong><br><span style="color:#888;font-size:13px">You only need 3-5 talking points. Be ready before the lead arrives.</span></div></div></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px"><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">3</div><div><strong style="color:#fff;font-size:14px">Track your response time</strong><br><span style="color:#888;font-size:13px">If you\'re not calling within 30 minutes, set an alert. Speed triples your conversion rate.</span></div></div></div><p style="color:#888;font-size:12px;margin-top:14px">Next week: What to say when they pick up the phone.</p></div>',
+    paid_tip2: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:16px">Tip #2: A Script That Converts</h2><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px 24px;margin-bottom:12px"><p style="color:#ccc;font-size:14px;line-height:1.7;margin:0">When you call a lead within minutes of receiving them, you have a massive advantage. But only if you know <strong style="color:#fff">what to say</strong>. Here\'s a script that works across every lead type:</p></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin-bottom:10px"><p style="color:#ccc;font-size:13px;line-height:1.7;margin:0"><strong style="color:' + accent + '">The Opening (15 seconds):</strong><br>"Hi [name], this is [your name] from [company]. I see you\'ve [had your property go SSTC/registered a new company/applied for planning permission] — congratulations. The reason I\'m calling is we help [business type] with [specific service]. I\'m actually the first person to reach out — would it help if I sent over some info?"</p></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin-bottom:10px"><p style="color:#ccc;font-size:13px;line-height:1.7;margin:0"><strong style="color:' + accent + '">The Hook (30 seconds):</strong><br>"I\'ve helped [X] other [business type] in your area this month alone. Most of them book within a week because we\'re fast and straightforward. I can have a quote ready in 10 minutes — shall we quickly run through what you need?"</p></div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px"><p style="color:#ccc;font-size:13px;line-height:1.7;margin:0"><strong style="color:' + accent + '">The Close:</strong><br>"I\'ve got a slot free at [time]. Shall I pop a confirmation through? If not, I\'ll send the info over and follow up tomorrow."</p></div><p style="color:#888;font-size:12px;margin-top:14px">Adapt this to your voice. The key is speed, specificity, and asking for the next step.</p></div>',
+    paid_tip3: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:16px">Tip #3: Track Everything</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:16px">The most successful 9amLeads customers do one thing differently: they track their numbers. Not because they love spreadsheets — because <strong style="color:#fff">what gets measured gets improved</strong>.</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px 24px;margin-bottom:12px"><div style="margin-bottom:12px"><strong style="color:#fff">Track these 3 metrics:</strong></div><div style="margin-bottom:10px"><span style="color:' + accent + ';font-weight:700">📞 Calls Made</span><br><span style="color:#888;font-size:13px">Out of 25 leads, how many did you call? Aim for 100%.</span></div><div style="margin-bottom:10px"><span style="color:' + accent + ';font-weight:700">✅ Conversations Had</span><br><span style="color:#888;font-size:13px">How many people actually answered? Aim for 60%+.</span></div><div style="margin-bottom:10px"><span style="color:' + accent + ';font-weight:700">💰 Conversions Closed</span><br><span style="color:#888;font-size:13px">How many became paying customers? Industry average is 20-30% with exclusive leads.</span></div></div><p style="color:#888;font-size:12px">Use your dashboard to see your historical leads. Track which postcode areas perform best and double down on them.</p></div>',
+    paid_tip4: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:16px">Tip #4: Follow Up — The Money Is In The Second Call</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:16px">Most people don\'t buy on the first call. They\'re busy, they\'re comparing options, or they need to check with someone else. The <strong style="color:#fff">second and third follow-ups are where the conversions happen</strong>.</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px 24px;margin-bottom:12px"><div style="margin-bottom:12px"><strong style="color:#fff">Your follow-up sequence:</strong></div><div style="margin-bottom:8px"><span style="color:' + accent + ';font-weight:700">Day 1 — First call</span><br><span style="color:#888;font-size:13px">Introduction, quick pitch, offer to send info.</span></div><div style="margin-bottom:8px"><span style="color:' + accent + ';font-weight:700">Day 2 — Email or text</span><br><span style="color:#888;font-size:13px">"Hi [name], just sending over that info I mentioned. Happy to talk through it if helpful."</span></div><div style="margin-bottom:8px"><span style="color:' + accent + ';font-weight:700">Day 4 — Second call</span><br><span style="color:#888;font-size:13px">"Hey [name], following up on my email. Did you get a chance to look? I\'ve got a window at [time] if you want to run through it."</span></div></div><p style="color:#888;font-size:12px">Exclusive leads mean no one else is calling them. Take your time. Follow up like a professional and you\'ll convert more than any other lead source.</p></div>',
+    paid_checkin1: '<div style="padding:24px;text-align:center"><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Quick Check-in</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:16px">You\'ve been receiving ' + productName + ' for 8 weeks now. Take 30 seconds to check your dashboard and ask yourself:</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:12px"><p style="color:#ccc;font-size:13px;line-height:1.8;margin:0">✔ Are you calling within 30 minutes?<br>✔ Are you following up with everyone?<br>✔ Are your postcode areas performing well?<br>✔ Could you add more areas for more leads?</p></div><p style="color:#888;font-size:13px;line-height:1.6">If you\'re happy with your results — great. If not, <a href="mailto:hello@9amleads.com" style="color:' + accent + '">reply to this email</a> and we\'ll help you optimise. Your success is our success.</p></div>',
+    paid_checkin2: '<div style="padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:12px">📈</div><h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">3 Months Strong — Well Done</h2><p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:16px">3 months of daily ' + productName + ' at 9am. That\'s roughly <strong style="color:' + accent + '">90 days of exclusive leads</strong> delivered straight to your inbox. By now you should have a clear picture of what works.</p><div style="display:inline-block;text-align:left;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 24px;margin-bottom:12px"><p style="color:#ccc;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">Ready to scale up?</strong><br>• Upgrade to a higher plan for more leads per day<br>• Add a second lead type to diversify your pipeline<br>• Check your dashboard for territories with the best conversion rates</p></div><p style="color:#888;font-size:12px">Thank you for being a 9amLeads customer. We\'re here when you need us — just reply to this email anytime.</p></div>',
   };
   
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#000;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%"><tr><td style="background:#0a0a0a;padding:28px;border-bottom:3px solid ' + accent + ';text-align:center"><div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff"><span style="color:' + accent + '">9am</span>Leads</div><p style="color:#888;font-size:12px;margin-top:4px">' + customer.company + '</p></td></tr><tr><td style="background:#0a0a0a;padding:24px 28px">' + (templates[template] || templates.trial_day1) + '</td></tr><tr><td style="background:#0a0a0a;padding:20px 28px;border-top:1px solid #1a1a1a;text-align:center"><p style="color:#888;font-size:11px;margin:0">9am Leads Ltd \u00b7 Company No. 17168176 \u00b7 <a href="#" style="color:#888">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>';
@@ -1370,7 +1388,7 @@ function httpsPost(url, data) {
 // ===== MAIN SCHEDULER: Daily at 9:00 AM (sharp) =====
 // Lead distributor must run before this (scrapers → match → insert → email)
 cron.schedule('0 9 * * *', async () => {
-  console.log('[SCHEDULER] Starting daily lead delivery...');
+  console.log('[SCHEDULER] Starting daily lead delivery...'); console.log('deploy-2026-06-23-crm-live');
 
   // Sunday check — no lead delivery on Sundays
   const dayOfWeek = new Date().getDay();
@@ -1470,6 +1488,23 @@ cron.schedule('0 9 * * *', async () => {
           
           if (daysSinceTrialEnd === 0) {
             trial_ended++;
+          }
+        }
+        
+        // ---- CASE 3: Paid customer → send paid email series ----
+        if (customer.plan && customer.plan !== 'free_trial' && customer.plan !== 'cancelled') {
+          const paidStage = parseInt(customer.paid_email_stage || '-1') + 1;
+          const subscriptionStart = customer.subscription_start ? new Date(customer.subscription_start) : null;
+          const weeksSinceStart = subscriptionStart ? Math.floor((new Date() - subscriptionStart) / (7 * 86400000)) : 0;
+          for (const pe of PAID_EMAIL_SERIES) {
+            if (pe.week === Math.max(paidStage, weeksSinceStart) && paidStage < pe.week + 1) {
+              const htmlContent = getCampaignEmailHTML(customer, pe.template);
+              await sendBrevoEmail({ email: customer.email, name: customer.company }, pe.subject, htmlContent);
+              db.prepare('UPDATE customers SET paid_email_stage = ? WHERE id = ?').run(String(pe.week), customer.id);
+              saveDb();
+              console.log('[PAID EMAIL] Sent "' + pe.subject + '" to ' + customer.email);
+              break;
+            }
           }
         }
       } catch (e) {
@@ -1780,7 +1815,7 @@ app.post('/api/subscribe', authMiddleware, async (req, res) => {
 
   const customerDb = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   const limit = getPlanLimit(customerDb?.product || 'moving', plan);
-  db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = NULL WHERE id = ?').run(plan, limit, req.user.id);
+  db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = NULL, subscription_start = COALESCE(subscription_start, datetime(\'now\')), paid_email_stage = COALESCE(paid_email_stage, \'0\') WHERE id = ?').run(plan, limit, req.user.id);
 
   console.log('[UPGRADE] Customer ' + customer.email + ' upgraded to ' + plan);
 
@@ -2199,7 +2234,7 @@ app.get('/api/health', (req, res) => {
     brevo_configured: !!BREVO_API_KEY,
     stripe_configured: !!STRIPE_SECRET_KEY,
     scheduler: 'Active (9:00 AM daily)',
-    campaign: 'Active (10 automated emails per trial)'
+    campaign: 'Active (10 trial + 7 paid emails)'
   });
 });
 
@@ -2333,7 +2368,7 @@ app.get('/api/analytics/pages', (req, res) => {
 
 // Tracking snippet to inject into HTML pages
 const TRACKING_SNIPPET = `<script>
-(function(){var i=new Image();i.src='https://nineamleads-api.onrender.com/api/track?p='+encodeURIComponent(window.location.pathname)+'&r='+encodeURIComponent(document.referrer||'')})();
+(function(){var i=new Image();i.src='https://nineamleads-backend.onrender.com/api/track?p='+encodeURIComponent(window.location.pathname)+'&r='+encodeURIComponent(document.referrer||'')})();
 </script>`;
 
 // ===== START SERVER =====
@@ -2385,6 +2420,7 @@ app.listen(PORT, () => {
   console.log('  GET  /api/distribute/status - Distribution status');
   console.log('========================================\n');
 });
+
 
 
 
