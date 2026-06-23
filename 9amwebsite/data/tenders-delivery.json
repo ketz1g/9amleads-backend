@@ -1,0 +1,576 @@
+{
+  "demo-tenders": [
+    {
+      "customerId": "demo-tenders",
+      "company": "ABC Construction Ltd",
+      "email": "info@abcconstruction.co.uk",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:38:08.065Z",
+      "totalLeads": 15,
+      "leadLimit": 15,
+      "leads": [
+        {
+          "title": "Marketing and Communications Support for Surrey County Council",
+          "contractingAuthority": "Surrey County Council",
+          "contractValue": "£50,000",
+          "deadlineDate": "2026-06-04",
+          "deadlineDaysRemaining": 29,
+          "cpvCode": "85300000 — IT",
+          "location": "Cardiff",
+          "description": "This opportunity is for marketing and communications support for surrey county council. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £50,000."
+        },
+        {
+          "title": "Event Management for Highways England",
+          "contractingAuthority": "Highways England",
+          "contractValue": "£50,000",
+          "deadlineDate": "2026-06-28",
+          "deadlineDaysRemaining": 53,
+          "cpvCode": "90900000 — Health",
+          "location": "Cardiff",
+          "description": "This opportunity is for event management for highways england. The buyer is seeking qualified suppliers to deliver the required services over a period of 4 years. Estimated contract value is £50,000."
+        },
+        {
+          "title": "IT Support Services for Ministry of Defence",
+          "contractingAuthority": "Ministry of Defence",
+          "contractValue": "£100,000",
+          "deadlineDate": "2026-06-23",
+          "deadlineDaysRemaining": 48,
+          "cpvCode": "79400000 — Security",
+          "location": "North East",
+          "description": "This opportunity is for it support services for ministry of defence. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 3 years. Estimated contract value is £100,000."
+        },
+        {
+          "title": "Fleet Vehicle Supply and Maintenance for Department for Education",
+          "contractingAuthority": "Department for Education",
+          "contractValue": "£50,000",
+          "deadlineDate": "2026-06-03",
+          "deadlineDaysRemaining": 28,
+          "cpvCode": "45321000 — Arboriculture",
+          "location": "Glasgow",
+          "description": "This opportunity is for fleet vehicle supply and maintenance for department for education. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 3 years. Estimated contract value is £50,000."
+        },
+        {
+          "title": "Occupational Health Services for Transport for London Staff",
+          "contractingAuthority": "Transport for London",
+          "contractValue": "£250,000",
+          "deadlineDate": "2026-05-28",
+          "deadlineDaysRemaining": 22,
+          "cpvCode": "80500000 — Electrical",
+          "location": "Liverpool",
+          "description": "This opportunity is for occupational health services for transport for london staff. The buyer is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £250,000."
+        },
+        {
+          "title": "Street Lighting Maintenance for Nottingham City Council",
+          "contractingAuthority": "Nottingham City Council",
+          "contractValue": "£50,000",
+          "deadlineDate": "2026-07-13",
+          "deadlineDaysRemaining": 68,
+          "cpvCode": "90922000 — Print",
+          "location": "South East",
+          "description": "This opportunity is for street lighting maintenance for nottingham city council. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 2 years. Estimated contract value is £50,000."
+        },
+        {
+          "title": "Social Care Provision at Department for Work and Pensions",
+          "contractingAuthority": "Department for Work and Pensions",
+          "contractValue": "£250,000",
+          "deadlineDate": "2026-05-30",
+          "deadlineDaysRemaining": 24,
+          "cpvCode": "79800000 — Software",
+          "location": "Midlands",
+          "description": "This opportunity is for social care provision at department for work and pensions. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 4 years. Estimated contract value is £250,000."
+        },
+        {
+          "title": "Street Lighting Maintenance for Environment Agency",
+          "contractingAuthority": "Environment Agency",
+          "contractValue": "£150,000",
+          "deadlineDate": "2026-07-01",
+          "deadlineDaysRemaining": 55,
+          "cpvCode": "90922000 — Waste",
+          "location": "Belfast",
+          "description": "This opportunity is for street lighting maintenance for environment agency. The buyer is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £150,000."
+        },
+        {
+          "title": "Facilities Management for Liverpool City Council Estate",
+          "contractingAuthority": "Liverpool City Council",
+          "contractValue": "£100,000",
+          "deadlineDate": "2026-06-16",
+          "deadlineDaysRemaining": 41,
+          "cpvCode": "79950000 — Translation",
+          "location": "Nottingham",
+          "description": "This opportunity is for facilities management for liverpool city council estate. The buyer is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £100,000."
+        },
+        {
+          "title": "Recruitment Agency Services for Scottish Government",
+          "contractingAuthority": "Scottish Government",
+          "contractValue": "£500,000",
+          "deadlineDate": "2026-05-28",
+          "deadlineDaysRemaining": 22,
+          "cpvCode": "79993000 — Pest Control",
+          "location": "South East",
+          "description": "This opportunity is for recruitment agency services for scottish government. The buyer is seeking qualified suppliers to deliver the required services over a period of 3 years. Estimated contract value is £500,000."
+        },
+        {
+          "title": "Security Guard Services for Highways England Premises",
+          "contractingAuthority": "Highways England",
+          "contractValue": "£1,000,000",
+          "deadlineDate": "2026-07-10",
+          "deadlineDaysRemaining": 65,
+          "cpvCode": "79710000 — Legal",
+          "location": "London",
+          "description": "This opportunity is for security guard services for highways england premises. The buyer is seeking qualified suppliers to deliver the required services over a period of 3 years. Estimated contract value is £1,000,000."
+        },
+        {
+          "title": "Facilities Management for Transport for London Estate",
+          "contractingAuthority": "Transport for London",
+          "contractValue": "£100,000",
+          "deadlineDate": "2026-07-08",
+          "deadlineDaysRemaining": 63,
+          "cpvCode": "90900000 — Print",
+          "location": "North West",
+          "description": "This opportunity is for facilities management for transport for london estate. The buyer is seeking qualified suppliers to deliver the required services over a period of 4 years. Estimated contract value is £100,000."
+        },
+        {
+          "title": "Training and Development Programme for Scottish Government",
+          "contractingAuthority": "Scottish Government",
+          "contractValue": "£500,000",
+          "deadlineDate": "2026-06-11",
+          "deadlineDaysRemaining": 36,
+          "cpvCode": "50720000 — Electrical",
+          "location": "South East",
+          "description": "This opportunity is for training and development programme for scottish government. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 2 years. Estimated contract value is £500,000."
+        },
+        {
+          "title": "Facilities Management for Department for Work and Pensions Estate",
+          "contractingAuthority": "Department for Work and Pensions",
+          "contractValue": "£500,000",
+          "deadlineDate": "2026-07-02",
+          "deadlineDaysRemaining": 57,
+          "cpvCode": "79530000 — Grounds",
+          "location": "Newcastle",
+          "description": "This opportunity is for facilities management for department for work and pensions estate. The buyer is seeking qualified suppliers to deliver the required services over a period of 2 years. Estimated contract value is £500,000."
+        },
+        {
+          "title": "Cleaning and Janitorial Services for Department for Education",
+          "contractingAuthority": "Department for Education",
+          "contractValue": "£2,500,000",
+          "deadlineDate": "2026-07-08",
+          "deadlineDaysRemaining": 63,
+          "cpvCode": "48700000 — Software",
+          "location": "East of England",
+          "description": "This opportunity is for cleaning and janitorial services for department for education. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 2 years. Estimated contract value is £2,500,000."
+        }
+      ],
+      "summary": {
+        "total": 15,
+        "byLocation": {
+          "Cardiff": 2,
+          "North East": 1,
+          "Glasgow": 1,
+          "Liverpool": 1,
+          "South East": 3,
+          "Midlands": 1,
+          "Belfast": 1,
+          "Nottingham": 1,
+          "London": 1,
+          "North West": 1,
+          "Newcastle": 1,
+          "East of England": 1
+        },
+        "byValueRange": {
+          "Under £100k": 4,
+          "£100k-£500k": 6,
+          "£500k-£1M": 3,
+          "£1M+": 2
+        },
+        "byProcurementType": {
+          "Open": 7,
+          "Negotiated": 2,
+          "Competitive Dialogue": 2,
+          "Restricted": 4
+        },
+        "totalContractValue": 6150000
+      }
+    }
+  ],
+  "_lastDelivery": "2026-05-06T08:59:36.347Z",
+  "demo-consultant": [
+    {
+      "customerId": "demo-consultant",
+      "company": "Premier Consulting",
+      "email": "info@premier.co.uk",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:59:36.347Z",
+      "totalLeads": 15,
+      "leadLimit": 15,
+      "leads": [
+        {
+          "title": "Management Consultancy for Birmingham City Council",
+          "contractingAuthority": "Birmingham City Council",
+          "contractValue": "£2,500,000",
+          "deadlineDate": "2026-07-14",
+          "deadlineDaysRemaining": 69,
+          "cpvCode": "45321000 — Security",
+          "location": "London",
+          "description": "This opportunity is for management consultancy for birmingham city council. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 4 years. Estimated contract value is £2,500,000."
+        },
+        {
+          "title": "Management Consultancy for Environment Agency",
+          "contractingAuthority": "Environment Agency",
+          "contractValue": "£25,000",
+          "deadlineDate": "2026-06-30",
+          "deadlineDaysRemaining": 55,
+          "cpvCode": "90500000 — IT",
+          "location": "Wales",
+          "description": "This opportunity is for management consultancy for environment agency. The buyer is seeking qualified suppliers to deliver the required services over a period of 4 years. Estimated contract value is £25,000."
+        },
+        {
+          "title": "Print and Mail Services for Surrey County Council",
+          "contractingAuthority": "Surrey County Council",
+          "contractValue": "£150,000",
+          "deadlineDate": "2026-05-23",
+          "deadlineDaysRemaining": 17,
+          "cpvCode": "79800000 — Marketing",
+          "location": "East of England",
+          "description": "This opportunity is for print and mail services for surrey county council. The buyer is seeking qualified suppliers to deliver the required services over a period of 2 years. Estimated contract value is £150,000."
+        },
+        {
+          "title": "Facilities Management for Environment Agency Estate",
+          "contractingAuthority": "Environment Agency",
+          "contractValue": "£100,000",
+          "deadlineDate": "2026-06-02",
+          "deadlineDaysRemaining": 27,
+          "cpvCode": "48700000 — IT Services",
+          "location": "South East",
+          "description": "This opportunity is for facilities management for environment agency estate. The buyer is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £100,000."
+        },
+        {
+          "title": "Catering Services for Northern Ireland Executive Schools",
+          "contractingAuthority": "Northern Ireland Executive",
+          "contractValue": "£100,000",
+          "deadlineDate": "2026-06-25",
+          "deadlineDaysRemaining": 50,
+          "cpvCode": "85100000 — Print",
+          "location": "Sheffield",
+          "description": "This opportunity is for catering services for northern ireland executive schools. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £100,000."
+        },
+        {
+          "title": "Security Guard Services for Environment Agency Premises",
+          "contractingAuthority": "Environment Agency",
+          "contractValue": "£50,000",
+          "deadlineDate": "2026-06-06",
+          "deadlineDaysRemaining": 31,
+          "cpvCode": "45233000 — Marketing",
+          "location": "South West",
+          "description": "This opportunity is for security guard services for environment agency premises. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 4 years. Estimated contract value is £50,000."
+        },
+        {
+          "title": "Occupational Health Services for Lancashire County Council Staff",
+          "contractingAuthority": "Lancashire County Council",
+          "contractValue": "£100,000",
+          "deadlineDate": "2026-06-07",
+          "deadlineDaysRemaining": 32,
+          "cpvCode": "79993000 — Recruitment",
+          "location": "Belfast",
+          "description": "This opportunity is for occupational health services for lancashire county council staff. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £100,000."
+        },
+        {
+          "title": "Legal Services Panel for Manchester City Council",
+          "contractingAuthority": "Manchester City Council",
+          "contractValue": "£500,000",
+          "deadlineDate": "2026-07-17",
+          "deadlineDaysRemaining": 72,
+          "cpvCode": "79800000 — Health",
+          "location": "Leicester",
+          "description": "This opportunity is for legal services panel for manchester city council. The buyer is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £500,000."
+        },
+        {
+          "title": "Tree Surgery and Arboriculture for Scottish Government",
+          "contractingAuthority": "Scottish Government",
+          "contractValue": "£1,000,000",
+          "deadlineDate": "2026-06-04",
+          "deadlineDaysRemaining": 29,
+          "cpvCode": "80500000 — Vehicles",
+          "location": "East of England",
+          "description": "This opportunity is for tree surgery and arboriculture for scottish government. The buyer is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £1,000,000."
+        },
+        {
+          "title": "Print and Mail Services for UK Research and Innovation",
+          "contractingAuthority": "UK Research and Innovation",
+          "contractValue": "£100,000",
+          "deadlineDate": "2026-06-22",
+          "deadlineDaysRemaining": 47,
+          "cpvCode": "72000000 — Grounds",
+          "location": "Northern Ireland",
+          "description": "This opportunity is for print and mail services for uk research and innovation. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 4 years. Estimated contract value is £100,000."
+        },
+        {
+          "title": "IT Support Services for Natural England",
+          "contractingAuthority": "Natural England",
+          "contractValue": "£2,500,000",
+          "deadlineDate": "2026-07-15",
+          "deadlineDaysRemaining": 70,
+          "cpvCode": "90922000 — Construction",
+          "location": "East of England",
+          "description": "This opportunity is for it support services for natural england. The buyer is seeking qualified suppliers to deliver the required services over a period of 4 years. Estimated contract value is £2,500,000."
+        },
+        {
+          "title": "Marketing and Communications Support for Arts Council England",
+          "contractingAuthority": "Arts Council England",
+          "contractValue": "£2,500,000",
+          "deadlineDate": "2026-05-21",
+          "deadlineDaysRemaining": 15,
+          "cpvCode": "55500000 — Software",
+          "location": "Midlands",
+          "description": "This opportunity is for marketing and communications support for arts council england. The buyer is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £2,500,000."
+        },
+        {
+          "title": "Waste Collection and Disposal Services for Essex County Council",
+          "contractingAuthority": "Essex County Council",
+          "contractValue": "£500,000",
+          "deadlineDate": "2026-06-11",
+          "deadlineDaysRemaining": 36,
+          "cpvCode": "48700000 — Recruitment",
+          "location": "Liverpool",
+          "description": "This opportunity is for waste collection and disposal services for essex county council. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 4 years. Estimated contract value is £500,000."
+        },
+        {
+          "title": "Highways Maintenance Contract for UK Research and Innovation",
+          "contractingAuthority": "UK Research and Innovation",
+          "contractValue": "£50,000",
+          "deadlineDate": "2026-06-12",
+          "deadlineDaysRemaining": 37,
+          "cpvCode": "79530000 — Training",
+          "location": "Bristol",
+          "description": "This opportunity is for highways maintenance contract for uk research and innovation. The buyer is seeking qualified suppliers to deliver the required services over a period of 2 years. Estimated contract value is £50,000."
+        },
+        {
+          "title": "Catering Services for Lancashire County Council Schools",
+          "contractingAuthority": "Lancashire County Council",
+          "contractValue": "£100,000",
+          "deadlineDate": "2026-06-26",
+          "deadlineDaysRemaining": 51,
+          "cpvCode": "77200000 — Vehicles",
+          "location": "Bristol",
+          "description": "This opportunity is for catering services for lancashire county council schools. The buyer is seeking qualified suppliers to deliver the required services over a period of 3 years. Estimated contract value is £100,000."
+        }
+      ],
+      "summary": {
+        "total": 15,
+        "byLocation": {
+          "London": 1,
+          "Wales": 1,
+          "East of England": 3,
+          "South East": 1,
+          "Sheffield": 1,
+          "South West": 1,
+          "Belfast": 1,
+          "Leicester": 1,
+          "Northern Ireland": 1,
+          "Midlands": 1,
+          "Liverpool": 1,
+          "Bristol": 2
+        },
+        "byValueRange": {
+          "£1M+": 4,
+          "Under £100k": 3,
+          "£100k-£500k": 6,
+          "£500k-£1M": 2
+        },
+        "byProcurementType": {
+          "Restricted": 3,
+          "Open": 3,
+          "Negotiated": 5,
+          "Competitive Dialogue": 4
+        },
+        "totalContractValue": 10275000
+      }
+    },
+    {
+      "customerId": "demo-consultant",
+      "company": "Premier Consulting",
+      "email": "info@premier.co.uk",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:39:23.688Z",
+      "totalLeads": 15,
+      "leadLimit": 15,
+      "leads": [
+        {
+          "title": "Architectural Design Services for Essex County Council",
+          "contractingAuthority": "Essex County Council",
+          "contractValue": "£2,500,000",
+          "deadlineDate": "2026-06-04",
+          "deadlineDaysRemaining": 29,
+          "cpvCode": "79600000 — Waste",
+          "location": "South East",
+          "description": "This opportunity is for architectural design services for essex county council. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £2,500,000."
+        },
+        {
+          "title": "Cleaning and Janitorial Services for Sheffield City Council",
+          "contractingAuthority": "Sheffield City Council",
+          "contractValue": "£50,000",
+          "deadlineDate": "2026-06-05",
+          "deadlineDaysRemaining": 30,
+          "cpvCode": "50720000 — Pest Control",
+          "location": "Newcastle",
+          "description": "This opportunity is for cleaning and janitorial services for sheffield city council. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £50,000."
+        },
+        {
+          "title": "Waste Collection and Disposal Services for Transport for London",
+          "contractingAuthority": "Transport for London",
+          "contractValue": "£50,000",
+          "deadlineDate": "2026-07-15",
+          "deadlineDaysRemaining": 70,
+          "cpvCode": "80500000 — Electrical",
+          "location": "Edinburgh",
+          "description": "This opportunity is for waste collection and disposal services for transport for london. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 3 years. Estimated contract value is £50,000."
+        },
+        {
+          "title": "Waste Collection and Disposal Services for Leeds City Council",
+          "contractingAuthority": "Leeds City Council",
+          "contractValue": "£1,000,000",
+          "deadlineDate": "2026-07-06",
+          "deadlineDaysRemaining": 61,
+          "cpvCode": "48000000 — FM",
+          "location": "Midlands",
+          "description": "This opportunity is for waste collection and disposal services for leeds city council. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 4 years. Estimated contract value is £1,000,000."
+        },
+        {
+          "title": "Building Refurbishment at Manchester City Council",
+          "contractingAuthority": "Manchester City Council",
+          "contractValue": "£150,000",
+          "deadlineDate": "2026-07-07",
+          "deadlineDaysRemaining": 62,
+          "cpvCode": "71630000 — Architecture",
+          "location": "Glasgow",
+          "description": "This opportunity is for building refurbishment at manchester city council. The buyer is seeking qualified suppliers to deliver the required services over a period of 4 years. Estimated contract value is £150,000."
+        },
+        {
+          "title": "Security Guard Services for Natural England Premises",
+          "contractingAuthority": "Natural England",
+          "contractValue": "£100,000",
+          "deadlineDate": "2026-06-25",
+          "deadlineDaysRemaining": 50,
+          "cpvCode": "45000000 — Maintenance",
+          "location": "Birmingham",
+          "description": "This opportunity is for security guard services for natural england premises. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £100,000."
+        },
+        {
+          "title": "Training and Development Programme for Department for Education",
+          "contractingAuthority": "Department for Education",
+          "contractValue": "£2,500,000",
+          "deadlineDate": "2026-06-14",
+          "deadlineDaysRemaining": 39,
+          "cpvCode": "71630000 — Print",
+          "location": "Scotland",
+          "description": "This opportunity is for training and development programme for department for education. The buyer is seeking qualified suppliers to deliver the required services over a period of 3 years. Estimated contract value is £2,500,000."
+        },
+        {
+          "title": "Cyber Security Assessment for Manchester City Council",
+          "contractingAuthority": "Manchester City Council",
+          "contractValue": "£25,000",
+          "deadlineDate": "2026-07-15",
+          "deadlineDaysRemaining": 70,
+          "cpvCode": "71630000 — Maintenance",
+          "location": "Midlands",
+          "description": "This opportunity is for cyber security assessment for manchester city council. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £25,000."
+        },
+        {
+          "title": "HR Software Implementation for Leicester City Council",
+          "contractingAuthority": "Leicester City Council",
+          "contractValue": "£100,000",
+          "deadlineDate": "2026-07-18",
+          "deadlineDaysRemaining": 73,
+          "cpvCode": "79993000 — Catering",
+          "location": "Sheffield",
+          "description": "This opportunity is for hr software implementation for leicester city council. The buyer is seeking qualified suppliers to deliver the required services over a period of 2 years. Estimated contract value is £100,000."
+        },
+        {
+          "title": "Gas Servicing Contract for Home Office",
+          "contractingAuthority": "Home Office",
+          "contractValue": "£150,000",
+          "deadlineDate": "2026-07-08",
+          "deadlineDaysRemaining": 63,
+          "cpvCode": "79340000 — Health",
+          "location": "Midlands",
+          "description": "This opportunity is for gas servicing contract for home office. The buyer is seeking qualified suppliers to deliver the required services over a period of 2 years. Estimated contract value is £150,000."
+        },
+        {
+          "title": "Grounds Maintenance for Surrey County Council Parks",
+          "contractingAuthority": "Surrey County Council",
+          "contractValue": "£100,000",
+          "deadlineDate": "2026-06-29",
+          "deadlineDaysRemaining": 54,
+          "cpvCode": "79950000 — Waste",
+          "location": "Belfast",
+          "description": "This opportunity is for grounds maintenance for surrey county council parks. The buyer is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £100,000."
+        },
+        {
+          "title": "Highways Maintenance Contract for West Midlands Combined Authority",
+          "contractingAuthority": "West Midlands Combined Authority",
+          "contractValue": "£100,000",
+          "deadlineDate": "2026-06-10",
+          "deadlineDaysRemaining": 35,
+          "cpvCode": "79530000 — Playground",
+          "location": "South East",
+          "description": "This opportunity is for highways maintenance contract for west midlands combined authority. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 2 years. Estimated contract value is £100,000."
+        },
+        {
+          "title": "Grounds Maintenance for Lancashire County Council Parks",
+          "contractingAuthority": "Lancashire County Council",
+          "contractValue": "£150,000",
+          "deadlineDate": "2026-06-08",
+          "deadlineDaysRemaining": 33,
+          "cpvCode": "55500000 — FM",
+          "location": "Edinburgh",
+          "description": "This opportunity is for grounds maintenance for lancashire county council parks. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 3 years. Estimated contract value is £150,000."
+        },
+        {
+          "title": "Event Management for Ministry of Defence",
+          "contractingAuthority": "Ministry of Defence",
+          "contractValue": "£250,000",
+          "deadlineDate": "2026-06-07",
+          "deadlineDaysRemaining": 32,
+          "cpvCode": "48000000 — Health",
+          "location": "Glasgow",
+          "description": "This opportunity is for event management for ministry of defence. The contracting authority is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £250,000."
+        },
+        {
+          "title": "Cleaning and Janitorial Services for Liverpool City Council",
+          "contractingAuthority": "Liverpool City Council",
+          "contractValue": "£150,000",
+          "deadlineDate": "2026-07-18",
+          "deadlineDaysRemaining": 73,
+          "cpvCode": "90900000 — Electrical",
+          "location": "Glasgow",
+          "description": "This opportunity is for cleaning and janitorial services for liverpool city council. The buyer is seeking qualified suppliers to deliver the required services over a period of 1 years. Estimated contract value is £150,000."
+        }
+      ],
+      "summary": {
+        "total": 15,
+        "byLocation": {
+          "South East": 2,
+          "Newcastle": 1,
+          "Edinburgh": 2,
+          "Midlands": 3,
+          "Glasgow": 3,
+          "Birmingham": 1,
+          "Scotland": 1,
+          "Sheffield": 1,
+          "Belfast": 1
+        },
+        "byValueRange": {
+          "£1M+": 3,
+          "Under £100k": 3,
+          "£100k-£500k": 9
+        },
+        "byProcurementType": {
+          "Competitive Dialogue": 2,
+          "Negotiated": 5,
+          "Open": 4,
+          "Restricted": 4
+        },
+        "totalContractValue": 7375000
+      }
+    }
+  ]
+}

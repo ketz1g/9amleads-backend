@@ -1,0 +1,18 @@
+{
+  "botStatus": "stopped",
+  "paperTradingMode": true,
+  "liveTradingEnabled": false,
+  "riskPerTrade": 1,
+  "maxRiskPerTrade": 2,
+  "maxDailyLoss": 2,
+  "maxWeeklyLoss": 5,
+  "maxOpenTrades": 3,
+  "maxTradesPerDay": 3,
+  "stopAfterLosses": 3,
+  "allowedSymbols": ["SPY", "QQQ", "AAPL", "MSFT", "TSLA"],
+  "allowedStrategies": [],
+  "sessionStart": "14:30",
+  "sessionEnd": "21:00",
+  "killSwitch": false,
+  "activityLog": []
+}

@@ -1,0 +1,481 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planning Permission Alerts — New Planning Applications Daily at 9am | 9amLeads</title>
+<meta name="description" content="Get new planning applications in your area every morning at 9am. For architects, builders, surveyors, estate agents & property developers. Start free trial.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{--clr-primary:#10b981;--clr-primary-hover:#059669;--clr-primary-subtle:rgba(16,185,129,0.12);--clr-primary-glow:rgba(16,185,129,0.35);--clr-bg:#000000;--clr-bg-alt:#050505;--clr-card:#0a0a0a;--clr-card-hover:#111111;--clr-border:#1a1a1a;--clr-border-light:#2a2a2a;--clr-text:#ffffff;--clr-text-secondary:#cccccc;--clr-muted:#888888;--clr-muted-dark:#555555;--clr-success:#22c55e;--clr-warning:#f59e0b;--clr-error:#ef4444;--clr-info:#3b82f6;--clr-glass:rgba(255,255,255,0.04);--clr-glass-border:rgba(255,255,255,0.08);--ff-heading:'Outfit',sans-serif;--ff-body:'Inter',sans-serif;--fs-xs:0.75rem;--fs-sm:0.875rem;--fs-base:1rem;--fs-lg:1.125rem;--fs-xl:1.25rem;--fs-2xl:1.5rem;--fs-3xl:2rem;--fs-4xl:2.5rem;--fs-5xl:3.25rem;--fs-6xl:4.5rem;--space-xs:0.25rem;--space-sm:0.5rem;--space-md:1rem;--space-lg:1.5rem;--space-xl:2rem;--space-2xl:3rem;--space-3xl:4rem;--space-4xl:6rem;--max-width:1200px;--nav-height:72px;--radius-sm:6px;--radius-md:10px;--radius-lg:16px;--radius-xl:24px;--radius-full:9999px;--shadow-sm:0 1px 3px rgba(0,0,0,0.4);--shadow-md:0 4px 14px rgba(0,0,0,0.5);--shadow-lg:0 10px 40px rgba(0,0,0,0.6);--shadow-xl:0 20px 60px rgba(0,0,0,0.7);--shadow-primary:0 0 30px rgba(16,185,129,0.25);--transition-fast:200ms cubic-bezier(0.4,0,0.2,1);--transition-base:350ms cubic-bezier(0.4,0,0.2,1);--transition-slow:500ms cubic-bezier(0.4,0,0.2,1);--z-nav:200;--z-cookie:700}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--ff-body);font-size:var(--fs-base);color:var(--clr-text);background:var(--clr-bg);-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4,h5,h6{font-family:var(--ff-heading);font-weight:700;line-height:1.1;color:var(--clr-text)}
+p{color:var(--clr-text-secondary);line-height:1.7}
+::selection{background:var(--clr-primary);color:#fff}
+.container{width:100%;max-width:var(--max-width);margin:0 auto;padding:0 var(--space-xl)}
+.section{padding:var(--space-4xl) 0}
+.section-label{display:inline-block;font-family:var(--ff-heading);font-size:var(--fs-sm);font-weight:600;text-transform:uppercase;letter-spacing:3px;color:var(--clr-primary);margin-bottom:var(--space-md)}
+.section-title{font-size:var(--fs-3xl);font-weight:800;margin-bottom:var(--space-lg)}
+.section-subtitle{font-size:var(--fs-lg);color:var(--clr-muted);max-width:600px}
+.section-header{text-align:center;margin-bottom:var(--space-3xl)}
+.section-header .section-subtitle{margin:0 auto}
+
+.nav{position:fixed;top:0;left:0;width:100%;height:var(--nav-height);z-index:var(--z-nav);background:rgba(0,0,0,0.6);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--clr-glass-border);transition:background var(--transition-base)}
+.nav.scrolled{background:rgba(0,0,0,0.92);box-shadow:0 1px 20px rgba(0,0,0,0.5)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:100%;max-width:var(--max-width);margin:0 auto;padding:0 var(--space-xl)}
+.nav-logo{display:flex;align-items:center;gap:var(--space-sm);font-family:var(--ff-heading);font-size:var(--fs-xl);font-weight:900;letter-spacing:-0.5px}
+.nav-logo span{color:var(--clr-primary)}
+.nav-links{display:flex;align-items:center;gap:var(--space-2xl)}
+.nav-links a{font-size:var(--fs-sm);font-weight:500;color:var(--clr-text-secondary);transition:color var(--transition-fast);position:relative}
+.nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:2px;background:var(--clr-primary);transition:width var(--transition-base)}
+.nav-links a:hover{color:var(--clr-text)}
+.nav-links a:hover::after{width:100%}
+.nav-hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px}
+.nav-hamburger span{display:block;width:24px;height:2px;background:var(--clr-text);border-radius:2px;transition:var(--transition-base);transform-origin:center}
+.nav-hamburger.active span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav-hamburger.active span:nth-child(2){opacity:0;transform:scaleX(0)}
+.nav-hamburger.active span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+.hero{position:relative;min-height:90vh;display:flex;align-items:center;justify-content:center;overflow:hidden;padding-top:var(--nav-height);background:var(--clr-bg) url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?q=80&w=2070&auto=format&fit=crop') center center / cover no-repeat}
+.hero-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(135deg,rgba(0,0,0,0.92) 0%,rgba(0,0,0,0.55) 45%,rgba(0,0,0,0.25) 100%),radial-gradient(ellipse at 30% 50%,rgba(16,185,129,0.10) 0%,transparent 60%)}
+.hero-grid-lines{position:absolute;inset:0;z-index:1;background-image:linear-gradient(rgba(16,185,129,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(16,185,129,0.04) 1px,transparent 1px);background-size:60px 60px}
+.hero-content{position:relative;z-index:2;text-align:center;max-width:900px;padding:0 var(--space-xl)}
+.hero-badge{display:inline-flex;align-items:center;gap:var(--space-sm);padding:var(--space-sm) var(--space-lg);background:var(--clr-glass);border:1px solid var(--clr-glass-border);border-radius:var(--radius-full);font-size:var(--fs-sm);font-weight:500;color:var(--clr-muted);margin-bottom:var(--space-xl);backdrop-filter:blur(10px)}
+.hero-badge .badge-dot{width:6px;height:6px;background:var(--clr-success);border-radius:50%;animation:glow-pulse 2s ease-in-out infinite;display:inline-block;margin-right:6px}
+.hero-title{font-size:var(--fs-5xl);font-weight:900;line-height:1.1;margin-bottom:var(--space-lg);letter-spacing:-1.5px}
+.hero-title .highlight{background:linear-gradient(135deg,var(--clr-primary),#34d399);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero-subtitle{font-size:var(--fs-lg);color:var(--clr-muted);max-width:640px;margin:0 auto var(--space-2xl);line-height:1.75}
+.hero-actions{display:flex;align-items:center;justify-content:center;gap:var(--space-md);flex-wrap:wrap}
+.hero-social-proof{display:flex;align-items:center;justify-content:center;gap:var(--space-sm);margin-bottom:var(--space-xl);font-size:var(--fs-sm);color:var(--clr-muted)}
+.hero-social-proof .avatars{display:flex;margin-right:var(--space-sm)}
+.hero-social-proof .avatars img{width:28px;height:28px;border-radius:50%;border:2px solid var(--clr-bg);margin-right:-8px;object-fit:cover}
+.hero-social-proof strong{color:var(--clr-text)}
+.hero-stats{display:flex;justify-content:center;gap:var(--space-3xl);margin-top:var(--space-4xl);padding-top:var(--space-3xl);border-top:1px solid var(--clr-border);flex-wrap:wrap}
+.hero-stat-value{font-family:var(--ff-heading);font-size:var(--fs-2xl);font-weight:800;color:var(--clr-text)}
+.hero-stat-label{font-size:var(--fs-sm);color:var(--clr-muted);margin-top:var(--space-xs)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-sm);padding:12px 28px;font-family:var(--ff-body);font-size:var(--fs-sm);font-weight:600;border:2px solid transparent;border-radius:var(--radius-md);cursor:pointer;transition:all var(--transition-base);text-align:center;white-space:nowrap}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:var(--clr-primary);color:#fff;border-color:var(--clr-primary)}
+.btn-primary:hover{background:var(--clr-primary-hover);border-color:var(--clr-primary-hover);box-shadow:var(--shadow-primary);transform:translateY(-2px)}
+.btn-secondary{background:transparent;color:var(--clr-text);border-color:var(--clr-border-light)}
+.btn-secondary:hover{border-color:var(--clr-text-secondary);background:var(--clr-glass);transform:translateY(-2px)}
+.btn-lg{padding:16px 36px;font-size:var(--fs-base)}
+
+.steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-xl);counter-reset:step}
+.step-card{position:relative;text-align:center;padding:var(--space-2xl);background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-lg);transition:all var(--transition-base)}
+.step-card:hover{background:var(--clr-card-hover);border-color:var(--clr-border-light);transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.step-number{font-family:var(--ff-heading);font-size:var(--fs-5xl);font-weight:900;color:var(--clr-primary-subtle);line-height:1;position:absolute;top:var(--space-lg);right:var(--space-lg);transition:color var(--transition-fast)}
+.step-card:hover .step-number{color:var(--clr-primary-glow)}
+.step-icon{width:64px;height:64px;margin:0 auto var(--space-lg);background:var(--clr-primary-subtle);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:1.5rem;transition:all var(--transition-base)}
+.step-card:hover .step-icon{background:var(--clr-primary);transform:scale(1.05);box-shadow:var(--shadow-primary)}
+.step-card h3{font-size:var(--fs-xl);margin-bottom:var(--space-sm)}
+.step-card p{font-size:var(--fs-sm);color:var(--clr-muted);line-height:1.7}
+
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-lg)}
+.feature-card{padding:var(--space-2xl);background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-lg);transition:all var(--transition-base);position:relative;overflow:hidden}
+.feature-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,transparent,var(--clr-primary),transparent);opacity:0;transition:opacity var(--transition-base)}
+.feature-card:hover{background:var(--clr-card-hover);border-color:var(--clr-border-light);transform:translateY(-6px);box-shadow:var(--shadow-lg)}
+.feature-card:hover::before{opacity:1}
+.feature-icon{width:48px;height:48px;background:var(--clr-primary-subtle);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:1.25rem;margin-bottom:var(--space-lg);transition:background var(--transition-fast)}
+.feature-card:hover .feature-icon{background:var(--clr-primary)}
+.feature-card h3{font-size:var(--fs-lg);margin-bottom:var(--space-sm)}
+.feature-card p{font-size:var(--fs-sm);color:var(--clr-muted);line-height:1.7}
+
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-xl);align-items:start}
+.pricing-card{background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-lg);padding:var(--space-2xl);text-align:center;transition:all var(--transition-base);position:relative}
+.pricing-card:hover{background:var(--clr-card-hover);border-color:var(--clr-border-light);transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.pricing-card.featured{border-color:var(--clr-primary);background:linear-gradient(180deg,rgba(16,185,129,0.06),var(--clr-card));box-shadow:var(--shadow-primary);transform:scale(1.03)}
+.pricing-card.featured:hover{transform:scale(1.03) translateY(-4px)}
+.pricing-card .popular{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--clr-primary);color:#fff;font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:6px 20px;border-radius:var(--radius-full)}
+.pricing-name{font-family:var(--ff-heading);font-size:var(--fs-lg);font-weight:700;color:var(--clr-text);margin-bottom:var(--space-sm)}
+.pricing-price{font-family:var(--ff-heading);font-size:var(--fs-4xl);font-weight:900;color:var(--clr-text);margin-bottom:var(--space-xs)}
+.pricing-price span{font-size:var(--fs-lg);font-weight:400;color:var(--clr-muted)}
+.pricing-desc{font-size:var(--fs-sm);color:var(--clr-muted);margin-bottom:var(--space-xl);min-height:40px}
+.pricing-features{list-style:none;padding:0;margin:0 0 var(--space-2xl);text-align:left}
+.pricing-features li{padding:var(--space-sm) 0;font-size:var(--fs-sm);color:var(--clr-text-secondary);display:flex;align-items:center;gap:var(--space-sm)}
+.pricing-features li i{color:var(--clr-primary);width:16px;font-size:12px}
+
+.testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-xl)}
+.t-card{background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-lg);padding:var(--space-2xl);transition:all var(--transition-base)}
+.t-card:hover{border-color:var(--clr-border-light);transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.t-card .stars{color:var(--clr-warning);font-size:var(--fs-sm);margin-bottom:var(--space-md);letter-spacing:2px}
+.t-card p{font-size:var(--fs-sm);line-height:1.7;color:var(--clr-text-secondary);margin-bottom:var(--space-xl);font-style:italic}
+.t-card .author{font-size:var(--fs-sm);font-weight:600}
+.t-card .role{font-size:var(--fs-xs);color:var(--clr-muted)}
+.t-card .author-row{display:flex;align-items:center;gap:var(--space-md)}
+.t-card .author-row img{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0}
+
+.faq-list{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:var(--space-sm)}
+.faq-item{background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-md);overflow:hidden;transition:border-color var(--transition-fast)}
+.faq-item.active{border-color:var(--clr-border-light)}
+.faq-question{width:100%;display:flex;align-items:center;justify-content:space-between;padding:var(--space-lg) var(--space-xl);background:none;border:none;text-align:left;cursor:pointer;font-size:var(--fs-base);font-weight:500;color:var(--clr-text);transition:color var(--transition-fast);gap:var(--space-md);font-family:var(--ff-body)}
+.faq-question:hover{color:var(--clr-primary)}
+.faq-icon{width:24px;height:24px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:transform var(--transition-base);color:var(--clr-muted)}
+.faq-item.active .faq-icon{transform:rotate(45deg);color:var(--clr-primary)}
+.faq-answer{max-height:0;overflow:hidden;transition:max-height var(--transition-slow)}
+.faq-item.active .faq-answer{max-height:300px}
+.faq-answer-inner{padding:0 var(--space-xl) var(--space-lg);font-size:var(--fs-sm);color:var(--clr-muted);line-height:1.7}
+
+.signup-section{background:linear-gradient(180deg,var(--clr-bg) 0%,#021a14 50%,#022c22 100%);position:relative;overflow:hidden}
+.signup-section::before{content:'';position:absolute;top:0;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--clr-primary),transparent)}
+.signup-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4xl);align-items:center}
+.signup-info h2{font-size:var(--fs-4xl);font-weight:800;margin-bottom:var(--space-lg)}
+.signup-info h2 span{color:var(--clr-primary)}
+.signup-info p{font-size:var(--fs-base);color:var(--clr-muted);margin-bottom:var(--space-xl);max-width:480px;line-height:1.8}
+.signup-info .benefits{list-style:none;padding:0}
+.signup-info .benefits li{display:flex;align-items:flex-start;gap:var(--space-md);padding:var(--space-sm) 0;font-size:var(--fs-sm);color:var(--clr-text-secondary)}
+.signup-info .benefits li i{color:var(--clr-primary);margin-top:3px;font-size:14px;width:18px}
+.signup-form-wrap{background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-lg);padding:var(--space-2xl);box-shadow:var(--shadow-xl)}
+.signup-form-wrap h3{font-size:var(--fs-2xl);margin-bottom:var(--space-sm)}
+.signup-form-wrap .form-desc{font-size:var(--fs-sm);color:var(--clr-muted);margin-bottom:var(--space-xl)}
+.form-group{margin-bottom:var(--space-lg)}
+.form-group label{display:block;font-size:var(--fs-sm);font-weight:500;color:var(--clr-text-secondary);margin-bottom:var(--space-sm)}
+.form-group input,.form-group select{width:100%;padding:12px 16px;background:var(--clr-bg-alt);border:1px solid var(--clr-border);border-radius:var(--radius-md);color:var(--clr-text);font-family:var(--ff-body);font-size:var(--fs-sm);transition:border-color var(--transition-fast);outline:none}
+.form-group input:focus,.form-group select:focus{border-color:var(--clr-primary);box-shadow:0 0 0 3px var(--clr-primary-subtle)}
+.form-group input::placeholder{color:var(--clr-muted-dark)}
+.form-group select option{background:var(--clr-bg);color:var(--clr-text)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg)}
+.form-checkbox{display:flex;align-items:flex-start;gap:var(--space-sm);margin-bottom:var(--space-lg)}
+.form-checkbox input[type="checkbox"]{margin-top:3px;accent-color:var(--clr-primary);width:16px;height:16px}
+.form-checkbox label{font-size:var(--fs-sm);color:var(--clr-muted);cursor:pointer}
+.form-checkbox a{color:var(--clr-primary)}
+.form-submit{width:100%;padding:14px;font-size:var(--fs-base)}
+.form-footnote{text-align:center;margin-top:var(--space-lg);font-size:var(--fs-sm);color:var(--clr-muted-dark)}
+.form-footnote a{color:var(--clr-primary)}
+
+footer{background:var(--clr-bg-alt);border-top:1px solid var(--clr-border);padding:var(--space-4xl) 0 var(--space-xl)}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:var(--space-2xl);margin-bottom:var(--space-3xl)}
+footer h4{font-size:var(--fs-sm);font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--clr-muted);margin-bottom:var(--space-lg)}
+.footer-links{display:flex;flex-direction:column;gap:var(--space-sm)}
+.footer-links a{font-size:var(--fs-sm);color:var(--clr-text-secondary);transition:color var(--transition-fast)}
+.footer-links a:hover{color:var(--clr-primary)}
+.footer-bottom{max-width:var(--max-width);margin:0 auto;padding:var(--space-xl) var(--space-xl) 0;border-top:1px solid var(--clr-border);font-size:var(--fs-sm);color:var(--clr-muted);text-align:center;display:flex;flex-direction:column;align-items:center;gap:var(--space-sm)}
+.footer-bottom a{color:var(--clr-primary)}
+
+.lead-volume{display:flex;justify-content:center;gap:var(--space-2xl);flex-wrap:wrap;margin-top:var(--space-2xl)}
+.volume-stat{text-align:center;padding:var(--space-lg) var(--space-2xl);background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-lg);min-width:180px}
+.volume-stat .value{font-family:var(--ff-heading);font-size:var(--fs-3xl);font-weight:900;color:var(--clr-primary)}
+.volume-stat .label{font-size:var(--fs-sm);color:var(--clr-muted);margin-top:var(--space-xs)}
+
+@keyframes fade-in-up{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glow-pulse{0%,100%{box-shadow:0 0 8px var(--clr-primary-glow);opacity:1}50%{box-shadow:0 0 20px var(--clr-primary-glow),0 0 40px var(--clr-primary-glow);opacity:0.8}}
+[data-animate]{opacity:0;transform:translateY(30px);transition:opacity 0.6s ease,transform 0.6s ease}
+[data-animate].visible{opacity:1;transform:translateY(0)}
+
+@media(max-width:1024px){.steps-grid{grid-template-columns:repeat(2,1fr)}.features-grid,.testimonials-grid,.pricing-grid{grid-template-columns:repeat(2,1fr)}.hero-title{font-size:var(--fs-4xl)}.signup-grid{grid-template-columns:1fr;gap:var(--space-2xl)}}
+@media(max-width:768px){.section{padding:var(--space-3xl) 0}.section-title{font-size:var(--fs-2xl)}.container{padding:0 var(--space-lg)}.nav-links{position:fixed;top:var(--nav-height);left:0;width:100%;background:rgba(0,0,0,0.96);backdrop-filter:blur(20px);flex-direction:column;padding:var(--space-xl);gap:var(--space-lg);border-bottom:1px solid var(--clr-border);transform:translateY(-100%);opacity:0;pointer-events:none;transition:all var(--transition-base)}.nav-links.open{transform:translateY(0);opacity:1;pointer-events:all}.nav-hamburger{display:flex}.hero-title{font-size:var(--fs-3xl)}.hero-stats{flex-wrap:wrap;gap:var(--space-xl)}.hero-actions{flex-direction:column;width:100%}.hero-actions .btn{width:100%}.steps-grid,.features-grid,.testimonials-grid,.pricing-grid{grid-template-columns:1fr}.pricing-card.featured{transform:none}.footer-grid{grid-template-columns:1fr 1fr}.signup-grid{text-align:center}.signup-info p{margin-left:auto;margin-right:auto}.signup-info .benefits{text-align:left;max-width:400px;margin:0 auto}.form-row{grid-template-columns:1fr}}
+@media(max-width:480px){.hero-title{font-size:var(--fs-2xl)}.footer-grid{grid-template-columns:1fr}}
+</style>
+</head><body>
+
+<div style="background:#0a0a0a;border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;font-size:11px;text-align:center;font-family:Arial,sans-serif;">
+<span style="color:#888">Part of </span>
+<a href="/" style="color:#0ea5e9;font-weight:600">9amLeads</a>
+<span style="color:#555;margin:0 6px">|</span>
+<a href="/movingleadsdaily/" style="color:#888;text-decoration:none">Moving</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/probateleads/" style="color:#888;text-decoration:none">Probate</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/newbusinessalert/" style="color:#888;text-decoration:none">New Business</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/planningleads/" style="color:#888;text-decoration:none">Planning</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/tenders/" style="color:#888;text-decoration:none">Tenders</a>
+</div>
+
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="/planningpermission/" class="nav-logo"><i class="fas fa-hard-hat" style="color:var(--clr-primary);font-size:22px"></i> Planning Permission <span>Alerts</span></a>
+    <div class="nav-links" id="navLinks">
+      <a href="#how">How It Works</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="#signup" class="btn btn-primary btn-sm" style="padding:8px 20px"><i class="fas fa-star"></i> Free Trial</a>
+    </div>
+    <button class="nav-hamburger" id="hamburger"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-overlay"></div>
+  <div class="hero-grid-lines"></div>
+  <div class="hero-content">
+    <div class="hero-badge" style="background:rgba(34,197,94,.1)!important;border-color:rgba(34,197,94,.2)!important;color:#22c55e!important"><i class="fas fa-gift"></i> Free Trial — Thousands of Pounds Worth of Leads, Totally Free</div>
+      <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(34,197,94,.08);color:#22c55e;border:1px solid rgba(34,197,94,.15)"><i class="fas fa-check"></i> 7 days free</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(34,197,94,.08);color:#22c55e;border:1px solid rgba(34,197,94,.15)"><i class="fas fa-check"></i> No card required</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(34,197,94,.08);color:#22c55e;border:1px solid rgba(34,197,94,.15)"><i class="fas fa-check"></i> Cancel anytime</span>
+      </div>
+    <h1 class="hero-title">New Planning Applications in Your Area.<br><span class="highlight">Every Morning at 9am.</span></h1>
+    <p class="hero-subtitle">Know about every planning permission in your chosen areas before your competitors. Fresh applications delivered to your inbox daily — so you can be first to quote, first to design, first to win.</p>
+    <div class="hero-social-proof">
+      <div class="avatars">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=56&q=80" alt="" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=56&q=80" alt="" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=56&q=80" alt="" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=56&q=80" alt="" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=56&q=80" alt="" loading="lazy">
+      </div>
+      <span>Join <strong>400+</strong> UK architects, builders &amp; surveyors</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#signup" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Start Free Trial</a>
+      <a href="#how" class="btn btn-secondary btn-lg"><i class="fas fa-play-circle"></i> How It Works</a>
+    </div>
+    <div class="hero-stats">
+      <div style="text-align:center"><div class="hero-stat-value">50-500+/wk</div><div class="hero-stat-label">Applications per area</div></div>
+      <div style="text-align:center"><div class="hero-stat-value">350+</div><div class="hero-stat-label">UK Councils covered</div></div>
+      <div style="text-align:center"><div class="hero-stat-value">400k+</div><div class="hero-stat-label">Apps indexed/year</div></div>
+      <div style="text-align:center"><div class="hero-stat-value">9am</div><div class="hero-stat-label">Delivered daily</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="how" style="position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+  <div class="container" style="position:relative;z-index:2">
+    <div class="section-header">
+      <div class="section-label">How It Works</div>
+      <h2 class="section-title">Four Simple <span style="color:var(--clr-primary)">Steps</span></h2>
+      <p class="section-subtitle">From sign-up to winning new projects in minutes. No technical skills required.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card" data-animate><div class="step-number">01</div><div class="step-icon"><i class="fas fa-map-marker-alt"></i></div><h3>Choose Your Area</h3><p>Select which council areas or postcode districts you want to monitor. Start with one or cover the whole UK.</p></div>
+      <div class="step-card" data-animate><div class="step-number">02</div><div class="step-icon"><i class="fas fa-sliders-h"></i></div><h3>Set Your Filters</h3><p>Filter by application type — house extensions, new builds, commercial developments. Set minimum project values.</p></div>
+      <div class="step-card" data-animate><div class="step-number">03</div><div class="step-icon"><i class="fas fa-envelope-open-text"></i></div><h3>Receive at 9am Daily</h3><p>Every morning you get a beautifully formatted email with every new planning application matching your criteria.</p></div>
+      <div class="step-card" data-animate><div class="step-number">04</div><div class="step-icon"><i class="fas fa-pound-sign"></i></div><h3>Win New Business</h3><p>Contact applicants before they've chosen their team. Be the first architect, builder, or surveyor they speak to.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="features" style="background:var(--clr-bg-alt);position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1541888946425-d81bb0c26d9b?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+  <div class="container" style="position:relative;z-index:2">
+    <div class="section-header">
+      <div class="section-label">Features</div>
+      <h2 class="section-title">Everything You Need to <span style="color:var(--clr-primary)">Stay Ahead</span></h2>
+      <p class="section-subtitle">Comprehensive planning data with powerful filtering and daily delivery at 9am sharp.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card" data-animate><div class="feature-icon"><i class="fas fa-clock"></i></div><h3>9am Delivery</h3><p>Every morning at 9am sharp, your curated planning applications land in your inbox. No refreshing council portals — just open your email and start winning.</p></div>
+      <div class="feature-card" data-animate><div class="feature-icon"><i class="fas fa-building"></i></div><h3>Council Filtering</h3><p>Choose exactly which UK councils to monitor — from a single local authority to all 350+. Only see applications that matter to your business.</p></div>
+      <div class="feature-card" data-animate><div class="feature-icon"><i class="fas fa-tag"></i></div><h3>Application Type Filters</h3><p>Filter by householder extensions, new dwellings, commercial developments, change of use, listed building consent, prior approval, and more.</p></div>
+      <div class="feature-card" data-animate><div class="feature-icon"><i class="fas fa-pound-sign"></i></div><h3>Value Data</h3><p>See estimated project values for every application. Focus your efforts on high-value projects that match your ideal fee range.</p></div>
+      <div class="feature-card" data-animate><div class="feature-icon"><i class="fas fa-map-marked-alt"></i></div><h3>Map View</h3><p>Visualise every application on an interactive map. Spot clusters of development activity in your patch and identify areas of growth.</p></div>
+      <div class="feature-card" data-animate><div class="feature-icon"><i class="fas fa-chart-pie"></i></div><h3>Dashboard</h3><p>Full web dashboard with searchable archive, CSV export, and market trends. Access your data anywhere, anytime.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="pricing" style="position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+  <div class="container" style="position:relative;z-index:2">
+    <div class="section-header">
+      <div class="section-label">Pricing</div>
+      <h2 class="section-title">Simple, Transparent <span style="color:var(--clr-primary)">Pricing</span></h2>
+      <p class="section-subtitle">No hidden fees. Cancel anytime. All plans include a 7-day free trial.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card" data-animate>
+        <div class="pricing-name">Essentials</div>
+        <div class="pricing-price">&pound;79<span>/mo</span></div>
+        <div class="pricing-desc">Perfect for sole traders and small firms monitoring a single area.</div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> 1 council area</li>
+          <li><i class="fas fa-check"></i> Up to 15 leads/day</li>
+          <li><i class="fas fa-check"></i> Daily email at 9am</li>
+          <li><i class="fas fa-check"></i> Web dashboard access</li>
+          <li><i class="fas fa-check"></i> Basic filters</li>
+          <li><i class="fas fa-check"></i> CSV export</li>
+        </ul>
+        <a href="#signup" class="btn btn-secondary" style="width:100%">Start Free Trial</a>
+      </div>
+      <div class="pricing-card featured" data-animate>
+        <div class="popular">Most Popular</div>
+        <div class="pricing-name">Pro</div>
+        <div class="pricing-price">&pound;147<span>/mo</span></div>
+        <div class="pricing-desc">Ideal for growing practices covering multiple council areas.</div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> 5 council areas</li>
+          <li><i class="fas fa-check"></i> Up to 40 leads/day</li>
+          <li><i class="fas fa-check"></i> Daily email at 9am</li>
+          <li><i class="fas fa-check"></i> Full dashboard &amp; map view</li>
+          <li><i class="fas fa-check"></i> Advanced filters (type, value, size)</li>
+          <li><i class="fas fa-check"></i> CSV &amp; API export</li>
+          <li><i class="fas fa-check"></i> Market trends report</li>
+        </ul>
+        <a href="#signup" class="btn btn-primary" style="width:100%">Start Free Trial</a>
+      </div>
+      <div class="pricing-card" data-animate>
+        <div class="pricing-name">Enterprise</div>
+        <div class="pricing-price">&pound;297<span>/mo</span></div>
+        <div class="pricing-desc">For agencies and firms that need the full UK picture.</div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> All UK councils (350+)</li>
+          <li><i class="fas fa-check"></i> Up to 100 leads/day</li>
+          <li><i class="fas fa-check"></i> Daily email at 9am</li>
+          <li><i class="fas fa-check"></i> Full dashboard &amp; map view</li>
+          <li><i class="fas fa-check"></i> All filters &amp; priority support</li>
+          <li><i class="fas fa-check"></i> API access &amp; webhooks</li>
+          <li><i class="fas fa-check"></i> Market trends &amp; competitor analysis</li>
+          <li><i class="fas fa-check"></i> Multi-user team access</li>
+        </ul>
+        <a href="#signup" class="btn btn-secondary" style="width:100%">Start Free Trial</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background:var(--clr-bg-alt);position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+  <div class="container" style="position:relative;z-index:2">
+    <div class="section-header">
+      <div class="section-label">Testimonials</div>
+      <h2 class="section-title">Trusted by <span style="color:var(--clr-primary)">UK Professionals</span></h2>
+      <p class="section-subtitle">Join hundreds of architects, builders, surveyors and estate agents already using Planning Permission Alerts.</p>
+    </div>
+    <div class="testimonials-grid">
+      <div class="t-card" data-animate><div class="stars">★★★★★</div><p>"I've been an architect in London for 12 years and this is by far the best lead generation tool I've used. I get 6-10 relevant alerts every single morning."</p><div class="author-row"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=88&q=80" alt="" loading="lazy"><div><div class="author">Michael Stone</div><div class="role">Architect · London</div></div></div></div>
+      <div class="t-card" data-animate><div class="stars">★★★★★</div><p>"My building firm now quotes on extensions the week planning is approved. Our conversion rate is 3x higher than cold calling. Essential tool."</p><div class="author-row"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=88&q=80" alt="" loading="lazy"><div><div class="author">Gary Wilson</div><div class="role">Builder · Birmingham</div></div></div></div>
+      <div class="t-card" data-animate><div class="stars">★★★★★</div><p>"We track development activity across 5 London boroughs. Knowing where planning applications are going in gives us a huge edge on valuation instructions."</p><div class="author-row"><img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=88&q=80" alt="" loading="lazy"><div><div class="author">Claire Bennett</div><div class="role">Estate Agent · London</div></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="faq">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">FAQ</div>
+      <h2 class="section-title">Frequently Asked <span style="color:var(--clr-primary)">Questions</span></h2>
+      <p class="section-subtitle">Everything you need to know about Planning Permission Alerts.</p>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item active"><button class="faq-question">Where does the planning data come from? <span class="faq-icon"><i class="fas fa-plus"></i></span></button><div class="faq-answer"><div class="faq-answer-inner">We aggregate data from every UK local authority planning portal — over 350 councils across England, Scotland, Wales, and Northern Ireland. Data is also sourced from the official <a href="https://www.planningportal.co.uk" style="color:var(--clr-primary)" target="_blank">Planning Portal</a>.</div></div></div>
+      <div class="faq-item"><button class="faq-question">How fresh is the data? <span class="faq-icon"><i class="fas fa-plus"></i></span></button><div class="faq-answer"><div class="faq-answer-inner">We check every council's portal daily. Applications submitted today appear in your next morning's 9am email. Most councils publish within 24 hours of submission.</div></div></div>
+      <div class="faq-item"><button class="faq-question">Can I filter by application type? <span class="faq-icon"><i class="fas fa-plus"></i></span></button><div class="faq-answer"><div class="faq-answer-inner">Yes. Filter by householder extensions, new dwellings, commercial developments, change of use, listed building consent, prior approval, and more. Pro and Enterprise plans get advanced filters.</div></div></div>
+      <div class="faq-item"><button class="faq-question">What information is included for each application? <span class="faq-icon"><i class="fas fa-plus"></i></span></button><div class="faq-answer"><div class="faq-answer-inner">Property address, full description of development, applicant name, application type, current status, council reference number, estimated project value, date submitted, and a direct link to the full application.</div></div></div>
+      <div class="faq-item"><button class="faq-question">Is there a free trial? <span class="faq-icon"><i class="fas fa-plus"></i></span></button><div class="faq-answer"><div class="faq-answer-inner">Yes. Every plan includes a 7-day free trial with full access to all features in your chosen tier. No payment required to start. Cancel anytime during your trial.</div></div></div>
+      <div class="faq-item"><button class="faq-question">How do I cancel? <span class="faq-icon"><i class="fas fa-plus"></i></span></button><div class="faq-answer"><div class="faq-answer-inner">Cancel anytime from your dashboard or by emailing us. No notice period, no cancellation fees. Your 7-day free trial is completely risk-free.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section signup-section" id="signup">
+  <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+  <div class="container" style="position:relative;z-index:2">
+    <div class="signup-grid">
+      <div class="signup-info">
+        <div class="section-label">Get Started</div>
+        <h2>Start Your <span>Free Trial</span> Today</h2>
+        <p>Join 400+ UK architects, builders, and surveyors who start every morning with fresh planning applications in their inbox. No commitment. Cancel anytime.</p>
+        <ul class="benefits">
+          <li><i class="fas fa-check-circle"></i> 7 days free — no payment required</li>
+          <li><i class="fas fa-check-circle"></i> Full access to your chosen plan</li>
+          <li><i class="fas fa-check-circle"></i> Cancel anytime with one click</li>
+          <li><i class="fas fa-check-circle"></i> No long-term contracts</li>
+        </ul>
+      </div>
+      <div class="signup-form-wrap">
+        <h3>Create Your Account</h3>
+        <p class="form-desc">Start your 7-day free trial. No credit card needed.</p>
+        <form id="signupForm" action="#" method="post" onsubmit="event.preventDefault();alert('Trial started! (Demo)')">
+          <div class="form-group">
+            <label for="companyName">Company Name</label>
+            <input type="text" id="companyName" name="company_name" placeholder="e.g. Stone &amp; Co Architects" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input type="email" id="email" name="email" placeholder="you@company.com" required>
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input type="tel" id="phone" name="phone" placeholder="07700 900000" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="councils">Target Councils</label>
+            <select id="councils" name="councils" required>
+              <option value="">Select council area...</option>
+              <option value="1">1 council area</option>
+              <option value="5">5 council areas</option>
+              <option value="all">All UK councils</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Create a strong password" minlength="8" required>
+          </div>
+          <div style="margin:12px 0">
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:12px;color:var(--clr-muted, #888);line-height:1.5">
+              <input type="checkbox" id="consent" required style="margin-top:3px;width:16px;height:16px;accent-color:#10b981;flex-shrink:0">
+              I agree to receive daily lead emails at 9am and accept the <a href="/terms.html" target="_blank" style="color:#10b981;text-decoration:underline">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:#10b981;text-decoration:underline">Privacy Policy</a>. I can unsubscribe anytime.
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary form-submit" style="width:100%"><i class="fas fa-gift"></i> Claim Free Week — Start Trial</button>
+          <div style="margin-top:10px;font-size:11px;color:var(--clr-muted-dark, #555);text-align:center;line-height:1.5"><i class="fas fa-lock" style="color:#10b981"></i> Your data is secure. No spam. Unsubscribe anytime.</div>
+          <p class="form-footnote" style="margin-top:12px">Already have an account? <a href="/dashboard.html">Log in</a></p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div><div class="nav-logo" style="font-size:20px;margin-bottom:var(--space-md)"><i class="fas fa-hard-hat" style="color:var(--clr-primary);font-size:20px;margin-right:8px"></i> Planning Permission <span>Alerts</span></div><p style="font-size:var(--fs-sm);max-width:320px">New planning applications delivered to your inbox every morning at 9am. <a href="/" style="color:var(--clr-primary)">Part of 9amLeads</a>.</p></div>
+      <div><h4>Product</h4><div class="footer-links"><a href="#how">How It Works</a><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></div>
+<div style="text-align:center;padding:12px 24px;font-size:11px;color:#555;border-top:1px solid #1a1a1a">9am Leads Ltd &middot; Company No. 17168176 &middot; hello@9amleads.com</div></div>
+      <div><h4>Company</h4><div class="footer-links"><a href="/" target="_blank">9amLeads</a><a href="/privacy.html">Privacy Policy</a><a href="/terms.html">Terms of Service</a></div></div>
+      <div><h4>Contact</h4><p style="font-size:var(--fs-sm);color:var(--clr-text-secondary)">hello@9amleads.com</p><p style="font-size:var(--fs-sm);color:var(--clr-muted)"><a href="/" style="color:var(--clr-primary)">Part of 9amLeads</a></p></div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 Planning Permission Alerts &mdash; <a href="/">Part of 9amLeads</a>. All rights reserved.</span>
+    <span><a href="/dashboard.html" style="color:var(--clr-text-secondary)">Already have an account? Log in</a></span>
+  </div>
+</footer>
+
+<div id="cookieConsent" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.95);backdrop-filter:blur(12px);padding:16px 24px;z-index:9999;display:none;border-top:1px solid var(--clr-border)">
+  <div style="max-width:var(--max-width);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+    <p style="font-size:13px;color:var(--clr-muted);line-height:1.5;margin:0">We use cookies to improve your experience. By using this site you accept our <a href="/privacy.html" style="color:var(--clr-primary)">Privacy Policy</a>.</p>
+    <button onclick="this.parentElement.parentElement.style.display='none';localStorage.setItem('ppa_cookie','1')" class="btn btn-primary btn-sm">Accept</button>
+  </div>
+</div>
+
+<button id="btop" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="position:fixed;bottom:80px;right:20px;width:44px;height:44px;border-radius:50%;background:var(--clr-primary);color:#fff;border:none;font-size:16px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);opacity:0;visibility:hidden;transform:translateY(10px);transition:all 0.3s;z-index:999;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 15l-6-6-6 6"/></svg></button>
+
+<script>
+document.querySelectorAll('.faq-question').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.closest('.faq-item');
+    const was = item.classList.contains('active');
+    item.closest('.faq-list').querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+    if (!was) item.classList.add('active');
+  });
+});
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+}, { threshold: 0.15 });
+document.querySelectorAll('[data-animate]').forEach(el => obs.observe(el));
+document.getElementById('hamburger').addEventListener('click', function() {
+  document.getElementById('navLinks').classList.toggle('open');
+  this.classList.toggle('active');
+});
+window.addEventListener('scroll', function() {
+  document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
+  const b = document.getElementById('btop');
+  if (b) {
+    if (window.scrollY > 400) { b.style.opacity = '1'; b.style.visibility = 'visible'; b.style.transform = 'translateY(0)'; }
+    else { b.style.opacity = '0'; b.style.visibility = 'hidden'; b.style.transform = 'translateY(10px)'; }
+  }
+});
+if (!localStorage.getItem('ppa_cookie')) document.getElementById('cookieConsent').style.display = 'flex';
+</script>
+</body></html>

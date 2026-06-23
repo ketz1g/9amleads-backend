@@ -1,0 +1,9 @@
+{
+  "leads": [],
+  "tasks": [],
+  "settings": {
+    "dailyLimit": 500,
+    "agentStatus": "stopped"
+  },
+  "activityLog": []
+}
