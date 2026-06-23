@@ -957,6 +957,43 @@ app.post('/api/crm/push', authMiddleware, async (req, res) => {
   }
 });
 
+// ===== AI IMAGE GENERATION =====
+
+// POST /api/ai/generate-image — Generate image via DALL-E 3
+app.post('/api/ai/generate-image', async (req, res) => {
+  try {
+    const { prompt, size, quality } = req.body;
+    const OPENAI_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_KEY) return res.status(400).json({ error: 'OpenAI API key not configured. Set OPENAI_API_KEY environment variable.' });
+    if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
+
+    const imageSize = size || '1024x1024';
+    const imageQuality = quality || 'standard';
+    const https = require('https');
+    
+    const data = JSON.stringify({
+      model: 'dall-e-3',
+      prompt: prompt,
+      n: 1,
+      size: imageSize,
+      quality: imageQuality
+    });
+
+    const result = await new Promise((resolve, reject) => {
+      const req = https.request({
+        hostname: 'api.openai.com', path: '/v1/images/generations', method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) }
+      }, r => { let b = ''; r.on('data', c => b += c); r.on('end', () => { try { resolve(JSON.parse(b)); } catch { resolve(b); } }); });
+      req.on('error', reject); req.write(data); req.end();
+    });
+
+    if (result.error) return res.status(400).json({ error: result.error.message || 'OpenAI API error' });
+    res.json({ url: result.data?.[0]?.url || null, revised_prompt: result.data?.[0]?.revised_prompt || null });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ===== ADMIN ENDPOINTS =====
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '9amAdmin2024!';
@@ -2435,6 +2472,8 @@ app.listen(PORT, () => {
   console.log('  DEL  /api/settings/crm  - Remove CRM webhook');
   console.log('  POST /api/crm/test      - Test CRM webhook connection');
   console.log('  POST /api/crm/push      - Manually push leads to CRM');
+  console.log('  AI Image Generation:');
+  console.log('  POST /api/ai/generate-image - Generate image via DALL-E 3 (requires OPENAI_API_KEY)');
   console.log('  GET  /api/health        - Server health');
   console.log('  GET  /api/admin/stats   - System-wide stats');
   console.log('  GET  /api/admin/customers - All customers');
