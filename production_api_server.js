@@ -959,8 +959,18 @@ app.post('/api/crm/push', authMiddleware, async (req, res) => {
 
 // ===== ADMIN ENDPOINTS =====
 
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '9amAdmin2024!';
+
+function adminAuth(req, res, next) {
+  const auth = req.headers.authorization;
+  if (!auth || auth !== 'Bearer ' + ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
 // GET /api/admin/stats — overall system stats
-app.get('/api/admin/stats', (req, res) => {
+app.get('/api/admin/stats', adminAuth, (req, res) => {
   const totalCustomers = db.prepare('SELECT COUNT(*) as count FROM customers').get();
   const freeTrials = db.prepare('SELECT COUNT(*) as count FROM customers WHERE plan = \'free_trial\'').get();
   const paidCustomers = db.prepare('SELECT COUNT(*) as count FROM customers WHERE plan != \'free_trial\'').get();
@@ -988,7 +998,7 @@ app.get('/api/admin/stats', (req, res) => {
 });
 
 // GET /api/admin/customers — list all customers (paginated)
-app.get('/api/admin/customers', (req, res) => {
+app.get('/api/admin/customers', adminAuth, (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 50;
 
@@ -2328,7 +2338,7 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
 });
 
 // POST /api/admin/impersonate — generate login token for any customer (admin access)
-app.post('/api/admin/impersonate', async (req, res) => {
+app.post('/api/admin/impersonate', adminAuth, async (req, res) => {
   try {
     const { customer_id } = req.body;
     if (!customer_id) return res.status(400).json({ error: 'customer_id required' });
@@ -2344,7 +2354,7 @@ app.post('/api/admin/impersonate', async (req, res) => {
 });
 
 // GET /api/admin/export — export customers for marketing
-app.get('/api/admin/export', (req, res) => {
+app.get('/api/admin/export', adminAuth, (req, res) => {
   const customers = db.prepare(`
     SELECT email, company, contact_name, phone, product, lead_type, business_type, 
            source, plan, marketing_consent, bounced, created_at, last_login
