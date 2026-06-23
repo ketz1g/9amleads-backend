@@ -989,11 +989,11 @@ app.post('/api/ai/generate-image', async (req, res) => {
         size: model.startsWith('gpt-image') ? '1024x1024' : (size || '1024x1024'),
         ...(model === 'dall-e-3' ? { quality: quality || 'standard' } : {})
       });
-      result = await new Promise((resolve) => {
-        const req = https.request({
+      result = await new Promise(function(resolve) {
+        var req = https.request({
           hostname: 'api.openai.com', path: '/v1/images/generations', method: 'POST',
           headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(attemptData) }
-        }, r => { let b = ''; r.on('data', c => b += c); r.on('end', () => { try { resolve({ status: r.statusCode, body: JSON.parse(b) }); } catch { try { resolve({ status: r.statusCode, body: JSON.parse(b) }); } catch { resolve({ status: r.statusCode, body: b }); } }); });
+        }, function(r) { var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() { try { var parsed = JSON.parse(b); resolve({ status: r.statusCode, body: parsed }); } catch(e) { resolve({ status: r.statusCode, body: b }); } }); });
         req.on('error', (e) => { lastError = e.message; resolve(null); });
         req.write(attemptData); req.end();
       });
