@@ -410,7 +410,7 @@ app.get(/^\/(?!api\/).*$/, (req, res) => {
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { company, name, email, phone, password, product, targetAreas, bizField2, bizField3, source, marketingConsent } = req.body;
+    const { company, name, email, phone, password, product, targetAreas, bizField2, bizField3, source, marketingConsent, crmWebhookUrl } = req.body;
 
     if (!company || !email || !password) {
       return res.status(400).json({ error: 'Company, email and password are required' });
@@ -450,13 +450,13 @@ app.post('/api/auth/signup', async (req, res) => {
       }
     }
 
-    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, email.toLowerCase(), company, name || '', phone || '', password_hash,
       product, productInfo.lead_type, productInfo.business_type,
       JSON.stringify(targetAreas || []), bizField2 || '', bizField3 || '',
       source || 'direct', 'free_trial', trial_ends, marketingConsent ? 1 : 0,
-      new Date().toISOString(), '0'
+      new Date().toISOString(), '0', crmWebhookUrl || ''
     );
 
     // Claim postcodes
@@ -504,6 +504,7 @@ app.post('/api/auth/signup', async (req, res) => {
         plan: customer.plan,
         trial_ends: customer.trial_ends,
         target_areas: JSON.parse(customer.target_areas || '[]'),
+        crm_webhook_url: customer.crm_webhook_url || '',
         email_verified: 0
       }
     });
@@ -601,7 +602,8 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
     marketing_consent: customer.marketing_consent === 1,
     email_verified: customer.email_verified || 0,
     created_at: customer.created_at,
-    last_login: customer.last_login
+    last_login: customer.last_login,
+    crm_webhook_url: customer.crm_webhook_url || ''
   });
 });
 
@@ -885,6 +887,62 @@ app.put('/api/settings', authMiddleware, (req, res) => {
   }
 
   res.json({ success: true });
+});
+
+// ===== CRM WEBHOOK ENDPOINTS =====
+
+// GET /api/settings/crm - Get CRM webhook URL
+app.get('/api/settings/crm', authMiddleware, (req, res) => {
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  if (!customer) return res.status(404).json({ error: 'User not found' });
+  res.json({ crm_webhook_url: customer.crm_webhook_url || '' });
+});
+
+// PUT /api/settings/crm - Update CRM webhook URL
+app.put('/api/settings/crm', authMiddleware, (req, res) => {
+  const { crm_webhook_url } = req.body;
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  if (!customer) return res.status(404).json({ error: 'User not found' });
+  db.prepare('UPDATE customers SET crm_webhook_url = ? WHERE id = ?').run(crm_webhook_url || '', req.user.id);
+  saveDb();
+  res.json({ success: true, crm_webhook_url: crm_webhook_url || '' });
+});
+
+// DELETE /api/settings/crm - Remove CRM webhook
+app.delete('/api/settings/crm', authMiddleware, (req, res) => {
+  db.prepare('UPDATE customers SET crm_webhook_url = ? WHERE id = ?').run('', req.user.id);
+  saveDb();
+  res.json({ success: true });
+});
+
+// POST /api/crm/test - Test CRM webhook connection
+app.post('/api/crm/test', authMiddleware, async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ error: 'Webhook URL is required' });
+    const testPayload = { test: true, message: '9amLeads CRM webhook test', timestamp: new Date().toISOString() };
+    const response = await httpsPost(url, testPayload);
+    res.json({ success: response.status >= 200 && response.status < 300, status: response.status, body: (response.body || '').substring(0, 200) });
+  } catch (e) {
+    res.json({ success: false, error: e.message });
+  }
+});
+
+// POST /api/crm/push - Manually push leads to CRM (for testing)
+app.post('/api/crm/push', authMiddleware, async (req, res) => {
+  try {
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    const webhookUrl = customer.crm_webhook_url || req.body.url || '';
+    if (!webhookUrl) return res.status(400).json({ error: 'No CRM webhook URL configured. Go to Settings to add one.' });
+    const leads = db.prepare('SELECT * FROM leads WHERE customer_id = ? AND delivered = 1 ORDER BY created_at DESC LIMIT 10').all(customer.id);
+    if (leads.length === 0) return res.json({ success: false, message: 'No delivered leads to push. Leads will be pushed automatically at 9am daily.' });
+    const payload = { customer: { name: customer.company, email: customer.email, product: customer.lead_type }, leads: leads.map(formatLeadForCRM), source: '9amLeads', timestamp: new Date().toISOString() };
+    const response = await httpsPost(webhookUrl, payload);
+    res.json({ success: response.status >= 200 && response.status < 300, status: response.status, leads_pushed: leads.length, response: (response.body || '').substring(0, 500) });
+  } catch (e) {
+    res.json({ success: false, error: e.message });
+  }
 });
 
 // ===== ADMIN ENDPOINTS =====
@@ -1238,6 +1296,77 @@ function generateDemoLeads(product, count) {
   return leads;
 }
 
+// ===== CRM HELPER: Format lead for CRM webhook =====
+function formatLeadForCRM(lead) {
+  const base = {
+    lead_id: lead.id,
+    source: lead.source || '9amLeads',
+    delivered_at: lead.delivered_at || new Date().toISOString(),
+    created_at: lead.created_at
+  };
+  // Moving leads
+  if (lead.address) base.address = lead.address;
+  if (lead.postcode) base.postcode = lead.postcode;
+  if (lead.city) base.city = lead.city;
+  if (lead.bedrooms) base.bedrooms = lead.bedrooms;
+  if (lead.propertyType) base.property_type = lead.propertyType;
+  if (lead.price) base.price = lead.price;
+  if (lead.status) base.status = lead.status;
+  if (lead.agent) base.agent = lead.agent;
+  if (lead.estimatedMoveWindow) base.estimated_move_window = lead.estimatedMoveWindow;
+  // Probate leads
+  if (lead.deceasedName) base.deceased_name = lead.deceasedName;
+  if (lead.estateValue) base.estate_value = lead.estateValue;
+  if (lead.registry) base.registry = lead.registry;
+  if (lead.legalAdvisor) base.legal_adviser = lead.legalAdvisor;
+  // New business leads
+  if (lead.companyNumber) base.company_number = lead.companyNumber;
+  if (lead.ownerEmail) base.owner_email = lead.ownerEmail;
+  if (lead.website) base.website = lead.website;
+  if (lead.incorporationDate) base.incorporation_date = lead.incorporationDate;
+  // Planning leads
+  if (lead.applicationType) base.application_type = lead.applicationType;
+  if (lead.description) base.description = lead.description;
+  if (lead.applicant) base.applicant = lead.applicant;
+  if (lead.council) base.council = lead.council;
+  if (lead.applicationRef) base.application_ref = lead.applicationRef;
+  // Tender leads
+  if (lead.title) base.title = lead.title;
+  if (lead.buyer) base.buyer = lead.buyer;
+  if (lead.contractValue) base.contract_value = lead.contractValue;
+  if (lead.closingDate) base.closing_date = lead.closingDate;
+  if (lead.cpvCode) base.cpv_code = lead.cpvCode;
+  // Any extra fields
+  if (lead.name && !lead.address) base.name = lead.name;
+  return base;
+}
+
+
+// ===== HTTP HELPER: POST JSON via https =====
+function httpsPost(url, data) {
+  return new Promise((resolve, reject) => {
+    try {
+      const parsed = new URL(url);
+      const isHttps = parsed.protocol === 'https:';
+      const mod = require(isHttps ? 'https' : 'http');
+      const body = JSON.stringify(data);
+      const options = {
+        hostname: parsed.hostname, port: parsed.port || (isHttps ? 443 : 80), path: parsed.pathname + parsed.search, method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+        timeout: 15000
+      };
+      const req = mod.request(options, res => {
+        let b = '';
+        res.on('data', c => b += c);
+        res.on('end', () => resolve({ status: res.statusCode, body: b, statusCode: res.statusCode }));
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('Request timed out')); });
+      req.write(body);
+      req.end();
+    } catch (e) { reject(e); }
+  });
+}
 // ===== MAIN SCHEDULER: Daily at 9:00 AM (sharp) =====
 // Lead distributor must run before this (scrapers → match → insert → email)
 cron.schedule('0 9 * * *', async () => {
@@ -1302,6 +1431,16 @@ cron.schedule('0 9 * * *', async () => {
               uuidv4(), customer.id, customer.product, leads.length, 'sent', result.messageId || ''
             );
             leads_sent++;
+
+            // Push to CRM webhook if configured
+            if (customer.crm_webhook_url) {
+              try {
+                const crmPayload = { customer: { name: customer.company, email: customer.email, product: customer.lead_type }, leads: leads.map(formatLeadForCRM), source: '9amLeads', timestamp: new Date().toISOString() };
+                const crmRes = await httpsPost(customer.crm_webhook_url, crmPayload);
+                if (crmRes.status >= 200 && crmRes.status < 300) { console.log('[CRM] Pushed ' + leads.length + ' leads to CRM for ' + customer.email); }
+                else { console.log('[CRM] CRM webhook returned ' + crmRes.status + ' for ' + customer.email); }
+              } catch (e) { console.log('[CRM] CRM push failed for ' + customer.email + ': ' + e.message); }
+            }
           }
         }
         
@@ -2222,6 +2361,12 @@ app.listen(PORT, () => {
   console.log('  GET  /api/postcodes/mine - Your assigned postcode territories');
   console.log('  PUT  /api/postcodes/update - Update your postcode selections');
   console.log('  PUT  /api/settings      - Update settings');
+  console.log('  CRM Endpoints:');
+  console.log('  GET  /api/settings/crm  - Get CRM webhook URL');
+  console.log('  PUT  /api/settings/crm  - Update CRM webhook URL');
+  console.log('  DEL  /api/settings/crm  - Remove CRM webhook');
+  console.log('  POST /api/crm/test      - Test CRM webhook connection');
+  console.log('  POST /api/crm/push      - Manually push leads to CRM');
   console.log('  GET  /api/health        - Server health');
   console.log('  GET  /api/admin/stats   - System-wide stats');
   console.log('  GET  /api/admin/customers - All customers');
@@ -2240,3 +2385,6 @@ app.listen(PORT, () => {
   console.log('  GET  /api/distribute/status - Distribution status');
   console.log('========================================\n');
 });
+
+
+
