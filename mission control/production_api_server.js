@@ -2333,7 +2333,7 @@ app.get('/api/analytics/pages', (req, res) => {
 
 // Tracking snippet to inject into HTML pages
 const TRACKING_SNIPPET = `<script>
-(function(){var i=new Image();i.src='https://nineamleads-api.onrender.com/api/track?p='+encodeURIComponent(window.location.pathname)+'&r='+encodeURIComponent(document.referrer||'')})();
+(function(){var i=new Image();i.src='https://nineamleads-backend.onrender.com/api/track?p='+encodeURIComponent(window.location.pathname)+'&r='+encodeURIComponent(document.referrer||'')})();
 </script>`;
 
 // ===== START SERVER =====
