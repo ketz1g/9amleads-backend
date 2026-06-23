@@ -971,7 +971,7 @@ app.post('/api/ai/generate-image', async (req, res) => {
     const imageQuality = quality || 'standard';
     const https = require('https');
     
-    const data = JSON.stringify({
+    var requestBody = JSON.stringify({
       model: 'dall-e-3',
       prompt: prompt,
       n: 1,
@@ -1005,10 +1005,10 @@ app.post('/api/ai/generate-image', async (req, res) => {
     if (!result || !result.body) return res.status(500).json({ error: lastError || 'No response from OpenAI API' });
     if (result.body.error) return res.status(400).json({ error: result.body.error.message || 'OpenAI API error' });
 
-    const data = result.body.data[0];
+    var imageData = result.body.data[0];
     // GPT-Image returns b64_json, DALL-E returns url
-    if (data.url) return res.json({ url: data.url, revised_prompt: data.revised_prompt || null });
-    if (data.b64_json) return res.json({ url: 'data:image/png;base64,' + data.b64_json, revised_prompt: data.revised_prompt || null });
+    if (imageData.url) return res.json({ url: imageData.url, revised_prompt: imageData.revised_prompt || null });
+    if (imageData.b64_json) return res.json({ url: 'data:image/png;base64,' + imageData.b64_json, revised_prompt: imageData.revised_prompt || null });
     res.json({ url: null, error: 'Unexpected response format' });
   } catch (e) {
     res.status(500).json({ error: e.message });
