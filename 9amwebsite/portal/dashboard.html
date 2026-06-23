@@ -188,6 +188,80 @@ footer a{color:var(--primary);text-decoration:none}
   </div>
 </div>
 
+<!-- LEAD FILTERS -->
+<div class="card" id="lead-filters-section">
+  <div class="card-header">
+    <div class="card-title"><i class="fas fa-sliders-h" style="color:var(--primary)"></i> Lead Filters</div>
+  </div>
+  <div id="lead-filters-body">
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Configure optional filters to refine which leads you receive. Only applies to new leads after saving.</p>
+    <div id="lead-filters-display" style="font-size:12px;color:var(--text2);margin-bottom:12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:12px">Loading filter configuration...</div>
+    <div id="lead-filters-editor" style="display:none">
+      <div id="dashboard-filter-moving" class="dashboard-filter-panel">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Min Bedrooms</label>
+            <select id="df-moving-minbeds" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5+</option></select></div>
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Max Bedrooms</label>
+            <select id="df-moving-maxbeds" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6+</option></select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Property Type</label>
+            <select id="df-moving-proptype" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="house">House</option><option value="flat">Flat</option><option value="bungalow">Bungalow</option></select></div>
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Max Property Value</label>
+            <select id="df-moving-maxprice" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="200000">£200k</option><option value="350000">£350k</option><option value="500000">£500k</option><option value="750000">£750k</option><option value="1000000">£1M</option></select></div>
+        </div>
+        <div style="margin-top:8px"><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Lead Status</label>
+          <div style="display:flex;gap:8px"><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="df-moving-status-sstc" checked style="accent-color:var(--primary)"> SSTC</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="df-moving-status-offer" checked style="accent-color:var(--primary)"> Under Offer</label></div>
+        </div>
+      </div>
+      <div id="dashboard-filter-probate" class="dashboard-filter-panel" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Min Estate Value</label>
+            <select id="df-probate-minvalue" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="50000">£50k</option><option value="100000">£100k</option><option value="250000">£250k</option><option value="500000">£500k</option><option value="1000000">£1M</option></select></div>
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Property Included</label>
+            <select id="df-probate-property" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="yes">Has Property</option><option value="no">No Property</option></select></div>
+        </div>
+      </div>
+      <div id="dashboard-filter-newbusiness" class="dashboard-filter-panel" style="display:none">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Industry Categories</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="tech_software" checked style="accent-color:#06b6d4"> Tech & Software</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="construction" checked style="accent-color:#06b6d4"> Construction</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="retail" checked style="accent-color:#06b6d4"> Retail</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="hospitality" checked style="accent-color:#06b6d4"> Hospitality</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="healthcare" checked style="accent-color:#06b6d4"> Healthcare</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="professional_services" checked style="accent-color:#06b6d4"> Prof Services</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="financial" checked style="accent-color:#06b6d4"> Financial</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="creative" checked style="accent-color:#06b6d4"> Creative</label>
+        </div>
+      </div>
+      <div id="dashboard-filter-planning" class="dashboard-filter-panel" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Application Type</label>
+            <select id="df-planning-apptype" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="householder">Householder</option><option value="full">Full Planning</option><option value="outline">Outline</option><option value="lawful">Lawful Dev</option><option value="listed">Listed Building</option></select></div>
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Max Project Value</label>
+            <select id="df-planning-maxvalue" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="50000">£50k</option><option value="100000">£100k</option><option value="250000">£250k</option><option value="500000">£500k</option><option value="1000000">£1M</option></select></div>
+        </div>
+      </div>
+      <div id="dashboard-filter-tenders" class="dashboard-filter-panel" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Min Contract Value</label>
+            <select id="df-tenders-minvalue" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="10000">£10k</option><option value="50000">£50k</option><option value="100000">£100k</option><option value="500000">£500k</option></select></div>
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Keywords</label>
+            <input type="text" id="df-tenders-keywords" placeholder="construction, IT, cleaning..." style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"></div>
+        </div>
+        <p style="font-size:10px;color:var(--muted2);margin-top:6px">Comma separated. Leave blank for all tenders.</p>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-primary btn-sm" onclick="saveLeadFilters()"><i class="fas fa-save"></i> Save Filters</button>
+        <button class="btn btn-outline btn-sm" onclick="toggleFilterEditor()"><i class="fas fa-times"></i> Cancel</button>
+      </div>
+      <div id="lead-filters-msg" style="margin-top:8px;font-size:12px;display:none"></div>
+    </div>
+    <button class="btn btn-outline btn-sm" id="edit-filters-btn" onclick="toggleFilterEditor()"><i class="fas fa-pen"></i> Edit Filters</button>
+  </div>
+</div>
+
 <!-- CRM INTEGRATION -->
 <div class="card" id="crmSection">
 <div class="card-header"><div class="card-title"><i class="fas fa-plug"></i> CRM Integration</div></div>
@@ -834,6 +908,146 @@ async function loadCrmUrl() {
   if (data && data.crm_webhook_url) { document.getElementById('crmUrl').value = data.crm_webhook_url; }
 }
 
+// ===== LEAD FILTERS (Dashboard) =====
+let filterEditing = false;
+let currentFilters = null;
+
+async function loadLeadFilters() {
+  const data = await apiFetch('/api/auth/me');
+  if (!data) return;
+  const filterStr = data.biz_field2 || '';
+  const display = document.getElementById('lead-filters-display');
+  if (!filterStr) {
+    display.innerHTML = '<span style="color:var(--muted2)">No filters configured. <a href="#" onclick="toggleFilterEditor();return false" style="color:var(--primary);text-decoration:underline">Set up filters</a> to refine your leads.</span>';
+    return;
+  }
+  try {
+    currentFilters = JSON.parse(filterStr);
+    const product = currentFilters.product || 'moving';
+    display.innerHTML = renderFilterSummary(currentFilters, product);
+    // Populate editor fields
+    populateFilterEditor(currentFilters, product);
+  } catch {
+    display.innerHTML = '<span style="color:var(--muted2)">Filter configuration unavailable.</span>';
+  }
+}
+
+function renderFilterSummary(filters, product) {
+  const lines = [];
+  if (product === 'moving') {
+    if (filters.minBedrooms) lines.push('Min bedrooms: ' + filters.minBedrooms + '+');
+    if (filters.maxBedrooms) lines.push('Max bedrooms: ' + filters.maxBedrooms);
+    if (filters.propertyType) lines.push('Property type: ' + filters.propertyType);
+    if (filters.maxPrice) lines.push('Max value: £' + Number(filters.maxPrice).toLocaleString());
+    const statuses = [];
+    if (filters.statusSSTC !== false) statuses.push('SSTC');
+    if (filters.statusOffer !== false) statuses.push('Under Offer');
+    lines.push('Statuses: ' + (statuses.length ? statuses.join(', ') : 'None'));
+  } else if (product === 'probate') {
+    if (filters.minEstateValue) lines.push('Min estate: £' + Number(filters.minEstateValue).toLocaleString());
+    if (filters.hasProperty) lines.push('Property: ' + filters.hasProperty);
+  } else if (product === 'newbusiness') {
+    const sics = filters.sicCodes || [];
+    const labels = { tech_software: 'Tech', construction: 'Construction', retail: 'Retail', hospitality: 'Hospitality', healthcare: 'Healthcare', professional_services: 'Prof Services', financial: 'Financial', creative: 'Creative' };
+    lines.push('Industries: ' + (sics.length ? sics.map(s => labels[s] || s).join(', ') : 'All'));
+  } else if (product === 'planning') {
+    if (filters.applicationType) lines.push('App type: ' + filters.applicationType);
+    if (filters.maxValue) lines.push('Max value: £' + Number(filters.maxValue).toLocaleString());
+  } else if (product === 'tenders') {
+    if (filters.minValue) lines.push('Min contract: £' + Number(filters.minValue).toLocaleString());
+    if (filters.keywords) lines.push('Keywords: ' + filters.keywords);
+  }
+  return '<span style="color:var(--success)">Active filters:</span> ' + (lines.length ? lines.join(' &middot; ') : 'No specific filters') +
+    ' <a href="#" onclick="toggleFilterEditor();return false" style="color:var(--primary);text-decoration:underline;margin-left:6px">Edit</a>';
+}
+
+function populateFilterEditor(filters, product) {
+  if (product === 'moving') {
+    setSelect('df-moving-minbeds', filters.minBedrooms || '');
+    setSelect('df-moving-maxbeds', filters.maxBedrooms || '');
+    setSelect('df-moving-proptype', filters.propertyType || '');
+    setSelect('df-moving-maxprice', filters.maxPrice || '');
+    setChecked('df-moving-status-sstc', filters.statusSSTC !== false);
+    setChecked('df-moving-status-offer', filters.statusOffer !== false);
+  } else if (product === 'probate') {
+    setSelect('df-probate-minvalue', filters.minEstateValue || '');
+    setSelect('df-probate-property', filters.hasProperty || '');
+  } else if (product === 'newbusiness') {
+    const sics = filters.sicCodes || [];
+    document.querySelectorAll('.df-nb-sic').forEach(cb => { cb.checked = sics.includes(cb.value); });
+  } else if (product === 'planning') {
+    setSelect('df-planning-apptype', filters.applicationType || '');
+    setSelect('df-planning-maxvalue', filters.maxValue || '');
+  } else if (product === 'tenders') {
+    setSelect('df-tenders-minvalue', filters.minValue || '');
+    document.getElementById('df-tenders-keywords').value = filters.keywords || '';
+  }
+}
+
+function setSelect(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
+function setChecked(id, val) { const el = document.getElementById(id); if (el) el.checked = val; }
+
+function toggleFilterEditor() {
+  filterEditing = !filterEditing;
+  document.getElementById('lead-filters-editor').style.display = filterEditing ? 'block' : 'none';
+  document.getElementById('lead-filters-display').style.display = filterEditing ? 'none' : 'block';
+  document.getElementById('edit-filters-btn').innerHTML = filterEditing ? '<i class="fas fa-times"></i> Cancel' : '<i class="fas fa-pen"></i> Edit Filters';
+  if (filterEditing && currentFilters) {
+    const product = currentFilters.product || getSession()?.product || 'moving';
+    document.querySelectorAll('.dashboard-filter-panel').forEach(el => el.style.display = 'none');
+    const panel = document.getElementById('dashboard-filter-' + product);
+    if (panel) panel.style.display = 'block';
+    populateFilterEditor(currentFilters, product);
+  }
+}
+
+async function saveLeadFilters() {
+  const msg = document.getElementById('lead-filters-msg');
+  msg.style.display = 'none';
+  const product = currentFilters?.product || getSession()?.product || 'moving';
+  const filters = { product: product };
+
+  if (product === 'moving') {
+    filters.minBedrooms = document.getElementById('df-moving-minbeds').value;
+    filters.maxBedrooms = document.getElementById('df-moving-maxbeds').value;
+    filters.propertyType = document.getElementById('df-moving-proptype').value;
+    filters.maxPrice = document.getElementById('df-moving-maxprice').value;
+    filters.statusSSTC = document.getElementById('df-moving-status-sstc').checked;
+    filters.statusOffer = document.getElementById('df-moving-status-offer').checked;
+  } else if (product === 'probate') {
+    filters.minEstateValue = document.getElementById('df-probate-minvalue').value;
+    filters.hasProperty = document.getElementById('df-probate-property').value;
+  } else if (product === 'newbusiness') {
+    filters.sicCodes = Array.from(document.querySelectorAll('.df-nb-sic:checked')).map(cb => cb.value);
+  } else if (product === 'planning') {
+    filters.applicationType = document.getElementById('df-planning-apptype').value;
+    filters.maxValue = document.getElementById('df-planning-maxvalue').value;
+  } else if (product === 'tenders') {
+    filters.minValue = document.getElementById('df-tenders-minvalue').value;
+    filters.keywords = document.getElementById('df-tenders-keywords').value;
+  }
+
+  const data = await apiFetch('/api/settings/lead-filters', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ leadFilters: JSON.stringify(filters) })
+  });
+
+  if (data && data.success) {
+    msg.style.color = 'var(--success)';
+    msg.textContent = 'Lead filters saved!';
+    msg.style.display = 'block';
+    currentFilters = filters;
+    document.getElementById('lead-filters-display').innerHTML = renderFilterSummary(filters, product);
+    setTimeout(() => { msg.style.display = 'none'; toggleFilterEditor(); }, 2000);
+  } else {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = data?.error || 'Failed to save.';
+    msg.style.display = 'block';
+  }
+}
+
+loadLeadFilters();
 document.addEventListener('click', function(e) {
   const cal = document.getElementById('calPopup');
   if (!e.target.closest('.cal-popup') && !e.target.closest('[onclick*="toggleCal"]') && !e.target.closest('[onclick*="buildCal"]')) cal.classList.remove('show');

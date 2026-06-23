@@ -100,26 +100,99 @@ function normaliseDistrict(pc) {
   return extractDistrict(pc);
 }
 
-// Check if a lead's location matches a customer's target area
-function leadMatchesTarget(lead, targetAreas) {
-  if (!targetAreas || targetAreas.length === 0) return true; // no filter = match all
-
-  // Check address text first (contains city names like "London", "Manchester"),
-  // then fall back to postcode for exact prefix matching.
-  const leadLocation = lead.address || lead.location || lead.name || lead.postcode || '';
-  const leadNorm = normalisePostcode(leadLocation);
-
-  for (const area of targetAreas) {
-    const areaNorm = normalisePostcode(area);
-    if (!areaNorm) continue;
-    // Match if lead postcode starts with target area prefix
-    if (leadNorm.startsWith(areaNorm) || areaNorm.startsWith(leadNorm)) return true;
-    // Also match if address contains the area name
-    if (leadLocation.toLowerCase().includes(area.toLowerCase())) return true;
-    // Also match if lead has a city field that matches the area
-    if (lead.city && lead.city.toLowerCase() === area.toLowerCase()) return true;
+// Check if a lead's location matches a customer's target area (with filter tiering)
+function leadMatchesTarget(lead, customer) {
+  const targets = JSON.parse(customer.target_areas || '[]');
+  // Area match (existing logic)
+  let areaMatch = false;
+  if (targets.length > 0) {
+    const leadLocation = lead.address || lead.location || lead.name || lead.postcode || '';
+    const leadNorm = normalisePostcode(leadLocation);
+    for (const area of targets) {
+      const areaNorm = normalisePostcode(area);
+      if (!areaNorm) continue;
+      if (leadNorm.startsWith(areaNorm) || areaNorm.startsWith(leadNorm)) { areaMatch = true; break; }
+      if (leadLocation.toLowerCase().includes(area.toLowerCase())) { areaMatch = true; break; }
+      if (lead.city && lead.city.toLowerCase() === area.toLowerCase()) { areaMatch = true; break; }
+    }
+    if (!areaMatch) return { match: false, tier: 0 };
+  } else {
+    areaMatch = true;
   }
-  return false;
+
+  // Filter matching (new)
+  const filterStr = customer.biz_field2 || '';
+  let tier = 1;
+  try {
+    const filters = JSON.parse(filterStr);
+    if (filters && filters.product) {
+      if (filters.product === 'moving') {
+        const beds = parseInt(lead.bedrooms) || 0;
+        const minBeds = parseInt(filters.minBedrooms) || 0;
+        const maxBeds = parseInt(filters.maxBedrooms) || 99;
+        if (minBeds > 0 && beds < minBeds) tier = 2;
+        if (maxBeds < 99 && beds > maxBeds) tier = 2;
+        const price = parseInt(lead.price) || 0;
+        const maxPrice = parseInt(filters.maxPrice) || 0;
+        if (maxPrice > 0 && price > maxPrice) tier = 2;
+        if (filters.propertyType) {
+          const pt = (lead.propertyType || '').toLowerCase();
+          const ft = filters.propertyType.toLowerCase();
+          if (pt !== ft && !pt.includes(ft)) tier = 2;
+        }
+        const status = (lead.status || '').toLowerCase();
+        const sstcEnabled = filters.statusSSTC !== false;
+        const offerEnabled = filters.statusOffer !== false;
+        const isSstc = status.includes('sstc') || status.includes('sold');
+        const isOffer = status.includes('offer');
+        if ((isSstc && !sstcEnabled) || (isOffer && !offerEnabled)) tier = 2;
+      }
+      if (filters.product === 'probate') {
+        const estateVal = parseInt(lead.estateValue) || 0;
+        const minVal = parseInt(filters.minEstateValue) || 0;
+        if (minVal > 0 && estateVal < minVal) tier = 2;
+        if (filters.hasProperty === 'yes' && !lead.hasProperty) tier = 2;
+        if (filters.hasProperty === 'no' && lead.hasProperty) tier = 2;
+      }
+      if (filters.product === 'newbusiness') {
+        const sicCodes = filters.sicCodes || [];
+        const leadSic = (lead.sicCode || lead.sic_codes || '').toString().toLowerCase();
+        if (sicCodes.length > 0) {
+          const matched = sicCodes.some(code => {
+            const sicMappings = { tech_software: ['62','63','58','61','95'], construction: ['41','42','43','71'], retail: ['47','46','45'], hospitality: ['55','56','93'], healthcare: ['86','87','88'], professional_services: ['69','70','73','74','78','80','82'], financial: ['64','65','66'], creative: ['59','60','90','91'] };
+            const codes = sicMappings[code] || [];
+            return codes.some(c => leadSic.includes(c));
+          });
+          if (!matched) tier = 2;
+        }
+      }
+      if (filters.product === 'planning') {
+        const appType = (lead.applicationType || '').toLowerCase();
+        const filterAppType = (filters.applicationType || '').toLowerCase();
+        if (filterAppType && !appType.includes(filterAppType)) tier = 2;
+        const val = parseInt(lead.estimatedValue) || 0;
+        const maxVal = parseInt(filters.maxValue) || 0;
+        if (maxVal > 0 && val > maxVal) tier = 2;
+      }
+      if (filters.product === 'tenders') {
+        const val = parseInt(lead.contractValue) || 0;
+        const minVal = parseInt(filters.minValue) || 0;
+        if (minVal > 0 && val < minVal) tier = 2;
+        if (filters.keywords) {
+          const keywords = filters.keywords.toLowerCase().split(',').map(k => k.trim()).filter(k => k);
+          if (keywords.length > 0) {
+            const title = (lead.title || '').toLowerCase();
+            const desc = (lead.description || '').toLowerCase();
+            const combined = title + ' ' + desc;
+            const matched = keywords.some(k => combined.includes(k));
+            if (!matched) tier = 2;
+          }
+        }
+      }
+    }
+  } catch (e) {}
+
+  return { match: true, tier: tier };
 }
 
 // Extract lead data in a standardised format from any scraper output
@@ -304,16 +377,12 @@ async function distributeProduct(product) {
 
     // Check exclusivity: if a postcode is claimed exclusively, restrict to that customer
     const exclusiveClaimant = getExclusiveClaimant(rawLead, product);
-    const matchedCustomers = [];
+    const matchedCustomers = []; // { customer, tier }
     for (const customer of activeCustomers) {
       if (exclusiveClaimant && customer.id !== exclusiveClaimant) continue;
-
-      const targetAreas = (() => {
-        try { return JSON.parse(customer.target_areas || '[]'); }
-        catch { return []; }
-      })();
-      if (!targetAreas.length || leadMatchesTarget(rawLead, targetAreas)) {
-        matchedCustomers.push(customer);
+      const result = leadMatchesTarget(rawLead, customer);
+      if (result.match) {
+        matchedCustomers.push({ customer, tier: result.tier });
       }
     }
 
@@ -321,44 +390,64 @@ async function distributeProduct(product) {
     leadAssignments.push({ lead: rawLead, normalised, addrKey, customers: matchedCustomers });
   }
 
-  // Phase 2: Round-robin distribution (exclusivity already applied above)
+  // Phase 2: Tiered round-robin distribution (3 passes)
   const customerUsage = {};
   const customerLabels = {};
+  const customerLimits = {};
   activeCustomers.forEach(c => {
     customerUsage[c.id] = 0;
     customerLabels[c.id] = c.company || c.email;
+    customerLimits[c.id] = c.leads_per_day || 5;
   });
 
   // Sort leads with fewest matching customers first (scarcer leads go first)
   leadAssignments.sort((a, b) => a.customers.length - b.customers.length);
 
-  for (const assignment of leadAssignments) {
-    const { lead: rawLead, normalised, addrKey, customers } = assignment;
+  function assignLead(leadData, rawLeadData, addrKeyData, tierFilter) {
+    const { lead: rl, normalised: nl, addrKey: ak, customers } = leadData;
+    // Filter customers by tier, then sort by usage
+    const eligible = customers.filter(mc => mc.tier <= tierFilter);
+    eligible.sort((a, b) => customerUsage[a.customer.id] - customerUsage[b.customer.id]);
 
-    // Sort customers by usage (least served first) for fair rotation
-    customers.sort((a, b) => customerUsage[a.id] - customerUsage[b.id]);
-
-    for (const customer of customers) {
-      const limit = customer.leads_per_day || 5;
-      if (customerUsage[customer.id] >= limit) continue;
-
+    for (const mc of eligible) {
+      const c = mc.customer;
+      if (customerUsage[c.id] >= customerLimits[c.id]) continue;
       const leadRecord = {
         id: uuidv4(),
-        customer_id: customer.id,
+        customer_id: c.id,
         product: product,
-        data: JSON.stringify(normaliseLead(rawLead, product, customer.id)),
+        data: JSON.stringify(normaliseLead(rl, product, c.id)),
         status: 'new',
         delivered: 0,
         created_at: now,
         delivered_at: null,
       };
-
       db.leads.push(leadRecord);
-      existingAddresses.add(addrKey);
-      customerUsage[customer.id]++;
+      existingAddresses.add(ak);
+      customerUsage[c.id]++;
       inserted++;
-      break;
+      return true;
     }
+    return false;
+  }
+
+  // Pass 1: Only Tier 1 (perfect filter matches)
+  const unassigned = [];
+  for (const assignment of leadAssignments) {
+    const assigned = assignLead(assignment, null, null, 1);
+    if (!assigned) unassigned.push(assignment);
+  }
+
+  // Pass 2: Tier 1 + Tier 2 for customers still below quota
+  const unassigned2 = [];
+  for (const assignment of unassigned) {
+    const assigned = assignLead(assignment, null, null, 2);
+    if (!assigned) unassigned2.push(assignment);
+  }
+
+  // Pass 3: Any remaining lead to any customer below quota (Tier 1 + Tier 2)
+  for (const assignment of unassigned2) {
+    assignLead(assignment, null, null, 2);
   }
 
   saveJSON(DB_FILE, db);

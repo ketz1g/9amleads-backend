@@ -410,7 +410,7 @@ app.get(/^\/(?!api\/).*$/, (req, res) => {
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { company, name, email, phone, password, product, targetAreas, bizField2, bizField3, source, marketingConsent, crmWebhookUrl } = req.body;
+    const { company, name, email, phone, password, product, targetAreas, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl } = req.body;
 
     if (!company || !email || !password) {
       return res.status(400).json({ error: 'Company, email and password are required' });
@@ -454,7 +454,7 @@ app.post('/api/auth/signup', async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, email.toLowerCase(), company, name || '', phone || '', password_hash,
       product, productInfo.lead_type, productInfo.business_type,
-      JSON.stringify(targetAreas || []), bizField2 || '', bizField3 || '',
+      JSON.stringify(targetAreas || []), leadFilters || bizField2 || '', bizField3 || '',
       source || 'direct', 'free_trial', trial_ends, marketingConsent ? 1 : 0,
       new Date().toISOString(), '0', crmWebhookUrl || ''
     );
@@ -887,6 +887,18 @@ app.put('/api/settings', authMiddleware, (req, res) => {
   }
 
   res.json({ success: true });
+});
+
+// PUT /api/settings/lead-filters — Update lead filters
+app.put('/api/settings/lead-filters', authMiddleware, (req, res) => {
+  const { leadFilters } = req.body;
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  if (!customer) return res.status(404).json({ error: 'User not found' });
+
+  db.prepare('UPDATE customers SET biz_field2 = ? WHERE id = ?').run(leadFilters || '', req.user.id);
+  saveDb();
+
+  res.json({ success: true, biz_field2: leadFilters || '' });
 });
 
 // ===== CRM WEBHOOK ENDPOINTS =====
