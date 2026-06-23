@@ -1370,7 +1370,7 @@ function httpsPost(url, data) {
 // ===== MAIN SCHEDULER: Daily at 9:00 AM (sharp) =====
 // Lead distributor must run before this (scrapers → match → insert → email)
 cron.schedule('0 9 * * *', async () => {
-  console.log('[SCHEDULER] Starting daily lead delivery...');
+  console.log('[SCHEDULER] Starting daily lead delivery...'); console.log('deploy-2026-06-23-crm-live');
 
   // Sunday check — no lead delivery on Sundays
   const dayOfWeek = new Date().getDay();
@@ -2385,6 +2385,7 @@ app.listen(PORT, () => {
   console.log('  GET  /api/distribute/status - Distribution status');
   console.log('========================================\n');
 });
+
 
 
 
