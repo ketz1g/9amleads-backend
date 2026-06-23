@@ -1,0 +1,67 @@
+{
+  "missionControl": {
+    "name": "Mission Control",
+    "version": "2.0.0",
+    "created": "2026-05-02",
+    "lastModified": "2026-05-02"
+  },
+  "global": {
+    "totalLeads": 0,
+    "totalCustomers": 0,
+    "totalTasks": 0,
+    "totalFollowUps": 0,
+    "totalCampaigns": 0,
+    "activeAgents": 0
+  },
+  "businesses": {
+    "vida-motor": {
+      "name": "Vida Motor",
+      "status": "active",
+      "leads": 0,
+      "tasks": 0,
+      "health": "healthy"
+    },
+    "vidalisting": {
+      "name": "VidaListing",
+      "status": "active",
+      "leads": 0,
+      "tasks": 0,
+      "health": "healthy"
+    },
+    "the-moving-school": {
+      "name": "The Moving School",
+      "status": "active",
+      "leads": 0,
+      "tasks": 0,
+      "health": "healthy"
+    }
+  },
+  "safety": {
+    "autoSendEmails": false,
+    "autoAddToBrevo": false,
+    "approvalRequired": true,
+    "doNotContact": []
+  },
+  "activityLog": [],
+  "settings": {
+    "dailyLeadLimit": 500,
+    "defaultLeadLimit": 500
+  },
+  "nextBestActions": [
+    {
+      "type": "review",
+      "priority": "high",
+      "description": "Review new leads needing approval"
+    },
+    {
+      "type": "followup",
+      "priority": "high",
+      "description": "Follow up with leads due today"
+    },
+    {
+      "type": "contact",
+      "priority": "medium",
+      "description": "Contact high-score leads"
+    }
+  ]
+}

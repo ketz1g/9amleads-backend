@@ -1,0 +1,67 @@
+# MovingLeadsDaily — Full Launch Checklist
+
+## ⚡ TO DO TODAY
+- [ ] Set up Gmail: `node email_campaign.js --setup`
+- [ ] Import CSV contacts: copy file as `prospects.csv` → `node email_campaign.js --import prospects.csv`
+- [ ] Send first batch: `node email_campaign.js --run`
+
+## 💳 PAYMENTS (Stripe)
+- [ ] Create Stripe account: https://stripe.com
+- [ ] Get API keys from Stripe Dashboard
+- [ ] Enter keys in Mission Control → Settings → Stripe Payments
+- [ ] Run: `node stripe_handler.js --setup` (creates products for all 4 businesses)
+- [ ] Test: `node stripe_handler.js --checkout movingleadsdaily mld-pro test@email.com`
+
+## 📧 EMAIL (Brevo)
+- [ ] Brevo API keys already configured ✅
+- [ ] Verify Brevo sender email is verified
+- [ ] Create nurture campaigns for each business in Brevo
+
+## 📡 AUTOMATION
+- [ ] Run: right-click `setup-schedule.ps1` → Run with PowerShell (schedules 6am daily)
+- [ ] Or manually: `Start-ScheduledTask "MovingLeadsDaily Daily Run"`
+- [ ] Verify: `node multi_lead_engine.js --all` (runs all 4 businesses)
+
+## 🏢 BUSINESS SETUP
+- [ ] Register domain: movingleadsdaily.co.uk
+- [ ] Register domains for other 3 businesses
+- [ ] Set up business bank account
+- [ ] Write privacy policy + terms of service
+- [ ] Set up business email (hello@movingleadsdaily.co.uk)
+
+## 🌐 PUBLIC LAUNCH
+- [ ] Push to GitHub Pages: `git remote add origin https://github.com/YOU/movingleadsdaily.git && git push -u origin master`
+- [ ] Or deploy via Vercel/Netlify (drag the mission control folder)
+- [ ] Point domains to hosting
+- [ ] Test all 4 landing pages are live
+
+## 📱 SOCIAL MEDIA
+- [ ] Create Twitter/X account: @MovingLeadsDaily
+- [ ] Create Facebook page
+- [ ] Create LinkedIn page
+- [ ] Generate first 10 posts using Mission Control Social Generator
+
+## 👥 FIRST CUSTOMERS (Cold Outreach)
+- [ ] Scrape removal companies: MC → MovingLeadsDaily → Prospects → Scrape Google Maps
+- [ ] NBA prospects: search LinkedIn for "accountants" + "web designers" in your area
+- [ ] Planning prospects: search Checkatrade/MyBuilder for local tradespeople
+- [ ] Probate prospects: search Law Society directory for local solicitors
+
+## 💰 REVENUE TARGETS
+| # Clients | MovingLeadsDaily | NBA | Planning | Probate | Total/mo |
+|-----------|-----------------|-----|----------|---------|----------|
+| 5 | £735 | £485 | £735 | £1,235 | £3,190 |
+| 10 | £1,470 | £970 | £1,470 | £2,470 | £6,380 |
+| 20 | £2,940 | £1,940 | £2,940 | £4,940 | £12,760 |
+| 50 | £7,350 | £4,850 | £7,350 | £12,350 | £31,900 |
+
+## 🛠️ BUILT & READY (No Action Needed)
+✅ MovingLeadsDaily — website, scraper, email, CRM, clients, prospects
+✅ New Business Alert — dashboard, clients, scraper, email, landing page
+✅ Planning Permission Leads — dashboard, clients, scraper, email, landing page
+✅ Probate Leads — dashboard, clients, scraper, email, landing page
+✅ Email campaign engine — 12-email sequence via Gmail (free)
+✅ Multi-lead engine — runs all 4 businesses daily
+✅ Cross-data sharing — between MovingLeadsDaily and The Moving School
+✅ ROI calculator, comparison tables, referral program, guarantees
+✅ All premium landing pages with competitor comparisons

@@ -1,0 +1,101 @@
+{
+  "assignments": {
+    "SW1": {
+      "customer_id": "3275665a-06c5-452a-9588-778b67affc37",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:06:14.626Z",
+      "status": "active"
+    },
+    "SW3": {
+      "customer_id": "3275665a-06c5-452a-9588-778b67affc37",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:06:14.626Z",
+      "status": "active"
+    },
+    "B1": {
+      "customer_id": "da8aaebd-6d82-4411-b49f-6dee0c350bd5",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:06:37.398Z",
+      "status": "active"
+    },
+    "B2": {
+      "customer_id": "da8aaebd-6d82-4411-b49f-6dee0c350bd5",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:06:37.398Z",
+      "status": "active"
+    },
+    "B3": {
+      "customer_id": "38397fa3-7ee4-4329-b5f7-abfb57ca0c22",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:07:43.315Z",
+      "status": "active"
+    },
+    "B4": {
+      "customer_id": "38397fa3-7ee4-4329-b5f7-abfb57ca0c22",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:07:43.315Z",
+      "status": "active"
+    },
+    "B5": {
+      "customer_id": "4d8c8f35-d679-41ce-b068-36732c8f1f26",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:08:14.325Z",
+      "status": "active"
+    },
+    "B6": {
+      "customer_id": "4d8c8f35-d679-41ce-b068-36732c8f1f26",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:08:14.325Z",
+      "status": "active"
+    },
+    "B7": {
+      "customer_id": "f9a93987-6f9b-456f-a4a7-fbb2dbe6466b",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:08:27.239Z",
+      "status": "active"
+    },
+    "B8": {
+      "customer_id": "f9a93987-6f9b-456f-a4a7-fbb2dbe6466b",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:08:27.239Z",
+      "status": "active"
+    },
+    "B9": {
+      "customer_id": "1ce1535e-7bdb-4b2b-b2a3-976de5869214",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:08:54.557Z",
+      "status": "active"
+    },
+    "B10": {
+      "customer_id": "1ce1535e-7bdb-4b2b-b2a3-976de5869214",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:08:54.557Z",
+      "status": "active"
+    },
+    "B11": {
+      "customer_id": "40365e9a-5f90-4fce-b731-3885ccc4e75a",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:09:04.278Z",
+      "status": "active"
+    },
+    "B12": {
+      "customer_id": "40365e9a-5f90-4fce-b731-3885ccc4e75a",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:09:04.278Z",
+      "status": "active"
+    },
+    "B13": {
+      "customer_id": "d6bddb71-5d27-4b39-83ae-096faad5470f",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:09:26.684Z",
+      "status": "active"
+    },
+    "B14": {
+      "customer_id": "d6bddb71-5d27-4b39-83ae-096faad5470f",
+      "product": "moving",
+      "assigned_at": "2026-06-22T17:09:26.684Z",
+      "status": "active"
+    }
+  },
+  "_description": "Tracks which postcode districts are claimed by which customers. Key = district code (e.g., 'EN1'), value = { customer_id, product, assigned_at, status }"
+}
