@@ -68,6 +68,106 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div id="pc-availability-msg" style="font-size:11px;color:#8890a8;margin-top:6px;display:none"></div>
 </div>
 
+<!-- Lead Filters -->
+<div id="lead-filters" style="margin-top:16px;padding:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+<div style="width:24px;height:24px;border-radius:5px;background:rgba(14,165,233,0.1);display:flex;align-items:center;justify-content:center;font-size:11px">&#9881;</div>
+<span style="font-size:13px;font-weight:700;color:#e8ebf2">Lead Filters <span style="font-size:10px;font-weight:400;color:#5c6480">(optional - refine the leads you receive)</span></span>
+</div>
+
+<!-- Moving Filters -->
+<div id="filter-moving" class="filter-panel" style="display:block">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Min Bedrooms</label>
+<select id="f-moving-minbeds" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
+<option value="">Any</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5+</option>
+</select></div>
+<div>
+<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Max Bedrooms</label>
+<select id="f-moving-maxbeds" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
+<option value="">Any</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6+</option>
+</select></div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+<div>
+<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Property Type</label>
+<select id="f-moving-proptype" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
+<option value="">Any</option><option value="house">House</option><option value="flat">Flat</option><option value="bungalow">Bungalow</option>
+</select></div>
+<div>
+<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Max Property Value</label>
+<select id="f-moving-maxprice" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
+<option value="">Any</option><option value="200000">£200k</option><option value="350000">£350k</option><option value="500000">£500k</option><option value="750000">£750k</option><option value="1000000">£1M</option>
+</select></div></div>
+<div style="margin-top:8px">
+<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Lead Status</label>
+<div style="display:flex;gap:8px">
+<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#b0b8cc;cursor:pointer"><input type="checkbox" id="f-moving-status-sstc" checked style="accent-color:#0ea5e9"> SSTC</label>
+<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#b0b8cc;cursor:pointer"><input type="checkbox" id="f-moving-status-offer" checked style="accent-color:#0ea5e9"> Under Offer</label>
+</div></div>
+</div>
+
+<!-- Probate Filters -->
+<div id="filter-probate" class="filter-panel" style="display:none">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Min Estate Value</label>
+<select id="f-probate-minvalue" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
+<option value="">Any</option><option value="50000">£50k</option><option value="100000">£100k</option><option value="250000">£250k</option><option value="500000">£500k</option><option value="1000000">£1M</option>
+</select></div>
+<div>
+<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Property Included</label>
+<select id="f-probate-property" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
+<option value="">Any</option><option value="yes">Has Property</option><option value="no">No Property</option>
+</select></div></div>
+</div>
+
+<!-- New Business Filters -->
+<div id="filter-newbusiness" class="filter-panel" style="display:none">
+<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Industry Categories</label>
+<div id="nb-sic-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="tech_software" checked style="accent-color:#06b6d4"> Tech & Software</label>
+<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="construction" checked style="accent-color:#06b6d4"> Construction</label>
+<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="retail" checked style="accent-color:#06b6d4"> Retail</label>
+<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="hospitality" checked style="accent-color:#06b6d4"> Hospitality</label>
+<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="healthcare" checked style="accent-color:#06b6d4"> Healthcare</label>
+<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="professional_services" checked style="accent-color:#06b6d4"> Prof Services</label>
+<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="financial" checked style="accent-color:#06b6d4"> Financial</label>
+<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="creative" checked style="accent-color:#06b6d4"> Creative</label>
+</div>
+</div>
+
+<!-- Planning Filters -->
+<div id="filter-planning" class="filter-panel" style="display:none">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Application Type</label>
+<select id="f-planning-apptype" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
+<option value="">Any</option><option value="householder">Householder</option><option value="full">Full Planning</option><option value="outline">Outline</option><option value="lawful">Lawful Dev</option><option value="listed">Listed Building</option>
+</select></div>
+<div>
+<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Max Project Value</label>
+<select id="f-planning-maxvalue" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
+<option value="">Any</option><option value="50000">£50k</option><option value="100000">£100k</option><option value="250000">£250k</option><option value="500000">£500k</option><option value="1000000">£1M</option>
+</select></div></div>
+</div>
+
+<!-- Tenders Filters -->
+<div id="filter-tenders" class="filter-panel" style="display:none">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Min Contract Value</label>
+<select id="f-tenders-minvalue" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
+<option value="">Any</option><option value="10000">£10k</option><option value="50000">£50k</option><option value="100000">£100k</option><option value="500000">£500k</option>
+</select></div>
+<div>
+<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Keywords</label>
+<input type="text" id="f-tenders-keywords" placeholder="construction, IT, cleaning..." style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
+</div></div>
+<p style="font-size:10px;color:#5c6480;margin-top:6px">Comma separated. Leave blank for all tenders.</p>
+</div>
+</div>
+
 <!-- CRM Integration -->
 <div style="background:linear-gradient(135deg,rgba(14,165,233,0.06),rgba(37,99,235,0.03));border:1px solid rgba(14,165,233,0.12);border-radius:10px;padding:16px 14px;margin-bottom:2px;text-align:left">
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -145,6 +245,39 @@ function loadPostcodes() {
       updatePcDisplay();
     })
     .catch(() => {});
+}
+
+// ===== LEAD FILTERS =====
+function showLeadFilters() {
+  const product = document.getElementById('signup-product').value;
+  document.querySelectorAll('.filter-panel').forEach(el => el.style.display = 'none');
+  const panel = document.getElementById('filter-' + product);
+  if (panel) panel.style.display = 'block';
+}
+
+function getLeadFilters() {
+  const product = document.getElementById('signup-product').value;
+  const filters = { product: product };
+  if (product === 'moving') {
+    filters.minBedrooms = document.getElementById('f-moving-minbeds').value;
+    filters.maxBedrooms = document.getElementById('f-moving-maxbeds').value;
+    filters.propertyType = document.getElementById('f-moving-proptype').value;
+    filters.maxPrice = document.getElementById('f-moving-maxprice').value;
+    filters.statusSSTC = document.getElementById('f-moving-status-sstc').checked;
+    filters.statusOffer = document.getElementById('f-moving-status-offer').checked;
+  } else if (product === 'probate') {
+    filters.minEstateValue = document.getElementById('f-probate-minvalue').value;
+    filters.hasProperty = document.getElementById('f-probate-property').value;
+  } else if (product === 'newbusiness') {
+    filters.sicCodes = Array.from(document.querySelectorAll('.nb-sic:checked')).map(cb => cb.value);
+  } else if (product === 'planning') {
+    filters.applicationType = document.getElementById('f-planning-apptype').value;
+    filters.maxValue = document.getElementById('f-planning-maxvalue').value;
+  } else if (product === 'tenders') {
+    filters.minValue = document.getElementById('f-tenders-minvalue').value;
+    filters.keywords = document.getElementById('f-tenders-keywords').value;
+  }
+  return filters;
 }
 
 function getAllDistricts() {
@@ -236,7 +369,7 @@ function updatePcDisplay() {
   tags.innerHTML = selectedPostcodes.map(s => '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:6px;font-size:12px;color:#0ea5e9;font-weight:600">' + s.code + ' ' + s.name + '<span onclick="removePc(\'' + s.code + '\')" style="cursor:pointer;opacity:0.6;font-size:10px;margin-left:2px">\u2715</span></span>').join('');
   input.placeholder = selectedPostcodes.length >= postcodeLimit ? 'Max reached' : 'Search districts like EN1, SW1...';
 }
-document.getElementById('signup-product').addEventListener('change', loadPostcodes);
+document.getElementById('signup-product').addEventListener('change', function() { loadPostcodes(); showLeadFilters(); });
 
 // ===== CRM TEST ON SIGNUP =====
 function testCrmOnSignup() {
@@ -266,7 +399,8 @@ function signup() {
   if (!name || !company || !email || !password) { error.textContent = 'Please fill in all fields'; error.style.display = 'block'; return; }
   if (password.length < 8) { error.textContent = 'Password must be at least 8 characters'; error.style.display = 'block'; return; }
   if (selectedPostcodes.length === 0) { error.textContent = 'Please select at least one postcode district'; error.style.display = 'block'; return; }
-  fetch(API + '/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company, name, email, phone: '', password, product, targetAreas: selectedPostcodes.map(s => s.code), source: 'web', marketingConsent: consent, crmWebhookUrl: document.getElementById('signup-crm').value.trim() }) })
+  const leadFilters = getLeadFilters();
+  fetch(API + '/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company, name, email, phone: '', password, product, targetAreas: selectedPostcodes.map(s => s.code), leadFilters: JSON.stringify(leadFilters), source: 'web', marketingConsent: consent, crmWebhookUrl: document.getElementById('signup-crm').value.trim() }) })
     .then(r => r.json()).then(d => {
       if (d.token) { localStorage.setItem('mld_portal_session', JSON.stringify({ token: d.token, clientId: d.customer?.id || email, name: d.customer?.name || name, plan: d.customer?.plan || 'free_trial', email, product: d.customer?.product || 'moving' })); success.style.display = 'block'; setTimeout(() => window.location.href = '/portal/dashboard.html', 1000); }
       else { error.textContent = d.error || 'Signup failed. Please try again.'; error.style.display = 'block'; }
