@@ -22,32 +22,33 @@ function loadData() {
 }
 function saveData(d) { fs.writeFileSync(DATA_FILE, JSON.stringify(d, null, 2)); }
 
-// Product definitions for all 5 businesses
-const PRODUCTS = {
-  'moving': [
-    { id: 'moving-starter', name: 'Moving Leads Starter', price: 9900, interval: 'month', leads: 5 },
-    { id: 'moving-pro', name: 'Moving Leads Growth', price: 24900, interval: 'month', leads: 15 },
-    { id: 'moving-enterprise', name: 'Moving Leads Pro', price: 49900, interval: 'month', leads: 40 }
+// Product definitions — loaded from central pricing config
+// Prices vary per product. Plan names: Starter, Growth, Power
+const PRICING_DATA = {
+  moving: [
+    { id: 'mov-starter', name: 'Moving Starter',     price: 2900,  interval: 'week', leadsLabel: '1-5 estimated leads/day' },
+    { id: 'mov-growth',  name: 'Moving Growth',      price: 5900,  interval: 'week', leadsLabel: '5-15 estimated leads/day' },
+    { id: 'mov-power',   name: 'Moving Power',       price: 9900,  interval: 'week', leadsLabel: '15-35 estimated leads/day' }
   ],
-  'probate': [
-    { id: 'prob-essential', name: 'Probate Leads Essential', price: 9700, interval: 'month', leads: 10 },
-    { id: 'prob-pro', name: 'Probate Leads Professional', price: 19700, interval: 'month', leads: 30 },
-    { id: 'prob-enterprise', name: 'Probate Leads Enterprise', price: 34700, interval: 'month', leads: 100 }
+  probate: [
+    { id: 'prob-starter', name: 'Probate Starter',   price: 3900,  interval: 'week', leadsLabel: '0-2 estimated leads/day' },
+    { id: 'prob-growth',  name: 'Probate Growth',    price: 7900,  interval: 'week', leadsLabel: '2-6 estimated leads/day' },
+    { id: 'prob-power',   name: 'Probate Power',     price: 14900, interval: 'week', leadsLabel: '5-15 estimated leads/day' }
   ],
-  'newbusiness': [
-    { id: 'nb-essential', name: 'New Business Essential', price: 4900, interval: 'month', leads: 50 },
-    { id: 'nb-pro', name: 'New Business Pro', price: 9700, interval: 'month', leads: 100 },
-    { id: 'nb-enterprise', name: 'New Business Enterprise', price: 19700, interval: 'month', leads: 300 }
+  newbusiness: [
+    { id: 'nb-starter', name: 'New Business Starter', price: 1900, interval: 'week', leadsLabel: '1-5 estimated leads/day' },
+    { id: 'nb-growth',  name: 'New Business Growth',  price: 3900, interval: 'week', leadsLabel: '5-15 estimated leads/day' },
+    { id: 'nb-power',   name: 'New Business Power',   price: 7900, interval: 'week', leadsLabel: '15-40 estimated leads/day' }
   ],
-  'planning': [
-    { id: 'plan-essential', name: 'Planning Permission Essential', price: 7900, interval: 'month', leads: 10 },
-    { id: 'plan-pro', name: 'Planning Permission Professional', price: 14700, interval: 'month', leads: 30 },
-    { id: 'plan-enterprise', name: 'Planning Permission Enterprise', price: 29700, interval: 'month', leads: 100 }
+  planning: [
+    { id: 'plan-starter', name: 'Planning Starter', price: 2900, interval: 'week', leadsLabel: '1-3 estimated leads/day' },
+    { id: 'plan-growth',  name: 'Planning Growth',  price: 5900, interval: 'week', leadsLabel: '3-10 estimated leads/day' },
+    { id: 'plan-power',   name: 'Planning Power',   price: 9900, interval: 'week', leadsLabel: '10-25 estimated leads/day' }
   ],
-  'tenders': [
-    { id: 'tend-essential', name: 'Public Tenders Essential', price: 7900, interval: 'month', leads: 100 },
-    { id: 'tend-pro', name: 'Public Tenders Pro', price: 14700, interval: 'month', leads: 500 },
-    { id: 'tend-enterprise', name: 'Public Tenders Enterprise', price: 29700, interval: 'month', leads: 1000 }
+  tenders: [
+    { id: 'tend-starter', name: 'Tenders Starter', price: 2900, interval: 'week', leadsLabel: '3-5 estimated tenders/day' },
+    { id: 'tend-growth',  name: 'Tenders Growth',  price: 5900, interval: 'week', leadsLabel: '5-15 estimated tenders/day' },
+    { id: 'tend-power',   name: 'Tenders Power',   price: 9900, interval: 'week', leadsLabel: '15-40 estimated tenders/day' }
   ]
 };
 
@@ -69,7 +70,13 @@ function stripeRequest(method, path, data, apiKey) {
     }, res => {
       let data = '';
       res.on('data', chunk => data += chunk);
-      res.on('end', () => { try { resolve(JSON.parse(data)); } catch { resolve(data); } });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (res.statusCode >= 400) reject(new Error(parsed.error?.message || 'HTTP ' + res.statusCode));
+          else resolve(parsed);
+        } catch { reject(new Error(data.slice(0,200))); }
+      });
     });
     req.on('error', reject);
     req.write(body);
@@ -82,7 +89,7 @@ async function setupStripeProducts(apiKey) {
   console.log('Setting up Stripe products for all businesses...');
   const priceIds = {};
 
-  for (const [business, plans] of Object.entries(PRODUCTS)) {
+  for (const [business, plans] of Object.entries(PRICING_DATA)) {
     priceIds[business] = {};
     for (const plan of plans) {
       try {
@@ -102,15 +109,15 @@ async function setupStripeProducts(apiKey) {
           product: plan.id, unit_amount: String(plan.price), currency: 'gbp',
           'recurring[interval]': plan.interval, 'recurring[interval_count]': '1'
         }, apiKey);
-        console.log('  Price: \u00a3' + (plan.price/100).toFixed(2) + '/mo (' + price.id + ')');
+        console.log('  Price: \u00a3' + (plan.price/100).toFixed(2) + '/wk (' + price.id + ')');
         priceIds[business][plan.id] = price.id;
       } catch (e) {
-        console.log('  Error setting up ' + plan.name + ': ' + e.message);
+        console.log('  Error setting up ' + plan.name + ': ' + e.message + ' (body: ' + JSON.stringify(e).slice(0,200) + ')');
       }
     }
   }
 
-  saveConfig({ ...loadConfig(), products: PRODUCTS, priceIds, setupComplete: true });
+  saveConfig({ priceIds, setupComplete: true });
   console.log('\nStripe setup complete! Price IDs saved to config.\n');
   console.log('Next steps:');
   console.log('  - Set webhook endpoint in Stripe Dashboard -> Webhooks:');
@@ -121,7 +128,7 @@ async function setupStripeProducts(apiKey) {
 
 // Create checkout session
 async function createCheckout(apiKey, business, planId, customerEmail, successUrl, cancelUrl) {
-  const plans = PRODUCTS[business] || [];
+  const plans = PRICING_DATA[business] || [];
   const plan = plans.find(p => p.id === planId);
   if (!plan || !plan.stripePriceId) throw new Error('Plan not configured');
   
@@ -258,7 +265,7 @@ async function main() {
     const biz = bizMap[business] || 'moving';
     
     // Look up price ID from config (may have been set up already)
-    const plans = PRODUCTS[biz] || [];
+    const plans = PRICING_DATA[biz] || [];
     const plan = plans.find(p => p.id === planId);
     if (!plan) { console.log('Unknown plan. Available plans for ' + biz + ':'); plans.forEach(p => console.log('  ' + p.id)); return; }
     
@@ -286,11 +293,11 @@ async function main() {
   } else if (args[0] === '--list') {
     console.log('\n=== Configured Products ===\n');
     const priceIds = config.priceIds || {};
-    for (const [biz, plans] of Object.entries(PRODUCTS)) {
+    for (const [biz, plans] of Object.entries(PRICING_DATA)) {
       console.log(biz + ':');
       for (const plan of plans) {
         const pid = priceIds[biz]?.[plan.id] || 'NOT SETUP';
-        console.log('  ' + plan.id + '  \u00a3' + (plan.price/100).toFixed(2) + '/mo  ->  ' + pid);
+          console.log('  ' + plan.id + '  \u00a3' + (plan.price/100).toFixed(2) + '/wk  ->  ' + pid);
       }
       console.log('');
     }
