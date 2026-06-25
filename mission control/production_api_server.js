@@ -1234,7 +1234,7 @@ const CAMPAIGN_EMAILS = [
   { day: 9, subject: 'Your leads have stopped \u23f8\ufe0f', template: 'trial_day9' },
   { day: 12, subject: 'Still not sure? Let us help.', template: 'trial_day12' },
   { day: 16, subject: '3 businesses that transformed their pipeline', template: 'trial_day16' },
-  { day: 21, subject: 'Come back \u2014 30% off your first month's subscription', template: 'trial_day21' },
+  { day: 21, subject: 'Come back \u2014 30% off your first month\u2019s subscription', template: 'trial_day21' },
   { day: 30, subject: 'Your account is still waiting', template: 'trial_day30' },
   { day: 60, subject: 'Last chance to reactivate your account', template: 'trial_day60' }
 ];
