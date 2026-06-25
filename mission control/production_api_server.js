@@ -2532,39 +2532,81 @@ app.get('/api/health', (req, res) => {
 
 // Generate lead email HTML (reuses existing template pattern)
 function generateLeadEmailHTML(customer, leads) {
-  const accent = { moving: '#ff6b35', probate: '#a855f7', newbusiness: '#06b6d4', planning: '#10b981', tenders: '#6366f1' }[customer.product] || '#0ea5e9';
-  const dashboardUrl = PUBLIC_URL + '/portal/dashboard.html';
-
-  const leadsHTML = leads.map(l => {
-    const data = JSON.parse(l.data || '{}');
-    let line = data.address || data.name || data.company || data.tenderTitle || data.title || 'Lead';
-    let value = data.priceLabel || data.estateValueLabel || data.price || data.location || data.authority || data.value || '';
-    return '<tr><td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:13px">' + line + '</td><td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:12px">' + value + '</td></tr>';
-  }).join('');
-
-  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#000;font-family:Inter,Arial,sans-serif">';
-  body += '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px">';
+  const accent = customer.product === 'moving' ? '#ff6b35' : customer.product === 'probate' ? '#a855f7' : customer.product === 'newbusiness' ? '#06b6d4' : customer.product === 'planning' ? '#10b981' : '#6366f1';
+  const dashboardUrl = 'https://www.9amleads.com/portal/dashboard.html';
+  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></head><body style="margin:0;padding:0;background:#000;font-family:Inter,Arial,sans-serif">';
+  body += '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 16px">';
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
-  body += '<tr><td style="background:#0a0a0a;padding:32px;border-bottom:3px solid ' + accent + ';text-align:center">';
+  body += '<tr><td style="background:#0a0a0a;padding:28px;border-bottom:3px solid ' + accent + ';text-align:center">';
   body += '<div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:800;color:#fff"><span style="color:' + accent + '">9am</span>Leads</div>';
-  body += '<p style="color:#888;font-size:13px;margin-top:4px">' + customer.lead_type + ' — ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '</p>';
+  body += '<p style="color:#888;font-size:12px;margin-top:4px;text-transform:uppercase;letter-spacing:1px">' + (customer.lead_type || 'Daily Opportunities') + '</p>';
   body += '</td></tr>';
-  body += '<tr><td style="background:#0a0a0a;padding:24px 32px">';
-  body += '<div style="font-size:36px;font-weight:800;color:' + accent + ';font-family:Outfit,sans-serif">' + leads.length + '</div>';
-  body += '<div style="font-size:13px;color:#888;margin-bottom:16px">new leads today for ' + customer.company + '</div>';
-  body += '<p style="font-size:14px;color:#ccc;line-height:1.7">Good morning! Your daily opportunity sheet has arrived. Every lead is scored Hot/Warm/Cold with AI-drafted outreach messages. Below are the new opportunities we\'ve found for you. Pick up the phone and start calling \u2014 you\'re the first to see these leads.</p>';
+
+  body += '<tr><td style="background:#0a0a0a;padding:28px 32px;text-align:center">';
+  body += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:' + accent + ';margin-bottom:4px">Daily Opportunity Sheet</div>';
+  body += '<h2 style="font-family:Outfit,sans-serif;font-size:20px;font-weight:800;color:#fff;margin:0 0 4px;line-height:1.2">Good Morning, ' + (customer.company || 'there') + '!</h2>';
+  body += '<p style="color:#888;font-size:13px;margin:0 0 16px;line-height:1.5">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '. Every lead is scored and ready to action.</p>';
+
+  // Stats bar
+  var hotCount = leads.filter(function(l) { var s = l.opportunity_score || 0; return s >= 80; }).length;
+  var warmCount = leads.filter(function(l) { var s = l.opportunity_score || 0; return s >= 50 && s < 80; }).length;
+  var coldCount = leads.filter(function(l) { var s = l.opportunity_score || 0; return s < 50; }).length;
+  body += '<div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px">';
+  body += '<div style="background:#0a0a0a;border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 14px;text-align:center"><div style="font-size:20px;font-weight:800;color:#22c55e">' + leads.length + '</div><div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.5px">Total</div></div>';
+  body += '<div style="background:#0a0a0a;border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 14px;text-align:center"><div style="font-size:20px;font-weight:800;color:#22c55e">' + hotCount + '</div><div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.5px">Hot</div></div>';
+  body += '<div style="background:#0a0a0a;border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 14px;text-align:center"><div style="font-size:20px;font-weight:800;color:#f59e0b">' + warmCount + '</div><div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.5px">Warm</div></div>';
+  body += '<div style="background:#0a0a0a;border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 14px;text-align:center"><div style="font-size:20px;font-weight:800;color:#0ea5e9">' + coldCount + '</div><div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.5px">Cold</div></div>';
+  body += '</div>';
+
+  body += '<p style="font-size:13px;color:#999;line-height:1.6;margin:0 0 8px;text-align:left">Call within 30 minutes. You are the first person to see these opportunities. AI-drafted outreach messages are ready in your dashboard.</p>';
   body += '</td></tr>';
-  body += '<tr><td style="background:#000;padding:0 32px"><table width="100%" cellpadding="0" cellspacing="0">';
-  body += '<tr><th style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:11px;text-transform:uppercase;text-align:left;letter-spacing:.5px">Details</th>';
-  body += '<th style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:11px;text-transform:uppercase;text-align:left;letter-spacing:.5px">Value</th></tr>';
-  body += leadsHTML;
-  body += '</table></td></tr>';
-  body += '<tr><td style="background:#0a0a0a;padding:24px 32px;border-top:1px solid #1a1a1a;text-align:center">';
-  body += '<p style="color:#888;font-size:12px;margin:0">Delivered at 9am by 9amLeads \u00b7 <a href="' + dashboardUrl + '" style="color:' + accent + '">View in Dashboard \u2192</a></p>';
+
+  // Lead cards
+  body += '<tr><td style="background:#0a0a0a;padding:0 32px 28px">';
+  for (var i = 0; i < leads.length; i++) {
+    var l = leads[i];
+    var d = l.data || {};
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch(e) { d = {}; } }
+    var score = l.opportunity_score || 0;
+    var scoreColor = score >= 80 ? '#22c55e' : (score >= 50 ? '#f59e0b' : '#0ea5e9');
+    var scoreLabel = score >= 80 ? 'HOT ' + score : (score >= 50 ? 'WARM ' + score : 'COLD ' + score);
+    var reasons = l.opportunity_reasons || [];
+    var reasonStr = reasons.length > 0 ? reasons.slice(0, 2).join(' • ') : '';
+
+    body += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-bottom:10px">';
+    body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    body += '<span style="padding:3px 10px;border-radius:4px;background:' + scoreColor + ';color:#fff;font-size:10px;font-weight:700;letter-spacing:.3px">' + scoreLabel + '</span>';
+    body += '<span style="font-size:13px;font-weight:600;color:#fff;flex:1">' + (d.address || d.name || d.companyName || l.address || 'Opportunity') + '</span>';
+    body += '</div>';
+
+    var details = [];
+    if (d.bedrooms) details.push(d.bedrooms + ' bed ' + (d.propertyType || ''));
+    if (d.status) details.push(d.status);
+    if (d.price) details.push('£' + Number(d.price).toLocaleString());
+    if (d.estateValue) details.push('Estate: £' + Number(d.estateValue).toLocaleString());
+    if (d.contractValue) details.push('Value: £' + Number(d.contractValue).toLocaleString());
+    if (d.agent) details.push('Agent: ' + d.agent);
+    if (d.companyName) details.push(d.sicDescription || '');
+    if (d.applicant) details.push('Applicant: ' + d.applicant);
+    if (d.council) details.push(d.council);
+    if (d.buyer) details.push('Buyer: ' + d.buyer);
+    if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); details.push('Deadline: ' + days + ' days'); }
+    if (d.incorporationDate) details.push('Incorporated: ' + new Date(d.incorporationDate).toLocaleDateString());
+
+    body += '<div style="font-size:12px;color:#999;line-height:1.6;margin-bottom:2px">' + details.join(' | ') + '</div>';
+    if (reasonStr) body += '<div style="font-size:10px;color:#666;font-style:italic;margin-top:4px">' + reasonStr + '</div>';
+    body += '</div>';
+  }
+  body += '</td></tr>';
+
+  // Footer
+  body += '<tr><td style="background:#0a0a0a;padding:24px 32px;border-top:1px solid rgba(255,255,255,0.04);text-align:center">';
+  body += '<p style="color:#888;font-size:11px;margin:0 0 8px;line-height:1.5">Use the AI-drafted outreach scripts in your dashboard to contact these leads. Mark them as contacted/won/lost to track your pipeline.</p>';
+  body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:600;font-size:13px">View Full Dashboard</a>';
+  body += '<p style="color:#555;font-size:10px;margin:12px 0 0;line-height:1.5">9am Leads Ltd &bull; Company No. 17168176<br>Delivered at 9am by 9amLeads</p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
-
 // POST /api/test/delivery — manually trigger delivery for one customer
 app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
