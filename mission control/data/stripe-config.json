@@ -1,59 +1,45 @@
 {
-  "apiKey": "sk_live_...",
-  "products": {
-    "moving": [
-      { "id": "moving-starter", "name": "Moving Leads Starter", "price": 9900, "interval": "month", "leads": 5 },
-      { "id": "moving-pro", "name": "Moving Leads Pro", "price": 19900, "interval": "month", "leads": 15 },
-      { "id": "moving-enterprise", "name": "Moving Leads Enterprise", "price": 50000, "interval": "month", "leads": 50 }
-    ],
-    "probate": [
-      { "id": "prob-essential", "name": "Probate Leads Essential", "price": 9900, "interval": "month", "leads": 5 },
-      { "id": "prob-pro", "name": "Probate Leads Pro", "price": 19900, "interval": "month", "leads": 15 },
-      { "id": "prob-enterprise", "name": "Probate Leads Enterprise", "price": 50000, "interval": "month", "leads": 50 }
-    ],
-    "newbusiness": [
-      { "id": "nb-essential", "name": "New Business Essential", "price": 9900, "interval": "month", "leads": 5 },
-      { "id": "nb-pro", "name": "New Business Pro", "price": 19900, "interval": "month", "leads": 15 },
-      { "id": "nb-enterprise", "name": "New Business Enterprise", "price": 50000, "interval": "month", "leads": 50 }
-    ],
-    "planning": [
-      { "id": "plan-essential", "name": "Planning Permission Essential", "price": 9900, "interval": "month", "leads": 5 },
-      { "id": "plan-pro", "name": "Planning Permission Pro", "price": 19900, "interval": "month", "leads": 15 },
-      { "id": "plan-enterprise", "name": "Planning Permission Enterprise", "price": 50000, "interval": "month", "leads": 50 }
-    ],
-    "tenders": [
-      { "id": "tend-essential", "name": "Public Tenders Essential", "price": 9900, "interval": "month", "leads": 5 },
-      { "id": "tend-pro", "name": "Public Tenders Pro", "price": 19900, "interval": "month", "leads": 15 },
-      { "id": "tend-enterprise", "name": "Public Tenders Enterprise", "price": 50000, "interval": "month", "leads": 50 }
-    ]
-  },
   "priceIds": {
     "moving": {
-      "moving-starter": "price_1TUCRKADspDnFpfBFiyKhFSD",
-      "moving-pro": "price_1TUCRLADspDnFpfBaPAUgx89",
-      "moving-enterprise": "price_1TUCRLADspDnFpfBz9oYAePm"
+      "mov-starter": "price_1Tm6PMADspDnFpfBJtsUWi6v",
+      "mov-growth": "price_1Tm6PNADspDnFpfB847Dubdf",
+      "mov-power": "price_1Tm6POADspDnFpfBkf0gfqXs"
     },
     "probate": {
-      "prob-essential": "price_1TUCRMADspDnFpfBfWSDzTLl",
-      "prob-pro": "price_1TUCRNADspDnFpfByRtNqyHq",
-      "prob-enterprise": "price_1TUCRNADspDnFpfBEiFpf69A"
+      "prob-starter": "price_1Tm6PPADspDnFpfBkewa97Bv",
+      "prob-growth": "price_1Tm6PPADspDnFpfB3q61i5FP",
+      "prob-power": "price_1Tm6PQADspDnFpfBazgz1UD7"
     },
     "newbusiness": {
-      "nb-essential": "price_1TUCROADspDnFpfBRfn6YLly",
-      "nb-pro": "price_1TUCRPADspDnFpfBnp5j8J7G",
-      "nb-enterprise": "price_1TUCRPADspDnFpfBZxFuypJK"
+      "nb-starter": "price_1Tm6PRADspDnFpfBx80lgJ84",
+      "nb-growth": "price_1Tm6PSADspDnFpfBXakzcGEL",
+      "nb-power": "price_1Tm6PSADspDnFpfBGRGc5zQ9"
     },
     "planning": {
-      "plan-essential": "price_1TUCRQADspDnFpfBVQDtO19a",
-      "plan-pro": "price_1TUCRRADspDnFpfBYFcbPNkH",
-      "plan-enterprise": "price_1TUCRRADspDnFpfBWstRMc30"
+      "plan-starter": "price_1Tm6PTADspDnFpfBfSSc0fUR",
+      "plan-growth": "price_1Tm6PUADspDnFpfBKFFst74I",
+      "plan-power": "price_1Tm6PUADspDnFpfB8Dvu7tq5"
     },
     "tenders": {
-      "tend-essential": "price_1TUCRSADspDnFpfB9KLJAJFs",
-      "tend-pro": "price_1TUCRSADspDnFpfB8FlYxaKb",
-      "tend-enterprise": "price_1TUCRTADspDnFpfBZAITeXal"
+      "tend-starter": "price_1Tm6PVADspDnFpfBqUAL1K6Z",
+      "tend-growth": "price_1Tm6PWADspDnFpfB68IGEx5J",
+      "tend-power": "price_1Tm6PXADspDnFpfBf8c9Ww8s"
+    },
+    "builder-package": {
+      "bld-package": "price_1Tm6PYADspDnFpfB1PoCynL3"
+    },
+    "marketing-package": {
+      "mkt-package": "price_1Tm6PZADspDnFpfBuTg9lDWp"
+    },
+    "property-package": {
+      "prp-package": "price_1Tm6PaADspDnFpfBtGP40kRG"
+    },
+    "moving-package": {
+      "mov-package": "price_1Tm6PbADspDnFpfBladxbVXe"
+    },
+    "pro": {
+      "pro-plan": "price_1Tm6PcADspDnFpfB74ilpeT6"
     }
   },
-  "extraPostcodes": { "price": 2000, "name": "Extra 5 Postcode Districts", "interval": "month" },
   "setupComplete": true
 }
