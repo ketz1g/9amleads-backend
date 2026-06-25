@@ -676,10 +676,13 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     'SELECT * FROM leads WHERE customer_id = ? ORDER BY created_at DESC LIMIT 50'
   ).all(req.user.id);
 
-  res.json(leads.map(l => ({
-    ...l,
-    data: JSON.parse(l.data || '{}')
-  })));
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+
+  res.json(leads.map(l => {
+    const parsed = JSON.parse(l.data || '{}');
+    const scored = attachOpportunityScore(parsed, customer?.product || l.product);
+    return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
+  }));
 });
 
 // GET /api/leads/today
@@ -689,10 +692,13 @@ app.get('/api/leads/today', authMiddleware, (req, res) => {
     'SELECT * FROM leads WHERE customer_id = ? AND date(created_at) = ? ORDER BY created_at DESC'
   ).all(req.user.id, today);
 
-  res.json(leads.map(l => ({
-    ...l,
-    data: JSON.parse(l.data || '{}')
-  })));
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+
+  res.json(leads.map(l => {
+    const parsed = JSON.parse(l.data || '{}');
+    const scored = attachOpportunityScore(parsed, customer?.product || l.product);
+    return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
+  }));
 });
 
 // PATCH /api/leads/:id/status
@@ -1450,6 +1456,116 @@ function formatLeadForCRM(lead) {
   return base;
 }
 
+// ===== OPPORTUNITY SCORE ENGINE =====
+function attachOpportunityScore(data, product) {
+  if (!data) return { score: 0, category: 'cold', label: 'Cold Lead', reasons: ['No data available'] };
+  product = product || 'moving';
+  var score = 0;
+  var reasons = [];
+  var now = new Date();
+
+  // 1. Freshness (0-20)
+  var scrapedAt = data.scrapedAt || data.created_at || data.createdAt || data.delivered_at;
+  if (scrapedAt) {
+    var ageHours = (now - new Date(scrapedAt)) / (1000 * 60 * 60);
+    if (ageHours < 1) { score += 20; reasons.push('Less than 1 hour old'); }
+    else if (ageHours < 6) { score += 18; reasons.push('Less than 6 hours old'); }
+    else if (ageHours < 24) { score += 14; reasons.push('Less than 24 hours old'); }
+    else if (ageHours < 72) { score += 8; reasons.push('Less than 3 days old'); }
+    else { score += 3; reasons.push('Older lead'); }
+  } else { score += 10; reasons.push('Fresh lead'); }
+
+  // 2. Business type match (0-15)
+  if (product === 'moving') {
+    var beds = parseInt(data.bedrooms) || 0;
+    if (beds >= 3) { score += 15; reasons.push(beds + '-bedroom property (high value move)'); }
+    else if (beds >= 2) { score += 12; reasons.push(beds + '-bedroom property'); }
+    else if (beds >= 1) { score += 8; reasons.push(beds + '-bedroom property'); }
+    else { score += 5; reasons.push('Property lead'); }
+    var priceVal = parseInt(data.price) || 0;
+    if (priceVal > 750000) { score += 3; reasons.push('Premium property'); }
+  } else if (product === 'probate') {
+    var estVal = parseInt(data.estateValue) || 0;
+    if (estVal > 500000) { score += 15; reasons.push('High value estate'); }
+    else if (estVal > 100000) { score += 12; reasons.push('Established estate'); }
+    else if (estVal > 0) { score += 8; reasons.push('Estate lead'); }
+    else { score += 5; }
+    if (data.deceasedName) { score += 3; reasons.push('Named executor identified'); }
+  } else if (product === 'newbusiness') {
+    if (data.companyName || data.company) { score += 15; reasons.push('Named company: ' + (data.companyName || data.company)); }
+    else { score += 8; reasons.push('New business lead'); }
+    if (data.ownerEmail) { score += 3; reasons.push('Contact email available'); }
+  } else if (product === 'planning') {
+    if (data.applicant) { score += 15; reasons.push('Named applicant: ' + data.applicant); }
+    else { score += 8; reasons.push('Planning application lead'); }
+    var projVal = parseInt(data.estimatedValue || data.value) || 0;
+    if (projVal > 100000) { score += 3; reasons.push('High value project'); }
+  } else if (product === 'tenders') {
+    var contractVal = parseInt(data.contractValue || data.value) || 0;
+    if (contractVal > 500000) { score += 15; reasons.push('Major contract (£' + (contractVal/1000).toFixed(0) + 'k)'); }
+    else if (contractVal > 100000) { score += 12; reasons.push('Substantial contract'); }
+    else if (contractVal > 0) { score += 8; reasons.push('Contract opportunity'); }
+    else { score += 5; }
+    var closingDate = data.closingDate || data.closing_date;
+    if (closingDate) {
+      var daysLeft = Math.max(0, Math.floor((new Date(closingDate) - now) / 86400000));
+      if (daysLeft < 14) { score += 5; reasons.push('Closing in ' + daysLeft + ' days'); }
+      else { score += 2; }
+    }
+  }
+
+  // 3. Location match (0-10)
+  if (data.address || data.postcode) { score += 10; reasons.push('Location available'); }
+  else { score += 4; }
+
+  // 4. Estimated value (0-10)
+  var vals = [data.price, data.estateValue, data.contractValue, data.estimatedValue, data.value];
+  var hasVal = false;
+  for (var vi = 0; vi < vals.length; vi++) { if (parseInt(vals[vi]) > 0) hasVal = true; }
+  score += hasVal ? 10 : 4;
+  if (hasVal) reasons.push('Value estimate available');
+
+  // 5. Contact information (0-10)
+  var hasContact = data.ownerEmail || data.legalAdvisorEmail || data.buyerEmail || data.applicant || data.name;
+  if (hasContact) { score += 10; reasons.push('Contact information available'); }
+  else { score += 3; }
+
+  // 6-9. Data quality signals (0-20)
+  var fieldCount = 0;
+  for (var k in data) { if (data[k] && typeof data[k] !== 'object') fieldCount++; }
+  if (fieldCount > 8) { score += 8; reasons.push('Rich data (' + fieldCount + ' fields)'); }
+  else if (fieldCount > 4) { score += 5; }
+  else { score += 2; }
+
+  // Freshness bonus
+  if (scrapedAt && ageHours < 1) score += 5;
+  else if (data.status) {
+    var st = (data.status || '').toLowerCase();
+    if (st.includes('sstc') || st.includes('sold') || st.includes('offer')) { score += 7; reasons.push('Active status — urgent'); }
+  }
+
+  // Urgency for tenders
+  if (product === 'tenders' && data.closingDate) {
+    var dd = Math.max(0, Math.floor((new Date(data.closingDate) - now) / 86400000));
+    if (dd < 7) { score += 5; reasons.push('Deadline within ' + dd + ' days'); }
+  }
+
+  // Deduplicate & limit to top 5 reasons
+  var seen = {};
+  var unique = [];
+  for (var ri = 0; ri < reasons.length; ri++) {
+    if (!seen[reasons[ri]]) { seen[reasons[ri]] = true; unique.push(reasons[ri]); }
+  }
+  var topReasons = unique.slice(0, 5);
+
+  // Clamp
+  score = Math.max(0, Math.min(100, score));
+
+  var category = score >= 80 ? 'hot' : (score >= 50 ? 'warm' : 'cold');
+  var label = score >= 80 ? 'Hot Lead' : (score >= 50 ? 'Warm Lead' : 'Cold Lead');
+
+  return { score: score, category: category, label: label, reasons: topReasons };
+}
 
 // ===== HTTP HELPER: POST JSON via https =====
 function httpsPost(url, data) {
