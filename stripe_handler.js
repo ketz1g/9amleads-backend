@@ -49,6 +49,23 @@ const PRICING_DATA = {
     { id: 'tend-starter', name: 'Tenders Starter', price: 2900, interval: 'week', leadsLabel: '3-5 estimated tenders/day' },
     { id: 'tend-growth',  name: 'Tenders Growth',  price: 5900, interval: 'week', leadsLabel: '5-15 estimated tenders/day' },
     { id: 'tend-power',   name: 'Tenders Power',   price: 9900, interval: 'week', leadsLabel: '15-40 estimated tenders/day' }
+  ],
+  // Industry Packages (Stage 34)
+  'builder-package': [
+    { id: 'bld-package', name: 'Builder Package', price: 13900, interval: 'week', leadsLabel: 'Planning + Probate + Tenders combined' }
+  ],
+  'marketing-package': [
+    { id: 'mkt-package', name: 'Marketing Package', price: 6900, interval: 'week', leadsLabel: 'New Business + Tenders combined' }
+  ],
+  'property-package': [
+    { id: 'prp-package', name: 'Property Package', price: 10900, interval: 'week', leadsLabel: 'Probate + Planning + New Business combined' }
+  ],
+  'moving-package': [
+    { id: 'mov-package', name: 'Moving Package', price: 5900, interval: 'week', leadsLabel: 'Moving + Probate combined' }
+  ],
+  // 9amLeads Pro (Stage 35)
+  'pro': [
+    { id: 'pro-plan', name: '9amLeads Pro', price: 24900, interval: 'week', leadsLabel: 'All 5 lead types + unlimited territories' }
   ]
 };
 

@@ -1792,22 +1792,36 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     }
 
     const { plan } = req.body;
-    const validPlans = ['starter', 'growth', 'power'];
-    if (!plan || !validPlans.includes(plan)) {
-      return res.status(400).json({ error: 'Invalid plan. Choose: starter, growth, or power' });
+    const validPlans = ['starter', 'growth', 'power', 'builder-package', 'marketing-package', 'property-package', 'moving-package'];
+    const proValid = ['starter', 'growth', 'power', 'builder-package', 'marketing-package', 'property-package', 'moving-package', 'pro'];
+    if (!plan || !proValid.includes(plan)) {
+      return res.status(400).json({ error: 'Invalid plan. Choose: starter, growth, power, or a package' });
     }
 
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!customer) return res.status(404).json({ error: 'User not found' });
 
-    // Map plan names: config uses 'essential' for non-moving starter plans
-    const productKey = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' }[customer.product] || customer.product;
-    const planKey = productKey + '-' + plan;
-    const priceIdMap = STRIPE_PRICE_IDS[customer.product] || {};
-    const priceId = priceIdMap[planKey];
-
-    if (!priceId) {
-      return res.status(400).json({ error: 'Pricing not found for this plan (' + planKey + '). Run node stripe_handler.js --setup first.' });
+    // Handle packages and pro plan directly
+    var packageKeys = { 'builder-package': 'bld-package', 'marketing-package': 'mkt-package', 'property-package': 'prp-package', 'moving-package': 'mov-package', 'pro': 'pro-plan' };
+    var packageMap = { 'builder-package': 'builder-package', 'marketing-package': 'marketing-package', 'property-package': 'property-package', 'moving-package': 'moving-package', 'pro': 'pro' };
+    
+    var priceId;
+    if (packageKeys[plan]) {
+      // Package or pro plan
+      var priceIdMap = STRIPE_PRICE_IDS[packageMap[plan]] || {};
+      priceId = priceIdMap[packageKeys[plan]];
+      if (!priceId) {
+        return res.status(400).json({ error: 'Package pricing not found. Run node stripe_handler.js --setup first.' });
+      }
+    } else {
+      // Standard plan
+      const productKey = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' }[customer.product] || customer.product;
+      const planKey = productKey + '-' + plan;
+      const priceIdMap = STRIPE_PRICE_IDS[customer.product] || {};
+      priceId = priceIdMap[planKey];
+      if (!priceId) {
+        return res.status(400).json({ error: 'Pricing not found for this plan (' + planKey + '). Run node stripe_handler.js --setup first.' });
+      }
     }
 
     const baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;

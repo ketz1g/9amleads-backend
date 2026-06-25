@@ -1,29 +1,44 @@
 {
   "priceIds": {
     "moving": {
-      "mov-starter": "price_1Tm4hUADspDnFpfB6oJUCqlL",
-      "mov-growth": "price_1Tm4hVADspDnFpfBXV1r8sIy",
-      "mov-power": "price_1Tm4hVADspDnFpfBvaBZohUW"
+      "mov-starter": "price_1Tm6PMADspDnFpfBJtsUWi6v",
+      "mov-growth": "price_1Tm6PNADspDnFpfB847Dubdf",
+      "mov-power": "price_1Tm6POADspDnFpfBkf0gfqXs"
     },
     "probate": {
-      "prob-starter": "price_1Tm4hWADspDnFpfBL35mkhAc",
-      "prob-growth": "price_1Tm4hWADspDnFpfB6PyElLPA",
-      "prob-power": "price_1Tm4hXADspDnFpfBJle6ZKTy"
+      "prob-starter": "price_1Tm6PPADspDnFpfBkewa97Bv",
+      "prob-growth": "price_1Tm6PPADspDnFpfB3q61i5FP",
+      "prob-power": "price_1Tm6PQADspDnFpfBazgz1UD7"
     },
     "newbusiness": {
-      "nb-starter": "price_1Tm4hYADspDnFpfBDrul3NjT",
-      "nb-growth": "price_1Tm4hYADspDnFpfBpLntgJQJ",
-      "nb-power": "price_1Tm4hZADspDnFpfBwSVf9IVP"
+      "nb-starter": "price_1Tm6PRADspDnFpfBx80lgJ84",
+      "nb-growth": "price_1Tm6PSADspDnFpfBXakzcGEL",
+      "nb-power": "price_1Tm6PSADspDnFpfBGRGc5zQ9"
     },
     "planning": {
-      "plan-starter": "price_1Tm4hZADspDnFpfBeDhvSecM",
-      "plan-growth": "price_1Tm4haADspDnFpfBjgWn4VCw",
-      "plan-power": "price_1Tm4hbADspDnFpfBWmV6qlsu"
+      "plan-starter": "price_1Tm6PTADspDnFpfBfSSc0fUR",
+      "plan-growth": "price_1Tm6PUADspDnFpfBKFFst74I",
+      "plan-power": "price_1Tm6PUADspDnFpfB8Dvu7tq5"
     },
     "tenders": {
-      "tend-starter": "price_1Tm4hbADspDnFpfBgeErthr5",
-      "tend-growth": "price_1Tm4hdADspDnFpfBwpKZUF3B",
-      "tend-power": "price_1Tm4hdADspDnFpfBO1S3OUHq"
+      "tend-starter": "price_1Tm6PVADspDnFpfBqUAL1K6Z",
+      "tend-growth": "price_1Tm6PWADspDnFpfB68IGEx5J",
+      "tend-power": "price_1Tm6PXADspDnFpfBf8c9Ww8s"
+    },
+    "builder-package": {
+      "bld-package": "price_1Tm6PYADspDnFpfB1PoCynL3"
+    },
+    "marketing-package": {
+      "mkt-package": "price_1Tm6PZADspDnFpfBuTg9lDWp"
+    },
+    "property-package": {
+      "prp-package": "price_1Tm6PaADspDnFpfBtGP40kRG"
+    },
+    "moving-package": {
+      "mov-package": "price_1Tm6PbADspDnFpfBladxbVXe"
+    },
+    "pro": {
+      "pro-plan": "price_1Tm6PcADspDnFpfB74ilpeT6"
     }
   },
   "setupComplete": true
