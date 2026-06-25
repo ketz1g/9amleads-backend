@@ -2586,6 +2586,11 @@ function generateLeadEmailHTML(customer, leads) {
     if (d.estateValue) details.push('Estate: £' + Number(d.estateValue).toLocaleString());
     if (d.contractValue) details.push('Value: £' + Number(d.contractValue).toLocaleString());
     if (d.agent) details.push('Agent: ' + d.agent);
+    if (d.ownerEmail) details.push('Contact: ' + d.ownerEmail);
+    if (d.website) details.push('Web: ' + d.website);
+    if (d.buyerEmail) details.push('Email: ' + d.buyerEmail);
+    if (d.phone) details.push('Phone: ' + d.phone);
+    if (d.legalAdvisorEmail) details.push('Solicitor: ' + d.legalAdvisorEmail);
     if (d.companyName) details.push(d.sicDescription || '');
     if (d.applicant) details.push('Applicant: ' + d.applicant);
     if (d.council) details.push(d.council);
