@@ -212,8 +212,27 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 <p style="font-size:11px;color:var(--muted);line-height:1.6;text-align:center;max-width:700px;margin:12px auto 0;border-top:1px solid var(--border);padding-top:16px">Estimated lead volumes are based on postcode area, lead type, recent public activity, and available data sources. Lead numbers may vary day to day. 9amLeads does not guarantee an exact number of leads every day, but we aim to deliver the freshest relevant opportunities available for your selected area or category.</p>
 </div>
 
+<!-- Lead Value Calculator -->
+<div style="max-width:860px;margin:48px auto 0;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:36px 32px">
+<div style="text-align:center;margin-bottom:24px">
+<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:6px">Lead Value Calculator</div>
+<h3 style="font-size:20px;font-weight:800;font-family:var(--ff-h);color:var(--text)">How Much Could <span style="color:var(--accent)">One Lead Be Worth?</span></h3>
+</div>
+<div style="margin-bottom:20px">
+<label style="display:flex;justify-content:space-between;font-size:14px;font-weight:600;margin-bottom:8px"><span>Estimated Profit Per Lead</span><span id="valueCalcProfit" style="color:var(--accent)">£500</span></label>
+<input type="range" id="valueCalcSlider" min="100" max="5000" value="500" step="50" style="width:100%;-webkit-appearance:none;height:5px;border-radius:3px;background:var(--border);outline:none;accent-color:var(--accent)">
+</div>
+<div style="text-align:center;padding:20px;background:var(--bg);border:1px solid var(--border);border-radius:10px">
+<p style="font-size:14px;color:var(--text2);line-height:1.7">At 5 leads/day, that could be <strong style="font-size:20px;color:var(--accent)" id="valueCalcResult">£17,500</strong> in additional revenue per week</p>
+</div>
+</div>
+
 <div class="payment-note">
 <p><i class="fas fa-credit-card" style="color:var(--accent);margin-right:6px"></i> <strong>Weekly payments.</strong> Your first payment is taken one week after you start your free trial. After that, payments are taken weekly. All payments are processed securely via Stripe. Cancel anytime.</p>
+</div>
+
+<div style="max-width:650px;margin:16px auto 0;padding:20px 24px;background:var(--accent-subtle);border:1px solid rgba(14,165,233,0.15);border-radius:12px;text-align:center">
+<p style="font-size:13px;color:var(--text2);line-height:1.7"><i class="fas fa-shield-alt" style="color:var(--accent);margin-right:6px"></i> <strong style="color:var(--text)">Cancel anytime.</strong> You can cancel your subscription at any time from your dashboard. If you cancel, you'll continue to have access until the end of your current billing period. No hidden fees. No cancellation charges. Your data is yours to keep.</p>
 </div>
 
 <div class="lead-type-tabs" style="margin-top:48px">
@@ -477,6 +496,22 @@ function updateCalculator() {
 }
 
 updateCalcArea();
+
+// Lead value calculator
+(function() {
+  var slider = document.getElementById('valueCalcSlider');
+  var profitEl = document.getElementById('valueCalcProfit');
+  var resultEl = document.getElementById('valueCalcResult');
+  if (!slider || !profitEl || !resultEl) return;
+  function update() {
+    var val = parseInt(slider.value);
+    profitEl.textContent = '\u00a3' + val.toLocaleString();
+    var weekly = val * 5 * 7;
+    resultEl.textContent = '\u00a3' + weekly.toLocaleString();
+  }
+  slider.addEventListener('input', update);
+  update();
+})();
 </script>
 <script src="/chat.js"></script>
 <script src="/enhancements.js"></script>
