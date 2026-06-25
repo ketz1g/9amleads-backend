@@ -1111,23 +1111,41 @@ function renderOutreach(leadId) {
   }
   if (!contactHtml) contactHtml = '<p style="color:var(--muted);font-size:11px">Contact data not available.</p>';
 
-  panel.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">' +
-    // Outreach messages column
+  panel.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+    // Left column: Outreach + Actions
     '<div><div style="display:flex;gap:4px;margin-bottom:6px">' +
     '<button class="btn btn-primary btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'email\')" id="otab-' + leadId + '-email" style="flex:1;justify-content:center;font-size:11px;padding:6px 8px">📧 Email</button>' +
     '<button class="btn btn-outline btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'whatsapp\')" id="otab-' + leadId + '-whatsapp" style="flex:1;justify-content:center;font-size:11px;padding:6px 8px">💬 WhatsApp</button>' +
     '<button class="btn btn-outline btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'phone\')" id="otab-' + leadId + '-phone" style="flex:1;justify-content:center;font-size:11px;padding:6px 8px">📞 Phone</button>' +
     '</div>' +
-    '<textarea id="o-text-' + leadId + '" style="width:100%;min-height:70px;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text2);font-family:inherit;line-height:1.6;resize:vertical">' + escapeHtml(msg.email) + '</textarea>' +
-    '<div style="display:flex;gap:4px;margin-top:4px">' +
-    '<button class="btn btn-primary btn-sm" onclick="copyOutreach(\'' + leadId + '\')" style="flex:1;justify-content:center;font-size:10px;padding:4px 8px"><i class="fas fa-copy"></i> Copy</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="var t=document.getElementById(\'o-text-\'+\'' + leadId + '\');t.focus();t.select()" style="flex:1;justify-content:center;font-size:10px;padding:4px 8px"><i class="fas fa-pen"></i> Edit</button>' +
-    '</div></div>' +
-    // Contact methods column
-    '<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px">' +
+    '<textarea id="o-text-' + leadId + '" style="width:100%;min-height:60px;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text2);font-family:inherit;line-height:1.6;resize:vertical">' + escapeHtml(msg.email) + '</textarea>' +
+    '<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">' +
+    '<button class="btn btn-primary btn-sm" onclick="copyOutreach(\'' + leadId + '\')" style="flex:1;min-width:60px;justify-content:center;font-size:10px;padding:4px 8px"><i class="fas fa-copy"></i> Copy</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="var t=document.getElementById(\'o-text-\'+\'' + leadId + '\');t.focus();t.select()" style="flex:1;min-width:60px;justify-content:center;font-size:10px;padding:4px 8px"><i class="fas fa-pen"></i> Edit</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="exportLeadCSV(\'' + leadId + '\')" style="flex:1;min-width:60px;justify-content:center;font-size:10px;padding:4px 8px" title="Export as CSV"><i class="fas fa-file-csv"></i> CSV</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="exportLeadExcel(\'' + leadId + '\')" style="flex:1;min-width:60px;justify-content:center;font-size:10px;padding:4px 8px" title="Export as Excel"><i class="fas fa-file-excel"></i> Excel</button>' +
+    '</div>' +
+    // Status and notes section
+    '<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">' +
+    '<button class="btn btn-outline btn-sm" onclick="updateLeadStatus(\'' + leadId + '\',\'contacted\')" style="font-size:10px;padding:4px 8px"><i class="fas fa-phone"></i> Contacted</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="updateLeadStatus(\'' + leadId + '\',\'booked\')" style="font-size:10px;padding:4px 8px;color:var(--success)"><i class="fas fa-check"></i> Won</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="updateLeadStatus(\'' + leadId + '\',\'lost\')" style="font-size:10px;padding:4px 8px;color:var(--danger)"><i class="fas fa-times"></i> Lost</button>' +
+    '</div>' +
+    '<div style="margin-top:6px"><textarea id="olead-note-' + leadId + '" placeholder="Add a note about this lead..." style="width:100%;min-height:32px;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:10px;color:var(--text2);font-family:inherit;line-height:1.5;resize:vertical" onblur="saveLeadNote(\'' + leadId + '\',this.value)"></textarea></div>' +
+    '</div>' +
+    // Right column: Contact Methods + Integrations
+    '<div><div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px">' +
     '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px">📋 Best Contact Method</div>' +
     contactHtml +
-    '</div></div>';
+    '</div>' +
+    '<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px">' +
+    '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px">🔌 CRM Integrations</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">' +
+    '<div style="padding:6px;border-radius:4px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);text-align:center;font-size:9px;color:var(--muted)"><i class="fab fa-hubspot" style="color:#ff7a59;display:block;font-size:14px;margin-bottom:2px"></i>HubSpot<br><span style="font-size:7px;color:var(--muted)">Coming soon</span></div>' +
+    '<div style="padding:6px;border-radius:4px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);text-align:center;font-size:9px;color:var(--muted)"><i class="fab fa-pied-piper" style="color:#20435f;display:block;font-size:14px;margin-bottom:2px"></i>Pipedrive<br><span style="font-size:7px;color:var(--muted)">Coming soon</span></div>' +
+    '<div style="padding:6px;border-radius:4px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);text-align:center;font-size:9px;color:var(--muted)"><i class="fas fa-bolt" style="color:#f59e0b;display:block;font-size:14px;margin-bottom:2px"></i>GoHighLevel<br><span style="font-size:7px;color:var(--muted)">Coming soon</span></div>' +
+    '<div style="padding:6px;border-radius:4px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);text-align:center;font-size:9px;color:var(--muted)"><i class="fab fa-salesforce" style="color:#00a1e0;display:block;font-size:14px;margin-bottom:2px"></i>Salesforce<br><span style="font-size:7px;color:var(--muted)">Coming soon</span></div>' +
+    '</div></div></div></div>';
 }
 
 function selectOutreachTab(leadId, tab) {
@@ -1177,6 +1195,95 @@ function generateFallbackMessages(lead) {
 function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ===== CRM EXPORTS & LEAD ACTIONS =====
+
+function updateLeadStatus(leadId, status) {
+  fetch(API + '/api/leads/' + leadId + '/status', {
+    method: 'PATCH',
+    headers: Object.assign({}, getAuthHeaders(), { 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ status: status })
+  }).then(function(r) { return r.json(); }).then(function() {
+    var idx = leads.findIndex(function(l) { return l.id === leadId; });
+    if (idx > -1) leads[idx].status = status;
+    renderLeads();
+  }).catch(function() {});
+}
+
+function saveLeadNote(leadId, note) {
+  var notes = JSON.parse(localStorage.getItem('mh_lead_notes') || '{}');
+  notes[leadId] = { note: note, updated: new Date().toISOString() };
+  localStorage.setItem('mh_lead_notes', JSON.stringify(notes));
+}
+
+function loadLeadNote(leadId) {
+  var notes = JSON.parse(localStorage.getItem('mh_lead_notes') || '{}');
+  var el = document.getElementById('olead-note-' + leadId);
+  if (el && notes[leadId]) el.value = notes[leadId].note;
+}
+
+function exportLeadCSV(leadId) {
+  var lead = leads.find(function(l) { return l.id === leadId; });
+  if (!lead) return;
+  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
+  var csv = 'Field,Value\n' +
+    'Lead ID,' + (lead.id || '') + '\n' +
+    'Product,' + (lead.product || '') + '\n' +
+    'Status,' + (lead.status || '') + '\n' +
+    'Address,' + (d.address || '') + '\n' +
+    'Postcode,' + (d.postcode || '') + '\n' +
+    'Price,' + (d.price || d.estateValue || d.contractValue || '') + '\n' +
+    'Bedrooms,' + (d.bedrooms || '') + '\n' +
+    'Property Type,' + (d.propertyType || d.type || '') + '\n' +
+    'Status,' + (d.status || '') + '\n' +
+    'Agent/Buyer,' + (d.agent || d.buyer || d.council || '') + '\n' +
+    'Contact Email,' + (d.ownerEmail || d.legalAdvisorEmail || d.buyerEmail || '') + '\n' +
+    'Website,' + (d.website || d.url || '') + '\n' +
+    'Delivered,' + (lead.delivered_at || '') + '\n';
+  downloadFile(csv, 'lead-' + leadId.substring(0, 8) + '.csv', 'text/csv');
+}
+
+function exportLeadExcel(leadId) {
+  var lead = leads.find(function(l) { return l.id === leadId; });
+  if (!lead) return;
+  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
+  // Generate an XML-based Excel spreadsheet (works in Excel/Sheets)
+  var xml = '<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Lead"><Table><Row><Cell><Data ss:Type="String">Field</Data></Cell><Cell><Data ss:Type="String">Value</Data></Cell></Row>' +
+    row('Lead ID', lead.id || '') + row('Product', lead.product || '') + row('Status', lead.status || '') +
+    row('Address', d.address || '') + row('Postcode', d.postcode || '') + row('Price', d.price || d.estateValue || d.contractValue || '') +
+    row('Bedrooms', d.bedrooms || '') + row('Property Type', d.propertyType || d.type || '') +
+    row('Status Detail', d.status || '') + row('Agent/Buyer', d.agent || d.buyer || d.council || '') +
+    row('Contact Email', d.ownerEmail || d.legalAdvisorEmail || d.buyerEmail || '') + row('Website', d.website || d.url || '') +
+    row('Delivered', lead.delivered_at || '') +
+    '</Table></Worksheet></Workbook>';
+  downloadFile(xml, 'lead-' + leadId.substring(0, 8) + '.xls', 'application/vnd.ms-excel');
+  function row(label, val) { return '<Row><Cell><Data ss:Type="String">' + escapeXml(label) + '</Data></Cell><Cell><Data ss:Type="String">' + escapeXml(val) + '</Data></Cell></Row>'; }
+  function escapeXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+}
+
+function downloadFile(content, filename, mimeType) {
+  var blob = new Blob([content], { type: mimeType });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function() { URL.revokeObjectURL(a.href); }, 100);
+}
+
+function getAuthHeaders() {
+  try {
+    var tok = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+    if (!tok) {
+      try {
+        var session = JSON.parse(localStorage.getItem('mld_portal_session') || '{}');
+        tok = session.token || '';
+      } catch(e) {}
+    }
+    return tok ? { 'Authorization': 'Bearer ' + tok } : {};
+  } catch(e) { return {}; }
 }
 
 // Fallback contact method renderer (if outreach-generator.js not loaded)
