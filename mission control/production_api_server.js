@@ -1673,9 +1673,9 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     }
 
     const { plan } = req.body;
-    const validPlans = ['starter', 'pro', 'enterprise'];
+    const validPlans = ['starter', 'growth', 'power'];
     if (!plan || !validPlans.includes(plan)) {
-      return res.status(400).json({ error: 'Invalid plan. Choose: starter, pro, or enterprise' });
+      return res.status(400).json({ error: 'Invalid plan. Choose: starter, growth, or power' });
     }
 
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -1982,9 +1982,9 @@ app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
 app.post('/api/subscription/update', authMiddleware, async (req, res) => {
   try {
     const { plan } = req.body;
-    const validPlans = ['starter', 'pro', 'enterprise'];
+    const validPlans = ['starter', 'growth', 'power'];
     if (!plan || !validPlans.includes(plan)) {
-      return res.status(400).json({ error: 'Invalid plan. Choose: starter, pro, or enterprise' });
+      return res.status(400).json({ error: 'Invalid plan. Choose: starter, growth, or power' });
     }
 
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
