@@ -337,30 +337,7 @@ footer a:hover{color:var(--text)}
 </div>
 </section>
 
-<!-- Social Proof Counters -->
-<section style="position:relative;overflow:hidden;padding:30px 0;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
-<div class="s-grid"></div>
-<div class="container">
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:900px;margin:0 auto">
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
-<div style="font-size:28px;font-weight:800;font-family:var(--ff-h);color:var(--accent)" id="spCounter1">0</div>
-<div style="font-size:12px;color:var(--text2);margin-top:4px">Total Leads Delivered</div>
-</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
-<div style="font-size:28px;font-weight:800;font-family:var(--ff-h);color:var(--accent)" id="spCounter2">0</div>
-<div style="font-size:12px;color:var(--text2);margin-top:4px">Territories Claimed</div>
-</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
-<div style="font-size:28px;font-weight:800;font-family:var(--ff-h);color:var(--accent)" id="spCounter3">0</div>
-<div style="font-size:12px;color:var(--text2);margin-top:4px">Active Customers</div>
-</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
-<div style="font-size:28px;font-weight:800;font-family:var(--ff-h);color:var(--accent)" id="spCounter4">0</div>
-<div style="font-size:12px;color:var(--text2);margin-top:4px">Leads Delivered Today</div>
-</div>
-</div>
-</div>
-</section>
+
 
 <div class="product-grid" style="max-width:1100px;margin:0 auto;padding:60px 24px">
 <a href="/movingleadsdaily/" class="photo-card" style="background-image:url('https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=600&q=80')">
@@ -1243,37 +1220,7 @@ function toggleMobile() {
 document.addEventListener('DOMContentLoaded',function(){var r=new IntersectionObserver(function(e){e.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');r.unobserve(e.target)}})},{threshold:0.1});document.querySelectorAll('[data-reveal]').forEach(function(e){r.observe(e)})});
 setTimeout(function(){var e=document.getElementById('liveProof'),t=document.getElementById('liveProofText');var n=['A removals company in Manchester just signed up','A probate solicitor from Birmingham joined','A builder in Bristol started his free trial','An estate agent from London just enrolled','A roofer from Leeds is getting leads now','An accountant from Glasgow started today'];e.style.display='flex';e.style.opacity='0';setTimeout(function(){e.style.opacity='1'},50);function i(){t.textContent=n[Math.floor(Math.random()*n.length)]}i();setInterval(i,8000)},4000);
 
-// Social proof counter animation
-function animateCounter(id, target, suffix) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  var current = 0;
-  var step = Math.ceil(target / 60);
-  var timer = setInterval(function() {
-    current += step;
-    if (current >= target) { current = target; clearInterval(timer); }
-    el.textContent = current.toLocaleString() + (suffix || '');
-  }, 25);
-}
-function initCounters() {
-  var section = document.querySelector('#spCounter1');
-  if (!section) return;
-  var parent = section.closest('section');
-  if (!parent) return;
-  var obs = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        animateCounter('spCounter1', 2850, '+');
-        animateCounter('spCounter2', 120, '+');
-        animateCounter('spCounter3', 85, '+');
-        animateCounter('spCounter4', 47, '+');
-        obs.disconnect();
-      }
-    });
-  }, { threshold: 0.3 });
-  obs.observe(parent);
-}
-initCounters();
+
 
 // Live activity feed rotation
 (function() {
