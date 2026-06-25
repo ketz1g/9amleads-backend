@@ -432,7 +432,8 @@ function renderLeads() {
 
   if (currentView === 'day') {
     const today = viewDate.toDateString();
-    const todayLeads = leads.filter(l => l.created_at && new Date(l.created_at).toDateString() === today);
+    var filtered = currentStatusFilter ? leads.filter(function(l) { return l.status === currentStatusFilter; }) : leads;
+    const todayLeads = filtered.filter(l => l.created_at && new Date(l.created_at).toDateString() === today);
     document.getElementById('dateLabel').textContent = viewDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     countEl.textContent = todayLeads.length + ' leads';
 
@@ -454,10 +455,13 @@ function renderLeads() {
     }
     titleEl.textContent = 'Daily Leads';
   } else {
+    var filteredAll = currentStatusFilter ? leads.filter(function(l) { return l.status === currentStatusFilter; }) : leads;
     document.getElementById('dateLabel').textContent = 'All Leads';
-    countEl.textContent = leads.length + ' total';
-    titleEl.textContent = 'All Leads';
-    groups.forEach(([day, dayLeads]) => {
+    countEl.textContent = filteredAll.length + ' total' + (currentStatusFilter ? ' (' + currentStatusFilter + ')' : '');
+    titleEl.textContent = 'All Leads' + (currentStatusFilter ? ' - ' + currentStatusFilter : '');
+    var filteredGroups = currentStatusFilter ? filteredAll : leads;
+    var filteredGrouped = groupLeadsByDay(filteredGroups);
+    filteredGrouped.forEach(([day, dayLeads]) => {
       html += '<div class="day-group"><div class="day-header" onclick="this.classList.toggle(\'collapsed\');this.nextElementSibling.classList.toggle(\'collapsed\')"><span class="day-date">' + day + '</span><span class="day-count">' + dayLeads.length + ' leads</span><span class="day-arrow"><i class="fas fa-chevron-down"></i></span></div><div class="day-body">';
       dayLeads.forEach(l => {
         const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
@@ -1146,7 +1150,44 @@ function renderOutreach(leadId) {
     '<div style="padding:6px;border-radius:4px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);text-align:center;font-size:9px;color:var(--muted)"><i class="fab fa-pied-piper" style="color:#20435f;display:block;font-size:14px;margin-bottom:2px"></i>Pipedrive<br><span style="font-size:7px;color:var(--muted)">Coming soon</span></div>' +
     '<div style="padding:6px;border-radius:4px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);text-align:center;font-size:9px;color:var(--muted)"><i class="fas fa-bolt" style="color:#f59e0b;display:block;font-size:14px;margin-bottom:2px"></i>GoHighLevel<br><span style="font-size:7px;color:var(--muted)">Coming soon</span></div>' +
     '<div style="padding:6px;border-radius:4px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);text-align:center;font-size:9px;color:var(--muted)"><i class="fab fa-salesforce" style="color:#00a1e0;display:block;font-size:14px;margin-bottom:2px"></i>Salesforce<br><span style="font-size:7px;color:var(--muted)">Coming soon</span></div>' +
-    '</div></div></div></div>';
+    '</div></div></div></div>' +
+    // Stages 25-35: New panels
+    '<div id="newpanels-' + leadId + '"></div>';
+  // Add new panels after render
+  var np = document.getElementById('newpanels-' + leadId);
+  if (np) {
+    var ev = estimateValue(lead);
+    var tl = getTimeline(lead);
+    var pi = getProspectInfo(lead);
+    np.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">' +
+      // Value Estimator
+      '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px">' +
+      '<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px">Estimated Value</div>' +
+      '<div style="font-size:14px;font-weight:800;color:var(--accent)">' + String.fromCharCode(163) + ev.min.toLocaleString() + ' - ' + String.fromCharCode(163) + ev.max.toLocaleString() + '</div>' +
+      '<div style="font-size:9px;color:' + (ev.conf === 'High' ? 'var(--success)' : 'var(--warning)') + '">' + ev.conf + ' Confidence</div>' +
+      '<div style="font-size:7px;color:var(--muted);margin-top:4px">' + ev.label + '</div></div>' +
+      // Prospect Research
+      '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px">' +
+      '<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px">Prospect Research</div>' +
+      '<div style="font-size:10px;color:var(--text2);line-height:1.6">Website: ' + pi.website + '<br>Social: ' + pi.social + '<br>Est. Size: ' + pi.size + '</div>' +
+      '<div style="font-size:10px;color:var(--accent);margin-top:2px;font-weight:600">Reach via ' + pi.approach + '</div>' +
+      '<div style="font-size:8px;color:var(--muted);margin-top:2px;font-style:italic">AI-generated guidance</div></div>' +
+      // Timeline
+      '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px">' +
+      '<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px">Timeline</div>' +
+      (tl.length ? tl.slice(-3).map(function(e) { return '<div style="display:flex;align-items:center;gap:4px;padding:2px 0;font-size:9px;color:var(--text2)"><i class="' + e.i + '" style="color:var(--accent);width:12px;font-size:8px"></i>' + e.l + '<span style="margin-left:auto;color:var(--muted)">' + new Date(e.d).toLocaleDateString() + '</span></div>'; }).join('') : '<div style="font-size:9px;color:var(--muted)">No timeline data</div>') +
+      '</div>' +
+      // Feedback
+      '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px">' +
+      '<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px">Rate This Lead</div>' +
+      '<div style="display:flex;gap:4px">' +
+      [4,3,2,1].map(function(v) {
+        var icons = { 4: 'fa-fire', 3: 'fa-thumbs-up', 2: 'fa-meh', 1: 'fa-frown' };
+        var colors = { 4: 'var(--success)', 3: 'var(--accent)', 2: 'var(--warning)', 1: 'var(--danger)' };
+        var active = (leadFeedback[leadId] && leadFeedback[leadId].rating === v) ? 'border-color:' + colors[v] + ';color:' + colors[v] + ';background:rgba(14,165,233,0.06)' : '';
+        return '<button onclick="rateLead(\'' + leadId + '\',' + v + ')" style="flex:1;padding:5px;border-radius:4px;border:1px solid var(--border);background:var(--bg);font-size:10px;color:var(--muted);cursor:pointer;font-family:inherit;' + active + '"><i class="fas ' + icons[v] + '"></i></button>';
+      }).join('') + '</div></div></div>';
+  }
 }
 
 function selectOutreachTab(leadId, tab) {
@@ -1370,6 +1411,76 @@ function downloadFile(content, filename, mimeType) {
   a.click();
   document.body.removeChild(a);
   setTimeout(function() { URL.revokeObjectURL(a.href); }, 100);
+}
+
+// ===== STAGES 25-35: NEW FEATURES =====
+
+// Stage 25: Opportunity Value Estimator
+function estimateValue(lead) {
+  var product = lead.product || 'moving';
+  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
+  var ranges = { moving: [300,5000,'Moving Job'], probate: [1000,20000,'Probate Instruction'], newbusiness: [500,5000,'Annual Client'], planning: [5000,100000,'Project'], tenders: [10000,1000000,'Contract'] };
+  var r = ranges[product] || ranges.moving;
+  var actual = parseInt(d.price) || parseInt(d.estateValue) || parseInt(d.contractValue) || parseInt(d.value) || 0;
+  if (actual > 0) return { min: Math.round(actual*0.6), max: Math.round(actual*1.4), label: r[2], conf: 'High', actual: actual };
+  return { min: r[0], max: r[1], label: r[2], conf: 'Medium', actual: 0 };
+}
+
+// Stage 26: Lead Timeline
+function getTimeline(lead) {
+  var events = [];
+  if (lead.created_at) events.push({ d: lead.created_at, l: 'Discovered', i: 'fa-search' });
+  if (lead.delivered_at) events.push({ d: lead.delivered_at, l: 'Delivered', i: 'fa-envelope' });
+  if (lead.status === 'contacted' || lead.status === 'booked') events.push({ d: new Date().toISOString(), l: 'Contacted', i: 'fa-phone' });
+  if (lead.status === 'booked') events.push({ d: new Date().toISOString(), l: 'Won', i: 'fa-check' });
+  events.sort(function(a,b) { return new Date(a.d) - new Date(b.d); });
+  return events;
+}
+
+// Stage 28: Prospect Research
+function getProspectInfo(lead) {
+  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
+  return {
+    website: d.website || d.url ? 'Yes' : 'Not found',
+    social: d.ownerEmail ? 'Possible' : 'Not found',
+    gbp: d.address ? 'Possible' : 'Not found',
+    size: d.price > 500000 ? 'Large' : d.bedrooms >= 3 ? 'Medium' : 'Small',
+    approach: d.ownerEmail ? 'Email' : d.phone ? 'Phone' : (d.company ? 'LinkedIn' : 'Phone'),
+    message: d.address ? 'Discuss recent activity in their area' : 'Introduce services tailored to their business'
+  };
+}
+
+// Stage 29: Status filtering
+var currentStatusFilter = '';
+function filterByStatus(s) {
+  currentStatusFilter = s;
+  document.querySelectorAll('[id^="st-"]').forEach(function(b) { b.style.borderColor = 'var(--border)'; b.style.color = 'var(--text2)'; });
+  var el = document.getElementById('st-' + (s || 'all'));
+  if (el) { el.style.borderColor = 'var(--accent)'; el.style.color = 'var(--accent)'; }
+  if (typeof renderLeads === 'function') renderLeads();
+}
+
+// Stage 33: Lead feedback
+var leadFeedback = JSON.parse(localStorage.getItem('mh_lead_feedback') || '{}');
+function rateLead(id, rating) {
+  leadFeedback[id] = { rating: rating, t: new Date().toISOString() };
+  localStorage.setItem('mh_lead_feedback', JSON.stringify(leadFeedback));
+}
+
+// Stage 30: Territory stats
+function territoryStats() {
+  var now = new Date(), weekAgo = new Date(now - 7*86400000);
+  var w = (window.leads || []).filter(function(l) { var d = l.delivered_at || l.created_at; return d && new Date(d) >= weekAgo; });
+  return { total: w.length, hot: w.filter(function(l) { return (l.opportunity_score||0) >= 80; }).length, warm: w.filter(function(l) { var s = l.opportunity_score||0; return s >= 50 && s < 80; }).length, cold: w.filter(function(l) { return (l.opportunity_score||0) < 50; }).length };
+}
+
+// Stage 27: Saved searches
+var savedSearches = JSON.parse(localStorage.getItem('mh_saved') || '[]');
+function saveSearch() {
+  var n = prompt('Name this search:');
+  if (!n) return;
+  savedSearches.push({ id: 's' + Date.now(), name: n, f: getLeadFilters(), created: new Date().toISOString() });
+  localStorage.setItem('mh_saved', JSON.stringify(savedSearches));
 }
 
 function getAuthHeaders() {
