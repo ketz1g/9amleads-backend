@@ -2586,7 +2586,7 @@ function generateLeadEmailHTML(customer, leads) {
     if (d.estateValue) details.push('Estate: £' + Number(d.estateValue).toLocaleString());
     if (d.contractValue) details.push('Value: £' + Number(d.contractValue).toLocaleString());
     if (d.agent) details.push('Agent: ' + d.agent);
-    if (d.ownerEmail) details.push('Contact: ' + d.ownerEmail);
+    if (d.ownerEmail) details.push('Email: ' + d.ownerEmail);
     if (d.website) details.push('Web: ' + d.website);
     if (d.buyerEmail) details.push('Email: ' + d.buyerEmail);
     if (d.phone) details.push('Phone: ' + d.phone);
@@ -2597,6 +2597,11 @@ function generateLeadEmailHTML(customer, leads) {
     if (d.buyer) details.push('Buyer: ' + d.buyer);
     if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); details.push('Deadline: ' + days + ' days'); }
     if (d.incorporationDate) details.push('Incorporated: ' + new Date(d.incorporationDate).toLocaleDateString());
+    // Show phone not available if missing, with suggestions
+    var hasPhone = d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone;
+    if (details.length > 0 && !hasPhone) {
+      body += '<div style="font-size:10px;color:#888;margin-top:6px;padding:6px 8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px">📞 Phone not available <span style="color:#666">— try searching the company/buyer name on Google or LinkedIn to find a direct contact number</span></div>';
+    }
 
     body += '<div style="font-size:12px;color:#999;line-height:1.6;margin-bottom:2px">' + details.join(' | ') + '</div>';
     if (reasonStr) body += '<div style="font-size:10px;color:#666;font-style:italic;margin-top:4px">' + reasonStr + '</div>';
