@@ -112,6 +112,7 @@ footer a{color:var(--primary);text-decoration:none}
 <a href="/" class="active">Dashboard</a>
 <a href="#" onclick="openSuccessCentre();return false">Success Centre</a>
 <a href="#" onclick="openCampaigns();return false">Campaigns</a>
+<a href="#" onclick="openPartnerMarketplace();return false">Partners</a>
 <a href="/founder/" target="_blank">Founder</a>
 <a href="#" id="logout-btn" class="btn-out" onclick="logout()">Sign Out</a>
 </div>
@@ -1507,6 +1508,92 @@ window.renderOutreach = function(leadId) {
     panel.insertBefore(campaignBtn, panel.firstChild);
   }
 };
+
+// ===== STAGE 41: PARTNER MARKETPLACE =====
+var partners = JSON.parse(localStorage.getItem('mh_partners') || '[]');
+function openPartnerMarketplace() {
+  var modal = document.getElementById('partnerModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'partnerModal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+  renderPartnerMarketplace();
+}
+function renderPartnerMarketplace() {
+  var modal = document.getElementById('partnerModal');
+  if (!modal) return;
+  var session = getSession() || {};
+  var customerType = session.product || 'moving';
+
+  // Suggest partners based on lead type
+  var PartnerSuggestions = {
+    moving: ['Removal Companies', 'Storage Providers', 'Packing Services', 'House Clearance', 'Man & Van'],
+    probate: ['Solicitors', 'Will Writers', 'Estate Agents', 'House Clearance', 'Removals Companies'],
+    newbusiness: ['Accountants', 'Web Designers', 'Marketing Agencies', 'IT Consultants', 'Insurance Brokers'],
+    planning: ['Builders', 'Architects', 'Electricians', 'Plumbers', 'Roofers', 'Landscapers', 'Kitchen Fitters'],
+    tenders: ['IT Services', 'Construction', 'Cleaning', 'Security', 'Facilities Management']
+  };
+  var suggestions = PartnerSuggestions[customerType] || PartnerSuggestions.moving;
+
+  modal.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:700px;width:100%;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:4px">Partner Marketplace</div><h2 style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;margin:0">Find or Offer Partner Services</h2></div><button class="btn btn-outline btn-sm" onclick="this.closest(\'#partnerModal\').style.display=\'none\'"><i class="fas fa-times"></i></button></div>' +
+    '<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5">Connect with complementary businesses. If you receive planning leads, partner with builders and architects. If you receive probate leads, partner with estate agents and removal companies.</p>' +
+
+    // Add your listing
+    '<div style="background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.12);border-radius:10px;padding:14px;margin-bottom:12px">' +
+    '<h3 style="font-size:12px;font-weight:700;margin-bottom:6px;color:#fff">List Your Business as a Partner</h3>' +
+    '<p style="font-size:10px;color:var(--muted);margin-bottom:8px">Other 9amLeads customers with relevant leads may need your services. Add your business to get referrals.</p>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">' +
+    '<input type="text" id="partner-name" placeholder="Business name" style="flex:1;min-width:120px;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text);font-family:inherit;outline:none">' +
+    '<input type="text" id="partner-service" placeholder="Service (e.g. Roofing)" style="flex:1;min-width:120px;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text);font-family:inherit;outline:none">' +
+    '<input type="text" id="partner-area" placeholder="Postcode area" style="width:100px;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text);font-family:inherit;outline:none">' +
+    '</div>' +
+    '<button class="btn btn-primary btn-sm" onclick="addPartner()" style="font-size:10px;padding:6px 14px"><i class="fas fa-plus"></i> List My Business</button>' +
+    '</div>' +
+
+    // Current partners
+    '<h3 style="font-size:12px;font-weight:700;margin-bottom:8px;color:#fff">Available Partners</h3>' +
+    (partners.length === 0 && partners.length === 0 ?
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;margin-bottom:12px"><p style="font-size:11px;color:var(--muted)">No partners listed yet. Be the first to add your business!</p></div>' :
+    partners.map(function(p) {
+      return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">' +
+        '<div style="width:28px;height:28px;border-radius:6px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">' + (p.name ? p.name[0] : 'P') + '</div>' +
+        '<div style="flex:1"><div style="font-size:11px;font-weight:600;color:#fff">' + p.name + '</div><div style="font-size:9px;color:var(--muted)">' + p.service + ' · ' + p.area + '</div></div>' +
+        (p.contact ? '<a href="mailto:' + p.contact + '" style="color:var(--accent);font-size:10px">Contact</a>' : '') +
+        (p.id === (session.email || '') ? '<button class="btn btn-outline btn-sm" onclick="removePartner(\'' + p.id + '\')" style="padding:2px 6px;font-size:9px">Remove</button>' : '') +
+        '</div>';
+    }).join('')) +
+
+    // Suggested partners for this customer
+    '<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">' +
+    '<h3 style="font-size:11px;font-weight:700;margin-bottom:6px;color:#fff">Recommended Partners for Your Lead Type</h3>' +
+    '<p style="font-size:10px;color:var(--muted);margin-bottom:6px;line-height:1.5">As a ' + (customerType === 'moving' ? 'Moving Leads' : customerType === 'probate' ? 'Probate Leads' : customerType === 'newbusiness' ? 'New Business Alerts' : customerType === 'planning' ? 'Planning Permission' : 'Tenders') + ' customer, you may benefit from partnering with:</p>' +
+    '<div style="display:flex;gap:4px;flex-wrap:wrap">' + suggestions.map(function(s) { return '<span style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);border-radius:4px;padding:3px 8px;font-size:9px;color:var(--text2)">' + s + '</span>'; }).join('') + '</div>' +
+    '<p style="font-size:9px;color:var(--muted);margin-top:8px;font-style:italic">Refer leads to partners and earn referral fees or reciprocal business.</p></div></div>';
+}
+function addPartner() {
+  var name = document.getElementById('partner-name').value.trim();
+  var service = document.getElementById('partner-service').value.trim();
+  var area = document.getElementById('partner-area').value.trim();
+  if (!name || !service) { alert('Enter your business name and service'); return; }
+  var session = getSession() || {};
+  var id = session.email || 'partner_' + Date.now();
+  partners.push({ id: id, name: name, service: service, area: area || 'UK-wide', contact: session.email || '', created: new Date().toISOString() });
+  localStorage.setItem('mh_partners', JSON.stringify(partners));
+  document.getElementById('partner-name').value = '';
+  document.getElementById('partner-service').value = '';
+  document.getElementById('partner-area').value = '';
+  renderPartnerMarketplace();
+}
+function removePartner(id) {
+  partners = partners.filter(function(p) { return p.id !== id; });
+  localStorage.setItem('mh_partners', JSON.stringify(partners));
+  renderPartnerMarketplace();
+}
 
 // ===== CRM EXPORTS & LEAD ACTIONS =====
 
