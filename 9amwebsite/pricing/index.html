@@ -394,24 +394,63 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 <script>
 // Territory data with estimated daily lead volumes per type
 var TERRITORY_DATA = [
-  { code: 'London', postcodes: 'E, EC, N, NW, SE, SW, W, WC', moving: '5-10', probate: '2-5', newbiz: '5-15', planning: '3-8', tenders: '5-12', status: 'available', price: '£29/wk' },
-  { code: 'South East', postcodes: 'BN, CT, GU, KT, ME, RH, SM, TN, TW', moving: '3-7', probate: '2-4', newbiz: '4-10', planning: '3-7', tenders: '3-8', status: 'available', price: '£29/wk' },
-  { code: 'South West', postcodes: 'BA, BH, BS, DT, EX, PL, PO, SO, SP, TA, TQ, TR', moving: '2-5', probate: '1-3', newbiz: '3-7', planning: '2-5', tenders: '2-5', status: 'available', price: '£29/wk' },
-  { code: 'Midlands East', postcodes: 'B, CV, DE, DY, LE, LN, NG, NN, ST, WS, WV', moving: '3-7', probate: '2-4', newbiz: '4-8', planning: '2-5', tenders: '3-6', status: 'available', price: '£29/wk' },
-  { code: 'Midlands West', postcodes: 'GL, HR, OX, SN, WR', moving: '2-5', probate: '1-3', newbiz: '3-6', planning: '2-4', tenders: '2-4', status: 'available', price: '£29/wk' },
-  { code: 'North East', postcodes: 'DH, DL, DN, HU, NE, SR, TS, YO', moving: '2-5', probate: '1-3', newbiz: '3-6', planning: '2-4', tenders: '3-6', status: 'available', price: '£29/wk' },
-  { code: 'North West', postcodes: 'BB, BD, BL, CA, CH, CW, FY, L, LA, M, OL, PR, SK, WA, WN', moving: '3-7', probate: '2-4', newbiz: '4-8', planning: '2-5', tenders: '3-6', status: 'available', price: '£29/wk' },
-  { code: 'East of England', postcodes: 'AL, CB, CM, CO, HP, IP, LU, MK, NR, PE, SG, SS', moving: '3-6', probate: '2-4', newbiz: '4-8', planning: '2-5', tenders: '3-6', status: 'available', price: '£29/wk' },
-  { code: 'Wales', postcodes: 'CF, LD, LL, NP, SA, SY', moving: '1-4', probate: '1-2', newbiz: '2-5', planning: '1-3', tenders: '2-4', status: 'available', price: '£29/wk' },
-  { code: 'Scotland', postcodes: 'AB, DD, EH, FK, G, IV, KA, KW, KY, ML, PA, PH, TD, ZE', moving: '2-4', probate: '1-2', newbiz: '3-6', planning: '1-3', tenders: '3-5', status: 'available', price: '£29/wk' }
+  { code: 'London', postcodes: 'E, EC, N, NW, SE, SW, W, WC', moving: '5-10', probate: '2-5', newbiz: '5-15', planning: '3-8', tenders: '5-12', status: { moving: 'available', probate: 'reserved', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£29/wk' },
+  { code: 'South East', postcodes: 'BN, CT, GU, KT, ME, RH, SM, TN, TW', moving: '3-7', probate: '2-4', newbiz: '4-10', planning: '3-7', tenders: '3-8', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£29/wk' },
+  { code: 'South West', postcodes: 'BA, BH, BS, DT, EX, PL, PO, SO, SP, TA, TQ, TR', moving: '2-5', probate: '1-3', newbiz: '3-7', planning: '2-5', tenders: '2-5', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'sold', tenders: 'available' }, price: '£29/wk' },
+  { code: 'Midlands East', postcodes: 'B, CV, DE, DY, LE, LN, NG, NN, ST, WS, WV', moving: '3-7', probate: '2-4', newbiz: '4-8', planning: '2-5', tenders: '3-6', status: { moving: 'sold', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'reserved' }, price: '£29/wk' },
+  { code: 'Midlands West', postcodes: 'GL, HR, OX, SN, WR', moving: '2-5', probate: '1-3', newbiz: '3-6', planning: '2-4', tenders: '2-4', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£29/wk' },
+  { code: 'North East', postcodes: 'DH, DL, DN, HU, NE, SR, TS, YO', moving: '2-5', probate: '1-3', newbiz: '3-6', planning: '2-4', tenders: '3-6', status: { moving: 'available', probate: 'available', newbiz: 'reserved', planning: 'available', tenders: 'available' }, price: '£29/wk' },
+  { code: 'North West', postcodes: 'BB, BD, BL, CA, CH, CW, FY, L, LA, M, OL, PR, SK, WA, WN', moving: '3-7', probate: '2-4', newbiz: '4-8', planning: '2-5', tenders: '3-6', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£29/wk' },
+  { code: 'East of England', postcodes: 'AL, CB, CM, CO, HP, IP, LU, MK, NR, PE, SG, SS', moving: '3-6', probate: '2-4', newbiz: '4-8', planning: '2-5', tenders: '3-6', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£29/wk' },
+  { code: 'Wales', postcodes: 'CF, LD, LL, NP, SA, SY', moving: '1-4', probate: '1-2', newbiz: '2-5', planning: '1-3', tenders: '2-4', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£29/wk' },
+  { code: 'Scotland', postcodes: 'AB, DD, EH, FK, G, IV, KA, KW, KY, ML, PA, PH, TD, ZE', moving: '2-4', probate: '1-2', newbiz: '3-6', planning: '1-3', tenders: '3-5', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£29/wk' }
 ];
+
+var products = ['moving', 'probate', 'newbiz', 'planning', 'tenders'];
+var productLabels = { moving: 'Moving', probate: 'Probate', newbiz: 'New Biz', planning: 'Planning', tenders: 'Tenders' };
+
+// Load reservations from localStorage
+var reservations = JSON.parse(localStorage.getItem('mh_reservations') || '[]');
+function reserveTerritory(code, product) {
+  if (!confirm('Reserve ' + code + ' for ' + productLabels[product] + '? This holds your spot for 48 hours.')) return;
+  var key = code + '-' + product;
+  var existing = reservations.find(function(r) { return r.key === key; });
+  if (existing) { alert('Already reserved!'); return; }
+  reservations.push({ key: key, territory: code, product: product, reservedAt: new Date().toISOString(), email: prompt('Enter your email for reservation:') || '' });
+  localStorage.setItem('mh_reservations', JSON.stringify(reservations));
+  renderTerritoryTable();
+  alert('Territory reserved! We will contact you to confirm your subscription within 48 hours.');
+}
+
+function getStatus(code, product) {
+  var t = TERRITORY_DATA.find(function(x) { return x.code === code; });
+  if (!t) return 'available';
+  var base = t.status[product] || 'available';
+  var key = code + '-' + product;
+  var isReserved = reservations.some(function(r) { return r.key === key; });
+  if (isReserved) return 'yours';
+  return base;
+}
 
 function renderTerritoryTable() {
   var tbody = document.getElementById('territory-table');
   if (!tbody) return;
+  // Status column headers
+  var thead = tbody.closest('table').querySelector('thead');
+  if (thead) {
+    var statusHeader = '<th style="padding:10px 12px;text-align:left;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-size:10px">Status / Reserve</th>';
+    var oldStatus = thead.querySelector('th:nth-child(8)');
+    if (oldStatus) oldStatus.outerHTML = statusHeader;
+  }
   tbody.innerHTML = TERRITORY_DATA.map(function(t) {
-    var statusClass = t.status === 'sold' ? 'color:#ef4444' : t.status === 'reserved' ? 'color:var(--warning)' : 'color:var(--success)';
-    var statusText = t.status === 'sold' ? 'Sold' : t.status === 'reserved' ? 'Reserved' : 'Available';
+    var statusCells = products.map(function(p) {
+      var s = getStatus(t.code, p);
+      var icon = s === 'available' ? '🟢' : s === 'yours' ? '🔵' : s === 'reserved' ? '🟡' : '🔴';
+      var label = s === 'available' ? 'Avail' : s === 'yours' ? 'Yours' : s === 'reserved' ? 'Held' : 'Sold';
+      var urgency = s === 'available' ? '<span style="font-size:7px;color:var(--warning);margin-left:2px">⏳</span>' : '';
+      var reserveBtn = s === 'available' ? '<br><button onclick="reserveTerritory(\'' + t.code + '\',\'' + p + '\')" style="padding:1px 6px;border-radius:3px;border:1px solid rgba(14,165,233,0.2);background:transparent;color:var(--accent);font-size:8px;cursor:pointer;margin-top:2px;font-family:inherit">Reserve</button>' : '';
+      return '<div style="font-size:9px;padding:2px 0">' + icon + ' ' + productLabels[p] + ' ' + label + urgency + reserveBtn + '</div>';
+    }).join('');
     var heatClass = function(val) {
       var nums = val.split('-').map(Number);
       var avg = (nums[0] + nums[1]) / 2;
@@ -420,14 +459,14 @@ function renderTerritoryTable() {
       return 'color:var(--muted)';
     };
     return '<tr style="border-bottom:1px solid var(--border)">' +
-      '<td style="padding:10px 12px"><strong style="color:var(--text);font-size:12px">' + t.code + '</strong><br><span style="font-size:9px;color:var(--muted)">' + t.postcodes.substring(0, 30) + '...</span></td>' +
-      '<td style="padding:10px 12px;text-align:center;' + heatClass(t.moving) + '">' + t.moving + '</td>' +
-      '<td style="padding:10px 12px;text-align:center;' + heatClass(t.probate) + '">' + t.probate + '</td>' +
-      '<td style="padding:10px 12px;text-align:center;' + heatClass(t.newbiz) + '">' + t.newbiz + '</td>' +
-      '<td style="padding:10px 12px;text-align:center;' + heatClass(t.planning) + '">' + t.planning + '</td>' +
-      '<td style="padding:10px 12px;text-align:center;' + heatClass(t.tenders) + '">' + t.tenders + '</td>' +
-      '<td style="padding:10px 12px;text-align:center"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;' + statusClass + ';background:' + (t.status === 'available' ? 'rgba(34,197,94,0.08)' : t.status === 'reserved' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)') + '">' + statusText + '</span></td>' +
-      '<td style="padding:10px 12px;text-align:center;font-weight:700;color:var(--text);font-size:12px">' + t.price + '</td></tr>';
+      '<td style="padding:6px 12px"><strong style="color:var(--text);font-size:12px">' + t.code + '</strong><br><span style="font-size:8px;color:var(--muted)">' + t.postcodes.substring(0,25) + '...</span></td>' +
+      '<td style="padding:6px;text-align:center;' + heatClass(t.moving) + ';font-size:11px">' + t.moving + '</td>' +
+      '<td style="padding:6px;text-align:center;' + heatClass(t.probate) + ';font-size:11px">' + t.probate + '</td>' +
+      '<td style="padding:6px;text-align:center;' + heatClass(t.newbiz) + ';font-size:11px">' + t.newbiz + '</td>' +
+      '<td style="padding:6px;text-align:center;' + heatClass(t.planning) + ';font-size:11px">' + t.planning + '</td>' +
+      '<td style="padding:6px;text-align:center;' + heatClass(t.tenders) + ';font-size:11px">' + t.tenders + '</td>' +
+      '<td style="padding:6px 12px;font-size:10px;line-height:1.5">' + statusCells + '</td>' +
+      '<td style="padding:6px;text-align:center;font-weight:700;color:var(--text);font-size:11px">' + t.price + '</td></tr>';
   }).join('');
 }
 renderTerritoryTable();
