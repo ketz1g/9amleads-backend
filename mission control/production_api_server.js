@@ -483,9 +483,11 @@ app.post('/api/auth/signup', async (req, res) => {
 
     // Save to Brevo contact list
     try {
-      await addBrevoContact(customer);
+      var addResult = await addBrevoContact(customer);
+      if (addResult && addResult.error) console.log('[BREVO] Contact add error:', addResult.error);
+      else if (addResult && addResult.id) console.log('[BREVO] Contact added to list, ID:', addResult.id);
     } catch (e) {
-      console.log('Brevo contact add skipped:', e.message);
+      console.log('[BREVO] Contact add failed:', e.message);
     }
 
     const token = generateToken(customer);
@@ -1099,21 +1101,22 @@ async function addBrevoContact(customer) {
     'planning': 47,
     'tenders': 48
   };
-  const listId = LIST_IDS[customer.product] || 2;
+  const product = customer.product || customer.lead_type || 'moving';
+  const listId = LIST_IDS[product] || 44;
   
   const data = JSON.stringify({
     email: customer.email,
     attributes: {
-      COMPANY: customer.company,
-      FIRSTNAME: customer.contact_name || '',
+      COMPANY: customer.company || customer.business_name || '',
+      FIRSTNAME: customer.contact_name || customer.name || '',
       PHONE: customer.phone || '',
-      PRODUCT: customer.product,
-      LEAD_TYPE: customer.lead_type,
-      PLAN: customer.plan,
+      PRODUCT: product,
+      LEAD_TYPE: customer.lead_type || product,
+      PLAN: customer.plan || 'free_trial',
       SOURCE: customer.source || 'direct',
-      SIGNUP_DATE: customer.created_at
+      SIGNUP_DATE: customer.created_at || new Date().toISOString()
     },
-    listIds: [listId, 2], // product-specific list + main list
+    listIds: [listId],
     updateEnabled: true
   });
 
@@ -1131,7 +1134,7 @@ async function addBrevoContact(customer) {
       let body = '';
       res.on('data', c => body += c);
       res.on('end', () => {
-        if (res.statusCode < 300) resolve();
+        if (res.statusCode < 300) try { resolve(JSON.parse(body)); } catch(e) { resolve({ id: 'ok' }); }
         else reject(new Error(body));
       });
     });
