@@ -111,6 +111,7 @@ footer a{color:var(--primary);text-decoration:none}
 <a href="/" target="_blank">Home</a>
 <a href="/" class="active">Dashboard</a>
 <a href="#" onclick="openSuccessCentre();return false">Success Centre</a>
+<a href="#" onclick="openCampaigns();return false">Campaigns</a>
 <a href="/founder/" target="_blank">Founder</a>
 <a href="#" id="logout-btn" class="btn-out" onclick="logout()">Sign Out</a>
 </div>
@@ -1404,6 +1405,108 @@ function switchSCTab(id) {
   var el = document.getElementById('sc-content');
   if (el && window.successCentreData) el.innerHTML = window.successCentreData[id];
 }
+
+// ===== STAGE 38: AUTOMATED FOLLOW-UP CAMPAIGNS =====
+var campaigns = JSON.parse(localStorage.getItem('mh_campaigns') || '[]');
+function openCampaigns() {
+  var modal = document.getElementById('campaignModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'campaignModal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+  renderCampaigns();
+}
+function renderCampaigns() {
+  var modal = document.getElementById('campaignModal');
+  if (!modal) return;
+  modal.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:4px">Automated Follow-Up Campaigns</div><h2 style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;margin:0">Lead Outreach Sequences</h2></div><button class="btn btn-outline btn-sm" onclick="this.closest(\'#campaignModal\').style.display=\'none\'"><i class="fas fa-times"></i></button></div>' +
+    '<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5">Create follow-up sequences for your leads. Each campaign runs Day 1, Day 3, Day 5, and Day 10 automatically. You choose the channels.</p>' +
+    '<h3 style="font-size:13px;font-weight:700;margin-bottom:8px;color:#fff">Your Campaigns</h3>' +
+    (campaigns.length === 0 ? '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;text-align:center;margin-bottom:16px"><p style="font-size:12px;color:var(--muted)">No campaigns yet. Open a lead and click "Start Campaign" to create one.</p></div>' :
+    campaigns.sort(function(a,b) { return new Date(b.created) - new Date(a.created); }).map(function(c) {
+      var statusColor = c.status === 'active' ? 'var(--success)' : c.status === 'completed' ? 'var(--accent)' : 'var(--muted)';
+      return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px">' +
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">' +
+        '<span style="font-size:11px;font-weight:600;color:#fff">' + (c.leadName || 'Lead') + '</span>' +
+        '<span style="margin-left:auto;font-size:9px;color:' + statusColor + ';font-weight:600">' + c.status + '</span></div>' +
+        '<div style="font-size:10px;color:var(--muted);margin-bottom:4px">Started ' + new Date(c.created).toLocaleDateString() + ' · ' + c.channels.join(', ') + '</div>' +
+        '<div style="display:flex;gap:8px;font-size:10px;color:var(--text2)">' +
+        '<span>Day 1: ' + (c.steps && c.steps.day1 ? (c.steps.day1.done ? '✅' : '⏳') : '⏳') + '</span>' +
+        '<span>Day 3: ' + (c.steps && c.steps.day3 ? (c.steps.day3.done ? '✅' : '⏳') : '—') + '</span>' +
+        '<span>Day 5: ' + (c.steps && c.steps.day5 ? (c.steps.day5.done ? '✅' : '⏳') : '—') + '</span>' +
+        '<span>Day 10: ' + (c.steps && c.steps.day10 ? (c.steps.day10.done ? '✅' : '⏳') : '—') + '</span></div>' +
+        '<div style="margin-top:6px;display:flex;gap:4px">' +
+        '<button class="btn btn-outline btn-sm" onclick="pauseCampaign(\'' + c.id + '\')" style="font-size:9px;padding:3px 8px">' + (c.status === 'active' ? 'Pause' : (c.status === 'paused' ? 'Resume' : '')) + '</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="deleteCampaign(\'' + c.id + '\')" style="font-size:9px;padding:3px 8px;color:var(--danger)">Delete</button></div></div>';
+    }).join('')) +
+    '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)"><h3 style="font-size:12px;font-weight:700;margin-bottom:6px;color:#fff">How Follow-Up Campaigns Work</h3><p style="font-size:10px;color:var(--muted);line-height:1.6">When you click "Start Campaign" on a lead, we create a 4-step follow-up sequence: Day 1 (initial), Day 3, Day 5, and Day 10 (final). Each step creates a task reminder and optionally generates an email or WhatsApp draft. You choose the channels when starting. Campaigns must be manually enabled — nothing sends automatically.</p></div></div>';
+}
+function startCampaign(leadId) {
+  var lead = leads.find(function(l) { return l.id === leadId; });
+  if (!lead) return;
+  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
+  var leadName = d.address || d.name || d.company || d.deceasedName || d.applicant || 'Lead ' + leadId.substring(0,6);
+  var channels = [];
+  if (confirm('Start follow-up campaign for ' + leadName + '?\n\nChoose channels:\nOK = Email + WhatsApp + Tasks\nCancel = Tasks only')) {
+    channels = ['Email', 'WhatsApp', 'Task Reminder'];
+  } else {
+    channels = ['Task Reminder'];
+  }
+  if (!confirm('This creates a 4-step sequence (Day 1, 3, 5, 10). Nothing sends automatically. You will be reminded to take action each day. Start?')) return;
+  var campaign = {
+    id: 'camp_' + Date.now(),
+    leadId: leadId,
+    leadName: leadName,
+    status: 'active',
+    channels: channels,
+    created: new Date().toISOString(),
+    steps: {
+      day1: { due: new Date(Date.now() + 86400000).toISOString(), done: false },
+      day3: { due: new Date(Date.now() + 3*86400000).toISOString(), done: false },
+      day5: { due: new Date(Date.now() + 5*86400000).toISOString(), done: false },
+      day10: { due: new Date(Date.now() + 10*86400000).toISOString(), done: false }
+    }
+  };
+  campaigns.push(campaign);
+  localStorage.setItem('mh_campaigns', JSON.stringify(campaigns));
+  renderCampaigns();
+  alert('Campaign started for ' + leadName + '. Check back on Day ' + 1 + ' for your first follow-up task.');
+}
+function pauseCampaign(id) {
+  var c = campaigns.find(function(x) { return x.id === id; });
+  if (!c) return;
+  c.status = c.status === 'active' ? 'paused' : 'active';
+  localStorage.setItem('mh_campaigns', JSON.stringify(campaigns));
+  renderCampaigns();
+}
+function deleteCampaign(id) {
+  if (!confirm('Delete this campaign?')) return;
+  campaigns = campaigns.filter(function(c) { return c.id !== id; });
+  localStorage.setItem('mh_campaigns', JSON.stringify(campaigns));
+  renderCampaigns();
+}
+// Add campaign button to outreach panel
+var origRenderOutreachWrapper = window.renderOutreach;
+window.renderOutreach = function(leadId) {
+  if (origRenderOutreachWrapper) origRenderOutreachWrapper(leadId);
+  var panel = document.getElementById('outreach-' + leadId);
+  if (!panel) return;
+  // Add campaign button at the top of the existing panel
+  var header = panel.querySelector('.lead-row') || panel;
+  var existingBtn = panel.querySelector('[data-campaign-btn]');
+  if (!existingBtn) {
+    var campaignBtn = document.createElement('div');
+    campaignBtn.setAttribute('data-campaign-btn', 'true');
+    campaignBtn.style.cssText = 'margin-bottom:8px';
+    campaignBtn.innerHTML = '<button class="btn btn-primary btn-sm" onclick="startCampaign(\'' + leadId + '\')" style="width:100%;justify-content:center;font-size:11px;padding:6px 12px"><i class="fas fa-rocket"></i> Start Automated Follow-Up Campaign</button>';
+    panel.insertBefore(campaignBtn, panel.firstChild);
+  }
+};
 
 // ===== CRM EXPORTS & LEAD ACTIONS =====
 
