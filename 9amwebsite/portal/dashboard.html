@@ -285,6 +285,7 @@ footer a{color:var(--primary);text-decoration:none}
 <div class="card-title"><i class="fas fa-calendar-day" style="color:var(--success)"></i> <span id="leadTitle">Your Leads</span></div>
 <div style="display:flex;gap:6px;flex-wrap:wrap;position:relative">
 <button class="btn btn-outline btn-sm" onclick="toggleCal()"><i class="fas fa-calendar"></i> Calendar</button>
+<button class="btn btn-outline btn-sm" onclick="openWeeklyReport()"><i class="fas fa-chart-line"></i> Weekly Report</button>
 <button class="btn btn-outline btn-sm" onclick="exportRange('csv')"><i class="fas fa-file-csv"></i> Export</button>
 <button class="btn btn-outline btn-sm" onclick="exportRange('json')"><i class="fas fa-file-code"></i> JSON</button>
 <div class="cal-popup" id="calPopup">
@@ -1195,6 +1196,104 @@ function generateFallbackMessages(lead) {
 function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ===== WEEKLY REPORT =====
+function openWeeklyReport() {
+  var modal = document.getElementById('weeklyReportModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'weeklyReportModal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+
+  var now = new Date();
+  var weekAgo = new Date(now.getTime() - 7 * 86400000);
+  var weekLeads = leads.filter(function(l) {
+    var d = l.delivered_at || l.created_at || '';
+    return d && new Date(d) >= weekAgo;
+  });
+
+  var totalWeek = weekLeads.length;
+  var hotLeads = weekLeads.filter(function(l) { return (l.opportunity_score || 0) >= 80; }).length;
+  var warmLeads = weekLeads.filter(function(l) { var s = l.opportunity_score || 0; return s >= 50 && s < 80; }).length;
+  var coldLeads = weekLeads.filter(function(l) { return (l.opportunity_score || 0) < 50; }).length;
+  var contacted = weekLeads.filter(function(l) { return l.status === 'contacted' || l.status === 'booked' || l.status === 'closed'; }).length;
+  var won = weekLeads.filter(function(l) { return l.status === 'booked' || l.status === 'closed'; }).length;
+
+  var estimatedValue = 0;
+  weekLeads.forEach(function(l) {
+    var d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
+    var val = parseInt(d.price) || parseInt(d.estateValue) || parseInt(d.contractValue) || parseInt(d.value) || 0;
+    if (val > 0 && (l.opportunity_score || 0) >= 50) estimatedValue += Math.round(val * 0.02);
+  });
+
+  var areaCounts = {};
+  weekLeads.forEach(function(l) {
+    var d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
+    var pc = (d.postcode || '').substring(0, 2).toUpperCase();
+    if (pc) { areaCounts[pc] = areaCounts[pc] || 0; areaCounts[pc]++; }
+  });
+  var sortedAreas = Object.keys(areaCounts).sort(function(a, b) { return areaCounts[b] - areaCounts[a]; }).slice(0, 5);
+
+  var notes = JSON.parse(localStorage.getItem('mh_lead_notes') || '{}');
+  var notesCount = Object.keys(notes).filter(function(k) { return weekLeads.some(function(l) { return l.id === k; }); }).length;
+
+  var sideColor = 'var(--accent)';
+
+  modal.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto" onclick="event.stopPropagation()">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">' +
+    '<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:' + sideColor + ';margin-bottom:4px">Weekly Report</div>' +
+    '<h2 style="font-size:20px;font-weight:800;font-family:Outfit,sans-serif;margin:0">' + weekAgo.toLocaleDateString() + ' - ' + now.toLocaleDateString() + '</h2></div>' +
+    '<div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" onclick="exportWeeklyCSV()"><i class="fas fa-download"></i> CSV</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="this.closest(\'#weeklyReportModal\').style.display=\'none\'"><i class="fas fa-times"></i></button></div></div>' +
+
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">📬</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + totalWeek + '</div><div style="font-size:9px;color:var(--muted)">Total Leads</div></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">🔥</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + hotLeads + '</div><div style="font-size:9px;color:var(--muted)">Hot Leads</div></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">🔶</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + warmLeads + '</div><div style="font-size:9px;color:var(--muted)">Warm Leads</div></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">❄</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + coldLeads + '</div><div style="font-size:9px;color:var(--muted)">Cold Leads</div></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">📞</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + contacted + '</div><div style="font-size:9px;color:var(--muted)">Contacted</div></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">✅</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + won + '</div><div style="font-size:9px;color:var(--muted)">Won</div></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">📝</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + notesCount + '</div><div style="font-size:9px;color:var(--muted)">With Notes</div></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">💰</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">£' + estimatedValue.toLocaleString() + '</div><div style="font-size:9px;color:var(--muted)">Est. Value</div></div>' +
+    '</div>' +
+
+    (sortedAreas.length > 0 ? '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">' +
+    '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px">📌 Best Performing Postcode Areas</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px">' +
+    sortedAreas.map(function(a) { return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center"><div style="font-weight:700;font-size:14px;color:var(--accent)">' + a + '</div><div style="font-size:10px;color:var(--muted)">' + areaCounts[a] + ' leads</div></div>'; }).join('') +
+    '</div></div>' : '') +
+
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">' +
+    '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px">📈 Weekly Performance</div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+    '<div style="flex:1;min-width:100px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--muted)">Contact Rate</div><div style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;color:' + sideColor + '">' + (totalWeek > 0 ? Math.round(contacted / totalWeek * 100) : 0) + '%</div></div>' +
+    '<div style="flex:1;min-width:100px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--muted)">Win Rate</div><div style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;color:var(--success)">' + (contacted > 0 ? Math.round(won / contacted * 100) : 0) + '%</div></div>' +
+    '<div style="flex:1;min-width:100px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--muted)">Hot Lead %</div><div style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;color:var(--warning)">' + (totalWeek > 0 ? Math.round(hotLeads / totalWeek * 100) : 0) + '%</div></div>' +
+    '</div></div>' +
+
+    '<div style="margin-top:14px;text-align:center;font-size:10px;color:var(--muted);border-top:1px solid var(--border);padding-top:12px">' +
+    '<i class="fas fa-chart-line" style="color:' + sideColor + ';margin-right:4px"></i> Report generated ' + now.toLocaleString() +
+    '</div></div>';
+}
+
+function exportWeeklyCSV() {
+  var now = new Date();
+  var weekAgo = new Date(now.getTime() - 7 * 86400000);
+  var weekLeads = leads.filter(function(l) {
+    var d = l.delivered_at || l.created_at || '';
+    return d && new Date(d) >= weekAgo;
+  });
+  var csv = 'ID,Product,Status,Score,Category,Address,Postcode,Price,Bedrooms,Email,Website,Delivered\n';
+  weekLeads.forEach(function(l) {
+    var d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
+    csv += '"' + (l.id || '') + '","' + (l.product || '') + '","' + (l.status || '') + '","' + (l.opportunity_score || 0) + '","' + (l.opportunity_category || '') + '","' + ((d.address || '').replace(/"/g, '""')) + '","' + (d.postcode || '') + '","' + (d.price || d.estateValue || d.contractValue || '') + '","' + (d.bedrooms || '') + '","' + (d.ownerEmail || d.legalAdvisorEmail || d.buyerEmail || '') + '","' + (d.website || d.url || '') + '","' + (l.delivered_at || l.created_at || '') + '"\n';
+  });
+  downloadFile(csv, '9amleads-weekly-report-' + now.toISOString().split('T')[0] + '.csv', 'text/csv');
 }
 
 // ===== CRM EXPORTS & LEAD ACTIONS =====
