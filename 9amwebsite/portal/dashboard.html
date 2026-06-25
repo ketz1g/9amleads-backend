@@ -110,6 +110,7 @@ footer a{color:var(--primary);text-decoration:none}
 <div class="nav-links">
 <a href="/" target="_blank">Home</a>
 <a href="/" class="active">Dashboard</a>
+<a href="#" onclick="openSuccessCentre();return false">Success Centre</a>
 <a href="/founder/" target="_blank">Founder</a>
 <a href="#" id="logout-btn" class="btn-out" onclick="logout()">Sign Out</a>
 </div>
@@ -1335,6 +1336,73 @@ function exportWeeklyCSV() {
     csv += '"' + (l.id || '') + '","' + (l.product || '') + '","' + (l.status || '') + '","' + (l.opportunity_score || 0) + '","' + (l.opportunity_category || '') + '","' + ((d.address || '').replace(/"/g, '""')) + '","' + (d.postcode || '') + '","' + (d.price || d.estateValue || d.contractValue || '') + '","' + (d.bedrooms || '') + '","' + (d.ownerEmail || d.legalAdvisorEmail || d.buyerEmail || '') + '","' + (d.website || d.url || '') + '","' + (l.delivered_at || l.created_at || '') + '"\n';
   });
   downloadFile(csv, '9amleads-weekly-report-' + now.toISOString().split('T')[0] + '.csv', 'text/csv');
+}
+
+// ===== STAGE 32: CUSTOMER SUCCESS CENTRE =====
+function openSuccessCentre() {
+  var modal = document.getElementById('successModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'successModal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+
+  var tabs = [
+    { id: 'scripts', label: 'Call Scripts' },
+    { id: 'email', label: 'Email Templates' },
+    { id: 'whatsapp', label: 'WhatsApp Tips' },
+    { id: 'followup', label: 'Follow-Up' },
+    { id: 'bestpractices', label: 'Best Practices' }
+  ];
+
+  var scriptsContent =
+    '<h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--accent)">Opening Script</h3>' +
+    '<p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px">"Hi [name], this is [your name] from [company]. I noticed that [trigger event]. The reason I am calling is we help [business type] with [service]. Would you be open to a quick chat this week?"</p>' +
+    '<h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--accent)">Key Rules</h3>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px"><p style="font-size:11px;color:var(--text2);line-height:1.7;margin:0">🔥 Call within 30 minutes of receiving the lead<br>👂 Listen more than you talk<br>🎯 Reference their specific situation<br>❓ Always ask for the next step</p></div>';
+
+  var emailContent =
+    '<h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--accent)">Email Outreach Template</h3>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px"><p style="font-size:11px;color:var(--text2);line-height:1.7;margin:0">Subject: Quick question regarding [trigger event]<br><br>Hi [name],<br><br>I noticed that [trigger event]. We specialise in helping [business type] with [service].<br><br>Would you be open to a five-minute chat this week to see if we can help?<br><br>Best,<br>[Your name]</p></div>' +
+    '<p style="font-size:11px;color:var(--muted);font-style:italic">Use the AI-drafted emails in your dashboard for personalised versions.</p>';
+
+  var whatsappContent =
+    '<h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--accent)">WhatsApp Template</h3>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px"><p style="font-size:11px;color:var(--text2);line-height:1.7;margin:0">Hi [name] 👋<br><br>I just saw that [trigger event]. We help [business type] with [service].<br><br>Free for a quick call this week?<br><br>Thanks!</p></div>' +
+    '<p style="font-size:11px;color:var(--muted)">Keep WhatsApp messages short, friendly, and personal. Use emojis sparingly.</p>';
+
+  var followupContent =
+    '<h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--accent)">Follow-Up Sequence</h3>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);margin:0"><strong style="color:#fff">Day 1:</strong> First call + email</p></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);margin:0"><strong style="color:#fff">Day 2:</strong> WhatsApp or text follow-up</p></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);margin:0"><strong style="color:#fff">Day 4:</strong> Second call — try different time of day</p></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px"><p style="font-size:11px;color:var(--text2);margin:0"><strong style="color:#fff">Day 7:</strong> Final follow-up email</p></div>' +
+    '<p style="font-size:11px;color:var(--muted);font-style:italic">Most sales happen on the 2nd or 3rd touch. Keep going.</p>';
+
+  var bestPracticesContent =
+    '<h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--accent)">Best Practices</h3>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);line-height:1.6;margin:0"><strong style="color:#fff">🕐 Speed wins:</strong> Call within 30 minutes. First to call = first to close.</p></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);line-height:1.6;margin:0"><strong style="color:#fff">🎯 Personalise:</strong> Reference their specific situation from the lead data. Generic pitches lose.</p></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);line-height:1.6;margin:0"><strong style="color:#fff">📊 Track:</strong> Use the status buttons (Contacted/Won/Lost) and lead notes in your dashboard.</p></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);line-height:1.6;margin:0"><strong style="color:#fff">📈 Review:</strong> Check your weekly report for contact rate and win rate. Improve every week.</p></div>';
+
+  var contentMap = { scripts: scriptsContent, email: emailContent, whatsapp: whatsappContent, followup: followupContent, bestpractices: bestPracticesContent };
+
+  modal.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:4px">Customer Success Centre</div><h2 style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;margin:0">Training & Resources</h2></div><button class="btn btn-outline btn-sm" onclick="this.closest(\'#successModal\').style.display=\'none\'"><i class="fas fa-times"></i></button></div>' +
+    '<div style="display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap">' + tabs.map(function(t) { return '<button class="btn btn-outline btn-sm" onclick="switchSCTab(\'' + t.id + '\')" id="sctab-' + t.id + '" style="font-size:11px;padding:6px 12px">' + t.label + '</button>'; }).join('') + '</div>' +
+    '<div id="sc-content">' + scriptsContent + '</div></div>';
+}
+function switchSCTab(id) {
+  var content = { scripts: 'scripts', email: 'email', whatsapp: 'whatsapp', followup: 'followup', bestpractices: 'bestpractices' }[id];
+  document.querySelectorAll('[id^="sctab-"]').forEach(function(b) { b.className = 'btn btn-outline btn-sm'; b.style.cssText = 'font-size:11px;padding:6px 12px'; });
+  var tab = document.getElementById('sctab-' + id);
+  if (tab) { tab.className = 'btn btn-primary btn-sm'; tab.style.cssText = 'font-size:11px;padding:6px 12px'; }
+  var el = document.getElementById('sc-content');
+  if (el && window.successCentreData) el.innerHTML = window.successCentreData[id];
 }
 
 // ===== CRM EXPORTS & LEAD ACTIONS =====
