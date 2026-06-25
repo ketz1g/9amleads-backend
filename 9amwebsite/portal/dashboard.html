@@ -113,6 +113,7 @@ footer a{color:var(--primary);text-decoration:none}
 <a href="#" onclick="openSuccessCentre();return false">Success Centre</a>
 <a href="#" onclick="openCampaigns();return false">Campaigns</a>
 <a href="#" onclick="openPartnerMarketplace();return false">Partners</a>
+<a href="#" onclick="openWhiteLabel();return false">Branding</a>
 <a href="/founder/" target="_blank">Founder</a>
 <a href="#" id="logout-btn" class="btn-out" onclick="logout()">Sign Out</a>
 </div>
@@ -1593,6 +1594,75 @@ function removePartner(id) {
   partners = partners.filter(function(p) { return p.id !== id; });
   localStorage.setItem('mh_partners', JSON.stringify(partners));
   renderPartnerMarketplace();
+}
+
+// ===== STAGE 43: WHITE LABEL REPORTS =====
+var brandSettings = JSON.parse(localStorage.getItem('mh_branding') || '{}');
+function openWhiteLabel() {
+  var modal = document.getElementById('brandModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'brandModal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+  renderBrandSettings();
+}
+function renderBrandSettings() {
+  var modal = document.getElementById('brandModal');
+  if (!modal) return;
+  var bs = brandSettings;
+  modal.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:4px">White Label Reports</div><h2 style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;margin:0">Brand Your Reports</h2></div><button class="btn btn-outline btn-sm" onclick="this.closest(\'#brandModal\').style.display=\'none\'"><i class="fas fa-times"></i></button></div>' +
+    '<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5">Add your company logo and name to exported CSV reports, weekly reports, and lead sheets. Your customers will see your brand, not ours.</p>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px">' +
+    '<h3 style="font-size:12px;font-weight:700;margin-bottom:8px;color:#fff">Brand Settings</h3>' +
+    '<div style="margin-bottom:8px"><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Company Name</label><input type="text" id="brand-company" value="' + (bs.companyName || '') + '" placeholder="Your company name" style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"></div>' +
+    '<div style="margin-bottom:8px"><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Logo URL (optional)</label><input type="url" id="brand-logo" value="' + (bs.logoUrl || '') + '" placeholder="https://yourcompany.com/logo.png" style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"></div>' +
+    '<div style="margin-bottom:8px"><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Report Footer Text</label><input type="text" id="brand-footer" value="' + (bs.footerText || '') + '" placeholder="e.g. Confidential - Prepared for Client Name" style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"></div>' +
+    '<div style="margin-bottom:8px"><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Primary Colour</label><input type="color" id="brand-color" value="' + (bs.primaryColor || '#0ea5e9') + '" style="width:40px;height:30px;border:none;border-radius:4px;cursor:pointer;background:none;padding:0"></div>' +
+    '<button class="btn btn-primary btn-sm" onclick="saveBrandSettings()" style="font-size:11px;padding:7px 16px;margin-top:4px"><i class="fas fa-save"></i> Save Brand Settings</button>' +
+    '</div>' +
+    // Preview
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px">' +
+    '<h3 style="font-size:11px;font-weight:700;margin-bottom:6px;color:#fff">Preview: Branded Lead Export</h3>' +
+    '<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:10px;color:var(--text2);line-height:1.6;font-family:monospace">' +
+    (bs.companyName ? 'Company: ' + bs.companyName + '\n' : '') +
+    (bs.footerText ? bs.footerText + '\n' : '') +
+    'Lead ID,Address,Postcode,Price,Score,Status\nML123,\"123 High Street\",SW1A 1AA,\u00a3525k,95,HOT\nML124,\"45 Green Lane\",M1 1AA,\u00a3250k,67,WARM\n' +
+    (bs.companyName ? '-- Generated by ' + bs.companyName + ' via 9amLeads --' : '-- Generated via 9amLeads --') +
+    '</div></div>' +
+
+    '<div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" onclick="exportBrandedCSV()" style="font-size:10px;padding:6px 14px"><i class="fas fa-file-csv"></i> Export Branded CSV</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="window.open(\'/portal/dashboard.html\')" style="font-size:10px;padding:6px 14px"><i class="fas fa-file-pdf"></i> Export Branded Weekly Report</button></div>' +
+    '</div>';
+}
+function saveBrandSettings() {
+  brandSettings = {
+    companyName: document.getElementById('brand-company').value.trim(),
+    logoUrl: document.getElementById('brand-logo').value.trim(),
+    footerText: document.getElementById('brand-footer').value.trim(),
+    primaryColor: document.getElementById('brand-color').value,
+    updated: new Date().toISOString()
+  };
+  localStorage.setItem('mh_branding', JSON.stringify(brandSettings));
+  renderBrandSettings();
+}
+function exportBrandedCSV() {
+  var bs = brandSettings;
+  var header = (bs.companyName ? 'Company: ' + bs.companyName + '\n' : '') + (bs.footerText ? bs.footerText + '\n' : '') + (bs.companyName ? '-- Generated by ' + bs.companyName + ' via 9amLeads --\n' : '') + 'Lead ID,Product,Address,Postcode,Price,Score,Category,Status\n';
+  var csv = header;
+  (window.leads || []).slice(0, 20).forEach(function(l) {
+    var d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
+    csv += '"' + (l.id || '').substring(0, 8) + '","' + (l.product || '') + '","' + (d.address || '').replace(/"/g, '""') + '","' + (d.postcode || '') + '","' + (d.price || d.estateValue || d.contractValue || '') + '","' + (l.opportunity_score || '') + '","' + (l.opportunity_category || '') + '","' + (l.status || '') + '"\n';
+  });
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (bs.companyName ? bs.companyName.replace(/\s+/g, '_') : 'lead_report') + '_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
 }
 
 // ===== CRM EXPORTS & LEAD ACTIONS =====
