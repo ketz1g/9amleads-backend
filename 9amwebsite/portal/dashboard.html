@@ -70,7 +70,7 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 2
 .day-body{padding:0}
 .day-body.collapsed{display:none}
 /* LEAD ROW */
-.lead-row{display:grid;grid-template-columns:1fr 80px 90px 80px 90px;gap:8px;padding:10px 18px;border-bottom:1px solid var(--border);align-items:center;font-size:12px;transition:.2s}
+.lead-row{display:grid;grid-template-columns:1fr 80px 90px 80px 60px;gap:8px;padding:10px 18px;border-bottom:1px solid var(--border);align-items:center;font-size:12px;transition:.2s}
 .lead-row:last-child{border-bottom:none}
 .lead-row:hover{background:rgba(255,255,255,.02)}
 .lead-row .score{text-align:center;font-size:11px}
@@ -446,7 +446,8 @@ function renderLeads() {
         const scoreLabel = l.opportunity_label || '';
         const reasons = l.opportunity_reasons || [];
         const scoreBadge = score >= 80 ? '<span class="badge badge-green" title="' + reasons.join(' | ') + '" style="cursor:help">'+ score + ' 🔥</span>' : score >= 50 ? '<span class="badge badge-orange" title="' + reasons.join(' | ') + '" style="cursor:help">'+ score + ' 🔶</span>' : '<span class="badge badge-blue" title="' + reasons.join(' | ') + '" style="cursor:help">'+ score + ' ❄</span>';
-        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || '—') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' · ' + d.type : '') + '</small></div><div class="score">' + scoreBadge + '</div><div class="value">' + (d.price || '—') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div></div>';
+        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || '—') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' · ' + d.type : '') + '</small></div><div class="score">' + scoreBadge + '</div><div class="value">' + (d.price || '—') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div><div class="outreach" style="text-align:center"><button class="btn btn-outline btn-sm" onclick="toggleOutreach(\'' + l.id + '\', this)"><i class="fas fa-envelope"></i></button></div></div>' +
+          '<div id="outreach-' + l.id + '" class="outreach-panel" style="display:none;padding:14px;background:var(--bg2);border-bottom:1px solid var(--border)"><div class="outreach-loading" style="color:var(--muted);font-size:12px">Generating outreach messages...</div></div>';
       });
       html += '</div></div>';
     }
@@ -464,7 +465,8 @@ function renderLeads() {
         const scoreLabel = l.opportunity_label || '';
         const reasons = l.opportunity_reasons || [];
         const scoreBadge = score >= 80 ? '<span class="badge badge-green" title="' + reasons.join(' | ') + '" style="cursor:help">'+ score + ' 🔥</span>' : score >= 50 ? '<span class="badge badge-orange" title="' + reasons.join(' | ') + '" style="cursor:help">'+ score + ' 🔶</span>' : '<span class="badge badge-blue" title="' + reasons.join(' | ') + '" style="cursor:help">'+ score + ' ❄</span>';
-        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || '—') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' · ' + d.type : '') + '</small></div><div class="score">' + scoreBadge + '</div><div class="value">' + (d.price || '—') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div></div>';
+        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || '—') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' · ' + d.type : '') + '</small></div><div class="score">' + scoreBadge + '</div><div class="value">' + (d.price || '—') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div><div class="outreach" style="text-align:center"><button class="btn btn-outline btn-sm" onclick="toggleOutreach(\'' + l.id + '\', this)"><i class="fas fa-envelope"></i></button></div></div>' +
+          '<div id="outreach-' + l.id + '" class="outreach-panel" style="display:none;padding:14px;background:var(--bg2);border-bottom:1px solid var(--border)"><div class="outreach-loading" style="color:var(--muted);font-size:12px">Generating outreach messages...</div></div>';
       });
       html += '</div></div>';
     });
@@ -1065,5 +1067,97 @@ document.addEventListener('click', function(e) {
   const td = document.getElementById('territory-dropdown');
   if (td && !e.target.closest('#territory-manager')) td.style.display = 'none';
 });
+
+// ===== AI OUTREACH GENERATOR =====
+var outreachCache = {};
+
+function toggleOutreach(leadId, btn) {
+  var panel = document.getElementById('outreach-' + leadId);
+  if (!panel) return;
+  if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  if (outreachCache[leadId]) { renderOutreach(leadId); return; }
+
+  // Find the lead data
+  var lead = leads.find(function(l) { return l.id === leadId; });
+  if (!lead) { panel.innerHTML = '<p style="color:var(--muted);font-size:12px">Lead data not available.</p>'; return; }
+
+  // Generate messages using the Opportunity Score + Outreach Generator
+  var msg;
+  if (window.OutreachGenerator) {
+    msg = window.OutreachGenerator.generateOutreachMessages(lead);
+  } else {
+    // Fallback generator
+    msg = generateFallbackMessages(lead);
+  }
+  outreachCache[leadId] = msg;
+  renderOutreach(leadId);
+}
+
+function renderOutreach(leadId) {
+  var panel = document.getElementById('outreach-' + leadId);
+  var msg = outreachCache[leadId];
+  if (!panel || !msg) return;
+
+  panel.innerHTML = '<div style="margin-bottom:10px"><div style="display:flex;gap:6px;margin-bottom:8px">' +
+    '<button class="btn btn-primary btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'email\')" id="otab-' + leadId + '-email" style="flex:1;justify-content:center">📧 Email</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'whatsapp\')" id="otab-' + leadId + '-whatsapp" style="flex:1;justify-content:center">💬 WhatsApp</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'phone\')" id="otab-' + leadId + '-phone" style="flex:1;justify-content:center">📞 Phone</button>' +
+    '</div>' +
+    '<div id="o-content-' + leadId + '"><textarea id="o-text-' + leadId + '" style="width:100%;min-height:100px;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text2);font-family:inherit;line-height:1.6;resize:vertical">' + escapeHtml(msg.email) + '</textarea></div>' +
+    '<div style="display:flex;gap:6px;margin-top:6px">' +
+    '<button class="btn btn-primary btn-sm" onclick="copyOutreach(\'' + leadId + '\')" style="flex:1;justify-content:center"><i class="fas fa-copy"></i> Copy</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="var t=document.getElementById(\'o-text-\'+\'' + leadId + '\');t.select();t.style.borderColor=\'var(--accent)\'" style="flex:1;justify-content:center"><i class="fas fa-pen"></i> Edit</button>' +
+    '</div>';
+}
+
+function selectOutreachTab(leadId, tab) {
+  var msg = outreachCache[leadId];
+  if (!msg) return;
+  var textarea = document.getElementById('o-text-' + leadId);
+  if (tab === 'email') textarea.value = msg.email;
+  else if (tab === 'whatsapp') textarea.value = msg.whatsapp;
+  else textarea.value = msg.phone;
+
+  document.querySelectorAll('[id^="otab-' + leadId + '-"]').forEach(function(b) {
+    b.className = 'btn btn-outline btn-sm';
+    b.style.justifyContent = 'center';
+    b.style.flex = '1';
+  });
+  var active = document.getElementById('otab-' + leadId + '-' + tab);
+  if (active) { active.className = 'btn btn-primary btn-sm'; active.style.justifyContent = 'center'; active.style.flex = '1'; }
+}
+
+function copyOutreach(leadId) {
+  var textarea = document.getElementById('o-text-' + leadId);
+  if (!textarea) return;
+  textarea.select();
+  navigator.clipboard.writeText(textarea.value).then(function() {
+    var btn = document.querySelector('#outreach-' + leadId + ' .btn-primary');
+    var orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    setTimeout(function() { btn.innerHTML = orig; }, 2000);
+  });
+}
+
+function generateFallbackMessages(lead) {
+  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
+  var name = d.deceasedName || d.applicant || d.name || d.companyName || d.company || '';
+  var company = d.company || d.companyName || d.buyer || '';
+  var addr = d.address || '';
+  var greeting = name ? 'Hi ' + name : (company ? 'Hi there' : 'Hello');
+
+  return {
+    lead_id: lead.id,
+    email: greeting + ',\n\nI noticed your recent activity and we help businesses with our lead generation services. Would you be open to a quick chat this week?',
+    whatsapp: greeting + ' 👋\n\nWe specialise in helping businesses generate leads. Would you be free for a quick 5-minute call?',
+    phone: greeting + ', my name is [Your Name] from [Your Company]. I wanted to reach out as we help businesses in your area. Do you have a couple of minutes to chat?'
+  };
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 </script>
 </body></html>
