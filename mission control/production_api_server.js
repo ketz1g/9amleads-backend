@@ -499,6 +499,33 @@ app.post('/api/auth/signup', async (req, res) => {
       console.log('[BREVO] Contact add failed:', e.message);
     }
 
+    // Save to scraper customer file for lead generation
+    try {
+      var scraperProduct = product;
+      var scraperDir = path.join(__dirname, 'data');
+      var scraperFile = path.join(scraperDir, scraperProduct + '-leads-customers.json');
+      var scraperCustomers = {};
+      try { scraperCustomers = JSON.parse(fs.readFileSync(scraperFile, 'utf-8')); } catch(e) { scraperCustomers = {}; }
+      var targetAreasParsed = targetAreas || [];
+      var filters = {};
+      try { filters = JSON.parse(leadFilters || '{}'); } catch(e) {}
+      scraperCustomers[customer.id] = {
+        company: company, email: email.toLowerCase(),
+        postcodes: targetAreasParsed,
+        minBedrooms: parseInt(filters.minBedrooms) || 0,
+        maxBedrooms: parseInt(filters.maxBedrooms) || 99,
+        maxPrice: parseInt(filters.maxPrice) || 0,
+        propertyType: filters.propertyType || '',
+        statusSSTC: filters.statusSSTC !== false,
+        statusOffer: filters.statusOffer !== false,
+        active: true, leadsPerDay: 5, created: new Date().toISOString(), plan: 'free_trial'
+      };
+      fs.writeFileSync(scraperFile, JSON.stringify(scraperCustomers, null, 2));
+      console.log('[SCRAPER] Customer added to ' + scraperProduct + ' scraper file');
+    } catch (e) {
+      console.log('[SCRAPER] Failed to add customer:', e.message);
+    }
+
     const token = generateToken(customer);
 
     res.status(201).json({
@@ -901,6 +928,18 @@ app.put('/api/settings', authMiddleware, (req, res) => {
     releasePostcodes(req.user.id);
     claimPostcodes(target_areas, req.user.id, customer.product);
     db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(JSON.stringify(target_areas), req.user.id);
+    // Sync postcodes to scraper customer file
+    try {
+      var p2 = customer.product;
+      var scraperFile2 = path.join(__dirname, 'data', p2 + '-leads-customers.json');
+      var scrCusts2 = {};
+      try { scrCusts2 = JSON.parse(fs.readFileSync(scraperFile2, 'utf-8')); } catch(e) {}
+      if (scrCusts2[req.user.id]) {
+        scrCusts2[req.user.id].postcodes = target_areas;
+        fs.writeFileSync(scraperFile2, JSON.stringify(scrCusts2, null, 2));
+        console.log('[SCRAPER] Postcodes synced for ' + req.user.id);
+      }
+    } catch(e) { console.log('[SCRAPER] Postcode sync error:', e.message); }
   }
 
   res.json({ success: true });
@@ -914,6 +953,26 @@ app.put('/api/settings/lead-filters', authMiddleware, (req, res) => {
 
   db.prepare('UPDATE customers SET biz_field2 = ? WHERE id = ?').run(leadFilters || '', req.user.id);
   saveDb();
+
+  // Sync updated filters to scraper customer file
+  try {
+    var p = customer.product;
+    var scraperFile = path.join(__dirname, 'data', p + '-leads-customers.json');
+    var scrCusts = {};
+    try { scrCusts = JSON.parse(fs.readFileSync(scraperFile, 'utf-8')); } catch(e) {}
+    if (scrCusts[req.user.id]) {
+      var f = {};
+      try { f = JSON.parse(leadFilters || '{}'); } catch(e) {}
+      scrCusts[req.user.id].minBedrooms = parseInt(f.minBedrooms) || 0;
+      scrCusts[req.user.id].maxBedrooms = parseInt(f.maxBedrooms) || 99;
+      scrCusts[req.user.id].maxPrice = parseInt(f.maxPrice) || 0;
+      scrCusts[req.user.id].propertyType = f.propertyType || '';
+      scrCusts[req.user.id].statusSSTC = f.statusSSTC !== false;
+      scrCusts[req.user.id].statusOffer = f.statusOffer !== false;
+      fs.writeFileSync(scraperFile, JSON.stringify(scrCusts, null, 2));
+      console.log('[SCRAPER] Filters synced for ' + req.user.id);
+    }
+  } catch(e) { console.log('[SCRAPER] Filter sync error:', e.message); }
 
   res.json({ success: true, biz_field2: leadFilters || '' });
 });
