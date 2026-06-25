@@ -344,7 +344,7 @@ footer a:hover{color:var(--text)}
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:900px;margin:0 auto">
 <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
 <div style="font-size:28px;font-weight:800;font-family:var(--ff-h);color:var(--accent)" id="spCounter1">0</div>
-<div style="font-size:12px;color:var(--text2);margin-top:4px">Opportunities Delivered This Month</div>
+<div style="font-size:12px;color:var(--text2);margin-top:4px">Total Leads Delivered</div>
 </div>
 <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
 <div style="font-size:28px;font-weight:800;font-family:var(--ff-h);color:var(--accent)" id="spCounter2">0</div>
@@ -1263,10 +1263,10 @@ function initCounters() {
   var obs = new IntersectionObserver(function(entries) {
     entries.forEach(function(entry) {
       if (entry.isIntersecting) {
-        animateCounter('spCounter1', 15000, '+');
-        animateCounter('spCounter2', 500, '+');
-        animateCounter('spCounter3', 500, '+');
-        animateCounter('spCounter4', 250, '+');
+        animateCounter('spCounter1', 293, '+');
+        animateCounter('spCounter2', 18, '+');
+        animateCounter('spCounter3', 9, '+');
+        animateCounter('spCounter4', 47, '+');
         obs.disconnect();
       }
     });
@@ -1280,13 +1280,13 @@ initCounters();
   var feedEl = document.getElementById('liveFeedText');
   if (!feedEl) return;
   var msgs = [
-    'A removal company from London just joined',
-    'A solicitor from Manchester just subscribed',
-    'New moving leads delivered to Birmingham',
-    'A construction firm from Leeds just upgraded',
-    'A probate practitioner from Bristol just enrolled',
-    'An estate agent from Edinburgh started their trial',
-    'New planning leads delivered to Cardiff'
+    'A removal company from London started their free trial',
+    'A solicitor from Manchester subscribed to probate leads',
+    'Moving leads delivered to a removal company in Birmingham',
+    'A construction firm from Leeds signed up for planning leads',
+    'A probate practitioner from Bristol joined the platform',
+    'An estate agent from Edinburgh started exploring leads',
+    'New business alerts delivered to an accountant in Cardiff'
   ];
   var idx = 0;
   setInterval(function() {
