@@ -1099,16 +1099,35 @@ function renderOutreach(leadId) {
   var msg = outreachCache[leadId];
   if (!panel || !msg) return;
 
-  panel.innerHTML = '<div style="margin-bottom:10px"><div style="display:flex;gap:6px;margin-bottom:8px">' +
-    '<button class="btn btn-primary btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'email\')" id="otab-' + leadId + '-email" style="flex:1;justify-content:center">📧 Email</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'whatsapp\')" id="otab-' + leadId + '-whatsapp" style="flex:1;justify-content:center">💬 WhatsApp</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'phone\')" id="otab-' + leadId + '-phone" style="flex:1;justify-content:center">📞 Phone</button>' +
+  var lead = leads.find(function(l) { return l.id === leadId; });
+
+  // Generate contact methods HTML
+  var contactHtml = '';
+  if (lead) {
+    var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
+    if (window.OutreachGenerator) {
+      contactHtml = window.OutreachGenerator.renderContactMethods(lead);
+    }
+  }
+  if (!contactHtml) contactHtml = '<p style="color:var(--muted);font-size:11px">Contact data not available.</p>';
+
+  panel.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">' +
+    // Outreach messages column
+    '<div><div style="display:flex;gap:4px;margin-bottom:6px">' +
+    '<button class="btn btn-primary btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'email\')" id="otab-' + leadId + '-email" style="flex:1;justify-content:center;font-size:11px;padding:6px 8px">📧 Email</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'whatsapp\')" id="otab-' + leadId + '-whatsapp" style="flex:1;justify-content:center;font-size:11px;padding:6px 8px">💬 WhatsApp</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'phone\')" id="otab-' + leadId + '-phone" style="flex:1;justify-content:center;font-size:11px;padding:6px 8px">📞 Phone</button>' +
     '</div>' +
-    '<div id="o-content-' + leadId + '"><textarea id="o-text-' + leadId + '" style="width:100%;min-height:100px;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text2);font-family:inherit;line-height:1.6;resize:vertical">' + escapeHtml(msg.email) + '</textarea></div>' +
-    '<div style="display:flex;gap:6px;margin-top:6px">' +
-    '<button class="btn btn-primary btn-sm" onclick="copyOutreach(\'' + leadId + '\')" style="flex:1;justify-content:center"><i class="fas fa-copy"></i> Copy</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="var t=document.getElementById(\'o-text-\'+\'' + leadId + '\');t.select();t.style.borderColor=\'var(--accent)\'" style="flex:1;justify-content:center"><i class="fas fa-pen"></i> Edit</button>' +
-    '</div>';
+    '<textarea id="o-text-' + leadId + '" style="width:100%;min-height:70px;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text2);font-family:inherit;line-height:1.6;resize:vertical">' + escapeHtml(msg.email) + '</textarea>' +
+    '<div style="display:flex;gap:4px;margin-top:4px">' +
+    '<button class="btn btn-primary btn-sm" onclick="copyOutreach(\'' + leadId + '\')" style="flex:1;justify-content:center;font-size:10px;padding:4px 8px"><i class="fas fa-copy"></i> Copy</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="var t=document.getElementById(\'o-text-\'+\'' + leadId + '\');t.focus();t.select()" style="flex:1;justify-content:center;font-size:10px;padding:4px 8px"><i class="fas fa-pen"></i> Edit</button>' +
+    '</div></div>' +
+    // Contact methods column
+    '<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px">' +
+    '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px">📋 Best Contact Method</div>' +
+    contactHtml +
+    '</div></div>';
 }
 
 function selectOutreachTab(leadId, tab) {
@@ -1158,6 +1177,28 @@ function generateFallbackMessages(lead) {
 function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Fallback contact method renderer (if outreach-generator.js not loaded)
+function fallbackContactMethods(lead) {
+  if (window.OutreachGenerator) return '';
+  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
+  var items = [];
+  var addItem = function(icon, value, found) {
+    if (found) items.push('<div style="display:flex;align-items:center;gap:6px"><i class="' + icon + '" style="color:var(--accent);width:14px;font-size:11px"></i><span style="font-size:11px;color:var(--text);word-break:break-all">' + value + '</span></div>');
+    else items.push('<div style="display:flex;align-items:center;gap:6px"><i class="' + icon + '" style="color:var(--muted);width:14px;font-size:11px"></i><span style="font-size:11px;color:var(--muted);font-style:italic">Not found yet</span></div>');
+  };
+  addItem('fas fa-envelope', d.ownerEmail || d.legalAdvisorEmail || d.buyerEmail || '', !!(d.ownerEmail || d.legalAdvisorEmail || d.buyerEmail));
+  addItem('fas fa-phone', d.phone || d.legalAdvisorPhone || d.buyerPhone || '', !!(d.phone || d.legalAdvisorPhone || d.buyerPhone));
+  addItem('fas fa-globe', d.website || d.url || '', !!(d.website || d.url));
+  addItem('fab fa-linkedin', 'LinkedIn Profile', false);
+  addItem('fas fa-map-marker-alt', d.address || d.applicantAddress || '', !!(d.address || d.applicantAddress));
+  items.push('<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-size:10px;color:var(--text2)"><i class="fas fa-lightbulb" style="color:var(--warning);margin-right:4px"></i>Email first, then call after 48 hours.</div>');
+  return '<div style="display:flex;flex-direction:column;gap:3px">' + items.join('') + '</div>';
+}
+// Patch renderContactMethods to use fallback if needed
+if (!window.OutreachGenerator) {
+  window.OutreachGenerator = { renderContactMethods: function(lead) { return fallbackContactMethods(lead); } };
 }
 </script>
 </body></html>

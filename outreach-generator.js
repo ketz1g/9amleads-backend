@@ -1,6 +1,55 @@
 // ===== AI OUTREACH MESSAGE GENERATOR =====
 // Generates personalised first-contact messages for each lead
 
+function getBestContactMethod(lead) {
+  var data = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
+  var product = lead.product || 'moving';
+
+  var contact = {
+    email: data.ownerEmail || data.legalAdvisorEmail || data.buyerEmail || '',
+    phone: data.phone || data.legalAdvisorPhone || data.buyerPhone || '',
+    website: data.website || data.url || '',
+    linkedin: '',
+    postal: data.address || data.applicantAddress || '',
+    recommended: 'Email first, then call after 48 hours.'
+  };
+
+  // Build LinkedIn URL from company name
+  if (data.company || data.companyName) {
+    var companyName = (data.company || data.companyName).toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 30);
+    if (companyName) contact.linkedin = 'https://www.linkedin.com/company/' + companyName + '/about/';
+  }
+
+  return contact;
+}
+
+function renderContactMethods(leadId) {
+  var lead = typeof leadId === 'object' ? leadId : null;
+  if (!lead) lead = (typeof leads !== 'undefined' ? leads.find(function(l) { return l.id === leadId; }) : null);
+  if (!lead) return '<p style="color:var(--muted);font-size:11px">Contact data not available.</p>';
+  
+  var contact = getBestContactMethod(lead);
+  var items = [];
+  var hasAny = false;
+
+  if (contact.email) { items.push('<div style="display:flex;align-items:center;gap:6px"><i class="fas fa-envelope" style="color:var(--accent);width:14px;font-size:11px"></i><span style="font-size:11px;color:var(--text);word-break:break-all">' + contact.email + '</span></div>'); hasAny = true; }
+  if (contact.phone) { items.push('<div style="display:flex;align-items:center;gap:6px"><i class="fas fa-phone" style="color:var(--accent);width:14px;font-size:11px"></i><span style="font-size:11px;color:var(--text)">' + contact.phone + '</span></div>'); hasAny = true; }
+  if (contact.website) { items.push('<div style="display:flex;align-items:center;gap:6px"><i class="fas fa-globe" style="color:var(--accent);width:14px;font-size:11px"></i><a href="' + contact.website + '" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:underline;word-break:break-all">' + contact.website.substring(0, 40) + '...</a></div>'); hasAny = true; }
+  if (contact.linkedin) { items.push('<div style="display:flex;align-items:center;gap:6px"><i class="fab fa-linkedin" style="color:#0a66c2;width:14px;font-size:11px"></i><a href="' + contact.linkedin + '" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:underline">LinkedIn Profile</a></div>'); hasAny = true; }
+  if (contact.postal) { items.push('<div style="display:flex;align-items:center;gap:6px"><i class="fas fa-map-marker-alt" style="color:var(--accent);width:14px;font-size:11px"></i><span style="font-size:11px;color:var(--text2)">' + contact.postal.substring(0, 50) + '</span></div>'); hasAny = true; }
+
+  // Add "not found" for missing methods
+  if (!contact.email) items.push('<div style="display:flex;align-items:center;gap:6px"><i class="fas fa-envelope" style="color:var(--muted);width:14px;font-size:11px"></i><span style="font-size:11px;color:var(--muted);font-style:italic">Not found yet</span></div>');
+  if (!contact.phone) items.push('<div style="display:flex;align-items:center;gap:6px"><i class="fas fa-phone" style="color:var(--muted);width:14px;font-size:11px"></i><span style="font-size:11px;color:var(--muted);font-style:italic">Not found yet</span></div>');
+  if (!contact.website) items.push('<div style="display:flex;align-items:center;gap:6px"><i class="fas fa-globe" style="color:var(--muted);width:14px;font-size:11px"></i><span style="font-size:11px;color:var(--muted);font-style:italic">Not found yet</span></div>');
+  if (!contact.linkedin) items.push('<div style="display:flex;align-items:center;gap:6px"><i class="fab fa-linkedin" style="color:var(--muted);width:14px;font-size:11px"></i><span style="font-size:11px;color:var(--muted);font-style:italic">Not found yet</span></div>');
+  if (!contact.postal) items.push('<div style="display:flex;align-items:center;gap:6px"><i class="fas fa-map-marker-alt" style="color:var(--muted);width:14px;font-size:11px"></i><span style="font-size:11px;color:var(--muted);font-style:italic">Not found yet</span></div>');
+
+  items.push('<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><i class="fas fa-lightbulb" style="color:var(--warning);font-size:11px;margin-right:4px"></i><span style="font-size:11px;color:var(--text2)">' + contact.recommended + '</span></div>');
+
+  return '<div style="display:flex;flex-direction:column;gap:4px">' + items.join('') + '</div>';
+}
+
 function generateOutreachMessages(lead) {
   var data = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
   var product = lead.product || 'moving';
