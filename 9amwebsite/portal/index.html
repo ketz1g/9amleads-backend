@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="en"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sign Up | 9amLeads Customer Portal</title>
 <meta name="description" content="Start your free 7-day trial. Get exclusive business leads delivered to your inbox at 9am every morning. No card required.">
 <meta name="robots" content="noindex, nofollow">
@@ -8,416 +8,374 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#f1f5f9;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 0%,rgba(14,165,233,0.04),transparent 60%)}
-.login-card{width:100%;max-width:440px;background:#11131f;border:1px solid #1e2030;border-radius:20px;padding:36px 32px;text-align:center}
+.card{width:100%;max-width:460px;background:#11131f;border:1px solid #1e2030;border-radius:20px;padding:32px 28px}
+.center{text-align:center}
+.mb-4{margin-bottom:4px}
+.mb-8{margin-bottom:8px}
+.mb-12{margin-bottom:12px}
+.mb-16{margin-bottom:16px}
 .logo{display:flex;align-items:center;justify-content:center;gap:10px;font-size:22px;font-weight:900;font-family:'Outfit',sans-serif;margin-bottom:4px}
-.logo .icon{width:42px;height:42px;background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:900;box-shadow:0 0 20px rgba(14,165,233,0.2)}
+.logo .icon{width:42px;height:42px;background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:900}
 .logo span{color:#0ea5e9}
-h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:6px}
-.sub{color:#8890a8;font-size:14px;margin-bottom:20px;line-height:1.6}
-.form-group{margin-bottom:14px;text-align:left}
-.form-group label{display:block;font-size:11px;font-weight:600;margin-bottom:5px;color:#b0b8cc;letter-spacing:.3px}
-.form-group input,.form-group select{width:100%;padding:12px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:14px;font-family:inherit;color:#f1f5f9;transition:border-color .2s;outline:none}
-.form-group input:focus,.form-group select:focus{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,0.08)}
+h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:4px}
+.sub{color:#8890a8;font-size:13px;line-height:1.6;margin-bottom:16px}
+.tooltip{position:relative;display:inline-flex;align-items:center;margin-left:4px;cursor:help;color:#5c6480;font-size:11px}
+.tooltip .tip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1a1a2e;border:1px solid #2a2d42;border-radius:8px;padding:10px 14px;font-size:11px;color:#ccc;line-height:1.6;width:280px;z-index:100;text-align:left;font-weight:400;box-shadow:0 8px 30px rgba(0,0,0,0.4)}
+.tooltip .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#2a2d42}
+.tooltip:hover .tip,.tooltip.show .tip{display:block}
+.trust-bar{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.trust-bar span{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;background:rgba(255,255,255,0.03);border:1px solid #1e2030;font-size:10px;color:#8890a8}
+.trust-bar i{font-size:9px}
+.form-group{margin-bottom:12px;text-align:left}
+.form-group label{display:block;font-size:11px;font-weight:600;margin-bottom:4px;color:#b0b8cc;letter-spacing:.3px}
+.form-group input,.form-group select{width:100%;padding:11px 13px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;font-family:inherit;color:#f1f5f9;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus{border-color:#0ea5e9}
 .form-group input::placeholder{color:#5c6480}
 .btn{width:100%;padding:14px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;font-family:inherit}
 .btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(14,165,233,0.25)}
 .btn-secondary{background:transparent;border:1px solid #1e2030;color:#8890a8;margin-top:8px}
-.btn-secondary:hover{background:rgba(255,255,255,0.03);transform:none;box-shadow:none;border-color:#2a2d42;color:#b0b8cc}
-.error{color:#ef4444;font-size:13px;margin-top:8px;display:none;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.1);border-radius:8px;padding:10px 14px;text-align:left}
-.success{color:#22c55e;font-size:13px;margin-top:8px;display:none;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.1);border-radius:8px;padding:10px 14px;text-align:left}
-.features{margin:16px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left}
-.feature-item{display:flex;align-items:center;gap:7px;font-size:12px;color:#8890a8;padding:5px 0}
-.feature-item i{color:#22c55e;font-size:10px}
-.footer-text{text-align:center;margin-top:20px;font-size:12px;color:#5c6480;line-height:1.8}
+.btn-secondary:hover{background:rgba(255,255,255,0.03);border-color:#2a2d42;color:#b0b8cc}
+.filters-box{margin-top:8px;margin-bottom:8px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid #1e2030;border-radius:10px;text-align:left;transition:border-color .3s}
+.filters-box.highlight{border-color:#0ea5e9}
+.crm-box{background:linear-gradient(135deg,rgba(14,165,233,0.06),rgba(37,99,235,0.03));border:1px solid rgba(14,165,233,0.12);border-radius:10px;padding:14px;margin-bottom:8px;text-align:left}
+.crm-box .title{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.crm-box .title .dot{width:26px;height:26px;border-radius:5px;background:linear-gradient(135deg,rgba(14,165,233,0.15),rgba(6,182,212,0.1));display:flex;align-items:center;justify-content:center;font-size:12px}
+.crm-box .title span{font-size:12px;font-weight:700;color:#e8ebf2}
+.crm-box .title .badge{font-size:10px;font-weight:400;background:rgba(34,197,94,0.1);color:#22c55e;padding:2px 7px;border-radius:4px;margin-left:4px}
+.crm-box p{font-size:11px;color:#8890a8;line-height:1.5;margin-bottom:8px}
+.crm-box .row{display:flex;gap:6px;align-items:center}
+.crm-box .row input{flex:1;padding:9px 12px;border-radius:6px;border:1px solid #1e2030;background:#0f111a;color:#f1f5f9;font-size:12px;font-family:inherit;outline:none}
+.crm-box .row input:focus{border-color:#0ea5e9}
+.crm-box .row button{padding:9px 14px;border-radius:6px;border:1px solid #1e2030;background:transparent;color:#8890a8;font-size:11px;cursor:pointer;font-family:inherit;transition:.2s;white-space:nowrap}
+.crm-box .row button:hover{border-color:#0ea5e9;color:#e8ebf2}
+.crm-box .status{font-size:11px;color:#8890a8;margin-top:6px;display:none}
+.crm-box .hint{font-size:10px;color:#5c6480;margin-top:6px;line-height:1.4}
+.filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+.filter-grid .field{text-align:left}
+.filter-grid .field label{font-size:10px;color:#8890a8;display:block;margin-bottom:3px}
+.filter-grid .field select,.filter-grid .field input{width:100%;padding:7px 9px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:11px;color:#f1f5f9;font-family:inherit;outline:none}
+.filter-grid .field select:focus,.filter-grid .field input:focus{border-color:#0ea5e9}
+.filter-checkboxes{display:flex;gap:8px;margin-top:6px}
+.filter-checkboxes label{display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer}
+.filter-checkboxes input{accent-color:#0ea5e9}
+.filter-title{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.filter-title .icon{width:22px;height:22px;border-radius:5px;background:rgba(14,165,233,0.1);display:flex;align-items:center;justify-content:center;font-size:10px;color:#0ea5e9}
+.filter-title .text{font-size:12px;font-weight:700;color:#e8ebf2}
+.filter-title .text .type{font-weight:400;font-size:10px;color:#0ea5e9}
+.filter-title .text .opt{font-weight:400;font-size:10px;color:#5c6480}
+.filter-title .refresh{padding:2px 7px;border-radius:4px;border:1px solid #1e2030;background:transparent;color:#5c6480;font-size:9px;cursor:pointer;font-family:inherit;margin-left:auto}
+.filter-title .refresh:hover{border-color:#0ea5e9;color:#b0b8cc}
+.sic-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px}
+.sic-grid label{display:flex;align-items:center;gap:4px;font-size:10px;color:#b0b8cc;cursor:pointer}
+.sic-grid input{accent-color:#06b6d4}
+.status{color:#ef4444;font-size:12px;margin-top:8px;display:none;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.1);border-radius:8px;padding:10px 14px;text-align:left}
+.success{color:#22c55e;font-size:12px;margin-top:8px;display:none;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.1);border-radius:8px;padding:10px 14px;text-align:left}
+.features{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:12px;text-align:left}
+.features div{display:flex;align-items:center;gap:6px;font-size:11px;color:#8890a8;padding:4px 0}
+.features i{color:#22c55e;font-size:9px}
+.footer-text{text-align:center;margin-top:16px;font-size:11px;color:#5c6480}
 .footer-text a{color:#0ea5e9;text-decoration:none}
-@media(max-width:480px){.login-card{padding:24px 18px}.features{grid-template-columns:1fr}}
+@media(max-width:480px){.card{padding:24px 18px}.filter-grid{grid-template-columns:1fr}.sic-grid{grid-template-columns:1fr}.features{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div style="position:fixed;top:16px;left:24px;z-index:10">
-<a href="/" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;color:#8890a8;font-size:13px;font-weight:600;text-decoration:none;border-radius:8px;transition:.2s;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)"><i class="fas fa-arrow-left" style="font-size:11px"></i> 9amLeads</a>
+<a href="/" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;color:#8890a8;font-size:12px;font-weight:600;text-decoration:none;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)"><i class="fas fa-arrow-left" style="font-size:10px"></i> 9amLeads</a>
 </div>
-<div class="login-card">
+
+<div class="card">
+<div class="center">
 <div class="logo"><div class="icon">9</div>9am<span>Leads</span></div>
 <h1>Start Your <span style="color:#0ea5e9">Free Trial</span></h1>
-<p class="sub">Get exclusive leads delivered to your inbox at 9am every morning. 7 days free — no card required.</p>
+<p class="sub" id="page-subtitle">Get exclusive opportunities delivered at 9am every morning. 7 days free, no card required.</p>
+</div>
 
-<div id="signup-form" style="display:block">
-<div class="form-group"><label><i class="fas fa-user" style="width:14px;color:#5c6480"></i> Full Name</label><input type="text" id="signup-name" placeholder="Your name" required></div>
-<div class="form-group"><label><i class="fas fa-building" style="width:14px;color:#5c6480"></i> Company Name</label><input type="text" id="signup-company" placeholder="Your company" required></div>
-<div class="form-group"><label><i class="fas fa-envelope" style="width:14px;color:#5c6480"></i> Email Address</label><input type="email" id="signup-email" placeholder="you@company.co.uk" required></div>
-<div class="form-group"><label><i class="fas fa-lock" style="width:14px;color:#5c6480"></i> Create Password</label><input type="password" id="signup-password" placeholder="Min 8 characters" minlength="8" required></div>
-<div class="form-group"><label><i class="fas fa-tag" style="width:14px;color:#5c6480"></i> Lead Type</label>
-<select id="signup-product" style="width:100%;padding:12px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;cursor:pointer" onchange="loadPostcodes()">
+<!-- TRUST BAR -->
+<div class="trust-bar">
+<span><i class="fas fa-lock" style="color:#22c55e"></i> Encrypted</span>
+<span><i class="fas fa-shield-alt" style="color:#0ea5e9"></i> UK Based</span>
+<span><i class="fas fa-credit-card" style="color:#f59e0b"></i> No Card</span>
+<span><i class="fas fa-ban" style="color:#ef4444"></i> Cancel Anytime</span>
+<span><i class="fas fa-check-circle" style="color:#22c55e"></i> 7 Days Free</span>
+</div>
+
+<!-- SIGNUP FORM -->
+<div id="signup-form">
+<div class="form-group">
+<label><i class="fas fa-user" style="width:13px;color:#5c6480;margin-right:2px"></i> Full Name</label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">We keep your details secure and never share them with third parties. Your account is protected by encrypted storage.</span></div>
+<input type="text" id="s-name" placeholder="Your name" required></div>
+<div class="form-group"><label><i class="fas fa-building" style="width:13px;color:#5c6480;margin-right:2px"></i> Company Name</label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Enter your business or company name. This helps us tailor your lead types and territory recommendations.</span></div>
+<input type="text" id="s-company" placeholder="Your company" required></div>
+<div class="form-group"><label><i class="fas fa-envelope" style="width:13px;color:#5c6480;margin-right:2px"></i> Email Address</label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Your daily leads, reports, and account notifications will be sent here. We never spam or share your email.</span></div>
+<input type="email" id="s-email" placeholder="you@company.co.uk" required></div>
+<div class="form-group"><label><i class="fas fa-lock" style="width:13px;color:#5c6480;margin-right:2px"></i> Create Password</label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Use at least 8 characters. Your password is encrypted and never stored in plain text. We recommend a mix of letters, numbers and symbols.</span></div>
+<input type="password" id="s-password" placeholder="Min 8 characters" minlength="8" required></div>
+<div class="form-group"><label><i class="fas fa-tag" style="width:13px;color:#5c6480;margin-right:2px"></i> Lead Type</label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Choose the type of UK business opportunities you want to receive daily at 9am. Each lead type sources from different official UK data registers. You can change this later.</span></div>
+<select id="s-product" style="width:100%;padding:11px 13px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none;cursor:pointer">
 <option value="moving">🚚 Moving Leads</option>
 <option value="probate">⚖️ Probate Leads</option>
 <option value="newbusiness">🏢 New Business Alerts</option>
 <option value="planning">🔨 Planning Permission</option>
 <option value="tenders">📋 Public Tenders</option>
 </select></div>
-<div class="form-group">
-<label><i class="fas fa-map-marker-alt" style="width:14px;color:#5c6480"></i> Target Postcode Districts <span style="color:#8890a8;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(<span id="pc-count">0</span>/<span id="pc-max">5</span> selected)</span></label>
-<div style="font-size:11px;color:#5c6480;margin-bottom:6px;line-height:1.5">Pick districts like <strong style="color:#8890a8">EN1</strong>, <strong style="color:#8890a8">SW1</strong>, <strong style="color:#8890a8">M1</strong> — search or browse below.</div>
-<div id="pc-selector" style="position:relative">
-<div id="pc-search-wrap" style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;min-height:44px;cursor:text;align-items:center" onclick="document.getElementById('pc-input').focus()">
-<div id="pc-tags" style="display:flex;flex-wrap:wrap;gap:4px"></div>
-<input type="text" id="pc-input" placeholder="Search districts like EN1, SW1, M1..." style="flex:1;min-width:120px;border:none;background:transparent;color:#f1f5f9;font-size:14px;font-family:inherit;outline:none;padding:2px 0" oninput="searchPostcodes(this.value)" onfocus="showPcDropdown()" onblur="setTimeout(hidePcDropdown,200)">
+
+<!-- FILTERS BOX (populated by JS) -->
+<div class="filters-box" id="filters-box">
+<div class="filter-title">
+<div class="icon">⚙️</div>
+<div class="text">Lead Filters <span class="type" id="filter-label">(Moving)</span> <span class="opt">— optional</span></div>
+<div class="tooltip" style="margin-left:auto;margin-right:4px"><i class="fas fa-question-circle"></i><span class="tip">Refine the leads you receive. Set minimum bedrooms for moving leads, filter by estate value for probate, or choose industry categories for new business alerts. Leave blank to receive all leads in your area. You can adjust these anytime from your dashboard.</span></div>
 </div>
-<div id="pc-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#11131f;border:1px solid #1e2030;border-top:none;border-radius:0 0 10px 10px;max-height:320px;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,0.4)"></div>
-</div>
-<div id="pc-availability-msg" style="font-size:11px;color:#8890a8;margin-top:6px;display:none"></div>
+<div id="filters-content"></div>
 </div>
 
-<!-- Lead Filters -->
-<div id="lead-filters" style="margin-top:16px;padding:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px">
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-<div style="width:24px;height:24px;border-radius:5px;background:rgba(14,165,233,0.1);display:flex;align-items:center;justify-content:center;font-size:11px">&#9881;</div>
-<span style="font-size:13px;font-weight:700;color:#e8ebf2">Lead Filters <span style="font-size:10px;font-weight:400;color:#5c6480">(optional - refine the leads you receive)</span></span>
+<!-- CRM BOX -->
+<div class="crm-box">
+<div class="title"><div class="dot">🔌</div><span>Auto-Send Leads to Your CRM</span><span class="badge">Free</span>
+<div class="tooltip" style="margin-left:auto"><i class="fas fa-question-circle"></i><span class="tip">Connect your CRM via webhook and your daily leads arrive automatically at 9am. Works with HubSpot, Salesforce, Pipedrive, and thousands more via Zapier, Make, or n8n. Not required — leads also arrive by email.</span></div></div>
+<p>Paste a webhook URL and your daily leads arrive in your CRM automatically at 9am. Works with Zapier, Make, n8n.</p>
+<div class="row"><input type="url" id="s-crm" placeholder="https://hooks.zapier.com/hooks/catch/..."><button type="button" onclick="testCrm()" id="crm-btn">Test</button></div>
+<div class="status" id="crm-status"></div>
+<div class="hint">Set up later in your dashboard. <a href="#" style="color:#5c6480;text-decoration:underline;text-decoration-style:dotted" onclick="document.getElementById('s-crm').value='https://hooks.zapier.com/hooks/catch/...';return false">Learn more</a></div>
 </div>
 
-<!-- Moving Filters -->
-<div id="filter-moving" class="filter-panel" style="display:block">
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-<div>
-<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Min Bedrooms</label>
-<select id="f-moving-minbeds" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
-<option value="">Any</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5+</option>
-</select></div>
-<div>
-<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Max Bedrooms</label>
-<select id="f-moving-maxbeds" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
-<option value="">Any</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6+</option>
-</select></div></div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
-<div>
-<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Property Type</label>
-<select id="f-moving-proptype" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
-<option value="">Any</option><option value="house">House</option><option value="flat">Flat</option><option value="bungalow">Bungalow</option>
-</select></div>
-<div>
-<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Max Property Value</label>
-<select id="f-moving-maxprice" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
-<option value="">Any</option><option value="200000">£200k</option><option value="350000">£350k</option><option value="500000">£500k</option><option value="750000">£750k</option><option value="1000000">£1M</option>
-</select></div></div>
-<div style="margin-top:8px">
-<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Lead Status</label>
-<div style="display:flex;gap:8px">
-<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#b0b8cc;cursor:pointer"><input type="checkbox" id="f-moving-status-sstc" checked style="accent-color:#0ea5e9"> SSTC</label>
-<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#b0b8cc;cursor:pointer"><input type="checkbox" id="f-moving-status-offer" checked style="accent-color:#0ea5e9"> Under Offer</label>
-</div></div>
-</div>
-
-<!-- Probate Filters -->
-<div id="filter-probate" class="filter-panel" style="display:none">
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-<div>
-<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Min Estate Value</label>
-<select id="f-probate-minvalue" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
-<option value="">Any</option><option value="50000">£50k</option><option value="100000">£100k</option><option value="250000">£250k</option><option value="500000">£500k</option><option value="1000000">£1M</option>
-</select></div>
-<div>
-<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Property Included</label>
-<select id="f-probate-property" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
-<option value="">Any</option><option value="yes">Has Property</option><option value="no">No Property</option>
-</select></div></div>
-</div>
-
-<!-- New Business Filters -->
-<div id="filter-newbusiness" class="filter-panel" style="display:none">
-<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Industry Categories</label>
-<div id="nb-sic-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="tech_software" checked style="accent-color:#06b6d4"> Tech & Software</label>
-<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="construction" checked style="accent-color:#06b6d4"> Construction</label>
-<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="retail" checked style="accent-color:#06b6d4"> Retail</label>
-<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="hospitality" checked style="accent-color:#06b6d4"> Hospitality</label>
-<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="healthcare" checked style="accent-color:#06b6d4"> Healthcare</label>
-<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="professional_services" checked style="accent-color:#06b6d4"> Prof Services</label>
-<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="financial" checked style="accent-color:#06b6d4"> Financial</label>
-<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="nb-sic" value="creative" checked style="accent-color:#06b6d4"> Creative</label>
-</div>
-</div>
-
-<!-- Planning Filters -->
-<div id="filter-planning" class="filter-panel" style="display:none">
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-<div>
-<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Application Type</label>
-<select id="f-planning-apptype" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
-<option value="">Any</option><option value="householder">Householder</option><option value="full">Full Planning</option><option value="outline">Outline</option><option value="lawful">Lawful Dev</option><option value="listed">Listed Building</option>
-</select></div>
-<div>
-<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Max Project Value</label>
-<select id="f-planning-maxvalue" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
-<option value="">Any</option><option value="50000">£50k</option><option value="100000">£100k</option><option value="250000">£250k</option><option value="500000">£500k</option><option value="1000000">£1M</option>
-</select></div></div>
-</div>
-
-<!-- Tenders Filters -->
-<div id="filter-tenders" class="filter-panel" style="display:none">
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-<div>
-<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Min Contract Value</label>
-<select id="f-tenders-minvalue" style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
-<option value="">Any</option><option value="10000">£10k</option><option value="50000">£50k</option><option value="100000">£100k</option><option value="500000">£500k</option>
-</select></div>
-<div>
-<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Keywords</label>
-<input type="text" id="f-tenders-keywords" placeholder="construction, IT, cleaning..." style="width:100%;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none">
-</div></div>
-<p style="font-size:10px;color:#5c6480;margin-top:6px">Comma separated. Leave blank for all tenders.</p>
-</div>
-</div>
-
-<!-- CRM Integration -->
-<div style="background:linear-gradient(135deg,rgba(14,165,233,0.06),rgba(37,99,235,0.03));border:1px solid rgba(14,165,233,0.12);border-radius:10px;padding:16px 14px;margin-bottom:2px;text-align:left">
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-<div style="width:26px;height:26px;border-radius:5px;background:linear-gradient(135deg,rgba(14,165,233,0.15),rgba(6,182,212,0.1));display:flex;align-items:center;justify-content:center;font-size:12px">🔌</div>
-<span style="font-size:13px;font-weight:700;color:#e8ebf2">Auto-Send Leads to Your CRM <span style="font-size:10px;font-weight:400;background:rgba(34,197,94,0.1);color:#22c55e;padding:2px 7px;border-radius:4px;margin-left:4px">Free</span></span>
-</div>
-<p style="font-size:11px;color:#8890a8;line-height:1.6;margin-bottom:8px">Paste a webhook URL and your daily leads arrive in your CRM automatically at 9am. Works with <strong style="color:#b0b8cc">Zapier</strong>, <strong style="color:#b0b8cc">Make</strong>, <strong style="color:#b0b8cc">n8n</strong> — connect to <strong style="color:#b0b8cc">HubSpot</strong>, <strong style="color:#b0b8cc">Salesforce</strong>, <strong style="color:#b0b8cc">Pipedrive</strong>, <strong style="color:#b0b8cc">Google Sheets</strong>, and 5000+ apps.</p>
-<div style="display:flex;gap:6px;align-items:center">
-<input type="url" id="signup-crm" placeholder="https://hooks.zapier.com/hooks/catch/..." style="flex:1;padding:9px 12px;border-radius:6px;border:1px solid #1e2030;background:#0f111a;color:#f1f5f9;font-size:12px;font-family:inherit;outline:none" onfocus="this.style.borderColor='#0ea5e9'" onblur="this.style.borderColor=''">
-<button type="button" onclick="testCrmOnSignup()" style="padding:9px 14px;border-radius:6px;border:1px solid #1e2030;background:transparent;color:#8890a8;font-size:11px;cursor:pointer;white-space:nowrap;transition:.2s;font-family:inherit" onmouseover="this.style.borderColor='#0ea5e9';this.style.color='#e8ebf2'" onmouseout="this.style.borderColor='';this.style.color='#8890a8'"><i class="fas fa-plug"></i> Test</button>
-</div>
-<div id="signup-crm-status" style="font-size:11px;color:#8890a8;margin-top:6px;display:none"></div>
-<div style="font-size:10px;color:#5c6480;margin-top:6px;line-height:1.5">You can also set this up later in your dashboard. <a href="#" style="color:#5c6480;text-decoration:underline;text-decoration-style:dotted" onclick="document.getElementById('signup-crm').value='https://hooks.zapier.com/hooks/catch/...';event.preventDefault()">How webhooks work</a></div>
-</div>
-
-<div class="form-group" style="margin-bottom:2px;margin-top:10px">
-<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400;font-size:12px;color:#8890a8;line-height:1.5">
-<input type="checkbox" id="signup-consent" style="width:14px;height:14px;margin-top:2px;accent-color:#0ea5e9" checked>
+<div class="form-group" style="margin-top:10px">
+<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-weight:400;font-size:11px;color:#8890a8;line-height:1.5">
+<input type="checkbox" id="s-consent" checked style="width:13px;height:13px;margin-top:2px;accent-color:#0ea5e9">
 <span>I agree to receive daily lead emails and occasional updates. <a href="/privacy.html" style="color:#5c6480;text-decoration:underline">Privacy Policy</a></span>
-</label>
-</div>
-<div id="signup-error" class="error"></div>
-<div id="signup-success" class="success">Account created! Redirecting to your dashboard...</div>
-<button class="btn" onclick="signup()" style="margin-top:4px"><i class="fas fa-rocket"></i> Create Free Account</button>
+</label></div>
+
+<div class="status" id="signup-error"></div>
+<div class="success" id="signup-success">Account created! Redirecting...</div>
+<button class="btn" onclick="doSignup()" id="signup-btn"><i class="fas fa-rocket"></i> Create Free Account</button>
 <button class="btn btn-secondary" onclick="showLogin()">Already have an account? Sign In</button>
 </div>
 
+<!-- LOGIN FORM -->
 <div id="login-form" style="display:none">
-<div class="form-group"><label><i class="fas fa-envelope" style="width:14px;color:#5c6480"></i> Email Address</label><input type="email" id="login-email" placeholder="you@company.co.uk" onkeydown="if(event.key==='Enter')login()"></div>
-<div class="form-group"><label><i class="fas fa-lock" style="width:14px;color:#5c6480"></i> Password</label><input type="password" id="login-password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')login()"></div>
-<div style="text-align:right;margin-top:-10px;margin-bottom:10px"><a href="/portal/reset-password.html" style="color:#5c6480;font-size:12px;text-decoration:none">Forgot password?</a></div>
-<div id="login-error" class="error">Invalid email or password. Please try again.</div>
-<button class="btn" onclick="login()"><i class="fas fa-arrow-right"></i> Sign In</button>
+<div class="form-group"><label>Email Address</label><input type="email" id="l-email" placeholder="you@company.co.uk"></div>
+<div class="form-group"><label>Password</label><input type="password" id="l-pass" placeholder="Enter your password"></div>
+<div style="text-align:right;margin-bottom:12px"><a href="/portal/reset-password.html" style="color:#5c6480;font-size:11px">Forgot password?</a></div>
+<div class="status" id="login-error">Invalid email or password</div>
+<button class="btn" onclick="doLogin()"><i class="fas fa-arrow-right"></i> Sign In</button>
 <button class="btn btn-secondary" onclick="showSignup()">Don't have an account? Sign Up</button>
 </div>
 
 <div class="features">
-<div class="feature-item"><i class="fas fa-check-circle"></i> 7 days free</div>
-<div class="feature-item"><i class="fas fa-check-circle"></i> No card required</div>
-<div class="feature-item"><i class="fas fa-check-circle"></i> Cancel anytime</div>
-<div class="feature-item"><i class="fas fa-check-circle"></i> Exclusive leads</div>
+<div><i class="fas fa-check-circle"></i> 7 days free</div>
+<div><i class="fas fa-check-circle"></i> No card required</div>
+<div><i class="fas fa-check-circle"></i> Cancel anytime</div>
+<div><i class="fas fa-check-circle"></i> Exclusive leads</div>
+</div>
+
+<div style="margin-top:14px;padding:12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.1);border-radius:8px;text-align:center">
+<p style="font-size:11px;color:#8890a8;line-height:1.6;margin:0">
+<strong style="color:#e8ebf2">Why choose 9amLeads?</strong><br>
+Fresh UK business opportunities delivered daily at 9am. Sourced from official public registers including Rightmove, Companies House, Gov.uk, and 350+ council portals. Every lead scored Hot/Warm/Cold with AI-drafted outreach messages.
+</p>
 </div>
 </div>
 
 <div class="footer-text">
-Free 7 day trial &middot; No card required &middot; <a href="/terms.html">Terms</a> &middot; <a href="/privacy.html">Privacy</a>
+Free 7 day trial · No card required · <a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a>
 </div>
 
 <script>
-const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+var API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:8012'
-  : 'https://www.9amleads.com';
+  : 'https://nineamleads-backend.onrender.com';
 
-let allPostcodeAreas = [];
-let selectedPostcodes = [];
-let postcodeLimit = 5;
-let expandedArea = null;
+// ===== FILTER SYSTEM =====
+var filterDefs = {
+  moving: [
+    { type: 'select', id: 'f-bed-min', label: 'Min Bedrooms', opts: ['Any','1','2','3','4','5'] },
+    { type: 'select', id: 'f-bed-max', label: 'Max Bedrooms', opts: ['Any','1','2','3','4','5','6+'] },
+    { type: 'select', id: 'f-prop-type', label: 'Property Type', opts: ['Any','House','Flat','Bungalow'] },
+    { type: 'select', id: 'f-max-price', label: 'Max Price', opts: ['Any','£200k','£350k','£500k','£750k','£1M'] },
+    { type: 'checkboxes', id: 'f-status', label: 'Lead Status', opts: ['SSTC','Under Offer'] }
+  ],
+  probate: [
+    { type: 'select', id: 'f-est-val', label: 'Min Estate Value', opts: ['Any','£50k','£100k','£250k','£500k','£1M'] },
+    { type: 'select', id: 'f-has-prop', label: 'Property Included', opts: ['Any','Has Property','No Property'] }
+  ],
+  newbusiness: [
+    { type: 'checkboxes', id: 'f-industries', label: 'Industry Categories', opts: ['Tech & Software','Construction','Retail','Hospitality','Healthcare','Professional Services','Financial','Creative & Media'] }
+  ],
+  planning: [
+    { type: 'select', id: 'f-app-type', label: 'Application Type', opts: ['Any','Householder','Full Planning','Outline','Lawful Development','Listed Building'] },
+    { type: 'select', id: 'f-proj-val', label: 'Max Project Value', opts: ['Any','£50k','£100k','£250k','£500k','£1M'] }
+  ],
+  tenders: [
+    { type: 'select', id: 'f-min-val', label: 'Min Contract Value', opts: ['Any','£10k','£50k','£100k','£500k'] },
+    { type: 'text', id: 'f-keywords', label: 'Keywords', placeholder: 'construction, IT, cleaning...' }
+  ]
+};
 
-function showLogin() { document.getElementById('signup-form').style.display='none'; document.getElementById('login-form').style.display='block'; }
-function showSignup() { document.getElementById('signup-form').style.display='block'; document.getElementById('login-form').style.display='none'; }
+var productNames = { moving:'Moving', probate:'Probate', newbusiness:'New Business', planning:'Planning Permission', tenders:'Public Tenders' };
+var productIcons = { moving:'🚚', probate:'⚖️', newbusiness:'🏢', planning:'🔨', tenders:'📋' };
 
-// ===== POSTCODE DISTRICT SELECTOR =====
-
-function loadPostcodes() {
-  const product = document.getElementById('signup-product').value;
-  fetch(API + '/api/postcodes?product=' + product)
-    .then(r => r.json())
-    .then(data => {
-      allPostcodeAreas = data.areas || [];
-      allPostcodeAreas.sort((a, b) => a.area_code.localeCompare(b.area_code));
-      for (const area of allPostcodeAreas) {
-        area.districts.sort((a, b) => { const numA = parseInt(a.code.replace(/[^0-9]/g, '')) || 0; const numB = parseInt(b.code.replace(/[^0-9]/g, '')) || 0; return numA - numB; });
+function renderFilters() {
+  var sel = document.getElementById('s-product');
+  var prod = sel ? sel.value : 'moving';
+  var box = document.getElementById('filters-box');
+  var label = document.getElementById('filter-label');
+  if (label) label.textContent = '(' + (productNames[prod] || prod) + ')';
+  
+  var content = document.getElementById('filters-content');
+  if (!content) return;
+  
+  var defs = filterDefs[prod] || [];
+  var html = '';
+  
+  for (var i = 0; i < defs.length; i++) {
+    var d = defs[i];
+    if (d.type === 'select') {
+      html += '<div class="field" style="margin-bottom:6px"><label>' + d.label + '</label><select class="f-field" data-id="' + d.id + '" style="width:100%;padding:7px 9px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:11px;color:#f1f5f9;font-family:inherit;outline:none">';
+      for (var o = 0; o < d.opts.length; o++) {
+        html += '<option value="' + d.opts[o] + '">' + d.opts[o] + '</option>';
       }
-      postcodeLimit = 5;
-      updatePcDisplay();
-    })
-    .catch(() => {});
+      html += '</select></div>';
+    } else if (d.type === 'checkboxes') {
+      html += '<div style="margin-bottom:6px"><label style="font-size:10px;color:#8890a8;display:block;margin-bottom:4px">' + d.label + '</label><div class="sic-grid">';
+      for (var o = 0; o < d.opts.length; o++) {
+        html += '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:#b0b8cc;cursor:pointer"><input type="checkbox" class="f-field" data-id="' + d.id + '" value="' + d.opts[o] + '" checked style="accent-color:#0ea5e9"> ' + d.opts[o] + '</label>';
+      }
+      html += '</div></div>';
+    } else if (d.type === 'text') {
+      html += '<div class="field" style="margin-bottom:6px"><label>' + d.label + '</label><input type="text" class="f-field" data-id="' + d.id + '" placeholder="' + (d.placeholder || '') + '" style="width:100%;padding:7px 9px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:11px;color:#f1f5f9;font-family:inherit;outline:none"></div>';
+    }
+  }
+  
+  if (defs.length === 0) html = '<div style="text-align:center;padding:8px;font-size:11px;color:#5c6480">No filters available for this lead type</div>';
+  
+  content.innerHTML = '<div class="filter-grid">' + html + '</div>';
+  
+  // Flash effect
+  box.classList.add('highlight');
+  setTimeout(function() { box.classList.remove('highlight'); }, 500);
 }
 
-// ===== LEAD FILTERS =====
-function showLeadFilters() {
-  const product = document.getElementById('signup-product').value;
-  document.querySelectorAll('.filter-panel').forEach(el => el.style.display = 'none');
-  const panel = document.getElementById('filter-' + product);
-  if (panel) panel.style.display = 'block';
-}
+// Wire up dropdown change
+var productSelect = document.getElementById('s-product');
+productSelect.addEventListener('change', function() {
+  renderFilters();
+});
+productSelect.addEventListener('click', function() {
+  // Handle the case where a click changes the selection (mouse)
+  setTimeout(renderFilters, 50);
+});
 
-function getLeadFilters() {
-  const product = document.getElementById('signup-product').value;
-  const filters = { product: product };
-  if (product === 'moving') {
-    filters.minBedrooms = document.getElementById('f-moving-minbeds').value;
-    filters.maxBedrooms = document.getElementById('f-moving-maxbeds').value;
-    filters.propertyType = document.getElementById('f-moving-proptype').value;
-    filters.maxPrice = document.getElementById('f-moving-maxprice').value;
-    filters.statusSSTC = document.getElementById('f-moving-status-sstc').checked;
-    filters.statusOffer = document.getElementById('f-moving-status-offer').checked;
-  } else if (product === 'probate') {
-    filters.minEstateValue = document.getElementById('f-probate-minvalue').value;
-    filters.hasProperty = document.getElementById('f-probate-property').value;
-  } else if (product === 'newbusiness') {
-    filters.sicCodes = Array.from(document.querySelectorAll('.nb-sic:checked')).map(cb => cb.value);
-  } else if (product === 'planning') {
-    filters.applicationType = document.getElementById('f-planning-apptype').value;
-    filters.maxValue = document.getElementById('f-planning-maxvalue').value;
-  } else if (product === 'tenders') {
-    filters.minValue = document.getElementById('f-tenders-minvalue').value;
-    filters.keywords = document.getElementById('f-tenders-keywords').value;
+// Initial render
+renderFilters();
+
+function getFilters() {
+  var sel = document.getElementById('s-product');
+  var prod = sel ? sel.value : 'moving';
+  var filters = { product: prod };
+  // Map data-id attributes to the filter keys used by lead_distributor.js
+  var filterMap = {
+    'f-bed-min': 'minBedrooms', 'f-bed-max': 'maxBedrooms', 'f-prop-type': 'propertyType',
+    'f-max-price': 'maxPrice', 'f-est-val': 'minEstateValue', 'f-has-prop': 'hasProperty',
+    'f-industries': 'sicCodes', 'f-app-type': 'applicationType', 'f-proj-val': 'maxValue',
+    'f-min-val': 'minValue', 'f-keywords': 'keywords'
+  };
+  var statusMap = { 'SSTC': 'statusSSTC', 'Under Offer': 'statusOffer' };
+  var fields = document.querySelectorAll('.f-field');
+  for (var i = 0; i < fields.length; i++) {
+    var el = fields[i];
+    var id = el.getAttribute('data-id');
+    var mappedKey = filterMap[id] || id;
+    if (el.type === 'checkbox') {
+      if (id === 'f-status') {
+        filters['statusSSTC'] = filters['statusSSTC'] || false;
+        filters['statusOffer'] = filters['statusOffer'] || false;
+        if (el.checked) { if (el.value === 'SSTC') filters['statusSSTC'] = true; if (el.value === 'Under Offer') filters['statusOffer'] = true; }
+      } else {
+        if (!filters[mappedKey]) filters[mappedKey] = [];
+        if (el.checked) filters[mappedKey].push(el.value);
+      }
+    } else if (el.type === 'text') {
+      filters[mappedKey] = el.value;
+    } else {
+      var val = el.value;
+      if (id === 'f-bed-min' || id === 'f-bed-max') filters[mappedKey] = val.replace('+','');
+      else if (val.startsWith('£')) filters[mappedKey] = val.replace(/[£k,]/g, '').replace('M','000000').replace('k','000');
+      else if (val === 'Any') filters[mappedKey] = '';
+      else filters[mappedKey] = val;
+    }
   }
   return filters;
 }
 
-function getAllDistricts() {
-  const all = [];
-  for (const area of allPostcodeAreas) {
-    for (const d of (area.districts || [])) {
-      all.push({ ...d, area_code: area.area_code, area_name: area.area_name, region: area.region });
-    }
-  }
-  return all;
-}
-
-function searchPostcodes(query) {
-  const dropdown = document.getElementById('pc-dropdown');
-  if (!query) { renderAllPostcodes(); return; }
-  const q = query.toLowerCase();
-  const all = getAllDistricts();
-  const filtered = all.filter(d => d.code.toLowerCase().includes(q) || d.name.toLowerCase().includes(q) || d.area_code.toLowerCase().includes(q) || d.area_name.toLowerCase().includes(q) || d.region.toLowerCase().includes(q));
-  const areaMatch = allPostcodeAreas.find(a => a.area_code.toLowerCase() === q);
-  if (areaMatch && filtered.length === areaMatch.districts.length) { expandedArea = areaMatch.area_code; renderAllPostcodes(); dropdown.style.display = 'block'; return; }
-  renderPcSearchResults(filtered);
-  dropdown.style.display = 'block';
-}
-function showPcDropdown() { renderAllPostcodes(); document.getElementById('pc-dropdown').style.display = 'block'; }
-function hidePcDropdown() { document.getElementById('pc-dropdown').style.display = 'none'; }
-function renderAllPostcodes() {
-  const dropdown = document.getElementById('pc-dropdown');
-  const selected = selectedPostcodes.map(s => s.code);
-  let html = '';
-  if (!allPostcodeAreas.length) { html = '<div style="padding:16px;color:#5c6480;font-size:13px;text-align:center">Loading postcode districts...</div>'; }
-  else { for (const area of allPostcodeAreas) {
-    const isExpanded = expandedArea === area.area_code;
-    const selectedInArea = selected.filter(s => s.startsWith(area.area_code));
-    html += '<div style="border-bottom:1px solid rgba(255,255,255,0.04)">';
-    html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;transition:.1s" onmouseover="this.style.background=\'rgba(255,255,255,0.03)\'" onmouseout="this.style.background=\'transparent\'" onclick="toggleArea(\'' + area.area_code + '\')">' +
-      '<span style="width:20px;height:20px;border-radius:4px;border:1px solid #2a2d42;display:flex;align-items:center;justify-content:center;font-size:10px;color:#5c6480" id="arrow-' + area.area_code + '">' + (isExpanded ? '▼' : '▶') + '</span>' +
-      '<span style="font-weight:700;font-size:13px;color:#f1f5f9;min-width:32px">' + area.area_code + '</span>' +
-      '<span style="color:#8890a8;font-size:12px;flex:1">' + area.area_name + ' <span style="color:#5c6480">· ' + area.region + '</span></span>' +
-      '<span style="font-size:10px;color:#5c6480">' + area.districts.length + ' districts</span>' +
-      (selectedInArea.length > 0 ? '<span style="font-size:10px;color:#0ea5e9;font-weight:600;margin-left:4px">' + selectedInArea.length + ' selected</span>' : '') + '</div>';
-    if (isExpanded) {
-      html += '<div id="districts-' + area.area_code + '" style="padding-left:42px;padding-bottom:4px">';
-      for (const d of (area.districts || [])) {
-        const isSelected = selected.includes(d.code);
-        const isTaken = !d.available && !isSelected;
-        const isDisabled = isTaken || (!isSelected && selectedPostcodes.length >= postcodeLimit);
-        html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;cursor:' + (isDisabled ? 'not-allowed' : 'pointer') + ';opacity:' + (isDisabled ? '0.3' : '1') + ';border-radius:4px;transition:.1s" onmouseover="this.style.background=\'rgba(255,255,255,0.03)\'" onmouseout="this.style.background=\'transparent\'" onclick="' + (isDisabled ? '' : 'togglePc(\'' + d.code + '\',\'' + d.name.replace(/'/g, "\\'") + '\',\'' + area.region + '\')') + '">' +
-          '<span style="width:16px;height:16px;border-radius:3px;border:1px solid ' + (isSelected ? '#0ea5e9' : (isTaken ? '#ef4444' : '#2a2d42')) + ';display:flex;align-items:center;justify-content:center;font-size:8px;color:' + (isSelected ? '#fff' : (isTaken ? '#ef4444' : 'transparent')) + ';background:' + (isSelected ? '#0ea5e9' : 'transparent') + '">' + (isSelected ? '\u2713' : (isTaken ? '\u2717' : '')) + '</span>' +
-          '<span style="font-weight:600;font-size:12px;color:#f1f5f9;min-width:44px">' + d.code + '</span>' +
-          '<span style="color:#8890a8;font-size:11px">' + d.name + '</span>' +
-          (isTaken ? '<span style="margin-left:auto;font-size:9px;color:#ef4444;font-weight:600">Taken</span>' : '') + '</div>';
-      }
-      html += '</div>';
-    }
-    html += '</div>'; } }
-  dropdown.innerHTML = html;
-}
-function renderPcSearchResults(items) {
-  const dropdown = document.getElementById('pc-dropdown');
-  const selected = selectedPostcodes.map(s => s.code);
-  if (items.length === 0) { dropdown.innerHTML = '<div style="padding:16px;color:#5c6480;font-size:13px;text-align:center">No matching districts. Try EN1, SW1, M1...</div>'; return; }
-  let html = ''; let lastArea = '';
-  for (const d of items) {
-    if (d.area_code !== lastArea) { html += '<div style="padding:6px 14px 2px;font-size:10px;font-weight:700;color:#5c6480">' + d.area_code + ' — ' + d.area_name + '</div>'; lastArea = d.area_code; }
-    const isSelected = selected.includes(d.code); const isTaken = !d.available && !isSelected; const isDisabled = isTaken || (!isSelected && selectedPostcodes.length >= postcodeLimit);
-    html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 14px;cursor:' + (isDisabled ? 'not-allowed' : 'pointer') + ';opacity:' + (isDisabled ? '0.3' : '1') + ';transition:.1s" onmouseover="this.style.background=\'rgba(255,255,255,0.03)\'" onmouseout="this.style.background=\'transparent\'" onclick="' + (isDisabled ? '' : 'togglePc(\'' + d.code + '\',\'' + d.name.replace(/'/g, "\\'") + '\',\'' + d.region + '\')') + '">' +
-      '<span style="width:16px;height:16px;border-radius:3px;border:1px solid ' + (isSelected ? '#0ea5e9' : (isTaken ? '#ef4444' : '#2a2d42')) + ';display:flex;align-items:center;justify-content:center;font-size:8px;color:' + (isSelected ? '#fff' : (isTaken ? '#ef4444' : 'transparent')) + ';background:' + (isSelected ? '#0ea5e9' : 'transparent') + '">' + (isSelected ? '\u2713' : (isTaken ? '\u2717' : '')) + '</span>' +
-      '<span style="font-weight:600;font-size:12px;color:#f1f5f9;min-width:44px">' + d.code + '</span>' +
-      '<span style="color:#8890a8;font-size:11px">' + d.name + '</span>' +
-      (isTaken ? '<span style="margin-left:auto;font-size:9px;color:#ef4444;font-weight:600">Taken</span>' : '') + '</div>';
-  }
-  dropdown.innerHTML = html;
-}
-function toggleArea(code) { if (expandedArea === code) { expandedArea = null; } else { expandedArea = code; } renderAllPostcodes(); document.getElementById('pc-dropdown').style.display = 'block'; }
-function togglePc(code, name, region) {
-  const idx = selectedPostcodes.findIndex(s => s.code === code);
-  if (idx >= 0) { selectedPostcodes.splice(idx, 1); }
-  else { if (selectedPostcodes.length >= postcodeLimit) { document.getElementById('pc-availability-msg').textContent = 'Free trial includes up to ' + postcodeLimit + ' districts. Upgrade for more.'; document.getElementById('pc-availability-msg').style.display = 'block'; setTimeout(() => document.getElementById('pc-availability-msg').style.display = 'none', 3000); return; } selectedPostcodes.push({ code, name, region }); }
-  updatePcDisplay(); renderAllPostcodes(); document.getElementById('pc-input').focus();
-}
-function removePc(code) { selectedPostcodes = selectedPostcodes.filter(s => s.code !== code); updatePcDisplay(); renderAllPostcodes(); }
-function updatePcDisplay() {
-  const tags = document.getElementById('pc-tags');
-  const count = document.getElementById('pc-count');
-  const max = document.getElementById('pc-max');
-  const input = document.getElementById('pc-input');
-  count.textContent = selectedPostcodes.length;
-  max.textContent = postcodeLimit;
-  tags.innerHTML = selectedPostcodes.map(s => '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:6px;font-size:12px;color:#0ea5e9;font-weight:600">' + s.code + ' ' + s.name + '<span onclick="removePc(\'' + s.code + '\')" style="cursor:pointer;opacity:0.6;font-size:10px;margin-left:2px">\u2715</span></span>').join('');
-  input.placeholder = selectedPostcodes.length >= postcodeLimit ? 'Max reached' : 'Search districts like EN1, SW1...';
-}
-document.getElementById('signup-product').addEventListener('change', function() { loadPostcodes(); showLeadFilters(); });
-
-// ===== CRM TEST ON SIGNUP =====
-function testCrmOnSignup() {
-  const url = document.getElementById('signup-crm').value.trim();
-  const status = document.getElementById('signup-crm-status');
-  status.style.display = 'block'; status.style.color = '#8890a8'; status.textContent = 'Testing connection...';
+// ===== CRM TEST =====
+function testCrm() {
+  var url = document.getElementById('s-crm').value.trim();
+  var status = document.getElementById('crm-status');
+  status.style.display = 'block'; status.style.color = '#8890a8'; status.textContent = 'Testing...';
   if (!url || !url.startsWith('http')) { status.style.color = '#ef4444'; status.textContent = 'Enter a valid webhook URL starting with https://'; return; }
-  fetch(API + '/api/crm/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) })
-    .then(r => r.json()).then(d => {
+  fetch(API + '/api/crm/test', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ url:url }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
       if (d.success) { status.style.color = '#22c55e'; status.textContent = 'Connected! Leads will flow here daily at 9am.'; }
       else { status.style.color = '#ef4444'; status.textContent = 'Connection failed: ' + (d.error || d.status || 'Unknown error'); }
-    }).catch(() => { status.style.color = '#ef4444'; status.textContent = 'Could not reach server. Try again later.'; });
-  setTimeout(() => { if (status.textContent !== 'Connected! Leads will flow here daily at 9am.') return; }, 8000);
+    })
+    .catch(function() { status.style.color = '#ef4444'; status.textContent = 'Could not reach server.'; });
 }
 
 // ===== SIGNUP =====
-function signup() {
-  const name = document.getElementById('signup-name').value.trim();
-  const company = document.getElementById('signup-company').value.trim();
-  const email = document.getElementById('signup-email').value.trim().toLowerCase();
-  const password = document.getElementById('signup-password').value;
-  const product = document.getElementById('signup-product').value;
-  const consent = document.getElementById('signup-consent').checked;
-  const error = document.getElementById('signup-error');
-  const success = document.getElementById('signup-success');
+function doSignup() {
+  var name = document.getElementById('s-name').value.trim();
+  var company = document.getElementById('s-company').value.trim();
+  var email = document.getElementById('s-email').value.trim().toLowerCase();
+  var password = document.getElementById('s-password').value;
+  var product = document.getElementById('s-product').value;
+  var button = document.getElementById('signup-btn');
+  var error = document.getElementById('signup-error');
+  var success = document.getElementById('signup-success');
   error.style.display = 'none'; success.style.display = 'none';
   if (!name || !company || !email || !password) { error.textContent = 'Please fill in all fields'; error.style.display = 'block'; return; }
   if (password.length < 8) { error.textContent = 'Password must be at least 8 characters'; error.style.display = 'block'; return; }
-  if (selectedPostcodes.length === 0) { error.textContent = 'Please select at least one postcode district'; error.style.display = 'block'; return; }
-  const leadFilters = getLeadFilters();
-  fetch(API + '/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company, name, email, phone: '', password, product, targetAreas: selectedPostcodes.map(s => s.code), leadFilters: JSON.stringify(leadFilters), source: 'web', marketingConsent: consent, crmWebhookUrl: document.getElementById('signup-crm').value.trim() }) })
-    .then(r => r.json()).then(d => {
-      if (d.token) { localStorage.setItem('mld_portal_session', JSON.stringify({ token: d.token, clientId: d.customer?.id || email, name: d.customer?.name || name, plan: d.customer?.plan || 'free_trial', email, product: d.customer?.product || 'moving' })); success.style.display = 'block'; setTimeout(() => window.location.href = '/portal/dashboard.html', 1000); }
-      else { error.textContent = d.error || 'Signup failed. Please try again.'; error.style.display = 'block'; }
-    }).catch(() => { error.textContent = 'Could not connect to server. Please ensure you are connected to the internet.'; error.style.display = 'block'; });
+  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
+  fetch(API + '/api/auth/signup', {
+    method:'POST', headers:{ 'Content-Type':'application/json' },
+    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, targetAreas:[], source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    if (d.token) {
+      localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:d.customer?.plan || 'free_trial', email:email, product:product }));
+      success.style.display = 'block'; button.innerHTML = '<i class="fas fa-check"></i> Redirecting...';
+      setTimeout(function() { window.location.href = '/portal/dashboard.html'; }, 1000);
+    } else {
+      error.textContent = d.error || 'Signup failed. Please try again.'; error.style.display = 'block';
+      button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false;
+    }
+  }).catch(function() {
+    error.textContent = 'Could not connect to server.'; error.style.display = 'block';
+    button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false;
+  });
 }
-loadPostcodes();
 
 // ===== LOGIN =====
-function login() {
-  const email = document.getElementById('login-email')?.value?.trim().toLowerCase() || '';
-  const password = document.getElementById('login-password')?.value || '';
-  const error = document.getElementById('login-error');
+function doLogin() {
+  var email = document.getElementById('l-email').value.trim().toLowerCase();
+  var pass = document.getElementById('l-pass').value;
+  var error = document.getElementById('login-error');
   error.style.display = 'none';
-  if (!email || !password) { error.style.display = 'block'; return; }
-  fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
-    .then(r => r.json()).then(d => {
-      if (d.token) { localStorage.setItem('mld_portal_session', JSON.stringify({ token: d.token, clientId: d.customer?.id || email, name: d.customer?.name || email, plan: d.customer?.plan || 'free_trial', email, product: d.customer?.product || 'moving' })); window.location.href = '/portal/dashboard.html'; }
-      else { error.textContent = d.error || 'Invalid email or password.'; error.style.display = 'block'; }
-    }).catch(() => { error.textContent = 'Could not connect to server.'; error.style.display = 'block'; });
+  if (!email || !pass) { error.style.display = 'block'; return; }
+  fetch(API + '/api/auth/login', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ email:email, password:pass }) })
+    .then(function(r) { return r.json(); }).then(function(d) {
+      if (d.token) {
+        localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || email, plan:d.customer?.plan || 'free_trial', email:email, product:d.customer?.product || 'moving' }));
+        window.location.href = '/portal/dashboard.html';
+      } else { error.style.display = 'block'; }
+    }).catch(function() { error.style.display = 'block'; });
 }
+
+function showLogin() { document.getElementById('signup-form').style.display='none'; document.getElementById('login-form').style.display='block'; }
+function showSignup() { document.getElementById('signup-form').style.display='block'; document.getElementById('login-form').style.display='none'; }
+</script>
+</body></html>
