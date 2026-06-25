@@ -1682,9 +1682,8 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     if (!customer) return res.status(404).json({ error: 'User not found' });
 
     // Map plan names: config uses 'essential' for non-moving starter plans
-    const effectivePlan = (customer.product !== 'moving' && plan === 'starter') ? 'essential' : plan;
-    const productKey = { moving: 'moving', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' }[customer.product] || customer.product;
-    const planKey = productKey + '-' + effectivePlan;
+    const productKey = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' }[customer.product] || customer.product;
+    const planKey = productKey + '-' + plan;
     const priceIdMap = STRIPE_PRICE_IDS[customer.product] || {};
     const priceId = priceIdMap[planKey];
 

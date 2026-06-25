@@ -1,0 +1,30 @@
+{
+  "priceIds": {
+    "moving": {
+      "mov-starter": "price_1Tm4hUADspDnFpfB6oJUCqlL",
+      "mov-growth": "price_1Tm4hVADspDnFpfBXV1r8sIy",
+      "mov-power": "price_1Tm4hVADspDnFpfBvaBZohUW"
+    },
+    "probate": {
+      "prob-starter": "price_1Tm4hWADspDnFpfBL35mkhAc",
+      "prob-growth": "price_1Tm4hWADspDnFpfB6PyElLPA",
+      "prob-power": "price_1Tm4hXADspDnFpfBJle6ZKTy"
+    },
+    "newbusiness": {
+      "nb-starter": "price_1Tm4hYADspDnFpfBDrul3NjT",
+      "nb-growth": "price_1Tm4hYADspDnFpfBpLntgJQJ",
+      "nb-power": "price_1Tm4hZADspDnFpfBwSVf9IVP"
+    },
+    "planning": {
+      "plan-starter": "price_1Tm4hZADspDnFpfBeDhvSecM",
+      "plan-growth": "price_1Tm4haADspDnFpfBjgWn4VCw",
+      "plan-power": "price_1Tm4hbADspDnFpfBWmV6qlsu"
+    },
+    "tenders": {
+      "tend-starter": "price_1Tm4hbADspDnFpfBgeErthr5",
+      "tend-growth": "price_1Tm4hdADspDnFpfBwpKZUF3B",
+      "tend-power": "price_1Tm4hdADspDnFpfBO1S3OUHq"
+    }
+  },
+  "setupComplete": true
+}
