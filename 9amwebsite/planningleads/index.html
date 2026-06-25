@@ -127,8 +127,11 @@ footer a:hover{color:var(--primary)}
 @media(max-width:768px){.features-grid{grid-template-columns:1fr}}
 @media(max-width:1024px)and (min-width:769px){.features-grid{grid-template-columns:repeat(2,1fr)}}
 .section{position:relative;overflow:hidden}
-.s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(16,185,129,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(16,185,129,0.03) 1px,transparent 1px);background-size:60px 60px}
-.s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.1}
+.s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(16,185,129,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(16,185,129,0.06) 1px,transparent 1px);background-size:60px 60px;z-index:0}
+.s-bg{position:absolute;inset:0;pointer-events:none;background-size:cover;background-position:center;opacity:.12;z-index:0}
+.s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.12;z-index:0}
+.s-orb.tl{width:500px;height:500px;top:-200px;right:-100px}
+.s-orb.br{width:400px;height:400px;bottom:-150px;left:-100px}
 @media(max-width:768px){
   .hero h1{font-size:28px;line-height:34px}
   .hero p{font-size:15px}
@@ -168,6 +171,7 @@ footer a:hover{color:var(--primary)}
 <nav><div class="nav-inner">
 <a href="/planningleads/" class="logo"><svg width="20" height="20" viewBox="0 0 100 100" fill="none" style="flex-shrink:0"><circle cx="50" cy="50" r="40" stroke="#10b981" stroke-width="5"/><circle cx="50" cy="50" r="3" fill="#10b981"/><line x1="50" y1="50" x2="50" y2="17" stroke="#10b981" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="23" y2="50" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="42" cy="8" r="5" fill="#10b981" opacity="0.8"/><circle cx="58" cy="8" r="5" fill="#10b981" opacity="0.8"/></svg> Planning<span>Leads</span></a>
 <div class="nav-links">
+<a href="/" style="color:var(--primary);font-weight:700">Home</a>
 <a href="/" style="display:inline-flex;align-items:center;gap:4px;padding:7px 10px;color:var(--muted2,#666);font-size:12px;font-weight:600;text-decoration:none;transition:.2s;border-radius:6px;border:1px solid rgba(255,255,255,0.06)"><i class="fas fa-arrow-left" style="font-size:10px"></i> 9amLeads</a>
 <a href="#how">How It Works</a>
 <a href="#who">Who It's For</a>
@@ -178,7 +182,7 @@ footer a:hover{color:var(--primary)}
 </div><a href="/" style="display:none;font-size:13px;font-weight:600;padding:6px 12px;border:1px solid var(--border);border-radius:6px;color:var(--text2);text-decoration:none;margin-right:6px;white-space:nowrap" class="mobile-home">Home</a><button class="hamburger" id="hamBtn" onclick="toggleMobile()" aria-label="Menu"><span></span><span></span><span></span></button></nav>
 <div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobile()"></div>
 <div class="mobile-menu" id="mobileMenu">
-<a href="/" onclick="toggleMobile()">Home</a>
+<a href="/" onclick="toggleMobile()" style="color:var(--primary);font-weight:700"><i class="fas fa-home"></i> Home</a>
 <a href="/movingleadsdaily/" onclick="toggleMobile()">Moving Leads</a>
 <a href="/probateleads/" onclick="toggleMobile()">Probate Leads</a>
 <a href="/newbusinessalert/" onclick="toggleMobile()">New Business</a>
@@ -191,8 +195,8 @@ footer a:hover{color:var(--primary)}
 <section class="hero" style="min-height:90vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;padding:120px 24px 80px;background:linear-gradient(90deg,rgba(0,0,0,0.92) 0%,rgba(0,0,0,0.4) 60%,rgba(0,0,0,0.1) 100%),url(https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1600&q=80);background-size:cover;background-position:center;background-attachment:fixed;overflow:hidden">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#059669"></div>
 <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(16,185,129,.1) 0%,transparent 60%),radial-gradient(ellipse at 70% 30%,rgba(16,185,129,.05) 0%,transparent 50%);pointer-events:none"></div>
 <div class="hero-content" style="position:relative;z-index:2">
 <div style="display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:28px">
@@ -200,7 +204,7 @@ footer a:hover{color:var(--primary)}
 <span style="display:inline-block;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e;font-size:12px;font-weight:600;padding:6px 20px;border-radius:100px;letter-spacing:.5px;text-transform:uppercase">No Card Required</span>
 </div>
 <h1>New Planning Applications Every Day. <span class="highlight">Be the Tradesperson They Hire.</span></h1>
-<p>Every morning, 500+ new planning applications land across 350+ UK councils. For builders, architects, electricians, plumbers, roofers, and landscapers, each approved permission means a paying project. 9amLeads delivers fresh planning data directly to your inbox at 9am â€” before your competitors have even heard of the project. Stop chasing shared leads. Start quoting exclusive opportunities.</p>
+<p>Every morning, 500+ new planning applications land across 350+ UK councils. For builders, architects, electricians, plumbers, roofers, and landscapers, each approved permission means a paying project. 9amLeads delivers fresh planning data directly to your inbox at 9am â€” scored Hot/Warm/Cold with AI-generated outreach messages and CRM-ready data. Before your competitors have even heard of the project. Stop chasing shared leads. Start quoting exclusive opportunities.</p>
 <a href="#cta" class="btn btn-primary btn-lg"><i class="fas fa-gift"></i> Start Your Free Trial</a>
 <div class="hero-stats">
 <div class="hero-stat"><div class="num">10-100+</div><div class="label">Apps Per Day</div></div>
@@ -211,11 +215,28 @@ footer a:hover{color:var(--primary)}
 </div>
 </section>
 
+<section class="section" style="position:relative;overflow:hidden;padding:40px 0;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);text-align:center">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#059669"></div>
+<div class="container">
+<p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:8px">Follow Us</p>
+<h3 style="font-size:20px;font-weight:800;font-family:var(--ff-h);margin-bottom:12px">Stay Connected with <span style="color:var(--primary)">PlanningLeads</span></h3>
+<p style="font-size:14px;color:var(--text2);margin-bottom:20px;max-width:500px;margin-left:auto;margin-right:auto">Follow us on social media for lead generation tips, success stories, and industry insights.</p>
+<div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+<a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.background='rgba(16,185,129,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-facebook-f" style="color:#1877f2;font-size:18px"></i> Facebook</a>
+<a href="https://www.tiktok.com/@9amleads.com" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.background='rgba(16,185,129,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-tiktok" style="color:#fff;font-size:18px"></i> TikTok</a>
+<a href="https://www.instagram.com/9amleads/" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.background='rgba(16,185,129,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-instagram" style="color:#e4405f;font-size:18px"></i> Instagram</a>
+</div>
+</div>
+</section>
+
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#059669"></div>
 <div class="container">
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:800px;margin:0 auto;text-align:center">
 <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
@@ -245,16 +266,16 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)" id="how">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#059669"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">How It Works</div>
 <h2 class="section-title">Three Simple Steps to <span class="gradient">More Projects</span></h2>
-<p class="section-sub">From setup to your first planning lead in under 5 minutes.</p>
+<p class="section-sub">From setup to your first planning lead in under 5 minutes. Each opportunity scored and ready to act on.</p>
 <div class="steps">
-<div class="step"><span class="num">1</span><div class="icon"><i class="fas fa-map-marker-alt"></i></div><h4>Choose Your Councils</h4><p>Select the local authorities and postcode areas you want to monitor. Cover one council or the whole UK â€” you choose exactly where you want to work.</p></div>
-<div class="step"><span class="num">2</span><div class="icon"><i class="fas fa-moon"></i></div><h4>We Scan Overnight</h4><p>Our system checks every UK council's planning portal daily. As soon as a new application matches your criteria, we capture every detail.</p></div>
-<div class="step"><span class="num">3</span><div class="icon"><i class="fas fa-envelope-open-text"></i></div><h4>Leads at 9am</h4><p>Your daily lead sheet arrives at 9am. Property address, applicant name, application type, description â€” everything you need to pitch your services.</p></div>
+<div class="step"><span class="num">1</span><div class="icon"><i class="fas fa-map-marker-alt"></i></div><h4>Choose Your Councils</h4><p>Select the local authorities and postcode areas you want to monitor. Use our calculator to estimate daily application volumes. Cover one council or the whole UK.</p></div>
+<div class="step"><span class="num">2</span><div class="icon"><i class="fas fa-moon"></i></div><h4>We Scan Overnight</h4><p>Our system checks every UK council's planning portal daily. As soon as a new application matches your criteria, we capture every detail and score it Hot/Warm/Cold.</p></div>
+<div class="step"><span class="num">3</span><div class="icon"><i class="fas fa-envelope-open-text"></i></div><h4>Opportunities at 9am</h4><p>Your daily opportunity sheet arrives at 9am with AI-generated outreach messages. Property address, applicant name, application type â€” export to CSV or Excel for your CRM. Everything you need to pitch your services.</p></div>
 </div>
 </div>
 </section>
@@ -262,8 +283,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" id="who">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#059669"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Who It's For</div>
 <h2 class="section-title">26 Trades &amp; Professions That Thrive on <span class="gradient">Planning Leads</span></h2>
@@ -302,8 +323,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#059669"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Who Benefits Most</div>
 <h2 class="section-title">Six Trades That Profit from <span class="gradient">Planning Leads</span></h2>
@@ -346,8 +367,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1521791136064-2b8711a1cfb9?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#059669"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Why Businesses Choose PlanningLeads</div>
 <h2 class="section-title">Built for Business Growth. <span class="gradient">Not Just Lead Generation.</span></h2>
@@ -383,19 +404,22 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#059669"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Features</div>
 <h2 class="section-title">Why Each Feature <span class="gradient">Wins You Projects</span></h2>
-<p class="section-sub">Every feature exists for one reason: to help you contact the applicant before any other tradesperson sees the opportunity.</p>
+<p class="section-sub">Every feature exists for one reason: to help you contact the applicant before any other tradesperson sees the opportunity. With opportunity scoring, AI outreach, and weekly reporting.</p>
+<div style="max-width:780px;margin:0 auto 24px;padding:12px 20px;background:var(--primary-subtle);border:1px solid rgba(16,185,129,0.15);border-radius:var(--r);text-align:center;font-size:13px;color:var(--text2)">
+<i class="fas fa-plug" style="color:var(--primary);margin-right:6px"></i> <strong>CRM Integration:</strong> HubSpot, Salesforce, Pipedrive, Tradify, Clio + 100s more via Zapier
+</div>
 <div class="features-grid">
 <div class="feature-card"><div class="icon"><i class="fas fa-clock"></i></div><h4>9am Delivery</h4><p>Why it matters: Planning applications go live on council portals at unpredictable times. We capture them that same day and deliver them at 9am, so you quote before other trades have even checked the council website.</p></div>
 <div class="feature-card"><div class="icon"><i class="fas fa-map-marker-alt"></i></div><h4>Council Targeting</h4><p>Why it matters: A builder in Bristol does not need leads from Newcastle. Filter by the exact councils where your team operates, so every lead is a project you can actually quote on the same day.</p></div>
 <div class="feature-card"><div class="icon"><i class="fas fa-lock"></i></div><h4>Exclusive Territory</h4><p>Why it matters: On other platforms, five builders fight over one extension. With PlanningLeads, your chosen councils are yours alone. You contact the applicant first, every time. No price wars.</p></div>
 <div class="feature-card"><div class="icon"><i class="fas fa-clipboard-list"></i></div><h4>Full App Details</h4><p>Why it matters: You need the property address, applicant name, and build cost to write a credible quote. We give you everything including the council reference so you sound informed from the first call.</p></div>
-<div class="feature-card"><div class="icon"><i class="fas fa-chart-line"></i></div><h4>Performance Dashboard</h4><p>Why it matters: Track which application types (extensions vs new builds vs loft conversions) generate the most revenue for your business, so you know exactly where to focus your quoting efforts.</p></div>
-<div class="feature-card"><div class="icon"><i class="fas fa-file-export"></i></div><h4>CSV Export</h4><p>Why it matters: Export leads directly into your CRM or Google Sheets. Build a database of every planning applicant in your area and automate follow-up sequences for when approvals come through.</p></div>
+<div class="feature-card"><div class="icon"><i class="fas fa-fire"></i></div><h4>Opportunity Scoring &amp; AI Outreach</h4><p>Why it matters: Every application scored Hot/Warm/Cold so you prioritise the best projects first. AI-generated outreach messages help you contact applicants faster. Weekly reports show your quoting performance and pipeline growth.</p></div>
+<div class="feature-card"><div class="icon"><i class="fas fa-file-export"></i></div><h4>CSV &amp; Excel Export + CRM Sync</h4><p>Why it matters: Export leads directly into your CRM or Google Sheets as CSV or Excel. Build a database of every planning applicant in your area and automate follow-up sequences for when approvals come through.</p></div>
 </div>
 </div>
 </section>
@@ -415,8 +439,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#059669"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:24px">See the Difference</div>
 <h2 class="section-title">Real Projects. <span class="gradient">Real Opportunities.</span></h2>
@@ -453,8 +477,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" id="pricing">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#059669"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Simple Pricing</div>
 <h2 class="section-title">Transparent Plans. <span class="gradient">No Surprises.</span></h2>
@@ -462,12 +486,12 @@ footer a:hover{color:var(--primary)}
 <div class="product-grid">
 <div class="pricing-card">
 <h3>Starter</h3>
-<div class="price">£99<span>/mo</span></div>
-<div class="price-sub">5 leads per day · 25 per week · 100 per month</div>
+<div class="price">Â£25<span>/wk</span></div>
+<div class="price-sub">5 leads per day ï¿½ 25 per week ï¿½ 100 per month</div>
 <ul>
 <li><i class="fas fa-check"></i> Up to 5 planning leads daily</li>
 <li><i class="fas fa-check"></i> Daily delivery at 9am</li>
-<li><i class="fas fa-check"></i> Exclusive – no competition</li>
+<li><i class="fas fa-check"></i> Exclusive ï¿½ no competition</li>
 <li><i class="fas fa-check"></i> Choose 1 council area</li>
 <li><i class="fas fa-check"></i> 7 day free trial</li>
 </ul>
@@ -476,12 +500,12 @@ footer a:hover{color:var(--primary)}
 <div class="pricing-card featured">
 <div class="popular-badge">Most Popular</div>
 <h3>Pro</h3>
-<div class="price">£197<span>/mo</span></div>
-<div class="price-sub">15 leads per day · 75 per week · 300 per month</div>
+<div class="price">Â£50<span>/wk</span></div>
+<div class="price-sub">15 leads per day ï¿½ 75 per week ï¿½ 300 per month</div>
 <ul>
 <li><i class="fas fa-check"></i> Up to 15 planning leads daily</li>
 <li><i class="fas fa-check"></i> Daily delivery at 9am</li>
-<li><i class="fas fa-check"></i> Exclusive – no competition</li>
+<li><i class="fas fa-check"></i> Exclusive ï¿½ no competition</li>
 <li><i class="fas fa-check"></i> Choose up to 3 council areas</li>
 <li><i class="fas fa-check"></i> Priority support</li>
 <li><i class="fas fa-check"></i> 7 day free trial</li>
@@ -490,12 +514,12 @@ footer a:hover{color:var(--primary)}
 </div>
 <div class="pricing-card">
 <h3>Enterprise</h3>
-<div class="price">£395<span>/mo</span></div>
-<div class="price-sub">25 leads per day · 175 per week · 350 per month</div>
+<div class="price">Â£100<span>/wk</span></div>
+<div class="price-sub">25 leads per day ï¿½ 175 per week ï¿½ 350 per month</div>
 <ul>
 <li><i class="fas fa-check"></i> Up to 25 planning leads daily</li>
 <li><i class="fas fa-check"></i> Daily delivery at 9am</li>
-<li><i class="fas fa-check"></i> Exclusive – no competition</li>
+<li><i class="fas fa-check"></i> Exclusive ï¿½ no competition</li>
 <li><i class="fas fa-check"></i> All councils nationwide</li>
 <li><i class="fas fa-check"></i> CSV export &amp; dashboard</li>
 <li><i class="fas fa-check"></i> Dedicated account manager</li>
@@ -508,7 +532,7 @@ footer a:hover{color:var(--primary)}
 <p style="font-size:13px;color:var(--text2);line-height:1.6">
 <i class="fas fa-calculator" style="color:var(--primary);margin-right:6px"></i>
 <strong style="color:var(--text)">One single project covers your entire annual subscription.</strong>
-Builders earn £5,000-£50,000 per project. One extension project alone pays for years of PlanningLeads.
+Builders earn ï¿½5,000-ï¿½50,000 per project. One extension project alone pays for years of PlanningLeads.
 </p>
 </div>
 </div>
@@ -517,14 +541,14 @@ Builders earn £5,000-£50,000 per project. One extension project alone pays for y
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#059669"></div>
 <div class="container">
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#059669"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Built For Multiple Industries</div>
 <h2 class="section-title">One Platform. <span class="gradient">Every Industry.</span></h2>
@@ -554,44 +578,52 @@ Builders earn £5,000-£50,000 per project. One extension project alone pays for y
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
 <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px">
 <div style="color:#f59e0b;font-size:12px;margin-bottom:6px">?????</div>
-<p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"I check planning applications in my area every morning using PlanningLeads. Landed a £45k loft conversion just by being first to contact the homeowner before any other builder."</p>
-<div style="font-size:12px;color:var(--muted2)">— Gary W., Builder, Birmingham</div>
+<p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"I check planning applications in my area every morning using PlanningLeads. Landed a ï¿½45k loft conversion just by being first to contact the homeowner before any other builder."</p>
+<div style="font-size:12px;color:var(--muted2)">ï¿½ Gary W., Builder, Birmingham</div>
 </div>
 <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px">
 <div style="color:#f59e0b;font-size:12px;margin-bottom:6px">?????</div>
 <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"We subscribed to the Essex planning feed and pick up 3-4 extension projects per week. The exclusivity means we quote before any other architect in the area has even seen the application."</p>
-<div style="font-size:12px;color:var(--muted2)">— Michael S., Architect, Colchester</div>
+<div style="font-size:12px;color:var(--muted2)">ï¿½ Michael S., Architect, Colchester</div>
 </div>
 <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px">
 <div style="color:#f59e0b;font-size:12px;margin-bottom:6px">?????</div>
 <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"Reduced my marketing spend by 80% and still get more planning leads than before. One extension project I won through PlanningLeads paid for five years of subscriptions."</p>
-<div style="font-size:12px;color:var(--muted2)">— Pete R., Roofer, Manchester</div>
+<div style="font-size:12px;color:var(--muted2)">ï¿½ Pete R., Roofer, Manchester</div>
 </div>
 <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px">
 <div style="color:#f59e0b;font-size:12px;margin-bottom:6px">?????</div>
 <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"The council coverage is incredible. We track 12 local authorities and never miss a single planning application in our area. It is how we win work now."</p>
-<div style="font-size:12px;color:var(--muted2)">— David W., Builder, Bristol</div>
+<div style="font-size:12px;color:var(--muted2)">ï¿½ David W., Builder, Bristol</div>
 </div>
 </div>
 <div class="test-grid">
 <div class="t-card"><div class="stars">?????</div>
 <blockquote>I've been an architect for 15 years and this is the best business development tool I've ever used. I get 5-10 relevant planning alerts every week and have converted three into full architectural projects already. The early warning alone is worth the subscription.</blockquote>
-<div class="author">— Michael Stone, Architect · London</div></div>
+<div class="author">ï¿½ Michael Stone, Architect ï¿½ London</div></div>
 <div class="t-card"><div class="stars">?????</div>
 <blockquote>We use PlanningLeads to identify extension and new build projects before they go to market. As soon as planning is approved, we contact the homeowner directly with our quote. It is the most effective lead source our building firm has ever used.</blockquote>
-<div class="author">— Gary Wilson, Builder · Birmingham</div></div>
+<div class="author">ï¿½ Gary Wilson, Builder ï¿½ Birmingham</div></div>
 <div class="t-card"><div class="stars">?????</div>
 <blockquote>I run a small electrical contracting business and this has been a game changer. I contact homeowners the week their planning is approved and offer a free quote for the full electrical package. My conversion rate is through the roof.</blockquote>
-<div class="author">— Steve M., Electrician · Bristol</div></div>
+<div class="author">ï¿½ Steve M., Electrician ï¿½ Bristol</div></div>
 </div>
 </div>
 </section>
+<div style="display:flex;justify-content:center;gap:12px;padding:24px 0 12px;border-top:1px solid rgba(255,255,255,0.04)">
+<a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;font-size:15px;text-decoration:none" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+<a href="https://www.tiktok.com/@9amleads.com" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;font-size:15px;text-decoration:none" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+<a href="https://www.instagram.com/9amleads/" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;font-size:15px;text-decoration:none" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+</div>
+</div>
+</div>
+
 
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1507925921958-8a62f3d1a50d?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#059669"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">PlanningLeads vs The Competition</div>
 <h2 class="section-title">Why PlanningLeads <span class="gradient">Wins</span></h2>
@@ -663,3 +695,5 @@ Builders earn £5,000-£50,000 per project. One extension project alone pays for y
 <div style="font-size:36px;margin-bottom:10px"><i class="fas fa-bolt"></i></div>
 <h4 style="font-size:15px;font-weight:700;margin-bottom:8px;font-family:var(--ff-h)">9am Routine Wins</h4>
 <p style="font-size:13px;color:var(--muted);line-height:1.7">Leads arrive at 9am sharp. Your team can act while competitors are still checking council websites.</p></div>
+
+

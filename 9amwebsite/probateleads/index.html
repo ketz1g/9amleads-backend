@@ -126,9 +126,12 @@ footer a:hover{color:var(--primary)}
 .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 @media(max-width:768px){.features-grid{grid-template-columns:1fr}}
 @media(max-width:1024px)and (min-width:769px){.features-grid{grid-template-columns:repeat(2,1fr)}}
-.section{position:relative}
-.s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(168,85,247,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,0.03) 1px,transparent 1px);background-size:60px 60px}
-.s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.1}
+.section{position:relative;overflow:hidden}
+.s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(168,85,247,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,0.06) 1px,transparent 1px);background-size:60px 60px;z-index:0}
+.s-bg{position:absolute;inset:0;pointer-events:none;background-size:cover;background-position:center;opacity:.12;z-index:0}
+.s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.12;z-index:0}
+.s-orb.tl{width:500px;height:500px;top:-200px;right:-100px}
+.s-orb.br{width:400px;height:400px;bottom:-150px;left:-100px}
 @media(max-width:768px){.hero h1{font-size:28px;line-height:34px}.hero p{font-size:15px}section{padding:50px 0}.container{padding:0 18px}.section-title{font-size:24px;line-height:30px;margin-bottom:20px}.section-sub{font-size:14px;margin-bottom:30px}div[style*="repeat(3"]{grid-template-columns:1fr!important;gap:12px!important}div[style*="repeat(4"]{grid-template-columns:1fr!important;gap:12px!important}div[style*="repeat(2"]{grid-template-columns:1fr!important;gap:12px!important}div[style*="repeat(auto"]{grid-template-columns:1fr!important}.footer-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.hero h1{font-size:24px;line-height:30px}.footer-grid{grid-template-columns:1fr}.container{padding:0 14px}section{padding:40px 0}}
 </style></head>
@@ -136,15 +139,16 @@ footer a:hover{color:var(--primary)}
 <div style="background:#0a0a0a;border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;font-size:11px;text-align:center;font-family:Arial,sans-serif;">
 <span style="color:#888">Part of </span><a href="/" style="color:#0ea5e9;font-weight:600;text-decoration:none">9amLeads</a>
 <span style="color:#555;margin:0 6px">|</span>
-<a href="/movingleadsdaily/" style="color:#ff6b35;text-decoration:none;font-weight:600">Moving</a> <span style="color:#444;margin:0 4px">·</span>
-<a href="/probateleads/" style="color:#a855f7;text-decoration:none;font-weight:600">Probate</a> <span style="color:#444;margin:0 4px">·</span>
-<a href="/newbusinessalert/" style="color:#06b6d4;text-decoration:none;font-weight:600">New Business</a> <span style="color:#444;margin:0 4px">·</span>
-<a href="/planningleads/" style="color:#10b981;text-decoration:none;font-weight:600">Planning</a> <span style="color:#444;margin:0 4px">·</span>
+<a href="/movingleadsdaily/" style="color:#ff6b35;text-decoration:none;font-weight:600">Moving</a> <span style="color:#444;margin:0 4px">ï¿½</span>
+<a href="/probateleads/" style="color:#a855f7;text-decoration:none;font-weight:600">Probate</a> <span style="color:#444;margin:0 4px">ï¿½</span>
+<a href="/newbusinessalert/" style="color:#06b6d4;text-decoration:none;font-weight:600">New Business</a> <span style="color:#444;margin:0 4px">ï¿½</span>
+<a href="/planningleads/" style="color:#10b981;text-decoration:none;font-weight:600">Planning</a> <span style="color:#444;margin:0 4px">ï¿½</span>
 <a href="/tenders/" style="color:#6366f1;text-decoration:none;font-weight:600">Tenders</a>
 </div>
 <nav><div class="nav-inner">
 <a href="/probateleads/" class="logo"><svg width="20" height="20" viewBox="0 0 100 100" fill="none" style="flex-shrink:0"><circle cx="50" cy="50" r="40" stroke="#a855f7" stroke-width="5"/><circle cx="50" cy="50" r="3" fill="#a855f7"/><line x1="50" y1="50" x2="50" y2="17" stroke="#a855f7" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="23" y2="50" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="42" cy="8" r="5" fill="#a855f7" opacity="0.8"/><circle cx="58" cy="8" r="5" fill="#a855f7" opacity="0.8"/></svg> Probate<span>Leads</span></a>
 <div class="nav-links">
+<a href="/" style="color:var(--primary);font-weight:700">Home</a>
 <a href="/" style="display:inline-flex;align-items:center;gap:4px;padding:7px 10px;color:var(--muted2,#666);font-size:12px;font-weight:600;text-decoration:none;transition:.2s;border-radius:6px;border:1px solid rgba(255,255,255,0.06)"><i class="fas fa-arrow-left" style="font-size:10px"></i> 9amLeads</a>
 <a href="#how">How It Works</a>
 <a href="#who">Who Benefits</a>
@@ -155,7 +159,7 @@ footer a:hover{color:var(--primary)}
 </div><a href="/" style="display:none;font-size:13px;font-weight:600;padding:6px 12px;border:1px solid var(--border);border-radius:6px;color:var(--text2);text-decoration:none;margin-right:6px;white-space:nowrap" class="mobile-home">Home</a><button class="hamburger" id="hamBtn" onclick="toggleMobile()" aria-label="Menu"><span></span><span></span><span></span></button></nav>
 <div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobile()"></div>
 <div class="mobile-menu" id="mobileMenu">
-<a href="/" onclick="toggleMobile()">Home</a>
+<a href="/" onclick="toggleMobile()" style="color:var(--primary);font-weight:700"><i class="fas fa-home"></i> Home</a>
 <a href="/movingleadsdaily/" onclick="toggleMobile()">Moving Leads</a>
 <a href="/probateleads/" onclick="toggleMobile()">Probate Leads</a>
 <a href="/newbusinessalert/" onclick="toggleMobile()">New Business</a>
@@ -167,8 +171,8 @@ footer a:hover{color:var(--primary)}
 <section class="hero" style="min-height:90vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;padding:120px 24px 80px;background:linear-gradient(90deg,rgba(0,0,0,0.92) 0%,rgba(0,0,0,0.4) 60%,rgba(0,0,0,0.1) 100%),url(https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1600&q=80);background-size:cover;background-position:center;background-attachment:fixed;overflow:hidden">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#a855f7;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#9333ea;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#a855f7"></div>
+<div class="s-orb br" style="background:#9333ea"></div>
 <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(168,85,247,.1) 0%,transparent 60%),radial-gradient(ellipse at 70% 30%,rgba(168,85,247,.05) 0%,transparent 50%);pointer-events:none"></div>
 <div class="hero-content" style="position:relative;z-index:2">
 <div style="display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:28px">
@@ -176,7 +180,7 @@ footer a:hover{color:var(--primary)}
 <span style="display:inline-block;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e;font-size:12px;font-weight:600;padding:6px 20px;border-radius:100px;letter-spacing:.5px;text-transform:uppercase">No Card Required</span>
 </div>
 <h1>Daily Probate Grants from the <span class="highlight">Official Gov.uk Register</span></h1>
-<p>Every probate grant published on the register means a new estate instruction waiting to be won. Solicitors, probate practitioners, will writers, estate agents, trust lawyers, and inheritance tax advisers all need this data. Whoever contacts the executor first gets the instruction. 9amLeads delivers fresh probate grants to your inbox at 9am daily &mdash; before your competitors even know they exist.</p>
+<p>Every probate grant published on the register means a new estate instruction waiting to be won. Solicitors, probate practitioners, will writers, estate agents, trust lawyers, and inheritance tax advisers all need this data. Whoever contacts the executor first gets the instruction. 9amLeads delivers fresh probate grants to your inbox at 9am daily &mdash; scored Hot/Warm/Cold with AI-generated outreach messages and full executor details. Before your competitors even know they exist.</p>
 <a href="#cta" class="btn btn-primary btn-lg"><i class="fas fa-gift"></i> Start Your Free Trial</a>
 <div class="hero-stats">
 <div class="hero-stat"><div class="num">10-100+</div><div class="label">Leads Per Day</div></div>
@@ -187,11 +191,28 @@ footer a:hover{color:var(--primary)}
 </div>
 </section>
 
+<section class="section" style="position:relative;overflow:hidden;padding:40px 0;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);text-align:center">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb tl" style="background:#a855f7"></div>
+<div class="s-orb br" style="background:#06b6d4"></div>
+<div class="container">
+<p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:8px">Follow Us</p>
+<h3 style="font-size:20px;font-weight:800;font-family:var(--ff-h);margin-bottom:12px">Stay Connected with <span style="color:var(--primary)">ProbateLeads</span></h3>
+<p style="font-size:14px;color:var(--text2);margin-bottom:20px;max-width:500px;margin-left:auto;margin-right:auto">Follow us on social media for lead generation tips, success stories, and industry insights.</p>
+<div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+<a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.background='rgba(168,85,247,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-facebook-f" style="color:#1877f2;font-size:18px"></i> Facebook</a>
+<a href="https://www.tiktok.com/@9amleads.com" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.background='rgba(168,85,247,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-tiktok" style="color:#fff;font-size:18px"></i> TikTok</a>
+<a href="https://www.instagram.com/9amleads/" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.background='rgba(168,85,247,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-instagram" style="color:#e4405f;font-size:18px"></i> Instagram</a>
+</div>
+</div>
+</section>
+
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#a855f7;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#9333ea;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#a855f7"></div>
+<div class="s-orb br" style="background:#9333ea"></div>
 <div class="container">
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:800px;margin:0 auto;text-align:center">
 <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
@@ -221,8 +242,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#a855f7;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#9333ea;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#a855f7"></div>
+<div class="s-orb br" style="background:#9333ea"></div>
 <div class="container">
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:800px;margin:0 auto;text-align:center">
 <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 16px"><div style="font-size:32px;margin-bottom:6px"><i class="fas fa-scale-balanced" style="color:var(--primary)"></i></div><div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--primary)">50k+</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Grants per Month</div></div>
@@ -236,16 +257,16 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)" id="how">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#a855f7;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#9333ea;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#a855f7"></div>
+<div class="s-orb br" style="background:#9333ea"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">How It Works</div>
 <h2 class="section-title">Three Simple Steps to <span class="gradient">More Instructions</span></h2>
-<p class="section-sub">From setup to your first probate lead in under 5 minutes.</p>
+<p class="section-sub">From setup to your first probate lead in under 5 minutes. Each opportunity scored and ready to act on.</p>
 <div class="steps">
-<div class="step"><span class="num">1</span><div class="icon"><i class="fas fa-bullseye"></i></div><h4>Choose Your Counties</h4><p>Select the UK counties you cover. Pick one or many &mdash; we support every county in England, Wales, Scotland, and Northern Ireland. Set it once.</p></div>
-<div class="step"><span class="num">2</span><div class="icon"><i class="fas fa-moon"></i></div><h4>We Scan the Register</h4><p>Our system monitors the official Gov.uk probate register continuously. As soon as a new grant matches your criteria, we capture every detail.</p></div>
-<div class="step"><span class="num">3</span><div class="icon"><i class="fas fa-inbox"></i></div><h4>Leads at 9am</h4><p>Your daily lead sheet arrives at 9am. Deceased name, executor details, estate value &mdash; everything you need to make the first contact.</p></div>
+<div class="step"><span class="num">1</span><div class="icon"><i class="fas fa-bullseye"></i></div><h4>Choose Your Counties</h4><p>Select the UK counties you cover. Pick one or many &mdash; we support every county in England, Wales, Scotland, and Northern Ireland. Use our calculator to estimate daily grant volumes.</p></div>
+<div class="step"><span class="num">2</span><div class="icon"><i class="fas fa-moon"></i></div><h4>We Scan the Register</h4><p>Our system monitors the official Gov.uk probate register continuously. As soon as a new grant matches your criteria, we capture every detail and score it Hot/Warm/Cold.</p></div>
+<div class="step"><span class="num">3</span><div class="icon"><i class="fas fa-inbox"></i></div><h4>Opportunities at 9am</h4><p>Your daily opportunity sheet arrives at 9am with AI-generated outreach messages and full executor details. Export to CSV or Excel for your CRM. Everything you need to make the first contact.</p></div>
 </div>
 </div>
 </section>
@@ -253,8 +274,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="position:relative;overflow:hidden" id="who">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#a855f7;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#9333ea;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#a855f7"></div>
+<div class="s-orb br" style="background:#9333ea"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Who It&rsquo;s For</div>
 <h2 class="section-title">Business Types That Thrive on <span class="gradient">Probate Leads</span></h2>
@@ -275,8 +296,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1521791136064-2b8711a1cfb9?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#a855f7;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#9333ea;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#a855f7"></div>
+<div class="s-orb br" style="background:#9333ea"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Why Probate Professionals Choose Us</div>
 <h2 class="section-title">Built for Legal Professionals. <span class="gradient">Not Mass Market Leads.</span></h2>
@@ -312,19 +333,22 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#a855f7;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#9333ea;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#a855f7"></div>
+<div class="s-orb br" style="background:#9333ea"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Features</div>
 <h2 class="section-title">Everything You Need to <span class="gradient">Win Probate Instructions</span></h2>
-<p class="section-sub">Designed for solicitors and legal professionals who want to be first, every time.</p>
+<p class="section-sub">Designed for solicitors and legal professionals who want to be first, every time. With opportunity scoring, AI outreach support, and CRM-ready exports.</p>
+<div style="max-width:780px;margin:0 auto 24px;padding:12px 20px;background:var(--primary-subtle);border:1px solid rgba(168,85,247,0.15);border-radius:var(--r);text-align:center;font-size:13px;color:var(--text2)">
+<i class="fas fa-plug" style="color:var(--primary);margin-right:6px"></i> <strong>CRM Integration:</strong> HubSpot, Salesforce, Pipedrive, Tradify, Clio + 100s more via Zapier
+</div>
 <div class="features-grid">
 <div class="feature-card"><div class="icon"><i class="fas fa-clock"></i></div><h4>9am Daily Delivery</h4><p>Fresh probate grants land in your inbox every morning at 9am sharp. No dashboards to check, no portals to refresh. You get the data before your competitors and can contact executors the same day.</p></div>
 <div class="feature-card"><div class="icon"><i class="fas fa-map-marker-alt"></i></div><h4>County-Level Targeting</h4><p>Choose exactly the UK counties you cover. Whether you serve one town or the whole country, you only pay for the leads that matter to your practice. No wasted data, no irrelevant grants.</p></div>
-<div class="feature-card"><div class="icon"><i class="fas fa-file-contract"></i></div><h4>Executor Contact Details</h4><p>Every lead includes the executor name and address so you can make compliant, professional contact immediately. No middlemen, no gatekeepers &mdash; just you and the person who needs your services.</p></div>
-<div class="feature-card"><div class="icon"><i class="fas fa-database"></i></div><h4>Official Gov.uk Data Source</h4><p>We pull directly from the official HM Courts &amp; Tribunals Service probate register. You can trust the data is accurate, lawful, and available for legitimate professional use.</p></div>
+<div class="feature-card"><div class="icon"><i class="fas fa-fire"></i></div><h4>Opportunity Scoring</h4><p>Every grant is scored Hot/Warm/Cold based on estate value, location, and timing. Prioritise high-value instructions first and maximise your team's billable time.</p></div>
+<div class="feature-card"><div class="icon"><i class="fas fa-robot"></i></div><h4>AI Outreach &amp; CRM Exports</h4><p>AI-generated outreach messages help you contact executors faster. Export every lead to CSV or Excel for your CRM. Weekly reports track your conversion performance.</p></div>
 <div class="feature-card"><div class="icon"><i class="fas fa-chart-simple"></i></div><h4>Estate Value Estimates</h4><p>Know the estimated estate value before you reach out. Prioritise high-value instructions and tailor your approach based on the complexity and size of each estate.</p></div>
-<div class="feature-card"><div class="icon"><i class="fas fa-envelope-open-text"></i></div><h4>Ready-to-Use Lead Sheets</h4><p>Your daily digest arrives as a clean, printable lead sheet. Deceased name, grant number, executor details, estate value, and county &mdash; everything in one place, ready for your outreach workflow.</p></div>
+<div class="feature-card"><div class="icon"><i class="fas fa-envelope-open-text"></i></div><h4>Ready-to-Use Lead Sheets</h4><p>Your daily digest arrives as a clean, printable lead sheet with AI-drafted messages. Deceased name, grant number, executor details, estate value, and county &mdash; everything in one place.</p></div>
 </div>
 </div>
 </section>
@@ -332,8 +356,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#a855f7;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#9333ea;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#a855f7"></div>
+<div class="s-orb br" style="background:#9333ea"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Who Benefits</div>
 <h2 class="section-title">Designed for <span class="gradient">Legal &amp; Property Professionals</span></h2>
@@ -351,8 +375,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)" id="pricing">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#a855f7;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#9333ea;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#a855f7"></div>
+<div class="s-orb br" style="background:#9333ea"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Pricing</div>
 <h2 class="section-title">Simple, Transparent <span class="gradient">Pricing</span></h2>
@@ -360,8 +384,8 @@ footer a:hover{color:var(--primary)}
 <div class="product-grid">
 <div class="pricing-card">
 <h3>Starter</h3>
-<div class="price">&pound;99<span>/mo</span></div>
-<div class="price-sub">5 leads per day &bull; ~150/mo</div>
+<div class="price">&pound;25<span>/wk</span></div>
+<div class="price-sub">5 leads/day &bull; 25/week &bull; 100/month</div>
 <ul>
 <li><i class="fas fa-check"></i> Daily probate grants at 9am</li>
 <li><i class="fas fa-check"></i> 1 UK county</li>
@@ -374,8 +398,8 @@ footer a:hover{color:var(--primary)}
 <div class="pricing-card featured">
 <div class="popular-badge">Most Popular</div>
 <h3>Pro</h3>
-<div class="price">&pound;197<span>/mo</span></div>
-<div class="price-sub">15 leads per day &bull; ~450/mo</div>
+<div class="price">&pound;50<span>/wk</span></div>
+<div class="price-sub">15 leads/day &bull; 75/week &bull; 300/month</div>
 <ul>
 <li><i class="fas fa-check"></i> Daily probate grants at 9am</li>
 <li><i class="fas fa-check"></i> Up to 5 UK counties</li>
@@ -387,8 +411,8 @@ footer a:hover{color:var(--primary)}
 </div>
 <div class="pricing-card">
 <h3>Enterprise</h3>
-<div class="price">&pound;395<span>/mo</span></div>
-<div class="price-sub">25 leads per day &bull; ~750/mo</div>
+<div class="price">&pound;100<span>/wk</span></div>
+<div class="price-sub">25 leads/day &bull; 175/week &bull; 350/month</div>
 <ul>
 <li><i class="fas fa-check"></i> Daily probate grants at 9am</li>
 <li><i class="fas fa-check"></i> All UK counties</li>
@@ -405,8 +429,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1552581234-26160f608093?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#a855f7;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#9333ea;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#a855f7"></div>
+<div class="s-orb br" style="background:#9333ea"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Testimonials</div>
 <h2 class="section-title">Trusted by <span class="gradient">Legal Professionals</span></h2>
@@ -434,8 +458,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)" id="faq">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#a855f7;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#9333ea;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#a855f7"></div>
+<div class="s-orb br" style="background:#9333ea"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">FAQ</div>
 <h2 class="section-title">Frequently Asked <span class="gradient">Questions</span></h2>
@@ -472,12 +496,12 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)" id="cta">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#a855f7;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#9333ea;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#a855f7"></div>
+<div class="s-orb br" style="background:#9333ea"></div>
 <div class="container" style="text-align:center">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Start Today</div>
 <h2 class="section-title" style="max-width:700px;margin:0 auto 14px">Be the First Professional to <span class="gradient">Contact Every New Executor</span></h2>
-<p class="section-sub" style="max-width:600px">Join 500+ UK solicitors, probate practitioners, will writers, and estate agents who start their day with fresh probate grants. Your competitors are already using probate data. Can you afford to be last?</p>
+<p class="section-sub" style="max-width:600px">Join 500+ UK solicitors, probate practitioners, will writers, and estate agents who start their day with fresh probate grants â€” scored, with AI outreach support and CRM-ready data. Your competitors are already using probate data. Can you afford to be last?</p>
 <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px">
 <a href="#cta" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Start Your 7-Day Free Trial</a>
 <a href="#faq" class="btn btn-ghost btn-lg"><i class="fas fa-question-circle"></i> Read the FAQ</a>
@@ -492,9 +516,9 @@ footer a:hover{color:var(--primary)}
 <h4>ProbateLeads by 9amLeads</h4>
 <p style="color:var(--muted);font-size:13px;line-height:1.8">Daily probate grant alerts from the official Gov.uk register. Serving solicitors, probate practitioners, will writers, and estate agents across the UK.
 <div style="display:flex;gap:10px;margin-top:12px">
-<a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-<a href="https://www.tiktok.com/@9amleads.com" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
-<a href="https://www.instagram.com/9amleads/" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+<a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;font-size:15px;text-decoration:none;transition:.2s" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+<a href="https://www.tiktok.com/@9amleads.com" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;font-size:15px;text-decoration:none;transition:.2s" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+<a href="https://www.instagram.com/9amleads/" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;font-size:15px;text-decoration:none;transition:.2s" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
 </div></p>
 </div>
 <div>
@@ -522,5 +546,7 @@ function toggleFaq(el){el.parentElement.classList.toggle("open")}
 </script>
 </body>
 </html>
+
+
 
 
