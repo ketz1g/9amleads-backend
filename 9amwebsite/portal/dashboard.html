@@ -612,7 +612,7 @@ function showPlans() {
         '<div style="display:flex;justify-content:space-between;align-items:center">' +
         '<div><strong style="font-size:15px;color:#fff">' + key.charAt(0).toUpperCase() + key.slice(1) + '</strong>' +
         '<br><span style="font-size:12px;color:#8890a8">' + p.leads + ' leads/day \u00b7 ' + pcLimit + ' postcode' + (p.postcodes !== 1 ? 's' : '') + '</span></div>' +
-        '<div style="text-align:right"><span style="font-size:20px;font-weight:800">&pound;' + p.price + '</span><span style="font-size:12px;color:#8890a8">/mo</span>' +
+        '<div style="text-align:right"><span style="font-size:20px;font-weight:800">&pound;' + p.price + '</span><span style="font-size:12px;color:#8890a8">/wk</span>' +
         (isCurrent ? '<br><span style="font-size:10px;color:#22c55e;font-weight:600">Current Plan</span>' : '') +
         '</div></div>' +
         (!isCurrent ? '<button onclick="checkout(\'' + key + '\')" style="margin-top:12px;width:100%;padding:8px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer">' + (parseInt(key === 'starter' ? '0' : currentPlan === 'free_trial' ? '-1' : '1') < 0 ? 'Upgrade' : 'Switch to ' + key.charAt(0).toUpperCase() + key.slice(1)) + '</button>' : '') +
@@ -889,15 +889,18 @@ loadDashboard();
 loadTerritories();
 loadCrmUrl();
 // ===== CRM WEBHOOK =====
+function getPortalToken() {
+  try { var s = JSON.parse(localStorage.getItem('mld_portal_session') || sessionStorage.getItem('mld_portal_session') || '{}'); return s.token || ''; } catch(e) { return ''; }
+}
 async function saveCrmUrl() {
   const url = document.getElementById('crmUrl').value.trim();
   if (!url) { showCrmStatus('Please enter a webhook URL', '#ef4444'); return; }
   showCrmStatus('Testing connection...', 'var(--accent)');
   try {
-    const testRes = await fetch(API + '/api/crm/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || sessionStorage.getItem('token')) }, body: JSON.stringify({ url }) });
+    const testRes = await fetch(API + '/api/crm/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getPortalToken() }, body: JSON.stringify({ url }) });
     const testData = await testRes.json();
     if (!testData.success) { showCrmStatus('Webhook test failed: ' + (testData.error || 'HTTP ' + testData.status), '#ef4444'); return; }
-    const saveRes = await fetch(API + '/api/settings/crm', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || sessionStorage.getItem('token')) }, body: JSON.stringify({ crm_webhook_url: url }) });
+    const saveRes = await fetch(API + '/api/settings/crm', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getPortalToken() }, body: JSON.stringify({ crm_webhook_url: url }) });
     if (saveRes.ok) { showCrmStatus('CRM connected successfully! Your leads will be pushed at 9am daily.', '#22c55e'); }
     else { showCrmStatus('Failed to save. Try again.', '#ef4444'); }
   } catch (e) { showCrmStatus('Connection error: ' + e.message, '#ef4444'); }
@@ -907,7 +910,7 @@ async function testCrmUrl() {
   if (!url) { showCrmStatus('Enter a URL first', '#ef4444'); return; }
   showCrmStatus('Testing...', 'var(--accent)');
   try {
-    const res = await fetch(API + '/api/crm/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || sessionStorage.getItem('token')) }, body: JSON.stringify({ url }) });
+    const res = await fetch(API + '/api/crm/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getPortalToken() }, body: JSON.stringify({ url }) });
     const data = await res.json();
     if (data.success) { showCrmStatus('Connection successful! (HTTP ' + data.status + ')', '#22c55e'); }
     else { showCrmStatus('Failed: ' + (data.error || 'HTTP ' + data.status), '#ef4444'); }
@@ -916,7 +919,7 @@ async function testCrmUrl() {
 async function removeCrmUrl() {
   if (!confirm('Remove CRM webhook? Leads will stop being pushed to your CRM.')) return;
   try {
-    await fetch(API + '/api/settings/crm', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || sessionStorage.getItem('token')) } });
+    await fetch(API + '/api/settings/crm', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + getPortalToken() } });
     document.getElementById('crmUrl').value = '';
     showCrmStatus('CRM disconnected.', 'var(--muted2)');
   } catch (e) { showCrmStatus('Error: ' + e.message, '#ef4444'); }
@@ -1406,7 +1409,7 @@ function switchSCTab(id) {
   var tab = document.getElementById('sctab-' + id);
   if (tab) { tab.className = 'btn btn-primary btn-sm'; tab.style.cssText = 'font-size:11px;padding:6px 12px'; }
   var el = document.getElementById('sc-content');
-  if (el && window.successCentreData) el.innerHTML = window.successCentreData[id];
+  // Content is hardcoded in the function above - this line is unused
 }
 
 // ===== STAGE 38: AUTOMATED FOLLOW-UP CAMPAIGNS =====
@@ -1559,7 +1562,7 @@ function renderPartnerMarketplace() {
 
     // Current partners
     '<h3 style="font-size:12px;font-weight:700;margin-bottom:8px;color:#fff">Available Partners</h3>' +
-    (partners.length === 0 && partners.length === 0 ?
+    (partners.length === 0 ?
     '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;margin-bottom:12px"><p style="font-size:11px;color:var(--muted)">No partners listed yet. Be the first to add your business!</p></div>' :
     partners.map(function(p) {
       return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">' +
@@ -1902,17 +1905,24 @@ function saveSearch() {
   localStorage.setItem('mh_saved', JSON.stringify(savedSearches));
 }
 
-function getAuthHeaders() {
-  try {
-    var tok = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
-    if (!tok) {
-      try {
-        var session = JSON.parse(localStorage.getItem('mld_portal_session') || '{}');
-        tok = session.token || '';
-      } catch(e) {}
+// Stage 31: ROI Stats
+function getROIStats() {
+  var allLeads = window.leads || [];
+  var contacted = allLeads.filter(function(l) { return l.status === 'contacted' || l.status === 'booked' || l.status === 'closed'; }).length;
+  var won = allLeads.filter(function(l) { return l.status === 'booked' || l.status === 'closed'; }).length;
+  var totalValue = 0;
+  allLeads.forEach(function(l) {
+    if (window.estimateValue) {
+      var est = window.estimateValue(l);
+      totalValue += Math.round((est.min + est.max) / 2);
     }
-    return tok ? { 'Authorization': 'Bearer ' + tok } : {};
-  } catch(e) { return {}; }
+  });
+  return { total: allLeads.length, contacted: contacted, won: won, estValue: totalValue };
+}
+
+function getAuthHeaders() {
+  var tok = getPortalToken();
+  return tok ? { 'Authorization': 'Bearer ' + tok } : {};
 }
 
 // Fallback contact method renderer (if outreach-generator.js not loaded)

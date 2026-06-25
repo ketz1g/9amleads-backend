@@ -20,7 +20,8 @@ require('dotenv').config();
 
 // ===== CONFIG =====
 const PORT = process.env.PORT || process.env.API_PORT || 8012;
-const JWT_SECRET = process.env.JWT_SECRET || '9amleads-prod-secret-2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) { console.error('[FATAL] JWT_SECRET environment variable is required. Set it before starting the server.'); process.exit(1); }
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 const PUBLIC_URL = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
@@ -346,7 +347,7 @@ function generateToken(customer) {
   return jwt.sign(
     { id: customer.id, email: customer.email, product: customer.product },
     JWT_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: '24h' }
   );
 }
 
@@ -369,7 +370,7 @@ function validateEmail(email) {
 
 // ===== APP =====
 const app = express();
-app.use(cors({ origin: '*', credentials: true }));
+app.use(cors({ origin: ['https://www.9amleads.com', 'https://9amleads.com', 'http://localhost:8012'], credentials: true }));
 app.use(express.json());
 
 // Serve static frontend files
@@ -1025,7 +1026,8 @@ app.post('/api/ai/generate-image', async (req, res) => {
 
 // ===== ADMIN ENDPOINTS =====
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '9amAdmin2024!';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+if (!ADMIN_PASSWORD) { console.error('[FATAL] ADMIN_PASSWORD environment variable is required for admin access. Set it before starting the server.'); process.exit(1); }
 
 function adminAuth(req, res, next) {
   const auth = req.headers.authorization;
@@ -1265,7 +1267,7 @@ function getCampaignEmailHTML(customer, template) {
     paid_checkin2: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Months Strong : Here\'s Your Impact</h2><p style="color:#888;font-size:13px;text-align:center;margin:0 0 20px">Three months of daily leads. Let\'s look at what you\'ve achieved.</p><p style="color:#ccc;font-size:14px;line-height:1.7;margin:0 0 16px">Congratulations : you\'ve been with 9amLeads for <strong style="color:' + accent + '">3 months</strong>. That\'s roughly 90 days of exclusive <strong>' + productName + '</strong> delivered straight to your inbox every morning at 9am. By now you should have a clear picture of what works and what doesn\'t.</p><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#ccc;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">Ready to scale up?</strong><br>📈 <strong style="color:#fff">Add a second lead type</strong> : diversify your pipeline with probate, new business, or planning leads<br>🌍 <strong style="color:#fff">Expand your postcodes</strong> : cover more areas for more volume<br>⬆️ <strong style="color:#fff">Upgrade your plan</strong> : get more leads per day at a better per-lead price<br>📊 <strong style="color:#fff">Check your dashboard</strong> : see which territories convert best</p></div><p style="color:#ccc;font-size:14px;line-height:1.7;margin:0 0 16px">We\'d love to hear your story. How many leads have you converted? What\'s the biggest deal you\'ve closed? Reply to this email and let us know : your feedback helps us improve, and we might feature your success story.</p><p style="color:#ccc;font-size:14px;line-height:1.7;margin:0 0 20px">Thank you for being a valued 9amLeads customer. We\'re here whenever you need us : just hit reply.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Scale Up Now</a></td></tr></table>',
   };
   
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#000;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%"><tr><td style="background:#0a0a0a;padding:28px;border-bottom:3px solid ' + accent + ';text-align:center"><div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff"><span style="color:' + accent + '">9am</span>Leads</div><p style="color:#888;font-size:12px;margin-top:4px">' + customer.company + '</p></td></tr><tr><td style="background:#0a0a0a;padding:24px 28px">' + (templates[template] || templates.trial_day1) + '</td></tr><tr><td style="background:#0a0a0a;padding:20px 28px;border-top:1px solid #1a1a1a;text-align:center"><p style="color:#888;font-size:11px;margin:0">9am Leads Ltd \u00b7 Company No. 17168176 \u00b7 <a href="#" style="color:#888">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>';
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#000;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%"><tr><td style="background:#0a0a0a;padding:28px;border-bottom:3px solid ' + accent + ';text-align:center"><div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff"><span style="color:' + accent + '">9am</span>Leads</div><p style="color:#888;font-size:12px;margin-top:4px">' + customer.company + '</p></td></tr><tr><td style="background:#0a0a0a;padding:24px 28px">' + (templates[template] || templates.trial_day1) + '</td></tr><tr><td style="background:#0a0a0a;padding:20px 28px;border-top:1px solid #1a1a1a;text-align:center"><p style="color:#888;font-size:11px;margin:0">9am Leads Ltd \u00b7 Company No. 17168176 \u00b7 <a href="https://www.9amleads.com/privacy.html" style="color:#888">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>';
 }
 
 // ===== SCRAPER SCHEDULER: Daily at 5:30 AM =====
@@ -1653,8 +1655,8 @@ cron.schedule('0 9 * * *', async () => {
             );
 
             // Mark ONLY the sent leads as delivered (not all undelivered leads)
-            const leadIds = leads.map(l => "'" + l.id + "'");
-            db.prepare('UPDATE leads SET delivered = 1, delivered_at = datetime(\'now\') WHERE id IN (' + leadIds.join(',') + ')').run();
+            const stmt = db.prepare('UPDATE leads SET delivered = 1, delivered_at = datetime(\'now\') WHERE id = ?');
+            for (const l of leads) { stmt.run(l.id); }
             db.prepare('INSERT INTO deliveries (id, customer_id, product, lead_count, email_status, email_id) VALUES (?, ?, ?, ?, ?, ?)').run(
               uuidv4(), customer.id, customer.product, leads.length, 'sent', result.messageId || ''
             );
@@ -1754,7 +1756,7 @@ try {
   if (stripeConfig.webhookSecret) {
     STRIPE_WEBHOOK_SECRET ||= stripeConfig.webhookSecret;
   }
-} catch(e) {}
+} catch(e) { console.error('[STRIPE] Config load error:', e.message); }
 
 function stripeApiRequest(method, path, data) {
   return new Promise((resolve, reject) => {
@@ -2468,7 +2470,7 @@ function generateLeadEmailHTML(customer, leads) {
 
   const leadsHTML = leads.map(l => {
     const data = JSON.parse(l.data || '{}');
-    let line = data.address || data.name || data.company || data.tenderTitle || data.tenderTitle || 'Lead';
+    let line = data.address || data.name || data.company || data.tenderTitle || data.title || 'Lead';
     let value = data.priceLabel || data.estateValueLabel || data.price || data.location || data.authority || data.value || '';
     return '<tr><td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:13px">' + line + '</td><td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#888;font-size:12px">' + value + '</td></tr>';
   }).join('');
@@ -2593,6 +2595,12 @@ app.get('/api/analytics/pages', (req, res) => {
 const TRACKING_SNIPPET = `<script>
 (function(){var i=new Image();i.src='https://nineamleads-backend.onrender.com/api/track?p='+encodeURIComponent(window.location.pathname)+'&r='+encodeURIComponent(document.referrer||'')})();
 </script>`;
+
+// Global error handler
+app.use(function(err, req, res, next) {
+  console.error('[ERROR] Unhandled error:', err.message || err);
+  res.status(500).json({ error: 'Internal server error' });
+});
 
 // ===== START SERVER =====
 app.listen(PORT, () => {

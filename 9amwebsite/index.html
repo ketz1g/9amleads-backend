@@ -1250,4 +1250,14 @@ setTimeout(function(){var e=document.getElementById('liveProof'),t=document.getE
 <script>(function(){var i=new Image();i.src='/api/track?p='+encodeURIComponent(window.location.pathname)+'&r='+encodeURIComponent(document.referrer||'')})();</script>
 <script src="/chat.js"></script>
 <script src="/enhancements.js"></script>
+<div id="cookieConsent" style="position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#111;border-top:2px solid #0ea5e9;padding:14px 24px;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;font-size:13px;color:#ccc">
+<span>We use cookies and similar technologies to improve your experience. By continuing, you agree to our <a href="/privacy.html" style="color:#0ea5e9">Privacy Policy</a>.</span>
+<div style="display:flex;gap:8px">
+<button onclick="document.getElementById('cookieConsent').style.display='none';localStorage.setItem('cookies_accepted','true')" style="padding:8px 20px;border-radius:6px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border:none;cursor:pointer;font-weight:600;font-size:12px">Accept</button>
+<button onclick="document.getElementById('cookieConsent').style.display='none'" style="padding:8px 20px;border-radius:6px;background:transparent;border:1px solid #333;color:#888;cursor:pointer;font-size:12px">Decline</button>
+</div>
+</div>
+<script>
+if(localStorage.getItem('cookies_accepted')) document.getElementById('cookieConsent').style.display='none';
+</script>
 </body></html>
