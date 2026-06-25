@@ -250,6 +250,11 @@
       .footer-grid{grid-template-columns:1fr}
       .pricing-card{padding:28px 20px}
     }
+    .s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,107,53,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,107,53,0.06) 1px,transparent 1px);background-size:60px 60px;z-index:0}
+    .s-bg{position:absolute;inset:0;pointer-events:none;background-size:cover;background-position:center;opacity:.12;z-index:0}
+    .s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.12;z-index:0}
+    .s-orb.tl{width:500px;height:500px;top:-200px;right:-100px}
+    .s-orb.br{width:400px;height:400px;bottom:-150px;left:-100px}
   </style>
 </head>
 <body>
@@ -270,6 +275,7 @@
   <nav>
     <a href="/" class="logo"><span class="mark">ML</span> Moving<em>LeadsDaily</em></a>
     <div class="nav-links" id="navLinks">
+      <a href="/" style="color:#ff6b35;font-weight:700">Home</a>
       <a href="#how">How It Works</a>
       <a href="#features">Features</a>
       <a href="#pricing">Pricing</a>
@@ -281,7 +287,7 @@
   </nav>
   <div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobile()"></div>
   <div class="mobile-menu" id="mobileMenu">
-    <a href="/" onclick="toggleMobile()">Home</a>
+    <a href="/" onclick="toggleMobile()" style="color:#ff6b35;font-weight:700"><i class="fas fa-home"></i> Home</a>
     <a href="#how" onclick="toggleMobile()">How It Works</a>
     <a href="#features" onclick="toggleMobile()">Features</a>
     <a href="#pricing" onclick="toggleMobile()">Pricing</a>
@@ -299,6 +305,10 @@
   <section class="hero">
     <div class="hero-bg"></div>
     <div class="hero-overlay"></div>
+    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=1400&q=80')"></div>
+    <div class="s-grid"></div>
+    <div class="s-orb tl" style="background:#ff6b35"></div>
+    <div class="s-orb br" style="background:#06b6d4"></div>
     <div class="container">
       <div class="hero-badge" style="background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.2);color:#22c55e"><i class="fas fa-gift"></i> Free Trial — Thousands of Pounds Worth of Leads, Totally Free</div>
       <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:12px">
@@ -306,8 +316,8 @@
         <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(34,197,94,.08);color:#22c55e;border:1px solid rgba(34,197,94,.15)"><i class="fas fa-check"></i> No card required</span>
         <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(34,197,94,.08);color:#22c55e;border:1px solid rgba(34,197,94,.15)"><i class="fas fa-check"></i> Cancel anytime</span>
       </div>
-      <h1>Get Moving Leads in Your Inbox at <span class="gradient-text">9am Every Morning</span></h1>
-      <p>Be the first removal company to contact homeowners the moment their property goes SSTC. Exclusive leads delivered daily — no dashboard to check, no apps to open.</p>
+<h1>Fresh UK Moving Opportunities <span class="gradient-text">Delivered Daily at 9am</span></h1>
+<p>Be the first removal company to contact homeowners the moment their property goes SSTC. Exclusive territory-based opportunities delivered daily with opportunity scoring, AI outreach support, and CRM-ready data. No dashboard to check. No apps to open.</p>
       <div class="hero-actions">
         <a href="#signup" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Start Free Trial</a>
         <a href="#how" class="btn btn-outline btn-lg"><i class="fas fa-play-circle"></i> See How It Works</a>
@@ -325,27 +335,50 @@
     </div>
   </section>
 
+  <section class="section" style="position:relative;overflow:hidden;padding:40px 0;background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border);text-align:center">
+  <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80')"></div>
+  <div class="s-grid"></div>
+  <div class="s-orb tl" style="background:#ff6b35"></div>
+  <div class="s-orb br" style="background:#06b6d4"></div>
+  <div class="container">
+  <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--orange);margin-bottom:8px">Follow Us</p>
+  <h3 style="font-size:20px;font-weight:800;font-family:var(--ff-head);margin-bottom:12px">Stay Connected with <span style="color:var(--orange)">MovingLeadsDaily</span></h3>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;max-width:500px;margin-left:auto;margin-right:auto">Follow us on social media for lead generation tips, success stories, and industry insights.</p>
+  <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+  <a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--orange)';this.style.background='rgba(255,107,53,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-facebook-f" style="color:#1877f2;font-size:18px"></i> Facebook</a>
+  <a href="https://www.tiktok.com/@9amleads.com" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--orange)';this.style.background='rgba(255,107,53,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-tiktok" style="color:#fff;font-size:18px"></i> TikTok</a>
+  <a href="https://www.instagram.com/9amleads/" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--orange)';this.style.background='rgba(255,107,53,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-instagram" style="color:#e4405f;font-size:18px"></i> Instagram</a>
+  </div>
+  </div>
+  </section>
+
   <section class="section" id="how" style="position:relative;overflow:hidden">
-    <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1400&q=80')"></div>
+    <div class="s-grid"></div>
+    <div class="s-orb tl" style="background:#ff6b35"></div>
+    <div class="s-orb br" style="background:#06b6d4"></div>
     <div class="container" style="position:relative;z-index:2">
       <div class="section-label flex-center">How It Works</div>
-      <h2 class="section-title">Four Simple Steps to <span class="gradient-text">More Customers</span></h2>
-      <p class="section-sub">From setup to your first lead in under 10 minutes. No technical skills required.</p>
+<h2 class="section-title">Four Simple Steps to <span class="gradient-text">More Opportunities</span></h2>
+<p class="section-sub">From setup to your first opportunity in under 10 minutes. Each lead scored, with AI outreach support and CRM exports.</p>
       <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:32px">
         <span style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:100px;font-size:13px;font-weight:600;background:rgba(255,107,53,.1);color:#ff6b35;border:1px solid rgba(255,107,53,.2)"><i class="fas fa-home"></i> Home Moves</span>
 
       </div>
       <div class="steps-grid">
-        <div class="step-card" data-reveal><span class="step-num">1</span><div class="step-icon"><i class="fas fa-map-marker-alt"></i></div><h3>Choose Your Territory</h3><p>Tell us which UK postcodes you cover. We'll monitor every property that goes SSTC in your chosen areas.</p></div>
-        <div class="step-card" data-reveal><span class="step-num">2</span><div class="step-icon"><i class="fas fa-envelope-open-text"></i></div><h3>Check Your Inbox at 9am</h3><p>Every morning at 9am your exclusive lead sheet arrives. Addresses, move dates, and contact details — ready to go.</p></div>
-        <div class="step-card" data-reveal><span class="step-num">3</span><div class="step-icon"><i class="fas fa-phone-alt"></i></div><h3>Contact Homeowners First</h3><p>You're the first mover to call — often within hours of the SSTC marker appearing. Speed wins the booking.</p></div>
-        <div class="step-card" data-reveal><span class="step-num">4</span><div class="step-icon"><i class="fas fa-chart-line"></i></div><h3>Track &amp; Grow</h3><p>Monitor your conversion rate, lead volume by area, and monthly ROI through your simple dashboard.</p></div>
+<div class="step-card" data-reveal><span class="step-num">1</span><div class="step-icon"><i class="fas fa-map-marker-alt"></i></div><h3>Choose Your Territory</h3><p>Tell us which UK postcodes you cover. Use our volume calculator to estimate daily opportunities. We'll monitor every property that goes SSTC in your chosen areas.</p></div>
+<div class="step-card" data-reveal><span class="step-num">2</span><div class="step-icon"><i class="fas fa-envelope-open-text"></i></div><h3>Opportunities at 9am</h3><p>Every morning at 9am your exclusive opportunity sheet arrives — scored Hot/Warm/Cold with AI-generated outreach messages and full contact details. Ready to go.</p></div>
+<div class="step-card" data-reveal><span class="step-num">3</span><div class="step-icon"><i class="fas fa-phone-alt"></i></div><h3>Contact Homeowners First</h3><p>You're the first mover to call — often within hours of the SSTC marker appearing. Export to your CRM or use AI-drafted messages. Speed wins the booking.</p></div>
+<div class="step-card" data-reveal><span class="step-num">4</span><div class="step-icon"><i class="fas fa-chart-line"></i></div><h3>Track &amp; Grow</h3><p>Monitor your conversion rate, lead volume by area, and monthly ROI through weekly reports and your dashboard. Export data to CSV or Excel.</p></div>
       </div>
     </div>
   </section>
 
   <section class="section" style="position:relative;overflow:hidden">
-    <div class="section-glow"><div class="glow-orb" style="width:400px;height:400px;background:var(--orange);top:-150px;right:-80px"></div><div class="glow-orb" style="width:350px;height:350px;background:#f97316;bottom:-120px;left:-80px"></div></div>
+    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&q=80')"></div>
+    <div class="s-grid"></div>
+    <div class="s-orb tl" style="background:#ff6b35"></div>
+    <div class="s-orb br" style="background:#06b6d4"></div>
     <div class="container" style="position:relative;z-index:2">
       <div class="section-label flex-center" style="color:var(--orange)">Sample Lead Preview</div>
       <h2 class="section-title">See Exactly What You Get <span class="gradient-text">at 9am Tomorrow</span></h2>
@@ -394,12 +427,17 @@
   </section>
 
   <section class="section" id="features" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
-    <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
-    <div class="section-glow"><div class="glow-orb"></div><div class="glow-orb"></div></div>
+    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80')"></div>
+    <div class="s-grid"></div>
+    <div class="s-orb tl" style="background:#ff6b35"></div>
+    <div class="s-orb br" style="background:#06b6d4"></div>
     <div class="container" style="position:relative;z-index:2">
       <div class="section-label flex-center">Everything You Need</div>
       <h2 class="section-title">Built for Removal Companies, <span class="gradient-text">By Removal People</span></h2>
       <p class="section-sub">Every feature designed to get you more bookings with less effort.</p>
+      <div style="max-width:780px;margin:0 auto 24px;padding:12px 20px;background:var(--orange-subtle);border:1px solid rgba(255,107,53,0.15);border-radius:var(--radius-md);text-align:center;font-size:13px;color:var(--text-secondary)">
+      <i class="fas fa-plug" style="color:var(--orange);margin-right:6px"></i> <strong>CRM Integration:</strong> HubSpot, Salesforce, Pipedrive, Tradify, Clio + 100s more via Zapier
+      </div>
       <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:28px">
         <span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:var(--orange-subtle);color:var(--orange);border:1px solid rgba(255,107,53,.15)">Removal companies</span>
         <span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:var(--orange-subtle);color:var(--orange);border:1px solid rgba(255,107,53,.15)">Man &amp; van operators</span>
@@ -416,15 +454,18 @@
         <div class="feature-card" data-reveal><div class="feature-icon" style="background:var(--orange-subtle);color:var(--orange)"><i class="fas fa-clock"></i></div><h4>9am Delivery</h4><p>Leads hit your inbox at 9am sharp every single morning. Same time, same place — build it into your daily routine.</p></div>
         <div class="feature-card" data-reveal><div class="feature-icon" style="background:rgba(14,165,233,0.12);color:#0ea5e9"><i class="fas fa-shield-alt"></i></div><h4>Exclusive Territory</h4><p>Your postcodes are yours. No other removal company on our platform gets leads in your chosen territory.</p></div>
         <div class="feature-card" data-reveal><div class="feature-icon" style="background:rgba(16,185,129,0.12);color:#10b981"><i class="fas fa-sliders-h"></i></div><h4>Property Filters</h4><p>Filter by property type, estimated move date, house value, and more. Only receive leads that match your services.</p></div>
-        <div class="feature-card" data-reveal><div class="feature-icon" style="background:rgba(168,85,247,0.12);color:#a855f7"><i class="fas fa-sms"></i></div><h4>SMS Alerts</h4><p>Get instant SMS notifications for hot leads. Be the first to call — often within minutes of the lead being generated.</p></div>
-        <div class="feature-card" data-reveal><div class="feature-icon" style="background:rgba(234,179,8,0.12);color:#eab308"><i class="fas fa-chart-bar"></i></div><h4>Performance Dashboard</h4><p>See which areas perform best, track your conversion rates, and monitor your monthly lead volume at a glance.</p></div>
-        <div class="feature-card" data-reveal><div class="feature-icon" style="background:rgba(59,130,246,0.12);color:#3b82f6"><i class="fas fa-file-export"></i></div><h4>CSV Export &amp; CRM Integration</h4><p>Export your leads to CSV with one click. Import into HubSpot, Salesforce, Pipedrive, Zoho, Freshsales, Tradify, Clio + 100s more via Zapier, Google Sheets, or your preferred CRM for deeper analysis.</p></div>
+        <div class="feature-card" data-reveal><div class="feature-icon" style="background:rgba(234,179,8,0.12);color:#eab308"><i class="fas fa-fire"></i></div><h4>Opportunity Scoring</h4><p>Every lead is scored Hot/Warm/Cold so your team prioritises the best opportunities first. Stop guessing and start focusing on the leads most likely to convert.</p></div>
+        <div class="feature-card" data-reveal><div class="feature-icon" style="background:rgba(168,85,247,0.12);color:#a855f7"><i class="fas fa-robot"></i></div><h4>AI Outreach &amp; Weekly Reports</h4><p>AI-generated outreach messages help you contact homeowners faster. Weekly reports show your conversion trends, territory performance, and revenue insights.</p></div>
+        <div class="feature-card" data-reveal><div class="feature-icon" style="background:rgba(59,130,246,0.12);color:#3b82f6"><i class="fas fa-file-export"></i></div><h4>CSV &amp; Excel Export + CRM Sync</h4><p>Export your leads to CSV or Excel with one click. Import into HubSpot, Salesforce, Pipedrive, Zoho, Freshsales, Tradify, Clio + 100s more via Zapier, Google Sheets, or your preferred CRM.</p></div>
       </div>
     </div>
   </section>
 
   <section class="section" id="pricing" style="position:relative;overflow:hidden">
-    <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1521791136064-2b8711a1cfb9?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1400&q=80')"></div>
+    <div class="s-grid"></div>
+    <div class="s-orb tl" style="background:#ff6b35"></div>
+    <div class="s-orb br" style="background:#06b6d4"></div>
     <div class="container" style="position:relative;z-index:2">
       <div class="section-label flex-center">Simple Pricing</div>
       <h2 class="section-title">Transparent Plans. <span class="gradient-text">No Surprises.</span></h2>
@@ -491,8 +532,10 @@
   </section>
 
   <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
-    <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
-    <div class="section-glow"><div class="glow-orb"></div><div class="glow-orb"></div></div>
+    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1521791136064-2b8711a1cfb9?w=1400&q=80')"></div>
+    <div class="s-grid"></div>
+    <div class="s-orb tl" style="background:#ff6b35"></div>
+    <div class="s-orb br" style="background:#06b6d4"></div>
     <div class="container" style="position:relative;z-index:2">
       <div class="section-label flex-center">Testimonials</div>
       <h2 class="section-title">Trusted by UK <span class="gradient-text">Removal Companies</span></h2>
@@ -527,8 +570,12 @@
   </section>
 
 
-  <section class="section" id="faq">
-    <div class="container">
+  <section class="section" id="faq" style="position:relative;overflow:hidden">
+    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1400&q=80')"></div>
+    <div class="s-grid"></div>
+    <div class="s-orb tl" style="background:#ff6b35"></div>
+    <div class="s-orb br" style="background:#06b6d4"></div>
+    <div class="container" style="position:relative;z-index:2">
       <div class="section-label flex-center">FAQ</div>
       <h2 class="section-title">Frequently Asked <span class="gradient-text">Questions</span></h2>
       <p class="section-sub">Everything you need to know about MovingLeadsDaily.</p>
@@ -544,16 +591,22 @@
   </section>
 
   <section class="cta-banner" style="position:relative;overflow:hidden">
-    <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1400&q=80')"></div>
+    <div class="s-grid"></div>
+    <div class="s-orb tl" style="background:#ff6b35"></div>
+    <div class="s-orb br" style="background:#06b6d4"></div>
     <div style="position:relative;z-index:2">
     <h2>Ready to Fill Your Van <span class="gradient-text">Every Morning?</span></h2>
-    <p>Join 500+ UK removal companies starting their day with fresh, exclusive moving leads.</p>
+    <p>Join 500+ UK removal companies starting their day with fresh moving opportunities scored and ready to act on.</p>
     <a href="#signup" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Start Your Free Trial</a>
     </div>
   </section>
 
   <section id="signup" style="position:relative;overflow:hidden">
-    <div style="position:absolute;inset:0;opacity:.07;background-image:url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80');background-size:cover;background-position:center;pointer-events:none"></div>
+    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&q=80')"></div>
+    <div class="s-grid"></div>
+    <div class="s-orb tl" style="background:#ff6b35"></div>
+    <div class="s-orb br" style="background:#06b6d4"></div>
     <div class="container section" style="position:relative;z-index:2">
       <div class="signup-grid">
         <div class="signup-left" data-reveal="left">
@@ -700,5 +753,6 @@
 <script src="/enhancements.js"></script>
 </body>
 </html>
+
 
 

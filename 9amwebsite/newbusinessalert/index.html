@@ -126,8 +126,11 @@ footer a:hover{color:var(--primary)}
 .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 @media(max-width:768px){.features-grid{grid-template-columns:1fr}}
 @media(max-width:1024px)and (min-width:769px){.features-grid{grid-template-columns:repeat(2,1fr)}}
-.s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(6,182,212,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(6,182,212,0.03) 1px,transparent 1px);background-size:60px 60px}
-.s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.1}
+.s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(6,182,212,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(6,182,212,0.06) 1px,transparent 1px);background-size:60px 60px;z-index:0}
+.s-bg{position:absolute;inset:0;pointer-events:none;background-size:cover;background-position:center;opacity:.12;z-index:0}
+.s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.12;z-index:0}
+.s-orb.tl{width:500px;height:500px;top:-200px;right:-100px}
+.s-orb.br{width:400px;height:400px;bottom:-150px;left:-100px}
 .section{position:relative;overflow:hidden}
 @media(max-width:768px){
   .hero h1{font-size:28px;line-height:34px}
@@ -168,6 +171,7 @@ footer a:hover{color:var(--primary)}
 <nav><div class="nav-inner">
 <a href="/" class="logo"><svg width="20" height="20" viewBox="0 0 100 100" fill="none" style="flex-shrink:0"><circle cx="50" cy="50" r="40" stroke="#06b6d4" stroke-width="5"/><circle cx="50" cy="50" r="3" fill="#06b6d4"/><line x1="50" y1="50" x2="50" y2="17" stroke="#06b6d4" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="23" y2="50" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="42" cy="8" r="5" fill="#06b6d4" opacity="0.8"/><circle cx="58" cy="8" r="5" fill="#06b6d4" opacity="0.8"/></svg> New <span>Business</span> Alert</a>
 <div class="nav-links">
+<a href="/" style="color:var(--primary);font-weight:700">Home</a>
 <a href="/" style="display:inline-flex;align-items:center;gap:4px;padding:7px 10px;color:var(--muted2,#666);font-size:12px;font-weight:600;text-decoration:none;transition:.2s;border-radius:6px;border:1px solid rgba(255,255,255,0.06)"><i class="fas fa-arrow-left" style="font-size:10px"></i> 9amLeads</a>
 <a href="#how">How It Works</a>
 <a href="#who">Who It's For</a>
@@ -178,7 +182,7 @@ footer a:hover{color:var(--primary)}
 </div><a href="/" style="display:none;font-size:13px;font-weight:600;padding:6px 12px;border:1px solid var(--border);border-radius:6px;color:var(--text2);text-decoration:none;margin-right:6px;white-space:nowrap" class="mobile-home">Home</a><button class="hamburger" id="hamBtn" onclick="toggleMobile()" aria-label="Menu"><span></span><span></span><span></span></button></nav>
 <div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobile()"></div>
 <div class="mobile-menu" id="mobileMenu">
-<a href="/" onclick="toggleMobile()">Home</a>
+<a href="/" onclick="toggleMobile()" style="color:var(--primary);font-weight:700"><i class="fas fa-home"></i> Home</a>
 <a href="/movingleadsdaily/" onclick="toggleMobile()">Moving Leads</a>
 <a href="/probateleads/" onclick="toggleMobile()">Probate Leads</a>
 <a href="/newbusinessalert/" onclick="toggleMobile()">New Business</a>
@@ -191,8 +195,8 @@ footer a:hover{color:var(--primary)}
 <section class="hero" style="min-height:90vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;padding:120px 24px 80px;background:linear-gradient(90deg,rgba(0,0,0,0.92) 0%,rgba(0,0,0,0.4) 60%,rgba(0,0,0,0.1) 100%),url(https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1600&q=80);background-size:cover;background-position:center;background-attachment:fixed;overflow:hidden">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1521791136064-2b8711a1cfb9?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#06b6d4;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#0891b2;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#06b6d4"></div>
+<div class="s-orb br" style="background:#0891b2"></div>
 <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(6,182,212,.1) 0%,transparent 60%),radial-gradient(ellipse at 70% 30%,rgba(6,182,212,.05) 0%,transparent 50%);pointer-events:none"></div>
 <div class="hero-content" style="position:relative;z-index:2">
 <div style="display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:28px">
@@ -200,7 +204,7 @@ footer a:hover{color:var(--primary)}
 <span style="display:inline-block;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e;font-size:12px;font-weight:600;padding:6px 20px;border-radius:100px;letter-spacing:.5px;text-transform:uppercase">No Card Required</span>
 </div>
 <h1>Every Day, 500+ New UK Companies Register at Companies House. <span class="highlight">Be First to Contact Decision Makers.</span></h1>
-<p>Every day, Companies House publishes hundreds of fresh LTD company registrations. Each new business is a hot B2B prospect that needs an accountant, a website, insurance, IT support, marketing, and staff. 9amLeads delivers full company and director details to your inbox at 9am â€” before any competitor reaches them. Accountants, web designers, marketing agencies, IT consultants, recruiters, and insurance brokers all use new company data to win clients first.</p>
+<p>Every day, Companies House publishes hundreds of fresh LTD company registrations. Each new business is a hot B2B prospect that needs an accountant, a website, insurance, IT support, marketing, and staff. 9amLeads delivers full company and director details to your inbox at 9am â€” scored Hot/Warm/Cold with AI-generated outreach messages and CRM-ready exports. Before any competitor reaches them. Accountants, web designers, marketing agencies, IT consultants, recruiters, and insurance brokers all use new company data to win clients first.</p>
 <a href="/portal/" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Get Fresh B2B Leads Tomorrow â€” Free Trial</a>
 <div class="hero-stats">
 <div class="hero-stat"><div class="num">50-150+</div><div class="label">Leads Per Day</div></div>
@@ -211,11 +215,28 @@ footer a:hover{color:var(--primary)}
 </div>
 </section>
 
+<section class="section" style="position:relative;overflow:hidden;padding:40px 0;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);text-align:center">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb tl" style="background:#06b6d4"></div>
+<div class="s-orb br" style="background:#0891b2"></div>
+<div class="container">
+<p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:8px">Follow Us</p>
+<h3 style="font-size:20px;font-weight:800;font-family:var(--ff-h);margin-bottom:12px">Stay Connected with <span style="color:var(--primary)">NewBusinessAlert</span></h3>
+<p style="font-size:14px;color:var(--text2);margin-bottom:20px;max-width:500px;margin-left:auto;margin-right:auto">Follow us on social media for lead generation tips, success stories, and industry insights.</p>
+<div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+<a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.background='rgba(6,182,212,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-facebook-f" style="color:#1877f2;font-size:18px"></i> Facebook</a>
+<a href="https://www.tiktok.com/@9amleads.com" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.background='rgba(6,182,212,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-tiktok" style="color:#fff;font-size:18px"></i> TikTok</a>
+<a href="https://www.instagram.com/9amleads/" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.background='rgba(6,182,212,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-instagram" style="color:#e4405f;font-size:18px"></i> Instagram</a>
+</div>
+</div>
+</section>
+
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#06b6d4;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#0891b2;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#06b6d4"></div>
+<div class="s-orb br" style="background:#0891b2"></div>
 <div class="container">
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:800px;margin:0 auto;text-align:center">
 <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
@@ -245,8 +266,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#06b6d4;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#0891b2;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#06b6d4"></div>
+<div class="s-orb br" style="background:#0891b2"></div>
 <div class="container">
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:800px;margin:0 auto;text-align:center">
 <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 16px"><div style="font-size:32px;margin-bottom:6px"><i class="fas fa-building"></i></div><div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--primary)">500k+</div><div style="font-size:12px;color:var(--muted);margin-top:4px">New Companies/yr</div></div>
@@ -260,16 +281,16 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)" id="how">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#06b6d4;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#0891b2;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#06b6d4"></div>
+<div class="s-orb br" style="background:#0891b2"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">How It Works</div>
 <h2 class="section-title">Three Simple Steps to <span class="gradient">More Clients</span></h2>
-<p class="section-sub">From setup to your first B2B prospect in under 5 minutes. Target by industry, get daily Companies House data, and reach decision makers before competitors.</p>
+<p class="section-sub">From setup to your first B2B prospect in under 5 minutes. Target by industry, get daily Companies House data scored Hot/Warm/Cold, and reach decision makers before competitors.</p>
 <div class="steps">
-<div class="step"><span class="num">1</span><div class="icon"><i class="fas fa-bullseye"></i></div><h4>Choose Your Target</h4><p>Select the SIC codes, locations, and company types that match your ideal B2B client. Targeting accountants in Manchester? Web designers in London? Set it once and we do the rest.</p></div>
-<div class="step"><span class="num">2</span><div class="icon"><i class="fas fa-moon"></i></div><h4>We Scan Overnight</h4><p>Our system monitors the Companies House register around the clock. The moment a new company matches your criteria, we pull every detail â€” including director names and full registered address.</p></div>
-<div class="step"><span class="num">3</span><div class="icon"><i class="fas fa-inbox"></i></div><h4>Leads at 9am</h4><p>Your daily prospect sheet lands at 9am sharp. Company name, SIC code, location, and director details â€” everything you need to call or email the decision maker before anyone else.</p></div>
+<div class="step"><span class="num">1</span><div class="icon"><i class="fas fa-bullseye"></i></div><h4>Choose Your Target</h4><p>Select the SIC codes, locations, and company types that match your ideal B2B client. Use our volume calculator to estimate prospects in your area. Set it once and we do the rest.</p></div>
+<div class="step"><span class="num">2</span><div class="icon"><i class="fas fa-moon"></i></div><h4>We Scan Overnight</h4><p>Our system monitors the Companies House register around the clock. The moment a new company matches your criteria, we pull every detail and score the opportunity Hot/Warm/Cold.</p></div>
+<div class="step"><span class="num">3</span><div class="icon"><i class="fas fa-inbox"></i></div><h4>Opportunities at 9am</h4><p>Your daily prospect sheet lands at 9am sharp with AI-generated outreach messages. Company name, SIC code, location, and director details â€” export to CSV or Excel for your CRM. Everything you need to call or email the decision maker before anyone else.</p></div>
 </div>
 </div>
 </section>
@@ -277,8 +298,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#06b6d4;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#0891b2;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#06b6d4"></div>
+<div class="s-orb br" style="background:#0891b2"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Who Benefits</div>
 <h2 class="section-title">6 Industries That Close B2B Clients <span class="gradient">From New Company Data</span></h2>
@@ -321,8 +342,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" id="who">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#06b6d4;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#0891b2;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#06b6d4"></div>
+<div class="s-orb br" style="background:#0891b2"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Who It's For</div>
 <h2 class="section-title">22 Industries That Win with <span class="gradient">New Business Leads</span></h2>
@@ -357,8 +378,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#06b6d4;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#0891b2;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#06b6d4"></div>
+<div class="s-orb br" style="background:#0891b2"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Why B2B Teams Choose NewBusinessAlert</div>
 <h2 class="section-title">Built for Business Growth. <span class="gradient">Not Lead Reselling.</span></h2>
@@ -394,19 +415,22 @@ footer a:hover{color:var(--primary)}
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#06b6d4;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#0891b2;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#06b6d4"></div>
+<div class="s-orb br" style="background:#0891b2"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Features</div>
 <h2 class="section-title">Everything You Need to <span class="gradient">Win New Clients</span></h2>
-<p class="section-sub">Designed for B2B sales teams who want to be first, every time.</p>
+<p class="section-sub">Designed for B2B sales teams who want to be first, every time. With opportunity scoring, AI outreach, and CRM-ready exports.</p>
+<div style="max-width:780px;margin:0 auto 24px;padding:12px 20px;background:var(--primary-subtle);border:1px solid rgba(6,182,212,0.15);border-radius:var(--r);text-align:center;font-size:13px;color:var(--text2)">
+<i class="fas fa-plug" style="color:var(--primary);margin-right:6px"></i> <strong>CRM Integration:</strong> HubSpot, Salesforce, Pipedrive, Tradify, Clio + 100s more via Zapier
+</div>
 <div class="features-grid">
 <div class="feature-card"><div class="icon"><i class="fas fa-clock"></i></div><h4>9am Delivery</h4><p>Fresh prospect sheet delivered to your inbox every morning. No dashboard to check, no portal to refresh. Open your email and start your B2B outreach before competitors have even started their day.</p></div>
 <div class="feature-card"><div class="icon"><i class="fas fa-bullseye"></i></div><h4>Target by Industry</h4><p>Filter by SIC code, location, and company type so every alert matches your ideal B2B client. Accountants see companies that need accounting. Web designers see startups that need a site. Zero irrelevant noise.</p></div>
 <div class="feature-card"><div class="icon"><i class="fas fa-shield-halved"></i></div><h4>Exclusive Territory</h4><p>Your selected industries and locations are exclusive to you. No other subscriber competes for the same prospects. Build a relationship without another B2B provider undercutting you.</p></div>
 <div class="feature-card"><div class="icon"><i class="fas fa-address-card"></i></div><h4>Full Company &amp; Director Details</h4><p>Company name, registered address, director names, SIC codes, and incorporation date. Director details give you direct access to the decision maker â€” no gatekeepers, no receptionists.</p></div>
-<div class="feature-card"><div class="icon"><i class="fas fa-chart-bar"></i></div><h4>Performance Dashboard</h4><p>Track which SIC codes convert at the highest rate, monitor your contact-to-appointment ratio, and prove your B2B pipeline ROI in real time. Optimise your outreach with data, not guesswork.</p></div>
-<div class="feature-card"><div class="icon"><i class="fas fa-file-csv"></i></div><h4>CSV Export</h4><p>Export your daily prospects to CSV with one click. Import into your CRM, Google Sheets, or email sequencer. Integrate new business outreach into your existing B2B workflow seamlessly.</p></div>
+<div class="feature-card"><div class="icon"><i class="fas fa-fire"></i></div><h4>Opportunity Scoring &amp; AI Outreach</h4><p>Every new company registration scored Hot/Warm/Cold so you prioritise the best B2B prospects. AI-generated outreach messages help you contact decision makers faster and smarter.</p></div>
+<div class="feature-card"><div class="icon"><i class="fas fa-file-csv"></i></div><h4>CSV &amp; Excel Export + Weekly Reports</h4><p>Export your daily prospects to CSV or Excel with one click. Weekly reports show your conversion trends, top-performing SIC codes, and pipeline ROI. Integrate with any CRM seamlessly.</p></div>
 </div>
 </div>
 </section>
@@ -426,8 +450,8 @@ footer a:hover{color:var(--primary)}
 <section class="section" id="pricing">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#06b6d4;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#0891b2;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#06b6d4"></div>
+<div class="s-orb br" style="background:#0891b2"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Simple Pricing</div>
 <h2 class="section-title">Transparent Plans. <span class="gradient">No Surprises.</span></h2>
@@ -435,12 +459,12 @@ footer a:hover{color:var(--primary)}
 <div class="product-grid">
 <div class="pricing-card">
 <h3>Starter</h3>
-<div class="price">£99<span>/mo</span></div>
-<div class="price-sub">5 fresh prospects/day · 25/week · Ideal for solo B2B practitioners</div>
+<div class="price">Â£25<span>/wk</span></div>
+<div class="price-sub">5 fresh prospects/day Â· 25/week Â· 100/month</div>
 <ul>
 <li><i class="fas fa-check"></i> Target any 1 industry</li>
 <li><i class="fas fa-check"></i> Daily 9am B2B delivery</li>
-<li><i class="fas fa-check"></i> Exclusive leads – no competition</li>
+<li><i class="fas fa-check"></i> Exclusive leads ï¿½ no competition</li>
 <li><i class="fas fa-check"></i> Cancel anytime</li>
 <li><i class="fas fa-check"></i> 7-day free trial</li>
 </ul>
@@ -449,12 +473,12 @@ footer a:hover{color:var(--primary)}
 <div class="pricing-card featured">
 <div class="popular-badge">Most Popular</div>
 <h3>Pro</h3>
-<div class="price">£197<span>/mo</span></div>
-<div class="price-sub">15 fresh prospects/day · 75/week · Perfect for growing B2B teams</div>
+<div class="price">Â£50<span>/wk</span></div>
+<div class="price-sub">15 fresh prospects/day Â· 75/week Â· 300/month</div>
 <ul>
 <li><i class="fas fa-check"></i> Target any 1 industry</li>
 <li><i class="fas fa-check"></i> Daily 9am B2B delivery</li>
-<li><i class="fas fa-check"></i> Exclusive leads – no competition</li>
+<li><i class="fas fa-check"></i> Exclusive leads ï¿½ no competition</li>
 <li><i class="fas fa-check"></i> Priority email support</li>
 <li><i class="fas fa-check"></i> Cancel anytime</li>
 <li><i class="fas fa-check"></i> 7-day free trial</li>
@@ -463,12 +487,12 @@ footer a:hover{color:var(--primary)}
 </div>
 <div class="pricing-card">
 <h3>Enterprise</h3>
-<div class="price">£395<span>/mo</span></div>
-<div class="price-sub">25 fresh prospects/day · 175/week · Built for B2B agencies &amp; enterprises</div>
+<div class="price">Â£100<span>/wk</span></div>
+<div class="price-sub">25 fresh prospects/day Â· 175/week Â· 350/month &amp; enterprises</div>
 <ul>
 <li><i class="fas fa-check"></i> Target any 1 industry</li>
 <li><i class="fas fa-check"></i> Daily 9am B2B delivery</li>
-<li><i class="fas fa-check"></i> Exclusive leads – no competition</li>
+<li><i class="fas fa-check"></i> Exclusive leads ï¿½ no competition</li>
 <li><i class="fas fa-check"></i> Priority email &amp; phone support</li>
 <li><i class="fas fa-check"></i> Cancel anytime</li>
 <li><i class="fas fa-check"></i> 7-day free trial</li>
@@ -489,14 +513,14 @@ Accountants earn Â£500-Â£2,000+/year per client. One onboarding = the full year 
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#06b6d4;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#0891b2;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#06b6d4"></div>
+<div class="s-orb br" style="background:#0891b2"></div>
 <div class="container">
 <section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1552581234-26160f608093?w=1400&q=80')"></div>
 <div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:#06b6d4;top:-200px;right:-100px"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#0891b2;bottom:-150px;left:-100px"></div>
+<div class="s-orb tl" style="background:#06b6d4"></div>
+<div class="s-orb br" style="background:#0891b2"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Built For Every B2B Sector</div>
 <h2 class="section-title">One Data Source. <span class="gradient">Every Prospect Stream.</span></h2>
@@ -520,6 +544,14 @@ Accountants earn Â£500-Â£2,000+/year per client. One onboarding = the full year 
 </div>
 </div>
 </section>
+<div style="display:flex;justify-content:center;gap:12px;padding:24px 0 12px;border-top:1px solid rgba(255,255,255,0.04)">
+<a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;font-size:15px;text-decoration:none" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+<a href="https://www.tiktok.com/@9amleads.com" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;font-size:15px;text-decoration:none" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+<a href="https://www.instagram.com/9amleads/" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;font-size:15px;text-decoration:none" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+</div>
+</div>
+</div>
+
 
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Testimonials</div>
 <h2 class="section-title">Trusted by <span class="gradient">B2B Professionals</span></h2>
@@ -527,22 +559,22 @@ Accountants earn Â£500-Â£2,000+/year per client. One onboarding = the full year 
 <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px">
 <div style="color:#f59e0b;font-size:12px;margin-bottom:6px">?????</div>
 <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"I sign up new B2B clients every week using 9amLeads. Being first to contact a freshly registered company means I am often the only accountant they speak to. The director details are pure gold."</p>
-<div style="font-size:12px;color:var(--muted2)">— Priya S., Accountant, Birmingham</div>
+<div style="font-size:12px;color:var(--muted2)">ï¿½ Priya S., Accountant, Birmingham</div>
 </div>
 <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px">
 <div style="color:#f59e0b;font-size:12px;margin-bottom:6px">?????</div>
 <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"I used to manually trawl Companies House for new leads. Now I get fresh B2B prospects delivered at 9am. I contact 10 before lunch and convert 2-3 every single week."</p>
-<div style="font-size:12px;color:var(--muted2)">— Tom W., IT Consultant, Manchester</div>
+<div style="font-size:12px;color:var(--muted2)">ï¿½ Tom W., IT Consultant, Manchester</div>
 </div>
 <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px">
 <div style="color:#f59e0b;font-size:12px;margin-bottom:6px">?????</div>
-<p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"£99/month for exclusive B2B leads that nobody else is contacting. One new client onboarding pays for the entire year. The ROI is absurdly good."</p>
-<div style="font-size:12px;color:var(--muted2)">— Riz K., Marketing Agency, London</div>
+<p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"ï¿½99/month for exclusive B2B leads that nobody else is contacting. One new client onboarding pays for the entire year. The ROI is absurdly good."</p>
+<div style="font-size:12px;color:var(--muted2)">ï¿½ Riz K., Marketing Agency, London</div>
 </div>
 <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px">
 <div style="color:#f59e0b;font-size:12px;margin-bottom:6px">?????</div>
 <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"Being first to contact a brand new Ltd company is everything. My conversion rate is over 40% because I am reaching decision makers before any competitor even knows they exist."</p>
-<div style="font-size:12px;color:var(--muted2)">— James H., Financial Adviser, Leeds</div>
+<div style="font-size:12px;color:var(--muted2)">ï¿½ James H., Financial Adviser, Leeds</div>
 </div>
 </div>
 <div class="test-grid">
@@ -551,3 +583,5 @@ Accountants earn Â£500-Â£2,000+/year per client. One onboarding = the full year 
 <div class="author">â€” David C., Chen &amp; Co Accountants</div></div>
 <div class="t-card"><div class="stars">â˜…â˜…â˜…â˜…â˜…</div>
 <blockquote>As a web designer, knowing who registered a company yesterday is pure gold. I reached out to three fresh prospects this morning and booked two meetings before lunch. That is B2B lead gen on autopilot.</blockquote><div class="author">Sarah K., Web Designer</div></div>
+
+
