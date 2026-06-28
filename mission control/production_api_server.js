@@ -2781,8 +2781,11 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         fs.mkdirSync(DATA_DIR, { recursive: true });
         fs.writeFileSync(customerFile, JSON.stringify(existing, null, 2));
 
-        // Try to run the scraper script
-        const scraperFile = path.join(__dirname, product + '_scraper.js');
+        // Try to run the scraper script (check both naming conventions)
+        var scraperFile = path.join(__dirname, product + '_scraper.js');
+        if (!fs.existsSync(scraperFile)) {
+          scraperFile = path.join(__dirname, product + '_leads_scraper.js');
+        }
         if (fs.existsSync(scraperFile)) {
           try {
             execSync('node ' + path.basename(scraperFile) + ' --all', { cwd: __dirname, timeout: 180000, stdio: 'pipe' });
