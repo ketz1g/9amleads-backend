@@ -2688,15 +2688,12 @@ function generateLeadEmailHTML(customer, leads) {
     if (productName === 'planning' && d.council) {
       var councilDomains = { 'Westminster City Council': 'westminster', 'Camden Council': 'camden', 'Manchester City Council': 'manchester', 'Birmingham City Council': 'birmingham', 'Leeds City Council': 'leeds', 'Bristol City Council': 'bristol' };
       var councilDomain = councilDomains[d.council] || d.council.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
-      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px"><a href="https://www.' + councilDomain + '.gov.uk/planning" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D View on ' + d.council.split(' ')[0] + ' Planning Portal</a></div>';
+      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px"><a href="https://www.' + councilDomain + '.gov.uk/planning" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Apply on ' + d.council.split(' ')[0] + ' Planning Portal</a></div>';
     } else if (productName === 'tenders') {
-      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px"><a href="https://www.gov.uk/contracts-finder" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D View on Contracts Finder</a></div>';
+      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px"><a href="https://www.gov.uk/contracts-finder" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Apply on Contracts Finder</a></div>';
     }
 
-    // Contact tip (only if no email/phone)
-    if (!hasEmail && !hasPhone) {
-      body += '<div style="margin-top:10px;padding:8px 12px;background:#f8f9fb;border:1px solid rgba(0,0,0,0.04);border-radius:6px;font-size:11px;color:#777;line-height:1.5">\uD83D\uDCCD No email or phone found. Send a flyer + intro letter to their address, or visit in person.</div>';
-    }
+    };
 
     body += '</div></div>';
   }
