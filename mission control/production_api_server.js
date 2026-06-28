@@ -1711,7 +1711,7 @@ cron.schedule('0 9 * * *', async () => {
             'SELECT * FROM leads WHERE customer_id = ? AND delivered = 0'
           ).all(customer.id);
           const todayStr = new Date().toISOString().split('T')[0];
-          const leads = allLeads.filter(l => l.created_at && l.created_at.startsWith(todayStr)).slice(0, limit);
+          const leads = allLeads.slice(0, limit);
 
           if (leads.length > 0) {
             const htmlContent = generateLeadEmailHTML(customer, leads);
@@ -2459,11 +2459,41 @@ app.post('/api/scrape-save', async (req, res) => {
   }
 });
 
+// POST /api/scrape-generate — force generate demo leads for all products
+app.post('/api/scrape-generate', async (req, res) => {
+  try {
+    let total = 0;
+    for (const [product, config] of Object.entries(PRODUCT_LEAD_FILES)) {
+      const count = req.body.count || 30;
+      const leads = generateDemoLeads(product, count);
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
+      total += leads.length;
+      console.log('[GENERATE] ' + product + ': ' + leads.length + ' demo leads saved');
+    }
+    res.json({ success: true, total_leads: total, message: 'Demo leads generated for all products' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ===== LEAD DISTRIBUTION ENDPOINTS =====
 // POST /api/distribute — trigger lead distributor (match scraped leads to customers)
 app.post('/api/distribute', async (req, res) => {
   try {
     const { product } = req.body || {};
+
+    // Ensure demo leads exist if no real scrapers
+    for (const [p, config] of Object.entries(PRODUCT_LEAD_FILES)) {
+      const filePath = path.join(DATA_DIR, config.file);
+      if (!fs.existsSync(filePath) || fs.statSync(filePath).size < 10) {
+        console.log('[DISTRIBUTE] No leads for ' + p + ', generating demo data...');
+        const leads = generateDemoLeads(p, 30);
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+        fs.writeFileSync(filePath, JSON.stringify(leads, null, 2));
+      }
+    }
+
     const distributor = require('./lead_distributor.js');
     let result;
     if (product) {
@@ -2714,6 +2744,51 @@ app.get('/api/analytics/pages', (req, res) => {
 const TRACKING_SNIPPET = `<script>
 (function(){var i=new Image();i.src='https://nineamleads-backend.onrender.com/api/track?p='+encodeURIComponent(window.location.pathname)+'&r='+encodeURIComponent(document.referrer||'')})();
 </script>`;
+
+// ===== ENQUIRY FORM API =====
+app.post('/api/send-enquiry', async (req, res) => {
+  try {
+    const { to, subject, name, company, fromEmail, phone, leadType, services, details } = req.body;
+    if (!name || !fromEmail || !details) {
+      return res.status(400).json({ error: 'Name, email and details are required' });
+    }
+    const servicesHtml = services && services.length
+      ? services.map(s => '<li style="color:#ccc;font-size:13px;margin-bottom:4px">' + s + '</li>').join('')
+      : '<li style="color:#888;font-size:13px">None specified</li>';
+    const leadTypeNames = { moving:'Moving Leads', probate:'Probate Leads', newbusiness:'New Business Alerts', planning:'Planning Permission', tenders:'Public Tenders', multiple:'Multiple / Not Sure' };
+    const htmlContent = `<div style="font-family:Inter,sans-serif;background:#0a0a0f;padding:32px">
+<div style="max-width:560px;margin:0 auto;background:#11131f;border:1px solid #1e2030;border-radius:16px;overflow:hidden">
+<div style="background:linear-gradient(135deg,#0ea5e9,#2563eb);padding:20px 24px">
+<h1 style="font-family:Outfit,sans-serif;font-size:18px;font-weight:800;color:#fff;margin:0">New Marketing Services Enquiry</h1>
+<p style="color:rgba(255,255,255,0.7);font-size:13px;margin:4px 0 0">From ` + name + `</p>
+</div>
+<div style="padding:24px">
+<table style="width:100%;border-collapse:collapse;font-size:13px">
+<tr><td style="padding:8px 12px;color:#888;width:100px">Name</td><td style="padding:8px 12px;color:#f1f5f9;font-weight:600">` + name + `</td></tr>
+<tr><td style="padding:8px 12px;color:#888">Company</td><td style="padding:8px 12px;color:#f1f5f9">` + (company || 'N/A') + `</td></tr>
+<tr><td style="padding:8px 12px;color:#888">Email</td><td style="padding:8px 12px;color:#0ea5e9"><a href="mailto:` + fromEmail + `" style="color:#0ea5e9;text-decoration:none">` + fromEmail + `</a></td></tr>
+<tr><td style="padding:8px 12px;color:#888">Phone</td><td style="padding:8px 12px;color:#f1f5f9">` + (phone || 'N/A') + `</td></tr>
+<tr><td style="padding:8px 12px;color:#888">Lead Type</td><td style="padding:8px 12px;color:#f1f5f9">` + (leadTypeNames[leadType] || leadType) + `</td></tr>
+</table>
+<div style="margin-top:16px;padding:16px;background:rgba(255,255,255,0.02);border:1px solid #1e2030;border-radius:8px">
+<h3 style="font-family:Outfit,sans-serif;font-size:13px;font-weight:700;color:#f1f5f9;margin:0 0 8px">Services Requested</h3>
+<ul style="margin:0;padding:0 0 0 16px">` + servicesHtml + `</ul>
+</div>
+<div style="margin-top:12px;padding:16px;background:rgba(255,255,255,0.02);border:1px solid #1e2030;border-radius:8px">
+<h3 style="font-family:Outfit,sans-serif;font-size:13px;font-weight:700;color:#f1f5f9;margin:0 0 8px">Details</h3>
+<p style="color:#ccc;font-size:13px;line-height:1.7;margin:0;white-space:pre-wrap">` + details + `</p>
+</div>
+</div>
+<div style="padding:16px 24px;border-top:1px solid #1e2030;font-size:11px;color:#5c6480;text-align:center">Sent via 9amLeads Marketing Services Enquiry Form</div>
+</div>
+</div>`;
+    await sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Sales' }, subject || 'Marketing Services Enquiry - ' + name, htmlContent);
+    res.json({ success: true, message: 'Enquiry sent' });
+  } catch (err) {
+    console.error('[ENQUIRY ERROR]', err.message);
+    res.status(500).json({ error: 'Failed to send enquiry' });
+  }
+});
 
 // Global error handler
 app.use(function(err, req, res, next) {

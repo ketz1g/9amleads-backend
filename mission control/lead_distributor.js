@@ -375,11 +375,13 @@ async function distributeProduct(product) {
     const addrKey = normalised.address.toLowerCase().trim();
     if (addrKey && existingAddresses.has(addrKey)) { duplicates++; continue; }
 
-    // Check exclusivity: if a postcode is claimed exclusively, restrict to that customer
-    const exclusiveClaimant = getExclusiveClaimant(rawLead, product);
+    // Per-lead exclusivity: every lead goes to all matching customers,
+    // but each customer only gets their daily limit.
+    // Once a customer hits their quota, remaining leads in their area
+    // are offered to other matching businesses.
+    // The specific leads delivered at 9am are exclusive to each recipient.
     const matchedCustomers = []; // { customer, tier }
     for (const customer of activeCustomers) {
-      if (exclusiveClaimant && customer.id !== exclusiveClaimant) continue;
       const result = leadMatchesTarget(rawLead, customer);
       if (result.match) {
         matchedCustomers.push({ customer, tier: result.tier });
