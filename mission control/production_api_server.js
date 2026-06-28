@@ -2781,7 +2781,10 @@ app.post('/api/admin/cleanup', adminAuth, (req, res) => {
     db.leads = [];
     db._cleanupAt = new Date().toISOString();
     saveDb();
-    res.json({ success: true, removed_customers: before, removed_leads: beforeLeads });
+    // Also clear postcode assignments
+    const assignFile = path.join(DATA_DIR, 'postcode-assignments.json');
+    fs.writeFileSync(assignFile, JSON.stringify({ assignments: {} }, null, 2));
+    res.json({ success: true, removed_customers: before, removed_leads: beforeLeads, assignments_cleared: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
