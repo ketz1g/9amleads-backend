@@ -478,8 +478,8 @@ app.post('/api/auth/signup', async (req, res) => {
     customer.email_verified = 0;
     saveDb();
 
-    // Send verification email
-    try {
+    // Verification email disabled — was causing spam during testing
+    /*try {
       const verifyUrl = PUBLIC_URL.replace(/\/+$/, '') + '/api/auth/verify-email?token=' + verification_token;
       await sendBrevoEmail(
         { email: customer.email, name: customer.contact_name || customer.company },
@@ -488,7 +488,7 @@ app.post('/api/auth/signup', async (req, res) => {
       );
     } catch (e) {
       console.log('Verification email skipped:', e.message);
-    }
+    }*/
 
     // Save to Brevo contact list
     try {
@@ -2620,7 +2620,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += '</td></tr>';
 
   // Lead cards
-  body += '<tr><td style="background:#ffffff;padding:16px 28px 28px">';
+  body += '<tr><td style="background:#ffffff;padding:16px 28px 20px">';
   for (var i = 0; i < leads.length; i++) {
     var l = leads[i];
     var d = l.data || {};
@@ -2628,88 +2628,77 @@ function generateLeadEmailHTML(customer, leads) {
 
     var typeLabel = productName === 'moving' ? 'Moving Lead' : productName === 'probate' ? 'Probate Lead' : productName === 'newbusiness' ? 'New Business' : productName === 'planning' ? 'Planning Application' : 'Tender Opportunity';
 
-    body += '<div style="background:#f8f9fb;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:20px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04)">';
+    body += '<div style="background:#ffffff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;margin-bottom:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">';
 
-    // Title row
-    body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
-    body += '<span style="padding:3px 10px;border-radius:4px;background:rgba(0,0,0,0.06);color:' + accent + ';font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap">' + typeLabel + '</span>';
-    body += '<span style="font-size:14px;font-weight:700;color:#111;flex:1;line-height:1.4">' + (d.address || d.name || d.companyName || l.address || 'Opportunity') + '</span>';
+    // Accent top bar
+    body += '<div style="height:4px;background:' + accent + '"></div>';
+
+    // Card content
+    body += '<div style="padding:16px 18px 14px">';
+
+    // Title + badge row
+    body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
+    body += '<span style="padding:3px 10px;border-radius:4px;background:' + accent + ';color:#fff;font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap;flex-shrink:0">' + typeLabel + '</span>';
+    body += '<span style="font-size:15px;font-weight:700;color:#111;line-height:1.4">' + (d.address || d.name || d.companyName || l.address || 'Opportunity') + '</span>';
     body += '</div>';
 
-    // Details in two-column grid
-    var leftCol = [], rightCol = [];
-    if (d.postcode) leftCol.push({ label: 'Postcode', value: d.postcode });
-    if (d.city) leftCol.push({ label: 'City', value: d.city });
-    if (d.bedrooms) leftCol.push({ label: 'Type', value: d.bedrooms + ' bed ' + (d.propertyType || '') });
-    if (d.status) leftCol.push({ label: 'Status', value: d.status });
-    if (d.price) leftCol.push({ label: 'Property Value', value: '\u00a3' + Number(d.price).toLocaleString() });
-    if (d.estateValue) leftCol.push({ label: 'Estate Value', value: '\u00a3' + Number(d.estateValue).toLocaleString() });
-    if (d.contractValue) leftCol.push({ label: 'Contract Value', value: '\u00a3' + Number(d.contractValue).toLocaleString() });
-    if (d.estimatedMoveWindow) rightCol.push({ label: 'Move Window', value: d.estimatedMoveWindow });
-    if (d.agent) rightCol.push({ label: 'Agent', value: d.agent });
-    if (d.council) rightCol.push({ label: 'Council', value: d.council });
-    if (d.applicationRef) rightCol.push({ label: 'Reference', value: d.applicationRef });
-    if (d.description) rightCol.push({ label: 'Description', value: d.description });
-    if (d.buyer) rightCol.push({ label: 'Buyer', value: d.buyer });
-    if (d.deceasedName) rightCol.push({ label: 'Deceased', value: d.deceasedName });
-    if (d.registry) rightCol.push({ label: 'Registry', value: d.registry });
-    if (d.companyName) rightCol.push({ label: 'Company', value: d.companyName });
-    if (d.sicCode) rightCol.push({ label: 'SIC Code', value: d.sicCode });
-    if (d.incorporationDate) rightCol.push({ label: 'Incorporated', value: new Date(d.incorporationDate).toLocaleDateString() });
-    if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); rightCol.push({ label: 'Deadline', value: days + ' days (' + new Date(d.closingDate).toLocaleDateString() + ')' }); }
+    // Key details as tagged chips
+    var chips = [];
+    if (d.postcode) chips.push({ icon: '\uD83D\uDCCD', text: d.postcode });
+    if (d.city) chips.push({ icon: '\uD83C\uDFD9\uFE0F', text: d.city });
+    if (d.bedrooms) chips.push({ icon: '\uD83C\uDFE0', text: d.bedrooms + ' bed' });
+    if (d.status) chips.push({ icon: '\uD83D\uDD34', text: d.status });
+    if (d.price) chips.push({ icon: '\u00A3', text: Number(d.price).toLocaleString() });
+    if (d.estateValue) chips.push({ icon: '\u00A3', text: Number(d.estateValue).toLocaleString() + ' estate' });
+    if (d.contractValue) chips.push({ icon: '\u00A3', text: Number(d.contractValue).toLocaleString() });
+    if (d.estimatedMoveWindow) chips.push({ icon: '\uD83D\uDCC5', text: d.estimatedMoveWindow });
+    if (d.council) chips.push({ icon: '\uD83C\uDFDB\uFE0F', text: d.council });
+    if (d.applicationRef) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.applicationRef });
+    if (d.buyer) chips.push({ icon: '\uD83C\uDFED', text: d.buyer });
+    if (d.deceasedName) chips.push({ icon: '\uD83D\uDC68\u200D\u2696\uFE0F', text: d.deceasedName });
+    if (d.registry) chips.push({ icon: '\uD83C\uDFE2', text: d.registry });
+    if (d.companyName) chips.push({ icon: '\uD83C\uDFE2', text: d.companyName });
+    if (d.sicCode) chips.push({ icon: '\uD83D\uDCCA', text: 'SIC: ' + d.sicCode });
+    if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: new Date(d.incorporationDate).toLocaleDateString() });
+    if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); chips.push({ icon: '\u23F3', text: 'Deadline: ' + days + ' days' }); }
+    if (d.agent) chips.push({ icon: '\uD83D\uDC64', text: d.agent });
 
-    body += '<div style="display:flex;flex-direction:column;gap:4px">';
-    for (var j = 0; j < leftCol.length; j++) {
-      body += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-size:13px;line-height:1.5"><span style="color:#888">' + leftCol[j].label + '</span><span style="color:#222;font-weight:600;text-align:right;margin-left:10px;flex-shrink:0">' + leftCol[j].value + '</span></div>';
+    if (chips.length > 0) {
+      body += '<div style="margin-bottom:10px">';
+      for (var c = 0; c < chips.length; c++) {
+        body += '<span style="display:inline-block;padding:4px 10px;margin:0 4px 4px 0;background:#f0f2f5;border-radius:6px;font-size:12px;color:#444;white-space:nowrap">' + chips[c].icon + ' ' + chips[c].text + '</span>';
+      }
+      body += '</div>';
     }
-    for (var j = 0; j < rightCol.length; j++) {
-      body += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-size:13px;line-height:1.5"><span style="color:#888">' + rightCol[j].label + '</span><span style="color:#222;font-weight:600;text-align:right;margin-left:10px;flex-shrink:0">' + rightCol[j].value + '</span></div>';
-    }
-    body += '</div>';
 
-    // Contact info strip
+    // Contact info
     var hasEmail = d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail;
     var hasWebsite = d.website;
     var hasAddress = d.address;
     var hasPhone = d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone;
-    var methods = [];
-    if (hasEmail) methods.push('\u2709\uFE0F ' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail));
-    if (hasWebsite) methods.push('\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:' + accent + ';text-decoration:none" target="_blank">' + d.website + '</a>');
-    if (hasAddress) methods.push('\uD83D\uDCCD ' + (d.address || ''));
-    if (hasPhone) methods.push('\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone));
-    body += '<div style="margin-top:10px;padding:8px 10px;background:#f8f9fb;border:1px solid rgba(0,0,0,0.04);border-radius:6px;font-size:12px;color:#555">';
-    if (methods.length > 0) {
-      for (var m = 0; m < methods.length; m++) body += '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;margin-bottom:2px">' + methods[m] + '</span>';
-    } else {
-      body += '<span style="color:#999;font-style:italic">\uD83D\uDCCD Use the address shown above to send a flyer or visit in person</span>';
+    if (hasEmail || hasWebsite || hasPhone || hasAddress) {
+      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px;margin-bottom:8px">';
+      if (hasEmail) body += '<div style="font-size:12px;color:#555;margin-bottom:3px">\u2709\uFE0F ' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail) + '</div>';
+      if (hasPhone) body += '<div style="font-size:12px;color:#555;margin-bottom:3px">\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone) + '</div>';
+      if (hasWebsite) body += '<div style="font-size:12px;color:#555;margin-bottom:3px">\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:' + accent + ';text-decoration:none" target="_blank">' + d.website + '</a></div>';
+      body += '</div>';
     }
-    body += '</div>';
 
-    // Direct link for planning and tenders
+    // Action button for planning / tenders
     if (productName === 'planning' && d.council) {
       var councilDomains = { 'Westminster City Council': 'westminster', 'Camden Council': 'camden', 'Manchester City Council': 'manchester', 'Birmingham City Council': 'birmingham', 'Leeds City Council': 'leeds', 'Bristol City Council': 'bristol' };
       var councilDomain = councilDomains[d.council] || d.council.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
-      body += '<div style="margin-top:8px"><a href="https://www.' + councilDomain + '.gov.uk/planning" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D Search ' + d.council.split(' ')[0] + ' Planning Portal \u2192</a></div>';
+      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px"><a href="https://www.' + councilDomain + '.gov.uk/planning" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D View on ' + d.council.split(' ')[0] + ' Planning Portal</a></div>';
     } else if (productName === 'tenders') {
-      body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D Search Contracts Finder \u2192</a></div>';
+      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px"><a href="https://www.gov.uk/contracts-finder" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D View on Contracts Finder</a></div>';
     }
 
-    // Per-lead contact tip
-    body += '<div style="margin-top:8px;padding:8px 12px;background:#f8f9fb;border:1px solid rgba(0,0,0,0.04);border-radius:6px;font-size:11px;color:#555;line-height:1.6">';
-    if (hasWebsite) {
-      body += '\uD83C\uDF10 <strong style="color:#333">Visit their website</strong> \u2014 click the link above to learn more about their business.<br>';
-    }
+    // Contact tip (only if no email/phone)
     if (!hasEmail && !hasPhone) {
-      body += '<strong style="color:#333">No email or phone available:</strong>\u00A0 Send a business flyer + personal introduction letter to their address, or visit in person. You can also search their name/company on LinkedIn.';
-    } else if (!hasPhone) {
-      body += '<strong style="color:#333">How to reach them:</strong>\u00A0 Email first, then follow up with a posted flyer + introduction letter to their address, or visit in person.';
-    } else {
-      body += '<strong style="color:#333">How to reach them:</strong>\u00A0 Email first or call, then follow up with a posted flyer + introduction letter to their address.';
+      body += '<div style="margin-top:10px;padding:8px 12px;background:#f8f9fb;border:1px solid rgba(0,0,0,0.04);border-radius:6px;font-size:11px;color:#777;line-height:1.5">\uD83D\uDCCD No email or phone found. Send a flyer + intro letter to their address, or visit in person.</div>';
     }
-    body += '</div>';
-    body += '</div>';
 
-    body += '</div>';
+    body += '</div></div>';
   }
   body += '</td></tr>';
 
