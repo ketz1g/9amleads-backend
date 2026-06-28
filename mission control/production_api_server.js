@@ -2503,7 +2503,7 @@ app.post('/api/distribute', async (req, res) => {
     if (product) {
       result = await distributor.distributeProduct(product);
     } else {
-      result = await distributor.distributeAll(false);
+      result = await distributor.distributeAll(true);
     }
     res.json({ success: true, result });
   } catch (e) {
