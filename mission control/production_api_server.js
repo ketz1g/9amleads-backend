@@ -2603,10 +2603,9 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 16px">';
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
-  // Header with logo
-  body += '<tr><td style="background:linear-gradient(135deg,#0a0a0f,#0f111a);padding:36px 28px 28px;border-bottom:3px solid ' + accent + ';text-align:center">';
-  body += '<div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(14,165,233,0.15),rgba(6,182,212,0.1))"><svg width="24" height="24" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="40" stroke="#fff" stroke-width="5"/><circle cx="50" cy="50" r="36" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><circle cx="50" cy="50" r="3" fill="#0ea5e9"/><line x1="50" y1="50" x2="50" y2="17" stroke="#0ea5e9" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="23" y2="50" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="42" cy="8" r="5" fill="#0ea5e9" opacity="0.8"/><circle cx="58" cy="8" r="5" fill="#0ea5e9" opacity="0.8"/><line x1="42" y1="13" x2="50" y2="10" stroke="#0ea5e9" stroke-width="2" opacity="0.6"/><line x1="58" y1="13" x2="50" y2="10" stroke="#0ea5e9" stroke-width="2" opacity="0.6"/></svg></div><div style="text-align:left"><div style="font-family:Outfit,sans-serif;font-size:26px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.5px">9am<span style="color:' + accent + '">Leads</span></div><div style="font-size:10px;color:#999;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px">Opportunity Intelligence</div></div></div>';
-  body += '<p style="color:#999;font-size:10px;margin:0;text-transform:uppercase;letter-spacing:2px">' + (customer.lead_type || 'Daily Opportunities') + '</p>';
+  // Header with homepage logo
+  body += '<tr><td style="background:#0a0a0f;padding:28px 28px 20px;text-align:center">';
+  body += '<div style="display:inline-flex;align-items:center;gap:10px"><div style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(14,165,233,0.15),rgba(6,182,212,0.1))"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="40" stroke="#fff" stroke-width="5"/><circle cx="50" cy="50" r="36" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><circle cx="50" cy="50" r="3" fill="#0ea5e9"/><line x1="50" y1="50" x2="50" y2="17" stroke="#0ea5e9" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="23" y2="50" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="42" cy="8" r="5" fill="#0ea5e9" opacity="0.8"/><circle cx="58" cy="8" r="5" fill="#0ea5e9" opacity="0.8"/></svg></div><div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:900;color:#fff;letter-spacing:-.5px">9am<span style="color:' + accent + '">Leads</span></div></div>';
   body += '</td></tr>';
 
   // Greeting + stats
@@ -2693,17 +2692,9 @@ function generateLeadEmailHTML(customer, leads) {
     if (productName === 'planning' && d.council) {
       var councilDomains = { 'Westminster City Council': 'westminster', 'Camden Council': 'camden', 'Manchester City Council': 'manchester', 'Birmingham City Council': 'birmingham', 'Leeds City Council': 'leeds', 'Bristol City Council': 'bristol' };
       var councilDomain = councilDomains[d.council] || d.council.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
-      if (d.planningKeyVal) {
-        body += '<div style="margin-top:8px"><a href="https://publicaccess.' + councilDomain + '.gov.uk/online-applications/applicationDetails.do?keyVal=' + d.planningKeyVal + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Application on ' + d.council.split(' ')[0] + ' Portal \u2192</a></div>';
-      } else {
-        body += '<div style="margin-top:8px"><a href="https://www.' + councilDomain + '.gov.uk/planning" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D Search ' + d.council.split(' ')[0] + ' Planning Portal \u2192</a></div>';
-      }
+      body += '<div style="margin-top:8px"><a href="https://www.' + councilDomain + '.gov.uk/planning" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D Search ' + d.council.split(' ')[0] + ' Planning Portal \u2192</a></div>';
     } else if (productName === 'tenders') {
-      if (d.tenderNoticeId) {
-        body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Tender on Contracts Finder \u2192</a></div>';
-      } else {
-        body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D Search Contracts Finder \u2192</a></div>';
-      }
+      body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D Search Contracts Finder \u2192</a></div>';
     }
 
     // Per-lead contact tip
