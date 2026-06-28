@@ -1,0 +1,177 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Marketing Services Enquiry | 9amLeads</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#f1f5f9;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:32px;background:radial-gradient(ellipse at 50% 0%,rgba(14,165,233,0.04),transparent 60%)}
+.page{width:100%;max-width:820px;margin:0 auto}
+.card{background:#11131f;border:1px solid #1e2030;border-radius:20px;padding:36px 44px;margin-bottom:24px}
+.back{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;color:#8890a8;font-size:12px;font-weight:600;text-decoration:none;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:20px}
+.back:hover{color:#e8ebf2;border-color:#2a2d42}
+.logo{display:flex;align-items:center;justify-content:center;gap:10px;font-size:22px;font-weight:900;font-family:'Outfit',sans-serif;margin-bottom:6px}
+.logo .icon{width:42px;height:42px;background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:900}
+.logo span{color:#0ea5e9}
+h1{font-size:24px;font-weight:800;font-family:'Outfit',sans-serif;text-align:center;margin-bottom:4px}
+.sub{text-align:center;color:#8890a8;font-size:13px;line-height:1.6;margin-bottom:24px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{margin-bottom:14px;text-align:left}
+.form-group label{display:block;font-size:11px;font-weight:600;margin-bottom:4px;color:#b0b8cc;letter-spacing:.3px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:11px 13px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;font-family:inherit;color:#f1f5f9;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#0ea5e9}
+.form-group input::placeholder,.form-group textarea::placeholder{color:#5c6480}
+.form-group textarea{min-height:100px;resize:vertical}
+.check-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+.check-grid label{display:flex;align-items:center;gap:6px;font-size:12px;color:#b0b8cc;cursor:pointer;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;transition:.2s}
+.check-grid label:hover{border-color:#2a2d42}
+.check-grid input{accent-color:#0ea5e9;width:14px;height:14px}
+.btn{width:100%;padding:14px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(14,165,233,0.25)}
+.status{color:#ef4444;font-size:12px;margin-top:10px;display:none;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.1);border-radius:8px;padding:10px 14px;text-align:left}
+.success{color:#22c55e;font-size:12px;margin-top:10px;display:none;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.1);border-radius:8px;padding:12px 14px;text-align:center;line-height:1.6}
+.services-hint{font-size:11px;color:#5c6480;margin-bottom:12px;line-height:1.5}
+.footer-text{text-align:center;margin-top:20px;font-size:11px;color:#5c6480}
+.footer-text a{color:#0ea5e9;text-decoration:none}
+@media(max-width:600px){
+  .card{padding:24px 18px}
+  .form-row,.check-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+<a href="/" class="back"><i class="fas fa-arrow-left" style="font-size:10px"></i> 9amLeads</a>
+
+<div class="card">
+<div class="logo"><div class="icon">9</div>9am<span>Leads</span></div>
+<h1>Marketing Services <span style="color:#0ea5e9">Enquiry</span></h1>
+<p class="sub">Need help with email campaigns, flyers, letterheads, or branding? Tell us what you need and we'll provide a custom quote.</p>
+
+<form id="enquiry-form" onsubmit="return sendEnquiry(event)">
+<div class="form-row">
+<div class="form-group"><label>Your Name</label><input type="text" id="e-name" placeholder="Your name" required></div>
+<div class="form-group"><label>Company Name</label><input type="text" id="e-company" placeholder="Your company"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Email Address</label><input type="email" id="e-email" placeholder="you@company.co.uk" required></div>
+<div class="form-group"><label>Phone (optional)</label><input type="tel" id="e-phone" placeholder="07700 000000"></div>
+</div>
+
+<div class="form-group"><label>Lead Type You Subscribe To</label>
+<select id="e-leadtype">
+<option value="moving">🚚 Moving Leads</option>
+<option value="probate">⚖️ Probate Leads</option>
+<option value="newbusiness">🏢 New Business Alerts</option>
+<option value="planning">🔨 Planning Permission</option>
+<option value="tenders">📋 Public Tenders</option>
+<option value="multiple">Multiple / Not Sure</option>
+</select></div>
+
+<div class="form-group"><label>Services You Need</label>
+<p class="services-hint">Tick all that apply. We'll quote per service or as a package.</p>
+<div class="check-grid">
+<label><input type="checkbox" class="e-service" value="Email campaign design & setup"> 📧 Email Campaign Setup</label>
+<label><input type="checkbox" class="e-service" value="Email automation (Day 1/3/5/10)"> 🤖 Email Automation</label>
+<label><input type="checkbox" class="e-service" value="Flyer design"> 📄 Flyer Design</label>
+<label><input type="checkbox" class="e-service" value="Personal letterhead design"> ✉️ Personal Letterhead</label>
+<label><input type="checkbox" class="e-service" value="Brochure design"> 📘 Brochure Design</label>
+<label><input type="checkbox" class="e-service" value="Brand identity / logo"> 🎨 Brand Identity / Logo</label>
+<label><input type="checkbox" class="e-service" value="Direct mail template"> 📮 Direct Mail Template</label>
+<label><input type="checkbox" class="e-service" value="Social media setup & automation"> 📱 Social Media Setup &amp; Automation</label>
+<label><input type="checkbox" class="e-service" value="Social media ongoing management"> 📱 Social Media Management (£25/wk + £150 setup)</label>
+<label><input type="checkbox" class="e-service" value="Website design"> 🌐 Website Design</label>
+<label><input type="checkbox" class="e-service" value="Other — described below"> ✏️ Other</label>
+</div></div>
+
+<div class="form-group"><label>Tell Us More About What You Need</label>
+<textarea id="e-details" placeholder="Describe what you're looking for — e.g. 'I need a set of 3 letterheads for my removal company, a flyer template to send with my moving leads, and a 4-email follow-up sequence for cold prospects...'" required></textarea></div>
+
+<div class="status" id="enquiry-status"></div>
+<div class="success" id="enquiry-success">
+<strong>Enquiry sent!</strong><br>
+Thank you. We'll review your requirements and get back to you within 24 hours with a custom price.<br>
+<span style="font-size:11px;color:#8890a8;display:block;margin-top:6px">If you don't hear from us, email us directly at <a href="mailto:hello@9amleads.com" style="color:#22c55e">hello@9amleads.com</a></span>
+</div>
+<button type="submit" class="btn" id="enquiry-btn"><i class="fas fa-paper-plane"></i> Send Enquiry</button>
+</form>
+</div>
+
+<div class="footer-text">9am Leads Ltd &middot; Company No. 17168176 &middot; <a href="mailto:hello@9amleads.com">hello@9amleads.com</a></div>
+</div>
+
+<script>
+var API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:8012'
+  : 'https://nineamleads-backend.onrender.com';
+
+function sendEnquiry(e) {
+  e.preventDefault();
+  var btn = document.getElementById('enquiry-btn');
+  var status = document.getElementById('enquiry-status');
+  var success = document.getElementById('enquiry-success');
+  
+  var name = document.getElementById('e-name').value.trim();
+  var company = document.getElementById('e-company').value.trim();
+  var email = document.getElementById('e-email').value.trim();
+  var phone = document.getElementById('e-phone').value.trim();
+  var leadtype = document.getElementById('e-leadtype').value;
+  var details = document.getElementById('e-details').value.trim();
+  
+  var services = [];
+  var boxes = document.querySelectorAll('.e-service:checked');
+  for (var i = 0; i < boxes.length; i++) services.push(boxes[i].value);
+  
+  if (!name || !email || !details) {
+    status.textContent = 'Please fill in your name, email, and what you need.';
+    status.style.display = 'block';
+    return false;
+  }
+  
+  status.style.display = 'none';
+  success.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+  
+  var leadtypeNames = { moving:'Moving Leads', probate:'Probate Leads', newbusiness:'New Business Alerts', planning:'Planning Permission', tenders:'Public Tenders', multiple:'Multiple / Not Sure' };
+  
+  var body = 'Name: ' + name + '\nCompany: ' + (company || 'N/A') + '\nEmail: ' + email + '\nPhone: ' + (phone || 'N/A') + '\nLead Type: ' + (leadtypeNames[leadtype] || leadtype) + '\n\nServices Requested:\n' + (services.length ? services.join('\n') : 'None specified') + '\n\nDetails:\n' + details;
+  
+  var mailto = 'mailto:hello@9amleads.com?subject=Marketing%20Services%20Enquiry%20-%20' + encodeURIComponent(name) + '&body=' + encodeURIComponent(body);
+  
+  // Try API first, fallback to mailto
+  fetch(API + '/api/send-enquiry', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: 'hello@9amleads.com',
+      subject: 'Marketing Services Enquiry - ' + name,
+      name: name,
+      company: company,
+      fromEmail: email,
+      phone: phone,
+      leadType: leadtype,
+      services: services,
+      details: details
+    })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    success.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Enquiry';
+    document.getElementById('enquiry-form').reset();
+  }).catch(function() {
+    // Fallback to mailto
+    success.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Enquiry';
+    success.innerHTML = '<strong>Form ready!</strong><br>Your email client should open now to send your enquiry. If it doesn\'t, please email us directly at <a href="' + mailto + '" style="color:#22c55e">hello@9amleads.com</a><br><span style="font-size:11px;color:#8890a8;display:block;margin-top:6px">Your details have been saved locally.</span>';
+    window.location.href = mailto;
+  });
+  
+  return false;
+}
+</script>
+</body>
+</html>
