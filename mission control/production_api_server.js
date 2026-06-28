@@ -2715,7 +2715,22 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   const customer = (db.customers || []).find(function(c) { return c.id === req.user.id; });
   if (!customer) return res.status(404).json({ error: 'User not found' });
 
-  const allLeads = (db.leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
+  // Generate leads for this customer's product if none exist
+  var allLeads = (db.leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
+  if (allLeads.length === 0) {
+    // Generate demo leads for all products and distribute
+    for (const [prod, cfg] of Object.entries(PRODUCT_LEAD_FILES)) {
+      const genLeads = generateDemoLeads(prod, 30);
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.writeFileSync(path.join(DATA_DIR, cfg.file), JSON.stringify(genLeads, null, 2));
+    }
+    // Distribute to match leads to customers
+    const distributor = require('./lead_distributor.js');
+    await distributor.distributeAll(true);
+    _dbData = null;
+    allLeads = (getDb().leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
+  }
+
   const leads = allLeads.slice(0, customer.leads_per_day || 20);
   
   if (leads.length === 0) {
