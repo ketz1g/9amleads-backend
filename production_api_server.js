@@ -478,16 +478,17 @@ app.post('/api/auth/signup', async (req, res) => {
     customer.email_verified = 0;
     saveDb();
 
-    // Send verification email
-    try {
-      const verifyUrl = PUBLIC_URL.replace(/\/+$/, '') + '/api/auth/verify-email?token=' + verification_token;
-      await sendBrevoEmail(
-        { email: customer.email, name: customer.contact_name || customer.company },
-        'Verify your 9amLeads account',
-        '<h2>Welcome to 9amLeads!</h2><p>Please verify your email address by clicking the link below:</p><p><a href="' + verifyUrl + '">Verify Email</a></p><p>Your free 7-day trial has started. You\'ll receive your first leads at 9am tomorrow.</p>'
-      );
-    } catch (e) {
-      console.log('Verification email skipped:', e.message);
+    if (BREVO_API_KEY && !customer.email.includes('+') && !customer.email.endsWith('@test.com') && !customer.email.endsWith('@9amleads.com')) {
+      try {
+        const verifyUrl = PUBLIC_URL.replace(/\/+$/, '') + '/api/auth/verify-email?token=' + verification_token;
+        await sendBrevoEmail(
+          { email: customer.email, name: customer.contact_name || customer.company },
+          'Verify your 9amLeads account',
+          '<h2>Welcome to 9amLeads!</h2><p>Please verify your email address by clicking the link below:</p><p><a href="' + verifyUrl + '">Verify Email</a></p><p>Your free 7-day trial has started. You\'ll receive your first leads at 9am tomorrow.</p>'
+        );
+      } catch (e) {
+        console.log('Verification email skipped:', e.message);
+      }
     }
 
     // Save to Brevo contact list
