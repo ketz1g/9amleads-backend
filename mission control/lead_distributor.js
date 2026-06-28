@@ -250,6 +250,7 @@ function normaliseLead(rawLead, product, customerId) {
     base.targetDecisionDate = rawLead.targetDecisionDate || '';
     base.council = rawLead.council || rawLead.authority || '';
     base.applicationRef = rawLead.applicationRef || '';
+    base.planningKeyVal = rawLead.planningKeyVal || '';
   }
 
   // Tenders specific fields
@@ -263,6 +264,9 @@ function normaliseLead(rawLead, product, customerId) {
     base.publishedDate = rawLead.publishedDate || '';
     base.closingDate = rawLead.closingDate || '';
     base.cpvCodes = rawLead.cpvCodes || [];
+    base.tenderNoticeId = rawLead.tenderNoticeId || '';
+    base.contractValue = rawLead.contractValue || '';
+    base.contractValueLabel = rawLead.contractValueLabel || '';
   }
 
   return base;
