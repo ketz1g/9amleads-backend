@@ -390,21 +390,7 @@ async function runForCustomer(customerId, useSampleData) {
   // Scrape leads via Apify (real data) or sample data
   let leads = [];
   if (!useSampleData) {
-    console.log('  Fetching live data from Apify Rightmove scraper...');
-    for (const pc of customer.postcodes) {
-      const apifyLeads = await fetchRightmoveApify(pc, customer.minBedrooms, customer.maxBedrooms, customer.maxPrice);
-      console.log('    ' + pc + ': ' + apifyLeads.length + ' SSTC properties');
-      leads.push(...apifyLeads.map(l => ({ ...l, customerId, postcodeArea: pc })));
-    }
-    // Deduplicate
-    const seen = new Set();
-    leads = leads.filter(l => {
-      const key = l.address.toLowerCase().trim();
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    console.log('  Total unique leads: ' + leads.length);
+    console.log('  (Apify scraper disabled — will use sample data)');
   }
   
   // Fall back to sample data if Apify returned nothing or --sample flag used

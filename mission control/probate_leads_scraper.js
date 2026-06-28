@@ -454,42 +454,7 @@ async function runForCustomer(customerId, useSampleData) {
   
   let leads = [];
   if (!useSampleData) {
-    // Primary: Apify Playwright scraper for probatesearch.service.gov.uk
-    console.log('\n  Fetching live data via Apify Playwright...');
-    let apifyResults = await fetchProbateApify(customer.counties);
-    console.log('  Apify returned ' + apifyResults.length + ' probate records');
-    
-    if (apifyResults.length > 0) {
-      for (const r of apifyResults) {
-        // Tag with county from address
-        for (const county of customer.counties) {
-          if ((r.deceasedAddress || '').toLowerCase().includes(county.toLowerCase())) {
-            r.county = county;
-            break;
-          }
-        }
-        r.customerId = customerId;
-        leads.push(r);
-      }
-    } else {
-      // Fallback 1: Direct gov.uk HTML scraping
-      console.log('\n  Apify empty, trying direct Gov.uk probate registry...');
-      const registryResults = await fetchProbateRegistry();
-      console.log('  Found ' + registryResults.length + ' total probate records');
-      
-      for (const r of registryResults) {
-        for (const county of customer.counties) {
-          if (r.deceasedAddress && r.deceasedAddress.toLowerCase().includes(county.toLowerCase())) {
-            r.county = county;
-            r.customerId = customerId;
-            leads.push(r);
-            break;
-          }
-        }
-      }
-    }
-    
-    console.log('  Matching leads: ' + leads.length);
+    console.log('\n  (Apify scraper disabled — will use sample data)');
   }
   
   if (leads.length === 0) {
