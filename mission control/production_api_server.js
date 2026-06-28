@@ -1215,26 +1215,37 @@ async function addBrevoContact(customer) {
 }
 
 async function sendBrevoEmail(to, subject, htmlContent) {
-  if (!BREVO_API_KEY && !process.env.BREVO_SMTP_KEY) return;
-  const nodemailer = require('nodemailer');
-  const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
-    secure: false,
-    auth: { user: 'hello@9amleads.com', pass: process.env.BREVO_SMTP_KEY || BREVO_API_KEY }
+  if (!BREVO_API_KEY) return;
+  const https = require('https');
+  const data = JSON.stringify({
+    sender: { name: '9amLeads', email: 'hello@9amleads.com' },
+    to: [{ email: to.email, name: to.name }],
+    subject,
+    htmlContent
   });
-  try {
-    const info = await transporter.sendMail({
-      from: '"9amLeads" <hello@9amleads.com>',
-      to: to.email,
-      subject: subject,
-      html: htmlContent
+
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: 'api.brevo.com',
+      path: '/v3/smtp/email',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'Content-Length': Buffer.byteLength(data)
+      }
+    }, (res) => {
+      let body = '';
+      res.on('data', c => body += c);
+      res.on('end', () => {
+        if (res.statusCode < 300) resolve(JSON.parse(body));
+        else reject(new Error(body));
+      });
     });
-    return info;
-  } catch (err) {
-    console.error('[BREVO SMTP ERROR]', err.message);
-    throw err;
-  }
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
 }
 
 // ===== 9AM DAILY DELIVERY SCHEDULER =====
