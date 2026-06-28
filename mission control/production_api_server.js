@@ -556,18 +556,19 @@ app.post('/api/auth/signup', async (req, res) => {
 app.get('/api/auth/verify-email', async (req, res) => {
   try {
     const { token } = req.query;
-    if (!token) return res.status(400).json({ error: 'Verification token required' });
+    if (!token) return res.redirect(PUBLIC_URL + '/portal/?error=missing_token');
 
     const customer = db.prepare('SELECT * FROM customers WHERE verification_token = ?').get(token);
-    if (!customer) return res.status(400).json({ error: 'Invalid or expired verification token' });
+    if (!customer) return res.redirect(PUBLIC_URL + '/portal/?error=invalid_token');
 
     db.prepare('UPDATE customers SET email_verified = 1, verification_token = NULL WHERE id = ?').run(customer.id);
     saveDb();
 
-    res.json({ message: 'Email verified successfully. You can now log in.' });
+    // Redirect to portal with success — user can now log in
+    res.redirect(PUBLIC_URL + '/portal/?verified=true');
   } catch (e) {
     console.error('Verification error:', e);
-    res.status(500).json({ error: 'Internal server error' });
+    res.redirect(PUBLIC_URL + '/portal/?error=server_error');
   }
 });
 
