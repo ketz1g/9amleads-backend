@@ -2599,23 +2599,24 @@ function generateLeadEmailHTML(customer, leads) {
   const accent = customer.product === 'moving' ? '#ff6b35' : customer.product === 'probate' ? '#a855f7' : customer.product === 'newbusiness' ? '#06b6d4' : customer.product === 'planning' ? '#10b981' : '#6366f1';
   const productName = customer.product || 'opportunities';
   const dashboardUrl = 'https://www.9amleads.com/portal/dashboard.html';
-  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></head><body style="margin:0;padding:0;background-color:#0a0a0f;font-family:Inter,Arial,sans-serif;color:#222">';
-  body += '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" bgcolor="#0a0a0f" style="background-color:#0a0a0f;padding:24px 16px">';
-  body += '<table width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.06)">';
+  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></head><body style="margin:0;padding:0;background:#050508;font-family:Inter,Arial,sans-serif">';
+  body += '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 16px">';
+  body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#0a0a0f;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.04)">';
 
   // Header with homepage logo
-  body += '<tr><td style="background:#ffffff;padding:28px 28px 20px;text-align:center">';
-  body += '<div style="display:inline-flex;align-items:center;gap:10px"><div style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(14,165,233,0.15),rgba(6,182,212,0.1))"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="40" stroke="#333" stroke-width="5"/><circle cx="50" cy="50" r="36" stroke="rgba(0,0,0,0.06)" stroke-width="1"/><circle cx="50" cy="50" r="3" fill="#0ea5e9"/><line x1="50" y1="50" x2="50" y2="17" stroke="#0ea5e9" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="23" y2="50" stroke="#333" stroke-width="5.5" stroke-linecap="round"/><circle cx="42" cy="8" r="5" fill="#0ea5e9" opacity="0.8"/><circle cx="58" cy="8" r="5" fill="#0ea5e9" opacity="0.8"/></svg></div><div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:900;color:#111;letter-spacing:-.5px">9am<span style="color:' + accent + '">Leads</span></div></div>';
+  body += '<tr><td style="background:linear-gradient(135deg,#0a0a0f,#0f111a);padding:36px 28px 28px;border-bottom:1px solid rgba(255,255,255,0.04);text-align:center">';
+  body += '<div style="display:inline-flex;align-items:center;gap:12px"><div style="width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(14,165,233,0.15),rgba(6,182,212,0.1))"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="40" stroke="#eee" stroke-width="5"/><circle cx="50" cy="50" r="36" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><circle cx="50" cy="50" r="3" fill="#0ea5e9"/><line x1="50" y1="50" x2="50" y2="17" stroke="#0ea5e9" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="23" y2="50" stroke="#eee" stroke-width="5.5" stroke-linecap="round"/><circle cx="42" cy="8" r="5" fill="#0ea5e9" opacity="0.8"/><circle cx="58" cy="8" r="5" fill="#0ea5e9" opacity="0.8"/></svg></div><div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:900;color:#fff;letter-spacing:-.5px">9am<span style="color:' + accent + '">Leads</span></div></div>';
+  body += '<p style="color:#777;font-size:10px;margin:8px 0 0;text-transform:uppercase;letter-spacing:2px">' + (customer.lead_type || 'Daily Opportunities') + '</p>';
   body += '</td></tr>';
 
   // Greeting + stats
-  body += '<tr><td style="background:#ffffff;padding:28px 28px 8px;text-align:center">';
-  body += '<h2 style="font-family:Outfit,sans-serif;font-size:18px;font-weight:800;color:#111;margin:0 0 4px;line-height:1.2;text-align:center">Good Morning, ' + (customer.company || 'there') + '!</h2>';
-  body += '<p style="color:#666;font-size:12px;margin:0 0 18px;line-height:1.5;text-align:center">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
+  body += '<tr><td style="background:#0a0a0a;padding:28px 28px 8px;text-align:center">';
+  body += '<h2 style="font-family:Outfit,sans-serif;font-size:18px;font-weight:800;color:#fff;margin:0 0 4px;line-height:1.2;text-align:center">Good Morning, ' + (customer.company || 'there') + '!</h2>';
+  body += '<p style="color:#999;font-size:12px;margin:0 0 18px;line-height:1.5;text-align:center">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
   body += '<div style="display:inline-flex;gap:8px;margin-bottom:18px">';
-  body += '<div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);border-radius:8px;padding:8px 18px;text-align:center"><div style="font-size:22px;font-weight:800;color:#22c55e">' + leads.length + '</div><div style="font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.5px">Today\'s Opportunities</div></div>';
+  body += '<div style="background:#0a0a0a;border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px 18px;text-align:center"><div style="font-size:22px;font-weight:800;color:#22c55e">' + leads.length + '</div><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px">Today\'s Opportunities</div></div>';
   body += '</div>';
-  body += '<p style="font-size:13px;color:#555;line-height:1.7;margin:0 0 4px;text-align:left;padding:14px 16px;background:#f8f9fb;border:1px solid rgba(0,0,0,0.04);border-radius:8px"><strong style="color:#111">How to reach each lead:</strong><br>Each card below shows available contact info. Click any website link to visit their site. If no email or phone is listed, use the address provided \u2014 post a business flyer + introduction letter, or visit in person. A face-to-face introduction beats any email.<br><span style="color:#999">Most competitors only email. Be different. Act within 30 minutes to be first.</span></p>';
+  body += '<p style="font-size:12px;color:#aaa;line-height:1.7;margin:0 0 4px;text-align:left;padding:14px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:8px"><strong style="color:#ddd">How to reach each lead:</strong><br>Each card below shows available contact info. Click any website link to visit their site. If no email or phone is listed, use the address provided \u2014 post a business flyer + introduction letter, or visit in person. A face-to-face introduction beats any email.<br><span style="color:#888">Most competitors only email. Be different. Act within 30 minutes to be first.</span></p>';
   body += '</td></tr>';
 
   // Lead cards
@@ -2627,12 +2628,12 @@ function generateLeadEmailHTML(customer, leads) {
 
     var typeLabel = productName === 'moving' ? 'Moving Lead' : productName === 'probate' ? 'Probate Lead' : productName === 'newbusiness' ? 'New Business' : productName === 'planning' ? 'Planning Application' : 'Tender Opportunity';
 
-    body += '<div style="background:#ffffff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:18px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04)">';
+    body += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.2)">';
 
     // Title row
     body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
     body += '<span style="padding:3px 10px;border-radius:4px;background:rgba(0,0,0,0.06);color:' + accent + ';font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap">' + typeLabel + '</span>';
-    body += '<span style="font-size:14px;font-weight:700;color:#111;flex:1;line-height:1.4">' + (d.address || d.name || d.companyName || l.address || 'Opportunity') + '</span>';
+    body += '<span style="font-size:14px;font-weight:700;color:#fff;flex:1;line-height:1.4">' + (d.address || d.name || d.companyName || l.address || 'Opportunity') + '</span>';
     body += '</div>';
 
     // Details in two-column grid
@@ -2676,7 +2677,7 @@ function generateLeadEmailHTML(customer, leads) {
     if (hasWebsite) methods.push('\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:' + accent + ';text-decoration:none" target="_blank">' + d.website + '</a>');
     if (hasAddress) methods.push('\uD83D\uDCCD ' + (d.address || ''));
     if (hasPhone) methods.push('\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone));
-    body += '<div style="margin-top:10px;padding:8px 10px;background:#f8f9fb;border:1px solid rgba(0,0,0,0.04);border-radius:6px;font-size:12px;color:#555">';
+    body += '<div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;font-size:12px;color:#bbb">';
     if (methods.length > 0) {
       for (var m = 0; m < methods.length; m++) body += '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;margin-bottom:2px">' + methods[m] + '</span>';
     } else {
@@ -2694,16 +2695,16 @@ function generateLeadEmailHTML(customer, leads) {
     }
 
     // Per-lead contact tip
-    body += '<div style="margin-top:8px;padding:8px 12px;background:#f8f9fb;border:1px solid rgba(0,0,0,0.04);border-radius:6px;font-size:11px;color:#444;line-height:1.6">';
+    body += '<div style="margin-top:8px;padding:8px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;font-size:11px;color:#bbb;line-height:1.6">';
     if (hasWebsite) {
-      body += '\uD83C\uDF10 <strong style="color:#333">Visit their website</strong> \u2014 click the link above to learn more about their business.<br>';
+      body += '\uD83C\uDF10 <strong style="color:#ddd">Visit their website</strong> \u2014 click the link above to learn more about their business.<br>';
     }
     if (!hasEmail && !hasPhone) {
-      body += '<strong style="color:#333">No email or phone available:</strong>\u00A0 Send a business flyer + personal introduction letter to their address, or visit in person. You can also search their name/company on LinkedIn.';
+      body += '<strong style="color:#ddd">No email or phone available:</strong>\u00A0 Send a business flyer + personal introduction letter to their address, or visit in person. You can also search their name/company on LinkedIn.';
     } else if (!hasPhone) {
-      body += '<strong style="color:#333">How to reach them:</strong>\u00A0 Email first, then follow up with a posted flyer + introduction letter to their address, or visit in person.';
+      body += '<strong style="color:#ddd">How to reach them:</strong>\u00A0 Email first, then follow up with a posted flyer + introduction letter to their address, or visit in person.';
     } else {
-      body += '<strong style="color:#333">How to reach them:</strong>\u00A0 Email first or call, then follow up with a posted flyer + introduction letter to their address.';
+      body += '<strong style="color:#ddd">How to reach them:</strong>\u00A0 Email first or call, then follow up with a posted flyer + introduction letter to their address.';
     }
     body += '</div>';
     body += '</div>';
@@ -2713,10 +2714,10 @@ function generateLeadEmailHTML(customer, leads) {
   body += '</td></tr>';
 
   // Footer
-  body += '<tr><td style="border-top:1px solid rgba(0,0,0,0.06);padding:24px 32px;text-align:center">';
-  body += '<p style="color:#666;font-size:11px;margin:0 0 10px;line-height:1.5">Use the AI-drafted outreach scripts in your dashboard to contact these leads. Send your business flyer with a personal introduction letter to the lead\u2019s address or visit in person \u2014 most competitors only email.</p>';
+  body += '<tr><td style="background:#0a0a0a;padding:24px 32px;border-top:1px solid rgba(255,255,255,0.04);text-align:center">';
+  body += '<p style="color:#aaa;font-size:11px;margin:0 0 10px;line-height:1.5">Use the AI-drafted outreach scripts in your dashboard to contact these leads. Send your business flyer with a personal introduction letter to the lead\u2019s address or visit in person \u2014 most competitors only email.</p>';
   body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:600;font-size:13px">View Full Dashboard</a>';
-  body += '<p style="color:#666;font-size:9px;margin:12px 0 0;line-height:1.5;text-transform:uppercase;letter-spacing:.5px">9am Leads Ltd &bull; Company No. 17168176 &bull; Delivered at 9am by 9amLeads</p>';
+  body += '<p style="color:#888;font-size:9px;margin:12px 0 0;line-height:1.5;text-transform:uppercase;letter-spacing:.5px">9am Leads Ltd &bull; Company No. 17168176 &bull; Delivered at 9am by 9amLeads</p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
