@@ -2568,85 +2568,113 @@ app.get('/api/health', (req, res) => {
 // Generate lead email HTML (reuses existing template pattern)
 function generateLeadEmailHTML(customer, leads) {
   const accent = customer.product === 'moving' ? '#ff6b35' : customer.product === 'probate' ? '#a855f7' : customer.product === 'newbusiness' ? '#06b6d4' : customer.product === 'planning' ? '#10b981' : '#6366f1';
+  const productName = customer.product || 'opportunities';
   const dashboardUrl = 'https://www.9amleads.com/portal/dashboard.html';
-  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></head><body style="margin:0;padding:0;background:#000;font-family:Inter,Arial,sans-serif">';
+  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></head><body style="margin:0;padding:0;background:#050508;font-family:Inter,Arial,sans-serif">';
   body += '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 16px">';
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
-  body += '<tr><td style="background:#0a0a0a;padding:28px;border-bottom:3px solid ' + accent + ';text-align:center">';
-  body += '<div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:800;color:#fff"><span style="color:' + accent + '">9am</span>Leads</div>';
-  body += '<p style="color:#888;font-size:12px;margin-top:4px;text-transform:uppercase;letter-spacing:1px">' + (customer.lead_type || 'Daily Opportunities') + '</p>';
+
+  // Header with logo
+  body += '<tr><td style="background:linear-gradient(135deg,#0a0a0f,#0f111a);padding:32px 28px 24px;border-bottom:3px solid ' + accent + ';text-align:center">';
+  body += '<div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:38px;height:38px;background:linear-gradient(135deg,' + accent + ',#0284c7);border-radius:10px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-family:Outfit,sans-serif;font-size:18px;font-weight:900">9</div><div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff">9am<span style="color:' + accent + '">Leads</span></div></div>';
+  body += '<p style="color:#555;font-size:10px;margin:0;text-transform:uppercase;letter-spacing:2px">' + (customer.lead_type || 'Daily Opportunities') + '</p>';
   body += '</td></tr>';
 
-  body += '<tr><td style="background:#0a0a0a;padding:28px 32px;text-align:center">';
-  body += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:' + accent + ';margin-bottom:4px">Daily Opportunity Sheet</div>';
-  body += '<h2 style="font-family:Outfit,sans-serif;font-size:20px;font-weight:800;color:#fff;margin:0 0 4px;line-height:1.2">Good Morning, ' + (customer.company || 'there') + '!</h2>';
-  body += '<p style="color:#888;font-size:13px;margin:0 0 16px;line-height:1.5">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '. Every lead is ready to action.</p>';
-
-  // Stats bar
-  var hotCount = leads.filter(function(l) { var s = l.opportunity_score || 0; return s >= 80; }).length;
-  var warmCount = leads.filter(function(l) { var s = l.opportunity_score || 0; return s >= 50 && s < 80; }).length;
-  var coldCount = leads.filter(function(l) { var s = l.opportunity_score || 0; return s < 50; }).length;
-  body += '<div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px">';
-  body += '<div style="background:#0a0a0a;border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 14px;text-align:center"><div style="font-size:20px;font-weight:800;color:#22c55e">' + leads.length + '</div><div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.5px">Total</div></div>';
-  body += '<div style="background:#0a0a0a;border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 14px;text-align:center"><div style="font-size:20px;font-weight:800;color:#22c55e">' + leads.length + '</div><div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.5px">Today\'s Leads</div></div>';
+  // Greeting + stats
+  body += '<tr><td style="background:#0a0a0f;padding:32px 28px 8px;text-align:center">';
+  body += '<h2 style="font-family:Outfit,sans-serif;font-size:18px;font-weight:800;color:#fff;margin:0 0 4px;line-height:1.2">Good Morning, ' + (customer.company || 'there') + '!</h2>';
+  body += '<p style="color:#777;font-size:12px;margin:0 0 18px;line-height:1.5">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
+  body += '<div style="display:inline-flex;gap:8px;margin-bottom:18px">';
+  body += '<div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);border-radius:8px;padding:8px 18px;text-align:center"><div style="font-size:22px;font-weight:800;color:#22c55e">' + leads.length + '</div><div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.5px">Today\'s Opportunities</div></div>';
   body += '</div>';
-
-  body += '<p style="font-size:13px;color:#999;line-height:1.6;margin:0 0 8px;text-align:left">Call within 30 minutes. You are the first person to see these opportunities. AI-drafted outreach messages are ready in your dashboard.</p>';
+  body += '<p style="font-size:12px;color:#777;line-height:1.6;margin:0 0 4px;text-align:left;padding:12px 14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:8px"><strong style="color:#bbb">Contact within 30 minutes.</strong> You are the first person to see these opportunities. AI-drafted outreach messages are ready in your dashboard.</p>';
   body += '</td></tr>';
 
   // Lead cards
-  body += '<tr><td style="background:#0a0a0a;padding:0 32px 28px">';
+  body += '<tr><td style="background:#0a0a0f;padding:20px 28px 28px">';
   for (var i = 0; i < leads.length; i++) {
     var l = leads[i];
     var d = l.data || {};
     if (typeof d === 'string') { try { d = JSON.parse(d); } catch(e) { d = {}; } }
-    var score = l.opportunity_score || 0;
-    var scoreColor = score >= 80 ? '#22c55e' : (score >= 50 ? '#f59e0b' : '#0ea5e9');
-    var scoreLabel = score >= 80 ? 'HOT ' + score : (score >= 50 ? 'WARM ' + score : 'COLD ' + score);
-    var reasons = l.opportunity_reasons || [];
-    var reasonStr = reasons.length > 0 ? reasons.slice(0, 2).join(' • ') : '';
 
-    body += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-bottom:10px">';
-    body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
-    body += '<span style="padding:3px 10px;border-radius:4px;background:' + scoreColor + ';color:#fff;font-size:10px;font-weight:700;letter-spacing:.3px">' + scoreLabel + '</span>';
-    body += '<span style="font-size:13px;font-weight:600;color:#fff;flex:1">' + (d.address || d.name || d.companyName || l.address || 'Opportunity') + '</span>';
+    var typeLabel = productName === 'moving' ? 'Moving Lead' : productName === 'probate' ? 'Probate Lead' : productName === 'newbusiness' ? 'New Business' : productName === 'planning' ? 'Planning Application' : 'Tender Opportunity';
+
+    body += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.2)">';
+
+    // Title row
+    body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
+    body += '<span style="padding:3px 10px;border-radius:4px;background:rgba(255,255,255,0.06);color:' + accent + ';font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap">' + typeLabel + '</span>';
+    body += '<span style="font-size:14px;font-weight:700;color:#fff;flex:1;line-height:1.4">' + (d.address || d.name || d.companyName || l.address || 'Opportunity') + '</span>';
     body += '</div>';
 
-    var details = [];
-    if (d.bedrooms) details.push(d.bedrooms + ' bed ' + (d.propertyType || ''));
-    if (d.status) details.push(d.status);
-    if (d.price) details.push('£' + Number(d.price).toLocaleString());
-    if (d.estateValue) details.push('Estate: £' + Number(d.estateValue).toLocaleString());
-    if (d.contractValue) details.push('Value: £' + Number(d.contractValue).toLocaleString());
-    if (d.agent) details.push('Agent: ' + d.agent);
-    if (d.ownerEmail) details.push('Email: ' + d.ownerEmail);
-    if (d.website) details.push('Web: ' + d.website);
-    if (d.buyerEmail) details.push('Email: ' + d.buyerEmail);
-    if (d.phone) details.push('Phone: ' + d.phone);
-    if (d.legalAdvisorEmail) details.push('Solicitor: ' + d.legalAdvisorEmail);
-    if (d.companyName) details.push(d.sicDescription || '');
-    if (d.applicant) details.push('Applicant: ' + d.applicant);
-    if (d.council) details.push(d.council);
-    if (d.buyer) details.push('Buyer: ' + d.buyer);
-    if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); details.push('Deadline: ' + days + ' days'); }
-    if (d.incorporationDate) details.push('Incorporated: ' + new Date(d.incorporationDate).toLocaleDateString());
-    // Show phone not available if missing, with suggestions
-    var hasPhone = d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone;
-    if (details.length > 0 && !hasPhone) {
-      body += '<div style="font-size:10px;color:#888;margin-top:6px;padding:6px 8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px">📞 Phone not available <span style="color:#666">— try searching the company/buyer name on Google or LinkedIn to find a direct contact number</span></div>';
+    // Details in two-column grid
+    var leftCol = [], rightCol = [];
+    if (d.postcode) leftCol.push({ label: 'Postcode', value: d.postcode });
+    if (d.city) leftCol.push({ label: 'City', value: d.city });
+    if (d.bedrooms) leftCol.push({ label: 'Type', value: d.bedrooms + ' bed ' + (d.propertyType || '') });
+    if (d.status) leftCol.push({ label: 'Status', value: d.status });
+    if (d.price) leftCol.push({ label: 'Property Value', value: '\u00a3' + Number(d.price).toLocaleString() });
+    if (d.estateValue) leftCol.push({ label: 'Estate Value', value: '\u00a3' + Number(d.estateValue).toLocaleString() });
+    if (d.contractValue) leftCol.push({ label: 'Contract Value', value: '\u00a3' + Number(d.contractValue).toLocaleString() });
+    if (d.estimatedMoveWindow) rightCol.push({ label: 'Move Window', value: d.estimatedMoveWindow });
+    if (d.agent) rightCol.push({ label: 'Agent', value: d.agent });
+    if (d.council) rightCol.push({ label: 'Council', value: d.council });
+    if (d.applicationRef) rightCol.push({ label: 'Reference', value: d.applicationRef });
+    if (d.applicant) rightCol.push({ label: 'Applicant', value: d.applicant });
+    if (d.buyer) rightCol.push({ label: 'Buyer', value: d.buyer });
+    if (d.deceasedName) rightCol.push({ label: 'Deceased', value: d.deceasedName });
+    if (d.registry) rightCol.push({ label: 'Registry', value: d.registry });
+    if (d.companyName) rightCol.push({ label: 'Company', value: d.companyName });
+    if (d.sicCode) rightCol.push({ label: 'SIC Code', value: d.sicCode });
+    if (d.incorporationDate) rightCol.push({ label: 'Incorporated', value: new Date(d.incorporationDate).toLocaleDateString() });
+    if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); rightCol.push({ label: 'Deadline', value: days + ' days (' + new Date(d.closingDate).toLocaleDateString() + ')' }); }
+
+    body += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+    body += '<div style="flex:1;min-width:140px">';
+    for (var j = 0; j < leftCol.length; j++) {
+      body += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:11px"><span style="color:#888">' + leftCol[j].label + '</span><span style="color:#ddd;font-weight:500;text-align:right">' + leftCol[j].value + '</span></div>';
+    }
+    body += '</div>';
+    body += '<div style="flex:1;min-width:140px">';
+    for (var j = 0; j < rightCol.length; j++) {
+      body += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:11px"><span style="color:#888">' + rightCol[j].label + '</span><span style="color:#ddd;font-weight:500;text-align:right">' + rightCol[j].value + '</span></div>';
+    }
+    body += '</div>';
+    body += '</div>';
+
+    // Contact info strip
+    var hasEmail = d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail;
+    var hasWebsite = d.website;
+    var hasAddress = d.address;
+    var noPhone = !(d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone);
+    body += '<div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;font-size:11px;color:#aaa">';
+    if (hasEmail) body += '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px">\u2709\uFE0F ' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail) + '</span>';
+    if (hasWebsite) body += '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px">\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:' + accent + ';text-decoration:none" target="_blank">' + d.website + '</a></span>';
+    if (hasAddress) body += '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px">\uD83D\uDCCD ' + (d.address || '') + '</span>';
+    if (noPhone) body += '<span style="display:inline-flex;align-items:center;gap:4px;color:#555;font-style:italic">\uD83D\uDCDE No phone available</span>';
+    body += '</div>';
+
+    // Direct link for planning and tenders
+    if (productName === 'planning' && d.applicationRef && d.council) {
+      var councilSlug = d.council.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
+      body += '<div style="margin-top:8px"><a href="https://www.' + councilSlug + '.gov.uk/planning-applications/' + encodeURIComponent(d.applicationRef) + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Application \u2192</a></div>';
+    } else if (productName === 'tenders' && d.title) {
+      var tenderSlug = encodeURIComponent((d.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, ''));
+      body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder?q=' + tenderSlug + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View on Contracts Finder \u2192</a></div>';
     }
 
-    body += '<div style="font-size:12px;color:#999;line-height:1.6;margin-bottom:2px">' + details.join(' | ') + '</div>';
-    if (reasonStr) body += '<div style="font-size:10px;color:#666;font-style:italic;margin-top:4px">' + reasonStr + '</div>';
+    // AI outreach tip
+    body += '<div style="margin-top:8px;font-size:10px;color:#555;font-style:italic">\uD83E\uDD16 AI outreach message ready \u2014 open your dashboard to use it.</div>';
+
     body += '</div>';
   }
   body += '</td></tr>';
 
   // Footer
-  body += '<tr><td style="background:#0a0a0a;padding:24px 32px;border-top:1px solid rgba(255,255,255,0.04);text-align:center">';
-  body += '<p style="color:#888;font-size:11px;margin:0 0 8px;line-height:1.5">Use the AI-drafted outreach scripts in your dashboard to contact these leads. Mark them as contacted/won/lost to track your pipeline.</p>';
+  body += '<tr><td style="background:#0a0a0f;padding:24px 32px;border-top:1px solid rgba(255,255,255,0.04);text-align:center">';
+  body += '<p style="color:#888;font-size:11px;margin:0 0 10px;line-height:1.5">Use the AI-drafted outreach scripts in your dashboard to contact these leads. Send your business flyer with a personal introduction letter to the lead\u2019s address or visit in person \u2014 most competitors only email.</p>';
   body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:600;font-size:13px">View Full Dashboard</a>';
-  body += '<p style="color:#555;font-size:10px;margin:12px 0 0;line-height:1.5">9am Leads Ltd &bull; Company No. 17168176<br>Delivered at 9am by 9amLeads</p>';
+  body += '<p style="color:#444;font-size:9px;margin:12px 0 0;line-height:1.5;text-transform:uppercase;letter-spacing:.5px">9am Leads Ltd &bull; Company No. 17168176 &bull; Delivered at 9am by 9amLeads</p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
