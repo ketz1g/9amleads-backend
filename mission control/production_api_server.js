@@ -2583,18 +2583,18 @@ function generateLeadEmailHTML(customer, leads) {
 
   // Header with logo
   body += '<tr><td style="background:linear-gradient(135deg,#0a0a0f,#0f111a);padding:36px 28px 28px;border-bottom:3px solid ' + accent + ';text-align:center">';
-  body += '<div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:44px;height:44px;background:linear-gradient(135deg,' + accent + ',#0284c7);border-radius:12px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-family:Outfit,sans-serif;font-size:20px;font-weight:900;box-shadow:0 4px 16px rgba(0,0,0,0.3)">9</div><div style="text-align:left"><div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:800;color:#fff;line-height:1">9am<span style="color:' + accent + '">Leads</span></div><div style="font-size:9px;color:#555;letter-spacing:1px;text-transform:uppercase;margin-top:1px">Opportunity Intelligence</div></div></div>';
-  body += '<p style="color:#555;font-size:10px;margin:0;text-transform:uppercase;letter-spacing:2px">' + (customer.lead_type || 'Daily Opportunities') + '</p>';
+  body += '<div style="display:inline-flex;align-items:center;gap:14px;margin-bottom:12px"><div style="width:48px;height:48px;background:linear-gradient(135deg,' + accent + ',#0284c7);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-family:Outfit,sans-serif;font-size:22px;font-weight:900;box-shadow:0 4px 20px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08)">9</div><div style="text-align:left"><div style="font-family:Outfit,sans-serif;font-size:26px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.5px">9am<span style="color:' + accent + '">Leads</span></div><div style="font-size:10px;color:#999;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px">Opportunity Intelligence</div></div></div>';
+  body += '<p style="color:#999;font-size:10px;margin:0;text-transform:uppercase;letter-spacing:2px">' + (customer.lead_type || 'Daily Opportunities') + '</p>';
   body += '</td></tr>';
 
   // Greeting + stats
   body += '<tr><td style="background:#0a0a0f;padding:32px 28px 8px;text-align:center">';
   body += '<h2 style="font-family:Outfit,sans-serif;font-size:18px;font-weight:800;color:#fff;margin:0 0 4px;line-height:1.2">Good Morning, ' + (customer.company || 'there') + '!</h2>';
-  body += '<p style="color:#777;font-size:12px;margin:0 0 18px;line-height:1.5">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
+  body += '<p style="color:#bbb;font-size:12px;margin:0 0 18px;line-height:1.5">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
   body += '<div style="display:inline-flex;gap:8px;margin-bottom:18px">';
-  body += '<div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);border-radius:8px;padding:8px 18px;text-align:center"><div style="font-size:22px;font-weight:800;color:#22c55e">' + leads.length + '</div><div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.5px">Today\'s Opportunities</div></div>';
+  body += '<div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);border-radius:8px;padding:8px 18px;text-align:center"><div style="font-size:22px;font-weight:800;color:#22c55e">' + leads.length + '</div><div style="font-size:9px;color:#bbb;text-transform:uppercase;letter-spacing:.5px">Today\'s Opportunities</div></div>';
   body += '</div>';
-  body += '<p style="font-size:12px;color:#888;line-height:1.7;margin:0 0 4px;text-align:left;padding:14px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:8px"><strong style="color:#ccc">How to reach each lead:</strong><br>Each card below shows the available contact info. If no email or phone is listed, use the address provided \u2014 post a business flyer + introduction letter, or visit in person. A face-to-face introduction beats any email.<br><span style="color:#666">Most competitors only email. Be different. Act within 30 minutes to be first.</span></p>';
+  body += '<p style="font-size:13px;color:#ccc;line-height:1.7;margin:0 0 4px;text-align:left;padding:14px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:8px"><strong style="color:#fff">How to reach each lead:</strong><br>Each card below shows available contact info. Click any website link to visit their site. If no email or phone is listed, use the address provided \u2014 post a business flyer + introduction letter, or visit in person. A face-to-face introduction beats any email.<br><span style="color:#999">Most competitors only email. Be different. Act within 30 minutes to be first.</span></p>';
   body += '</td></tr>';
 
   // Lead cards
@@ -2659,11 +2659,11 @@ function generateLeadEmailHTML(customer, leads) {
     if (hasWebsite) methods.push('\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:' + accent + ';text-decoration:none" target="_blank">' + d.website + '</a>');
     if (hasAddress) methods.push('\uD83D\uDCCD ' + (d.address || ''));
     if (hasPhone) methods.push('\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone));
-    body += '<div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;font-size:11px;color:#aaa">';
+    body += '<div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;font-size:12px;color:#ccc">';
     if (methods.length > 0) {
       for (var m = 0; m < methods.length; m++) body += '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;margin-bottom:2px">' + methods[m] + '</span>';
     } else {
-      body += '<span style="color:#555;font-style:italic">\uD83D\uDCCD Use the address shown above to send a flyer or visit in person</span>';
+      body += '<span style="color:#999;font-style:italic">\uD83D\uDCCD Use the address shown above to send a flyer or visit in person</span>';
     }
     body += '</div>';
 
@@ -2677,14 +2677,17 @@ function generateLeadEmailHTML(customer, leads) {
       body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Tender on Contracts Finder \u2192</a></div>';
     }
 
-    // Per-lead contact tip — no email/phone? Suggest address-based methods
-    body += '<div style="margin-top:8px;padding:8px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;font-size:10px;color:#999;line-height:1.6">';
+    // Per-lead contact tip
+    body += '<div style="margin-top:8px;padding:8px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;font-size:11px;color:#bbb;line-height:1.6">';
+    if (hasWebsite) {
+      body += '\uD83C\uDF10 <strong style="color:#ddd">Visit their website</strong> \u2014 click the link above to learn more about their business.<br>';
+    }
     if (!hasEmail && !hasPhone) {
-      body += '<strong style="color:#bbb">How to reach them:</strong>\u00A0 Send a business flyer + personal introduction letter to their address, or visit in person. You can also search their name/company on LinkedIn.';
+      body += '<strong style="color:#ddd">No email or phone available:</strong>\u00A0 Send a business flyer + personal introduction letter to their address, or visit in person. You can also search their name/company on LinkedIn.';
     } else if (!hasPhone) {
-      body += '<strong style="color:#bbb">How to reach them:</strong>\u00A0 Email first, then follow up with a posted flyer + introduction letter to their address, or visit in person.';
+      body += '<strong style="color:#ddd">How to reach them:</strong>\u00A0 Email first, then follow up with a posted flyer + introduction letter to their address, or visit in person.';
     } else {
-      body += '<strong style="color:#bbb">How to reach them:</strong>\u00A0 Email first or call, then follow up with a posted flyer + introduction letter to their address.';
+      body += '<strong style="color:#ddd">How to reach them:</strong>\u00A0 Email first or call, then follow up with a posted flyer + introduction letter to their address.';
     }
     body += '</div>';
     body += '</div>';
@@ -2695,9 +2698,9 @@ function generateLeadEmailHTML(customer, leads) {
 
   // Footer
   body += '<tr><td style="background:#0a0a0f;padding:24px 32px;border-top:1px solid rgba(255,255,255,0.04);text-align:center">';
-  body += '<p style="color:#888;font-size:11px;margin:0 0 10px;line-height:1.5">Use the AI-drafted outreach scripts in your dashboard to contact these leads. Send your business flyer with a personal introduction letter to the lead\u2019s address or visit in person \u2014 most competitors only email.</p>';
+  body += '<p style="color:#bbb;font-size:11px;margin:0 0 10px;line-height:1.5">Use the AI-drafted outreach scripts in your dashboard to contact these leads. Send your business flyer with a personal introduction letter to the lead\u2019s address or visit in person \u2014 most competitors only email.</p>';
   body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:600;font-size:13px">View Full Dashboard</a>';
-  body += '<p style="color:#444;font-size:9px;margin:12px 0 0;line-height:1.5;text-transform:uppercase;letter-spacing:.5px">9am Leads Ltd &bull; Company No. 17168176 &bull; Delivered at 9am by 9amLeads</p>';
+  body += '<p style="color:#888;font-size:9px;margin:12px 0 0;line-height:1.5;text-transform:uppercase;letter-spacing:.5px">9am Leads Ltd &bull; Company No. 17168176 &bull; Delivered at 9am by 9amLeads</p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
