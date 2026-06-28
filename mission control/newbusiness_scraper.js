@@ -748,15 +748,12 @@ async function runForCustomer(customerId, useSampleData) {
     const sicCodes = customer.sicCodes || [];
     for (const loc of locations) {
       console.log('    Searching: ' + loc);
-      const apifyLeads = await fetchCompaniesHouseApify(loc, sicCodes, customer.companyTypes?.[0] || 'ltd', 7);
-      if (apifyLeads.length === 0) {
-        console.log('    Apify returned no results, trying direct API...');
-        const directLeads = await fetchCompaniesHouseDirect(loc, sicCodes);
-        console.log('    ' + loc + ': ' + directLeads.length + ' companies via direct API');
+      const directLeads = await fetchCompaniesHouseDirect(loc, sicCodes);
+      if (directLeads.length > 0) {
+        console.log('    ' + loc + ': ' + directLeads.length + ' companies via Companies House direct API');
         leads.push(...directLeads.map(l => ({ ...l, customerId, locationArea: loc })));
       } else {
-        console.log('    ' + loc + ': ' + apifyLeads.length + ' companies via Apify');
-        leads.push(...apifyLeads.map(l => ({ ...l, customerId, locationArea: loc })));
+        console.log('    Direct API returned no results for ' + loc);
       }
     }
     const seen = new Set();

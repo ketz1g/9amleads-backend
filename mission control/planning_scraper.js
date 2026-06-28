@@ -449,29 +449,7 @@ async function runForCustomer(customerId, useSampleData) {
 
   let leads = [];
   if (!useSampleData) {
-    console.log('  Fetching live data from Apify...');
-    for (const pc of customer.postcodes) {
-      const apifyLeads = await fetchPlanningApify(pc);
-      console.log('    ' + pc + ': ' + apifyLeads.length + ' planning applications');
-      leads.push(...apifyLeads.map(l => ({ ...l, customerId, postcodeArea: pc })));
-    }
-    const seen = new Set();
-    leads = leads.filter(l => {
-      const key = (l.address + l.description).toLowerCase().trim();
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    console.log('  Total unique leads: ' + leads.length);
-
-    // Filter by application type
-    if (customer.applicationTypes && customer.applicationTypes.length > 0) {
-      leads = leads.filter(l => customer.applicationTypes.some(t => l.applicationType.toLowerCase().includes(t.toLowerCase())));
-      console.log('  After type filter: ' + leads.length);
-    }
-    // Filter by value
-    if (customer.minValue > 0) leads = leads.filter(l => l.estimatedValue >= customer.minValue);
-    if (customer.maxValue > 0) leads = leads.filter(l => l.estimatedValue <= customer.maxValue);
+    console.log('  (Apify scraper disabled — will use sample data)');
   }
 
   if (leads.length === 0) {

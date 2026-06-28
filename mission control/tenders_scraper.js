@@ -444,8 +444,7 @@ async function runForCustomer(customerId, useSampleData) {
     console.log('\n  Fetching live data from Contracts Finder Gov.uk API...');
     let tenderResults = await fetchTendersGovUK(customer.keywords, customer.location);
     if (tenderResults.length === 0) {
-      console.log('  Gov.uk API returned no results, trying Apify fallback...');
-      tenderResults = await fetchTendersApify(customer.keywords, customer.location);
+      console.log('  Gov.uk API returned no results (will use sample data fallback)');
     }
     console.log('  Found ' + tenderResults.length + ' tenders');
 
