@@ -2605,7 +2605,7 @@ function generateLeadEmailHTML(customer, leads) {
 
   // Header with homepage logo
   body += '<tr><td style="background:#ffffff;padding:28px 28px 20px;border-bottom:1px solid rgba(0,0,0,0.04);text-align:center">';
-  body += '<div style="display:inline-flex;align-items:center;gap:12px"><div style="width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(14,165,233,0.12),rgba(6,182,212,0.08))"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="40" stroke="#333" stroke-width="5"/><circle cx="50" cy="50" r="36" stroke="rgba(0,0,0,0.04)" stroke-width="1"/><circle cx="50" cy="50" r="3" fill="#0ea5e9"/><line x1="50" y1="50" x2="50" y2="17" stroke="#0ea5e9" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="23" y2="50" stroke="#333" stroke-width="5.5" stroke-linecap="round"/><circle cx="42" cy="8" r="5" fill="#0ea5e9" opacity="0.8"/><circle cx="58" cy="8" r="5" fill="#0ea5e9" opacity="0.8"/></svg></div><div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:900;color:#111;letter-spacing:-.5px">9am<span style="color:' + accent + '">Leads</span></div></div>';
+  body += '<div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:900;color:#111;letter-spacing:-.5px">9am<span style="color:' + accent + '">Leads</span></div>';
   body += '<p style="color:#999;font-size:10px;margin:8px 0 0;text-transform:uppercase;letter-spacing:2px">' + (customer.lead_type || 'Daily Opportunities') + '</p>';
   body += '</td></tr>';
 
@@ -2616,7 +2616,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<div style="display:inline-flex;gap:8px;margin-bottom:18px">';
   body += '<div style="background:#f8f9fb;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:8px 18px;text-align:center"><div style="font-size:22px;font-weight:800;color:#22c55e">' + leads.length + '</div><div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.5px">Today\'s Opportunities</div></div>';
   body += '</div>';
-  body += '<p style="font-size:12px;color:#555;line-height:1.7;margin:0 0 4px;text-align:left;padding:14px 16px;background:#f8f9fb;border:1px solid rgba(0,0,0,0.04);border-radius:8px"><strong style="color:#111">How to reach each lead:</strong><br>Each card below shows available contact info. Click any website link to visit their site. If no email or phone is listed, use the address provided \u2014 post a business flyer + introduction letter, or visit in person. A face-to-face introduction beats any email.<br><span style="color:#888">Most competitors only email. Be different. Act within 30 minutes to be first.</span></p>';
+  body += '<p style="font-size:12px;color:#555;line-height:1.7;margin:0 0 4px;text-align:left;padding:14px 16px;background:#f8f9fb;border:1px solid rgba(0,0,0,0.04);border-radius:8px"><strong style="color:#111">How to reach each lead:</strong><br>Each card below shows available contact info. Click any website link to visit their site. If no email or phone is listed, use the address provided to post a business flyer plus introduction letter, or visit in person. A face to face introduction beats any email.<br><span style="color:#888">Most competitors only email. Be different. Act within 30 minutes to be first.</span></p>';
   body += '</td></tr>';
 
   // Lead cards
@@ -2704,7 +2704,7 @@ function generateLeadEmailHTML(customer, leads) {
 
   // Footer
   body += '<tr><td style="padding:24px 32px;border-top:1px solid rgba(0,0,0,0.04);text-align:center">';
-  body += '<p style="color:#666;font-size:11px;margin:0 0 10px;line-height:1.5">Use the AI-drafted outreach scripts in your dashboard to contact these leads. Send your business flyer with a personal introduction letter to the lead\u2019s address or visit in person \u2014 most competitors only email.</p>';
+  body += '<p style="color:#666;font-size:11px;margin:0 0 10px;line-height:1.5">Use the AI-drafted outreach scripts in your dashboard to contact these leads. Send your business flyer with a personal introduction letter to the lead\u2019s address or visit in person. Most competitors only email.</p>';
   body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:600;font-size:13px">View Full Dashboard</a>';
   body += '<p style="color:#999;font-size:9px;margin:12px 0 0;line-height:1.5;text-transform:uppercase;letter-spacing:.5px">9am Leads Ltd &bull; Company No. 17168176 &bull; Delivered at 9am by 9amLeads</p>';
   body += '</td></tr></table></td></tr></table></body></html>';
