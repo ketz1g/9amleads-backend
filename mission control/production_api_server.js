@@ -264,7 +264,7 @@ function _get(sql, params) {
 function _filterWhere(rows, sql, params) {
   const whereIdx = sql.toUpperCase().indexOf('WHERE');
   if (whereIdx === -1) return rows;
-  const whereClause = sql.substring(whereIdx + 5).replace(/\bORDER\s+BY\s+.+/i, '').replace(/\bLIMIT\s+\d+/i, '').replace(/\bOFFSET\s+\d+/i, '').trim();
+  const whereClause = sql.substring(whereIdx + 5).replace(/\bORDER\s+BY\s+.+/i, '').replace(/\bLIMIT\s+(?:\d+|\?)/i, '').replace(/\bOFFSET\s+(?:\d+|\?)/i, '').trim();
   const conditions = whereClause.split(/\bAND\b/i).map(c => c.trim()).filter(Boolean);
   const ops = ['!=', '<=', '>=', '<>', '=', '<', '>'];
   let paramIdx = 0;
@@ -2483,6 +2483,10 @@ app.post('/api/distribute', async (req, res) => {
   try {
     const { product } = req.body || {};
 
+    // Reload DB from file to get latest state
+    _dbData = null;
+    getDb();
+
     // Ensure demo leads exist if no real scrapers
     for (const [p, config] of Object.entries(PRODUCT_LEAD_FILES)) {
       const filePath = path.join(DATA_DIR, config.file);
@@ -2649,6 +2653,9 @@ function generateLeadEmailHTML(customer, leads) {
 }
 // POST /api/test/delivery — manually trigger delivery for one customer
 app.post('/api/test/delivery', authMiddleware, async (req, res) => {
+  // Reload DB from file to get latest state
+  _dbData = null;
+  getDb();
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
 
