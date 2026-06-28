@@ -2690,13 +2690,20 @@ function generateLeadEmailHTML(customer, leads) {
     body += '</div>';
 
     // Direct link for planning and tenders
-    if (productName === 'planning' && d.planningKeyVal && d.council) {
+    if (productName === 'planning' && d.council) {
       var councilDomains = { 'Westminster City Council': 'westminster', 'Camden Council': 'camden', 'Manchester City Council': 'manchester', 'Birmingham City Council': 'birmingham', 'Leeds City Council': 'leeds', 'Bristol City Council': 'bristol' };
       var councilDomain = councilDomains[d.council] || d.council.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
-      var directUrl = 'https://publicaccess.' + councilDomain + '.gov.uk/online-applications/applicationDetails.do?keyVal=' + d.planningKeyVal;
-      body += '<div style="margin-top:8px"><a href="' + directUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Application on Council Portal \u2192</a></div>';
-    } else if (productName === 'tenders' && d.tenderNoticeId) {
-      body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Tender on Contracts Finder \u2192</a></div>';
+      if (d.planningKeyVal) {
+        body += '<div style="margin-top:8px"><a href="https://publicaccess.' + councilDomain + '.gov.uk/online-applications/applicationDetails.do?keyVal=' + d.planningKeyVal + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Application on ' + d.council.split(' ')[0] + ' Portal \u2192</a></div>';
+      } else {
+        body += '<div style="margin-top:8px"><a href="https://www.' + councilDomain + '.gov.uk/planning" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D Search ' + d.council.split(' ')[0] + ' Planning Portal \u2192</a></div>';
+      }
+    } else if (productName === 'tenders') {
+      if (d.tenderNoticeId) {
+        body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Tender on Contracts Finder \u2192</a></div>';
+      } else {
+        body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D Search Contracts Finder \u2192</a></div>';
+      }
     }
 
     // Per-lead contact tip
