@@ -2728,7 +2728,8 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
 
-  const leads = db.prepare('SELECT * FROM leads WHERE customer_id = ? AND delivered = 0 LIMIT ?').all(req.user.id, customer.leads_per_day || 20);
+  const allLeads = db.prepare('SELECT * FROM leads WHERE customer_id = ? AND delivered = 0').all(req.user.id);
+  const leads = allLeads.slice(0, customer.leads_per_day || 20);
   
   if (leads.length === 0) {
     return res.json({ message: 'No undelivered leads', leads: 0 });
