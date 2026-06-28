@@ -1458,6 +1458,7 @@ function generateDemoLeads(product, count) {
         description: 'Proposed ' + (['residential', 'commercial', 'mixed-use', 'retail', 'office'][i % 5]) + ' development',
         applicant: 'Applicant at ' + streets[i % streets.length], council: councils[i % councils.length],
         applicationRef: 'APP/' + new Date().getFullYear() + '/' + (Math.floor(Math.random() * 90000) + 10000),
+        planningKeyVal: String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + Math.floor(Math.random() * 90000 + 10000),
         targetDecisionDate: new Date(Date.now() + Math.floor(Math.random() * 60) * 86400000).toISOString().split('T')[0],
         source: 'Planning Portal', scrapedAt: now
       });
@@ -1476,6 +1477,7 @@ function generateDemoLeads(product, count) {
         publishedDate: new Date().toISOString().split('T')[0],
         closingDate: new Date(Date.now() + daysLeft * 86400000).toISOString().split('T')[0],
         deadlineDaysRemaining: daysLeft, cpvCode: String(Math.floor(Math.random() * 900000) + 100000),
+        tenderNoticeId: 'CF-' + (Math.floor(Math.random() * 90000000) + 10000000),
         source: 'Contracts Finder', scrapedAt: now
       });
     }
@@ -2655,12 +2657,19 @@ function generateLeadEmailHTML(customer, leads) {
     body += '</div>';
 
     // Direct link for planning and tenders
-    if (productName === 'planning' && d.applicationRef && d.council) {
+    if (productName === 'planning' && d.planningKeyVal && d.council) {
       var councilDomains = { 'Westminster City Council': 'westminster', 'Camden Council': 'camden', 'Manchester City Council': 'manchester', 'Birmingham City Council': 'birmingham', 'Leeds City Council': 'leeds', 'Bristol City Council': 'bristol' };
       var councilDomain = councilDomains[d.council] || d.council.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
-      body += '<div style="margin-top:8px"><a href="https://www.' + councilDomain + '.gov.uk/planning-search?ref=' + encodeURIComponent(d.applicationRef) + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Application on Council Portal \u2192</a></div>';
-    } else if (productName === 'tenders' && d.title) {
-      body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D Search on Contracts Finder \u2192</a></div>';
+      var directUrl = 'https://publicaccess.' + councilDomain + '.gov.uk/online-applications/applicationDetails.do?keyVal=' + d.planningKeyVal;
+      body += '<div style="margin-top:8px"><a href="' + directUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Application on Council Portal \u2192</a></div>';
+    } else if (productName === 'tenders' && d.tenderNoticeId) {
+      body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Tender on Contracts Finder \u2192</a></div>';
+    } else if (productName === 'moving' && d.address) {
+      body += '<div style="margin-top:8px;font-size:10px;color:#555;font-style:italic">\uD83D\uDCCD Lead address shown above \u2014 post a flyer or visit in person</div>';
+    } else if (productName === 'probate' && d.deceasedName) {
+      body += '<div style="margin-top:8px;font-size:10px;color:#555;font-style:italic">\uD83D\uDCCB Search the deceased estate on the Gov.uk probate registry for full grant details</div>';
+    } else if (productName === 'newbusiness' && d.companyName) {
+      body += '<div style="margin-top:8px;font-size:10px;color:#555;font-style:italic">\uD83C\uDF10 Search Companies House for full company filing history</div>';
     }
 
     // Best ways to contact
