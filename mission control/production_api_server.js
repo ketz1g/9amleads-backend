@@ -1383,7 +1383,7 @@ cron.schedule('30 5 * * *', async () => {
 function generateDemoLeads(product, count) {
   const now = new Date().toISOString();
   const leads = [];
-  const fullPC = (area) => area.pc + ' ' + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + (Math.floor(Math.random() * 9) + 1) + (Math.floor(Math.random() * 9) + 1) + (Math.floor(Math.random() * 9) + 1);
+  const fullPC = (area) => area.pc + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
   const areas = [
     { city: 'London', pc: 'SW1A', pcPrefix: 'SW' },
     { city: 'London', pc: 'SW3', pcPrefix: 'SW' },
@@ -2587,7 +2587,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<div style="display:inline-flex;gap:8px;margin-bottom:18px">';
   body += '<div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);border-radius:8px;padding:8px 18px;text-align:center"><div style="font-size:22px;font-weight:800;color:#22c55e">' + leads.length + '</div><div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.5px">Today\'s Opportunities</div></div>';
   body += '</div>';
-  body += '<p style="font-size:12px;color:#777;line-height:1.6;margin:0 0 4px;text-align:left;padding:12px 14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:8px"><strong style="color:#bbb">Contact within 30 minutes.</strong> You are the first person to see these opportunities. AI-drafted outreach messages are ready in your dashboard.</p>';
+  body += '<p style="font-size:12px;color:#777;line-height:1.7;margin:0 0 4px;text-align:left;padding:14px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:8px"><strong style="color:#bbb">How to contact these leads:</strong><br>\u2709\uFE0F Email first using the contact details below<br>\uD83D\uDCCB Post a business flyer + personal introduction letter to their address<br>\uD83D\uDEAA Visit in person \u2014 a face-to-face introduction beats any email<br>\uD83D\uDD0D Search their name/company on LinkedIn to find a direct contact<br><span style="color:#666">Most competitors only email. Be different. Contact within 30 minutes to be first.</span></p>';
   body += '</td></tr>';
 
   // Lead cards
@@ -2656,15 +2656,17 @@ function generateLeadEmailHTML(customer, leads) {
 
     // Direct link for planning and tenders
     if (productName === 'planning' && d.applicationRef && d.council) {
-      var councilSlug = d.council.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
-      body += '<div style="margin-top:8px"><a href="https://www.' + councilSlug + '.gov.uk/planning-applications/' + encodeURIComponent(d.applicationRef) + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Application \u2192</a></div>';
+      var councilDomains = { 'Westminster City Council': 'westminster', 'Camden Council': 'camden', 'Manchester City Council': 'manchester', 'Birmingham City Council': 'birmingham', 'Leeds City Council': 'leeds', 'Bristol City Council': 'bristol' };
+      var councilDomain = councilDomains[d.council] || d.council.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
+      body += '<div style="margin-top:8px"><a href="https://www.' + councilDomain + '.gov.uk/planning-search?ref=' + encodeURIComponent(d.applicationRef) + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Application on Council Portal \u2192</a></div>';
     } else if (productName === 'tenders' && d.title) {
-      var tenderSlug = encodeURIComponent((d.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, ''));
-      body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder?q=' + tenderSlug + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View on Contracts Finder \u2192</a></div>';
+      body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D Search on Contracts Finder \u2192</a></div>';
     }
 
-    // AI outreach tip
-    body += '<div style="margin-top:8px;font-size:10px;color:#555;font-style:italic">\uD83E\uDD16 AI outreach message ready \u2014 open your dashboard to use it.</div>';
+    // Best ways to contact
+    body += '<div style="margin-top:8px;padding:10px 12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.08);border-radius:6px;font-size:10px;color:#999;line-height:1.6">';
+    body += '<strong style="color:#bbb">Ways to contact this lead:</strong>\u00A0 Email first using the address above, then follow up with a posted flyer + introduction letter to their address, or visit in person \u2014 a face-to-face introduction beats any email. Most competitors only email. Be different.';
+    body += '</div>';
 
     body += '</div>';
   }
