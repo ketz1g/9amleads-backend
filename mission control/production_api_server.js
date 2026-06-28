@@ -2757,7 +2757,53 @@ app.post('/api/admin/impersonate', adminAuth, async (req, res) => {
   }
 });
 
-// POST /api/admin/cleanup — remove all test customers and reset leads
+// POST /api/admin/run-scrapers — manually trigger all scrapers now
+app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
+  try {
+    const dayOfWeek = new Date().getDay();
+    const results = {};
+    for (const [product, config] of Object.entries(PRODUCT_LEAD_FILES)) {
+      try {
+        // Sync customers from main DB to scraper customer file
+        const allCustomers = getDb().customers || [];
+        const productCustomers = allCustomers.filter(c => c.product === product && c.trial_ends && new Date(c.trial_ends) > new Date());
+        const customerFile = path.join(DATA_DIR, product + '-customers.json');
+        const existing = (() => { try { return JSON.parse(fs.readFileSync(customerFile, 'utf-8')); } catch { return {}; } })();
+        for (const c of productCustomers) {
+          existing[c.id] = existing[c.id] || {};
+          existing[c.id].active = true;
+          existing[c.id].company = c.company || c.name || '';
+          existing[c.id].email = c.email || '';
+          existing[c.id].postcodeAreas = (c.target_areas || []);
+          existing[c.id].leadsPerDay = c.leads_per_day || 5;
+          existing[c.id].plan = c.plan || 'free_trial';
+        }
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+        fs.writeFileSync(customerFile, JSON.stringify(existing, null, 2));
+
+        // Try to run the scraper script
+        const scraperFile = path.join(__dirname, product + '_scraper.js');
+        if (fs.existsSync(scraperFile)) {
+          try {
+            execSync('node ' + path.basename(scraperFile) + ' --all', { cwd: __dirname, timeout: 180000, stdio: 'pipe' });
+            results[product] = 'scraper_done';
+          } catch (scrapeErr) {
+            // Fallback to demo leads
+            const leads = generateDemoLeads(product, 30);
+            fs.mkdirSync(DATA_DIR, { recursive: true });
+            fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
+            results[product] = 'demo_fallback';
+          }
+        }
+      } catch (prodErr) {
+        results[product] = 'error: ' + prodErr.message;
+      }
+    }
+    res.json({ success: true, results });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 app.post('/api/admin/cleanup', adminAuth, (req, res) => {
   try {
     const db = getDb();
