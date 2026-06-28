@@ -19,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const APIFY_API_KEY = process.env.APIFY_API_KEY || 'apify_api_...';
+const APIFY_API_KEY = process.env.APIFY_API_KEY;
 
 const DATA_DIR = path.join(__dirname, 'data');
 const CUSTOMERS_FILE = path.join(DATA_DIR, 'planning-customers.json');

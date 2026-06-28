@@ -20,7 +20,7 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 
-const APIFY_API_KEY = process.env.APIFY_API_KEY || 'apify_api_...';
+const APIFY_API_KEY = process.env.APIFY_API_KEY;
 const ACCENT_COLOR = '#6366f1';
 
 const DATA_DIR = path.join(__dirname, 'data');

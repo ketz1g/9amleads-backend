@@ -1350,7 +1350,29 @@ cron.schedule('30 5 * * *', async () => {
   for (const [product, config] of Object.entries(PRODUCT_LEAD_FILES)) {
     try {
       console.log('[SCRAPER] Generating ' + product + ' leads...');
-      
+
+      // Sync customers from main database to scraper customer file
+      try {
+        const allCustomers = getDb().customers || [];
+        const productCustomers = allCustomers.filter(c => c.product === product && c.trial_ends && new Date(c.trial_ends) > new Date());
+        const customerFile = path.join(DATA_DIR, product + '-customers.json');
+        if (fs.existsSync(customerFile) || productCustomers.length > 0) {
+          const existing = (() => { try { return JSON.parse(fs.readFileSync(customerFile, 'utf-8')); } catch { return {}; } })();
+          for (const c of productCustomers) {
+            existing[c.id] = existing[c.id] || {};
+            existing[c.id].active = true;
+            existing[c.id].company = c.company || c.name || '';
+            existing[c.id].email = c.email || '';
+            existing[c.id].postcodeAreas = (c.target_areas || []);
+            existing[c.id].leadsPerDay = c.leads_per_day || 5;
+            existing[c.id].plan = c.plan || 'free_trial';
+          }
+          fs.mkdirSync(DATA_DIR, { recursive: true });
+          fs.writeFileSync(customerFile, JSON.stringify(existing, null, 2));
+          console.log('[SCRAPER] Synced ' + Object.keys(existing).length + ' customers to ' + path.basename(customerFile));
+        }
+      } catch (e) { console.log('[SCRAPER] Customer sync issue: ' + e.message); }
+
       // Try to run the standalone scraper if it exists (uses Apify, Gov.uk APIs, etc.)
       // Try both naming conventions: {product}_leads_scraper.js and {product}_scraper.js
       let scraperFile = path.join(__dirname, product + '_leads_scraper.js');
