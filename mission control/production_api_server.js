@@ -2582,8 +2582,8 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
   // Header with logo
-  body += '<tr><td style="background:linear-gradient(135deg,#0a0a0f,#0f111a);padding:32px 28px 24px;border-bottom:3px solid ' + accent + ';text-align:center">';
-  body += '<div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:38px;height:38px;background:linear-gradient(135deg,' + accent + ',#0284c7);border-radius:10px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-family:Outfit,sans-serif;font-size:18px;font-weight:900">9</div><div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff">9am<span style="color:' + accent + '">Leads</span></div></div>';
+  body += '<tr><td style="background:linear-gradient(135deg,#0a0a0f,#0f111a);padding:36px 28px 28px;border-bottom:3px solid ' + accent + ';text-align:center">';
+  body += '<div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:44px;height:44px;background:linear-gradient(135deg,' + accent + ',#0284c7);border-radius:12px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-family:Outfit,sans-serif;font-size:20px;font-weight:900;box-shadow:0 4px 16px rgba(0,0,0,0.3)">9</div><div style="text-align:left"><div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:800;color:#fff;line-height:1">9am<span style="color:' + accent + '">Leads</span></div><div style="font-size:9px;color:#555;letter-spacing:1px;text-transform:uppercase;margin-top:1px">Opportunity Intelligence</div></div></div>';
   body += '<p style="color:#555;font-size:10px;margin:0;text-transform:uppercase;letter-spacing:2px">' + (customer.lead_type || 'Daily Opportunities') + '</p>';
   body += '</td></tr>';
 
@@ -2594,7 +2594,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<div style="display:inline-flex;gap:8px;margin-bottom:18px">';
   body += '<div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);border-radius:8px;padding:8px 18px;text-align:center"><div style="font-size:22px;font-weight:800;color:#22c55e">' + leads.length + '</div><div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.5px">Today\'s Opportunities</div></div>';
   body += '</div>';
-  body += '<p style="font-size:12px;color:#777;line-height:1.7;margin:0 0 4px;text-align:left;padding:14px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:8px"><strong style="color:#bbb">How to contact these leads:</strong><br>\u2709\uFE0F Email first using the contact details below<br>\uD83D\uDCCB Post a business flyer + personal introduction letter to their address<br>\uD83D\uDEAA Visit in person \u2014 a face-to-face introduction beats any email<br>\uD83D\uDD0D Search their name/company on LinkedIn to find a direct contact<br><span style="color:#666">Most competitors only email. Be different. Contact within 30 minutes to be first.</span></p>';
+  body += '<p style="font-size:12px;color:#888;line-height:1.7;margin:0 0 4px;text-align:left;padding:14px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:8px"><strong style="color:#ccc">How to reach each lead:</strong><br>Each card below shows the available contact info. If no email or phone is listed, use the address provided \u2014 post a business flyer + introduction letter, or visit in person. A face-to-face introduction beats any email.<br><span style="color:#666">Most competitors only email. Be different. Act within 30 minutes to be first.</span></p>';
   body += '</td></tr>';
 
   // Lead cards
@@ -2653,33 +2653,30 @@ function generateLeadEmailHTML(customer, leads) {
     var hasEmail = d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail;
     var hasWebsite = d.website;
     var hasAddress = d.address;
-    var noPhone = !(d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone);
+    var hasPhone = d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone;
+    var methods = [];
+    if (hasEmail) methods.push('\u2709\uFE0F ' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail));
+    if (hasWebsite) methods.push('\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:' + accent + ';text-decoration:none" target="_blank">' + d.website + '</a>');
+    if (hasAddress) methods.push('\uD83D\uDCCD ' + (d.address || ''));
+    if (hasPhone) methods.push('\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone));
     body += '<div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;font-size:11px;color:#aaa">';
-    if (hasEmail) body += '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px">\u2709\uFE0F ' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail) + '</span>';
-    if (hasWebsite) body += '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px">\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:' + accent + ';text-decoration:none" target="_blank">' + d.website + '</a></span>';
-    if (hasAddress) body += '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px">\uD83D\uDCCD ' + (d.address || '') + '</span>';
-    if (noPhone) body += '<span style="display:inline-flex;align-items:center;gap:4px;color:#555;font-style:italic">\uD83D\uDCDE No phone available</span>';
+    if (methods.length > 0) {
+      for (var m = 0; m < methods.length; m++) body += '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;margin-bottom:2px">' + methods[m] + '</span>';
+    } else {
+      body += '<span style="color:#555;font-style:italic">\uD83D\uDCCD Use the address shown above to send a flyer or visit in person</span>';
+    }
     body += '</div>';
 
-    // Direct link for planning and tenders
-    if (productName === 'planning' && d.planningKeyVal && d.council) {
-      var councilDomains = { 'Westminster City Council': 'westminster', 'Camden Council': 'camden', 'Manchester City Council': 'manchester', 'Birmingham City Council': 'birmingham', 'Leeds City Council': 'leeds', 'Bristol City Council': 'bristol' };
-      var councilDomain = councilDomains[d.council] || d.council.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
-      var directUrl = 'https://publicaccess.' + councilDomain + '.gov.uk/online-applications/applicationDetails.do?keyVal=' + d.planningKeyVal;
-      body += '<div style="margin-top:8px"><a href="' + directUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Application on Council Portal \u2192</a></div>';
-    } else if (productName === 'tenders' && d.tenderNoticeId) {
-      body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Tender on Contracts Finder \u2192</a></div>';
-    } else if (productName === 'moving' && d.address) {
-      body += '<div style="margin-top:8px;font-size:10px;color:#555;font-style:italic">\uD83D\uDCCD Lead address shown above \u2014 post a flyer or visit in person</div>';
-    } else if (productName === 'probate' && d.deceasedName) {
-      body += '<div style="margin-top:8px;font-size:10px;color:#555;font-style:italic">\uD83D\uDCCB Search the deceased estate on the Gov.uk probate registry for full grant details</div>';
-    } else if (productName === 'newbusiness' && d.companyName) {
-      body += '<div style="margin-top:8px;font-size:10px;color:#555;font-style:italic">\uD83C\uDF10 Search Companies House for full company filing history</div>';
+    // Per-lead contact tip — no email/phone? Suggest address-based methods
+    body += '<div style="margin-top:8px;padding:8px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;font-size:10px;color:#999;line-height:1.6">';
+    if (!hasEmail && !hasPhone) {
+      body += '<strong style="color:#bbb">How to reach them:</strong>\u00A0 Send a business flyer + personal introduction letter to their address, or visit in person. You can also search their name/company on LinkedIn.';
+    } else if (!hasPhone) {
+      body += '<strong style="color:#bbb">How to reach them:</strong>\u00A0 Email first, then follow up with a posted flyer + introduction letter to their address, or visit in person.';
+    } else {
+      body += '<strong style="color:#bbb">How to reach them:</strong>\u00A0 Email first or call, then follow up with a posted flyer + introduction letter to their address.';
     }
-
-    // Best ways to contact
-    body += '<div style="margin-top:8px;padding:10px 12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.08);border-radius:6px;font-size:10px;color:#999;line-height:1.6">';
-    body += '<strong style="color:#bbb">Ways to contact this lead:</strong>\u00A0 Email first using the address above, then follow up with a posted flyer + introduction letter to their address, or visit in person \u2014 a face-to-face introduction beats any email. Most competitors only email. Be different.';
+    body += '</div>';
     body += '</div>';
 
     body += '</div>';
