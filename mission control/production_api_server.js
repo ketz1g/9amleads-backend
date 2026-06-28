@@ -2598,6 +2598,11 @@ app.get('/api/health', (req, res) => {
 function generateLeadEmailHTML(customer, leads) {
   const accent = customer.product === 'moving' ? '#ff6b35' : customer.product === 'probate' ? '#a855f7' : customer.product === 'newbusiness' ? '#06b6d4' : customer.product === 'planning' ? '#10b981' : '#6366f1';
   const productName = customer.product || 'opportunities';
+  const aboutText = productName === 'moving' ? 'The address and property details are shown below. Contact the homeowner directly using the information provided.'
+    : productName === 'probate' ? 'The deceased name, estate value and registry details are shown below. Contact the executor using the information provided.'
+    : productName === 'newbusiness' ? 'The company name, SIC code and incorporation date are shown below. Contact the director using the information provided.'
+    : productName === 'planning' ? 'The address, council and application reference are shown below for your records.'
+    : 'The tender details, buyer and deadline are shown below. Apply using the reference number.';
   const dashboardUrl = 'https://www.9amleads.com/portal/dashboard.html';
   let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="only light"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></head><body style="margin:0;padding:0;background-color:#ffffff;font-family:Inter,Arial,sans-serif;color:#111">';
   body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#ffffff"><tr><td align="center" bgcolor="#ffffff" style="background-color:#ffffff;padding:24px 16px">';
@@ -2616,7 +2621,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<div style="display:inline-flex;gap:8px;margin-bottom:18px">';
   body += '<div style="background:#f8f9fb;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:8px 18px;text-align:center"><div style="font-size:22px;font-weight:800;color:#22c55e">' + leads.length + '</div><div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.5px">Today\'s Opportunities</div></div>';
   body += '</div>';
-  body += '<p style="font-size:12px;color:#555;line-height:1.7;margin:0 0 4px;text-align:left;padding:14px 16px;background:#f8f9fb;border:1px solid rgba(0,0,0,0.04);border-radius:8px"><strong style="color:#111">How to reach each lead:</strong><br>Each card below shows available contact info. Click any website link to visit their site. If no email or phone is listed, use the address provided to post a business flyer plus introduction letter, or visit in person. A face to face introduction beats any email.<br><span style="color:#888">Most competitors only email. Be different. Act within 30 minutes to be first.</span></p>';
+  body += '<p style="font-size:12px;color:#555;line-height:1.7;margin:0 0 4px;text-align:left;padding:14px 16px;background:#f8f9fb;border:1px solid rgba(0,0,0,0.04);border-radius:8px"><strong style="color:#111">About these leads:</strong><br>' + aboutText + '</p>';
   body += '</td></tr>';
 
   // Lead cards
@@ -2696,7 +2701,7 @@ function generateLeadEmailHTML(customer, leads) {
 
   // Footer
   body += '<tr><td style="padding:24px 32px;border-top:1px solid rgba(0,0,0,0.04);text-align:center">';
-  body += '<p style="color:#666;font-size:11px;margin:0 0 10px;line-height:1.5">Use the AI-drafted outreach scripts in your dashboard to contact these leads.</p>';
+  body += '<p style="color:#666;font-size:11px;margin:0 0 10px;line-height:1.5">' + (productName === 'planning' ? 'This information is provided for reference purposes only.' : 'Use the AI-drafted outreach scripts in your dashboard to contact these leads.') + '</p>';
   body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:600;font-size:13px">View Full Dashboard</a>';
   body += '<p style="color:#999;font-size:9px;margin:12px 0 0;line-height:1.5;text-transform:uppercase;letter-spacing:.5px">9am Leads Ltd &bull; Company No. 17168176 &bull; Delivered at 9am by 9amLeads</p>';
   body += '</td></tr></table></td></tr></table></body></html>';
