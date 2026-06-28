@@ -2660,10 +2660,10 @@ function generateLeadEmailHTML(customer, leads) {
 
     body += '<div style="display:flex;flex-direction:column;gap:6px">';
     for (var j = 0; j < leftCol.length; j++) {
-      body += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:12px"><span style="color:#666">' + leftCol[j].label + '</span><span style="color:#333;font-weight:500;text-align:right">' + leftCol[j].value + '</span></div>';
+      body += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-size:12px;line-height:1.5"><span style="color:#777">' + leftCol[j].label + '</span><span style="color:#222;font-weight:600;text-align:right;margin-left:8px">' + leftCol[j].value + '</span></div>';
     }
     for (var j = 0; j < rightCol.length; j++) {
-      body += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:12px"><span style="color:#666">' + rightCol[j].label + '</span><span style="color:#333;font-weight:500;text-align:right">' + rightCol[j].value + '</span></div>';
+      body += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-size:12px;line-height:1.5"><span style="color:#777">' + rightCol[j].label + '</span><span style="color:#222;font-weight:600;text-align:right;margin-left:8px">' + rightCol[j].value + '</span></div>';
     }
     body += '</div>';
 
