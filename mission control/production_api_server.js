@@ -2627,7 +2627,7 @@ function generateLeadEmailHTML(customer, leads) {
     if (d.agent) rightCol.push({ label: 'Agent', value: d.agent });
     if (d.council) rightCol.push({ label: 'Council', value: d.council });
     if (d.applicationRef) rightCol.push({ label: 'Reference', value: d.applicationRef });
-    if (d.applicant) rightCol.push({ label: 'Applicant', value: d.applicant });
+    if (d.description) rightCol.push({ label: 'Description', value: d.description });
     if (d.buyer) rightCol.push({ label: 'Buyer', value: d.buyer });
     if (d.deceasedName) rightCol.push({ label: 'Deceased', value: d.deceasedName });
     if (d.registry) rightCol.push({ label: 'Registry', value: d.registry });
@@ -2666,6 +2666,16 @@ function generateLeadEmailHTML(customer, leads) {
       body += '<span style="color:#555;font-style:italic">\uD83D\uDCCD Use the address shown above to send a flyer or visit in person</span>';
     }
     body += '</div>';
+
+    // Direct link for planning and tenders
+    if (productName === 'planning' && d.planningKeyVal && d.council) {
+      var councilDomains = { 'Westminster City Council': 'westminster', 'Camden Council': 'camden', 'Manchester City Council': 'manchester', 'Birmingham City Council': 'birmingham', 'Leeds City Council': 'leeds', 'Bristol City Council': 'bristol' };
+      var councilDomain = councilDomains[d.council] || d.council.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
+      var directUrl = 'https://publicaccess.' + councilDomain + '.gov.uk/online-applications/applicationDetails.do?keyVal=' + d.planningKeyVal;
+      body += '<div style="margin-top:8px"><a href="' + directUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:6px;color:#10b981;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Application on Council Portal \u2192</a></div>';
+    } else if (productName === 'tenders' && d.tenderNoticeId) {
+      body += '<div style="margin-top:8px"><a href="https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#6366f1;font-size:11px;font-weight:600;text-decoration:none">\uD83D\uDD0D View Full Tender on Contracts Finder \u2192</a></div>';
+    }
 
     // Per-lead contact tip — no email/phone? Suggest address-based methods
     body += '<div style="margin-top:8px;padding:8px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;font-size:10px;color:#999;line-height:1.6">';
