@@ -2600,9 +2600,9 @@ function generateLeadEmailHTML(customer, leads) {
   const accent = customer.product === 'moving' ? '#ff6b35' : customer.product === 'probate' ? '#a855f7' : customer.product === 'newbusiness' ? '#06b6d4' : customer.product === 'planning' ? '#10b981' : '#6366f1';
   const productName = customer.product || 'opportunities';
   const dashboardUrl = 'https://www.9amleads.com/portal/dashboard.html';
-  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></head><body style="margin:0;padding:0;background:#f4f6f9;font-family:Inter,Arial,sans-serif">';
-  body += '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 16px">';
-  body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.06)">';
+  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"><style>[data-ogsc] body,[data-ogsc] table,[data-ogsc] td,[data-ogsc] div{background-color:#ffffff!important;color:#222!important}@media(prefers-color-scheme:dark){body,table,td,div{background-color:#ffffff!important;color:#222!important}}</style></head><body style="margin:0;padding:0;background-color:#f4f6f9;font-family:Inter,Arial,sans-serif;color:#222">';
+  body += '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="background-color:#f4f6f9;padding:24px 16px">';
+  body += '<table width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.06)">';
 
   // Header with homepage logo
   body += '<tr><td style="background:#ffffff;padding:28px 28px 20px;text-align:center">';
@@ -2628,7 +2628,7 @@ function generateLeadEmailHTML(customer, leads) {
 
     var typeLabel = productName === 'moving' ? 'Moving Lead' : productName === 'probate' ? 'Probate Lead' : productName === 'newbusiness' ? 'New Business' : productName === 'planning' ? 'Planning Application' : 'Tender Opportunity';
 
-    body += '<div style="background:#ffffff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:18px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04)">';
+    body += '<div style="background-color:#ffffff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:18px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04)">';
 
     // Title row
     body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
