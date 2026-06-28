@@ -2786,6 +2786,7 @@ app.post('/api/admin/impersonate', adminAuth, async (req, res) => {
 // POST /api/admin/run-scrapers — manually trigger all scrapers now
 app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
   try {
+    const https = require('https');
     const dayOfWeek = new Date().getDay();
     const results = {};
     for (const [product, config] of Object.entries(PRODUCT_LEAD_FILES)) {
