@@ -1408,9 +1408,10 @@ function generateDemoLeads(product, count) {
       const area = areas[i % areas.length];
       const beds = Math.floor(Math.random() * 4) + 1;
       const price = beds <= 2 ? Math.floor(Math.random() * 200000) + 250000 : Math.floor(Math.random() * 500000) + 500000;
+      const leadPC = fullPC(area);
       leads.push({
-        id: 'ML_' + Date.now() + '_' + i, address: Math.floor(Math.random() * 200) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + fullPC(area),
-        postcode: fullPC(area), city: area.city, bedrooms: beds, propertyType: types[i % types.length],
+        id: 'ML_' + Date.now() + '_' + i, address: Math.floor(Math.random() * 200) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + leadPC,
+        postcode: leadPC, city: area.city, bedrooms: beds, propertyType: types[i % types.length],
         price: price, status: statuses[i % statuses.length], agent: agents[i % agents.length],
         listedDate: new Date(Date.now() - Math.floor(Math.random() * 14) * 86400000).toISOString().split('T')[0],
         estimatedMoveWindow: (Math.floor(Math.random() * 8) + 4) + ' weeks', source: 'Rightmove', scrapedAt: now
@@ -1423,12 +1424,13 @@ function generateDemoLeads(product, count) {
       const value = Math.floor(Math.random() * 900000) + 100000;
       const surname = surnames[i % surnames.length];
       const area = areas[i % areas.length];
+      const leadPC = fullPC(area);
       leads.push({
         id: 'PR_' + Date.now() + '_' + i, name: 'Estate of ' + surname,
         deceasedName: surname, estateValue: value, estateValueLabel: '\u00a3' + value.toLocaleString(),
         registry: registries[i % registries.length],
-        address: Math.floor(Math.random() * 100) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + fullPC(area),
-        postcode: fullPC(area), city: area.city,
+        address: Math.floor(Math.random() * 100) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + leadPC,
+        postcode: leadPC, city: area.city,
         legalAdvisor: surname + ' & Co Solicitors', source: 'Gov.uk Probate Register', scrapedAt: now
       });
     }
@@ -1437,11 +1439,12 @@ function generateDemoLeads(product, count) {
     for (let i = 0; i < count; i++) {
       const bizType = bizTypes[i % bizTypes.length];
       const area = areas[i % areas.length];
+      const leadPC = fullPC(area);
       leads.push({
         id: 'NB_' + Date.now() + '_' + i, name: streets[i % streets.length] + ' ' + bizType + ' Ltd',
         companyNumber: 'NI' + (Math.floor(Math.random() * 900000) + 100000),
-        address: Math.floor(Math.random() * 50) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + fullPC(area),
-        postcode: fullPC(area), city: area.city,
+        address: Math.floor(Math.random() * 50) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + leadPC,
+        postcode: leadPC, city: area.city,
         sicCode: (Math.floor(Math.random() * 90000) + 10000).toString(), ownerEmail: 'info@' + streets[i % streets.length].toLowerCase().replace(/\s/g, '') + '.co.uk',
         website: 'www.' + streets[i % streets.length].toLowerCase().replace(/\s/g, '') + '.co.uk',
         incorporationDate: new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString(), source: 'Companies House', scrapedAt: now
@@ -1452,9 +1455,10 @@ function generateDemoLeads(product, count) {
     const appTypes = ['Full Planning', 'Householder', 'Listed Building', 'Change of Use', 'Outline Planning'];
     for (let i = 0; i < count; i++) {
       const area = areas[i % areas.length];
+      const leadPC = fullPC(area);
       leads.push({
-        id: 'PL_' + Date.now() + '_' + i, address: Math.floor(Math.random() * 200) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + fullPC(area),
-        postcode: fullPC(area), city: area.city, applicationType: appTypes[i % appTypes.length],
+        id: 'PL_' + Date.now() + '_' + i, address: Math.floor(Math.random() * 200) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + leadPC,
+        postcode: leadPC, city: area.city, applicationType: appTypes[i % appTypes.length],
         description: 'Proposed ' + (['residential', 'commercial', 'mixed-use', 'retail', 'office'][i % 5]) + ' development',
         applicant: 'Applicant at ' + streets[i % streets.length], council: councils[i % councils.length],
         applicationRef: 'APP/' + new Date().getFullYear() + '/' + (Math.floor(Math.random() * 90000) + 10000),
