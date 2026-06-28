@@ -2657,17 +2657,13 @@ function generateLeadEmailHTML(customer, leads) {
     if (d.incorporationDate) rightCol.push({ label: 'Incorporated', value: new Date(d.incorporationDate).toLocaleDateString() });
     if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); rightCol.push({ label: 'Deadline', value: days + ' days (' + new Date(d.closingDate).toLocaleDateString() + ')' }); }
 
-    body += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
-    body += '<div style="flex:1;min-width:140px">';
+    body += '<div style="display:flex;flex-direction:column;gap:6px">';
     for (var j = 0; j < leftCol.length; j++) {
-      body += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:11px"><span style="color:#888">' + leftCol[j].label + '</span><span style="color:#ddd;font-weight:500;text-align:right">' + leftCol[j].value + '</span></div>';
+      body += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:12px"><span style="color:#888">' + leftCol[j].label + '</span><span style="color:#ddd;font-weight:500;text-align:right">' + leftCol[j].value + '</span></div>';
     }
-    body += '</div>';
-    body += '<div style="flex:1;min-width:140px">';
     for (var j = 0; j < rightCol.length; j++) {
-      body += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:11px"><span style="color:#888">' + rightCol[j].label + '</span><span style="color:#ddd;font-weight:500;text-align:right">' + rightCol[j].value + '</span></div>';
+      body += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:12px"><span style="color:#888">' + rightCol[j].label + '</span><span style="color:#ddd;font-weight:500;text-align:right">' + rightCol[j].value + '</span></div>';
     }
-    body += '</div>';
     body += '</div>';
 
     // Contact info strip
