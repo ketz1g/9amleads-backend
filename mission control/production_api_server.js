@@ -2639,7 +2639,7 @@ function generateLeadEmailHTML(customer, leads) {
     // Title + badge row
     body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
     body += '<span style="padding:3px 10px;border-radius:4px;background:' + accent + ';color:#fff;font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap;flex-shrink:0">' + typeLabel + '</span>';
-    body += '<span style="font-size:15px;font-weight:700;color:#111;line-height:1.4">' + (d.address || d.name || d.companyName || l.address || 'Opportunity') + '</span>';
+    body += '<span style="font-size:15px;font-weight:700;color:#111;line-height:1.4">' + (d.title || d.address || d.name || d.companyName || l.address || d.description || 'Opportunity') + '</span>';
     body += '</div>';
 
     // Key details as tagged chips
