@@ -2807,29 +2807,53 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         fs.mkdirSync(DATA_DIR, { recursive: true });
         fs.writeFileSync(customerFile, JSON.stringify(existing, null, 2));
 
-        // Generate leads — try Companies House API for newbusiness, else use demo
+        // Generate leads — use free APIs where available, else demo data
         var leads;
         if (product === 'newbusiness') {
           try {
-            const ch = require('./newbusiness_scraper.js');
-            // The scraper runs on require. For now use demo data as reliable fallback.
-            leads = generateDemoLeads(product, 30);
-          } catch (e) {
-            leads = generateDemoLeads(product, 30);
-          }
-        } else if (product === 'tenders') {
-          try {
-            const tf = require('./tenders_scraper.js');
-            leads = generateDemoLeads(product, 30);
-          } catch (e) {
-            leads = generateDemoLeads(product, 30);
-          }
+            leads = await (async function() {
+              const apiKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+              const url = '/advanced-search/companies?incorporatedFrom=' + new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0] + '&size=30';
+              return new Promise((resolve) => {
+                const req = https.request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(apiKey + ':').toString('base64'), 'Accept': 'application/json' } }, (res) => {
+                  let body = '';
+                  res.on('data', c => body += c);
+                  res.on('end', () => {
+                    try {
+                      const data = JSON.parse(body);
+                      const items = data.items || [];
+                      resolve(items.map(c => ({
+                        id: 'CH_' + (c.company_number || Date.now()),
+                        name: c.company_name || c.title || '',
+                        companyNumber: c.company_number || '',
+                        companyName: c.company_name || c.title || '',
+                        address: [(c.address_line_1 || ''), (c.address_line_2 || ''), (c.locality || ''), (c.postal_code || '')].filter(Boolean).join(', '),
+                        postcode: c.postal_code || '',
+                        city: c.locality || '',
+                        sicCode: (c.sic_codes || [])[0] || '',
+                        incorporationDate: c.date_of_creation || '',
+                        companyStatus: c.company_status || 'active',
+                        ownerEmail: '',
+                        website: '',
+                        source: 'Companies House',
+                        scrapedAt: new Date().toISOString()
+                      })));
+                    } catch (e) { resolve([]); }
+                  });
+                });
+                req.on('error', () => resolve([]));
+                req.setTimeout(15000, () => { req.destroy(); resolve([]); });
+                req.end();
+              });
+            })();
+            if (!leads || leads.length === 0) leads = generateDemoLeads(product, 30);
+          } catch (e) { leads = generateDemoLeads(product, 30); }
         } else {
           leads = generateDemoLeads(product, 30);
         }
         fs.mkdirSync(DATA_DIR, { recursive: true });
         fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
-        results[product] = 'generated_' + leads.length;
+        results[product] = leads && leads.length > 0 ? (leads[0].source || 'ok') + '_' + leads.length : 'empty';
       } catch (prodErr) {
         results[product] = 'error: ' + prodErr.message;
       }
