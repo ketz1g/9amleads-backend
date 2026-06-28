@@ -2724,11 +2724,11 @@ function generateLeadEmailHTML(customer, leads) {
 app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   // Reload DB from file to get latest state
   _dbData = null;
-  getDb();
-  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  const db = getDb();
+  const customer = (db.customers || []).find(function(c) { return c.id === req.user.id; });
   if (!customer) return res.status(404).json({ error: 'User not found' });
 
-  const allLeads = db.prepare('SELECT * FROM leads WHERE customer_id = ? AND delivered = 0').all(req.user.id);
+  const allLeads = (db.leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
   const leads = allLeads.slice(0, customer.leads_per_day || 20);
   
   if (leads.length === 0) {
