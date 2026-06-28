@@ -1341,7 +1341,7 @@ function getCampaignEmailHTML(customer, template) {
 // ===== SCRAPER SCHEDULER: Daily at 5:30 AM =====
 // Generates fresh leads from real APIs (Apify, Gov.uk, etc.) or demo data.
 // Leads are saved to data/{product}-leads.json for the distributor at 9am.
-cron.schedule('30 5 * * *', async () => {
+// cron.schedule('30 5 * * *', async () => {
   const dayOfWeek = new Date().getDay();
   if (dayOfWeek === 0) { console.log('[SCRAPER] Sunday — no scraping. Skipping.'); return; }
 
@@ -1400,7 +1400,7 @@ cron.schedule('30 5 * * *', async () => {
     }
   }
   console.log('[SCRAPER] Daily lead generation complete');
-});
+// });
 
 // Generate realistic-looking demo leads for any product
 function generateDemoLeads(product, count) {
@@ -1696,7 +1696,7 @@ function httpsPost(url, data) {
 }
 // ===== MAIN SCHEDULER: Daily at 9:00 AM (sharp) =====
 // Lead distributor must run before this (scrapers → match → insert → email)
-cron.schedule('0 9 * * *', async () => {
+// cron.schedule('0 9 * * *', async () => {
   console.log('[SCHEDULER] Starting daily lead delivery...'); console.log('deploy-2026-06-23-crm-live');
 
   // Sunday check — no lead delivery on Sundays
@@ -1834,7 +1834,7 @@ cron.schedule('0 9 * * *', async () => {
   }
 
   console.log('[SCHEDULER] Complete: ' + leads_sent + ' lead sheets sent, ' + campaign_sent + ' campaign emails, ' + trial_ended + ' trials ended, ' + errors + ' errors');
-});
+// });
 
 // ===== STRIPE PAYMENTS =====
 const STRIPE_PRICE_IDS = {};
