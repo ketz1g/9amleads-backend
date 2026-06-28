@@ -264,6 +264,7 @@ function normaliseLead(rawLead, product, customerId) {
     base.publishedDate = rawLead.publishedDate || '';
     base.closingDate = rawLead.closingDate || '';
     base.cpvCodes = rawLead.cpvCodes || [];
+    base.cpvCode = rawLead.cpvCode || '';
     base.tenderNoticeId = rawLead.tenderNoticeId || '';
     base.contractValue = rawLead.contractValue || '';
     base.contractValueLabel = rawLead.contractValueLabel || '';
