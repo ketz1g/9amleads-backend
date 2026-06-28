@@ -2684,15 +2684,11 @@ function generateLeadEmailHTML(customer, leads) {
       body += '</div>';
     }
 
-    // Action button for planning / tenders
-    if (productName === 'planning' && d.council) {
-      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px;padding-bottom:2px"><a href="https://www.planningportal.co.uk/" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Apply on Portal</a></div>';
-    } else if (productName === 'tenders') {
+    // Action button for tenders only
+    if (productName === 'tenders') {
       body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px;padding-bottom:2px"><a href="https://www.gov.uk/contracts-finder" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Apply on Contracts Finder</a></div>';
+      body += '<div style="font-size:11px;color:#888;margin-top:6px">Use the reference number shown above to apply for this opportunity.</div>';
     }
-
-    // Reference tip
-    body += '<div style="font-size:11px;color:#888;margin-top:6px">Use the reference number shown above to apply for this opportunity.</div>';
 
     body += '</div></div>';
   }
