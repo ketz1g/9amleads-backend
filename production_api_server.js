@@ -2797,6 +2797,11 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
             results[product] = 'demo_fallback';
           }
+        } else {
+          const leads = generateDemoLeads(product, 30);
+          fs.mkdirSync(DATA_DIR, { recursive: true });
+          fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
+          results[product] = 'no_file_demo';
         }
       } catch (prodErr) {
         results[product] = 'error: ' + prodErr.message;
