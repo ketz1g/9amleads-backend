@@ -1215,13 +1215,13 @@ async function addBrevoContact(customer) {
 }
 
 async function sendBrevoEmail(to, subject, htmlContent) {
-  if (!BREVO_API_KEY) return;
+  if (!BREVO_API_KEY && !process.env.BREVO_SMTP_KEY) return;
   const nodemailer = require('nodemailer');
   const transporter = nodemailer.createTransport({
     host: 'smtp-relay.brevo.com',
     port: 587,
     secure: false,
-    auth: { user: 'hello@9amleads.com', pass: BREVO_API_KEY }
+    auth: { user: 'hello@9amleads.com', pass: process.env.BREVO_SMTP_KEY || BREVO_API_KEY }
   });
   try {
     const info = await transporter.sendMail({
