@@ -2696,8 +2696,6 @@ function generateLeadEmailHTML(customer, leads) {
     // Reference tip
     body += '<div style="font-size:11px;color:#888;margin-top:6px">Use the reference number shown above to apply for this opportunity.</div>';
 
-    };
-
     body += '</div></div>';
   }
   body += '</td></tr>';
