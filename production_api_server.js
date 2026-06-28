@@ -2628,7 +2628,7 @@ function generateLeadEmailHTML(customer, leads) {
 
     var typeLabel = productName === 'moving' ? 'Moving Lead' : productName === 'probate' ? 'Probate Lead' : productName === 'newbusiness' ? 'New Business' : productName === 'planning' ? 'Planning Application' : 'Tender Opportunity';
 
-    body += '<div style="background:#f8f9fb;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:18px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04)">';
+    body += '<div style="background:#f8f9fb;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:20px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04)">';
 
     // Title row
     body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
@@ -2658,12 +2658,12 @@ function generateLeadEmailHTML(customer, leads) {
     if (d.incorporationDate) rightCol.push({ label: 'Incorporated', value: new Date(d.incorporationDate).toLocaleDateString() });
     if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); rightCol.push({ label: 'Deadline', value: days + ' days (' + new Date(d.closingDate).toLocaleDateString() + ')' }); }
 
-    body += '<div style="display:flex;flex-direction:column;gap:6px">';
+    body += '<div style="display:flex;flex-direction:column;gap:4px">';
     for (var j = 0; j < leftCol.length; j++) {
-      body += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:12px"><span style="color:#666">' + leftCol[j].label + '</span><span style="color:#333;font-weight:500;text-align:right">' + leftCol[j].value + '</span></div>';
+      body += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-size:13px;line-height:1.5"><span style="color:#888">' + leftCol[j].label + '</span><span style="color:#222;font-weight:600;text-align:right;margin-left:10px;flex-shrink:0">' + leftCol[j].value + '</span></div>';
     }
     for (var j = 0; j < rightCol.length; j++) {
-      body += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:12px"><span style="color:#666">' + rightCol[j].label + '</span><span style="color:#333;font-weight:500;text-align:right">' + rightCol[j].value + '</span></div>';
+      body += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-size:13px;line-height:1.5"><span style="color:#888">' + rightCol[j].label + '</span><span style="color:#222;font-weight:600;text-align:right;margin-left:10px;flex-shrink:0">' + rightCol[j].value + '</span></div>';
     }
     body += '</div>';
 
