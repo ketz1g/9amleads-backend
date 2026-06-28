@@ -2771,6 +2771,22 @@ app.post('/api/admin/impersonate', adminAuth, async (req, res) => {
   }
 });
 
+// POST /api/admin/cleanup — remove all test customers and reset leads
+app.post('/api/admin/cleanup', adminAuth, (req, res) => {
+  try {
+    const db = getDb();
+    const before = (db.customers || []).length;
+    const beforeLeads = (db.leads || []).length;
+    db.customers = [];
+    db.leads = [];
+    db._cleanupAt = new Date().toISOString();
+    saveDb();
+    res.json({ success: true, removed_customers: before, removed_leads: beforeLeads });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/admin/export — export customers for marketing
 app.get('/api/admin/export', adminAuth, (req, res) => {
   const customers = db.prepare(`
