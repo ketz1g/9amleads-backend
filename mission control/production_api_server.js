@@ -2667,6 +2667,8 @@ function generateLeadEmailHTML(customer, leads) {
     if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: new Date(d.incorporationDate).toLocaleDateString() });
     if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 80) });
     if (d.publishedDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Published: ' + new Date(d.publishedDate).toLocaleDateString() });
+    if (d.tenderNoticeId) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.tenderNoticeId });
+    if (d.cpvCode) chips.push({ icon: '\uD83D\uDCCA', text: 'CPV: ' + d.cpvCode });
     if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); chips.push({ icon: '\u23F3', text: 'Deadline: ' + days + ' days' }); }
     if (d.agent) chips.push({ icon: '\uD83D\uDC64', text: d.agent });
 
@@ -2693,7 +2695,8 @@ function generateLeadEmailHTML(customer, leads) {
 
     // Action button for tenders only
     if (productName === 'tenders') {
-      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px;padding-bottom:2px"><a href="https://www.gov.uk/contracts-finder" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Apply on Contracts Finder</a></div>';
+      var noticeUrl = d.tenderNoticeId ? 'https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId : 'https://www.gov.uk/contracts-finder';
+      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px;padding-bottom:2px"><a href="' + noticeUrl + '" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Apply on Contracts Finder</a></div>';
       body += '<div style="font-size:11px;color:#888;margin-top:6px">Use the reference number shown above to apply for this opportunity.</div>';
     }
 
