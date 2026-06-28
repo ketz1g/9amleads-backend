@@ -2628,7 +2628,7 @@ function generateLeadEmailHTML(customer, leads) {
 
     var typeLabel = productName === 'moving' ? 'Moving Lead' : productName === 'probate' ? 'Probate Lead' : productName === 'newbusiness' ? 'New Business' : productName === 'planning' ? 'Planning Application' : 'Tender Opportunity';
 
-    body += '<div style="background:#ffffff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;margin-bottom:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">';
+    body += '<div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.08);border-radius:12px;margin-bottom:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">';
 
     // Accent top bar
     body += '<div style="height:4px;background:' + accent + '"></div>';
@@ -2666,7 +2666,7 @@ function generateLeadEmailHTML(customer, leads) {
     if (chips.length > 0) {
       body += '<div style="margin-bottom:10px">';
       for (var c = 0; c < chips.length; c++) {
-        body += '<span style="display:inline-block;padding:4px 10px;margin:0 4px 4px 0;background:#f0f2f5;border-radius:6px;font-size:12px;color:#444;white-space:nowrap">' + chips[c].icon + ' ' + chips[c].text + '</span>';
+        body += '<span style="display:inline-block;padding:4px 10px;margin:0 4px 4px 0;background:#e4e7eb;border-radius:6px;font-size:12px;color:#333;white-space:nowrap">' + chips[c].icon + ' ' + chips[c].text + '</span>';
       }
       body += '</div>';
     }
