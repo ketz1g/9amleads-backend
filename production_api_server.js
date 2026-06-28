@@ -2644,7 +2644,7 @@ function generateLeadEmailHTML(customer, leads) {
     // Title + badge row
     body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
     body += '<span style="padding:3px 10px;border-radius:4px;background:' + accent + ';color:#fff;font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap;flex-shrink:0">' + typeLabel + '</span>';
-    body += '<span style="font-size:15px;font-weight:700;color:#111;line-height:1.4">' + (d.title || d.address || d.name || d.companyName || l.address || d.description || 'Opportunity') + '</span>';
+    body += '<span style="font-size:15px;font-weight:700;color:#111;line-height:1.4">' + (d.title || d.tenderTitle || d.address || d.name || d.companyName || l.address || d.description || 'Opportunity') + '</span>';
     body += '</div>';
 
     // Key details as tagged chips
@@ -2665,6 +2665,8 @@ function generateLeadEmailHTML(customer, leads) {
     if (d.companyName) chips.push({ icon: '\uD83C\uDFE2', text: d.companyName });
     if (d.sicCode) chips.push({ icon: '\uD83D\uDCCA', text: 'SIC: ' + d.sicCode });
     if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: new Date(d.incorporationDate).toLocaleDateString() });
+    if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 80) });
+    if (d.publishedDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Published: ' + new Date(d.publishedDate).toLocaleDateString() });
     if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); chips.push({ icon: '\u23F3', text: 'Deadline: ' + days + ' days' }); }
     if (d.agent) chips.push({ icon: '\uD83D\uDC64', text: d.agent });
 
