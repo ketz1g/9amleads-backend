@@ -2807,11 +2807,23 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         fs.mkdirSync(DATA_DIR, { recursive: true });
         fs.writeFileSync(customerFile, JSON.stringify(existing, null, 2));
 
-        // Generate demo leads directly (reliable, no external process)
-        const leads = generateDemoLeads(product, 30);
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-        fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
-        results[product] = 'ok_' + leads.length + '_leads';
+        // Run real scraper for products with free APIs, fallback to demo for others
+        if (product === 'newbusiness' || product === 'tenders') {
+          try {
+            execSync('node ' + product + '_scraper.js --all', { cwd: __dirname, timeout: 120000, stdio: 'pipe' });
+            results[product] = 'scraper_ok';
+          } catch (scrapeErr) {
+            const leads = generateDemoLeads(product, 30);
+            fs.mkdirSync(DATA_DIR, { recursive: true });
+            fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
+            results[product] = 'scraper_fail_demo';
+          }
+        } else {
+          const leads = generateDemoLeads(product, 30);
+          fs.mkdirSync(DATA_DIR, { recursive: true });
+          fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
+          results[product] = 'demo_' + leads.length;
+        }
       } catch (prodErr) {
         results[product] = 'error: ' + prodErr.message;
       }
