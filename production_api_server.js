@@ -1413,7 +1413,7 @@ function generateDemoLeads(product, count) {
         postcode: leadPC, city: area.city,
         sicCode: (Math.floor(Math.random() * 90000) + 10000).toString(), ownerEmail: 'info@' + streets[i % streets.length].toLowerCase().replace(/\s/g, '') + '.co.uk',
         website: 'www.' + streets[i % streets.length].toLowerCase().replace(/\s/g, '') + '.co.uk',
-        incorporationDate: new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString(), source: 'Companies House', scrapedAt: now
+        incorporationDate: new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString(), source: 'Demo Data', scrapedAt: now
       });
     }
   } else if (product === 'planning') {
@@ -2606,7 +2606,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try {
             var chKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
             leads = await new Promise(function(resolve) {
-              var chUrl = '/advanced-search/companies?location=London&incorporationDateFrom=' + new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0] + '&size=30&status=active';
+              var chUrl = '/advanced-search/companies?incorporationDateFrom=' + new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0] + '&size=30&status=active';
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: chUrl, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
