@@ -2619,7 +2619,21 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               req.write(bodyData);
               req.end();
             });
-            if (!leads || leads.length === 0) { console.log('[SCRAPER] Apify returned 0 companies'); leads = []; }
+            if (!leads || leads.length < 3) {
+              console.log('[SCRAPER] Apify returned ' + (leads ? leads.length : 0) + ' companies, fallback to basic search');
+              var chKey = process.env.COMPANIES_HOUSE_API_KEY || process.env.GOVUK_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+              leads = await new Promise(function(resolve) {
+                var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=a&size=30', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+                  var body = ''; res.on('data', function(c) { body += c; });
+                  res.on('end', function() {
+                    try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.title && c.company_number}).map(function(c) { var a = c.address || {}; return { id: 'CH_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.title || '', address: [a.premises || '', a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                  });
+                });
+                req.on('error', function() { resolve([]); });
+                req.setTimeout(15000, function() { req.destroy(); resolve([]); });
+                req.end();
+              });
+            }
           } catch(e) { console.log('[SCRAPER] Apify error: ' + e.message); leads = []; }
         } else if (product === 'tenders') {
           try {
