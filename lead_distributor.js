@@ -23,7 +23,7 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = path.join(__dirname, 'mission control', 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 const POSTCODE_ASSIGNMENTS_FILE = path.join(DATA_DIR, 'postcode-assignments.json');
 

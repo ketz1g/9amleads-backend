@@ -23,7 +23,7 @@ require('dotenv').config();
 const PORT = process.env.PORT || process.env.API_PORT || 8012;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-dev-secret-' + Date.now();
 if (!process.env.JWT_SECRET) console.warn('[WARN] JWT_SECRET not set. Using fallback. Set JWT_SECRET env var for production.');
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = path.join(__dirname, 'mission control', 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 const PUBLIC_URL = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
 
@@ -1344,11 +1344,8 @@ function getCampaignEmailHTML(customer, template) {
 // ===== SCRAPER SCHEDULER: Daily at 5:30 AM =====
 cron.schedule('30 5 * * *', async () => {
   console.log('[SCRAPER CRON] Starting daily lead generation...');
-  // Use same logic as /api/admin/run-scrapers endpoint
-  const https = require('https');
-  const req = https.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {});
-  req.write(JSON.stringify({}));
-  req.end();
+  const http = require('http');
+  http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
 });
 
 // Generate realistic-looking demo leads for any product
@@ -1646,10 +1643,8 @@ function httpsPost(url, data) {
 cron.schedule('0 9 * * *', async () => {
   console.log('[9AM CRON] Starting daily delivery...');
   try {
-    const https = require('https');
-    const req = https.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {});
-    req.write(JSON.stringify({}));
-    req.end();
+    const http = require('http');
+    http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
   } catch(e) { console.log('[9AM CRON] Delivery error:', e.message); }
 });
 
@@ -2953,6 +2948,29 @@ app.post('/api/send-enquiry', async (req, res) => {
 app.use(function(err, req, res, next) {
   console.error('[ERROR] Unhandled error:', err.message || err);
   res.status(500).json({ error: 'Internal server error' });
+});
+
+// ===== TEST SCHEDULE: 14:10 scraper → 14:13 distributor → 14:15 delivery =====
+cron.schedule('10 14 * * *', async () => {
+  console.log('[TEST CRON] Running scrapers...');
+  try {
+    const http = require('http');
+    http.request({ hostname: 'localhost', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
+  } catch(e) { console.log('[TEST CRON] Scraper error:', e.message); }
+});
+cron.schedule('13 14 * * *', async () => {
+  console.log('[TEST CRON] Distributing leads to customers...');
+  try {
+    const http = require('http');
+    http.request({ hostname: 'localhost', port: PORT, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
+  } catch(e) { console.log('[TEST CRON] Distributor error:', e.message); }
+});
+cron.schedule('15 14 * * *', async () => {
+  console.log('[TEST CRON] Delivering leads via email...');
+  try {
+    const http = require('http');
+    http.request({ hostname: 'localhost', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
+  } catch(e) { console.log('[TEST CRON] Delivery error:', e.message); }
 });
 
 // ===== START SERVER =====
