@@ -131,6 +131,11 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
         </div>
         <button class="btn btn-primary btn-sm" onclick="saveTerritories()" id="save-territory-btn" disabled>Save</button>
       </div>
+      <div style="margin-bottom:10px">
+        <input type="text" id="custom-sector-input" placeholder="Add specific sector e.g. EN1 3, SG13 7" style="width:100%;padding:8px 12px;background:#0f111a;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter')addCustomSector()">
+        <button class="btn btn-outline btn-sm" onclick="addCustomSector()" style="margin-top:4px;font-size:11px"><i class="fas fa-plus"></i> Add Sector</button>
+        <span id="custom-sector-error" style="font-size:10px;color:var(--danger);display:none"></span>
+      </div>
       <div id="territory-msg" style="font-size:11px;color:var(--success);display:none"></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -825,9 +830,36 @@ function toggleTerritoryPc(code) {
 function updateTerritorySaveBtn() {
   const btn = document.getElementById('save-territory-btn');
   if (!editedTerritories || !territoryEditing) { btn.disabled = true; return; }
-  const current = document.getElementById('territory-tags');
-  const currentCodes = editedTerritories;
   btn.disabled = false;
+}
+
+function addCustomSector() {
+  const input = document.getElementById('custom-sector-input');
+  const err = document.getElementById('custom-sector-error');
+  const sector = input.value.trim().toUpperCase();
+  err.style.display = 'none';
+  if (!sector) { err.textContent = 'Please enter a postcode sector e.g. EN1 3'; err.style.display = 'block'; return; }
+  if (!editedTerritories) editedTerritories = [];
+  if (editedTerritories.includes(sector)) { err.textContent = '"' + sector + '" is already in your list'; err.style.display = 'block'; return; }
+  const taken = document.querySelectorAll('#territory-tags .taken');
+  editedTerritories.push(sector);
+  input.value = '';
+  renderTerritoryFull();
+  updateTerritorySaveBtn();
+  // Show in tags
+  const tags = document.getElementById('territory-tags');
+  const span = document.createElement('span');
+  span.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:6px;font-size:12px;color:var(--primary);font-weight:600';
+  span.innerHTML = sector + ' <span style="cursor:pointer;opacity:0.6" onclick="removeTerritoryPc(\'' + sector + '\')">&times;</span>';
+  tags.appendChild(span);
+}
+
+function removeTerritoryPc(code) {
+  if (!editedTerritories) return;
+  editedTerritories = editedTerritories.filter(c => c !== code);
+  renderTerritoryFull();
+  updateTerritorySaveBtn();
+  loadTerritories();
 }
 
 async function saveTerritories() {
