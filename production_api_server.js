@@ -2476,7 +2476,6 @@ function generateLeadEmailHTML(customer, leads) {
     }
     // Always show debug info
     body += '<div style="font-size:9px;color:#999;margin-top:2px">DBG: source=' + (d.source||'nil') + ' company=' + (d.company||'nil').slice(0,30) + ' name=' + (d.name||'nil').slice(0,30) + ' addr=' + (d.address||'nil').slice(0,20) + '</div>';
-    }
 
     // Contact info
     var hasEmail = d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail;
