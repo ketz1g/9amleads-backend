@@ -2674,6 +2674,26 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+// POST /api/admin/test-ch — test Companies House API from Render
+app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
+  try {
+    var key = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+    var result = await new Promise(function(resolve) {
+      var url = '/advanced-search/companies?incorporationDateFrom=' + new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0] + '&size=3';
+      var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(key + ':').toString('base64'), 'Accept': 'application/json' } }, function(r) {
+        var b = ''; r.on('data', function(c) { b += c; });
+        r.on('end', function() {
+          try { var d = JSON.parse(b); resolve({ status: r.statusCode, total: d.total_results, items: (d.items || []).length, first: d.items && d.items[0] ? d.items[0].company_name : 'none' }); }
+          catch(e) { resolve({ status: r.statusCode, error: b.slice(0, 200) }); }
+        });
+      });
+      req.on('error', function(e) { resolve({ error: e.message }); });
+      req.setTimeout(20000, function() { req.destroy(); resolve({ error: 'timeout' }); });
+      req.end();
+    });
+    res.json({ success: true, result: result });
+  } catch(e) { res.json({ error: e.message }); }
+});
 app.post('/api/admin/cleanup', adminAuth, (req, res) => {
   try {
     const db = getDb();
