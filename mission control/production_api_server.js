@@ -2947,22 +2947,22 @@ app.use(function(err, req, res, next) {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ===== TEST SCHEDULE: 14:20 scraper → 14:22 distributor → 14:25 delivery =====
-cron.schedule('20 14 * * *', async () => {
+// ===== TEST SCHEDULE: 15:10 scraper → 15:12 distributor → 15:15 delivery =====
+cron.schedule('10 15 * * *', async () => {
   console.log('[TEST CRON] Running scrapers...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
   } catch(e) { console.log('[TEST CRON] Scraper error:', e.message); }
 });
-cron.schedule('22 14 * * *', async () => {
+cron.schedule('12 15 * * *', async () => {
   console.log('[TEST CRON] Distributing leads to customers...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
   } catch(e) { console.log('[TEST CRON] Distributor error:', e.message); }
 });
-cron.schedule('25 14 * * *', async () => {
+cron.schedule('15 15 * * *', async () => {
   console.log('[TEST CRON] Delivering leads via email...');
   try {
     const http = require('http');
