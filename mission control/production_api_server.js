@@ -2532,7 +2532,8 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   if (allLeads.length === 0) {
     // Direct insert: read scraped leads for this product and assign to customer
     try {
-      var productFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[customer.product].file);
+      var prod = customer.product || 'moving';
+      var productFile = path.join(__dirname, 'data', prod + '-leads.json');
       if (fs.existsSync(productFile)) {
         var rawLeads = JSON.parse(fs.readFileSync(productFile, 'utf-8'));
         if (Array.isArray(rawLeads) && rawLeads.length > 0) {
@@ -2540,7 +2541,7 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
           var insertedNow = new Date().toISOString();
           for (var li = 0; li < Math.min(rawLeads.length, customer.leads_per_day || 5); li++) {
             var rl = rawLeads[li];
-            var nl = { id: uuidv4(), customer_id: req.user.id, product: customer.product, data: JSON.stringify(rl), status: 'new', delivered: 0, created_at: insertedNow, delivered_at: null };
+            var nl = { id: uuidv4(), customer_id: req.user.id, product: prod, data: JSON.stringify(rl), status: 'new', delivered: 0, created_at: insertedNow, delivered_at: null };
             db2.leads.push(nl);
             inserted++;
           }
