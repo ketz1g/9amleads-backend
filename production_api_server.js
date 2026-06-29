@@ -2611,7 +2611,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }
-                    resolve(items.filter(function(c){return c.company_name && c.date_of_creation}).map(function(c) { var a = c.address || {}; return { id: 'APIFY_' + (c.company_number || Date.now()), name: (c.company_name || '').trim(), companyNumber: c.company_number || '', companyName: c.company_name || '', address: c.address_snippet || [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', source: 'Apify Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                    resolve(items.filter(function(c){return c.title && c.company_number}).map(function(c) { var a = c.address || {}; var prem = a.premises ? a.premises + ' ' : ''; return { id: 'APIFY_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.title || '', address: (prem + (a.address_line_1 || '') + (a.address_line_2 ? ', ' + a.address_line_2 : '') + ', ' + (a.locality || '') + (a.postal_code ? ' ' + a.postal_code : '')).trim(), postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', source: 'Apify Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
                 });
               });
               req.on('error', function() { resolve([]); });
