@@ -2530,7 +2530,16 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   // Generate leads for this customer's product if none exist
   var allLeads = (db.leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
   if (allLeads.length === 0) {
-    return res.json({ message: 'No undelivered leads. Run the scrapers first via /api/admin/run-scrapers.', leads: 0 });
+    // Try running the distributor to match scraped leads
+    try {
+      var dist = require('./lead_distributor.js');
+      await dist.distributeAll(true);
+      _dbData = null;
+      allLeads = (getDb().leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
+    } catch(e) {}
+    if (allLeads.length === 0) {
+      return res.json({ message: 'No undelivered leads. Run the scrapers first via /api/admin/run-scrapers.', leads: 0 });
+    }
   }
 
   const leads = allLeads.slice(0, customer.leads_per_day || 20);
