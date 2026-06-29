@@ -69,6 +69,26 @@ function getPostcodeLimit(plan, extraPostcodes) {
 
 const EXTRAS_PRICE = 2000; // £20 per extra 5 postcode districts
 
+function normalisePostcodeForMatch(pc) {
+  return pc.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function isFullDistrict(code, districts) {
+  return !!districts[code.toUpperCase()];
+}
+
+function getMatchingDistrict(code, districts) {
+  const upper = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  // Try exact district match first
+  if (districts[upper]) return upper;
+  // Check if it starts with a known district (sector-level like "EN1 3" -> district "EN1")
+  const sortedCodes = Object.keys(districts).sort((a, b) => b.length - a.length);
+  for (const dc of sortedCodes) {
+    if (upper.startsWith(dc)) return dc;
+  }
+  return null;
+}
+
 function validatePostcodes(postcodes, customerPlan, customerProduct, customerId, extraPostcodes) {
   const districts = loadPostcodeDistricts();
   const areas = loadPostcodeAreas();
@@ -82,18 +102,38 @@ function validatePostcodes(postcodes, customerPlan, customerProduct, customerId,
 
   if (postcodes.length > maxLimit) {
     const limitLabel = maxLimit >= 999 ? 'unlimited' : maxLimit;
-    errors.push('Your ' + customerPlan + ' plan allows ' + limitLabel + ' postcode district' + (maxLimit !== 1 ? 's' : '') + '. You selected ' + postcodes.length + '.');
+    errors.push('Your ' + customerPlan + ' plan allows ' + limitLabel + ' postcode' + (maxLimit !== 1 ? 's' : '') + '. You selected ' + postcodes.length + '.');
   }
 
   for (const pc of postcodes) {
-    const upper = pc.toUpperCase();
-    if (!districts[upper]) {
-      errors.push('"' + pc + '" is not a specific postcode district. Please pick individual districts like "' + (upper + '1') + '", not the whole area.');
+    const upper = pc.toUpperCase().trim();
+    const normalised = normalisePostcodeForMatch(pc);
+
+    // Check if it's a full district or sector-level
+    const matchedDistrict = getMatchingDistrict(upper, districts);
+    if (!matchedDistrict) {
+      errors.push('"' + pc + '" is not a valid UK postcode area. Please pick a specific district (e.g. "EN1") or sector (e.g. "EN1 3").');
       continue;
     }
-    const existing = assignments.assignments[upper];
-    if (existing && existing.customer_id !== customerId) {
-      errors.push('"' + upper + '" (' + districts[upper].name + ') is already taken by another customer.');
+
+    if (normalised.length < 2) {
+      errors.push('"' + pc + '" is too short. Please enter a full district code (e.g. "EN1") or sector (e.g. "EN1 3").');
+      continue;
+    }
+
+    // Check exclusivity by prefix: "EN1" conflicts with any claim starting with "EN1"
+    // "EN1 3" only conflicts with another "EN1 3", not "EN1 4"
+    for (const [claimedCode, assignment] of Object.entries(assignments.assignments || {})) {
+      if (assignment.status !== 'active') continue;
+      if (assignment.customer_id === customerId) continue;
+      const claimedNorm = normalisePostcodeForMatch(claimedCode);
+      const inputNorm = normalisePostcodeForMatch(upper);
+      // Full district claim (e.g., "EN1") blocks any sector within it
+      // Sector claim (e.g., "EN1 3") only blocks that specific sector
+      if (inputNorm.startsWith(claimedNorm) || claimedNorm.startsWith(inputNorm)) {
+        errors.push('"' + upper + '" overlaps with "' + claimedCode.toUpperCase() + '" which is already taken.');
+        break;
+      }
     }
   }
 

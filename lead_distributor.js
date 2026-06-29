@@ -47,22 +47,27 @@ function extractDistrict(pc) {
   return match ? match[1] : cleaned.substring(0, 3);
 }
 
-// Check if a lead's postcode district is exclusively claimed by a specific customer
+// Check if a lead's postcode is exclusively claimed by a specific customer (sector-aware)
 function getExclusiveClaimant(lead, product) {
   const assignments = loadPostcodeAssignments();
-  const leadDistrict = extractDistrict(lead.postcode || lead.address || lead.location || '');
-  if (!leadDistrict) return null;
+  const leadPostcode = lead.postcode || lead.address || lead.location || '';
+  const leadNorm = normalisePostcode(leadPostcode);
+  if (!leadNorm) return null;
 
-  // Check exact district match first, then prefix match
+  // Find the longest prefix match among active claims
+  let bestMatch = null;
+  let bestLength = 0;
   for (const [code, assignment] of Object.entries(assignments.assignments)) {
     if (assignment.status !== 'active') continue;
     if (assignment.product !== product) continue;
-    const codeLower = code.toLowerCase();
-    if (leadDistrict === codeLower || leadDistrict.startsWith(codeLower)) {
-      return assignment.customer_id;
+    const codeNorm = normalisePostcode(code);
+    if (!codeNorm) continue;
+    if (leadNorm.startsWith(codeNorm) && codeNorm.length > bestLength) {
+      bestMatch = assignment.customer_id;
+      bestLength = codeNorm.length;
     }
   }
-  return null;
+  return bestMatch;
 }
 
 // Product-specific lead files (output by scrapers)
