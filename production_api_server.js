@@ -2606,7 +2606,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try {
             var apifyKey = process.env.APIFY_API_KEY;
             leads = await new Promise(function(resolve) {
-              var bodyData = JSON.stringify({ search: 'Consulting|Accounting|Design|Marketing|Property|Construction|Services', maxItems: 30, includeOfficers: false });
+              var bodyData = JSON.stringify({ search: 'Consulting|Accounting|Design', maxItems: 5, includeOfficers: false });
               var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
@@ -2638,7 +2638,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         } else if (product === 'tenders') {
           try {
             leads = await new Promise(function(resolve) {
-              var url = '/api/rest/2.0/notices?searchTerm=' + encodeURIComponent('construction IT services cleaning security facilities management') + '&status=Open&size=30';
+               var url = '/api/rest/2.0/notices?searchTerm=' + encodeURIComponent('IT construction cleaning') + '&status=Open&size=5';
               var req = require('https').request({ hostname: 'www.contractsfinder.service.gov.uk', path: url, method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 30000 }, function(res) {
                 var body = '';
                 res.on('data', function(c) { body += c; });
@@ -2673,8 +2673,8 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try {
             var apifyKey2 = process.env.APIFY_API_KEY;
             leads = await new Promise(function(resolve) {
-              var councils = ['woking','durham','westminster','camden','manchester','birmingham','leeds','bristol','surrey','kensington','wandsworth','richmond'];
-              var bodyData = JSON.stringify({ councils: councils, dateMode: 'validated', maxResultsPerCouncil: 5, stateKey: 'Output Only New Applications' });
+              var councils = ['woking','durham'];
+              var bodyData = JSON.stringify({ councils: councils, dateMode: 'validated', maxResultsPerCouncil: 2, stateKey: 'Output Only New Applications' });
               var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/illehius~uk-planning-monitor/run-sync-get-dataset-items?token=' + apifyKey2 + '&memory=512&timeout=180', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 240000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
@@ -2694,7 +2694,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try {
             var apifyKey3 = process.env.APIFY_API_KEY;
             leads = await new Promise(function(resolve) {
-              var bodyData = JSON.stringify({ location: 'London', maxResults: 30 });
+              var bodyData = JSON.stringify({ location: 'London', maxResults: 5 });
               var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey3 + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
@@ -2714,7 +2714,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try {
             var chKey5 = process.env.COMPANIES_HOUSE_API_KEY || process.env.GOVUK_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
             leads = await new Promise(function(resolve) {
-              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=probate%20will%20estate%20solicitor&size=50', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey5 + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=probate%20will%20estate&size=5', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey5 + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.title && c.company_number}).map(function(c) { var a = c.address || {}; return { id: 'CH_PROB_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', address: [a.premises || '', a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House Probate', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
