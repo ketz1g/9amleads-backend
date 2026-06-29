@@ -1642,9 +1642,42 @@ function httpsPost(url, data) {
     } catch (e) { reject(e); }
   });
 }
-// ===== 9AM DAILY DELIVERY SCHEDULER: DISABLED =====
-// Cron was disabled to prevent automated email delivery until scraping is fixed.
-// Delivery can still be triggered manually via /api/test/delivery
+// ===== 9AM DAILY DELIVERY SCHEDULER =====
+cron.schedule('0 9 * * *', async () => {
+  console.log('[9AM CRON] Starting daily delivery...');
+  try {
+    const https = require('https');
+    const req = https.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {});
+    req.write(JSON.stringify({}));
+    req.end();
+  } catch(e) { console.log('[9AM CRON] Delivery error:', e.message); }
+});
+
+// POST /api/admin/deliver — manually trigger daily delivery to all customers
+app.post('/api/admin/deliver', adminAuth, async (req, res) => {
+  try {
+    var delivered = 0, errors = 0;
+    var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
+    for (var ci = 0; ci < customers.length; ci++) {
+      var cust = customers[ci];
+      var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
+      var isExpired = trialEnds && new Date() > trialEnds;
+      if (isExpired && cust.plan === 'free_trial') continue;
+      var limit = { moving: 5, probate: 5, newbusiness: 5, planning: 5, tenders: 5 }[cust.product] || 5;
+      var custLeads = (getDb().leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0; }).slice(0, limit);
+      if (custLeads.length === 0) continue;
+      try {
+        var htmlContent = generateLeadEmailHTML(cust, custLeads);
+        var subject = (cust.lead_type || 'Daily Leads') + ' for ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, htmlContent);
+        for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
+        saveDb();
+        delivered += custLeads.length;
+      } catch(e) { errors++; }
+    }
+    res.json({ success: true, customers_processed: customers.length, leads_delivered: delivered, errors: errors });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ===== STRIPE PAYMENTS =====
 const STRIPE_PRICE_IDS = {};
