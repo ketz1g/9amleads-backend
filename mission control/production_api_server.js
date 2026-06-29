@@ -2623,30 +2623,13 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         var leads;
         if (product === 'newbusiness') {
           try {
-            var chApiKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
-            var chUrl = '/advanced-search/companies?incorporatedFrom=' + new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0] + '&size=30';
+            var chKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
             leads = await new Promise(function(resolve) {
-              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: chUrl, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chApiKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
-                var body = '';
-                res.on('data', function(c) { body += c; });
+              var chUrl = '/advanced-search/companies?incorporatedFrom=' + new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0] + '&size=30';
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: chUrl, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+                var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
-                  try {
-                    var data = JSON.parse(body);
-                    var items = data.items || [];
-                    resolve(items.map(function(c) { return {
-                      id: 'CH_' + (c.company_number || Date.now()),
-                      name: c.company_name || c.title || '',
-                      companyNumber: c.company_number || '',
-                      companyName: c.company_name || c.title || '',
-                      address: [c.address_line_1 || '', c.address_line_2 || '', c.locality || '', c.postal_code || ''].filter(Boolean).join(', '),
-                      postcode: c.postal_code || '',
-                      city: c.locality || '',
-                      sicCode: (c.sic_codes || [])[0] || '',
-                      incorporationDate: c.date_of_creation || '',
-                      ownerEmail: '', website: '',
-                      source: 'Companies House', scrapedAt: new Date().toISOString()
-                    }; }));
-                  } catch(e) { resolve([]); }
+                  try { var data = JSON.parse(body); var items = data.items || []; resolve(items.map(function(c) { return { id: 'CH_' + (c.company_number || Date.now()), name: c.company_name || c.title || '', companyNumber: c.company_number || '', companyName: c.company_name || c.title || '', address: [c.address_line_1 || '', c.address_line_2 || '', c.locality || '', c.postal_code || ''].filter(Boolean).join(', '), postcode: c.postal_code || '', city: c.locality || '', sicCode: (c.sic_codes || [])[0] || '', incorporationDate: c.date_of_creation || '', ownerEmail: '', website: '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
                 });
               });
               req.on('error', function() { resolve([]); });
@@ -2655,6 +2638,40 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             });
             if (!leads || leads.length === 0) { console.log('[SCRAPER] Companies House returned 0 results, using demo'); leads = generateDemoLeads(product, 30); }
           } catch(e) { console.log('[SCRAPER] Companies House error: ' + e.message); leads = generateDemoLeads(product, 30); }
+        } else if (product === 'tenders') {
+          try {
+            leads = await new Promise(function(resolve) {
+              var url = '/api/rest/2.0/notices?searchTerm=' + encodeURIComponent('construction IT services cleaning security facilities management') + '&status=Open&size=30';
+              var req = require('https').request({ hostname: 'www.contractsfinder.service.gov.uk', path: url, method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 30000 }, function(res) {
+                var body = '';
+                res.on('data', function(c) { body += c; });
+                res.on('end', function() {
+                  try {
+                    var data = JSON.parse(body);
+                    var items = data.notices || data.results || data.items || data || [];
+                    if (!Array.isArray(items)) { resolve([]); return; }
+                    resolve(items.filter(function(n) { return n.status === 'Open'; }).slice(0, 30).map(function(n) { return {
+                      id: n.id || n.noticeId || 'CF_' + Date.now(),
+                      title: n.title || n.noticeTitle || '',
+                      buyer: n.contractingAuthority || n.organisationName || n.buyerName || '',
+                      contractValue: n.estimatedValue || n.valueLow || n.value || 0,
+                      description: n.description || n.shortDescription || '',
+                      closingDate: n.deadlineDate || n.closingDate || '',
+                      publishedDate: n.publishedDate || n.publicationDate || '',
+                      cpvCode: (n.cpvCodes || n.cpvCode || []).join(', '),
+                      tenderNoticeId: n.noticeId || n.id || '',
+                      source: 'Contracts Finder',
+                      scrapedAt: new Date().toISOString()
+                    }; }));
+                  } catch(e) { resolve([]); }
+                });
+              });
+              req.on('error', function() { resolve([]); });
+              req.setTimeout(30000, function() { req.destroy(); resolve([]); });
+              req.end();
+            });
+            if (!leads || leads.length === 0) { console.log('[SCRAPER] Contracts Finder returned 0 results, using demo'); leads = generateDemoLeads(product, 30); }
+          } catch(e) { console.log('[SCRAPER] Contracts Finder error: ' + e.message); leads = generateDemoLeads(product, 30); }
         } else {
           leads = generateDemoLeads(product, 30);
         }
