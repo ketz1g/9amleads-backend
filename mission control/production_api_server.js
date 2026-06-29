@@ -2448,7 +2448,7 @@ function generateLeadEmailHTML(customer, leads) {
 
     // Title + badge row
     body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
-    body += '<span style="padding:3px 10px;border-radius:4px;background:' + accent + ';color:#fff;font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap;flex-shrink:0">' + typeLabel + '</span>';
+    body += '<span style="padding:3px 10px;border-radius:4px;background:' + accent + ';color:#fff;font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap;flex-shrink:0">' + typeLabel + ' ' + (d.source === 'Companies House' ? 'REAL' : '') + '</span>';
     body += '<span style="font-size:15px;font-weight:700;color:#111;line-height:1.4">' + (d.title || d.tenderTitle || d.name || d.company || d.companyName || d.address || l.address || d.description || 'Opportunity') + '</span>';
     body += '</div>';
 
@@ -2662,12 +2662,14 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             });
             if (!leads || leads.length === 0) { console.log('[SCRAPER] Contracts Finder returned 0 results, using demo'); leads = generateDemoLeads(product, 30); }
           } catch(e) { console.log('[SCRAPER] Contracts Finder error: ' + e.message); leads = generateDemoLeads(product, 30); }
-        } else {
+    } else {
           leads = generateDemoLeads(product, 30);
         }
         fs.mkdirSync(DATA_DIR, { recursive: true });
         fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
-        results[product] = leads && leads.length > 0 ? (leads[0].source || 'ok') + '_' + leads.length : 'empty';
+        var leadSource = leads && leads.length > 0 ? (leads[0].source || 'unknown') : 'empty';
+        fs.writeFileSync(path.join(DATA_DIR, product + '-source.txt'), leadSource);
+        results[product] = leadSource + '_' + (leads ? leads.length : 0);
       } catch (prodErr) {
         results[product] = 'error: ' + prodErr.message;
       }
