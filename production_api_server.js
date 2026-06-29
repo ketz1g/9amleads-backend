@@ -2322,17 +2322,6 @@ app.post('/api/distribute', async (req, res) => {
     _dbData = null;
     getDb();
 
-    // Ensure demo leads exist if no real scrapers
-    for (const [p, config] of Object.entries(PRODUCT_LEAD_FILES)) {
-      const filePath = path.join(DATA_DIR, config.file);
-      if (!fs.existsSync(filePath) || fs.statSync(filePath).size < 10) {
-        console.log('[DISTRIBUTE] No leads for ' + p + ', generating demo data...');
-        const leads = generateDemoLeads(p, 30);
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-        fs.writeFileSync(filePath, JSON.stringify(leads, null, 2));
-      }
-    }
-
     const distributor = require('./lead_distributor.js');
     let result;
     if (product) {
