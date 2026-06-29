@@ -2405,7 +2405,7 @@ function generateLeadEmailHTML(customer, leads) {
   const productName = customer.product || 'opportunities';
   const aboutText = productName === 'moving' ? 'The address and property details are shown below. Contact the homeowner directly using the information provided.'
     : productName === 'probate' ? 'The deceased name, estate value and registry details are shown below. Contact the executor using the information provided.'
-    : productName === 'newbusiness' ? 'The company name, SIC code and incorporation date are shown below. Contact the director using the information provided.'
+    : productName === 'newbusiness' ? 'The company name, SIC code and incorporation date are shown below. Contact the company using the information provided.'
     : productName === 'planning' ? 'The address, council and application reference are shown below for your records.'
     : 'The tender details, buyer and deadline are shown below. Apply using the reference number.';
   const dashboardUrl = 'https://www.9amleads.com/portal/dashboard.html';
@@ -2449,7 +2449,7 @@ function generateLeadEmailHTML(customer, leads) {
     // Title + badge row
     body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
     body += '<span style="padding:3px 10px;border-radius:4px;background:' + accent + ';color:#fff;font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap;flex-shrink:0">' + typeLabel + '</span>';
-    body += '<span style="font-size:15px;font-weight:700;color:#111;line-height:1.4">' + (d.title || d.tenderTitle || d.name || d.companyName || d.address || l.address || d.description || 'Opportunity') + '</span>';
+    body += '<span style="font-size:15px;font-weight:700;color:#111;line-height:1.4">' + (d.title || d.tenderTitle || d.name || d.company || d.companyName || d.address || l.address || d.description || 'Opportunity') + '</span>';
     body += '</div>';
 
     // Key details as tagged chips
