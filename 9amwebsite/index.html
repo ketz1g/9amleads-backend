@@ -15,7 +15,31 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-:root{--accent:#0ea5e9;--accent-subtle:rgba(14,165,233,0.12);--accent-glow:rgba(14,165,233,0.3);--bg:#111;--bg-card:#1a1a1a;--border:#2a2a2a;--border-h:#444;--text:#f5f5f5;--text2:#aaa;--muted:#777;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
+:root{--accent:#0ea5e9;--accent-subtle:rgba(14,165,233,0.12);--accent-glow:rgba(14,165,233,0.3);--bg:#111;--bg-card:#1a1a1a;--border:#2a2a2a;--border-h:#444;--text:#f5f5f5;--text2:#ddd;--muted:#bbb;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
+:root.light{--bg:#f8f9fb;--bg-card:#ffffff;--border:#e5e7eb;--border-h:#d1d5db;--text:#111827;--text2:#4b5563;--muted:#6b7280}
+:root.light [class*="s-bg"]{opacity:0.04}
+:root.light [class*="s-grid"]{opacity:0.3}
+:root.light .section-sub{color:#4b5563}
+:root.light .faq-a p{color:#4b5563}
+:root.light .test-grid blockquote{color:#4b5563}
+:root.light .test-grid .role{color:#6b7280}
+:root.light [style*="color:#555"]{color:#4b5563!important}
+:root.light [style*="color:#666"]{color:#4b5563!important}
+:root.light [style*="color:#777"]{color:#6b7280!important}
+:root.light [style*="color:#888"]{color:#6b7280!important}
+:root.light [style*="color:#999"]{color:#9ca3af!important}
+:root.light [style*="background:#0a0a0a"]{background:var(--bg)!important}
+:root.light [style*="background:#111"]{background:var(--bg)!important}
+/* Hero section always stays dark with light text */
+:root.light .hero h1{color:#f5f5f5}
+:root.light .hero p{color:#ddd}
+:root.light .hero-stat-num{color:#f5f5f5}
+:root.light .hero-stat-label{color:#bbb}
+:root.light .hero-badge{color:#0ea5e9}
+/* Background elements lighter on light theme */
+:root.light .s-orb{opacity:0.06}
+:root.light .s-bg{opacity:0.04}
+:root.light .s-grid{opacity:0.12}
 
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -43,7 +67,7 @@ nav{padding:18px 0;position:fixed;top:0;left:0;right:0;z-index:100;background:rg
 .logo{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:800;font-family:var(--ff-h);letter-spacing:-.5px}
 .logo span{color:var(--accent)}
 .nav-links{display:flex;align-items:center;gap:4px}
-.nav-links a{padding:8px 14px;font-size:14px;font-weight:500;color:var(--text2);border-radius:6px;transition:.2s}
+.nav-links a{padding:8px 14px;font-size:14px;font-weight:500;color:var(--text2);border-radius:6px;transition:.2s;white-space:nowrap}
 .nav-links a:hover{color:var(--text)}
 .btn-pill{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:50px;background:var(--accent);color:#fff!important;font-weight:700;font-size:15px;border:none;cursor:pointer;transition:all .25s;font-family:var(--ff-b)}
 .btn-pill:hover{transform:translateY(-2px);box-shadow:0 8px 30px var(--accent-glow)}
@@ -54,6 +78,8 @@ nav{padding:18px 0;position:fixed;top:0;left:0;right:0;z-index:100;background:rg
 .logo .icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(14,165,233,0.15),rgba(6,182,212,0.1))}
 .nav-links a:hover{color:var(--text);background:rgba(255,255,255,.04)}
 .nav-links .btn-nav{padding:10px 22px;min-height:44px;background:linear-gradient(135deg,var(--accent),#0284c7);color:#fff!important;font-weight:600;box-shadow:0 4px 20px rgba(14,165,233,0.25)}
+.theme-toggle{background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer;padding:6px 10px;border-radius:6px;transition:.2s}
+.theme-toggle:hover{color:var(--text);background:rgba(255,255,255,.04)}
 
 /* Universal card - solid color backgrounds */
 .card{border-radius:14px;padding:28px 24px;transition:all .3s;position:relative;overflow:hidden}
@@ -249,6 +275,9 @@ footer a:hover{color:var(--text)}
 <a href="/founder/">Founder</a>
 <a href="mailto:hello@9amleads.com">Contact</a>
 <a href="/portal/" class="btn-nav"><i class="fas fa-clock"></i> Start Free Trial</a>
+<a href="/portal/" style="font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;padding:8px 14px">Sign In</a>
+<a href="/portal/#signup" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:6px 16px;border-radius:8px;font-weight:600;font-size:13px;text-decoration:none;margin-left:4px">Sign Up</a>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
 </div>
 <a href="/" style="display:none;font-size:13px;font-weight:600;padding:6px 12px;border:1px solid var(--border);border-radius:6px;color:var(--text2);text-decoration:none;margin-right:6px;white-space:nowrap" class="mobile-home">Home</a><button class="hamburger" id="hamBtn" onclick="toggleMobile()" aria-label="Menu"><span></span><span></span><span></span></button>
 </div></nav>
@@ -415,7 +444,7 @@ footer a:hover{color:var(--text)}
 <div style="max-width:800px;margin:0 auto 40px;text-align:center">
 <p style="color:var(--text2);font-size:16px;line-height:1.8;margin-bottom:24px">We started 9amLeads because we saw the same problem everywhere: great businesses with talented sales teams spending their most productive hours searching for leads instead of closing deals. Business owners wasting thousands on marketing that delivers random enquiries instead of qualified opportunities.</p>
 <p style="color:var(--text2);font-size:16px;line-height:1.8;margin-bottom:24px"><strong style="color:var(--text)">We believe every business deserves a predictable, affordable pipeline of exclusive opportunities.</strong> No more cold contacting from outdated lists. No more competing with five other companies for the same enquiry. No more hoping the phone rings.</p>
-<p style="color:var(--text2);font-size:16px;line-height:1.8;">Our platform uses public data intelligence to surface fresh opportunities, scores each one hot/warm/cold, generates AI-powered outreach messages, and delivers everything to your inbox and CRM at 9am. Simple, repeatable, profitable.</p>
+<p style="color:var(--text2);font-size:16px;line-height:1.8;">Our platform uses public data intelligence to surface fresh opportunities, analyses each one, generates AI-powered outreach messages, and delivers everything to your inbox and CRM at 9am. Simple, repeatable, profitable.</p>
 </div>
 </div>
 </section>
@@ -431,7 +460,7 @@ footer a:hover{color:var(--text)}
 <p class="section-sub">Most businesses waste their most productive hour prospecting. 9am Leads changes that. Your team arrives at 9am to a fresh batch of exclusive, ready to contact leads. No searching. No prospecting. Just selling.</p>
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:0 auto">
 <div class="card card-accent-orange" style="padding:28px 24px;text-align:center"><div style="font-size:36px;margin-bottom:12px">📉</div><h4 style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--accent-orange)">50x ROI One Deal Covers Your Year</h4><p style="font-size:13px;color:var(--text2);line-height:1.7">One single booking covers your entire year's subscription. Our average customer sees a 10x-50x return in their first month. When was the last time your marketing delivered that? <a href="/pricing/" style="color:var(--accent);font-weight:600">See plans →</a></p></div>
-<div class="card card-accent-cyan" style="padding:28px 24px;text-align:center"><div style="font-size:36px;margin-bottom:12px">🎯</div><h4 style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--accent-cyan)">Opportunity Scoring &amp; AI Outreach</h4><p style="font-size:13px;color:var(--text2);line-height:1.7">Every opportunity is scored Hot/Warm/Cold so you prioritise the best leads first. AI-generated outreach messages help you contact prospects faster and smarter. Your team walks in at 9am and sells. Simple.</p></div>
+<div class="card card-accent-cyan" style="padding:28px 24px;text-align:center"><div style="font-size:36px;margin-bottom:12px">🎯</div><h4 style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--accent-cyan)">Opportunity Scoring &amp; AI Outreach</h4><p style="font-size:13px;color:var(--text2);line-height:1.7">Every opportunity is analysed so you prioritise the best leads first. AI-generated outreach messages help you contact prospects faster and smarter. Your team walks in at 9am and sells. Simple.</p></div>
 <div class="card card-accent-purple" style="padding:28px 24px;text-align:center"><div style="font-size:36px;margin-bottom:12px">🛡️</div><h4 style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--accent-purple)">Exclusive Leads. Zero Competition.</h4><p style="font-size:13px;color:var(--text2);line-height:1.7">Unlike directories or PPC where you fight for every enquiry, our leads are exclusive to you — one business per industry per territory. When you receive a lead at 9am, no other company has it. Your conversion rate doubles overnight.</p></div>
 <div class="card card-accent-green" style="padding:28px 24px;text-align:center"><div style="font-size:36px;margin-bottom:12px">📊</div><h4 style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--accent-green)">CRM Exports &amp; Weekly Reports</h4><p style="font-size:13px;color:var(--text2);line-height:1.7">Export every lead to CSV or Excel with one click. Integrate with HubSpot, Salesforce, Pipedrive and more. Weekly reporting shows your conversion trends, lead volume by territory, and revenue performance. Structure drives profit.</p></div>
 <div class="card card-accent-indigo" style="padding:28px 24px;text-align:center"><div style="font-size:36px;margin-bottom:12px">⚡</div><h4 style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--accent-indigo)">First Contact Wins. Every Time.</h4><p style="font-size:13px;color:var(--text2);line-height:1.7">Speed is everything. Our customers who contact within 30 minutes of receiving their lead sheet convert at 3x the rate. Being first is a superpower, and 9amLeads makes sure you are always first.</p></div>
@@ -485,7 +514,7 @@ footer a:hover{color:var(--text)}
 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:800px;margin:0 auto">
 <div class="card card-accent-cyan" style="padding:28px 24px"><div style="font-size:28px;margin-bottom:8px">🎯</div><h4 style="font-size:15px;font-weight:700;margin-bottom:6px;color:var(--accent-cyan)">Exclusive Opportunities, Not Shared Enquiries</h4><p style="font-size:13px;color:var(--text2);line-height:1.7">Other platforms sell the same lead to multiple businesses. 9amLeads delivers fresh data directly to you — one business per industry per territory. You control the outreach, the timing, and the relationship on your terms.</p></div>
 <div class="card card-accent-green" style="padding:28px 24px"><div style="font-size:28px;margin-bottom:8px">📈</div><h4 style="font-size:15px;font-weight:700;margin-bottom:6px;color:var(--accent-green)">Build Your Own Pipeline</h4><p style="font-size:13px;color:var(--text2);line-height:1.7">We help you create a repeatable outreach system using fresh daily data, industry filtering, postcode targeting, and scalable workflows. Export to CSV or Excel for deeper analysis. You build a database of prospects that grows with your business.</p></div>
-<div class="card card-accent-purple" style="padding:28px 24px"><div style="font-size:28px;margin-bottom:8px">🕐</div><h4 style="font-size:15px;font-weight:700;margin-bottom:6px;color:var(--accent-purple)">Better Timing, Better Results</h4><p style="font-size:13px;color:var(--text2);line-height:1.7">Opportunities arrive at 9am every morning with AI-generated outreach messages and hot/warm/cold scoring. Your team builds a daily routine around fresh outreach. No distractions, no bidding wars — just consistent action that drives revenue.</p></div>
+<div class="card card-accent-purple" style="padding:28px 24px"><div style="font-size:28px;margin-bottom:8px">🕐</div><h4 style="font-size:15px;font-weight:700;margin-bottom:6px;color:var(--accent-purple)">Better Timing, Better Results</h4><p style="font-size:13px;color:var(--text2);line-height:1.7">Opportunities arrive at 9am every morning with AI-generated outreach messages and scoring. Your team builds a daily routine around fresh outreach. No distractions, no bidding wars — just consistent action that drives revenue.</p></div>
 <div class="card card-accent-orange" style="padding:28px 24px"><div style="font-size:28px;margin-bottom:8px">💰</div><h4 style="font-size:15px;font-weight:700;margin-bottom:6px;color:var(--accent-orange)">Predictable Cost, Scalable Growth</h4><p style="font-size:13px;color:var(--text2);line-height:1.7">Weekly subscriptions starting at £25/week. Cancel anytime. One deal covers your entire subscription. Weekly reports help you track what's working. Scale up or down as your business grows.</p></div>
 </div>
 <div style="text-align:center;margin-top:28px">
@@ -528,7 +557,7 @@ footer a:hover{color:var(--text)}
 <p class="section-sub">No apps to check. No dashboards to refresh. Fresh opportunities at 9am, every morning — scored, prioritised, and ready to act on.</p>
 <div class="steps">
 <div class="step"><span class="num">1</span><div class="icon">🎯</div><h4>Choose Your Streams</h4><p>Pick the lead types, industries, and postcode territories that match your business. Use our volume calculator to estimate daily opportunities. Set it once we do the rest.</p></div>
-<div class="step"><span class="num">2</span><div class="icon">🌙</div><h4>We Work Overnight</h4><p>Our systems scan property portals, government registries, Companies House, council portals, and contracts databases. Every new opportunity is scored Hot/Warm/Cold.</p></div>
+<div class="step"><span class="num">2</span><div class="icon">🌙</div><h4>We Work Overnight</h4><p>Our systems scan property portals, government registries, Companies House, council portals, and contracts databases. Every new opportunity is analysed.</p></div>
 <div class="step"><span class="num">3</span><div class="icon">📥</div><h4>Opportunities at 9am</h4><p>Your personalised opportunity sheet lands in your email and CRM at 9am — with AI-generated outreach messages ready to use. No logging in. No searching.</p></div>
 <div class="step"><span class="num">4</span><div class="icon">📞</div><h4>Contact &amp; Convert</h4><p>You're the first to reach out every single time. Export to CSV, Excel, or your CRM. Track performance with weekly reports. Close deals before competitors even know there's an opportunity.</p></div>
 </div>
@@ -547,22 +576,36 @@ footer a:hover{color:var(--text)}
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px">Built For Multiple Industries</div>
 <h2 class="section-title">One Platform. <span class="gradient">Every Industry.</span></h2>
 <p class="section-sub" style="max-width:650px">9am Leads supports businesses across multiple sectors. If you rely on being first to contact new prospects, we have a lead stream for you.</p>
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:900px;margin:0 auto">
-<div class="card card-accent-orange" style="padding:14px 12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">🚛</div><div style="font-size:12px;font-weight:600;color:var(--accent-orange)">Removals</div></div>
-<div class="card card-accent-cyan" style="padding:14px 12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">🔧</div><div style="font-size:12px;font-weight:600;color:var(--accent-cyan)">Trades</div></div>
-<div class="card card-accent-green" style="padding:14px 12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">🏠</div><div style="font-size:12px;font-weight:600;color:var(--accent-green)">Estate Agents</div></div>
-<div class="card card-accent-purple" style="padding:14px 12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">⚖️</div><div style="font-size:12px;font-weight:600;color:var(--accent-purple)">Solicitors</div></div>
-<div class="card card-default" style="padding:14px 12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">💰</div><div style="font-size:12px;font-weight:600">Mortgage Brokers</div></div>
-<div class="card card-accent-purple" style="padding:14px 12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">🛡️</div><div style="font-size:12px;font-weight:600;color:var(--accent-purple)">Insurance</div></div>
-<div class="card card-accent-cyan" style="padding:14px 12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">🧹</div><div style="font-size:12px;font-weight:600;color:var(--accent-cyan)">Cleaning</div></div>
-<div class="card card-accent-orange" style="padding:14px 12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">📦</div><div style="font-size:12px;font-weight:600;color:var(--accent-orange)">Storage</div></div>
-<div class="card card-accent-green" style="padding:14px 12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">🏢</div><div style="font-size:12px;font-weight:600;color:var(--accent-green)">B2B Services</div></div>
-<div class="card card-accent-indigo" style="padding:14px 12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">📋</div><div style="font-size:12px;font-weight:600;color:var(--accent-indigo)">Agencies</div></div>
-<div class="card card-accent-cyan" style="padding:14px 12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">🏪</div><div style="font-size:12px;font-weight:600;color:var(--accent-cyan)">Franchises</div></div>
-<div class="card card-accent-orange" style="padding:14px 12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">📞</div><div style="font-size:12px;font-weight:600;color:var(--accent-orange)">Local Services</div></div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-width:1000px;margin:0 auto">
+<a href="/movingleadsdaily/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🚛</div><div style="font-size:11px;font-weight:600;color:var(--text)">Removals</div></a>
+<a href="/planningleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🔧</div><div style="font-size:11px;font-weight:600;color:var(--text)">Builders</div></a>
+<a href="/probateleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🏠</div><div style="font-size:11px;font-weight:600;color:var(--text)">Estate Agents</div></a>
+<a href="/probateleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">⚖️</div><div style="font-size:11px;font-weight:600;color:var(--text)">Solicitors</div></a>
+<a href="/newbusinessalert/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">💰</div><div style="font-size:11px;font-weight:600;color:var(--text)">Mortgage Brokers</div></a>
+<a href="/newbusinessalert/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🏢</div><div style="font-size:11px;font-weight:600;color:var(--text)">Accountants</div></a>
+<a href="/newbusinessalert/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🛡️</div><div style="font-size:11px;font-weight:600;color:var(--text)">Insurance</div></a>
+<a href="/tenders/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🧹</div><div style="font-size:11px;font-weight:600;color:var(--text)">Cleaning</div></a>
+<a href="/movingleadsdaily/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">📦</div><div style="font-size:11px;font-weight:600;color:var(--text)">Storage</div></a>
+<a href="/planningleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">📋</div><div style="font-size:11px;font-weight:600;color:var(--text)">Architects</div></a>
+<a href="/planningleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">⚡</div><div style="font-size:11px;font-weight:600;color:var(--text)">Electricians</div></a>
+<a href="/planningleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🔩</div><div style="font-size:11px;font-weight:600;color:var(--text)">Plumbers</div></a>
+<a href="/planningleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🏗️</div><div style="font-size:11px;font-weight:600;color:var(--text)">Roofers</div></a>
+<a href="/planningleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🌳</div><div style="font-size:11px;font-weight:600;color:var(--text)">Landscapers</div></a>
+<a href="/planningleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🪚</div><div style="font-size:11px;font-weight:600;color:var(--text)">Carpenters</div></a>
+<a href="/planningleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🎨</div><div style="font-size:11px;font-weight:600;color:var(--text)">Painters &amp; Decorators</div></a>
+<a href="/planningleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🍳</div><div style="font-size:11px;font-weight:600;color:var(--text)">Kitchen Fitters</div></a>
+<a href="/planningleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🚿</div><div style="font-size:11px;font-weight:600;color:var(--text)">Bathroom Fitters</div></a>
+<a href="/planningleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">📐</div><div style="font-size:11px;font-weight:600;color:var(--text)">Surveyors</div></a>
+<a href="/tenders/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🖥️</div><div style="font-size:11px;font-weight:600;color:var(--text)">IT Services</div></a>
+<a href="/newbusinessalert/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">📱</div><div style="font-size:11px;font-weight:600;color:var(--text)">Marketing Agencies</div></a>
+<a href="/tenders/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🏥</div><div style="font-size:11px;font-weight:600;color:var(--text)">Healthcare</div></a>
+<a href="/tenders/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🔒</div><div style="font-size:11px;font-weight:600;color:var(--text)">Security</div></a>
+<a href="/tenders/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">🏭</div><div style="font-size:11px;font-weight:600;color:var(--text)">Facilities Management</div></a>
+<a href="/tenders/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=''"><div style="font-size:20px;margin-bottom:4px">👔</div><div style="font-size:11px;font-weight:600;color:var(--text)">Consultancy</div></a>
 </div>
 <div style="text-align:center;margin-top:24px">
 <p style="font-size:13px;color:var(--muted);max-width:600px;margin:0 auto">If your business relies on being first to contact new prospects, 9amLeads gives you the daily data, opportunity intelligence, and AI tools to win consistently.</p>
+<a href="/who-we-serve/" style="display:inline-block;margin-top:12px;font-size:13px;font-weight:600;color:var(--accent);text-decoration:none">Browse all industries <i class="fas fa-arrow-right" style="font-size:11px;margin-left:4px"></i></a>
 </div>
 </div>
 </section>
@@ -627,38 +670,186 @@ footer a:hover{color:var(--text)}
 <h2 class="section-title">Every Lead Type. Every <span class="gradient">Trade. One Platform.</span></h2>
 <p class="section-sub">We deliver targeted, exclusive business opportunities across five lead streams — each powered by public data intelligence, opportunity scoring, and AI outreach tools. If your business relies on being first to contact a prospect, we have got you covered.</p>
 
-<div style="max-width:820px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px;justify-content:center">
-<a href="/movingleadsdaily/" style="text-decoration:none;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;min-width:240px;transition:.2s;flex:1" onmouseover="this.style.borderColor='#ff6b35'" onmouseout="this.style.borderColor=''">
-<div style="width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(255,107,53,0.12);color:#ff6b35;flex-shrink:0"><i class="fas fa-truck"></i></div>
-<div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--ff-h)">Moving</div><div style="font-size:10px;color:var(--muted2)">Removals · Storage · Clearance</div></div>
-<div style="font-size:14px;color:#ff6b35"><i class="fas fa-arrow-right"></i></div>
+<style>
+.lt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;max-width:960px;margin:0 auto}
+.lt-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-decoration:none;color:var(--text);display:flex;flex-direction:column;transition:.3s;position:relative;overflow:hidden}
+.lt-card::before{content:'';position:absolute;inset:0;border-radius:14px;opacity:0;transition:.3s}
+.lt-card:hover::before{opacity:1}
+.lt-card:hover{transform:translateY(-4px)}
+.lt-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;position:relative;z-index:1}
+.lt-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.lt-title{font-size:16px;font-weight:700;font-family:var(--ff-h)}
+.lt-source{font-size:10px;color:var(--muted2);margin-top:1px}
+.lt-desc{font-size:12px;color:var(--text2);line-height:1.6;position:relative;z-index:1;flex:1}
+.lt-footer{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);position:relative;z-index:1}
+.lt-price{font-size:11px;color:var(--muted2)}
+.lt-arrow{font-size:13px;transition:.3s}
+.lt-card:hover .lt-arrow{transform:translateX(4px)}
+</style>
+
+<div class="lt-grid">
+<a href="/movingleadsdaily/" class="lt-card" onmouseover="this.style.borderColor='#ff6b35'" onmouseout="this.style.borderColor=''" style="--hgl:#ff6b35">
+<div class="lt-top">
+<div class="lt-icon" style="background:rgba(255,107,53,0.12);color:#ff6b35"><i class="fas fa-truck"></i></div>
+<div><div class="lt-title" style="color:#ff6b35">Moving Leads</div><div class="lt-source">Rightmove &amp; Zoopla SSTC/Under Offer</div></div>
+</div>
+<div class="lt-desc">Daily property chain-break alerts for removal companies, man &amp; van operators, storage providers and clearance services. Be first to quote before competitors.</div>
+<div class="lt-footer">
+<span class="lt-price"><i class="fas fa-chart-line" style="font-size:9px;margin-right:3px"></i> 1-35 leads/day · from £29/week</span>
+<span class="lt-arrow" style="color:#ff6b35"><i class="fas fa-arrow-right"></i></span>
+</div>
 </a>
-<a href="/probateleads/" style="text-decoration:none;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;min-width:240px;transition:.2s;flex:1" onmouseover="this.style.borderColor='#a855f7'" onmouseout="this.style.borderColor=''">
-<div style="width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(168,85,247,0.12);color:#a855f7;flex-shrink:0"><i class="fas fa-scale-balanced"></i></div>
-<div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--ff-h)">Probate</div><div style="font-size:10px;color:var(--muted2)">Solicitors · Will Writers · Estate Agents</div></div>
-<div style="font-size:14px;color:#a855f7"><i class="fas fa-arrow-right"></i></div>
+<a href="/probateleads/" class="lt-card" onmouseover="this.style.borderColor='#a855f7'" onmouseout="this.style.borderColor=''" style="--hgl:#a855f7">
+<div class="lt-top">
+<div class="lt-icon" style="background:rgba(168,85,247,0.12);color:#a855f7"><i class="fas fa-scale-balanced"></i></div>
+<div><div class="lt-title" style="color:#a855f7">Probate Leads</div><div class="lt-source">Gov.uk Probate Register</div></div>
+</div>
+<div class="lt-desc">Fresh probate grant notifications for solicitors, will writers, probate practitioners, estate agents and trust lawyers. Contact executors before other firms.</div>
+<div class="lt-footer">
+<span class="lt-price"><i class="fas fa-chart-line" style="font-size:9px;margin-right:3px"></i> 0-15 leads/day · from £39/week</span>
+<span class="lt-arrow" style="color:#a855f7"><i class="fas fa-arrow-right"></i></span>
+</div>
 </a>
-<a href="/newbusinessalert/" style="text-decoration:none;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;min-width:240px;transition:.2s;flex:1" onmouseover="this.style.borderColor='#06b6d4'" onmouseout="this.style.borderColor=''">
-<div style="width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(6,182,212,0.12);color:#06b6d4;flex-shrink:0"><i class="fas fa-building"></i></div>
-<div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--ff-h)">New Business</div><div style="font-size:10px;color:var(--muted2)">Accountants · Agencies · IT · Insurance</div></div>
-<div style="font-size:14px;color:#06b6d4"><i class="fas fa-arrow-right"></i></div>
+<a href="/newbusinessalert/" class="lt-card" onmouseover="this.style.borderColor='#06b6d4'" onmouseout="this.style.borderColor=''" style="--hgl:#06b6d4">
+<div class="lt-top">
+<div class="lt-icon" style="background:rgba(6,182,212,0.12);color:#06b6d4"><i class="fas fa-building"></i></div>
+<div><div class="lt-title" style="color:#06b6d4">New Business Alerts</div><div class="lt-source">Companies House Incorporations</div></div>
+</div>
+<div class="lt-desc">Same-day company registration alerts for accountants, web designers, marketing agencies, IT consultants, insurance brokers and B2B services.</div>
+<div class="lt-footer">
+<span class="lt-price"><i class="fas fa-chart-line" style="font-size:9px;margin-right:3px"></i> 1-40 leads/day · from £19/week</span>
+<span class="lt-arrow" style="color:#06b6d4"><i class="fas fa-arrow-right"></i></span>
+</div>
 </a>
-<a href="/planningleads/" style="text-decoration:none;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;min-width:240px;transition:.2s;flex:1" onmouseover="this.style.borderColor='#10b981'" onmouseout="this.style.borderColor=''">
-<div style="width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(16,185,129,0.12);color:#10b981;flex-shrink:0"><i class="fas fa-draw-polygon"></i></div>
-<div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--ff-h)">Planning</div><div style="font-size:10px;color:var(--muted2)">Builders · Architects · Trades</div></div>
-<div style="font-size:14px;color:#10b981"><i class="fas fa-arrow-right"></i></div>
+<a href="/planningleads/" class="lt-card" onmouseover="this.style.borderColor='#10b981'" onmouseout="this.style.borderColor=''" style="--hgl:#10b981">
+<div class="lt-top">
+<div class="lt-icon" style="background:rgba(16,185,129,0.12);color:#10b981"><i class="fas fa-draw-polygon"></i></div>
+<div><div class="lt-title" style="color:#10b981">Planning Permission</div><div class="lt-source">350+ UK Council Portals</div></div>
+</div>
+<div class="lt-desc">Planning application alerts for builders, architects, electricians, plumbers, roofers, landscapers and construction trades. Win projects before competitors quote.</div>
+<div class="lt-footer">
+<span class="lt-price"><i class="fas fa-chart-line" style="font-size:9px;margin-right:3px"></i> 1-25 leads/day · from £29/week</span>
+<span class="lt-arrow" style="color:#10b981"><i class="fas fa-arrow-right"></i></span>
+</div>
 </a>
-<a href="/tenders/" style="text-decoration:none;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;min-width:240px;transition:.2s;flex:1" onmouseover="this.style.borderColor='#6366f1'" onmouseout="this.style.borderColor=''">
-<div style="width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(99,102,241,0.12);color:#6366f1;flex-shrink:0"><i class="fas fa-gavel"></i></div>
-<div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--ff-h)">Tenders</div><div style="font-size:10px;color:var(--muted2)">IT · Construction · Cleaning · FM</div></div>
-<div style="font-size:14px;color:#6366f1"><i class="fas fa-arrow-right"></i></div>
+<a href="/tenders/" class="lt-card" onmouseover="this.style.borderColor='#6366f1'" onmouseout="this.style.borderColor=''" style="--hgl:#6366f1">
+<div class="lt-top">
+<div class="lt-icon" style="background:rgba(99,102,241,0.12);color:#6366f1"><i class="fas fa-gavel"></i></div>
+<div><div class="lt-title" style="color:#6366f1">Public Sector Tenders</div><div class="lt-source">Gov.uk Contracts Finder</div></div>
+</div>
+<div class="lt-desc">Government contract opportunities for IT services, construction, cleaning, security, facilities management and consultancy. £5k-£5m+ contract values.</div>
+<div class="lt-footer">
+<span class="lt-price"><i class="fas fa-chart-line" style="font-size:9px;margin-right:3px"></i> 3-40 leads/day · from £29/week</span>
+<span class="lt-arrow" style="color:#6366f1"><i class="fas fa-arrow-right"></i></span>
+</div>
 </a>
 </div>
-<div style="text-align:center;margin-top:24px">
+<div style="text-align:center;margin-top:28px">
 <a href="/pricing/" class="btn-pill" style="font-size:14px;padding:12px 28px"><i class="fas fa-pound-sign"></i> View All Plans &amp; Pricing</a>
 </div>
 </div>
 </section>
+
+<!-- PLATFORM FEATURES SECTION -->
+<section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px">Platform Features</div>
+<h2 class="section-title">What You Get on a <span class="gradient">Paid Plan</span></h2>
+<p class="section-sub" style="max-width:680px">Other lead companies send you a spreadsheet. 9amLeads gives you a complete opportunity intelligence platform — with AI scoring, outreach tools, CRM sync, and performance tracking. Here is everything included with your subscription.</p>
+
+<style>
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:1000px;margin:32px auto 0}
+@media(max-width:768px){.feat-grid{grid-template-columns:1fr}}
+.feat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;transition:.3s;position:relative;overflow:hidden}
+.feat-card:hover{border-color:var(--border-h);transform:translateY(-2px)}
+.feat-card .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px}
+.feat-card h4{font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px;color:var(--text)}
+.feat-card p{font-size:12px;color:var(--text2);line-height:1.6;margin:0}
+.feat-card .tag{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:4px;margin-top:10px}
+</style>
+
+<div class="feat-grid">
+<div class="feat-card">
+<div class="icon" style="background:rgba(245,158,11,0.12);color:#f59e0b"><i class="fas fa-bolt"></i></div>
+<h4>AI Opportunity Scoring</h4>
+<p>Every lead is analysed using our proprietary algorithm. Prioritise your calls based on estate value, location, timeliness, and conversion probability — not gut feel.</p>
+<span class="tag" style="background:rgba(245,158,11,0.1);color:#f59e0b">Exclusive</span>
+</div>
+<div class="feat-card">
+<div class="icon" style="background:rgba(6,182,212,0.12);color:#06b6d4"><i class="fas fa-robot"></i></div>
+<h4>AI Outreach Messages</h4>
+<p>Every lead includes a ready-to-use AI-generated outreach message. Personalised by lead type, territory, and prospect details. Copy, paste, send. No writer needed.</p>
+<span class="tag" style="background:rgba(6,182,212,0.1);color:#06b6d4">Exclusive</span>
+</div>
+<div class="feat-card">
+<div class="icon" style="background:rgba(34,197,94,0.12);color:#22c55e"><i class="fas fa-shield"></i></div>
+<h4>Exclusive Leads Only</h4>
+<p>We never sell the same lead to multiple buyers. When you receive a lead at 9am, you are the only person contacting that prospect. No price wars. No competition on the same deal.</p>
+</div>
+<div class="feat-card">
+<div class="icon" style="background:rgba(99,102,241,0.12);color:#6366f1"><i class="fas fa-plug"></i></div>
+<h4>CRM Sync via Webhook</h4>
+<p>Connect your CRM with a webhook URL and your daily leads arrive automatically at 9am. Works with HubSpot, Salesforce, Pipedrive, and thousands more via Zapier, Make, or our REST API. Not using a CRM? Leads arrive by email — no setup needed.</p>
+</div>
+<div class="feat-card">
+<div class="icon" style="background:rgba(236,72,153,0.12);color:#ec4899"><i class="fas fa-envelope-open-text"></i></div>
+<h4>9am Email Delivery</h4>
+<p>Beautifully formatted leads land in your inbox at 9am every morning. Full contact details, score badge, AI message, map view, and quick-actions. No login required.</p>
+</div>
+<div class="feat-card">
+<div class="icon" style="background:rgba(245,158,11,0.12);color:#f59e0b"><i class="fas fa-map-marked-alt"></i></div>
+<h4>Territory Management</h4>
+<p>Claim and manage postcode territories. Focus your team on the areas that generate the best returns. Block competitors from your zones. Daily lead volume per territory.</p>
+<span class="tag" style="background:rgba(245,158,11,0.1);color:#f59e0b">Growth+</span>
+</div>
+<div class="feat-card">
+<div class="icon" style="background:rgba(14,165,233,0.12);color:#0ea5e9"><i class="fas fa-history"></i></div>
+<h4>Lead Timeline &amp; History</h4>
+<p>Full history of every lead you have received. Search, filter, re-assign, and track status. Never lose a prospect or forget to follow up again.</p>
+</div>
+<div class="feat-card">
+<div class="icon" style="background:rgba(168,85,247,0.12);color:#a855f7"><i class="fas fa-chart-bar"></i></div>
+<h4>Performance Dashboard</h4>
+<p>Track leads received, contacted, converted, and revenue generated. See conversion rates by lead type, territory, and team member. Measure ROI in real time.</p>
+</div>
+<div class="feat-card">
+<div class="icon" style="background:rgba(34,197,94,0.12);color:#22c55e"><i class="fas fa-download"></i></div>
+<h4>CSV &amp; White-Label Exports</h4>
+<p>Export leads to CSV or Excel with your company branding. Perfect for team distribution, client reporting, or offline processing. Clean, structured, ready to use.</p>
+</div>
+<div class="feat-card">
+<div class="icon" style="background:rgba(255,107,53,0.12);color:#ff6b35"><i class="fas fa-paper-plane"></i></div>
+<h4>Follow-Up Task Reminders</h4>
+<p>Mark leads for follow-up and get task reminders at Day 1, 3, 5, and 10. Track progress from your dashboard and never lose a prospect again.</p>
+</div>
+<div class="feat-card">
+<div class="icon" style="background:rgba(6,182,212,0.12);color:#06b6d4"><i class="fas fa-search"></i></div>
+<h4>Saved Searches &amp; Filters</h4>
+<p>Create custom lead filters per lead type — minimum estate value, specific postcodes, SIC codes, council areas. Your preferences run automatically every night.</p>
+</div>
+
+</div>
+<div style="text-align:center;margin-top:28px">
+<a href="/pricing/" class="btn-pill" style="font-size:14px;padding:12px 28px"><i class="fas fa-pound-sign"></i> Compare Plans &amp; Pricing</a>
+</div>
+</div>
+</section>
+
+<div style="background:linear-gradient(135deg,rgba(14,165,233,0.06),rgba(99,102,241,0.06));border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:28px 0;text-align:center">
+<div class="container">
+<div style="display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap">
+<div style="text-align:left">
+<div style="font-size:14px;font-weight:700;font-family:var(--ff-h);color:var(--text)"><i class="fas fa-gift" style="color:var(--accent);margin-right:8px"></i> Try any lead type free for 7 days</div>
+<p style="font-size:12px;color:var(--text2);margin:4px 0 0;line-height:1.5">Real, exclusive leads at 9am every morning. No credit card. Cancel anytime.</p>
+</div>
+<a href="/portal/" class="btn-pill" style="font-size:13px;padding:10px 24px;white-space:nowrap;flex-shrink:0"><i class="fas fa-rocket"></i> Start Free Trial</a>
+</div>
+</div>
+</div>
 
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1400&q=80')"></div>
@@ -789,6 +980,136 @@ footer a:hover{color:var(--text)}
 </div>
 </section>
 
+<!-- LEAD TYPES SECTION -->
+<section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px">Lead Types</div>
+<h2 class="section-title">Choose Your <span class="gradient">Opportunity Stream</span></h2>
+<p class="section-sub">Five exclusive lead types sourced from official UK data sources. Pick the ones that match your business.</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;max-width:1000px;margin:0 auto">
+<a href="/movingleadsdaily/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-decoration:none;color:var(--text);display:block;transition:.3s" onmouseover="this.style.borderColor='#ff6b35';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+<div style="font-size:32px">🚚</div>
+<div><h4 style="font-size:15px;font-weight:700;font-family:var(--ff-h);margin:0;color:#ff6b35">Moving Leads</h4><p style="font-size:11px;color:var(--muted);margin:0">Rightmove &amp; Zoopla</p></div>
+</div>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">SSTC and Under Offer property alerts for removal companies, man and van operators, and storage providers. 1-35+ leads/day. From £29/week.</p>
+</a>
+<a href="/probateleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-decoration:none;color:var(--text);display:block;transition:.3s" onmouseover="this.style.borderColor='#a855f7';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+<div style="font-size:32px">⚖️</div>
+<div><h4 style="font-size:15px;font-weight:700;font-family:var(--ff-h);margin:0;color:#a855f7">Probate Leads</h4><p style="font-size:11px;color:var(--muted);margin:0">Gov.uk Probate Register</p></div>
+</div>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Probate grant notifications for solicitors, probate practitioners, will writers and estate agents. 0-15+ leads/day. From £39/week.</p>
+</a>
+<a href="/newbusinessalert/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-decoration:none;color:var(--text);display:block;transition:.3s" onmouseover="this.style.borderColor='#06b6d4';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+<div style="font-size:32px">🏢</div>
+<div><h4 style="font-size:15px;font-weight:700;font-family:var(--ff-h);margin:0;color:#06b6d4">New Business Alerts</h4><p style="font-size:11px;color:var(--muted);margin:0">Companies House</p></div>
+</div>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Fresh company incorporations for accountants, web designers, marketing agencies, IT consultants and B2B services. 1-40+ leads/day. From £19/week.</p>
+</a>
+<a href="/planningleads/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-decoration:none;color:var(--text);display:block;transition:.3s" onmouseover="this.style.borderColor='#10b981';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+<div style="font-size:32px">🔨</div>
+<div><h4 style="font-size:15px;font-weight:700;font-family:var(--ff-h);margin:0;color:#10b981">Planning Permission</h4><p style="font-size:11px;color:var(--muted);margin:0">350+ UK Council Portals</p></div>
+</div>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Planning application alerts for builders, architects, electricians, plumbers and construction trades. 1-25+ leads/day. From £29/week.</p>
+</a>
+<a href="/tenders/" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-decoration:none;color:var(--text);display:block;transition:.3s" onmouseover="this.style.borderColor='#6366f1';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+<div style="font-size:32px">📋</div>
+<div><h4 style="font-size:15px;font-weight:700;font-family:var(--ff-h);margin:0;color:#6366f1">Public Sector Tenders</h4><p style="font-size:11px;color:var(--muted);margin:0">Gov.uk Contracts Finder</p></div>
+</div>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Government contract opportunities for IT, construction, cleaning, security, facilities management and consultancy. 3-40+ leads/day. From £29/week.</p>
+</a>
+</div>
+</div>
+</section>
+<!-- SOCIAL MEDIA SERVICES -->
+<section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px">Done For You Services</div>
+<h2 class="section-title">Social Media <span class="gradient">Management</span></h2>
+<p class="section-sub" style="max-width:680px">We set up, automate, and manage your social media accounts so you stay visible while focusing on closing leads. Facebook, Instagram, TikTok, LinkedIn — we handle everything.</p>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:900px;margin:0 auto">
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
+<div style="width:44px;height:44px;border-radius:10px;background:rgba(14,165,233,0.12);color:#0ea5e9;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px"><i class="fas fa-rocket"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px">Account Setup</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">We create and optimise your business profiles on Facebook, Instagram, TikTok, LinkedIn, and X (Twitter). Bio, branding, contact info, posting schedule — all set up for you.</p>
+</div>
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
+<div style="width:44px;height:44px;border-radius:10px;background:rgba(168,85,247,0.12);color:#a855f7;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px"><i class="fas fa-clock"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px">Automated Posting</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Daily content scheduled and posted automatically. Lead generation tips, success stories, industry insights, and curated content — written, designed, and queued by us.</p>
+</div>
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
+<div style="width:44px;height:44px;border-radius:10px;background:rgba(34,197,94,0.12);color:#22c55e;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px"><i class="fas fa-headset"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px">Ongoing Management</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Monthly content planning, engagement monitoring, follower growth tracking, and strategy adjustments. We maintain your presence so you don't have to think about it.</p>
+</div>
+</div>
+<div style="text-align:center;margin-top:28px">
+<div style="display:inline-flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center">
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 24px;text-align:center">
+<div style="font-size:24px;font-weight:900;font-family:var(--ff-h);color:var(--accent)">£25<span style="font-size:13px;color:var(--muted);font-weight:400">/wk</span></div>
+<div style="font-size:11px;color:var(--text2)">Ongoing management</div>
+</div>
+<div style="font-size:20px;color:var(--muted2);font-weight:300">+</div>
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 24px;text-align:center">
+<div style="font-size:24px;font-weight:900;font-family:var(--ff-h);color:var(--accent)">£150<span style="font-size:13px;color:var(--muted);font-weight:400"> one-off</span></div>
+<div style="font-size:11px;color:var(--text2)">Setup fee</div>
+</div>
+</div>
+</div>
+<div style="text-align:center;margin-top:20px">
+<a href="/portal/enquiry.html" class="btn-pill" style="font-size:14px;padding:12px 28px"><i class="fas fa-paper-plane"></i> Enquire About Social Media Management</a>
+</div>
+<p style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted)">Cancel anytime. No long-term contract. First month's content strategy included in the setup fee.</p>
+</div>
+</section>
+
+<!-- MARKETING SERVICES -->
+<section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1557838923-2985c318be48?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px">Done For You Services</div>
+<h2 class="section-title">Need Marketing Materials? <span class="gradient">We Can Help.</span></h2>
+<p class="section-sub" style="max-width:680px">Got the leads but no time to design emails, flyers, or follow-up campaigns? We design and set up everything for you — branded, ready to send, tailored to your business.</p>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:900px;margin:0 auto">
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
+<div style="width:44px;height:44px;border-radius:10px;background:rgba(14,165,233,0.12);color:#0ea5e9;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px"><i class="fas fa-envelope-open-text"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px">Email Campaigns &amp; Automation</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">We build your email templates, set up Day 1/3/5/10 follow-up sequences, and connect everything to your Brevo or email platform. You just hit send.</p>
+</div>
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
+<div style="width:44px;height:44px;border-radius:10px;background:rgba(168,85,247,0.12);color:#a855f7;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px"><i class="fas fa-paint-brush"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px">Flyers, Letters &amp; Brochures</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Professional flyers, personal letterheads, and brochures designed for your business. Print-ready PDFs you can send with every lead or mail directly.</p>
+</div>
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
+<div style="width:44px;height:44px;border-radius:10px;background:rgba(34,197,94,0.12);color:#22c55e;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px"><i class="fas fa-palette"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px">Branding &amp; Identity</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Logos, colour schemes, fonts, and brand guidelines. Everything you need to look professional when prospects receive your outreach.</p>
+</div>
+</div>
+<div style="text-align:center;margin-top:28px">
+<a href="/portal/enquiry.html" class="btn-pill" style="font-size:14px;padding:12px 28px"><i class="fas fa-paper-plane"></i> Tell Us What You Need — Get a Quote</a>
+</div>
+<p style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted)">Every project is priced individually. Tell us what you need and we'll quote within 24 hours.</p>
+</div>
+</section>
+
 <section class="section" id="faq" style="position:relative;overflow:hidden">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1400&q=80')"></div>
 <div class="s-grid"></div>
@@ -799,10 +1120,14 @@ footer a:hover{color:var(--text)}
 <h2 class="section-title">Questions? We've Got <span class="gradient">Answers.</span></h2>
 <div class="faq-grid">
 <div class="faq-item open"><button class="faq-q" onclick="toggleFaq(this)">What time do leads arrive? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Every morning at 9am sharp. Every lead type Moving, Probate, New Business, Planning, and Tenders all arrive at the same time. Same time every day. Your team can build it into their morning routine.</p></div></div>
-<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Am I the only person getting these leads? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Yes. Every lead is exclusive to you. We do not sell the same lead to multiple companies. When you receive a lead at 9am, you are the first and only person contacted that prospect.</p></div></div>
-<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I subscribe to multiple lead types? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Absolutely. You can subscribe to any combination of our five lead streams. Each arrives as a separate email at 9am. Many customers subscribe to multiple types.</p></div></div>
+<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Am I the only person getting these leads? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Every lead delivered to you is 100% exclusive — no other business receives the same prospect. You get your daily limit at 9am. If there are more leads in your area than your plan covers, those extras go to other businesses. Upgrade to capture more leads in your area before anyone else. The specific leads in your inbox are yours alone.</p></div></div>
+<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">How do I receive my leads? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Leads arrive by email at 9am every morning in a beautifully formatted HTML email with full contact details, opportunity score, AI-generated outreach message, and a map. You can also connect your CRM, export to CSV, or set up automated delivery via Zapier, Make, or our REST API.</p></div></div>
+<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I subscribe to multiple lead types? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Absolutely. You can subscribe to any combination of our five lead streams. Each arrives as a separate email at 9am. Many customers subscribe to multiple types — for example, builders often take both Planning Permission and Tenders.</p></div></div>
 <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Is there a free trial? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Yes. Every lead type comes with a 7 day free trial. No credit card required. You'll receive daily leads at 9am for a full week. Cancel anytime during the trial no charge, no questions asked.</p></div></div>
-<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">How are the leads sourced? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Each lead type comes from a different public data source. Moving Leads tracks SSTC properties on Rightmove and Zoopla. Probate Leads uses the official Gov.uk probate register. New Business Alerts uses Companies House. Planning Permission tracks the Planning Portal. Tenders uses Contracts Finder.</p></div></div>
+<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">How are the leads sourced? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Each lead type comes from a different public data source. Moving Leads tracks SSTC properties on Rightmove and Zoopla. Probate Leads uses the official Gov.uk probate register. New Business Alerts uses Companies House. Planning Permission monitors 350+ UK council planning portals. Tenders uses Contracts Finder and other government procurement platforms.</p></div></div>
+<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">What does the opportunity score mean? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Every lead is scored Hot / Warm / Cold based on estate value, location, timeliness, and probability of conversion. Hot leads are your highest priority — contact these first. The score updates automatically based on new data and lead age.</p></div></div>
+<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I cancel anytime? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Yes. Your subscription renews weekly and you can cancel at any time from your portal. There are no long-term contracts, no cancellation fees, and no hidden charges. If you cancel during a free trial, you are never charged.</p></div></div>
+<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Which CRMs do you integrate with? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>We integrate directly with HubSpot, Salesforce, Pipedrive, and Removals Manager. We also support Zapier, Make, and a REST API for custom integrations with Zoho CRM, Freshsales, Zendesk Sell, ActiveCampaign, Keap, Monday.com, Airtable, Notion, and any system that accepts webhooks. No CRM? No problem — leads arrive by email.</p></div></div>
 </div>
 </div>
 </section>
@@ -1085,6 +1410,18 @@ document.addEventListener('DOMContentLoaded',function(){var l=document.getElemen
 <blockquote>9amLeads helped me win a £1.4M commercial construction contract. I got the planning lead at 9am, contacted the developer at 9:15am, and by lunchtime I was their preferred contractor. Unbelievable.</blockquote>
 <div class="author">James R.</div>
 <div class="role">Bristol Construction</div></div>
+<div class="t-card"><div class="stars">★★★★★</div>
+<blockquote>We were throwing money at Google Ads and getting lukewarm enquiries. 9amLeads delivers qualified moving leads at a fixed cost. The 9am delivery means my team contacts prospects before they've even spoken to anyone else. Game changer.</blockquote>
+<div class="author">Andrew M.</div>
+<div class="role">London Premier Removals</div></div>
+<div class="t-card"><div class="stars">★★★★★</div>
+<blockquote>The exclusivity is what makes this work. When I call a planning applicant at 9:02am, I'm the only builder who's contacted them. My conversion rate went from 15% to over 55% in the first month. I can't recommend it enough.</blockquote>
+<div class="author">David W.</div>
+<div class="role">Premier Build &amp; Design, Bristol</div></div>
+<div class="t-card"><div class="stars">★★★★★</div>
+<blockquote>I tried Bark first — three other firms got the same lead and it became a price war. 9amLeads gives me exclusive access. I won a £3,200 contract on my first day. The fixed pricing means my marketing budget is finally predictable.</blockquote>
+<div class="author">Priya S.</div>
+<div class="role">Secure Estate Planning, Birmingham</div></div>
 </div>
 </div>
 </section>
@@ -1110,6 +1447,18 @@ document.addEventListener('DOMContentLoaded',function(){var l=document.getElemen
 </div>
 </div>
 </section>
+
+<!-- VALUE STRIP -->
+<div style="max-width:700px;margin:0 auto 32px;padding:20px 24px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.12);border-radius:12px;text-align:center">
+<div style="font-size:12px;color:var(--text2);margin-bottom:8px">💰 <strong style="color:var(--text)">Choose your lead type — one win covers your entire subscription</strong></div>
+<div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;font-size:11px">
+<div><span style="color:#ff6b35;font-weight:700">Moving:</span> £1k–£3k/win</div>
+<div><span style="color:#a855f7;font-weight:700">Probate:</span> £1k–£5k/win</div>
+<div><span style="color:#06b6d4;font-weight:700">New Business:</span> £500–£5k/win</div>
+<div><span style="color:#10b981;font-weight:700">Planning:</span> £5k–£50k/win</div>
+<div><span style="color:#6366f1;font-weight:700">Tenders:</span> £50k–£500k/win</div>
+</div>
+</div>
 
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border)">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1400&q=80')"></div>
@@ -1187,6 +1536,11 @@ document.addEventListener('DOMContentLoaded',function(){var l=document.getElemen
 <a href="/#faq">FAQ</a>
 <a href="mailto:hello@9amleads.com">hello@9amleads.com</a>
 </div>
+<div>
+<h4>Get Started</h4>
+<a href="/portal/">Sign In</a>
+<a href="/portal/#signup">Sign Up Free</a>
+</div>
 </div>
 <div class="footer-bottom">&copy; 2026 9am Leads Ltd &middot; Made in the UK &middot; All rights reserved.</div>
 </div>
@@ -1259,5 +1613,20 @@ setTimeout(function(){var e=document.getElementById('liveProof'),t=document.getE
 </div>
 <script>
 if(localStorage.getItem('cookies_accepted')) document.getElementById('cookieConsent').style.display='none';
+// Theme toggle
+var savedTheme = localStorage.getItem('theme');
+if(savedTheme === 'light') { document.documentElement.classList.add('light'); }
+function toggleTheme() {
+  var root = document.documentElement;
+  root.classList.toggle('light');
+  var isLight = root.classList.contains('light');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  document.getElementById('themeToggle').innerHTML = isLight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+}
+// Set initial icon
+document.addEventListener('DOMContentLoaded', function() {
+  var isLight = document.documentElement.classList.contains('light');
+  document.getElementById('themeToggle').innerHTML = isLight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+});
 </script>
 </body></html>

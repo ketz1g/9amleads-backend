@@ -1341,9 +1341,15 @@ function getCampaignEmailHTML(customer, template) {
 // ===== SCRAPER SCHEDULER: Daily at 5:30 AM =====
 // Generates fresh leads from real APIs (Apify, Gov.uk, etc.) or demo data.
 // Leads are saved to data/{product}-leads.json for the distributor at 9am.
-// ===== SCRAPER SCHEDULER: DISABLED =====
-// Cron was disabled to prevent automated runs until scraping is fixed.
-// Scrapers can still be triggered manually via /api/admin/run-scrapers
+// ===== SCRAPER SCHEDULER: Daily at 5:30 AM =====
+cron.schedule('30 5 * * *', async () => {
+  console.log('[SCRAPER CRON] Starting daily lead generation...');
+  // Use same logic as /api/admin/run-scrapers endpoint
+  const https = require('https');
+  const req = https.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {});
+  req.write(JSON.stringify({}));
+  req.end();
+});
 
 // Generate realistic-looking demo leads for any product
 function generateDemoLeads(product, count) {

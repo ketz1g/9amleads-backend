@@ -6,139 +6,62 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-:root{--bg:#0a0c14;--bg2:#06080e;--card:#0f1220;--card2:#0b0d18;--border:#1a1e32;--border2:#282e48;--text:#e8edf5;--text2:#a0a8c0;--muted:#6b7280;--muted2:#4b5563;--primary:#0ea5e9;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--accent:#0ea5e9;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif;--shadow:0 1px 3px rgba(0,0,0,.3);--shadow-lg:0 8px 32px rgba(0,0,0,.4);--radius:12px;--radius-sm:8px}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:var(--ff-b);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;background-image:radial-gradient(ellipse at 20% 50%,rgba(14,165,233,.03) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(99,102,241,.03) 0%,transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(14,165,233,.02) 0%,transparent 50%);min-height:100vh}
-nav{display:flex;justify-content:space-between;align-items:center;padding:12px 28px;background:rgba(10,12,20,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
-.logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:900;font-family:var(--ff-h)}
-.logo .mark{width:34px;height:34px;background:linear-gradient(135deg,var(--primary),#2563eb);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;box-shadow:0 2px 12px rgba(14,165,233,.3)}
-.logo span{color:var(--primary)}
-.nav-links{display:flex;gap:4px;align-items:center}
-.nav-links a{text-decoration:none;color:var(--muted);font-size:13px;font-weight:500;padding:7px 14px;border-radius:8px;transition:all .2s}
-.nav-links a:hover{color:var(--text);background:rgba(255,255,255,.04)}
-.nav-links a.active{color:var(--primary);background:rgba(14,165,233,.1)}
-.nav-links a[href*="founder"]{background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(99,102,241,.12));border:1px solid rgba(14,165,233,.2);color:var(--primary);font-weight:600}
-.nav-links a[href*="founder"]:hover{background:linear-gradient(135deg,rgba(14,165,233,.2),rgba(99,102,241,.2));transform:translateY(-1px)}
-.nav-links .btn-out{color:var(--danger);font-weight:600;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15)}
-.nav-links .btn-out:hover{background:rgba(239,68,68,.15);color:var(--danger)}
-.container{max-width:1200px;margin:0 auto;padding:28px 24px}
-.onboarding{background:linear-gradient(135deg,rgba(14,165,233,.1),rgba(99,102,241,.05));border:1px solid rgba(14,165,233,.2);border-radius:var(--radius);padding:18px 24px;margin-bottom:24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--text2);backdrop-filter:blur(4px)}
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:all .3s}
-.stat-card:hover{transform:translateY(-2px);border-color:var(--border2);box-shadow:var(--shadow-lg)}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}
-.stat-card:nth-child(1)::before{background:linear-gradient(90deg,#0ea5e9,#06b6d4)}
-.stat-card:nth-child(2)::before{background:linear-gradient(90deg,#22c55e,#10b981)}
-.stat-card:nth-child(3)::before{background:linear-gradient(90deg,#f59e0b,#f97316)}
-.stat-card:nth-child(4)::before{background:linear-gradient(90deg,#a855f7,#8b5cf6)}
-.stat-card .num{font-size:30px;font-weight:800;font-family:var(--ff-h);color:var(--primary);line-height:1.2}
-.stat-card .label{color:var(--muted);font-size:12px;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-.stat-card .sub{color:var(--muted2);font-size:11px;margin-top:2px}
-.stat-card .stat-trend{position:absolute;top:16px;right:16px;font-size:11px;display:flex;align-items:center;gap:4px;padding:2px 10px;border-radius:20px;background:rgba(34,197,94,.1);color:var(--success);font-weight:600}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;transition:border-color .3s,box-shadow .3s}
-.card:hover{border-color:var(--border2)}
-.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}
-.card-title{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
-.badge{display:inline-flex;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;gap:4px;align-items:center;line-height:1}
-.badge-green{background:rgba(34,197,94,.12);color:var(--success);border:1px solid rgba(34,197,94,.2)}
-.badge-blue{background:rgba(14,165,233,.12);color:var(--primary);border:1px solid rgba(14,165,233,.2)}
-.badge-orange{background:rgba(245,158,11,.12);color:var(--warning);border:1px solid rgba(245,158,11,.2)}
-.badge-red{background:rgba(239,68,68,.12);color:var(--danger);border:1px solid rgba(239,68,68,.2)}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-weight:600;font-size:13px;cursor:pointer;border:none;text-decoration:none;transition:all .2s;font-family:var(--ff-b)}
-.btn-primary{background:linear-gradient(135deg,var(--primary),#2563eb);color:#fff;box-shadow:0 2px 8px rgba(14,165,233,.2)}
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(14,165,233,.35)}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
-.btn-outline:hover{border-color:var(--primary);color:var(--primary);background:rgba(14,165,233,.04)}
-.btn-sm{padding:6px 12px;font-size:11px}
-.btn-danger{background:var(--danger);color:#fff}
-.tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
-.tool-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:22px 16px;text-align:center;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
-.tool-card:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:0 8px 24px rgba(14,165,233,.15)}
-.tool-card .icon{font-size:36px;margin-bottom:10px;display:block}
-.tool-card h3{font-size:14px;font-weight:600;margin-bottom:4px;color:var(--text)}
-.tool-card p{color:var(--muted);font-size:11px;line-height:1.4}
-.sub-card{background:linear-gradient(135deg,rgba(14,165,233,.06),transparent);border:1px solid rgba(14,165,233,.15);border-radius:var(--radius);padding:20px}
-.sub-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
-.sub-plan{font-size:18px;font-weight:800;font-family:var(--ff-h)}
-.sub-price{color:var(--muted);font-size:13px}
-.tip-card{background:rgba(245,158,11,.04);border:1px solid rgba(245,158,11,.1);border-radius:10px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:12px;color:var(--text2);transition:border-color .2s}
-.tip-card:hover{border-color:rgba(245,158,11,.2)}
-.tip-card .icon{font-size:16px;flex-shrink:0}
-.date-nav{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.date-nav .nav-btn{width:34px;height:34px;border-radius:var(--radius-sm);background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:all .2s;font-size:12px}
-.date-nav .nav-btn:hover{border-color:var(--primary);color:var(--primary);background:rgba(14,165,233,.04)}
-.date-nav .date-label{font-size:16px;font-weight:700;font-family:var(--ff-h);min-width:200px;text-align:center}
-.date-nav .today-btn{padding:6px 16px;border-radius:var(--radius-sm);background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.15);color:var(--primary);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s}
-.date-nav .today-btn:hover{background:rgba(14,165,233,.16);transform:translateY(-1px)}
-.day-group{margin-bottom:16px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .2s}
-.day-group:hover{border-color:var(--border2)}
-.day-header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:var(--bg2);border-bottom:1px solid var(--border);cursor:pointer;transition:background .2s}
-.day-header:hover{background:rgba(255,255,255,.025)}
-.day-header .day-date{font-size:14px;font-weight:700}
-.day-header .day-count{font-size:12px;color:var(--muted);font-weight:600}
-.day-header .day-arrow{color:var(--muted2);font-size:10px;transition:transform .3s}
-.day-header.collapsed .day-arrow{transform:rotate(-90deg)}
-.day-body{padding:0}
-.day-body.collapsed{display:none}
-.lead-row{display:grid;grid-template-columns:1fr 90px 100px 90px 54px;gap:8px;padding:12px 20px;border-bottom:1px solid var(--border);align-items:center;font-size:12px;transition:background .15s}
-.lead-row:last-child{border-bottom:none}
-.lead-row:hover{background:rgba(255,255,255,.015)}
-.lead-row .score{text-align:center;font-size:11px}
-.lead-row .details{color:var(--text);font-weight:500}
-.lead-row .details small{color:var(--muted2);font-size:10px;display:block;font-weight:400;margin-top:2px}
-.lead-row .value{color:var(--text2);font-weight:500}
-.lead-row .status{text-align:center}
-.empty-state{text-align:center;padding:48px 20px;color:var(--muted2);font-size:13px}
-.empty-state .icon{font-size:40px;margin-bottom:12px;opacity:.5}
-footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-top:1px solid var(--border);margin-top:48px}
-footer a{color:var(--primary);text-decoration:none}
-footer a:hover{text-decoration:underline}
-.cal-popup{position:absolute;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-lg);width:260px;display:none;right:0}
-.cal-popup.show{display:block}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px}
-.cal-grid .cal-day{text-align:center;padding:6px 4px;border-radius:6px;font-size:12px;cursor:pointer;color:var(--text2);transition:all .15s}
-.cal-grid .cal-day:hover{background:rgba(14,165,233,.1);color:var(--primary)}
-.cal-grid .cal-day.active{background:var(--primary);color:#fff}
-.cal-grid .cal-day.muted{color:var(--muted2)}
-.cal-grid .cal-day.today{background:rgba(14,165,233,.12);color:var(--primary);font-weight:700}
-.cal-grid .cal-header{text-align:center;padding:4px;font-size:10px;color:var(--muted2);font-weight:600;text-transform:uppercase}
-.cal-month-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.cal-month-nav span{font-size:13px;font-weight:700;font-family:var(--ff-h)}
-.cal-month-nav button{background:none;border:none;color:var(--text2);cursor:pointer;padding:4px 8px;font-size:14px;transition:color .15s}
-.cal-month-nav button:hover{color:var(--primary)}
-@media(max-width:768px){nav{padding:10px 16px;flex-wrap:wrap;gap:8px}.nav-links{flex-wrap:wrap;gap:2px}.nav-links a{font-size:12px;padding:5px 10px}.lead-row{grid-template-columns:1fr 70px 70px 60px}.lead-row .status{display:none}.stats-grid{grid-template-columns:1fr 1fr}.container{padding:16px}}
-@media(max-width:480px){.stats-grid{grid-template-columns:1fr}.tools-grid{grid-template-columns:1fr 1fr}.lead-row{grid-template-columns:1fr 60px 60px;font-size:11px;padding:10px 14px;gap:6px}.lead-row .value{display:none}}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}:root{--bg:#f3f4f6;--bg2:#ffffff;--card:#ffffff;--card2:#f9fafb;--border:#e5e7eb;--border2:#d1d5db;--text:#111827;--text2:#4b5563;--muted:#6b7280;--muted2:#9ca3af;--primary:#0ea5e9;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--accent:#0ea5e9;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif;--shadow:0 1px 3px rgba(0,0,0,.06);--shadow-lg:0 8px 32px rgba(0,0,0,.1);--radius:12px;--radius-sm:8px;--nav-h:56px}
+:root.dark{--bg:#0a0c14;--bg2:#06080e;--card:#0f1220;--card2:#0b0d18;--border:#1a1e32;--border2:#282e48;--text:#e8edf5;--text2:#a0a8c0;--muted:#6b7280;--muted2:#4b5563;--shadow:0 1px 3px rgba(0,0,0,.3);--shadow-lg:0 8px 32px rgba(0,0,0,.5)}
+body{font-family:var(--ff-b);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--muted2)}
+nav{display:flex;align-items:center;height:var(--nav-h);padding:0 28px;background:#ffffff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;gap:12px}
+.nav-scroll{display:flex;align-items:center;gap:8px;overflow-x:auto;flex:1;-ms-overflow-style:none;scrollbar-width:none}.nav-scroll::-webkit-scrollbar{display:none}
+.logo{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:900;font-family:var(--ff-h);flex-shrink:0;text-decoration:none;color:var(--text)}.logo .mark{width:30px;height:30px;background:linear-gradient(135deg,var(--primary),#2563eb);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;box-shadow:0 2px 10px rgba(14,165,233,.3)}.logo span{color:var(--primary)}
+.nav-links{display:flex;gap:2px;align-items:center}.nav-links a{text-decoration:none;color:var(--muted);font-size:13px;font-weight:500;padding:6px 14px;border-radius:7px;transition:all .2s;white-space:nowrap}.nav-links a:hover{color:var(--text);background:rgba(255,255,255,.04)}.nav-links a.active{color:var(--primary);background:rgba(14,165,233,.1)}
+.pill-growth{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(99,102,241,.12));border:1px solid rgba(14,165,233,.2);color:var(--primary);font-weight:600;font-size:12px;text-decoration:none;transition:all .2s;white-space:nowrap;flex-shrink:0}.pill-growth:hover{background:linear-gradient(135deg,rgba(14,165,233,.22),rgba(99,102,241,.22));transform:translateY(-1px);box-shadow:0 4px 12px rgba(14,165,233,.15)}
+.theme-toggle{background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer;padding:6px 10px;border-radius:6px;transition:.2s;flex-shrink:0}.theme-toggle:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.nav-signout{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;color:var(--danger);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);font-family:var(--ff-b);text-decoration:none;transition:all .2s;flex-shrink:0}.nav-signout:hover{background:rgba(239,68,68,.16)}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.onboarding{background:linear-gradient(135deg,rgba(14,165,233,.08),rgba(99,102,241,.04));border:1px solid rgba(14,165,233,.15);border-radius:var(--radius);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--text2)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:all .3s}.stat-card:hover{transform:translateY(-2px);border-color:var(--border2);box-shadow:var(--shadow-lg)}.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}.stat-card:nth-child(1)::before{background:linear-gradient(90deg,#0ea5e9,#06b6d4)}.stat-card:nth-child(2)::before{background:linear-gradient(90deg,#22c55e,#10b981)}.stat-card:nth-child(3)::before{background:linear-gradient(90deg,#f59e0b,#f97316)}.stat-card:nth-child(4)::before{background:linear-gradient(90deg,#a855f7,#8b5cf6)}.stat-card .num{font-size:32px;font-weight:800;font-family:var(--ff-h);color:var(--text);line-height:1.2}.stat-card .label{color:var(--muted);font-size:12px;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}.stat-card .sub{color:var(--muted2);font-size:11px;margin-top:2px}.stat-card .stat-trend{position:absolute;top:16px;right:16px;font-size:11px;display:flex;align-items:center;gap:4px;padding:2px 10px;border-radius:20px;background:rgba(34,197,94,.1);color:var(--success);font-weight:600}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;transition:border-color .3s,box-shadow .3s}.card:hover{border-color:var(--border2)}.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}.card-title{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+.badge{display:inline-flex;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;gap:4px;align-items:center;line-height:1}.badge-green{background:rgba(34,197,94,.12);color:var(--success);border:1px solid rgba(34,197,94,.2)}.badge-blue{background:rgba(14,165,233,.12);color:var(--primary);border:1px solid rgba(14,165,233,.2)}.badge-orange{background:rgba(245,158,11,.12);color:var(--warning);border:1px solid rgba(245,158,11,.2)}.badge-red{background:rgba(239,68,68,.12);color:var(--danger);border:1px solid rgba(239,68,68,.2)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-weight:600;font-size:13px;cursor:pointer;border:none;text-decoration:none;transition:all .2s;font-family:var(--ff-b)}.btn-primary{background:linear-gradient(135deg,var(--primary),#2563eb);color:#fff;box-shadow:0 2px 8px rgba(14,165,233,.2)}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(14,165,233,.35)}.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}.btn-outline:hover{border-color:var(--primary);color:var(--primary);background:rgba(14,165,233,.04)}.btn-sm{padding:6px 12px;font-size:11px}.btn-danger{background:var(--danger);color:#fff}
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.tool-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:22px 16px;text-align:center;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}.tool-card:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:0 8px 24px rgba(14,165,233,.15)}.tool-card .icon{font-size:36px;margin-bottom:10px;display:block}.tool-card h3{font-size:14px;font-weight:600;margin-bottom:4px;color:var(--text)}.tool-card p{color:var(--muted);font-size:11px;line-height:1.4}
+.sub-card{background:linear-gradient(135deg,rgba(14,165,233,.06),transparent);border:1px solid rgba(14,165,233,.15);border-radius:var(--radius);padding:20px;transition:border-color .2s}.sub-card:hover{border-color:rgba(14,165,233,.25)}.sub-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}.sub-plan{font-size:18px;font-weight:800;font-family:var(--ff-h)}.sub-price{color:var(--muted);font-size:13px}
+.tip-card{background:rgba(245,158,11,.04);border:1px solid rgba(245,158,11,.1);border-radius:10px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:12px;color:var(--text2);transition:all .2s}.tip-card:hover{border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.06)}.tip-card .icon{font-size:16px;flex-shrink:0}
+.date-nav{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;padding:12px 16px;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-sm)}.date-nav .nav-btn{width:32px;height:32px;border-radius:var(--radius-sm);background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:all .2s;font-size:12px;flex-shrink:0}.date-nav .nav-btn:hover{border-color:var(--primary);color:var(--primary);background:rgba(14,165,233,.04)}.date-nav .date-label{font-size:15px;font-weight:700;font-family:var(--ff-h);min-width:200px;text-align:center;color:var(--text)}.date-nav .today-btn{padding:5px 14px;border-radius:var(--radius-sm);background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.15);color:var(--primary);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;flex-shrink:0}.date-nav .today-btn:hover{background:rgba(14,165,233,.18);transform:translateY(-1px)}
+.day-group{margin-bottom:14px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .2s}.day-group:hover{border-color:var(--border2)}.day-header{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:var(--bg2);border-bottom:1px solid var(--border);cursor:pointer;transition:background .2s}.day-header:hover{background:rgba(255,255,255,.025)}.day-header .day-date{font-size:14px;font-weight:700}.day-header .day-count{font-size:12px;color:var(--muted);font-weight:600}.day-header .day-arrow{color:var(--muted2);font-size:10px;transition:transform .3s}.day-header.collapsed .day-arrow{transform:rotate(-90deg)}.day-body{padding:0}.day-body.collapsed{display:none}
+.lead-row{display:grid;grid-template-columns:1fr 90px 100px 90px 54px;gap:8px;padding:12px 20px;border-bottom:1px solid var(--border);align-items:center;font-size:12px;transition:background .15s}.lead-row:last-child{border-bottom:none}.lead-row:hover{background:rgba(255,255,255,.015)}.lead-row .score{text-align:center;font-size:11px}.lead-row .details{color:var(--text);font-weight:500}.lead-row .details small{color:var(--muted2);font-size:10px;display:block;font-weight:400;margin-top:2px}.lead-row .value{color:var(--text2);font-weight:500}.lead-row .status{text-align:center}.empty-state{text-align:center;padding:48px 20px;color:var(--muted2);font-size:13px}.empty-state .icon{font-size:40px;margin-bottom:12px;opacity:.5}
+footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-top:1px solid var(--border);margin-top:48px}footer a{color:var(--primary);text-decoration:none}footer a:hover{text-decoration:underline}
+.cal-popup{position:absolute;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-lg);width:260px;display:none;right:0}.cal-popup.show{display:block}.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px}.cal-grid .cal-day{text-align:center;padding:6px 4px;border-radius:6px;font-size:12px;cursor:pointer;color:var(--text2);transition:all .15s}.cal-grid .cal-day:hover{background:rgba(14,165,233,.1);color:var(--primary)}.cal-grid .cal-day.active{background:var(--primary);color:#fff}.cal-grid .cal-day.muted{color:var(--muted2)}.cal-grid .cal-day.today{background:rgba(14,165,233,.12);color:var(--primary);font-weight:700}.cal-grid .cal-header{text-align:center;padding:4px;font-size:10px;color:var(--muted2);font-weight:600;text-transform:uppercase}.cal-month-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.cal-month-nav span{font-size:13px;font-weight:700;font-family:var(--ff-h)}.cal-month-nav button{background:none;border:none;color:var(--text2);cursor:pointer;padding:4px 8px;font-size:14px;transition:color .15s}.cal-month-nav button:hover{color:var(--primary)}
+@media(max-width:900px){nav{padding:0 16px}.container{padding:16px}.stats-grid{gap:10px}.stat-card{padding:16px}.stat-card .num{font-size:26px}}
+@media(max-width:768px){nav{gap:8px;padding:0 12px;flex-wrap:nowrap;overflow-x:auto}.nav-scroll{gap:6px}.nav-links a{font-size:12px;padding:5px 10px}.pill-growth{font-size:11px;padding:5px 12px}.nav-signout{font-size:11px;padding:5px 10px}.lead-row{grid-template-columns:1fr 70px 70px 60px}.lead-row .status{display:none}.stats-grid{grid-template-columns:1fr 1fr}.container{padding:12px}.date-nav{padding:10px 12px}.date-nav .date-label{min-width:140px;font-size:13px}}
+@media(max-width:480px){.stats-grid{grid-template-columns:1fr}.tools-grid{grid-template-columns:1fr 1fr}.lead-row{grid-template-columns:1fr 60px 60px;font-size:11px;padding:10px 14px;gap:6px}.lead-row .value{display:none}.nav-links a{font-size:11px;padding:4px 8px}.container{padding:10px}.date-nav .date-label{min-width:100px;font-size:12px}}
 </style>
 </head>
 <body>
 <nav>
-<div class="logo"><div class="mark">9</div>9am<span>Leads</span></div>
+<a href="/" class="logo"><div class="mark">9</div>9am<span>Leads</span></a>
+<div class="nav-scroll">
 <div class="nav-links">
-<a href="/" target="_blank">Home</a>
+<a href="/">Home</a>
 <a href="/" class="active">Dashboard</a>
 <a href="#" onclick="openSuccessCentre();return false">Success Centre</a>
 <a href="#" onclick="openCampaigns();return false">Campaigns</a>
 <a href="#" onclick="openPartnerMarketplace();return false">Partners</a>
 <a href="#" onclick="openWhiteLabel();return false">Branding</a>
 <a href="#" onclick="openFeatureDiscovery();return false">Features</a>
-<a href="/founder/" target="_blank">Business Growth</a>
-<a href="#" id="logout-btn" class="btn-out" onclick="logout()">Sign Out</a>
+</div>
+<a href="/founder/" target="_blank" class="pill-growth"><i class="fas fa-rocket"></i> Business Growth</a>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
+<button class="nav-signout" id="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
 </div>
 </nav>
 <div class="container">
-
-<!-- ONBOARDING -->
 <div class="onboarding" id="onboardingBanner"><i class="fas fa-spinner fa-spin" style="color:var(--primary)"></i> Loading your dashboard...</div>
-
-<!-- STATS -->
 <div class="stats-grid" id="statsGrid">
 <div class="stat-card"><div class="num" id="stat-leads">0</div><div class="label">Total Leads</div><div class="sub">All time</div><div class="stat-trend"><i class="fas fa-arrow-up"></i> Active</div></div>
 <div class="stat-card"><div class="num" id="stat-new">0</div><div class="label">This Week</div><div class="sub" id="stat-week-label">Last 7 days</div><div class="stat-trend"><i class="fas fa-chart-line"></i> New</div></div>
 <div class="stat-card"><div class="num" id="stat-plan">Free</div><div class="label">Your Plan</div><div class="sub" id="stat-trial">7 days remaining</div><div class="stat-trend"><i class="fas fa-crown"></i> Plan</div></div>
 <div class="stat-card"><div class="num" id="stat-rate">0%</div><div class="label">Conversion</div><div class="sub">Contacted to Booked</div><div class="stat-trend"><i class="fas fa-percentage"></i> Rate</div></div>
 </div>
-
-<!-- TIPS -->
 <div class="card" id="tipsSection">
 <div class="card-title"><i class="fas fa-lightbulb" style="color:var(--warning)"></i> Tips to Get Started</div>
 <div id="tipsContainer">
@@ -147,8 +70,6 @@ footer a:hover{text-decoration:underline}
 <div class="tip-card"><span class="icon">📊</span><div><strong>Track everything</strong> Log every call and booking. See which areas and lead types deliver the best ROI.</div></div>
 </div>
 </div>
-
-<!-- TOOLS -->
 <div class="card">
 <div class="card-title"><i class="fas fa-rocket" style="color:var(--primary)"></i> Your Tools</div>
 <div class="tools-grid">
@@ -157,8 +78,6 @@ footer a:hover{text-decoration:underline}
 <div class="tool-card" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'})"><div class="icon">⚡</div><h3>Upgrade Plan</h3><p>Get more leads per day</p></div>
 </div>
 </div>
-
-<!-- BUSINESS GROWTH -->
 <div class="card" style="background:linear-gradient(135deg,rgba(14,165,233,0.03),rgba(99,102,241,0.03));border-color:rgba(14,165,233,0.15)">
 <div class="card-header"><div class="card-title"><i class="fas fa-chart-line" style="color:var(--primary)"></i> Grow Your Business</div></div>
 <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">Need help with marketing materials, email campaigns, social media, or scaling your operations? We offer done-for-you services to help you convert more leads and grow faster.</p>
@@ -173,8 +92,6 @@ footer a:hover{text-decoration:underline}
 <a href="/founder/" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:8px;color:var(--primary);font-size:13px;font-weight:600;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(14,165,233,0.15)'" onmouseout="this.style.background=''"><i class="fas fa-comments"></i> Get a Custom Quote — Tell Us What You Need</a>
 </div>
 </div>
-
-<!-- FEEDBACK -->
 <div class="card" style="background:rgba(245,158,11,0.02);border-color:rgba(245,158,11,0.1)">
 <div class="card-header"><div class="card-title"><i class="fas fa-comment-dots" style="color:var(--warning)"></i> We Want Your Feedback</div></div>
 <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
@@ -184,8 +101,6 @@ footer a:hover{text-decoration:underline}
 <a href="/portal/feedback.html" class="btn btn-primary btn-sm" style="white-space:nowrap;flex-shrink:0"><i class="fas fa-paper-plane"></i> Send Feedback</a>
 </div>
 </div>
-
-<!-- SUBSCRIPTION -->
 <div class="card" id="sub-section">
 <div class="card-header"><div class="card-title"><i class="fas fa-crown" style="color:var(--warning)"></i> Subscription</div></div>
 <div class="sub-card">
@@ -201,8 +116,6 @@ footer a:hover{text-decoration:underline}
 <div id="sub-msg" style="margin-top:8px;font-size:12px;color:var(--success);display:none"></div>
 </div>
 </div>
-
-<!-- MY TERRITORIES -->
 <div class="card" id="territories-section">
   <div class="card-header">
     <div class="card-title"><i class="fas fa-map-marker-alt" style="color:var(--success)"></i> My Territories</div>
@@ -226,8 +139,6 @@ footer a:hover{text-decoration:underline}
     </div>
   </div>
 </div>
-
-<!-- LEAD FILTERS -->
 <div class="card" id="lead-filters-section">
   <div class="card-header">
     <div class="card-title"><i class="fas fa-sliders-h" style="color:var(--primary)"></i> Lead Filters</div>
@@ -300,8 +211,6 @@ footer a:hover{text-decoration:underline}
     <button class="btn btn-outline btn-sm" id="edit-filters-btn" onclick="toggleFilterEditor()"><i class="fas fa-pen"></i> Edit Filters</button>
   </div>
 </div>
-
-<!-- CRM INTEGRATION -->
 <div class="card" id="crmSection">
 <div class="card-header"><div class="card-title"><i class="fas fa-plug"></i> CRM Integration</div></div>
 <p style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6">Connect your CRM via webhook. Your daily leads will be pushed here automatically at 9am. Works with Zapier, Make, n8n, HubSpot, Salesforce, and any system that accepts webhooks.</p>
@@ -316,8 +225,6 @@ footer a:hover{text-decoration:underline}
 </div>
 <div id="crmStatus" style="margin-top:10px;font-size:13px;display:none"></div>
 </div>
-
-<!-- LEADS SECTION -->
 <div class="card" id="leads-section">
 <div class="card-header">
 <div class="card-title"><i class="fas fa-calendar-day" style="color:var(--success)"></i> <span id="leadTitle">Your Leads</span></div>
@@ -332,8 +239,6 @@ footer a:hover{text-decoration:underline}
 </div>
 </div>
 </div>
-
-<!-- Date Navigation -->
 <div class="date-nav">
 <button class="today-btn" onclick="goToday()">Today</button>
 <button class="nav-btn" onclick="navDay(-1)"><i class="fas fa-chevron-left"></i></button>
@@ -353,19 +258,15 @@ footer a:hover{text-decoration:underline}
 <option value="all">All Leads</option>
 </select>
 </div>
-
-<!-- Lead Groups -->
 <div id="leadGroups"><div class="empty-state"><div class="icon">📭</div>Loading your leads...</div></div>
 </div>
 </div>
-
 <footer>
 <a href="https://www.9amleads.com" style="color:var(--primary);font-weight:600;text-decoration:none">9amLeads.com</a> &middot;
 <a href="/founder/" style="color:var(--muted2);text-decoration:none">Founder</a> &middot;
 <a href="/terms.html" style="color:var(--muted2);text-decoration:none">Terms</a> &middot;
 <a href="/privacy.html" style="color:var(--muted2);text-decoration:none">Privacy</a>
 </footer>
-
 <script>
 const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://localhost:8012'
@@ -423,12 +324,11 @@ async function loadDashboard() {
   }
   calcConversion();
   updateOnboarding();
-  // Show lead volume tip if needed
-  if (typeof showLowLeadsTip === 'function' && leads.length >= 0) {
-    var pcCount = 0;
-    try { var t = document.getElementById('territory-tags'); pcCount = t ? t.children.length : 0; } catch(e) {}
-    var weekLeads = leads.filter(function(l) { return l.created_at && new Date(l.created_at) > new Date(Date.now() - 7*86400000); }).length;
-    showLowLeadsTip(pcCount || 3, weekLeads);
+  if (typeof showLowLeadsTip === 'function') {
+    var pcCount2 = 0;
+    try { var t2 = document.getElementById('territory-tags'); pcCount2 = t2 ? t2.children.length : 0; } catch(e) {}
+    var weekLeads2 = leads.filter(function(l) { return l.created_at && new Date(l.created_at) > new Date(Date.now() - 7*86400000); }).length;
+    showLowLeadsTip(pcCount2 || 3, weekLeads2);
   }
 }
 
@@ -440,7 +340,7 @@ function generateDemoLeads(session) {
     const daysAgo = Math.floor(Math.random() * 14);
     const d = new Date(); d.setDate(d.getDate() - daysAgo);
     leads.push({
-      data: JSON.stringify({ address: Math.floor(Math.random()*200)+1 + ' ' + ['Acacia Avenue','Victoria Road','Green Lane','Park Crescent','Oakwood Gardens','Market Street','Church Road'][i%7] + ', ' + areas[i%areas.length], type: types[i%types.length], price: '£' + (Math.floor(Math.random()*900)+100) + ',000', bedrooms: Math.floor(Math.random()*4)+1 }),
+      data: JSON.stringify({ address: Math.floor(Math.random()*200)+1 + ' ' + ['Acacia Avenue','Victoria Road','Green Lane','Park Crescent','Oakwood Gardens','Market Street','Church Road'][i%7] + ', ' + areas[i%areas.length], type: types[i%types.length], price: '┬ú' + (Math.floor(Math.random()*900)+100) + ',000', bedrooms: Math.floor(Math.random()*4)+1 }),
       status: ['new','new','new','contacted','booked'][i%5],
       created_at: d.toISOString()
     });
@@ -450,7 +350,7 @@ function generateDemoLeads(session) {
   renderLeads();
   // Show demo mode banner
   const banner = document.getElementById('onboardingBanner');
-  banner.innerHTML = '<i class="fas fa-flask" style="color:var(--warning)"></i> <strong>Demo Mode</strong> — Showing sample leads. Your real leads will appear after the 9am daily scrape and distribution pipeline runs.';
+  banner.innerHTML = '<i class="fas fa-flask" style="color:var(--warning)"></i> <strong>Demo Mode</strong> ΓÇö Showing sample leads. Your real leads will appear after the 9am daily scrape and distribution pipeline runs.';
   banner.style.display = 'flex';
 }
 
@@ -471,7 +371,7 @@ function renderLeads() {
   const titleEl = document.getElementById('leadTitle');
 
   if (leads.length === 0) {
-    container.innerHTML = '<div class="empty-state"><div class="icon">📭</div>No leads yet. They will appear here at 9am.<br><span style="font-size:11px;color:var(--muted2)">New leads arrive every morning.</span></div>';
+    container.innerHTML = '<div class="empty-state"><div class="icon">≡ƒô¡</div>No leads yet. They will appear here at 9am.<br><span style="font-size:11px;color:var(--muted2)">New leads arrive every morning.</span></div>';
     document.getElementById('dateLabel').textContent = 'No leads';
     countEl.textContent = '0 leads';
     return;
@@ -483,46 +383,30 @@ function renderLeads() {
 
   if (currentView === 'day') {
     const today = viewDate.toDateString();
-    var filtered = currentStatusFilter ? leads.filter(function(l) { return l.status === currentStatusFilter; }) : leads;
-    const todayLeads = filtered.filter(l => l.created_at && new Date(l.created_at).toDateString() === today);
+    const todayLeads = leads.filter(l => l.created_at && new Date(l.created_at).toDateString() === today);
     document.getElementById('dateLabel').textContent = viewDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     countEl.textContent = todayLeads.length + ' leads';
 
     if (todayLeads.length === 0) {
-      html = '<div class="empty-state"><div class="icon">📭</div>No leads for this day.</div>';
+      html = '<div class="empty-state"><div class="icon">≡ƒô¡</div>No leads for this day.</div>';
     } else {
       html += '<div class="day-group"><div class="day-header"><span class="day-date">' + viewDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + '</span><span class="day-count">' + todayLeads.length + ' leads</span></div><div class="day-body">';
       todayLeads.forEach(l => {
         const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
-        const score = l.opportunity_score || 0;
-        const category = l.opportunity_category || 'cold';
-        const scoreLabel = l.opportunity_label || '';
-        const reasons = l.opportunity_reasons || [];
-        const scoreBadge = score >= 80 ? '<span class="badge badge-green" title="' + reasons.join(' | ') + '" style="cursor:help">'+ score + ' 🔥</span>' : score >= 50 ? '<span class="badge badge-orange" title="' + reasons.join(' | ') + '" style="cursor:help">'+ score + ' 🔶</span>' : '<span class="badge badge-blue" title="' + reasons.join(' | ') + '" style="cursor:help">'+ score + ' ❄</span>';
-        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || '—') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' · ' + d.type : '') + '</small></div><div class="score">' + scoreBadge + '</div><div class="value">' + (d.price || '—') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div><div class="outreach" style="text-align:center"><button class="btn btn-outline btn-sm" onclick="toggleOutreach(\'' + l.id + '\', this)"><i class="fas fa-envelope"></i></button></div></div>' +
-          '<div id="outreach-' + l.id + '" class="outreach-panel" style="display:none;padding:14px;background:var(--bg2);border-bottom:1px solid var(--border)"><div class="outreach-loading" style="color:var(--muted);font-size:12px">Generating outreach messages...</div></div>';
+        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || 'ΓÇö') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' ┬╖ ' + d.type : '') + '</small></div><div class="value">' + (d.price || 'ΓÇö') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div></div>';
       });
       html += '</div></div>';
     }
     titleEl.textContent = 'Daily Leads';
   } else {
-    var filteredAll = currentStatusFilter ? leads.filter(function(l) { return l.status === currentStatusFilter; }) : leads;
     document.getElementById('dateLabel').textContent = 'All Leads';
-    countEl.textContent = filteredAll.length + ' total' + (currentStatusFilter ? ' (' + currentStatusFilter + ')' : '');
-    titleEl.textContent = 'All Leads' + (currentStatusFilter ? ' - ' + currentStatusFilter : '');
-    var filteredGroups = currentStatusFilter ? filteredAll : leads;
-    var filteredGrouped = groupLeadsByDay(filteredGroups);
-    filteredGrouped.forEach(([day, dayLeads]) => {
+    countEl.textContent = leads.length + ' total';
+    titleEl.textContent = 'All Leads';
+    groups.forEach(([day, dayLeads]) => {
       html += '<div class="day-group"><div class="day-header" onclick="this.classList.toggle(\'collapsed\');this.nextElementSibling.classList.toggle(\'collapsed\')"><span class="day-date">' + day + '</span><span class="day-count">' + dayLeads.length + ' leads</span><span class="day-arrow"><i class="fas fa-chevron-down"></i></span></div><div class="day-body">';
       dayLeads.forEach(l => {
         const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
-        const score = l.opportunity_score || 0;
-        const category = l.opportunity_category || 'cold';
-        const scoreLabel = l.opportunity_label || '';
-        const reasons = l.opportunity_reasons || [];
-        const scoreBadge = score >= 80 ? '<span class="badge badge-green" title="' + reasons.join(' | ') + '" style="cursor:help">'+ score + ' 🔥</span>' : score >= 50 ? '<span class="badge badge-orange" title="' + reasons.join(' | ') + '" style="cursor:help">'+ score + ' 🔶</span>' : '<span class="badge badge-blue" title="' + reasons.join(' | ') + '" style="cursor:help">'+ score + ' ❄</span>';
-        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || '—') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' · ' + d.type : '') + '</small></div><div class="score">' + scoreBadge + '</div><div class="value">' + (d.price || '—') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div><div class="outreach" style="text-align:center"><button class="btn btn-outline btn-sm" onclick="toggleOutreach(\'' + l.id + '\', this)"><i class="fas fa-envelope"></i></button></div></div>' +
-          '<div id="outreach-' + l.id + '" class="outreach-panel" style="display:none;padding:14px;background:var(--bg2);border-bottom:1px solid var(--border)"><div class="outreach-loading" style="color:var(--muted);font-size:12px">Generating outreach messages...</div></div>';
+        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || 'ΓÇö') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' ┬╖ ' + d.type : '') + '</small></div><div class="value">' + (d.price || 'ΓÇö') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div></div>';
       });
       html += '</div></div>';
     });
@@ -618,13 +502,56 @@ async function checkout(plan) {
       msg.innerHTML = 'Payments are being set up. For now, please email <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">hello@9amleads.com</a> to upgrade your plan.';
     } else {
       msg.style.color = 'var(--danger)';
-      msg.textContent = 'Error: ' + errMsg + ' — Contact hello@9amleads.com for help.';
+      msg.textContent = 'Error: ' + errMsg + ' ΓÇö Contact hello@9amleads.com for help.';
     }
     msg.style.display = 'block';
   }
 }
 
 function scrollToLeads() { document.getElementById('leads-section').scrollIntoView({ behavior: 'smooth' }); }
+
+// Status filter
+var currentStatusFilter = '';
+function filterByStatus(s) {
+  currentStatusFilter = s || '';
+  document.querySelectorAll('[id^="st-"]').forEach(function(b) { b.style.cssText = ''; });
+  var el = document.getElementById('st-' + (s || 'all'));
+  if (el) { el.style.cssText = 'border-color:var(--primary);color:var(--primary);background:rgba(14,165,233,0.08)'; }
+  if (typeof renderLeads === 'function') renderLeads();
+}
+
+// Modal placeholders (populated on first open)
+function openSuccessCentre() { showModal('Success Centre', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Tips and best practices for contacting your leads.</p><p style="font-size:12px;color:var(--muted)">Coming soon — contact strategies, email templates, and call scripts will appear here.</p></div>'); }
+function openCampaigns() { showModal('Campaigns', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Automated email follow-up campaigns for your leads.</p><p style="font-size:12px;color:var(--muted)">Coming soon — set up Day 1/3/5/10 sequences.</p></div>'); }
+function openPartnerMarketplace() { showModal('Partner Marketplace', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Find partners to refer or receive leads from.</p><p style="font-size:12px;color:var(--muted)">Coming soon — connect with complementary businesses.</p></div>'); }
+function openWhiteLabel() { showModal('White Label Branding', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Customise your exports and reports with your branding.</p><p style="font-size:12px;color:var(--muted)">Coming soon — upload your logo and set brand colours.</p></div>'); }
+function openFeatureDiscovery() {
+  var features = ['Lead Scoring', 'AI Outreach', 'CRM Sync', 'Territory Management', 'Export CSV', 'Lead Timeline', 'Performance Dashboard', 'Saved Searches'];
+  var html = '<div style="padding:10px"><p style="color:var(--text2);margin-bottom:16px">Tools available in your account:</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+  for (var fi = 0; fi < features.length; fi++) {
+    html += '<div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text)"><i class="fas fa-check" style="color:var(--success);margin-right:6px"></i>' + features[fi] + '</div>';
+  }
+  html += '</div></div>';
+  showModal('Features & Tools', html);
+}
+
+function showModal(title, content) {
+  var existing = document.getElementById('modal-overlay');
+  if (existing) existing.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:480px;width:100%';
+  box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="font-weight:700;font-family:var(--ff-h);font-size:16px">' + title + '</h3><button onclick="this.closest(\'#modal-overlay\').remove()" style="background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer">✕</button></div>' + content;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function openWeeklyReport() {
+  exportRange('csv');
+}
 
 // Plan pricing per product (with postcode limits)
 const PLAN_PRICING = {
@@ -658,7 +585,7 @@ function showPlans() {
         '<div style="display:flex;justify-content:space-between;align-items:center">' +
         '<div><strong style="font-size:15px;color:#fff">' + key.charAt(0).toUpperCase() + key.slice(1) + '</strong>' +
         '<br><span style="font-size:12px;color:#8890a8">' + p.leads + ' leads/day \u00b7 ' + pcLimit + ' postcode' + (p.postcodes !== 1 ? 's' : '') + '</span></div>' +
-        '<div style="text-align:right"><span style="font-size:20px;font-weight:800">&pound;' + p.price + '</span><span style="font-size:12px;color:#8890a8">/wk</span>' +
+        '<div style="text-align:right"><span style="font-size:20px;font-weight:800">&pound;' + p.price + '</span><span style="font-size:12px;color:#8890a8">/mo</span>' +
         (isCurrent ? '<br><span style="font-size:10px;color:#22c55e;font-weight:600">Current Plan</span>' : '') +
         '</div></div>' +
         (!isCurrent ? '<button onclick="checkout(\'' + key + '\')" style="margin-top:12px;width:100%;padding:8px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer">' + (parseInt(key === 'starter' ? '0' : currentPlan === 'free_trial' ? '-1' : '1') < 0 ? 'Upgrade' : 'Switch to ' + key.charAt(0).toUpperCase() + key.slice(1)) + '</button>' : '') +
@@ -666,7 +593,7 @@ function showPlans() {
     }).join('') +
     '<div style="margin-top:16px;padding:12px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:8px;font-size:11px;color:#8890a8;text-align:center">' +
     '<strong>Postcode districts:</strong> Starter: 5 districts &middot; Pro: 10 districts &middot; Enterprise: 50 districts<br>' +
-    '<strong>Extra districts:</strong> Need more? Add 5 extra districts for just £20/mo from your dashboard.<br>' +
+    '<strong>Extra districts:</strong> Need more? Add 5 extra districts for just ┬ú20/mo from your dashboard.<br>' +
     'Switching plans creates a new Stripe subscription with prorated billing.</div>';
 
   overlay.appendChild(modal);
@@ -675,7 +602,7 @@ function showPlans() {
 }
 
 async function buyExtraPostcodes() {
-  if (!confirm('Add 5 extra postcode districts for £20/month? This will be charged on your next invoice.')) return;
+  if (!confirm('Add 5 extra postcode districts for ┬ú20/month? This will be charged on your next invoice.')) return;
   const data = await apiFetch('/api/postcodes/extra', { method: 'POST' });
   const msg = document.getElementById('sub-msg');
   if (data && data.success) {
@@ -799,7 +726,7 @@ function renderTerritoryFull() {
     html += '<div style="display:flex;align-items:center;gap:6px;padding:7px 12px;cursor:pointer;transition:.1s"' +
       'onmouseover="this.style.background=\'rgba(255,255,255,0.02)\'" onmouseout="this.style.background=\'transparent\'"' +
       'onclick="toggleTerritoryArea(\'' + area.area_code + '\')">' +
-      '<span style="font-size:9px;color:var(--muted2);min-width:14px">' + (isExpanded ? '▼' : '▶') + '</span>' +
+      '<span style="font-size:9px;color:var(--muted2);min-width:14px">' + (isExpanded ? 'Γû╝' : 'Γû╢') + '</span>' +
       '<span style="font-weight:700;font-size:12px;color:var(--text);min-width:28px">' + area.area_code + '</span>' +
       '<span style="color:var(--muted);font-size:11px">' + area.area_name + '</span>' +
       '<span style="margin-left:auto;font-size:10px;color:var(--muted2)">' + area.districts.length + ' districts</span>' +
@@ -864,7 +791,7 @@ function renderTerritorySearchResults(items) {
   let html = '';
   for (const d of items) {
     if (d.area_code !== lastArea) {
-      html += '<div style="padding:4px 12px 1px;font-size:9px;font-weight:700;color:var(--muted2)">' + d.area_code + ' — ' + d.area_name + '</div>';
+      html += '<div style="padding:4px 12px 1px;font-size:9px;font-weight:700;color:var(--muted2)">' + d.area_code + ' ΓÇö ' + d.area_name + '</div>';
       lastArea = d.area_code;
     }
     const isSelected = selected.includes(d.code);
@@ -935,18 +862,19 @@ loadDashboard();
 loadTerritories();
 loadCrmUrl();
 // ===== CRM WEBHOOK =====
-function getPortalToken() {
-  try { var s = JSON.parse(localStorage.getItem('mld_portal_session') || sessionStorage.getItem('mld_portal_session') || '{}'); return s.token || ''; } catch(e) { return ''; }
+function getAuthToken() {
+  try { var s = JSON.parse(localStorage.getItem('mld_portal_session')); return s ? s.token : null; } catch(e) { return null; }
 }
+
 async function saveCrmUrl() {
   const url = document.getElementById('crmUrl').value.trim();
   if (!url) { showCrmStatus('Please enter a webhook URL', '#ef4444'); return; }
   showCrmStatus('Testing connection...', 'var(--accent)');
   try {
-    const testRes = await fetch(API + '/api/crm/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getPortalToken() }, body: JSON.stringify({ url }) });
+    const testRes = await fetch(API + '/api/crm/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAuthToken() }, body: JSON.stringify({ url }) });
     const testData = await testRes.json();
     if (!testData.success) { showCrmStatus('Webhook test failed: ' + (testData.error || 'HTTP ' + testData.status), '#ef4444'); return; }
-    const saveRes = await fetch(API + '/api/settings/crm', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getPortalToken() }, body: JSON.stringify({ crm_webhook_url: url }) });
+    const saveRes = await fetch(API + '/api/settings/crm', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAuthToken() }, body: JSON.stringify({ crm_webhook_url: url }) });
     if (saveRes.ok) { showCrmStatus('CRM connected successfully! Your leads will be pushed at 9am daily.', '#22c55e'); }
     else { showCrmStatus('Failed to save. Try again.', '#ef4444'); }
   } catch (e) { showCrmStatus('Connection error: ' + e.message, '#ef4444'); }
@@ -956,7 +884,7 @@ async function testCrmUrl() {
   if (!url) { showCrmStatus('Enter a URL first', '#ef4444'); return; }
   showCrmStatus('Testing...', 'var(--accent)');
   try {
-    const res = await fetch(API + '/api/crm/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getPortalToken() }, body: JSON.stringify({ url }) });
+    const res = await fetch(API + '/api/crm/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAuthToken() }, body: JSON.stringify({ url }) });
     const data = await res.json();
     if (data.success) { showCrmStatus('Connection successful! (HTTP ' + data.status + ')', '#22c55e'); }
     else { showCrmStatus('Failed: ' + (data.error || 'HTTP ' + data.status), '#ef4444'); }
@@ -965,7 +893,7 @@ async function testCrmUrl() {
 async function removeCrmUrl() {
   if (!confirm('Remove CRM webhook? Leads will stop being pushed to your CRM.')) return;
   try {
-    await fetch(API + '/api/settings/crm', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + getPortalToken() } });
+    await fetch(API + '/api/settings/crm', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + getAuthToken() } });
     document.getElementById('crmUrl').value = '';
     showCrmStatus('CRM disconnected.', 'var(--muted2)');
   } catch (e) { showCrmStatus('Error: ' + e.message, '#ef4444'); }
@@ -1010,13 +938,13 @@ function renderFilterSummary(filters, product) {
     if (filters.minBedrooms) lines.push('Min bedrooms: ' + filters.minBedrooms + '+');
     if (filters.maxBedrooms) lines.push('Max bedrooms: ' + filters.maxBedrooms);
     if (filters.propertyType) lines.push('Property type: ' + filters.propertyType);
-    if (filters.maxPrice) lines.push('Max value: £' + Number(filters.maxPrice).toLocaleString());
+    if (filters.maxPrice) lines.push('Max value: ┬ú' + Number(filters.maxPrice).toLocaleString());
     const statuses = [];
     if (filters.statusSSTC !== false) statuses.push('SSTC');
     if (filters.statusOffer !== false) statuses.push('Under Offer');
     lines.push('Statuses: ' + (statuses.length ? statuses.join(', ') : 'None'));
   } else if (product === 'probate') {
-    if (filters.minEstateValue) lines.push('Min estate: £' + Number(filters.minEstateValue).toLocaleString());
+    if (filters.minEstateValue) lines.push('Min estate: ┬ú' + Number(filters.minEstateValue).toLocaleString());
     if (filters.hasProperty) lines.push('Property: ' + filters.hasProperty);
   } else if (product === 'newbusiness') {
     const sics = filters.sicCodes || [];
@@ -1024,9 +952,9 @@ function renderFilterSummary(filters, product) {
     lines.push('Industries: ' + (sics.length ? sics.map(s => labels[s] || s).join(', ') : 'All'));
   } else if (product === 'planning') {
     if (filters.applicationType) lines.push('App type: ' + filters.applicationType);
-    if (filters.maxValue) lines.push('Max value: £' + Number(filters.maxValue).toLocaleString());
+    if (filters.maxValue) lines.push('Max value: ┬ú' + Number(filters.maxValue).toLocaleString());
   } else if (product === 'tenders') {
-    if (filters.minValue) lines.push('Min contract: £' + Number(filters.minValue).toLocaleString());
+    if (filters.minValue) lines.push('Min contract: ┬ú' + Number(filters.minValue).toLocaleString());
     if (filters.keywords) lines.push('Keywords: ' + filters.keywords);
   }
   return '<span style="color:var(--success)">Active filters:</span> ' + (lines.length ? lines.join(' &middot; ') : 'No specific filters') +
@@ -1126,998 +1054,19 @@ document.addEventListener('click', function(e) {
   const td = document.getElementById('territory-dropdown');
   if (td && !e.target.closest('#territory-manager')) td.style.display = 'none';
 });
-
-// ===== AI OUTREACH GENERATOR =====
-var outreachCache = {};
-
-function toggleOutreach(leadId, btn) {
-  var panel = document.getElementById('outreach-' + leadId);
-  if (!panel) return;
-  if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
-  panel.style.display = 'block';
-  if (outreachCache[leadId]) { renderOutreach(leadId); return; }
-
-  // Find the lead data
-  var lead = leads.find(function(l) { return l.id === leadId; });
-  if (!lead) { panel.innerHTML = '<p style="color:var(--muted);font-size:12px">Lead data not available.</p>'; return; }
-
-  // Generate messages using the Opportunity Score + Outreach Generator
-  var msg;
-  if (window.OutreachGenerator && typeof window.OutreachGenerator.generateOutreachMessages === 'function') {
-    msg = window.OutreachGenerator.generateOutreachMessages(lead);
-  } else {
-    // Fallback generator
-    msg = generateFallbackMessages(lead);
-  }
-  outreachCache[leadId] = msg;
-  renderOutreach(leadId);
+// Theme toggle
+var savedTheme = localStorage.getItem('dashboard_theme');
+if(savedTheme === 'dark') { document.documentElement.classList.add('dark'); }
+function toggleTheme() {
+  var root = document.documentElement;
+  root.classList.toggle('dark');
+  var isDark = root.classList.contains('dark');
+  localStorage.setItem('dashboard_theme', isDark ? 'dark' : 'light');
+  document.getElementById('themeToggle').innerHTML = isDark ? '<i class=\"fas fa-moon\"></i>' : '<i class=\"fas fa-sun\"></i>';
 }
-
-function renderOutreach(leadId) {
-  var panel = document.getElementById('outreach-' + leadId);
-  var msg = outreachCache[leadId];
-  if (!panel || !msg) return;
-
-  var lead = leads.find(function(l) { return l.id === leadId; });
-
-  // Generate contact methods HTML
-  var contactHtml = '';
-  if (lead) {
-    var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
-    if (window.OutreachGenerator) {
-      contactHtml = window.OutreachGenerator.renderContactMethods(lead);
-    }
-  }
-  if (!contactHtml) contactHtml = '<p style="color:var(--muted);font-size:11px">Contact data not available.</p>';
-
-  panel.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
-    // Left column: Outreach + Actions
-    '<div><div style="display:flex;gap:4px;margin-bottom:6px">' +
-    '<button class="btn btn-primary btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'email\')" id="otab-' + leadId + '-email" style="flex:1;justify-content:center;font-size:11px;padding:6px 8px">📧 Email</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'whatsapp\')" id="otab-' + leadId + '-whatsapp" style="flex:1;justify-content:center;font-size:11px;padding:6px 8px">💬 WhatsApp</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="selectOutreachTab(\'' + leadId + '\', \'phone\')" id="otab-' + leadId + '-phone" style="flex:1;justify-content:center;font-size:11px;padding:6px 8px">📞 Phone</button>' +
-    '</div>' +
-    '<textarea id="o-text-' + leadId + '" style="width:100%;min-height:60px;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text2);font-family:inherit;line-height:1.6;resize:vertical">' + escapeHtml(msg.email) + '</textarea>' +
-    '<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">' +
-    '<button class="btn btn-primary btn-sm" onclick="copyOutreach(\'' + leadId + '\')" style="flex:1;min-width:60px;justify-content:center;font-size:10px;padding:4px 8px"><i class="fas fa-copy"></i> Copy</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="var t=document.getElementById(\'o-text-\'+\'' + leadId + '\');t.focus();t.select()" style="flex:1;min-width:60px;justify-content:center;font-size:10px;padding:4px 8px"><i class="fas fa-pen"></i> Edit</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="exportLeadCSV(\'' + leadId + '\')" style="flex:1;min-width:60px;justify-content:center;font-size:10px;padding:4px 8px" title="Export as CSV"><i class="fas fa-file-csv"></i> CSV</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="exportLeadExcel(\'' + leadId + '\')" style="flex:1;min-width:60px;justify-content:center;font-size:10px;padding:4px 8px" title="Export as Excel"><i class="fas fa-file-excel"></i> Excel</button>' +
-    '</div>' +
-    // Status and notes section
-    '<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">' +
-    '<button class="btn btn-outline btn-sm" onclick="updateLeadStatus(\'' + leadId + '\',\'contacted\')" style="font-size:10px;padding:4px 8px"><i class="fas fa-phone"></i> Contacted</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="updateLeadStatus(\'' + leadId + '\',\'booked\')" style="font-size:10px;padding:4px 8px;color:var(--success)"><i class="fas fa-check"></i> Won</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="updateLeadStatus(\'' + leadId + '\',\'lost\')" style="font-size:10px;padding:4px 8px;color:var(--danger)"><i class="fas fa-times"></i> Lost</button>' +
-    '</div>' +
-    '<div style="margin-top:6px"><textarea id="olead-note-' + leadId + '" placeholder="Add a note about this lead..." style="width:100%;min-height:32px;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:10px;color:var(--text2);font-family:inherit;line-height:1.5;resize:vertical" onblur="saveLeadNote(\'' + leadId + '\',this.value)"></textarea></div>' +
-    '</div>' +
-    // Right column: Contact Methods + Integrations
-    '<div><div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px">' +
-    '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px">📋 Best Contact Method</div>' +
-    contactHtml +
-    '</div>' +
-    '<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px">' +
-    '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px">🔌 CRM Integrations</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">' +
-    '<div style="padding:6px;border-radius:4px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);text-align:center;font-size:9px;color:var(--muted)"><i class="fab fa-hubspot" style="color:#ff7a59;display:block;font-size:14px;margin-bottom:2px"></i>HubSpot<br><span style="font-size:7px;color:var(--muted)">Coming soon</span></div>' +
-    '<div style="padding:6px;border-radius:4px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);text-align:center;font-size:9px;color:var(--muted)"><i class="fab fa-pied-piper" style="color:#20435f;display:block;font-size:14px;margin-bottom:2px"></i>Pipedrive<br><span style="font-size:7px;color:var(--muted)">Coming soon</span></div>' +
-    '<div style="padding:6px;border-radius:4px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);text-align:center;font-size:9px;color:var(--muted)"><i class="fas fa-bolt" style="color:#f59e0b;display:block;font-size:14px;margin-bottom:2px"></i>GoHighLevel<br><span style="font-size:7px;color:var(--muted)">Coming soon</span></div>' +
-    '<div style="padding:6px;border-radius:4px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);text-align:center;font-size:9px;color:var(--muted)"><i class="fab fa-salesforce" style="color:#00a1e0;display:block;font-size:14px;margin-bottom:2px"></i>Salesforce<br><span style="font-size:7px;color:var(--muted)">Coming soon</span></div>' +
-    '</div></div></div></div>' +
-    // Stages 25-35: New panels
-    '<div id="newpanels-' + leadId + '"></div>';
-  // Add new panels after render
-  var np = document.getElementById('newpanels-' + leadId);
-  if (np) {
-    var ev = estimateValue(lead);
-    var tl = getTimeline(lead);
-    var pi = getProspectInfo(lead);
-    np.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">' +
-      // Value Estimator
-      '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px">' +
-      '<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px">Estimated Value</div>' +
-      '<div style="font-size:14px;font-weight:800;color:var(--accent)">' + String.fromCharCode(163) + ev.min.toLocaleString() + ' - ' + String.fromCharCode(163) + ev.max.toLocaleString() + '</div>' +
-      '<div style="font-size:9px;color:' + (ev.conf === 'High' ? 'var(--success)' : 'var(--warning)') + '">' + ev.conf + ' Confidence</div>' +
-      '<div style="font-size:7px;color:var(--muted);margin-top:4px">' + ev.label + '</div></div>' +
-      // Prospect Research
-      '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px">' +
-      '<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px">Prospect Research</div>' +
-      '<div style="font-size:10px;color:var(--text2);line-height:1.6">Website: ' + pi.website + '<br>Social: ' + pi.social + '<br>Est. Size: ' + pi.size + '</div>' +
-      '<div style="font-size:10px;color:var(--accent);margin-top:2px;font-weight:600">Reach via ' + pi.approach + '</div>' +
-      '<div style="font-size:8px;color:var(--muted);margin-top:2px;font-style:italic">AI-generated guidance</div></div>' +
-      // Timeline
-      '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px">' +
-      '<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px">Timeline</div>' +
-      (tl.length ? tl.slice(-3).map(function(e) { return '<div style="display:flex;align-items:center;gap:4px;padding:2px 0;font-size:9px;color:var(--text2)"><i class="' + e.i + '" style="color:var(--accent);width:12px;font-size:8px"></i>' + e.l + '<span style="margin-left:auto;color:var(--muted)">' + new Date(e.d).toLocaleDateString() + '</span></div>'; }).join('') : '<div style="font-size:9px;color:var(--muted)">No timeline data</div>') +
-      '</div>' +
-      // Feedback
-      '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px">' +
-      '<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px">Rate This Lead</div>' +
-      '<div style="display:flex;gap:4px">' +
-      [4,3,2,1].map(function(v) {
-        var icons = { 4: 'fa-fire', 3: 'fa-thumbs-up', 2: 'fa-meh', 1: 'fa-frown' };
-        var colors = { 4: 'var(--success)', 3: 'var(--accent)', 2: 'var(--warning)', 1: 'var(--danger)' };
-        var active = (leadFeedback[leadId] && leadFeedback[leadId].rating === v) ? 'border-color:' + colors[v] + ';color:' + colors[v] + ';background:rgba(14,165,233,0.06)' : '';
-        return '<button onclick="rateLead(\'' + leadId + '\',' + v + ')" style="flex:1;padding:5px;border-radius:4px;border:1px solid var(--border);background:var(--bg);font-size:10px;color:var(--muted);cursor:pointer;font-family:inherit;' + active + '"><i class="fas ' + icons[v] + '"></i></button>';
-      }).join('') + '</div></div></div>';
-  }
-}
-
-function selectOutreachTab(leadId, tab) {
-  var msg = outreachCache[leadId];
-  if (!msg) return;
-  var textarea = document.getElementById('o-text-' + leadId);
-  if (tab === 'email') textarea.value = msg.email;
-  else if (tab === 'whatsapp') textarea.value = msg.whatsapp;
-  else textarea.value = msg.phone;
-
-  document.querySelectorAll('[id^="otab-' + leadId + '-"]').forEach(function(b) {
-    b.className = 'btn btn-outline btn-sm';
-    b.style.justifyContent = 'center';
-    b.style.flex = '1';
-  });
-  var active = document.getElementById('otab-' + leadId + '-' + tab);
-  if (active) { active.className = 'btn btn-primary btn-sm'; active.style.justifyContent = 'center'; active.style.flex = '1'; }
-}
-
-function copyOutreach(leadId) {
-  var textarea = document.getElementById('o-text-' + leadId);
-  if (!textarea) return;
-  textarea.select();
-  navigator.clipboard.writeText(textarea.value).then(function() {
-    var btn = document.querySelector('#outreach-' + leadId + ' .btn-primary');
-    var orig = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-    setTimeout(function() { btn.innerHTML = orig; }, 2000);
-  });
-}
-
-function generateFallbackMessages(lead) {
-  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
-  var name = d.deceasedName || d.applicant || d.name || d.companyName || d.company || '';
-  var company = d.company || d.companyName || d.buyer || '';
-  var addr = d.address || '';
-  var greeting = name ? 'Hi ' + name : (company ? 'Hi there' : 'Hello');
-
-  return {
-    lead_id: lead.id,
-    email: greeting + ',\n\nI noticed your recent activity and we help businesses with our lead generation services. Would you be open to a quick chat this week?',
-    whatsapp: greeting + ' 👋\n\nWe specialise in helping businesses generate leads. Would you be free for a quick 5-minute call?',
-    phone: greeting + ', my name is [Your Name] from [Your Company]. I wanted to reach out as we help businesses in your area. Do you have a couple of minutes to chat?'
-  };
-}
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-// ===== BEST WAYS TO CONTACT GUIDE =====
-var contactGuides = {
-  moving: [
-    { icon: '📞', title: 'Call First (Within 30 Min)', desc: 'Homeowners who just went SSTC urgently need removal quotes. Calling immediately makes you the first and only removal company they speak to.' },
-    { icon: '📧', title: 'Follow-Up Email', desc: 'If they do not answer, send a short email referencing their property address and offering a quick quote. Include testimonials from similar moves.' },
-    { icon: '📬', title: 'Drop a Flyer / Letter', desc: 'The property address is included in the lead. A professional flyer or letter hand-delivered or posted shows you are local and serious.' },
-    { icon: '🏠', title: 'Visit the Area', desc: 'If the lead is in a close postcode area, consider delivering a professional brochure to their street. Personal touch works.' },
-    { icon: '📋', title: 'Register for Updates', desc: 'If they are not ready yet, ask if you can keep them on your mailing list for future moving tips and offers.' }
-  ],
-  probate: [
-    { icon: '📧', title: 'Email Executor / Solicitor', desc: 'Probate records may include the legal adviser or executor name. A professional, empathetic email offering probate services works best.' },
-    { icon: '📞', title: 'Phone Call (Empathetic)', desc: 'Call the executor or legal adviser directly. Be respectful of their situation. Offer a free consultation on estate administration.' },
-    { icon: '📬', title: 'Letter of Introduction', desc: 'The deceased address is often available. A well-written letter offering probate support can differentiate you from competitors.' },
-    { icon: '🤝', title: 'Referral from Local Partners', desc: 'Build relationships with local estate agents will writers who can refer probate leads to you.' }
-  ],
-  newbusiness: [
-    { icon: '📧', title: 'Email Director', desc: 'Companies House often lists the director email. Send a concise introduction offering your service. Reference their specific SIC code and incorporation date.' },
-    { icon: '🔗', title: 'Visit Their Website', desc: 'If no email is listed, their website almost always has a contact form. Use it with a tailored message about their new business.' },
-    { icon: '💼', title: 'LinkedIn Message', desc: 'Search the company name and director name on LinkedIn. A direct message there often gets higher response rates than cold email.' },
-    { icon: '📬', title: 'Postal Letter', desc: 'Every company has a registered address. A professionally printed welcome pack sent to new companies works extremely well.' },
-    { icon: '📞', title: 'Phone Call', desc: 'If a phone number is available, call within office hours. Congratulate them on their new company and offer your service.' }
-  ],
-  planning: [
-    { icon: '📞', title: 'Call Applicant', desc: 'The applicant name and property address are provided. Call them directly to discuss their construction project.' },
-    { icon: '📧', title: 'Email Quote', desc: 'If email is available, send a professional quote tailored to their specific application type (extension, new build, loft conversion).' },
-    { icon: '🏠', title: 'Visit the Property', desc: 'The address is known. A site visit shows you are serious and allows you to provide an accurate quote.' },
-    { icon: '📬', title: 'Leaflet Drop in Area', desc: 'If the application is in a specific neighbourhood, consider leaflet dropping nearby homes offering your services.' }
-  ],
-  tenders: [
-    { icon: '📧', title: 'Email Procurement Contact', desc: 'Tender notices include buyer email. Introduce your company, express interest, and request the full tender documentation.' },
-    { icon: '📞', title: 'Call Procurement Department', desc: 'Call the contracting authoritys procurement team. Ask about the tender process, deadlines, and any bidder events.' },
-    { icon: '🌐', title: 'Register on All Portals', desc: 'Ensure you are registered on Contracts Finder, Find a Tender Service, and any regional portals. This is free.' },
-    { icon: '📋', title: 'Attend Pre-Bid Meetings', desc: 'Many public tenders hold pre-bid meetings. Attending shows commitment and gives you insight into evaluator priorities.' },
-    { icon: '🤝', title: 'Partner with Other Firms', desc: 'If the tender requires capabilities you lack (e.g., turnover, certifications), partner with a larger firm as a subcontractor.' }
-  ]
-};
-
-function getContactGuideHTML(product, leadData) {
-  var d = (typeof leadData === 'string' ? JSON.parse(leadData || '{}') : (leadData || {}));
-  var hasEmail = !!(d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email);
-  var hasAddress = !!(d.address || d.postcode || d.applicantAddress || d.registeredAddress);
-  var hasPhone = !!(d.phone || d.ownerPhone || d.buyerPhone);
-  var hasWebsite = !!(d.website || d.url);
-  var hasCompany = !!(d.company || d.companyName);
-  var hasName = !!(d.name || d.deceasedName || d.applicant || d.contact_name);
-
-  // Build scenario-based advice
-  var scenarios = [];
-
-  // Scenario: Email available
-  if (hasEmail) {
-    if (product === 'moving') scenarios.push('📧 <strong>Email Available</strong> — Send a personal email referencing their property address. Offer a free quote and mention you help homeowners in your area move. Keep it short: 3 paragraphs max.');
-    else if (product === 'probate') scenarios.push('📧 <strong>Email Available</strong> — Send an empathetic email offering probate support. Reference the estate. Be respectful and professional. Offer a free consultation.');
-    else if (product === 'newbusiness') scenarios.push('📧 <strong>Email Available</strong> — Send a concise introduction referencing their company name and SIC code. Congratulate them on their new venture. Offer a specific service relevant to their industry.');
-    else if (product === 'planning') scenarios.push('📧 <strong>Email Available</strong> — Send a quote tailored to their planning application. Reference the property address and application type. Offer a free site visit.');
-    else if (product === 'tenders') scenarios.push('📧 <strong>Email Available</strong> — Email the buyer directly. Express interest in the tender. Ask for clarification on requirements. Introduce your company capabilities.');
-  } else {
-    // No email - find it
-    if (hasWebsite) scenarios.push('🔗 <strong>Website Found — Find Their Email</strong> — Visit their website and look for a "Contact Us" page. Many websites have a contact form. Fill it out with a professional message.');
-    if (hasCompany) scenarios.push('💼 <strong>LinkedIn Search</strong> — Search for the business or director name on LinkedIn. Send a connection request with a personalised note. LinkedIn messages have high open rates.');
-    scenarios.push('🔍 <strong>Email Finder Tools</strong> — Use free tools like Hunter.io, Rocketreach, or Apollo.io to find the business email address. Search by domain name (if you have a website) or company name.');
-  }
-
-  // Scenario: Address available  
-  if (hasAddress) {
-    if (product === 'moving' || product === 'planning') {
-      scenarios.push('🏠 <strong>Address Available — Visit In Person</strong> — Visit the property address in person. Bring a professional flyer/brochure. Leave it if no one is home. A personal visit shows you\'re local and serious.');
-      scenarios.push('📬 <strong>Address Available — Post a Professional Letter</strong> — Send a well-designed A5 flyer or letter in a quality envelope. Include a clear call to action: "Call for a free quote" or "Visit our website." Handwrite the address for better open rates.');
-    } else {
-      scenarios.push('📬 <strong>Address Available — Send a Professional Letter</strong> — Send a well-designed letter introducing your company. Include testimonials, your services, and a clear next step. Use quality paper and a professional envelope.');
-    }
-  }
-
-  // Scenario: Only company name
-  if (hasCompany && !hasWebsite && !hasEmail) {
-    scenarios.push('🌐 <strong>Only Company Name — Search Online</strong> — Google the company name + "UK" to find their website. Check Companies House for their registered address. Search for their director name on LinkedIn.');
-    scenarios.push('📋 <strong>Only Company Name — Write to Registered Address</strong> — Every UK company has a registered address at Companies House. Write a professional letter and send it there. It will be forwarded to the director.');
-  }
-
-  // Scenario: Only name (no company, no address, no email)
-  if (hasName && !hasCompany && !hasAddress && !hasEmail) {
-    if (product === 'probate') scenarios.push('📖 <strong>Name Only — Search Online for Obituaries</strong> — Search the name on Google along with "funeral" or "probate" to find obituaries. These often list family members or funeral directors who can put you in touch.');
-    scenarios.push('🔍 <strong>Name Only — Social Media Search</strong> — Search the name on Facebook, LinkedIn, and Instagram. Many people list their profession and contact info publicly.');
-  }
-
-  // General strategies for all lead types
-  if (!hasPhone) {
-    if (hasWebsite) scenarios.push('📞 <strong>Looking for a Phone Number?</strong> — Check their website footer, "Contact Us" page, or About page for a phone number. If not listed on the website, search the company name + "phone number" on Google.');
-    if (hasAddress) scenarios.push('📞 <strong>Looking for a Phone Number?</strong> — Search the address/postcode on Google. Sometimes the address is linked to a business listing that includes a phone number. Check Google Business Profile.');
-  }
-
-  // Follow-up advice
-  scenarios.push('📅 <strong>Follow Up</strong> — If you don\'t hear back within 3 days, follow up. "Just checking in on my previous message. Happy to hop on a quick call if helpful." Most sales happen after the 2nd or 3rd touch.');
-
-  // Render the guide
-  var rows = scenarios.map(function(s) {
-    return '<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:10px;color:#b0b8cc;line-height:1.5">' + s + '</div>';
-  }).join('');
-
-  return '<div style="background:rgba(14,165,233,0.02);border:1px solid rgba(14,165,233,0.06);border-radius:8px;padding:10px;margin-top:8px">' +
-    '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px">How to Contact This Lead</div>' +
-    '<div style="margin-bottom:4px;font-size:9px;color:var(--muted)">Available info: ' +
-    (hasEmail ? '📧 Email ' : '') + (hasPhone ? '📞 Phone ' : '') + (hasAddress ? '📮 Address ' : '') + (hasWebsite ? '🌐 Website ' : '') + (hasCompany ? '🏢 Company ' : '') +
-    '</div>' +
-    rows + '</div>';
-}
-
-// Inject contact guide into outreach panel
-var origRenderContact = window.renderOutreach;
-window.renderOutreach = function(leadId) {
-  if (origRenderContact) origRenderContact(leadId);
-  var lead = window.leads ? window.leads.find(function(l) { return l.id === leadId; }) : null;
-  if (!lead) return;
-  var panel = document.getElementById('outreach-' + leadId);
-  if (!panel) return;
-  var existingGuide = panel.querySelector('.contact-guide-injected');
-  if (!existingGuide) {
-    var guide = document.createElement('div');
-    guide.className = 'contact-guide-injected';
-    guide.innerHTML = getContactGuideHTML(lead.product || 'moving', lead.data);
-    panel.appendChild(guide);
-  }
-};
-
-// ===== WEEKLY REPORT =====
-function openWeeklyReport() {
-  var modal = document.getElementById('weeklyReportModal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'weeklyReportModal';
-    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;padding:20px';
-    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
-    document.body.appendChild(modal);
-  }
-  modal.style.display = 'flex';
-
-  var now = new Date();
-  var weekAgo = new Date(now.getTime() - 7 * 86400000);
-  var weekLeads = leads.filter(function(l) {
-    var d = l.delivered_at || l.created_at || '';
-    return d && new Date(d) >= weekAgo;
-  });
-
-  var totalWeek = weekLeads.length;
-  var hotLeads = weekLeads.filter(function(l) { return (l.opportunity_score || 0) >= 80; }).length;
-  var warmLeads = weekLeads.filter(function(l) { var s = l.opportunity_score || 0; return s >= 50 && s < 80; }).length;
-  var coldLeads = weekLeads.filter(function(l) { return (l.opportunity_score || 0) < 50; }).length;
-  var contacted = weekLeads.filter(function(l) { return l.status === 'contacted' || l.status === 'booked' || l.status === 'closed'; }).length;
-  var won = weekLeads.filter(function(l) { return l.status === 'booked' || l.status === 'closed'; }).length;
-
-  var estimatedValue = 0;
-  weekLeads.forEach(function(l) {
-    var d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
-    var val = parseInt(d.price) || parseInt(d.estateValue) || parseInt(d.contractValue) || parseInt(d.value) || 0;
-    if (val > 0 && (l.opportunity_score || 0) >= 50) estimatedValue += Math.round(val * 0.02);
-  });
-
-  var areaCounts = {};
-  weekLeads.forEach(function(l) {
-    var d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
-    var pc = (d.postcode || '').substring(0, 2).toUpperCase();
-    if (pc) { areaCounts[pc] = areaCounts[pc] || 0; areaCounts[pc]++; }
-  });
-  var sortedAreas = Object.keys(areaCounts).sort(function(a, b) { return areaCounts[b] - areaCounts[a]; }).slice(0, 5);
-
-  var notes = JSON.parse(localStorage.getItem('mh_lead_notes') || '{}');
-  var notesCount = Object.keys(notes).filter(function(k) { return weekLeads.some(function(l) { return l.id === k; }); }).length;
-
-  var sideColor = 'var(--accent)';
-
-  modal.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto" onclick="event.stopPropagation()">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">' +
-    '<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:' + sideColor + ';margin-bottom:4px">Weekly Report</div>' +
-    '<h2 style="font-size:20px;font-weight:800;font-family:Outfit,sans-serif;margin:0">' + weekAgo.toLocaleDateString() + ' - ' + now.toLocaleDateString() + '</h2></div>' +
-    '<div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" onclick="exportWeeklyCSV()"><i class="fas fa-download"></i> CSV</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="this.closest(\'#weeklyReportModal\').style.display=\'none\'"><i class="fas fa-times"></i></button></div></div>' +
-
-    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">📬</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + totalWeek + '</div><div style="font-size:9px;color:var(--muted)">Total Leads</div></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">🔥</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + hotLeads + '</div><div style="font-size:9px;color:var(--muted)">Hot Leads</div></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">🔶</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + warmLeads + '</div><div style="font-size:9px;color:var(--muted)">Warm Leads</div></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">❄</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + coldLeads + '</div><div style="font-size:9px;color:var(--muted)">Cold Leads</div></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">📞</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + contacted + '</div><div style="font-size:9px;color:var(--muted)">Contacted</div></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">✅</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + won + '</div><div style="font-size:9px;color:var(--muted)">Won</div></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">📝</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">' + notesCount + '</div><div style="font-size:9px;color:var(--muted)">With Notes</div></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;margin-bottom:2px">💰</div><div style="font-size:14px;font-weight:800;font-family:Outfit,sans-serif;color:#fff">£' + estimatedValue.toLocaleString() + '</div><div style="font-size:9px;color:var(--muted)">Est. Value</div></div>' +
-    '</div>' +
-
-    (sortedAreas.length > 0 ? '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">' +
-    '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px">📌 Best Performing Postcode Areas</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px">' +
-    sortedAreas.map(function(a) { return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center"><div style="font-weight:700;font-size:14px;color:var(--accent)">' + a + '</div><div style="font-size:10px;color:var(--muted)">' + areaCounts[a] + ' leads</div></div>'; }).join('') +
-    '</div></div>' : '') +
-
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">' +
-    '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px">📈 Weekly Performance</div>' +
-    '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
-    '<div style="flex:1;min-width:100px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--muted)">Contact Rate</div><div style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;color:' + sideColor + '">' + (totalWeek > 0 ? Math.round(contacted / totalWeek * 100) : 0) + '%</div></div>' +
-    '<div style="flex:1;min-width:100px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--muted)">Win Rate</div><div style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;color:var(--success)">' + (contacted > 0 ? Math.round(won / contacted * 100) : 0) + '%</div></div>' +
-    '<div style="flex:1;min-width:100px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--muted)">Hot Lead %</div><div style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;color:var(--warning)">' + (totalWeek > 0 ? Math.round(hotLeads / totalWeek * 100) : 0) + '%</div></div>' +
-    '</div></div>' +
-
-    '<div style="margin-top:14px;text-align:center;font-size:10px;color:var(--muted);border-top:1px solid var(--border);padding-top:12px">' +
-    '<i class="fas fa-chart-line" style="color:' + sideColor + ';margin-right:4px"></i> Report generated ' + now.toLocaleString() +
-    '</div></div>';
-}
-
-function exportWeeklyCSV() {
-  var now = new Date();
-  var weekAgo = new Date(now.getTime() - 7 * 86400000);
-  var weekLeads = leads.filter(function(l) {
-    var d = l.delivered_at || l.created_at || '';
-    return d && new Date(d) >= weekAgo;
-  });
-  var csv = 'ID,Product,Status,Score,Category,Address,Postcode,Price,Bedrooms,Email,Website,Delivered\n';
-  weekLeads.forEach(function(l) {
-    var d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
-    csv += '"' + (l.id || '') + '","' + (l.product || '') + '","' + (l.status || '') + '","' + (l.opportunity_score || 0) + '","' + (l.opportunity_category || '') + '","' + ((d.address || '').replace(/"/g, '""')) + '","' + (d.postcode || '') + '","' + (d.price || d.estateValue || d.contractValue || '') + '","' + (d.bedrooms || '') + '","' + (d.ownerEmail || d.legalAdvisorEmail || d.buyerEmail || '') + '","' + (d.website || d.url || '') + '","' + (l.delivered_at || l.created_at || '') + '"\n';
-  });
-  downloadFile(csv, '9amleads-weekly-report-' + now.toISOString().split('T')[0] + '.csv', 'text/csv');
-}
-
-// ===== STAGE 32: CUSTOMER SUCCESS CENTRE =====
-function openSuccessCentre() {
-  var modal = document.getElementById('successModal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'successModal';
-    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:20px';
-    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
-    document.body.appendChild(modal);
-  }
-  modal.style.display = 'flex';
-
-  var tabs = [
-    { id: 'scripts', label: 'Call Scripts' },
-    { id: 'email', label: 'Email Templates' },
-    { id: 'whatsapp', label: 'WhatsApp Tips' },
-    { id: 'followup', label: 'Follow-Up' },
-    { id: 'bestpractices', label: 'Best Practices' }
-  ];
-
-  var scriptsContent =
-    '<h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--accent)">Opening Script</h3>' +
-    '<p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px">"Hi [name], this is [your name] from [company]. I noticed that [trigger event]. The reason I am calling is we help [business type] with [service]. Would you be open to a quick chat this week?"</p>' +
-    '<h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--accent)">Key Rules</h3>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px"><p style="font-size:11px;color:var(--text2);line-height:1.7;margin:0">🔥 Call within 30 minutes of receiving the lead<br>👂 Listen more than you talk<br>🎯 Reference their specific situation<br>❓ Always ask for the next step</p></div>';
-
-  var emailContent =
-    '<h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--accent)">Email Outreach Template</h3>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px"><p style="font-size:11px;color:var(--text2);line-height:1.7;margin:0">Subject: Quick question regarding [trigger event]<br><br>Hi [name],<br><br>I noticed that [trigger event]. We specialise in helping [business type] with [service].<br><br>Would you be open to a five-minute chat this week to see if we can help?<br><br>Best,<br>[Your name]</p></div>' +
-    '<p style="font-size:11px;color:var(--muted);font-style:italic">Use the AI-drafted emails in your dashboard for personalised versions.</p>';
-
-  var whatsappContent =
-    '<h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--accent)">WhatsApp Template</h3>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px"><p style="font-size:11px;color:var(--text2);line-height:1.7;margin:0">Hi [name] 👋<br><br>I just saw that [trigger event]. We help [business type] with [service].<br><br>Free for a quick call this week?<br><br>Thanks!</p></div>' +
-    '<p style="font-size:11px;color:var(--muted)">Keep WhatsApp messages short, friendly, and personal. Use emojis sparingly.</p>';
-
-  var followupContent =
-    '<h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--accent)">Follow-Up Sequence</h3>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);margin:0"><strong style="color:#fff">Day 1:</strong> First call + email</p></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);margin:0"><strong style="color:#fff">Day 2:</strong> WhatsApp or text follow-up</p></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);margin:0"><strong style="color:#fff">Day 4:</strong> Second call — try different time of day</p></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px"><p style="font-size:11px;color:var(--text2);margin:0"><strong style="color:#fff">Day 7:</strong> Final follow-up email</p></div>' +
-    '<p style="font-size:11px;color:var(--muted);font-style:italic">Most sales happen on the 2nd or 3rd touch. Keep going.</p>';
-
-  var bestPracticesContent =
-    '<h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--accent)">Best Practices</h3>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);line-height:1.6;margin:0"><strong style="color:#fff">🕐 Speed wins:</strong> Call within 30 minutes. First to call = first to close.</p></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);line-height:1.6;margin:0"><strong style="color:#fff">🎯 Personalise:</strong> Reference their specific situation from the lead data. Generic pitches lose.</p></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);line-height:1.6;margin:0"><strong style="color:#fff">📊 Track:</strong> Use the status buttons (Contacted/Won/Lost) and lead notes in your dashboard.</p></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);line-height:1.6;margin:0"><strong style="color:#fff">📈 Review:</strong> Check your weekly report for contact rate and win rate. Improve every week.</p></div>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:11px;color:var(--text2);line-height:1.6;margin:0"><strong style="color:#fff">📬 Direct mail works:</strong> Send your business flyer with a personal introduction letter to the lead\'s address. Or visit in person — a face-to-face introduction beats any email. Most competitors only email. Be different.</p></div>';
-
-  var contentMap = { scripts: scriptsContent, email: emailContent, whatsapp: whatsappContent, followup: followupContent, bestpractices: bestPracticesContent };
-  window._scContentMap = contentMap;
-
-  modal.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:4px">Customer Success Centre</div><h2 style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;margin:0">Training & Resources</h2></div><button class="btn btn-outline btn-sm" onclick="this.closest(\'#successModal\').style.display=\'none\'"><i class="fas fa-times"></i></button></div>' +
-    '<div style="display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap">' + tabs.map(function(t) { return '<button class="btn btn-outline btn-sm" onclick="switchSCTab(\'' + t.id + '\')" id="sctab-' + t.id + '" style="font-size:11px;padding:6px 12px">' + t.label + '</button>'; }).join('') + '</div>' +
-    '<div id="sc-content">' + scriptsContent + '</div></div>';
-}
-function switchSCTab(id) {
-  var contentMap = window._scContentMap;
-  if (!contentMap) return;
-  document.querySelectorAll('[id^="sctab-"]').forEach(function(b) { b.className = 'btn btn-outline btn-sm'; b.style.cssText = 'font-size:11px;padding:6px 12px'; });
-  var tab = document.getElementById('sctab-' + id);
-  if (tab) { tab.className = 'btn btn-primary btn-sm'; tab.style.cssText = 'font-size:11px;padding:6px 12px'; }
-  var el = document.getElementById('sc-content');
-  if (el && contentMap[id]) el.innerHTML = contentMap[id];
-}
-
-// ===== STAGE 38: AUTOMATED FOLLOW-UP CAMPAIGNS =====
-var campaigns = JSON.parse(localStorage.getItem('mh_campaigns') || '[]');
-function openCampaigns() {
-  var modal = document.getElementById('campaignModal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'campaignModal';
-    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:20px';
-    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
-    document.body.appendChild(modal);
-  }
-  modal.style.display = 'flex';
-  renderCampaigns();
-}
-function renderCampaigns() {
-  var modal = document.getElementById('campaignModal');
-  if (!modal) return;
-  modal.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:4px">Automated Follow-Up Campaigns</div><h2 style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;margin:0">Lead Outreach Sequences</h2></div><button class="btn btn-outline btn-sm" onclick="this.closest(\'#campaignModal\').style.display=\'none\'"><i class="fas fa-times"></i></button></div>' +
-    '<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5">Create follow-up sequences for your leads. Each campaign runs Day 1, Day 3, Day 5, and Day 10 automatically. You choose the channels.</p>' +
-    '<h3 style="font-size:13px;font-weight:700;margin-bottom:8px;color:#fff">Your Campaigns</h3>' +
-    (campaigns.length === 0 ? '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;text-align:center;margin-bottom:16px"><p style="font-size:12px;color:var(--muted)">No campaigns yet. Open a lead and click "Start Campaign" to create one.</p></div>' :
-    campaigns.sort(function(a,b) { return new Date(b.created) - new Date(a.created); }).map(function(c) {
-      var statusColor = c.status === 'active' ? 'var(--success)' : c.status === 'completed' ? 'var(--accent)' : 'var(--muted)';
-      return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px">' +
-        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">' +
-        '<span style="font-size:11px;font-weight:600;color:#fff">' + (c.leadName || 'Lead') + '</span>' +
-        '<span style="margin-left:auto;font-size:9px;color:' + statusColor + ';font-weight:600">' + c.status + '</span></div>' +
-        '<div style="font-size:10px;color:var(--muted);margin-bottom:4px">Started ' + new Date(c.created).toLocaleDateString() + ' · ' + c.channels.join(', ') + '</div>' +
-        '<div style="display:flex;gap:8px;font-size:10px;color:var(--text2)">' +
-        '<span>Day 1: ' + (c.steps && c.steps.day1 ? (c.steps.day1.done ? '✅' : '⏳') : '⏳') + '</span>' +
-        '<span>Day 3: ' + (c.steps && c.steps.day3 ? (c.steps.day3.done ? '✅' : '⏳') : '—') + '</span>' +
-        '<span>Day 5: ' + (c.steps && c.steps.day5 ? (c.steps.day5.done ? '✅' : '⏳') : '—') + '</span>' +
-        '<span>Day 10: ' + (c.steps && c.steps.day10 ? (c.steps.day10.done ? '✅' : '⏳') : '—') + '</span></div>' +
-        '<div style="margin-top:6px;display:flex;gap:4px">' +
-        '<button class="btn btn-outline btn-sm" onclick="pauseCampaign(\'' + c.id + '\')" style="font-size:9px;padding:3px 8px">' + (c.status === 'active' ? 'Pause' : (c.status === 'paused' ? 'Resume' : '')) + '</button>' +
-        '<button class="btn btn-outline btn-sm" onclick="deleteCampaign(\'' + c.id + '\')" style="font-size:9px;padding:3px 8px;color:var(--danger)">Delete</button></div></div>';
-    }).join('')) +
-    '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)"><h3 style="font-size:12px;font-weight:700;margin-bottom:6px;color:#fff">How Follow-Up Campaigns Work</h3><p style="font-size:10px;color:var(--muted);line-height:1.6">When you click "Start Campaign" on a lead, we create a 4-step follow-up sequence: Day 1 (initial), Day 3, Day 5, and Day 10 (final). Each step creates a task reminder and optionally generates an email or WhatsApp draft. You choose the channels when starting. Campaigns must be manually enabled — nothing sends automatically.</p></div></div>';
-}
-function startCampaign(leadId) {
-  var lead = leads.find(function(l) { return l.id === leadId; });
-  if (!lead) return;
-  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
-  var leadName = d.address || d.name || d.company || d.deceasedName || d.applicant || 'Lead ' + leadId.substring(0,6);
-  var channels = [];
-  if (confirm('Start follow-up campaign for ' + leadName + '?\n\nChoose channels:\nOK = Email + WhatsApp + Tasks\nCancel = Tasks only')) {
-    channels = ['Email', 'WhatsApp', 'Task Reminder'];
-  } else {
-    channels = ['Task Reminder'];
-  }
-  if (!confirm('This creates a 4-step sequence (Day 1, 3, 5, 10). Nothing sends automatically. You will be reminded to take action each day. Start?')) return;
-  var campaign = {
-    id: 'camp_' + Date.now(),
-    leadId: leadId,
-    leadName: leadName,
-    status: 'active',
-    channels: channels,
-    created: new Date().toISOString(),
-    steps: {
-      day1: { due: new Date(Date.now() + 86400000).toISOString(), done: false },
-      day3: { due: new Date(Date.now() + 3*86400000).toISOString(), done: false },
-      day5: { due: new Date(Date.now() + 5*86400000).toISOString(), done: false },
-      day10: { due: new Date(Date.now() + 10*86400000).toISOString(), done: false }
-    }
-  };
-  campaigns.push(campaign);
-  localStorage.setItem('mh_campaigns', JSON.stringify(campaigns));
-  renderCampaigns();
-  alert('Campaign started for ' + leadName + '. Check back on Day ' + 1 + ' for your first follow-up task.');
-}
-function pauseCampaign(id) {
-  var c = campaigns.find(function(x) { return x.id === id; });
-  if (!c) return;
-  c.status = c.status === 'active' ? 'paused' : 'active';
-  localStorage.setItem('mh_campaigns', JSON.stringify(campaigns));
-  renderCampaigns();
-}
-function deleteCampaign(id) {
-  if (!confirm('Delete this campaign?')) return;
-  campaigns = campaigns.filter(function(c) { return c.id !== id; });
-  localStorage.setItem('mh_campaigns', JSON.stringify(campaigns));
-  renderCampaigns();
-}
-// Add campaign button to outreach panel
-var origRenderOutreachWrapper = window.renderOutreach;
-window.renderOutreach = function(leadId) {
-  if (origRenderOutreachWrapper) origRenderOutreachWrapper(leadId);
-  var panel = document.getElementById('outreach-' + leadId);
-  if (!panel) return;
-  // Add campaign button at the top of the existing panel
-  var header = panel.querySelector('.lead-row') || panel;
-  var existingBtn = panel.querySelector('[data-campaign-btn]');
-  if (!existingBtn) {
-    var campaignBtn = document.createElement('div');
-    campaignBtn.setAttribute('data-campaign-btn', 'true');
-    campaignBtn.style.cssText = 'margin-bottom:8px';
-    campaignBtn.innerHTML = '<button class="btn btn-primary btn-sm" onclick="startCampaign(\'' + leadId + '\')" style="width:100%;justify-content:center;font-size:11px;padding:6px 12px"><i class="fas fa-rocket"></i> Start Automated Follow-Up Campaign</button>';
-    panel.insertBefore(campaignBtn, panel.firstChild);
-  }
-};
-
-// ===== STAGE 41: PARTNER MARKETPLACE =====
-var partners = JSON.parse(localStorage.getItem('mh_partners') || '[]');
-function openPartnerMarketplace() {
-  var modal = document.getElementById('partnerModal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'partnerModal';
-    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:20px';
-    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
-    document.body.appendChild(modal);
-  }
-  modal.style.display = 'flex';
-  renderPartnerMarketplace();
-}
-function renderPartnerMarketplace() {
-  var modal = document.getElementById('partnerModal');
-  if (!modal) return;
-  var session = getSession() || {};
-  var customerType = session.product || 'moving';
-
-  // Suggest partners based on lead type
-  var PartnerSuggestions = {
-    moving: ['Removal Companies', 'Storage Providers', 'Packing Services', 'House Clearance', 'Man & Van'],
-    probate: ['Solicitors', 'Will Writers', 'Estate Agents', 'House Clearance', 'Removals Companies'],
-    newbusiness: ['Accountants', 'Web Designers', 'Marketing Agencies', 'IT Consultants', 'Insurance Brokers'],
-    planning: ['Builders', 'Architects', 'Electricians', 'Plumbers', 'Roofers', 'Landscapers', 'Kitchen Fitters'],
-    tenders: ['IT Services', 'Construction', 'Cleaning', 'Security', 'Facilities Management']
-  };
-  var suggestions = PartnerSuggestions[customerType] || PartnerSuggestions.moving;
-
-  modal.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:700px;width:100%;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:4px">Partner Marketplace</div><h2 style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;margin:0">Find or Offer Partner Services</h2></div><button class="btn btn-outline btn-sm" onclick="this.closest(\'#partnerModal\').style.display=\'none\'"><i class="fas fa-times"></i></button></div>' +
-    '<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5">Connect with complementary businesses. If you receive planning leads, partner with builders and architects. If you receive probate leads, partner with estate agents and removal companies.</p>' +
-
-    // Add your listing
-    '<div style="background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.12);border-radius:10px;padding:14px;margin-bottom:12px">' +
-    '<h3 style="font-size:12px;font-weight:700;margin-bottom:6px;color:#fff">List Your Business as a Partner</h3>' +
-    '<p style="font-size:10px;color:var(--muted);margin-bottom:8px">Other 9amLeads customers with relevant leads may need your services. Add your business to get referrals.</p>' +
-    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">' +
-    '<input type="text" id="partner-name" placeholder="Business name" style="flex:1;min-width:120px;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text);font-family:inherit;outline:none">' +
-    '<input type="text" id="partner-service" placeholder="Service (e.g. Roofing)" style="flex:1;min-width:120px;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text);font-family:inherit;outline:none">' +
-    '<input type="text" id="partner-area" placeholder="Postcode area" style="width:100px;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text);font-family:inherit;outline:none">' +
-    '</div>' +
-    '<button class="btn btn-primary btn-sm" onclick="addPartner()" style="font-size:10px;padding:6px 14px"><i class="fas fa-plus"></i> List My Business</button>' +
-    '</div>' +
-
-    // Current partners
-    '<h3 style="font-size:12px;font-weight:700;margin-bottom:8px;color:#fff">Available Partners</h3>' +
-    (partners.length === 0 ?
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;margin-bottom:12px"><p style="font-size:11px;color:var(--muted)">No partners listed yet. Be the first to add your business!</p></div>' :
-    partners.map(function(p) {
-      return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">' +
-        '<div style="width:28px;height:28px;border-radius:6px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">' + (p.name ? p.name[0] : 'P') + '</div>' +
-        '<div style="flex:1"><div style="font-size:11px;font-weight:600;color:#fff">' + p.name + '</div><div style="font-size:9px;color:var(--muted)">' + p.service + ' · ' + p.area + '</div></div>' +
-        (p.contact ? '<a href="mailto:' + p.contact + '" style="color:var(--accent);font-size:10px">Contact</a>' : '') +
-        (p.id === (session.email || '') ? '<button class="btn btn-outline btn-sm" onclick="removePartner(\'' + p.id + '\')" style="padding:2px 6px;font-size:9px">Remove</button>' : '') +
-        '</div>';
-    }).join('')) +
-
-    // Suggested partners for this customer
-    '<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">' +
-    '<h3 style="font-size:11px;font-weight:700;margin-bottom:6px;color:#fff">Recommended Partners for Your Lead Type</h3>' +
-    '<p style="font-size:10px;color:var(--muted);margin-bottom:6px;line-height:1.5">As a ' + (customerType === 'moving' ? 'Moving Leads' : customerType === 'probate' ? 'Probate Leads' : customerType === 'newbusiness' ? 'New Business Alerts' : customerType === 'planning' ? 'Planning Permission' : 'Tenders') + ' customer, you may benefit from partnering with:</p>' +
-    '<div style="display:flex;gap:4px;flex-wrap:wrap">' + suggestions.map(function(s) { return '<span style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);border-radius:4px;padding:3px 8px;font-size:9px;color:var(--text2)">' + s + '</span>'; }).join('') + '</div>' +
-    '<p style="font-size:9px;color:var(--muted);margin-top:8px;font-style:italic">Refer leads to partners and earn referral fees or reciprocal business.</p></div></div>';
-}
-function addPartner() {
-  var name = document.getElementById('partner-name').value.trim();
-  var service = document.getElementById('partner-service').value.trim();
-  var area = document.getElementById('partner-area').value.trim();
-  if (!name || !service) { alert('Enter your business name and service'); return; }
-  var session = getSession() || {};
-  var id = session.email || 'partner_' + Date.now();
-  partners.push({ id: id, name: name, service: service, area: area || 'UK-wide', contact: session.email || '', created: new Date().toISOString() });
-  localStorage.setItem('mh_partners', JSON.stringify(partners));
-  document.getElementById('partner-name').value = '';
-  document.getElementById('partner-service').value = '';
-  document.getElementById('partner-area').value = '';
-  renderPartnerMarketplace();
-}
-function removePartner(id) {
-  partners = partners.filter(function(p) { return p.id !== id; });
-  localStorage.setItem('mh_partners', JSON.stringify(partners));
-  renderPartnerMarketplace();
-}
-
-// ===== STAGE 43: WHITE LABEL REPORTS =====
-var brandSettings = JSON.parse(localStorage.getItem('mh_branding') || '{}');
-function openWhiteLabel() {
-  var modal = document.getElementById('brandModal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'brandModal';
-    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:20px';
-    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
-    document.body.appendChild(modal);
-  }
-  modal.style.display = 'flex';
-  renderBrandSettings();
-}
-function renderBrandSettings() {
-  var modal = document.getElementById('brandModal');
-  if (!modal) return;
-  var bs = brandSettings;
-  modal.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:4px">White Label Reports</div><h2 style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;margin:0">Brand Your Reports</h2></div><button class="btn btn-outline btn-sm" onclick="this.closest(\'#brandModal\').style.display=\'none\'"><i class="fas fa-times"></i></button></div>' +
-    '<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5">Add your company logo and name to exported CSV reports, weekly reports, and lead sheets. Your customers will see your brand, not ours.</p>' +
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px">' +
-    '<h3 style="font-size:12px;font-weight:700;margin-bottom:8px;color:#fff">Brand Settings</h3>' +
-    '<div style="margin-bottom:8px"><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Company Name</label><input type="text" id="brand-company" value="' + (bs.companyName || '') + '" placeholder="Your company name" style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"></div>' +
-    '<div style="margin-bottom:8px"><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Logo URL (optional)</label><input type="url" id="brand-logo" value="' + (bs.logoUrl || '') + '" placeholder="https://yourcompany.com/logo.png" style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"></div>' +
-    '<div style="margin-bottom:8px"><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Report Footer Text</label><input type="text" id="brand-footer" value="' + (bs.footerText || '') + '" placeholder="e.g. Confidential - Prepared for Client Name" style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"></div>' +
-    '<div style="margin-bottom:8px"><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Primary Colour</label><input type="color" id="brand-color" value="' + (bs.primaryColor || '#0ea5e9') + '" style="width:40px;height:30px;border:none;border-radius:4px;cursor:pointer;background:none;padding:0"></div>' +
-    '<button class="btn btn-primary btn-sm" onclick="saveBrandSettings()" style="font-size:11px;padding:7px 16px;margin-top:4px"><i class="fas fa-save"></i> Save Brand Settings</button>' +
-    '</div>' +
-    // Preview
-    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px">' +
-    '<h3 style="font-size:11px;font-weight:700;margin-bottom:6px;color:#fff">Preview: Branded Lead Export</h3>' +
-    '<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:10px;color:var(--text2);line-height:1.6;font-family:monospace">' +
-    (bs.companyName ? 'Company: ' + bs.companyName + '\n' : '') +
-    (bs.footerText ? bs.footerText + '\n' : '') +
-    'Lead ID,Address,Postcode,Price,Score,Status\nML123,\"123 High Street\",SW1A 1AA,\u00a3525k,95,HOT\nML124,\"45 Green Lane\",M1 1AA,\u00a3250k,67,WARM\n' +
-    (bs.companyName ? '-- Generated by ' + bs.companyName + ' via 9amLeads --' : '-- Generated via 9amLeads --') +
-    '</div></div>' +
-
-    '<div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" onclick="exportBrandedCSV()" style="font-size:10px;padding:6px 14px"><i class="fas fa-file-csv"></i> Export Branded CSV</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="window.open(\'/portal/dashboard.html\')" style="font-size:10px;padding:6px 14px"><i class="fas fa-file-pdf"></i> Export Branded Weekly Report</button></div>' +
-    '</div>';
-}
-function saveBrandSettings() {
-  brandSettings = {
-    companyName: document.getElementById('brand-company').value.trim(),
-    logoUrl: document.getElementById('brand-logo').value.trim(),
-    footerText: document.getElementById('brand-footer').value.trim(),
-    primaryColor: document.getElementById('brand-color').value,
-    updated: new Date().toISOString()
-  };
-  localStorage.setItem('mh_branding', JSON.stringify(brandSettings));
-  renderBrandSettings();
-}
-function exportBrandedCSV() {
-  var bs = brandSettings;
-  var header = (bs.companyName ? 'Company: ' + bs.companyName + '\n' : '') + (bs.footerText ? bs.footerText + '\n' : '') + (bs.companyName ? '-- Generated by ' + bs.companyName + ' via 9amLeads --\n' : '') + 'Lead ID,Product,Address,Postcode,Price,Score,Category,Status\n';
-  var csv = header;
-  (window.leads || []).slice(0, 20).forEach(function(l) {
-    var d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
-    csv += '"' + (l.id || '').substring(0, 8) + '","' + (l.product || '') + '","' + (d.address || '').replace(/"/g, '""') + '","' + (d.postcode || '') + '","' + (d.price || d.estateValue || d.contractValue || '') + '","' + (l.opportunity_score || '') + '","' + (l.opportunity_category || '') + '","' + (l.status || '') + '"\n';
-  });
-  var blob = new Blob([csv], { type: 'text/csv' });
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = (bs.companyName ? bs.companyName.replace(/\s+/g, '_') : 'lead_report') + '_' + new Date().toISOString().split('T')[0] + '.csv';
-  a.click();
-}
-
-// ===== STAGE 44: FEATURE DISCOVERY & UPGRADE SYSTEM =====
-var featureProgress = JSON.parse(localStorage.getItem('mh_feature_progress') || '{}');
-var allFeatures = [
-  { id: 'daily_leads', title: 'Daily Opportunities at 9am', icon: '📥', desc: 'Fresh UK opportunities delivered to your inbox every morning at 9am. Analysed and ready to action.', cat: 'Core' },
-  { id: 'opportunity_scoring', title: 'Opportunity Scoring', icon: '🔥', desc: 'Every lead scored 0-100 based on freshness, value, and urgency. Score labels help you prioritise.', cat: 'Core' },
-  { id: 'ai_outreach', title: 'AI-Drafted Outreach', icon: '💬', desc: 'Email, WhatsApp, and phone scripts generated for every lead. Personalised with trigger events. Edit, copy, and send.', cat: 'AI' },
-  { id: 'crm_exports', title: 'CRM Exports', icon: '📤', desc: 'Export any lead to CSV or Excel with one click. Push to HubSpot, Salesforce, or Pipedrive via webhook.', cat: 'Integration' },
-  { id: 'weekly_report', title: 'Weekly Report', icon: '📊', desc: 'Contact rate, win rate, best performing postcode areas. Track your performance every week.', cat: 'Analytics' },
-  { id: 'value_estimator', title: 'Opportunity Value Estimator', icon: '💰', desc: 'Estimated value range for every lead based on type, location, and historical averages.', cat: 'AI' },
-  { id: 'prospect_research', title: 'AI Prospect Research', icon: '🔍', desc: 'Auto-generated research on every lead: website, social media, business size, recommended approach.', cat: 'AI' },
-  { id: 'lead_timeline', title: 'Lead Timeline', icon: '📅', desc: 'Track every lead from discovery through delivery, contact, and conversion.', cat: 'Management' },
-  { id: 'lead_feedback', title: 'Lead Quality Feedback', icon: '⭐', desc: 'Rate leads Excellent/Good/Average/Poor. Your feedback improves scoring over time.', cat: 'Management' },
-  { id: 'status_filter', title: 'Lead Status Management', icon: '🏷️', desc: 'Filter by New/Contacted/Won/Lost. Add notes to every lead. Track your pipeline.', cat: 'Management' },
-  { id: 'saved_searches', title: 'Saved Searches', icon: '💾', desc: 'Save filter combinations. Re-run them anytime without re-entering criteria.', cat: 'Management' },
-  { id: 'campaigns', title: 'Follow-Up Campaigns', icon: '🚀', desc: 'Automated Day 1/3/5/10 follow-up sequences per lead. Email, WhatsApp, and task reminders.', cat: 'Automation' },
-  { id: 'partner_marketplace', title: 'Partner Marketplace', icon: '🤝', desc: 'Find or list partner businesses. Refer leads and earn reciprocal business.', cat: 'Growth' },
-  { id: 'white_label', title: 'White Label Reports', icon: '🏢', desc: 'Brand your exports with your company logo, name, and colours.', cat: 'Premium' },
-  { id: 'territory_calc', title: 'Lead Territory Calculator', icon: '🧮', desc: 'Estimate daily lead volumes for any territory before subscribing.', cat: 'Core' },
-  { id: 'territory_map', title: 'Territory Opportunity Map', icon: '🗺️', desc: 'View postcode area availability, estimated volumes, and reserve territories.', cat: 'Core' }
-];
-
-function openFeatureDiscovery() {
-  var modal = document.getElementById('featureModal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'featureModal';
-    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:20px';
-    modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
-    document.body.appendChild(modal);
-  }
-  modal.style.display = 'flex';
-  renderFeatureExplorer();
-}
-function renderFeatureExplorer(filter) {
-  var modal = document.getElementById('featureModal');
-  if (!modal) return;
-  var categories = {};
-  allFeatures.forEach(function(f) {
-    if (!categories[f.cat]) categories[f.cat] = [];
-    categories[f.cat].push(f);
-  });
-  var catKeys = Object.keys(categories);
-  
-  modal.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:700px;width:100%;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:4px">Feature Discovery</div><h2 style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif;margin:0">Explore All 9amLeads Features</h2></div><button class="btn btn-outline btn-sm" onclick="this.closest(\'#featureModal\').style.display=\'none\'"><i class="fas fa-times"></i></button></div>' +
-    '<div style="display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap">' +
-    '<button class="btn btn-primary btn-sm" onclick="renderFeatureExplorer(\'all\')" id="feat-all" style="font-size:10px;padding:5px 10px">All</button>' +
-    catKeys.map(function(c) { return '<button class="btn btn-outline btn-sm" onclick="renderFeatureExplorer(\'' + c + '\')" id="feat-' + c + '" style="font-size:10px;padding:5px 10px">' + c + '</button>'; }).join('') +
-    '</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
-    allFeatures.filter(function(f) { return !filter || filter === 'all' || f.cat === filter; }).map(function(f) {
-      var discovered = featureProgress[f.id];
-      return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer" onclick="showFeatureTooltip(\'' + f.id + '\')" onmouseover="this.style.borderColor=\'var(--accent)\'" onmouseout="this.style.borderColor=\'\'">' +
-        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:18px">' + f.icon + '</span><span style="font-size:11px;font-weight:600;color:#fff">' + f.title + '</span>' +
-        (discovered ? '<span style="margin-left:auto;font-size:8px;color:var(--success)">✓</span>' : '<span style="margin-left:auto;font-size:8px;color:var(--muted)">New</span>') +
-        '</div><p style="font-size:9px;color:var(--muted);line-height:1.5">' + f.desc + '</p>' +
-        '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(14,165,233,0.06);color:var(--accent)">' + f.cat + '</span></div>';
-    }).join('') +
-    '</div>' +
-    '<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);text-align:center;font-size:10px;color:var(--muted)">' +
-    'All features available on all paid plans. ' + allFeatures.length + ' features total. ' + Object.keys(featureProgress).length + ' discovered. ' +
-    '<button class="btn btn-outline btn-sm" onclick="startWalkthrough()" style="font-size:10px;padding:4px 12px;margin-left:8px"><i class="fas fa-play"></i> Start Walkthrough</button></div></div>';
-}
-function showFeatureTooltip(id) {
-  var f = allFeatures.find(function(x) { return x.id === id; });
-  if (!f) return;
-  featureProgress[id] = { discovered: new Date().toISOString() };
-  localStorage.setItem('mh_feature_progress', JSON.stringify(featureProgress));
-}
-function startWalkthrough() {
-  var steps = allFeatures.slice(0, 6);
-  var current = 0;
-  var modal = document.getElementById('featureModal');
-  showWalkthroughStep();
-  function showWalkthroughStep() {
-    if (current >= steps.length) { alert('Walkthrough complete! You have discovered ' + steps.length + ' key features.'); renderFeatureExplorer('all'); return; }
-    var s = steps[current];
-    featureProgress[s.id] = { discovered: new Date().toISOString() };
-    localStorage.setItem('mh_feature_progress', JSON.stringify(featureProgress));
-    modal.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:36px;max-width:480px;width:100%;text-align:center" onclick="event.stopPropagation()">' +
-      '<div style="font-size:48px;margin-bottom:12px">' + s.icon + '</div>' +
-      '<h2 style="font-size:20px;font-weight:800;font-family:Outfit,sans-serif;margin-bottom:4px;color:#fff">' + s.title + '</h2>' +
-      '<p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px">' + s.desc + '</p>' +
-      '<div style="display:flex;gap:8px;justify-content:center">' +
-      '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'featureModal\').style.display=\'none\'" style="font-size:12px;padding:8px 20px">Skip</button>' +
-      '<button class="btn btn-primary" onclick="current++;showWalkthroughStep()" style="font-size:12px;padding:8px 24px">' + (current < steps.length - 1 ? 'Next →' : 'Finish ✓') + '</button></div>' +
-      '<div style="margin-top:12px;font-size:10px;color:var(--muted)">' + (current + 1) + ' of ' + steps.length + '</div></div>';
-  }
-}
-
-// ===== CRM EXPORTS & LEAD ACTIONS =====
-
-function updateLeadStatus(leadId, status) {
-  fetch(API + '/api/leads/' + leadId + '/status', {
-    method: 'PATCH',
-    headers: Object.assign({}, getAuthHeaders(), { 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ status: status })
-  }).then(function(r) { return r.json(); }).then(function() {
-    var idx = leads.findIndex(function(l) { return l.id === leadId; });
-    if (idx > -1) leads[idx].status = status;
-    renderLeads();
-  }).catch(function() {});
-}
-
-function saveLeadNote(leadId, note) {
-  var notes = JSON.parse(localStorage.getItem('mh_lead_notes') || '{}');
-  notes[leadId] = { note: note, updated: new Date().toISOString() };
-  localStorage.setItem('mh_lead_notes', JSON.stringify(notes));
-}
-
-function loadLeadNote(leadId) {
-  var notes = JSON.parse(localStorage.getItem('mh_lead_notes') || '{}');
-  var el = document.getElementById('olead-note-' + leadId);
-  if (el && notes[leadId]) el.value = notes[leadId].note;
-}
-
-function exportLeadCSV(leadId) {
-  var lead = leads.find(function(l) { return l.id === leadId; });
-  if (!lead) return;
-  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
-  var csv = 'Field,Value\n' +
-    'Lead ID,' + (lead.id || '') + '\n' +
-    'Product,' + (lead.product || '') + '\n' +
-    'Status,' + (lead.status || '') + '\n' +
-    'Address,' + (d.address || '') + '\n' +
-    'Postcode,' + (d.postcode || '') + '\n' +
-    'Price,' + (d.price || d.estateValue || d.contractValue || '') + '\n' +
-    'Bedrooms,' + (d.bedrooms || '') + '\n' +
-    'Property Type,' + (d.propertyType || d.type || '') + '\n' +
-    'Status,' + (d.status || '') + '\n' +
-    'Agent/Buyer,' + (d.agent || d.buyer || d.council || '') + '\n' +
-    'Contact Email,' + (d.ownerEmail || d.legalAdvisorEmail || d.buyerEmail || '') + '\n' +
-    'Website,' + (d.website || d.url || '') + '\n' +
-    'Delivered,' + (lead.delivered_at || '') + '\n';
-  downloadFile(csv, 'lead-' + leadId.substring(0, 8) + '.csv', 'text/csv');
-}
-
-function exportLeadExcel(leadId) {
-  var lead = leads.find(function(l) { return l.id === leadId; });
-  if (!lead) return;
-  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
-  // Generate an XML-based Excel spreadsheet (works in Excel/Sheets)
-  var xml = '<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Lead"><Table><Row><Cell><Data ss:Type="String">Field</Data></Cell><Cell><Data ss:Type="String">Value</Data></Cell></Row>' +
-    row('Lead ID', lead.id || '') + row('Product', lead.product || '') + row('Status', lead.status || '') +
-    row('Address', d.address || '') + row('Postcode', d.postcode || '') + row('Price', d.price || d.estateValue || d.contractValue || '') +
-    row('Bedrooms', d.bedrooms || '') + row('Property Type', d.propertyType || d.type || '') +
-    row('Status Detail', d.status || '') + row('Agent/Buyer', d.agent || d.buyer || d.council || '') +
-    row('Contact Email', d.ownerEmail || d.legalAdvisorEmail || d.buyerEmail || '') + row('Website', d.website || d.url || '') +
-    row('Delivered', lead.delivered_at || '') +
-    '</Table></Worksheet></Workbook>';
-  downloadFile(xml, 'lead-' + leadId.substring(0, 8) + '.xls', 'application/vnd.ms-excel');
-  function row(label, val) { return '<Row><Cell><Data ss:Type="String">' + escapeXml(label) + '</Data></Cell><Cell><Data ss:Type="String">' + escapeXml(val) + '</Data></Cell></Row>'; }
-  function escapeXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-}
-
-function downloadFile(content, filename, mimeType) {
-  var blob = new Blob([content], { type: mimeType });
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(function() { URL.revokeObjectURL(a.href); }, 100);
-}
-
-// ===== STAGES 25-35: NEW FEATURES =====
-
-// Stage 25: Opportunity Value Estimator
-function estimateValue(lead) {
-  var product = lead.product || 'moving';
-  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
-  var ranges = { moving: [300,5000,'Moving Job'], probate: [1000,20000,'Probate Instruction'], newbusiness: [500,5000,'Annual Client'], planning: [5000,100000,'Project'], tenders: [10000,1000000,'Contract'] };
-  var r = ranges[product] || ranges.moving;
-  var actual = parseInt(d.price) || parseInt(d.estateValue) || parseInt(d.contractValue) || parseInt(d.value) || 0;
-  if (actual > 0) return { min: Math.round(actual*0.6), max: Math.round(actual*1.4), label: r[2], conf: 'High', actual: actual };
-  return { min: r[0], max: r[1], label: r[2], conf: 'Medium', actual: 0 };
-}
-
-// Stage 26: Lead Timeline
-function getTimeline(lead) {
-  var events = [];
-  if (lead.created_at) events.push({ d: lead.created_at, l: 'Discovered', i: 'fa-search' });
-  if (lead.delivered_at) events.push({ d: lead.delivered_at, l: 'Delivered', i: 'fa-envelope' });
-  if (lead.status === 'contacted' || lead.status === 'booked') events.push({ d: new Date().toISOString(), l: 'Contacted', i: 'fa-phone' });
-  if (lead.status === 'booked') events.push({ d: new Date().toISOString(), l: 'Won', i: 'fa-check' });
-  events.sort(function(a,b) { return new Date(a.d) - new Date(b.d); });
-  return events;
-}
-
-// Stage 28: Prospect Research
-function getProspectInfo(lead) {
-  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
-  return {
-    website: d.website || d.url ? 'Yes' : 'Not found',
-    social: d.ownerEmail ? 'Possible' : 'Not found',
-    gbp: d.address ? 'Possible' : 'Not found',
-    size: d.price > 500000 ? 'Large' : d.bedrooms >= 3 ? 'Medium' : 'Small',
-    approach: d.ownerEmail ? 'Email' : d.phone ? 'Phone' : (d.company ? 'LinkedIn' : 'Phone'),
-    message: d.address ? 'Discuss recent activity in their area' : 'Introduce services tailored to their business'
-  };
-}
-
-// Stage 29: Status filtering
-var currentStatusFilter = '';
-function filterByStatus(s) {
-  currentStatusFilter = s || '';
-  document.querySelectorAll('[id^="st-"]').forEach(function(b) { b.style.borderColor = ''; b.style.color = ''; b.style.background = ''; });
-  var el = document.getElementById('st-' + (s || 'all'));
-  if (el) { el.style.borderColor = 'var(--accent)'; el.style.color = 'var(--accent)'; el.style.background = 'rgba(14,165,233,0.08)'; }
-  if (typeof renderLeads === 'function') renderLeads();
-}
-
-// Stage 33: Lead feedback
-var leadFeedback = JSON.parse(localStorage.getItem('mh_lead_feedback') || '{}');
-function rateLead(id, rating) {
-  leadFeedback[id] = { rating: rating, t: new Date().toISOString() };
-  localStorage.setItem('mh_lead_feedback', JSON.stringify(leadFeedback));
-}
-
-// Stage 30: Territory stats
-function territoryStats() {
-  var now = new Date(), weekAgo = new Date(now - 7*86400000);
-  var w = (window.leads || []).filter(function(l) { var d = l.delivered_at || l.created_at; return d && new Date(d) >= weekAgo; });
-  return { total: w.length, hot: w.filter(function(l) { return (l.opportunity_score||0) >= 80; }).length, warm: w.filter(function(l) { var s = l.opportunity_score||0; return s >= 50 && s < 80; }).length, cold: w.filter(function(l) { return (l.opportunity_score||0) < 50; }).length };
-}
-
-// Stage 27: Saved searches
-var savedSearches = JSON.parse(localStorage.getItem('mh_saved') || '[]');
-function saveSearch() {
-  var n = prompt('Name this search:');
-  if (!n) return;
-  savedSearches.push({ id: 's' + Date.now(), name: n, f: getLeadFilters(), created: new Date().toISOString() });
-  localStorage.setItem('mh_saved', JSON.stringify(savedSearches));
-}
-
-// Stage 31: ROI Stats
-function getROIStats() {
-  var allLeads = window.leads || [];
-  var contacted = allLeads.filter(function(l) { return l.status === 'contacted' || l.status === 'booked' || l.status === 'closed'; }).length;
-  var won = allLeads.filter(function(l) { return l.status === 'booked' || l.status === 'closed'; }).length;
-  var totalValue = 0;
-  allLeads.forEach(function(l) {
-    if (window.estimateValue) {
-      var est = window.estimateValue(l);
-      totalValue += Math.round((est.min + est.max) / 2);
-    }
-  });
-  return { total: allLeads.length, contacted: contacted, won: won, estValue: totalValue };
-}
-
-function getAuthHeaders() {
-  var tok = getPortalToken();
-  return tok ? { 'Authorization': 'Bearer ' + tok } : {};
-}
-
-// Fallback contact method renderer (if outreach-generator.js not loaded)
-function fallbackContactMethods(lead) {
-  if (window.OutreachGenerator) return '';
-  var d = typeof lead.data === 'string' ? JSON.parse(lead.data || '{}') : (lead.data || {});
-  var items = [];
-  var addItem = function(icon, value, found) {
-    if (found) items.push('<div style="display:flex;align-items:center;gap:6px"><i class="' + icon + '" style="color:var(--accent);width:14px;font-size:11px"></i><span style="font-size:11px;color:var(--text);word-break:break-all">' + value + '</span></div>');
-    else items.push('<div style="display:flex;align-items:center;gap:6px"><i class="' + icon + '" style="color:var(--muted);width:14px;font-size:11px"></i><span style="font-size:11px;color:var(--muted);font-style:italic">Not found yet</span></div>');
-  };
-  addItem('fas fa-envelope', d.ownerEmail || d.legalAdvisorEmail || d.buyerEmail || '', !!(d.ownerEmail || d.legalAdvisorEmail || d.buyerEmail));
-  addItem('fas fa-phone', d.phone || d.legalAdvisorPhone || d.buyerPhone || '', !!(d.phone || d.legalAdvisorPhone || d.buyerPhone));
-  addItem('fas fa-globe', d.website || d.url || '', !!(d.website || d.url));
-  addItem('fab fa-linkedin', 'LinkedIn Profile', false);
-  addItem('fas fa-map-marker-alt', d.address || d.applicantAddress || '', !!(d.address || d.applicantAddress));
-  items.push('<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-size:10px;color:var(--text2)"><i class="fas fa-lightbulb" style="color:var(--warning);margin-right:4px"></i>Email first, then call after 48 hours.</div>');
-  return '<div style="display:flex;flex-direction:column;gap:3px">' + items.join('') + '</div>';
-}
-// Patch renderContactMethods to use fallback if needed
-if (!window.OutreachGenerator) {
-  window.OutreachGenerator = { renderContactMethods: function(lead) { return fallbackContactMethods(lead); }, generateOutreachMessages: function(lead) { return generateFallbackMessages(lead); } };
-}
+document.addEventListener('DOMContentLoaded', function() {
+  var isDark = document.documentElement.classList.contains('dark');
+  document.getElementById('themeToggle').innerHTML = isDark ? '<i class=\"fas fa-moon\"></i>' : '<i class=\"fas fa-sun\"></i>';
+});
 </script>
 </body></html>
