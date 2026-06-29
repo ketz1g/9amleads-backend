@@ -2394,7 +2394,7 @@ function generateLeadEmailHTML(customer, leads) {
   const productName = customer.product || 'opportunities';
   const aboutText = productName === 'moving' ? 'The address and property details are shown below. Contact the homeowner directly using the information provided.'
     : productName === 'probate' ? 'The deceased name, estate value and registry details are shown below. Contact the executor using the information provided.'
-    : productName === 'newbusiness' ? 'The company name, SIC code and incorporation date are shown below. Contact the company using the information provided.'
+    : productName === 'newbusiness' ? 'Use the address shown to post your business flyer and introduction letter. You can also visit in person or search for the company online to find their website and contact details.'
     : productName === 'planning' ? 'The address, council and application reference are shown below for your records.'
     : 'The tender details, buyer and deadline are shown below. Apply using the reference number.';
   const dashboardUrl = 'https://www.9amleads.com/portal/dashboard.html';
@@ -2511,7 +2511,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<p style="color:#666;font-size:11px;margin:0 0 10px;line-height:1.5">' + 
     (productName === 'planning' ? 'This information is provided for reference purposes only.' :
      productName === 'tenders' ? 'Apply using the reference number provided above. Visit the dashboard to track your applications.' :
-      productName === 'newbusiness' ? 'Contact the company using the information provided. Visit the dashboard to manage your leads.' :
+     productName === 'newbusiness' ? 'Use the address to post your flyer and introduction letter, or visit in person. Search for the company online to find their website and contact details.' :
      productName === 'probate' ? 'Contact the executor using the information provided. Visit the dashboard to manage your leads.' :
      'Contact the homeowner using the information provided. Visit the dashboard to manage your leads.') + '</p>';
   body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:600;font-size:13px">View Full Dashboard</a>';
