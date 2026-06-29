@@ -2606,7 +2606,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try {
             var chKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
             leads = await new Promise(function(resolve) {
-              var chUrl = '/advanced-search/companies?incorporationDateFrom=' + new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0] + '&size=30&status=active';
+              var chUrl = '/search/companies?q=Accountant&size=30';
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: chUrl, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
