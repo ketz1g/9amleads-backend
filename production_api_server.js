@@ -2604,30 +2604,23 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         var leads;
         if (product === 'newbusiness') {
           try {
-            var chKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
-              var chDates = [1, 2, 3, 7];
-            for (var di = 0; di < chDates.length; di++) {
-              var chUrl = '/search/companies?q=Limited&size=50';
-              leads = await new Promise(function(resolve) {
-                var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: chUrl, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
-                  var body = ''; res.on('data', function(c) { body += c; });
-                  res.on('end', function() {
-                    try { var data = JSON.parse(body); var items = data.items || []; 
-                  // Only include companies incorporated today or yesterday
-                  var today2 = new Date().toISOString().split('T')[0];
-                  var yesterday2 = new Date(Date.now() - 1 * 86400000).toISOString().split('T')[0];
-                  resolve(items.filter(function(c){return c.title && c.company_number}).map(function(c) { var a = c.address || {}; return { id: 'CH_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.title || '', address: c.address_snippet || [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.region || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', sicCode: (c.sic_codes || [])[0] || '', incorporationDate: c.date_of_creation || '', ownerEmail: '', website: '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
-                  });
+            var apifyKey = process.env.APIFY_API_KEY;
+            leads = await new Promise(function(resolve) {
+              var bodyData = JSON.stringify({ search: 'Consulting|Accounting|Design|Marketing|Property|Construction|Services', maxItems: 30, includeOfficers: false });
+              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
+                var body = ''; res.on('data', function(c) { body += c; });
+                res.on('end', function() {
+                  try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }
+                    resolve(items.filter(function(c){return c.company_name && c.date_of_creation}).map(function(c) { var a = c.address || {}; return { id: 'APIFY_' + (c.company_number || Date.now()), name: (c.company_name || '').trim(), companyNumber: c.company_number || '', companyName: c.company_name || '', address: c.address_snippet || [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', source: 'Apify Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
                 });
-                req.on('error', function() { resolve([]); });
-                req.setTimeout(15000, function() { req.destroy(); resolve([]); });
-                req.end();
               });
-              if (leads && leads.length >= 3) break;
-              console.log('[SCRAPER] Companies House: ' + (leads ? leads.length : 0) + ' results for ' + chDates[di] + ' days, trying wider range...');
-            }
-            if (!leads || leads.length === 0) { console.log('[SCRAPER] Companies House returned 0 results — no leads generated for newbusiness'); leads = []; }
-          } catch(e) { console.log('[SCRAPER] Companies House error: ' + e.message); leads = []; }
+              req.on('error', function() { resolve([]); });
+              req.setTimeout(90000, function() { req.destroy(); resolve([]); });
+              req.write(bodyData);
+              req.end();
+            });
+            if (!leads || leads.length === 0) { console.log('[SCRAPER] Apify returned 0 companies'); leads = []; }
+          } catch(e) { console.log('[SCRAPER] Apify error: ' + e.message); leads = []; }
         } else if (product === 'tenders') {
           try {
             leads = await new Promise(function(resolve) {
