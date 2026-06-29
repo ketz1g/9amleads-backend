@@ -2443,6 +2443,7 @@ function generateLeadEmailHTML(customer, leads) {
     // Key details as tagged chips
     var chips = [];
     if (d.postcode) chips.push({ icon: '\uD83D\uDCCD', text: d.postcode });
+    if (d.address && d.address.length > 10) chips.push({ icon: '\uD83C\uDFE2', text: d.address.substring(0, 50) });
     if (d.city) chips.push({ icon: '\uD83C\uDFD9\uFE0F', text: d.city });
     if (d.bedrooms) chips.push({ icon: '\uD83C\uDFE0', text: d.bedrooms + ' bed' });
     if (d.status) chips.push({ icon: '\uD83D\uDD34', text: d.status });
