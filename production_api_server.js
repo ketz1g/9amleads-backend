@@ -1401,19 +1401,18 @@ function generateDemoLeads(product, count) {
       });
     }
   } else if (product === 'newbusiness') {
-    const bizTypes = ['Retail', 'Consulting', 'Tech', 'Hospitality', 'Construction', 'Healthcare', 'Marketing', 'Property'];
+    const bizNames = ['Premier', 'Elite', 'First Choice', 'Advanced', 'Apex', 'Meridian', 'Pinnacle', 'Signature', 'Prestige', 'Horizon'];
+    const bizSuffix = ['Consulting', 'Services', 'Solutions', 'Partners', 'Group', 'Associates', 'Management', 'Holdings', 'Ventures', 'Enterprises'];
     for (let i = 0; i < count; i++) {
-      const bizType = bizTypes[i % bizTypes.length];
       const area = areas[i % areas.length];
       const leadPC = fullPC(area);
       leads.push({
-        id: 'NB_' + Date.now() + '_' + i, name: streets[i % streets.length] + ' ' + bizType + ' Ltd',
+        id: 'NB_' + Date.now() + '_' + i, name: bizNames[i % bizNames.length] + ' ' + bizSuffix[i % bizSuffix.length] + ' Ltd',
         companyNumber: 'NI' + (Math.floor(Math.random() * 900000) + 100000),
         address: Math.floor(Math.random() * 50) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + leadPC,
         postcode: leadPC, city: area.city,
-        sicCode: (Math.floor(Math.random() * 90000) + 10000).toString(), ownerEmail: 'info@' + streets[i % streets.length].toLowerCase().replace(/\s/g, '') + '.co.uk',
-        website: 'www.' + streets[i % streets.length].toLowerCase().replace(/\s/g, '') + '.co.uk',
-        incorporationDate: new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString(), source: 'Demo Data', scrapedAt: now
+        sicCode: (Math.floor(Math.random() * 90000) + 10000).toString(),
+        incorporationDate: new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString(), source: 'Sample Data', scrapedAt: now
       });
     }
   } else if (product === 'planning') {
