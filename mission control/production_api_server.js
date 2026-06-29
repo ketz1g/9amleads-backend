@@ -2621,8 +2621,8 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               if (leads && leads.length >= 3) break;
               console.log('[SCRAPER] Companies House: ' + (leads ? leads.length : 0) + ' results for ' + chDates[di] + ' days, trying wider range...');
             }
-            if (!leads || leads.length === 0) { console.log('[SCRAPER] Companies House returned 0 results, using demo'); leads = generateDemoLeads(product, 30); }
-          } catch(e) { console.log('[SCRAPER] Companies House error: ' + e.message); leads = generateDemoLeads(product, 30); }
+            if (!leads || leads.length === 0) { console.log('[SCRAPER] Companies House returned 0 results — no leads generated for newbusiness'); leads = []; }
+          } catch(e) { console.log('[SCRAPER] Companies House error: ' + e.message); leads = []; }
         } else if (product === 'tenders') {
           try {
             leads = await new Promise(function(resolve) {
@@ -2655,8 +2655,8 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               req.setTimeout(30000, function() { req.destroy(); resolve([]); });
               req.end();
             });
-            if (!leads || leads.length === 0) { console.log('[SCRAPER] Contracts Finder returned 0 results, using demo'); leads = generateDemoLeads(product, 30); }
-          } catch(e) { console.log('[SCRAPER] Contracts Finder error: ' + e.message); leads = generateDemoLeads(product, 30); }
+            if (!leads || leads.length === 0) { console.log('[SCRAPER] Contracts Finder returned 0 results — no leads generated for tenders'); leads = []; }
+          } catch(e) { console.log('[SCRAPER] Contracts Finder error: ' + e.message); leads = []; }
     } else {
           leads = generateDemoLeads(product, 30);
         }
