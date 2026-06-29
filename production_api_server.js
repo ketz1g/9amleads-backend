@@ -2474,8 +2474,7 @@ function generateLeadEmailHTML(customer, leads) {
       }
       body += '</div>';
     }
-    // Always show debug info
-    body += '<div style="font-size:9px;color:#999;margin-top:2px">DBG: source=' + (d.source||'nil') + ' company=' + (d.company||'nil').slice(0,30) + ' name=' + (d.name||'nil').slice(0,30) + ' addr=' + (d.address||'nil').slice(0,20) + '</div>';
+    body += '</div>';
 
     // Contact info
     var hasEmail = d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail;
@@ -2484,6 +2483,7 @@ function generateLeadEmailHTML(customer, leads) {
     var hasPhone = d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone;
     if (hasEmail || hasWebsite || hasPhone || hasAddress) {
       body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px;margin-bottom:8px">';
+      if (hasAddress) body += '<div style="font-size:12px;color:#555;margin-bottom:3px">\uD83D\uDCCD ' + d.address + '</div>';
       if (hasEmail) body += '<div style="font-size:12px;color:#555;margin-bottom:3px">\u2709\uFE0F ' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail) + '</div>';
       if (hasPhone) body += '<div style="font-size:12px;color:#555;margin-bottom:3px">\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone) + '</div>';
       if (hasWebsite) body += '<div style="font-size:12px;color:#555;margin-bottom:3px">\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:' + accent + ';text-decoration:none" target="_blank">' + d.website + '</a></div>';
