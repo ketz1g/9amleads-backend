@@ -2612,7 +2612,11 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
                 var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: chUrl, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; });
                   res.on('end', function() {
-                    try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.title && c.company_number}).map(function(c) { var a = c.address || {}; return { id: 'CH_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.title || '', address: c.address_snippet || [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.region || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', sicCode: (c.sic_codes || [])[0] || '', incorporationDate: c.date_of_creation || '', ownerEmail: '', website: '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                    try { var data = JSON.parse(body); var items = data.items || []; 
+                  // Only include companies incorporated today or yesterday
+                  var today2 = new Date().toISOString().split('T')[0];
+                  var yesterday2 = new Date(Date.now() - 1 * 86400000).toISOString().split('T')[0];
+                  resolve(items.filter(function(c){return c.title && c.company_number && (c.date_of_creation === today2 || c.date_of_creation === yesterday2)}).map(function(c) { var a = c.address || {}; return { id: 'CH_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.title || '', address: c.address_snippet || [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.region || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', sicCode: (c.sic_codes || [])[0] || '', incorporationDate: c.date_of_creation || '', ownerEmail: '', website: '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
                   });
                 });
                 req.on('error', function() { resolve([]); });
