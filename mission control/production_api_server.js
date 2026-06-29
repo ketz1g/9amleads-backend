@@ -2472,6 +2472,8 @@ function generateLeadEmailHTML(customer, leads) {
       for (var c = 0; c < chips.length; c++) {
         body += '<span style="display:inline-block;padding:4px 10px;margin:0 4px 4px 0;background:#e4e7eb;border-radius:6px;font-size:12px;color:#333;white-space:nowrap">' + chips[c].icon + ' ' + chips[c].text + '</span>';
       }
+      // DEBUG: Show raw data source
+      body += '<div style="font-size:9px;color:#999;margin-top:4px">DBG: source=' + (d.source||'nil') + ' company=' + (d.company||'nil').slice(0,30) + ' name=' + (d.name||'nil').slice(0,30) + '</div>';
       body += '</div>';
     }
 
