@@ -2530,15 +2530,16 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   // Generate leads for this customer's product if none exist
   var allLeads = (db.leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
   if (allLeads.length === 0) {
-    // Try running the distributor to match scraped leads
+    // Run distributor and force DB reload
     try {
       var dist = require('./lead_distributor.js');
-      await dist.distributeAll(true);
-      _dbData = null;
-      allLeads = (getDb().leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
-    } catch(e) {}
+      await dist.distributeProduct(customer.product);
+    } catch(e) { console.log('[DELIVERY] Distribute failed:', e.message); }
+    // Double-check with fresh DB load
+    _dbData = null;
+    allLeads = (getDb().leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
     if (allLeads.length === 0) {
-      return res.json({ message: 'No undelivered leads. Run the scrapers first via /api/admin/run-scrapers.', leads: 0 });
+      return res.json({ message: 'No undelivered leads found after distribution.', leads: 0 });
     }
   }
 
@@ -2647,8 +2648,8 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         } else if (product === 'tenders') {
           try {
             leads = await new Promise(function(resolve) {
-               var url = '/api/rest/2.0/notices?searchTerm=' + encodeURIComponent('IT construction cleaning') + '&status=Open&size=5';
-              var req = require('https').request({ hostname: 'www.contractsfinder.service.gov.uk', path: url, method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 30000 }, function(res) {
+               var url = '/api/rest/2.0/notices?searchTerm=' + encodeURIComponent('construction') + '&status=Open&size=5';
+               var req = require('https').request({ hostname: 'www.contractsfinder.service.gov.uk', path: url, method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 30000 }, function(res) {
                 var body = '';
                 res.on('data', function(c) { body += c; });
                 res.on('end', function() {
