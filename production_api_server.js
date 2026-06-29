@@ -2499,11 +2499,16 @@ function generateLeadEmailHTML(customer, leads) {
       body += '</div>';
     }
 
-    // Action button for tenders only
+    // Action buttons per lead type
     if (productName === 'tenders') {
       var noticeUrl = d.tenderNoticeId ? 'https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId : 'https://www.gov.uk/contracts-finder';
       body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px;padding-bottom:2px"><a href="' + noticeUrl + '" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Apply on Contracts Finder</a></div>';
       body += '<div style="font-size:11px;color:#888;margin-top:6px">Use the reference number shown above to apply for this opportunity.</div>';
+    }
+    if (productName === 'newbusiness' && d.name) {
+      var googleUrl = 'https://www.google.com/search?q=' + encodeURIComponent(d.name + ' contact email phone');
+      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px;padding-bottom:2px"><a href="' + googleUrl + '" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Search for Contact Details</a></div>';
+      body += '<div style="font-size:11px;color:#888;margin-top:6px">Click the button above to search for this company\u2019s contact information on Google. Most limited companies have a website with contact details listed.</div>';
     }
 
     body += '</div></div>';
