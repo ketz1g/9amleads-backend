@@ -2530,29 +2530,39 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   // Generate leads for this customer's product if none exist
   var allLeads = (db.leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
   if (allLeads.length === 0) {
-    // Direct insert: read scraped leads for this product and assign to customer
+    // Fetch fresh data from Rightmove API for moving leads
     try {
       var prod = customer.product || 'moving';
-      var productFile = path.join(__dirname, 'data', prod + '-leads.json');
-      if (fs.existsSync(productFile)) {
-        var rawLeads = JSON.parse(fs.readFileSync(productFile, 'utf-8'));
-        if (Array.isArray(rawLeads) && rawLeads.length > 0) {
+      var apifyK = process.env.APIFY_API_KEY;
+      var freshLeads = [];
+      if (prod === 'moving' && apifyK) {
+        var lm = await new Promise(function(resolve) {
+          var bd = JSON.stringify({ location: 'London', maxResults: 5 });
+          var rq = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyK + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd) }, timeout: 90000 }, function(s) {
+            var t = ''; s.on('data', function(c) { t += c; }); s.on('end', function() {
+              try { var j = JSON.parse(t); if (Array.isArray(j)) resolve(j); else resolve([]); } catch(e) { resolve([]); }
+            });
+          });
+          rq.on('error', function() { resolve([]); });
+          rq.write(bd); rq.end();
+        });
+        if (lm.length > 0) {
           var db2 = getDb();
-          var insertedNow = new Date().toISOString();
-          for (var li = 0; li < Math.min(rawLeads.length, customer.leads_per_day || 5); li++) {
-            var rl = rawLeads[li];
-            var nl = { id: uuidv4(), customer_id: req.user.id, product: prod, data: JSON.stringify(rl), status: 'new', delivered: 0, created_at: insertedNow, delivered_at: null };
-            db2.leads.push(nl);
-            inserted++;
+          var now2 = new Date().toISOString();
+          for (var li2 = 0; li2 < Math.min(lm.length, customer.leads_per_day || 5); li2++) {
+            var p = lm[li2];
+            var nl2 = { id: uuidv4(), customer_id: req.user.id, product: 'moving', data: JSON.stringify(p), status: 'new', delivered: 0, created_at: now2, delivered_at: null };
+            db2.leads.push(nl2);
           }
           saveDb();
+          freshLeads = lm;
         }
       }
       _dbData = null;
       allLeads = (getDb().leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
-    } catch(e) { console.log('[DELIVERY] Direct insert error:', e.message); }
+    } catch(e) { console.log('[DELIVERY] Fetch error:', e.message); }
     if (allLeads.length === 0) {
-      return res.json({ message: 'No undelivered leads found.', leads: 0 });
+      return res.json({ message: 'No leads available yet.', leads: 0 });
     }
   }
 
