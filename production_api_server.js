@@ -2605,18 +2605,23 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         if (product === 'newbusiness') {
           try {
             var chKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
-            leads = await new Promise(function(resolve) {
-              var chUrl = '/advanced-search/companies?incorporationDateFrom=' + new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0] + '&size=30';
-              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: chUrl, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
-                var body = ''; res.on('data', function(c) { body += c; });
-                res.on('end', function() {
-                  try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.company_name && c.company_number && c.company_status==='active'}).map(function(c) { var a = c.registered_office_address || {}; return { id: 'CH_' + (c.company_number || Date.now()),                     name: (c.company_name || c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.company_name || c.title || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', sicCode: (c.sic_codes || [])[0] || '', incorporationDate: c.date_of_creation || '', ownerEmail: '', website: '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+            var chDates = [2, 7, 30, 90];
+            for (var di = 0; di < chDates.length; di++) {
+              var chUrl = '/advanced-search/companies?incorporationDateFrom=' + new Date(Date.now() - chDates[di] * 86400000).toISOString().split('T')[0] + '&size=50';
+              leads = await new Promise(function(resolve) {
+                var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: chUrl, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+                  var body = ''; res.on('data', function(c) { body += c; });
+                  res.on('end', function() {
+                    try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.company_name && c.company_number && c.company_status==='active'}).map(function(c) { var a = c.registered_office_address || {}; return { id: 'CH_' + (c.company_number || Date.now()), name: (c.company_name || c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.company_name || c.title || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', sicCode: (c.sic_codes || [])[0] || '', incorporationDate: c.date_of_creation || '', ownerEmail: '', website: '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                  });
                 });
+                req.on('error', function() { resolve([]); });
+                req.setTimeout(15000, function() { req.destroy(); resolve([]); });
+                req.end();
               });
-              req.on('error', function() { resolve([]); });
-              req.setTimeout(15000, function() { req.destroy(); resolve([]); });
-              req.end();
-            });
+              if (leads && leads.length >= 3) break;
+              console.log('[SCRAPER] Companies House: ' + (leads ? leads.length : 0) + ' results for ' + chDates[di] + ' days, trying wider range...');
+            }
             if (!leads || leads.length === 0) { console.log('[SCRAPER] Companies House returned 0 results, using demo'); leads = generateDemoLeads(product, 30); }
           } catch(e) { console.log('[SCRAPER] Companies House error: ' + e.message); leads = generateDemoLeads(product, 30); }
         } else if (product === 'tenders') {
