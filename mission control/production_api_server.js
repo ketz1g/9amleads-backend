@@ -2694,12 +2694,12 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try {
             var apifyKey3 = process.env.APIFY_API_KEY;
             leads = await new Promise(function(resolve) {
-              var bodyData = JSON.stringify({ location: 'London', maxResults: 30, radius: 50 });
-              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey3 + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
+              var bodyData = JSON.stringify({ location: 'London', maxResults: 20 });
+              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/shahidirfan~Rightmove-Agent-Scraper/run-sync-get-dataset-items?token=' + apifyKey3 + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }
-                    resolve(items.map(function(p) { return { id: 'APIFY_MOV_' + (p.id || Date.now()), address: (p.displayAddress || p.address || '').trim(), postcode: p.postcode || '', city: p.location || '', price: p.price || 0, bedrooms: p.bedrooms || 0, propertyType: p.propertyType || '', agent: p.agent || '', source: 'Apify Rightmove', scrapedAt: new Date().toISOString() }; }));
+                    resolve(items.map(function(p) { return { id: 'AGENT_' + (p.agentId || Date.now()), name: p.name || '', address: p.address || '', phone: p.phone || '', area: p.area || 'London', source: 'Rightmove Agents', scrapedAt: new Date().toISOString() }; }));
                   } catch(e) { resolve([]); }
                 });
               });
@@ -2708,28 +2708,24 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               req.write(bodyData);
               req.end();
             });
-            if (!leads || leads.length < 3) { console.log('[SCRAPER] Apify moving returned ' + (leads ? leads.length : 0) + ', using sample'); leads = generateDemoLeads(product, 30); }
-          } catch(e) { console.log('[SCRAPER] Apify moving error: ' + e.message); leads = generateDemoLeads(product, 30); }
+            if (!leads || leads.length < 3) { console.log('[SCRAPER] Rightmove agents returned ' + (leads ? leads.length : 0) + ', using sample'); leads = generateDemoLeads(product, 30); }
+          } catch(e) { console.log('[SCRAPER] Rightmove agents error: ' + e.message); leads = generateDemoLeads(product, 30); }
         } else if (product === 'probate') {
           try {
-            var apifyKey4 = process.env.APIFY_API_KEY;
+            var chKey5 = process.env.COMPANIES_HOUSE_API_KEY || process.env.GOVUK_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
             leads = await new Promise(function(resolve) {
-              var bodyData = JSON.stringify({ search: 'probate', maxResults: 30 });
-              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/apify~playwright-scraper/run-sync-get-dataset-items?token=' + apifyKey4 + '&memory=1024&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=probate%20will%20estate%20solicitor&size=50', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey5 + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
-                  try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }
-                    resolve(items.map(function(p) { return { id: 'APIFY_PROB_' + (p.id || Date.now()), name: p.name || '', address: p.address || '', postcode: p.postcode || '', estateValue: p.estateValue || 0, deceasedName: p.deceasedName || '', registry: p.registry || '', source: 'Apify Probate', scrapedAt: new Date().toISOString() }; }));
-                  } catch(e) { resolve([]); }
+                  try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.title && c.company_number}).map(function(c) { var a = c.address || {}; return { id: 'CH_PROB_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', address: [a.premises || '', a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House Probate', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
                 });
               });
               req.on('error', function() { resolve([]); });
-              req.setTimeout(90000, function() { req.destroy(); resolve([]); });
-              req.write(bodyData);
+              req.setTimeout(15000, function() { req.destroy(); resolve([]); });
               req.end();
             });
-            if (!leads || leads.length < 3) { console.log('[SCRAPER] Apify probate returned ' + (leads ? leads.length : 0) + ', using sample'); leads = generateDemoLeads(product, 30); }
-          } catch(e) { console.log('[SCRAPER] Apify probate error: ' + e.message); leads = generateDemoLeads(product, 30); }
+            if (!leads || leads.length < 3) { console.log('[SCRAPER] Companies House probate returned ' + (leads ? leads.length : 0) + ', using sample'); leads = generateDemoLeads(product, 30); }
+          } catch(e) { console.log('[SCRAPER] Companies House probate error: ' + e.message); leads = generateDemoLeads(product, 30); }
         } else {
           leads = generateDemoLeads(product, 30);
         }
