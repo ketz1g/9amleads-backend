@@ -2530,16 +2530,28 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   // Generate leads for this customer's product if none exist
   var allLeads = (db.leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
   if (allLeads.length === 0) {
-    // Run distributor and force DB reload
+    // Direct insert: read scraped leads for this product and assign to customer
     try {
-      var dist = require('./lead_distributor.js');
-      await dist.distributeProduct(customer.product);
-    } catch(e) { console.log('[DELIVERY] Distribute failed:', e.message); }
-    // Double-check with fresh DB load
-    _dbData = null;
-    allLeads = (getDb().leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
+      var productFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[customer.product].file);
+      if (fs.existsSync(productFile)) {
+        var rawLeads = JSON.parse(fs.readFileSync(productFile, 'utf-8'));
+        if (Array.isArray(rawLeads) && rawLeads.length > 0) {
+          var db2 = getDb();
+          var insertedNow = new Date().toISOString();
+          for (var li = 0; li < Math.min(rawLeads.length, customer.leads_per_day || 5); li++) {
+            var rl = rawLeads[li];
+            var nl = { id: uuidv4(), customer_id: req.user.id, product: customer.product, data: JSON.stringify(rl), status: 'new', delivered: 0, created_at: insertedNow, delivered_at: null };
+            db2.leads.push(nl);
+            inserted++;
+          }
+          saveDb();
+        }
+      }
+      _dbData = null;
+      allLeads = (getDb().leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered === 0; });
+    } catch(e) { console.log('[DELIVERY] Direct insert error:', e.message); }
     if (allLeads.length === 0) {
-      return res.json({ message: 'No undelivered leads found after distribution.', leads: 0 });
+      return res.json({ message: 'No undelivered leads found.', leads: 0 });
     }
   }
 
