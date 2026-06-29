@@ -2694,12 +2694,12 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try {
             var apifyKey3 = process.env.APIFY_API_KEY;
             leads = await new Promise(function(resolve) {
-              var bodyData = JSON.stringify({ location: 'London', maxResults: 20 });
-              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/shahidirfan~Rightmove-Agent-Scraper/run-sync-get-dataset-items?token=' + apifyKey3 + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
+              var bodyData = JSON.stringify({ location: 'London', maxResults: 30 });
+              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey3 + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }
-                    resolve(items.map(function(p) { return { id: 'AGENT_' + (p.agentId || Date.now()), name: p.name || '', address: p.address || '', phone: p.phone || '', area: p.area || 'London', source: 'Rightmove Agents', scrapedAt: new Date().toISOString() }; }));
+                    resolve(items.map(function(p) { return { id: 'RM_' + (p.id || Date.now()), address: p.address || '', price: p.price || 0, bedrooms: p.bedrooms || 0, propertyType: p.propertyType || '', agent: p.agentName || p.agent || '', url: p.url || '', source: 'Rightmove', scrapedAt: new Date().toISOString() }; }));
                   } catch(e) { resolve([]); }
                 });
               });
@@ -2708,8 +2708,8 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               req.write(bodyData);
               req.end();
             });
-            if (!leads || leads.length < 3) { console.log('[SCRAPER] Rightmove agents returned ' + (leads ? leads.length : 0) + ', using sample'); leads = generateDemoLeads(product, 30); }
-          } catch(e) { console.log('[SCRAPER] Rightmove agents error: ' + e.message); leads = generateDemoLeads(product, 30); }
+            if (!leads || leads.length < 3) { console.log('[SCRAPER] Rightmove returned ' + (leads ? leads.length : 0) + ', using sample'); leads = generateDemoLeads(product, 30); }
+          } catch(e) { console.log('[SCRAPER] Rightmove error: ' + e.message); leads = generateDemoLeads(product, 30); }
         } else if (product === 'probate') {
           try {
             var chKey5 = process.env.COMPANIES_HOUSE_API_KEY || process.env.GOVUK_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
