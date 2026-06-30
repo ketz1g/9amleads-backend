@@ -2983,6 +2983,25 @@ app.post('/api/send-enquiry', async (req, res) => {
   }
 });
 
+// ===== ADMIN RESET (TEMPORARY - for fresh test) =====
+app.post('/api/admin/reset', async (req, res) => {
+  try {
+    const auth = req.headers.authorization;
+    if (!auth || auth !== 'Bearer 9amAdmin2024!') return res.status(401).json({ error: 'Unauthorized' });
+    const dbData = getDb();
+    dbData.customers = [];
+    dbData.leads = [];
+    dbData.deliveries = [];
+    saveDb();
+    // Clear postcode assignments
+    const assignmentsData = loadAssignments();
+    assignmentsData.assignments = {};
+    saveAssignments(assignmentsData);
+    console.log('[ADMIN] Database reset complete');
+    res.json({ success: true, message: 'All customers, leads, and assignments cleared. Start fresh.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Global error handler
 app.use(function(err, req, res, next) {
   console.error('[ERROR] Unhandled error:', err.message || err);
