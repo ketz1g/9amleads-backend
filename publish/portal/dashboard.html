@@ -1,0 +1,1102 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>My Dashboard 9am Leads</title>
+<meta name="description" content="Your 9amLeads customer dashboard. View your daily leads, track conversions, and manage your subscription.">
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}:root{--bg:#f3f4f6;--bg2:#ffffff;--card:#ffffff;--card2:#f9fafb;--border:#e5e7eb;--border2:#d1d5db;--text:#111827;--text2:#4b5563;--muted:#6b7280;--muted2:#9ca3af;--primary:#0ea5e9;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--accent:#0ea5e9;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif;--shadow:0 1px 3px rgba(0,0,0,.06);--shadow-lg:0 8px 32px rgba(0,0,0,.1);--radius:12px;--radius-sm:8px;--nav-h:56px}
+:root.dark{--bg:#0a0c14;--bg2:#06080e;--card:#0f1220;--card2:#0b0d18;--border:#1a1e32;--border2:#282e48;--text:#e8edf5;--text2:#a0a8c0;--muted:#6b7280;--muted2:#4b5563;--shadow:0 1px 3px rgba(0,0,0,.3);--shadow-lg:0 8px 32px rgba(0,0,0,.5)}
+body{font-family:var(--ff-b);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--muted2)}
+nav{display:flex;align-items:center;height:var(--nav-h);padding:0 28px;background:#ffffff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;gap:12px}
+.nav-scroll{display:flex;align-items:center;gap:8px;overflow-x:auto;flex:1;-ms-overflow-style:none;scrollbar-width:none}.nav-scroll::-webkit-scrollbar{display:none}
+.logo{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:900;font-family:var(--ff-h);flex-shrink:0;text-decoration:none;color:var(--text)}.logo .mark{width:30px;height:30px;background:linear-gradient(135deg,var(--primary),#2563eb);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;box-shadow:0 2px 10px rgba(14,165,233,.3)}.logo span{color:var(--primary)}
+.nav-links{display:flex;gap:2px;align-items:center}.nav-links a{text-decoration:none;color:var(--muted);font-size:13px;font-weight:500;padding:6px 14px;border-radius:7px;transition:all .2s;white-space:nowrap}.nav-links a:hover{color:var(--text);background:rgba(255,255,255,.04)}.nav-links a.active{color:var(--primary);background:rgba(14,165,233,.1)}
+.pill-growth{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(99,102,241,.12));border:1px solid rgba(14,165,233,.2);color:var(--primary);font-weight:600;font-size:12px;text-decoration:none;transition:all .2s;white-space:nowrap;flex-shrink:0}.pill-growth:hover{background:linear-gradient(135deg,rgba(14,165,233,.22),rgba(99,102,241,.22));transform:translateY(-1px);box-shadow:0 4px 12px rgba(14,165,233,.15)}
+.theme-toggle{background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer;padding:6px 10px;border-radius:6px;transition:.2s;flex-shrink:0}.theme-toggle:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.nav-signout{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;color:var(--danger);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);font-family:var(--ff-b);text-decoration:none;transition:all .2s;flex-shrink:0}.nav-signout:hover{background:rgba(239,68,68,.16)}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.onboarding{background:linear-gradient(135deg,rgba(14,165,233,.08),rgba(99,102,241,.04));border:1px solid rgba(14,165,233,.15);border-radius:var(--radius);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--text2)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:all .3s}.stat-card:hover{transform:translateY(-2px);border-color:var(--border2);box-shadow:var(--shadow-lg)}.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}.stat-card:nth-child(1)::before{background:linear-gradient(90deg,#0ea5e9,#06b6d4)}.stat-card:nth-child(2)::before{background:linear-gradient(90deg,#22c55e,#10b981)}.stat-card:nth-child(3)::before{background:linear-gradient(90deg,#f59e0b,#f97316)}.stat-card:nth-child(4)::before{background:linear-gradient(90deg,#a855f7,#8b5cf6)}.stat-card .num{font-size:32px;font-weight:800;font-family:var(--ff-h);color:var(--text);line-height:1.2}.stat-card .label{color:var(--muted);font-size:12px;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}.stat-card .sub{color:var(--muted2);font-size:11px;margin-top:2px}.stat-card .stat-trend{position:absolute;top:16px;right:16px;font-size:11px;display:flex;align-items:center;gap:4px;padding:2px 10px;border-radius:20px;background:rgba(34,197,94,.1);color:var(--success);font-weight:600}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;transition:border-color .3s,box-shadow .3s}.card:hover{border-color:var(--border2)}.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}.card-title{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+.badge{display:inline-flex;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;gap:4px;align-items:center;line-height:1}.badge-green{background:rgba(34,197,94,.12);color:var(--success);border:1px solid rgba(34,197,94,.2)}.badge-blue{background:rgba(14,165,233,.12);color:var(--primary);border:1px solid rgba(14,165,233,.2)}.badge-orange{background:rgba(245,158,11,.12);color:var(--warning);border:1px solid rgba(245,158,11,.2)}.badge-red{background:rgba(239,68,68,.12);color:var(--danger);border:1px solid rgba(239,68,68,.2)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-weight:600;font-size:13px;cursor:pointer;border:none;text-decoration:none;transition:all .2s;font-family:var(--ff-b)}.btn-primary{background:linear-gradient(135deg,var(--primary),#2563eb);color:#fff;box-shadow:0 2px 8px rgba(14,165,233,.2)}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(14,165,233,.35)}.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}.btn-outline:hover{border-color:var(--primary);color:var(--primary);background:rgba(14,165,233,.04)}.btn-sm{padding:6px 12px;font-size:11px}.btn-danger{background:var(--danger);color:#fff}
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.tool-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:22px 16px;text-align:center;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}.tool-card:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:0 8px 24px rgba(14,165,233,.15)}.tool-card .icon{font-size:36px;margin-bottom:10px;display:block}.tool-card h3{font-size:14px;font-weight:600;margin-bottom:4px;color:var(--text)}.tool-card p{color:var(--muted);font-size:11px;line-height:1.4}
+.sub-card{background:linear-gradient(135deg,rgba(14,165,233,.06),transparent);border:1px solid rgba(14,165,233,.15);border-radius:var(--radius);padding:20px;transition:border-color .2s}.sub-card:hover{border-color:rgba(14,165,233,.25)}.sub-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}.sub-plan{font-size:18px;font-weight:800;font-family:var(--ff-h)}.sub-price{color:var(--muted);font-size:13px}
+.tip-card{background:rgba(245,158,11,.04);border:1px solid rgba(245,158,11,.1);border-radius:10px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:12px;color:var(--text2);transition:all .2s}.tip-card:hover{border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.06)}.tip-card .icon{font-size:16px;flex-shrink:0}
+.date-nav{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;padding:12px 16px;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-sm)}.date-nav .nav-btn{width:32px;height:32px;border-radius:var(--radius-sm);background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:all .2s;font-size:12px;flex-shrink:0}.date-nav .nav-btn:hover{border-color:var(--primary);color:var(--primary);background:rgba(14,165,233,.04)}.date-nav .date-label{font-size:15px;font-weight:700;font-family:var(--ff-h);min-width:200px;text-align:center;color:var(--text)}.date-nav .today-btn{padding:5px 14px;border-radius:var(--radius-sm);background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.15);color:var(--primary);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;flex-shrink:0}.date-nav .today-btn:hover{background:rgba(14,165,233,.18);transform:translateY(-1px)}
+.day-group{margin-bottom:14px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .2s}.day-group:hover{border-color:var(--border2)}.day-header{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:var(--bg2);border-bottom:1px solid var(--border);cursor:pointer;transition:background .2s}.day-header:hover{background:rgba(255,255,255,.025)}.day-header .day-date{font-size:14px;font-weight:700}.day-header .day-count{font-size:12px;color:var(--muted);font-weight:600}.day-header .day-arrow{color:var(--muted2);font-size:10px;transition:transform .3s}.day-header.collapsed .day-arrow{transform:rotate(-90deg)}.day-body{padding:0}.day-body.collapsed{display:none}
+.lead-row{display:grid;grid-template-columns:1fr 90px 100px 90px 54px;gap:8px;padding:12px 20px;border-bottom:1px solid var(--border);align-items:center;font-size:12px;transition:background .15s}.lead-row:last-child{border-bottom:none}.lead-row:hover{background:rgba(255,255,255,.015)}.lead-row .score{text-align:center;font-size:11px}.lead-row .details{color:var(--text);font-weight:500}.lead-row .details small{color:var(--muted2);font-size:10px;display:block;font-weight:400;margin-top:2px}.lead-row .value{color:var(--text2);font-weight:500}.lead-row .status{text-align:center}.empty-state{text-align:center;padding:48px 20px;color:var(--muted2);font-size:13px}.empty-state .icon{font-size:40px;margin-bottom:12px;opacity:.5}
+footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-top:1px solid var(--border);margin-top:48px}footer a{color:var(--primary);text-decoration:none}footer a:hover{text-decoration:underline}
+.cal-popup{position:absolute;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-lg);width:260px;display:none;right:0}.cal-popup.show{display:block}.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px}.cal-grid .cal-day{text-align:center;padding:6px 4px;border-radius:6px;font-size:12px;cursor:pointer;color:var(--text2);transition:all .15s}.cal-grid .cal-day:hover{background:rgba(14,165,233,.1);color:var(--primary)}.cal-grid .cal-day.active{background:var(--primary);color:#fff}.cal-grid .cal-day.muted{color:var(--muted2)}.cal-grid .cal-day.today{background:rgba(14,165,233,.12);color:var(--primary);font-weight:700}.cal-grid .cal-header{text-align:center;padding:4px;font-size:10px;color:var(--muted2);font-weight:600;text-transform:uppercase}.cal-month-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.cal-month-nav span{font-size:13px;font-weight:700;font-family:var(--ff-h)}.cal-month-nav button{background:none;border:none;color:var(--text2);cursor:pointer;padding:4px 8px;font-size:14px;transition:color .15s}.cal-month-nav button:hover{color:var(--primary)}
+@media(max-width:900px){nav{padding:0 16px}.container{padding:16px}.stats-grid{gap:10px}.stat-card{padding:16px}.stat-card .num{font-size:26px}}
+@media(max-width:768px){nav{gap:8px;padding:0 12px;flex-wrap:nowrap;overflow-x:auto}.nav-scroll{gap:6px}.nav-links a{font-size:12px;padding:5px 10px}.pill-growth{font-size:11px;padding:5px 12px}.nav-signout{font-size:11px;padding:5px 10px}.lead-row{grid-template-columns:1fr 70px 70px 60px}.lead-row .status{display:none}.stats-grid{grid-template-columns:1fr 1fr}.container{padding:12px}.date-nav{padding:10px 12px}.date-nav .date-label{min-width:140px;font-size:13px}}
+@media(max-width:480px){.stats-grid{grid-template-columns:1fr}.tools-grid{grid-template-columns:1fr 1fr}.lead-row{grid-template-columns:1fr 60px 60px;font-size:11px;padding:10px 14px;gap:6px}.lead-row .value{display:none}.nav-links a{font-size:11px;padding:4px 8px}.container{padding:10px}.date-nav .date-label{min-width:100px;font-size:12px}}
+</style>
+</head>
+<body>
+<nav>
+<a href="/" class="logo"><div class="mark">9</div>9am<span>Leads</span></a>
+<div class="nav-scroll">
+<div class="nav-links">
+<a href="/">Home</a>
+<a href="/" class="active">Dashboard</a>
+<a href="#" onclick="openSuccessCentre();return false">Success Centre</a>
+<a href="#" onclick="openCampaigns();return false">Campaigns</a>
+<a href="#" onclick="openPartnerMarketplace();return false">Partners</a>
+<a href="#" onclick="openWhiteLabel();return false">Branding</a>
+<a href="#" onclick="openFeatureDiscovery();return false">Features</a>
+</div>
+<a href="/founder/" target="_blank" class="pill-growth"><i class="fas fa-rocket"></i> Business Growth</a>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
+<button class="nav-signout" id="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+</div>
+</nav>
+<div class="container">
+<div class="onboarding" id="onboardingBanner"><i class="fas fa-spinner fa-spin" style="color:var(--primary)"></i> Loading your dashboard...</div>
+<div class="stats-grid" id="statsGrid">
+<div class="stat-card"><div class="num" id="stat-leads">0</div><div class="label">Total Leads</div><div class="sub">All time</div><div class="stat-trend"><i class="fas fa-arrow-up"></i> Active</div></div>
+<div class="stat-card"><div class="num" id="stat-new">0</div><div class="label">This Week</div><div class="sub" id="stat-week-label">Last 7 days</div><div class="stat-trend"><i class="fas fa-chart-line"></i> New</div></div>
+<div class="stat-card"><div class="num" id="stat-plan">Free</div><div class="label">Your Plan</div><div class="sub" id="stat-trial">7 days remaining</div><div class="stat-trend"><i class="fas fa-crown"></i> Plan</div></div>
+<div class="stat-card"><div class="num" id="stat-rate">0%</div><div class="label">Conversion</div><div class="sub">Contacted to Booked</div><div class="stat-trend"><i class="fas fa-percentage"></i> Rate</div></div>
+</div>
+<div class="card" id="tipsSection">
+<div class="card-title"><i class="fas fa-lightbulb" style="color:var(--warning)"></i> Tips to Get Started</div>
+<div id="tipsContainer">
+<div class="tip-card"><span class="icon">📞</span><div><strong>Call within 30 minutes</strong> Speed is your biggest advantage. Customers who call within 30 minutes convert at 3x the rate.</div></div>
+<div class="tip-card"><span class="icon">🎯</span><div><strong>Personalise your approach</strong> Reference their specific property, industry, or location. Show them you have done your homework.</div></div>
+<div class="tip-card"><span class="icon">📊</span><div><strong>Track everything</strong> Log every call and booking. See which areas and lead types deliver the best ROI.</div></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title"><i class="fas fa-rocket" style="color:var(--primary)"></i> Your Tools</div>
+<div class="tools-grid">
+<div class="tool-card" onclick="scrollToLeads()"><div class="icon">📋</div><h3>View Leads</h3><p>See all your leads by day</p></div>
+<div class="tool-card" onclick="exportRange('csv')"><div class="icon">📥</div><h3>Export CSV</h3><p>Download leads as spreadsheet</p></div>
+<div class="tool-card" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'})"><div class="icon">⚡</div><h3>Upgrade Plan</h3><p>Get more leads per day</p></div>
+</div>
+</div>
+<div class="card" style="background:linear-gradient(135deg,rgba(14,165,233,0.03),rgba(99,102,241,0.03));border-color:rgba(14,165,233,0.15)">
+<div class="card-header"><div class="card-title"><i class="fas fa-chart-line" style="color:var(--primary)"></i> Grow Your Business</div></div>
+<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">Need help with marketing materials, email campaigns, social media, or scaling your operations? We offer done-for-you services to help you convert more leads and grow faster.</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📧</div><h3>Email Campaigns</h3><p>Setup, templates, automation</p></div>
+<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">🎨</div><h3>Flyers &amp; Letters</h3><p>Branded designs, print-ready PDFs</p></div>
+<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📱</div><h3>Social Media</h3><p>Setup, content, management</p></div>
+<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">💼</div><h3>Business Consulting</h3><p>Strategy, scaling, automation</p></div>
+<div class="tool-card" onclick="window.open('/founder/','_blank')"><div class="icon">👔</div><h3>Speak to the Founder</h3><p>Direct help &amp; custom solutions</p></div>
+</div>
+<div style="text-align:center;margin-top:14px">
+<a href="/founder/" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:8px;color:var(--primary);font-size:13px;font-weight:600;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(14,165,233,0.15)'" onmouseout="this.style.background=''"><i class="fas fa-comments"></i> Get a Custom Quote — Tell Us What You Need</a>
+</div>
+</div>
+<div class="card" style="background:rgba(245,158,11,0.02);border-color:rgba(245,158,11,0.1)">
+<div class="card-header"><div class="card-title"><i class="fas fa-comment-dots" style="color:var(--warning)"></i> We Want Your Feedback</div></div>
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+<div style="flex:1;min-width:200px">
+<p style="font-size:13px;color:var(--text2);line-height:1.6;margin:0">Something not working? Confusing? Missing a feature? Tell us directly — every response goes to the founder and is reviewed personally.</p>
+</div>
+<a href="/portal/feedback.html" class="btn btn-primary btn-sm" style="white-space:nowrap;flex-shrink:0"><i class="fas fa-paper-plane"></i> Send Feedback</a>
+</div>
+</div>
+<div class="card" id="sub-section">
+<div class="card-header"><div class="card-title"><i class="fas fa-crown" style="color:var(--warning)"></i> Subscription</div></div>
+<div class="sub-card">
+<div class="sub-row">
+<div><span class="sub-plan" id="sub-plan-name">Free Trial</span><br><span class="sub-price" id="sub-price-info">5 leads/day</span></div>
+<div><span class="badge badge-orange" id="sub-badge">Trial</span></div>
+</div>
+<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-primary btn-sm" onclick="showPlans()">View Plans &amp; Upgrade</button>
+      <button class="btn btn-outline btn-sm" id="extraBtn" onclick="buyExtraPostcodes()" style="color:var(--primary);border-color:rgba(14,165,233,0.2)"><i class="fas fa-plus-circle"></i> Add 5 Extra Districts (£20/mo)</button>
+      <button class="btn btn-outline btn-sm" id="cancelBtn" onclick="cancelSubscription()" style="color:var(--danger);border-color:rgba(239,68,68,0.3)">Cancel Subscription</button>
+</div>
+<div id="sub-msg" style="margin-top:8px;font-size:12px;color:var(--success);display:none"></div>
+</div>
+</div>
+<div class="card" id="territories-section">
+  <div class="card-header">
+    <div class="card-title"><i class="fas fa-map-marker-alt" style="color:var(--success)"></i> My Territories</div>
+    <span id="territory-stats" style="font-size:12px;color:var(--muted2)">Loading...</span>
+  </div>
+  <div id="territories-body">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px" id="territory-tags"></div>
+    <div id="territory-manager" style="display:none">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div style="position:relative;flex:1">
+          <input type="text" id="territory-search" placeholder="Search postcode areas..." style="width:100%;padding:10px 14px;background:#0f111a;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none" oninput="searchTerritories(this.value)">
+          <div id="territory-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#11131f;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveTerritories()" id="save-territory-btn" disabled>Save</button>
+      </div>
+      <div style="margin-bottom:10px">
+        <input type="text" id="custom-sector-input" placeholder="Add specific sector e.g. EN1 3, SG13 7" style="width:100%;padding:8px 12px;background:#0f111a;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter')addCustomSector()">
+        <button class="btn btn-outline btn-sm" onclick="addCustomSector()" style="margin-top:4px;font-size:11px"><i class="fas fa-plus"></i> Add Sector</button>
+        <span id="custom-sector-error" style="font-size:10px;color:var(--danger);display:none"></span>
+      </div>
+      <div id="territory-msg" style="font-size:11px;color:var(--success);display:none"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" id="edit-territory-btn" onclick="toggleTerritoryEditor()"><i class="fas fa-pen"></i> Edit Territories</button>
+      <button class="btn btn-outline btn-sm" onclick="showPlans()" style="color:var(--primary);border-color:rgba(14,165,233,0.2)"><i class="fas fa-crown"></i> Upgrade for More</button>
+    </div>
+  </div>
+</div>
+<div class="card" id="lead-filters-section">
+  <div class="card-header">
+    <div class="card-title"><i class="fas fa-sliders-h" style="color:var(--primary)"></i> Lead Filters</div>
+  </div>
+  <div id="lead-filters-body">
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Configure optional filters to refine which leads you receive. Only applies to new leads after saving.</p>
+    <div id="lead-filters-display" style="font-size:12px;color:var(--text2);margin-bottom:12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:12px">Loading filter configuration...</div>
+    <div id="lead-filters-editor" style="display:none">
+      <div id="dashboard-filter-moving" class="dashboard-filter-panel">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Min Bedrooms</label>
+            <select id="df-moving-minbeds" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5+</option></select></div>
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Max Bedrooms</label>
+            <select id="df-moving-maxbeds" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6+</option></select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Property Type</label>
+            <select id="df-moving-proptype" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="house">House</option><option value="flat">Flat</option><option value="bungalow">Bungalow</option></select></div>
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Max Property Value</label>
+            <select id="df-moving-maxprice" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="200000">£200k</option><option value="350000">£350k</option><option value="500000">£500k</option><option value="750000">£750k</option><option value="1000000">£1M</option></select></div>
+        </div>
+        <div style="margin-top:8px"><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Lead Status</label>
+          <div style="display:flex;gap:8px"><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="df-moving-status-sstc" checked style="accent-color:var(--primary)"> SSTC</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="df-moving-status-offer" checked style="accent-color:var(--primary)"> Under Offer</label></div>
+        </div>
+      </div>
+      <div id="dashboard-filter-probate" class="dashboard-filter-panel" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Min Estate Value</label>
+            <select id="df-probate-minvalue" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="50000">£50k</option><option value="100000">£100k</option><option value="250000">£250k</option><option value="500000">£500k</option><option value="1000000">£1M</option></select></div>
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Property Included</label>
+            <select id="df-probate-property" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="yes">Has Property</option><option value="no">No Property</option></select></div>
+        </div>
+      </div>
+      <div id="dashboard-filter-newbusiness" class="dashboard-filter-panel" style="display:none">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Industry Categories</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="tech_software" checked style="accent-color:#06b6d4"> Tech & Software</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="construction" checked style="accent-color:#06b6d4"> Construction</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="retail" checked style="accent-color:#06b6d4"> Retail</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="hospitality" checked style="accent-color:#06b6d4"> Hospitality</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="healthcare" checked style="accent-color:#06b6d4"> Healthcare</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="professional_services" checked style="accent-color:#06b6d4"> Prof Services</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="financial" checked style="accent-color:#06b6d4"> Financial</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-nb-sic" value="creative" checked style="accent-color:#06b6d4"> Creative</label>
+        </div>
+      </div>
+      <div id="dashboard-filter-planning" class="dashboard-filter-panel" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Application Type</label>
+            <select id="df-planning-apptype" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="householder">Householder</option><option value="full">Full Planning</option><option value="outline">Outline</option><option value="lawful">Lawful Dev</option><option value="listed">Listed Building</option></select></div>
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Max Project Value</label>
+            <select id="df-planning-maxvalue" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="50000">£50k</option><option value="100000">£100k</option><option value="250000">£250k</option><option value="500000">£500k</option><option value="1000000">£1M</option></select></div>
+        </div>
+      </div>
+      <div id="dashboard-filter-tenders" class="dashboard-filter-panel" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Min Contract Value</label>
+            <select id="df-tenders-minvalue" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="10000">£10k</option><option value="50000">£50k</option><option value="100000">£100k</option><option value="500000">£500k</option></select></div>
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Keywords</label>
+            <input type="text" id="df-tenders-keywords" placeholder="construction, IT, cleaning..." style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"></div>
+        </div>
+        <p style="font-size:10px;color:var(--muted2);margin-top:6px">Comma separated. Leave blank for all tenders.</p>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-primary btn-sm" onclick="saveLeadFilters()"><i class="fas fa-save"></i> Save Filters</button>
+        <button class="btn btn-outline btn-sm" onclick="toggleFilterEditor()"><i class="fas fa-times"></i> Cancel</button>
+      </div>
+      <div id="lead-filters-msg" style="margin-top:8px;font-size:12px;display:none"></div>
+    </div>
+    <button class="btn btn-outline btn-sm" id="edit-filters-btn" onclick="toggleFilterEditor()"><i class="fas fa-pen"></i> Edit Filters</button>
+  </div>
+</div>
+<div class="card" id="crmSection">
+<div class="card-header"><div class="card-title"><i class="fas fa-plug"></i> CRM Integration</div></div>
+<p style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6">Connect your CRM via webhook. Your daily leads will be pushed here automatically at 9am. Works with Zapier, Make, n8n, HubSpot, Salesforce, and any system that accepts webhooks.</p>
+<div class="form-group">
+<label for="crmUrl">Webhook URL</label>
+<input type="url" id="crmUrl" placeholder="https://hooks.zapier.com/hooks/catch/..." style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px">
+</div>
+<div style="display:flex;gap:10px;margin-top:8px">
+<button onclick="saveCrmUrl()" class="btn btn-primary" style="padding:10px 24px;font-size:13px">Save &amp; Test</button>
+<button onclick="testCrmUrl()" class="btn btn-outline" style="padding:10px 24px;font-size:13px">Test Connection</button>
+<button onclick="removeCrmUrl()" class="btn btn-outline" style="padding:10px 24px;font-size:13px;color:#ef4444">Remove</button>
+</div>
+<div id="crmStatus" style="margin-top:10px;font-size:13px;display:none"></div>
+</div>
+<div class="card" id="leads-section">
+<div class="card-header">
+<div class="card-title"><i class="fas fa-calendar-day" style="color:var(--success)"></i> <span id="leadTitle">Your Leads</span></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;position:relative">
+<button class="btn btn-outline btn-sm" onclick="toggleCal()"><i class="fas fa-calendar"></i> Calendar</button>
+<button class="btn btn-outline btn-sm" onclick="openWeeklyReport()"><i class="fas fa-chart-line"></i> Weekly Report</button>
+<button class="btn btn-outline btn-sm" onclick="exportRange('csv')"><i class="fas fa-file-csv"></i> Export</button>
+<button class="btn btn-outline btn-sm" onclick="exportRange('json')"><i class="fas fa-file-code"></i> JSON</button>
+<div class="cal-popup" id="calPopup">
+<div class="cal-month-nav"><button onclick="calNav(-1)"><i class="fas fa-chevron-left"></i></button><span id="calMonthLabel">May 2026</span><button onclick="calNav(1)"><i class="fas fa-chevron-right"></i></button></div>
+<div class="cal-grid" id="calGrid"></div>
+</div>
+</div>
+</div>
+<div class="date-nav">
+<button class="today-btn" onclick="goToday()">Today</button>
+<button class="nav-btn" onclick="navDay(-1)"><i class="fas fa-chevron-left"></i></button>
+<div style="position:relative">
+<span class="date-label" id="dateLabel" style="cursor:pointer" onclick="toggleCal()">Loading...</span>
+</div>
+<button class="nav-btn" onclick="navDay(1)"><i class="fas fa-chevron-right"></i></button>
+<span style="font-size:12px;color:var(--muted2)" id="leadCount">0 leads</span>
+<div style="display:flex;gap:4px;margin-left:auto">
+<button id="st-all" class="btn btn-outline btn-sm" onclick="filterByStatus('')" style="font-size:10px;padding:4px 8px;border-color:var(--accent);color:var(--accent)">All</button>
+<button id="st-new" class="btn btn-outline btn-sm" onclick="filterByStatus('new')" style="font-size:10px;padding:4px 8px">New</button>
+<button id="st-contacted" class="btn btn-outline btn-sm" onclick="filterByStatus('contacted')" style="font-size:10px;padding:4px 8px">Contacted</button>
+<button id="st-booked" class="btn btn-outline btn-sm" onclick="filterByStatus('booked')" style="font-size:10px;padding:4px 8px">Won</button>
+</div>
+<select id="viewMode" style="padding:5px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;font-family:inherit;outline:none" onchange="switchView(this.value)">
+<option value="day">Day View</option>
+<option value="all">All Leads</option>
+</select>
+</div>
+<div id="leadGroups"><div class="empty-state"><div class="icon">📭</div>Loading your leads...</div></div>
+</div>
+</div>
+<footer>
+<a href="https://www.9amleads.com" style="color:var(--primary);font-weight:600;text-decoration:none">9amLeads.com</a> &middot;
+<a href="/founder/" style="color:var(--muted2);text-decoration:none">Founder</a> &middot;
+<a href="/terms.html" style="color:var(--muted2);text-decoration:none">Terms</a> &middot;
+<a href="/privacy.html" style="color:var(--muted2);text-decoration:none">Privacy</a>
+</footer>
+<script>
+const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:8012'
+  : 'https://www.9amleads.com';
+let currentUser = null;
+let leads = [];
+let viewDate = new Date();
+let calDate = new Date();
+let currentView = 'day';
+
+function logout() { localStorage.removeItem('mld_portal_session'); window.location.href = '/portal/'; }
+function getSession() { const s = localStorage.getItem('mld_portal_session'); if (!s) { window.location.href = '/portal/'; return null; }
+  try { return JSON.parse(s); } catch { return null; } }
+
+async function apiFetch(path, opts = {}) {
+  const session = getSession(); if (!session) return null;
+  try {
+    const r = await fetch(API + path, { ...opts, headers: { ...opts.headers, 'Authorization': 'Bearer ' + (session.token || '') } });
+    const d = await r.json();
+    // If unauthenticated but we have a local session, use demo mode
+    if (d.error && (d.error.includes('token') || d.error.includes('auth'))) return null;
+    return d;
+  } catch { return null; }
+}
+
+async function loadDashboard() {
+  const session = getSession(); if (!session) return;
+  const sub = await apiFetch('/api/subscription');
+  if (sub) {
+    const planLabel = sub.plan === 'free_trial' ? 'Free Trial' : sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1);
+    const extraInfo = (sub.extra_postcodes || 0) > 0 ? ' + ' + sub.extra_postcodes + ' extra districts' : '';
+    document.getElementById('sub-plan-name').textContent = planLabel + extraInfo;
+    document.getElementById('sub-price-info').textContent = sub.leads_per_day + ' leads/day' + extraInfo;
+    document.getElementById('sub-badge').textContent = sub.plan === 'free_trial' ? 'Trial' : 'Active';
+    document.getElementById('extraBtn').style.display = (sub.plan === 'free_trial' || sub.plan === 'cancelled') ? 'none' : 'inline-flex';
+    if (sub.trial_ends) {
+      const days = Math.ceil((new Date(sub.trial_ends) - new Date()) / 86400000);
+      document.getElementById('stat-trial').textContent = days > 0 ? days + ' days remaining' : 'Expired';
+    }
+  }
+
+  // Store product from session for plan pricing
+  if (session.product) currentUser = { ...currentUser, product: session.product };
+
+  const leadData = await apiFetch('/api/leads');
+  if (leadData && Array.isArray(leadData) && leadData.length > 0) {
+    leads = leadData;
+    document.getElementById('stat-leads').textContent = leads.length;
+    document.getElementById('stat-new').textContent = leads.filter(l => l.created_at && new Date(l.created_at) > new Date(Date.now() - 7*86400000)).length;
+    renderLeads();
+    document.getElementById('onboardingBanner').style.display = 'none';
+  } else {
+    // Demo data
+    generateDemoLeads(session);
+  }
+  calcConversion();
+  updateOnboarding();
+  if (typeof showLowLeadsTip === 'function') {
+    var pcCount2 = 0;
+    try { var t2 = document.getElementById('territory-tags'); pcCount2 = t2 ? t2.children.length : 0; } catch(e) {}
+    var weekLeads2 = leads.filter(function(l) { return l.created_at && new Date(l.created_at) > new Date(Date.now() - 7*86400000); }).length;
+    showLowLeadsTip(pcCount2 || 3, weekLeads2);
+  }
+}
+
+function generateDemoLeads(session) {
+  const areas = ['SW1A 1AA', 'SW1E 5NA', 'W1B 1SH', 'N2 0EY', 'SE3 0QU', 'EC2A 4NE', 'NW1 4SA'];
+  const types = ['House', 'Flat', 'Bungalow', 'Maisonette'];
+  leads = [];
+  for (let i = 0; i < 20; i++) {
+    const daysAgo = Math.floor(Math.random() * 14);
+    const d = new Date(); d.setDate(d.getDate() - daysAgo);
+    leads.push({
+      data: JSON.stringify({ address: Math.floor(Math.random()*200)+1 + ' ' + ['Acacia Avenue','Victoria Road','Green Lane','Park Crescent','Oakwood Gardens','Market Street','Church Road'][i%7] + ', ' + areas[i%areas.length], type: types[i%types.length], price: '┬ú' + (Math.floor(Math.random()*900)+100) + ',000', bedrooms: Math.floor(Math.random()*4)+1 }),
+      status: ['new','new','new','contacted','booked'][i%5],
+      created_at: d.toISOString()
+    });
+  }
+  document.getElementById('stat-leads').textContent = leads.length;
+  document.getElementById('stat-new').textContent = leads.filter(l => new Date(l.created_at) > new Date(Date.now()-7*86400000)).length;
+  renderLeads();
+  // Show demo mode banner
+  const banner = document.getElementById('onboardingBanner');
+  banner.innerHTML = '<i class="fas fa-flask" style="color:var(--warning)"></i> <strong>Demo Mode</strong> ΓÇö Showing sample leads. Your real leads will appear after the 9am daily scrape and distribution pipeline runs.';
+  banner.style.display = 'flex';
+}
+
+function groupLeadsByDay(leadList) {
+  const groups = {};
+  leadList.forEach(l => {
+    const day = l.created_at ? new Date(l.created_at).toDateString() : 'Unknown';
+    if (!groups[day]) groups[day] = [];
+    groups[day].push(l);
+  });
+  const sorted = Object.entries(groups).sort((a, b) => new Date(b[0]) - new Date(a[0]));
+  return sorted;
+}
+
+function renderLeads() {
+  const container = document.getElementById('leadGroups');
+  const countEl = document.getElementById('leadCount');
+  const titleEl = document.getElementById('leadTitle');
+
+  if (leads.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">≡ƒô¡</div>No leads yet. They will appear here at 9am.<br><span style="font-size:11px;color:var(--muted2)">New leads arrive every morning.</span></div>';
+    document.getElementById('dateLabel').textContent = 'No leads';
+    countEl.textContent = '0 leads';
+    return;
+  }
+
+  const groups = groupLeadsByDay(leads);
+  const statusLabel = { new: '<span class="badge badge-blue">New</span>', contacted: '<span class="badge badge-orange">Contacted</span>', booked: '<span class="badge badge-green">Booked</span>', closed: '<span class="badge badge-green">Closed</span>', lost: '<span class="badge badge-red">Lost</span>' };
+  let html = '';
+
+  if (currentView === 'day') {
+    const today = viewDate.toDateString();
+    const todayLeads = leads.filter(l => l.created_at && new Date(l.created_at).toDateString() === today);
+    document.getElementById('dateLabel').textContent = viewDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    countEl.textContent = todayLeads.length + ' leads';
+
+    if (todayLeads.length === 0) {
+      html = '<div class="empty-state"><div class="icon">≡ƒô¡</div>No leads for this day.</div>';
+    } else {
+      html += '<div class="day-group"><div class="day-header"><span class="day-date">' + viewDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + '</span><span class="day-count">' + todayLeads.length + ' leads</span></div><div class="day-body">';
+      todayLeads.forEach(l => {
+        const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
+        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || 'ΓÇö') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' ┬╖ ' + d.type : '') + '</small></div><div class="value">' + (d.price || 'ΓÇö') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div></div>';
+      });
+      html += '</div></div>';
+    }
+    titleEl.textContent = 'Daily Leads';
+  } else {
+    document.getElementById('dateLabel').textContent = 'All Leads';
+    countEl.textContent = leads.length + ' total';
+    titleEl.textContent = 'All Leads';
+    groups.forEach(([day, dayLeads]) => {
+      html += '<div class="day-group"><div class="day-header" onclick="this.classList.toggle(\'collapsed\');this.nextElementSibling.classList.toggle(\'collapsed\')"><span class="day-date">' + day + '</span><span class="day-count">' + dayLeads.length + ' leads</span><span class="day-arrow"><i class="fas fa-chevron-down"></i></span></div><div class="day-body">';
+      dayLeads.forEach(l => {
+        const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
+        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || 'ΓÇö') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' ┬╖ ' + d.type : '') + '</small></div><div class="value">' + (d.price || 'ΓÇö') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div></div>';
+      });
+      html += '</div></div>';
+    });
+  }
+
+  container.innerHTML = html;
+  calcConversion();
+}
+
+function calcConversion() {
+  const booked = leads.filter(l => l.status === 'booked' || l.status === 'closed').length;
+  document.getElementById('stat-rate').textContent = leads.length > 0 ? Math.round((booked / leads.length) * 100) + '%' : '0%';
+}
+
+function updateOnboarding() {
+  const el = document.getElementById('onboardingBanner');
+  const c = getSession();
+  if (leads.length > 0) el.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i> You have <strong>' + leads.length + '</strong> leads. Keep calling to convert them into bookings!';
+  else el.innerHTML = '<i class="fas fa-clock" style="color:var(--warning)"></i> Your leads will arrive at 9am tomorrow morning. Set your target areas in the meantime.';
+}
+
+function navDay(dir) {
+  viewDate.setDate(viewDate.getDate() + dir);
+  renderLeads();
+}
+
+function goToday() { viewDate = new Date(); renderLeads(); }
+
+function switchView(mode) {
+  currentView = mode;
+  renderLeads();
+}
+
+// Calendar
+function toggleCal() {
+  document.getElementById('calPopup').classList.toggle('show');
+  buildCal();
+}
+
+function buildCal() {
+  const year = calDate.getFullYear(), month = calDate.getMonth();
+  document.getElementById('calMonthLabel').textContent = calDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+  let html = '<div class="cal-header">S</div><div class="cal-header">M</div><div class="cal-header">T</div><div class="cal-header">W</div><div class="cal-header">T</div><div class="cal-header">F</div><div class="cal-header">S</div>';
+  for (let i = 0; i < firstDay; i++) html += '<div></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = new Date(year, month, d).toDateString();
+    const isToday = dateStr === today.toDateString();
+    const hasLeads = leads.some(l => l.created_at && new Date(l.created_at).toDateString() === dateStr);
+    const isActive = dateStr === viewDate.toDateString();
+    html += '<div class="cal-day' + (isActive ? ' active' : '') + (isToday ? ' today' : '') + '" onclick="pickCalDate(' + year + ',' + month + ',' + d + ')">' + d + (hasLeads ? '<span style="display:block;width:4px;height:4px;border-radius:50%;background:var(--primary);margin:1px auto"></span>' : '') + '</div>';
+  }
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function calNav(dir) { calDate.setMonth(calDate.getMonth() + dir); buildCal(); }
+
+function pickCalDate(y, m, d) { viewDate = new Date(y, m, d); document.getElementById('calPopup').classList.remove('show'); renderLeads(); }
+
+// Export
+function exportRange(format) {
+  if (leads.length === 0) { alert('No leads to export'); return; }
+  let exportLeads = leads;
+  if (currentView === 'day') {
+    const today = viewDate.toDateString();
+    exportLeads = leads.filter(l => l.created_at && new Date(l.created_at).toDateString() === today);
+  }
+  if (exportLeads.length === 0) { alert('No leads for the selected period'); return; }
+
+  if (format === 'csv') {
+    let csv = 'Address,Type,Price,Bedrooms,Status,Date\n';
+    exportLeads.forEach(l => {
+      const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
+      csv += '"' + (d.address || '') + '","' + (d.type || '') + '","' + (d.price || '') + '","' + (d.bedrooms || '') + '","' + (l.status || '') + '","' + (l.created_at ? new Date(l.created_at).toLocaleDateString() : '') + '"\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '9amleads-export.csv'; a.click();
+  } else {
+    const data = exportLeads.map(l => { const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {}); return { address: d.address || '', type: d.type || '', price: d.price || '', bedrooms: d.bedrooms || '', status: l.status || '', date: l.created_at || '' }; });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '9amleads-export.json'; a.click();
+  }
+}
+
+async function checkout(plan) {
+  const msg = document.getElementById('sub-msg'); msg.style.display = 'none';
+  const data = await apiFetch('/api/create-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan }) });
+  if (data && data.url) { window.location.href = data.url; }
+  else {
+    const errMsg = data?.error || '';
+    if (errMsg.includes('not configured')) {
+      msg.style.color = 'var(--warning)';
+      msg.innerHTML = 'Payments are being set up. For now, please email <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">hello@9amleads.com</a> to upgrade your plan.';
+    } else {
+      msg.style.color = 'var(--danger)';
+      msg.textContent = 'Error: ' + errMsg + ' ΓÇö Contact hello@9amleads.com for help.';
+    }
+    msg.style.display = 'block';
+  }
+}
+
+function scrollToLeads() { document.getElementById('leads-section').scrollIntoView({ behavior: 'smooth' }); }
+
+// Status filter
+var currentStatusFilter = '';
+function filterByStatus(s) {
+  currentStatusFilter = s || '';
+  document.querySelectorAll('[id^="st-"]').forEach(function(b) { b.style.cssText = ''; });
+  var el = document.getElementById('st-' + (s || 'all'));
+  if (el) { el.style.cssText = 'border-color:var(--primary);color:var(--primary);background:rgba(14,165,233,0.08)'; }
+  if (typeof renderLeads === 'function') renderLeads();
+}
+
+// Modal placeholders (populated on first open)
+function openSuccessCentre() { showModal('Success Centre', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Tips and best practices for contacting your leads.</p><p style="font-size:12px;color:var(--muted)">Coming soon — contact strategies, email templates, and call scripts will appear here.</p></div>'); }
+function openCampaigns() { showModal('Campaigns', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Automated email follow-up campaigns for your leads.</p><p style="font-size:12px;color:var(--muted)">Coming soon — set up Day 1/3/5/10 sequences.</p></div>'); }
+function openPartnerMarketplace() { showModal('Partner Marketplace', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Find partners to refer or receive leads from.</p><p style="font-size:12px;color:var(--muted)">Coming soon — connect with complementary businesses.</p></div>'); }
+function openWhiteLabel() { showModal('White Label Branding', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Customise your exports and reports with your branding.</p><p style="font-size:12px;color:var(--muted)">Coming soon — upload your logo and set brand colours.</p></div>'); }
+function openFeatureDiscovery() {
+  var features = ['Lead Scoring', 'AI Outreach', 'CRM Sync', 'Territory Management', 'Export CSV', 'Lead Timeline', 'Performance Dashboard', 'Saved Searches'];
+  var html = '<div style="padding:10px"><p style="color:var(--text2);margin-bottom:16px">Tools available in your account:</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+  for (var fi = 0; fi < features.length; fi++) {
+    html += '<div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text)"><i class="fas fa-check" style="color:var(--success);margin-right:6px"></i>' + features[fi] + '</div>';
+  }
+  html += '</div></div>';
+  showModal('Features & Tools', html);
+}
+
+function showModal(title, content) {
+  var existing = document.getElementById('modal-overlay');
+  if (existing) existing.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:480px;width:100%';
+  box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="font-weight:700;font-family:var(--ff-h);font-size:16px">' + title + '</h3><button onclick="this.closest(\'#modal-overlay\').remove()" style="background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer">✕</button></div>' + content;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function openWeeklyReport() {
+  exportRange('csv');
+}
+
+// Plan pricing per product (with postcode limits)
+const PLAN_PRICING = {
+  moving: { starter: { leads: 5, postcodes: 5, price: 99 }, pro: { leads: 15, postcodes: 10, price: 199 }, enterprise: { leads: 50, postcodes: 50, price: 500 } },
+  probate: { starter: { leads: 5, postcodes: 5, price: 99 }, pro: { leads: 15, postcodes: 10, price: 199 }, enterprise: { leads: 50, postcodes: 50, price: 500 } },
+  newbusiness: { starter: { leads: 5, postcodes: 5, price: 99 }, pro: { leads: 15, postcodes: 10, price: 199 }, enterprise: { leads: 50, postcodes: 50, price: 500 } },
+  planning: { starter: { leads: 5, postcodes: 5, price: 99 }, pro: { leads: 15, postcodes: 10, price: 199 }, enterprise: { leads: 50, postcodes: 50, price: 500 } },
+  tenders: { starter: { leads: 5, postcodes: 5, price: 99 }, pro: { leads: 15, postcodes: 10, price: 199 }, enterprise: { leads: 50, postcodes: 50, price: 500 } },
+};
+
+function showPlans() {
+  const session = getSession();
+  if (!session) return;
+  const currentPlan = session.plan || 'free_trial';
+  const product = session.product || 'moving';
+  const pricing = PLAN_PRICING[product] || PLAN_PRICING.moving;
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px';
+
+  const modal = document.createElement('div');
+  modal.style.cssText = 'background:#11131f;border:1px solid #1e2030;border-radius:16px;padding:32px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto';
+
+  modal.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">' +
+    '<h3 style="font-size:18px;font-weight:700">Choose Your Plan</h3>' +
+    '<button onclick="this.parentElement.parentElement.parentElement.remove()" style="background:none;border:none;color:#8890a8;font-size:20px;cursor:pointer">\u2715</button></div>' +
+    Object.entries(pricing).map(([key, p]) => {
+      const pcLimit = p.postcodes === 999 ? 'Unlimited' : p.postcodes + ' area' + (p.postcodes > 1 ? 's' : '');
+      const isCurrent = currentPlan === key;
+      return '<div style="background:' + (isCurrent ? 'rgba(14,165,233,0.06)' : 'var(--card)') + ';border:1px solid ' + (isCurrent ? 'rgba(14,165,233,0.2)' : '#1e2030') + ';border-radius:10px;padding:16px;margin-bottom:10px;transition:.2s">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<div><strong style="font-size:15px;color:#fff">' + key.charAt(0).toUpperCase() + key.slice(1) + '</strong>' +
+        '<br><span style="font-size:12px;color:#8890a8">' + p.leads + ' leads/day \u00b7 ' + pcLimit + ' postcode' + (p.postcodes !== 1 ? 's' : '') + '</span></div>' +
+        '<div style="text-align:right"><span style="font-size:20px;font-weight:800">&pound;' + p.price + '</span><span style="font-size:12px;color:#8890a8">/mo</span>' +
+        (isCurrent ? '<br><span style="font-size:10px;color:#22c55e;font-weight:600">Current Plan</span>' : '') +
+        '</div></div>' +
+        (!isCurrent ? '<button onclick="checkout(\'' + key + '\')" style="margin-top:12px;width:100%;padding:8px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer">' + (parseInt(key === 'starter' ? '0' : currentPlan === 'free_trial' ? '-1' : '1') < 0 ? 'Upgrade' : 'Switch to ' + key.charAt(0).toUpperCase() + key.slice(1)) + '</button>' : '') +
+        '</div>';
+    }).join('') +
+    '<div style="margin-top:16px;padding:12px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:8px;font-size:11px;color:#8890a8;text-align:center">' +
+    '<strong>Postcode districts:</strong> Starter: 5 districts &middot; Pro: 10 districts &middot; Enterprise: 50 districts<br>' +
+    '<strong>Extra districts:</strong> Need more? Add 5 extra districts for just ┬ú20/mo from your dashboard.<br>' +
+    'Switching plans creates a new Stripe subscription with prorated billing.</div>';
+
+  overlay.appendChild(modal);
+  overlay.onclick = function(e) { if (e.target === this) this.remove(); };
+  document.body.appendChild(overlay);
+}
+
+async function buyExtraPostcodes() {
+  if (!confirm('Add 5 extra postcode districts for ┬ú20/month? This will be charged on your next invoice.')) return;
+  const data = await apiFetch('/api/postcodes/extra', { method: 'POST' });
+  const msg = document.getElementById('sub-msg');
+  if (data && data.success) {
+    msg.style.color = 'var(--success)';
+    msg.textContent = data.message;
+    msg.style.display = 'block';
+    setTimeout(() => { msg.style.display = 'none'; location.reload(); }, 3000);
+  } else {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = data?.error || 'Failed to add extra districts.';
+    msg.style.display = 'block';
+  }
+}
+
+function showLowLeadsTip(postcodeCount, leadsThisWeek) {
+  const banner = document.getElementById('onboardingBanner');
+  if (leadsThisWeek < 10 && postcodeCount <= 3) {
+    banner.innerHTML = '<i class="fas fa-lightbulb" style="color:var(--warning)"></i> <strong>Not enough leads?</strong> You have <strong>' + postcodeCount + ' postcode district' + (postcodeCount !== 1 ? 's' : '') + '</strong> and only <strong>' + leadsThisWeek + ' leads this week</strong>. Try adding more postcode districts to increase your volume. <a href="#" onclick="document.getElementById(\'edit-territory-btn\').click();return false" style="color:var(--primary);text-decoration:underline">Add districts now</a>';
+    banner.style.display = 'flex';
+  }
+}
+
+async function cancelSubscription() {
+  if (!confirm('Are you sure you want to cancel your subscription?\n\nYour access will continue until the end of the current billing period, then your account will be disabled.')) return;
+  const data = await apiFetch('/api/subscription/cancel', { method: 'POST' });
+  if (data && data.success) {
+    alert(data.message);
+    location.reload();
+  } else {
+    alert('Failed to cancel. Please email hello@9amleads.com for assistance.');
+  }
+}
+
+// ===== TERRITORY MANAGEMENT =====
+let allTerritoryPostcodes = [];
+let editedTerritories = null;
+let territoryEditing = false;
+
+async function loadTerritories() {
+  const data = await apiFetch('/api/postcodes/mine');
+  if (!data) return;
+  const tags = document.getElementById('territory-tags');
+  const stats = document.getElementById('territory-stats');
+
+  tags.innerHTML = data.postcodes.map(p =>
+    '<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.15);border-radius:6px;font-size:12px;color:var(--success);font-weight:600">' +
+    p.code + ' ' + p.name +
+    '<span style="font-weight:400;color:var(--muted2)">' + (p.area_name || p.region) + '</span></span>'
+  ).join('');
+
+  const remaining = data.max_limit - data.count;
+  const limitLabel = data.limit_label || String(data.max_limit);
+  let extraInfo = '';
+  if (data.base_limit && data.extra_postcodes) {
+    extraInfo = ' (' + data.base_limit + ' base + ' + data.extra_postcodes + ' extra)';
+  }
+  stats.textContent = data.count + '/' + limitLabel + ' district' + (data.count !== 1 ? 's' : '') + extraInfo +
+    (remaining > 0 ? ' (' + remaining + ' available)' : '');
+
+  editedTerritories = data.postcodes.map(p => p.code);
+  updateTerritorySaveBtn();
+}
+
+let allTerritoryAreas = [];
+let territoryExpandedArea = null;
+
+async function loadTerritoryPostcodes() {
+  const data = await apiFetch('/api/postcodes');
+  if (data) {
+    allTerritoryAreas = (data.areas || []).sort((a, b) => a.area_code.localeCompare(b.area_code));
+    for (const area of allTerritoryAreas) {
+      area.districts.sort((a, b) => {
+        const numA = parseInt(a.code.replace(/[^0-9]/g, '')) || 0;
+        const numB = parseInt(b.code.replace(/[^0-9]/g, '')) || 0;
+        return numA - numB;
+      });
+    }
+  }
+  renderTerritoryFull();
+}
+
+function getAllTerritoryDistricts() {
+  const all = [];
+  for (const area of allTerritoryAreas) {
+    for (const d of (area.districts || [])) {
+      all.push({ ...d, area_code: area.area_code, area_name: area.area_name, region: area.region });
+    }
+  }
+  return all;
+}
+
+function toggleTerritoryEditor() {
+  const manager = document.getElementById('territory-manager');
+  territoryEditing = !territoryEditing;
+  manager.style.display = territoryEditing ? 'block' : 'none';
+  document.getElementById('edit-territory-btn').innerHTML = territoryEditing
+    ? '<i class="fas fa-times"></i> Cancel'
+    : '<i class="fas fa-pen"></i> Edit Territories';
+  if (territoryEditing) {
+    document.getElementById('territory-search').focus();
+    loadTerritoryPostcodes();
+  }
+}
+
+function toggleTerritoryArea(code) {
+  territoryExpandedArea = territoryExpandedArea === code ? null : code;
+  renderTerritoryFull();
+}
+
+function renderTerritoryFull() {
+  const dropdown = document.getElementById('territory-dropdown');
+  const currentPlan = getSession()?.plan || 'free_trial';
+  const maxLimit = { free_trial: 5, essential: 5, starter: 5, pro: 10, enterprise: 50 }[currentPlan] || 5;
+  const selected = editedTerritories || [];
+
+  let html = '';
+  for (const area of allTerritoryAreas) {
+    const isExpanded = territoryExpandedArea === area.area_code;
+    const selInArea = selected.filter(s => s.startsWith(area.area_code));
+    html += '<div style="border-bottom:1px solid var(--border)">';
+    html += '<div style="display:flex;align-items:center;gap:6px;padding:7px 12px;cursor:pointer;transition:.1s"' +
+      'onmouseover="this.style.background=\'rgba(255,255,255,0.02)\'" onmouseout="this.style.background=\'transparent\'"' +
+      'onclick="toggleTerritoryArea(\'' + area.area_code + '\')">' +
+      '<span style="font-size:9px;color:var(--muted2);min-width:14px">' + (isExpanded ? 'Γû╝' : 'Γû╢') + '</span>' +
+      '<span style="font-weight:700;font-size:12px;color:var(--text);min-width:28px">' + area.area_code + '</span>' +
+      '<span style="color:var(--muted);font-size:11px">' + area.area_name + '</span>' +
+      '<span style="margin-left:auto;font-size:10px;color:var(--muted2)">' + area.districts.length + ' districts</span>' +
+      (selInArea.length > 0 ? '<span style="font-size:10px;color:var(--primary);font-weight:600;margin-left:4px">' + selInArea.length + ' sel</span>' : '') +
+      '</div>';
+    if (isExpanded) {
+      html += '<div style="padding-left:32px;padding-bottom:4px">';
+      for (const d of (area.districts || [])) {
+        const isSelected = selected.includes(d.code);
+        const isTaken = !d.available && !isSelected;
+        const isDisabled = isTaken || (!isSelected && selected.length >= maxLimit);
+        html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;cursor:' + (isDisabled ? 'not-allowed' : 'pointer') + ';opacity:' + (isDisabled ? '0.35' : '1') + ';border-radius:4px;transition:.1s" ' +
+          'onmouseover="this.style.background=\'rgba(255,255,255,0.02)\'" onmouseout="this.style.background=\'transparent\'" ' +
+          'onclick="' + (isDisabled ? '' : 'toggleTerritoryPc(\'' + d.code + '\')') + '"' +
+          '>' +
+          '<span style="width:14px;height:14px;border-radius:3px;border:1px solid ' + (isSelected ? '#0ea5e9' : (isTaken ? '#ef4444' : '#2a2d42')) + ';display:flex;align-items:center;justify-content:center;font-size:7px;color:' + (isSelected ? '#fff' : (isTaken ? '#ef4444' : 'transparent')) + ';background:' + (isSelected ? '#0ea5e9' : 'transparent') + '">' + (isSelected ? '\u2713' : (isTaken ? '\u2717' : '')) + '</span>' +
+          '<span style="font-weight:600;font-size:11px;color:var(--text);min-width:36px">' + d.code + '</span>' +
+          '<span style="color:var(--muted);font-size:10px">' + d.name + '</span>' +
+          (isTaken ? '<span style="margin-left:auto;font-size:9px;color:var(--danger);font-weight:600">Taken</span>' : '') +
+          '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  dropdown.innerHTML = html || '<div style="padding:12px;color:var(--muted2);font-size:12px;text-align:center">Loading...</div>';
+  dropdown.style.display = 'block';
+}
+
+function searchTerritories(query) {
+  const dropdown = document.getElementById('territory-dropdown');
+  if (!query || !territoryEditing) { renderTerritoryFull(); return; }
+  const q = query.toLowerCase();
+  const all = getAllTerritoryDistricts();
+  const filtered = all.filter(d =>
+    d.code.toLowerCase().includes(q) ||
+    d.name.toLowerCase().includes(q) ||
+    d.area_code.toLowerCase().includes(q)
+  );
+  // If user typed an area code, expand to show its districts
+  const areaMatch = allTerritoryAreas.find(a => a.area_code.toLowerCase() === q);
+  if (areaMatch && filtered.length === areaMatch.districts.length) {
+    territoryExpandedArea = areaMatch.area_code;
+    renderTerritoryFull();
+    return;
+  }
+  renderTerritorySearchResults(filtered);
+  dropdown.style.display = 'block';
+}
+
+function renderTerritorySearchResults(items) {
+  const dropdown = document.getElementById('territory-dropdown');
+  const currentPlan = getSession()?.plan || 'free_trial';
+  const maxLimit = { free_trial: 5, essential: 5, starter: 5, pro: 10, enterprise: 50 }[currentPlan] || 5;
+  const selected = editedTerritories || [];
+
+  if (items.length === 0) {
+    dropdown.innerHTML = '<div style="padding:12px;color:var(--muted2);font-size:12px;text-align:center">No matching districts</div>';
+    return;
+  }
+  let lastArea = '';
+  let html = '';
+  for (const d of items) {
+    if (d.area_code !== lastArea) {
+      html += '<div style="padding:4px 12px 1px;font-size:9px;font-weight:700;color:var(--muted2)">' + d.area_code + ' ΓÇö ' + d.area_name + '</div>';
+      lastArea = d.area_code;
+    }
+    const isSelected = selected.includes(d.code);
+    const isTaken = !d.available && !isSelected;
+    const isDisabled = isTaken || (!isSelected && selected.length >= maxLimit);
+    html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 12px;cursor:' + (isDisabled ? 'not-allowed' : 'pointer') + ';opacity:' + (isDisabled ? '0.35' : '1') + ';transition:.1s" ' +
+      'onmouseover="this.style.background=\'rgba(255,255,255,0.02)\'" onmouseout="this.style.background=\'transparent\'" ' +
+      'onclick="' + (isDisabled ? '' : 'toggleTerritoryPc(\'' + d.code + '\')') + '"' +
+      '>' +
+      '<span style="width:14px;height:14px;border-radius:3px;border:1px solid ' + (isSelected ? '#0ea5e9' : (isTaken ? '#ef4444' : '#2a2d42')) + ';display:flex;align-items:center;justify-content:center;font-size:7px;color:' + (isSelected ? '#fff' : (isTaken ? '#ef4444' : 'transparent')) + ';background:' + (isSelected ? '#0ea5e9' : 'transparent') + '">' + (isSelected ? '\u2713' : (isTaken ? '\u2717' : '')) + '</span>' +
+      '<span style="font-weight:600;font-size:11px;color:var(--text);min-width:36px">' + d.code + '</span>' +
+      '<span style="color:var(--muted);font-size:10px">' + d.name + '</span>' +
+      (isTaken ? '<span style="margin-left:auto;font-size:9px;color:var(--danger);font-weight:600">Taken</span>' : '') +
+      '</div>';
+  }
+  dropdown.innerHTML = html;
+}
+
+function toggleTerritoryPc(code) {
+  if (!editedTerritories) editedTerritories = [];
+  const idx = editedTerritories.indexOf(code);
+  if (idx >= 0) {
+    editedTerritories.splice(idx, 1);
+  } else {
+    editedTerritories.push(code);
+  }
+  updateTerritorySaveBtn();
+  searchTerritories(document.getElementById('territory-search').value);
+}
+
+function updateTerritorySaveBtn() {
+  const btn = document.getElementById('save-territory-btn');
+  if (!editedTerritories || !territoryEditing) { btn.disabled = true; return; }
+  btn.disabled = false;
+}
+
+function addCustomSector() {
+  const input = document.getElementById('custom-sector-input');
+  const err = document.getElementById('custom-sector-error');
+  const sector = input.value.trim().toUpperCase();
+  err.style.display = 'none';
+  if (!sector) { err.textContent = 'Please enter a postcode sector e.g. EN1 3'; err.style.display = 'block'; return; }
+  if (!editedTerritories) editedTerritories = [];
+  if (editedTerritories.includes(sector)) { err.textContent = '"' + sector + '" is already in your list'; err.style.display = 'block'; return; }
+  editedTerritories.push(sector);
+  input.value = '';
+  renderTerritoryFull();
+  updateTerritorySaveBtn();
+  const tags = document.getElementById('territory-tags');
+  const span = document.createElement('span');
+  span.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:6px;font-size:12px;color:var(--primary);font-weight:600';
+  span.innerHTML = sector + ' <span style="cursor:pointer;opacity:0.6" onclick="removeTerritoryPc(\'' + sector + '\')">&times;</span>';
+  tags.appendChild(span);
+}
+
+function removeTerritoryPc(code) {
+  if (!editedTerritories) return;
+  editedTerritories = editedTerritories.filter(c => c !== code);
+  renderTerritoryFull();
+  updateTerritorySaveBtn();
+  loadTerritories();
+}
+
+async function saveTerritories() {
+  const btn = document.getElementById('save-territory-btn');
+  const msg = document.getElementById('territory-msg');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  const data = await apiFetch('/api/postcodes/update', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ postcodes: editedTerritories })
+  });
+
+  if (data && data.success) {
+    msg.textContent = 'Territories updated! ' + data.count + ' postcode area' + (data.count !== 1 ? 's' : '') + ' selected (max: ' + data.max_limit + ').';
+    msg.style.color = 'var(--success)';
+    msg.style.display = 'block';
+    setTimeout(() => msg.style.display = 'none', 4000);
+    loadTerritories();
+    toggleTerritoryEditor();
+  } else {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = data?.error || 'Failed to save territories.';
+    msg.style.display = 'block';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Save';
+}
+
+loadDashboard();
+loadTerritories();
+loadCrmUrl();
+// ===== CRM WEBHOOK =====
+function getAuthToken() {
+  try { var s = JSON.parse(localStorage.getItem('mld_portal_session')); return s ? s.token : null; } catch(e) { return null; }
+}
+
+async function saveCrmUrl() {
+  const url = document.getElementById('crmUrl').value.trim();
+  if (!url) { showCrmStatus('Please enter a webhook URL', '#ef4444'); return; }
+  showCrmStatus('Testing connection...', 'var(--accent)');
+  try {
+    const testRes = await fetch(API + '/api/crm/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAuthToken() }, body: JSON.stringify({ url }) });
+    const testData = await testRes.json();
+    if (!testData.success) { showCrmStatus('Webhook test failed: ' + (testData.error || 'HTTP ' + testData.status), '#ef4444'); return; }
+    const saveRes = await fetch(API + '/api/settings/crm', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAuthToken() }, body: JSON.stringify({ crm_webhook_url: url }) });
+    if (saveRes.ok) { showCrmStatus('CRM connected successfully! Your leads will be pushed at 9am daily.', '#22c55e'); }
+    else { showCrmStatus('Failed to save. Try again.', '#ef4444'); }
+  } catch (e) { showCrmStatus('Connection error: ' + e.message, '#ef4444'); }
+}
+async function testCrmUrl() {
+  const url = document.getElementById('crmUrl').value.trim();
+  if (!url) { showCrmStatus('Enter a URL first', '#ef4444'); return; }
+  showCrmStatus('Testing...', 'var(--accent)');
+  try {
+    const res = await fetch(API + '/api/crm/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAuthToken() }, body: JSON.stringify({ url }) });
+    const data = await res.json();
+    if (data.success) { showCrmStatus('Connection successful! (HTTP ' + data.status + ')', '#22c55e'); }
+    else { showCrmStatus('Failed: ' + (data.error || 'HTTP ' + data.status), '#ef4444'); }
+  } catch (e) { showCrmStatus('Error: ' + e.message, '#ef4444'); }
+}
+async function removeCrmUrl() {
+  if (!confirm('Remove CRM webhook? Leads will stop being pushed to your CRM.')) return;
+  try {
+    await fetch(API + '/api/settings/crm', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + getAuthToken() } });
+    document.getElementById('crmUrl').value = '';
+    showCrmStatus('CRM disconnected.', 'var(--muted2)');
+  } catch (e) { showCrmStatus('Error: ' + e.message, '#ef4444'); }
+}
+function showCrmStatus(msg, color) {
+  const el = document.getElementById('crmStatus');
+  el.style.display = 'block'; el.style.color = color; el.textContent = msg;
+  setTimeout(() => { if (el.textContent === msg) el.style.display = 'none'; }, 8000);
+}
+async function loadCrmUrl() {
+  const data = await apiFetch('/api/settings/crm');
+  if (data && data.crm_webhook_url) { document.getElementById('crmUrl').value = data.crm_webhook_url; }
+}
+
+// ===== LEAD FILTERS (Dashboard) =====
+let filterEditing = false;
+let currentFilters = null;
+
+async function loadLeadFilters() {
+  const data = await apiFetch('/api/auth/me');
+  if (!data) return;
+  const filterStr = data.biz_field2 || '';
+  const display = document.getElementById('lead-filters-display');
+  if (!filterStr) {
+    display.innerHTML = '<span style="color:var(--muted2)">No filters configured. <a href="#" onclick="toggleFilterEditor();return false" style="color:var(--primary);text-decoration:underline">Set up filters</a> to refine your leads.</span>';
+    return;
+  }
+  try {
+    currentFilters = JSON.parse(filterStr);
+    const product = currentFilters.product || 'moving';
+    display.innerHTML = renderFilterSummary(currentFilters, product);
+    // Populate editor fields
+    populateFilterEditor(currentFilters, product);
+  } catch {
+    display.innerHTML = '<span style="color:var(--muted2)">Filter configuration unavailable.</span>';
+  }
+}
+
+function renderFilterSummary(filters, product) {
+  const lines = [];
+  if (product === 'moving') {
+    if (filters.minBedrooms) lines.push('Min bedrooms: ' + filters.minBedrooms + '+');
+    if (filters.maxBedrooms) lines.push('Max bedrooms: ' + filters.maxBedrooms);
+    if (filters.propertyType) lines.push('Property type: ' + filters.propertyType);
+    if (filters.maxPrice) lines.push('Max value: ┬ú' + Number(filters.maxPrice).toLocaleString());
+    const statuses = [];
+    if (filters.statusSSTC !== false) statuses.push('SSTC');
+    if (filters.statusOffer !== false) statuses.push('Under Offer');
+    lines.push('Statuses: ' + (statuses.length ? statuses.join(', ') : 'None'));
+  } else if (product === 'probate') {
+    if (filters.minEstateValue) lines.push('Min estate: ┬ú' + Number(filters.minEstateValue).toLocaleString());
+    if (filters.hasProperty) lines.push('Property: ' + filters.hasProperty);
+  } else if (product === 'newbusiness') {
+    const sics = filters.sicCodes || [];
+    const labels = { tech_software: 'Tech', construction: 'Construction', retail: 'Retail', hospitality: 'Hospitality', healthcare: 'Healthcare', professional_services: 'Prof Services', financial: 'Financial', creative: 'Creative' };
+    lines.push('Industries: ' + (sics.length ? sics.map(s => labels[s] || s).join(', ') : 'All'));
+  } else if (product === 'planning') {
+    if (filters.applicationType) lines.push('App type: ' + filters.applicationType);
+    if (filters.maxValue) lines.push('Max value: ┬ú' + Number(filters.maxValue).toLocaleString());
+  } else if (product === 'tenders') {
+    if (filters.minValue) lines.push('Min contract: ┬ú' + Number(filters.minValue).toLocaleString());
+    if (filters.keywords) lines.push('Keywords: ' + filters.keywords);
+  }
+  return '<span style="color:var(--success)">Active filters:</span> ' + (lines.length ? lines.join(' &middot; ') : 'No specific filters') +
+    ' <a href="#" onclick="toggleFilterEditor();return false" style="color:var(--primary);text-decoration:underline;margin-left:6px">Edit</a>';
+}
+
+function populateFilterEditor(filters, product) {
+  if (product === 'moving') {
+    setSelect('df-moving-minbeds', filters.minBedrooms || '');
+    setSelect('df-moving-maxbeds', filters.maxBedrooms || '');
+    setSelect('df-moving-proptype', filters.propertyType || '');
+    setSelect('df-moving-maxprice', filters.maxPrice || '');
+    setChecked('df-moving-status-sstc', filters.statusSSTC !== false);
+    setChecked('df-moving-status-offer', filters.statusOffer !== false);
+  } else if (product === 'probate') {
+    setSelect('df-probate-minvalue', filters.minEstateValue || '');
+    setSelect('df-probate-property', filters.hasProperty || '');
+  } else if (product === 'newbusiness') {
+    const sics = filters.sicCodes || [];
+    document.querySelectorAll('.df-nb-sic').forEach(cb => { cb.checked = sics.includes(cb.value); });
+  } else if (product === 'planning') {
+    setSelect('df-planning-apptype', filters.applicationType || '');
+    setSelect('df-planning-maxvalue', filters.maxValue || '');
+  } else if (product === 'tenders') {
+    setSelect('df-tenders-minvalue', filters.minValue || '');
+    document.getElementById('df-tenders-keywords').value = filters.keywords || '';
+  }
+}
+
+function setSelect(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
+function setChecked(id, val) { const el = document.getElementById(id); if (el) el.checked = val; }
+
+function toggleFilterEditor() {
+  filterEditing = !filterEditing;
+  document.getElementById('lead-filters-editor').style.display = filterEditing ? 'block' : 'none';
+  document.getElementById('lead-filters-display').style.display = filterEditing ? 'none' : 'block';
+  document.getElementById('edit-filters-btn').innerHTML = filterEditing ? '<i class="fas fa-times"></i> Cancel' : '<i class="fas fa-pen"></i> Edit Filters';
+  if (filterEditing && currentFilters) {
+    const product = currentFilters.product || getSession()?.product || 'moving';
+    document.querySelectorAll('.dashboard-filter-panel').forEach(el => el.style.display = 'none');
+    const panel = document.getElementById('dashboard-filter-' + product);
+    if (panel) panel.style.display = 'block';
+    populateFilterEditor(currentFilters, product);
+  }
+}
+
+async function saveLeadFilters() {
+  const msg = document.getElementById('lead-filters-msg');
+  msg.style.display = 'none';
+  const product = currentFilters?.product || getSession()?.product || 'moving';
+  const filters = { product: product };
+
+  if (product === 'moving') {
+    filters.minBedrooms = document.getElementById('df-moving-minbeds').value;
+    filters.maxBedrooms = document.getElementById('df-moving-maxbeds').value;
+    filters.propertyType = document.getElementById('df-moving-proptype').value;
+    filters.maxPrice = document.getElementById('df-moving-maxprice').value;
+    filters.statusSSTC = document.getElementById('df-moving-status-sstc').checked;
+    filters.statusOffer = document.getElementById('df-moving-status-offer').checked;
+  } else if (product === 'probate') {
+    filters.minEstateValue = document.getElementById('df-probate-minvalue').value;
+    filters.hasProperty = document.getElementById('df-probate-property').value;
+  } else if (product === 'newbusiness') {
+    filters.sicCodes = Array.from(document.querySelectorAll('.df-nb-sic:checked')).map(cb => cb.value);
+  } else if (product === 'planning') {
+    filters.applicationType = document.getElementById('df-planning-apptype').value;
+    filters.maxValue = document.getElementById('df-planning-maxvalue').value;
+  } else if (product === 'tenders') {
+    filters.minValue = document.getElementById('df-tenders-minvalue').value;
+    filters.keywords = document.getElementById('df-tenders-keywords').value;
+  }
+
+  const data = await apiFetch('/api/settings/lead-filters', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ leadFilters: JSON.stringify(filters) })
+  });
+
+  if (data && data.success) {
+    msg.style.color = 'var(--success)';
+    msg.textContent = 'Lead filters saved!';
+    msg.style.display = 'block';
+    currentFilters = filters;
+    document.getElementById('lead-filters-display').innerHTML = renderFilterSummary(filters, product);
+    setTimeout(() => { msg.style.display = 'none'; toggleFilterEditor(); }, 2000);
+  } else {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = data?.error || 'Failed to save.';
+    msg.style.display = 'block';
+  }
+}
+
+loadLeadFilters();
+document.addEventListener('click', function(e) {
+  const cal = document.getElementById('calPopup');
+  if (!e.target.closest('.cal-popup') && !e.target.closest('[onclick*="toggleCal"]') && !e.target.closest('[onclick*="buildCal"]')) cal.classList.remove('show');
+  const td = document.getElementById('territory-dropdown');
+  if (td && !e.target.closest('#territory-manager')) td.style.display = 'none';
+});
+// Theme toggle
+var savedTheme = localStorage.getItem('dashboard_theme');
+if(savedTheme === 'dark') { document.documentElement.classList.add('dark'); }
+function toggleTheme() {
+  var root = document.documentElement;
+  root.classList.toggle('dark');
+  var isDark = root.classList.contains('dark');
+  localStorage.setItem('dashboard_theme', isDark ? 'dark' : 'light');
+  document.getElementById('themeToggle').innerHTML = isDark ? '<i class=\"fas fa-moon\"></i>' : '<i class=\"fas fa-sun\"></i>';
+}
+document.addEventListener('DOMContentLoaded', function() {
+  var isDark = document.documentElement.classList.contains('dark');
+  document.getElementById('themeToggle').innerHTML = isDark ? '<i class=\"fas fa-moon\"></i>' : '<i class=\"fas fa-sun\"></i>';
+});
+</script>
+</body></html>
