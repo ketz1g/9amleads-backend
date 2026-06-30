@@ -1685,7 +1685,66 @@ cron.schedule('0 9 * * *', async () => {
   } catch(e) { console.log('[9AM CRON] Delivery error:', e.message); }
 });
 
-// POST /api/admin/deliver — manually trigger daily delivery to all customers
+// ===== CAMPAIGN EMAIL SCHEDULER (daily at 10:00 AM) =====
+cron.schedule('0 10 * * *', async () => {
+  console.log('[CAMPAIGN] Starting campaign email check...');
+  var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && c.marketing_consent === 1; });
+  var sent = 0;
+  for (var ci = 0; ci < customers.length; ci++) {
+    var cust = customers[ci];
+    try {
+      var campaignSent = [];
+      try { campaignSent = JSON.parse(cust.campaign_sent || '[]'); } catch(e) {}
+      var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
+      var daysSinceTrialEnd = trialEnds ? Math.floor((new Date() - trialEnds) / 86400000) : -1;
+      var createdDate = cust.created_at ? new Date(cust.created_at) : null;
+      var accountAge = createdDate ? Math.floor((new Date() - createdDate) / 86400000) : 0;
+
+      if (cust.plan === 'free_trial' && trialEnds) {
+        if (new Date() <= trialEnds) {
+          // Active trial: send onboarding emails at days 1, 3, 5 (after signup)
+          for (var ei = 0; ei < CAMPAIGN_EMAILS.length; ei++) {
+            var e = CAMPAIGN_EMAILS[ei];
+            if (e.day <= 6 && accountAge >= e.day && !campaignSent.includes(e.template)) {
+              campaignSent.push(e.template);
+              await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, e.subject, getCampaignEmailHTML(cust, e.template));
+              sent++;
+              break;
+            }
+          }
+        } else if (daysSinceTrialEnd >= 0) {
+          // Trial ended: send post-trial emails at days 7, 9, 12, 16, 21, 30, 60
+          for (var ei = 0; ei < CAMPAIGN_EMAILS.length; ei++) {
+            var e = CAMPAIGN_EMAILS[ei];
+            if (e.day >= 7 && daysSinceTrialEnd >= (e.day - 7) && !campaignSent.includes(e.template)) {
+              campaignSent.push(e.template);
+              await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, e.subject, getCampaignEmailHTML(cust, e.template));
+              sent++;
+              break;
+            }
+          }
+        }
+      } else if (cust.plan !== 'free_trial') {
+        // Paid customer: send paid email series weekly
+        var subAgeWeeks = Math.floor(accountAge / 7);
+        for (var pi = 0; pi < PAID_EMAIL_SERIES.length; pi++) {
+          var p = PAID_EMAIL_SERIES[pi];
+          if (subAgeWeeks >= p.week && !campaignSent.includes(p.template)) {
+            campaignSent.push(p.template);
+            await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, p.subject, getCampaignEmailHTML(cust, p.template));
+            sent++;
+            break;
+          }
+        }
+      }
+      if (campaignSent.length > 0) {
+        cust.campaign_sent = JSON.stringify(campaignSent);
+        saveDb();
+      }
+    } catch(e) { console.log('[CAMPAIGN] Error for', cust.email, e.message); }
+  }
+  console.log('[CAMPAIGN] Sent ' + sent + ' campaign emails');
+});
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   try {
     var delivered = 0, errors = 0;
