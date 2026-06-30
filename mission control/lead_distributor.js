@@ -299,9 +299,9 @@ async function distributeProduct(product) {
     return { product, matched: 0, total: 0 };
   }
 
-  // Get customers subscribed to this product
+  // Get customers subscribed to this product (check both product and products array)
   const productCustomers = db.customers.filter(c =>
-    c.product === product &&
+    (c.product === product || (c.biz_field3 && (function(){ try { return JSON.parse(c.biz_field3).includes(product); } catch(e){ return false; } })())) &&
     c.plan !== 'cancelled' &&
     (!c.bounced || c.bounced < 3)
   );
