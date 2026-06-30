@@ -394,6 +394,10 @@ function showSignup() { document.getElementById('signup-form').style.display='bl
 
 // Check for verification success/error from redirect
 (function() {
+  // Show signup form if URL has #signup
+  if (window.location.hash === '#signup') {
+    showSignup();
+  }
   var params = new URLSearchParams(window.location.search);
   if (params.get('verified') === 'true') {
     showLogin();
