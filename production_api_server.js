@@ -419,7 +419,7 @@ app.get(/^\/(?!api\/).*$/, (req, res) => {
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { company, name, email, phone, password, product, products, targetAreas, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl } = req.body;
+    const { company, name, email, phone, password, product, products, plan, targetAreas, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl } = req.body;
 
     if (!company || !email || !password) {
       return res.status(400).json({ error: 'Company, email and password are required' });
@@ -464,7 +464,7 @@ app.post('/api/auth/signup', async (req, res) => {
       id, email.toLowerCase(), company, name || '', phone || '', password_hash,
       product, productInfo.lead_type, productInfo.business_type,
       JSON.stringify(targetAreas || []), leadFilters || bizField2 || '', bizField3 || JSON.stringify(products && Array.isArray(products) ? products : [product]),
-      source || 'direct', 'free_trial', trial_ends, marketingConsent ? 1 : 0,
+      source || 'direct', plan || 'free_trial', plan === 'free_trial' ? trial_ends : null, marketingConsent ? 1 : 0,
       new Date().toISOString(), '0', crmWebhookUrl || ''
     );
 
