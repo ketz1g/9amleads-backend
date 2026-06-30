@@ -1648,6 +1648,27 @@ cron.schedule('0 9 * * *', async () => {
   } catch(e) { console.log('[9AM CRON] Delivery error:', e.message); }
 });
 
+// ===== ADMIN SEND ALL CAMPAIGN EMAILS (for review) =====
+app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
+  try {
+    var email = req.body.email || 'ketzman1g@gmail.com';
+    var results = [];
+    for (var ei = 0; ei < CAMPAIGN_EMAILS.length; ei++) {
+      var e = CAMPAIGN_EMAILS[ei];
+      var demoCustomer = { product: 'moving', lead_type: 'Moving Leads', business_type: 'Removal Company', name: 'Test Customer', company: 'Test Company', email: email, plan: 'free_trial' };
+      var html = getCampaignEmailHTML(demoCustomer, e.template);
+      try { await sendBrevoEmail({ email: email, name: 'Test Customer' }, '[REVIEW] ' + e.subject, html); results.push({ template: e.template, subject: e.subject, status: 'sent' }); } catch(s_err) { results.push({ template: e.template, subject: e.subject, status: 'error: ' + s_err.message }); }
+    }
+    for (var pi = 0; pi < PAID_EMAIL_SERIES.length; pi++) {
+      var p = PAID_EMAIL_SERIES[pi];
+      var demoPaid = { product: 'moving', lead_type: 'Moving Leads', business_type: 'Removal Company', name: 'Test Customer', company: 'Test Company', email: email, plan: 'starter' };
+      var html2 = getCampaignEmailHTML(demoPaid, p.template);
+      try { await sendBrevoEmail({ email: email, name: 'Test Customer' }, '[REVIEW] ' + p.subject, html2); results.push({ template: p.template, subject: p.subject, status: 'sent' }); } catch(s_err) { results.push({ template: p.template, subject: p.subject, status: 'error: ' + s_err.message }); }
+    }
+    res.json({ success: true, total: results.length, results: results });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== CAMPAIGN EMAIL SCHEDULER (daily at 10:00 AM) =====
 cron.schedule('0 10 * * *', async () => {
   console.log('[CAMPAIGN] Starting campaign email check...');
