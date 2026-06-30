@@ -120,15 +120,20 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Use at least 8 characters. Your password is encrypted and never stored in plain text. We recommend a mix of letters, numbers and symbols.</span></div>
 <input type="password" id="s-password" placeholder="Min 8 characters" minlength="8" required></div>
 </div>
-<div class="form-group"><label><i class="fas fa-tag" style="width:13px;color:#5c6480;margin-right:2px"></i> Lead Type</label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Choose the type of UK business opportunities you want to receive daily at 9am. Each lead type sources from different official UK data registers. You can change this later.</span></div>
-<select id="s-product" style="width:100%;padding:11px 13px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none;cursor:pointer">
-<option value="moving">🚚 Moving Leads</option>
-<option value="probate">⚖️ Probate Leads</option>
-<option value="newbusiness">🏢 New Business Alerts</option>
-<option value="planning">🔨 Planning Permission</option>
-<option value="tenders">📋 Public Tenders</option>
-</select></div>
+<div class="form-group"><label><i class="fas fa-tag" style="width:13px;color:#5c6480;margin-right:2px"></i> Lead Types <span style="color:#8890a8;font-weight:400;font-size:11px">(select one or more)</span></label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Choose the types of UK business opportunities you want to receive daily at 9am. Select multiple to get leads from different sources. Each lead type sources from different official UK data registers. You can change this later.</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px" id="s-products-container">
+<label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
+<input type="checkbox" value="moving" checked style="accent-color:#0ea5e9;width:14px;height:14px"> 🚚 Moving Leads</label>
+<label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
+<input type="checkbox" value="probate" style="accent-color:#0ea5e9;width:14px;height:14px"> ⚖️ Probate Leads</label>
+<label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
+<input type="checkbox" value="newbusiness" style="accent-color:#0ea5e9;width:14px;height:14px"> 🏢 New Business Alerts</label>
+<label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
+<input type="checkbox" value="planning" style="accent-color:#0ea5e9;width:14px;height:14px"> 🔨 Planning Permission</label>
+<label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
+<input type="checkbox" value="tenders" style="accent-color:#0ea5e9;width:14px;height:14px"> 📋 Public Tenders</label>
+</div></div>
 
 <!-- FILTERS BOX (populated by JS) -->
 <div class="filters-box" id="filters-box">
@@ -339,7 +344,10 @@ function doSignup() {
   var company = document.getElementById('s-company').value.trim();
   var email = document.getElementById('s-email').value.trim().toLowerCase();
   var password = document.getElementById('s-password').value;
-  var product = document.getElementById('s-product').value;
+  var productCheckboxes = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
+  var products = Array.from(productCheckboxes).map(function(cb) { return cb.value; });
+  if (products.length === 0) { document.getElementById('signup-error').textContent = 'Please select at least one lead type'; document.getElementById('signup-error').style.display = 'block'; return; }
+  var product = products[0]; // primary product for display
   var button = document.getElementById('signup-btn');
   var error = document.getElementById('signup-error');
   var success = document.getElementById('signup-success');
@@ -349,7 +357,7 @@ function doSignup() {
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
   fetch(API + '/api/auth/signup', {
     method:'POST', headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, targetAreas:[], source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
+    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, targetAreas:[], source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:d.customer?.plan || 'free_trial', email:email, product:product }));

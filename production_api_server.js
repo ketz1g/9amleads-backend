@@ -419,7 +419,7 @@ app.get(/^\/(?!api\/).*$/, (req, res) => {
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { company, name, email, phone, password, product, targetAreas, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl } = req.body;
+    const { company, name, email, phone, password, product, products, targetAreas, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl } = req.body;
 
     if (!company || !email || !password) {
       return res.status(400).json({ error: 'Company, email and password are required' });
@@ -463,7 +463,7 @@ app.post('/api/auth/signup', async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, email.toLowerCase(), company, name || '', phone || '', password_hash,
       product, productInfo.lead_type, productInfo.business_type,
-      JSON.stringify(targetAreas || []), leadFilters || bizField2 || '', bizField3 || '',
+      JSON.stringify(targetAreas || []), leadFilters || bizField2 || '', bizField3 || JSON.stringify(products && Array.isArray(products) ? products : [product]),
       source || 'direct', 'free_trial', trial_ends, marketingConsent ? 1 : 0,
       new Date().toISOString(), '0', crmWebhookUrl || ''
     );
@@ -1658,7 +1658,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
       var isExpired = trialEnds && new Date() > trialEnds;
       if (isExpired && cust.plan === 'free_trial') continue;
-      var limit = { moving: 5, probate: 5, newbusiness: 5, planning: 5, tenders: 5 }[cust.product] || 5;
+      var products = [cust.product];
+      try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
+      var limit = products.reduce(function(sum, p) { return sum + ({ moving: 5, probate: 5, newbusiness: 5, planning: 5, tenders: 5 }[p] || 5); }, 0);
       var custLeads = (getDb().leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0; }).slice(0, limit);
       if (custLeads.length === 0) continue;
       try {
