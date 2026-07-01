@@ -906,18 +906,15 @@ app.get('/api/postcodes/mine', authMiddleware, (req, res) => {
   });
 });
 
-// GET /api/postcodes/check — Check if a postcode district is available
+// GET /api/postcodes/check — Check if a postcode district is valid
 app.get('/api/postcodes/check', async (req, res) => {
   try {
     var code = (req.query.code || '').toUpperCase().trim();
-    if (!code) return res.json({ available: false, error: 'No postcode provided' });
+    if (!code) return res.json({ valid: false, error: 'No postcode provided' });
     var districts = loadPostcodeDistricts();
-    if (!districts[code]) return res.json({ available: false, error: '"' + code + '" is not a valid UK postcode district' });
-    var assignments = loadAssignments();
-    var existing = assignments.assignments[code];
-    if (existing && existing.status === 'active') return res.json({ available: false, error: '"' + code + '" is already claimed by another customer', claimed: true });
-    res.json({ available: true, district: code });
-  } catch(e) { res.json({ available: false, error: 'Server error' }); }
+    if (!districts[code]) return res.json({ valid: false, error: '"' + code + '" is not a valid UK postcode district' });
+    res.json({ valid: true, district: code, name: (districts[code] || {}).name || code });
+  } catch(e) { res.json({ valid: false, error: 'Server error' }); }
 });
 
 // PUT /api/postcodes/update — Update the customer's selected postcodes
