@@ -3178,29 +3178,6 @@ app.use(function(err, req, res, next) {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ===== TEST SCHEDULE: PAUSED until territories/filters UX is finalised =====
-// cron.schedule('0 6 * * *', async () => {
-  console.log('[6AM TEST] Scraping fresh leads...');
-  try {
-    const http = require('http');
-    http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[6AM TEST] Scraper error:', e.message); }
-});
-cron.schedule('2 6 * * *', async () => {
-  console.log('[6AM TEST] Distributing leads to customers...');
-  try {
-    const http = require('http');
-    http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[6AM TEST] Distributor error:', e.message); }
-});
-// cron.schedule('5 6 * * *', async () => {
-//   console.log('[6AM TEST] Delivering leads via email...');
-//   try {
-//     const http = require('http');
-//     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[TEST CRON] Delivery error:', e.message); }
-});
-
 // ===== START SERVER =====
 app.listen(PORT, () => {
   console.log('\n========================================');
