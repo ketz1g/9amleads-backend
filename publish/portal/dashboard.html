@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head>
+﻿<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>My Dashboard 9am Leads</title>
 <meta name="description" content="Your 9amLeads customer dashboard. View your daily leads, track conversions, and manage your subscription.">
@@ -113,7 +113,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 </div>
 <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
     <button class="btn btn-primary btn-sm" onclick="showPlans()">View Plans &amp; Upgrade</button>
-      <button class="btn btn-outline btn-sm" id="extraBtn" onclick="buyExtraPostcodes()" style="color:var(--primary);border-color:rgba(14,165,233,0.2)"><i class="fas fa-plus-circle"></i> Add 5 Extra Districts (£20/mo)</button>
+      <button class="btn btn-outline btn-sm" id="extraBtn" onclick="buyExtraPostcodes()" style="color:var(--primary);border-color:rgba(14,165,233,0.2)"><i class="fas fa-plus-circle"></i> Add Extra District (\u00a310/wk)</button>
       <button class="btn btn-outline btn-sm" id="cancelBtn" onclick="cancelSubscription()" style="color:var(--danger);border-color:rgba(239,68,68,0.3)">Cancel Subscription</button>
 </div>
 <div id="sub-msg" style="margin-top:8px;font-size:12px;color:var(--success);display:none"></div>
@@ -631,7 +631,7 @@ function showPlans() {
     }).join('') +
     '<div style="margin-top:16px;padding:12px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:8px;font-size:11px;color:#8890a8;text-align:center">' +
     '<strong>Postcode districts:</strong> Starter: 5 districts &middot; Pro: 10 districts &middot; Enterprise: 50 districts<br>' +
-    '<strong>Extra districts:</strong> Need more? Add 5 extra districts for just ┬ú20/mo from your dashboard.<br>' +
+    '<strong>Extra districts:</strong> Need more? Add extra districts for just \u00a310/wk from your dashboard.<br>' +
     'Switching plans creates a new Stripe subscription with prorated billing.</div>';
 
   overlay.appendChild(modal);
@@ -640,7 +640,7 @@ function showPlans() {
 }
 
 async function buyExtraPostcodes() {
-  if (!confirm('Add 5 extra postcode districts for ┬ú20/month? This will be charged on your next invoice.')) return;
+  if (!confirm('Add 1 extra postcode district for \u00a310/week? This will appear on your next invoice.')) return;
   const data = await apiFetch('/api/postcodes/extra', { method: 'POST' });
   const msg = document.getElementById('sub-msg');
   if (data && data.success) {
