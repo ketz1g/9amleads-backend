@@ -80,7 +80,7 @@ function getPostcodeLimit(plan, extraPostcodes) {
   return base + extra;
 }
 
-const EXTRAS_PRICE = 2500; // £25 one-time per extra postcode sector
+const EXTRAS_PRICE = 5000; // £50 one-time per extra postcode area
 
 function normalisePostcodeForMatch(pc) {
   return pc.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -929,28 +929,43 @@ app.put('/api/postcodes/update', authMiddleware, (req, res) => {
   res.json({ success: true, areas: postcodes, count: postcodes.length, max_limit: getPostcodeLimit(customer.plan) });
 });
 
-// POST /api/postcodes/extra — Purchase extra postcode districts
+// POST /api/postcodes/extra — purchase 1 extra postcode area (£50 one-time via Stripe)
 app.post('/api/postcodes/extra', authMiddleware, async (req, res) => {
   try {
+    if (!STRIPE_SECRET_KEY) {
+      return res.status(500).json({ error: 'Stripe not configured. Add keys in Settings \u2192 Stripe Payments.' });
+    }
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!customer) return res.status(404).json({ error: 'User not found' });
     if (customer.plan === 'free_trial' || customer.plan === 'cancelled') {
       return res.status(400).json({ error: 'Upgrade to a paid plan first' });
     }
 
-    const currentExtra = parseInt(customer.extra_postcodes) || 0;
-    const newExtra = currentExtra + 1;
+    const baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    const successUrl = baseUrl + '/portal/dashboard.html?checkout=success&session_id={CHECKOUT_SESSION_ID}';
+    const cancelUrl = baseUrl + '/portal/dashboard.html?checkout=cancel';
 
-    db.prepare('UPDATE customers SET extra_postcodes = ? WHERE id = ?').run(String(newExtra), req.user.id);
-    saveDb();
+    const sessionBody = {
+      mode: 'payment',
+      customer_email: customer.email,
+      'line_items[0][price_data][currency]': 'gbp',
+      'line_items[0][price_data][product_data][name]': 'Extra Postcode Area',
+      'line_items[0][price_data][unit_amount]': String(EXTRAS_PRICE),
+      'line_items[0][quantity]': '1',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      'metadata[customer_id]': customer.id,
+      'metadata[type]': 'extra_area',
+      'metadata[product]': customer.product
+    };
 
-    const newLimit = getPostcodeLimit(customer.plan, newExtra);
-    res.json({
-      success: true,
-      extra_postcodes: newExtra,
-      total_postcode_limit: newLimit,
-      message: 'Added 1 extra district (\u00a310/week). Your limit is now ' + newLimit + ' districts.'
-    });
+    const session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
+
+    if (session.url) {
+      res.json({ url: session.url, session_id: session.id });
+    } else {
+      res.status(400).json({ error: session.error?.message || 'Checkout creation failed' });
+    }
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -2034,13 +2049,32 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       const customerId = session.metadata?.customer_id;
+      const type = session.metadata?.type || 'plan_upgrade';
+
+      if (!customerId) {
+        console.log('[WEBHOOK] Missing customer_id in metadata');
+        return res.json({ received: true });
+      }
+
+      if (type === 'extra_area') {
+        const custRecord = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
+        if (custRecord) {
+          const currentExtra = parseInt(custRecord.extra_postcodes) || 0;
+          const newExtra = currentExtra + 1;
+          db.prepare('UPDATE customers SET extra_postcodes = ? WHERE id = ?').run(String(newExtra), customerId);
+          saveDb();
+          console.log('[WEBHOOK] Extra area purchased:', custRecord.email, 'now has', newExtra, 'extra areas');
+        }
+        return res.json({ received: true });
+      }
+
       const plan = session.metadata?.plan;
       const product = session.metadata?.product;
       const stripeCustomerId = session.customer;
       const subscriptionId = session.subscription;
 
-      if (!customerId || !plan) {
-        console.log('[WEBHOOK] Missing metadata:', JSON.stringify(session.metadata));
+      if (!plan) {
+        console.log('[WEBHOOK] Missing plan metadata:', JSON.stringify(session.metadata));
         return res.json({ received: true });
       }
 
