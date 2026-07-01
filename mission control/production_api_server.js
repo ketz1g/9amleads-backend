@@ -1799,10 +1799,25 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         var prodLimit = perProduct + (pi < remainder ? 1 : 0);
         if (prodLimit <= 0) continue;
         
-        // Get all undelivered leads for this customer + product
-        var prodLeads = (getDb().leads || []).filter(function(l) {
+        // Get undelivered leads for this customer + product (today first, then yesterday, then any)
+        var today = new Date().toISOString().split('T')[0];
+        var yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        var allProductLeads = (getDb().leads || []).filter(function(l) {
           return l.customer_id === cust.id && l.delivered === 0 && l.product === prod;
         });
+        // Prefer today's leads, then yesterday's, then any remaining
+        var todayLeads = allProductLeads.filter(function(l) { return (l.created_at && l.created_at.startsWith(today)) || (l.scrapedAt && l.scrapedAt.startsWith(today)); });
+        var yesterdayLeads = allProductLeads.filter(function(l) { return (l.created_at && l.created_at.startsWith(yesterday)) || (l.scrapedAt && l.scrapedAt.startsWith(yesterday)); });
+        var olderLeads = allProductLeads.filter(function(l) { return !todayLeads.includes(l) && !yesterdayLeads.includes(l); });
+        var prodLeads = todayLeads.slice(0, prodLimit);
+        if (prodLeads.length < prodLimit) {
+          var remaining = prodLimit - prodLeads.length;
+          prodLeads = prodLeads.concat(yesterdayLeads.slice(0, remaining));
+        }
+        if (prodLeads.length < prodLimit) {
+          var remaining = prodLimit - prodLeads.length;
+          prodLeads = prodLeads.concat(olderLeads.slice(0, remaining));
+        }
         
         custLeads = custLeads.concat(prodLeads.slice(0, prodLimit));
       }
@@ -2925,8 +2940,8 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               req.write(bodyData);
               req.end();
             });
-            if (!leads || leads.length < 3) { console.log('[SCRAPER] Planning monitor returned ' + (leads ? leads.length : 0) + ', using sample'); leads = generateDemoLeads(product, 30); }
-          } catch(e) { console.log('[SCRAPER] Planning monitor error: ' + e.message); leads = generateDemoLeads(product, 30); }
+            if (!leads || leads.length < 3) { console.log('[SCRAPER] Planning monitor returned ' + (leads ? leads.length : 0) + ', no leads for planning today'); leads = []; }
+          } catch(e) { console.log('[SCRAPER] Planning monitor error: ' + e.message); leads = []; }
         } else if (product === 'moving') {
           try {
             var apifyKey3 = process.env.APIFY_API_KEY;
@@ -2945,8 +2960,8 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               req.write(bodyData);
               req.end();
             });
-            if (!leads || leads.length < 3) { console.log('[SCRAPER] Rightmove returned ' + (leads ? leads.length : 0) + ', using sample'); leads = generateDemoLeads(product, 30); }
-          } catch(e) { console.log('[SCRAPER] Rightmove error: ' + e.message); leads = generateDemoLeads(product, 30); }
+            if (!leads || leads.length < 3) { console.log('[SCRAPER] Rightmove returned ' + (leads ? leads.length : 0) + ', no moving leads today'); leads = []; }
+          } catch(e) { console.log('[SCRAPER] Rightmove error: ' + e.message); leads = []; }
         } else if (product === 'probate') {
           try {
             var chKey5 = process.env.COMPANIES_HOUSE_API_KEY || process.env.GOVUK_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
@@ -2961,8 +2976,8 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               req.setTimeout(15000, function() { req.destroy(); resolve([]); });
               req.end();
             });
-            if (!leads || leads.length < 3) { console.log('[SCRAPER] Companies House probate returned ' + (leads ? leads.length : 0) + ', using sample'); leads = generateDemoLeads(product, 30); }
-          } catch(e) { console.log('[SCRAPER] Companies House probate error: ' + e.message); leads = generateDemoLeads(product, 30); }
+            if (!leads || leads.length < 3) { console.log('[SCRAPER] Companies House probate returned ' + (leads ? leads.length : 0) + ', no probate leads today'); leads = []; }
+          } catch(e) { console.log('[SCRAPER] Companies House probate error: ' + e.message); leads = []; }
         } else {
           leads = generateDemoLeads(product, 30);
         }
