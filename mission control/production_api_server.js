@@ -67,7 +67,7 @@ function getPostcodeLimit(plan, extraPostcodes) {
   return base + extra;
 }
 
-const EXTRAS_PRICE = 2000; // £20 per extra 5 postcode districts
+const EXTRAS_PRICE = 2500; // £25 one-time per extra postcode sector
 
 function normalisePostcodeForMatch(pc) {
   return pc.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -937,7 +937,7 @@ app.post('/api/postcodes/extra', authMiddleware, async (req, res) => {
     }
 
     const currentExtra = parseInt(customer.extra_postcodes) || 0;
-    const newExtra = currentExtra + 5;
+    const newExtra = currentExtra + 1;
 
     db.prepare('UPDATE customers SET extra_postcodes = ? WHERE id = ?').run(String(newExtra), req.user.id);
     saveDb();
@@ -947,7 +947,7 @@ app.post('/api/postcodes/extra', authMiddleware, async (req, res) => {
       success: true,
       extra_postcodes: newExtra,
       total_postcode_limit: newLimit,
-      message: 'Added 5 extra postcode districts (£20/mo). Your limit is now ' + newLimit + ' districts.'
+      message: 'Added 1 extra postcode sector (\u00a325 one-time). Your limit is now ' + newLimit + ' sectors.'
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
