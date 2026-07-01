@@ -2520,65 +2520,80 @@ app.get('/api/health', (req, res) => {
 function generateLeadEmailHTML(customer, leads) {
   const accent = customer.product === 'moving' ? '#ff6b35' : customer.product === 'probate' ? '#a855f7' : customer.product === 'newbusiness' ? '#06b6d4' : customer.product === 'planning' ? '#10b981' : '#6366f1';
   const productName = customer.product || 'opportunities';
-  const aboutText = productName === 'moving' ? 'The address and property details are shown below. Contact the homeowner directly using the information provided.'
-    : productName === 'probate' ? 'The deceased name, estate value and registry details are shown below. Contact the executor using the information provided.'
-    : productName === 'newbusiness' ? 'Use the address shown to post your business flyer and introduction letter. You can also visit in person. The company may not have a website yet — keep checking back as they may add one soon with contact details like phone and email, which may not be set up yet.'
-    : productName === 'planning' ? 'The address, council and application reference are shown below for your records.'
-    : 'The tender details, buyer and deadline are shown below. Apply using the reference number.';
+  const aboutText = productName === 'moving' ? 'The address and property details are shown below.'
+    : productName === 'probate' ? 'The deceased name and estate details are shown below.'
+    : productName === 'newbusiness' ? 'New company registration details are shown below.'
+    : productName === 'planning' ? 'The planning application details are shown below.'
+    : 'Tender opportunity details are shown below.';
   const dashboardUrl = 'https://www.9amleads.com/portal/dashboard.html';
-  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="only light"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></head><body style="margin:0;padding:0;background-color:#ffffff;font-family:Inter,Arial,sans-serif;color:#111">';
-  body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#ffffff"><tr><td align="center" bgcolor="#ffffff" style="background-color:#ffffff;padding:24px 16px">';
-  body += '<table width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.04)">';
+  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>@media only screen and (max-width:480px){.card{padding:12px!important}.inner{padding:12px 14px!important}.chips span{font-size:10px!important}}</style></head><body style="margin:0;padding:0;background-color:#f4f6f9;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#1a1a2e">';
+  body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f6f9"><tr><td align="center" style="padding:20px 16px">';
+  body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
-  // Header with homepage logo
-  body += '<tr><td style="background:#ffffff;padding:28px 28px 20px;border-bottom:1px solid rgba(0,0,0,0.04);text-align:center">';
-  body += '<div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:900;color:#111;letter-spacing:-.5px">9am<span style="color:' + accent + '">Leads</span></div>';
-  body += '<p style="color:#999;font-size:10px;margin:8px 0 0;text-transform:uppercase;letter-spacing:2px">' + (customer.lead_type || 'Daily Opportunities') + '</p>';
+  // Header
+  body += '<tr><td style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:28px 28px 22px;border-radius:16px 16px 0 0;text-align:center">';
+  body += '<div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:900;color:#ffffff;letter-spacing:-.5px">9am<span style="color:' + accent + '">Leads</span></div>';
+  body += '<p style="color:rgba(255,255,255,0.5);font-size:10px;margin:6px 0 0;text-transform:uppercase;letter-spacing:2px">' + (customer.lead_type || 'Daily Opportunities') + '</p>';
   body += '</td></tr>';
 
-  // Greeting + stats
-  body += '<tr><td style="background:#ffffff;padding:28px 28px 8px;text-align:center">';
-  body += '<h2 style="font-family:Outfit,sans-serif;font-size:18px;font-weight:800;color:#111;margin:0 0 4px;line-height:1.2;text-align:center">Good Morning, ' + (customer.company || 'there') + '!</h2>';
-  body += '<p style="color:#666;font-size:12px;margin:0 0 18px;line-height:1.5;text-align:center">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
-  body += '<div style="display:inline-flex;gap:8px;margin-bottom:18px">';
-  body += '<div style="background:#f8f9fb;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:8px 18px;text-align:center"><div style="font-size:22px;font-weight:800;color:#22c55e">' + leads.length + '</div><div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.5px">Today\'s Opportunities</div></div>';
-  body += '</div>';
-  body += '<p style="font-size:12px;color:#555;line-height:1.7;margin:0 0 4px;text-align:left;padding:14px 16px;background:#f8f9fb;border:1px solid rgba(0,0,0,0.04);border-radius:8px"><strong style="color:#111">About these leads:</strong><br>' + aboutText + '</p>';
+  // Greeting + count
+  body += '<tr><td style="background:#ffffff;padding:28px 28px 16px">';
+  body += '<h2 style="font-family:Outfit,sans-serif;font-size:18px;font-weight:800;color:#1a1a2e;margin:0 0 4px;line-height:1.2">Good Morning, ' + (customer.company || 'there') + '!</h2>';
+  body += '<p style="color:#6b7280;font-size:13px;margin:0 0 16px;line-height:1.5">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
+  body += '<div style="display:inline-flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 18px;margin-bottom:16px"><span style="font-size:24px;font-weight:800;color:#16a34a">' + leads.length + '</span><span style="font-size:12px;color:#166534;font-weight:500">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' today</span></div>';
+  body += '<p style="font-size:12px;color:#6b7280;line-height:1.6;margin:0;padding:12px 14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">' + aboutText + '</p>';
   body += '</td></tr>';
 
   // Lead cards
-  body += '<tr><td style="background:#ffffff;padding:16px 28px 20px">';
+  body += '<tr><td style="background:#ffffff;padding:6px 28px 24px">';
   for (var i = 0; i < leads.length; i++) {
     var l = leads[i];
     var d = l.data || {};
     if (typeof d === 'string') { try { d = JSON.parse(d); } catch(e) { d = {}; } }
 
-    var typeLabel = productName === 'moving' ? 'Moving Lead' : productName === 'probate' ? 'Probate Lead' : productName === 'newbusiness' ? 'New Business' : productName === 'planning' ? 'Planning Application' : 'Tender Opportunity';
+    var title = '';
+    var subtitle = '';
+    var address = d.address || l.address || '';
+    var postcode = d.postcode || '';
 
-    body += '<div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.08);border-radius:12px;margin-bottom:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">';
+    if (productName === 'moving') {
+      title = address.split(',')[0].trim() || address || 'Property';
+      subtitle = postcode || '';
+    } else if (productName === 'probate') {
+      title = d.deceasedName || 'Probate Estate';
+      subtitle = d.estateValue ? '\u00a3' + Number(d.estateValue).toLocaleString() + ' estate' : '';
+    } else if (productName === 'newbusiness') {
+      title = d.companyName || d.name || 'New Company';
+      subtitle = d.sicCode ? 'SIC: ' + d.sicCode : '';
+    } else if (productName === 'planning') {
+      title = address.split(',')[0].trim() || d.council || 'Planning Application';
+      subtitle = d.applicationRef ? 'Ref: ' + d.applicationRef : '';
+    } else {
+      title = d.tenderTitle || d.description || 'Opportunity';
+      subtitle = d.buyer || '';
+    }
 
-    // Accent top bar
-    body += '<div style="height:4px;background:' + accent + '"></div>';
-
-    // Card content
+    body += '<div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:14px;overflow:hidden">';
+    body += '<div style="height:3px;background:' + accent + '"></div>';
     body += '<div style="padding:16px 18px 14px">';
 
-    // Title + badge row
-    body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
-    body += '<span style="padding:3px 10px;border-radius:4px;background:' + accent + ';color:#fff;font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap;flex-shrink:0">' + typeLabel + ' ' + (d.source === 'Companies House' ? 'REAL' : '') + '</span>';
-    body += '<span style="font-size:15px;font-weight:700;color:#111;line-height:1.4">' + (d.title || d.tenderTitle || d.name || d.company || d.companyName || d.address || l.address || d.description || 'Opportunity') + '</span>';
-    body += '</div>';
+    // Badge + title
+    body += '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px">';
+    body += '<span style="padding:2px 8px;border-radius:4px;background:' + accent + ';color:#fff;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:2px">' + (productName === 'moving' ? 'MOVING' : productName === 'probate' ? 'PROBATE' : productName === 'newbusiness' ? 'NEW BIZ' : productName === 'planning' ? 'PLANNING' : 'TENDER') + '</span>';
+    body += '<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#1a1a2e;line-height:1.3">' + title + '</div>';
+    if (subtitle) body += '<div style="font-size:11px;color:#6b7280;margin-top:2px">' + subtitle + '</div>';
+    body += '</div></div>';
 
-    // Key details as tagged chips
+    // Details as chips
     var chips = [];
-    if (d.postcode) chips.push({ icon: '\uD83D\uDCCD', text: d.postcode });
-    if (d.address && d.address.length > 10) chips.push({ icon: '\uD83C\uDFE2', text: d.address.substring(0, 50) });
+    if (postcode) chips.push({ icon: '\uD83D\uDCCD', text: postcode });
+    if (address && address.length > 10) chips.push({ icon: '\uD83C\uDFE2', text: address.substring(0, 60) });
     if (d.city) chips.push({ icon: '\uD83C\uDFD9\uFE0F', text: d.city });
-    if (d.bedrooms) chips.push({ icon: '\uD83C\uDFE0', text: d.bedrooms + ' bed' });
+    if (d.bedrooms) chips.push({ icon: '\uD83C\uDFE0', text: d.bedrooms + ' bedrooms' });
     if (d.status) chips.push({ icon: '\uD83D\uDD34', text: d.status });
-    if (d.price) chips.push({ icon: '\u00A3', text: Number(d.price).toLocaleString() });
-    if (d.estateValue) chips.push({ icon: '\u00A3', text: Number(d.estateValue).toLocaleString() + ' estate' });
-    if (d.contractValue) chips.push({ icon: '\u00A3', text: Number(d.contractValue).toLocaleString() });
+    if (d.price) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.price).toLocaleString() });
+    if (d.estateValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.estateValue).toLocaleString() + ' estate' });
+    if (d.contractValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.contractValue).toLocaleString() });
     if (d.estimatedMoveWindow) chips.push({ icon: '\uD83D\uDCC5', text: d.estimatedMoveWindow });
     if (d.council) chips.push({ icon: '\uD83C\uDFDB\uFE0F', text: d.council });
     if (d.applicationRef) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.applicationRef });
@@ -2589,46 +2604,37 @@ function generateLeadEmailHTML(customer, leads) {
     if (d.sicCode) chips.push({ icon: '\uD83D\uDCCA', text: 'SIC: ' + d.sicCode });
     if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: new Date(d.incorporationDate).toLocaleDateString() });
     if (d.companyNumber) chips.push({ icon: '\uD83D\uDCB3', text: 'No: ' + d.companyNumber });
-    if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 80) });
+    if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 100) });
     if (d.publishedDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Published: ' + new Date(d.publishedDate).toLocaleDateString() });
     if (d.tenderNoticeId) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.tenderNoticeId });
-    if (d.cpvCode) chips.push({ icon: '\uD83D\uDCCA', text: 'CPV: ' + d.cpvCode });
     if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); chips.push({ icon: '\u23F3', text: 'Deadline: ' + days + ' days' }); }
-    if (d.agent) chips.push({ icon: '\uD83D\uDC64', text: d.agent });
 
     if (chips.length > 0) {
-      body += '<div style="margin-bottom:10px">';
+      body += '<div style="margin-bottom:8px">';
       for (var c = 0; c < chips.length; c++) {
-        body += '<span style="display:inline-block;padding:4px 10px;margin:0 4px 4px 0;background:#e4e7eb;border-radius:6px;font-size:12px;color:#333;white-space:nowrap">' + chips[c].icon + ' ' + chips[c].text + '</span>';
+        body += '<span style="display:inline-block;padding:3px 8px;margin:0 3px 3px 0;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;font-size:11px;color:#374151;white-space:nowrap">' + chips[c].icon + ' ' + chips[c].text + '</span>';
       }
       body += '</div>';
     }
-    body += '</div>';
 
     // Contact info
     var hasEmail = d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail;
-    var hasWebsite = d.website;
-    var hasAddress = d.address;
     var hasPhone = d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone;
-    if (hasEmail || hasWebsite || hasPhone || hasAddress) {
-      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px;margin-bottom:8px">';
-      if (hasAddress) body += '<div style="font-size:12px;color:#555;margin-bottom:3px">\uD83D\uDCCD ' + d.address + '</div>';
-      if (hasEmail) body += '<div style="font-size:12px;color:#555;margin-bottom:3px">\u2709\uFE0F ' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail) + '</div>';
-      if (hasPhone) body += '<div style="font-size:12px;color:#555;margin-bottom:3px">\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone) + '</div>';
-      if (hasWebsite) body += '<div style="font-size:12px;color:#555;margin-bottom:3px">\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:' + accent + ';text-decoration:none" target="_blank">' + d.website + '</a></div>';
+    var hasWebsite = d.website;
+    if (hasEmail || hasPhone || hasWebsite) {
+      body += '<div style="border-top:1px solid #f3f4f6;padding-top:8px;margin-top:6px">';
+      if (hasEmail) body += '<div style="font-size:11px;color:#6b7280;margin-bottom:2px">\u2709\uFE0F <a href="mailto:' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail) + '" style="color:' + accent + ';text-decoration:none">' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail) + '</a></div>';
+      if (hasPhone) body += '<div style="font-size:11px;color:#6b7280;margin-bottom:2px">\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone) + '</div>';
+      if (hasWebsite) body += '<div style="font-size:11px;color:#6b7280;margin-bottom:2px">\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:' + accent + ';text-decoration:none" target="_blank">' + d.website + '</a></div>';
       body += '</div>';
     }
 
-    // Action buttons per lead type
-    if (productName === 'tenders') {
-      var noticeUrl = d.tenderNoticeId ? 'https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId : 'https://www.gov.uk/contracts-finder';
-      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px;padding-bottom:2px"><a href="' + noticeUrl + '" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Apply on Contracts Finder</a></div>';
-      body += '<div style="font-size:11px;color:#888;margin-top:6px">Use the reference number shown above to apply for this opportunity.</div>';
+    // Product-specific action buttons
+    if (productName === 'tenders' && d.tenderNoticeId) {
+      body += '<div style="margin-top:10px"><a href="https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId + '" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Apply on Contracts Finder</a></div>';
     }
     if (productName === 'newbusiness' && d.name) {
-      var googleUrl = 'https://www.google.com/search?q=' + encodeURIComponent(d.name + ' contact email phone');
-      body += '<div style="border-top:1px solid rgba(0,0,0,0.04);padding-top:10px;padding-bottom:2px"><a href="' + googleUrl + '" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Search for Contact Details</a></div>';
-      body += '<div style="font-size:11px;color:#888;margin-top:6px">Click the button above to search for this company\u2019s contact information on Google. Most limited companies have a website with contact details listed.</div>';
+      body += '<div style="margin-top:10px"><a href="https://www.google.com/search?q=' + encodeURIComponent(d.name + ' contact email phone') + '" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Find Contact Details</a></div>';
     }
 
     body += '</div></div>';
@@ -2636,15 +2642,9 @@ function generateLeadEmailHTML(customer, leads) {
   body += '</td></tr>';
 
   // Footer
-  body += '<tr><td style="padding:24px 32px;border-top:1px solid rgba(0,0,0,0.04);text-align:center">';
-  body += '<p style="color:#666;font-size:11px;margin:0 0 10px;line-height:1.5">' + 
-    (productName === 'planning' ? 'This information is provided for reference purposes only.' :
-     productName === 'tenders' ? 'Apply using the reference number provided above. Visit the dashboard to track your applications.' :
-     productName === 'newbusiness' ? 'Use the address to post your flyer and introduction letter, or visit in person. The company may not have a website yet — check back for contact details.' :
-     productName === 'probate' ? 'Contact the executor using the information provided. Visit the dashboard to manage your leads.' :
-     'Contact the homeowner using the information provided. Visit the dashboard to manage your leads.') + '</p>';
-  body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:600;font-size:13px">View Full Dashboard</a>';
-  body += '<p style="color:#999;font-size:9px;margin:12px 0 0;line-height:1.5;text-transform:uppercase;letter-spacing:.5px">9am Leads Ltd &bull; Company No. 17168176 &bull; Delivered at 9am by 9amLeads</p>';
+  body += '<tr><td style="background:#1a1a2e;padding:24px 28px;border-radius:0 0 16px 16px;text-align:center">';
+  body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px">View Full Dashboard</a>';
+  body += '<p style="color:rgba(255,255,255,0.4);font-size:9px;margin:14px 0 0;line-height:1.5;text-transform:uppercase;letter-spacing:.5px">9am Leads Ltd &bull; Company No. 17168176 &bull; Delivered at 9am by 9amLeads</p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
