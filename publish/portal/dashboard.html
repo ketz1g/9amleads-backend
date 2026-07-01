@@ -1034,14 +1034,12 @@ function renderFilterSummary(filters, product) {
       var st = []; if (pf.statusSSTC !== false) st.push('SSTC'); if (pf.statusOffer !== false) st.push('Under Offer');
       if (st.length) pl.push(st.join(', '));
     } else if (p === 'probate') {
-      if (pf.minEstateValue) pl.push('Min \u00a3' + Number(pf.minEstateValue).toLocaleString());
-      if (pf.hasProperty) pl.push(pf.hasProperty);
+      pl.push('Territory only');
     } else if (p === 'newbusiness') {
       var sics = pf.sicCodes || []; var labels = { tech_software: 'Tech', construction: 'Construction', retail: 'Retail', hospitality: 'Hospitality', healthcare: 'Healthcare', professional_services: 'Prof Services', financial: 'Financial', creative: 'Creative' };
       if (sics.length) pl.push(sics.map(function(s) { return labels[s] || s; }).join(', '));
     } else if (p === 'planning') {
       if (pf.applicationType) pl.push(pf.applicationType);
-      if (pf.maxValue) pl.push('Max \u00a3' + Number(pf.maxValue).toLocaleString());
     } else if (p === 'tenders') {
       if (pf.minValue) pl.push('Min \u00a3' + Number(pf.minValue).toLocaleString());
       if (pf.keywords) pl.push('"' + pf.keywords + '"');
@@ -1060,16 +1058,14 @@ function populateFilterEditor(filters, product) {
     setSelect('df-moving-maxprice', filters.maxPrice || '');
     setChecked('df-moving-status-sstc', filters.statusSSTC !== false);
     setChecked('df-moving-status-offer', filters.statusOffer !== false);
-  } else if (product === 'probate') {
-    setSelect('df-probate-minvalue', filters.minEstateValue || '');
-    setSelect('df-probate-property', filters.hasProperty || '');
-  } else if (product === 'newbusiness') {
-    const sics = filters.sicCodes || [];
-    document.querySelectorAll('.df-nb-sic').forEach(cb => { cb.checked = sics.includes(cb.value); });
-  } else if (product === 'planning') {
-    setSelect('df-planning-apptype', filters.applicationType || '');
-    setSelect('df-planning-maxvalue', filters.maxValue || '');
-  } else if (product === 'tenders') {
+    } else if (product === 'probate') {
+      // No additional filters for probate
+    } else if (product === 'newbusiness') {
+      const sics = filters.sicCodes || [];
+      document.querySelectorAll('.df-nb-sic').forEach(cb => { cb.checked = sics.includes(cb.value); });
+    } else if (product === 'planning') {
+      setSelect('df-planning-apptype', filters.applicationType || '');
+    } else if (product === 'tenders') {
     setSelect('df-tenders-minvalue', filters.minValue || '');
     document.getElementById('df-tenders-keywords').value = filters.keywords || '';
   }
@@ -1118,13 +1114,12 @@ async function saveLeadFilters() {
       pf.statusSSTC = document.getElementById('df-moving-status-sstc').checked;
       pf.statusOffer = document.getElementById('df-moving-status-offer').checked;
     } else if (prod === 'probate') {
-      pf.minEstateValue = document.getElementById('df-probate-minvalue').value;
-      pf.hasProperty = document.getElementById('df-probate-property').value;
+      // No additional filters for probate (postcode filtering only)
+      pf = {};
     } else if (prod === 'newbusiness') {
       pf.sicCodes = Array.from(document.querySelectorAll('.df-nb-sic:checked')).map(function(cb) { return cb.value; });
     } else if (prod === 'planning') {
       pf.applicationType = document.getElementById('df-planning-apptype').value;
-      pf.maxValue = document.getElementById('df-planning-maxvalue').value;
     } else if (prod === 'tenders') {
       pf.minValue = document.getElementById('df-tenders-minvalue').value;
       pf.keywords = document.getElementById('df-tenders-keywords').value;
