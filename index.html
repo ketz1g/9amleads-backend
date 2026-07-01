@@ -15,7 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-:root{--accent:#0ea5e9;--accent-subtle:rgba(14,165,233,0.12);--accent-glow:rgba(14,165,233,0.3);--bg:#050505;--bg-card:#0a0a0a;--border:#1a1a1a;--border-h:#333;--text:#f5f5f5;--text2:#999;--muted:#666;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
+:root{--accent:#0ea5e9;--accent-subtle:rgba(14,165,233,0.12);--accent-glow:rgba(14,165,233,0.3);--bg:#111;--bg-card:#1a1a1a;--border:#2a2a2a;--border-h:#444;--text:#f5f5f5;--text2:#aaa;--muted:#777;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
 
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -27,9 +27,9 @@ body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font
 .section-title span{color:var(--accent)}
 .section-sub{text-align:center;color:var(--text2);font-size:17px;margin-top:0;margin-bottom:60px;max-width:600px;margin-left:auto;margin-right:auto}
 .gradient-text{background:linear-gradient(135deg,var(--accent),#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(14,165,233,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,0.06) 1px,transparent 1px);background-size:60px 60px}
-.s-bg{position:absolute;inset:0;pointer-events:none;background-size:cover;background-position:center;opacity:.15}
-.s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.12}
+.s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(14,165,233,0.08) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,0.08) 1px,transparent 1px);background-size:60px 60px}
+.s-bg{position:absolute;inset:0;pointer-events:none;background-size:cover;background-position:center;opacity:.2}
+.s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.18}
 .s-orb.tl{width:500px;height:500px;top:-200px;right:-100px;animation:float 8s ease-in-out infinite}
 .s-orb.br{width:400px;height:400px;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-30px)}}
@@ -38,7 +38,7 @@ body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font
 a{color:inherit;text-decoration:none}
 
 /* Nav */
-nav{padding:18px 0;position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(5,5,5,0.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.04)}
+nav{padding:18px 0;position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(17,17,17,0.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.04)}
 .nav-inner{display:flex;align-items:center;justify-content:space-between;max-width:1140px;margin:0 auto;padding:0 24px}
 .logo{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:800;font-family:var(--ff-h);letter-spacing:-.5px}
 .logo span{color:var(--accent)}
@@ -285,7 +285,21 @@ footer a:hover{color:var(--text)}
 <section class="hero">
 <div class="hero-content">
 <div class="hero-badge">✦ 9AM DAILY EXCLUSIVE LEADS ZERO COMPETITION BOOSTS TEAM PRODUCTIVITY</div>
-<h1 style="font-size:clamp(36px,5vw,64px);font-weight:900;line-height:1.05;letter-spacing:-2px;margin-bottom:20px;font-family:var(--ff-h)">9am Leads to Your <span class="gradient">Inbox Daily</span></h1>
+<div style="display:flex;justify-content:center;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+  <span style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.25);border-radius:20px;font-size:12px;font-weight:700;color:#22c55e;letter-spacing:0.3px">
+    <i class="fas fa-crown" style="font-size:11px"></i> EXCLUSIVE &mdash; You're the First &amp; Only Business to Receive This Lead
+  </span>
+  <span style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:20px;font-size:12px;font-weight:700;color:#ef4444;letter-spacing:0.3px">
+    <i class="fas fa-ban" style="font-size:11px"></i> ZERO COMPETITION &mdash; No Other Business Gets The Same Opportunity
+  </span>
+</div><div style="display:flex;justify-content:center;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+  <span style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.25);border-radius:20px;font-size:12px;font-weight:700;color:#22c55e;letter-spacing:0.3px">
+    <i class="fas fa-crown" style="font-size:11px"></i> EXCLUSIVE LEADS &mdash; You're the First &amp; Only Business to Receive Them
+  </span>
+  <span style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:20px;font-size:12px;font-weight:700;color:#ef4444;letter-spacing:0.3px">
+    <i class="fas fa-ban" style="font-size:11px"></i> ZERO COMPETITION &mdash; No Other Business Gets the Same Lead
+  </span>
+</div><h1 style="font-size:clamp(36px,5vw,64px);font-weight:900;line-height:1.05;letter-spacing:-2px;margin-bottom:20px;font-family:var(--ff-h)">9am Leads to Your <span class="gradient">Inbox Daily</span></h1>
 <p>Fresh, exclusive leads delivered to your inbox every morning at 9am. Your team walks in, opens their email, and starts winning. Keeping your business and sales team productive every morning, every day. No prospecting. No searching. Just selling.</p>
 <div class="hero-actions">
 <a href="/portal/" class="btn-pill btn-pill-lg"><i class="fas fa-clock"></i> Try Free First Leads at 9am Tomorrow</a>
@@ -320,6 +334,19 @@ footer a:hover{color:var(--text)}
 <div style="font-size:18px">&#128279;</div>
 <div><strong style="color:#fff;font-size:13px">CRM Integration</strong><br><span style="color:#8890a8;font-size:11px">Leads pushed directly to HubSpot, Salesforce, Pipedrive and more</span></div>
 </div>
+</div>
+</div>
+</section>
+
+<section class="section" style="position:relative;overflow:hidden;padding:40px 0;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);text-align:center">
+<div class="container">
+<p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:8px">Follow Us</p>
+<h3 style="font-size:20px;font-weight:800;font-family:var(--ff-h);margin-bottom:12px">Stay Connected with <span style="color:var(--accent)">9amLeads</span></h3>
+<p style="font-size:14px;color:var(--text2);margin-bottom:20px;max-width:500px;margin-left:auto;margin-right:auto">Follow us on social media for lead generation tips, success stories, and industry insights.</p>
+<div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+<a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.background='rgba(14,165,233,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-facebook-f" style="color:#1877f2;font-size:18px"></i> Facebook</a>
+<a href="https://www.tiktok.com/@9amleads.com" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.background='rgba(14,165,233,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-tiktok" style="color:#fff;font-size:18px"></i> TikTok</a>
+<a href="https://www.instagram.com/9amleads/" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e8ebf2;text-decoration:none;font-size:14px;font-weight:600;transition:.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.background='rgba(14,165,233,0.06)'" onmouseout="this.style.borderColor='';this.style.background=''"><i class="fab fa-instagram" style="color:#e4405f;font-size:18px"></i> Instagram</a>
 </div>
 </div>
 </section>
@@ -615,6 +642,65 @@ footer a:hover{color:var(--text)}
 </div>
 </section>
 
+<section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px">CRM Integration</div>
+<h2 class="section-title">Leads Sent Directly to <span class="gradient">Your CRM</span></h2>
+<p class="section-sub" style="max-width:700px">No manual entry. No CSV downloads. Your leads arrive automatically in the CRM your team already uses — ready to action at 9am.</p>
+<p class="section-sub" style="max-width:700px">We integrate with the tools you already use. Leads land directly in your CRM at 9am — no manual entry, no exporting, no copying and pasting.</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;max-width:1050px;margin:0 auto">
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="font-size:38px;margin-bottom:10px"><i class="fab fa-hubspot" style="color:#ff7a59"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">HubSpot</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">Full contact, company &amp; deal sync with custom properties, source tracking, and pipeline automation.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="font-size:38px;margin-bottom:10px"><i class="fab fa-salesforce" style="color:#00a1e0"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Salesforce</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">Leads, contacts, opportunities created with full audit trail, campaign attribution, and custom object mapping.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="font-size:38px;margin-bottom:10px"><i class="fas fa-exchange-alt" style="color:#20435f"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Pipedrive</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">Leads become new deals with custom fields, stage mapping, and automated follow-up sequences included.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="font-size:38px;margin-bottom:10px"><i class="fas fa-truck" style="color:#ff6b35"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Removals Manager</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">Moving leads sent straight with customer details, move dates, and property info — no manual data entry required.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="font-size:38px;margin-bottom:10px"><i class="fas fa-wrench" style="color:#6366f1"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Tradify</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">Planning &amp; trades leads sync directly to Tradify jobs — perfect for builders, electricians, plumbers and contractors.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="font-size:38px;margin-bottom:10px"><i class="fas fa-scale-balanced" style="color:#a855f7"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Clio / LEAP</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">Probate &amp; legal leads integrate with Clio, LEAP, and PracticeEvolve — contacts, matters, and tasks created automatically.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="font-size:38px;margin-bottom:10px"><i class="fas fa-calculator" style="color:#22c55e"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Xero / QuickBooks</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">New business leads flow into Xero or QuickBooks as prospects — ideal for accountants, bookkeepers, and financial advisers.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="font-size:38px;margin-bottom:10px"><i class="fas fa-briefcase" style="color:#0ea5e9"></i></div>
+<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Zoho / Freshsales</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">Seamless sync with Zoho CRM and Freshsales. Captures, lead scoring, and activity logging — all automated at 9am.</p>
+</div>
+</div>
+<div style="text-align:center;margin-top:32px;padding:28px 24px;background:var(--card);border:1px solid var(--border);border-radius:14px;max-width:800px;margin-left:auto;margin-right:auto">
+<p style="font-size:14px;color:var(--text2);line-height:1.8"><i class="fas fa-plug" style="color:var(--accent);margin-right:8px"></i> <strong style="color:var(--text)">Don't see your CRM?</strong> We connect with almost any system. Leads can be pushed to <strong style="color:var(--text)">ActiveCampaign, Keap, Zendesk Sell, Capsule, Nimble, Copper, Monday.com, Airtable, Notion</strong> and hundreds more via <a href="#" style="color:var(--accent);font-weight:600">Zapier</a> and <a href="#" style="color:var(--accent);font-weight:600">Make</a>. Custom API integrations built on request.</p>
+<p style="font-size:13px;color:var(--muted);margin-top:10px">Every plan includes CSV &amp; JSON exports. All Enterprise plans include dedicated API access.</p>
+</div>
+</div>
+</section>
+
 <section class="section" style="position:relative;overflow:hidden">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1400&q=80')"></div>
 <div class="s-grid"></div>
@@ -699,6 +785,49 @@ footer a:hover{color:var(--text)}
 <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I subscribe to multiple lead types? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Absolutely. You can subscribe to any combination of our five lead streams. Each arrives as a separate email at 9am. Many customers subscribe to multiple types.</p></div></div>
 <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Is there a free trial? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Yes. Every lead type comes with a 7 day free trial. No credit card required. You'll receive daily leads at 9am for a full week. Cancel anytime during the trial no charge, no questions asked.</p></div></div>
 <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">How are the leads sourced? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Each lead type comes from a different public data source. Moving Leads tracks SSTC properties on Rightmove and Zoopla. Probate Leads uses the official Gov.uk probate register. New Business Alerts uses Companies House. Planning Permission tracks the Planning Portal. Tenders uses Contracts Finder.</p></div></div>
+</div>
+</div>
+</section>
+
+<!-- VALUE PER WIN -->
+<section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px">Your Potential Earnings</div>
+<h2 class="section-title">The Value of <span class="gradient">One Win</span></h2>
+<p class="section-sub" style="max-width:680px">Every lead type delivers real revenue when you convert. Here's what one win is worth per industry — and what winning consistently looks like for your business.</p>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;max-width:1000px;margin:0 auto">
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+<div style="font-size:11px;font-weight:700;color:#ff6b35;margin-bottom:8px">Moving Leads</div>
+<div style="font-size:24px;font-weight:900;font-family:var(--ff-h);color:var(--text)">£1k–£3k</div>
+<div style="font-size:10px;color:var(--muted);margin-top:4px">Per house move</div>
+</div>
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+<div style="font-size:11px;font-weight:700;color:#a855f7;margin-bottom:8px">Probate Leads</div>
+<div style="font-size:24px;font-weight:900;font-family:var(--ff-h);color:var(--text)">£1k–£5k</div>
+<div style="font-size:10px;color:var(--muted);margin-top:4px">Per estate instruction</div>
+</div>
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+<div style="font-size:11px;font-weight:700;color:#06b6d4;margin-bottom:8px">New Business</div>
+<div style="font-size:24px;font-weight:900;font-family:var(--ff-h);color:var(--text)">£500–£5k</div>
+<div style="font-size:10px;color:var(--muted);margin-top:4px">Per client contract</div>
+</div>
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+<div style="font-size:11px;font-weight:700;color:#10b981;margin-bottom:8px">Planning</div>
+<div style="font-size:24px;font-weight:900;font-family:var(--ff-h);color:var(--text)">£5k–£50k</div>
+<div style="font-size:10px;color:var(--muted);margin-top:4px">Per project</div>
+</div>
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+<div style="font-size:11px;font-weight:700;color:#6366f1;margin-bottom:8px">Tenders</div>
+<div style="font-size:24px;font-weight:900;font-family:var(--ff-h);color:var(--text)">£50k–£500k</div>
+<div style="font-size:10px;color:var(--muted);margin-top:4px">Per contract</div>
+</div>
+</div>
+<div style="text-align:center;margin-top:20px">
+<a href="/pricing/" style="display:inline-block;padding:10px 24px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:8px;color:var(--accent);font-size:13px;font-weight:600;text-decoration:none">View Pricing <i class="fas fa-arrow-right" style="font-size:11px;margin-left:4px"></i></a>
 </div>
 </div>
 </section>
@@ -999,64 +1128,7 @@ document.addEventListener('DOMContentLoaded',function(){var l=document.getElemen
 </div>
 </section>
 
-<section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
-<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1400&q=80')"></div>
-<div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
-<div class="container">
-<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px">CRM Integration</div>
-<h2 class="section-title">Leads Sent Directly to <span class="gradient">Your CRM</span></h2>
-<p class="section-sub" style="max-width:700px">No manual entry. No CSV downloads. Your leads arrive automatically in the CRM your team already uses — ready to action at 9am.</p>
-<p class="section-sub" style="max-width:700px">We integrate with the tools you already use. Leads land directly in your CRM at 9am — no manual entry, no exporting, no copying and pasting.</p>
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;max-width:1050px;margin:0 auto">
-<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
-<div style="font-size:38px;margin-bottom:10px"><i class="fab fa-hubspot" style="color:#ff7a59"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">HubSpot</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6">Full contact, company &amp; deal sync with custom properties, source tracking, and pipeline automation.</p>
-</div>
-<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
-<div style="font-size:38px;margin-bottom:10px"><i class="fab fa-salesforce" style="color:#00a1e0"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Salesforce</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6">Leads, contacts, opportunities created with full audit trail, campaign attribution, and custom object mapping.</p>
-</div>
-<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
-<div style="font-size:38px;margin-bottom:10px"><i class="fas fa-exchange-alt" style="color:#20435f"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Pipedrive</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6">Leads become new deals with custom fields, stage mapping, and automated follow-up sequences included.</p>
-</div>
-<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
-<div style="font-size:38px;margin-bottom:10px"><i class="fas fa-truck" style="color:#ff6b35"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Removals Manager</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6">Moving leads sent straight with customer details, move dates, and property info — no manual data entry required.</p>
-</div>
-<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
-<div style="font-size:38px;margin-bottom:10px"><i class="fas fa-wrench" style="color:#6366f1"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Tradify</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6">Planning &amp; trades leads sync directly to Tradify jobs — perfect for builders, electricians, plumbers and contractors.</p>
-</div>
-<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
-<div style="font-size:38px;margin-bottom:10px"><i class="fas fa-scale-balanced" style="color:#a855f7"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Clio / LEAP</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6">Probate &amp; legal leads integrate with Clio, LEAP, and PracticeEvolve — contacts, matters, and tasks created automatically.</p>
-</div>
-<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
-<div style="font-size:38px;margin-bottom:10px"><i class="fas fa-calculator" style="color:#22c55e"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Xero / QuickBooks</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6">New business leads flow into Xero or QuickBooks as prospects — ideal for accountants, bookkeepers, and financial advisers.</p>
-</div>
-<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;transition:.25s" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
-<div style="font-size:38px;margin-bottom:10px"><i class="fas fa-briefcase" style="color:#0ea5e9"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Zoho / Freshsales</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6">Seamless sync with Zoho CRM and Freshsales. Captures, lead scoring, and activity logging — all automated at 9am.</p>
-</div>
-</div>
-<div style="text-align:center;margin-top:32px;padding:28px 24px;background:var(--card);border:1px solid var(--border);border-radius:14px;max-width:800px;margin-left:auto;margin-right:auto">
-<p style="font-size:14px;color:var(--text2);line-height:1.8"><i class="fas fa-plug" style="color:var(--accent);margin-right:8px"></i> <strong style="color:var(--text)">Don't see your CRM?</strong> We connect with almost any system. Leads can be pushed to <strong style="color:var(--text)">ActiveCampaign, Keap, Zendesk Sell, Capsule, Nimble, Copper, Monday.com, Airtable, Notion</strong> and hundreds more via <a href="#" style="color:var(--accent);font-weight:600">Zapier</a> and <a href="#" style="color:var(--accent);font-weight:600">Make</a>. Custom API integrations built on request.</p>
-<p style="font-size:13px;color:var(--muted);margin-top:10px">Every plan includes CSV &amp; JSON exports. All Enterprise plans include dedicated API access.</p>
-</div>
-</div>
-</section>
+
 
 <footer>
 <div class="container">
@@ -1064,10 +1136,10 @@ document.addEventListener('DOMContentLoaded',function(){var l=document.getElemen
 <div>
 <div style="display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;font-family:var(--ff-h);margin-bottom:12px"><div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(14,165,233,0.15)"><svg width="18" height="18" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="40" stroke="#fff" stroke-width="5"/><circle cx="50" cy="50" r="3" fill="#0ea5e9"/><line x1="50" y1="50" x2="50" y2="17" stroke="#0ea5e9" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="23" y2="50" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/></svg></div>9am<span style="color:var(--accent)">Leads</span></div>
 <p style="font-size:13px;color:var(--text2);line-height:1.8;max-width:320px">Business leads delivered to your inbox at 9am every morning. No sitting idle. No competing with other companies. Just fresh, exclusive leads ready to convert.</p>
-<div style="display:flex;gap:10px;margin-top:16px">
-<a href="#" style="width:32px;height:32px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:13px;transition:.2s"><i class="fab fa-linkedin-in"></i></a>
-<a href="#" style="width:32px;height:32px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:13px;transition:.2s"><i class="fab fa-facebook-f"></i></a>
-<a href="#" style="width:32px;height:32px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:13px;transition:.2s"><i class="fab fa-twitter"></i></a>
+<div style="display:flex;gap:8px;margin-top:14px">
+<a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;font-size:15px;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(14,165,233,0.1)';this.style.color='#0ea5e9'" onmouseout="this.style.background='';this.style.color=''" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+<a href="https://www.tiktok.com/@9amleads.com" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;font-size:15px;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(14,165,233,0.1)';this.style.color='#0ea5e9'" onmouseout="this.style.background='';this.style.color=''" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+<a href="https://www.instagram.com/9amleads/" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;font-size:15px;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(14,165,233,0.1)';this.style.color='#0ea5e9'" onmouseout="this.style.background='';this.style.color=''" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
 </div>
 </div>
 <div>

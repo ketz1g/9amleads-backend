@@ -1,17 +1,17 @@
-<!DOCTYPE html><html lang="en"><head>
+﻿<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Planning Leads — Daily Planning Application Alerts for UK Professionals</title>
+<title>Planning Leads â€” Daily Planning Application Alerts for UK Professionals</title>
 <meta name="description" content="Get daily planning application alerts in your target areas. Every planning permission means potential work for builders, architects, surveyors, and tradespeople. Be first to quote.">
-<meta property="og:title" content="Planning Leads — Daily Planning Application Alerts for UK Tradespeople">
+<meta property="og:title" content="Planning Leads â€” Daily Planning Application Alerts for UK Tradespeople">
 <meta property="og:description" content="New planning applications from all 350+ UK councils delivered daily. Every extension and new build is a potential project.">
 <meta property="og:url" content="https://9amleads.com/planningleads/">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://9amleads.com/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Planning Leads — Daily Planning Application Alerts for UK Tradespeople">
+<meta name="twitter:title" content="Planning Leads â€” Daily Planning Application Alerts for UK Tradespeople">
 <meta name="twitter:description" content="New planning applications from all 350+ UK councils delivered daily. Every extension and new build is a potential project.">
 <link rel="canonical" href="https://9amleads.com/planningleads/">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'><i class="fas fa-clipboard-list"></i></text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
@@ -103,76 +103,106 @@ footer h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing
 footer a,footer p{color:var(--muted);font-size:13px;padding:3px 0;line-height:1.8}
 footer a:hover{color:var(--primary)}
 .footer-bottom{text-align:center;padding:24px;margin-top:40px;border-top:1px solid var(--border);font-size:12px;color:var(--muted2)}
+@media(max-width:1024px){.steps{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){.hero h1{font-size:30px}.steps{grid-template-columns:1fr}.features-grid{grid-template-columns:1fr}.product-grid{grid-template-columns:1fr}.trades-grid{grid-template-columns:1fr 1fr}.footer-grid{grid-template-columns:1fr 1fr}.nav-links{display:none}}
 .hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px;z-index:101}
 .hamburger span{width:24px;height:2.5px;background:var(--text);border-radius:2px;transition:.3s}
 .hamburger.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
 .hamburger.active span:nth-child(2){opacity:0}
 .hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
-.mobile-menu{position:fixed;top:0;right:-100%;width:100%;max-width:300px;height:100vh;background:rgba(0,0,0,0.97);border-left:1px solid var(--border);padding:80px 28px 32px;z-index:100;transition:.3s;overflow-y:auto}
+.mobile-home{display:none}
+.mobile-menu{position:fixed;top:0;right:-100%;width:100%;max-width:300px;height:100vh;background:#000;border-left:1px solid var(--border);padding:80px 28px 32px;z-index:100;transition:.3s;overflow-y:auto}
 .mobile-menu.open{right:0}
-.mobile-menu a{display:block;color:var(--text2);text-decoration:none;font-size:16px;padding:14px 0;border-bottom:1px solid var(--border)}
+.mobile-menu a{display:block;color:var(--text2);text-decoration:none;font-size:15px;padding:12px 0;border-bottom:1px solid var(--border)}
 .mobile-menu a:hover{color:var(--text)}
-.mobile-menu .btn-mobile{display:block;margin-top:20px;padding:14px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff!important;text-align:center;border-radius:8px;font-weight:600;border-bottom:none}
 .mobile-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;opacity:0;pointer-events:none;transition:.3s}
 .mobile-overlay.show{opacity:1;pointer-events:auto}
-@media(max-width:1024px){.steps{grid-template-columns:1fr 1fr}}
-@media(max-width:768px){.hero h1{font-size:30px}.steps{grid-template-columns:1fr}.features-grid{grid-template-columns:1fr}.product-grid{grid-template-columns:1fr}.trades-grid{grid-template-columns:1fr 1fr}.footer-grid{grid-template-columns:1fr 1fr}.hamburger{display:flex}.nav-links a{display:none}}
-.section-bg-overlay{position:absolute;inset:0;pointer-events:none;opacity:.05;background-size:cover;background-position:center}
-.section-glow{position:absolute;inset:0;pointer-events:none}
-.section-glow .glow-orb{position:absolute;border-radius:50%;filter:blur(120px);opacity:.08}
-.section-glow .glow-orb:nth-child(1){width:400px;height:400px;background:var(--primary);top:-150px;right:-80px}
-.section-glow .glow-orb:nth-child(2){width:350px;height:350px;background:#059669;bottom:-120px;left:-80px}
-[data-reveal]{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease}
-[data-reveal].visible{opacity:1;transform:translateY(0)}
+@media(max-width:768px){.hamburger{display:flex}.nav-links a{display:none}.mobile-home{display:inline-flex!important;align-items:center;gap:4px}}
+.product-card,.pricing-card,.step,.t-card,.feature-card{transition:all .4s cubic-bezier(.4,0,.2,1)}
+.product-card:hover,.pricing-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.t-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.pricing-card.featured{border-color:var(--primary)!important}
+.pricing-card:hover .btn{transform:translateY(-2px);box-shadow:0 8px 24px var(--primary-glow)}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:768px){.features-grid{grid-template-columns:1fr}}
+@media(max-width:1024px)and (min-width:769px){.features-grid{grid-template-columns:repeat(2,1fr)}}
+.section{position:relative;overflow:hidden}
+.s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(16,185,129,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(16,185,129,0.03) 1px,transparent 1px);background-size:60px 60px}
+.s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.1}
+@media(max-width:768px){
+  .hero h1{font-size:28px;line-height:34px}
+  .hero p{font-size:15px}
+  section{padding:50px 0}
+  .container{padding:0 18px}
+  .section-title{font-size:24px;line-height:30px;margin-bottom:20px}
+  .section-sub{font-size:14px;margin-bottom:30px}
+  div[style*="repeat(3"]{grid-template-columns:1fr!important;gap:12px!important}
+  div[style*="repeat(4"]{grid-template-columns:1fr!important;gap:12px!important}
+  div[style*="repeat(2"]{grid-template-columns:1fr!important;gap:12px!important}
+  div[style*="repeat(auto"]{grid-template-columns:1fr!important}
+  .footer-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .hero h1{font-size:24px;line-height:30px}
+  .footer-grid{grid-template-columns:1fr}
+  .container{padding:0 14px}
+  section{padding:40px 0}
+}
 </style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How fresh is the planning data?","acceptedAnswer":{"@type":"Answer","text":"We scan all 350+ UK council planning portals daily. Applications appear in your inbox within 24 hours of submission."}},{"@type":"Question","name":"What details are included?","acceptedAnswer":{"@type":"Answer","text":"Full application details including applicant name, property address, application type, estimated build cost, and council reference number."}},{"@type":"Question","name":"Can I try before committing?","acceptedAnswer":{"@type":"Answer","text":"Yes. 7-day free trial with real planning leads. No card required."}}]}</script>
 </head>
 <body>
 <div style="background:#0a0a0a;border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;font-size:11px;text-align:center;font-family:Arial,sans-serif;">
 <span style="color:#888">Part of </span><a href="/" style="color:#0ea5e9;font-weight:600;text-decoration:none">9amLeads</a>
 <span style="color:#555;margin:0 6px">|</span>
 <a href="/movingleadsdaily/" style="color:#ff6b35;text-decoration:none;font-weight:600">Moving</a>
-<span style="color:#444;margin:0 4px">·</span>
+<span style="color:#444;margin:0 4px">Â·</span>
 <a href="/probateleads/" style="color:#a855f7;text-decoration:none;font-weight:600">Probate</a>
-<span style="color:#444;margin:0 4px">·</span>
+<span style="color:#444;margin:0 4px">Â·</span>
+<a href="/newbusinessalert/" style="color:#06b6d4;text-decoration:none;font-weight:600">New Business</a>
+<span style="color:#444;margin:0 4px">Â·</span>
 <a href="/planningleads/" style="color:#10b981;text-decoration:none;font-weight:600">Planning</a>
-<span style="color:#444;margin:0 4px">·</span>
+<span style="color:#444;margin:0 4px">Â·</span>
 <a href="/tenders/" style="color:#6366f1;text-decoration:none;font-weight:600">Tenders</a>
 </div>
 <nav><div class="nav-inner">
-<a href="/planningleads/" class="logo"><div class="mark">PL</div> Planning <span>Leads</span></a>
+<a href="/planningleads/" class="logo"><svg width="20" height="20" viewBox="0 0 100 100" fill="none" style="flex-shrink:0"><circle cx="50" cy="50" r="40" stroke="#10b981" stroke-width="5"/><circle cx="50" cy="50" r="3" fill="#10b981"/><line x1="50" y1="50" x2="50" y2="17" stroke="#10b981" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="23" y2="50" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="42" cy="8" r="5" fill="#10b981" opacity="0.8"/><circle cx="58" cy="8" r="5" fill="#10b981" opacity="0.8"/></svg> Planning<span>Leads</span></a>
 <div class="nav-links">
+<a href="/" style="display:inline-flex;align-items:center;gap:4px;padding:7px 10px;color:var(--muted2,#666);font-size:12px;font-weight:600;text-decoration:none;transition:.2s;border-radius:6px;border:1px solid rgba(255,255,255,0.06)"><i class="fas fa-arrow-left" style="font-size:10px"></i> 9amLeads</a>
 <a href="#how">How It Works</a>
 <a href="#who">Who It's For</a>
 <a href="#pricing">Pricing</a>
 <a href="#faq">FAQ</a>
 <a href="#cta" class="btn-nav"><i class="fas fa-rocket"></i> Start Free Trial</a>
 </div>
-<button class="hamburger" id="hamBtn" onclick="toggleMobile()" aria-label="Menu"><span></span><span></span><span></span></button>
-</div></nav>
+</div><a href="/" style="display:none;font-size:13px;font-weight:600;padding:6px 12px;border:1px solid var(--border);border-radius:6px;color:var(--text2);text-decoration:none;margin-right:6px;white-space:nowrap" class="mobile-home">Home</a><button class="hamburger" id="hamBtn" onclick="toggleMobile()" aria-label="Menu"><span></span><span></span><span></span></button></nav>
 <div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobile()"></div>
 <div class="mobile-menu" id="mobileMenu">
-<a href="#how" onclick="toggleMobile()">How It Works</a>
-<a href="#who" onclick="toggleMobile()">Who It's For</a>
-<a href="#pricing" onclick="toggleMobile()">Pricing</a>
-<a href="#faq" onclick="toggleMobile()">FAQ</a>
+<a href="/" onclick="toggleMobile()">Home</a>
 <a href="/movingleadsdaily/" onclick="toggleMobile()">Moving Leads</a>
 <a href="/probateleads/" onclick="toggleMobile()">Probate Leads</a>
 <a href="/newbusinessalert/" onclick="toggleMobile()">New Business</a>
 <a href="/planningleads/" onclick="toggleMobile()">Planning Permission</a>
 <a href="/tenders/" onclick="toggleMobile()">Public Tenders</a>
-<a href="#cta" class="btn-mobile" onclick="toggleMobile()"><i class="fas fa-rocket"></i> Start Free Trial</a>
+<a href="/9amleads/founder/" onclick="toggleMobile()">Founder</a>
+<a href="/portal/" onclick="toggleMobile()" style="margin-top:12px;color:var(--primary);font-weight:600">Start Free Trial</a>
 </div>
 
-<section class="hero">
-<div class="hero-bg"><div class="grid"></div><div class="orb"></div><div class="orb"></div></div>
-<div class="hero-content">
-<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:18px">
-<span style="padding:5px 12px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(34,197,94,.08);color:var(--success);border:1px solid rgba(34,197,94,.15)"><i class="fas fa-check"></i> 7 days free</span>
-<span style="padding:5px 12px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(34,197,94,.08);color:var(--success);border:1px solid rgba(34,197,94,.15)"><i class="fas fa-check"></i> No card required</span>
-<span style="padding:5px 12px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(34,197,94,.08);color:var(--success);border:1px solid rgba(34,197,94,.15)"><i class="fas fa-check"></i> Cancel anytime</span>
+<section class="hero" style="min-height:90vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;padding:120px 24px 80px;background:linear-gradient(90deg,rgba(0,0,0,0.92) 0%,rgba(0,0,0,0.4) 60%,rgba(0,0,0,0.1) 100%),url(https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1600&q=80);background-size:cover;background-position:center;background-attachment:fixed;overflow:hidden">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(16,185,129,.1) 0%,transparent 60%),radial-gradient(ellipse at 70% 30%,rgba(16,185,129,.05) 0%,transparent 50%);pointer-events:none"></div>
+<div class="hero-content" style="position:relative;z-index:2">
+<div style="display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:28px">
+<span style="display:inline-block;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.25);color:#22c55e;font-size:11px;font-weight:700;padding:6px 16px;border-radius:100px;letter-spacing:.3px"><i class="fas fa-crown" style="font-size:10px"></i> EXCLUSIVE &mdash; You're the First &amp; Only Business</span>
+<span style="display:inline-block;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;font-size:11px;font-weight:700;padding:6px 16px;border-radius:100px;letter-spacing:.3px"><i class="fas fa-ban" style="font-size:10px"></i> ZERO COMPETITION</span>
+<span style="display:inline-block;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#10b981;font-size:12px;font-weight:600;padding:6px 20px;border-radius:100px;letter-spacing:.5px;text-transform:uppercase">7 days Free Trial</span>
+<span style="display:inline-block;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e;font-size:12px;font-weight:600;padding:6px 20px;border-radius:100px;letter-spacing:.5px;text-transform:uppercase">No Card Required</span>
 </div>
-<h1>Every Planning Permission is a <span class="highlight">New Project. Be First.</span></h1>
-<p>Every single day, hundreds of planning applications are submitted across the UK. Each approved permission means someone needs an architect, builder, plumber, electrician, or tradesperson. 9amLeads alerts you the moment an application is submitted — before your competitors even know it exists.</p>
+<h1>New Planning Applications Every Day. <span class="highlight">Be the Tradesperson They Hire.</span></h1>
+<p>Every morning, 500+ new planning applications land across 350+ UK councils. For builders, architects, electricians, plumbers, roofers, and landscapers, each approved permission means a paying project. 9amLeads delivers fresh planning data directly to your inbox at 9am â€” before your competitors have even heard of the project. Stop chasing shared leads. Start quoting exclusive opportunities.</p>
 <a href="#cta" class="btn btn-primary btn-lg"><i class="fas fa-gift"></i> Start Your Free Trial</a>
 <div class="hero-stats">
 <div class="hero-stat"><div class="num">10-100+</div><div class="label">Apps Per Day</div></div>
@@ -180,307 +210,492 @@ footer a:hover{color:var(--primary)}
 <div class="hero-stat"><div class="num">9am</div><div class="label">Daily Delivery</div></div>
 <div class="hero-stat"><div class="num">100%</div><div class="label">Exclusive</div></div>
 </div>
-<div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:32px;flex-wrap:wrap">
-<div style="display:flex">
-<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;border:2px solid var(--bg);margin-right:-8px">RB</div>
-<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;border:2px solid var(--bg);margin-right:-8px">PM</div>
-<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#06b6d4,#0891b2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;border:2px solid var(--bg);margin-right:-8px">SK</div>
-<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;border:2px solid var(--bg)">AJ</div>
 </div>
-<div style="font-size:14px;color:var(--muted)"><strong style="color:var(--text);font-weight:600">Rated 4.9/5</strong> by UK builders &amp; tradespeople</div>
+</section>
+
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="container">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:800px;margin:0 auto;text-align:center">
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
+<div style="font-size:32px;margin-bottom:6px"><i class="fas fa-building"></i></div>
+<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--primary)">350+</div>
+<div style="font-size:12px;color:var(--muted);margin-top:4px">Councils Covered</div>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
+<div style="font-size:32px;margin-bottom:6px"><i class="fas fa-clipboard-list"></i></div>
+<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--primary)">500+</div>
+<div style="font-size:12px;color:var(--muted);margin-top:4px">Daily Applications</div>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
+<div style="font-size:32px;margin-bottom:6px"><i class="fas fa-lock"></i></div>
+<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--primary)">100%</div>
+<div style="font-size:12px;color:var(--muted);margin-top:4px">Exclusive to You</div>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 16px">
+<div style="font-size:32px;margin-bottom:6px"><i class="fas fa-clock"></i></div>
+<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--primary)">9am</div>
+<div style="font-size:12px;color:var(--muted);margin-top:4px">Daily Delivery</div>
+</div>
 </div>
 </div>
 </section>
 
-<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden" id="how">
-<div class="section-bg-overlay" style="background-image:url('https://images.unsplash.com/photo-1521791136064-2b8711a1cfb9?w=1400&q=80')"></div>
-<div class="section-glow"><div class="glow-orb"></div><div class="glow-orb"></div></div>
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)" id="how">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">How It Works</div>
 <h2 class="section-title">Three Simple Steps to <span class="gradient">More Projects</span></h2>
 <p class="section-sub">From setup to your first planning lead in under 5 minutes.</p>
 <div class="steps">
-<div class="step" data-reveal><span class="num">1</span><div class="icon">🎯</div><h4>Choose Your Councils</h4><p>Select the local authorities and postcode areas you want to monitor. Cover one council or the whole UK — you choose exactly where you want to work.</p></div>
-<div class="step" data-reveal><span class="num">2</span><div class="icon">🌙</div><h4>We Scan Overnight</h4><p>Our system checks every UK council's planning portal daily. As soon as a new application matches your criteria, we capture every detail.</p></div>
-<div class="step" data-reveal><span class="num">3</span><div class="icon">📥</div><h4>Leads at 9am</h4><p>Your daily lead sheet arrives at 9am. Property address, applicant name, application type, description — everything you need to pitch your services.</p></div>
+<div class="step"><span class="num">1</span><div class="icon"><i class="fas fa-map-marker-alt"></i></div><h4>Choose Your Councils</h4><p>Select the local authorities and postcode areas you want to monitor. Cover one council or the whole UK â€” you choose exactly where you want to work.</p></div>
+<div class="step"><span class="num">2</span><div class="icon"><i class="fas fa-moon"></i></div><h4>We Scan Overnight</h4><p>Our system checks every UK council's planning portal daily. As soon as a new application matches your criteria, we capture every detail.</p></div>
+<div class="step"><span class="num">3</span><div class="icon"><i class="fas fa-envelope-open-text"></i></div><h4>Leads at 9am</h4><p>Your daily lead sheet arrives at 9am. Property address, applicant name, application type, description â€” everything you need to pitch your services.</p></div>
 </div>
 </div>
 </section>
 
-<section class="section" id="who" style="position:relative;overflow:hidden">
-<div class="section-bg-overlay" style="background-image:url('https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1400&q=80')"></div>
+<section class="section" id="who">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Who It's For</div>
 <h2 class="section-title">26 Trades &amp; Professions That Thrive on <span class="gradient">Planning Leads</span></h2>
-<p class="section-sub">Every planning application is a potential new project. If you work in construction, design, or home improvement, you need to be first.</p>
+<p class="section-sub">Every planning application signals a homeowner or developer about to spend money. Whether you pour foundations, fit kitchens, or design extensions, being first to quote is everything.</p>
 <div class="trades-grid">
-<div class="trade-tag" data-reveal><span class="dot"></span> Builders</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Architects</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Surveyors</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Structural Engineers</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Kitchen Fitters</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Bathroom Fitters</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Plumbers</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Electricians</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Carpenters</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Roofers</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Painters &amp; Decorators</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Plasterers</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Flooring Companies</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Tilers</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Landscapers</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Garden Designers</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Loft Conversion Specialists</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Home Extension Specialists</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Conservatory Companies</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Window Fitters</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Gas Engineers</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> HVAC Engineers</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Solar Panel Installers</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Interior Designers</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Planning Consultants</div>
-<div class="trade-tag" data-reveal><span class="dot"></span> Property Developers</div>
+<div class="trade-tag"><span class="dot"></span> Builders</div>
+<div class="trade-tag"><span class="dot"></span> Architects</div>
+<div class="trade-tag"><span class="dot"></span> Surveyors</div>
+<div class="trade-tag"><span class="dot"></span> Structural Engineers</div>
+<div class="trade-tag"><span class="dot"></span> Kitchen Fitters</div>
+<div class="trade-tag"><span class="dot"></span> Bathroom Fitters</div>
+<div class="trade-tag"><span class="dot"></span> Plumbers</div>
+<div class="trade-tag"><span class="dot"></span> Electricians</div>
+<div class="trade-tag"><span class="dot"></span> Carpenters</div>
+<div class="trade-tag"><span class="dot"></span> Roofers</div>
+<div class="trade-tag"><span class="dot"></span> Painters &amp; Decorators</div>
+<div class="trade-tag"><span class="dot"></span> Plasterers</div>
+<div class="trade-tag"><span class="dot"></span> Flooring Companies</div>
+<div class="trade-tag"><span class="dot"></span> Tilers</div>
+<div class="trade-tag"><span class="dot"></span> Landscapers</div>
+<div class="trade-tag"><span class="dot"></span> Garden Designers</div>
+<div class="trade-tag"><span class="dot"></span> Loft Conversion Specialists</div>
+<div class="trade-tag"><span class="dot"></span> Home Extension Specialists</div>
+<div class="trade-tag"><span class="dot"></span> Conservatory Companies</div>
+<div class="trade-tag"><span class="dot"></span> Window Fitters</div>
+<div class="trade-tag"><span class="dot"></span> Gas Engineers</div>
+<div class="trade-tag"><span class="dot"></span> HVAC Engineers</div>
+<div class="trade-tag"><span class="dot"></span> Solar Panel Installers</div>
+<div class="trade-tag"><span class="dot"></span> Interior Designers</div>
+<div class="trade-tag"><span class="dot"></span> Planning Consultants</div>
+<div class="trade-tag"><span class="dot"></span> Property Developers</div>
 </div>
 </div>
 </section>
 
-<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
-<div class="section-bg-overlay" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="container">
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Who Benefits Most</div>
+<h2 class="section-title">Six Trades That Profit from <span class="gradient">Planning Leads</span></h2>
+<p class="section-sub">Every approved planning application creates work for specific trades. Here is why each one needs to be first to contact the applicant.</p>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:0 auto">
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center">
+<div style="font-size:36px;margin-bottom:10px"><i class="fas fa-helmet-safety"></i></div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)">Builders</h4>
+<p style="font-size:13px;color:var(--text2);line-height:1.7">Every approved extension or new build needs a main contractor. Planning applications tell you exactly who is building what and where before they have chosen their builder. Be the first to quote and you win more work.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center">
+<div style="font-size:36px;margin-bottom:10px"><i class="fas fa-drafting-compass"></i></div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)">Architects</h4>
+<p style="font-size:13px;color:var(--text2);line-height:1.7">Homeowners need architectural drawings and design statements before they can submit planning applications. Spot applications that need professional design input and offer your services early in the process.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center">
+<div style="font-size:36px;margin-bottom:10px"><i class="fas fa-bolt"></i></div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)">Electricians</h4>
+<p style="font-size:13px;color:var(--text2);line-height:1.7">New builds, extensions, and loft conversions all require full electrical rewires and installations. Planning data reveals projects before they break ground, giving you weeks of advantage over other electricians.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center">
+<div style="font-size:36px;margin-bottom:10px"><i class="fas fa-wrench"></i></div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)">Plumbers</h4>
+<p style="font-size:13px;color:var(--text2);line-height:1.7">Every extension adds bathrooms or kitchens. Every new build needs full heating and plumbing systems. Planning applications tell you exactly where the work will happen and at what scale.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center">
+<div style="font-size:36px;margin-bottom:10px"><i class="fas fa-hard-hat"></i></div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)">Roofers</h4>
+<p style="font-size:13px;color:var(--text2);line-height:1.7">Extensions, loft conversions, and new builds all need professional roofing. Planning applications reveal the project scope and estimated build cost before construction starts. Quote early, win the contract.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center">
+<div style="font-size:36px;margin-bottom:10px"><i class="fas fa-tree"></i></div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)">Landscapers</h4>
+<p style="font-size:13px;color:var(--text2);line-height:1.7">Approved developments often require landscaping as a condition of planning. Homeowners with new extensions need gardens redesigned and patios installed. Spot these requirements in the planning documents and be the landscaper they call first.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1521791136064-2b8711a1cfb9?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="container">
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Why Businesses Choose PlanningLeads</div>
+<h2 class="section-title">Built for Business Growth. <span class="gradient">Not Just Lead Generation.</span></h2>
+<p class="section-sub" style="max-width:650px">Most lead generation platforms focus on selling the same enquiry to multiple businesses, creating competition, price wars, and lower conversion rates. PlanningLeads is built differently.</p>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:800px;margin:0 auto">
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px">
+<div style="font-size:28px;margin-bottom:8px"><i class="fas fa-bullseye"></i></div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)">Exclusive Opportunities, Not Shared Enquiries</h4>
+<p style="font-size:13px;color:var(--text2);line-height:1.7">Other platforms sell the same project lead to multiple trades. PlanningLeads delivers fresh planning application data directly to you. You control the outreach, the timing, and the relationship.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px">
+<div style="font-size:28px;margin-bottom:8px"><i class="fas fa-chart-line"></i></div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)">Build Your Own Pipeline</h4>
+<p style="font-size:13px;color:var(--text2);line-height:1.7">Create a repeatable outreach system using fresh daily planning applications and council targeting. Build a prospect database of upcoming projects in your area.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px">
+<div style="font-size:28px;margin-bottom:8px"><i class="fas fa-clock"></i></div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)">Better Timing, Better Results</h4>
+<p style="font-size:13px;color:var(--text2);line-height:1.7">Leads arrive at 9am every morning. Your team builds a daily routine around fresh outreach. No distractions, no bidding wars â€” just consistent action.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px">
+<div style="font-size:28px;margin-bottom:8px"><i class="fas fa-coins"></i></div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)">Predictable Cost, Scalable Growth</h4>
+<p style="font-size:13px;color:var(--text2);line-height:1.7">Fixed monthly pricing means no surprise costs. One planning project covers your entire subscription. Scale up or down as your business grows.</p>
+</div>
+</div>
+<div style="text-align:center;margin-top:28px">
+<a href="#cta" class="btn btn-primary btn-lg"><i class="fas fa-gift"></i> Start Building Your Project Pipeline Today</a>
+</div>
+</div>
+</section>
+
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Features</div>
-<h2 class="section-title">Everything You Need to <span class="gradient">Win More Projects</span></h2>
-<p class="section-sub">Designed for builders, architects, and tradespeople who want to be first, every time.</p>
+<h2 class="section-title">Why Each Feature <span class="gradient">Wins You Projects</span></h2>
+<p class="section-sub">Every feature exists for one reason: to help you contact the applicant before any other tradesperson sees the opportunity.</p>
 <div class="features-grid">
-<div class="feature-card" data-reveal><div class="icon">⏰</div><h4>9am Delivery</h4><p>Fresh planning applications land in your inbox every morning at 9am. No dashboards to check, no portals to refresh. Just open your email and start quoting.</p></div>
-<div class="feature-card" data-reveal><div class="icon">🎯</div><h4>Council Targeting</h4><p>Filter by local authority. Only receive applications from the councils where you want to work — zero wasted leads, maximum relevance.</p></div>
-<div class="feature-card" data-reveal><div class="icon">🔒</div><h4>Exclusive Territory</h4><p>Your target councils and areas are yours. No other 9amLeads member gets the same applications in your territory. First-mover advantage, guaranteed.</p></div>
-<div class="feature-card" data-reveal><div class="icon">📋</div><h4>Full App Details</h4><p>Property address, applicant name, application type, description, council reference, status. Everything you need to pitch your services with confidence.</p></div>
-<div class="feature-card" data-reveal><div class="icon">📊</div><h4>Performance Dashboard</h4><p>Track which application types convert best, monitor your quote-to-win ratio, and measure your ROI in real-time from any device.</p></div>
-<div class="feature-card" data-reveal><div class="icon">📥</div><h4>CSV Export</h4><p>Export your leads to CSV with one click. Import into your CRM, Google Sheets, or email marketing platform for automated follow-up.</p></div>
+<div class="feature-card"><div class="icon"><i class="fas fa-clock"></i></div><h4>9am Delivery</h4><p>Why it matters: Planning applications go live on council portals at unpredictable times. We capture them that same day and deliver them at 9am, so you quote before other trades have even checked the council website.</p></div>
+<div class="feature-card"><div class="icon"><i class="fas fa-map-marker-alt"></i></div><h4>Council Targeting</h4><p>Why it matters: A builder in Bristol does not need leads from Newcastle. Filter by the exact councils where your team operates, so every lead is a project you can actually quote on the same day.</p></div>
+<div class="feature-card"><div class="icon"><i class="fas fa-lock"></i></div><h4>Exclusive Territory</h4><p>Why it matters: On other platforms, five builders fight over one extension. With PlanningLeads, your chosen councils are yours alone. You contact the applicant first, every time. No price wars.</p></div>
+<div class="feature-card"><div class="icon"><i class="fas fa-clipboard-list"></i></div><h4>Full App Details</h4><p>Why it matters: You need the property address, applicant name, and build cost to write a credible quote. We give you everything including the council reference so you sound informed from the first call.</p></div>
+<div class="feature-card"><div class="icon"><i class="fas fa-chart-line"></i></div><h4>Performance Dashboard</h4><p>Why it matters: Track which application types (extensions vs new builds vs loft conversions) generate the most revenue for your business, so you know exactly where to focus your quoting efforts.</p></div>
+<div class="feature-card"><div class="icon"><i class="fas fa-file-export"></i></div><h4>CSV Export</h4><p>Why it matters: Export leads directly into your CRM or Google Sheets. Build a database of every planning applicant in your area and automate follow-up sequences for when approvals come through.</p></div>
 </div>
 </div>
 </section>
 
-<section class="section" style="position:relative;overflow:hidden">
-<div class="section-glow"><div class="glow-orb" style="width:400px;height:400px;background:var(--primary);top:-150px;right:-80px"></div><div class="glow-orb" style="width:350px;height:350px;background:#059669;bottom:-120px;left:-80px"></div></div>
-<div class="container" style="position:relative;z-index:2">
-<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Sample Lead Preview</div>
-<h2 class="section-title">See Exactly What You Get <span class="gradient">at 9am Tomorrow</span></h2>
-<p class="section-sub">Here is a real example of what lands in your inbox every morning. Fresh, exclusive planning application alerts — delivered before your competitors wake up.</p>
-<div style="max-width:700px;margin:32px auto 0;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.3)">
-<div style="background:linear-gradient(135deg,#10b981,#059669);padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
-<div style="display:flex;align-items:center;gap:10px">
-<div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px">@</div>
-<div><div style="color:#fff;font-weight:600;font-size:13px">PlanningLeads Daily</div><div style="color:rgba(255,255,255,0.6);font-size:11px">to you &lt;your@email.com&gt;</div></div>
-</div>
-<div style="color:rgba(255,255,255,0.6);font-size:11px">9:00 AM (1 min ago)</div>
-</div>
-<div style="padding:24px 20px">
-<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px">
-<div style="flex:1;min-width:140px"><div style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Lead Type</div><div style="font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--primary);display:inline-block"></span> Planning Applications</div></div>
-<div style="flex:1;min-width:140px"><div style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Date</div><div style="font-size:14px;font-weight:600;color:var(--text)">Delivered Daily at 9am</div></div>
-<div style="flex:1;min-width:140px"><div style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Exclusive</div><div style="font-size:14px;font-weight:600;color:var(--success)">✓ Yes — Just for You</div></div>
-</div>
-<div style="border-top:1px solid var(--border);padding-top:16px">
-<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px">Good morning! Here are your fresh, exclusive planning leads for today. Each application was submitted in the last 24 hours — be the first to quote the homeowner.</p>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
-<div style="font-size:10px;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px"><i class="fas fa-hard-hat" style="margin-right:4px"></i> Householder Extension</div>
-<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">Rear Extension, 42 Acacia Ave</div>
-<div style="font-size:11px;color:var(--muted)">Council: Leeds City · Est. Value: £45,000</div>
-</div>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
-<div style="font-size:10px;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px"><i class="fas fa-hard-hat" style="margin-right:4px"></i> New Dwelling</div>
-<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">Single Storey Dwelling, Land off Mill Rd</div>
-<div style="font-size:11px;color:var(--muted)">Council: Manchester City · Est. Value: £250,000</div>
-</div>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
-<div style="font-size:10px;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px"><i class="fas fa-hard-hat" style="margin-right:4px"></i> Loft Conversion</div>
-<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">Loft Conversion with Dormer</div>
-<div style="font-size:11px;color:var(--muted)">Council: Birmingham City · Est. Value: £35,000</div>
-</div>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
-<div style="font-size:10px;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px"><i class="fas fa-hard-hat" style="margin-right:4px"></i> Change of Use</div>
-<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">Office to Residential (6 Units)</div>
-<div style="font-size:11px;color:var(--muted)">Council: Bristol City · Est. Value: £600,000</div>
+<div style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:40px 0;text-align:center">
+<div class="container">
+<p style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:24px;font-weight:600">Trusted by professionals across the UK</p>
+<div style="display:flex;justify-content:center;align-items:center;gap:36px;flex-wrap:wrap;opacity:.4">
+<span style="font-family:var(--ff-h);font-size:18px;font-weight:700;color:#555;letter-spacing:-.5px">Solicitors</span>
+<span style="font-family:var(--ff-h);font-size:18px;font-weight:700;color:#555;letter-spacing:-.5px">Accountants</span>
+<span style="font-family:var(--ff-h);font-size:18px;font-weight:700;color:#555;letter-spacing:-.5px">Builders</span>
+<span style="font-family:var(--ff-h);font-size:18px;font-weight:700;color:#555;letter-spacing:-.5px">Agencies</span>
+<span style="font-family:var(--ff-h);font-size:18px;font-weight:700;color:#555;letter-spacing:-.5px">Contractors</span>
 </div>
 </div>
 </div>
-<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-<div style="font-size:12px;color:var(--muted)">📊 <strong style="color:var(--text)">15+ apps</strong> today · <strong style="color:var(--success)">40%</strong> average quote-to-win rate</div>
-<a href="#cta" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none"><i class="fas fa-gift"></i> Start Free Trial</a>
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="container">
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:24px">See the Difference</div>
+<h2 class="section-title">Real Projects. <span class="gradient">Real Opportunities.</span></h2>
+<p class="section-sub">Every planning application is a potential project for your business. Here are examples of the types of leads you will receive daily.</p>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:0 auto">
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:all 0.3s">
+<div style="height:180px;background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.05)),url(https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=600&q=80);background-size:cover;background-position:center"></div>
+<div style="padding:20px">
+<div style="font-size:12px;color:var(--primary);font-weight:600;margin-bottom:6px">House Extension</div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)">Â£120k Â£250k Project Value</h4>
+<p style="font-size:12px;color:var(--muted);line-height:1.6">Two-storey side extension in Harrow. Applicant needs architect and builder. Application received yesterday.</p>
+</div>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:all 0.3s">
+<div style="height:180px;background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.05)),url(https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&q=80);background-size:cover;background-position:center"></div>
+<div style="padding:20px">
+<div style="font-size:12px;color:var(--primary);font-weight:600;margin-bottom:6px">New Build</div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)">4-Bed Detached</h4>
+<p style="font-size:12px;color:var(--muted);line-height:1.6">New dwelling in Cheltenham. Plot with planning approved. Developer seeking quotes from builders and contractors.</p>
+</div>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:all 0.3s">
+<div style="height:180px;background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.05)),url(https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80);background-size:cover;background-position:center"></div>
+<div style="padding:20px">
+<div style="font-size:12px;color:var(--primary);font-weight:600;margin-bottom:6px">Loft Conversion</div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)">Â£45k Â£80k Project Value</h4>
+<p style="font-size:12px;color:var(--muted);line-height:1.6">Loft conversion with dormer in Bristol. Homeowner looking for quotes from local builders and roofers.</p>
 </div>
 </div>
 </div>
 </div>
 </section>
 
-<section class="section" id="pricing" style="position:relative;overflow:hidden">
-<div class="section-bg-overlay" style="background-image:url('https://images.unsplash.com/photo-1521791136064-2b8711a1cfb9?w=1400&q=80')"></div>
+<!-- VALUE PER WIN -->
+<section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb tl" style="background:#10b981"></div>
+<div class="s-orb br" style="background:#10b981"></div>
+<div class="container">
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#10b981;margin-bottom:12px">Your Potential Earnings</div>
+<h2 class="section-title">The Value of <span class="gradient">One Win</span></h2>
+<p class="section-sub">Average planning project fee is £5,000–£50,000 for planning consultants. Here's what winning consistently looks like — even at modest conversion rates.</p>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:900px;margin:0 auto">
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
+<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:#10b981">£5k–£50k</div>
+<div style="font-size:11px;color:var(--text2);margin-top:4px">Average value per win</div>
+</div>
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
+<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:#10b981">£25k–£250k</div>
+<div style="font-size:11px;color:var(--text2);margin-top:4px">If you win 5 per month</div>
+</div>
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
+<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:#10b981">£50k–£500k</div>
+<div style="font-size:11px;color:var(--text2);margin-top:4px">If you win 10 per month</div>
+</div>
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
+<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:#10b981">£100k–£1M</div>
+<div style="font-size:11px;color:var(--text2);margin-top:4px">If you win 20 per month</div>
+</div>
+</div>
+<div style="text-align:center;margin-top:20px">
+<a href="/planningleads/#pricing" style="display:inline-block;padding:10px 24px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:8px;color:#10b981;font-size:13px;font-weight:600;text-decoration:none">View Pricing <i class="fas fa-arrow-right" style="font-size:11px;margin-left:4px"></i></a>
+</div>
+</div>
+</section>
+
+<section class="section" id="pricing">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Simple Pricing</div>
 <h2 class="section-title">Transparent Plans. <span class="gradient">No Surprises.</span></h2>
-<p class="section-sub">All plans include a 7-day free trial. No credit card required.</p>
+<p class="section-sub">All plans include a 7 day free trial. No credit card required.</p>
 <div class="product-grid">
-<div class="pricing-card" data-reveal>
-<h3>Essential</h3>
-<div class="price">£79<span>/mo</span></div>
-<div class="price-sub">1 council · 10 apps/day</div>
-<div style="font-size:12px;color:var(--primary);font-weight:600;margin-bottom:6px">≈ £0.53/lead</div>
+<div class="pricing-card">
+<h3>Starter</h3>
+<div class="price">£25<span>/wk</span></div>
+<div class="price-sub">5 leads per day · 25 per week · 100 per month</div>
 <ul>
-<li><i class="fas fa-check"></i> 1 local authority</li>
-<li><i class="fas fa-check"></i> Up to 10 apps per day</li>
-<li><i class="fas fa-check"></i> Daily email at 9am</li>
-<li><i class="fas fa-check"></i> Full application details</li>
-<li><i class="fas fa-check"></i> Type filtering</li>
-<li><i class="fas fa-check"></i> 7-day free trial</li>
+<li><i class="fas fa-check"></i> Up to 5 planning leads daily</li>
+<li><i class="fas fa-check"></i> Daily delivery at 9am</li>
+<li><i class="fas fa-check"></i> Exclusive – no competition</li>
+<li><i class="fas fa-check"></i> Choose 1 council area</li>
+<li><i class="fas fa-check"></i> 7 day free trial</li>
 </ul>
-<a href="#cta" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
+<a href="/portal/" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
 </div>
-<div class="pricing-card" data-reveal featured>
+<div class="pricing-card featured">
 <div class="popular-badge">Most Popular</div>
-<h3>Professional</h3>
-<div class="price">£147<span>/mo</span></div>
-<div class="price-sub">5 councils · 30 apps/day</div>
-<div style="font-size:12px;color:var(--primary);font-weight:600;margin-bottom:6px">≈ £0.33/lead</div>
+<h3>Pro</h3>
+<div class="price">£50<span>/wk</span></div>
+<div class="price-sub">15 leads per day · 75 per week · 300 per month</div>
 <ul>
-<li><i class="fas fa-check"></i> 5 local authorities</li>
-<li><i class="fas fa-check"></i> Up to 30 apps per day</li>
-<li><i class="fas fa-check"></i> Daily email at 9am</li>
-<li><i class="fas fa-check"></i> Full application details</li>
-<li><i class="fas fa-check"></i> Type filtering</li>
-<li><i class="fas fa-check"></i> Online dashboard</li>
-<li><i class="fas fa-check"></i> CSV export</li>
+<li><i class="fas fa-check"></i> Up to 15 planning leads daily</li>
+<li><i class="fas fa-check"></i> Daily delivery at 9am</li>
+<li><i class="fas fa-check"></i> Exclusive – no competition</li>
+<li><i class="fas fa-check"></i> Choose up to 3 council areas</li>
 <li><i class="fas fa-check"></i> Priority support</li>
+<li><i class="fas fa-check"></i> 7 day free trial</li>
 </ul>
-<a href="#cta" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
+<a href="/portal/" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
 </div>
-<div class="pricing-card" data-reveal>
+<div class="pricing-card">
 <h3>Enterprise</h3>
-<div class="price">£297<span>/mo</span></div>
-<div class="price-sub">Unlimited councils · 100 apps/day</div>
-<div style="font-size:12px;color:var(--primary);font-weight:600;margin-bottom:6px">≈ £0.30/lead</div>
+<div class="price">£100<span>/wk</span></div>
+<div class="price-sub">25 leads per day · 175 per week · 350 per month</div>
 <ul>
-<li><i class="fas fa-check"></i> All UK councils</li>
-<li><i class="fas fa-check"></i> Up to 100 apps per day</li>
-<li><i class="fas fa-check"></i> Daily email at 9am</li>
-<li><i class="fas fa-check"></i> Full application details</li>
-<li><i class="fas fa-check"></i> Filter by type &amp; status</li>
-<li><i class="fas fa-check"></i> Online dashboard</li>
-<li><i class="fas fa-check"></i> CSV export</li>
+<li><i class="fas fa-check"></i> Up to 25 planning leads daily</li>
+<li><i class="fas fa-check"></i> Daily delivery at 9am</li>
+<li><i class="fas fa-check"></i> Exclusive – no competition</li>
+<li><i class="fas fa-check"></i> All councils nationwide</li>
+<li><i class="fas fa-check"></i> CSV export &amp; dashboard</li>
 <li><i class="fas fa-check"></i> Dedicated account manager</li>
-<li><i class="fas fa-check"></i> API access</li>
+<li><i class="fas fa-check"></i> 7 day free trial</li>
 </ul>
-<a href="#cta" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
+<a href="/portal/" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
 </div>
 </div>
 <div style="max-width:780px;margin:24px auto 0;padding:14px 20px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:var(--r);text-align:center">
 <p style="font-size:13px;color:var(--text2);line-height:1.6">
 <i class="fas fa-calculator" style="color:var(--primary);margin-right:6px"></i>
 <strong style="color:var(--text)">One single project covers your entire annual subscription.</strong>
-Builders earn £5,000-£50,000 per project. One project = 63-630 months paid.
+Builders earn £5,000-£50,000 per project. One extension project alone pays for years of PlanningLeads.
 </p>
 </div>
 </div>
 </section>
 
-<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
-<div class="section-bg-overlay" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
 <div class="container">
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
+<div class="container">
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Built For Multiple Industries</div>
+<h2 class="section-title">One Platform. <span class="gradient">Every Industry.</span></h2>
+<p class="section-sub" style="max-width:650px">9amLeads supports businesses across multiple sectors. If you rely on being first to contact new prospects, we have a lead stream for you.</p>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:800px;margin:0 auto">
+<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px"><i class="fas fa-truck"></i></div><div style="font-size:12px;font-weight:600;color:var(--text)">Removals</div></div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px"><i class="fas fa-tools"></i></div><div style="font-size:12px;font-weight:600;color:var(--text)">Trades</div></div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px"><i class="fas fa-home"></i></div><div style="font-size:12px;font-weight:600;color:var(--text)">Estate Agents</div></div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px"><i class="fas fa-gavel"></i></div><div style="font-size:12px;font-weight:600;color:var(--text)">Solicitors</div></div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px"><i class="fas fa-coins"></i></div><div style="font-size:12px;font-weight:600;color:var(--text)">Mortgage Brokers</div></div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px"><i class="fas fa-shield-halved"></i></div><div style="font-size:12px;font-weight:600;color:var(--text)">Insurance</div></div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px"><i class="fas fa-broom"></i></div><div style="font-size:12px;font-weight:600;color:var(--text)">Cleaning</div></div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px"><i class="fas fa-box"></i></div><div style="font-size:12px;font-weight:600;color:var(--text)">Storage</div></div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px"><i class="fas fa-building"></i></div><div style="font-size:12px;font-weight:600;color:var(--text)">B2B Services</div></div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px"><i class="fas fa-clipboard-list"></i></div><div style="font-size:12px;font-weight:600;color:var(--text)">Agencies</div></div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px"><i class="fas fa-store"></i></div><div style="font-size:12px;font-weight:600;color:var(--text)">Franchises</div></div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center"><div style="font-size:24px;margin-bottom:4px"><i class="fas fa-phone"></i></div><div style="font-size:12px;font-weight:600;color:var(--text)">Local Services</div></div>
+</div>
+<div style="text-align:center;margin-top:24px">
+<p style="font-size:13px;color:var(--muted);max-width:600px;margin:0 auto;line-height:1.6">If your business relies on being first to contact new prospects, 9amLeads gives you the daily data and structure to win consistently.</p>
+</div>
+</div>
+</section>
+
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Testimonials</div>
-<h2 class="section-title">Trusted by <span class="gradient">UK Professionals</span></h2>
+<h2 class="section-title">Trusted by <span class="gradient">UK Builders &amp; Tradespeople</span></h2>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
+<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px">
+<div style="color:#f59e0b;font-size:12px;margin-bottom:6px">★★★★★</div>
+<p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"I check planning applications in my area every morning using PlanningLeads. Landed a £45k loft conversion just by being first to contact the homeowner before any other builder."</p>
+<div style="font-size:12px;color:var(--muted2)">— Gary W., Builder, Birmingham</div>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px">
+<div style="color:#f59e0b;font-size:12px;margin-bottom:6px">★★★★★</div>
+<p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"We subscribed to the Essex planning feed and pick up 3-4 extension projects per week. The exclusivity means we quote before any other architect in the area has even seen the application."</p>
+<div style="font-size:12px;color:var(--muted2)">— Michael S., Architect, Colchester</div>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px">
+<div style="color:#f59e0b;font-size:12px;margin-bottom:6px">★★★★★</div>
+<p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"Reduced my marketing spend by 80% and still get more planning leads than before. One extension project I won through PlanningLeads paid for five years of subscriptions."</p>
+<div style="font-size:12px;color:var(--muted2)">— Pete R., Roofer, Manchester</div>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px">
+<div style="color:#f59e0b;font-size:12px;margin-bottom:6px">★★★★★</div>
+<p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic">"The council coverage is incredible. We track 12 local authorities and never miss a single planning application in our area. It is how we win work now."</p>
+<div style="font-size:12px;color:var(--muted2)">— David W., Builder, Bristol</div>
+</div>
+</div>
 <div class="test-grid">
-<div class="t-card" data-reveal><div class="stars">★★★★★</div>
-<blockquote>I've been an architect for 15 years and this is the best business development tool I've ever used. I get 5-10 relevant planning alerts every week and have converted three into projects already.</blockquote>
-<div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0">MS</div><div style="font-size:13px;color:var(--muted)">— Michael Stone, Architect · London</div></div></div>
-<div class="t-card" data-reveal><div class="stars">★★★★★</div>
-<blockquote>We use Planning Leads to identify development opportunities before they hit the market. It's given us a significant edge over other estate agents in our area.</blockquote>
-<div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0">CB</div><div style="font-size:13px;color:var(--muted)">— Claire Bennett, Estate Agent · Manchester</div></div></div>
-<div class="t-card" data-reveal><div class="stars">★★★★★</div>
-<blockquote>I run a small building firm and this has been a game changer. I contact homeowners the week their extension is approved. My conversion rate is through the roof.</blockquote>
-<div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#06b6d4,#0891b2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0">GW</div><div style="font-size:13px;color:var(--muted)">— Gary Wilson, Builder · Birmingham</div></div></div>
+<div class="t-card"><div class="stars">★★★★★</div>
+<blockquote>I've been an architect for 15 years and this is the best business development tool I've ever used. I get 5-10 relevant planning alerts every week and have converted three into full architectural projects already. The early warning alone is worth the subscription.</blockquote>
+<div class="author">— Michael Stone, Architect · London</div></div>
+<div class="t-card"><div class="stars">★★★★★</div>
+<blockquote>We use PlanningLeads to identify extension and new build projects before they go to market. As soon as planning is approved, we contact the homeowner directly with our quote. It is the most effective lead source our building firm has ever used.</blockquote>
+<div class="author">— Gary Wilson, Builder · Birmingham</div></div>
+<div class="t-card"><div class="stars">★★★★★</div>
+<blockquote>I run a small electrical contracting business and this has been a game changer. I contact homeowners the week their planning is approved and offer a free quote for the full electrical package. My conversion rate is through the roof.</blockquote>
+<div class="author">— Steve M., Electrician · Bristol</div></div>
 </div>
 </div>
 </section>
 
-<section class="section" id="faq" style="position:relative;overflow:hidden">
-<div class="section-bg-overlay" style="background-image:url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1400&q=80')"></div>
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1507925921958-8a62f3d1a50d?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:#10b981;top:-200px;right:-100px"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#059669;bottom:-150px;left:-100px"></div>
 <div class="container">
-<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">FAQ</div>
-<h2 class="section-title">Questions? We Have <span class="gradient">Answers.</span></h2>
-<div class="faq-grid">
-<div class="faq-item open"><button class="faq-q" onclick="toggleFaq(this)">Where does the planning data come from? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>We aggregate planning application data from every UK local authority's planning portal — over 350 councils across England, Wales, Scotland, and Northern Ireland. Our system checks each portal daily for new submissions.</p></div></div>
-<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">How fresh is the planning data? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>We check every council's portal daily. Applications submitted today will appear in your next morning's alert at 9am. Most councils publish within 24 hours of submission.</p></div></div>
-<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I filter by application type? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Yes. Filter by householder extensions, new dwellings, commercial developments, change of use, listed building consent, prior approval, and more. Only see the applications relevant to your trade.</p></div></div>
-<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">What information is included with each lead? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Property address, full description of development, applicant name, application type, status, council reference number, date submitted, and a link to the full application on the council portal.</p></div></div>
-<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I try before committing? <i class="fas fa-chevron-down"></i></button><div class="faq-a"><p>Absolutely. Every plan comes with a 7-day free trial — no credit card needed. You will receive real planning application alerts at 9am during the trial so you can see the quality and volume for yourself.</p></div></div>
-</div>
-</div>
-</section>
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">PlanningLeads vs The Competition</div>
+<h2 class="section-title">Why PlanningLeads <span class="gradient">Wins</span></h2>
+<p class="section-sub" style="max-width:650px">Most lead platforms sell the same lead to multiple businesses. PlanningLeads gives you every lead exclusively â€” you are always first to contact the applicant.</p>
 
-<section class="section" id="cta" style="text-align:center;background:linear-gradient(135deg,rgba(0,0,0,0.92),rgba(16,185,129,0.06));position:relative;overflow:hidden">
-<div class="container">
-<h2 class="section-title">Start Getting Planning Leads <span class="gradient">at 9am Tomorrow</span></h2>
-<p class="section-sub" style="max-width:600px">Thousands of new planning applications are submitted every week. Your competitors are waiting. You could be quoting first. Try free for 7 days.</p>
-<a href="mailto:hello@9amleads.com?subject=Free Trial - Planning Leads&body=Hi, I would like to start my free trial." class="btn btn-primary btn-lg"><i class="fas fa-gift"></i> Claim Your Free Trial</a>
-<div style="margin-top:20px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)">
-<span><i class="fas fa-check-circle" style="color:var(--success)"></i> 7 days free</span>
-<span><i class="fas fa-check-circle" style="color:var(--success)"></i> No card required</span>
-<span><i class="fas fa-check-circle" style="color:var(--success)"></i> Cancel anytime</span>
+<div style="max-width:900px;margin:32px auto;overflow-x:auto">
+<table style="width:100%;border-collapse:collapse;font-size:14px">
+<thead>
+<tr style="border-bottom:2px solid var(--border-l)">
+<th style="padding:14px 16px;text-align:left;color:var(--muted2);font-weight:600"></th>
+<th style="padding:14px 16px;text-align:center;color:var(--primary);font-weight:700;background:var(--primary-subtle);border-radius:8px 8px 0 0"><i class="fas fa-clock" style="margin-right:4px"></i> PlanningLeads</th>
+<th style="padding:14px 16px;text-align:center;color:var(--text2);font-weight:600">Bark / RatedPeople</th>
+<th style="padding:14px 16px;text-align:center;color:var(--text2);font-weight:600">Google Ads</th>
+</tr>
+</thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border)">
+<td style="padding:14px 16px;font-weight:600;color:var(--text)">Lead Exclusivity</td>
+<td style="padding:14px 16px;text-align:center;color:var(--success)"><i class="fas fa-check-circle"></i> Yours alone</td>
+<td style="padding:14px 16px;text-align:center;color:var(--muted2)"><i class="fas fa-times-circle"></i> Sold to multiple</td>
+<td style="padding:14px 16px;text-align:center;color:var(--muted2)"><i class="fas fa-times-circle"></i> Anyone can click</td>
+</tr>
+<tr style="border-bottom:1px solid var(--border)">
+<td style="padding:14px 16px;font-weight:600;color:var(--text)">Cost Per Lead</td>
+<td style="padding:14px 16px;text-align:center;color:var(--success);font-weight:700">&pound;0.79 &pound;2.97</td>
+<td style="padding:14px 16px;text-align:center;color:var(--muted2)">&pound;15 &pound;50 each</td>
+<td style="padding:14px 16px;text-align:center;color:var(--muted2)">&pound;5 &pound;50 per click</td>
+</tr>
+<tr style="border-bottom:1px solid var(--border)">
+<td style="padding:14px 16px;font-weight:600;color:var(--text)">Monthly Cost (100 leads)</td>
+<td style="padding:14px 16px;text-align:center;color:var(--success);font-weight:700">&pound;79 &pound;297 flat</td>
+<td style="padding:14px 16px;text-align:center;color:#ef4444">&pound;1,500 &pound;5,000+</td>
+<td style="padding:14px 16px;text-align:center;color:#ef4444">&pound;500 &pound;5,000+</td>
+</tr>
+<tr style="border-bottom:1px solid var(--border)">
+<td style="padding:14px 16px;font-weight:600;color:var(--text)">Compete On Price?</td>
+<td style="padding:14px 16px;text-align:center;color:var(--success)"><i class="fas fa-check-circle"></i> Never â€” first wins</td>
+<td style="padding:14px 16px;text-align:center;color:#ef4444">Yes â€” customer picks cheapest</td>
+<td style="padding:14px 16px;text-align:center;color:var(--muted2)">Yes â€” highest bidder</td>
+</tr>
+<tr style="border-bottom:1px solid var(--border)">
+<td style="padding:14px 16px;font-weight:600;color:var(--text)">Leads Arrive</td>
+<td style="padding:14px 16px;text-align:center;color:var(--success);font-weight:700">9am sharp daily</td>
+<td style="padding:14px 16px;text-align:center;color:var(--muted2)">When customer posts</td>
+<td style="padding:14px 16px;text-align:center;color:var(--muted2)">Anytime (unqualified)</td>
+</tr>
+<tr>
+<td style="padding:14px 16px;font-weight:600;color:var(--text)">Free Trial</td>
+<td style="padding:14px 16px;text-align:center;color:var(--success);font-weight:700">7 days, no card</td>
+<td style="padding:14px 16px;text-align:center;color:var(--muted2)">Limited or none</td>
+<td style="padding:14px 16px;text-align:center;color:var(--muted2)">None (pay per click)</td>
+</tr>
+</tbody>
+</table>
 </div>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:40px auto 0">
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center">
+<div style="font-size:36px;margin-bottom:10px"><i class="fas fa-lock"></i></div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:8px;font-family:var(--ff-h)">Exclusive to You</h4>
+<p style="font-size:13px;color:var(--muted);line-height:1.7">On other platforms, multiple builders compete for the same project. PlanningLeads gives you every lead exclusively â€” you contact the applicant before anyone else.</p>
 </div>
-</section>
-
-<footer>
-<div class="footer-grid">
-<div>
-<div class="logo" style="font-size:18px;margin-bottom:10px"><div class="mark" style="width:32px;height:32px;font-size:13px">PL</div>Planning <span>Leads</span></div>
-<p style="font-size:13px;color:var(--muted);line-height:1.8">Daily planning application alerts for UK professionals. Part of 9amLeads.</p>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center">
+<div style="font-size:36px;margin-bottom:10px"><i class="fas fa-coins"></i></div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:8px;font-family:var(--ff-h)">Fixed Pricing</h4>
+<p style="font-size:13px;color:var(--muted);line-height:1.7">Bark charges Â£15-50 per lead. One planning project from PlanningLeads covers your entire annual subscription. Predictable costs for builders and trades.</p>
 </div>
-<div><h4>Quick Links</h4><a href="#how">How It Works</a><a href="#who">Who It's For</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a href="#cta">Free Trial</a></div>
-<div><h4>Other Products</h4><a href="/movingleadsdaily/">Moving Leads</a><a href="/probateleads/">Probate Leads</a><a href="/newbusinessalert/">New Business Alert</a><a href="/tenders/">Public Tenders</a></div>
-</div>
-<div class="footer-bottom">&copy; 2026 9am Leads Ltd &middot; Part of <a href="/" style="color:var(--primary)">9amLeads</a></div>
-</footer>
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "Planning Permission Leads",
-  "url": "https://9amleads.com/planningleads/"
-}
-</script>
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {"@type":"Question","name":"How fresh is the planning data?","acceptedAnswer":{"@type":"Answer","text":"We check every council's portal daily. Applications submitted today will appear in your next morning's alert at 9am. Most councils publish within 24 hours of submission."}},
-    {"@type":"Question","name":"What areas do you cover?","acceptedAnswer":{"@type":"Answer","text":"We cover all 350+ UK councils across England, Wales, Scotland, and Northern Ireland. You select exactly which local authorities to monitor for new planning applications."}},
-    {"@type":"Question","name":"Can I try before committing?","acceptedAnswer":{"@type":"Answer","text":"Absolutely. Every plan comes with a 7-day free trial — no credit card needed. You will receive real planning application alerts at 9am during the trial."}},
-    {"@type":"Question","name":"What details are included?","acceptedAnswer":{"@type":"Answer","text":"Each lead includes the property address, full description of development, applicant name, application type, status, council reference number, date submitted, and a link to the full application on the council portal."}}
-  ]
-}
-</script>
-
-<script>
-function toggleFaq(btn) {
-  var item = btn.parentElement;
-  var was = item.classList.contains('open');
-  item.parentElement.querySelectorAll('.faq-item').forEach(function(i) { i.classList.remove('open'); });
-  if (!was) item.classList.add('open');
-}
-function toggleMobile() {
-  document.getElementById('mobileMenu').classList.toggle('open');
-  document.getElementById('mobileOverlay').classList.toggle('show');
-  document.getElementById('hamBtn').classList.toggle('active');
-}
-document.addEventListener('DOMContentLoaded',function(){var r=new IntersectionObserver(function(e){e.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');r.unobserve(e.target)}})},{threshold:0.1});document.querySelectorAll('[data-reveal]').forEach(function(e){r.observe(e)})});
-</script>
-<img src="https://nineamleads-api.onrender.com/api/track?p=PATH" alt="" style="display:none" id="tracker">
-<script>document.getElementById('tracker').src = 'https://nineamleads-api.onrender.com/api/track?p=' + encodeURIComponent(window.location.pathname) + '&r=' + encodeURIComponent(document.referrer || '');</script>
-<script src="/chat.js"></script>
-<script src="/enhancements.js"></script>
-</body></html>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center">
+<div style="font-size:36px;margin-bottom:10px"><i class="fas fa-bolt"></i></div>
+<h4 style="font-size:15px;font-weight:700;margin-bottom:8px;font-family:var(--ff-h)">9am Routine Wins</h4>
+<p style="font-size:13px;color:var(--muted);line-height:1.7">Leads arrive at 9am sharp. Your team can act while competitors are still checking council websites.</p></div>
