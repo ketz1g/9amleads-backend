@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head>
+﻿<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sign Up | 9amLeads Customer Portal</title>
 <meta name="description" content="Start your free 7-day trial. Get exclusive business leads delivered to your inbox at 9am every morning. No card required.">
@@ -135,15 +135,15 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <input type="checkbox" value="tenders" style="accent-color:#0ea5e9;width:14px;height:14px"> 📋 Public Tenders</label>
 </div></div>
 
-<!-- POSTCODE DISTRICTS -->
+<!-- POSTCODE AREAS -->
 <div class="form-group" style="margin-top:8px">
-<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Your Postcode Districts <span style="color:#8890a8;font-weight:400;font-size:11px">(up to 5 &middot; e.g. EN1, EN2, SW1)</span></label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Enter UK postcode districts you want leads for. Multiple customers can choose the same district — each lead is unique and sent to only one customer. Your plan includes 5 districts. Just enter the district code like "EN1" or "SW1".</span></div>
+<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Your Postcode Areas <span style="color:#8890a8;font-weight:400;font-size:11px">(up to 3 &middot; e.g. EN for Enfield, SG for Stevenage, CM for Chelmsford)</span></label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Choose broad postcode areas (2-letter codes) for the regions you serve. Each area covers all districts within it — e.g. area EN covers EN1, EN2, EN3... EN99. Your leads are exclusive and unique to you. Pick up to 3 areas.</span></div>
 <div id="s-postcode-wrapper" style="position:relative;margin-top:4px">
 <div id="s-postcode-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px"></div>
-<input type="text" id="s-postcode-input" placeholder="Type a district e.g. EN1 or SW1" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
+<input type="text" id="s-postcode-input" placeholder="Type area code e.g. EN, SG, CM" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
 <div id="s-postcode-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#ffffff;border:1px solid #d1d5db;border-top:none;border-radius:0 0 6px 6px;max-height:160px;overflow-y:auto"></div>
-<button type="button" onclick="addSignupPostcode()" style="margin-top:4px;font-size:11px;padding:4px 10px;background:transparent;border:1px solid #d1d5db;border-radius:6px;color:#374151;cursor:pointer"><i class="fas fa-plus"></i> Add District</button>
+<button type="button" onclick="addSignupPostcode()" style="margin-top:4px;font-size:11px;padding:5px 12px;background:rgba(14,165,233,0.12);border:1px solid #0ea5e9;border-radius:6px;color:#f1f5f9;cursor:pointer;font-weight:600"><i class="fas fa-plus" style="color:#0ea5e9"></i> Add Area</button>
 <span id="s-postcode-count" style="font-size:10px;color:#8890a8;margin-left:8px"></span>
 </div>
 <div id="s-postcode-error" style="font-size:10px;color:#ef4444;margin-top:4px;display:none"></div>
@@ -158,22 +158,22 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div style="display:grid;gap:6px" id="s-plan-container">
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(14,165,233,0.06);border:2px solid rgba(14,165,233,0.3);border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-free_trial" onmouseover="this.style.borderColor='rgba(14,165,233,0.5)'" onmouseout="this.style.borderColor='rgba(14,165,233,0.3)'">
 <input type="radio" name="plan" value="free_trial" checked style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong style="color:#f1f5f9">Free Trial</strong><br><span style="font-size:10px;color:#8890a8">7 days free &middot; 5 leads/day (Mon-Fri) &middot; 5 postcode sectors</span></div>
+<div style="flex:1"><strong style="color:#f1f5f9">Free Trial</strong><br><span style="font-size:10px;color:#8890a8">7 days free &middot; 5 leads/day &middot; 3 postcode areas</span></div>
 <div style="font-size:14px;font-weight:800;color:#22c55e">Free</div>
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-starter" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
 <input type="radio" name="plan" value="starter" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong style="color:#f1f5f9">Starter</strong><br><span style="font-size:10px;color:#8890a8">5 leads/day &middot; 5 postcode sectors</span></div>
+<div style="flex:1"><strong style="color:#f1f5f9">Starter</strong><br><span style="font-size:10px;color:#8890a8">5 leads/day &middot; 3 postcode areas</span></div>
 <div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;25<span style="font-size:10px;color:#8890a8">/wk</span></div>
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-pro" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
 <input type="radio" name="plan" value="pro" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong style="color:#f1f5f9">Pro</strong><br><span style="font-size:10px;color:#8890a8">15 leads/day &middot; 10 postcode sectors</span></div>
+<div style="flex:1"><strong style="color:#f1f5f9">Pro</strong><br><span style="font-size:10px;color:#8890a8">15 leads/day &middot; 5 postcode areas</span></div>
 <div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;49<span style="font-size:10px;color:#8890a8">/wk</span></div>
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-enterprise" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
 <input type="radio" name="plan" value="enterprise" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong style="color:#f1f5f9">Enterprise</strong><br><span style="font-size:10px;color:#8890a8">50 leads/day &middot; 50 postcode sectors</span></div>
+<div style="flex:1"><strong style="color:#f1f5f9">Enterprise</strong><br><span style="font-size:10px;color:#8890a8">50 leads/day &middot; 10 postcode areas</span></div>
 <div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;99<span style="font-size:10px;color:#8890a8">/wk</span></div>
 </label>
 </div>
@@ -240,87 +240,7 @@ var API = window.location.hostname === 'localhost' || window.location.hostname =
   ? 'http://localhost:8012'
   : 'https://9amleads.com';
 
-// ===== FILTER SYSTEM =====
-var filterDefs = {
-  moving: [
-    { type: 'select', id: 'f-bed-min', label: 'Min Bedrooms', opts: ['Any','1','2','3','4','5'] },
-    { type: 'select', id: 'f-bed-max', label: 'Max Bedrooms', opts: ['Any','1','2','3','4','5','6+'] },
-    { type: 'select', id: 'f-prop-type', label: 'Property Type', opts: ['Any','House','Flat','Bungalow'] },
-    { type: 'select', id: 'f-max-price', label: 'Max Price', opts: ['Any','£200k','£350k','£500k','£750k','£1M'] },
-    { type: 'checkboxes', id: 'f-status', label: 'Lead Status', opts: ['SSTC','Under Offer'] }
-  ],
-  probate: [
-    { type: 'select', id: 'f-est-val', label: 'Min Estate Value', opts: ['Any','£50k','£100k','£250k','£500k','£1M'] },
-    { type: 'select', id: 'f-has-prop', label: 'Property Included', opts: ['Any','Has Property','No Property'] }
-  ],
-  newbusiness: [
-    { type: 'checkboxes', id: 'f-industries', label: 'Industry Categories', opts: ['Tech & Software','Construction','Retail','Hospitality','Healthcare','Professional Services','Financial','Creative & Media'] }
-  ],
-  planning: [
-    { type: 'select', id: 'f-app-type', label: 'Application Type', opts: ['Any','Householder','Full Planning','Outline','Lawful Development','Listed Building'] },
-    { type: 'select', id: 'f-proj-val', label: 'Max Project Value', opts: ['Any','£50k','£100k','£250k','£500k','£1M'] }
-  ],
-  tenders: [
-    { type: 'select', id: 'f-min-val', label: 'Min Contract Value', opts: ['Any','£10k','£50k','£100k','£500k'] },
-    { type: 'text', id: 'f-keywords', label: 'Keywords', placeholder: 'construction, IT, cleaning...' }
-  ]
-};
-
-var productNames = { moving:'Moving', probate:'Probate', newbusiness:'New Business', planning:'Planning Permission', tenders:'Public Tenders' };
-var productIcons = { moving:'🚚', probate:'⚖️', newbusiness:'🏢', planning:'🔨', tenders:'📋' };
-
-function renderFilters() {
-  var container = document.getElementById('s-products-container');
-  var checkedBoxes = container ? container.querySelectorAll('input[type=checkbox]:checked') : [];
-  var box = document.getElementById('filters-box');
-  var label = document.getElementById('filter-label');
-  var content = document.getElementById('filters-content');
-  if (!content) return;
-  if (checkedBoxes.length === 0) {
-    if (label) label.textContent = '(none)';
-    content.innerHTML = '<div style="text-align:center;padding:8px;font-size:11px;color:#5c6480">Select at least one lead type above</div>';
-    return;
-  }
-  var names = [];
-  for (var ci = 0; ci < checkedBoxes.length; ci++) {
-    names.push(productNames[checkedBoxes[ci].value] || checkedBoxes[ci].value);
-  }
-  if (label) label.textContent = '(' + names.join(', ') + ')';
-  content.innerHTML = '<div style="text-align:center;padding:10px;font-size:11px;color:#5c6480">You can set detailed filters for each lead type from your dashboard after signing up.</div>';
-  box.classList.add('highlight');
-  setTimeout(function() { box.classList.remove('highlight'); }, 500);
-}
-
-// Initial render
-renderFilters();
-
-function getFilters() {
-  var checked = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
-  var allFilters = {};
-  for (var ci = 0; ci < checked.length; ci++) {
-    var p = checked[ci].value;
-    var defs = filterDefs[p] || [];
-    if (defs.length === 0) continue;
-    var pf = {};
-    var fields = document.querySelectorAll('.sf-field[data-product="' + p + '"]');
-    for (var fi = 0; fi < fields.length; fi++) {
-      var el = fields[fi];
-      var id = el.getAttribute('data-id');
-      if (el.type === 'checkbox') {
-        if (!pf[id]) pf[id] = [];
-        if (el.checked) pf[id].push(el.value);
-      } else if (el.type === 'select-one') {
-        if (el.value) pf[id] = el.value;
-      } else if (el.type === 'text') {
-        if (el.value.trim()) pf[id] = el.value.trim();
-      }
-    }
-    if (Object.keys(pf).length > 0) allFilters[p] = pf;
-  }
-  return allFilters;
-}
-
-// ===== SIGNUP POSTCODE SELECTOR =====
+// ===== SIGNUP POSTCODE AREA SELECTOR =====
 var signupPostcodes = [];
 async function addSignupPostcode() {
   var input = document.getElementById('s-postcode-input');
@@ -328,18 +248,17 @@ async function addSignupPostcode() {
   var err = document.getElementById('s-postcode-error');
   err.style.display = 'none';
   if (!code) return;
-  if (signupPostcodes.length >= 5) { err.textContent = 'Maximum 5 districts allowed'; err.style.display = 'block'; return; }
+  if (signupPostcodes.length >= 3) { err.textContent = 'Maximum 3 areas allowed'; err.style.display = 'block'; return; }
   if (signupPostcodes.includes(code)) { err.textContent = '"' + code + '" already added'; err.style.display = 'block'; return; }
-  // Check if valid district via API
   try {
     var r = await fetch(API + '/api/postcodes/check?code=' + encodeURIComponent(code));
     var data = await r.json();
-    if (data.valid === false) { err.textContent = data.error || '"' + code + '" is not a valid district'; err.style.display = 'block'; return; }
+    if (data.valid === false) { err.textContent = data.error || '"' + code + '" is not a valid postcode area (use 2-letter code like EN, SG, CM)'; err.style.display = 'block'; return; }
     signupPostcodes.push(code);
     input.value = '';
     renderSignupPostcodes();
     input.focus();
-  } catch(e) { err.textContent = 'Could not verify district. Please try again.'; err.style.display = 'block'; }
+  } catch(e) { err.textContent = 'Could not verify area'; err.style.display = 'block'; }
 }
 function removeSignupPostcode(code) {
   signupPostcodes = signupPostcodes.filter(function(c) { return c !== code; });
@@ -352,15 +271,10 @@ function renderSignupPostcodes() {
     html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:5px;font-size:11px;font-weight:600;color:#0ea5e9">' + signupPostcodes[i] + ' <span style="cursor:pointer;opacity:0.6" onclick="removeSignupPostcode(\'' + signupPostcodes[i] + '\')">&times;</span></span>';
   }
   tags.innerHTML = html;
-  if (signupPostcodes.length > 0) {
-    document.getElementById('s-postcode-count').textContent = signupPostcodes.length + ' of 5 districts selected';
-  } else {
-    document.getElementById('s-postcode-count').textContent = '';
-  }
+  document.getElementById('s-postcode-count').textContent = signupPostcodes.length > 0 ? signupPostcodes.length + ' of 3 areas selected' : '';
 }
 
-// ===== SIGNUP FILTERS =====
-var signupFilters = {};
+// ===== FILTER SYSTEM =====
 var filterDefs = {
   moving: [{ id:'f-bed-min', label:'Min Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] }, { id:'f-bed-max', label:'Max Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] }, { id:'f-prop-type', label:'Property Type', type:'select', opts:['Any','House','Flat','Bungalow','Maisonette','Townhouse'] }, { id:'f-max-price', label:'Max Property Value', type:'select', opts:['Any','£100k','£200k','£350k','£500k','£750k','£1M','£2M','£3M','£5M','£10M'] } ],
   probate: [],
@@ -400,6 +314,34 @@ function renderSignupFilters() {
   }
   container.innerHTML = html;
 }
+
+// ===== SIGNUP FILTER COLLECTION =====
+function getFilters() {
+  var checked = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
+  var allFilters = {};
+  for (var ci = 0; ci < checked.length; ci++) {
+    var p = checked[ci].value;
+    var defs = filterDefs[p] || [];
+    if (defs.length === 0) continue;
+    var pf = {};
+    var fields = document.querySelectorAll('.sf-field[data-product="' + p + '"]');
+    for (var fi = 0; fi < fields.length; fi++) {
+      var el = fields[fi];
+      var id = el.getAttribute('data-id');
+      if (el.type === 'checkbox') {
+        if (!pf[id]) pf[id] = [];
+        if (el.checked) pf[id].push(el.value);
+      } else if (el.type === 'select-one') {
+        if (el.value) pf[id] = el.value;
+      } else if (el.type === 'text') {
+        if (el.value.trim()) pf[id] = el.value.trim();
+      }
+    }
+    if (Object.keys(pf).length > 0) allFilters[p] = pf;
+  }
+  return allFilters;
+}
+
 document.querySelector('#s-products-container').addEventListener('change', renderSignupFilters);
 renderSignupFilters();
 function testCrm() {
@@ -442,7 +384,7 @@ function doSignup() {
   if (products.length === 0) { document.getElementById('signup-error').textContent = 'Please select at least one lead type'; document.getElementById('signup-error').style.display = 'block'; return; }
   var product = products[0];
   var targetAreas = signupPostcodes;
-  if (targetAreas.length === 0) { document.getElementById('signup-error').textContent = 'Please add at least one postcode district'; document.getElementById('signup-error').style.display = 'block'; return; }
+  if (targetAreas.length === 0) { document.getElementById('signup-error').textContent = 'Please add at least one postcode area (e.g. EN, SG, CM)'; document.getElementById('signup-error').style.display = 'block'; return; }
   var planRadio = document.querySelector('#s-plan-container input[type=radio]:checked');
   var plan = planRadio ? planRadio.value : 'free_trial';
   var button = document.getElementById('signup-btn');
