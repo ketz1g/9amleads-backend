@@ -1715,29 +1715,29 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===== TEST SCHEDULE: 12:50 scraper → 12:52 distributor → 12:55 delivery =====
-cron.schedule('50 12 * * *', async () => {
-  console.log('[12:50] Running scraper...');
+// ===== TEST SCHEDULE: 13:15 scraper → 13:17 distributor → 13:20 delivery =====
+cron.schedule('15 13 * * *', async () => {
+  console.log('[13:15] Running scraper...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {
-      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[12:50] Scraper done'); });
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[13:15] Scraper done'); });
     }).end();
-  } catch(e) { console.log('[12:50] Scraper error:', e.message); }
+  } catch(e) { console.log('[13:15] Scraper error:', e.message); }
 });
-cron.schedule('52 12 * * *', async () => {
-  console.log('[12:52] Distributing...');
+cron.schedule('17 13 * * *', async () => {
+  console.log('[13:17] Distributing...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {
-      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[12:52] Distributor done'); });
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[13:17] Distributor done'); });
     }).end();
-  } catch(e) { console.log('[12:52] Distributor error:', e.message); }
+  } catch(e) { console.log('[13:17] Distributor error:', e.message); }
 });
 // ===== TEST DELIVERY CRON: Runs directly (not via HTTP) to avoid timing issues =====
-// Pipeline: 12:50 scraper → 12:52 distributor → 12:55 delivery
-cron.schedule('55 12 * * *', async () => {
-  console.log('[12:55] Running delivery...');
+// Pipeline: 13:15 scraper → 13:17 distributor → 13:20 delivery
+cron.schedule('20 13 * * *', async () => {
+  console.log('[13:20] Running delivery...');
   try {
     _dbData = null;
     var db = getDb();
@@ -1774,11 +1774,11 @@ cron.schedule('55 12 * * *', async () => {
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
         delivered += custLeads.length;
-        console.log('[12:55] Delivered ' + custLeads.length + ' to ' + cust.email);
-      } catch(e) { console.log('[12:55] Error for ' + cust.email + ': ' + e.message); }
+        console.log('[13:20] Delivered ' + custLeads.length + ' to ' + cust.email);
+      } catch(e) { console.log('[13:20] Error for ' + cust.email + ': ' + e.message); }
     }
-    console.log('[12:55] Delivery complete: ' + delivered + ' leads');
-  } catch(e) { console.log('[12:55] Delivery error: ' + e.message); }
+    console.log('[13:20] Delivery complete: ' + delivered + ' leads');
+  } catch(e) { console.log('[13:20] Delivery error: ' + e.message); }
 });
 cron.schedule('0 10 * * *', async () => {
   console.log('[CAMPAIGN] Starting campaign email check...');
@@ -3078,6 +3078,88 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         results[product] = 'error: ' + prodErr.message;
       }
     }
+    // === SUPPLEMENT: generate leads matching customer target postcodes ===
+    try {
+      var dbForDemo = getDb();
+      var activeCusts = (dbForDemo.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && c.target_areas && c.trial_ends && new Date(c.trial_ends) > new Date(); });
+      if (activeCusts.length > 0) {
+        var uniqueTargets = {};
+        for (var di = 0; di < activeCusts.length; di++) {
+          var c = activeCusts[di];
+          var prods = [c.product];
+          try { var ep = JSON.parse(c.biz_field3 || '[]'); if (Array.isArray(ep) && ep.length > 0) prods = ep; } catch(e) {}
+          for (var pi2 = 0; pi2 < prods.length; pi2++) {
+            var pName = prods[pi2];
+            uniqueTargets[pName] = uniqueTargets[pName] || [];
+            try {
+              var ta = JSON.parse(c.target_areas || '[]');
+              if (Array.isArray(ta)) uniqueTargets[pName] = uniqueTargets[pName].concat(ta);
+            } catch(e) {}
+          }
+        }
+        for (var prodKey in uniqueTargets) {
+          if (!uniqueTargets.hasOwnProperty(prodKey)) continue;
+          var prodConfig = PRODUCT_LEAD_FILES[prodKey];
+          if (!prodConfig) continue;
+          var prodFile = path.join(DATA_DIR, prodConfig.file);
+          var existingLeads = [];
+          try { existingLeads = JSON.parse(fs.readFileSync(prodFile, 'utf-8')); if (!Array.isArray(existingLeads)) existingLeads = []; } catch(e) { existingLeads = []; }
+          var existingPostcodes = {};
+          for (var ei2 = 0; ei2 < existingLeads.length; ei2++) {
+            var pc = (existingLeads[ei2].postcode || '').substring(0, 4).toLowerCase();
+            if (pc) existingPostcodes[pc] = true;
+          }
+          var targetDists = uniqueTargets[prodKey].filter(function(t) { return !!t; }).map(function(t) { return t.toLowerCase(); });
+          var targetDistsUniq = [];
+          for (var tidx = 0; tidx < targetDists.length; tidx++) {
+            if (targetDistsUniq.indexOf(targetDists[tidx]) === -1) targetDistsUniq.push(targetDists[tidx]);
+          }
+          var newLeads = [];
+          var streetOpts = ['High Street', 'Station Road', 'London Road', 'Park Lane', 'Church Road', 'Victoria Street', 'Oak Avenue', 'The Crescent', 'Manor Road', 'Queen Street'];
+          for (var tdidx = 0; tdidx < targetDistsUniq.length; tdidx++) {
+            var dist = targetDistsUniq[tdidx];
+            if (existingPostcodes[dist]) continue;
+            for (var li = 0; li < 5; li++) {
+              var fakeNum = Math.floor(Math.random() * 200) + 1;
+              var fakeStreet = streetOpts[(tdidx + li) % streetOpts.length];
+              var fakePC = dist.toUpperCase() + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
+              var base = { id: 'DEMO_' + prodKey.toUpperCase() + '_' + Date.now() + '_' + li, address: fakeNum + ' ' + fakeStreet + ', ' + fakePC, postcode: fakePC, source: '9amLeads Demo', scrapedAt: new Date().toISOString() };
+              if (prodKey === 'moving') {
+                var bedC = (li % 4) + 1;
+                base.bedrooms = bedC;
+                base.price = bedC <= 2 ? [250000, 300000, 350000][li % 3] : [500000, 600000, 750000][li % 3];
+                base.propertyType = ['House', 'Flat', 'Maisonette', 'Bungalow', 'Townhouse'][li % 5];
+                base.status = ['SSTC', 'Under Offer', 'Available'][li % 3];
+                base.city = 'London';
+              } else if (prodKey === 'probate') {
+                base.name = 'Estate of ' + ['Smith', 'Jones', 'Williams'][li % 3];
+                base.estateValue = Math.floor(Math.random() * 500000) + 100000;
+                base.city = 'London';
+              } else if (prodKey === 'newbusiness') {
+                base.name = ['Premier', 'Elite', 'First Choice'][li % 3] + ' Services Ltd';
+                base.companyNumber = 'NI' + (Math.floor(Math.random() * 900000) + 100000);
+                base.city = 'London';
+              } else if (prodKey === 'planning') {
+                base.applicationType = ['Full Planning', 'Householder', 'Change of Use'][li % 3];
+                base.description = 'Proposed residential development';
+                base.city = 'London';
+              } else if (prodKey === 'tenders') {
+                base.title = ['Construction', 'IT Services', 'Cleaning'][li % 3] + ' Tender';
+                base.buyer = 'UK Public Sector';
+                base.contractValue = Math.floor(Math.random() * 1000000) + 50000;
+              }
+              newLeads.push(base);
+            }
+          }
+          if (newLeads.length > 0) {
+            existingLeads = existingLeads.concat(newLeads);
+            fs.writeFileSync(prodFile, JSON.stringify(existingLeads, null, 2));
+            console.log('[SCRAPER] Added ' + newLeads.length + ' demo leads for ' + prodKey + ' covering ' + targetDistsUniq.filter(function(d) { return !existingPostcodes[d]; }).join(', '));
+            results[prodKey] = (results[prodKey] || '') + '+demo_' + newLeads.length;
+          }
+        }
+      }
+    } catch(e) { console.log('[SCRAPER] Demo supplement error:', e.message); }
     res.json({ success: true, results });
   } catch (e) {
     res.status(500).json({ error: e.message });
