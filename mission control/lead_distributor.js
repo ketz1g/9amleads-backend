@@ -482,7 +482,7 @@ async function distributeProduct(product) {
     assignLead(assignment, null, null, 2);
   }
 
-  // === Phase 4: Generate targeted leads for customers below daily limit ===
+  // === Phase 4: Generate targeted leads — evenly split across customer's areas ===
   var streets = ['High Street', 'Station Road', 'London Road', 'Park Lane', 'Church Road', 'Victoria Street', 'Oak Avenue', 'The Crescent', 'Manor Road', 'Queen Street', 'Mill Lane', 'New Road', 'Green Lane', 'Grove Road', 'Kingsway'];
   var citiesByPrefix = { 'EC': 'London', 'WC': 'London', 'SW': 'London', 'SE': 'London', 'W': 'London', 'N': 'London', 'NW': 'London', 'E': 'London', 'EN': 'Enfield', 'SG': 'Stevenage', 'CM': 'Chelmsford', 'ME': 'Maidstone', 'KT': 'Kingston', 'TW': 'Twickenham', 'UB': 'Uxbridge', 'HA': 'Harrow', 'WD': 'Watford', 'AL': 'St Albans', 'LU': 'Luton', 'SS': 'Southend', 'DA': 'Dartford', 'BR': 'Bromley', 'CR': 'Croydon', 'SM': 'Sutton', 'TN': 'Tonbridge', 'BN': 'Brighton', 'RH': 'Redhill', 'GU': 'Guildford', 'SL': 'Slough', 'RG': 'Reading', 'OX': 'Oxford' };
   var propTypes = ['House', 'Flat', 'Maisonette', 'Bungalow', 'Townhouse'];
@@ -494,67 +494,82 @@ async function distributeProduct(product) {
   var generated = 0;
   for (var gi = 0; gi < activeCustomers.length; gi++) {
     var custGen = activeCustomers[gi];
-    var used = customerUsage[custGen.id] || 0;
     var limit = customerLimits[custGen.id] || 5;
-    var needed = limit - used;
-    if (needed <= 0) continue;
     var targets = [];
     try { targets = JSON.parse(custGen.target_areas || '[]'); } catch(e) {}
     if (targets.length === 0) continue;
+    var numAreas = targets.length;
+    var basePerArea = Math.floor(limit / numAreas);
+    var extraCount = limit - (basePerArea * numAreas);
     var filters = {};
     try { var rawF = JSON.parse(custGen.biz_field2 || '{}'); filters = rawF[product] || rawF; } catch(e) {}
     var minBeds = parseInt(filters.minBedrooms) || 0;
     var maxBeds = parseInt(filters.maxBedrooms) || 99;
     var maxPrice = parseInt(filters.maxPrice) || 0;
     var propTypeFilter = (filters.propertyType || '').toLowerCase();
-    for (var ni = 0; ni < needed; ni++) {
-      var targetDist = targets[ni % targets.length].toUpperCase();
-      var prefix = targetDist.replace(/[0-9]/g, '');
-      var city = citiesByPrefix[prefix] || 'London';
-      var street = streets[(ni + gi) % streets.length];
-      var num = Math.floor(Math.random() * 200) + 1;
-      var distNum = Math.floor(Math.random() * 20) + 1;
-      var pcOut = targetDist + distNum + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
-      var address = num + ' ' + street + ', ' + city + ' ' + pcOut;
-      var baseLead = { id: 'GEN_' + product.toUpperCase() + '_' + Date.now() + '_' + ni, address: address, postcode: pcOut, city: city, source: '9amLeads Generated', scrapedAt: now };
-      if (product === 'moving') {
-        var beds = minBeds > 0 ? minBeds + (ni % Math.max(1, maxBeds - minBeds + 1)) : (ni % 4) + 1;
-        beds = Math.min(beds, maxBeds);
-        var price = maxPrice > 0 ? Math.floor(maxPrice * (0.5 + Math.random() * 0.45)) : (beds <= 2 ? [250000, 300000, 350000][ni % 3] : [500000, 600000, 750000][ni % 3]);
-        var pt = propTypes[(ni + gi) % propTypes.length];
-        if (propTypeFilter && !pt.toLowerCase().includes(propTypeFilter)) pt = propTypes[0];
-        baseLead.bedrooms = beds;
-        baseLead.price = price;
-        baseLead.propertyType = pt;
-        baseLead.status = statuses[ni % statuses.length];
-        if (!baseLead.listingStatus) baseLead.listingStatus = baseLead.status;
-      } else if (product === 'probate') {
-        baseLead.name = 'Estate of ' + surnames[ni % surnames.length];
-        baseLead.deceasedName = surnames[ni % surnames.length];
-        baseLead.estateValue = Math.floor(Math.random() * 500000) + 100000;
-      } else if (product === 'newbusiness') {
-        baseLead.name = bizNames[ni % bizNames.length] + ' ' + bizSuffixes[ni % bizSuffixes.length] + ' Ltd';
-        baseLead.companyNumber = 'NI' + (Math.floor(Math.random() * 900000) + 100000);
-        baseLead.incorporationDate = new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString();
-      } else if (product === 'planning') {
-        baseLead.applicationType = appTypes[ni % appTypes.length];
-        baseLead.description = 'Proposed ' + (['residential', 'commercial', 'mixed-use'][ni % 3]) + ' development';
-        baseLead.council = city + ' Council';
-      } else if (product === 'tenders') {
-        baseLead.title = (['Construction', 'IT Services', 'Facilities Management', 'Consultancy', 'Cleaning'][ni % 5]) + ' Tender';
-        baseLead.buyer = city + ' Council';
-        baseLead.contractValue = Math.floor(Math.random() * 1000000) + 50000;
-        baseLead.closingDate = new Date(Date.now() + Math.floor(Math.random() * 60 + 14) * 86400000).toISOString().split('T')[0];
+    for (var ti = 0; ti < numAreas; ti++) {
+      var targetDist = targets[ti].toUpperCase();
+      var areaQuota = basePerArea + (ti < extraCount ? 1 : 0);
+      var areaAlready = 0;
+      for (var ci = 0; ci < db.leads.length; ci++) {
+        var existingLead = db.leads[ci];
+        if (existingLead.customer_id === custGen.id) {
+          try {
+            var leadData = JSON.parse(existingLead.data);
+            var leadPC = (leadData.postcode || leadData.address || '').toUpperCase();
+            if (leadPC.includes(targetDist)) areaAlready++;
+          } catch(e) {}
+        }
       }
-      var normalisedGen = normaliseLead(baseLead, product, custGen.id);
-      var addrKeyGen = (normalisedGen.address || '').toLowerCase().trim();
-      if (addrKeyGen && existingAddresses.has(addrKeyGen)) { ni--; continue; }
-      var leadRecord = { id: uuidv4(), customer_id: custGen.id, product: product, data: JSON.stringify(normalisedGen), status: 'new', delivered: 0, created_at: now, delivered_at: null };
-      db.leads.push(leadRecord);
-      existingAddresses.add(addrKeyGen);
-      customerUsage[custGen.id]++;
-      inserted++;
-      generated++;
+      var areaNeeded = Math.max(0, areaQuota - areaAlready);
+      for (var ni = 0; ni < areaNeeded; ni++) {
+        var prefix = targetDist.replace(/[0-9]/g, '');
+        var city = citiesByPrefix[prefix] || 'London';
+        var street = streets[(ni + gi + ti) % streets.length];
+        var num = Math.floor(Math.random() * 200) + 1;
+        var distNum = Math.floor(Math.random() * 20) + 1;
+        var pcOut = targetDist + distNum + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
+        var address = num + ' ' + street + ', ' + city + ' ' + pcOut;
+        var baseLead = { id: 'GEN_' + product.toUpperCase() + '_' + Date.now() + '_' + ti + '_' + ni, address: address, postcode: pcOut, city: city, source: '9amLeads Generated', scrapedAt: now };
+        if (product === 'moving') {
+          var beds = minBeds > 0 ? minBeds + (ni % Math.max(1, maxBeds - minBeds + 1)) : (ni % 4) + 1;
+          beds = Math.min(beds, maxBeds);
+          var price = maxPrice > 0 ? Math.floor(maxPrice * (0.5 + Math.random() * 0.45)) : (beds <= 2 ? [250000, 300000, 350000][ni % 3] : [500000, 600000, 750000][ni % 3]);
+          var pt = propTypes[(ni + gi + ti) % propTypes.length];
+          if (propTypeFilter && !pt.toLowerCase().includes(propTypeFilter)) pt = propTypes[0];
+          baseLead.bedrooms = beds;
+          baseLead.price = price;
+          baseLead.propertyType = pt;
+          baseLead.status = statuses[ni % statuses.length];
+          if (!baseLead.listingStatus) baseLead.listingStatus = baseLead.status;
+        } else if (product === 'probate') {
+          baseLead.name = 'Estate of ' + surnames[ni % surnames.length];
+          baseLead.deceasedName = surnames[ni % surnames.length];
+          baseLead.estateValue = Math.floor(Math.random() * 500000) + 100000;
+        } else if (product === 'newbusiness') {
+          baseLead.name = bizNames[ni % bizNames.length] + ' ' + bizSuffixes[ni % bizSuffixes.length] + ' Ltd';
+          baseLead.companyNumber = 'NI' + (Math.floor(Math.random() * 900000) + 100000);
+          baseLead.incorporationDate = new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString();
+        } else if (product === 'planning') {
+          baseLead.applicationType = appTypes[ni % appTypes.length];
+          baseLead.description = 'Proposed ' + (['residential', 'commercial', 'mixed-use'][ni % 3]) + ' development';
+          baseLead.council = city + ' Council';
+        } else if (product === 'tenders') {
+          baseLead.title = (['Construction', 'IT Services', 'Facilities Management', 'Consultancy', 'Cleaning'][ni % 5]) + ' Tender';
+          baseLead.buyer = city + ' Council';
+          baseLead.contractValue = Math.floor(Math.random() * 1000000) + 50000;
+          baseLead.closingDate = new Date(Date.now() + Math.floor(Math.random() * 60 + 14) * 86400000).toISOString().split('T')[0];
+        }
+        var normalisedGen = normaliseLead(baseLead, product, custGen.id);
+        var addrKeyGen = (normalisedGen.address || '').toLowerCase().trim();
+        if (addrKeyGen && existingAddresses.has(addrKeyGen)) { ni--; continue; }
+        var leadRecord = { id: uuidv4(), customer_id: custGen.id, product: product, data: JSON.stringify(normalisedGen), status: 'new', delivered: 0, created_at: now, delivered_at: null };
+        db.leads.push(leadRecord);
+        existingAddresses.add(addrKeyGen);
+        customerUsage[custGen.id]++;
+        inserted++;
+        generated++;
+      }
     }
   }
   if (generated > 0) console.log(`  Generated ${generated} supplementary leads for shortfall customers`);
