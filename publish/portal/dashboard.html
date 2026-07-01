@@ -120,6 +120,22 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div id="sub-msg" style="margin-top:8px;font-size:12px;color:var(--success);display:none"></div>
 </div>
 </div>
+<div class="card" id="onboarding-card" style="background:linear-gradient(135deg,rgba(14,165,233,0.08),rgba(99,102,241,0.04));border:1px solid rgba(14,165,233,0.2);display:none">
+<div class="card-header"><div class="card-title"><i class="fas fa-rocket" style="color:var(--primary)"></i> Set Up Your Account</div></div>
+<div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:14px">
+  <strong>Welcome!</strong> To start receiving the right leads, you need to:
+  <ol style="margin:8px 0 0 20px;padding:0">
+    <li style="margin-bottom:6px"><strong style="color:var(--text)">1. Add your postcode territories</strong> — Enter UK postcode sectors you want leads for (e.g., "EN1 3", "SW1A 1"). You get <strong>5 sectors free</strong> on trial.</li>
+    <li style="margin-bottom:6px"><strong style="color:var(--text)">2. Set your lead filters</strong> — Click "Edit Filters" below to refine by bedrooms, property type, industry, etc. for each lead type.</li>
+    <li style="margin-bottom:6px"><strong style="color:var(--text)">3. Wait for 9am delivery</strong> — Once set, leads matching your criteria arrive in your inbox every morning.</li>
+  </ol>
+</div>
+<div style="display:flex;gap:8px">
+  <button class="btn btn-primary btn-sm" onclick="toggleTerritoryEditor();document.getElementById('onboarding-card').style.display='none'"><i class="fas fa-map-marker-alt"></i> Add My Territories</button>
+  <button class="btn btn-outline btn-sm" onclick="toggleFilterEditor();document.getElementById('onboarding-card').style.display='none'"><i class="fas fa-sliders-h"></i> Set Filters</button>
+  <button class="btn btn-outline btn-sm" onclick="document.getElementById('onboarding-card').style.display='none'"><i class="fas fa-check"></i> Done, Skip</button>
+</div>
+</div>
 <div class="card" id="territories-section">
   <div class="card-header">
     <div class="card-title"><i class="fas fa-map-marker-alt" style="color:var(--success)"></i> My Territories</div>
@@ -130,13 +146,13 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
     <div id="territory-manager" style="display:none">
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <div style="position:relative;flex:1">
-          <input type="text" id="territory-search" placeholder="Search postcode areas..." style="width:100%;padding:10px 14px;background:#0f111a;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none" oninput="searchTerritories(this.value)">
-          <div id="territory-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#11131f;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto"></div>
+          <input type="text" id="territory-search" placeholder="Search postcode districts..." style="width:100%;padding:10px 14px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;color:#111827;font-size:13px;font-family:inherit;outline:none" oninput="searchTerritories(this.value)">
+          <div id="territory-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#ffffff;border:1px solid #d1d5db;border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto"></div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="saveTerritories()" id="save-territory-btn" disabled>Save</button>
       </div>
       <div style="margin-bottom:10px">
-        <input type="text" id="custom-sector-input" placeholder="Add specific sector e.g. EN1 3, SG13 7" style="width:100%;padding:8px 12px;background:#0f111a;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter')addCustomSector()">
+        <input type="text" id="custom-sector-input" placeholder="Add specific sector e.g. EN1 3, SG13 7" style="width:100%;padding:8px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter')addCustomSector()">
         <button class="btn btn-outline btn-sm" onclick="addCustomSector()" style="margin-top:4px;font-size:11px"><i class="fas fa-plus"></i> Add Sector</button>
         <span id="custom-sector-error" style="font-size:10px;color:var(--danger);display:none"></span>
       </div>
@@ -157,7 +173,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
     <div id="lead-filters-display" style="font-size:12px;color:var(--text2);margin-bottom:12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:12px">Loading filter configuration...</div>
     <div id="lead-filters-editor" style="display:none">
       <div id="dashboard-filter-moving" class="dashboard-filter-panel">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="font-size:13px;font-weight:700;color:#ff6b35;margin-bottom:10px;padding:6px 10px;background:rgba(255,107,53,0.06);border-radius:6px;border-left:3px solid #ff6b35">🚚 Moving Leads — Filters</div>
           <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Min Bedrooms</label>
             <select id="df-moving-minbeds" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5+</option></select></div>
           <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Max Bedrooms</label>
@@ -174,6 +190,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
         </div>
       </div>
       <div id="dashboard-filter-probate" class="dashboard-filter-panel" style="display:none">
+        <div style="font-size:13px;font-weight:700;color:#a855f7;margin-bottom:10px;padding:6px 10px;background:rgba(168,85,247,0.06);border-radius:6px;border-left:3px solid #a855f7">⚖️ Probate Leads — Filters</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Min Estate Value</label>
             <select id="df-probate-minvalue" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="50000">£50k</option><option value="100000">£100k</option><option value="250000">£250k</option><option value="500000">£500k</option><option value="1000000">£1M</option></select></div>

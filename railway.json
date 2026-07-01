@@ -1,10 +1,8 @@
 {
-  "build": {
-    "builder": "NIXPACKS"
-  },
+  "build": null,
   "deploy": {
-    "startCommand": "node mission control/production_api_server.js",
+    "startCommand": "echo 'Deployed via Render only'",
     "healthcheckPath": "/api/health",
-    "restartPolicyType": "ON_FAILURE"
+    "restartPolicyType": "NEVER"
   }
 }
