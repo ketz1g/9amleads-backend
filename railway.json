@@ -1,5 +1,8 @@
 {
-  "build": null,
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "echo 'build-skipped'"
+  },
   "deploy": {
     "startCommand": "echo 'Deployed via Render only'",
     "healthcheckPath": "/api/health",
