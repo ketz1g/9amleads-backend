@@ -676,10 +676,13 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     'SELECT * FROM leads WHERE customer_id = ? ORDER BY created_at DESC LIMIT 50'
   ).all(req.user.id);
 
-  res.json(leads.map(l => ({
-    ...l,
-    data: JSON.parse(l.data || '{}')
-  })));
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+
+  res.json(leads.map(l => {
+    const parsed = JSON.parse(l.data || '{}');
+    const scored = attachOpportunityScore(parsed, customer?.product || l.product);
+    return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
+  }));
 });
 
 // GET /api/leads/today
@@ -689,10 +692,13 @@ app.get('/api/leads/today', authMiddleware, (req, res) => {
     'SELECT * FROM leads WHERE customer_id = ? AND date(created_at) = ? ORDER BY created_at DESC'
   ).all(req.user.id, today);
 
-  res.json(leads.map(l => ({
-    ...l,
-    data: JSON.parse(l.data || '{}')
-  })));
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+
+  res.json(leads.map(l => {
+    const parsed = JSON.parse(l.data || '{}');
+    const scored = attachOpportunityScore(parsed, customer?.product || l.product);
+    return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
+  }));
 });
 
 // PATCH /api/leads/:id/status
@@ -954,6 +960,64 @@ app.post('/api/crm/push', authMiddleware, async (req, res) => {
     res.json({ success: response.status >= 200 && response.status < 300, status: response.status, leads_pushed: leads.length, response: (response.body || '').substring(0, 500) });
   } catch (e) {
     res.json({ success: false, error: e.message });
+  }
+});
+
+// ===== AI IMAGE GENERATION =====
+
+// POST /api/ai/generate-image — Generate image via DALL-E 3
+app.post('/api/ai/generate-image', async (req, res) => {
+  try {
+    const { prompt, size, quality } = req.body;
+    const OPENAI_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_KEY) return res.status(400).json({ error: 'OpenAI API key not configured. Set OPENAI_API_KEY environment variable.' });
+    if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
+
+    const imageSize = size || '1024x1024';
+    const imageQuality = quality || 'standard';
+    const https = require('https');
+    
+    var requestBody = JSON.stringify({
+      model: 'dall-e-3',
+      prompt: prompt,
+      n: 1,
+      size: imageSize,
+      quality: imageQuality
+    });
+
+    // Try available image models (GPT-Image series, falling back to DALL-E)
+    const models = ['gpt-image-1', 'gpt-image-2', 'dall-e-3', 'dall-e-2'];
+    let result = null;
+    let lastError = null;
+    for (const model of models) {
+      const attemptData = JSON.stringify({
+        model, prompt, n: 1,
+        size: model.startsWith('gpt-image') ? '1024x1024' : (size || '1024x1024'),
+        ...(model === 'dall-e-3' ? { quality: quality || 'standard' } : {})
+      });
+      result = await new Promise(function(resolve) {
+        var req = https.request({
+          hostname: 'api.openai.com', path: '/v1/images/generations', method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(attemptData) }
+        }, function(r) { var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() { try { var parsed = JSON.parse(b); resolve({ status: r.statusCode, body: parsed }); } catch(e) { resolve({ status: r.statusCode, body: b }); } }); });
+        req.on('error', (e) => { lastError = e.message; resolve(null); });
+        req.write(attemptData); req.end();
+      });
+      if (result && result.status === 200 && result.body && result.body.data && result.body.data.length > 0) break;
+      if (result && result.body && result.body.error) lastError = result.body.error.message;
+      result = null;
+    }
+
+    if (!result || !result.body) return res.status(500).json({ error: lastError || 'No response from OpenAI API' });
+    if (result.body.error) return res.status(400).json({ error: result.body.error.message || 'OpenAI API error' });
+
+    var imageData = result.body.data[0];
+    // GPT-Image returns b64_json, DALL-E returns url
+    if (imageData.url) return res.json({ url: imageData.url, revised_prompt: imageData.revised_prompt || null });
+    if (imageData.b64_json) return res.json({ url: 'data:image/png;base64,' + imageData.b64_json, revised_prompt: imageData.revised_prompt || null });
+    res.json({ url: null, error: 'Unexpected response format' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -1392,6 +1456,116 @@ function formatLeadForCRM(lead) {
   return base;
 }
 
+// ===== OPPORTUNITY SCORE ENGINE =====
+function attachOpportunityScore(data, product) {
+  if (!data) return { score: 0, category: 'cold', label: 'Cold Lead', reasons: ['No data available'] };
+  product = product || 'moving';
+  var score = 0;
+  var reasons = [];
+  var now = new Date();
+
+  // 1. Freshness (0-20)
+  var scrapedAt = data.scrapedAt || data.created_at || data.createdAt || data.delivered_at;
+  if (scrapedAt) {
+    var ageHours = (now - new Date(scrapedAt)) / (1000 * 60 * 60);
+    if (ageHours < 1) { score += 20; reasons.push('Less than 1 hour old'); }
+    else if (ageHours < 6) { score += 18; reasons.push('Less than 6 hours old'); }
+    else if (ageHours < 24) { score += 14; reasons.push('Less than 24 hours old'); }
+    else if (ageHours < 72) { score += 8; reasons.push('Less than 3 days old'); }
+    else { score += 3; reasons.push('Older lead'); }
+  } else { score += 10; reasons.push('Fresh lead'); }
+
+  // 2. Business type match (0-15)
+  if (product === 'moving') {
+    var beds = parseInt(data.bedrooms) || 0;
+    if (beds >= 3) { score += 15; reasons.push(beds + '-bedroom property (high value move)'); }
+    else if (beds >= 2) { score += 12; reasons.push(beds + '-bedroom property'); }
+    else if (beds >= 1) { score += 8; reasons.push(beds + '-bedroom property'); }
+    else { score += 5; reasons.push('Property lead'); }
+    var priceVal = parseInt(data.price) || 0;
+    if (priceVal > 750000) { score += 3; reasons.push('Premium property'); }
+  } else if (product === 'probate') {
+    var estVal = parseInt(data.estateValue) || 0;
+    if (estVal > 500000) { score += 15; reasons.push('High value estate'); }
+    else if (estVal > 100000) { score += 12; reasons.push('Established estate'); }
+    else if (estVal > 0) { score += 8; reasons.push('Estate lead'); }
+    else { score += 5; }
+    if (data.deceasedName) { score += 3; reasons.push('Named executor identified'); }
+  } else if (product === 'newbusiness') {
+    if (data.companyName || data.company) { score += 15; reasons.push('Named company: ' + (data.companyName || data.company)); }
+    else { score += 8; reasons.push('New business lead'); }
+    if (data.ownerEmail) { score += 3; reasons.push('Contact email available'); }
+  } else if (product === 'planning') {
+    if (data.applicant) { score += 15; reasons.push('Named applicant: ' + data.applicant); }
+    else { score += 8; reasons.push('Planning application lead'); }
+    var projVal = parseInt(data.estimatedValue || data.value) || 0;
+    if (projVal > 100000) { score += 3; reasons.push('High value project'); }
+  } else if (product === 'tenders') {
+    var contractVal = parseInt(data.contractValue || data.value) || 0;
+    if (contractVal > 500000) { score += 15; reasons.push('Major contract (£' + (contractVal/1000).toFixed(0) + 'k)'); }
+    else if (contractVal > 100000) { score += 12; reasons.push('Substantial contract'); }
+    else if (contractVal > 0) { score += 8; reasons.push('Contract opportunity'); }
+    else { score += 5; }
+    var closingDate = data.closingDate || data.closing_date;
+    if (closingDate) {
+      var daysLeft = Math.max(0, Math.floor((new Date(closingDate) - now) / 86400000));
+      if (daysLeft < 14) { score += 5; reasons.push('Closing in ' + daysLeft + ' days'); }
+      else { score += 2; }
+    }
+  }
+
+  // 3. Location match (0-10)
+  if (data.address || data.postcode) { score += 10; reasons.push('Location available'); }
+  else { score += 4; }
+
+  // 4. Estimated value (0-10)
+  var vals = [data.price, data.estateValue, data.contractValue, data.estimatedValue, data.value];
+  var hasVal = false;
+  for (var vi = 0; vi < vals.length; vi++) { if (parseInt(vals[vi]) > 0) hasVal = true; }
+  score += hasVal ? 10 : 4;
+  if (hasVal) reasons.push('Value estimate available');
+
+  // 5. Contact information (0-10)
+  var hasContact = data.ownerEmail || data.legalAdvisorEmail || data.buyerEmail || data.applicant || data.name;
+  if (hasContact) { score += 10; reasons.push('Contact information available'); }
+  else { score += 3; }
+
+  // 6-9. Data quality signals (0-20)
+  var fieldCount = 0;
+  for (var k in data) { if (data[k] && typeof data[k] !== 'object') fieldCount++; }
+  if (fieldCount > 8) { score += 8; reasons.push('Rich data (' + fieldCount + ' fields)'); }
+  else if (fieldCount > 4) { score += 5; }
+  else { score += 2; }
+
+  // Freshness bonus
+  if (scrapedAt && ageHours < 1) score += 5;
+  else if (data.status) {
+    var st = (data.status || '').toLowerCase();
+    if (st.includes('sstc') || st.includes('sold') || st.includes('offer')) { score += 7; reasons.push('Active status — urgent'); }
+  }
+
+  // Urgency for tenders
+  if (product === 'tenders' && data.closingDate) {
+    var dd = Math.max(0, Math.floor((new Date(data.closingDate) - now) / 86400000));
+    if (dd < 7) { score += 5; reasons.push('Deadline within ' + dd + ' days'); }
+  }
+
+  // Deduplicate & limit to top 5 reasons
+  var seen = {};
+  var unique = [];
+  for (var ri = 0; ri < reasons.length; ri++) {
+    if (!seen[reasons[ri]]) { seen[reasons[ri]] = true; unique.push(reasons[ri]); }
+  }
+  var topReasons = unique.slice(0, 5);
+
+  // Clamp
+  score = Math.max(0, Math.min(100, score));
+
+  var category = score >= 80 ? 'hot' : (score >= 50 ? 'warm' : 'cold');
+  var label = score >= 80 ? 'Hot Lead' : (score >= 50 ? 'Warm Lead' : 'Cold Lead');
+
+  return { score: score, category: category, label: label, reasons: topReasons };
+}
 
 // ===== HTTP HELPER: POST JSON via https =====
 function httpsPost(url, data) {
@@ -1615,18 +1789,17 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     }
 
     const { plan } = req.body;
-    const validPlans = ['starter', 'pro', 'enterprise'];
+    const validPlans = ['starter', 'growth', 'power'];
     if (!plan || !validPlans.includes(plan)) {
-      return res.status(400).json({ error: 'Invalid plan. Choose: starter, pro, or enterprise' });
+      return res.status(400).json({ error: 'Invalid plan. Choose: starter, growth, or power' });
     }
 
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!customer) return res.status(404).json({ error: 'User not found' });
 
     // Map plan names: config uses 'essential' for non-moving starter plans
-    const effectivePlan = (customer.product !== 'moving' && plan === 'starter') ? 'essential' : plan;
-    const productKey = { moving: 'moving', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' }[customer.product] || customer.product;
-    const planKey = productKey + '-' + effectivePlan;
+    const productKey = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' }[customer.product] || customer.product;
+    const planKey = productKey + '-' + plan;
     const priceIdMap = STRIPE_PRICE_IDS[customer.product] || {};
     const priceId = priceIdMap[planKey];
 
@@ -1925,9 +2098,9 @@ app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
 app.post('/api/subscription/update', authMiddleware, async (req, res) => {
   try {
     const { plan } = req.body;
-    const validPlans = ['starter', 'pro', 'enterprise'];
+    const validPlans = ['starter', 'growth', 'power'];
     if (!plan || !validPlans.includes(plan)) {
-      return res.status(400).json({ error: 'Invalid plan. Choose: starter, pro, or enterprise' });
+      return res.status(400).json({ error: 'Invalid plan. Choose: starter, growth, or power' });
     }
 
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -2435,6 +2608,8 @@ app.listen(PORT, () => {
   console.log('  DEL  /api/settings/crm  - Remove CRM webhook');
   console.log('  POST /api/crm/test      - Test CRM webhook connection');
   console.log('  POST /api/crm/push      - Manually push leads to CRM');
+  console.log('  AI Image Generation:');
+  console.log('  POST /api/ai/generate-image - Generate image via DALL-E 3 (requires OPENAI_API_KEY)');
   console.log('  GET  /api/health        - Server health');
   console.log('  GET  /api/admin/stats   - System-wide stats');
   console.log('  GET  /api/admin/customers - All customers');
