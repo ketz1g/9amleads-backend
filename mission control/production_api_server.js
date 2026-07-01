@@ -1799,13 +1799,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         var prodLimit = perProduct + (pi < remainder ? 1 : 0);
         if (prodLimit <= 0) continue;
         
-        // Get undelivered leads for this customer + product, today or yesterday
+        // Get leads for this customer + product - prefer today/yesterday, fallback to any undelivered
         var prodLeads = (getDb().leads || []).filter(function(l) {
           return l.customer_id === cust.id && l.delivered === 0 && l.product === prod &&
-            (l.date === today || l.date === yesterday || l.created_at === today || l.created_at === yesterday || l.listed_date === today || l.listed_date === yesterday || l.scrapedAt?.startsWith(today) || l.scrapedAt?.startsWith(yesterday));
+            (l.date === today || l.date === yesterday || (l.scrapedAt && typeof l.scrapedAt === 'string' && (l.scrapedAt.startsWith(today) || l.scrapedAt.startsWith(yesterday))));
         });
-        
-        // If not enough today/yesterday, allow leads without date filtering
         if (prodLeads.length < prodLimit) {
           prodLeads = (getDb().leads || []).filter(function(l) {
             return l.customer_id === cust.id && l.delivered === 0 && l.product === prod;
