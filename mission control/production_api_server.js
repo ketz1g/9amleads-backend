@@ -630,6 +630,10 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
+    if (!customer.email_verified) {
+      return res.status(403).json({ error: 'Please verify your email first. Check your inbox for the verification link.', needsVerification: true, email: customer.email });
+    }
+
     db.prepare('UPDATE customers SET last_login = datetime(\'now\') WHERE id = ?').run(customer.id);
     const token = generateToken(customer);
 
