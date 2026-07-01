@@ -62,7 +62,7 @@ try {
   var beforeCust = (startupDb.customers || []).length;
   var beforeLeads = (startupDb.leads || []).length;
   startupDb.customers = (startupDb.customers || []).filter(function(c) { return c.source !== 'demo-migration'; });
-  startupDb.leads = (startupDb.leads || []).filter(function(l) { return !l.customer_id || !startupDb.customers.some(function(oc) { return oc.id === l.customer_id && l.source === 'demo-migration'; }); });
+  startupDb.leads = (startupDb.leads || []).filter(function(l) { return l.customer_id && startupDb.customers.some(function(oc) { return oc.id === l.customer_id; }); });
   if (beforeCust !== startupDb.customers.length) {
     fs.writeFileSync(path.join(DATA_DIR, 'database.json'), JSON.stringify(startupDb, null, 2));
     console.log('[BOOT] Purged ' + (beforeCust - startupDb.customers.length) + ' demo customers + ' + (beforeLeads - startupDb.leads.length) + ' leads');
@@ -1721,29 +1721,29 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===== TEST SCHEDULE: 14:20 scraper → 14:22 distributor → 14:25 delivery =====
-cron.schedule('20 14 * * *', async () => {
-  console.log('[14:20] Running scraper...');
+// ===== TEST SCHEDULE: 14:35 scraper → 14:37 distributor → 14:40 delivery =====
+cron.schedule('35 14 * * *', async () => {
+  console.log('[14:35] Running scraper...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {
-      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[14:20] Scraper done'); });
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[14:35] Scraper done'); });
     }).end();
-  } catch(e) { console.log('[14:20] Scraper error:', e.message); }
+  } catch(e) { console.log('[14:35] Scraper error:', e.message); }
 });
-cron.schedule('22 14 * * *', async () => {
-  console.log('[14:22] Distributing...');
+cron.schedule('37 14 * * *', async () => {
+  console.log('[14:37] Distributing...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {
-      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[14:22] Distributor done'); });
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[14:37] Distributor done'); });
     }).end();
-  } catch(e) { console.log('[14:22] Distributor error:', e.message); }
+  } catch(e) { console.log('[14:37] Distributor error:', e.message); }
 });
 // ===== TEST DELIVERY CRON: Runs directly (not via HTTP) to avoid timing issues =====
-// Pipeline: 14:20 scraper → 14:22 distributor → 14:25 delivery
-cron.schedule('25 14 * * *', async () => {
-  console.log('[14:25] Running delivery...');
+// Pipeline: 14:35 scraper → 14:37 distributor → 14:40 delivery
+cron.schedule('40 14 * * *', async () => {
+  console.log('[14:40] Running delivery...');
   try {
     _dbData = null;
     var db = getDb();
@@ -1780,11 +1780,11 @@ cron.schedule('25 14 * * *', async () => {
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
         delivered += custLeads.length;
-        console.log('[14:25] Delivered ' + custLeads.length + ' to ' + cust.email);
-      } catch(e) { console.log('[14:25] Error for ' + cust.email + ': ' + e.message); }
+        console.log('[14:40] Delivered ' + custLeads.length + ' to ' + cust.email);
+      } catch(e) { console.log('[14:40] Error for ' + cust.email + ': ' + e.message); }
     }
-    console.log('[14:25] Delivery complete: ' + delivered + ' leads');
-  } catch(e) { console.log('[14:25] Delivery error: ' + e.message); }
+    console.log('[14:40] Delivery complete: ' + delivered + ' leads');
+  } catch(e) { console.log('[14:40] Delivery error: ' + e.message); }
 });
 cron.schedule('0 10 * * *', async () => {
   console.log('[CAMPAIGN] Starting campaign email check...');
