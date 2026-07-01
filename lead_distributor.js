@@ -277,13 +277,13 @@ async function distributeProduct(product) {
   const config = PRODUCT_LEAD_FILES[product];
   if (!config) {
     console.log(`  Unknown product: ${product}`);
-    return { product, matched: 0, total: 0 };
+    return { product, matched: 0, total: 0, inserted: 0 };
   }
 
   const db = loadJSON(DB_FILE);
   if (!db || !db.customers) {
     console.log(`  Database not found or empty`);
-    return { product, matched: 0, total: 0 };
+    return { product, matched: 0, total: 0, inserted: 0 };
   }
 
   // Load scraped leads for this product
@@ -291,7 +291,7 @@ async function distributeProduct(product) {
   const scrapedData = loadJSON(productLeadsFile);
   if (!scrapedData) {
     console.log(`  No scraped leads file: ${config.file}`);
-    return { product, matched: 0, total: 0 };
+    return { product, matched: 0, total: 0, inserted: 0 };
   }
 
   // Get customers subscribed to this product (check both product and products array)
@@ -303,7 +303,7 @@ async function distributeProduct(product) {
 
   if (productCustomers.length === 0) {
     console.log(`  No active customers for ${product}`);
-    return { product, matched: 0, total: 0 };
+    return { product, matched: 0, total: 0, inserted: 0 };
   }
 
   console.log(`  Customers: ${productCustomers.length} active`);
@@ -325,7 +325,7 @@ async function distributeProduct(product) {
 
   if (allScrapedLeads.length === 0) {
     console.log(`  No leads found in scraped data`);
-    return { product, matched: 0, total: 0 };
+    return { product, matched: 0, total: 0, inserted: 0 };
   }
 
   console.log(`  Total scraped leads available: ${allScrapedLeads.length}`);
