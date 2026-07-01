@@ -144,6 +144,7 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <input type="text" id="s-postcode-input" placeholder="Type a district e.g. EN1 or SW1" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
 <div id="s-postcode-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#ffffff;border:1px solid #d1d5db;border-top:none;border-radius:0 0 6px 6px;max-height:160px;overflow-y:auto"></div>
 <button type="button" onclick="addSignupPostcode()" style="margin-top:4px;font-size:11px;padding:4px 10px;background:transparent;border:1px solid #d1d5db;border-radius:6px;color:#374151;cursor:pointer"><i class="fas fa-plus"></i> Add District</button>
+<span id="s-postcode-count" style="font-size:10px;color:#8890a8;margin-left:8px"></span>
 </div>
 <div id="s-postcode-error" style="font-size:10px;color:#ef4444;margin-top:4px;display:none"></div>
 </div>
@@ -351,6 +352,11 @@ function renderSignupPostcodes() {
     html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:5px;font-size:11px;font-weight:600;color:#0ea5e9">' + signupPostcodes[i] + ' <span style="cursor:pointer;opacity:0.6" onclick="removeSignupPostcode(\'' + signupPostcodes[i] + '\')">&times;</span></span>';
   }
   tags.innerHTML = html;
+  if (signupPostcodes.length > 0) {
+    document.getElementById('s-postcode-count').textContent = signupPostcodes.length + ' of 5 districts selected';
+  } else {
+    document.getElementById('s-postcode-count').textContent = '';
+  }
 }
 
 // ===== SIGNUP FILTERS =====
