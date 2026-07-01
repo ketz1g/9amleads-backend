@@ -2944,23 +2944,38 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           } catch(e) { console.log('[SCRAPER] Planning monitor error: ' + e.message); leads = []; }
         } else if (product === 'moving') {
           try {
-            var apifyKey3 = process.env.APIFY_API_KEY;
+            // Direct Rightmove API (free) - fetch SSTC/Under Offer properties UK-wide
             leads = await new Promise(function(resolve) {
-              var bodyData = JSON.stringify({ location: 'London', maxResults: 5 });
-              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey3 + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
+              // Use Rightmove's property search API for SSTC properties
+              var req = require('https').request({ hostname: 'www.rightmove.co.uk', path: '/api/_search?locationIdentifier=REGION%5E5&numberOfPropertiesRequired=30&sortType=6&dontShow=reduced&includeSSTC=true&viewType=LIST', method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'application/json' }, timeout: 30000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
-                  try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }
-                    resolve(items.map(function(p) { return { id: 'RM_' + (p.id || Date.now()), address: p.address || '', price: p.price || 0, bedrooms: p.bedrooms || 0, propertyType: p.propertyType || '', agent: p.agentName || p.agent || '', url: p.url || '', source: 'Rightmove', scrapedAt: new Date().toISOString() }; }));
-                  } catch(e) { resolve([]); }
+                  try { var data = JSON.parse(body); var properties = data.properties || []; resolve(properties.slice(0, 30).map(function(p) { return { id: 'RM_' + (p.id || Date.now()), address: p.displayAddress || p.address || '', price: p.price?.amount || p.price || 0, bedrooms: p.bedrooms || 0, propertyType: p.propertyType || '', agent: p.agent?.name || p.agentName || '', url: 'https://www.rightmove.co.uk/properties/' + (p.id || ''), listingStatus: p.status || 'SSTC', source: 'Rightmove', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
                 });
               });
               req.on('error', function() { resolve([]); });
-              req.setTimeout(90000, function() { req.destroy(); resolve([]); });
-              req.write(bodyData);
+              req.setTimeout(30000, function() { req.destroy(); resolve([]); });
               req.end();
             });
-            if (!leads || leads.length < 3) { console.log('[SCRAPER] Rightmove returned ' + (leads ? leads.length : 0) + ', no moving leads today'); leads = []; }
+            if (!leads || leads.length < 3) { console.log('[SCRAPER] Rightmove returned ' + (leads ? leads.length : 0) + ', trying Apify fallback...');
+              var apifyKey3 = process.env.APIFY_API_KEY;
+              if (apifyKey3) {
+                leads = await new Promise(function(resolve) {
+                  var bodyData = JSON.stringify({ location: 'London', maxResults: 5 });
+                  var req2 = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey3 + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 90000 }, function(res2) {
+                    var body2 = ''; res2.on('data', function(c) { body2 += c; });
+                    res2.on('end', function() {
+                      try { var items2 = JSON.parse(body2); if (!Array.isArray(items2)) { resolve([]); return; } resolve(items2.map(function(p) { return { id: 'RM_' + (p.id || Date.now()), address: p.address || '', price: p.price || 0, bedrooms: p.bedrooms || 0, propertyType: p.propertyType || '', agent: p.agentName || p.agent || '', url: p.url || '', source: 'Rightmove', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                    });
+                  });
+                  req2.on('error', function() { resolve([]); });
+                  req2.setTimeout(90000, function() { req2.destroy(); resolve([]); });
+                  req2.write(bodyData);
+                  req2.end();
+                });
+              }
+              if (!leads || leads.length < 3) { console.log('[SCRAPER] Rightmove returned ' + (leads ? leads.length : 0) + ', no moving leads today'); leads = []; }
+            }
           } catch(e) { console.log('[SCRAPER] Rightmove error: ' + e.message); leads = []; }
         } else if (product === 'probate') {
           try {
