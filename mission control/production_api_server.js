@@ -3034,7 +3034,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             if (!leads || leads.length < 3) { console.log('[SCRAPER] Companies House probate returned ' + (leads ? leads.length : 0) + ', no probate leads today'); leads = []; }
           } catch(e) { console.log('[SCRAPER] Companies House probate error: ' + e.message); leads = []; }
         } else {
-          leads = generateDemoLeads(product, 30);
+          leads = [];
         }
         fs.mkdirSync(DATA_DIR, { recursive: true });
         fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
