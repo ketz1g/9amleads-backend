@@ -1817,36 +1817,31 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
       
       // Calculate base leads per product (split evenly, round down)
-      var perProduct = Math.floor(totalDailyLimit / products.length);
-      var remainder = totalDailyLimit - (perProduct * products.length);
+      // Collect leads up to daily limit from all products combined — no per-product split
+      var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 25 };
+      var totalDailyLimit = dailyLimitByPlan[cust.plan] || 5;
+      
+      // Get all products for this customer
+      var products = [cust.product];
+      try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
       
       var custLeads = [];
-      for (var pi = 0; pi < products.length; pi++) {
+      for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
         var prod = products[pi];
-        var prodLimit = perProduct + (pi < remainder ? 1 : 0);
-        if (prodLimit <= 0) continue;
-        
-        // Get undelivered leads for this customer + product (today first, then yesterday, then any)
-        var today = new Date().toISOString().split('T')[0];
-        var yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-        var allProductLeads = (getDb().leads || []).filter(function(l) {
+        var prodLeads = (getDb().leads || []).filter(function(l) {
           return l.customer_id === cust.id && l.delivered === 0 && l.product === prod;
         });
-        // Prefer today's leads, then yesterday's, then any remaining
-        var todayLeads = allProductLeads.filter(function(l) { return (l.created_at && l.created_at.startsWith(today)) || (l.scrapedAt && l.scrapedAt.startsWith(today)); });
-        var yesterdayLeads = allProductLeads.filter(function(l) { return (l.created_at && l.created_at.startsWith(yesterday)) || (l.scrapedAt && l.scrapedAt.startsWith(yesterday)); });
-        var olderLeads = allProductLeads.filter(function(l) { return !todayLeads.includes(l) && !yesterdayLeads.includes(l); });
-        var prodLeads = todayLeads.slice(0, prodLimit);
-        if (prodLeads.length < prodLimit) {
-          var remaining = prodLimit - prodLeads.length;
-          prodLeads = prodLeads.concat(yesterdayLeads.slice(0, remaining));
-        }
-        if (prodLeads.length < prodLimit) {
-          var remaining = prodLimit - prodLeads.length;
-          prodLeads = prodLeads.concat(olderLeads.slice(0, remaining));
-        }
-        
-        custLeads = custLeads.concat(prodLeads.slice(0, prodLimit));
+        // Prefer today's leads, then yesterday's, then older
+        var todayStr2 = new Date().toISOString().split('T')[0];
+        var yesterdayStr2 = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        prodLeads.sort(function(a, b) {
+          var aFresh = (a.created_at && a.created_at.startsWith(todayStr2)) || (a.scrapedAt && a.scrapedAt.startsWith(todayStr2)) ? 0 : (a.created_at && a.created_at.startsWith(yesterdayStr2)) || (a.scrapedAt && a.scrapedAt.startsWith(yesterdayStr2)) ? 1 : 2;
+          var bFresh = (b.created_at && b.created_at.startsWith(todayStr2)) || (b.scrapedAt && b.scrapedAt.startsWith(todayStr2)) ? 0 : (b.created_at && b.created_at.startsWith(yesterdayStr2)) || (b.scrapedAt && b.scrapedAt.startsWith(yesterdayStr2)) ? 1 : 2;
+          return aFresh - bFresh;
+        });
+        var slots = totalDailyLimit - custLeads.length;
+        custLeads = custLeads.concat(prodLeads.slice(0, slots));
+      }
       }
       
       if (custLeads.length === 0) continue;
