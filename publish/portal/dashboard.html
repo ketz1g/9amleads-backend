@@ -953,42 +953,69 @@ async function loadLeadFilters() {
   }
   try {
     currentFilters = JSON.parse(filterStr);
-    const product = currentFilters.product || 'moving';
-    display.innerHTML = renderFilterSummary(currentFilters, product);
-    // Populate editor fields
-    populateFilterEditor(currentFilters, product);
+    // Normalize single-product filters to per-product format
+    var isAlreadyPerProduct = currentFilters.moving || currentFilters.probate || currentFilters.newbusiness || currentFilters.planning || currentFilters.tenders;
+    if (!isAlreadyPerProduct && currentFilters.product) {
+      var prod = currentFilters.product;
+      var single = {};
+      single[prod] = currentFilters;
+      currentFilters = single;
+    } else if (!isAlreadyPerProduct) {
+      currentFilters = {};
+    }
+    var session = getSession();
+    var products = session?.products ? (typeof session.products === 'string' ? JSON.parse(session.products) : session.products) : [session?.product || 'moving'];
+    var primaryProduct = products[0] || 'moving';
+    display.innerHTML = renderFilterSummary(currentFilters, primaryProduct);
+    // Populate editor fields for all products
+    for (var pi = 0; pi < products.length; pi++) {
+      var prodFilters = currentFilters[products[pi]] || {};
+      populateFilterEditor(prodFilters, products[pi]);
+    }
   } catch {
     display.innerHTML = '<span style="color:var(--muted2)">Filter configuration unavailable.</span>';
   }
 }
 
 function renderFilterSummary(filters, product) {
-  const lines = [];
-  if (product === 'moving') {
-    if (filters.minBedrooms) lines.push('Min bedrooms: ' + filters.minBedrooms + '+');
-    if (filters.maxBedrooms) lines.push('Max bedrooms: ' + filters.maxBedrooms);
-    if (filters.propertyType) lines.push('Property type: ' + filters.propertyType);
-    if (filters.maxPrice) lines.push('Max value: ┬ú' + Number(filters.maxPrice).toLocaleString());
-    const statuses = [];
-    if (filters.statusSSTC !== false) statuses.push('SSTC');
-    if (filters.statusOffer !== false) statuses.push('Under Offer');
-    lines.push('Statuses: ' + (statuses.length ? statuses.join(', ') : 'None'));
-  } else if (product === 'probate') {
-    if (filters.minEstateValue) lines.push('Min estate: ┬ú' + Number(filters.minEstateValue).toLocaleString());
-    if (filters.hasProperty) lines.push('Property: ' + filters.hasProperty);
-  } else if (product === 'newbusiness') {
-    const sics = filters.sicCodes || [];
-    const labels = { tech_software: 'Tech', construction: 'Construction', retail: 'Retail', hospitality: 'Hospitality', healthcare: 'Healthcare', professional_services: 'Prof Services', financial: 'Financial', creative: 'Creative' };
-    lines.push('Industries: ' + (sics.length ? sics.map(s => labels[s] || s).join(', ') : 'All'));
-  } else if (product === 'planning') {
-    if (filters.applicationType) lines.push('App type: ' + filters.applicationType);
-    if (filters.maxValue) lines.push('Max value: ┬ú' + Number(filters.maxValue).toLocaleString());
-  } else if (product === 'tenders') {
-    if (filters.minValue) lines.push('Min contract: ┬ú' + Number(filters.minValue).toLocaleString());
-    if (filters.keywords) lines.push('Keywords: ' + filters.keywords);
+  if (typeof filters !== 'object') return '<span style="color:var(--muted2)">No filters configured.</span>';
+  // Check if filters is per-product object (keys like "moving", "probate") or legacy single-product
+  var isMulti = Object.keys(filters).every(function(k) { return ['moving','probate','newbusiness','planning','tenders'].includes(k); });
+  if (!isMulti) {
+    // Legacy single-product filter - wrap it
+    var wrapped = {}; wrapped[product || 'moving'] = filters; filters = wrapped;
   }
-  return '<span style="color:var(--success)">Active filters:</span> ' + (lines.length ? lines.join(' &middot; ') : 'No specific filters') +
-    ' <a href="#" onclick="toggleFilterEditor();return false" style="color:var(--primary);text-decoration:underline;margin-left:6px">Edit</a>';
+  var lines = [];
+  var productNames = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Tenders' };
+  for (var p in filters) {
+    if (!filters.hasOwnProperty(p)) continue;
+    var pf = filters[p];
+    if (typeof pf !== 'object') continue;
+    var pl = [];
+    if (p === 'moving') {
+      if (pf.minBedrooms) pl.push('Min ' + pf.minBedrooms + '+ beds');
+      if (pf.maxBedrooms) pl.push('Max ' + pf.maxBedrooms + ' beds');
+      if (pf.propertyType) pl.push(pf.propertyType);
+      if (pf.maxPrice) pl.push('Max \u00a3' + Number(pf.maxPrice).toLocaleString());
+      var st = []; if (pf.statusSSTC !== false) st.push('SSTC'); if (pf.statusOffer !== false) st.push('Under Offer');
+      if (st.length) pl.push(st.join(', '));
+    } else if (p === 'probate') {
+      if (pf.minEstateValue) pl.push('Min \u00a3' + Number(pf.minEstateValue).toLocaleString());
+      if (pf.hasProperty) pl.push(pf.hasProperty);
+    } else if (p === 'newbusiness') {
+      var sics = pf.sicCodes || []; var labels = { tech_software: 'Tech', construction: 'Construction', retail: 'Retail', hospitality: 'Hospitality', healthcare: 'Healthcare', professional_services: 'Prof Services', financial: 'Financial', creative: 'Creative' };
+      if (sics.length) pl.push(sics.map(function(s) { return labels[s] || s; }).join(', '));
+    } else if (p === 'planning') {
+      if (pf.applicationType) pl.push(pf.applicationType);
+      if (pf.maxValue) pl.push('Max \u00a3' + Number(pf.maxValue).toLocaleString());
+    } else if (p === 'tenders') {
+      if (pf.minValue) pl.push('Min \u00a3' + Number(pf.minValue).toLocaleString());
+      if (pf.keywords) pl.push('"' + pf.keywords + '"');
+    }
+    lines.push('<strong style="color:var(--text)">' + (productNames[p] || p) + ':</strong> ' + (pl.length ? pl.join(' \u00b7 ') : 'No filters'));
+  }
+  return '<span style="color:var(--success)">Active filters:</span><br>' + lines.join('<br>') +
+    ' <a href="#" onclick="toggleFilterEditor();return false" style="color:var(--primary);text-decoration:underline;margin-left:6px;white-space:nowrap">Edit</a>';
 }
 
 function populateFilterEditor(filters, product) {
@@ -1023,44 +1050,58 @@ function toggleFilterEditor() {
   document.getElementById('lead-filters-display').style.display = filterEditing ? 'none' : 'block';
   document.getElementById('edit-filters-btn').innerHTML = filterEditing ? '<i class="fas fa-times"></i> Cancel' : '<i class="fas fa-pen"></i> Edit Filters';
   if (filterEditing && currentFilters) {
-    const product = currentFilters.product || getSession()?.product || 'moving';
-    document.querySelectorAll('.dashboard-filter-panel').forEach(el => el.style.display = 'none');
-    const panel = document.getElementById('dashboard-filter-' + product);
-    if (panel) panel.style.display = 'block';
-    populateFilterEditor(currentFilters, product);
+    var session = getSession();
+    var products = session?.products ? (typeof session.products === 'string' ? JSON.parse(session.products) : session.products) : [session?.product || 'moving'];
+    document.querySelectorAll('.dashboard-filter-panel').forEach(function(el) { el.style.display = 'none'; });
+    for (var pi = 0; pi < products.length; pi++) {
+      var panel = document.getElementById('dashboard-filter-' + products[pi]);
+      if (panel) panel.style.display = 'block';
+    }
+    for (var pi2 = 0; pi2 < products.length; pi2++) {
+      var prod = products[pi2];
+      var prodFilters = currentFilters[prod] || {};
+      populateFilterEditor(prodFilters, prod);
+    }
   }
 }
 
 async function saveLeadFilters() {
   const msg = document.getElementById('lead-filters-msg');
   msg.style.display = 'none';
-  const product = currentFilters?.product || getSession()?.product || 'moving';
-  const filters = { product: product };
+  var session = getSession();
+  var products = session?.products ? (typeof session.products === 'string' ? JSON.parse(session.products) : session.products) : [session?.product || 'moving'];
+  var allFilters = {};
 
-  if (product === 'moving') {
-    filters.minBedrooms = document.getElementById('df-moving-minbeds').value;
-    filters.maxBedrooms = document.getElementById('df-moving-maxbeds').value;
-    filters.propertyType = document.getElementById('df-moving-proptype').value;
-    filters.maxPrice = document.getElementById('df-moving-maxprice').value;
-    filters.statusSSTC = document.getElementById('df-moving-status-sstc').checked;
-    filters.statusOffer = document.getElementById('df-moving-status-offer').checked;
-  } else if (product === 'probate') {
-    filters.minEstateValue = document.getElementById('df-probate-minvalue').value;
-    filters.hasProperty = document.getElementById('df-probate-property').value;
-  } else if (product === 'newbusiness') {
-    filters.sicCodes = Array.from(document.querySelectorAll('.df-nb-sic:checked')).map(cb => cb.value);
-  } else if (product === 'planning') {
-    filters.applicationType = document.getElementById('df-planning-apptype').value;
-    filters.maxValue = document.getElementById('df-planning-maxvalue').value;
-  } else if (product === 'tenders') {
-    filters.minValue = document.getElementById('df-tenders-minvalue').value;
-    filters.keywords = document.getElementById('df-tenders-keywords').value;
+  for (var pi = 0; pi < products.length; pi++) {
+    var prod = products[pi];
+    var pf = {};
+
+    if (prod === 'moving') {
+      pf.minBedrooms = document.getElementById('df-moving-minbeds').value;
+      pf.maxBedrooms = document.getElementById('df-moving-maxbeds').value;
+      pf.propertyType = document.getElementById('df-moving-proptype').value;
+      pf.maxPrice = document.getElementById('df-moving-maxprice').value;
+      pf.statusSSTC = document.getElementById('df-moving-status-sstc').checked;
+      pf.statusOffer = document.getElementById('df-moving-status-offer').checked;
+    } else if (prod === 'probate') {
+      pf.minEstateValue = document.getElementById('df-probate-minvalue').value;
+      pf.hasProperty = document.getElementById('df-probate-property').value;
+    } else if (prod === 'newbusiness') {
+      pf.sicCodes = Array.from(document.querySelectorAll('.df-nb-sic:checked')).map(function(cb) { return cb.value; });
+    } else if (prod === 'planning') {
+      pf.applicationType = document.getElementById('df-planning-apptype').value;
+      pf.maxValue = document.getElementById('df-planning-maxvalue').value;
+    } else if (prod === 'tenders') {
+      pf.minValue = document.getElementById('df-tenders-minvalue').value;
+      pf.keywords = document.getElementById('df-tenders-keywords').value;
+    }
+    allFilters[prod] = pf;
   }
 
   const data = await apiFetch('/api/settings/lead-filters', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ leadFilters: JSON.stringify(filters) })
+    body: JSON.stringify({ leadFilters: JSON.stringify(allFilters) })
   });
 
   if (data && data.success) {
