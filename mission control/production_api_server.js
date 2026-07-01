@@ -958,7 +958,7 @@ app.post('/api/postcodes/extra', authMiddleware, async (req, res) => {
       success: true,
       extra_postcodes: newExtra,
       total_postcode_limit: newLimit,
-      message: 'Added 1 extra postcode sector (\u00a325 one-time). Your limit is now ' + newLimit + ' sectors.'
+      message: 'Added 1 extra district (\u00a310/week). Your limit is now ' + newLimit + ' districts.'
     });
   } catch (e) {
     res.status(500).json({ error: e.message });

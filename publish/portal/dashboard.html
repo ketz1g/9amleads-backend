@@ -43,8 +43,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="nav-links">
 <a href="/">Home</a>
 <a href="/" class="active">Dashboard</a>
-<a href="#" onclick="openSuccessCentre();return false">Success Centre</a>
-<a href="#" onclick="document.getElementById('territory-section').scrollIntoView({behavior:'smooth'});return false">Territories</a>
+<a href="#" onclick="document.getElementById('territories-section').scrollIntoView({behavior:'smooth'});return false">Territories</a>
 <a href="#" onclick="document.getElementById('lead-filters-section').scrollIntoView({behavior:'smooth'});return false">Filters</a>
 <a href="#" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'});return false">Plan</a>
 <a href="#" onclick="openCampaigns();return false">Campaigns</a>
@@ -138,29 +137,25 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 </div>
 <div class="card" id="territories-section">
   <div class="card-header">
-    <div class="card-title"><i class="fas fa-map-marker-alt" style="color:var(--success)"></i> My Territories</div>
+    <div class="card-title"><i class="fas fa-map-marker-alt" style="color:var(--success)"></i> My Postcode Districts</div>
     <span id="territory-stats" style="font-size:12px;color:var(--muted2)">Loading...</span>
   </div>
   <div id="territories-body">
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px">These districts were set when you signed up. Leads are matched from these areas across all your lead types.</p>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px" id="territory-tags"></div>
     <div id="territory-manager" style="display:none">
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <div style="position:relative;flex:1">
-          <input type="text" id="territory-search" placeholder="Search postcode districts..." style="width:100%;padding:10px 14px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;color:#111827;font-size:13px;font-family:inherit;outline:none" oninput="searchTerritories(this.value)">
-          <div id="territory-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#ffffff;border:1px solid #d1d5db;border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto"></div>
+          <input type="text" id="territory-input" placeholder="Type district e.g. EN1" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:13px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){addTerritory();event.preventDefault()}">
+          <div id="territory-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#ffffff;border:1px solid #d1d5db;border-top:none;border-radius:0 0 6px 6px;max-height:200px;overflow-y:auto"></div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="saveTerritories()" id="save-territory-btn" disabled>Save</button>
+        <button class="btn btn-primary btn-sm" onclick="addTerritory()" id="add-territory-btn"><i class="fas fa-plus"></i> Add</button>
       </div>
-      <div style="margin-bottom:10px">
-        <input type="text" id="custom-sector-input" placeholder="Add specific sector e.g. EN1 3, SG13 7" style="width:100%;padding:8px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter')addCustomSector()">
-        <button class="btn btn-outline btn-sm" onclick="addCustomSector()" style="margin-top:4px;font-size:11px"><i class="fas fa-plus"></i> Add Sector</button>
-        <span id="custom-sector-error" style="font-size:10px;color:var(--danger);display:none"></span>
-      </div>
-      <div id="territory-msg" style="font-size:11px;color:var(--success);display:none"></div>
+      <div id="territory-msg" style="font-size:11px;display:none;margin-bottom:8px"></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-outline btn-sm" id="edit-territory-btn" onclick="toggleTerritoryEditor()"><i class="fas fa-pen"></i> Edit Territories</button>
-      <button class="btn btn-outline btn-sm" onclick="showPlans()" style="color:var(--primary);border-color:rgba(14,165,233,0.2)"><i class="fas fa-crown"></i> Upgrade for More</button>
+      <button class="btn btn-outline btn-sm" id="edit-territory-btn" onclick="toggleTerritoryEditor()"><i class="fas fa-plus-circle"></i> Add District</button>
+      <span style="font-size:10px;color:var(--muted2);margin-left:4px">Extra districts: \u00a310/wk each beyond your plan limit</span>
     </div>
   </div>
 </div>
@@ -739,23 +734,31 @@ function toggleTerritoryEditor() {
   manager.style.display = territoryEditing ? 'block' : 'none';
   document.getElementById('edit-territory-btn').innerHTML = territoryEditing
     ? '<i class="fas fa-times"></i> Cancel'
-    : '<i class="fas fa-pen"></i> Edit Territories';
+    : '<i class="fas fa-plus-circle"></i> Add District';
   if (territoryEditing) {
-    document.getElementById('territory-search').focus();
-    loadTerritoryPostcodes();
+    document.getElementById('territory-input').focus();
   }
 }
 
-function toggleTerritoryArea(code) {
-  territoryExpandedArea = territoryExpandedArea === code ? null : code;
-  renderTerritoryFull();
+async function addTerritory() {
+  var input = document.getElementById('territory-input');
+  var code = input.value.trim().toUpperCase();
+  var msg = document.getElementById('territory-msg');
+  msg.style.display = 'none';
+  if (!code) return;
+  try {
+    var r = await apiFetch('/api/postcodes/check?code=' + encodeURIComponent(code));
+    if (!r || r.valid === false) { msg.style.color = '#ef4444'; msg.textContent = r?.error || 'Invalid district'; msg.style.display = 'block'; return; }
+    var res = await apiFetch('/api/postcodes/update', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ postcodes: [code] }) });
+    if (res && res.success) {
+      msg.style.color = '#22c55e'; msg.textContent = 'District added!';
+      msg.style.display = 'block'; input.value = '';
+      loadTerritories();
+    } else {
+      msg.style.color = '#ef4444'; msg.textContent = res?.error || 'Failed to add district'; msg.style.display = 'block';
+    }
+  } catch(e) { msg.style.color = '#ef4444'; msg.textContent = 'Could not connect'; msg.style.display = 'block'; }
 }
-
-function renderTerritoryFull() {
-  const dropdown = document.getElementById('territory-dropdown');
-  const currentPlan = getSession()?.plan || 'free_trial';
-  const maxLimit = { free_trial: 5, essential: 5, starter: 5, pro: 10, enterprise: 50 }[currentPlan] || 5;
-  const selected = editedTerritories || [];
 
   let html = '';
   for (const area of allTerritoryAreas) {
