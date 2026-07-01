@@ -2912,7 +2912,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         } else if (product === 'tenders') {
           try {
             leads = await new Promise(function(resolve) {
-               var url = '/api/rest/2.0/notices?searchTerm=' + encodeURIComponent('construction') + '&status=Open&size=5';
+               var url = '/api/rest/2.0/notices?status=Open&size=30';
                var req = require('https').request({ hostname: 'www.contractsfinder.service.gov.uk', path: url, method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 30000 }, function(res) {
                 var body = '';
                 res.on('data', function(c) { body += c; });
@@ -2921,7 +2921,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
                     var data = JSON.parse(body);
                     var items = data.notices || data.results || data.items || data || [];
                     if (!Array.isArray(items)) { resolve([]); return; }
-                    resolve(items.filter(function(n) { return n.status === 'Open'; }).slice(0, 30).map(function(n) { return {
+                    resolve(items.slice(0, 30).map(function(n) { return {
                       id: n.id || n.noticeId || 'CF_' + Date.now(),
                       title: n.title || n.noticeTitle || '',
                       buyer: n.contractingAuthority || n.organisationName || n.buyerName || '',
@@ -2941,8 +2941,21 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               req.setTimeout(30000, function() { req.destroy(); resolve([]); });
               req.end();
             });
-            if (!leads || leads.length === 0) { console.log('[SCRAPER] Contracts Finder returned 0 results — no leads generated for tenders'); leads = []; }
-          } catch(e) { console.log('[SCRAPER] Contracts Finder error: ' + e.message); leads = []; }
+            if (!leads || leads.length === 0) {
+              leads = await new Promise(function(resolve) {
+                var req2 = require('https').request({ hostname: 'api.sell2wales.gov.wales', path: '/api/v1/notices?status=Open&size=30', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res2) {
+                  var b2 = ''; res2.on('data', function(c) { b2 += c; });
+                  res2.on('end', function() {
+                    try { var d2 = JSON.parse(b2); var items2 = d2.notices || d2.results || d2.items || d2 || []; if (!Array.isArray(items2)) items2 = []; resolve(items2.slice(0, 30).map(function(n) { return { id: 'SW_' + (n.id || Date.now()), title: n.title || n.noticeTitle || '', buyer: n.contractingAuthority || n.buyerName || '', contractValue: n.estimatedValue || n.value || 0, description: n.description || '', closingDate: n.deadlineDate || '', publishedDate: n.publishedDate || '', cpvCode: '', tenderNoticeId: n.noticeId || n.id || '', source: 'Sell2Wales', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                  });
+                });
+                req2.on('error', function() { resolve([]); });
+                req2.setTimeout(15000, function() { req2.destroy(); resolve([]); });
+                req2.end();
+              });
+              if (!leads || leads.length === 0) { console.log('[SCRAPER] No tender leads from any source'); leads = []; }
+            }
+          } catch(e) { console.log('[SCRAPER] Tenders error: ' + e.message); leads = []; }
         } else if (product === 'planning') {
           try {
             var apifyKey2 = process.env.APIFY_API_KEY;
