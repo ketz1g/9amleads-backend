@@ -3162,8 +3162,8 @@ app.post('/api/admin/reset', async (req, res) => {
     dbData.customers = [];
     dbData.leads = [];
     dbData.deliveries = [];
-    saveDb();
-    // Clear postcode assignments
+    dbData.scraper_logs = [];
+    await saveDb();
     const assignmentsData = loadAssignments();
     assignmentsData.assignments = {};
     saveAssignments(assignmentsData);
