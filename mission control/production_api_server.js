@@ -2958,7 +2958,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             });
             if (!leads || leads.length < 3) {
               console.log('[SCRAPER] Rightmove API returned ' + (leads ? leads.length : 0) + ', falling back to Companies House moving/removals...');
-              var chKey = process.env.COMPANIES_HOUSE_API_KEY || process.env.GOVUK_API_KEY || '';
+              var chKey = process.env.COMPANIES_HOUSE_API_KEY || process.env.GOVUK_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
               var searchTerms = ['removals', 'removal', 'moving house', 'man and van'];
               var allResults = [];
               for (var st = 0; st < searchTerms.length; st++) {
