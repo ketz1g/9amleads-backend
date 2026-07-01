@@ -41,14 +41,14 @@ const PRICING_DATA = {
     { id: 'nb-power',   name: 'New Business Power',   price: 7900, interval: 'week', leadsLabel: '15-40 estimated leads/day' }
   ],
   planning: [
-    { id: 'plan-starter', name: 'Planning Starter', price: 2900, interval: 'week', leadsLabel: '1-3 estimated leads/day' },
-    { id: 'plan-growth',  name: 'Planning Growth',  price: 5900, interval: 'week', leadsLabel: '3-10 estimated leads/day' },
-    { id: 'plan-power',   name: 'Planning Power',   price: 9900, interval: 'week', leadsLabel: '10-25 estimated leads/day' }
+    { id: 'plan-starter', name: 'Planning Starter', price: 4900, interval: 'week', leadsLabel: '1-3 estimated leads/day' },
+    { id: 'plan-growth',  name: 'Planning Growth',  price: 9900, interval: 'week', leadsLabel: '3-10 estimated leads/day' },
+    { id: 'plan-power',   name: 'Planning Power',   price: 17900, interval: 'week', leadsLabel: '10-25 estimated leads/day' }
   ],
   tenders: [
-    { id: 'tend-starter', name: 'Tenders Starter', price: 2900, interval: 'week', leadsLabel: '3-5 estimated tenders/day' },
-    { id: 'tend-growth',  name: 'Tenders Growth',  price: 5900, interval: 'week', leadsLabel: '5-15 estimated tenders/day' },
-    { id: 'tend-power',   name: 'Tenders Power',   price: 9900, interval: 'week', leadsLabel: '15-40 estimated tenders/day' }
+    { id: 'tend-starter', name: 'Tenders Starter', price: 4900, interval: 'week', leadsLabel: '3-5 estimated tenders/day' },
+    { id: 'tend-growth',  name: 'Tenders Growth',  price: 9900, interval: 'week', leadsLabel: '5-15 estimated tenders/day' },
+    { id: 'tend-power',   name: 'Tenders Power',   price: 17900, interval: 'week', leadsLabel: '15-40 estimated tenders/day' }
   ],
   // Industry Packages (Stage 34)
   'builder-package': [

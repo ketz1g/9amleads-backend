@@ -133,6 +133,7 @@ footer a:hover{color:var(--primary)}
 </div></nav>
 <div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobile()"></div>
 <div class="mobile-menu" id="mobileMenu">
+<a href="/" onclick="toggleMobile()">Home</a>
 <a href="#products" onclick="toggleMobile()">Lead Types</a>
 <a href="#who" onclick="toggleMobile()">Who We Serve</a>
 <a href="#pricing" onclick="toggleMobile()">Pricing</a>
@@ -474,90 +475,56 @@ footer a:hover{color:var(--primary)}
 <div class="section-glow"><div class="glow-orb"></div><div class="glow-orb"></div></div>
 <div class="container" style="position:relative;z-index:2">
 <div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px">Simple Pricing</div>
-<h2 class="section-title">Choose Your Lead Type. <span class="gradient">Pick Your Plan.</span></h2>
-<p class="section-sub">Every plan includes a 7-day free trial. No credit card required. Cancel anytime.</p>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;max-width:1100px;margin:32px auto 0">
-
-<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;position:relative;overflow:hidden;transition:.3s" data-reveal>
-<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#ff6b35,#f97316)"></div>
-<div style="font-size:28px;margin-bottom:8px">🚛</div>
-<h3 style="font-size:17px;font-weight:700;font-family:var(--ff-h)">Moving Leads</h3>
-<div style="font-size:13px;color:var(--muted2);margin:6px 0 4px">SSTC property alerts</div>
-<div style="font-size:32px;font-weight:900;font-family:var(--ff-h);margin:8px 0">&pound;29<span style="font-size:13px;font-weight:400;color:var(--muted)">/mo</span></div>
-<div style="font-size:12px;color:var(--muted2);margin-bottom:12px">from &pound;0.66/lead &middot; Starter plan</div>
-<ul style="list-style:none;font-size:13px;color:var(--text2);line-height:2.2">
-<li><i class="fas fa-check" style="color:#ff6b35;width:18px;font-size:10px"></i> 1 postcode territory</li>
-<li><i class="fas fa-check" style="color:#ff6b35;width:18px;font-size:10px"></i> 5 fresh leads per day</li>
-<li><i class="fas fa-check" style="color:#ff6b35;width:18px;font-size:10px"></i> Daily email at 9am</li>
-<li><i class="fas fa-check" style="color:#ff6b35;width:18px;font-size:10px"></i> 7-day free trial</li>
+<h2 class="section-title">Simple Plans. <span class="gradient">One Price for Any Lead Type.</span></h2>
+<p class="section-sub">From £25/week. All plans include a 7-day free trial. No credit card required.</p>
+<div class="product-grid">
+<div class="pricing-card" data-reveal>
+<h3>Starter</h3>
+<div class="price">£25<span>/wk</span></div>
+<div class="price-sub">5 leads/day · 25/week · 100/month</div>
+<ul>
+<li><i class="fas fa-check"></i> 5 exclusive leads per day</li>
+<li><i class="fas fa-check"></i> Daily delivery at 9am</li>
+<li><i class="fas fa-check"></i> Choose any lead type</li>
+<li><i class="fas fa-check"></i> Online dashboard</li>
+<li><i class="fas fa-check"></i> 7-day free trial</li>
 </ul>
-<a href="/movingleadsdaily/#signup" class="btn" style="width:100%;justify-content:center;padding:12px;font-size:13px;background:linear-gradient(135deg,#ff6b35,#f97316);color:#fff;border-radius:8px;font-weight:600;gap:6px"><i class="fas fa-gift"></i> Start Free Trial</a>
+<a href="#cta" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
 </div>
-
-<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;position:relative;overflow:hidden;transition:.3s" data-reveal>
-<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#a855f7,#7c3aed)"></div>
-<div style="font-size:28px;margin-bottom:8px">⚖️</div>
-<h3 style="font-size:17px;font-weight:700;font-family:var(--ff-h)">Probate Leads</h3>
-<div style="font-size:13px;color:var(--muted2);margin:6px 0 4px">Gov.uk probate register</div>
-<div style="font-size:32px;font-weight:900;font-family:var(--ff-h);margin:8px 0">&pound;97<span style="font-size:13px;font-weight:400;color:var(--muted)">/mo</span></div>
-<div style="font-size:12px;color:var(--muted2);margin-bottom:12px">from &pound;0.65/lead &middot; Essential plan</div>
-<ul style="list-style:none;font-size:13px;color:var(--text2);line-height:2.2">
-<li><i class="fas fa-check" style="color:#a855f7;width:18px;font-size:10px"></i> 1 UK county</li>
-<li><i class="fas fa-check" style="color:#a855f7;width:18px;font-size:10px"></i> Up to 10 leads per day</li>
-<li><i class="fas fa-check" style="color:#a855f7;width:18px;font-size:10px"></i> Full grant details</li>
-<li><i class="fas fa-check" style="color:#a855f7;width:18px;font-size:10px"></i> 7-day free trial</li>
+<div class="pricing-card featured" data-reveal>
+<div class="popular-badge">Most Popular</div>
+<h3>Pro</h3>
+<div class="price">£50<span>/wk</span></div>
+<div class="price-sub">15 leads/day · 75/week · 300/month</div>
+<ul>
+<li><i class="fas fa-check"></i> 15 exclusive leads per day</li>
+<li><i class="fas fa-check"></i> Daily delivery at 9am</li>
+<li><i class="fas fa-check"></i> Choose any lead type</li>
+<li><i class="fas fa-check"></i> Full source details</li>
+<li><i class="fas fa-check"></i> Online dashboard</li>
+<li><i class="fas fa-check"></i> CSV export</li>
+<li><i class="fas fa-check"></i> Priority support</li>
 </ul>
-<a href="/probateleads/#cta" class="btn" style="width:100%;justify-content:center;padding:12px;font-size:13px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border-radius:8px;font-weight:600;gap:6px"><i class="fas fa-gift"></i> Start Free Trial</a>
+<a href="#cta" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
 </div>
-
-<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;position:relative;overflow:hidden;transition:.3s" data-reveal>
-<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#06b6d4,#0891b2)"></div>
-<div style="font-size:28px;margin-bottom:8px">🏢</div>
-<h3 style="font-size:17px;font-weight:700;font-family:var(--ff-h)">New Business Alerts</h3>
-<div style="font-size:13px;color:var(--muted2);margin:6px 0 4px">Companies House daily</div>
-<div style="font-size:32px;font-weight:900;font-family:var(--ff-h);margin:8px 0">&pound;49<span style="font-size:13px;font-weight:400;color:var(--muted)">/mo</span></div>
-<div style="font-size:12px;color:var(--muted2);margin-bottom:12px">from &pound;0.33/lead &middot; Essential plan</div>
-<ul style="list-style:none;font-size:13px;color:var(--text2);line-height:2.2">
-<li><i class="fas fa-check" style="color:#06b6d4;width:18px;font-size:10px"></i> 1 industry category</li>
-<li><i class="fas fa-check" style="color:#06b6d4;width:18px;font-size:10px"></i> Up to 50 leads per day</li>
-<li><i class="fas fa-check" style="color:#06b6d4;width:18px;font-size:10px"></i> Full company details</li>
-<li><i class="fas fa-check" style="color:#06b6d4;width:18px;font-size:10px"></i> 7-day free trial</li>
+<div class="pricing-card" data-reveal>
+<h3>Enterprise</h3>
+<div class="price">£100<span>/wk</span></div>
+<div class="price-sub">25 leads/day · 175/week · 350/month</div>
+<ul>
+<li><i class="fas fa-check"></i> 25 exclusive leads per day</li>
+<li><i class="fas fa-check"></i> Daily delivery at 9am</li>
+<li><i class="fas fa-check"></i> Choose any lead type</li>
+<li><i class="fas fa-check"></i> Full source details</li>
+<li><i class="fas fa-check"></i> Online dashboard</li>
+<li><i class="fas fa-check"></i> CSV export</li>
+<li><i class="fas fa-check"></i> Dedicated account manager</li>
+<li><i class="fas fa-check"></i> API access</li>
+<li><i class="fas fa-check"></i> Multi-location — nationwide coverage across UK</li>
+<li><i class="fas fa-check"></i> Spread leads across your branch locations</li>
 </ul>
-<a href="/newbusinessalert/#cta" class="btn" style="width:100%;justify-content:center;padding:12px;font-size:13px;background:linear-gradient(135deg,#06b6d4,#0891b2);color:#fff;border-radius:8px;font-weight:600;gap:6px"><i class="fas fa-gift"></i> Start Free Trial</a>
+<a href="#cta" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
 </div>
-
-<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;position:relative;overflow:hidden;transition:.3s" data-reveal>
-<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#10b981,#059669)"></div>
-<div style="font-size:28px;margin-bottom:8px">📋</div>
-<h3 style="font-size:17px;font-weight:700;font-family:var(--ff-h)">Planning Permission</h3>
-<div style="font-size:13px;color:var(--muted2);margin:6px 0 4px">350+ UK council portals</div>
-<div style="font-size:32px;font-weight:900;font-family:var(--ff-h);margin:8px 0">&pound;79<span style="font-size:13px;font-weight:400;color:var(--muted)">/mo</span></div>
-<div style="font-size:12px;color:var(--muted2);margin-bottom:12px">from &pound;0.53/lead &middot; Essential plan</div>
-<ul style="list-style:none;font-size:13px;color:var(--text2);line-height:2.2">
-<li><i class="fas fa-check" style="color:#10b981;width:18px;font-size:10px"></i> 1 local authority</li>
-<li><i class="fas fa-check" style="color:#10b981;width:18px;font-size:10px"></i> Up to 15 leads per day</li>
-<li><i class="fas fa-check" style="color:#10b981;width:18px;font-size:10px"></i> Application details</li>
-<li><i class="fas fa-check" style="color:#10b981;width:18px;font-size:10px"></i> 7-day free trial</li>
-</ul>
-<a href="/planningleads/#cta" class="btn" style="width:100%;justify-content:center;padding:12px;font-size:13px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border-radius:8px;font-weight:600;gap:6px"><i class="fas fa-gift"></i> Start Free Trial</a>
-</div>
-
-<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;position:relative;overflow:hidden;transition:.3s" data-reveal>
-<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6366f1,#4f46e5)"></div>
-<div style="font-size:28px;margin-bottom:8px">🔨</div>
-<h3 style="font-size:17px;font-weight:700;font-family:var(--ff-h)">Public Sector Tenders</h3>
-<div style="font-size:13px;color:var(--muted2);margin:6px 0 4px">Gov.uk Contracts Finder</div>
-<div style="font-size:32px;font-weight:900;font-family:var(--ff-h);margin:8px 0">&pound;79<span style="font-size:13px;font-weight:400;color:var(--muted)">/mo</span></div>
-<div style="font-size:12px;color:var(--muted2);margin-bottom:12px">from &pound;0.53/lead &middot; Essential plan</div>
-<ul style="list-style:none;font-size:13px;color:var(--text2);line-height:2.2">
-<li><i class="fas fa-check" style="color:#6366f1;width:18px;font-size:10px"></i> 1 category</li>
-<li><i class="fas fa-check" style="color:#6366f1;width:18px;font-size:10px"></i> Up to 10 tenders per day</li>
-<li><i class="fas fa-check" style="color:#6366f1;width:18px;font-size:10px"></i> Full tender details</li>
-<li><i class="fas fa-check" style="color:#6366f1;width:18px;font-size:10px"></i> 7-day free trial</li>
-</ul>
-<a href="/tenders/#cta" class="btn" style="width:100%;justify-content:center;padding:12px;font-size:13px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border-radius:8px;font-weight:600;gap:6px"><i class="fas fa-gift"></i> Start Free Trial</a>
-</div>
-
 </div>
 <div style="max-width:780px;margin:24px auto 0;padding:14px 20px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:10px;text-align:center">
 <p style="font-size:13px;color:var(--text2);line-height:1.6">
