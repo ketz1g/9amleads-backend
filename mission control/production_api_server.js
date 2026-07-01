@@ -2646,30 +2646,43 @@ function generateLeadEmailHTML(customer, leads) {
     if (subtitle) body += '<div style="font-size:11px;color:#6b7280;margin-top:2px">' + subtitle + '</div>';
     body += '</div></div>';
 
-    // Details as chips
+    // Details as chips (only show relevant fields per product type)
     var chips = [];
     if (postcode) chips.push({ icon: '\uD83D\uDCCD', text: postcode });
     if (address && address.length > 10) chips.push({ icon: '\uD83C\uDFE2', text: address.substring(0, 60) });
     if (d.city) chips.push({ icon: '\uD83C\uDFD9\uFE0F', text: d.city });
-    if (d.bedrooms) chips.push({ icon: '\uD83C\uDFE0', text: d.bedrooms + ' bedrooms' });
-    if (d.status) chips.push({ icon: '\uD83D\uDD34', text: d.status });
-    if (d.price) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.price).toLocaleString() });
-    if (d.estateValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.estateValue).toLocaleString() + ' estate' });
-    if (d.contractValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.contractValue).toLocaleString() });
-    if (d.estimatedMoveWindow) chips.push({ icon: '\uD83D\uDCC5', text: d.estimatedMoveWindow });
-    if (d.council) chips.push({ icon: '\uD83C\uDFDB\uFE0F', text: d.council });
-    if (d.applicationRef) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.applicationRef });
-    if (d.buyer) chips.push({ icon: '\uD83C\uDFED', text: d.buyer });
-    if (d.deceasedName) chips.push({ icon: '\uD83D\uDC68\u200D\u2696\uFE0F', text: d.deceasedName });
-    if (d.registry) chips.push({ icon: '\uD83C\uDFE2', text: d.registry });
-    if (d.companyName) chips.push({ icon: '\uD83C\uDFE2', text: d.companyName });
-    if (d.sicCode) chips.push({ icon: '\uD83D\uDCCA', text: 'SIC: ' + d.sicCode });
-    if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: new Date(d.incorporationDate).toLocaleDateString() });
-    if (d.companyNumber) chips.push({ icon: '\uD83D\uDCB3', text: 'No: ' + d.companyNumber });
-    if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 100) });
-    if (d.publishedDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Published: ' + new Date(d.publishedDate).toLocaleDateString() });
-    if (d.tenderNoticeId) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.tenderNoticeId });
-    if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); chips.push({ icon: '\u23F3', text: 'Deadline: ' + days + ' days' }); }
+
+    if (productName === 'moving') {
+      if (d.bedrooms) chips.push({ icon: '\uD83C\uDFE0', text: d.bedrooms + ' bedrooms' });
+      if (d.price) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.price).toLocaleString() });
+      if (d.listingStatus || d.status === 'SSTC' || d.status === 'Under Offer' || d.status === 'Available') {
+        var s = d.listingStatus || d.status;
+        chips.push({ icon: '\uD83D\uDD34', text: s });
+      }
+      if (d.estimatedMoveWindow) chips.push({ icon: '\uD83D\uDCC5', text: d.estimatedMoveWindow });
+      if (d.propertyType) chips.push({ icon: '\uD83C\uDFE2', text: d.propertyType });
+      if (d.agent) chips.push({ icon: '\uD83D\uDC64', text: d.agent });
+    } else if (productName === 'probate') {
+      if (d.estateValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.estateValue).toLocaleString() + ' estate' });
+      if (d.deceasedName) chips.push({ icon: '\uD83D\uDC68\u200D\u2696\uFE0F', text: d.deceasedName });
+      if (d.registry) chips.push({ icon: '\uD83C\uDFE2', text: d.registry });
+    } else if (productName === 'newbusiness') {
+      if (d.companyName) chips.push({ icon: '\uD83C\uDFE2', text: d.companyName });
+      if (d.sicCode) chips.push({ icon: '\uD83D\uDCCA', text: 'SIC: ' + d.sicCode });
+      if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: new Date(d.incorporationDate).toLocaleDateString() });
+      if (d.companyNumber) chips.push({ icon: '\uD83D\uDCB3', text: 'No: ' + d.companyNumber });
+    } else if (productName === 'planning') {
+      if (d.council) chips.push({ icon: '\uD83C\uDFDB\uFE0F', text: d.council });
+      if (d.applicationRef) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.applicationRef });
+      if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 100) });
+    } else {
+      if (d.buyer) chips.push({ icon: '\uD83C\uDFED', text: d.buyer });
+      if (d.contractValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.contractValue).toLocaleString() });
+      if (d.tenderNoticeId) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.tenderNoticeId });
+      if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); chips.push({ icon: '\u23F3', text: 'Deadline: ' + days + ' days' }); }
+      if (d.publishedDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Published: ' + new Date(d.publishedDate).toLocaleDateString() });
+      if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 100) });
+    }
 
     if (chips.length > 0) {
       body += '<div style="margin-bottom:8px">';
