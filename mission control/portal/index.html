@@ -75,12 +75,12 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <option value="tenders">Public Tenders</option>
 </select></div>
 <div class="form-group">
-  <label>Your Target postcode areas <span style="color:#8890a8;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(<span id="pc-count">0</span>/<span id="pc-max">5</span> selected <span id="pc-plan-name">on Free Trial</span>)</span></label>
-  <div style="font-size:11px;color:#5c6480;margin-bottom:8px;line-height:1.5">Pick individual postcode areas like <strong style="color:#8890a8">EN1</strong>, <strong style="color:#8890a8">EN2</strong>, <strong style="color:#8890a8">EN3</strong> — grouped by area. Search or browse below.</div>
+  <label>Your Target postcode areas <span style="color:#8890a8;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(<span id="pc-count">0</span>/<span id="pc-max">3</span> selected &middot; up to 3 areas)</span></label>
+  <div style="font-size:11px;color:#5c6480;margin-bottom:8px;line-height:1.5">Pick 2-letter area codes like <strong style="color:#8890a8">CM</strong> (Chelmsford), <strong style="color:#8890a8">EN</strong> (Enfield), <strong style="color:#8890a8">SG</strong> (Stevenage) — each covers all districts in that area. <a href="/pricing/" style="color:#0ea5e9">Extra areas \u00a350 each</a>.</div>
   <div id="pc-selector" style="position:relative">
     <div id="pc-search-wrap" style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:10px;min-height:46px;cursor:text;align-items:center" onclick="document.getElementById('pc-input').focus()">
       <div id="pc-tags" style="display:flex;flex-wrap:wrap;gap:4px"></div>
-      <input type="text" id="pc-input" placeholder="Search districts like EN1, SW1, M1..." style="flex:1;min-width:120px;border:none;background:transparent;color:#f1f5f9;font-size:14px;font-family:inherit;outline:none;padding:2px 0" oninput="searchPostcodes(this.value)" onfocus="showPcDropdown()" onblur="setTimeout(hidePcDropdown,200)">
+      <input type="text" id="pc-input" placeholder="Search area codes like EN, CM, SG..." style="flex:1;min-width:120px;border:none;background:transparent;color:#f1f5f9;font-size:14px;font-family:inherit;outline:none;padding:2px 0" oninput="searchPostcodes(this.value)" onfocus="showPcDropdown()" onblur="setTimeout(hidePcDropdown,200)">
     </div>
     <div id="pc-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#11131f;border:1px solid #1e2030;border-top:none;border-radius:0 0 10px 10px;max-height:320px;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,0.4)"></div>
   </div>
@@ -153,7 +153,7 @@ function loadPostcodes() {
           return numA - numB;
         });
       }
-      postcodeLimit = 5;
+      postcodeLimit = 3;
       updatePcDisplay();
     })
     .catch(() => {});
@@ -252,7 +252,7 @@ function renderPcSearchResults(items) {
   const dropdown = document.getElementById('pc-dropdown');
   const selected = selectedPostcodes.map(s => s.code);
   if (items.length === 0) {
-    dropdown.innerHTML = '<div style="padding:16px;color:#5c6480;font-size:13px;text-align:center">No matching districts. Try EN1, SW1, M1...</div>';
+    dropdown.innerHTML = '<div style="padding:16px;color:#5c6480;font-size:13px;text-align:center">No matching areas. Try CM, EN, SG...</div>';
     return;
   }
   let html = '';
@@ -294,7 +294,7 @@ function togglePc(code, name, region) {
     selectedPostcodes.splice(idx, 1);
   } else {
     if (selectedPostcodes.length >= postcodeLimit) {
-      document.getElementById('pc-availability-msg').textContent = 'Free trial includes up to ' + postcodeLimit + ' districts. Upgrade for more.';
+      document.getElementById('pc-availability-msg').textContent = 'Free trial includes up to ' + postcodeLimit + ' areas. Upgrade or purchase extras for \u00a350 each.';
       document.getElementById('pc-availability-msg').style.display = 'block';
       setTimeout(() => document.getElementById('pc-availability-msg').style.display = 'none', 3000);
       return;
@@ -320,7 +320,7 @@ function updatePcDisplay() {
   const input = document.getElementById('pc-input');
   count.textContent = selectedPostcodes.length;
   max.textContent = postcodeLimit;
-  planName.textContent = 'on Free Trial (5 districts)';
+  planName.textContent = 'on Free Trial (3 areas)';
 
   tags.innerHTML = selectedPostcodes.map(s =>
     '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:6px;font-size:12px;color:#0ea5e9;font-weight:600">' +
@@ -328,7 +328,7 @@ function updatePcDisplay() {
     '<span onclick="removePc(\'' + s.code + '\')" style="cursor:pointer;opacity:0.6;font-size:10px;margin-left:2px">\u2715</span></span>'
   ).join('');
 
-  input.placeholder = selectedPostcodes.length >= postcodeLimit ? 'Max reached' : 'Search districts like EN1, SW1...';
+  input.placeholder = selectedPostcodes.length >= postcodeLimit ? 'Max reached' : 'Search area codes like EN, CM, SG...';
 }
 
 document.getElementById('signup-product').addEventListener('change', loadPostcodes);
@@ -348,7 +348,7 @@ function signup() {
 
   if (!name || !company || !email || !password) { error.textContent = 'Please fill in all fields'; error.style.display = 'block'; return; }
   if (password.length < 8) { error.textContent = 'Password must be at least 8 characters'; error.style.display = 'block'; return; }
-  if (selectedPostcodes.length === 0) { error.textContent = 'Please select at least one postcode district'; error.style.display = 'block'; return; }
+  if (selectedPostcodes.length === 0) { error.textContent = 'Please select at least one postcode area (e.g. EN, CM, SG)'; error.style.display = 'block'; return; }
 
   fetch(API + '/api/auth/signup', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
