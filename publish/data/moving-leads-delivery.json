@@ -1,0 +1,929 @@
+{
+  "london-removals": [
+    {
+      "customerId": "london-removals",
+      "company": "London Premier Removals",
+      "email": "info@londonpremier.co.uk",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:11:48.316Z",
+      "totalLeads": 20,
+      "leadLimit": 20,
+      "leads": [
+        {
+          "address": "73 Buckingham Gate A, SW1",
+          "postcode": "SW1",
+          "bedrooms": 2,
+          "propertyType": "Bungalow",
+          "price": "£289,053",
+          "status": "SSTC",
+          "agent": "Foxtons",
+          "moveWindow": "4 weeks"
+        },
+        {
+          "address": "48 Cadogan Square B, SW3",
+          "postcode": "SW3",
+          "bedrooms": 2,
+          "propertyType": "Flat",
+          "price": "£350,521",
+          "status": "Under Offer",
+          "agent": "Hamptons",
+          "moveWindow": "10 weeks"
+        },
+        {
+          "address": "85 Old Brompton Road C, SW5",
+          "postcode": "SW5",
+          "bedrooms": 4,
+          "propertyType": "Bungalow",
+          "price": "£981,229",
+          "status": "Sold STC",
+          "agent": "Dexters",
+          "moveWindow": "10 weeks"
+        },
+        {
+          "address": "138 Park Lane, W8",
+          "postcode": "W8",
+          "bedrooms": 2,
+          "propertyType": "House",
+          "price": "£412,414",
+          "status": "SSTC",
+          "agent": "Knight Frank",
+          "moveWindow": "7 weeks"
+        },
+        {
+          "address": "117 Church Road, W11",
+          "postcode": "W11",
+          "bedrooms": 1,
+          "propertyType": "Bungalow",
+          "price": "£448,182",
+          "status": "Under Offer",
+          "agent": "Hamptons",
+          "moveWindow": "7 weeks"
+        },
+        {
+          "address": "80 Buckingham Gate, SW1",
+          "postcode": "SW1",
+          "bedrooms": 4,
+          "propertyType": "Townhouse",
+          "price": "£739,898",
+          "status": "Sold STC",
+          "agent": "Chestertons",
+          "moveWindow": "11 weeks"
+        },
+        {
+          "address": "117 Cadogan Square A, SW3",
+          "postcode": "SW3",
+          "bedrooms": 3,
+          "propertyType": "Townhouse",
+          "price": "£875,885",
+          "status": "SSTC",
+          "agent": "Dexters",
+          "moveWindow": "6 weeks"
+        },
+        {
+          "address": "97 Old Brompton Road B, SW5",
+          "postcode": "SW5",
+          "bedrooms": 2,
+          "propertyType": "Townhouse",
+          "price": "£406,209",
+          "status": "Under Offer",
+          "agent": "Dexters",
+          "moveWindow": "10 weeks"
+        },
+        {
+          "address": "129 Park Lane C, W8",
+          "postcode": "W8",
+          "bedrooms": 1,
+          "propertyType": "Flat",
+          "price": "£425,752",
+          "status": "Sold STC",
+          "agent": "Winkworth",
+          "moveWindow": "9 weeks"
+        },
+        {
+          "address": "38 Church Road, W11",
+          "postcode": "W11",
+          "bedrooms": 3,
+          "propertyType": "Townhouse",
+          "price": "£695,575",
+          "status": "SSTC",
+          "agent": "Foxtons",
+          "moveWindow": "6 weeks"
+        },
+        {
+          "address": "2 Buckingham Gate, SW1",
+          "postcode": "SW1",
+          "bedrooms": 1,
+          "propertyType": "Maisonette",
+          "price": "£348,575",
+          "status": "Under Offer",
+          "agent": "Hamptons",
+          "moveWindow": "6 weeks"
+        },
+        {
+          "address": "160 Cadogan Square, SW3",
+          "postcode": "SW3",
+          "bedrooms": 2,
+          "propertyType": "Maisonette",
+          "price": "£348,578",
+          "status": "Sold STC",
+          "agent": "Savills",
+          "moveWindow": "7 weeks"
+        },
+        {
+          "address": "122 Old Brompton Road A, SW5",
+          "postcode": "SW5",
+          "bedrooms": 1,
+          "propertyType": "Townhouse",
+          "price": "£328,537",
+          "status": "SSTC",
+          "agent": "Knight Frank",
+          "moveWindow": "8 weeks"
+        },
+        {
+          "address": "69 Park Lane B, W8",
+          "postcode": "W8",
+          "bedrooms": 1,
+          "propertyType": "Bungalow",
+          "price": "£273,107",
+          "status": "Under Offer",
+          "agent": "Knight Frank",
+          "moveWindow": "11 weeks"
+        },
+        {
+          "address": "162 Church Road C, W11",
+          "postcode": "W11",
+          "bedrooms": 1,
+          "propertyType": "House",
+          "price": "£274,633",
+          "status": "Sold STC",
+          "agent": "Dexters",
+          "moveWindow": "8 weeks"
+        },
+        {
+          "address": "131 Buckingham Gate, SW1",
+          "postcode": "SW1",
+          "bedrooms": 4,
+          "propertyType": "Townhouse",
+          "price": "£878,008",
+          "status": "SSTC",
+          "agent": "Foxtons",
+          "moveWindow": "8 weeks"
+        },
+        {
+          "address": "41 Cadogan Square, SW3",
+          "postcode": "SW3",
+          "bedrooms": 3,
+          "propertyType": "Townhouse",
+          "price": "£728,160",
+          "status": "Under Offer",
+          "agent": "Knight Frank",
+          "moveWindow": "6 weeks"
+        },
+        {
+          "address": "167 Old Brompton Road, SW5",
+          "postcode": "SW5",
+          "bedrooms": 1,
+          "propertyType": "Townhouse",
+          "price": "£398,637",
+          "status": "Sold STC",
+          "agent": "Chestertons",
+          "moveWindow": "9 weeks"
+        },
+        {
+          "address": "139 Park Lane A, W8",
+          "postcode": "W8",
+          "bedrooms": 2,
+          "propertyType": "Bungalow",
+          "price": "£369,392",
+          "status": "SSTC",
+          "agent": "Savills",
+          "moveWindow": "6 weeks"
+        },
+        {
+          "address": "39 Church Road B, W11",
+          "postcode": "W11",
+          "bedrooms": 4,
+          "propertyType": "Maisonette",
+          "price": "£967,185",
+          "status": "Under Offer",
+          "agent": "Knight Frank",
+          "moveWindow": "6 weeks"
+        }
+      ],
+      "summary": {
+        "total": 20,
+        "byPostcode": {
+          "SW1": 4,
+          "SW3": 4,
+          "SW5": 4,
+          "W8": 4,
+          "W11": 4
+        },
+        "byBedrooms": {
+          "2-bed": 6,
+          "4-bed": 4,
+          "1-bed": 7,
+          "3-bed": 3
+        },
+        "byStatus": {
+          "SSTC": 7,
+          "Under Offer": 7,
+          "Sold STC": 6
+        }
+      }
+    }
+  ],
+  "_lastDelivery": "2026-05-06T08:59:36.107Z",
+  "demo-customer": [
+    {
+      "customerId": "demo-customer",
+      "company": "ABC Removals",
+      "email": "demo@movingleadsdaily.co.uk",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:59:36.106Z",
+      "totalLeads": 20,
+      "leadLimit": 20,
+      "leads": [
+        {
+          "address": "157 Buckingham Gate A, SW1",
+          "postcode": "SW1",
+          "bedrooms": 2,
+          "propertyType": "Bungalow",
+          "price": "£376,806",
+          "status": "SSTC",
+          "agent": "Knight Frank",
+          "moveWindow": "9 weeks"
+        },
+        {
+          "address": "175 Cadogan Square B, SW3",
+          "postcode": "SW3",
+          "bedrooms": 2,
+          "propertyType": "Bungalow",
+          "price": "£389,900",
+          "status": "Under Offer",
+          "agent": "Hamptons",
+          "moveWindow": "4 weeks"
+        },
+        {
+          "address": "54 Old Brompton Road C, SW5",
+          "postcode": "SW5",
+          "bedrooms": 4,
+          "propertyType": "Flat",
+          "price": "£518,880",
+          "status": "Sold STC",
+          "agent": "Chestertons",
+          "moveWindow": "5 weeks"
+        },
+        {
+          "address": "96 Horseferry Road, SW1",
+          "postcode": "SW1",
+          "bedrooms": 3,
+          "propertyType": "Townhouse",
+          "price": "£996,007",
+          "status": "SSTC",
+          "agent": "Knight Frank",
+          "moveWindow": "8 weeks"
+        },
+        {
+          "address": "35 Sydney Street, SW3",
+          "postcode": "SW3",
+          "bedrooms": 2,
+          "propertyType": "House",
+          "price": "£298,163",
+          "status": "Under Offer",
+          "agent": "Winkworth",
+          "moveWindow": "10 weeks"
+        },
+        {
+          "address": "145 Earls Court Road, SW5",
+          "postcode": "SW5",
+          "bedrooms": 2,
+          "propertyType": "Townhouse",
+          "price": "£303,907",
+          "status": "Sold STC",
+          "agent": "Knight Frank",
+          "moveWindow": "8 weeks"
+        },
+        {
+          "address": "6 Victoria Street A, SW1",
+          "postcode": "SW1",
+          "bedrooms": 3,
+          "propertyType": "Flat",
+          "price": "£553,349",
+          "status": "SSTC",
+          "agent": "Foxtons",
+          "moveWindow": "10 weeks"
+        },
+        {
+          "address": "139 Sloane Avenue B, SW3",
+          "postcode": "SW3",
+          "bedrooms": 2,
+          "propertyType": "Maisonette",
+          "price": "£336,310",
+          "status": "Under Offer",
+          "agent": "Knight Frank",
+          "moveWindow": "7 weeks"
+        },
+        {
+          "address": "32 Warwick Road C, SW5",
+          "postcode": "SW5",
+          "bedrooms": 2,
+          "propertyType": "House",
+          "price": "£358,319",
+          "status": "Sold STC",
+          "agent": "Winkworth",
+          "moveWindow": "9 weeks"
+        },
+        {
+          "address": "69 Millbank, SW1",
+          "postcode": "SW1",
+          "bedrooms": 3,
+          "propertyType": "Flat",
+          "price": "£721,990",
+          "status": "SSTC",
+          "agent": "Dexters",
+          "moveWindow": "7 weeks"
+        },
+        {
+          "address": "196 King's Road, SW3",
+          "postcode": "SW3",
+          "bedrooms": 3,
+          "propertyType": "Bungalow",
+          "price": "£735,447",
+          "status": "Under Offer",
+          "agent": "Dexters",
+          "moveWindow": "5 weeks"
+        },
+        {
+          "address": "139 Nevern Square, SW5",
+          "postcode": "SW5",
+          "bedrooms": 2,
+          "propertyType": "Bungalow",
+          "price": "£443,371",
+          "status": "Sold STC",
+          "agent": "Winkworth",
+          "moveWindow": "5 weeks"
+        },
+        {
+          "address": "46 Birdcage Walk A, SW1",
+          "postcode": "SW1",
+          "bedrooms": 4,
+          "propertyType": "Maisonette",
+          "price": "£639,348",
+          "status": "SSTC",
+          "agent": "Winkworth",
+          "moveWindow": "9 weeks"
+        },
+        {
+          "address": "157 Chelsea Embankment B, SW3",
+          "postcode": "SW3",
+          "bedrooms": 4,
+          "propertyType": "Maisonette",
+          "price": "£704,039",
+          "status": "Under Offer",
+          "agent": "Winkworth",
+          "moveWindow": "11 weeks"
+        },
+        {
+          "address": "143 Trebovir Road C, SW5",
+          "postcode": "SW5",
+          "bedrooms": 1,
+          "propertyType": "Maisonette",
+          "price": "£447,590",
+          "status": "Sold STC",
+          "agent": "Savills",
+          "moveWindow": "9 weeks"
+        },
+        {
+          "address": "135 Buckingham Gate, SW1",
+          "postcode": "SW1",
+          "bedrooms": 1,
+          "propertyType": "Townhouse",
+          "price": "£403,024",
+          "status": "SSTC",
+          "agent": "Foxtons",
+          "moveWindow": "10 weeks"
+        },
+        {
+          "address": "26 Cadogan Square, SW3",
+          "postcode": "SW3",
+          "bedrooms": 2,
+          "propertyType": "Maisonette",
+          "price": "£331,277",
+          "status": "Under Offer",
+          "agent": "Winkworth",
+          "moveWindow": "7 weeks"
+        },
+        {
+          "address": "123 Old Brompton Road, SW5",
+          "postcode": "SW5",
+          "bedrooms": 3,
+          "propertyType": "Flat",
+          "price": "£985,688",
+          "status": "Sold STC",
+          "agent": "Knight Frank",
+          "moveWindow": "11 weeks"
+        },
+        {
+          "address": "144 Horseferry Road A, SW1",
+          "postcode": "SW1",
+          "bedrooms": 4,
+          "propertyType": "Townhouse",
+          "price": "£878,292",
+          "status": "SSTC",
+          "agent": "Chestertons",
+          "moveWindow": "10 weeks"
+        },
+        {
+          "address": "74 Sydney Street B, SW3",
+          "postcode": "SW3",
+          "bedrooms": 2,
+          "propertyType": "Maisonette",
+          "price": "£276,055",
+          "status": "Under Offer",
+          "agent": "Knight Frank",
+          "moveWindow": "5 weeks"
+        }
+      ],
+      "summary": {
+        "total": 20,
+        "byPostcode": {
+          "SW1": 7,
+          "SW3": 7,
+          "SW5": 6
+        },
+        "byBedrooms": {
+          "2-bed": 9,
+          "4-bed": 4,
+          "3-bed": 5,
+          "1-bed": 2
+        },
+        "byStatus": {
+          "SSTC": 7,
+          "Under Offer": 7,
+          "Sold STC": 6
+        }
+      }
+    },
+    {
+      "customerId": "demo-customer",
+      "company": "ABC Removals",
+      "email": "demo@movingleadsdaily.co.uk",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:15:55.595Z",
+      "totalLeads": 20,
+      "leadLimit": 20,
+      "leads": [
+        {
+          "address": "108 Buckingham Gate A, SW1",
+          "postcode": "SW1",
+          "bedrooms": 2,
+          "propertyType": "Maisonette",
+          "price": "£392,919",
+          "status": "SSTC",
+          "agent": "Hamptons",
+          "moveWindow": "4 weeks"
+        },
+        {
+          "address": "177 Cadogan Square B, SW3",
+          "postcode": "SW3",
+          "bedrooms": 3,
+          "propertyType": "Bungalow",
+          "price": "£580,124",
+          "status": "Under Offer",
+          "agent": "Knight Frank",
+          "moveWindow": "7 weeks"
+        },
+        {
+          "address": "153 Old Brompton Road C, SW5",
+          "postcode": "SW5",
+          "bedrooms": 4,
+          "propertyType": "Flat",
+          "price": "£662,044",
+          "status": "Sold STC",
+          "agent": "Chestertons",
+          "moveWindow": "10 weeks"
+        },
+        {
+          "address": "80 Horseferry Road, SW1",
+          "postcode": "SW1",
+          "bedrooms": 1,
+          "propertyType": "Flat",
+          "price": "£426,606",
+          "status": "SSTC",
+          "agent": "Chestertons",
+          "moveWindow": "4 weeks"
+        },
+        {
+          "address": "69 Sydney Street, SW3",
+          "postcode": "SW3",
+          "bedrooms": 4,
+          "propertyType": "House",
+          "price": "£715,495",
+          "status": "Under Offer",
+          "agent": "Winkworth",
+          "moveWindow": "4 weeks"
+        },
+        {
+          "address": "17 Earls Court Road, SW5",
+          "postcode": "SW5",
+          "bedrooms": 1,
+          "propertyType": "Flat",
+          "price": "£320,027",
+          "status": "Sold STC",
+          "agent": "Chestertons",
+          "moveWindow": "8 weeks"
+        },
+        {
+          "address": "75 Victoria Street A, SW1",
+          "postcode": "SW1",
+          "bedrooms": 1,
+          "propertyType": "Flat",
+          "price": "£252,436",
+          "status": "SSTC",
+          "agent": "Winkworth",
+          "moveWindow": "5 weeks"
+        },
+        {
+          "address": "52 Sloane Avenue B, SW3",
+          "postcode": "SW3",
+          "bedrooms": 4,
+          "propertyType": "House",
+          "price": "£699,901",
+          "status": "Under Offer",
+          "agent": "Dexters",
+          "moveWindow": "10 weeks"
+        },
+        {
+          "address": "16 Warwick Road C, SW5",
+          "postcode": "SW5",
+          "bedrooms": 4,
+          "propertyType": "Bungalow",
+          "price": "£911,773",
+          "status": "Sold STC",
+          "agent": "Winkworth",
+          "moveWindow": "11 weeks"
+        },
+        {
+          "address": "197 Millbank, SW1",
+          "postcode": "SW1",
+          "bedrooms": 4,
+          "propertyType": "Bungalow",
+          "price": "£884,598",
+          "status": "SSTC",
+          "agent": "Dexters",
+          "moveWindow": "11 weeks"
+        },
+        {
+          "address": "163 King's Road, SW3",
+          "postcode": "SW3",
+          "bedrooms": 4,
+          "propertyType": "Maisonette",
+          "price": "£879,306",
+          "status": "Under Offer",
+          "agent": "Knight Frank",
+          "moveWindow": "9 weeks"
+        },
+        {
+          "address": "132 Nevern Square, SW5",
+          "postcode": "SW5",
+          "bedrooms": 2,
+          "propertyType": "House",
+          "price": "£264,672",
+          "status": "Sold STC",
+          "agent": "Foxtons",
+          "moveWindow": "8 weeks"
+        },
+        {
+          "address": "168 Birdcage Walk A, SW1",
+          "postcode": "SW1",
+          "bedrooms": 1,
+          "propertyType": "Bungalow",
+          "price": "£293,851",
+          "status": "SSTC",
+          "agent": "Chestertons",
+          "moveWindow": "6 weeks"
+        },
+        {
+          "address": "128 Chelsea Embankment B, SW3",
+          "postcode": "SW3",
+          "bedrooms": 1,
+          "propertyType": "Bungalow",
+          "price": "£331,939",
+          "status": "Under Offer",
+          "agent": "Foxtons",
+          "moveWindow": "9 weeks"
+        },
+        {
+          "address": "69 Trebovir Road C, SW5",
+          "postcode": "SW5",
+          "bedrooms": 4,
+          "propertyType": "Maisonette",
+          "price": "£514,177",
+          "status": "Sold STC",
+          "agent": "Savills",
+          "moveWindow": "11 weeks"
+        },
+        {
+          "address": "144 Buckingham Gate, SW1",
+          "postcode": "SW1",
+          "bedrooms": 4,
+          "propertyType": "Townhouse",
+          "price": "£678,012",
+          "status": "SSTC",
+          "agent": "Hamptons",
+          "moveWindow": "8 weeks"
+        },
+        {
+          "address": "144 Cadogan Square, SW3",
+          "postcode": "SW3",
+          "bedrooms": 2,
+          "propertyType": "Maisonette",
+          "price": "£275,732",
+          "status": "Under Offer",
+          "agent": "Savills",
+          "moveWindow": "6 weeks"
+        },
+        {
+          "address": "87 Old Brompton Road, SW5",
+          "postcode": "SW5",
+          "bedrooms": 4,
+          "propertyType": "House",
+          "price": "£781,285",
+          "status": "Sold STC",
+          "agent": "Dexters",
+          "moveWindow": "8 weeks"
+        },
+        {
+          "address": "68 Horseferry Road A, SW1",
+          "postcode": "SW1",
+          "bedrooms": 1,
+          "propertyType": "Maisonette",
+          "price": "£359,330",
+          "status": "SSTC",
+          "agent": "Foxtons",
+          "moveWindow": "4 weeks"
+        },
+        {
+          "address": "159 Sydney Street B, SW3",
+          "postcode": "SW3",
+          "bedrooms": 4,
+          "propertyType": "Flat",
+          "price": "£983,436",
+          "status": "Under Offer",
+          "agent": "Dexters",
+          "moveWindow": "7 weeks"
+        }
+      ],
+      "summary": {
+        "total": 20,
+        "byPostcode": {
+          "SW1": 7,
+          "SW3": 7,
+          "SW5": 6
+        },
+        "byBedrooms": {
+          "2-bed": 3,
+          "3-bed": 1,
+          "4-bed": 10,
+          "1-bed": 6
+        },
+        "byStatus": {
+          "SSTC": 7,
+          "Under Offer": 7,
+          "Sold STC": 6
+        }
+      }
+    },
+    {
+      "customerId": "demo-customer",
+      "company": "ABC Removals",
+      "email": "demo@movingleadsdaily.co.uk",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:11:57.126Z",
+      "totalLeads": 20,
+      "leadLimit": 20,
+      "leads": [
+        {
+          "address": "51 Buckingham Gate A, SW1",
+          "postcode": "SW1",
+          "bedrooms": 2,
+          "propertyType": "Maisonette",
+          "price": "£349,124",
+          "status": "SSTC",
+          "agent": "Hamptons",
+          "moveWindow": "10 weeks"
+        },
+        {
+          "address": "88 Cadogan Square B, SW3",
+          "postcode": "SW3",
+          "bedrooms": 4,
+          "propertyType": "Bungalow",
+          "price": "£877,419",
+          "status": "Under Offer",
+          "agent": "Hamptons",
+          "moveWindow": "4 weeks"
+        },
+        {
+          "address": "28 Old Brompton Road C, SW5",
+          "postcode": "SW5",
+          "bedrooms": 3,
+          "propertyType": "House",
+          "price": "£784,188",
+          "status": "Sold STC",
+          "agent": "Dexters",
+          "moveWindow": "7 weeks"
+        },
+        {
+          "address": "93 Horseferry Road, SW1",
+          "postcode": "SW1",
+          "bedrooms": 1,
+          "propertyType": "Flat",
+          "price": "£320,230",
+          "status": "SSTC",
+          "agent": "Foxtons",
+          "moveWindow": "6 weeks"
+        },
+        {
+          "address": "98 Sydney Street, SW3",
+          "postcode": "SW3",
+          "bedrooms": 1,
+          "propertyType": "Maisonette",
+          "price": "£303,905",
+          "status": "Under Offer",
+          "agent": "Knight Frank",
+          "moveWindow": "11 weeks"
+        },
+        {
+          "address": "142 Earls Court Road, SW5",
+          "postcode": "SW5",
+          "bedrooms": 2,
+          "propertyType": "Maisonette",
+          "price": "£327,845",
+          "status": "Sold STC",
+          "agent": "Savills",
+          "moveWindow": "4 weeks"
+        },
+        {
+          "address": "146 Victoria Street A, SW1",
+          "postcode": "SW1",
+          "bedrooms": 1,
+          "propertyType": "House",
+          "price": "£361,784",
+          "status": "SSTC",
+          "agent": "Hamptons",
+          "moveWindow": "10 weeks"
+        },
+        {
+          "address": "171 Sloane Avenue B, SW3",
+          "postcode": "SW3",
+          "bedrooms": 2,
+          "propertyType": "Flat",
+          "price": "£435,470",
+          "status": "Under Offer",
+          "agent": "Dexters",
+          "moveWindow": "5 weeks"
+        },
+        {
+          "address": "192 Warwick Road C, SW5",
+          "postcode": "SW5",
+          "bedrooms": 4,
+          "propertyType": "House",
+          "price": "£578,329",
+          "status": "Sold STC",
+          "agent": "Foxtons",
+          "moveWindow": "11 weeks"
+        },
+        {
+          "address": "151 Millbank, SW1",
+          "postcode": "SW1",
+          "bedrooms": 2,
+          "propertyType": "House",
+          "price": "£306,924",
+          "status": "SSTC",
+          "agent": "Dexters",
+          "moveWindow": "6 weeks"
+        },
+        {
+          "address": "6 King's Road, SW3",
+          "postcode": "SW3",
+          "bedrooms": 4,
+          "propertyType": "Flat",
+          "price": "£657,951",
+          "status": "Under Offer",
+          "agent": "Hamptons",
+          "moveWindow": "7 weeks"
+        },
+        {
+          "address": "166 Nevern Square, SW5",
+          "postcode": "SW5",
+          "bedrooms": 2,
+          "propertyType": "Bungalow",
+          "price": "£428,272",
+          "status": "Sold STC",
+          "agent": "Savills",
+          "moveWindow": "10 weeks"
+        },
+        {
+          "address": "166 Birdcage Walk A, SW1",
+          "postcode": "SW1",
+          "bedrooms": 1,
+          "propertyType": "House",
+          "price": "£348,567",
+          "status": "SSTC",
+          "agent": "Chestertons",
+          "moveWindow": "4 weeks"
+        },
+        {
+          "address": "91 Chelsea Embankment B, SW3",
+          "postcode": "SW3",
+          "bedrooms": 3,
+          "propertyType": "Bungalow",
+          "price": "£682,812",
+          "status": "Under Offer",
+          "agent": "Winkworth",
+          "moveWindow": "4 weeks"
+        },
+        {
+          "address": "40 Trebovir Road C, SW5",
+          "postcode": "SW5",
+          "bedrooms": 4,
+          "propertyType": "Flat",
+          "price": "£840,790",
+          "status": "Sold STC",
+          "agent": "Hamptons",
+          "moveWindow": "10 weeks"
+        },
+        {
+          "address": "49 Buckingham Gate, SW1",
+          "postcode": "SW1",
+          "bedrooms": 3,
+          "propertyType": "Maisonette",
+          "price": "£690,722",
+          "status": "SSTC",
+          "agent": "Dexters",
+          "moveWindow": "5 weeks"
+        },
+        {
+          "address": "181 Cadogan Square, SW3",
+          "postcode": "SW3",
+          "bedrooms": 1,
+          "propertyType": "Townhouse",
+          "price": "£289,046",
+          "status": "Under Offer",
+          "agent": "Chestertons",
+          "moveWindow": "9 weeks"
+        },
+        {
+          "address": "4 Old Brompton Road, SW5",
+          "postcode": "SW5",
+          "bedrooms": 2,
+          "propertyType": "Bungalow",
+          "price": "£288,279",
+          "status": "Sold STC",
+          "agent": "Chestertons",
+          "moveWindow": "11 weeks"
+        },
+        {
+          "address": "12 Horseferry Road A, SW1",
+          "postcode": "SW1",
+          "bedrooms": 4,
+          "propertyType": "House",
+          "price": "£680,367",
+          "status": "SSTC",
+          "agent": "Hamptons",
+          "moveWindow": "9 weeks"
+        },
+        {
+          "address": "95 Sydney Street B, SW3",
+          "postcode": "SW3",
+          "bedrooms": 4,
+          "propertyType": "House",
+          "price": "£964,484",
+          "status": "Under Offer",
+          "agent": "Foxtons",
+          "moveWindow": "8 weeks"
+        }
+      ],
+      "summary": {
+        "total": 20,
+        "byPostcode": {
+          "SW1": 7,
+          "SW3": 7,
+          "SW5": 6
+        },
+        "byBedrooms": {
+          "2-bed": 6,
+          "4-bed": 6,
+          "3-bed": 3,
+          "1-bed": 5
+        },
+        "byStatus": {
+          "SSTC": 7,
+          "Under Offer": 7,
+          "Sold STC": 6
+        }
+      }
+    }
+  ]
+}

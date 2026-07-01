@@ -459,13 +459,13 @@ app.post('/api/auth/signup', async (req, res) => {
       }
     }
 
-    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url, campaign_sent)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, email.toLowerCase(), company, name || '', phone || '', password_hash,
       product, productInfo.lead_type, productInfo.business_type,
       JSON.stringify(targetAreas || []), leadFilters || bizField2 || '', bizField3 || JSON.stringify(products && Array.isArray(products) ? products : [product]),
       source || 'direct', plan || 'free_trial', plan === 'free_trial' ? trial_ends : null, marketingConsent ? 1 : 0,
-      new Date().toISOString(), '0', crmWebhookUrl || ''
+      new Date().toISOString(), '0', crmWebhookUrl || '', '[]'
     );
 
     // Claim postcodes
@@ -1727,20 +1727,40 @@ cron.schedule('0 10 * * *', async () => {
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   try {
     var delivered = 0, errors = 0;
+    var today = new Date().toISOString().split('T')[0];
+    var yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
     var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
       var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
       var isExpired = trialEnds && new Date() > trialEnds;
       if (isExpired && cust.plan === 'free_trial') continue;
+      var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 25 };
+      var totalDailyLimit = dailyLimitByPlan[cust.plan] || 5;
       var products = [cust.product];
       try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
-      var limit = products.reduce(function(sum, p) { return sum + ({ moving: 5, probate: 5, newbusiness: 5, planning: 5, tenders: 5 }[p] || 5); }, 0);
-      var custLeads = (getDb().leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0; }).slice(0, limit);
+      var perProduct = Math.floor(totalDailyLimit / products.length);
+      var remainder = totalDailyLimit - (perProduct * products.length);
+      var custLeads = [];
+      for (var pi = 0; pi < products.length; pi++) {
+        var prod = products[pi];
+        var prodLimit = perProduct + (pi < remainder ? 1 : 0);
+        if (prodLimit <= 0) continue;
+        var prodLeads = (getDb().leads || []).filter(function(l) {
+          return l.customer_id === cust.id && l.delivered === 0 && l.product === prod &&
+            (l.date === today || l.date === yesterday || l.created_at === today || l.created_at === yesterday || l.listed_date === today || l.listed_date === yesterday || l.scrapedAt?.startsWith(today) || l.scrapedAt?.startsWith(yesterday));
+        });
+        if (prodLeads.length < prodLimit) {
+          prodLeads = (getDb().leads || []).filter(function(l) {
+            return l.customer_id === cust.id && l.delivered === 0 && l.product === prod;
+          });
+        }
+        custLeads = custLeads.concat(prodLeads.slice(0, prodLimit));
+      }
       if (custLeads.length === 0) continue;
       try {
         var htmlContent = generateLeadEmailHTML(cust, custLeads);
-        var subject = (cust.lead_type || 'Daily Leads') + ' for ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        var subject = '9amLeads for ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, htmlContent);
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
@@ -3045,23 +3065,23 @@ app.use(function(err, req, res, next) {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ===== TEST SCHEDULE: 2:00 scraper → 2:02 distributor → 2:05 delivery =====
-cron.schedule('0 2 * * *', async () => {
-  console.log('[TEST CRON] Running scrapers...');
+// ===== TEST SCHEDULE: 3:00 scraper → 3:02 distributor → 3:05 delivery =====
+cron.schedule('0 3 * * *', async () => {
+  console.log('[3AM TEST] Scraping fresh leads...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[TEST CRON] Scraper error:', e.message); }
+  } catch(e) { console.log('[3AM TEST] Scraper error:', e.message); }
 });
-cron.schedule('2 2 * * *', async () => {
-  console.log('[TEST CRON] Distributing leads to customers...');
+cron.schedule('2 3 * * *', async () => {
+  console.log('[3AM TEST] Distributing leads to customers...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: PORT, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[TEST CRON] Distributor error:', e.message); }
+  } catch(e) { console.log('[3AM TEST] Distributor error:', e.message); }
 });
-cron.schedule('5 2 * * *', async () => {
-  console.log('[TEST CRON] Delivering leads via email...');
+cron.schedule('5 3 * * *', async () => {
+  console.log('[3AM TEST] Delivering leads via email...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About — Probate Leads</title>
+  <meta name="description" content="Learn about Probate Leads — the UK's most reliable daily probate grant alert service for solicitors, estate agents, and financial advisors.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--primary:#a855f7;--primary-dark:#7c3aed;--primary-light:#c084fc;--bg:#000000;--bg-card:#0a0a0a;--bg-card-hover:#111111;--border:#1a1a1a;--border-hover:#2a2a2a;--text:#ffffff;--text-secondary:#a1a1aa;--text-muted:#52525b;--radius:12px;--radius-sm:8px;--radius-lg:16px;--radius-xl:24px;--shadow:0 4px 24px rgba(0,0,0,0.3);--transition:all 0.3s cubic-bezier(0.4,0,0.2,1);--font-heading:'Outfit',-apple-system,BlinkMacSystemFont,sans-serif;--font-body:'Inter',-apple-system,BlinkMacSystemFont,sans-serif}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--font-body);color:var(--text);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+    .container{max-width:1140px;margin:0 auto;padding:0 24px}
+    .section{padding:80px 0}
+    .section-title{font-family:var(--font-heading);font-size:36px;font-weight:800;margin-bottom:16px;letter-spacing:-0.5px;line-height:1.15}
+    .section-sub{color:var(--text-secondary);font-size:16px;max-width:600px;line-height:1.7}
+    .gradient-text{background:linear-gradient(135deg,var(--primary),var(--primary-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    a{text-decoration:none;color:inherit}
+    img{max-width:100%;height:auto}
+
+    /* Navigation */
+    nav{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;max-width:1140px;margin:0 auto;position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06)}
+    .logo{display:flex;align-items:center;gap:10px;font-family:var(--font-heading);font-size:21px;font-weight:800;color:var(--text);letter-spacing:-0.5px}
+    .logo .mark{width:36px;height:36px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px}
+    .logo span{color:var(--primary)}
+    .nav-links{display:flex;align-items:center;gap:4px}
+    .nav-links a{padding:8px 16px;color:var(--text-secondary);font-weight:500;font-size:14px;transition:var(--transition);border-radius:var(--radius-sm)}
+    .nav-links a:hover{color:var(--text);background:rgba(255,255,255,0.04)}
+    .nav-links a.active{color:var(--primary)}
+    .nav-links .btn-nav{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff!important;padding:10px 22px;border-radius:var(--radius-sm);font-weight:600;box-shadow:0 4px 16px rgba(168,85,247,0.25)}
+    .nav-links .btn-nav:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(168,85,247,0.35)}
+    .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px;background:none;border:none;z-index:101}
+    .hamburger span{width:24px;height:2px;background:var(--text);border-radius:2px;transition:var(--transition)}
+
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:var(--radius-sm);font-weight:600;font-size:15px;cursor:pointer;border:none;transition:var(--transition);text-decoration:none;font-family:var(--font-body)}
+    .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 4px 16px rgba(168,85,247,0.25)}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(168,85,247,0.35)}
+    .btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border)}
+    .btn-secondary:hover{border-color:var(--primary);color:var(--primary);background:rgba(168,85,247,0.04)}
+
+    /* Page hero */
+    .page-hero{padding:120px 0 60px;text-align:center;position:relative;overflow:hidden;background:#000}
+    .page-hero .bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(168,85,247,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,0.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+    .page-hero .orb{position:absolute;width:400px;height:400px;border-radius:50%;background:var(--primary);opacity:0.05;filter:blur(80px);top:-150px;right:-100px;pointer-events:none}
+    .page-hero h1{font-family:var(--font-heading);font-size:42px;font-weight:900;margin-bottom:12px;position:relative}
+    .page-hero p{color:var(--text-secondary);font-size:17px;max-width:550px;margin:0 auto;position:relative}
+
+    /* Content */
+    .content-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;margin-top:48px}
+    .content-image-wrap{border-radius:var(--radius-xl);overflow:hidden;border:1px solid var(--border)}
+    .content-image-wrap img{width:100%;display:block}
+    .content-text p{color:var(--text-secondary);font-size:15px;line-height:1.8;margin-bottom:16px}
+    .content-text .highlight{color:var(--primary);font-weight:600}
+
+    /* Values */
+    .values-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px}
+    .value-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px 24px;text-align:center;transition:var(--transition)}
+    .value-card:hover{transform:translateY(-4px);border-color:var(--border-hover);background:var(--bg-card-hover)}
+    .value-card .icon{font-size:32px;margin-bottom:12px}
+    .value-card h3{font-family:var(--font-heading);font-size:17px;margin-bottom:8px}
+    .value-card p{color:var(--text-secondary);font-size:14px;line-height:1.7}
+
+    /* Team */
+    .team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px}
+    .team-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;text-align:center;transition:var(--transition)}
+    .team-card:hover{border-color:var(--border-hover)}
+    .team-card .avatar{width:72px;height:72px;border-radius:50%;background:rgba(168,85,247,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:28px;color:var(--primary)}
+    .team-card h4{font-family:var(--font-heading);font-size:16px;margin-bottom:4px}
+    .team-card .role{color:var(--text-muted);font-size:13px;margin-bottom:12px}
+    .team-card p{color:var(--text-secondary);font-size:13px;line-height:1.6}
+
+    /* Stats */
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:48px}
+    .stat-item{text-align:center;padding:32px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)}
+    .stat-item .num{font-family:var(--font-heading);font-size:32px;font-weight:900;background:linear-gradient(135deg,var(--primary),var(--primary-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .stat-item .label{color:var(--text-muted);font-size:13px;margin-top:4px}
+    .stat-item .desc{color:var(--text-secondary);font-size:12px;margin-top:2px}
+
+    /* CTA */
+    .cta-section{background:linear-gradient(135deg,#0a0a0a,#1a0a2e);text-align:center;padding:80px 24px;position:relative;overflow:hidden;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .cta-section::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(168,85,247,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,0.04) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+    .cta-section h2{font-family:var(--font-heading);font-size:36px;font-weight:800;margin-bottom:16px;position:relative}
+    .cta-section p{color:var(--text-secondary);max-width:500px;margin:0 auto 28px;font-size:16px;position:relative}
+    .cta-section .btn{position:relative}
+
+    /* Footer */
+    footer{background:#050505;color:var(--text-muted);padding:60px 0 0;border-top:1px solid var(--border)}
+    .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;max-width:1140px;margin:0 auto;padding:0 24px}
+    .footer-grid h4{color:var(--text-secondary);font-size:13px;font-weight:700;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-heading)}
+    .footer-grid a{display:block;color:var(--text-muted);font-size:14px;padding:5px 0;transition:var(--transition)}
+    .footer-grid a:hover{color:var(--primary-light)}
+    .footer-grid p{font-size:14px;line-height:1.7;margin-top:12px}
+    .footer-social{display:flex;gap:12px;margin-top:16px}
+    .footer-social a{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:16px;transition:var(--transition);text-decoration:none}
+    .footer-social a:hover{background:var(--primary);color:#fff}
+    .footer-bottom{text-align:center;padding:24px;margin-top:48px;border-top:1px solid var(--border);font-size:13px;max-width:1140px;margin-left:auto;margin-right:auto}
+
+    /* Animations */
+    [data-animate]{opacity:0;transform:translateY(24px);transition:opacity 0.6s ease,transform 0.6s ease}
+    [data-animate].visible{opacity:1;transform:translateY(0)}
+
+    /* Responsive */
+    @media(max-width:1024px){
+      .content-grid{grid-template-columns:1fr;gap:32px}
+      .values-grid,.team-grid{grid-template-columns:repeat(2,1fr)}
+      .stats-row{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(max-width:768px){
+      .section{padding:60px 0}
+      .page-hero h1{font-size:30px}
+      .hamburger{display:flex}
+      .nav-links{display:none;position:absolute;top:64px;left:0;right:0;background:rgba(0,0,0,0.95);backdrop-filter:blur(20px);flex-direction:column;padding:16px 24px;border-bottom:1px solid var(--border)}
+      .nav-links.open{display:flex}
+      .nav-links a{padding:12px 16px;margin:2px 0}
+      .values-grid,.team-grid{grid-template-columns:1fr}
+      .stats-row{grid-template-columns:1fr}
+      .footer-grid{grid-template-columns:1fr 1fr;gap:24px}
+      .section-title{font-size:28px}
+    }
+    @media(max-width:480px){
+      .footer-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/probateleads/" class="logo"><div class="mark">⚖️</div> Probate <span>Leads</span></a>
+  <div class="nav-links" id="navLinks">
+    <a href="/probateleads/">Home</a>
+    <a href="/probateleads/about.html" class="active">About</a>
+    <a href="/probateleads/how-it-works.html">How It Works</a>
+    <a href="/probateleads/pricing.html">Pricing</a>
+    <a href="/probateleads/contact.html">Contact</a>
+    <a href="/probateleads/contact.html" class="btn-nav"><i class="fas fa-star"></i> Free Trial</a>
+  </div>
+  <button class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- PAGE HERO -->
+<section class="page-hero">
+  <div class="bg-grid"></div>
+  <div class="orb"></div>
+  <h1 data-animate>About <span class="gradient-text">Probate Leads</span></h1>
+  <p data-animate>We help UK professionals find high-quality leads through daily data alerts from the official probate register.</p>
+</section>
+
+<!-- WHAT WE DO -->
+<section class="section">
+  <div class="container">
+    <div class="content-grid">
+      <div class="content-image-wrap" data-animate><img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&h=500&fit=crop" alt="Probate documents and legal work" loading="lazy"></div>
+      <div class="content-text" data-animate>
+        <h2 class="section-title" style="text-align:left">What <span class="gradient-text">We Do</span></h2>
+        <p>Probate Leads provides daily data alerts to help UK businesses find new clients. Our system monitors public data sources and delivers fresh leads directly to your inbox every morning — so you can be first to contact potential customers before your competitors even know they exist.</p>
+        <p>We track every probate grant published on the <span class="highlight">official UK Probate Register</span>. Our technology captures grants within 24-48 hours of publication, filters them by your chosen postcodes or regions, and sends you a clean, actionable list every morning before 8 AM.</p>
+        <p>Whether you're a solicitor handling estate administration, an estate agent looking for property instructions, or a financial advisor offering inheritance tax planning — we give you the leads you need to grow your practice.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="section" style="background:var(--bg-card);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat-item" data-animate><div class="num">15k+</div><div class="label">Grants Tracked</div><div class="desc">and counting</div></div>
+      <div class="stat-item" data-animate><div class="num">98%</div><div class="label">Accuracy Rate</div><div class="desc">verified data</div></div>
+      <div class="stat-item" data-animate><div class="num">300+</div><div class="label">Active Clients</div><div class="desc">UK wide</div></div>
+      <div class="stat-item" data-animate><div class="num">4.7★</div><div class="label">Customer Rating</div><div class="desc">from reviews</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- OUR VALUES -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title" data-animate>Our <span class="gradient-text">Values</span></h2>
+    <p class="section-sub" style="text-align:center;margin:0 auto 12px" data-animate>What drives us every day.</p>
+    <div class="values-grid">
+      <div class="value-card" data-animate><div class="icon">🎯</div><h3>Accuracy First</h3><p>We verify every grant against the official register. No guesswork, no stale data — just reliable, actionable leads.</p></div>
+      <div class="value-card" data-animate><div class="icon">⚡</div><h3>Speed Matters</h3><p>We deliver leads within 24-48 hours of publication. Being first to know is the difference between winning and losing the instruction.</p></div>
+      <div class="value-card" data-animate><div class="icon">🔒</div><h3>Data Privacy</h3><p>All data is sourced from public registers and handled with the utmost respect for privacy and compliance.</p></div>
+      <div class="value-card" data-animate><div class="icon">🤝</div><h3>Client Success</h3><p>Our average client sees 5-10x ROI within 30 days. We succeed when you succeed — it's that simple.</p></div>
+      <div class="value-card" data-animate><div class="icon">🇬🇧</div><h3>UK Focused</h3><p>We cover England, Wales, Scotland, and Northern Ireland. Hyper-local targeting with national coverage.</p></div>
+      <div class="value-card" data-animate><div class="icon">💡</div><h3>Continuous Improvement</h3><p>We're constantly refining our technology to deliver faster, more accurate, and more actionable leads.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- OUR TEAM -->
+<section class="section" style="background:var(--bg-card);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="container">
+    <h2 class="section-title" data-animate>Meet the <span class="gradient-text">Team</span></h2>
+    <p class="section-sub" style="text-align:center;margin:0 auto 12px" data-animate>The people behind Probate Leads.</p>
+    <div class="team-grid">
+      <div class="team-card" data-animate><div class="avatar"><i class="fas fa-user-tie"></i></div><h4>Alex Richardson</h4><div class="role">Founder & CEO</div><p>Former solicitor with 12 years in estate administration. Built Probate Leads to solve the problem he experienced firsthand.</p></div>
+      <div class="team-card" data-animate><div class="avatar"><i class="fas fa-code"></i></div><h4>Maya Patel</h4><div class="role">Head of Technology</div><p>Full-stack engineer who built the data pipeline that monitors the probate register 24/7/365.</p></div>
+      <div class="team-card" data-animate><div class="avatar"><i class="fas fa-headset"></i></div><h4>Jack Thompson</h4><div class="role">Client Success Lead</div><p>Ensures every client gets maximum value from their subscription. Former estate agent who knows the industry inside out.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2 data-animate>Ready to Grow Your Practice?</h2>
+  <p data-animate>Join 300+ UK professionals already using Probate Leads to win new business every week.</p>
+  <a href="/probateleads/contact.html" class="btn btn-primary btn-lg" data-animate><i class="fas fa-rocket"></i> Start Free Trial</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="/probateleads/" class="logo" style="font-size:20px"><div class="mark">⚖️</div> Probate <span>Leads</span></a>
+      <p>Daily probate grant alerts for UK solicitors, estate agents, and financial advisors. Know who inherited before anyone else does.</p>
+      <div class="footer-social">
+        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+        <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+      </div>
+    </div>
+    <div><h4>Pages</h4><a href="/probateleads/">Home</a><a href="/probateleads/about.html">About</a><a href="/probateleads/how-it-works.html">How It Works</a><a href="/probateleads/pricing.html">Pricing</a><a href="/probateleads/contact.html">Contact</a></div>
+    <div><h4>Resources</h4><a href="/privacy.html">Privacy Policy</a><a href="/terms.html">Terms of Service</a><a href="/probateleads/contact.html">Support</a></div>
+    <div><h4>Contact</h4><p style="font-size:14px;line-height:1.7">Email: hello@probateleads.co.uk<br>Phone: 020 1234 5678<br>Mon-Fri 9am-6pm</p></div>
+  </div>
+  <div class="footer-bottom">© 2026 Probate Leads. All rights reserved. Made in the UK 🇬🇧</div>
+</footer>
+
+<script>
+document.querySelectorAll('.nav-links a').forEach(a => {
+  a.addEventListener('click', () => {
+    document.getElementById('navLinks').classList.remove('open');
+  });
+});
+window.addEventListener('scroll', () => {
+  document.querySelector('nav').style.borderBottomColor = window.scrollY > 20 ? 'rgba(255,255,255,0.06)' : 'transparent';
+});
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
+</script>
+
+<!-- COOKIE CONSENT -->
+<div id="cookieConsent" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.95);backdrop-filter:blur(12px);padding:16px 24px;z-index:9999;display:none;border-top:1px solid rgba(255,255,255,0.06)">
+  <div style="max-width:1140px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+    <p style="font-size:13px;color:#a1a1aa;line-height:1.5;margin:0">We use cookies to improve your experience. By using this site you accept our <a href="/privacy.html" style="color:var(--primary);text-decoration:underline">Privacy Policy</a>.</p>
+    <button onclick="document.getElementById('cookieConsent').style.display='none';localStorage.setItem('ms_cookie_consent','1')" style="padding:8px 24px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap">Accept</button>
+  </div>
+</div>
+
+<button id="btop" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="position:fixed;bottom:80px;right:20px;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;font-size:16px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);opacity:0;visibility:hidden;transform:translateY(10px);transition:all 0.3s;z-index:999;display:flex;align-items:center;justify-content:center" aria-label="Back to top"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 15l-6-6-6 6"/></svg></button>
+
+<script>
+if(!localStorage.getItem('ms_cookie_consent'))document.getElementById('cookieConsent').style.display='flex';
+window.addEventListener('scroll',function(){var b=document.getElementById('btop');if(b){if(window.scrollY>400){b.style.opacity='1';b.style.visibility='visible';b.style.transform='translateY(0)'}else{b.style.opacity='0';b.style.visibility='hidden';b.style.transform='translateY(10px)'}}});
+</script>
+
+<a href="https://wa.me/440000000000?text=Hi%20I'd%20like%20to%20learn%20more" target="_blank" rel="noopener" aria-label="Contact us on WhatsApp" style="position:fixed;bottom:20px;right:20px;width:52px;height:52px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,0.3);z-index:998;text-decoration:none;transition:all 0.3s;font-size:24px" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+
+</body>
+</html>

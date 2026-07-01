@@ -1,0 +1,216 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin | 9amLeads</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#f1f5f9;min-height:100vh}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+h1{font-size:26px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:4px}
+h1 span{color:#0ea5e9}
+.sub{color:#8890a8;font-size:13px;margin-bottom:20px}
+.card{background:#11131f;border:1px solid #1e2030;border-radius:14px;padding:20px;margin-bottom:16px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:#11131f;border:1px solid #1e2030;border-radius:12px;padding:16px;text-align:center}
+.stat-card .num{font-size:28px;font-weight:900;font-family:'Outfit',sans-serif;color:#fff}
+.stat-card .label{font-size:11px;color:#5c6480;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.search-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-bar input,.search-bar select{padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none}
+.search-bar input:focus,.search-bar select:focus{border-color:#0ea5e9}
+.search-bar input{flex:1;min-width:200px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;color:#5c6480;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #1e2030;font-weight:600}
+td{padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#c8cbd6}
+tr:hover td{background:rgba(255,255,255,0.02)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.badge-trial{background:rgba(14,165,233,0.1);color:#0ea5e9}
+.badge-paid{background:rgba(34,197,94,0.1);color:#22c55e}
+.badge-cancelled{background:rgba(239,68,68,0.1);color:#ef4444}
+.prod-moving{background:rgba(255,107,53,0.1);color:#ff6b35}
+.prod-probate{background:rgba(168,85,247,0.1);color:#a855f7}
+.prod-newbusiness{background:rgba(6,182,212,0.1);color:#06b6d4}
+.prod-planning{background:rgba(16,185,129,0.1);color:#10b981}
+.prod-tenders{background:rgba(99,102,241,0.1);color:#6366f1}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:.2s;font-family:inherit;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff}
+.btn-view{background:rgba(14,165,233,0.1);color:#0ea5e9;border:1px solid rgba(14,165,233,0.2)}
+.btn-view:hover{background:rgba(14,165,233,0.2)}
+.btn-outline{background:transparent;border:1px solid #1e2030;color:#8890a8}
+.btn-outline:hover{border-color:#2a2d42;color:#c8cbd6}
+.btn-sm{padding:5px 10px;font-size:11px}
+.login-box{max-width:400px;margin:80px auto;background:#11131f;border:1px solid #1e2030;border-radius:16px;padding:32px;text-align:center}
+.login-box input{width:100%;padding:12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:14px;color:#f1f5f9;margin:16px 0 12px;outline:none;font-family:inherit}
+.login-box input:focus{border-color:#0ea5e9}
+.login-box .logo{font-size:24px;font-weight:900;font-family:'Outfit',sans-serif}
+.login-box .logo span{color:#0ea5e9}
+.error{color:#ef4444;font-size:13px;display:none;margin-bottom:8px}
+.loading{text-align:center;padding:40px;color:#5c6480;font-size:14px}
+.empty{text-align:center;padding:24px;color:#5c6480;font-size:13px}
+.pulse{animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+<div class="container" id="loginPage">
+<div class="login-box">
+<div class="logo">9am<span>Leads</span> Admin</div>
+<p style="color:#8890a8;font-size:13px;margin:8px 0">Enter admin password to continue</p>
+<input type="password" id="adminPass" placeholder="Admin password" onkeydown="if(event.key==='Enter')adminLogin()">
+<div id="loginError" class="error">Incorrect password</div>
+<button class="btn btn-primary" onclick="adminLogin()" style="width:100%;justify-content:center;padding:12px;font-size:14px"><i class="fas fa-lock"></i> Sign In</button>
+</div>
+</div>
+
+<div class="container" id="adminPage" style="display:none">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+<div><div style="display:flex;align-items:center;gap:8px"><div style="width:32px;height:32px;background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;font-family:'Outfit',sans-serif">9</div><h1 style="margin-bottom:0">9am<span>Leads</span> Admin</h1></div><p class="sub" style="margin-bottom:0">Customer management &amp; system overview</p></div>
+<div style="display:flex;gap:8px">
+<a href="/portal/" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Portal</a>
+<button class="btn btn-outline btn-sm" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+</div>
+</div>
+
+<div class="stats-grid" id="statsGrid"><div class="loading">Loading stats...</div></div>
+
+<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+<input type="text" id="searchInput" placeholder="Search by name, email or company..." oninput="filterCustomers()" style="flex:1;min-width:200px;padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none">
+<select id="filterPlan" onchange="filterCustomers()" style="padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none"><option value="">All Plans</option><option value="free_trial">Free Trial</option><option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option><option value="cancelled">Cancelled</option></select>
+<select id="filterProduct" onchange="filterCustomers()" style="padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none"><option value="">All Products</option><option value="moving">Moving</option><option value="probate">Probate</option><option value="newbusiness">New Business</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select>
+<button class="btn btn-outline btn-sm" onclick="exportCsv()" style="white-space:nowrap"><i class="fas fa-download"></i> Export CSV</button>
+</div>
+
+<div class="card" style="padding:0;overflow:auto">
+<table><thead><tr><th>Company</th><th>Email</th><th>Product</th><th>Plan</th><th>Areas</th><th>Leads</th><th>CRM</th><th>Signup</th><th></th></tr></thead><tbody id="customerTable"><tr><td colspan="9" class="loading">Loading customers...</td></tr></tbody></table></div>
+</div>
+
+<script>
+const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : 'https://www.9amleads.com';
+let allCustomers = [];
+
+function saveAdminAuth() { sessionStorage.setItem('9amAdminAuth', 'true'); }
+function getAdminAuth() { return sessionStorage.getItem('9amAdminAuth') === 'true'; }
+function getAdminPass() { return sessionStorage.getItem('9amAdminPass') || ''; }
+function adminHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminPass() }; }
+
+function adminLogin() {
+  const pass = document.getElementById('adminPass').value;
+  document.getElementById('loginError').style.display = 'none';
+  if (pass) {
+    sessionStorage.setItem('9amAdminPass', pass);
+    saveAdminAuth();
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('adminPage').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function adminLogout() {
+  sessionStorage.removeItem('9amAdminAuth');
+  sessionStorage.removeItem('9amAdminPass');
+  document.getElementById('adminPage').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'block';
+}
+
+if (getAdminAuth()) {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('adminPage').style.display = 'block';
+  loadData();
+}
+
+function badgeClass(product) {
+  const map = { moving: 'prod-moving', probate: 'prod-probate', newbusiness: 'prod-newbusiness', planning: 'prod-planning', tenders: 'prod-tenders' };
+  return map[product] || '';
+}
+
+function planBadge(plan) {
+  if (plan === 'free_trial') return 'badge-trial';
+  if (plan === 'cancelled') return 'badge-cancelled';
+  return 'badge-paid';
+}
+
+async function loadData() {
+  try {
+    const stats = await (await fetch(API + '/api/admin/stats', { headers: adminHeaders() })).json();
+    document.getElementById('statsGrid').innerHTML =
+      '<div class="stat-card"><div class="num">' + stats.total_customers + '</div><div class="label">Total Customers</div></div>' +
+      '<div class="stat-card"><div class="num">' + stats.free_trials + '</div><div class="label">Free Trials</div></div>' +
+      '<div class="stat-card"><div class="num">' + stats.paid_customers + '</div><div class="label">Paid Customers</div></div>' +
+      '<div class="stat-card"><div class="num">' + stats.total_leads + '</div><div class="label">Total Leads</div></div>' +
+      '<div class="stat-card"><div class="num">' + stats.today_leads + '</div><div class="label">Today\'s Leads</div></div>' +
+      '<div class="stat-card"><div class="num">' + stats.deliveries_today + '</div><div class="label">Deliveries Today</div></div>';
+
+    const custResp = await fetch(API + '/api/admin/customers', { headers: adminHeaders() });
+    const custData = custResp.ok ? await custResp.json() : { customers: [] };
+    allCustomers = custData.customers || [];
+    renderCustomers(allCustomers);
+  } catch (e) {
+    document.getElementById('statsGrid').innerHTML = '<div class="empty" style="color:#ef4444">Failed to load: ' + e.message + '</div>';
+  }
+}
+
+function renderCustomers(customers) {
+  const tbody = document.getElementById('customerTable');
+  if (customers.length === 0) { tbody.innerHTML = '<tr><td colspan="9" class="empty">No customers found</td></tr>'; return; }
+  tbody.innerHTML = customers.map(c => {
+    const areas = c.target_areas ? JSON.parse(c.target_areas).slice(0, 3).join(', ') + (JSON.parse(c.target_areas).length > 3 ? '...' : '') : '';
+    const hasCrm = c.crm_webhook_url ? '<span style="color:#22c55e;font-size:11px">Connected</span>' : '<span style="color:#5c6480;font-size:11px">No</span>';
+    const signupDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
+    return '<tr>' +
+      '<td><strong>' + (c.company || '-') + '</strong></td>' +
+      '<td style="font-size:12px;color:#8890a8">' + c.email + '</td>' +
+      '<td><span class="badge ' + badgeClass(c.product) + '">' + (c.lead_type || c.product) + '</span></td>' +
+      '<td><span class="badge ' + planBadge(c.plan) + '">' + (c.plan || 'free_trial') + '</span></td>' +
+      '<td style="font-size:11px;color:#5c6480;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + areas + '</td>' +
+      '<td>' + (c.leads_count || 0) + '</td>' +
+      '<td>' + hasCrm + '</td>' +
+      '<td style="font-size:11px;color:#5c6480">' + signupDate + '</td>' +
+      '<td><button class="btn btn-view btn-sm" onclick="loginAs(\'' + c.id + '\')"><i class="fas fa-eye"></i></button></td></tr>';
+  }).join('');
+}
+
+function filterCustomers() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const plan = document.getElementById('filterPlan').value;
+  const product = document.getElementById('filterProduct').value;
+  let filtered = allCustomers;
+  if (search) filtered = filtered.filter(c => (c.company || '').toLowerCase().includes(search) || c.email.toLowerCase().includes(search) || (c.contact_name || '').toLowerCase().includes(search));
+  if (plan) filtered = filtered.filter(c => c.plan === plan || (plan === 'paid' && c.plan !== 'free_trial' && c.plan !== 'cancelled'));
+  if (product) filtered = filtered.filter(c => c.product === product);
+  renderCustomers(filtered);
+}
+
+async function loginAs(customerId) {
+  try {
+    const r = await fetch(API + '/api/admin/impersonate', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ customer_id: customerId }) });
+    const d = await r.json();
+    if (d.token) {
+      try {
+        const payload = JSON.parse(atob(d.token.split('.')[1]));
+        localStorage.setItem('mld_portal_session', JSON.stringify({ token: d.token, clientId: customerId, name: payload.name || 'Admin', plan: payload.plan || 'free_trial', email: payload.email || '', product: payload.product || 'moving' }));
+      } catch(e) {
+        const c = d.customer || {};
+        localStorage.setItem('mld_portal_session', JSON.stringify({ token: d.token, clientId: customerId, name: c.name || 'Admin', plan: c.plan || 'free_trial', email: c.email || '', product: c.product || 'moving' }));
+      }
+      window.location.href = '/portal/dashboard.html';
+    } else { alert('Failed: ' + (d.error || 'unknown')); }
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+function exportCsv() {
+  const headers = ['Company','Email','Name','Phone','Product','Plan','Target Areas','CRM Webhook','Signup Date'];
+  const rows = allCustomers.map(c => [
+    c.company || '', c.email, c.contact_name || '', c.phone || '',
+    c.lead_type || c.product || '', c.plan || 'free_trial',
+    (c.target_areas ? JSON.parse(c.target_areas).join('; ') : ''),
+    c.crm_webhook_url ? 'Yes' : 'No', c.created_at || ''
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '9amleads-customers.csv'; a.click();
+}
+</script>
+</body></html>

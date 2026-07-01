@@ -499,13 +499,13 @@ app.post('/api/auth/signup', async (req, res) => {
       }
     }
 
-    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url, campaign_sent)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, email.toLowerCase(), company, name || '', phone || '', password_hash,
       product, productInfo.lead_type, productInfo.business_type,
       JSON.stringify(targetAreas || []), leadFilters || bizField2 || '', bizField3 || JSON.stringify(products && Array.isArray(products) ? products : [product]),
       source || 'direct', plan || 'free_trial', plan === 'free_trial' ? trial_ends : null, marketingConsent ? 1 : 0,
-      new Date().toISOString(), '0', crmWebhookUrl || ''
+      new Date().toISOString(), '0', crmWebhookUrl || '', '[]'
     );
 
     // Claim postcodes
@@ -1772,20 +1772,53 @@ cron.schedule('0 10 * * *', async () => {
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   try {
     var delivered = 0, errors = 0;
+    var today = new Date().toISOString().split('T')[0];
+    var yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
     var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
       var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
       var isExpired = trialEnds && new Date() > trialEnds;
       if (isExpired && cust.plan === 'free_trial') continue;
+      
+      // Determine daily lead limit based on plan
+      var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 25 };
+      var totalDailyLimit = dailyLimitByPlan[cust.plan] || 5;
+      
+      // Get all products for this customer
       var products = [cust.product];
       try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
-      var limit = products.reduce(function(sum, p) { return sum + ({ moving: 5, probate: 5, newbusiness: 5, planning: 5, tenders: 5 }[p] || 5); }, 0);
-      var custLeads = (getDb().leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0; }).slice(0, limit);
+      
+      // Calculate base leads per product (split evenly, round down)
+      var perProduct = Math.floor(totalDailyLimit / products.length);
+      var remainder = totalDailyLimit - (perProduct * products.length);
+      
+      var custLeads = [];
+      for (var pi = 0; pi < products.length; pi++) {
+        var prod = products[pi];
+        var prodLimit = perProduct + (pi < remainder ? 1 : 0);
+        if (prodLimit <= 0) continue;
+        
+        // Get undelivered leads for this customer + product, today or yesterday
+        var prodLeads = (getDb().leads || []).filter(function(l) {
+          return l.customer_id === cust.id && l.delivered === 0 && l.product === prod &&
+            (l.date === today || l.date === yesterday || l.created_at === today || l.created_at === yesterday || l.listed_date === today || l.listed_date === yesterday || l.scrapedAt?.startsWith(today) || l.scrapedAt?.startsWith(yesterday));
+        });
+        
+        // If not enough today/yesterday, allow leads without date filtering
+        if (prodLeads.length < prodLimit) {
+          prodLeads = (getDb().leads || []).filter(function(l) {
+            return l.customer_id === cust.id && l.delivered === 0 && l.product === prod;
+          });
+        }
+        
+        custLeads = custLeads.concat(prodLeads.slice(0, prodLimit));
+      }
+      
       if (custLeads.length === 0) continue;
       try {
         var htmlContent = generateLeadEmailHTML(cust, custLeads);
-        var subject = (cust.lead_type || 'Daily Leads') + ' for ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        var subject = '9amLeads for ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, htmlContent);
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
@@ -1851,10 +1884,10 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     }
 
     const { plan } = req.body;
-    const validPlans = ['starter', 'growth', 'power', 'builder-package', 'marketing-package', 'property-package', 'moving-package'];
-    const proValid = ['starter', 'growth', 'power', 'builder-package', 'marketing-package', 'property-package', 'moving-package', 'pro'];
+    const validPlans = ['starter', 'pro', 'enterprise', 'builder-package', 'marketing-package', 'property-package', 'moving-package'];
+    const proValid = ['starter', 'pro', 'enterprise', 'builder-package', 'marketing-package', 'property-package', 'moving-package', 'pro'];
     if (!plan || !proValid.includes(plan)) {
-      return res.status(400).json({ error: 'Invalid plan. Choose: starter, growth, power, or a package' });
+      return res.status(400).json({ error: 'Invalid plan. Choose: starter, pro, enterprise, or a package' });
     }
 
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -1866,14 +1899,12 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     
     var priceId;
     if (packageKeys[plan]) {
-      // Package or pro plan
       var priceIdMap = STRIPE_PRICE_IDS[packageMap[plan]] || {};
       priceId = priceIdMap[packageKeys[plan]];
       if (!priceId) {
         return res.status(400).json({ error: 'Package pricing not found. Run node stripe_handler.js --setup first.' });
       }
     } else {
-      // Standard plan
       const productKey = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' }[customer.product] || customer.product;
       const planKey = productKey + '-' + plan;
       const priceIdMap = STRIPE_PRICE_IDS[customer.product] || {};
@@ -1887,7 +1918,12 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     const successUrl = baseUrl + '/portal/dashboard.html?checkout=success&session_id={CHECKOUT_SESSION_ID}';
     const cancelUrl = baseUrl + '/portal/dashboard.html?checkout=cancel';
 
-    const session = await stripeApiRequest('POST', 'checkout/sessions', {
+    // If customer is on free trial with remaining trial days, apply trial period to subscription
+    var trialEnds = customer.trial_ends ? new Date(customer.trial_ends) : null;
+    var hasTrialRemaining = trialEnds && trialEnds > new Date();
+    var trialDays = hasTrialRemaining ? Math.ceil((trialEnds - new Date()) / 86400000) : 0;
+
+    var sessionBody = {
       mode: 'subscription',
       customer_email: customer.email,
       'line_items[0][price]': priceId,
@@ -1897,7 +1933,14 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
       'metadata[customer_id]': customer.id,
       'metadata[product]': customer.product,
       'metadata[plan]': plan
-    });
+    };
+
+    // Add trial period if customer still has trial days remaining
+    if (trialDays > 0) {
+      sessionBody['trial_period_days'] = trialDays;
+    }
+
+    const session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
 
     if (session.url) {
       res.json({ url: session.url, session_id: session.id });
@@ -3091,23 +3134,23 @@ app.use(function(err, req, res, next) {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ===== TEST SCHEDULE: 2:00 scraper → 2:02 distributor → 2:05 delivery =====
-cron.schedule('0 2 * * *', async () => {
-  console.log('[TEST CRON] Running scrapers...');
+// ===== TEST SCHEDULE: 3:00 scraper → 3:02 distributor → 3:05 delivery =====
+cron.schedule('0 3 * * *', async () => {
+  console.log('[3AM TEST] Scraping fresh leads...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[TEST CRON] Scraper error:', e.message); }
+  } catch(e) { console.log('[3AM TEST] Scraper error:', e.message); }
 });
-cron.schedule('2 2 * * *', async () => {
-  console.log('[TEST CRON] Distributing leads to customers...');
+cron.schedule('2 3 * * *', async () => {
+  console.log('[3AM TEST] Distributing leads to customers...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[TEST CRON] Distributor error:', e.message); }
+  } catch(e) { console.log('[3AM TEST] Distributor error:', e.message); }
 });
-cron.schedule('5 2 * * *', async () => {
-  console.log('[TEST CRON] Delivering leads via email...');
+cron.schedule('5 3 * * *', async () => {
+  console.log('[3AM TEST] Delivering leads via email...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();

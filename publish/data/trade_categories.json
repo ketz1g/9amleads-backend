@@ -1,0 +1,129 @@
+{
+  "moving": {
+    "name": "Moving Leads",
+    "brand_color": "#ff6b35",
+    "icon": "fa-truck",
+    "lead_types": [
+      { "id": "sstc_property", "label": "SSTC Property", "description": "Property marked Sold Subject to Contract on Rightmove/Zoopla" }
+    ],
+    "trades": [
+      { "id": "removal_company", "label": "Removal Company", "description": "Full-service removal and moving companies" },
+      { "id": "man_with_van", "label": "Man & Van", "description": "Solo operators with a van offering local moves" },
+      { "id": "storage_company", "label": "Storage Company", "description": "Companies offering storage solutions alongside removals" },
+      { "id": "international_movers", "label": "International Mover", "description": "Companies specializing in overseas removals" },
+      { "id": "packing_service", "label": "Packing Service", "description": "Businesses offering packing/unpacking services only" }
+    ],
+    "pain_points": [
+      "Wasting money on Google Ads with inconsistent results",
+      "Competing with 5+ other removal companies for the same quote",
+      "Cold calling lists that are out of date",
+      "Not knowing who's moving until it's too late",
+      "Seasonal dry spells with no enquiries"
+    ]
+  },
+  "probate": {
+    "name": "Probate Leads",
+    "brand_color": "#a855f7",
+    "icon": "fa-scale-balanced",
+    "lead_types": [
+      { "id": "probate_grant", "label": "Probate Grant", "description": "New probate grants published on the Gov.uk register" }
+    ],
+    "trades": [
+      { "id": "solicitor", "label": "Solicitor", "description": "High-street and specialist solicitors offering probate services" },
+      { "id": "estate_agent", "label": "Estate Agent", "description": "Estate agents looking for probate property listings" },
+      { "id": "financial_advisor", "label": "Financial Advisor", "description": "IFAs and wealth managers offering inheritance planning" },
+      { "id": "house_clearer", "label": "House Clearer", "description": "Specialist house clearance and probate property clearance" },
+      { "id": "accountant", "label": "Accountant (Probate)", "description": "Accountants offering estate administration and inheritance tax services" }
+    ],
+    "pain_points": [
+      "Manually checking the probate register every day",
+      "Missing out on high-value estate instructions",
+      "Competitors contacting executors before you",
+      "Wasting time on estates that don't fit your criteria",
+      "No consistent pipeline of probate work"
+    ]
+  },
+  "newbusiness": {
+    "name": "New Business Alerts",
+    "brand_color": "#06b6d4",
+    "icon": "fa-building",
+    "lead_types": [
+      { "id": "company_registration", "label": "New Company Registration", "description": "New UK companies registered at Companies House" }
+    ],
+    "trades": [
+      { "id": "accountant", "label": "Accountant", "description": "Accountants and bookkeepers targeting new businesses" },
+      { "id": "web_designer", "label": "Web Designer", "description": "Web design and development agencies" },
+      { "id": "insurance_broker", "label": "Insurance Broker", "description": "Business insurance brokers" },
+      { "id": "it_provider", "label": "IT Provider", "description": "IT support and managed service providers" },
+      { "id": "marketing_agency", "label": "Marketing Agency", "description": "SEO, PPC and digital marketing agencies" },
+      { "id": "recruitment", "label": "Recruitment Agency", "description": "Staffing and recruitment companies" },
+      { "id": "graphic_designer", "label": "Graphic Designer", "description": "Branding and graphic design studios" },
+      { "id": "telecoms", "label": "Telecoms Provider", "description": "Business phone and broadband providers" }
+    ],
+    "pain_points": [
+      "Spending hours searching Companies House for new leads",
+      "Cold calling businesses that have been trading for years (already have suppliers)",
+      "No way to know who started a business yesterday",
+      "Competing with other firms for the same established companies",
+      "Low conversion rates from generic B2B prospecting"
+    ]
+  },
+  "planning": {
+    "name": "Planning Permission",
+    "brand_color": "#10b981",
+    "icon": "fa-draw-polygon",
+    "lead_types": [
+      { "id": "planning_application", "label": "Planning Application", "description": "New planning applications submitted to UK councils" }
+    ],
+    "trades": [
+      { "id": "architect", "label": "Architect", "description": "Architects and architectural designers" },
+      { "id": "builder", "label": "Builder / Contractor", "description": "General building contractors and construction firms" },
+      { "id": "surveyor", "label": "Surveyor", "description": "Building surveyors and quantity surveyors" },
+      { "id": "estate_agent", "label": "Estate Agent (Planning)", "description": "Estate agents tracking development activity" },
+      { "id": "property_developer", "label": "Property Developer", "description": "Residential and commercial property developers" },
+      { "id": "structural_engineer", "label": "Structural Engineer", "description": "Structural and civil engineering consultants" },
+      { "id": "landscape_architect", "label": "Landscape Architect", "description": "Garden and landscape design professionals" }
+    ],
+    "pain_points": [
+      "Driving past sites and wondering if they've got planning permission",
+      "Missing out on projects because you didn't know about the application",
+      "Spending hours checking council planning portals",
+      "Competitors winning work because they contacted applicants first",
+      "No reliable way to track planning activity in your target areas"
+    ]
+  },
+  "tenders": {
+    "name": "Public Sector Tenders",
+    "brand_color": "#6366f1",
+    "icon": "fa-gavel",
+    "lead_types": [
+      { "id": "public_tender", "label": "Public Sector Tender", "description": "Government contracts published on Contracts Finder" }
+    ],
+    "trades": [
+      { "id": "it_services", "label": "IT & Technology", "description": "Software, IT support, cybersecurity, cloud services" },
+      { "id": "construction", "label": "Construction", "description": "Building, refurbishment, roofing, electrical, plumbing" },
+      { "id": "cleaning", "label": "Cleaning & Janitorial", "description": "Commercial cleaning, window cleaning, waste management" },
+      { "id": "catering", "label": "Catering", "description": "School meals, hospital catering, event catering" },
+      { "id": "consultancy", "label": "Consultancy", "description": "Management consulting, HR, financial advisory" },
+      { "id": "security", "label": "Security Services", "description": "Manned guarding, CCTV, alarm monitoring, cyber" },
+      { "id": "facilities", "label": "Facilities Management", "description": "Building maintenance, grounds, pest control" },
+      { "id": "printing", "label": "Printing & Stationery", "description": "Print management, office supplies" },
+      { "id": "transport", "label": "Transport & Logistics", "description": "Courier, fleet management, vehicle maintenance" },
+      { "id": "healthcare", "label": "Healthcare & Medical", "description": "Medical equipment, care services, nursing" },
+      { "id": "training", "label": "Training & Education", "description": "Vocational training, e-learning, apprenticeships" },
+      { "id": "marketing", "label": "Marketing & PR", "description": "Digital marketing, SEO, social media, PR" },
+      { "id": "legal", "label": "Legal Services", "description": "Solicitors, contract law, employment law" },
+      { "id": "financial_services", "label": "Financial Services", "description": "Accounting, audit, payroll, insurance" },
+      { "id": "hr_recruitment", "label": "HR & Recruitment", "description": "Temp staffing, permanent recruitment, HR outsourcing" },
+      { "id": "engineering", "label": "Engineering", "description": "Civil, structural, mechanical, electrical engineering" },
+      { "id": "environmental", "label": "Environmental Services", "description": "Waste recycling, sustainability, energy efficiency" }
+    ],
+    "pain_points": [
+      "Didn't know the contract was out for tender until it was awarded",
+      "Spending hours searching Contracts Finder every day",
+      "Winning government contracts feels impossible without a dedicated bid writer",
+      "Missing deadlines because you didn't see the tender in time",
+      "Not knowing which contracts are worth bidding on vs wasting time"
+    ]
+  }
+}

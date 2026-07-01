@@ -1,0 +1,15 @@
+{
+  "date": "2026-05-03",
+  "totalClients": 0,
+  "activeClients": 0,
+  "trialClients": 0,
+  "paidClients": 0,
+  "monthlyRevenue": 0,
+  "totalLeads": 0,
+  "weeklyLeads": 0,
+  "totalProspects": 0,
+  "weeklyEmailsSent": 0,
+  "totalEmailsSent": 0,
+  "leadsByBiz": {},
+  "prospectsByCity": {}
+}

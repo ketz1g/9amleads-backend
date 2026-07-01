@@ -1,0 +1,72 @@
+{
+  "firm": {
+    "name": "AI Trading Firm",
+    "mode": "paper-trading",
+    "status": "running",
+    "paperCapital": 100000,
+    "createdAt": "2026-05-03",
+    "version": "1.0.0"
+  },
+  "riskRules": {
+    "maxRiskPerTrade": {
+      "value": 1.0,
+      "unit": "percent",
+      "description": "Maximum risk per individual trade (0.5% to 1%)"
+    },
+    "maxDailyLoss": {
+      "value": 2.0,
+      "unit": "percent",
+      "description": "Maximum portfolio loss allowed in a single day"
+    },
+    "maxWeeklyLoss": {
+      "value": 5.0,
+      "unit": "percent",
+      "description": "Maximum portfolio loss allowed in a calendar week"
+    },
+    "maxOpenTrades": {
+      "value": 3,
+      "unit": "count",
+      "description": "Maximum number of open positions at any time"
+    },
+    "consecutiveLossLimit": {
+      "value": 3,
+      "unit": "count",
+      "description": "Stop trading after this many consecutive losses"
+    },
+    "martingale": {
+      "allowed": false,
+      "description": "Martingale strategy is strictly forbidden"
+    },
+    "doublingDown": {
+      "allowed": false,
+      "description": "Doubling down on losing positions is strictly forbidden"
+    },
+    "emergencyKillSwitch": {
+      "active": false,
+      "engagedBy": null,
+      "engagedAt": null,
+      "description": "Emergency kill switch pauses all trading activity"
+    },
+    "maxPositionSize": {
+      "value": 5.0,
+      "unit": "percent",
+      "description": "Maximum single position size as percentage of capital"
+    },
+    "maxDrawdown": {
+      "value": 15.0,
+      "unit": "percent",
+      "description": "Maximum portfolio drawdown before mandatory shutdown"
+    }
+  },
+  "state": {
+    "dailyLoss": 0,
+    "weeklyLoss": 0,
+    "consecutiveLosses": 0,
+    "openTrades": 0,
+    "totalTrades": 0,
+    "winningTrades": 0,
+    "losingTrades": 0,
+    "currentDrawdown": 0,
+    "portfolioValue": 100000
+  }
+}

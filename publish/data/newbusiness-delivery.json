@@ -1,0 +1,4631 @@
+{
+  "demo": [
+    {
+      "customerId": "demo",
+      "company": "ABC Accountants",
+      "email": "demo@newbusinessalert.co.uk",
+      "date": "2026-06-20",
+      "generatedAt": "2026-06-20T13:29:25.199Z",
+      "totalLeads": 47,
+      "leadLimit": 50,
+      "leads": [
+        {
+          "companyName": "Liberty Holdings",
+          "registrationNumber": "18407365",
+          "address": "86 South Street, Manchester",
+          "postcode": "M20 RH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-22",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Nexus Consulting",
+          "registrationNumber": "89177879",
+          "address": "122 Albert Road, London",
+          "postcode": "EC31 PI",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-04",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "London Solutions",
+          "registrationNumber": "43802335",
+          "address": "152 Church Street, Manchester",
+          "postcode": "M41 PL",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-03",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Blue Ltd",
+          "registrationNumber": "51396506",
+          "address": "146 Queen Street, London",
+          "postcode": "SW98 JE",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-06-20",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Thames Holdings",
+          "registrationNumber": "64013958",
+          "address": "120 South Street, Manchester",
+          "postcode": "M35 QE",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-19",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Red Investments",
+          "registrationNumber": "29440015",
+          "address": "147 Oxford Road, London",
+          "postcode": "N57 VV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-16",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Meridian Tech",
+          "registrationNumber": "83540004",
+          "address": "174 Church Road, Manchester",
+          "postcode": "M71 KA",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-22",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "York Capital",
+          "registrationNumber": "13236950",
+          "address": "192 Victoria Street, London",
+          "postcode": "N13 IR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-05-22",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Oak Capital",
+          "registrationNumber": "43507663",
+          "address": "103 King Street, Manchester",
+          "postcode": "M47 HY",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-05-31",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Alpha Properties",
+          "registrationNumber": "49469413",
+          "address": "10 King Street, London",
+          "postcode": "N89 BQ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-25",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Alpha Management",
+          "registrationNumber": "99186829",
+          "address": "37 High Street, Manchester",
+          "postcode": "M88 TG",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-06-11",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Jupiter Associates",
+          "registrationNumber": "42331044",
+          "address": "51 Oxford Road, London",
+          "postcode": "WC85 PM",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-22",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Integra Holdings",
+          "registrationNumber": "97036546",
+          "address": "69 Manor Road, Manchester",
+          "postcode": "M80 MW",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-14",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "West Ventures",
+          "registrationNumber": "83406097",
+          "address": "2 New Street, London",
+          "postcode": "EC42 ID",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-27",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Zen Digital",
+          "registrationNumber": "78141762",
+          "address": "9 East Street, Manchester",
+          "postcode": "M40 WY",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-06-02",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Meridian Solutions",
+          "registrationNumber": "62594281",
+          "address": "74 Castle Street, London",
+          "postcode": "W43 EO",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-06-20",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Quantum Ventures",
+          "registrationNumber": "66578093",
+          "address": "148 West Street, Manchester",
+          "postcode": "M65 LF",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-05",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Meridian Consulting",
+          "registrationNumber": "54125697",
+          "address": "196 Green Lane, London",
+          "postcode": "E45 ZN",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-16",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Nexus Developments",
+          "registrationNumber": "91056911",
+          "address": "158 London Road, Manchester",
+          "postcode": "M19 TU",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-03",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Empire Enterprise",
+          "registrationNumber": "79791022",
+          "address": "45 Manor Road, London",
+          "postcode": "E77 PD",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-06-11",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Summit Tech",
+          "registrationNumber": "90259763",
+          "address": "191 King Street, Manchester",
+          "postcode": "M47 HX",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-03",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Gateway Investments",
+          "registrationNumber": "50145286",
+          "address": "139 Victoria Street, London",
+          "postcode": "SW90 XT",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-28",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "North Limited",
+          "registrationNumber": "63312211",
+          "address": "100 King Street, Manchester",
+          "postcode": "M66 JP",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-05-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Oak Associates",
+          "registrationNumber": "41042244",
+          "address": "146 Richmond Road, London",
+          "postcode": "EC75 QG",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-05-28",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Crescent Ltd",
+          "registrationNumber": "24042312",
+          "address": "174 Green Lane, Manchester",
+          "postcode": "M78 KC",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-30",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Summit Holdings",
+          "registrationNumber": "39219597",
+          "address": "89 Richmond Road, London",
+          "postcode": "SE79 II",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-08",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Alpha Limited",
+          "registrationNumber": "46670117",
+          "address": "171 Queen Street, Manchester",
+          "postcode": "M31 DW",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-05",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Helix Management",
+          "registrationNumber": "34970881",
+          "address": "95 Waterloo Road, London",
+          "postcode": "SW86 BF",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-06-17",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Red Tech",
+          "registrationNumber": "64897051",
+          "address": "179 Mill Lane, Manchester",
+          "postcode": "M77 FF",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-06-17",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Keystone Solutions",
+          "registrationNumber": "38309774",
+          "address": "180 Queen Street, London",
+          "postcode": "WC32 QW",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-23",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "West Digital",
+          "registrationNumber": "89178946",
+          "address": "47 Market Street, Manchester",
+          "postcode": "M81 SF",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-09",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Kensington Digital",
+          "registrationNumber": "81046439",
+          "address": "161 Albert Road, London",
+          "postcode": "W31 WS",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Kensington Services",
+          "registrationNumber": "47975432",
+          "address": "31 King Street, Manchester",
+          "postcode": "M24 TZ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-02",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Red Management",
+          "registrationNumber": "92291884",
+          "address": "178 Church Road, London",
+          "postcode": "W38 GO",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-31",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Core Consulting",
+          "registrationNumber": "69082109",
+          "address": "130 Church Street, Manchester",
+          "postcode": "M84 TW",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-20",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Xenon UK",
+          "registrationNumber": "27487985",
+          "address": "129 Albert Road, London",
+          "postcode": "WC31 TI",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-06-13",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Vertex Associates",
+          "registrationNumber": "31816781",
+          "address": "60 King Street, Manchester",
+          "postcode": "M40 KP",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-08",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Meridian Services",
+          "registrationNumber": "43796655",
+          "address": "69 London Road, Manchester",
+          "postcode": "M86 DZ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-07",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Quantum Ltd",
+          "registrationNumber": "58744070",
+          "address": "125 Manor Road, London",
+          "postcode": "WC35 DP",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-06-05",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Blue Ventures",
+          "registrationNumber": "60489431",
+          "address": "20 Bridge Street, London",
+          "postcode": "SW63 HJ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-06-04",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Red Developments",
+          "registrationNumber": "87143589",
+          "address": "71 Albert Road, Manchester",
+          "postcode": "M25 LC",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-16",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Junction Solutions",
+          "registrationNumber": "87637977",
+          "address": "39 Manor Road, London",
+          "postcode": "N22 BW",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-07",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Nexus Tech",
+          "registrationNumber": "99417632",
+          "address": "15 East Street, Manchester",
+          "postcode": "M80 SD",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-05-28",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Helix Partners",
+          "registrationNumber": "67330098",
+          "address": "154 West Street, London",
+          "postcode": "NW31 LT",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-06",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Digital Services",
+          "registrationNumber": "76488493",
+          "address": "129 Richmond Road, London",
+          "postcode": "W98 TD",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-16",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Phoenix Developments",
+          "registrationNumber": "54133388",
+          "address": "39 West Street, Manchester",
+          "postcode": "M57 EJ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-06-05",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "London Partners",
+          "registrationNumber": "76226498",
+          "address": "150 Richmond Road, London",
+          "postcode": "E33 XO",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-11",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        }
+      ],
+      "summary": {
+        "total": 47,
+        "byLocation": {
+          "M2": 3,
+          "EC": 3,
+          "M4": 5,
+          "SW": 4,
+          "M3": 2,
+          "N5": 1,
+          "M7": 3,
+          "N1": 1,
+          "N8": 1,
+          "M8": 6,
+          "WC": 4,
+          "W4": 1,
+          "M6": 2,
+          "E4": 1,
+          "M1": 1,
+          "E7": 1,
+          "SE": 1,
+          "W3": 2,
+          "N2": 1,
+          "NW": 1,
+          "W9": 1,
+          "M5": 1,
+          "E3": 1
+        },
+        "byIndustry": {
+          "Management consultancy activities": 47
+        },
+        "byCompanyType": {
+          "ltd": 31,
+          "limited": 5,
+          "plc": 10,
+          "cic": 1
+        }
+      }
+    },
+    {
+      "customerId": "demo",
+      "company": "ABC Accountants",
+      "email": "demo@newbusinessalert.co.uk",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:38:33.562Z",
+      "totalLeads": 50,
+      "leadLimit": 50,
+      "leads": [
+        {
+          "companyName": "Junction Digital",
+          "registrationNumber": "16022987",
+          "address": "102 Bridge Street, Manchester",
+          "postcode": "M79 LC",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-11",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Nexus Limited",
+          "registrationNumber": "46091628",
+          "address": "35 Green Lane, London",
+          "postcode": "W62 ZJ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-05-02",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Dover Management",
+          "registrationNumber": "90945040",
+          "address": "140 Oxford Road, Manchester",
+          "postcode": "M20 NM",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-26",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Gateway Group",
+          "registrationNumber": "42296599",
+          "address": "63 Albert Road, London",
+          "postcode": "E58 RM",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-06",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Horizon Enterprise",
+          "registrationNumber": "91490330",
+          "address": "139 Richmond Road, Manchester",
+          "postcode": "M95 FA",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-04-16",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Meridian Consulting",
+          "registrationNumber": "56641601",
+          "address": "169 West Street, London",
+          "postcode": "E74 TA",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-25",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Apex Management",
+          "registrationNumber": "77786542",
+          "address": "165 West Street, Manchester",
+          "postcode": "M91 KR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-15",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Jupiter Developments",
+          "registrationNumber": "99328538",
+          "address": "189 Church Road, London",
+          "postcode": "EC27 YR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-04-19",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Zen Partners",
+          "registrationNumber": "68674699",
+          "address": "74 Market Street, Manchester",
+          "postcode": "M30 BH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-05-02",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Blue Partners",
+          "registrationNumber": "31069448",
+          "address": "172 Richmond Road, London",
+          "postcode": "NW32 VJ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-25",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Global Advisory",
+          "registrationNumber": "84003860",
+          "address": "192 Green Lane, Manchester",
+          "postcode": "M79 OP",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-30",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Alpha Group",
+          "registrationNumber": "50842777",
+          "address": "20 Mill Lane, London",
+          "postcode": "SE69 AR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-28",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Global Tech",
+          "registrationNumber": "59597590",
+          "address": "2 Albert Road, Manchester",
+          "postcode": "M12 KI",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-26",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Keystone Properties",
+          "registrationNumber": "93563272",
+          "address": "83 Green Lane, London",
+          "postcode": "SW42 TQ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-15",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Summit Associates",
+          "registrationNumber": "60402115",
+          "address": "27 West Street, Manchester",
+          "postcode": "M97 DB",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-02",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Blue Developments",
+          "registrationNumber": "74382504",
+          "address": "163 Victoria Street, London",
+          "postcode": "SE65 VR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-08",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Elite Limited",
+          "registrationNumber": "91329022",
+          "address": "96 King Street, Manchester",
+          "postcode": "M85 MW",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-19",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Xenon Associates",
+          "registrationNumber": "66354274",
+          "address": "131 Castle Street, London",
+          "postcode": "W86 NM",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-30",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Global Solutions",
+          "registrationNumber": "74573865",
+          "address": "192 Church Street, Manchester",
+          "postcode": "M64 CV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-18",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Elite Holdings",
+          "registrationNumber": "82912115",
+          "address": "113 London Road, London",
+          "postcode": "SW57 RV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-20",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "York Ventures",
+          "registrationNumber": "34385062",
+          "address": "154 Station Road, Manchester",
+          "postcode": "M24 EG",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-24",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Phoenix Limited",
+          "registrationNumber": "92564783",
+          "address": "71 West Street, London",
+          "postcode": "WC66 UU",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-02",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Fusion Enterprise",
+          "registrationNumber": "53877335",
+          "address": "106 North Street, Manchester",
+          "postcode": "M26 HV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-04-21",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Liberty Developments",
+          "registrationNumber": "95165902",
+          "address": "72 West Street, London",
+          "postcode": "NW73 JO",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Fusion Ltd",
+          "registrationNumber": "84619931",
+          "address": "71 Castle Street, Manchester",
+          "postcode": "M11 OE",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-02",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Quantum Enterprise",
+          "registrationNumber": "11553384",
+          "address": "142 Queen Street, London",
+          "postcode": "SE66 ES",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-07",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Crescent Tech",
+          "registrationNumber": "33556844",
+          "address": "74 Station Road, Manchester",
+          "postcode": "M79 IA",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-26",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Alpha Services",
+          "registrationNumber": "30382317",
+          "address": "57 Victoria Street, London",
+          "postcode": "NW27 KV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-02",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Crescent Limited",
+          "registrationNumber": "63158187",
+          "address": "99 Market Street, Manchester",
+          "postcode": "M68 FV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-04-16",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Horizon Ltd",
+          "registrationNumber": "98917783",
+          "address": "35 Albert Road, London",
+          "postcode": "N85 SQ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-12",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Empire Ventures",
+          "registrationNumber": "94719408",
+          "address": "194 New Street, Manchester",
+          "postcode": "M39 SB",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-26",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Helix Services",
+          "registrationNumber": "81610391",
+          "address": "79 Park Road, London",
+          "postcode": "SE71 ZI",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-30",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Vertex UK",
+          "registrationNumber": "29810488",
+          "address": "198 High Street, Manchester",
+          "postcode": "M19 KF",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-04",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Blue UK",
+          "registrationNumber": "68095731",
+          "address": "47 High Street, London",
+          "postcode": "N26 QI",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-04-09",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Thames Associates",
+          "registrationNumber": "80388224",
+          "address": "143 Market Street, Manchester",
+          "postcode": "M28 TA",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-04-26",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Island Developments",
+          "registrationNumber": "47448238",
+          "address": "52 West Street, London",
+          "postcode": "SW24 BC",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-27",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Liberty Advisory",
+          "registrationNumber": "85829831",
+          "address": "164 Richmond Road, Manchester",
+          "postcode": "M33 WU",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-14",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Thames Management",
+          "registrationNumber": "77501441",
+          "address": "69 Castle Street, London",
+          "postcode": "N61 LP",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-30",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Vertex Digital",
+          "registrationNumber": "53713289",
+          "address": "8 Oxford Road, Manchester",
+          "postcode": "M21 YU",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-14",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Horizon Consulting",
+          "registrationNumber": "80296847",
+          "address": "100 Church Road, London",
+          "postcode": "E19 OU",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-27",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Core Holdings",
+          "registrationNumber": "43815807",
+          "address": "137 Church Street, Manchester",
+          "postcode": "M75 OR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-20",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Alpha Ltd",
+          "registrationNumber": "25741153",
+          "address": "102 London Road, London",
+          "postcode": "E98 VP",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-21",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Beacon Tech",
+          "registrationNumber": "48294548",
+          "address": "114 Green Lane, Manchester",
+          "postcode": "M51 EM",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-22",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Liberty Ltd",
+          "registrationNumber": "14876544",
+          "address": "161 North Street, London",
+          "postcode": "W17 FX",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Empire Limited",
+          "registrationNumber": "28050475",
+          "address": "4 Bridge Street, Manchester",
+          "postcode": "M33 QB",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-16",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "United Tech",
+          "registrationNumber": "54345320",
+          "address": "180 Station Road, London",
+          "postcode": "E80 MR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-28",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Helix UK",
+          "registrationNumber": "33715597",
+          "address": "150 Bridge Street, Manchester",
+          "postcode": "M50 AC",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-14",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Phoenix Properties",
+          "registrationNumber": "76072135",
+          "address": "179 Market Street, London",
+          "postcode": "WC68 XC",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-01",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Xenon Solutions",
+          "registrationNumber": "52733881",
+          "address": "110 High Street, Manchester",
+          "postcode": "M10 MN",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-30",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Red Capital",
+          "registrationNumber": "54378743",
+          "address": "65 King Street, London",
+          "postcode": "SE63 QG",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-22",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        }
+      ],
+      "summary": {
+        "total": 50,
+        "byLocation": {
+          "M7": 4,
+          "W6": 1,
+          "M2": 5,
+          "E5": 1,
+          "M9": 3,
+          "E7": 1,
+          "EC": 1,
+          "M3": 4,
+          "NW": 3,
+          "SE": 5,
+          "M1": 4,
+          "SW": 3,
+          "M8": 1,
+          "W8": 1,
+          "M6": 2,
+          "WC": 2,
+          "N8": 1,
+          "N2": 1,
+          "N6": 1,
+          "E1": 1,
+          "E9": 1,
+          "M5": 2,
+          "W1": 1,
+          "E8": 1
+        },
+        "byIndustry": {
+          "Management consultancy activities": 50
+        },
+        "byCompanyType": {
+          "ltd": 36,
+          "plc": 7,
+          "cic": 6,
+          "limited": 1
+        }
+      }
+    }
+  ],
+  "_lastDelivery": "2026-06-20T13:29:46.819Z",
+  "demo-accountant": [
+    {
+      "customerId": "demo-accountant",
+      "company": "ABC Accountants",
+      "email": "demo@accountants.com",
+      "date": "2026-06-20",
+      "generatedAt": "2026-06-20T13:29:46.816Z",
+      "totalLeads": 49,
+      "leadLimit": 50,
+      "leads": [
+        {
+          "companyName": "Red Ventures",
+          "registrationNumber": "44512259",
+          "address": "78 Queen Street, London",
+          "postcode": "SE49 JM",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-06-18",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Global Group",
+          "registrationNumber": "60738762",
+          "address": "85 East Street, Manchester",
+          "postcode": "M97 RG",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-06-18",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Thames Associates",
+          "registrationNumber": "16356249",
+          "address": "185 West Street, London",
+          "postcode": "W11 LM",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-05",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "West Group",
+          "registrationNumber": "88110721",
+          "address": "93 Victoria Street, Manchester",
+          "postcode": "M86 DF",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-12",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Global Properties",
+          "registrationNumber": "66195045",
+          "address": "26 Queen Street, London",
+          "postcode": "W83 LZ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-06-12",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "North Investments",
+          "registrationNumber": "94371050",
+          "address": "96 North Street, Manchester",
+          "postcode": "M88 KP",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-06-17",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Crescent Management",
+          "registrationNumber": "26906570",
+          "address": "122 East Street, London",
+          "postcode": "E74 IH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-07",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Jupiter Developments",
+          "registrationNumber": "28665225",
+          "address": "68 Victoria Street, Manchester",
+          "postcode": "M90 IR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Liberty Holdings",
+          "registrationNumber": "26361130",
+          "address": "142 Green Lane, London",
+          "postcode": "NW84 JT",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-13",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "West Ltd",
+          "registrationNumber": "30975102",
+          "address": "74 Waterloo Road, Manchester",
+          "postcode": "M99 RJ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-06-05",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Zen Digital",
+          "registrationNumber": "83176427",
+          "address": "92 Green Lane, London",
+          "postcode": "WC42 SI",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-06-15",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Integra Tech",
+          "registrationNumber": "39840631",
+          "address": "187 King Street, Manchester",
+          "postcode": "M80 MQ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-02",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Beacon Advisory",
+          "registrationNumber": "82319585",
+          "address": "153 Bridge Street, London",
+          "postcode": "W84 IT",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-06-05",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Beacon Holdings",
+          "registrationNumber": "64324330",
+          "address": "63 King Street, Manchester",
+          "postcode": "M17 JT",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-20",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Apex Partners",
+          "registrationNumber": "88536119",
+          "address": "77 Mill Lane, London",
+          "postcode": "E18 EF",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-27",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "North Ltd",
+          "registrationNumber": "11357588",
+          "address": "68 West Street, Manchester",
+          "postcode": "M80 VJ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-04",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Red Partners",
+          "registrationNumber": "31363898",
+          "address": "30 Market Street, London",
+          "postcode": "WC24 JR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "North Solutions",
+          "registrationNumber": "32722094",
+          "address": "190 Market Street, Manchester",
+          "postcode": "M13 PY",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-05-22",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Liberty Management",
+          "registrationNumber": "67711978",
+          "address": "65 King Street, London",
+          "postcode": "WC89 QH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-18",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Vertex Solutions",
+          "registrationNumber": "58963413",
+          "address": "63 West Street, Manchester",
+          "postcode": "M45 IF",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-06-16",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Liberty Solutions",
+          "registrationNumber": "22351926",
+          "address": "16 Bridge Street, London",
+          "postcode": "EC11 UF",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-06-17",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Jupiter Group",
+          "registrationNumber": "73799003",
+          "address": "15 Market Street, Manchester",
+          "postcode": "M18 SJ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Thames Investments",
+          "registrationNumber": "76108252",
+          "address": "117 North Street, London",
+          "postcode": "SE60 JV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-06-20",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Horizon Developments",
+          "registrationNumber": "25515399",
+          "address": "48 West Street, Manchester",
+          "postcode": "M89 ZK",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-30",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Manchester Properties",
+          "registrationNumber": "17872044",
+          "address": "164 Queen Street, London",
+          "postcode": "NW10 KO",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-11",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Phoenix Partners",
+          "registrationNumber": "59807204",
+          "address": "63 East Street, Manchester",
+          "postcode": "M88 NV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-11",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Dover Developments",
+          "registrationNumber": "19944237",
+          "address": "96 Richmond Road, London",
+          "postcode": "NW67 JS",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-03",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Thames Ltd",
+          "registrationNumber": "94360390",
+          "address": "110 Richmond Road, Manchester",
+          "postcode": "M33 RT",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-06-02",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Horizon Limited",
+          "registrationNumber": "98171122",
+          "address": "180 Waterloo Road, London",
+          "postcode": "NW67 BN",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-14",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "United Enterprise",
+          "registrationNumber": "22871380",
+          "address": "115 Church Road, Manchester",
+          "postcode": "M98 IX",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-12",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "York Developments",
+          "registrationNumber": "99699594",
+          "address": "168 Queen Street, London",
+          "postcode": "W20 QH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-06-19",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Apex Properties",
+          "registrationNumber": "67014865",
+          "address": "177 Waterloo Road, Manchester",
+          "postcode": "M32 DR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-28",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Vertex Ventures",
+          "registrationNumber": "58994169",
+          "address": "75 West Street, London",
+          "postcode": "SE19 BC",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-05-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "West Services",
+          "registrationNumber": "84961451",
+          "address": "57 Victoria Street, Manchester",
+          "postcode": "M51 GI",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-13",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Blue Partners",
+          "registrationNumber": "29738540",
+          "address": "175 New Street, London",
+          "postcode": "NW88 RY",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-01",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Dover Services",
+          "registrationNumber": "33581134",
+          "address": "123 Church Street, Manchester",
+          "postcode": "M12 FG",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-05-25",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Red Management",
+          "registrationNumber": "46818363",
+          "address": "88 New Street, London",
+          "postcode": "WC24 JX",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-02",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Oak Investments",
+          "registrationNumber": "17092143",
+          "address": "61 Castle Street, Manchester",
+          "postcode": "M43 ZK",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-25",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Digital Tech",
+          "registrationNumber": "78000251",
+          "address": "106 King Street, London",
+          "postcode": "N21 UW",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-15",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Dover Capital",
+          "registrationNumber": "36449933",
+          "address": "178 Bridge Street, London",
+          "postcode": "E86 XI",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-22",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Island Consulting",
+          "registrationNumber": "72025899",
+          "address": "99 Market Street, Manchester",
+          "postcode": "M94 WO",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-05-30",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Kensington Associates",
+          "registrationNumber": "50673128",
+          "address": "194 High Street, London",
+          "postcode": "SE49 IQ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-06-19",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Global Advisory",
+          "registrationNumber": "20273154",
+          "address": "66 Castle Street, Manchester",
+          "postcode": "M72 OB",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-06-05",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Quantum Group",
+          "registrationNumber": "92645120",
+          "address": "8 King Street, London",
+          "postcode": "N13 KV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-06-02",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Meridian Solutions",
+          "registrationNumber": "18139596",
+          "address": "48 Castle Street, Manchester",
+          "postcode": "M41 OK",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-05-25",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Gateway Capital",
+          "registrationNumber": "64252553",
+          "address": "164 Station Road, London",
+          "postcode": "EC43 DV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-26",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "West Partners",
+          "registrationNumber": "62344123",
+          "address": "163 The Grove, Manchester",
+          "postcode": "M97 UI",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-06-20",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Liberty Developments",
+          "registrationNumber": "93246735",
+          "address": "103 London Road, London",
+          "postcode": "SE60 AR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-24",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Crescent Holdings",
+          "registrationNumber": "56868737",
+          "address": "3 Green Lane, Manchester",
+          "postcode": "M82 IH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-06-17",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        }
+      ],
+      "summary": {
+        "total": 49,
+        "byLocation": {
+          "SE": 5,
+          "M9": 6,
+          "W1": 1,
+          "M8": 7,
+          "W8": 2,
+          "E7": 1,
+          "NW": 5,
+          "WC": 4,
+          "M1": 4,
+          "E1": 1,
+          "M4": 3,
+          "EC": 2,
+          "M3": 2,
+          "W2": 1,
+          "M5": 1,
+          "N2": 1,
+          "E8": 1,
+          "M7": 1,
+          "N1": 1
+        },
+        "byIndustry": {
+          "Management consultancy activities": 49
+        },
+        "byCompanyType": {
+          "plc": 9,
+          "ltd": 28,
+          "cic": 7,
+          "limited": 5
+        }
+      }
+    },
+    {
+      "customerId": "demo-accountant",
+      "company": "ABC Accountants",
+      "email": "demo@accountants.com",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:59:36.220Z",
+      "totalLeads": 50,
+      "leadLimit": 50,
+      "leads": [
+        {
+          "companyName": "York Ltd",
+          "registrationNumber": "62363034",
+          "address": "69 New Street, London",
+          "postcode": "SE41 RP",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-20",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Xenon Capital",
+          "registrationNumber": "67629086",
+          "address": "88 South Street, Manchester",
+          "postcode": "M55 KP",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-07",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Oak Management",
+          "registrationNumber": "24934704",
+          "address": "200 Waterloo Road, London",
+          "postcode": "EC20 RE",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-05-04",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Zen Limited",
+          "registrationNumber": "57371647",
+          "address": "124 Manor Road, Manchester",
+          "postcode": "M17 TP",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-04-26",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Phoenix Associates",
+          "registrationNumber": "19383303",
+          "address": "113 South Street, London",
+          "postcode": "SE39 ON",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-26",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "London Associates",
+          "registrationNumber": "38371792",
+          "address": "16 New Street, Manchester",
+          "postcode": "M45 MX",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-07",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Alpha Digital",
+          "registrationNumber": "89347366",
+          "address": "155 Manor Road, London",
+          "postcode": "WC69 GU",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-25",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Summit UK",
+          "registrationNumber": "31905385",
+          "address": "15 London Road, Manchester",
+          "postcode": "M45 ID",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-21",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Quantum Properties",
+          "registrationNumber": "94837983",
+          "address": "137 Church Road, London",
+          "postcode": "SW32 EU",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-07",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Helix UK",
+          "registrationNumber": "81090064",
+          "address": "153 Green Lane, Manchester",
+          "postcode": "M60 LH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-04-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Island Developments",
+          "registrationNumber": "46132636",
+          "address": "180 Queen Street, London",
+          "postcode": "SW57 CC",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-13",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Fusion Limited",
+          "registrationNumber": "41642117",
+          "address": "175 London Road, Manchester",
+          "postcode": "M96 EE",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-26",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "United UK",
+          "registrationNumber": "54790194",
+          "address": "198 The Grove, London",
+          "postcode": "SW93 QF",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-08",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Dover Ltd",
+          "registrationNumber": "96265830",
+          "address": "42 Manor Road, Manchester",
+          "postcode": "M91 SW",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-04",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Gateway Advisory",
+          "registrationNumber": "31769151",
+          "address": "131 Park Road, London",
+          "postcode": "E44 PZ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-01",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Crescent Tech",
+          "registrationNumber": "50614589",
+          "address": "81 London Road, Manchester",
+          "postcode": "M21 XI",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Meridian UK",
+          "registrationNumber": "80975023",
+          "address": "5 Station Road, London",
+          "postcode": "WC81 YH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-23",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Kensington Tech",
+          "registrationNumber": "20838338",
+          "address": "39 New Street, Manchester",
+          "postcode": "M62 MO",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Kensington Management",
+          "registrationNumber": "73780832",
+          "address": "16 Market Street, London",
+          "postcode": "SE99 SM",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-15",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "North Solutions",
+          "registrationNumber": "24617633",
+          "address": "81 Richmond Road, Manchester",
+          "postcode": "M31 GI",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-30",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Phoenix Investments",
+          "registrationNumber": "79918066",
+          "address": "105 Green Lane, London",
+          "postcode": "N56 RP",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-15",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Crescent Limited",
+          "registrationNumber": "32232221",
+          "address": "194 East Street, Manchester",
+          "postcode": "M18 LC",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-20",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "United Ltd",
+          "registrationNumber": "29841473",
+          "address": "79 Bridge Street, London",
+          "postcode": "SE83 IB",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-10",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "North Advisory",
+          "registrationNumber": "31177465",
+          "address": "25 Waterloo Road, Manchester",
+          "postcode": "M94 TS",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-20",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Global Partners",
+          "registrationNumber": "21355019",
+          "address": "159 Albert Road, London",
+          "postcode": "EC77 GR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-04-22",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Integra Digital",
+          "registrationNumber": "16313104",
+          "address": "169 Oxford Road, Manchester",
+          "postcode": "M94 KF",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-23",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Blue Advisory",
+          "registrationNumber": "73006833",
+          "address": "122 London Road, London",
+          "postcode": "N76 LC",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-08",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "York Developments",
+          "registrationNumber": "85714846",
+          "address": "11 Station Road, Manchester",
+          "postcode": "M75 GV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-05-01",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Elite UK",
+          "registrationNumber": "70039499",
+          "address": "156 Albert Road, London",
+          "postcode": "WC78 MB",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-05",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Digital UK",
+          "registrationNumber": "55497354",
+          "address": "162 Manor Road, Manchester",
+          "postcode": "M37 SW",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Apex Digital",
+          "registrationNumber": "96507193",
+          "address": "44 Church Street, London",
+          "postcode": "N92 AD",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-04-19",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Horizon Limited",
+          "registrationNumber": "61847070",
+          "address": "197 Queen Street, Manchester",
+          "postcode": "M29 VK",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-05-06",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Zen Tech",
+          "registrationNumber": "11713128",
+          "address": "98 Bridge Street, London",
+          "postcode": "NW18 JZ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Empire Developments",
+          "registrationNumber": "67765151",
+          "address": "72 Victoria Street, Manchester",
+          "postcode": "M73 WX",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-12",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Gateway Properties",
+          "registrationNumber": "36988261",
+          "address": "106 Queen Street, London",
+          "postcode": "WC33 EG",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-22",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Gateway Group",
+          "registrationNumber": "11346804",
+          "address": "47 Albert Road, Manchester",
+          "postcode": "M51 UN",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-05-04",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Core Ventures",
+          "registrationNumber": "36080682",
+          "address": "187 Richmond Road, London",
+          "postcode": "EC86 JM",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-21",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Summit Properties",
+          "registrationNumber": "22082438",
+          "address": "43 Manor Road, Manchester",
+          "postcode": "M30 XL",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-13",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Helix Advisory",
+          "registrationNumber": "24903892",
+          "address": "172 Green Lane, London",
+          "postcode": "EC32 NE",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-28",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Crescent Services",
+          "registrationNumber": "86870084",
+          "address": "150 Market Street, Manchester",
+          "postcode": "M88 BQ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-09",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Liberty Solutions",
+          "registrationNumber": "60550775",
+          "address": "76 Church Street, London",
+          "postcode": "SW67 JY",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-10",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Digital Associates",
+          "registrationNumber": "32995986",
+          "address": "138 North Street, Manchester",
+          "postcode": "M83 NW",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-18",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "York UK",
+          "registrationNumber": "50609730",
+          "address": "174 Victoria Street, London",
+          "postcode": "EC98 YX",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-02",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "First UK",
+          "registrationNumber": "35635623",
+          "address": "177 Waterloo Road, Manchester",
+          "postcode": "M35 DW",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-16",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Alpha Developments",
+          "registrationNumber": "60971783",
+          "address": "55 Mill Lane, London",
+          "postcode": "E59 ZV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-05",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Meridian Properties",
+          "registrationNumber": "31940220",
+          "address": "79 Oxford Road, Manchester",
+          "postcode": "M11 BH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-04",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Keystone Services",
+          "registrationNumber": "29614582",
+          "address": "193 Mill Lane, London",
+          "postcode": "WC68 QR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-20",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "York Tech",
+          "registrationNumber": "86645621",
+          "address": "198 Green Lane, Manchester",
+          "postcode": "M22 FG",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-04-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "London UK",
+          "registrationNumber": "44382610",
+          "address": "18 High Street, London",
+          "postcode": "EC43 XN",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Crescent Partners",
+          "registrationNumber": "45190866",
+          "address": "187 West Street, Manchester",
+          "postcode": "M36 KC",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-08",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        }
+      ],
+      "summary": {
+        "total": 50,
+        "byLocation": {
+          "SE": 4,
+          "M5": 2,
+          "EC": 6,
+          "M1": 3,
+          "M4": 2,
+          "WC": 5,
+          "SW": 4,
+          "M6": 2,
+          "M9": 4,
+          "E4": 1,
+          "M2": 3,
+          "M3": 5,
+          "N5": 1,
+          "N7": 1,
+          "M7": 2,
+          "N9": 1,
+          "NW": 1,
+          "M8": 2,
+          "E5": 1
+        },
+        "byIndustry": {
+          "Management consultancy activities": 50
+        },
+        "byCompanyType": {
+          "ltd": 33,
+          "cic": 5,
+          "plc": 9,
+          "limited": 3
+        }
+      }
+    },
+    {
+      "customerId": "demo-accountant",
+      "company": "ABC Accountants",
+      "email": "demo@accountants.com",
+      "date": "2026-05-06",
+      "generatedAt": "2026-05-06T08:39:20.770Z",
+      "totalLeads": 48,
+      "leadLimit": 50,
+      "leads": [
+        {
+          "companyName": "Jupiter Holdings",
+          "registrationNumber": "66563612",
+          "address": "65 Waterloo Road, London",
+          "postcode": "SE49 HC",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Dover Digital",
+          "registrationNumber": "27100681",
+          "address": "151 Queen Street, Manchester",
+          "postcode": "M85 CM",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-24",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Fusion Investments",
+          "registrationNumber": "28974439",
+          "address": "111 Castle Street, London",
+          "postcode": "NW78 ZH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-26",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Xenon Developments",
+          "registrationNumber": "32873865",
+          "address": "181 Church Road, Manchester",
+          "postcode": "M66 EE",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-18",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "First Digital",
+          "registrationNumber": "58918358",
+          "address": "28 Waterloo Road, London",
+          "postcode": "N45 OJ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-27",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "York Investments",
+          "registrationNumber": "91231665",
+          "address": "54 Waterloo Road, Manchester",
+          "postcode": "M99 BQ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-04-18",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Keystone Investments",
+          "registrationNumber": "32014604",
+          "address": "179 Mill Lane, London",
+          "postcode": "EC60 CA",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-05-06",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Blue Ltd",
+          "registrationNumber": "13535990",
+          "address": "45 High Street, Manchester",
+          "postcode": "M81 QE",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Summit Capital",
+          "registrationNumber": "57826233",
+          "address": "93 Oxford Road, London",
+          "postcode": "W88 LZ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-04-07",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Oak Properties",
+          "registrationNumber": "85205165",
+          "address": "24 Park Road, Manchester",
+          "postcode": "M18 ER",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-30",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Quantum Consulting",
+          "registrationNumber": "73196528",
+          "address": "12 Green Lane, London",
+          "postcode": "SE49 DZ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-05-03",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Helix Advisory",
+          "registrationNumber": "24288195",
+          "address": "152 King Street, Manchester",
+          "postcode": "M66 EH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-05-03",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Junction Solutions",
+          "registrationNumber": "67202135",
+          "address": "187 Manor Road, London",
+          "postcode": "W43 QA",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-27",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Keystone Partners",
+          "registrationNumber": "21013169",
+          "address": "7 Church Street, Manchester",
+          "postcode": "M22 QA",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-04-27",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Vertex Investments",
+          "registrationNumber": "42859019",
+          "address": "162 Oxford Road, London",
+          "postcode": "EC44 MS",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-05-04",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Keystone Limited",
+          "registrationNumber": "92494046",
+          "address": "3 Castle Street, Manchester",
+          "postcode": "M38 MK",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-07",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Phoenix Associates",
+          "registrationNumber": "58991699",
+          "address": "168 Oxford Road, London",
+          "postcode": "WC71 TE",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-01",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Crescent Investments",
+          "registrationNumber": "35856771",
+          "address": "172 West Street, Manchester",
+          "postcode": "M48 KA",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-22",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Kensington Associates",
+          "registrationNumber": "56631680",
+          "address": "175 High Street, London",
+          "postcode": "SW52 AA",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-06",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Digital Consulting",
+          "registrationNumber": "75705632",
+          "address": "131 South Street, Manchester",
+          "postcode": "M42 CB",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-04-11",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Phoenix Developments",
+          "registrationNumber": "66950997",
+          "address": "196 Bridge Street, London",
+          "postcode": "SW74 UQ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-14",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "United UK",
+          "registrationNumber": "18809120",
+          "address": "124 Oxford Road, Manchester",
+          "postcode": "M26 AB",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-12",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Kensington Advisory",
+          "registrationNumber": "38486118",
+          "address": "1 King Street, London",
+          "postcode": "NW43 HG",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-24",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Elite Capital",
+          "registrationNumber": "37690915",
+          "address": "111 Station Road, Manchester",
+          "postcode": "M98 ZH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-04",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "First Holdings",
+          "registrationNumber": "15006478",
+          "address": "161 Mill Lane, London",
+          "postcode": "NW13 NB",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-07",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Digital Ltd",
+          "registrationNumber": "89717775",
+          "address": "182 Albert Road, Manchester",
+          "postcode": "M68 PJ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-14",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Apex Associates",
+          "registrationNumber": "48030728",
+          "address": "149 West Street, London",
+          "postcode": "EC13 HM",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-01",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Gateway Limited",
+          "registrationNumber": "95147702",
+          "address": "84 Green Lane, Manchester",
+          "postcode": "M64 MV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-04-10",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Apex Consulting",
+          "registrationNumber": "30213604",
+          "address": "25 Church Road, London",
+          "postcode": "N56 PL",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-05-06",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Integra Capital",
+          "registrationNumber": "27384861",
+          "address": "136 The Grove, Manchester",
+          "postcode": "M70 VB",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-05-01",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Quantum Tech",
+          "registrationNumber": "22850958",
+          "address": "103 Albert Road, London",
+          "postcode": "E10 JY",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-27",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Meridian Ltd",
+          "registrationNumber": "57703963",
+          "address": "110 Park Road, Manchester",
+          "postcode": "M15 TR",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-23",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Integra Holdings",
+          "registrationNumber": "14316099",
+          "address": "112 Manor Road, London",
+          "postcode": "W82 SO",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-13",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Thames UK",
+          "registrationNumber": "67671046",
+          "address": "140 The Grove, Manchester",
+          "postcode": "M40 DU",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-04-09",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Keystone Advisory",
+          "registrationNumber": "52886156",
+          "address": "159 New Street, Manchester",
+          "postcode": "M59 SE",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-09",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "First Tech",
+          "registrationNumber": "37222758",
+          "address": "12 The Grove, London",
+          "postcode": "N72 GV",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-04-25",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Crescent Enterprise",
+          "registrationNumber": "31532405",
+          "address": "162 North Street, Manchester",
+          "postcode": "M88 TE",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-22",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Oak Group",
+          "registrationNumber": "87839379",
+          "address": "86 Bridge Street, London",
+          "postcode": "W39 QI",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-16",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Junction Group",
+          "registrationNumber": "31751579",
+          "address": "64 Church Road, Manchester",
+          "postcode": "M43 TZ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-09",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "North Group",
+          "registrationNumber": "86904849",
+          "address": "198 Oxford Road, London",
+          "postcode": "SE25 NS",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-14",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "First Investments",
+          "registrationNumber": "68625079",
+          "address": "15 Manor Road, London",
+          "postcode": "SE59 XQ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "cic",
+          "dateIncorporated": "2026-04-29",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "North Holdings",
+          "registrationNumber": "96100398",
+          "address": "167 Waterloo Road, Manchester",
+          "postcode": "M62 RB",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-24",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Red Developments",
+          "registrationNumber": "84513427",
+          "address": "28 Queen Street, London",
+          "postcode": "SW79 UB",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-17",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Digital Partners",
+          "registrationNumber": "98887027",
+          "address": "144 Green Lane, Manchester",
+          "postcode": "M99 EL",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-20",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Global Ventures",
+          "registrationNumber": "41800558",
+          "address": "100 Victoria Street, London",
+          "postcode": "EC70 HH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "limited",
+          "dateIncorporated": "2026-04-12",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Keystone Enterprise",
+          "registrationNumber": "21215222",
+          "address": "128 London Road, Manchester",
+          "postcode": "M39 XJ",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-27",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "North Consulting",
+          "registrationNumber": "32190624",
+          "address": "13 Park Road, London",
+          "postcode": "E69 XH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "ltd",
+          "dateIncorporated": "2026-04-09",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        },
+        {
+          "companyName": "Quantum Partners",
+          "registrationNumber": "13118859",
+          "address": "182 Queen Street, Manchester",
+          "postcode": "M10 NH",
+          "sicDescription": "Management consultancy activities",
+          "sicCodes": [
+            "70229"
+          ],
+          "companyType": "plc",
+          "dateIncorporated": "2026-04-28",
+          "estimatedNeeds": [
+            "accounting",
+            "business insurance",
+            "website",
+            "banking"
+          ]
+        }
+      ],
+      "summary": {
+        "total": 48,
+        "byLocation": {
+          "SE": 4,
+          "M8": 3,
+          "NW": 3,
+          "M6": 5,
+          "N4": 1,
+          "M9": 3,
+          "EC": 4,
+          "W8": 2,
+          "M1": 3,
+          "W4": 1,
+          "M2": 2,
+          "M3": 2,
+          "WC": 1,
+          "M4": 4,
+          "SW": 3,
+          "N5": 1,
+          "M7": 1,
+          "E1": 1,
+          "M5": 1,
+          "N7": 1,
+          "W3": 1,
+          "E6": 1
+        },
+        "byIndustry": {
+          "Management consultancy activities": 48
+        },
+        "byCompanyType": {
+          "ltd": 27,
+          "plc": 8,
+          "cic": 9,
+          "limited": 4
+        }
+      }
+    }
+  ]
+}
