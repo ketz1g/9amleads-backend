@@ -3121,6 +3121,22 @@ app.post('/api/admin/cleanup', adminAuth, (req, res) => {
   }
 });
 
+// POST /api/admin/purge-demo — remove demo migration accounts only (keeps real signups)
+app.post('/api/admin/purge-demo', adminAuth, (req, res) => {
+  try {
+    const db = getDb();
+    const demoIds = (db.customers || []).filter(c => c.source === 'demo-migration').map(c => c.id);
+    const beforeCust = db.customers.length;
+    const beforeLeads = db.leads.length;
+    db.customers = (db.customers || []).filter(c => c.source !== 'demo-migration');
+    db.leads = (db.leads || []).filter(l => !demoIds.includes(l.customer_id));
+    saveDb();
+    res.json({ success: true, removed_customers: beforeCust - db.customers.length, removed_leads: beforeLeads - db.leads.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/admin/export — export customers for marketing
 app.get('/api/admin/export', adminAuth, (req, res) => {
   const customers = db.prepare(`
