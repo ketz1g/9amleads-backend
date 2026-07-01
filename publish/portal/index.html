@@ -138,7 +138,7 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <!-- POSTCODE DISTRICTS -->
 <div class="form-group" style="margin-top:8px">
 <label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Your Postcode Districts <span style="color:#8890a8;font-weight:400;font-size:11px">(up to 5 &middot; e.g. EN1, EN2, SW1)</span></label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Enter UK postcode districts you want exclusive leads for. Your plan includes 5 districts. Once you claim a district, no other customer gets leads there. Each lead is yours exclusively. Enter just the district code like "EN1", "SW1A", "CM1".</span></div>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Enter UK postcode districts you want leads for. Multiple customers can choose the same district — each lead is unique and sent to only one customer. Your plan includes 5 districts. Just enter the district code like "EN1" or "SW1".</span></div>
 <div id="s-postcode-wrapper" style="position:relative;margin-top:4px">
 <div id="s-postcode-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px"></div>
 <input type="text" id="s-postcode-input" placeholder="Type a district e.g. EN1 or SW1" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
@@ -309,7 +309,7 @@ async function addSignupPostcode() {
   try {
     var r = await fetch(API + '/api/postcodes/check?code=' + encodeURIComponent(code));
     var data = await r.json();
-    if (data.available === false) { err.textContent = data.error || '"' + code + '" is not available'; err.style.display = 'block'; return; }
+    if (data.valid === false) { err.textContent = data.error || '"' + code + '" is not a valid district'; err.style.display = 'block'; return; }
     signupPostcodes.push(code);
     input.value = '';
     renderSignupPostcodes();
