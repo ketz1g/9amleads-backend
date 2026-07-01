@@ -338,7 +338,7 @@ function renderAllPostcodes() {
 function renderPcSearchResults(items) {
   const dropdown = document.getElementById('pc-dropdown');
   const selected = selectedPostcodes.map(s => s.code);
-  if (items.length === 0) { dropdown.innerHTML = '<div style="padding:16px;color:#5c6480;font-size:13px;text-align:center">No matching districts. Try EN1, SW1, M1...</div>'; return; }
+  if (items.length === 0) {     dropdown.innerHTML = '<div style="padding:16px;color:#5c6480;font-size:13px;text-align:center">No matching areas. Try CM, EN, SG...</div>'; return; }
   let html = ''; let lastArea = '';
   for (const d of items) {
     if (d.area_code !== lastArea) { html += '<div style="padding:6px 14px 2px;font-size:10px;font-weight:700;color:#5c6480">' + d.area_code + ' — ' + d.area_name + '</div>'; lastArea = d.area_code; }

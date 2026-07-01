@@ -330,7 +330,7 @@ async function loadDashboard() {
   const sub = await apiFetch('/api/subscription');
   if (sub) {
     const planLabel = sub.plan === 'free_trial' ? 'Free Trial' : sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1);
-    const extraInfo = (sub.extra_postcodes || 0) > 0 ? ' + ' + sub.extra_postcodes + ' extra districts' : '';
+    const extraInfo = (sub.extra_postcodes || 0) > 0 ? ' + ' + sub.extra_postcodes + ' extra areas' : '';
     document.getElementById('sub-plan-name').textContent = planLabel + extraInfo;
     document.getElementById('sub-price-info').textContent = sub.leads_per_day + ' leads/day' + extraInfo;
     document.getElementById('sub-badge').textContent = sub.plan === 'free_trial' ? 'Trial' : 'Active';
@@ -630,8 +630,8 @@ function showPlans() {
         '</div>';
     }).join('') +
     '<div style="margin-top:16px;padding:12px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:8px;font-size:11px;color:#8890a8;text-align:center">' +
-    '<strong>postcode areas:</strong> Starter: 5 districts &middot; Pro: 10 districts &middot; Enterprise: 50 districts<br>' +
-    '<strong>Extra districts:</strong> Need more? Add extra districts for just \u00a310/wk from your dashboard.<br>' +
+    '<strong>postcode areas:</strong> Starter: 3 areas &middot; Pro: 5 areas &middot; Enterprise: 10 areas<br>' +
+    '<strong>Extra districts:</strong> Need more? Add extra areas for just \u00a310/wk from your dashboard.<br>' +
     'Switching plans creates a new Stripe subscription with prorated billing.</div>';
 
   overlay.appendChild(modal);
@@ -655,7 +655,7 @@ async function buyExtraPostcodes() {
 function showLowLeadsTip(postcodeCount, leadsThisWeek) {
   const banner = document.getElementById('onboardingBanner');
   if (leadsThisWeek < 10 && postcodeCount <= 3) {
-    banner.innerHTML = '<i class="fas fa-lightbulb" style="color:var(--warning)"></i> <strong>Not enough leads?</strong> You have <strong>' + postcodeCount + ' postcode district' + (postcodeCount !== 1 ? 's' : '') + '</strong> and only <strong>' + leadsThisWeek + ' leads this week</strong>. Try adding more postcode areas to increase your volume. <a href="#" onclick="document.getElementById(\'edit-territory-btn\').click();return false" style="color:var(--primary);text-decoration:underline">Add districts now</a>';
+    banner.innerHTML = '<i class="fas fa-lightbulb" style="color:var(--warning)"></i> <strong>Not enough leads?</strong> You have <strong>' + postcodeCount + ' postcode district' + (postcodeCount !== 1 ? 's' : '') + '</strong> and only <strong>' + leadsThisWeek + ' leads this week</strong>. Try adding more postcode areas to increase your volume. <a href="#" onclick="document.getElementById(\'edit-territory-btn\').click();return false" style="color:var(--primary);text-decoration:underline">Add areas now</a>';
     banner.style.display = 'flex';
   }
 }
@@ -813,7 +813,7 @@ function renderTerritorySearchResults(items) {
   const selected = editedTerritories || [];
 
   if (items.length === 0) {
-    dropdown.innerHTML = '<div style="padding:12px;color:var(--muted2);font-size:12px;text-align:center">No matching districts</div>';
+    dropdown.innerHTML = '<div style="padding:12px;color:var(--muted2);font-size:12px;text-align:center">No matching areas</div>';
     return;
   }
   let lastArea = '';
