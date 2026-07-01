@@ -1,11 +1,8 @@
 {
-  "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "echo 'build-skipped'"
-  },
+  "$schema": "https://railway.com/railway.schema.json",
   "deploy": {
-    "startCommand": "echo 'Deployed via Render only'",
+    "startCommand": "node production_api_server.js",
     "healthcheckPath": "/api/health",
-    "restartPolicyType": "NEVER"
+    "restartPolicyType": "ON_FAILURE"
   }
 }
