@@ -148,6 +148,9 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div id="s-postcode-error" style="font-size:10px;color:#ef4444;margin-top:4px;display:none"></div>
 </div>
 
+<!-- LEAD FILTERS -->
+<div id="s-filters-container" style="margin-top:8px"></div>
+
 <!-- PLAN SELECTION -->
 <div class="form-group" style="margin-top:12px">
 <label style="display:block;font-size:12px;font-weight:600;color:#f1f5f9;margin-bottom:6px"><i class="fas fa-crown" style="color:#f59e0b;width:14px"></i> Choose Your Plan</label>
@@ -175,10 +178,9 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </div>
 </div>
 
-<!-- FILTERS NOTE -->
-<div style="margin-top:8px;padding:10px 12px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:8px;font-size:11px;color:#8890a8;line-height:1.5">
-<strong style="color:#f1f5f9">After signing up, set your lead filters in the dashboard.</strong><br>
-Choose which lead types you want above — then log into your dashboard to set detailed filters (bedrooms, property type, SIC codes, etc.) and postcode areas. This ensures the distributor sends you exactly the leads you need at 9am each day.
+<!-- FILTERS NOTE (below plan selection, before fields) -->
+<div style="margin-top:6px;padding:8px 12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.08);border-radius:8px;font-size:10px;color:#8890a8;line-height:1.5">
+Filters set here apply to each lead type. You can adjust them anytime from your dashboard after signing up.
 </div>
 
 <!-- CRM BOX -->
@@ -292,7 +294,29 @@ function renderFilters() {
 renderFilters();
 
 function getFilters() {
-  return {};
+  var checked = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
+  var allFilters = {};
+  for (var ci = 0; ci < checked.length; ci++) {
+    var p = checked[ci].value;
+    var defs = filterDefs[p] || [];
+    if (defs.length === 0) continue;
+    var pf = {};
+    var fields = document.querySelectorAll('.sf-field[data-product="' + p + '"]');
+    for (var fi = 0; fi < fields.length; fi++) {
+      var el = fields[fi];
+      var id = el.getAttribute('data-id');
+      if (el.type === 'checkbox') {
+        if (!pf[id]) pf[id] = [];
+        if (el.checked) pf[id].push(el.value);
+      } else if (el.type === 'select-one') {
+        if (el.value) pf[id] = el.value;
+      } else if (el.type === 'text') {
+        if (el.value.trim()) pf[id] = el.value.trim();
+      }
+    }
+    if (Object.keys(pf).length > 0) allFilters[p] = pf;
+  }
+  return allFilters;
 }
 
 // ===== SIGNUP POSTCODE SELECTOR =====
@@ -329,7 +353,49 @@ function renderSignupPostcodes() {
   tags.innerHTML = html;
 }
 
-// ===== CRM TEST =====
+// ===== SIGNUP FILTERS =====
+var signupFilters = {};
+var filterDefs = {
+  moving: [{ id:'f-bed-min', label:'Min Bedrooms', type:'select', opts:['','1','2','3','4','5'] }, { id:'f-bed-max', label:'Max Bedrooms', type:'select', opts:['','1','2','3','4','5','6'] }, { id:'f-prop-type', label:'Property Type', type:'select', opts:['','House','Flat','Bungalow'] }, { id:'f-max-price', label:'Max Price', type:'select', opts:['','£200k','£350k','£500k','£750k','£1M'] } ],
+  probate: [],
+  newbusiness: [{ id:'f-industries', label:'Industries', type:'checkboxes', opts:['Tech & Software','Construction','Retail','Hospitality','Healthcare','Professional Services','Financial','Creative'] }],
+  planning: [{ id:'f-app-type', label:'Application Type', type:'select', opts:['','Householder','Full Planning','Outline','Listed Building'] }],
+  tenders: [{ id:'f-min-val', label:'Min Contract Value', type:'select', opts:['','£10k','£50k','£100k','£500k'] }, { id:'f-keywords', label:'Keywords', type:'text', placeholder:'construction, IT...' }]
+};
+var filterNames = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Tenders' };
+var filterColors = { moving:'#ff6b35', probate:'#a855f7', newbusiness:'#06b6d4', planning:'#10b981', tenders:'#6366f1' };
+
+function renderSignupFilters() {
+  var container = document.getElementById('s-filters-container');
+  var checked = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
+  var html = '';
+  for (var ci = 0; ci < checked.length; ci++) {
+    var p = checked[ci].value;
+    var defs = filterDefs[p] || [];
+    if (defs.length === 0) continue;
+    html += '<div class="form-group" style="margin-bottom:8px;padding:10px 12px;background:rgba(' + (p==='moving'?'255,107,53':p==='probate'?'168,85,247':p==='newbusiness'?'6,182,212':p==='planning'?'16,185,129':'99,102,241') + ',0.04);border:1px solid rgba(' + (p==='moving'?'255,107,53':p==='probate'?'168,85,247':p==='newbusiness'?'6,182,212':p==='planning'?'16,185,129':'99,102,241') + ',0.1);border-radius:8px">';
+    html += '<label style="font-size:12px;font-weight:600;color:' + filterColors[p] + ';margin-bottom:6px;display:block">' + (p==='moving'?'🚚':p==='probate'?'⚖️':p==='newbusiness'?'🏢':p==='planning'?'🔨':'📋') + ' ' + filterNames[p] + ' Filters</label>';
+    for (var fi = 0; fi < defs.length; fi++) {
+      var d = defs[fi];
+      var fieldId = d.id + '-' + p;
+      if (d.type === 'select') {
+        html += '<div style="margin-bottom:4px"><label style="font-size:10px;color:#8890a8;display:block;margin-bottom:2px">' + d.label + '</label><select class="sf-field" data-product="' + p + '" data-id="' + d.id + '" style="width:100%;padding:6px 8px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:11px;color:#111827;font-family:inherit;outline:none">';
+        for (var oi = 0; oi < d.opts.length; oi++) { html += '<option value="' + d.opts[oi] + '">' + d.opts[oi] + '</option>'; }
+        html += '</select></div>';
+      } else if (d.type === 'checkboxes') {
+        html += '<div style="margin-bottom:4px"><label style="font-size:10px;color:#8890a8;display:block;margin-bottom:3px">' + d.label + '</label><div style="display:flex;flex-wrap:wrap;gap:3px">';
+        for (var oi = 0; oi < d.opts.length; oi++) { html += '<label style="display:flex;align-items:center;gap:3px;font-size:10px;color:#374151;cursor:pointer;padding:2px 6px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px"><input type="checkbox" class="sf-field" data-product="' + p + '" data-id="' + d.id + '" value="' + d.opts[oi] + '" checked style="accent-color:' + filterColors[p] + ';width:11px;height:11px"> ' + d.opts[oi] + '</label>'; }
+        html += '</div></div>';
+      } else if (d.type === 'text') {
+        html += '<div style="margin-bottom:4px"><label style="font-size:10px;color:#8890a8;display:block;margin-bottom:2px">' + d.label + '</label><input type="text" class="sf-field" data-product="' + p + '" data-id="' + d.id + '" placeholder="' + (d.placeholder||'') + '" style="width:100%;padding:6px 8px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:11px;color:#111827;font-family:inherit;outline:none"></div>';
+      }
+    }
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+document.querySelector('#s-products-container').addEventListener('change', renderSignupFilters);
+renderSignupFilters();
 function testCrm() {
   var url = document.getElementById('s-crm').value.trim();
   var status = document.getElementById('crm-status');
