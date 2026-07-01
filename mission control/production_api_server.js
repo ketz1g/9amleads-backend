@@ -2944,39 +2944,44 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           } catch(e) { console.log('[SCRAPER] Planning monitor error: ' + e.message); leads = []; }
         } else if (product === 'moving') {
           try {
-            // Direct Rightmove API (free) - fetch SSTC/Under Offer properties UK-wide
+            // Direct Rightmove API (free) - fetch UK properties
             leads = await new Promise(function(resolve) {
-              // Use Rightmove's property search API for SSTC properties
-              var req = require('https').request({ hostname: 'www.rightmove.co.uk', path: '/api/_search?locationIdentifier=REGION%5E5&numberOfPropertiesRequired=30&sortType=6&dontShow=reduced&includeSSTC=true&viewType=LIST', method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'application/json' }, timeout: 30000 }, function(res) {
+              var req = require('https').request({ hostname: 'www.rightmove.co.uk', path: '/api/_search?locationIdentifier=REGION%5E5&numberOfPropertiesRequired=30&sortType=6&includeSSTC=true&viewType=LIST', method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'application/json' }, timeout: 15000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
-                  try { var data = JSON.parse(body); var properties = data.properties || []; resolve(properties.slice(0, 30).map(function(p) { return { id: 'RM_' + (p.id || Date.now()), address: p.displayAddress || p.address || '', price: p.price?.amount || p.price || 0, bedrooms: p.bedrooms || 0, propertyType: p.propertyType || '', agent: p.agent?.name || p.agentName || '', url: 'https://www.rightmove.co.uk/properties/' + (p.id || ''), listingStatus: p.status || 'SSTC', source: 'Rightmove', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                  try { var data = JSON.parse(body); var properties = data.properties || data.result?.properties || []; resolve(properties.slice(0, 30).map(function(p) { return { id: 'RM_' + (p.id || Date.now()), address: p.displayAddress || p.address || '', price: p.price?.amount || p.price || 0, bedrooms: p.bedrooms || 0, propertyType: p.propertyType || '', agent: p.agent?.name || p.agentName || '', url: 'https://www.rightmove.co.uk/properties/' + (p.id || ''), listingStatus: p.status || (p.soldDate ? 'SSTC' : 'Available'), source: 'Rightmove', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
                 });
               });
               req.on('error', function() { resolve([]); });
-              req.setTimeout(30000, function() { req.destroy(); resolve([]); });
+              req.setTimeout(15000, function() { req.destroy(); resolve([]); });
               req.end();
             });
-            if (!leads || leads.length < 3) { console.log('[SCRAPER] Rightmove returned ' + (leads ? leads.length : 0) + ', trying Apify fallback...');
-              var apifyKey3 = process.env.APIFY_API_KEY;
-              if (apifyKey3) {
-                leads = await new Promise(function(resolve) {
-                  var bodyData = JSON.stringify({ location: 'London', maxResults: 5 });
-                  var req2 = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey3 + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 90000 }, function(res2) {
-                    var body2 = ''; res2.on('data', function(c) { body2 += c; });
-                    res2.on('end', function() {
-                      try { var items2 = JSON.parse(body2); if (!Array.isArray(items2)) { resolve([]); return; } resolve(items2.map(function(p) { return { id: 'RM_' + (p.id || Date.now()), address: p.address || '', price: p.price || 0, bedrooms: p.bedrooms || 0, propertyType: p.propertyType || '', agent: p.agentName || p.agent || '', url: p.url || '', source: 'Rightmove', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+            if (!leads || leads.length < 3) {
+              console.log('[SCRAPER] Rightmove API returned ' + (leads ? leads.length : 0) + ', falling back to Companies House moving/removals...');
+              var chKey = process.env.COMPANIES_HOUSE_API_KEY || process.env.GOVUK_API_KEY || '';
+              var searchTerms = ['removals', 'removal', 'moving house', 'man and van'];
+              var allResults = [];
+              for (var st = 0; st < searchTerms.length; st++) {
+                try {
+                  var termLeads = await new Promise(function(resolve2) {
+                    var req2 = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=' + encodeURIComponent(searchTerms[st]) + '&size=20', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res2) {
+                      var body2 = ''; res2.on('data', function(c) { body2 += c; });
+                      res2.on('end', function() {
+                        try { var data2 = JSON.parse(body2); var items2 = data2.items || []; resolve2(items2.filter(function(c){return c.title && c.company_number}).map(function(c) { var a = c.address || {}; return { id: 'CH_MV_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.title || '', address: [a.premises || '', a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve2([]); }
+                      });
                     });
+                    req2.on('error', function() { resolve2([]); });
+                    req2.setTimeout(10000, function() { req2.destroy(); resolve2([]); });
+                    req2.end();
                   });
-                  req2.on('error', function() { resolve([]); });
-                  req2.setTimeout(90000, function() { req2.destroy(); resolve([]); });
-                  req2.write(bodyData);
-                  req2.end();
-                });
+                  allResults = allResults.concat(termLeads);
+                } catch(e) { }
               }
-              if (!leads || leads.length < 3) { console.log('[SCRAPER] Rightmove returned ' + (leads ? leads.length : 0) + ', no moving leads today'); leads = []; }
+              leads = allResults.slice(0, 30);
+              if (leads.length > 0) console.log('[SCRAPER] Companies House returned ' + leads.length + ' moving/removals leads');
+              else console.log('[SCRAPER] No moving leads found from any source today');
             }
-          } catch(e) { console.log('[SCRAPER] Rightmove error: ' + e.message); leads = []; }
+          } catch(e) { console.log('[SCRAPER] Moving error: ' + e.message); leads = []; }
         } else if (product === 'probate') {
           try {
             var chKey5 = process.env.COMPANIES_HOUSE_API_KEY || process.env.GOVUK_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
