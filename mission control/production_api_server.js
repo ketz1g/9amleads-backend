@@ -3178,8 +3178,8 @@ app.use(function(err, req, res, next) {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ===== TEST SCHEDULE: 6:00 scraper → 6:02 distributor → 6:05 delivery =====
-cron.schedule('0 6 * * *', async () => {
+// ===== TEST SCHEDULE: PAUSED until territories/filters UX is finalised =====
+// cron.schedule('0 6 * * *', async () => {
   console.log('[6AM TEST] Scraping fresh leads...');
   try {
     const http = require('http');
@@ -3193,11 +3193,11 @@ cron.schedule('2 6 * * *', async () => {
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
   } catch(e) { console.log('[6AM TEST] Distributor error:', e.message); }
 });
-cron.schedule('5 6 * * *', async () => {
-  console.log('[6AM TEST] Delivering leads via email...');
-  try {
-    const http = require('http');
-    http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
+// cron.schedule('5 6 * * *', async () => {
+//   console.log('[6AM TEST] Delivering leads via email...');
+//   try {
+//     const http = require('http');
+//     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
   } catch(e) { console.log('[TEST CRON] Delivery error:', e.message); }
 });
 
