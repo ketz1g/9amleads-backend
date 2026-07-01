@@ -1,0 +1,36 @@
+{
+  "demo-solicitor": {
+    "company": "Smith & Co Solicitors",
+    "email": "info@smithsolicitors.co.uk",
+    "active": true,
+    "counties": [
+      "London",
+      "Surrey",
+      "Kent"
+    ],
+    "minEstateValue": 0,
+    "onlyWithProperty": false,
+    "plan": "Professional",
+    "leadsPerDay": 15,
+    "createdAt": "2026-05-06T08:18:38.865Z",
+    "lastDelivery": null,
+    "totalLeadsReceived": 0
+  },
+  "estate-solicitors": {
+    "company": "Estate Law Partners",
+    "email": "enquiries@estatelaw.co.uk",
+    "active": true,
+    "counties": [
+      "Essex",
+      "Hertfordshire",
+      "Cambridgeshire"
+    ],
+    "minEstateValue": 0,
+    "onlyWithProperty": false,
+    "plan": "Professional",
+    "leadsPerDay": 15,
+    "createdAt": "2026-05-06T08:18:46.371Z",
+    "lastDelivery": null,
+    "totalLeadsReceived": 0
+  }
+}

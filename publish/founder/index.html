@@ -1,0 +1,490 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ketz Mandalia | Business Development, Digital Growth & AI Automation Specialist</title>
+<meta name="description" content="Business Development, Digital Growth & AI Automation Specialist with 15+ years experience. Helping businesses modernise, grow, and scale with smart systems, CRM implementation, and AI driven automation.">
+<meta property="og:title" content="Ketz Mandalia | Business Development & Digital Growth Specialist">
+<meta property="og:description" content="15+ years building, growing, and automating businesses.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#2563eb;--primary-light:#3b82f6;--primary-dark:#1d4ed8;--accent:#8b5cf6;--bg:#0a0a0f;--bg2:#0f111a;--card:#11131f;--card-hover:#181a2a;--border:#1e2030;--border-l:#2a2d42;--text:#f1f5f9;--text2:#c8cbd6;--muted:#8890a8;--muted2:#5c6480;--success:#22c55e;--whatsapp:#25D366;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
+html{scroll-behavior:smooth}
+body{font-family:var(--ff-b);background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden}
+.container{max-width:1140px;margin:0 auto;padding:0 24px}
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 0;background:rgba(10,10,15,0.9);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,0.04)}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;max-width:1140px;margin:0 auto;padding:0 24px}
+.logo{font-size:22px;font-weight:800;font-family:var(--ff-h);text-decoration:none;color:var(--text);letter-spacing:-0.5px}
+.logo .f{color:var(--primary)}.logo .l{color:var(--accent)}
+.nav-links{display:flex;gap:2px;align-items:center}
+.nav-links a{padding:8px 14px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;border-radius:6px;transition:.2s}
+.nav-links a:hover{color:var(--text);background:rgba(255,255,255,0.04)}
+.nav-links .btn-nav{padding:9px 22px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff!important;border-radius:6px;font-weight:600;box-shadow:0 4px 16px rgba(37,99,235,0.25)}
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;padding:120px 0 60px}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(37,99,235,0.08) 0%,transparent 60%),radial-gradient(ellipse at 80% 50%,rgba(139,92,246,0.05) 0%,transparent 60%);pointer-events:none}
+.hero .grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(37,99,235,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,0.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+.hero-content{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;position:relative;z-index:2}
+.hero h1{font-size:clamp(34px,4vw,52px);font-weight:900;line-height:1.08;letter-spacing:-1.5px;margin-bottom:14px;font-family:var(--ff-h)}
+.hero h1 .grad{background:linear-gradient(135deg,var(--primary-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:17px;color:var(--muted);max-width:520px;margin-bottom:24px;line-height:1.8}
+.hero-contact{display:flex;flex-direction:column;gap:8px}
+.hero-contact a{display:flex;align-items:center;gap:10px;color:var(--muted);text-decoration:none;font-size:14px;transition:.2s}
+.hero-contact a:hover{color:var(--text)}
+.hero-contact a i{width:18px;color:var(--primary-light)}
+.hero-badge-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
+.hero-badge-bar span{padding:5px 12px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.12);color:var(--primary-light)}
+.hero-strip{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:100px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);font-size:12px;color:var(--success);font-weight:500;margin-bottom:20px}
+.stats-row{display:flex;gap:32px;margin-top:28px;flex-wrap:wrap}
+.stat-item{text-align:center}
+.stat-item .num{font-size:28px;font-weight:900;font-family:var(--ff-h);background:linear-gradient(135deg,var(--primary-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-item .lbl{font-size:11px;color:var(--muted2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+/* PHOTO */
+.photo-wrap{position:relative;display:flex;justify-content:center;align-items:center}
+.photo-frame{width:100%;max-width:360px;border-radius:24px;overflow:hidden;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:2px solid rgba(37,99,235,0.12)}
+.photo-frame img{width:100%;display:block}
+.photo-frame::after{content:'';position:absolute;bottom:0;left:0;right:0;height:40%;background:linear-gradient(to top,rgba(10,10,15,0.6),transparent);pointer-events:none}
+.photo-badge{position:absolute;bottom:16px;left:16px;z-index:2;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);font-size:11px;color:#fff}
+/* SECTIONS */
+.section{padding:100px 0}
+.section-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--primary-light);margin-bottom:12px;text-align:center}
+.section-title{font-size:clamp(28px,3vw,38px);font-weight:800;text-align:center;margin-bottom:10px;letter-spacing:-.5px;line-height:1.15;font-family:var(--ff-h)}
+.section-title .g{background:linear-gradient(135deg,var(--primary-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.section-sub{text-align:center;color:var(--muted);font-size:15px;max-width:600px;margin:0 auto 44px;line-height:1.7}
+/* ABOUT */
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:1000px;margin:0 auto}
+.about-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px}
+.about-card .icon{width:44px;height:44px;border-radius:12px;background:rgba(37,99,235,0.08);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--primary-light);margin-bottom:14px}
+.about-card h3{font-size:17px;font-weight:700;margin-bottom:10px;font-family:var(--ff-h)}
+.about-card p{color:var(--text2);font-size:14px;line-height:1.8}
+/* SERVICES GRID */
+.services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;max-width:1000px;margin:0 auto}
+.service-item{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:10px;font-size:14px;color:var(--text2);transition:.2s}
+.service-item:hover{border-color:var(--border-l);transform:translateY(-1px)}
+.service-item .check{width:20px;height:20px;border-radius:50%;background:rgba(34,197,94,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--success);font-size:10px;font-weight:700}
+/* INDUSTRIES */
+.industries-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;max-width:1000px;margin:0 auto}
+.ind-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;transition:.3s}
+.ind-card:hover{transform:translateY(-3px);border-color:var(--border-l);background:var(--card-hover)}
+.ind-card .ind-icon{font-size:32px;margin-bottom:10px}
+.ind-card h4{font-size:16px;font-weight:700;margin-bottom:6px;font-family:var(--ff-h)}
+.ind-card p{color:var(--text2);font-size:13px;line-height:1.7;margin-bottom:10px}
+.ind-card .ind-results{padding:10px 14px;background:rgba(34,197,94,0.03);border:1px solid rgba(34,197,94,0.08);border-radius:8px;font-size:12px;color:var(--success);line-height:1.6}
+/* PROCESS */
+.process-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:1000px;margin:0 auto}
+.process-step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 22px;text-align:center;position:relative}
+.process-step .num{position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.process-step .icon{font-size:30px;margin-bottom:10px;margin-top:4px}
+.process-step h4{font-size:15px;font-weight:700;margin-bottom:6px}
+.process-step p{font-size:13px;color:var(--text2);line-height:1.6}
+/* EXP */
+.exp-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;margin-bottom:14px;max-width:800px;margin-left:auto;margin-right:auto}
+.exp-card h3{font-size:16px;font-weight:700;font-family:var(--ff-h)}
+.exp-card .role{color:var(--primary-light);font-size:13px;font-weight:600;margin:4px 0 2px}
+.exp-card .date{color:var(--muted2);font-size:12px}
+.exp-card p{color:var(--text2);font-size:13px;line-height:1.7;margin-top:10px}
+.exp-card ul{margin-top:8px;list-style:none;padding:0}
+.exp-card li{color:var(--muted);font-size:13px;padding:3px 0;display:flex;align-items:flex-start;gap:8px}
+.exp-card li i{color:var(--success);font-size:10px;margin-top:5px}
+/* TESTIMONIALS */
+.test-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;max-width:1000px;margin:0 auto}
+.test-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px}
+.test-card .stars{color:#f59e0b;font-size:12px;margin-bottom:8px}
+.test-card blockquote{color:var(--text2);font-size:13px;line-height:1.7;margin-bottom:14px;font-style:italic}
+.test-card .author{font-size:12px;color:var(--muted)}
+/* ENGAGEMENT */
+.engage-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:800px;margin:16px auto 0}
+.engage-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:22px 16px;text-align:center;transition:.2s}
+.engage-card:hover{border-color:var(--border-l)}
+.engage-card .icon{font-size:28px;margin-bottom:8px}
+.engage-card h5{font-size:14px;font-weight:700;margin-bottom:4px}
+.engage-card p{font-size:12px;color:var(--muted);line-height:1.5}
+/* CTA */
+.cta{text-align:center;padding:80px 24px;position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(37,99,235,0.04),rgba(139,92,246,0.02))}
+.cta h2{font-size:clamp(24px,2.5vw,34px);font-weight:800;margin-bottom:10px;font-family:var(--ff-h)}
+.cta p{color:var(--muted);max-width:520px;margin:0 auto 24px;font-size:15px}
+.cta-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 30px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;border:none;text-decoration:none;transition:.2s;font-family:var(--ff-b)}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 4px 16px rgba(37,99,235,0.2)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(37,99,235,0.3)}
+.btn-outline{background:transparent;border:1px solid var(--border-l);color:var(--text2)}
+.btn-outline:hover{border-color:var(--primary);color:var(--text)}
+.btn-lg{padding:16px 36px;font-size:15px}
+.btn-whatsapp{background:#25D366;color:#fff}
+.btn-whatsapp:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(37,211,102,0.3)}
+/* FOOTER */
+footer{text-align:center;padding:48px 24px 32px;border-top:1px solid var(--border)}
+footer .social{display:flex;justify-content:center;gap:10px;margin-bottom:16px}
+footer .social a{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted2);font-size:14px;transition:.2s;text-decoration:none}
+footer .social a:hover{border-color:var(--primary);color:var(--primary-light)}
+footer p{color:var(--muted2);font-size:12px;line-height:1.8}
+footer a{color:var(--primary-light);text-decoration:none}
+/* RESPONSIVE */
+@media(max-width:900px){.hero-content{grid-template-columns:1fr;gap:40px}.about-grid{grid-template-columns:1fr}.process-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.process-grid{grid-template-columns:1fr}.engage-grid{grid-template-columns:1fr}.nav-links a:not(.btn-nav){display:none}}
+.s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(14,165,233,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,0.06) 1px,transparent 1px);background-size:60px 60px}
+.s-bg{position:absolute;inset:0;pointer-events:none;background-size:cover;background-position:center;opacity:.15}
+.s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.12}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-30px)}}
+</style>
+</head>
+<body>
+<div style="background:#0a0a0a;border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;font-size:11px;text-align:center;font-family:Arial,sans-serif;">
+<span style="color:#888">Part of </span><a href="/" style="color:#0ea5e9;font-weight:600;text-decoration:none">9amLeads</a>
+<span style="color:#555;margin:0 6px">|</span>
+<a href="/movingleadsdaily/" style="color:#ff6b35;text-decoration:none;font-weight:600">Moving</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/probateleads/" style="color:#a855f7;text-decoration:none;font-weight:600">Probate</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/newbusinessalert/" style="color:#06b6d4;text-decoration:none;font-weight:600">New Business</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/planningleads/" style="color:#10b981;text-decoration:none;font-weight:600">Planning</a>
+<span style="color:#444;margin:0 4px">·</span>
+<a href="/tenders/" style="color:#6366f1;text-decoration:none;font-weight:600">Tenders</a>
+</div>
+<nav><div class="nav-inner">
+<a href="/" class="logo"><span class="f">Ketz</span><span class="l">Mandalia</span></a>
+<div class="nav-links">
+<a href="#about">About</a><a href="#services">Services</a><a href="#industries">Industries</a><a href="#process">Process</a>
+<a href="#contact" class="btn-nav">Let's Talk</a>
+<a href="/portal/" style="font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;padding:8px 14px">Sign In</a>
+<a href="/portal/#signup" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;padding:6px 16px;border-radius:8px;font-weight:600;font-size:13px;text-decoration:none;margin-left:4px">Sign Up</a>
+</div>
+</div></nav>
+
+<!-- HERO -->
+<section class="hero" style="position:relative;overflow:hidden">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="grid-bg"></div>
+<div class="container"><div class="hero-content">
+<div>
+<div class="hero-strip"><i class="fas fa-bolt"></i> Available for remote, hybrid, onsite and international work</div>
+<h1>I Help Businesses <span class="grad">Modernise, Scale &amp; Automate</span> for Sustainable Growth</h1>
+<p>With 15+ years building, growing, and optimising businesses across multiple industries. I create the systems, strategies, and automation that turn potential into profit. Every solution I build is practical, measurable, and designed to run without me.</p>
+<div class="hero-badge-bar">
+<span>Business Development</span><span>Digital Growth</span><span>AI Automation</span>
+<span>CRM Systems</span><span>Lead Generation</span><span>Marketing Strategy</span>
+</div>
+<div class="hero-contact">
+<!-- phone removed -->
+<a href="mailto:Ketzman1g@gmail.com"><i class="fas fa-envelope"></i> Ketzman1g@gmail.com</a>
+<a href="#"><i class="fas fa-map-marker-alt"></i> London, UK</a>
+</div>
+<div class="stats-row">
+<div class="stat-item"><div class="num">15+</div><div class="lbl">Years Experience</div></div>
+<div class="stat-item"><div class="num">6+</div><div class="lbl">Projects Built</div></div>
+<div class="stat-item"><div class="num">500+</div><div class="lbl">Projects Delivered</div></div>
+</div>
+<div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap">
+<a href="#contact" class="btn btn-primary btn-lg">Book a Free Consultation</a>
+<a href="https://wa.me/447709788772?text=Hi%20Ketz%2C%20I%20found%20your%20website%20and%20would%20like%20to%20chat%20about%20how%20you%20can%20help%20my%20business." target="_blank" class="btn btn-whatsapp btn-lg"><i class="fab fa-whatsapp"></i> WhatsApp Me</a>
+</div>
+</div>
+<div class="photo-wrap">
+<div class="photo-frame">
+<img src="me.jpeg" alt="Ketz Mandalia | Business Development Specialist">
+<div class="photo-badge"><i class="fas fa-check-circle" style="color:var(--success)"></i> Available Now</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<!-- ABOUT -->
+<section class="section" id="about" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div class="section-label">About Me</div>
+<h2 class="section-title">Building Businesses That <span class="g">Work Smarter, Not Harder</span></h2>
+<p class="section-sub">I don't just consult. I build, implement, and deliver. Every system I create is practical, measurable, and built for the real world.</p>
+<div class="about-grid">
+<div class="about-card">
+<div class="icon"><i class="fas fa-bullseye"></i></div>
+<h3>Why I Do This</h3>
+<p>After many years of building businesses, systems, brands, marketing strategies, and automation workflows, I decided to officially offer my services to businesses looking to start, grow, scale, improve, or modernise what they already have in place.<br><br>
+Over the last 15+ years I have worked across multiple industries building businesses from the ground up, creating lead generation systems, improving customer journeys, managing sales pipelines, designing websites, building brands, automating workflows, and helping businesses become more organised, efficient, and profitable.<br><br>
+A lot of businesses struggle because they do not have the right systems, follow up processes, marketing structure, automation, branding, or customer journey in place. That is where I come in.</p>
+</div>
+<div class="about-card">
+<div class="icon"><i class="fas fa-rocket"></i></div>
+<h3>What I Deliver</h3>
+<p>I bridge the gap between business strategy and technical execution. Most businesses know what they want to achieve. They just do not have the systems, processes, or technology to get there.<br><br>
+I build the infrastructure that transforms ambition into operation: CRM systems that actually get used, automated workflows that save hours every week, lead generation pipelines that fill your calendar, and digital strategies that attract the right customers.<br><br>
+Every system I build is designed to run without me. I do not create dependency. I create independence.<br><br>
+<span style="color:var(--primary-light);font-weight:600">Open to remote, hybrid, onsite and international opportunities with full flexibility to travel.</span></p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- SERVICES -->
+<section class="section" id="services" style="position:relative;overflow:hidden">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div class="section-label">Services</div>
+<h2 class="section-title">Everything I Offer to <span class="g">Help Your Business Grow</span></h2>
+<p class="section-sub">From one off projects to long term partnerships. Every solution is tailored to your specific needs.</p>
+<div class="services-grid">
+<div class="service-item"><span class="check">✓</span> Business development and growth</div>
+<div class="service-item"><span class="check">✓</span> Lead generation systems</div>
+<div class="service-item"><span class="check">✓</span> AI automation and workflow systems</div>
+<div class="service-item"><span class="check">✓</span> CRM setup, management and automation</div>
+<div class="service-item"><span class="check">✓</span> Website design, revamps and maintenance</div>
+<div class="service-item"><span class="check">✓</span> Social media management and brand growth</div>
+<div class="service-item"><span class="check">✓</span> Email marketing campaigns</div>
+<div class="service-item"><span class="check">✓</span> Business systems and operational processes</div>
+<div class="service-item"><span class="check">✓</span> Staff training and workflow improvement</div>
+<div class="service-item"><span class="check">✓</span> Customer follow up and retention systems</div>
+<div class="service-item"><span class="check">✓</span> Sales pipeline setup and optimisation</div>
+<div class="service-item"><span class="check">✓</span> Video marketing and advertising content</div>
+<div class="service-item"><span class="check">✓</span> Business branding and rebranding</div>
+<div class="service-item"><span class="check">✓</span> Deep business and competitor research</div>
+<div class="service-item"><span class="check">✓</span> Digital marketing strategies</div>
+<div class="service-item"><span class="check">✓</span> Modernising businesses with AI and new technology</div>
+</div>
+</div>
+</section>
+
+<!-- INDUSTRIES -->
+<section class="section" id="industries" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div class="section-label">Industries</div>
+<h2 class="section-title">Who I Work With <span class="g">and How I Help</span></h2>
+<p class="section-sub">I have helped businesses across multiple sectors build better systems, generate more leads, and operate more efficiently.</p>
+<div class="industries-grid">
+<div class="ind-card"><div class="ind-icon">🚛</div><h4>Removals and Relocation</h4><p>Complete lead generation, CRM, and customer management systems tailored for removal companies. Automated enquiry follow ups, booking pipelines, and customer retention workflows that convert more enquiries into confirmed moves.</p><div class="ind-results">✔ Typical result: 40%+ increase in conversion rate, automated follow ups saving 10+ hours per week</div></div>
+<div class="ind-card"><div class="ind-icon">🏗️</div><h4>Trades and Construction</h4><p>Customer acquisition funnels, automated quoting systems, and CRM workflows for builders, electricians, plumbers, and trades. More enquiries, faster conversions, less admin time wasted.</p><div class="ind-results">✔ Typical result: Streamlined quoting process, 30%+ reduction in admin time</div></div>
+<div class="ind-card"><div class="ind-icon">🏢</div><h4>B2B Service Providers</h4><p>Full lead generation ecosystems including AI powered prospect research, automated email campaigns, CRM pipelines, and sales tracking dashboards. Keep your pipeline full and your team focused.</p><div class="ind-results">✔ Typical result: 3x more qualified leads, complete pipeline visibility</div></div>
+<div class="ind-card"><div class="ind-icon">📚</div><h4>Coaches and Course Creators</h4><p>Complete digital infrastructure for education businesses: landing pages, email automation, student management systems, and AI assisted content creation. Attract students and deliver efficiently.</p><div class="ind-results">✔ Typical result: Automated enrolment systems, 60% less manual admin</div></div>
+<div class="ind-card"><div class="ind-icon">🤖</div><h4>Startups and Digital Platforms</h4><p>Full go to market infrastructure. From website creation and marketing system setup to automated acquisition funnels and operational frameworks. I help you launch, grow, and scale with confidence.</p><div class="ind-results">✔ Typical result: Complete launch infrastructure, automated acquisition systems, clear growth roadmap</div></div>
+<div class="ind-card"><div class="ind-icon">🏠</div><h4>Estate Agents and Property</h4><p>Customer management systems, automated property alert workflows, and digital marketing funnels that help you attract more vendors, nurture leads, and manage your pipeline efficiently.</p><div class="ind-results">✔ Typical result: Automated lead nurturing, improved vendor conversion, organised CRM systems</div></div>
+</div>
+</div>
+</section>
+
+<div class="ind-card"><div class="ind-icon">💰</div><h4>Accountants and Financial Services</h4><p>CRM systems, client onboarding automation, compliance workflows, and marketing systems for accounting firms and financial advisers. Automate your client acquisition and retention processes.</p><div class="ind-results">✔ Typical result: Automated client onboarding, 50% less admin time</div></div>
+<div class="ind-card"><div class="ind-icon">🏥</div><h4>Healthcare and Medical Practices</h4><p>Patient management systems, automated appointment reminders, intake workflows, and marketing automation for clinics, dentists, and healthcare providers.</p><div class="ind-results">✔ Typical result: Reduced no-shows, streamlined patient intake</div></div>
+<div class="ind-card"><div class="ind-icon">⚖️</div><h4>Legal and Professional Services</h4><p>Case management systems, client intake automation, document workflows, and marketing systems for solicitors, conveyancers, and legal professionals.</p><div class="ind-results">✔ Typical result: 40% faster client intake, organised case pipelines</div></div>
+<div class="ind-card"><div class="ind-icon">🍽️</div><h4>Hospitality and Leisure</h4><p>Booking systems, customer engagement automation, marketing funnels, and operational workflows for restaurants, hotels, and leisure businesses.</p><div class="ind-results">✔ Typical result: Increased bookings, automated customer follow-ups</div></div>
+<div class="ind-card"><div class="ind-icon">📦</div><h4>Ecommerce and Retail</h4><p>Customer journey automation, email marketing workflows, inventory management systems, and sales funnel optimisation for online and physical retail businesses.</p><div class="ind-results">✔ Typical result: Higher conversion rates, automated customer retention</div></div>
+<div class="ind-card"><div class="ind-icon">🎓</div><h4>Education and Training Providers</h4><p>Student management systems, course delivery platforms, automated enrolment workflows, and marketing systems for schools, trainers, and course creators.</p><div class="ind-results">✔ Typical result: Streamlined enrolment, 60% less admin overhead</div></div>
+
+<!-- PROCESS -->
+<section class="section" id="process" style="position:relative;overflow:hidden">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div class="section-label">My Process</div>
+<h2 class="section-title">A Proven Approach to <span class="g">Transforming Your Business</span></h2>
+<p class="section-sub">Every engagement follows a clear, structured process designed to deliver real results.</p>
+<div class="process-grid">
+<div class="process-step"><span class="num">1</span><div class="icon">🔍</div><h4>Discovery</h4><p>I analyse your current operations, identify what is working and what is not working, and understand your goals. No assumptions. Just a clear picture of where you are and where you want to be.</p></div>
+<div class="process-step"><span class="num">2</span><div class="icon">🎯</div><h4>Strategy</h4><p>I create a detailed plan covering systems, automation, marketing, and timelines. You see exactly what will be built, how it will work, and what results to expect. Full transparency from day one.</p></div>
+<div class="process-step"><span class="num">3</span><div class="icon">⚙️</div><h4>Implementation</h4><p>I build everything. CRM setups, automation workflows, marketing funnels, AI systems, websites, and dashboards. Every system is tested, refined, and delivered to the highest standard.</p></div>
+<div class="process-step"><span class="num">4</span><div class="icon">📈</div><h4>Handover</h4><p>You receive a fully documented system that runs without me. I provide training, support, and everything you need to maintain and build on the work delivered. No hidden dependencies.</p></div>
+</div>
+</div>
+</section>
+
+<!-- ENGAGEMENT -->
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div class="section-label">How I Work</div>
+<h2 class="section-title">Flexible Engagement <span class="g">for Every Business</span></h2>
+<p class="section-sub">Before any work begins, I offer a free consultation call to understand your business properly. Following that, I provide a professional proposal outlining focus areas, priorities, timelines, and pricing.</p>
+<div class="engage-grid">
+<div class="engage-card"><div class="icon">🎯</div><h5>One Off Projects</h5><p>Fixed scope, fixed price, delivered on time. Perfect for specific deliverables like CRM setup, website build, or automation implementation.</p></div>
+<div class="engage-card"><div class="icon">📅</div><h5>Monthly Retainer</h5><p>Ongoing support, strategy, and implementation. Ideal for businesses that want continuous improvement and dedicated attention.</p></div>
+<div class="engage-card"><div class="icon">🤝</div><h5>3 to 6 Month Contracts</h5><p>Full business development partnership. Transformational engagement covering systems, strategy, automation, and growth from the ground up.</p></div>
+</div>
+<p style="text-align:center;margin-top:16px;font-size:13px;color:var(--muted2)">Every business is different. Pricing is customised based on your goals, workload, systems, and level of support required.</p>
+</div>
+</section>
+
+<!-- EXPERIENCE -->
+<section class="section" id="experience" style="position:relative;overflow:hidden">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<section class="section" style="position:relative;overflow:hidden">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div class="section-label">Projects</div>
+<h2 class="section-title">Digital Platforms <span class="g">I Have Built</span></h2>
+<p class="section-sub">Each platform built from concept through to launch, growth, and ongoing operation.</p>
+<div class="industries-grid">
+<div class="ind-card">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+<div class="ind-icon" style="margin-bottom:0">🕘</div>
+<span style="padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);color:var(--accent);white-space:nowrap">INVESTMENT OPPORTUNITY</span>
+</div>
+<h4 style="font-size:16px;font-weight:700;font-family:var(--ff-h);margin-bottom:2px">9amLeads</h4>
+<p style="font-size:11px;color:var(--accent);font-weight:600;margin-bottom:6px">www.9amleads.com ↗</p>
+<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:0">Business opportunity intelligence platform delivering exclusive UK leads daily at 9am with AI scoring, outreach tools, territory exclusivity, and CRM-ready exports. Seeking investment to scale.</p>
+</div>
+<div class="ind-card">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+<div class="ind-icon" style="margin-bottom:0">🎓</div>
+<span style="padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);color:var(--accent);white-space:nowrap">INVESTMENT OPPORTUNITY</span>
+</div>
+<h4 style="font-size:16px;font-weight:700;font-family:var(--ff-h);margin-bottom:2px">The Moving School</h4>
+<p style="font-size:11px;color:var(--accent);font-weight:600;margin-bottom:6px">www.themovingschool.com ↗</p>
+<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:0">Online education and training platform for the removals and relocation industry. Looking for investors to help promote and grow this platform to its full potential.</p>
+</div>
+<div class="ind-card">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+<div class="ind-icon" style="margin-bottom:0">📖</div>
+<span style="padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);color:var(--accent);white-space:nowrap">INVESTMENT OPPORTUNITY</span>
+</div>
+<h4 style="font-size:16px;font-weight:700;font-family:var(--ff-h);margin-bottom:2px">The Quote Cure</h4>
+<p style="font-size:11px;color:var(--accent);font-weight:600;margin-bottom:6px">www.thequotecure.com ↗</p>
+<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:0">A book and website I built to help businesses improve quoting and win more customers. Looking for investors to help promote and scale this project.</p>
+</div>
+<div class="ind-card">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+<div class="ind-icon" style="margin-bottom:0">🏠</div>
+<span style="padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);color:var(--success);white-space:nowrap">FOR SALE - £10k</span>
+</div>
+<h4 style="font-size:16px;font-weight:700;font-family:var(--ff-h);margin-bottom:2px">VidaListing</h4>
+<p style="font-size:11px;color:var(--success);font-weight:600;margin-bottom:6px">www.vidalisting.com - For Sale</p>
+<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:6px">Premium AI property video marketing platform built for estate agents, letting agents, and property developers. Fully built and ready for a new owner.</p>
+<a href="/vidalisting/" style="color:var(--success);font-weight:600;font-size:12px;text-decoration:underline">Click here for more information ↗</a>
+</div>
+<div class="ind-card">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+<div class="ind-icon" style="margin-bottom:0">🚗</div>
+<span style="padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);color:var(--success);white-space:nowrap">FOR SALE - £15k</span>
+</div>
+<h4 style="font-size:16px;font-weight:700;font-family:var(--ff-h);margin-bottom:2px">VidaMotor</h4>
+<p style="font-size:11px;color:var(--success);font-weight:600;margin-bottom:6px">www.vidamotor.com - For Sale</p>
+<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:6px">Premium automotive video marketing platform for the UK motor trade. AI-powered vehicle video creation, dealer branding, and social media content. Fully built company with Stripe integration, social media assets, and UK dealer database.</p>
+<a href="/vidamotor/" style="color:var(--success);font-weight:600;font-size:12px;text-decoration:underline">Click here for more information ↗</a>
+</div>
+<div class="ind-card">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+<div class="ind-icon" style="margin-bottom:0">🤖</div>
+<span style="padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);color:var(--success);white-space:nowrap">SOLD</span>
+</div>
+<h4 style="font-size:16px;font-weight:700;font-family:var(--ff-h);margin-bottom:2px">JobSearchAI</h4>
+<p style="font-size:11px;color:var(--success);font-weight:600;margin-bottom:6px">www.jobsearchai.co.uk - Sold</p>
+<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:0">AI powered job search and recruitment automation platform. Website revamp completed and sold to a new owner.</p>
+</div>
+<div class="ind-card">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+<div class="ind-icon" style="margin-bottom:0">🌐</div>
+<span style="padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);color:var(--success);white-space:nowrap">SOLD</span>
+</div>
+<h4 style="font-size:16px;font-weight:700;font-family:var(--ff-h);margin-bottom:2px">WebsiteRevamp</h4>
+<p style="font-size:11px;color:var(--success);font-weight:600;margin-bottom:6px">www.websiterevamp.io - Sold</p>
+<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:0">Website revamp and modernisation service platform. Complete business with systems and processes. Sold to a new owner.</p>
+</div>
+</div>
+</section>
+
+<section class="section" style="background:linear-gradient(135deg,rgba(37,99,235,0.04),rgba(139,92,246,0.02));border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div class="section-label" style="color:var(--accent)">Investment Opportunity</div>
+<h2 class="section-title">Looking for Investors to <span class="g">Scale These Projects</span></h2>
+<div style="max-width:750px;margin:0 auto;background:var(--card);border:1px solid rgba(139,92,246,0.15);border-radius:16px;padding:36px 32px;text-align:center">
+<div style="font-size:48px;margin-bottom:12px">💎</div>
+<h3 style="font-size:20px;font-weight:800;font-family:var(--ff-h);margin-bottom:10px">Investment Opportunities Available</h3>
+<p style="color:var(--text2);font-size:14px;line-height:1.8;margin-bottom:16px">I am actively looking for investors and strategic partners to invest into any of the digital platforms and projects shown on this page. Each business has a clear growth trajectory, existing user base, and significant scaling potential.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;text-align:left">
+<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px">
+<div style="font-size:13px;font-weight:700;margin-bottom:4px;font-family:var(--ff-h)">📊 Business Projection Plan</div>
+<p style="font-size:12px;color:var(--muted);line-height:1.6">I can provide detailed financial projections, growth forecasts, market analysis, and roadmap for any project you are interested in.</p>
+</div>
+<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px">
+<div style="font-size:13px;font-weight:700;margin-bottom:4px;font-family:var(--ff-h)">⚡ Full Execution Ready</div>
+<p style="font-size:12px;color:var(--muted);line-height:1.6">Every business already has built systems, operational workflows, and growth infrastructure in place. Investment goes directly into scaling, marketing, and expansion.</p>
+</div>
+</div>
+<p style="color:var(--text2);font-size:14px;line-height:1.8;margin-bottom:16px">If you are an investor, angel investor, or venture capitalist interested in any of the platforms shown, I would love to discuss the vision, metrics, and opportunity with you in detail.</p>
+<a href="mailto:Ketzman1g@gmail.com?subject=Investment%20Enquiry%20-%20Ketz%20Mandalia%20Projects" class="btn btn-primary btn-lg"><i class="fas fa-chart-line"></i> Discuss Investment Opportunities</a>
+<p style="margin-top:12px;font-size:12px;color:var(--muted2)">Business projection plans and pitch decks available upon request.</p>
+</div>
+</div>
+</section>
+
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div class="section-label">Testimonials</div>
+<h2 class="section-title">What People <span class="g">Say</span></h2>
+<div class="test-grid">
+<div class="test-card"><div class="stars">★★★★★</div><blockquote>Ketz helped us completely overhaul our customer follow up system. What used to take hours of manual work is now fully automated. Our conversion rate has improved significantly.</blockquote><div class="author">Removal Business Owner, London</div></div>
+<div class="test-card"><div class="stars">★★★★★</div><blockquote>Working with Ketz transformed our approach to lead generation. He built a system from scratch that now delivers consistent, qualified leads every week.</blockquote><div class="author">Construction Company Director, Hertfordshire</div></div>
+<div class="test-card"><div class="stars">★★★★★</div><blockquote>Ketz built our entire digital platform from concept to launch. His ability to understand what we needed and translate that into a functioning system was impressive.</blockquote><div class="author">Startup Founder, Digital Services</div></div>
+</div>
+</div>
+</section>
+
+<!-- CTA -->
+<section class="cta" id="contact" style="position:relative;overflow:hidden">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<h2>Ready to Transform <span style="background:linear-gradient(135deg,var(--primary-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Your Business Operations?</span></h2>
+<p>I work with startups, local businesses, growing companies, personal brands, and established enterprises. Even if it is just advice or guidance, I am always happy to help.</p>
+<div class="cta-actions">
+<!-- phone removed -->
+<a href="mailto:Ketzman1g@gmail.com" class="btn btn-primary btn-lg"><i class="fas fa-envelope"></i> Email Me</a>
+<a href="https://wa.me/447709788772?text=Hi%20Ketz%2C%20I%20found%20your%20website%20and%20would%20like%20to%20chat." target="_blank" class="btn btn-whatsapp btn-lg"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+</div>
+<p style="margin-top:16px;font-size:13px;color:var(--muted2)"><i class="fas fa-globe-europe" style="color:var(--primary-light)"></i> Available for remote, hybrid, onsite and international work. Full flexibility to travel.</p>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+<div class="social">
+<!-- phone removed -->
+<a href="mailto:Ketzman1g@gmail.com" aria-label="Email"><i class="fas fa-envelope"></i></a>
+<a href="https://wa.me/447709788772" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+<a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+</div>
+<p><strong style="color:var(--text)">Ketz Mandalia</strong> | Business Development, Digital Growth and AI Automation Specialist</p>
+<p>London, UK | <a href="mailto:Ketzman1g@gmail.com">Ketzman1g@gmail.com</a></p>
+<p style="margin-top:8px;color:var(--muted2)">© 2026 Ketz Mandalia. All rights reserved.</p>
+<div style="margin-top:16px;display:flex;justify-content:center;gap:16px;font-size:13px">
+<a href="/portal/" style="color:var(--muted);text-decoration:none">Sign In</a>
+<a href="/portal/#signup" style="color:var(--primary-light);text-decoration:none;font-weight:600">Sign Up Free</a>
+</div>
+</footer>
+<script src="/chat.js"></script>
+<script src="/enhancements.js"></script>
+</body></html>
