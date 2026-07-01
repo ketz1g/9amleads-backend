@@ -596,7 +596,7 @@ function showPlans() {
         '</div>';
     }).join('') +
     '<div style="margin-top:16px;padding:12px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:8px;font-size:11px;color:#8890a8;text-align:center">' +
-    '<strong>Postcode districts:</strong> Starter: 5 districts &middot; Pro: 10 districts &middot; Enterprise: 50 districts<br>' +
+    '<strong>postcode areas:</strong> Starter: 5 districts &middot; Pro: 10 districts &middot; Enterprise: 50 districts<br>' +
     '<strong>Extra districts:</strong> Need more? Add 5 extra districts for just £20/mo from your dashboard.<br>' +
     'Switching plans creates a new Stripe subscription with prorated billing.</div>';
 
@@ -606,7 +606,7 @@ function showPlans() {
 }
 
 async function buyExtraPostcodes() {
-  if (!confirm('Add 5 extra postcode districts for £20/month? This will be charged on your next invoice.')) return;
+  if (!confirm('Add 5 extra postcode areas for £20/month? This will be charged on your next invoice.')) return;
   const data = await apiFetch('/api/postcodes/extra', { method: 'POST' });
   const msg = document.getElementById('sub-msg');
   if (data && data.success) {
@@ -624,7 +624,7 @@ async function buyExtraPostcodes() {
 function showLowLeadsTip(postcodeCount, leadsThisWeek) {
   const banner = document.getElementById('onboardingBanner');
   if (leadsThisWeek < 10 && postcodeCount <= 3) {
-    banner.innerHTML = '<i class="fas fa-lightbulb" style="color:var(--warning)"></i> <strong>Not enough leads?</strong> You have <strong>' + postcodeCount + ' postcode district' + (postcodeCount !== 1 ? 's' : '') + '</strong> and only <strong>' + leadsThisWeek + ' leads this week</strong>. Try adding more postcode districts to increase your volume. <a href="#" onclick="document.getElementById(\'edit-territory-btn\').click();return false" style="color:var(--primary);text-decoration:underline">Add districts now</a>';
+    banner.innerHTML = '<i class="fas fa-lightbulb" style="color:var(--warning)"></i> <strong>Not enough leads?</strong> You have <strong>' + postcodeCount + ' postcode district' + (postcodeCount !== 1 ? 's' : '') + '</strong> and only <strong>' + leadsThisWeek + ' leads this week</strong>. Try adding more postcode areas to increase your volume. <a href="#" onclick="document.getElementById(\'edit-territory-btn\').click();return false" style="color:var(--primary);text-decoration:underline">Add districts now</a>';
     banner.style.display = 'flex';
   }
 }
