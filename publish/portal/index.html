@@ -137,16 +137,17 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 
 <!-- POSTCODE AREAS -->
 <div class="form-group" style="margin-top:8px">
-<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Your Postcode Areas <span style="color:#8890a8;font-weight:400;font-size:11px">(up to 3 &middot; e.g. EN for Enfield, SG for Stevenage, CM for Chelmsford)</span></label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Choose broad postcode areas (2-letter codes) for the regions you serve. Each area covers all districts within it — e.g. area EN covers EN1, EN2, EN3... EN99. Your leads are exclusive and unique to you. Pick up to 3 areas.</span></div>
+<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Your Postcode Areas <span style="color:#8890a8;font-weight:400;font-size:11px">(choose up to 3 &middot; e.g. <strong>CM</strong> for Chelmsford, <strong>EN</strong> for Enfield, <strong>SG</strong> for Stevenage)</span></label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Choose up to 3 broad postcode areas (2-letter codes) for the regions you serve. Each area covers all districts within it — e.g. area EN covers EN1, EN2, EN3... EN99. Your leads are evenly split across your chosen areas and are exclusive to you. Need more than 3 areas? You can purchase extras for £50/area.</span></div>
 <div id="s-postcode-wrapper" style="position:relative;margin-top:4px">
 <div id="s-postcode-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px"></div>
-<input type="text" id="s-postcode-input" placeholder="Type area code e.g. EN, SG, CM" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
+<input type="text" id="s-postcode-input" placeholder="Type area code e.g. CM, EN, SG" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
 <div id="s-postcode-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#ffffff;border:1px solid #d1d5db;border-top:none;border-radius:0 0 6px 6px;max-height:160px;overflow-y:auto"></div>
 <button type="button" onclick="addSignupPostcode()" style="margin-top:4px;font-size:11px;padding:5px 12px;background:rgba(14,165,233,0.12);border:1px solid #0ea5e9;border-radius:6px;color:#f1f5f9;cursor:pointer;font-weight:600"><i class="fas fa-plus" style="color:#0ea5e9"></i> Add Area</button>
 <span id="s-postcode-count" style="font-size:10px;color:#8890a8;margin-left:8px"></span>
 </div>
 <div id="s-postcode-error" style="font-size:10px;color:#ef4444;margin-top:4px;display:none"></div>
+<div style="font-size:10px;color:#6b7280;margin-top:6px">Leads are evenly split across your areas. Need more? <a href="/pricing/" style="color:#0ea5e9;text-decoration:underline">Extra areas £50 each</a></div>
 </div>
 
 <!-- LEAD FILTERS -->
