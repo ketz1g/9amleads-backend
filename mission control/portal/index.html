@@ -75,8 +75,8 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <option value="tenders">Public Tenders</option>
 </select></div>
 <div class="form-group">
-  <label>Your Target Postcode Districts <span style="color:#8890a8;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(<span id="pc-count">0</span>/<span id="pc-max">5</span> selected <span id="pc-plan-name">on Free Trial</span>)</span></label>
-  <div style="font-size:11px;color:#5c6480;margin-bottom:8px;line-height:1.5">Pick individual postcode districts like <strong style="color:#8890a8">EN1</strong>, <strong style="color:#8890a8">EN2</strong>, <strong style="color:#8890a8">EN3</strong> — grouped by area. Search or browse below.</div>
+  <label>Your Target postcode areas <span style="color:#8890a8;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(<span id="pc-count">0</span>/<span id="pc-max">5</span> selected <span id="pc-plan-name">on Free Trial</span>)</span></label>
+  <div style="font-size:11px;color:#5c6480;margin-bottom:8px;line-height:1.5">Pick individual postcode areas like <strong style="color:#8890a8">EN1</strong>, <strong style="color:#8890a8">EN2</strong>, <strong style="color:#8890a8">EN3</strong> — grouped by area. Search or browse below.</div>
   <div id="pc-selector" style="position:relative">
     <div id="pc-search-wrap" style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:10px;min-height:46px;cursor:text;align-items:center" onclick="document.getElementById('pc-input').focus()">
       <div id="pc-tags" style="display:flex;flex-wrap:wrap;gap:4px"></div>
@@ -207,7 +207,7 @@ function renderAllPostcodes() {
   const selected = selectedPostcodes.map(s => s.code);
   let html = '';
   if (!allPostcodeAreas.length) {
-    html = '<div style="padding:16px;color:#5c6480;font-size:13px;text-align:center">Loading postcode districts...</div>';
+    html = '<div style="padding:16px;color:#5c6480;font-size:13px;text-align:center">Loading postcode areas...</div>';
   } else {
     for (const area of allPostcodeAreas) {
       const isExpanded = expandedArea === area.area_code;
