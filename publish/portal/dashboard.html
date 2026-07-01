@@ -593,11 +593,11 @@ function openWeeklyReport() {
 
 // Plan pricing per product (with postcode limits)
 const PLAN_PRICING = {
-  moving: { starter: { leads: 5, postcodes: 5, price: 99 }, pro: { leads: 15, postcodes: 10, price: 199 }, enterprise: { leads: 50, postcodes: 50, price: 500 } },
-  probate: { starter: { leads: 5, postcodes: 5, price: 99 }, pro: { leads: 15, postcodes: 10, price: 199 }, enterprise: { leads: 50, postcodes: 50, price: 500 } },
-  newbusiness: { starter: { leads: 5, postcodes: 5, price: 99 }, pro: { leads: 15, postcodes: 10, price: 199 }, enterprise: { leads: 50, postcodes: 50, price: 500 } },
-  planning: { starter: { leads: 5, postcodes: 5, price: 99 }, pro: { leads: 15, postcodes: 10, price: 199 }, enterprise: { leads: 50, postcodes: 50, price: 500 } },
-  tenders: { starter: { leads: 5, postcodes: 5, price: 99 }, pro: { leads: 15, postcodes: 10, price: 199 }, enterprise: { leads: 50, postcodes: 50, price: 500 } },
+  moving: { starter: { leads: 5, postcodes: 5, price: 25 }, pro: { leads: 15, postcodes: 10, price: 49 }, enterprise: { leads: 50, postcodes: 50, price: 99 } },
+  probate: { starter: { leads: 5, postcodes: 5, price: 25 }, pro: { leads: 15, postcodes: 10, price: 49 }, enterprise: { leads: 50, postcodes: 50, price: 99 } },
+  newbusiness: { starter: { leads: 5, postcodes: 5, price: 25 }, pro: { leads: 15, postcodes: 10, price: 49 }, enterprise: { leads: 50, postcodes: 50, price: 99 } },
+  planning: { starter: { leads: 5, postcodes: 5, price: 25 }, pro: { leads: 15, postcodes: 10, price: 49 }, enterprise: { leads: 50, postcodes: 50, price: 99 } },
+  tenders: { starter: { leads: 5, postcodes: 5, price: 25 }, pro: { leads: 15, postcodes: 10, price: 49 }, enterprise: { leads: 50, postcodes: 50, price: 99 } },
 };
 
 function showPlans() {
@@ -623,7 +623,7 @@ function showPlans() {
         '<div style="display:flex;justify-content:space-between;align-items:center">' +
         '<div><strong style="font-size:15px;color:#fff">' + key.charAt(0).toUpperCase() + key.slice(1) + '</strong>' +
         '<br><span style="font-size:12px;color:#8890a8">' + p.leads + ' leads/day \u00b7 ' + pcLimit + ' postcode' + (p.postcodes !== 1 ? 's' : '') + '</span></div>' +
-        '<div style="text-align:right"><span style="font-size:20px;font-weight:800">&pound;' + p.price + '</span><span style="font-size:12px;color:#8890a8">/mo</span>' +
+        '<div style="text-align:right"><span style="font-size:20px;font-weight:800">&pound;' + p.price + '</span><span style="font-size:12px;color:#8890a8">/wk</span>' +
         (isCurrent ? '<br><span style="font-size:10px;color:#22c55e;font-weight:600">Current Plan</span>' : '') +
         '</div></div>' +
         (!isCurrent ? '<button onclick="checkout(\'' + key + '\')" style="margin-top:12px;width:100%;padding:8px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer">' + (parseInt(key === 'starter' ? '0' : currentPlan === 'free_trial' ? '-1' : '1') < 0 ? 'Upgrade' : 'Switch to ' + key.charAt(0).toUpperCase() + key.slice(1)) + '</button>' : '') +
