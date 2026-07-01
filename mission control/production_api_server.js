@@ -3174,23 +3174,23 @@ app.use(function(err, req, res, next) {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ===== TEST SCHEDULE: 4:00 scraper → 4:02 distributor → 4:05 delivery =====
-cron.schedule('0 4 * * *', async () => {
-  console.log('[4AM TEST] Scraping fresh leads...');
+// ===== TEST SCHEDULE: 5:00 scraper → 5:05 distributor → 5:10 delivery =====
+cron.schedule('0 5 * * *', async () => {
+  console.log('[5AM TEST] Scraping fresh leads...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[4AM TEST] Scraper error:', e.message); }
+  } catch(e) { console.log('[5AM TEST] Scraper error:', e.message); }
 });
-cron.schedule('2 4 * * *', async () => {
-  console.log('[4AM TEST] Distributing leads to customers...');
+cron.schedule('5 5 * * *', async () => {
+  console.log('[5AM TEST] Distributing leads to customers...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[4AM TEST] Distributor error:', e.message); }
+  } catch(e) { console.log('[5AM TEST] Distributor error:', e.message); }
 });
-cron.schedule('5 4 * * *', async () => {
-  console.log('[4AM TEST] Delivering leads via email...');
+cron.schedule('10 5 * * *', async () => {
+  console.log('[5AM TEST] Delivering leads via email...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
