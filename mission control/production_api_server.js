@@ -1724,27 +1724,27 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===== TEST SCHEDULE: 7:15 scraper → 7:17 distributor → 7:20 delivery =====
-cron.schedule('15 7 * * *', async () => {
-  console.log('[7:15 TEST] Scraping fresh leads...');
+// ===== TEST SCHEDULE: 7:30 scraper → 7:32 distributor → 7:35 delivery =====
+cron.schedule('30 7 * * *', async () => {
+  console.log('[7:30 TEST] Scraping fresh leads...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[7:15 TEST] Scraper error:', e.message); }
+  } catch(e) { console.log('[7:30 TEST] Scraper error:', e.message); }
 });
-cron.schedule('17 7 * * *', async () => {
-  console.log('[7:15 TEST] Distributing leads to customers...');
+cron.schedule('32 7 * * *', async () => {
+  console.log('[7:30 TEST] Distributing leads to customers...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[7:15 TEST] Distributor error:', e.message); }
+  } catch(e) { console.log('[7:30 TEST] Distributor error:', e.message); }
 });
-cron.schedule('20 7 * * *', async () => {
-  console.log('[7:15 TEST] Delivering leads via email...');
+cron.schedule('35 7 * * *', async () => {
+  console.log('[7:30 TEST] Delivering leads via email...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[7:15 TEST] Delivery error:', e.message); }
+  } catch(e) { console.log('[7:30 TEST] Delivery error:', e.message); }
 });
 cron.schedule('0 10 * * *', async () => {
   console.log('[CAMPAIGN] Starting campaign email check...');
