@@ -3178,23 +3178,23 @@ app.use(function(err, req, res, next) {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ===== TEST SCHEDULE: 5:00 scraper → 5:05 distributor → 5:10 delivery =====
-cron.schedule('0 5 * * *', async () => {
-  console.log('[5AM TEST] Scraping fresh leads...');
+// ===== TEST SCHEDULE: 5:30 scraper → 5:32 distributor → 5:35 delivery =====
+cron.schedule('30 5 * * *', async () => {
+  console.log('[5:30 TEST] Scraping fresh leads...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[5AM TEST] Scraper error:', e.message); }
+  } catch(e) { console.log('[5:30 TEST] Scraper error:', e.message); }
 });
-cron.schedule('5 5 * * *', async () => {
-  console.log('[5AM TEST] Distributing leads to customers...');
+cron.schedule('32 5 * * *', async () => {
+  console.log('[5:30 TEST] Distributing leads to customers...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[5AM TEST] Distributor error:', e.message); }
+  } catch(e) { console.log('[5:30 TEST] Distributor error:', e.message); }
 });
-cron.schedule('10 5 * * *', async () => {
-  console.log('[5AM TEST] Delivering leads via email...');
+cron.schedule('35 5 * * *', async () => {
+  console.log('[5:30 TEST] Delivering leads via email...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
