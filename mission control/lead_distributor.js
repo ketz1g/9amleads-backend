@@ -125,11 +125,27 @@ function leadMatchesTarget(lead, customer) {
     areaMatch = true;
   }
 
-  // Filter matching (new)
+  // Filter matching — support both legacy single-product and per-product format
   const filterStr = customer.biz_field2 || '';
   let tier = 1;
   try {
-    const filters = JSON.parse(filterStr);
+    const rawFilters = JSON.parse(filterStr);
+    if (!rawFilters || Object.keys(rawFilters).length === 0) { /* no filters */ }
+    // Determine format: legacy has 'product' key, per-product has lead type keys
+    var filters;
+    if (rawFilters.product) {
+      filters = rawFilters; // legacy single-product format
+    } else {
+      // Per-product format: extract the relevant product's filters
+      var prodKey = product;
+      if (rawFilters[prodKey]) {
+        filters = rawFilters[prodKey];
+        filters.product = prodKey;
+      } else {
+        filters = { product: product };
+      }
+    }
+
     if (filters && filters.product) {
       if (filters.product === 'moving') {
         const beds = parseInt(lead.bedrooms) || 0;
