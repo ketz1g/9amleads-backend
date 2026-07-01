@@ -6,6 +6,11 @@
   to = "https://nineamleads-backend.onrender.com/api/:splat"
   status = 200
 
+[[redirects]]
+  from = "/portal/*"
+  to = "https://nineamleads-backend.onrender.com/portal/:splat"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]
