@@ -169,11 +169,7 @@ function leadMatchesTarget(lead, customer) {
         if ((isSstc && !sstcEnabled) || (isOffer && !offerEnabled)) tier = 2;
       }
       if (filters.product === 'probate') {
-        const estateVal = parseInt(lead.estateValue) || 0;
-        const minVal = parseInt(filters.minEstateValue) || 0;
-        if (minVal > 0 && estateVal < minVal) tier = 2;
-        if (filters.hasProperty === 'yes' && !lead.hasProperty) tier = 2;
-        if (filters.hasProperty === 'no' && lead.hasProperty) tier = 2;
+        // Probate: only postcode territory filtering (no additional filters from Companies House data)
       }
       if (filters.product === 'newbusiness') {
         const sicCodes = filters.sicCodes || [];
@@ -191,9 +187,6 @@ function leadMatchesTarget(lead, customer) {
         const appType = (lead.applicationType || '').toLowerCase();
         const filterAppType = (filters.applicationType || '').toLowerCase();
         if (filterAppType && !appType.includes(filterAppType)) tier = 2;
-        const val = parseInt(lead.estimatedValue) || 0;
-        const maxVal = parseInt(filters.maxValue) || 0;
-        if (maxVal > 0 && val > maxVal) tier = 2;
       }
       if (filters.product === 'tenders') {
         const val = parseInt(lead.contractValue) || 0;
