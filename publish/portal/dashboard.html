@@ -324,8 +324,13 @@ async function loadDashboard() {
     renderLeads();
     document.getElementById('onboardingBanner').style.display = 'none';
   } else {
-    // Demo data
-    generateDemoLeads(session);
+    leads = [];
+    document.getElementById('stat-leads').textContent = '0';
+    document.getElementById('stat-new').textContent = '0';
+    renderLeads();
+    var banner = document.getElementById('onboardingBanner');
+    banner.innerHTML = '<i class="fas fa-clock" style="color:var(--primary)"></i> <strong>Waiting for leads</strong> \u2014 Your real leads will arrive at 9am after the daily scrape and distribution pipeline runs.';
+    banner.style.display = 'flex';
   }
   calcConversion();
   updateOnboarding();
