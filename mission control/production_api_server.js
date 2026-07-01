@@ -34,11 +34,11 @@ const POSTCODE_ASSIGNMENTS_FILE = path.join(DATA_DIR, 'postcode-assignments.json
 
 // Postcode district limits per plan (districts are granular, so higher limits)
 const POSTCODE_LIMITS = {
-  free_trial: 5,
-  essential: 5,
-  starter: 5,
-  pro: 10,
-  enterprise: 50
+  free_trial: 3,
+  essential: 3,
+  starter: 3,
+  pro: 5,
+  enterprise: 10
 };
 
 function loadPostcodeDistricts() {
@@ -77,20 +77,13 @@ function isFullDistrict(code, districts) {
   return !!districts[code.toUpperCase()];
 }
 
-function getMatchingDistrict(code, districts) {
-  const upper = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  // Try exact district match first
-  if (districts[upper]) return upper;
-  // Check if it starts with a known district (sector-level like "EN1 3" -> district "EN1")
-  const sortedCodes = Object.keys(districts).sort((a, b) => b.length - a.length);
-  for (const dc of sortedCodes) {
-    if (upper.startsWith(dc)) return dc;
-  }
+function getMatchingArea(code, areas) {
+  const upper = code.toUpperCase().replace(/[^A-Z]/g, '');
+  if (areas[upper]) return upper;
   return null;
 }
 
 function validatePostcodes(postcodes, customerPlan, customerProduct, customerId, extraPostcodes) {
-  const districts = loadPostcodeDistricts();
   const areas = loadPostcodeAreas();
   const assignments = loadAssignments();
   const maxLimit = getPostcodeLimit(customerPlan, extraPostcodes);
@@ -102,36 +95,30 @@ function validatePostcodes(postcodes, customerPlan, customerProduct, customerId,
 
   if (postcodes.length > maxLimit) {
     const limitLabel = maxLimit >= 999 ? 'unlimited' : maxLimit;
-    errors.push('Your ' + customerPlan + ' plan allows ' + limitLabel + ' postcode' + (maxLimit !== 1 ? 's' : '') + '. You selected ' + postcodes.length + '.');
+    errors.push('Your ' + customerPlan + ' plan allows ' + limitLabel + ' postcode area' + (maxLimit !== 1 ? 's' : '') + '. You selected ' + postcodes.length + '.');
   }
 
   for (const pc of postcodes) {
     const upper = pc.toUpperCase().trim();
-    const normalised = normalisePostcodeForMatch(pc);
 
-    // Check if it's a full district or sector-level
-    const matchedDistrict = getMatchingDistrict(upper, districts);
-    if (!matchedDistrict) {
-      errors.push('"' + pc + '" is not a valid UK postcode area. Please pick a specific district (e.g. "EN1") or sector (e.g. "EN1 3").');
+    // Check if it's a valid postcode area (e.g., "EN", "SG", "CM")
+    const matchedArea = getMatchingArea(upper, areas);
+    if (!matchedArea) {
+      errors.push('"' + pc + '" is not a valid UK postcode area. Please pick a 2-letter area code (e.g. "EN" for Enfield, "SG" for Stevenage, "CM" for Chelmsford).');
       continue;
     }
 
-    if (normalised.length < 2) {
-      errors.push('"' + pc + '" is too short. Please enter a full district code (e.g. "EN1") or sector (e.g. "EN1 3").');
+    if (upper.length !== 2) {
+      errors.push('"' + pc + '" should be a 2-letter area code (e.g. "EN", "SG", "CM").');
       continue;
     }
 
-    // Check exclusivity by prefix: "EN1" conflicts with any claim starting with "EN1"
-    // "EN1 3" only conflicts with another "EN1 3", not "EN1 4"
+    // Check area exclusivity: only one customer per area per product
     for (const [claimedCode, assignment] of Object.entries(assignments.assignments || {})) {
       if (assignment.status !== 'active') continue;
       if (assignment.customer_id === customerId) continue;
-      const claimedNorm = normalisePostcodeForMatch(claimedCode);
-      const inputNorm = normalisePostcodeForMatch(upper);
-      // Full district claim (e.g., "EN1") blocks any sector within it
-      // Sector claim (e.g., "EN1 3") only blocks that specific sector
-      if (inputNorm.startsWith(claimedNorm) || claimedNorm.startsWith(inputNorm)) {
-        errors.push('"' + upper + '" overlaps with "' + claimedCode.toUpperCase() + '" which is already taken.');
+      if (claimedCode === upper) {
+        errors.push('"' + upper + '" is already taken by another customer for ' + (assignment.product || 'this product') + '.');
         break;
       }
     }
@@ -844,57 +831,48 @@ app.get('/api/postcodes', (req, res) => {
   const assignments = loadAssignments();
   const product = req.query.product || 'moving';
 
-  // Group districts by area
+  // Group districts by area, return area-level overview
   const areaMap = {};
   for (const [code, info] of Object.entries(districts)) {
     const areaCode = info.area;
     if (!areaMap[areaCode]) {
+      const areaAssignment = assignments.assignments ? assignments.assignments[areaCode] : null;
       areaMap[areaCode] = {
-        area_code: areaCode,
-        area_name: (areas[areaCode] || {}).name || areaCode,
+        code: areaCode,
+        name: (areas[areaCode] || {}).name || areaCode,
         region: info.region,
-        districts: []
+        district_count: 0,
+        available: !areaAssignment,
+        taken_by: areaAssignment ? areaAssignment.customer_id : null
       };
     }
-    const assignment = assignments.assignments[code];
-    areaMap[areaCode].districts.push({
-      code,
-      name: info.name,
-      available: !assignment,
-      taken_by: assignment ? assignment.customer_id : null
-    });
+    areaMap[areaCode].district_count++;
   }
 
   const result = Object.values(areaMap);
   const regions = [...new Set(Object.values(districts).map(d => d.region))];
 
-  res.json({ areas: result, districts: Object.keys(districts).length, regions });
+  res.json({ areas: result, total_areas: result.length, regions });
 });
 
-// GET /api/postcodes/mine — Get current customer's assigned postcode districts with limits
+// GET /api/postcodes/mine — Get current customer's assigned postcode areas with limits
 app.get('/api/postcodes/mine', authMiddleware, (req, res) => {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
 
-  const districts = loadPostcodeDistricts();
   const areas = loadPostcodeAreas();
-  const currentDistricts = JSON.parse(customer.target_areas || '[]');
+  const currentAreas = JSON.parse(customer.target_areas || '[]');
   const extraPostcodes = parseInt(customer.extra_postcodes) || 0;
   const maxLimit = getPostcodeLimit(customer.plan, extraPostcodes);
 
-  const withDetails = currentDistricts.map(code => {
+  const withDetails = currentAreas.map(code => {
     const upper = code.toUpperCase();
-    const info = districts[upper];
-    if (info) {
-      return { code: upper, name: info.name, area: info.area, area_name: (areas[info.area] || {}).name || info.area, region: info.region };
-    }
-    // Fallback: treat as area code
     const areaInfo = areas[upper];
-    return { code: upper, name: areaInfo ? areaInfo.name : upper, area: upper, area_name: areaInfo ? areaInfo.name : '', region: areaInfo ? areaInfo.region : '' };
+    return { code: upper, name: areaInfo ? areaInfo.name : upper, region: areaInfo ? areaInfo.region : '' };
   });
 
   res.json({
-    postcodes: withDetails,
+    areas: withDetails,
     count: withDetails.length,
     max_limit: maxLimit,
     plan: customer.plan,
@@ -906,18 +884,18 @@ app.get('/api/postcodes/mine', authMiddleware, (req, res) => {
   });
 });
 
-// GET /api/postcodes/check — Check if a postcode district is valid
+// GET /api/postcodes/check — Check if a postcode area is valid
 app.get('/api/postcodes/check', async (req, res) => {
   try {
     var code = (req.query.code || '').toUpperCase().trim();
     if (!code) return res.json({ valid: false, error: 'No postcode provided' });
-    var districts = loadPostcodeDistricts();
-    if (!districts[code]) return res.json({ valid: false, error: '"' + code + '" is not a valid UK postcode district' });
-    res.json({ valid: true, district: code, name: (districts[code] || {}).name || code });
+    var areas = loadPostcodeAreas();
+    if (!areas[code]) return res.json({ valid: false, error: '"' + code + '" is not a valid UK postcode area' });
+    res.json({ valid: true, area: code, name: (areas[code] || {}).name || code, region: (areas[code] || {}).region || '' });
   } catch(e) { res.json({ valid: false, error: 'Server error' }); }
 });
 
-// PUT /api/postcodes/update — Update the customer's selected postcodes
+// PUT /api/postcodes/update — Update the customer's selected postcode areas
 app.put('/api/postcodes/update', authMiddleware, (req, res) => {
   const { postcodes } = req.body;
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -935,7 +913,7 @@ app.put('/api/postcodes/update', authMiddleware, (req, res) => {
   db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(JSON.stringify(postcodes), req.user.id);
   saveDb();
 
-  res.json({ success: true, postcodes, count: postcodes.length, max_limit: getPostcodeLimit(customer.plan) });
+  res.json({ success: true, areas: postcodes, count: postcodes.length, max_limit: getPostcodeLimit(customer.plan) });
 });
 
 // POST /api/postcodes/extra — Purchase extra postcode districts
@@ -3122,7 +3100,8 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             for (var li = 0; li < 5; li++) {
               var fakeNum = Math.floor(Math.random() * 200) + 1;
               var fakeStreet = streetOpts[(tdidx + li) % streetOpts.length];
-              var fakePC = dist.toUpperCase() + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
+              var fakeDistNum = Math.floor(Math.random() * 20) + 1;
+              var fakePC = dist.toUpperCase() + fakeDistNum + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
               var base = { id: 'DEMO_' + prodKey.toUpperCase() + '_' + Date.now() + '_' + li, address: fakeNum + ' ' + fakeStreet + ', ' + fakePC, postcode: fakePC, source: '9amLeads Demo', scrapedAt: new Date().toISOString() };
               if (prodKey === 'moving') {
                 var bedC = (li % 4) + 1;

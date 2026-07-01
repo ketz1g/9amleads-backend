@@ -390,7 +390,8 @@ async function distributeProduct(product) {
     leadAssignments.push({ lead: rawLead, normalised, addrKey, customers: matchedCustomers });
   }
 
-  // Phase 2: Tiered round-robin distribution (3 passes)
+  // Phase 2: Exclusive tiered round-robin distribution (3 passes)
+  // Each source lead goes to at most ONE customer (exclusive)
   const customerUsage = {};
   const customerLabels = {};
   const customerLimits = {};
@@ -400,11 +401,16 @@ async function distributeProduct(product) {
     customerLimits[c.id] = c.leads_per_day || 5;
   });
 
+  // Track which source lead IDs have been claimed (exclusivity)
+  const claimedLeadIds = new Set();
+
   // Sort leads with fewest matching customers first (scarcer leads go first)
   leadAssignments.sort((a, b) => a.customers.length - b.customers.length);
 
   function assignLead(leadData, rawLeadData, addrKeyData, tierFilter) {
     const { lead: rl, normalised: nl, addrKey: ak, customers } = leadData;
+    // Skip if this source lead is already claimed by another customer
+    if (rl.id && claimedLeadIds.has(rl.id)) return false;
     // Filter customers by tier, then sort by usage
     const eligible = customers.filter(mc => mc.tier <= tierFilter);
     eligible.sort((a, b) => customerUsage[a.customer.id] - customerUsage[b.customer.id]);
@@ -426,6 +432,8 @@ async function distributeProduct(product) {
       existingAddresses.add(ak);
       customerUsage[c.id]++;
       inserted++;
+      // Mark source lead as claimed (exclusive)
+      if (rl.id) claimedLeadIds.add(rl.id);
       return true;
     }
     return false;
@@ -434,6 +442,7 @@ async function distributeProduct(product) {
   // Pass 1: Only Tier 1 (perfect filter matches)
   const unassigned = [];
   for (const assignment of leadAssignments) {
+    if (assignment.lead.id && claimedLeadIds.has(assignment.lead.id)) continue;
     const assigned = assignLead(assignment, null, null, 1);
     if (!assigned) unassigned.push(assignment);
   }
@@ -441,12 +450,14 @@ async function distributeProduct(product) {
   // Pass 2: Tier 1 + Tier 2 for customers still below quota
   const unassigned2 = [];
   for (const assignment of unassigned) {
+    if (assignment.lead.id && claimedLeadIds.has(assignment.lead.id)) continue;
     const assigned = assignLead(assignment, null, null, 2);
     if (!assigned) unassigned2.push(assignment);
   }
 
   // Pass 3: Any remaining lead to any customer below quota (Tier 1 + Tier 2)
   for (const assignment of unassigned2) {
+    if (assignment.lead.id && claimedLeadIds.has(assignment.lead.id)) continue;
     assignLead(assignment, null, null, 2);
   }
 
@@ -481,7 +492,8 @@ async function distributeProduct(product) {
       var city = citiesByPrefix[prefix] || 'London';
       var street = streets[(ni + gi) % streets.length];
       var num = Math.floor(Math.random() * 200) + 1;
-      var pcOut = targetDist + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
+      var distNum = Math.floor(Math.random() * 20) + 1;
+      var pcOut = targetDist + distNum + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
       var address = num + ' ' + street + ', ' + city + ' ' + pcOut;
       var baseLead = { id: 'GEN_' + product.toUpperCase() + '_' + Date.now() + '_' + ni, address: address, postcode: pcOut, city: city, source: '9amLeads Generated', scrapedAt: now };
       if (product === 'moving') {
