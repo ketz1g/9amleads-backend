@@ -44,6 +44,9 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <a href="/">Home</a>
 <a href="/" class="active">Dashboard</a>
 <a href="#" onclick="openSuccessCentre();return false">Success Centre</a>
+<a href="#" onclick="document.getElementById('territory-section').scrollIntoView({behavior:'smooth'});return false">Territories</a>
+<a href="#" onclick="document.getElementById('lead-filters-section').scrollIntoView({behavior:'smooth'});return false">Filters</a>
+<a href="#" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'});return false">Plan</a>
 <a href="#" onclick="openCampaigns();return false">Campaigns</a>
 <a href="#" onclick="openPartnerMarketplace();return false">Partners</a>
 <a href="#" onclick="openWhiteLabel();return false">Branding</a>
@@ -56,6 +59,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 </nav>
 <div class="container">
 <div class="onboarding" id="onboardingBanner"><i class="fas fa-spinner fa-spin" style="color:var(--primary)"></i> Loading your dashboard...</div>
+<div id="product-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
 <div class="stats-grid" id="statsGrid">
 <div class="stat-card"><div class="num" id="stat-leads">0</div><div class="label">Total Leads</div><div class="sub">All time</div><div class="stat-trend"><i class="fas fa-arrow-up"></i> Active</div></div>
 <div class="stat-card"><div class="num" id="stat-new">0</div><div class="label">This Week</div><div class="sub" id="stat-week-label">Last 7 days</div><div class="stat-trend"><i class="fas fa-chart-line"></i> New</div></div>
@@ -63,11 +67,11 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="stat-card"><div class="num" id="stat-rate">0%</div><div class="label">Conversion</div><div class="sub">Contacted to Booked</div><div class="stat-trend"><i class="fas fa-percentage"></i> Rate</div></div>
 </div>
 <div class="card" id="tipsSection">
-<div class="card-title"><i class="fas fa-lightbulb" style="color:var(--warning)"></i> Tips to Get Started</div>
+<div class="card-title"><i class="fas fa-graduation-cap" style="color:var(--primary)"></i> How to Convert Your Leads</div>
 <div id="tipsContainer">
-<div class="tip-card"><span class="icon">📞</span><div><strong>Call within 30 minutes</strong> Speed is your biggest advantage. Customers who call within 30 minutes convert at 3x the rate.</div></div>
-<div class="tip-card"><span class="icon">🎯</span><div><strong>Personalise your approach</strong> Reference their specific property, industry, or location. Show them you have done your homework.</div></div>
-<div class="tip-card"><span class="icon">📊</span><div><strong>Track everything</strong> Log every call and booking. See which areas and lead types deliver the best ROI.</div></div>
+<div class="tip-card"><span class="icon">🎯</span><div><strong>Personalise your approach</strong> Reference their specific business, location, or situation. Tailored messages get replies.</div></div>
+<div class="tip-card"><span class="icon">📊</span><div><strong>Track your outreach</strong> Log every lead you contact and the outcome. Review which lead types convert best for you.</div></div>
+<div class="tip-card"><span class="icon">🔄</span><div><strong>Follow up more than once</strong> Most conversions happen after the second or third contact — polite persistence pays off. Visit the <a href="/portal/success.html" style="color:var(--primary);text-decoration:underline">Success Centre</a> for detailed guides per lead type.</div></div>
 </div>
 </div>
 <div class="card">
@@ -299,6 +303,18 @@ async function apiFetch(path, opts = {}) {
 
 async function loadDashboard() {
   const session = getSession(); if (!session) return;
+
+  // Show product badges
+  var prodNames = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Tenders' };
+  var prodColors = { moving: '#ff6b35', probate: '#a855f7', newbusiness: '#06b6d4', planning: '#10b981', tenders: '#6366f1' };
+  var sessionProducts = session.products ? (typeof session.products === 'string' ? JSON.parse(session.products) : session.products) : [session.product || 'moving'];
+  var badgeHtml = '';
+  for (var bi = 0; bi < sessionProducts.length; bi++) {
+    var p = sessionProducts[bi];
+    badgeHtml += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;background:' + prodColors[p] + '15;border:1px solid ' + prodColors[p] + '30;color:' + prodColors[p] + ';font-size:11px;font-weight:600">' + (prodNames[p] || p) + '</span>';
+  }
+  document.getElementById('product-badges').innerHTML = badgeHtml;
+
   const sub = await apiFetch('/api/subscription');
   if (sub) {
     const planLabel = sub.plan === 'free_trial' ? 'Free Trial' : sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1);
