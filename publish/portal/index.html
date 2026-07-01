@@ -102,7 +102,7 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </div>
 
 <!-- SIGNUP FORM -->
-<div id="signup-form">
+<div id="signup-form" style="display:none">
 <div class="form-row">
 <div class="form-group">
 <label><i class="fas fa-user" style="width:13px;color:#5c6480;margin-right:2px"></i> Full Name</label>
@@ -135,28 +135,41 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <input type="checkbox" value="tenders" style="accent-color:#0ea5e9;width:14px;height:14px"> 📋 Public Tenders</label>
 </div></div>
 
+<!-- POSTCODE DISTRICTS -->
+<div class="form-group" style="margin-top:8px">
+<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Your Postcode Districts <span style="color:#8890a8;font-weight:400;font-size:11px">(up to 5 &middot; e.g. EN1, EN2, SW1)</span></label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Enter UK postcode districts you want exclusive leads for. Your plan includes 5 districts. Once you claim a district, no other customer gets leads there. Each lead is yours exclusively. Enter just the district code like "EN1", "SW1A", "CM1".</span></div>
+<div id="s-postcode-wrapper" style="position:relative;margin-top:4px">
+<div id="s-postcode-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px"></div>
+<input type="text" id="s-postcode-input" placeholder="Type a district e.g. EN1 or SW1" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
+<div id="s-postcode-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#ffffff;border:1px solid #d1d5db;border-top:none;border-radius:0 0 6px 6px;max-height:160px;overflow-y:auto"></div>
+<button type="button" onclick="addSignupPostcode()" style="margin-top:4px;font-size:11px;padding:4px 10px;background:transparent;border:1px solid #d1d5db;border-radius:6px;color:#374151;cursor:pointer"><i class="fas fa-plus"></i> Add District</button>
+</div>
+<div id="s-postcode-error" style="font-size:10px;color:#ef4444;margin-top:4px;display:none"></div>
+</div>
+
 <!-- PLAN SELECTION -->
 <div class="form-group" style="margin-top:12px">
 <label style="display:block;font-size:12px;font-weight:600;color:#f1f5f9;margin-bottom:6px"><i class="fas fa-crown" style="color:#f59e0b;width:14px"></i> Choose Your Plan</label>
 <div style="display:grid;gap:6px" id="s-plan-container">
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(14,165,233,0.06);border:2px solid rgba(14,165,233,0.3);border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-free_trial" onmouseover="this.style.borderColor='rgba(14,165,233,0.5)'" onmouseout="this.style.borderColor='rgba(14,165,233,0.3)'">
 <input type="radio" name="plan" value="free_trial" checked style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong style="color:#f1f5f9">Free Trial</strong><br><span style="font-size:10px;color:#8890a8">7 days free &middot; 5 leads/day (Mon-Fri) &middot; 5 postcode areas</span></div>
+<div style="flex:1"><strong style="color:#f1f5f9">Free Trial</strong><br><span style="font-size:10px;color:#8890a8">7 days free &middot; 5 leads/day (Mon-Fri) &middot; 5 postcode sectors</span></div>
 <div style="font-size:14px;font-weight:800;color:#22c55e">Free</div>
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-starter" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
 <input type="radio" name="plan" value="starter" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong style="color:#f1f5f9">Starter</strong><br><span style="font-size:10px;color:#8890a8">5 leads/day &middot; 5 postcode areas</span></div>
+<div style="flex:1"><strong style="color:#f1f5f9">Starter</strong><br><span style="font-size:10px;color:#8890a8">5 leads/day &middot; 5 postcode sectors</span></div>
 <div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;25<span style="font-size:10px;color:#8890a8">/wk</span></div>
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-pro" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
 <input type="radio" name="plan" value="pro" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong style="color:#f1f5f9">Pro</strong><br><span style="font-size:10px;color:#8890a8">15 leads/day &middot; 10 postcode areas</span></div>
+<div style="flex:1"><strong style="color:#f1f5f9">Pro</strong><br><span style="font-size:10px;color:#8890a8">15 leads/day &middot; 10 postcode sectors</span></div>
 <div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;49<span style="font-size:10px;color:#8890a8">/wk</span></div>
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-enterprise" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
 <input type="radio" name="plan" value="enterprise" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong style="color:#f1f5f9">Enterprise</strong><br><span style="font-size:10px;color:#8890a8">50 leads/day &middot; 50 postcode areas</span></div>
+<div style="flex:1"><strong style="color:#f1f5f9">Enterprise</strong><br><span style="font-size:10px;color:#8890a8">50 leads/day &middot; 50 postcode sectors</span></div>
 <div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;99<span style="font-size:10px;color:#8890a8">/wk</span></div>
 </label>
 </div>
@@ -191,7 +204,7 @@ Choose which lead types you want above — then log into your dashboard to set d
 </div>
 
 <!-- LOGIN FORM -->
-<div id="login-form" style="display:none">
+<div id="login-form">
 <div class="form-group"><label>Email Address</label><input type="email" id="l-email" placeholder="you@company.co.uk"></div>
 <div class="form-group"><label>Password</label><input type="password" id="l-pass" placeholder="Enter your password"></div>
 <div style="text-align:right;margin-bottom:12px"><a href="/portal/reset-password.html" style="color:#5c6480;font-size:11px">Forgot password?</a></div>
@@ -282,6 +295,40 @@ function getFilters() {
   return {};
 }
 
+// ===== SIGNUP POSTCODE SELECTOR =====
+var signupPostcodes = [];
+async function addSignupPostcode() {
+  var input = document.getElementById('s-postcode-input');
+  var code = input.value.trim().toUpperCase();
+  var err = document.getElementById('s-postcode-error');
+  err.style.display = 'none';
+  if (!code) return;
+  if (signupPostcodes.length >= 5) { err.textContent = 'Maximum 5 districts allowed'; err.style.display = 'block'; return; }
+  if (signupPostcodes.includes(code)) { err.textContent = '"' + code + '" already added'; err.style.display = 'block'; return; }
+  // Check if valid district via API
+  try {
+    var r = await fetch(API + '/api/postcodes/check?code=' + encodeURIComponent(code));
+    var data = await r.json();
+    if (data.available === false) { err.textContent = data.error || '"' + code + '" is not available'; err.style.display = 'block'; return; }
+    signupPostcodes.push(code);
+    input.value = '';
+    renderSignupPostcodes();
+    input.focus();
+  } catch(e) { err.textContent = 'Could not verify district. Please try again.'; err.style.display = 'block'; }
+}
+function removeSignupPostcode(code) {
+  signupPostcodes = signupPostcodes.filter(function(c) { return c !== code; });
+  renderSignupPostcodes();
+}
+function renderSignupPostcodes() {
+  var tags = document.getElementById('s-postcode-tags');
+  var html = '';
+  for (var i = 0; i < signupPostcodes.length; i++) {
+    html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:5px;font-size:11px;font-weight:600;color:#0ea5e9">' + signupPostcodes[i] + ' <span style="cursor:pointer;opacity:0.6" onclick="removeSignupPostcode(\'' + signupPostcodes[i] + '\')">&times;</span></span>';
+  }
+  tags.innerHTML = html;
+}
+
 // ===== CRM TEST =====
 function testCrm() {
   var url = document.getElementById('s-crm').value.trim();
@@ -322,6 +369,8 @@ function doSignup() {
   var products = Array.from(productCheckboxes).map(function(cb) { return cb.value; });
   if (products.length === 0) { document.getElementById('signup-error').textContent = 'Please select at least one lead type'; document.getElementById('signup-error').style.display = 'block'; return; }
   var product = products[0];
+  var targetAreas = signupPostcodes;
+  if (targetAreas.length === 0) { document.getElementById('signup-error').textContent = 'Please add at least one postcode district'; document.getElementById('signup-error').style.display = 'block'; return; }
   var planRadio = document.querySelector('#s-plan-container input[type=radio]:checked');
   var plan = planRadio ? planRadio.value : 'free_trial';
   var button = document.getElementById('signup-btn');
@@ -333,7 +382,7 @@ function doSignup() {
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
   fetch(API + '/api/auth/signup', {
     method:'POST', headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, targetAreas:[], source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
+    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:d.customer?.plan || 'free_trial', email:email, product:product, products:products }));
