@@ -1772,8 +1772,6 @@ cron.schedule('0 10 * * *', async () => {
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   try {
     var delivered = 0, errors = 0;
-    var today = new Date().toISOString().split('T')[0];
-    var yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
     var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
@@ -1799,16 +1797,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         var prodLimit = perProduct + (pi < remainder ? 1 : 0);
         if (prodLimit <= 0) continue;
         
-        // Get leads for this customer + product - prefer today/yesterday, fallback to any undelivered
+        // Get all undelivered leads for this customer + product
         var prodLeads = (getDb().leads || []).filter(function(l) {
-          return l.customer_id === cust.id && l.delivered === 0 && l.product === prod &&
-            (l.date === today || l.date === yesterday || (l.scrapedAt && typeof l.scrapedAt === 'string' && (l.scrapedAt.startsWith(today) || l.scrapedAt.startsWith(yesterday))));
+          return l.customer_id === cust.id && l.delivered === 0 && l.product === prod;
         });
-        if (prodLeads.length < prodLimit) {
-          prodLeads = (getDb().leads || []).filter(function(l) {
-            return l.customer_id === cust.id && l.delivered === 0 && l.product === prod;
-          });
-        }
         
         custLeads = custLeads.concat(prodLeads.slice(0, prodLimit));
       }

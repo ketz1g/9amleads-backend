@@ -1727,8 +1727,6 @@ cron.schedule('0 10 * * *', async () => {
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   try {
     var delivered = 0, errors = 0;
-    var today = new Date().toISOString().split('T')[0];
-    var yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
     var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
