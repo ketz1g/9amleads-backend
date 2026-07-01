@@ -56,12 +56,12 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <option value="tenders">📋 Public Tenders</option>
 </select></div>
 <div class="form-group">
-<label><i class="fas fa-map-marker-alt" style="width:14px;color:#5c6480"></i> Target postcode areas <span style="color:#8890a8;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(<span id="pc-count">0</span>/<span id="pc-max">5</span> selected)</span></label>
-<div style="font-size:11px;color:#5c6480;margin-bottom:6px;line-height:1.5">Pick districts like <strong style="color:#8890a8">EN1</strong>, <strong style="color:#8890a8">SW1</strong>, <strong style="color:#8890a8">M1</strong> — search or browse below.</div>
+<label><i class="fas fa-map-marker-alt" style="width:14px;color:#5c6480"></i> Target postcode areas <span style="color:#8890a8;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(<span id="pc-count">0</span>/<span id="pc-max">3</span> selected &middot; up to 3 areas)</span></label>
+<div style="font-size:11px;color:#5c6480;margin-bottom:6px;line-height:1.5">Pick 2-letter area codes like <strong style="color:#8890a8">EN</strong> (Enfield), <strong style="color:#8890a8">CM</strong> (Chelmsford), <strong style="color:#8890a8">SG</strong> (Stevenage) — each covers all districts in that area.</div>
 <div id="pc-selector" style="position:relative">
 <div id="pc-search-wrap" style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;min-height:44px;cursor:text;align-items:center" onclick="document.getElementById('pc-input').focus()">
 <div id="pc-tags" style="display:flex;flex-wrap:wrap;gap:4px"></div>
-<input type="text" id="pc-input" placeholder="Search districts like EN1, SW1, M1..." style="flex:1;min-width:120px;border:none;background:transparent;color:#f1f5f9;font-size:14px;font-family:inherit;outline:none;padding:2px 0" oninput="searchPostcodes(this.value)" onfocus="showPcDropdown()" onblur="setTimeout(hidePcDropdown,200)">
+<input type="text" id="pc-input" placeholder="Search area codes like EN, CM, SG..." style="flex:1;min-width:120px;border:none;background:transparent;color:#f1f5f9;font-size:14px;font-family:inherit;outline:none;padding:2px 0" oninput="searchPostcodes(this.value)" onfocus="showPcDropdown()" onblur="setTimeout(hidePcDropdown,200)">
 </div>
 <div id="pc-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#11131f;border:1px solid #1e2030;border-top:none;border-radius:0 0 10px 10px;max-height:320px;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,0.4)"></div>
 </div>
@@ -223,7 +223,7 @@ const API = (window.location.hostname === 'localhost' || window.location.hostnam
 
 let allPostcodeAreas = [];
 let selectedPostcodes = [];
-let postcodeLimit = 5;
+let postcodeLimit = 3;
 let expandedArea = null;
 
 function showLogin() { document.getElementById('signup-form').style.display='none'; document.getElementById('login-form').style.display='block'; }
@@ -241,7 +241,7 @@ function loadPostcodes() {
       for (const area of allPostcodeAreas) {
         area.districts.sort((a, b) => { const numA = parseInt(a.code.replace(/[^0-9]/g, '')) || 0; const numB = parseInt(b.code.replace(/[^0-9]/g, '')) || 0; return numA - numB; });
       }
-      postcodeLimit = 5;
+      postcodeLimit = 3;
       updatePcDisplay();
     })
     .catch(() => {});
@@ -351,11 +351,11 @@ function renderPcSearchResults(items) {
   }
   dropdown.innerHTML = html;
 }
-function toggleArea(code) { if (expandedArea === code) { expandedArea = null; } else { expandedArea = code; } renderAllPostcodes(); document.getElementById('pc-dropdown').style.display = 'block'; }
+function toggleArea(code) { if (selectedPostcodes.find(s => s.code === code)) { selectedPostcodes = selectedPostcodes.filter(s => s.code !== code); } else { if (selectedPostcodes.length >= postcodeLimit) { document.getElementById('pc-availability-msg').textContent = 'Up to ' + postcodeLimit + ' areas allowed. Purchase extras for \u00a350 each.'; document.getElementById('pc-availability-msg').style.display = 'block'; setTimeout(() => document.getElementById('pc-availability-msg').style.display = 'none', 3000); return; } const area = allPostcodeAreas.find(a => a.code === code); if (area) { selectedPostcodes.push({ code: area.code, name: area.name, region: area.region }); } } updatePcDisplay(); renderAllPostcodes(); document.getElementById('pc-dropdown').style.display = 'block'; }
 function togglePc(code, name, region) {
   const idx = selectedPostcodes.findIndex(s => s.code === code);
   if (idx >= 0) { selectedPostcodes.splice(idx, 1); }
-  else { if (selectedPostcodes.length >= postcodeLimit) { document.getElementById('pc-availability-msg').textContent = 'Free trial includes up to ' + postcodeLimit + ' districts. Upgrade for more.'; document.getElementById('pc-availability-msg').style.display = 'block'; setTimeout(() => document.getElementById('pc-availability-msg').style.display = 'none', 3000); return; } selectedPostcodes.push({ code, name, region }); }
+  else { if (selectedPostcodes.length >= postcodeLimit) { document.getElementById('pc-availability-msg').textContent = 'Free trial includes up to ' + postcodeLimit + ' areas. Upgrade or purchase extras for \u00a350 each.'; document.getElementById('pc-availability-msg').style.display = 'block'; setTimeout(() => document.getElementById('pc-availability-msg').style.display = 'none', 3000); return; } selectedPostcodes.push({ code, name, region }); }
   updatePcDisplay(); renderAllPostcodes(); document.getElementById('pc-input').focus();
 }
 function removePc(code) { selectedPostcodes = selectedPostcodes.filter(s => s.code !== code); updatePcDisplay(); renderAllPostcodes(); }
@@ -367,7 +367,7 @@ function updatePcDisplay() {
   count.textContent = selectedPostcodes.length;
   max.textContent = postcodeLimit;
   tags.innerHTML = selectedPostcodes.map(s => '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:6px;font-size:12px;color:#0ea5e9;font-weight:600">' + s.code + ' ' + s.name + '<span onclick="removePc(\'' + s.code + '\')" style="cursor:pointer;opacity:0.6;font-size:10px;margin-left:2px">\u2715</span></span>').join('');
-  input.placeholder = selectedPostcodes.length >= postcodeLimit ? 'Max reached' : 'Search districts like EN1, SW1...';
+  input.placeholder = selectedPostcodes.length >= postcodeLimit ? 'Max reached' : 'Search areas like EN, CM, SG...';
 }
 document.getElementById('signup-product').addEventListener('change', function() { loadPostcodes(); showLeadFilters(); });
 
