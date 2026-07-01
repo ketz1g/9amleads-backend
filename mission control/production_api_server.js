@@ -1713,7 +1713,28 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===== CAMPAIGN EMAIL SCHEDULER (daily at 10:00 AM) =====
+// ===== TEST SCHEDULE: 7:00 scraper → 7:02 distributor → 7:05 delivery =====
+cron.schedule('0 7 * * *', async () => {
+  console.log('[7AM TEST] Scraping fresh leads...');
+  try {
+    const http = require('http');
+    http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
+  } catch(e) { console.log('[7AM TEST] Scraper error:', e.message); }
+});
+cron.schedule('2 7 * * *', async () => {
+  console.log('[7AM TEST] Distributing leads to customers...');
+  try {
+    const http = require('http');
+    http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
+  } catch(e) { console.log('[7AM TEST] Distributor error:', e.message); }
+});
+cron.schedule('5 7 * * *', async () => {
+  console.log('[7AM TEST] Delivering leads via email...');
+  try {
+    const http = require('http');
+    http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
+  } catch(e) { console.log('[7AM TEST] Delivery error:', e.message); }
+});
 cron.schedule('0 10 * * *', async () => {
   console.log('[CAMPAIGN] Starting campaign email check...');
   var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && c.marketing_consent === 1; });
