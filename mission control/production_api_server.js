@@ -1715,29 +1715,29 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===== TEST SCHEDULE: 11:15 scraper → 11:17 distributor → 11:20 delivery =====
-cron.schedule('15 11 * * *', async () => {
-  console.log('[11:15] Running scraper...');
+// ===== TEST SCHEDULE: 13:00 scraper → 13:02 distributor → 13:05 delivery =====
+cron.schedule('0 13 * * *', async () => {
+  console.log('[13:00] Running scraper...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {
-      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[11:15] Scraper done'); });
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[13:00] Scraper done'); });
     }).end();
-  } catch(e) { console.log('[11:15] Scraper error:', e.message); }
+  } catch(e) { console.log('[13:00] Scraper error:', e.message); }
 });
-cron.schedule('17 11 * * *', async () => {
-  console.log('[11:15] Distributing...');
+cron.schedule('2 13 * * *', async () => {
+  console.log('[13:02] Distributing...');
   try {
     const http = require('http');
     http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {
-      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[11:15] Distributor done'); });
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[13:02] Distributor done'); });
     }).end();
-  } catch(e) { console.log('[11:15] Distributor error:', e.message); }
+  } catch(e) { console.log('[13:02] Distributor error:', e.message); }
 });
-// ===== TEST DELIVERY CRON: Runs manually via setTimeout to avoid HTTP timing issues =====
-// The scraper and distributor crons fire at 11:00/11:02. The delivery runs at 11:05.
-cron.schedule('5 11 * * *', async () => {
-  console.log('[11:05] Running delivery...');
+// ===== TEST DELIVERY CRON: Runs directly (not via HTTP) to avoid timing issues =====
+// Pipeline: 13:00 scraper → 13:02 distributor → 13:05 delivery
+cron.schedule('5 13 * * *', async () => {
+  console.log('[13:05] Running delivery...');
   try {
     _dbData = null;
     var db = getDb();
@@ -1774,11 +1774,11 @@ cron.schedule('5 11 * * *', async () => {
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
         delivered += custLeads.length;
-        console.log('[11:05] Delivered ' + custLeads.length + ' to ' + cust.email);
-      } catch(e) { console.log('[11:05] Error for ' + cust.email + ': ' + e.message); }
+        console.log('[13:05] Delivered ' + custLeads.length + ' to ' + cust.email);
+      } catch(e) { console.log('[13:05] Error for ' + cust.email + ': ' + e.message); }
     }
-    console.log('[11:05] Delivery complete: ' + delivered + ' leads');
-  } catch(e) { console.log('[11:05] Delivery error: ' + e.message); }
+    console.log('[13:05] Delivery complete: ' + delivered + ' leads');
+  } catch(e) { console.log('[13:05] Delivery error: ' + e.message); }
 });
 cron.schedule('0 10 * * *', async () => {
   console.log('[CAMPAIGN] Starting campaign email check...');
@@ -1859,15 +1859,6 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var products = [cust.product];
       try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
       
-      // Calculate base leads per product (split evenly, round down)
-      // Collect leads up to daily limit from all products combined — no per-product split
-      var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 25 };
-      var totalDailyLimit = dailyLimitByPlan[cust.plan] || 5;
-      
-      // Get all products for this customer
-      var products = [cust.product];
-      try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
-      
       var custLeads = [];
       for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
         var prod = products[pi];
@@ -1884,7 +1875,6 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         });
         var slots = totalDailyLimit - custLeads.length;
         custLeads = custLeads.concat(prodLeads.slice(0, slots));
-      }
       }
       
       if (custLeads.length === 0) continue;
