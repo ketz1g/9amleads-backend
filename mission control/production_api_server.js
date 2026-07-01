@@ -1715,27 +1715,70 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===== TEST SCHEDULE: 11:00 scraper → 11:02 distributor → 11:05 delivery =====
-cron.schedule('0 11 * * *', async () => {
-  console.log('[11AM TEST] Scraping fresh leads...');
+// ===== TEST SCHEDULE: 11:15 scraper → 11:17 distributor → 11:20 delivery =====
+cron.schedule('15 11 * * *', async () => {
+  console.log('[11:15] Running scraper...');
   try {
     const http = require('http');
-    http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[11AM TEST] Scraper error:', e.message); }
+    http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[11:15] Scraper done'); });
+    }).end();
+  } catch(e) { console.log('[11:15] Scraper error:', e.message); }
 });
-cron.schedule('2 11 * * *', async () => {
-  console.log('[11AM TEST] Distributing leads to customers...');
+cron.schedule('17 11 * * *', async () => {
+  console.log('[11:15] Distributing...');
   try {
     const http = require('http');
-    http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[11AM TEST] Distributor error:', e.message); }
+    http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[11:15] Distributor done'); });
+    }).end();
+  } catch(e) { console.log('[11:15] Distributor error:', e.message); }
 });
+// ===== TEST DELIVERY CRON: Runs manually via setTimeout to avoid HTTP timing issues =====
+// The scraper and distributor crons fire at 11:00/11:02. The delivery runs at 11:05.
 cron.schedule('5 11 * * *', async () => {
-  console.log('[11AM TEST] Delivering leads via email...');
+  console.log('[11:05] Running delivery...');
   try {
-    const http = require('http');
-    http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
-  } catch(e) { console.log('[11AM TEST] Delivery error:', e.message); }
+    _dbData = null;
+    var db = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var customers = (db.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
+    var delivered = 0;
+    for (var ci = 0; ci < customers.length; ci++) {
+      var cust = customers[ci];
+      var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
+      if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
+      var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 25 };
+      var totalDailyLimit = dailyLimitByPlan[cust.plan] || 5;
+      var products = [cust.product];
+      try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
+      var custLeads = [];
+      for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
+        var prod = products[pi];
+        var prodLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
+        prodLeads.sort(function(a, b) {
+          var aD = (a.created_at || a.scrapedAt || '').substring(0, 10);
+          var bD = (b.created_at || b.scrapedAt || '').substring(0, 10);
+          if (aD === today && bD !== today) return -1;
+          if (bD === today && aD !== today) return 1;
+          return 0;
+        });
+        var slots = totalDailyLimit - custLeads.length;
+        custLeads = custLeads.concat(prodLeads.slice(0, slots));
+      }
+      if (custLeads.length === 0) continue;
+      try {
+        var html = generateLeadEmailHTML(cust, custLeads);
+        var subject = '9amLeads for ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, subject, html);
+        for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
+        saveDb();
+        delivered += custLeads.length;
+        console.log('[11:05] Delivered ' + custLeads.length + ' to ' + cust.email);
+      } catch(e) { console.log('[11:05] Error for ' + cust.email + ': ' + e.message); }
+    }
+    console.log('[11:05] Delivery complete: ' + delivered + ' leads');
+  } catch(e) { console.log('[11:05] Delivery error: ' + e.message); }
 });
 cron.schedule('0 10 * * *', async () => {
   console.log('[CAMPAIGN] Starting campaign email check...');
