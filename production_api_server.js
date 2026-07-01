@@ -3078,8 +3078,8 @@ app.use(function(err, req, res, next) {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ===== TEST SCHEDULE: 4:00 scraper → 4:02 distributor → 4:05 delivery =====
-cron.schedule('0 4 * * *', async () => {
+// ===== TEST SCHEDULE: PAUSED =====
+// cron.schedule('0 4 * * *', async () => {
   console.log('[4AM TEST] Scraping fresh leads...');
   try {
     const http = require('http');
