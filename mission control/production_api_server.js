@@ -1065,6 +1065,108 @@ app.get('/api/notifications', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== SUCCESS CENTRE API =====
+// Built-in industry playbooks
+const PLAYBOOKS = {
+  'removal-companies': { name:'Removal Companies', industries:['moving'], best_lead_types:['Moving Leads','Probate Property','Property Leads'], best_contact:['Phone','Email','Letter Drop','Follow-up Call'], tips:['Contact quickly','Offer free survey','Mention insurance & packing service','Highlight local experience','Follow up after 2 days'] },
+  'builders': { name:'Builders & Contractors', industries:['planning','tenders'], best_lead_types:['Planning Leads','Tenders','New Business'], best_contact:['Email','Phone','Letter','Site Visit'], tips:['Focus on project value','Mention similar projects','Offer free quote','Follow up after 3 days'] },
+  'roofers': { name:'Roofers', industries:['planning'], best_lead_types:['Planning Leads'], best_contact:['Phone','Letter Drop','Email'], tips:['Check if lead involves roofing','Mention insurance work','Offer free inspection'] },
+  'solar-installers': { name:'Solar Installers', industries:['planning'], best_lead_types:['Planning Leads'], best_contact:['Email','Phone','Facebook Ads'], tips:['Focus on energy savings','Mention government grants','Offer free survey'] },
+  'estate-agents': { name:'Estate Agents', industries:['moving','probate'], best_lead_types:['Moving Leads','Probate Leads'], best_contact:['Phone','Email','Letter','LinkedIn'], tips:['Contact probate leads sensitively','Offer free valuation','Mention local market knowledge'] },
+  'mortgage-brokers': { name:'Mortgage Brokers', industries:['moving','newbusiness'], best_lead_types:['Moving Leads','New Business Leads'], best_contact:['Phone','Email','LinkedIn'], tips:['Contact movers early','Offer pre-approval check','Follow up after offer accepted'] },
+  'accountants': { name:'Accountants', industries:['newbusiness'], best_lead_types:['New Business Leads'], best_contact:['Email','Phone','LinkedIn','Letter'], tips:['Welcome new businesses','Offer free initial consultation','Mention MTD/compliance'] },
+  'recruitment': { name:'Recruitment Agencies', industries:['newbusiness'], best_lead_types:['New Business Leads','Tenders'], best_contact:['Email','LinkedIn','Phone'], tips:['Focus on growth companies','Offer contingent search','Follow up quarterly'] },
+  'commercial-cleaning': { name:'Commercial Cleaning', industries:['newbusiness','tenders'], best_lead_types:['New Business Leads','Tenders'], best_contact:['Letter','Email','Tender Portal'], tips:['Target facilities managers','Offer free site survey','Get on approved supplier lists'] },
+  'marketing-agencies': { name:'Marketing Agencies', industries:['newbusiness'], best_lead_types:['New Business Leads'], best_contact:['Email','LinkedIn','Phone'], tips:['Offer free audit','Show portfolio','Focus on ROI'] },
+  'probate-professionals': { name:'Probate Professionals', industries:['probate'], best_lead_types:['Probate Leads'], best_contact:['Letter','Email','Solicitor Referral'], tips:['Be respectful','Offer free probate valuation','Follow up after 1 week'] },
+  'local-trades': { name:'Local Trades', industries:['moving','planning'], best_lead_types:['Moving Leads','Planning Leads'], best_contact:['Letter Drop','Local Ads','Word of Mouth'], tips:['Use local wording','Mention local reputation','Offer free quote'] }
+};
+
+// Built-in templates
+const BUILTIN_TEMPLATES = [
+  { id:'moving-intro-letter', name:'Moving Introduction Letter', industry:'moving', lead_type:'moving', method:'letter', content:'Dear {{lead_name}},\n\nWe understand you are considering a move to {{lead_address}}.\n\nAs a local removal company, we offer:\n- Free no-obligation survey\n- Full packing service\n- Insurance included\n- Storage options\n\nCall us on {{customer_phone}} for a free quote.\n\nBest regards,\n{{customer_business_name}}' },
+  { id:'moving-phone-script', name:'Moving Phone Script', industry:'moving', lead_type:'moving', method:'phone', content:'Hello, this is {{customer_business_name}}.\n\nWe saw you are planning a move to {{lead_address}}. We specialise in {{postcode}} area moves.\n\nWould you like a free no-obligation survey and quote?\n\nWe offer full packing, storage and insurance.' },
+  { id:'probate-intro-letter', name:'Probate Introduction Letter', industry:'probate', lead_type:'probate', method:'letter', content:'Dear {{lead_name}},\n\nWe were sorry to learn of your recent loss.\n\nAt {{customer_business_name}}, we handle probate property matters with care and sensitivity.\n\nWe offer:\n- Free probate valuation\n- Sensitive handling\n- Clear guidance through the process\n\nPlease call {{customer_phone}} when you are ready.\n\nWith condolences,\n{{customer_business_name}}' },
+  { id:'planning-builder-letter', name:'Builder Planning Letter', industry:'planning', lead_type:'planning', method:'letter', content:'Dear {{lead_name}},\n\nWe note you have a planning application at {{lead_address}}.\n\n{{customer_business_name}} specialises in projects like this. We can provide a competitive quote.\n\nCall {{customer_phone}} for a free site visit.\n\nBest regards,\n{{customer_business_name}}' },
+  { id:'newbusiness-welcome', name:'New Business Welcome Email', industry:'newbusiness', lead_type:'newbusiness', method:'email', content:'Subject: Welcome to {{lead_name}}\n\nDear {{contact_name}},\n\nCongratulations on your new venture.\n\n{{customer_business_name}} can help you with:\n- Accounting/Insurance/Marketing support\n- Free initial consultation\n- Local expertise\n\nCall {{customer_phone}} or reply to this email.\n\nBest regards,\n{{customer_business_name}}' },
+  { id:'tenders-intro', name:'Tender Introduction Email', industry:'tenders', lead_type:'tenders', method:'email', content:'Subject: Expression of Interest\n\nTo the procurement team,\n\n{{customer_business_name}} wishes to express interest in the tender opportunity.\n\nWe have experience delivering similar contracts and can provide full capability documentation.\n\nPlease contact {{customer_email}} for our credentials.\n\nYours faithfully,\n{{customer_business_name}}' }
+];
+
+// GET /api/success-centre/templates — return all templates
+app.get('/api/success-centre/templates', authMiddleware, (req, res) => {
+  res.json({ templates: BUILTIN_TEMPLATES });
+});
+
+// GET /api/success-centre/playbooks — return playbooks
+app.get('/api/success-centre/playbooks', authMiddleware, (req, res) => {
+  res.json({ playbooks: PLAYBOOKS });
+});
+
+// POST /api/success-centre/save — save a template
+app.post('/api/success-centre/save', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    if (!db.saved_templates) db.saved_templates = [];
+    db.saved_templates.push({ id: uuidv4(), customer_id: req.user.id, template_name: req.body.template_name || '', industry: req.body.industry || '', lead_type: req.body.lead_type || '', contact_method: req.body.contact_method || '', content: req.body.content || '', created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+    saveDb();
+    res.json({ success: true, message: 'Template saved!' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/success-centre/saved — get customer's saved templates
+app.get('/api/success-centre/saved', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const saved = (db.saved_templates || []).filter(t => t.customer_id === req.user.id);
+    res.json({ saved });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/success-centre/saved/:id — delete a saved template
+app.delete('/api/success-centre/saved/:id', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    db.saved_templates = (db.saved_templates || []).filter(t => !(t.id === req.params.id && t.customer_id === req.user.id));
+    saveDb();
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/success-centre/generate — AI template generator (rule-based)
+app.post('/api/success-centre/generate', authMiddleware, (req, res) => {
+  try {
+    const { industry, lead_type, contact_method, tone, lead_name, lead_address, business_name } = req.body;
+    const session = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    const company = business_name || session?.company || 'Your Business';
+    const phone = session?.phone || 'your number';
+    const email = session?.email || 'your email';
+
+    var prefix = tone === 'sensitive' ? 'With respect, ' : tone === 'friendly' ? 'Hi there, ' : tone === 'premium' ? 'Dear ' : tone === 'direct' ? 'Hello, ' : 'Dear ';
+    var body = '';
+    if (contact_method === 'letter' || contact_method === 'email') {
+      body = prefix + (lead_name || 'Sir/Madam') + ',\n\n';
+      if (lead_type === 'probate') {
+        body += 'We understand this may be a difficult time. At ' + company + ', we handle probate-related matters with care and sensitivity.\n\nWe offer a free consultation. Please call ' + phone + ' when you are ready.\n\nWith condolences,\n' + company;
+      } else if (lead_type === 'moving') {
+        body += 'We see you are planning a move to ' + (lead_address || 'your new property') + '. ' + company + ' offers reliable removal services including packing, storage and insurance.\n\nCall ' + phone + ' for a free no-obligation quote.\n\nBest regards,\n' + company;
+      } else if (lead_type === 'planning') {
+        body += 'We note the project at ' + (lead_address || 'your property') + '. ' + company + ' has experience with similar developments and can provide a competitive quote.\n\nContact ' + email + ' for more information.\n\nYours sincerely,\n' + company;
+      } else if (lead_type === 'newbusiness') {
+        body += 'Congratulations on your new venture. ' + company + ' can support your growth with our expertise.\n\nWe offer a free initial consultation. Call ' + phone + ' to arrange a chat.\n\nBest wishes,\n' + company;
+      } else {
+        body += 'We are interested in discussing how ' + company + ' can work with you.\n\nPlease contact us at ' + email + '.\n\nBest regards,\n' + company;
+      }
+    } else if (contact_method === 'phone') {
+      body = 'Hello, this is ' + company + '. We noticed your interest in ' + (lead_type || 'our services') + ' and wanted to see if we can help.';
+    } else if (contact_method === 'sms') {
+      body = 'Hi ' + (lead_name || 'there') + ', this is ' + company + '. Would you like a free quote? Reply or call ' + phone;
+    } else if (contact_method === 'linkedin') {
+      body = 'Hi ' + (lead_name || 'there') + ', I noticed you recently engaged with ' + (lead_type || 'our industry') + '. Happy to share how ' + company + ' can help.';
+    }
+    res.json({ generated: body, company: company, phone: phone, email: email });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== DASHBOARD API ENDPOINTS =====
 
 // GET /api/dashboard — KPI summary data

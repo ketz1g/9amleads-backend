@@ -121,6 +121,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <a href="#" onclick="showPage('pipeline')"><i class="fas fa-tasks"></i> Pipeline</a>
 <a href="#" onclick="document.getElementById('territories-section').scrollIntoView({behavior:'smooth'});return false"><i class="fas fa-map-marker-alt"></i> Areas</a>
 <a href="#" onclick="showPage('reports')"><i class="fas fa-chart-bar"></i> Reports</a>
+<a href="#" onclick="showPage('success-centre')"><i class="fas fa-graduation-cap"></i> Success</a>
 <a href="#" onclick="document.getElementById('crm-section').scrollIntoView({behavior:'smooth'});return false"><i class="fas fa-plug"></i> CRM</a>
 <a href="#" onclick="showPage('billing')"><i class="fas fa-credit-card"></i> Billing</a>
 <a href="#" onclick="showPage('settings')"><i class="fas fa-cog"></i> Settings</a>
@@ -924,6 +925,162 @@ function showBillingPage() {
 }
 
 // ===== SETTINGS PAGE (Step 14) =====
+// ===== SUCCESS CENTRE =====
+function showSuccessCentre() {
+  var industryFilter = '';
+  var leadTypeFilter = '';
+  // Build filter HTML
+  var industries = ['removal-companies','builders','roofers','solar-installers','estate-agents','mortgage-brokers','accountants','recruitment','commercial-cleaning','marketing-agencies','probate-professionals','local-trades'];
+  var leadTypes = ['moving','probate','planning','newbusiness','tenders'];
+  var methods = ['letter','email','phone','sms','linkedin','letter-drop'];
+
+  var html = '<div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+    '<input type="text" id="sc-search" placeholder="Search templates..." style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit" oninput="renderSuccessCentre()">' +
+    '<select id="sc-industry" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px" onchange="renderSuccessCentre()"><option value="">All Industries</option>' + industries.map(function(i){ var n=i.replace(/-/g,' ').replace(/\b\w/g,function(l){return l.toUpperCase()}); return '<option value="'+i+'">'+n+'</option>'; }).join('') + '</select>' +
+    '<select id="sc-leadtype" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px" onchange="renderSuccessCentre()"><option value="">All Lead Types</option>' + leadTypes.map(function(l){ return '<option value="'+l+'">'+l.charAt(0).toUpperCase()+l.slice(1)+'</option>'; }).join('') + '</select>' +
+    '<select id="sc-method" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px" onchange="renderSuccessCentre()"><option value="">All Methods</option>' + methods.map(function(m){ return '<option value="'+m+'">'+m.charAt(0).toUpperCase()+m.slice(1)+'</option>'; }).join('') + '</select>' +
+    '</div><div id="sc-content" style="display:grid;gap:12px"></div><div id="sc-saved" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:12px"><h4 style="font-size:13px;font-weight:700;margin-bottom:8px">Saved Templates</h4><div id="sc-saved-list" style="display:grid;gap:6px"></div></div>';
+
+  showModal('Success Centre', html);
+  renderSuccessCentre();
+  loadSavedTemplates();
+}
+
+var scTemplates = [];
+var scPlaybooks = [];
+
+async function loadSuccessCentreData() {
+  try {
+    var t = await apiFetch('/api/success-centre/templates');
+    if (t && t.templates) scTemplates = t.templates;
+    var p = await apiFetch('/api/success-centre/playbooks');
+    if (p && p.playbooks) scPlaybooks = Object.values(p.playbooks);
+  } catch(e) {}
+}
+
+async function renderSuccessCentre() {
+  if (scTemplates.length === 0) await loadSuccessCentreData();
+  var q = (document.getElementById('sc-search')?.value || '').toLowerCase();
+  var ind = document.getElementById('sc-industry')?.value || '';
+  var lt = document.getElementById('sc-leadtype')?.value || '';
+  var mt = document.getElementById('sc-method')?.value || '';
+  var filtered = scTemplates.filter(function(t) {
+    return (!q || t.name.toLowerCase().includes(q) || t.content.toLowerCase().includes(q)) &&
+      (!ind || t.industry === ind) &&
+      (!lt || t.lead_type === lt) &&
+      (!mt || t.method === mt);
+  });
+  var html = '';
+  filtered.forEach(function(t) {
+    html += '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">' +
+      '<strong style="font-size:13px;color:var(--text)">' + t.name + '</strong>' +
+      '<div style="display:flex;gap:4px;flex-wrap:wrap">' +
+      '<button onclick="copyTemplate(\'' + t.id + '\')" style="padding:3px 8px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text2);font-size:10px;cursor:pointer">Copy</button>' +
+      '<button onclick="saveTemplate(\'' + t.id + '\')" style="padding:3px 8px;border:1px solid var(--primary);border-radius:4px;background:rgba(14,165,233,0.1);color:var(--primary);font-size:10px;cursor:pointer">Save</button>' +
+      '<button onclick="generateAI(\'' + t.lead_type + '\',\'' + t.method + '\',\'' + t.name + '\')" style="padding:3px 8px;border:1px solid #6366f1;border-radius:4px;background:rgba(99,102,241,0.1);color:#6366f1;font-size:10px;cursor:pointer">AI Gen</button>' +
+      '</div></div>' +
+      '<div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap"><span style="font-size:9px;padding:2px 6px;background:var(--card);border:1px solid var(--border);border-radius:3px;color:var(--muted2)">' + (t.industry || 'general') + '</span><span style="font-size:9px;padding:2px 6px;background:var(--card);border:1px solid var(--border);border-radius:3px;color:var(--muted2)">' + (t.lead_type || '') + '</span><span style="font-size:9px;padding:2px 6px;background:var(--card);border:1px solid var(--border);border-radius:3px;color:var(--muted2)">' + (t.method || '') + '</span></div>' +
+      '<pre style="font-size:11px;color:var(--text2);background:var(--bg);padding:8px;border-radius:4px;white-space:pre-wrap;font-family:inherit;margin:0;max-height:120px;overflow-y:auto">' + t.content.substring(0, 300) + '</pre></div>';
+  });
+  if (scPlaybooks.length > 0) {
+    html += '<div style="margin-top:8px;padding:12px;background:rgba(99,102,241,0.03);border:1px solid rgba(99,102,241,0.1);border-radius:8px"><strong style="font-size:12px;color:var(--text)">Need industry advice?</strong><p style="font-size:11px;color:var(--muted2);margin:4px 0 0">' + Object.values(scPlaybooks).slice(0, 3).map(function(p){ return '<strong>' + p.name + '</strong>: ' + (p.tips || []).join(', '); }).join('<br>') + '... <a href="#" onclick="showIndustryGuide();return false" style="color:var(--primary);text-decoration:underline">View all playbooks</a></p></div>';
+  }
+  var el = document.getElementById('sc-content');
+  if (el) el.innerHTML = html || '<p style="color:var(--muted2);text-align:center;padding:20px">No templates found.</p>';
+}
+
+function copyTemplate(id) {
+  var t = scTemplates.find(function(t) { return t.id === id; });
+  if (!t) return;
+  navigator.clipboard.writeText(t.content).then(function() { alert('Template copied!'); });
+}
+
+async function saveTemplate(id) {
+  var t = scTemplates.find(function(t) { return t.id === id; });
+  if (!t) return;
+  try {
+    var r = await apiFetch('/api/success-centre/save', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ template_name: t.name, industry: t.industry, lead_type: t.lead_type, contact_method: t.method, content: t.content }) });
+    if (r && r.success) { alert('Saved!'); loadSavedTemplates(); }
+  } catch(e) {}
+}
+
+async function loadSavedTemplates() {
+  try {
+    var r = await apiFetch('/api/success-centre/saved');
+    if (r && r.saved && r.saved.length > 0) {
+      document.getElementById('sc-saved').style.display = 'block';
+      var html = r.saved.map(function(s) {
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:var(--card2);border:1px solid var(--border);border-radius:4px;font-size:11px;color:var(--text2)">' +
+          '<span>' + s.template_name + '</span>' +
+          '<button onclick="deleteSaved(\'' + s.id + '\')" style="padding:2px 6px;border:none;background:none;color:var(--danger);cursor:pointer;font-size:10px">Delete</button></div>';
+      }).join('');
+      document.getElementById('sc-saved-list').innerHTML = html;
+    }
+  } catch(e) {}
+}
+
+async function deleteSaved(id) {
+  try {
+    var r = await apiFetch('/api/success-centre/saved/' + id, { method:'DELETE' });
+    if (r && r.success) loadSavedTemplates();
+  } catch(e) {}
+}
+
+function generateAI(leadType, method, name) {
+  var tone = leadType === 'probate' ? 'sensitive' : 'professional';
+  showModal('AI Template Generator',
+    '<div style="margin-bottom:10px"><label style="font-size:11px;font-weight:600">Industry</label><select id="ai-industry" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px;margin-top:4px">' +
+    '<option value="moving">Moving</option><option value="planning">Planning</option><option value="probate">Probate</option><option value="newbusiness">New Business</option><option value="tenders">Tenders</option></select></div>' +
+    '<div style="margin-bottom:10px"><label style="font-size:11px;font-weight:600">Method</label><select id="ai-method" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px;margin-top:4px">' +
+    '<option value="letter">Letter</option><option value="email">Email</option><option value="phone">Phone</option><option value="sms">SMS</option><option value="linkedin">LinkedIn</option></select></div>' +
+    '<div style="margin-bottom:10px"><label style="font-size:11px;font-weight:600">Tone</label><select id="ai-tone" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px;margin-top:4px">' +
+    '<option value="professional">Professional</option><option value="friendly">Friendly</option><option value="direct">Direct</option><option value="premium">Premium</option><option value="sensitive">Sensitive</option></select></div>' +
+    '<button class="btn btn-primary btn-sm" onclick="doGenerate()" style="width:100%">Generate</button>' +
+    '<div id="ai-result" style="margin-top:10px;display:none"><pre id="ai-text" style="font-size:12px;color:var(--text2);background:var(--card2);padding:10px;border-radius:6px;white-space:pre-wrap;font-family:inherit;max-height:300px;overflow-y:auto"></pre><button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(document.getElementById(\'ai-text\').textContent);alert(\'Copied!\')" style="margin-top:6px">Copy</button></div>'
+  );
+}
+
+async function doGenerate() {
+  var ind = document.getElementById('ai-industry')?.value || 'moving';
+  var mt = document.getElementById('ai-method')?.value || 'email';
+  var tn = document.getElementById('ai-tone')?.value || 'professional';
+  var btn = document.querySelector('#ai-result').previousElementSibling;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...'; btn.disabled = true;
+  try {
+    var r = await apiFetch('/api/success-centre/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ industry:ind, lead_type:ind, contact_method:mt, tone:tn }) });
+    if (r && r.generated) {
+      document.getElementById('ai-result').style.display = 'block';
+      document.getElementById('ai-text').textContent = r.generated;
+    }
+  } catch(e) {}
+  btn.innerHTML = 'Generate'; btn.disabled = false;
+}
+
+function showIndustryGuide() {
+  showModal('Industry Playbooks', '<div id="playbook-content"><p style="color:var(--muted2)">Loading...</p></div>');
+  apiFetch('/api/success-centre/playbooks').then(function(r) {
+    if (!r || !r.playbooks) return;
+    var html = '';
+    Object.values(r.playbooks).forEach(function(p) {
+      html += '<div style="margin-bottom:12px;padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px">' +
+        '<strong style="font-size:13px;color:var(--text)">' + p.name + '</strong>' +
+        '<div style="font-size:11px;color:var(--muted2);margin-top:6px"><strong>Best contact:</strong> ' + (p.best_contact || []).join(', ') + '</div>' +
+        '<div style="font-size:11px;color:var(--muted2);margin-top:4px"><strong>Tips:</strong> ' + (p.tips || []).join(' · ') + '</div></div>';
+    });
+    document.getElementById('playbook-content').innerHTML = html;
+  }).catch(function() {});
+}
+
+// Add success-centre to showPage
+(function() {
+  var origSP = showPage;
+  showPage = function(page) {
+    if (page === 'success-centre') { showSuccessCentre(); return; }
+    origSP(page);
+  };
+})();
+
 function showSettingsPage() {
   var session = getSession();
   var email = session?.email || '';
