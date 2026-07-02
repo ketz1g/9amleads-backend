@@ -516,6 +516,9 @@ app.post('/api/auth/signup', async (req, res) => {
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(id);
     customer.verification_token = verification_token;
     customer.email_verified = 0;
+    // Store daily limit based on lead type, plan and coverage
+    const dailyLimit = getPlanLimit(product, plan || 'free_trial', coverage || 'postcode');
+    db.prepare('UPDATE customers SET leads_per_day = ?, coverage = ? WHERE id = ?').run(dailyLimit, coverage || 'postcode', id);
     saveDb();
 
     // Verification email disabled — was causing spam during testing
@@ -1333,8 +1336,11 @@ app.get('/api/lead-types', (req, res) => {
       coverage: rule.coverage,
       min_area: rule.min_area,
       up_to: rule.up_to,
+      enabled: rule.enabled,
       plans: Object.keys(rule.plans).filter(p => p !== 'free_trial'),
-      plan_details: rule.plans
+      plan_details: rule.plans,
+      weekly_est: rule.weekly_est,
+      monthly_est: rule.monthly_est
     };
   }
   res.json({ lead_types: summary });
@@ -1342,8 +1348,7 @@ app.get('/api/lead-types', (req, res) => {
 
 const LEAD_TYPE_RULES = {
   moving: {
-    name: 'Moving Leads',
-    local: true,
+    name: 'Moving Leads', key: 'moving', local: true,
     coverage: ['postcode', 'county', 'region'],
     plans: {
       free_trial: { default: 5, postcode: 5, county: 5, region: 5 },
@@ -1351,13 +1356,15 @@ const LEAD_TYPE_RULES = {
       pro:      { default: 15, postcode: 15, county: 15, region: 15 },
       enterprise: { default: 30, postcode: 30, county: 30, region: 30 },
     },
-    min_area: 'postcode',
-    up_to: false,
-    price_ids: { starter: 'price_1Tm6PMADspDnFpfBJtsUWi6v', growth: 'price_1Tm6PNADspDnFpfB847Dubdf', power: 'price_1Tm6POADspDnFpfBkf0gfqXs' }
+    min_area: 'postcode', up_to: false, enabled: true,
+    price_starter: 'price_1Tm6PMADspDnFpfBJtsUWi6v',
+    price_growth: 'price_1Tm6PNADspDnFpfB847Dubdf',
+    price_power: 'price_1Tm6POADspDnFpfBkf0gfqXs',
+    weekly_est: { starter: 25, pro: 75, enterprise: 150 },
+    monthly_est: { starter: 100, pro: 300, enterprise: 600 }
   },
   newbusiness: {
-    name: 'New Business Alerts',
-    local: true,
+    name: 'New Business Alerts', key: 'newbusiness', local: true,
     coverage: ['postcode', 'county', 'region'],
     plans: {
       free_trial: { default: 5, postcode: 5, county: 5, region: 5 },
@@ -1365,13 +1372,15 @@ const LEAD_TYPE_RULES = {
       pro:      { default: 25, postcode: 25, county: 25, region: 25 },
       enterprise: { default: 50, postcode: 50, county: 50, region: 50 },
     },
-    min_area: 'postcode',
-    up_to: false,
-    price_ids: { starter: 'price_1Tm6PRADspDnFpfBx80lgJ84', growth: 'price_1Tm6PSADspDnFpfBXakzcGEL', power: 'price_1Tm6PSADspDnFpfBGRGc5zQ9' }
+    min_area: 'postcode', up_to: false, enabled: true,
+    price_starter: 'price_1Tm6PRADspDnFpfBx80lgJ84',
+    price_growth: 'price_1Tm6PSADspDnFpfBXakzcGEL',
+    price_power: 'price_1Tm6PSADspDnFpfBGRGc5zQ9',
+    weekly_est: { starter: 50, pro: 125, enterprise: 250 },
+    monthly_est: { starter: 200, pro: 500, enterprise: 1000 }
   },
   planning: {
-    name: 'Planning Permissions',
-    local: false,
+    name: 'Planning Permissions', key: 'planning', local: false,
     coverage: ['county', 'region', 'ukwide'],
     plans: {
       free_trial: { default: 2, county: 2, region: 5, ukwide: 10 },
@@ -1379,13 +1388,15 @@ const LEAD_TYPE_RULES = {
       pro:      { default: 5,  county: 5,  region: 15, ukwide: 25 },
       enterprise: { default: 30, county: 10, region: 30, ukwide: 50 },
     },
-    min_area: 'county',
-    up_to: true,
-    price_ids: { starter: 'price_1TmEKSADspDnFpfBrCHXJBFu', growth: 'price_1TmEKTADspDnFpfBVdi1APEq', power: 'price_1TmEKTADspDnFpfBxFjHeoP9' }
+    min_area: 'county', up_to: true, enabled: true,
+    price_starter: 'price_1TmEKSADspDnFpfBrCHXJBFu',
+    price_growth: 'price_1TmEKTADspDnFpfBVdi1APEq',
+    price_power: 'price_1TmEKTADspDnFpfBxFjHeoP9',
+    weekly_est: { starter: 10, pro: 35, enterprise: 70 },
+    monthly_est: { starter: 40, pro: 140, enterprise: 280 }
   },
   probate: {
-    name: 'Probate Leads',
-    local: false,
+    name: 'Probate Leads', key: 'probate', local: false,
     coverage: ['county', 'region', 'ukwide'],
     plans: {
       free_trial: { default: 1, county: 1, region: 2, ukwide: 5 },
@@ -1393,13 +1404,15 @@ const LEAD_TYPE_RULES = {
       pro:      { default: 3,  county: 3,  region: 5,  ukwide: 10 },
       enterprise: { default: 10, county: 10, region: 15, ukwide: 20 },
     },
-    min_area: 'county',
-    up_to: true,
-    price_ids: { starter: 'price_1Tm6PPADspDnFpfBkewa97Bv', growth: 'price_1Tm6PPADspDnFpfB3q61i5FP', power: 'price_1Tm6PQADspDnFpfBazgz1UD7' }
+    min_area: 'county', up_to: true, enabled: true,
+    price_starter: 'price_1Tm6PPADspDnFpfBkewa97Bv',
+    price_growth: 'price_1Tm6PPADspDnFpfB3q61i5FP',
+    price_power: 'price_1Tm6PQADspDnFpfBazgz1UD7',
+    weekly_est: { starter: 5, pro: 15, enterprise: 50 },
+    monthly_est: { starter: 20, pro: 60, enterprise: 200 }
   },
   tenders: {
-    name: 'Public Tenders',
-    local: false,
+    name: 'Public Tenders', key: 'tenders', local: false,
     coverage: ['region', 'ukwide'],
     plans: {
       free_trial: { default: 1, region: 1, ukwide: 3 },
@@ -1407,9 +1420,68 @@ const LEAD_TYPE_RULES = {
       pro:      { default: 3,  region: 3,  ukwide: 10 },
       enterprise: { default: 8, region: 8, ukwide: 25 },
     },
-    min_area: 'region',
-    up_to: true,
-    price_ids: { starter: 'price_1TmEKTADspDnFpfBsi6jjA6B', growth: 'price_1TmEKUADspDnFpfBqnyKzJxM', power: 'price_1TmEKUADspDnFpfBugGOoqhD' }
+    min_area: 'region', up_to: true, enabled: true,
+    price_starter: 'price_1TmEKTADspDnFpfBsi6jjA6B',
+    price_growth: 'price_1TmEKUADspDnFpfBqnyKzJxM',
+    price_power: 'price_1TmEKUADspDnFpfBugGOoqhD',
+    weekly_est: { starter: 5, pro: 15, enterprise: 40 },
+    monthly_est: { starter: 20, pro: 60, enterprise: 160 }
+  },
+  property: {
+    name: 'Property Leads', key: 'property', local: true,
+    coverage: ['postcode', 'county', 'region'],
+    plans: {
+      free_trial: { default: 3, postcode: 3, county: 3, region: 3 },
+      starter:  { default: 5,  postcode: 5,  county: 5,  region: 10 },
+      pro:      { default: 15, postcode: 15, county: 15, region: 20 },
+      enterprise: { default: 30, postcode: 30, county: 30, region: 40 },
+    },
+    min_area: 'postcode', up_to: false, enabled: false,
+    price_starter: '', price_growth: '', price_power: '',
+    weekly_est: { starter: 25, pro: 75, enterprise: 150 },
+    monthly_est: { starter: 100, pro: 300, enterprise: 600 }
+  },
+  marketing: {
+    name: 'Marketing Leads', key: 'marketing', local: true,
+    coverage: ['postcode', 'county', 'region'],
+    plans: {
+      free_trial: { default: 3, postcode: 3, county: 3, region: 3 },
+      starter:  { default: 5,  postcode: 5,  county: 10, region: 15 },
+      pro:      { default: 15, postcode: 15, county: 20, region: 30 },
+      enterprise: { default: 30, postcode: 30, county: 40, region: 50 },
+    },
+    min_area: 'postcode', up_to: false, enabled: false,
+    price_starter: '', price_growth: '', price_power: '',
+    weekly_est: { starter: 25, pro: 75, enterprise: 150 },
+    monthly_est: { starter: 100, pro: 300, enterprise: 600 }
+  },
+  builder: {
+    name: 'Builder Package', key: 'builder', local: false,
+    coverage: ['county', 'region', 'ukwide'],
+    plans: {
+      free_trial: { default: 2, county: 2, region: 5, ukwide: 10 },
+      starter:  { default: 3,  county: 3,  region: 8,  ukwide: 15 },
+      pro:      { default: 8,  county: 8,  region: 15, ukwide: 25 },
+      enterprise: { default: 20, county: 20, region: 30, ukwide: 50 },
+    },
+    min_area: 'county', up_to: true, enabled: false,
+    price_starter: '', price_growth: '', price_power: '',
+    weekly_est: { starter: 15, pro: 40, enterprise: 100 },
+    monthly_est: { starter: 60, pro: 160, enterprise: 400 }
+  },
+  contracts: {
+    name: 'Government Contracts', key: 'contracts', local: false,
+    coverage: ['region', 'ukwide'],
+    plans: {
+      free_trial: { default: 1, region: 1, ukwide: 3 },
+      starter:  { default: 1,  region: 1,  ukwide: 5 },
+      pro:      { default: 3,  region: 3,  ukwide: 10 },
+      enterprise: { default: 8, region: 8, ukwide: 25 },
+    },
+    min_area: 'region', up_to: true, enabled: false,
+    price_starter: '', price_growth: '', price_power: '',
+    weekly_est: { starter: 5, pro: 15, enterprise: 40 },
+    monthly_est: { starter: 20, pro: 60, enterprise: 160 }
   }
 };
 
@@ -1419,6 +1491,8 @@ const COVERAGE_LABELS = {
   region: 'Region',
   ukwide: 'UK-wide'
 };
+
+const COVERAGE_TYPES = ['postcode', 'county', 'region', 'ukwide'];
 
 const PLAN_NAMES = {
   free_trial: 'Free Trial',
