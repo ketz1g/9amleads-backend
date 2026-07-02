@@ -516,9 +516,18 @@ app.post('/api/auth/signup', async (req, res) => {
     const productInfo = PRODUCT_MAP[product] || PRODUCT_MAP.moving;
     const areas = Array.isArray(targetAreas) ? targetAreas : [];
 
+    // Validate product count by plan
+    var productsList = req.body.products || [product];
+    if (!Array.isArray(productsList)) productsList = [product];
+    var planName = plan || 'free_trial';
+    var maxTypes = planName === 'free_trial' ? 1 : planName === 'starter' ? 2 : 99;
+    if (productsList.length > maxTypes) {
+      return res.status(400).json({ error: (planName === 'free_trial' ? 'Free Trial' : planName.charAt(0).toUpperCase() + planName.slice(1)) + ' allows up to ' + maxTypes + ' lead type' + (maxTypes > 1 ? 's' : '') + '. Upgrade for more.' });
+    }
+
     // Validate postcode district availability
     if (areas.length > 0) {
-      const validation = validatePostcodes(areas, 'free_trial', product, id);
+      const validation = validatePostcodes(areas, planName, product, id);
       if (!validation.valid) {
         return res.status(400).json({ error: validation.errors.join(' ') });
       }
