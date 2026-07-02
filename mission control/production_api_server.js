@@ -1092,19 +1092,32 @@ const BUILTIN_TEMPLATES = [
   { id:'tenders-intro', name:'Tender Introduction Email', industry:'tenders', lead_type:'tenders', method:'email', content:'Subject: Expression of Interest\n\nTo the procurement team,\n\n{{customer_business_name}} wishes to express interest in the tender opportunity.\n\nWe have experience delivering similar contracts and can provide full capability documentation.\n\nPlease contact {{customer_email}} for our credentials.\n\nYours faithfully,\n{{customer_business_name}}' }
 ];
 
-// GET /api/success-centre/templates — return all templates
+// GET /api/success-centre/templates — return all templates (Pro+ only)
 app.get('/api/success-centre/templates', authMiddleware, (req, res) => {
+  const cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  var plan = cust?.plan || 'free_trial';
+  if (plan === 'free_trial' || plan === 'starter') {
+    return res.json({ restricted: true, templates: [], message: 'Success Centre is available on Pro and Enterprise plans. <a href="#" onclick="showPlans();return false" style="color:#0ea5e9;text-decoration:underline">Upgrade now</a> to access industry playbooks, outreach templates, AI generator and more.' });
+  }
   res.json({ templates: BUILTIN_TEMPLATES });
 });
 
-// GET /api/success-centre/playbooks — return playbooks
+function checkProAccess(req) {
+  const cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  var plan = cust?.plan || 'free_trial';
+  return (plan === 'pro' || plan === 'enterprise');
+}
+
+// GET /api/success-centre/playbooks — return playbooks (Pro+ only)
 app.get('/api/success-centre/playbooks', authMiddleware, (req, res) => {
+  if (!checkProAccess(req)) return res.json({ restricted: true, playbooks: {} });
   res.json({ playbooks: PLAYBOOKS });
 });
 
-// POST /api/success-centre/save — save a template
+// POST /api/success-centre/save — save a template (Pro+ only)
 app.post('/api/success-centre/save', authMiddleware, (req, res) => {
   try {
+    if (!checkProAccess(req)) return res.status(403).json({ error: 'Upgrade to Pro to save templates' });
     const db = getDb();
     if (!db.saved_templates) db.saved_templates = [];
     db.saved_templates.push({ id: uuidv4(), customer_id: req.user.id, template_name: req.body.template_name || '', industry: req.body.industry || '', lead_type: req.body.lead_type || '', contact_method: req.body.contact_method || '', content: req.body.content || '', created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
