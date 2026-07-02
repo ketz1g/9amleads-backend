@@ -512,6 +512,99 @@ function setKPI(id, val) {
   if (el) el.textContent = val !== undefined && val !== null ? val : '0';
 }
 
+// ===== LEAD DETAIL MODAL & STATUS (Steps 6-7) =====
+async function openLeadDetail(leadId) {
+  try {
+    var r = await apiFetch('/api/leads/' + leadId);
+    if (!r) { alert('Lead not found'); return; }
+    var d = typeof r.data === 'object' ? r.data : {};
+    var statusColors = { new:'#0ea5e9', contacted:'#f59e0b', interested:'#8b5cf6', quoted:'#6366f1', won:'#22c55e', lost:'#ef4444' };
+    var statusLabels = { new:'New', contacted:'Contacted', interested:'Interested', quoted:'Quoted', won:'Won', lost:'Lost' };
+    var currentStatus = r.lead_status || 'new';
+    var notesHtml = '';
+    if (r.notes && r.notes.length > 0) {
+      r.notes.forEach(function(n) { notesHtml += '<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)">' + (n.text || '') + ' <span style="color:var(--muted2);font-size:10px">' + (n.created_at ? new Date(n.created_at).toLocaleDateString() : '') + '</span></div>'; });
+    }
+    var statusBtns = ['new','contacted','interested','quoted','won','lost'].map(function(s) {
+      var active = s === currentStatus;
+      return '<button onclick="updateLeadStatus(\'' + leadId + '\',\'' + s + '\');this.closest(\'#lead-modal\').remove()" style="padding:4px 10px;border-radius:6px;border:1px solid ' + (active ? statusColors[s] : 'var(--border)') + ';background:' + (active ? statusColors[s] : 'transparent') + ';color:' + (active ? '#fff' : 'var(--text2)') + ';font-size:11px;font-weight:600;cursor:pointer">' + statusLabels[s] + '</button>';
+    }).join('');
+
+    showModal(r.product + ' Opportunity',
+      '<div style="font-size:13px;color:var(--text2);line-height:1.7">' +
+      '<div style="margin-bottom:12px"><strong>Address:</strong> ' + (d.address || d.name || d.title || 'N/A') + '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:12px">' +
+      '<div><strong>Postcode:</strong> ' + (d.postcode || 'N/A') + '</div>' +
+      '<div><strong>Source:</strong> ' + (r.product || 'N/A') + '</div>' +
+      '<div><strong>Est. Value:</strong> \u00a3' + (r.estimated_value || d.price || '0') + '</div>' +
+      '<div><strong>Found:</strong> ' + (r.created_at ? new Date(r.created_at).toLocaleDateString() : 'N/A') + '</div>' +
+      '</div>' +
+      '<div style="margin-bottom:12px"><strong>Status:</strong> <span style="color:' + (statusColors[currentStatus] || '#0ea5e9') + ';font-weight:600">' + (statusLabels[currentStatus] || 'New') + '</span></div>' +
+      '<div style="margin-bottom:12px"><strong>Update Status:</strong><br><div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">' + statusBtns + '</div></div>' +
+      (currentStatus === 'won' ? '<div style="margin-bottom:12px"><input type="number" id="deal-value-input" placeholder="Enter deal value (\u00a3)" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:13px;margin-bottom:4px"><button class="btn btn-primary btn-sm" onclick="var v=document.getElementById(\'deal-value-input\').value;if(v){updateLeadStatus(\'' + leadId + '\',\'won\',v);this.closest(\'#lead-modal\').remove()}">Save Deal Value</button></div>' : '') +
+      '<div style="margin-bottom:12px"><textarea id="note-input-' + leadId + '" placeholder="Add a note..." style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px;min-height:50px;font-family:inherit;resize:vertical;margin-bottom:4px"></textarea><button class="btn btn-outline btn-sm" onclick="var n=document.getElementById(\'note-input-' + leadId + '\').value;if(n){addLeadNote(\'' + leadId + '\',n)}">Add Note</button></div>' +
+      (notesHtml ? '<div style="margin-bottom:12px"><strong>Notes:</strong>' + notesHtml + '</div>' : '') +
+      '</div>'
+    );
+  } catch(e) { alert('Could not load lead details.'); }
+}
+
+async function updateLeadStatus(leadId, status, dealValue) {
+  try {
+    var body = { status: status };
+    if (dealValue) body.deal_value = dealValue;
+    var r = await apiFetch('/api/leads/' + leadId + '/status', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    if (r && r.success) { loadDashboardData(); return; }
+    alert('Failed to update status.');
+  } catch(e) { alert('Could not update status.'); }
+}
+
+async function addLeadNote(leadId, note) {
+  try {
+    var r = await apiFetch('/api/leads/' + leadId + '/note', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ note:note }) });
+    if (r && r.success) { alert('Note added!'); location.reload(); return; }
+    alert('Failed to add note.');
+  } catch(e) { alert('Could not add note.'); }
+}
+
+// ===== PIPELINE FULL VIEW (Step 8) =====
+function showPipelineFull() {
+  showModal('Pipeline', '<div id="pipeline-full"><p style="color:var(--muted);margin-bottom:12px">Loading pipeline data...</p></div>');
+  apiFetch('/api/pipeline').then(function(pipe) {
+    if (!pipe || !pipe.pipeline) return;
+    var stages = ['new','contacted','interested','quoted','won','lost'];
+    var labels = { new:'New', contacted:'Contacted', interested:'Interested', quoted:'Quoted', won:'Won', lost:'Lost' };
+    var colors = { new:'#0ea5e9', contacted:'#f59e0b', interested:'#8b5cf6', quoted:'#6366f1', won:'#22c55e', lost:'#ef4444' };
+    var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">';
+    stages.forEach(function(s) {
+      var stage = pipe.pipeline.find(function(p) { return p.stage === s; });
+      if (!stage) stage = { stage:s, count:0, leads:[], revenue:0, estimated_value:0 };
+      html += '<div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px">';
+      html += '<div style="font-size:12px;font-weight:700;color:' + (colors[s] || '#0ea5e9') + ';margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">' + (labels[s] || s) + ' (' + stage.count + ')</div>';
+      html += '<div style="font-size:11px;color:var(--muted);margin-bottom:6px">Est: \u00a3' + (stage.estimated_value||0).toLocaleString() + '</div>';
+      html += '<div style="font-size:11px;color:var(--muted2);margin-bottom:8px">Revenue: \u00a3' + (stage.revenue||0).toLocaleString() + '</div>';
+      (stage.leads || []).slice(0, 5).forEach(function(l) {
+        html += '<div style="padding:4px 0;border-bottom:1px solid var(--border);font-size:11px;cursor:pointer" onclick="openLeadDetail(\'' + l.id + '\')">' + (l.title || 'Lead') + '</div>';
+      });
+      if (stage.count > 5) html += '<div style="font-size:10px;color:var(--muted2);padding-top:4px">+' + (stage.count - 5) + ' more</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    var el = document.getElementById('pipeline-full');
+    if (el) el.innerHTML = html;
+  }).catch(function() {});
+}
+
+// ===== PIPELINE UPDATE FROM LEAD STATUS =====
+// Update showPage to include full pipeline
+(function() {
+  var origShowPage = showPage;
+  showPage = function(page) {
+    if (page === 'pipeline') { showPipelineFull(); return; }
+    origShowPage(page);
+  };
+})();
+
 function generateDemoLeads(session) {
   const areas = ['SW1A 1AA', 'SW1E 5NA', 'W1B 1SH', 'N2 0EY', 'SE3 0QU', 'EC2A 4NE', 'NW1 4SA'];
   const types = ['House', 'Flat', 'Bungalow', 'Maisonette'];
