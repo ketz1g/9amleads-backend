@@ -940,6 +940,106 @@ app.get('/api/public-stats', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== LEAD SOURCE TRACKER (Section 5) =====
+// GET /api/admin/lead-sources — manage lead sources
+app.get('/api/admin/lead-sources', adminAuth, (req, res) => {
+  try {
+    const db = getDb();
+    if (!db.lead_sources) db.lead_sources = [
+      { id: 'moving-rightmove', name: 'Rightmove API', type: 'scraper', category: 'moving', status: 'active', last_run: null, leads_found: 0, error_rate: 0 },
+      { id: 'newbusiness-apify', name: 'Apify Companies House', type: 'api', category: 'newbusiness', status: 'active', last_run: null, leads_found: 0, error_rate: 0 },
+      { id: 'planning-api', name: 'UK Planning Monitor', type: 'api', category: 'planning', status: 'active', last_run: null, leads_found: 0, error_rate: 0 },
+      { id: 'probate-ch', name: 'Companies House Probate', type: 'api', category: 'probate', status: 'active', last_run: null, leads_found: 0, error_rate: 0 },
+      { id: 'tenders-gov', name: 'Contracts Finder (GOV.UK)', type: 'api', category: 'tenders', status: 'active', last_run: null, leads_found: 0, error_rate: 0 }
+    ];
+    res.json({ sources: db.lead_sources });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/lead-sources/update — update source status
+app.post('/api/admin/lead-sources/update', adminAuth, (req, res) => {
+  try {
+    const db = getDb();
+    const { id, status } = req.body;
+    const source = (db.lead_sources || []).find(s => s.id === id);
+    if (!source) return res.status(404).json({ error: 'Source not found' });
+    if (status) source.status = status;
+    saveDb();
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== USAGE-BASED EXPANSION PROMPTS (Section 6) =====
+// GET /api/prompts — smart prompts based on customer data
+app.get('/api/prompts', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    const leads = (db.leads || []).filter(l => l.customer_id === req.user.id);
+    const prompts = [];
+
+    // Check if usage is high
+    const thisMonth = new Date().toISOString().split('T')[0].substring(0, 7);
+    const monthLeads = leads.filter(l => l.created_at && l.created_at.startsWith(thisMonth));
+    const dailyLimit = getPlanLimit(customer.product, customer.plan, customer.coverage);
+    if (monthLeads.length > dailyLimit * 20 * 0.9) {
+      prompts.push({ type: 'upgrade', priority: 'high', message: 'You\'ve used 90%+ of your monthly opportunity allowance. ' + (customer.plan === 'starter' ? 'Upgrade to Pro for more daily opportunities.' : 'Upgrade to Enterprise for maximum volume.'), action: 'View Plans', page: 'billing' });
+    }
+
+    // Check if CRM not connected
+    if (!customer.crm_webhook_url) {
+      prompts.push({ type: 'crm', priority: 'medium', message: 'Connect your CRM to save time and automatically receive opportunities every morning at 9am.', action: 'Connect CRM', page: 'crm' });
+    }
+
+    // Check if area could be expanded
+    if (customer.coverage === 'postcode' && (customer.product === 'planning' || customer.product === 'probate' || customer.product === 'tenders')) {
+      prompts.push({ type: 'coverage', priority: 'medium', message: 'Your selected area has limited volume. Expand to county or region coverage for more daily opportunities.', action: 'Expand Area', page: 'areas' });
+    }
+
+    // Check if customer has won deals
+    const wonRevenue = leads.filter(l => l.lead_status === 'won').reduce((s, l) => s + (parseInt(l.actual_revenue) || parseInt(l.deal_value) || 0), 0);
+    if (wonRevenue > 1000) {
+      prompts.push({ type: 'roi', priority: 'low', message: 'You generated £' + wonRevenue.toLocaleString() + ' from 9am Leads. Upgrade to access more opportunities.', action: 'View Plans', page: 'billing' });
+    }
+
+    res.json({ prompts });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== NOTIFICATIONS (Section 8) =====
+// GET /api/notifications — customer notifications
+app.get('/api/notifications', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    const notifications = [];
+
+    // Trial ending soon
+    if (customer.plan === 'free_trial' && customer.trial_ends) {
+      const daysLeft = Math.ceil((new Date(customer.trial_ends) - new Date()) / 86400000);
+      if (daysLeft <= 3 && daysLeft > 0) {
+        notifications.push({ type: 'trial_ending', priority: 'high', title: 'Trial ends in ' + daysLeft + ' days', message: 'Your free trial ends soon. Upgrade to continue receiving daily opportunities.', created_at: new Date().toISOString() });
+      }
+    }
+
+    // Unread low supply
+    const todayLeads = (db.leads || []).filter(l => l.customer_id === req.user.id && l.created_at && l.created_at.startsWith(new Date().toISOString().split('T')[0]));
+    if (todayLeads.length === 0 && customer.plan !== 'cancelled') {
+      notifications.push({ type: 'low_supply', priority: 'low', title: 'Today\'s opportunities are being prepared', message: 'New opportunities will appear once the daily pipeline completes.', created_at: new Date().toISOString() });
+    }
+
+    // No outcomes recorded reminder
+    const contactedNoOutcome = (db.leads || []).filter(l => l.customer_id === req.user.id && l.lead_status === 'contacted' && (!l.outcome_reason));
+    if (contactedNoOutcome.length > 0) {
+      notifications.push({ type: 'follow_up', priority: 'medium', title: 'Outcome needed for ' + contactedNoOutcome.length + ' leads', message: 'Did you win business from these opportunities? Record your outcomes.', created_at: new Date().toISOString() });
+    }
+
+    res.json({ notifications });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== DASHBOARD API ENDPOINTS =====
 
 // GET /api/dashboard — KPI summary data
