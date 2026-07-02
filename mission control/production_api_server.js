@@ -25,7 +25,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback-dev-secret-' + Date.now()
 if (!process.env.JWT_SECRET) console.warn('[WARN] JWT_SECRET not set. Using fallback. Set JWT_SECRET env var for production.');
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
-const PUBLIC_URL = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.9amleads.com';
 
 // Postcode district data
 const POSTCODE_DISTRICTS_FILE = path.join(DATA_DIR, 'uk-postcode-districts.json');
