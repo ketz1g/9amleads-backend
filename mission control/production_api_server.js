@@ -1079,6 +1079,8 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     const leadsToday = leads.filter(l => l.created_at && l.created_at.startsWith(today));
     const leadsWeek = leads.filter(l => l.created_at && l.created_at >= thisWeek);
     const leadsMonth = leads.filter(l => l.created_at && l.created_at.startsWith(thisMonth));
+    const deliveredToday = leads.filter(l => l.delivered && l.delivered_at && l.delivered_at.startsWith(today));
+    const deliveredThisMonth = leads.filter(l => l.delivered && l.delivered_at && l.delivered_at.startsWith(thisMonth));
     const contacted = leads.filter(l => l.lead_status === 'contacted' || l.lead_status === 'interested' || l.lead_status === 'quoted' || l.lead_status === 'won');
     const replied = leads.filter(l => l.lead_status === 'interested' || l.lead_status === 'quoted' || l.lead_status === 'won');
     const quoted = leads.filter(l => l.lead_status === 'quoted' || l.lead_status === 'won');
@@ -1097,6 +1099,8 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
       leads_today: leadsToday.length,
       leads_week: leadsWeek.length,
       leads_month: leadsMonth.length,
+      delivered_today: deliveredToday.length,
+      delivered_this_month: deliveredThisMonth.length,
       contacted: contacted.length,
       replied: replied.length,
       quoted: quoted.length,
@@ -2567,6 +2571,14 @@ cron.schedule('50 8 * * *', async () => {
         var covName2 = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
         var subject = 'Your 9am Opportunities for ' + covName2 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, subject, html);
+        // Send to CRM webhook if configured
+        if (cust.crm_webhook_url) {
+          try {
+            var crmPayload = JSON.stringify({ customer: cust.email, company: cust.company, leads: custLeads, delivered_at: new Date().toISOString() });
+            var crmReq = require('https').request(cust.crm_webhook_url, { method:'POST', headers:{ 'Content-Type':'application/json', 'Content-Length':Buffer.byteLength(crmPayload) } });
+            crmReq.write(crmPayload); crmReq.end();
+          } catch(ce) { console.log('[DELIVERY] CRM webhook failed:', cust.email); }
+        }
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
         delivered += custLeads.length;
@@ -2682,6 +2694,14 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         var covName3 = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
         var subject = 'Your 9am Opportunities for ' + covName3 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, htmlContent);
+        // Send to CRM webhook if configured
+        if (cust.crm_webhook_url) {
+          try {
+            var crmPayload2 = JSON.stringify({ customer: cust.email, company: cust.company, leads: custLeads, delivered_at: new Date().toISOString() });
+            var crmReq2 = require('https').request(cust.crm_webhook_url, { method:'POST', headers:{ 'Content-Type':'application/json', 'Content-Length':Buffer.byteLength(crmPayload2) } });
+            crmReq2.write(crmPayload2); crmReq2.end();
+          } catch(ce) { console.log('[DELIVERY] CRM webhook failed:', cust.email); }
+        }
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
         delivered += custLeads.length;
