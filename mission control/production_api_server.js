@@ -459,7 +459,7 @@ app.get(/^\/(?!api\/).*$/, (req, res) => {
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { company, name, email, phone, password, product, products, plan, targetAreas, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl } = req.body;
+    const { company, name, email, phone, password, product, products, plan, targetAreas, coverage, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl } = req.body;
 
     if (!company || !email || !password) {
       return res.status(400).json({ error: 'Company, email and password are required' });
@@ -499,11 +499,11 @@ app.post('/api/auth/signup', async (req, res) => {
       }
     }
 
-    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url, campaign_sent)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, coverage, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url, campaign_sent)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, email.toLowerCase(), company, name || '', phone || '', password_hash,
       product, productInfo.lead_type, productInfo.business_type,
-      JSON.stringify(targetAreas || []), leadFilters || bizField2 || '', bizField3 || JSON.stringify(products && Array.isArray(products) ? products : [product]),
+      JSON.stringify(targetAreas || []), coverage || 'postcode', leadFilters || bizField2 || '', bizField3 || JSON.stringify(products && Array.isArray(products) ? products : [product]),
       source || 'direct', plan || 'free_trial', plan === 'free_trial' ? trial_ends : null, marketingConsent ? 1 : 0,
       new Date().toISOString(), '0', crmWebhookUrl || '', '[]'
     );
@@ -1321,14 +1321,103 @@ const PRODUCT_LEAD_FILES = {
   tenders: { file: 'tenders-leads.json', key: 'customerId' },
 };
 
-const PLAN_LIMITS = {
-  // Flat leads per day across ALL products
-  '*': { free_trial: 5, starter: 5, pro: 15, enterprise: 40 },
-  moving: { free_trial: 5, starter: 5, pro: 15, enterprise: 40 },
-  probate: { free_trial: 5, starter: 5, pro: 15, enterprise: 40 },
-  newbusiness: { free_trial: 5, starter: 5, pro: 15, enterprise: 40 },
-  planning: { free_trial: 5, starter: 5, pro: 15, enterprise: 40 },
-  tenders: { free_trial: 5, starter: 5, pro: 15, enterprise: 40 },
+// Lead type rules: per-product, per-plan, per-coverage-area daily limits
+// Coverage types: 'postcode', 'county', 'region', 'ukwide'
+// GET /api/lead-types — return lead type rules for frontend
+app.get('/api/lead-types', (req, res) => {
+  const summary = {};
+  for (const [key, rule] of Object.entries(LEAD_TYPE_RULES)) {
+    summary[key] = {
+      name: rule.name,
+      local: rule.local,
+      coverage: rule.coverage,
+      min_area: rule.min_area,
+      up_to: rule.up_to,
+      plans: Object.keys(rule.plans).filter(p => p !== 'free_trial'),
+      plan_details: rule.plans
+    };
+  }
+  res.json({ lead_types: summary });
+});
+
+const LEAD_TYPE_RULES = {
+  moving: {
+    name: 'Moving Leads',
+    local: true,
+    coverage: ['postcode', 'county', 'region'],
+    plans: {
+      free_trial: { default: 5, postcode: 5, county: 5, region: 5 },
+      starter:  { default: 5,  postcode: 5,  county: 5,  region: 5 },
+      pro:      { default: 15, postcode: 15, county: 15, region: 15 },
+      enterprise: { default: 30, postcode: 30, county: 30, region: 30 },
+    },
+    min_area: 'postcode',
+    up_to: false,
+    price_ids: { starter: 'price_1Tm6PMADspDnFpfBJtsUWi6v', growth: 'price_1Tm6PNADspDnFpfB847Dubdf', power: 'price_1Tm6POADspDnFpfBkf0gfqXs' }
+  },
+  newbusiness: {
+    name: 'New Business Alerts',
+    local: true,
+    coverage: ['postcode', 'county', 'region'],
+    plans: {
+      free_trial: { default: 5, postcode: 5, county: 5, region: 5 },
+      starter:  { default: 10, postcode: 10, county: 10, region: 10 },
+      pro:      { default: 25, postcode: 25, county: 25, region: 25 },
+      enterprise: { default: 50, postcode: 50, county: 50, region: 50 },
+    },
+    min_area: 'postcode',
+    up_to: false,
+    price_ids: { starter: 'price_1Tm6PRADspDnFpfBx80lgJ84', growth: 'price_1Tm6PSADspDnFpfBXakzcGEL', power: 'price_1Tm6PSADspDnFpfBGRGc5zQ9' }
+  },
+  planning: {
+    name: 'Planning Permissions',
+    local: false,
+    coverage: ['county', 'region', 'ukwide'],
+    plans: {
+      free_trial: { default: 2, county: 2, region: 5, ukwide: 10 },
+      starter:  { default: 2,  county: 2,  region: 5,  ukwide: 10 },
+      pro:      { default: 5,  county: 5,  region: 15, ukwide: 25 },
+      enterprise: { default: 30, county: 10, region: 30, ukwide: 50 },
+    },
+    min_area: 'county',
+    up_to: true,
+    price_ids: { starter: 'price_1TmEKSADspDnFpfBrCHXJBFu', growth: 'price_1TmEKTADspDnFpfBVdi1APEq', power: 'price_1TmEKTADspDnFpfBxFjHeoP9' }
+  },
+  probate: {
+    name: 'Probate Leads',
+    local: false,
+    coverage: ['county', 'region', 'ukwide'],
+    plans: {
+      free_trial: { default: 1, county: 1, region: 2, ukwide: 5 },
+      starter:  { default: 1,  county: 1,  region: 2,  ukwide: 5 },
+      pro:      { default: 3,  county: 3,  region: 5,  ukwide: 10 },
+      enterprise: { default: 10, county: 10, region: 15, ukwide: 20 },
+    },
+    min_area: 'county',
+    up_to: true,
+    price_ids: { starter: 'price_1Tm6PPADspDnFpfBkewa97Bv', growth: 'price_1Tm6PPADspDnFpfB3q61i5FP', power: 'price_1Tm6PQADspDnFpfBazgz1UD7' }
+  },
+  tenders: {
+    name: 'Public Tenders',
+    local: false,
+    coverage: ['region', 'ukwide'],
+    plans: {
+      free_trial: { default: 1, region: 1, ukwide: 3 },
+      starter:  { default: 1,  region: 1,  ukwide: 3 },
+      pro:      { default: 3,  region: 3,  ukwide: 10 },
+      enterprise: { default: 8, region: 8, ukwide: 25 },
+    },
+    min_area: 'region',
+    up_to: true,
+    price_ids: { starter: 'price_1TmEKTADspDnFpfBsi6jjA6B', growth: 'price_1TmEKUADspDnFpfBqnyKzJxM', power: 'price_1TmEKUADspDnFpfBugGOoqhD' }
+  }
+};
+
+const COVERAGE_LABELS = {
+  postcode: 'Single Postcode Area',
+  county: 'County',
+  region: 'Region',
+  ukwide: 'UK-wide'
 };
 
 const PLAN_NAMES = {
@@ -1339,11 +1428,17 @@ const PLAN_NAMES = {
   enterprise: 'Enterprise',
 };
 
-function getPlanLimit(product, plan) {
-  const productLimits = PLAN_LIMITS[product] || PLAN_LIMITS['*'];
-  // Map 'essential' -> 'starter' since they share the same level
-  const planKey = plan === 'essential' ? 'starter' : plan;
-  return productLimits[planKey] || productLimits['free_trial'] || 5;
+function getLeadTypeRule(product) {
+  return LEAD_TYPE_RULES[product] || LEAD_TYPE_RULES.moving;
+}
+
+function getPlanLimit(product, plan, coverage) {
+  const rule = getLeadTypeRule(product);
+  const planKey = plan === 'essential' ? 'starter' : (plan || 'starter');
+  const coverageKey = coverage || 'default';
+  const planLimits = rule.plans[planKey] || rule.plans.starter;
+  // Fallback: try specific coverage, then default, then first available
+  return planLimits[coverageKey] || planLimits.default || Object.values(planLimits)[0] || 5;
 }
 
 // ===== TRIAL / CAMPAIGN CAMPAIGN EMAIL TEMPLATES =====
@@ -1754,8 +1849,9 @@ cron.schedule('45 2 * * *', async () => {
       var cust = customers[ci];
       var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
       if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
+      // Use per-product limits based on lead type and coverage area
       var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 40 };
-      var totalDailyLimit = dailyLimitByPlan[cust.plan] || 5;
+      var totalDailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || dailyLimitByPlan[cust.plan] || 5;
       var products = [cust.product];
       try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
       var custLeads = [];
