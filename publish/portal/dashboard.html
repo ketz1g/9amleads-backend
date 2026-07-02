@@ -69,7 +69,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 </div>
 <div class="onboarding" id="onboardingBanner"><i class="fas fa-spinner fa-spin" style="color:var(--primary)"></i> Loading your dashboard...</div>
 <div id="product-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
-<div class="stats-grid" id="statsGrid">
+<div class="stats-grid" id="statsGrid" style="display:none">
 <div class="stat-card"><div class="num" id="stat-leads">0</div><div class="label">Total Leads</div><div class="sub">All time</div><div class="stat-trend"><i class="fas fa-arrow-up"></i> Active</div></div>
 <div class="stat-card"><div class="num" id="stat-new">0</div><div class="label">This Week</div><div class="sub" id="stat-week-label">Last 7 days</div><div class="stat-trend"><i class="fas fa-chart-line"></i> New</div></div>
 <div class="stat-card"><div class="num" id="stat-plan">Free</div><div class="label">Your Plan</div><div class="sub" id="stat-trial">7 days remaining</div><div class="stat-trend"><i class="fas fa-crown"></i> Plan</div></div>
@@ -78,17 +78,17 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="card" id="tipsSection">
 <div class="card-title"><i class="fas fa-graduation-cap" style="color:var(--primary)"></i> How to Convert Your Leads</div>
 <div id="tipsContainer">
-<div class="tip-card"><span class="icon">💡/span><div><strong>Personalise your approach</strong> Reference their specific business, location, or situation. Tailored messages get replies.</div></div>
-<div class="tip-card"><span class="icon">💡/span><div><strong>Track your outreach</strong> Log every lead you contact and the outcome. Review which lead types convert best for you.</div></div>
-<div class="tip-card"><span class="icon">💡/span><div><strong>Follow up more than once</strong> Most conversions happen after the second or third contact � polite persistence pays off. Visit the <a href="/portal/success.html" style="color:var(--primary);text-decoration:underline">Success Centre</a> for detailed guides per lead type.</div></div>
+<div class="tip-card"><span class="icon">💡<span><div><strong>Personalise your approach</strong> Reference their specific business, location, or situation. Tailored messages get replies.</div></div>
+<div class="tip-card"><span class="icon">💡<span><div><strong>Track your outreach</strong> Log every lead you contact and the outcome. Review which lead types convert best for you.</div></div>
+<div class="tip-card"><span class="icon">💡<span><div><strong>Follow up more than once</strong> Most conversions happen after the second or third contact � polite persistence pays off. Visit the <a href="/portal/success.html" style="color:var(--primary);text-decoration:underline">Success Centre</a> for detailed guides per lead type.</div></div>
 </div>
 </div>
 <div class="card">
 <div class="card-title"><i class="fas fa-rocket" style="color:var(--primary)"></i> Your Tools</div>
 <div class="tools-grid">
-<div class="tool-card" onclick="scrollToLeads()"><div class="icon">💡/div><h3>View Leads</h3><p>See all your leads by day</p></div>
-<div class="tool-card" onclick="exportRange('csv')"><div class="icon">💡/div><h3>Export CSV</h3><p>Download leads as spreadsheet</p></div>
-<div class="tool-card" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'})"><div class="icon">?</div><h3>Upgrade Plan</h3><p>Get more leads per day</p></div>
+<div class="tool-card" onclick="scrollToLeads()"><div class="icon">💡<div><h3>View Leads</h3><p>See all your leads by day</p></div>
+<div class="tool-card" onclick="exportRange('csv')"><div class="icon">💡<div><h3>Export CSV</h3><p>Download leads as spreadsheet</p></div>
+<div class="tool-card" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'})"><div class="icon">📈</div><h3>Upgrade Plan</h3><p>Get more leads per day</p></div>
 </div>
 </div>
 <!-- KPI Dashboard Cards -->
@@ -327,7 +327,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <option value="all">All Leads</option>
 </select>
 </div>
-<div id="leadGroups"><div class="empty-state"><div class="icon">💡/div>Loading your leads...</div></div>
+<div id="leadGroups"><div class="empty-state"><div class="icon">💡<div>Loading your leads...</div></div>
 </div>
 </div>
 <footer>
