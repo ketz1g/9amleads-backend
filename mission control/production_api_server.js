@@ -3678,16 +3678,17 @@ function generateLeadEmailHTML(customer, leads) {
   // Footer
   body += '<tr><td style="background:#0b1424;padding:28px 28px 24px;border-radius:0 0 16px 16px;text-align:center">';
   body += '<div style="border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:20px;margin-bottom:16px">';
-  body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:11px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px">View Full Dashboard</a>';
+  body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:11px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px;letter-spacing:0.3px">VIEW DASHBOARD</a>';
+  body += '<div style="margin-top:10px"><a href="mailto:hello@9amleads.com?subject=Lead%20Issue" style="color:rgba(255,255,255,0.35);font-size:11px;text-decoration:underline;letter-spacing:0.2px">Lead issue? Contact support &rarr;</a></div>';
   body += '</div>';
-  body += '<table cellpadding="0" cellspacing="0" align="center"><tr><td style="text-align:center;padding-bottom:12px">';
-  body += '<a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:28px;text-align:center;margin:0 3px;text-decoration:none"><span style="color:rgba(255,255,255,0.4);font-size:12px">f</span></a>';
-  body += '<a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:28px;text-align:center;margin:0 3px;text-decoration:none"><span style="color:rgba(255,255,255,0.4);font-size:12px">t</span></a>';
-  body += '<a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:28px;text-align:center;margin:0 3px;text-decoration:none"><span style="color:rgba(255,255,255,0.4);font-size:12px">ig</span></a>';
+  body += '<table cellpadding="0" cellspacing="0" align="center"><tr><td style="text-align:center;padding-bottom:14px">';
+  body += '<a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:28px;text-align:center;margin:0 4px;text-decoration:none"><span style="color:rgba(255,255,255,0.4);font-size:11px;font-family:Arial">fb</span></a>';
+  body += '<a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:28px;text-align:center;margin:0 4px;text-decoration:none"><span style="color:rgba(255,255,255,0.4);font-size:11px;font-family:Arial">tt</span></a>';
+  body += '<a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:28px;text-align:center;margin:0 4px;text-decoration:none"><span style="color:rgba(255,255,255,0.4);font-size:11px;font-family:Arial">ig</span></a>';
   body += '</td></tr></table>';
-  body += '<p style="color:rgba(255,255,255,0.2);font-size:9px;margin:0 0 2px;letter-spacing:.3px">9am Leads Ltd &bull; Company No. 17168176</p>';
-  body += '<p style="color:rgba(255,255,255,0.15);font-size:8px;margin:0;letter-spacing:.3px"><a href="mailto:hello@9amleads.com" style="color:rgba(255,255,255,0.2);text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:rgba(255,255,255,0.2);text-decoration:underline">Privacy Policy</a></p>';
-  body += '<p style="color:rgba(255,255,255,0.1);font-size:7px;margin:12px 0 0;letter-spacing:.5px">Fresh opportunities delivered every morning at 9am</p>';
+  body += '<p style="color:rgba(255,255,255,0.2);font-size:9px;margin:0 0 1px;letter-spacing:.3px">9am Leads Ltd &bull; Company No. 17168176 &bull; hello@9amleads.com</p>';
+  body += '<p style="color:rgba(255,255,255,0.12);font-size:8px;margin:0;letter-spacing:.3px"><a href="https://www.9amleads.com/privacy.html" style="color:rgba(255,255,255,0.15);text-decoration:underline">Privacy Policy</a></p>';
+  body += '<p style="color:rgba(255,255,255,0.08);font-size:7px;margin:14px 0 0;letter-spacing:.5px">Fresh exclusive opportunities delivered every morning at 9am &bull; 9amLeads.com</p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
