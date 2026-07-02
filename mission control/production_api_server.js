@@ -3193,6 +3193,7 @@ app.post('/api/admin/impersonate', adminAuth, async (req, res) => {
 // POST /api/admin/run-scrapers — manually trigger all scrapers now
 app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
   try {
+    const startTime = new Date().toISOString();
     const https = require('https');
     const dayOfWeek = new Date().getDay();
     const results = {};
@@ -3469,6 +3470,13 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         }
       }
     } catch(e) { console.log('[SCRAPER] Demo supplement error:', e.message); }
+    // Log scraper run to database
+    try {
+      var scraperLog = getDb();
+      if (!scraperLog.scraper_logs) scraperLog.scraper_logs = [];
+      scraperLog.scraper_logs.push({ id: uuidv4(), start_time: startTime, end_time: new Date().toISOString(), duration_seconds: Math.floor((Date.now() - new Date(startTime).getTime()) / 1000), results: JSON.parse(JSON.stringify(results)), status: 'completed' });
+      saveDb();
+    } catch(logErr) { console.log('[SCRAPER] Log error:', logErr.message); }
     res.json({ success: true, results });
   } catch (e) {
     res.status(500).json({ error: e.message });

@@ -108,7 +108,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="card-header"><div class="card-title"><i class="fas fa-crown" style="color:var(--warning)"></i> Subscription</div></div>
 <div class="sub-card">
 <div class="sub-row">
-<div><span class="sub-plan" id="sub-plan-name">Free Trial</span><br><span class="sub-price" id="sub-price-info">5 leads/day</span></div>
+<div><span class="sub-plan" id="sub-plan-name">Free Trial</span><br><span class="sub-price" id="sub-price-info">5 leads/day</span><br><span class="sub-price" id="sub-coverage-info" style="font-size:11px;color:var(--muted2)"></span></div>
 <div><span class="badge badge-orange" id="sub-badge">Trial</span></div>
 </div>
 <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
@@ -117,16 +117,17 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
       <button class="btn btn-outline btn-sm" id="cancelBtn" onclick="cancelSubscription()" style="color:var(--danger);border-color:rgba(239,68,68,0.3)">Cancel Subscription</button>
 </div>
 <div id="sub-msg" style="margin-top:8px;font-size:12px;color:var(--success);display:none"></div>
+<div style="margin-top:10px;padding:8px 12px;background:rgba(251,191,36,0.04);border:1px solid rgba(251,191,36,0.1);border-radius:8px;font-size:10px;color:#8890a8;line-height:1.5;display:none" id="supply-notice">Your leads are based on live market opportunities. Specialist categories such as planning, probate and contracts may vary day by day.</div>
 </div>
 </div>
 <div class="card" id="onboarding-card" style="background:linear-gradient(135deg,rgba(14,165,233,0.08),rgba(99,102,241,0.04));border:1px solid rgba(14,165,233,0.2);display:none">
 <div class="card-header"><div class="card-title"><i class="fas fa-rocket" style="color:var(--primary)"></i> Set Up Your Account</div></div>
 <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:14px">
-  <strong>Welcome!</strong> To start receiving the right leads, you need to:
+  <strong>Welcome!</strong> To start receiving the right leads:
   <ol style="margin:8px 0 0 20px;padding:0">
-    <li style="margin-bottom:6px"><strong style="color:var(--text)">1. Add your postcode territories</strong> � Enter UK postcode sectors you want leads for (e.g., "EN1 3", "SW1A 1"). You get <strong>5 sectors free</strong> on trial.</li>
-    <li style="margin-bottom:6px"><strong style="color:var(--text)">2. Set your lead filters</strong> � Click "Edit Filters" below to refine by bedrooms, property type, industry, etc. for each lead type.</li>
-    <li style="margin-bottom:6px"><strong style="color:var(--text)">3. Wait for 9am delivery</strong> � Once set, leads matching your criteria arrive in your inbox every morning.</li>
+    <li style="margin-bottom:6px"><strong style="color:var(--text)">1. Add your postcode areas</strong> &ndash; Enter 2-letter area codes like EN, CM, SG. You get <strong>3 areas free</strong> on trial. Specialist types (planning, probate, tenders) may need wider coverage.</li>
+    <li style="margin-bottom:6px"><strong style="color:var(--text)">2. Set your lead filters</strong> &ndash; Click "Edit Filters" below to refine by bedrooms, property type, industry, etc.</li>
+    <li style="margin-bottom:6px"><strong style="color:var(--text)">3. Wait for 9am delivery</strong> &ndash; Once set, leads matching your criteria arrive every morning.</li>
   </ol>
 </div>
 <div style="display:flex;gap:8px">
@@ -335,6 +336,16 @@ async function loadDashboard() {
     document.getElementById('sub-price-info').textContent = sub.leads_per_day + ' leads/day' + extraInfo;
     document.getElementById('sub-badge').textContent = sub.plan === 'free_trial' ? 'Trial' : 'Active';
     document.getElementById('extraBtn').style.display = (sub.plan === 'free_trial' || sub.plan === 'cancelled') ? 'none' : 'inline-flex';
+    // Show coverage info
+    var covLabel = COVERAGE_LABELS[sub.coverage] || sub.coverage || '';
+    var prodLabel = LEAD_TYPE_NAMES[sub.product] || sub.product || '';
+    var covEl = document.getElementById('sub-coverage-info');
+    if (covEl) covEl.textContent = (prodLabel ? prodLabel + ' \u00b7 ' : '') + (covLabel ? covLabel + ' coverage' : '');
+    // Show supply notice for specialist types
+    var noticeEl = document.getElementById('supply-notice');
+    if (noticeEl && (sub.product === 'planning' || sub.product === 'probate' || sub.product === 'tenders')) {
+      noticeEl.style.display = 'block';
+    }
     if (sub.trial_ends) {
       const days = Math.ceil((new Date(sub.trial_ends) - new Date()) / 86400000);
       document.getElementById('stat-trial').textContent = days > 0 ? days + ' days remaining' : 'Expired';
@@ -591,14 +602,24 @@ function openWeeklyReport() {
   exportRange('csv');
 }
 
-// Plan pricing per product (with postcode limits)
-const PLAN_PRICING = {
-  moving: { starter: { leads: 5, postcodes: 5, price: 25 }, pro: { leads: 15, postcodes: 10, price: 49 }, enterprise: { leads: 50, postcodes: 50, price: 99 } },
-  probate: { starter: { leads: 5, postcodes: 5, price: 25 }, pro: { leads: 15, postcodes: 10, price: 49 }, enterprise: { leads: 50, postcodes: 50, price: 99 } },
-  newbusiness: { starter: { leads: 5, postcodes: 5, price: 25 }, pro: { leads: 15, postcodes: 10, price: 49 }, enterprise: { leads: 50, postcodes: 50, price: 99 } },
-  planning: { starter: { leads: 5, postcodes: 5, price: 25 }, pro: { leads: 15, postcodes: 10, price: 49 }, enterprise: { leads: 50, postcodes: 50, price: 99 } },
-  tenders: { starter: { leads: 5, postcodes: 5, price: 25 }, pro: { leads: 15, postcodes: 10, price: 49 }, enterprise: { leads: 50, postcodes: 50, price: 99 } },
-};
+// Plan pricing per product (loaded from backend)
+var PLAN_PRICING = null;
+var LEAD_TYPE_NAMES = { moving:'Moving', probate:'Probate', newbusiness:'New Business', planning:'Planning', tenders:'Tenders' };
+var COVERAGE_LABELS = { postcode:'Postcode Area(s)', county:'County', region:'Region', ukwide:'UK-wide' };
+
+fetch(API + '/api/lead-types').then(function(r) { return r.json(); }).then(function(d) {
+  if (d && d.lead_types) {
+    PLAN_PRICING = {};
+    for (var k in d.lead_types) {
+      var lt = d.lead_types[k];
+      PLAN_PRICING[k] = {};
+      for (var pk in lt.plan_details) {
+        if (pk === 'free_trial') continue;
+        PLAN_PRICING[k][pk] = { leads: lt.plan_details[pk].default || 5, postcodes: 3, price: pk === 'starter' ? 25 : (pk === 'pro' ? 49 : 99) };
+      }
+    }
+  }
+}).catch(function() {});
 
 function showPlans() {
   const session = getSession();
