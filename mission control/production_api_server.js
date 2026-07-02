@@ -2796,27 +2796,38 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           var allProdLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
           var pickedIds = custLeads.map(function(cl) { return cl.id; });
           var prodLeads = allProdLeads.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
-          // Sort by area cycle to ensure even distribution
-          prodLeads.sort(function(a, b) {
-            var aD = (a.created_at || a.scrapedAt || '').substring(0, 10);
-            var bD = (b.created_at || b.scrapedAt || '').substring(0, 10);
-            if (aD === today && bD !== today) return -1;
-            if (bD === today && aD !== today) return 1;
-            // Group by area cycle
-            if (custAreas.length > 1) {
+          // Cycle through areas: take 1 lead per area per round
+          if (prodLeads.length > 0 && custAreas.length > 1) {
+            // Group by area
+            var areaGroups = {};
+            for (var ai = 0; ai < prodLeads.length; ai++) {
               try {
-                var aArea = JSON.parse(a.data || '{}').postcode || '';
-                var bArea = JSON.parse(b.data || '{}').postcode || '';
-                var aMatch = custAreas.findIndex(function(ca){ return aArea.toUpperCase().startsWith(ca); });
-                var bMatch = custAreas.findIndex(function(ca){ return bArea.toUpperCase().startsWith(ca); });
-                if (aMatch !== bMatch) return (aMatch % custAreas.length) - (bMatch % custAreas.length);
+                var leadData = JSON.parse(prodLeads[ai].data || '{}');
+                var leadPC = (leadData.postcode || '').toUpperCase();
+                for (var ac = 0; ac < custAreas.length; ac++) {
+                  if (leadPC.startsWith(custAreas[ac].toUpperCase())) {
+                    if (!areaGroups[custAreas[ac]]) areaGroups[custAreas[ac]] = [];
+                    areaGroups[custAreas[ac]].push(prodLeads[ai]);
+                    break;
+                  }
+                }
               } catch(e) {}
             }
-            return 0;
-          });
-          if (prodLeads.length > 0) {
-            custLeads.push(prodLeads[0]); // Take 1 lead per product per round
+            // Pick 1 lead from each area in round-robin order
+            var areaKeys = Object.keys(areaGroups);
+            if (areaKeys.length > 0) {
+              var areaIdx = (ri * products.length + pi) % areaKeys.length;
+              var picked = areaGroups[areaKeys[areaIdx]];
+              if (picked && picked.length > 0) {
+                // Pick the freshest lead from this area
+                picked.sort(function(a,b){ return (b.created_at||'').localeCompare(a.created_at||''); });
+                custLeads.push(picked[0]);
+                continue;
+              }
+            }
           }
+          // Fallback: pick first lead
+          if (prodLeads.length > 0) custLeads.push(prodLeads[0]);
         }
       }
       
