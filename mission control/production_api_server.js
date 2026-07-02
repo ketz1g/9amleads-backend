@@ -754,6 +754,192 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
+// ===== ONBOARDING API =====
+// GET /api/onboarding — customer onboarding checklist and progress
+app.get('/api/onboarding', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+
+    const leads = (db.leads || []).filter(l => l.customer_id === req.user.id);
+    const hasLeads = leads.length > 0;
+    const hasContacted = leads.some(l => l.lead_status === 'contacted' || l.lead_status === 'interested' || l.lead_status === 'quoted' || l.lead_status === 'won');
+    const hasPipeline = leads.some(l => l.lead_status && l.lead_status !== 'new' && l.lead_status !== 'lost');
+    const hasWon = leads.some(l => l.lead_status === 'won');
+    const hasCrm = !!(customer.crm_webhook_url || (db.crm_webhooks || []).find(w => w.customer_id === req.user.id));
+    const hasProfile = !!(customer.company && customer.contact_name);
+    const hasAreas = (customer.target_areas && JSON.parse(customer.target_areas).length > 0);
+    const hasFilters = !!(customer.biz_field2);
+    const hasOnboardingCall = (customer.onboarding_call_booked || false);
+
+    const checklist = [
+      { id: 'profile', label: 'Complete business profile', done: hasProfile },
+      { id: 'lead_type', label: 'Confirm lead type', done: !!customer.product },
+      { id: 'coverage', label: 'Confirm coverage area', done: hasAreas },
+      { id: 'crm', label: 'Connect CRM', done: hasCrm },
+      { id: 'first_delivery', label: 'View first 9am delivery', done: hasLeads },
+      { id: 'first_contact', label: 'Contact first lead', done: hasContacted },
+      { id: 'pipeline', label: 'Move first lead to pipeline', done: hasPipeline },
+      { id: 'win', label: 'Mark lead outcome (won/lost)', done: hasWon },
+      { id: 'onboarding_call', label: 'Book onboarding call', done: hasOnboardingCall }
+    ];
+    const total = checklist.length;
+    const completed = checklist.filter(i => i.done).length;
+    const progress = Math.round((completed / total) * 100);
+    const state = progress === 100 ? 'completed' : (completed > 0 ? 'in_progress' : 'not_started');
+
+    // Save onboarding state to customer record
+    if (customer.onboarding_state !== state) {
+      db.prepare('UPDATE customers SET onboarding_state = ?, onboarding_progress = ? WHERE id = ?').run(state, progress, req.user.id);
+      saveDb();
+    }
+
+    res.json({ state, progress, completed, total, checklist, customer_name: customer.contact_name || customer.company || '' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/health-score — customer health score
+app.get('/api/health-score', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    const leads = (db.leads || []).filter(l => l.customer_id === req.user.id);
+    const delivered = leads.filter(l => l.delivered);
+    const contacted = leads.filter(l => l.lead_status && l.lead_status !== 'new');
+    const wonLeads = leads.filter(l => l.lead_status === 'won');
+    const contactedRate = delivered.length > 0 ? Math.round((contacted.length / delivered.length) * 100) : 0;
+    const hasRecentLogin = customer.last_login_at && (Date.now() - new Date(customer.last_login_at).getTime()) < 7 * 86400000;
+    const hasCrm = !!(customer.crm_webhook_url || (db.crm_webhooks || []).find(w => w.customer_id === req.user.id));
+    const hasLowSupply = db.scraper_logs && db.scraper_logs.length > 0;
+    const failedPayment = parseInt(customer.fail_count) > 0;
+
+    let score = 100;
+    if (!hasRecentLogin) score -= 20;
+    if (contactedRate < 30) score -= 15;
+    if (!hasCrm) score -= 10;
+    if (wonLeads.length === 0) score -= 10;
+    if (delivered.length === 0) score -= 10;
+    if (failedPayment) score -= 25;
+    if (customer.plan === 'cancelled') score -= 50;
+
+    const status = score >= 80 ? 'Healthy' : score >= 60 ? 'Needs Attention' : score >= 40 ? 'At Risk' : 'Critical';
+    res.json({ score, status, contacted_rate: contactedRate, recent_login: hasRecentLogin, crm_connected: hasCrm, won_count: wonLeads.length, failed_payment: failedPayment });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/onboarding/call — book onboarding call
+app.post('/api/onboarding/call', authMiddleware, async (req, res) => {
+  try {
+    const db = getDb();
+    if (!db.support_requests) db.support_requests = [];
+    db.support_requests.push({ id: uuidv4(), customer_id: req.user.id, type: 'onboarding_call', subject: 'Book onboarding call', message: req.body.message || 'Customer requested onboarding call', created_at: new Date().toISOString(), resolved: false });
+    db.prepare('UPDATE customers SET onboarding_call_booked = 1 WHERE id = ?').run(req.user.id);
+    saveDb();
+    res.json({ success: true, message: 'Onboarding call request sent. We\'ll contact you within 24 hours.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/founder-dashboard — founder analytics (admin only)
+app.get('/api/admin/founder-dashboard', adminAuth, (req, res) => {
+  try {
+    const db = getDb();
+    const customers = (db.customers || []);
+    const leads = (db.leads || []);
+    const subscriptions = (db.subscriptions || []);
+    const activeCustomers = customers.filter(c => c.plan && c.plan !== 'cancelled' && (!c.trial_ends || new Date(c.trial_ends) > new Date()));
+    const trialCustomers = customers.filter(c => c.plan === 'free_trial');
+    const cancelledCustomers = customers.filter(c => c.plan === 'cancelled');
+
+    // MRR calculation
+    const planPrices = { starter: 25, pro: 49, enterprise: 99 };
+    var mrr = activeCustomers.reduce(function(sum, c) { return sum + (planPrices[c.plan] || 0); }, 0);
+    var weeklyRr = activeCustomers.reduce(function(sum, c) { return sum + (planPrices[c.plan] || 0); }, 0);
+
+    // Trial conversion
+    var everTrialled = customers.filter(c => c.plan === 'free_trial' || (c.created_at && (c.plan === 'starter' || c.plan === 'pro' || c.plan === 'enterprise')));
+    var converted = customers.filter(c => c.plan !== 'free_trial' && c.plan !== 'cancelled' && c.plan !== '');
+    var trialConversion = everTrialled.length > 0 ? Math.round((converted.length / everTrialled.length) * 100) : 0;
+
+    // Churn
+    var totalEver = customers.length;
+    var churnRate = totalEver > 0 ? Math.round((cancelledCustomers.length / totalEver) * 100) : 0;
+
+    // Revenue by product
+    var revenueByProduct = {};
+    customers.forEach(function(c) {
+      if (!revenueByProduct[c.product]) revenueByProduct[c.product] = 0;
+      revenueByProduct[c.product] += planPrices[c.plan] || 0;
+    });
+
+    // Lead stats
+    var today = new Date().toISOString().split('T')[0];
+    var leadsToday = leads.filter(l => l.created_at && l.created_at.startsWith(today));
+    var deliveredToday = leads.filter(l => l.delivered_at && l.delivered_at.startsWith(today));
+
+    // Customer health overview
+    var atRiskCustomers = activeCustomers.filter(function(c) { return c.last_login_at && (Date.now() - new Date(c.last_login_at).getTime()) > 7 * 86400000; });
+    var failedPayments = activeCustomers.filter(function(c) { return parseInt(c.fail_count) > 0; });
+
+    res.json({
+      mrr: mrr,
+      weekly_revenue: weeklyRr,
+      active_customers: activeCustomers.length,
+      trial_customers: trialCustomers.length,
+      trial_conversion_rate: trialConversion,
+      cancelled_customers: cancelledCustomers.length,
+      churn_rate: churnRate,
+      failed_payments: failedPayments.length,
+      revenue_by_product: revenueByProduct,
+      customers_by_plan: { starter: customers.filter(c => c.plan === 'starter').length, pro: customers.filter(c => c.plan === 'pro').length, enterprise: customers.filter(c => c.plan === 'enterprise').length, free_trial: trialCustomers.length, cancelled: cancelledCustomers.length },
+      leads_scraped_today: leadsToday.length,
+      leads_delivered_today: deliveredToday.length,
+      at_risk_customers: atRiskCustomers.length,
+      total_customers: customers.length,
+      total_leads: leads.length,
+      support_requests: (db.support_requests || []).filter(s => !s.resolved).length
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/public-stats — public trust metrics (cached, safe for website)
+var publicStatsCache = { data: null, expires: 0 };
+app.get('/api/public-stats', async (req, res) => {
+  try {
+    if (publicStatsCache.data && publicStatsCache.expires > Date.now()) {
+      return res.json(publicStatsCache.data);
+    }
+    const db = getDb();
+    const today = new Date().toISOString().split('T')[0];
+    const thisMonth = today.substring(0, 7);
+    const leads = (db.leads || []);
+    const leadsThisMonth = leads.filter(l => l.created_at && l.created_at.startsWith(thisMonth));
+    const customers = (db.customers || []).filter(c => c.plan && c.plan !== 'cancelled');
+    const delivered = leads.filter(l => l.delivered);
+    const totalValue = delivered.reduce(function(sum, l) { return sum + (parseInt(l.estimated_value) || parseInt(l.deal_value) || 0); }, 0);
+
+    // Get areas covered
+    var areasSet = new Set();
+    customers.forEach(function(c) {
+      try { JSON.parse(c.target_areas || '[]').forEach(function(a) { areasSet.add(a); }); } catch(e) {}
+    });
+
+    var stats = {
+      opportunities_this_month: leadsThisMonth.length,
+      estimated_value_delivered: totalValue,
+      active_businesses: customers.length,
+      average_roi: customers.length > 0 ? Math.round(totalValue / (customers.length * 100)) : 0,
+      leads_scraped_today: leads.filter(l => l.created_at && l.created_at.startsWith(today)).length,
+      uk_areas_covered: areasSet.size,
+      friendly_label: leadsThisMonth.length > 10 ? (leadsThisMonth.length + ' opportunities delivered this month') : 'Fresh opportunities delivered daily across the UK',
+      generated_at: new Date().toISOString()
+    };
+    publicStatsCache = { data: stats, expires: Date.now() + 300000 }; // 5 min cache
+    res.json(stats);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== DASHBOARD API ENDPOINTS =====
 
 // GET /api/dashboard — KPI summary data
