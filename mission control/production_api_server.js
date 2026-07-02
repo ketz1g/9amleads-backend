@@ -3676,9 +3676,11 @@ function generateLeadEmailHTML(customer, leads) {
   body += '</td></tr>';
 
   // Footer
-  body += '<tr><td style="background:#1a1a2e;padding:24px 28px;border-radius:0 0 16px 16px;text-align:center">';
-  body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px">View Full Dashboard</a>';
-  body += '<p style="color:rgba(255,255,255,0.4);font-size:9px;margin:14px 0 0;line-height:1.5;text-transform:uppercase;letter-spacing:.5px">9am Leads Ltd &bull; Company No. 17168176 &bull; Delivered at 9am by 9amLeads</p>';
+  body += '<tr><td style="background:#0f1a2e;padding:32px 28px 24px;border-radius:0 0 16px 16px;text-align:center">';
+  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:900;color:rgba(255,255,255,0.3);margin-bottom:16px"><span style="display:inline-block;background:rgba(14,165,233,0.2);border-radius:8px;width:28px;height:28px;line-height:28px;font-size:13px;color:rgba(255,255,255,0.5);vertical-align:middle;margin-right:5px;text-align:center">9</span>am<span style="color:rgba(255,255,255,0.3)">Leads</span></div>';
+  body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px;margin-bottom:16px">View Full Dashboard</a>';
+  body += '<p style="color:rgba(255,255,255,0.25);font-size:9px;margin:0 0 4px;line-height:1.6;letter-spacing:.3px">9am Leads Ltd &bull; Company No. 17168176 &bull; hello@9amleads.com</p>';
+  body += '<p style="color:rgba(255,255,255,0.15);font-size:8px;margin:0;letter-spacing:.5px">Fresh opportunities delivered every morning at 9am. This email was sent to you as part of your 9amLeads subscription.</p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
