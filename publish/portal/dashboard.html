@@ -328,29 +328,9 @@ async function loadDashboard() {
   }
   document.getElementById('product-badges').innerHTML = badgeHtml;
 
-  const sub = await apiFetch('/api/subscription');
-  if (sub) {
-    const planLabel = sub.plan === 'free_trial' ? 'Free Trial' : sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1);
-    const extraInfo = (sub.extra_postcodes || 0) > 0 ? ' + ' + sub.extra_postcodes + ' extra areas' : '';
-    document.getElementById('sub-plan-name').textContent = planLabel + extraInfo;
-    document.getElementById('sub-price-info').textContent = sub.leads_per_day + ' leads/day' + extraInfo;
-    document.getElementById('sub-badge').textContent = sub.plan === 'free_trial' ? 'Trial' : 'Active';
-    document.getElementById('extraBtn').style.display = (sub.plan === 'free_trial' || sub.plan === 'cancelled') ? 'none' : 'inline-flex';
-    // Show coverage info
-    var covLabel = COVERAGE_LABELS[sub.coverage] || sub.coverage || '';
-    var prodLabel = LEAD_TYPE_NAMES[sub.product] || sub.product || '';
-    var covEl = document.getElementById('sub-coverage-info');
-    if (covEl) covEl.textContent = (prodLabel ? prodLabel + ' \u00b7 ' : '') + (covLabel ? covLabel + ' coverage' : '');
-    // Show supply notice for specialist types
-    var noticeEl = document.getElementById('supply-notice');
-    if (noticeEl && (sub.product === 'planning' || sub.product === 'probate' || sub.product === 'tenders')) {
-      noticeEl.style.display = 'block';
-    }
-    if (sub.trial_ends) {
-      const days = Math.ceil((new Date(sub.trial_ends) - new Date()) / 86400000);
-      document.getElementById('stat-trial').textContent = days > 0 ? days + ' days remaining' : 'Expired';
-    }
-  }
+  liveSubscription = null;
+  var sub = await apiFetch('/api/subscription');
+  if (sub) { updateSubscriptionDisplay(sub); liveSubscription = sub; }
 
   // Store product from session for plan pricing
   if (session.product) currentUser = { ...currentUser, product: session.product };
@@ -602,31 +582,69 @@ function openWeeklyReport() {
   exportRange('csv');
 }
 
-// Plan pricing per product (loaded from backend)
-var PLAN_PRICING = null;
-var LEAD_TYPE_NAMES = { moving:'Moving', probate:'Probate', newbusiness:'New Business', planning:'Planning', tenders:'Tenders' };
+// Load live subscription data from backend (no fallback values)
+var liveSubscription = null;
 var COVERAGE_LABELS = { postcode:'Postcode Area(s)', county:'County', region:'Region', ukwide:'UK-wide' };
 
-fetch(API + '/api/lead-types').then(function(r) { return r.json(); }).then(function(d) {
-  if (d && d.lead_types) {
-    PLAN_PRICING = {};
-    for (var k in d.lead_types) {
-      var lt = d.lead_types[k];
-      PLAN_PRICING[k] = {};
-      for (var pk in lt.plan_details) {
-        if (pk === 'free_trial') continue;
-        PLAN_PRICING[k][pk] = { leads: lt.plan_details[pk].default || 5, postcodes: 3, price: pk === 'starter' ? 25 : (pk === 'pro' ? 49 : 99) };
-      }
+async function loadSubscription() {
+  try {
+    var r = await fetch(API + '/api/subscription', { headers: { 'Authorization': 'Bearer ' + (getSession()?.token || '') } });
+    if (r.ok) {
+      liveSubscription = await r.json();
+      updateSubscriptionDisplay(liveSubscription);
+    } else {
+      showSubscriptionError('Could not load subscription data from server.');
     }
+  } catch(e) {
+    showSubscriptionError('Server connection failed. Please refresh.');
   }
-}).catch(function() {});
+}
+
+function showSubscriptionError(msg) {
+  document.getElementById('sub-plan-name').textContent = '\u2014';
+  document.getElementById('sub-price-info').textContent = msg;
+  document.getElementById('sub-badge').textContent = 'Error';
+  document.getElementById('sub-coverage-info').textContent = '';
+}
+
+function updateSubscriptionDisplay(sub) {
+  if (!sub) return showSubscriptionError('No subscription data.');
+  var planLabel = sub.plan === 'free_trial' ? 'Free Trial' : sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1);
+  var extraInfo = (sub.extra_postcodes || 0) > 0 ? ' + ' + sub.extra_postcodes + ' extra areas' : '';
+  var limitPrefix = sub.up_to ? 'Up to ' : '';
+  document.getElementById('sub-plan-name').textContent = planLabel + extraInfo;
+  document.getElementById('sub-price-info').textContent = sub.lead_type + ' \u00b7 ' + limitPrefix + sub.leads_per_day + ' leads/day\u2024';
+  document.getElementById('sub-badge').textContent = sub.plan === 'free_trial' ? 'Trial' : 'Active';
+  document.getElementById('extraBtn').style.display = (sub.plan === 'free_trial' || sub.plan === 'cancelled') ? 'none' : 'inline-flex';
+  // Coverage info
+  var covEl = document.getElementById('sub-coverage-info');
+  if (covEl) covEl.textContent = sub.coverage_label + (sub.coverage_areas && sub.coverage_areas.length > 0 ? ' \u00b7 ' + sub.coverage_areas.join(', ') : '');
+  // Weekly/monthly
+  var statsEl = document.getElementById('stat-leads');
+  if (statsEl) statsEl.textContent = sub.delivered_this_month + ' this month (est. ' + sub.monthly_estimate + '/mo)';
+  // Trial
+  if (sub.trial_ends) {
+    var days = Math.ceil((new Date(sub.trial_ends) - new Date()) / 86400000);
+    var trialEl = document.getElementById('stat-trial');
+    if (trialEl) trialEl.textContent = days > 0 ? days + ' days remaining' : 'Expired';
+  }
+  // Next billing
+  if (sub.subscription && sub.subscription.next_billing) {
+    var billingDate = new Date(sub.subscription.next_billing);
+    document.getElementById('stat-trial').textContent = 'Next bill: ' + billingDate.toLocaleDateString('en-GB');
+  }
+  // Supply notice for specialist types
+  var noticeEl = document.getElementById('supply-notice');
+  if (noticeEl) {
+    noticeEl.style.display = (sub.product === 'planning' || sub.product === 'probate' || sub.product === 'tenders') ? 'block' : 'none';
+  }
+}
 
 function showPlans() {
   const session = getSession();
   if (!session) return;
-  const currentPlan = session.plan || 'free_trial';
-  const product = session.product || 'moving';
-  const pricing = PLAN_PRICING[product] || PLAN_PRICING.moving;
+  var planData = liveSubscription;
+  if (!planData) { showModal('Plans', '<p style="color:#8890a8">Loading plan data...</p>'); return; }
 
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px';
@@ -634,26 +652,30 @@ function showPlans() {
   const modal = document.createElement('div');
   modal.style.cssText = 'background:#11131f;border:1px solid #1e2030;border-radius:16px;padding:32px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto';
 
+  var plans = [
+    { key:'starter', label:'Starter', price:25, leadsDesc: (planData.lead_type || '') + ' — depends on lead type and coverage', highlight: false },
+    { key:'pro', label:'Pro', price:49, leadsDesc: (planData.lead_type || '') + ' — depends on lead type and coverage', highlight: false },
+    { key:'enterprise', label:'Enterprise', price:99, leadsDesc: (planData.lead_type || '') + ' — depends on lead type and coverage', highlight: true },
+  ];
+
   modal.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">' +
-    '<h3 style="font-size:18px;font-weight:700">Choose Your Plan</h3>' +
+    '<h3 style="font-size:18px;font-weight:700">Plans for ' + (planData.lead_type || 'Leads') + '</h3>' +
     '<button onclick="this.parentElement.parentElement.parentElement.remove()" style="background:none;border:none;color:#8890a8;font-size:20px;cursor:pointer">\u2715</button></div>' +
-    Object.entries(pricing).map(([key, p]) => {
-      const pcLimit = p.postcodes === 999 ? 'Unlimited' : p.postcodes + ' area' + (p.postcodes > 1 ? 's' : '');
-      const isCurrent = currentPlan === key;
-      return '<div style="background:' + (isCurrent ? 'rgba(14,165,233,0.06)' : 'var(--card)') + ';border:1px solid ' + (isCurrent ? 'rgba(14,165,233,0.2)' : '#1e2030') + ';border-radius:10px;padding:16px;margin-bottom:10px;transition:.2s">' +
+    '<p style="font-size:11px;color:#8890a8;margin-bottom:16px">Your lead type: <strong>' + (planData.lead_type || '') + '</strong> &middot; Coverage: <strong>' + (planData.coverage_label || '') + '</strong></p>' +
+    plans.map(function(p) {
+      var isCurrent = planData.plan === p.key;
+      return '<div style="background:' + (isCurrent ? 'rgba(14,165,233,0.06)' : 'var(--card)') + ';border:1px solid ' + (isCurrent ? 'rgba(14,165,233,0.2)' : '#1e2030') + ';border-radius:10px;padding:16px;margin-bottom:10px">' +
         '<div style="display:flex;justify-content:space-between;align-items:center">' +
-        '<div><strong style="font-size:15px;color:#fff">' + key.charAt(0).toUpperCase() + key.slice(1) + '</strong>' +
-        '<br><span style="font-size:12px;color:#8890a8">' + p.leads + ' leads/day \u00b7 ' + pcLimit + ' postcode' + (p.postcodes !== 1 ? 's' : '') + '</span></div>' +
+        '<div><strong style="font-size:15px;color:#fff">' + p.label + '</strong>' +
+        '<br><span style="font-size:11px;color:#8890a8">Check availability in checkout for exact daily limit</span></div>' +
         '<div style="text-align:right"><span style="font-size:20px;font-weight:800">&pound;' + p.price + '</span><span style="font-size:12px;color:#8890a8">/wk</span>' +
         (isCurrent ? '<br><span style="font-size:10px;color:#22c55e;font-weight:600">Current Plan</span>' : '') +
         '</div></div>' +
-        (!isCurrent ? '<button onclick="checkout(\'' + key + '\')" style="margin-top:12px;width:100%;padding:8px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer">' + (parseInt(key === 'starter' ? '0' : currentPlan === 'free_trial' ? '-1' : '1') < 0 ? 'Upgrade' : 'Switch to ' + key.charAt(0).toUpperCase() + key.slice(1)) + '</button>' : '') +
+        (!isCurrent ? '<button onclick="checkout(\'' + p.key + '\')" style="margin-top:12px;width:100%;padding:8px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer">' + (p.key === 'starter' || planData.plan === 'free_trial' ? 'Upgrade' : 'Switch to ' + p.label) + '</button>' : '') +
         '</div>';
     }).join('') +
-    '<div style="margin-top:16px;padding:12px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:8px;font-size:11px;color:#8890a8;text-align:center">' +
-    '<strong>postcode areas:</strong> Starter: 3 areas &middot; Pro: 5 areas &middot; Enterprise: All UK<br>' +
-    '<strong>Extra districts:</strong> Need more? Add extra areas for just \u00a310/wk from your dashboard.<br>' +
-    'Switching plans creates a new Stripe subscription with prorated billing.</div>';
+    '<div style="margin-top:16px;padding:12px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:8px;font-size:10px;color:#8890a8;text-align:center">' +
+    'Lead limits depend on your lead type and coverage area. Check availability before purchasing. Pricing and plan availability subject to change.</div>';
 
   overlay.appendChild(modal);
   overlay.onclick = function(e) { if (e.target === this) this.remove(); };

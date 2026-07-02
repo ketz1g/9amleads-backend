@@ -2532,18 +2532,53 @@ app.get('/api/subscription', authMiddleware, (req, res) => {
   if (!customer) return res.status(404).json({ error: 'User not found' });
 
   const sub = db.prepare('SELECT * FROM subscriptions WHERE customer_id = ?').get(req.user.id);
+  const product = customer.product || 'moving';
+  const plan = customer.plan || 'free_trial';
+  const coverage = customer.coverage || 'postcode';
+  const dailyLimit = getPlanLimit(product, plan, coverage);
+  const rule = getLeadTypeRule(product);
+  const weeklyEst = rule.weekly_est ? (rule.weekly_est[plan] || dailyLimit * 5) : dailyLimit * 5;
+  const monthlyEst = rule.monthly_est ? (rule.monthly_est[plan] || dailyLimit * 22) : dailyLimit * 22;
+  const upTo = rule.up_to || false;
+
+  // Get stripe price ID for display
+  var priceKey = plan === 'starter' ? 'price_starter' : (plan === 'pro' ? 'price_growth' : 'price_power');
+  var stripePriceId = rule[priceKey] || '';
+  var priceAmount = plan === 'starter' ? 25 : (plan === 'pro' ? 49 : (plan === 'enterprise' ? 99 : 0));
+
+  // Get delivered today + this month
+  const dbData = getDb();
+  const today = new Date().toISOString().split('T')[0];
+  const thisMonth = today.substring(0, 7);
+  var deliveredToday = (dbData.leads || []).filter(function(l) { return l.customer_id === customer.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today); }).length;
+  var deliveredThisMonth = (dbData.leads || []).filter(function(l) { return l.customer_id === customer.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(thisMonth); }).length;
 
   res.json({
-    plan: customer.plan,
-    leads_per_day: customer.leads_per_day,
+    product: product,
+    lead_type: rule.name,
+    plan: plan,
+    coverage: coverage,
+    coverage_label: COVERAGE_LABELS[coverage] || coverage,
+    leads_per_day: dailyLimit,
+    daily_limit: dailyLimit,
+    weekly_estimate: weeklyEst,
+    monthly_estimate: monthlyEst,
+    up_to: upTo,
+    price_per_week: priceAmount,
+    price_id: stripePriceId,
+    delivered_today: deliveredToday,
+    delivered_this_month: deliveredThisMonth,
     trial_ends: customer.trial_ends,
+    extra_postcodes: customer.extra_postcodes || 0,
+    coverage_areas: JSON.parse(customer.target_areas || '[]'),
     subscription: sub ? {
       stripe_id: sub.stripe_id,
       plan: sub.plan,
       status: sub.status,
       current_period_start: sub.current_period_start,
       current_period_end: sub.current_period_end,
-      created_at: sub.created_at
+      created_at: sub.created_at,
+      next_billing: sub.current_period_end
     } : null
   });
 });
