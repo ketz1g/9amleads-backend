@@ -511,21 +511,26 @@ async function distributeProduct(product) {
     var maxBeds = parseInt(filters.maxBedrooms) || 99;
     var maxPrice = parseInt(filters.maxPrice) || 0;
     var propTypeFilter = (filters.propertyType || '').toLowerCase();
+    // Pre-count leads for all areas BEFORE generating any (to avoid counting self-generated leads)
+    var areaExisting = {};
     for (var ti = 0; ti < numAreas; ti++) {
-      var targetDist = targets[ti].toUpperCase();
-      var areaQuota = basePerArea + (ti < extraCount ? 1 : 0);
-      var areaAlready = 0;
+      var td = targets[ti].toUpperCase();
+      areaExisting[td] = 0;
       for (var ci = 0; ci < db.leads.length; ci++) {
         var existingLead = db.leads[ci];
-        // Only count undelivered leads for this specific product per area
         if (existingLead.customer_id === custGen.id && existingLead.product === product && !existingLead.delivered) {
           try {
             var leadData = JSON.parse(existingLead.data);
             var leadPC = (leadData.postcode || leadData.address || '').toUpperCase();
-            if (leadPC.includes(targetDist)) areaAlready++;
+            if (leadPC.includes(td)) areaExisting[td]++;
           } catch(e) {}
         }
       }
+    }
+    for (var ti = 0; ti < numAreas; ti++) {
+      var targetDist = targets[ti].toUpperCase();
+      var areaQuota = basePerArea + (ti < extraCount ? 1 : 0);
+      var areaAlready = areaExisting[targetDist] || 0;
       var areaNeeded = Math.max(0, areaQuota - areaAlready);
       for (var ni = 0; ni < areaNeeded; ni++) {
         var prefix = targetDist.replace(/[0-9]/g, '');
