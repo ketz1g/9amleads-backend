@@ -389,5 +389,8 @@ function login() {
     }
   }).catch(() => { error.textContent = 'Could not connect to server. Please try again later.'; error.style.display = 'block'; });
 }
+
+// Hide disabled lead types
+(function(){fetch("https://9amleads.com/api/lead-types").then(function(r){return r.json()}).then(function(d){if(d&&d.lead_types){document.querySelectorAll(".lead-type-chip input").forEach(function(cb){var v=cb.value;if(v&&d.lead_types[v]&&!d.lead_types[v].enabled){cb.closest("label").style.display="none"}})}}).catch(function(){})})();
 </script>
 </body></html>
