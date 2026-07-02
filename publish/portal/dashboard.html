@@ -1275,8 +1275,16 @@ function updateSubscriptionDisplay(sub) {
 function showPlans() {
   const session = getSession();
   if (!session) return;
+  // Fetch live subscription data if not already loaded
   var planData = liveSubscription;
-  if (!planData) { showModal('Plans', '<p style="color:#8890a8">Loading plan data...</p>'); return; }
+  if (!planData) {
+    apiFetch('/api/subscription').then(function(sub) {
+      if (sub && sub.plan) { liveSubscription = sub; showPlans(); }
+      else { showModal('Plans', '<p style="color:var(--muted2);text-align:center;padding:20px">Unable to load your plan data. <a href="javascript:location.reload()" style="color:var(--primary);text-decoration:underline">Refresh</a> or <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">contact support</a>.</p>'); }
+    });
+    showModal('Plans', '<p style="color:#8890a8;text-align:center;padding:20px"><i class="fas fa-spinner fa-spin" style="font-size:18px;display:block;margin-bottom:8px"></i>Loading plans...</p>');
+    return;
+  }
 
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px';
