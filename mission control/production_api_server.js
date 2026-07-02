@@ -2789,54 +2789,48 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var custLeads = [];
       var custAreas = [];
       try { custAreas = JSON.parse(cust.target_areas || '[]'); } catch(e) {}
-      var maxRound = Math.ceil(totalDailyLimit / products.length);
-      for (var ri = 0; ri < maxRound && custLeads.length < totalDailyLimit; ri++) {
-        for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
-          var prod = products[pi];
-          var allProdLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
-          // Skip if no leads for this product
-          if (allProdLeads.length === 0) continue;
-          var pickedIds = custLeads.map(function(cl) { return cl.id; });
-          var prodLeads = allProdLeads.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
-          if (prodLeads.length === 0) continue;
-          // Try to pick a lead from a different area than previously picked
-          var pickedLead = prodLeads[0];
-          if (custAreas.length > 1) {
-            // Group available leads by area
-            var areaPicks = {};
-            for (var ai2 = 0; ai2 < prodLeads.length; ai2++) {
-              try {
-                var ld = JSON.parse(prodLeads[ai2].data || '{}');
-                var pc = (ld.postcode || '').toUpperCase();
-                for (var ac2 = 0; ac2 < custAreas.length; ac2++) {
-                  if (pc.startsWith(custAreas[ac2].toUpperCase())) {
-                    if (!areaPicks[custAreas[ac2]]) areaPicks[custAreas[ac2]] = prodLeads[ai2];
-                    break;
+      // Round 1: pick 1 lead from EACH product (guarantees every product gets at least 1)
+      for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
+        var prod = products[pi];
+        var allProdLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
+        if (allProdLeads.length === 0) continue;
+        var pickedIds = custLeads.map(function(cl) { return cl.id; });
+        var prodLeads = allProdLeads.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+        if (prodLeads.length === 0) continue;
+        custLeads.push(prodLeads[0]);
+      }
+      // Round 2: fill remaining slots with round-robin across products + areas
+      if (custLeads.length < totalDailyLimit) {
+        for (var ri2 = 0; ri2 < 3 && custLeads.length < totalDailyLimit; ri2++) {
+          for (var pi2 = 0; pi2 < products.length && custLeads.length < totalDailyLimit; pi2++) {
+            var prod2 = products[pi2];
+            var allProdLeads2 = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod2; });
+            var pickedIds2 = custLeads.map(function(cl) { return cl.id; });
+            var prodLeads2 = allProdLeads2.filter(function(l) { return pickedIds2.indexOf(l.id) === -1; });
+            if (prodLeads2.length === 0) continue;
+            // Pick a lead from a different area than already picked
+            var picked2 = prodLeads2[0];
+            if (custAreas.length > 0) {
+              for (var ac = 0; ac < custAreas.length; ac++) {
+                var hasArea = false;
+                for (var pch = 0; pch < custLeads.length; pch++) {
+                  try {
+                    var pchData = JSON.parse(custLeads[pch].data || '{}');
+                    if ((pchData.postcode || '').toUpperCase().startsWith(custAreas[ac].toUpperCase())) { hasArea = true; break; }
+                  } catch(e) {}
+                }
+                if (!hasArea) {
+                  for (var lx = 0; lx < prodLeads2.length; lx++) {
+                    try {
+                      var lxData = JSON.parse(prodLeads2[lx].data || '{}');
+                      if ((lxData.postcode || '').toUpperCase().startsWith(custAreas[ac].toUpperCase())) { picked2 = prodLeads2[lx]; ac = custAreas.length; break; }
+                    } catch(e) {}
                   }
                 }
-              } catch(e) {}
-            }
-            // Find the first area not yet represented in custLeads
-            var pickedAreas = [];
-            for (var pi2 = 0; pi2 < custLeads.length; pi2++) {
-              try {
-                var pd = JSON.parse(custLeads[pi2].data || '{}');
-                var pp = (pd.postcode || '').toUpperCase();
-                for (var ac3 = 0; ac3 < custAreas.length; ac3++) {
-                  if (pp.startsWith(custAreas[ac3].toUpperCase())) {
-                    pickedAreas.push(custAreas[ac3]); break;
-                  }
-                }
-              } catch(e) {}
-            }
-            for (var ac4 = 0; ac4 < custAreas.length; ac4++) {
-              if (pickedAreas.indexOf(custAreas[ac4]) === -1 && areaPicks[custAreas[ac4]]) {
-                pickedLead = areaPicks[custAreas[ac4]];
-                break;
               }
             }
+            custLeads.push(picked2);
           }
-          custLeads.push(pickedLead);
         }
       }
       
