@@ -537,6 +537,13 @@ function doSignup() {
   if (targetAreas.length === 0) { document.getElementById('signup-error').textContent = 'Please add at least one postcode area (e.g. EN, SG, CM)'; document.getElementById('signup-error').style.display = 'block'; return; }
   var planRadio = document.querySelector('#s-plan-container input[type=radio]:checked');
   var plan = planRadio ? planRadio.value : 'free_trial';
+  // Show upgrade recommendation if multiple products on free trial
+  if (plan === 'free_trial' && products.length > 1) {
+    if (!confirm('You selected ' + products.length + ' lead types but the Free Trial only gives you 5 leads/day total (about 1-2 per type). Upgrade to Pro for 15 leads/day or Enterprise for 40 leads/day to get more from each lead type. Click Cancel to upgrade, OK to continue with Free Trial.')) {
+      document.querySelector('#s-plan-container input[value="pro"]')?.click();
+      plan = 'pro';
+    }
+  }
   var button = document.getElementById('signup-btn');
   var error = document.getElementById('signup-error');
   var success = document.getElementById('signup-success');
