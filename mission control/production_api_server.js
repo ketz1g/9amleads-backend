@@ -3528,21 +3528,21 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
   // Header
-  body += '<tr><td style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:28px 28px 22px;border-radius:16px 16px 0 0;text-align:center">';
-  body += '<div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:900;color:#ffffff;letter-spacing:-.5px">9am<span style="color:' + accent + '">Leads</span></div>';
-    body += '<p style="color:rgba(255,255,255,0.5);font-size:10px;margin:6px 0 0;text-transform:uppercase;letter-spacing:2px">Daily Opportunities for ' + (customer.coverage ? (COVERAGE_LABELS[customer.coverage] || customer.coverage) : 'your area') + '</p>';
+  body += '<tr><td style="background:linear-gradient(135deg,#0c1929,#16213e);padding:32px 28px 24px;border-radius:16px 16px 0 0;text-align:center">';
+  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#ffffff;text-align:center"><span style="display:inline-block;background:#0ea5e9;border-radius:8px;width:32px;height:32px;line-height:32px;font-size:16px;color:#fff;vertical-align:middle;margin-right:6px">9</span>9am<span style="color:' + accent + '">Leads</span></div>';
+  body += '<p style="color:rgba(255,255,255,0.6);font-size:10px;margin:10px 0 0;text-transform:uppercase;letter-spacing:2px;font-weight:600">Daily Opportunities for ' + (customer.coverage ? (COVERAGE_LABELS[customer.coverage] || customer.coverage) : 'your area') + '</p>';
   body += '</td></tr>';
 
   // Greeting + count
-  body += '<tr><td style="background:#ffffff;padding:28px 28px 16px">';
-  body += '<h2 style="font-family:Outfit,sans-serif;font-size:18px;font-weight:800;color:#1a1a2e;margin:0 0 4px;line-height:1.2">Good Morning, ' + (customer.company || 'there') + '!</h2>';
-  body += '<p style="color:#6b7280;font-size:13px;margin:0 0 16px;line-height:1.5">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
-  body += '<div style="display:inline-flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 18px;margin-bottom:16px"><span style="font-size:24px;font-weight:800;color:#16a34a">' + leads.length + '</span><span style="font-size:12px;color:#166534;font-weight:500">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' today</span></div>';
-  body += '<p style="font-size:12px;color:#6b7280;line-height:1.6;margin:0;padding:12px 14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">' + aboutText + '</p>';
+  body += '<tr><td style="background:#ffffff;padding:32px 28px 20px">';
+  body += '<h2 style="font-family:Outfit,sans-serif;font-size:20px;font-weight:800;color:#111827;margin:0 0 6px;line-height:1.2">Good Morning, ' + (customer.company || 'there') + '!</h2>';
+  body += '<p style="color:#6b7280;font-size:13px;margin:0 0 18px;line-height:1.5">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
+  body += '<div style="display:inline-flex;align-items:center;gap:10px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 20px;margin-bottom:18px"><span style="font-size:28px;font-weight:800;color:#16a34a">' + leads.length + '</span><span style="font-size:13px;color:#166534;font-weight:600">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' today</span></div>';
+  body += '<p style="font-size:12px;color:#6b7280;line-height:1.6;margin:0;padding:12px 16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">' + aboutText + '</p>';
   body += '</td></tr>';
 
   // Lead cards
-  body += '<tr><td style="background:#ffffff;padding:6px 28px 24px">';
+  body += '<tr><td style="background:#ffffff;padding:8px 28px 28px">';
   for (var i = 0; i < leads.length; i++) {
     var l = leads[i];
     var d = l.data || {};
@@ -3572,22 +3572,22 @@ function generateLeadEmailHTML(customer, leads) {
       subtitle = d.buyer || '';
     }
 
-    body += '<div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:14px;overflow:hidden">';
-    body += '<div style="height:3px;background:' + leadAccent + '"></div>';
-    body += '<div style="padding:16px 18px 14px">';
+    body += '<div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">';
+    body += '<div style="height:4px;background:' + leadAccent + '"></div>';
+    body += '<div style="padding:18px 20px 16px">';
 
-    // Badge + title
-    body += '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px">';
-    body += '<span style="padding:2px 8px;border-radius:4px;background:' + leadAccent + ';color:#fff;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:2px">' + (leadProduct === 'moving' ? 'MOVING' : leadProduct === 'probate' ? 'PROBATE' : leadProduct === 'newbusiness' ? 'NEW BIZ' : leadProduct === 'planning' ? 'PLANNING' : 'TENDER') + '</span>';
-    body += '<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#1a1a2e;line-height:1.3">' + title + '</div>';
-    if (subtitle) body += '<div style="font-size:11px;color:#6b7280;margin-top:2px">' + subtitle + '</div>';
+    // Badge + title row
+    body += '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px">';
+    body += '<span style="padding:3px 10px;border-radius:4px;background:' + leadAccent + ';color:#fff;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:3px;letter-spacing:0.5px">' + (leadProduct === 'moving' ? 'MOVING' : leadProduct === 'probate' ? 'PROBATE' : leadProduct === 'newbusiness' ? 'NEW BIZ' : leadProduct === 'planning' ? 'PLANNING' : 'TENDER') + '</span>';
+    body += '<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#111827;line-height:1.3">' + (title || 'Opportunity') + '</div>';
+    if (subtitle) body += '<div style="font-size:12px;color:#6b7280;margin-top:3px">' + subtitle + '</div>';
     body += '</div></div>';
 
-    // Details as chips (only show relevant fields per product type)
-    var chips = [];
-    if (postcode) chips.push({ icon: '\uD83D\uDCCD', text: postcode });
-    if (address && address.length > 10) chips.push({ icon: '\uD83C\uDFE2', text: address.substring(0, 60) });
-    if (d.city) chips.push({ icon: '\uD83C\uDFD9\uFE0F', text: d.city });
+    // Details as clean rows (not squished chips)
+    var details = [];
+    if (postcode) details.push('<span style="display:inline-block;background:#f3f4f6;padding:3px 10px;border-radius:5px;font-size:11px;color:#374151;font-weight:500;margin:2px">\uD83D\uDCCD ' + postcode + '</span>');
+    if (address && address.length > 10) details.push('<span style="display:inline-block;background:#f3f4f6;padding:3px 10px;border-radius:5px;font-size:11px;color:#374151;font-weight:500;margin:2px">\uD83C\uDFE2 ' + address.substring(0, 55) + '</span>');
+    if (d.city) details.push('<span style="display:inline-block;background:#f3f4f6;padding:3px 10px;border-radius:5px;font-size:11px;color:#374151;font-weight:500;margin:2px">\uD83C\uDFD9\uFE0F ' + d.city + '</span>');
 
     if (leadProduct === 'moving') {
       if (d.bedrooms) chips.push({ icon: '\uD83C\uDFE0', text: d.bedrooms + ' bedrooms' });
