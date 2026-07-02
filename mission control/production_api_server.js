@@ -4196,6 +4196,251 @@ app.post('/api/admin/update-lead-type', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== REFERRAL SYSTEM (Step 2) =====
+// GET /api/referral — customer referral dashboard
+app.get('/api/referral', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    const code = customer.referral_code || (customer.id || '').substring(0, 8).toUpperCase();
+    const referrals = (db.referrals || []).filter(r => r.referrer_id === req.user.id);
+    res.json({
+      code: code,
+      link: 'https://www.9amleads.com/portal/?ref=' + code,
+      total_referrals: referrals.length,
+      pending_rewards: referrals.filter(r => r.status === 'pending').length,
+      approved_rewards: referrals.filter(r => r.status === 'approved').length,
+      paid_conversions: referrals.filter(r => r.status === 'converted').length,
+      referrals: referrals
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/referral/use — apply referral code on signup
+app.post('/api/referral/use', async (req, res) => {
+  try {
+    const { code, email } = req.body;
+    if (!code || !email) return res.status(400).json({ error: 'Code and email required' });
+    const db = getDb();
+    const referrer = (db.customers || []).find(c => (c.referral_code || c.id.substring(0,8).toUpperCase()) === code.toUpperCase());
+    if (!referrer) return res.status(404).json({ error: 'Invalid referral code' });
+    if (!db.referrals) db.referrals = [];
+    db.referrals.push({ id: uuidv4(), referrer_id: referrer.id, referred_email: email, status: 'signed_up', reward: null, created_at: new Date().toISOString(), notes: '' });
+    saveDb();
+    res.json({ success: true, message: 'Referral code applied!' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== CASE STUDY SYSTEM (Step 3) =====
+// POST /api/case-studies — create case study from won lead
+app.post('/api/case-studies', authMiddleware, (req, res) => {
+  try {
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    const { lead_id, business_name, deal_value, time_to_win, testimonial, allow_publish, anonymous } = req.body;
+    const db = getDb();
+    if (!db.case_studies) db.case_studies = [];
+    db.case_studies.push({
+      id: uuidv4(), customer_id: req.user.id, lead_id: lead_id || '',
+      business_name: business_name || customer.company || 'Customer',
+      lead_type: customer.product, coverage: customer.coverage,
+      deal_value: deal_value || 0, time_to_win: time_to_win || '',
+      testimonial: testimonial || '', allow_publish: !!allow_publish,
+      anonymous: !!anonymous, status: 'draft',
+      created_at: new Date().toISOString(), published_at: null
+    });
+    saveDb();
+    res.json({ success: true, message: 'Success story saved! Our team will review it.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/case-studies — public approved case studies
+app.get('/api/case-studies', async (req, res) => {
+  try {
+    const db = getDb();
+    const published = (db.case_studies || []).filter(c => c.status === 'published').slice(0, 10);
+    res.json({ case_studies: published.map(c => ({ business_name: c.business_name, lead_type: c.lead_type, deal_value: c.deal_value, time_to_win: c.time_to_win, testimonial: c.testimonial, anonymous: c.anonymous, created_at: c.created_at })) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/case-studies — admin list all
+app.get('/api/admin/case-studies', adminAuth, (req, res) => {
+  try { const db = getDb(); res.json({ case_studies: db.case_studies || [] }); } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/case-studies/approve — approve/reject
+app.post('/api/admin/case-studies/approve', adminAuth, (req, res) => {
+  try {
+    const db = getDb(); const { id, status } = req.body;
+    const cs = (db.case_studies || []).find(c => c.id === id);
+    if (!cs) return res.status(404).json({ error: 'Not found' });
+    cs.status = status || 'published';
+    if (status === 'published') cs.published_at = new Date().toISOString();
+    saveDb();
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== COMPETITOR MONITORING (Step 4) =====
+// POST /api/competitors — add competitor
+app.post('/api/competitors', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    if (!db.competitors) db.competitors = [];
+    db.competitors.push({ id: uuidv4(), customer_id: req.user.id, name: req.body.name || '', website: req.body.website || '', area: req.body.area || '', industry: req.body.industry || '', notes: req.body.notes || '', created_at: new Date().toISOString(), last_update: null });
+    saveDb();
+    res.json({ success: true, message: 'Competitor added. We\'ll monitor for signals.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/competitors — customer competitors list
+app.get('/api/competitors', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const competitors = (db.competitors || []).filter(c => c.customer_id === req.user.id);
+    res.json({ competitors });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== AI ACCOUNT MANAGER (Step 5) =====
+// GET /api/ai-advisor — AI recommendations based on real data
+app.get('/api/ai-advisor', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    const leads = (db.leads || []).filter(l => l.customer_id === req.user.id);
+    const thisMonth = new Date().toISOString().split('T')[0].substring(0,7);
+    const monthLeads = leads.filter(l => l.created_at && l.created_at.startsWith(thisMonth));
+    const contacted = monthLeads.filter(l => l.lead_status && l.lead_status !== 'new');
+    const wonLeads = leads.filter(l => l.lead_status === 'won');
+    const totalRevenue = wonLeads.reduce((s, l) => s + (parseInt(l.actual_revenue) || parseInt(l.deal_value) || 0), 0);
+    const contactedRate = monthLeads.length > 0 ? Math.round((contacted.length / monthLeads.length) * 100) : 0;
+    const recommendations = [];
+
+    if (contactedRate < 30 && monthLeads.length > 0) {
+      recommendations.push({ priority: 'high', icon: '\uD83D\uDCDE', message: 'You have contacted only ' + contactedRate + '% of this month\'s opportunities. Contacting more leads could improve your results.', action: 'View Leads', page: 'leads' });
+    }
+    if (customer.coverage === 'postcode' && (customer.product === 'planning' || customer.product === 'probate' || customer.product === 'tenders')) {
+      recommendations.push({ priority: 'medium', icon: '\uD83D\uDCCD', message: 'Your current coverage area may be too narrow for consistent volume. Consider expanding to county or region coverage.', action: 'Expand Coverage', page: 'areas' });
+    }
+    if (totalRevenue > 500) {
+      recommendations.push({ priority: 'medium', icon: '\uD83D\uDCC8', message: 'You generated \u00a3' + totalRevenue.toLocaleString() + ' from 9am Leads. Upgrading your plan could increase your opportunity volume.', action: 'View Plans', page: 'billing' });
+    }
+    if (!customer.crm_webhook_url) {
+      recommendations.push({ priority: 'low', icon: '\uD83D\uDD0C', message: 'Your CRM is not connected. Connect it to save time every morning by automatically receiving opportunities.', action: 'Connect CRM', page: 'crm' });
+    }
+    recommendations.push({ priority: 'info', icon: '\uD83D\uDCA1', message: 'Your next 9am delivery arrives tomorrow. Contact fresh leads quickly to maximise your conversion rate.', action: 'View Dashboard', page: 'dashboard' });
+
+    res.json({ recommendations, contacted_rate: contactedRate, leads_this_month: monthLeads.length, total_revenue: totalRevenue });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== ADMIN NOTIFICATIONS (Step 8) =====
+// GET /api/admin/notifications — admin alerts
+app.get('/api/admin/notifications', adminAuth, (req, res) => {
+  try {
+    const db = getDb();
+    const notifications = [];
+
+    // Check for at-risk customers
+    const customers = db.customers || [];
+    customers.forEach(function(c) {
+      const leads = (db.leads || []).filter(l => l.customer_id === c.id);
+      const hasRecentLogin = c.last_login_at && (Date.now() - new Date(c.last_login_at).getTime()) < 7 * 86400000;
+      if (!hasRecentLogin && c.plan && c.plan !== 'cancelled') {
+        notifications.push({ type: 'at_risk', priority: 'high', customer_id: c.id, customer_email: c.email, message: c.email + ' has not logged in for 7+ days', created_at: new Date().toISOString() });
+      }
+    });
+
+    // Pending case studies
+    const pendingCaseStudies = (db.case_studies || []).filter(cs => cs.status === 'draft').length;
+    if (pendingCaseStudies > 0) notifications.push({ type: 'case_study', priority: 'medium', message: pendingCaseStudies + ' case study review' + (pendingCaseStudies !== 1 ? 's' : '') + ' pending approval', created_at: new Date().toISOString() });
+
+    // Pending referrals
+    const pendingReferrals = (db.referrals || []).filter(r => r.status === 'signed_up').length;
+    if (pendingReferrals > 0) notifications.push({ type: 'referral', priority: 'low', message: pendingReferrals + ' referral' + (pendingReferrals !== 1 ? 's' : '') + ' need reward review', created_at: new Date().toISOString() });
+
+    // Failed payments
+    const failedPayments = customers.filter(c => parseInt(c.fail_count) > 0).length;
+    if (failedPayments > 0) notifications.push({ type: 'payment', priority: 'high', message: failedPayments + ' customer' + (failedPayments !== 1 ? 's' : '') + ' have failed payments', created_at: new Date().toISOString() });
+
+    // Support requests
+    const pendingSupport = (db.support_requests || []).filter(s => !s.resolved).length;
+    if (pendingSupport > 0) notifications.push({ type: 'support', priority: 'medium', message: pendingSupport + ' unresolved support request' + (pendingSupport !== 1 ? 's' : ''), created_at: new Date().toISOString() });
+
+    res.json({ notifications });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== QA TEST SUITE (Step 7) =====
+// GET /api/admin/qa-tests — get test results
+app.get('/api/admin/qa-tests', adminAuth, (req, res) => {
+  try { const db = getDb(); res.json({ tests: db.qa_tests || [] }); } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/qa-tests — save test result
+app.post('/api/admin/qa-tests', adminAuth, (req, res) => {
+  try {
+    const db = getDb();
+    if (!db.qa_tests) db.qa_tests = [];
+    db.qa_tests.push({ id: uuidv4(), test_name: req.body.test_name || '', steps: req.body.steps || '', expected: req.body.expected || '', result: req.body.result || 'pass', notes: req.body.notes || '', tested_by: req.body.tested_by || 'admin', date_tested: new Date().toISOString() });
+    saveDb();
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== METRICS (Step 6) — LTV and founder finance metrics =====
+// GET /api/admin/metrics — LTV, ARPU, churn, etc.
+app.get('/api/admin/metrics', adminAuth, (req, res) => {
+  try {
+    const db = getDb();
+    const customers = db.customers || [];
+    const activeCustomers = customers.filter(c => c.plan && c.plan !== 'cancelled' && (!c.trial_ends || new Date(c.trial_ends) > new Date()));
+    const totalCustomers = customers.length;
+    const planPrices = { starter: 25, pro: 49, enterprise: 99 };
+
+    // MRR
+    var mrr = activeCustomers.reduce(function(s, c) { return s + (planPrices[c.plan] || 0); }, 0);
+
+    // Average revenue per customer
+    var totalMonthly = customers.reduce(function(s, c) { return s + (planPrices[c.plan] || 0); }, 0);
+    var arpu = activeCustomers.length > 0 ? Math.round(totalMonthly / activeCustomers.length) : 0;
+
+    // Average subscription length
+    var totalDays = customers.filter(c => c.created_at).reduce(function(s, c) { return s + Math.round((Date.now() - new Date(c.created_at).getTime()) / 86400000); }, 0);
+    var avgDays = totalCustomers > 0 ? Math.round(totalDays / totalCustomers) : 0;
+
+    // Churn
+    var cancelled = customers.filter(c => c.plan === 'cancelled').length;
+    var churnRate = totalCustomers > 0 ? Math.round((cancelled / totalCustomers) * 100) : 0;
+
+    // LTV estimate
+    var avgMonths = Math.max(1, Math.round(avgDays / 30));
+    var ltv = arpu * avgMonths;
+
+    // Trial conversion
+    var everTrial = customers.filter(c => c.plan === 'free_trial' || c.created_at).length;
+    var paid = customers.filter(c => c.plan === 'starter' || c.plan === 'pro' || c.plan === 'enterprise').length;
+    var trialConversion = everTrial > 0 ? Math.round((paid / everTrial) * 100) : 0;
+
+    res.json({
+      mrr: mrr,
+      arpu: arpu,
+      average_subscription_days: avgDays,
+      average_subscription_months: avgMonths,
+      customer_lifetime_value: ltv,
+      churn_rate: churnRate,
+      churned_customers: cancelled,
+      trial_conversion_rate: trialConversion,
+      paid_customers: paid,
+      active_customers: activeCustomers.length,
+      total_customers_ever: totalCustomers,
+      failed_payment_rate: customers.length > 0 ? Math.round((customers.filter(c => parseInt(c.fail_count) > 0).length / customers.length) * 100) : 0
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Global error handler
 app.use(function(err, req, res, next) {
   console.error('[ERROR] Unhandled error:', err.message || err);
