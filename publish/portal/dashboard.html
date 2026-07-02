@@ -1,24 +1,25 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>My Dashboard 9am Leads</title>
-<meta name="description" content="Your 9amLeads customer dashboard. View your daily leads, track conversions, and manage your subscription.">
+<title>Dashboard 9amLeads</title>
+<meta name="description" content="Your 9amLeads customer dashboard. Track leads, manage pipeline, and measure ROI.">
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}:root{--bg:#f3f4f6;--bg2:#ffffff;--card:#ffffff;--card2:#f9fafb;--border:#e5e7eb;--border2:#d1d5db;--text:#111827;--text2:#4b5563;--muted:#6b7280;--muted2:#9ca3af;--primary:#0ea5e9;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--accent:#0ea5e9;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif;--shadow:0 1px 3px rgba(0,0,0,.06);--shadow-lg:0 8px 32px rgba(0,0,0,.1);--radius:12px;--radius-sm:8px;--nav-h:56px}
-:root.dark{--bg:#0a0c14;--bg2:#06080e;--card:#0f1220;--card2:#0b0d18;--border:#1a1e32;--border2:#282e48;--text:#e8edf5;--text2:#a0a8c0;--muted:#6b7280;--muted2:#4b5563;--shadow:0 1px 3px rgba(0,0,0,.3);--shadow-lg:0 8px 32px rgba(0,0,0,.5)}
-body{font-family:var(--ff-b);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--muted2)}
-nav{display:flex;align-items:center;height:var(--nav-h);padding:0 28px;background:#ffffff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;gap:12px}
-.nav-scroll{display:flex;align-items:center;gap:8px;overflow-x:auto;flex:1;-ms-overflow-style:none;scrollbar-width:none}.nav-scroll::-webkit-scrollbar{display:none}
-.logo{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:900;font-family:var(--ff-h);flex-shrink:0;text-decoration:none;color:var(--text)}.logo .mark{width:30px;height:30px;background:linear-gradient(135deg,var(--primary),#2563eb);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;box-shadow:0 2px 10px rgba(14,165,233,.3)}.logo span{color:var(--primary)}
-.nav-links{display:flex;gap:2px;align-items:center}.nav-links a{text-decoration:none;color:var(--muted);font-size:13px;font-weight:500;padding:6px 14px;border-radius:7px;transition:all .2s;white-space:nowrap}.nav-links a:hover{color:var(--text);background:rgba(255,255,255,.04)}.nav-links a.active{color:var(--primary);background:rgba(14,165,233,.1)}
-.pill-growth{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(99,102,241,.12));border:1px solid rgba(14,165,233,.2);color:var(--primary);font-weight:600;font-size:12px;text-decoration:none;transition:all .2s;white-space:nowrap;flex-shrink:0}.pill-growth:hover{background:linear-gradient(135deg,rgba(14,165,233,.22),rgba(99,102,241,.22));transform:translateY(-1px);box-shadow:0 4px 12px rgba(14,165,233,.15)}
-.theme-toggle{background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer;padding:6px 10px;border-radius:6px;transition:.2s;flex-shrink:0}.theme-toggle:hover{color:var(--text);background:rgba(255,255,255,.04)}
-.nav-signout{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;color:var(--danger);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);font-family:var(--ff-b);text-decoration:none;transition:all .2s;flex-shrink:0}.nav-signout:hover{background:rgba(239,68,68,.16)}
-.container{max-width:1200px;margin:0 auto;padding:24px}
-.onboarding{background:linear-gradient(135deg,rgba(14,165,233,.08),rgba(99,102,241,.04));border:1px solid rgba(14,165,233,.15);border-radius:var(--radius);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--text2)}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}:root{--bg:#f1f3f6;--bg2:#ffffff;--card:#ffffff;--card2:#f8f9fb;--border:#e2e5ed;--border2:#c8cedb;--text:#0f1219;--text2:#4a5268;--muted:#6b7388;--muted2:#949cb0;--primary:#0ea5e9;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--accent:#0ea5e9;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif;--shadow:0 1px 3px rgba(0,0,0,.04);--shadow-lg:0 8px 32px rgba(0,0,0,.08);--radius:12px;--radius-sm:8px;--sidebar-w:220px}
+:root.dark{--bg:#07090f;--bg2:#04060a;--card:#0c0f1a;--card2:#090b14;--border:#151929;--border2:#1e2340;--text:#dce2f0;--text2:#8890b0;--muted:#5a6280;--muted2:#3a4160;--shadow:0 1px 3px rgba(0,0,0,.3);--shadow-lg:0 8px 32px rgba(0,0,0,.5)}
+body{font-family:var(--ff-b);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);z-index:200;display:flex;flex-direction:column;overflow-y:auto;transition:.3s}
+.sidebar .logo{padding:20px 20px 16px;display:flex;align-items:center;gap:8px;font-size:17px;font-weight:900;font-family:var(--ff-h);text-decoration:none;color:var(--text)}.sidebar .logo .mark{width:28px;height:28px;background:linear-gradient(135deg,var(--primary),#2563eb);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:900}.sidebar .logo span{color:var(--primary)}
+.sidebar .nav-items{flex:1;padding:8px 10px}.sidebar .nav-items a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;transition:all .15s;margin-bottom:2px}.sidebar .nav-items a:hover{color:var(--text);background:var(--card2)}.sidebar .nav-items a.active{color:var(--primary);background:rgba(14,165,233,.08);font-weight:600}.sidebar .nav-items a i{width:18px;text-align:center;font-size:14px}
+.sidebar .nav-bottom{padding:8px 10px;border-top:1px solid var(--border)}.sidebar .nav-bottom a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;transition:all .15s}.sidebar .nav-bottom a:hover{color:var(--text);background:var(--card2)}
+.main-content{margin-left:var(--sidebar-w);padding:24px 32px;max-width:1400px;min-height:100vh}
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}.page-header h1{font-size:22px;font-weight:800;font-family:var(--ff-h)}.page-header p{color:var(--muted);font-size:13px;margin-top:2px}
+.top-bar{display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;justify-content:space-between}.top-bar .greeting{font-size:18px;font-weight:700;font-family:var(--ff-h)}.top-bar .greeting small{font-weight:400;font-size:13px;color:var(--muted);display:block;margin-top:2px}.top-bar .actions{display:flex;gap:8px;flex-wrap:wrap}
+.section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;transition:border-color .3s}.section:hover{border-color:var(--border2)}.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}.section-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px}.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;position:relative;transition:all .2s}.kpi-card:hover{transform:translateY(-2px);border-color:var(--border2);box-shadow:var(--shadow-lg)}.kpi-card .kpi-num{font-size:28px;font-weight:800;font-family:var(--ff-h);color:var(--text);line-height:1.1}.kpi-card .kpi-label{color:var(--muted);font-size:11px;margin-top:4px;font-weight:500}.kpi-card .kpi-desc{color:var(--muted2);font-size:10px;margin-top:1px}.kpi-card .kpi-icon{position:absolute;top:12px;right:14px;font-size:18px;opacity:.2}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:all .3s}.stat-card:hover{transform:translateY(-2px);border-color:var(--border2);box-shadow:var(--shadow-lg)}.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}.stat-card:nth-child(1)::before{background:linear-gradient(90deg,#0ea5e9,#06b6d4)}.stat-card:nth-child(2)::before{background:linear-gradient(90deg,#22c55e,#10b981)}.stat-card:nth-child(3)::before{background:linear-gradient(90deg,#f59e0b,#f97316)}.stat-card:nth-child(4)::before{background:linear-gradient(90deg,#a855f7,#8b5cf6)}.stat-card .num{font-size:32px;font-weight:800;font-family:var(--ff-h);color:var(--text);line-height:1.2}.stat-card .label{color:var(--muted);font-size:12px;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}.stat-card .sub{color:var(--muted2);font-size:11px;margin-top:2px}.stat-card .stat-trend{position:absolute;top:16px;right:16px;font-size:11px;display:flex;align-items:center;gap:4px;padding:2px 10px;border-radius:20px;background:rgba(34,197,94,.1);color:var(--success);font-weight:600}
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:all .3s}.stat-card:hover{transform:translateY(-2px);border-color:var(--border2);box-shadow:var(--shadow-lg)}.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}.stat-card:nth-child(1)::before{background:linear-gradient(90deg,#0ea5e9,#06b6d4)}.stat-card:nth-child(2)::before{background:linear-gradient(90deg,#22c55e,#10b981)}.stat-card:nth-child(3)::before{background:linear-gradient(90deg,#f59e0b,#f97316)}.stat-card:nth-child(4)::before{background:linear-gradient(90deg,#a855f7,#8b5cf6)}.stat-card .num{font-size:32px;font-weight:800;font-family:var(--ff-h);color:var(--text);line-height:1.2}.stat-card .label{color:var(--muted);font-size:12px;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}.stat-card .sub{color:var(--muted2);font-size:11px;margin-top:2px}.stat-card .stat-trend{position:absolute;top:16px;right:16px;font-size:11px;display:flex;align-items:center;gap:4px;padding:2px 10px;border-radius:20px;background:rgba(34,197,94,.1);color:var(--success);font-weight:600}
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;transition:border-color .3s,box-shadow .3s}.card:hover{border-color:var(--border2)}.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}.card-title{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
 .badge{display:inline-flex;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;gap:4px;align-items:center;line-height:1}.badge-green{background:rgba(34,197,94,.12);color:var(--success);border:1px solid rgba(34,197,94,.2)}.badge-blue{background:rgba(14,165,233,.12);color:var(--primary);border:1px solid rgba(14,165,233,.2)}.badge-orange{background:rgba(245,158,11,.12);color:var(--warning);border:1px solid rgba(245,158,11,.2)}.badge-red{background:rgba(239,68,68,.12);color:var(--danger);border:1px solid rgba(239,68,68,.2)}
@@ -37,26 +38,35 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 </style>
 </head>
 <body>
-<nav>
-<a href="/" class="logo"><div class="mark">9</div>9am<span>Leads</span></a>
-<div class="nav-scroll">
-<div class="nav-links">
-<a href="/">Home</a>
-<a href="/" class="active">Dashboard</a>
-<a href="#" onclick="document.getElementById('territories-section').scrollIntoView({behavior:'smooth'});return false">Territories</a>
-<a href="#" onclick="document.getElementById('lead-filters-section').scrollIntoView({behavior:'smooth'});return false">Filters</a>
-<a href="#" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'});return false">Plan</a>
-<a href="#" onclick="openCampaigns();return false">Campaigns</a>
-<a href="#" onclick="openPartnerMarketplace();return false">Partners</a>
-<a href="#" onclick="openWhiteLabel();return false">Branding</a>
-<a href="#" onclick="openFeatureDiscovery();return false">Features</a>
+<div class="sidebar">
+<a href="/portal/dashboard.html" class="logo"><div class="mark">9</div>9am<span>Leads</span></a>
+<div class="nav-items">
+<a href="/portal/dashboard.html" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
+<a href="#" onclick="showPage('leads')"><i class="fas fa-list"></i> Leads</a>
+<a href="#" onclick="showPage('pipeline')"><i class="fas fa-tasks"></i> Pipeline</a>
+<a href="#" onclick="document.getElementById('territories-section').scrollIntoView({behavior:'smooth'});return false"><i class="fas fa-map-marker-alt"></i> Areas</a>
+<a href="#" onclick="openCampaigns();return false"><i class="fas fa-bullhorn"></i> Campaigns</a>
+<a href="#" onclick="showPage('reports')"><i class="fas fa-chart-bar"></i> Reports</a>
+<a href="#" onclick="document.getElementById('crm-section').scrollIntoView({behavior:'smooth'});return false"><i class="fas fa-plug"></i> CRM</a>
+<a href="#" onclick="showPage('billing')"><i class="fas fa-credit-card"></i> Billing</a>
+<a href="#" onclick="showPage('settings')"><i class="fas fa-cog"></i> Settings</a>
+<a href="#" onclick="showPage('support')"><i class="fas fa-life-ring"></i> Support</a>
 </div>
-<a href="/founder/" target="_blank" class="pill-growth"><i class="fas fa-rocket"></i> Business Growth</a>
-<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
-<button class="nav-signout" id="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+<div class="nav-bottom">
+<a href="/founder/" target="_blank"><i class="fas fa-rocket"></i> Business Growth</a>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:9px 12px;border-radius:8px;display:flex;align-items:center;gap:10px;width:100%;font-family:inherit;font-size:12px;font-weight:500" title="Toggle theme"><i class="fas fa-moon" style="width:18px;text-align:center"></i> Dark Mode</button>
+<button class="nav-signout" id="logout-btn" onclick="logout()" style="background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;padding:9px 12px;border-radius:8px;display:flex;align-items:center;gap:10px;width:100%;font-family:inherit;font-weight:500"><i class="fas fa-sign-out-alt" style="width:18px;text-align:center"></i> Sign Out</button>
 </div>
-</nav>
-<div class="container">
+</div>
+<div class="main-content">
+<div class="top-bar">
+<div class="greeting" id="greeting">Good morning<span id="customer-name"></span><small id="delivery-status">Loading your dashboard...</small></div>
+<div class="actions">
+<a href="/portal/dashboard.html?page=leads" class="btn btn-primary btn-sm"><i class="fas fa-eye"></i> View Leads</a>
+<a href="#" onclick="toggleTerritoryEditor();return false" class="btn btn-outline btn-sm"><i class="fas fa-plus-circle"></i> Add Area</a>
+<a href="#" onclick="showPlans()" class="btn btn-outline btn-sm"><i class="fas fa-arrow-up"></i> Upgrade Plan</a>
+</div>
+</div>
 <div class="onboarding" id="onboardingBanner"><i class="fas fa-spinner fa-spin" style="color:var(--primary)"></i> Loading your dashboard...</div>
 <div id="product-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
 <div class="stats-grid" id="statsGrid">
@@ -68,31 +78,68 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="card" id="tipsSection">
 <div class="card-title"><i class="fas fa-graduation-cap" style="color:var(--primary)"></i> How to Convert Your Leads</div>
 <div id="tipsContainer">
-<div class="tip-card"><span class="icon">??</span><div><strong>Personalise your approach</strong> Reference their specific business, location, or situation. Tailored messages get replies.</div></div>
-<div class="tip-card"><span class="icon">??</span><div><strong>Track your outreach</strong> Log every lead you contact and the outcome. Review which lead types convert best for you.</div></div>
-<div class="tip-card"><span class="icon">??</span><div><strong>Follow up more than once</strong> Most conversions happen after the second or third contact � polite persistence pays off. Visit the <a href="/portal/success.html" style="color:var(--primary);text-decoration:underline">Success Centre</a> for detailed guides per lead type.</div></div>
+<div class="tip-card"><span class="icon">💡/span><div><strong>Personalise your approach</strong> Reference their specific business, location, or situation. Tailored messages get replies.</div></div>
+<div class="tip-card"><span class="icon">💡/span><div><strong>Track your outreach</strong> Log every lead you contact and the outcome. Review which lead types convert best for you.</div></div>
+<div class="tip-card"><span class="icon">💡/span><div><strong>Follow up more than once</strong> Most conversions happen after the second or third contact � polite persistence pays off. Visit the <a href="/portal/success.html" style="color:var(--primary);text-decoration:underline">Success Centre</a> for detailed guides per lead type.</div></div>
 </div>
 </div>
 <div class="card">
 <div class="card-title"><i class="fas fa-rocket" style="color:var(--primary)"></i> Your Tools</div>
 <div class="tools-grid">
-<div class="tool-card" onclick="scrollToLeads()"><div class="icon">??</div><h3>View Leads</h3><p>See all your leads by day</p></div>
-<div class="tool-card" onclick="exportRange('csv')"><div class="icon">??</div><h3>Export CSV</h3><p>Download leads as spreadsheet</p></div>
+<div class="tool-card" onclick="scrollToLeads()"><div class="icon">💡/div><h3>View Leads</h3><p>See all your leads by day</p></div>
+<div class="tool-card" onclick="exportRange('csv')"><div class="icon">💡/div><h3>Export CSV</h3><p>Download leads as spreadsheet</p></div>
 <div class="tool-card" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'})"><div class="icon">?</div><h3>Upgrade Plan</h3><p>Get more leads per day</p></div>
 </div>
 </div>
-<div class="card" style="background:linear-gradient(135deg,rgba(14,165,233,0.03),rgba(99,102,241,0.03));border-color:rgba(14,165,233,0.15)">
-<div class="card-header"><div class="card-title"><i class="fas fa-chart-line" style="color:var(--primary)"></i> Grow Your Business</div></div>
+<!-- KPI Dashboard Cards -->
+<div class="kpi-grid" id="kpiGrid">
+<div class="kpi-card"><div class="kpi-num" id="kpi-today">0</div><div class="kpi-label">Today's Opportunities</div><div class="kpi-desc">Delivered at 9am</div><div class="kpi-icon"><i class="fas fa-sun"></i></div></div>
+<div class="kpi-card"><div class="kpi-num" id="kpi-week">0</div><div class="kpi-label">This Week</div><div class="kpi-desc">Last 7 days</div><div class="kpi-icon"><i class="fas fa-calendar-week"></i></div></div>
+<div class="kpi-card"><div class="kpi-num" id="kpi-month">0</div><div class="kpi-label">This Month</div><div class="kpi-desc">Est. value: &pound;0</div><div class="kpi-icon"><i class="fas fa-calendar-alt"></i></div></div>
+<div class="kpi-card"><div class="kpi-num" id="kpi-contacted">0</div><div class="kpi-label">Contacted</div><div class="kpi-desc">Outreach started</div><div class="kpi-icon"><i class="fas fa-phone"></i></div></div>
+<div class="kpi-card"><div class="kpi-num" id="kpi-quoted">0</div><div class="kpi-label">Quoted</div><div class="kpi-desc">Sent proposals</div><div class="kpi-icon"><i class="fas fa-file-invoice"></i></div></div>
+<div class="kpi-card"><div class="kpi-num" id="kpi-won">0</div><div class="kpi-label">Jobs Won</div><div class="kpi-desc">Revenue: &pound;0</div><div class="kpi-icon"><i class="fas fa-trophy"></i></div></div>
+<div class="kpi-card"><div class="kpi-num" id="kpi-revenue">&pound;0</div><div class="kpi-label">Revenue Generated</div><div class="kpi-desc">Avg deal: &pound;0</div><div class="kpi-icon"><i class="fas fa-pound-sign"></i></div></div>
+<div class="kpi-card"><div class="kpi-num" id="kpi-roi">0%</div><div class="kpi-label">Subscription ROI</div><div class="kpi-desc">Revenue / cost</div><div class="kpi-icon"><i class="fas fa-chart-line"></i></div></div>
+</div>
+
+<!-- Today's Delivery Widget -->
+<div class="section" id="delivery-widget">
+<div class="section-header"><div class="section-title"><i class="fas fa-clock" style="color:var(--primary)"></i> Today's 9am Delivery</div></div>
+<div id="delivery-content"><div style="text-align:center;padding:24px;color:var(--muted2)"><i class="fas fa-spinner fa-spin" style="font-size:18px;margin-bottom:6px;display:block"></i>Loading delivery status...</div></div>
+</div>
+
+<!-- Pipeline Overview -->
+<div class="section" id="pipeline-section">
+<div class="section-header"><div class="section-title"><i class="fas fa-tasks" style="color:var(--success)"></i> Pipeline Overview</div><a href="#" onclick="showPage('pipeline');return false" style="font-size:12px;color:var(--primary);text-decoration:none">View Full Pipeline <i class="fas fa-arrow-right"></i></a></div>
+<div id="pipeline-content" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px"><div style="text-align:center;padding:20px;color:var(--muted2)">Loading pipeline data...</div></div>
+</div>
+
+<!-- ROI Summary -->
+<div class="section" id="roi-section">
+<div class="section-header"><div class="section-title"><i class="fas fa-chart-line" style="color:var(--warning)"></i> ROI &amp; Business Impact</div></div>
+<div id="roi-content" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px"><div style="text-align:center;padding:20px;color:var(--muted2)">Loading ROI data...</div></div>
+</div>
+
+<!-- Stats Grid (backward compat) -->
+<div class="stats-grid" id="statsGrid" style="display:none">
+<div class="stat-card"><div class="num" id="stat-leads">0</div><div class="label">Total Leads</div><div class="sub">All time</div><div class="stat-trend"><i class="fas fa-arrow-up"></i> Active</div></div>
+<div class="stat-card"><div class="num" id="stat-new">0</div><div class="label">This Week</div><div class="sub" id="stat-week-label">Last 7 days</div><div class="stat-trend"><i class="fas fa-chart-line"></i> New</div></div>
+<div class="stat-card"><div class="num" id="stat-plan">Free</div><div class="label">Your Plan</div><div class="sub" id="stat-trial">7 days remaining</div><div class="stat-trend"><i class="fas fa-crown"></i> Plan</div></div>
+<div class="stat-card"><div class="num" id="stat-crm">0</div><div class="label">CRM</div><div class="sub" id="crm-status-sub">Not connected</div><div class="stat-trend"><i class="fas fa-plug"></i> Status</div></div>
+</div>
+
+ <div class="card-header"><div class="card-title"><i class="fas fa-chart-line" style="color:var(--primary)"></i> Grow Your Business</div></div>
 <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">Need help with marketing materials, email campaigns, social media, or scaling your operations? We offer done-for-you services to help you convert more leads and grow faster.</p>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
-<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">??</div><h3>Email Campaigns</h3><p>Setup, templates, automation</p></div>
-<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">??</div><h3>Flyers &amp; Letters</h3><p>Branded designs, print-ready PDFs</p></div>
-<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">??</div><h3>Social Media</h3><p>Setup, content, management</p></div>
-<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">??</div><h3>Business Consulting</h3><p>Strategy, scaling, automation</p></div>
-<div class="tool-card" onclick="window.open('/founder/','_blank')"><div class="icon">??</div><h3>Speak to the Founder</h3><p>Direct help &amp; custom solutions</p></div>
+<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📧</div><h3>Email Campaigns</h3><p>Setup, templates, automation</p></div>
+<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📬</div><h3>Flyers &amp; Letters</h3><p>Branded designs, print-ready PDFs</p></div>
+<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📱</div><h3>Social Media</h3><p>Setup, content, management</p></div>
+<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">💼</div><h3>Business Consulting</h3><p>Strategy, scaling, automation</p></div>
+<div class="tool-card" onclick="window.open('/founder/','_blank')"><div class="icon">👤</div><h3>Speak to the Founder</h3><p>Direct help &amp; custom solutions</p></div>
 </div>
 <div style="text-align:center;margin-top:14px">
-<a href="/founder/" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:8px;color:var(--primary);font-size:13px;font-weight:600;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(14,165,233,0.15)'" onmouseout="this.style.background=''"><i class="fas fa-comments"></i> Get a Custom Quote � Tell Us What You Need</a>
+<a href="/founder/" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:8px;color:var(--primary);font-size:13px;font-weight:600;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(14,165,233,0.15)'" onmouseout="this.style.background=''"><i class="fas fa-comments"></i> Get a Custom Quote \u2014 Tell Us What You Need</a>
 </div>
 </div>
 <div class="card" style="background:rgba(245,158,11,0.02);border-color:rgba(245,158,11,0.1)">
@@ -280,7 +327,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <option value="all">All Leads</option>
 </select>
 </div>
-<div id="leadGroups"><div class="empty-state"><div class="icon">??</div>Loading your leads...</div></div>
+<div id="leadGroups"><div class="empty-state"><div class="icon">💡/div>Loading your leads...</div></div>
 </div>
 </div>
 <footer>
@@ -351,6 +398,7 @@ async function loadDashboard() {
     banner.innerHTML = '<i class="fas fa-clock" style="color:var(--primary)"></i> <strong>Waiting for leads</strong> \u2014 Your real leads will arrive at 9am after the daily scrape and distribution pipeline runs.';
     banner.style.display = 'flex';
   }
+  loadDashboardData();
   calcConversion();
   updateOnboarding();
   if (typeof showLowLeadsTip === 'function') {
@@ -359,6 +407,109 @@ async function loadDashboard() {
     var weekLeads2 = leads.filter(function(l) { return l.created_at && new Date(l.created_at) > new Date(Date.now() - 7*86400000); }).length;
     showLowLeadsTip(pcCount2 || 3, weekLeads2);
   }
+}
+
+// ===== NEW DASHBOARD FUNCTIONS =====
+function showPage(page) {
+  // Page navigation - scroll to relevant section or navigate
+  var sections = {
+    dashboard: function() { window.scrollTo({top:0,behavior:'smooth'}); },
+    leads: function() { document.getElementById('leads-section')?.scrollIntoView({behavior:'smooth'}); },
+    pipeline: function() { document.getElementById('pipeline-section')?.scrollIntoView({behavior:'smooth'}); },
+    billing: function() { document.getElementById('sub-section')?.scrollIntoView({behavior:'smooth'}); },
+    settings: function() { document.getElementById('lead-filters-section')?.scrollIntoView({behavior:'smooth'}); },
+    support: function() { showModal('Support', '<p style="color:var(--muted);margin-bottom:12px">Send us a message and we\'ll get back to you within 24 hours.</p><textarea id="support-msg" placeholder="Describe your issue or question..." style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-family:inherit;font-size:13px;min-height:100px;margin-bottom:12px;resize:vertical"></textarea><input type="text" id="support-subject" placeholder="Subject" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-family:inherit;font-size:13px;margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="submitSupport()">Send Message</button>'); },
+    reports: function() { showModal('Reports', '<p style="color:var(--muted)">Full reports are being built. Your key metrics are shown on the dashboard above.</p>'); }
+  };
+  (sections[page] || sections.dashboard)();
+}
+
+async function submitSupport() {
+  var msg = document.getElementById('support-msg')?.value;
+  var subject = document.getElementById('support-subject')?.value;
+  if (!msg) return alert('Please enter a message');
+  try {
+    var r = await apiFetch('/api/support', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ type:'support', subject:subject||'', message:msg }) });
+    if (r && r.success) { alert(r.message || 'Sent!'); showModal('Support', '<p style="color:var(--success)">Your message has been sent. We\'ll reply within 24 hours.</p>'); }
+    else alert('Failed to send. Please try again.');
+  } catch(e) { alert('Could not connect. Please try again.'); }
+}
+
+async function loadDashboardData() {
+  try {
+    // Load KPI data
+    var dash = await apiFetch('/api/dashboard');
+    if (dash) {
+      setKPI('kpi-today', dash.leads_today);
+      setKPI('kpi-week', dash.leads_week);
+      setKPI('kpi-month', dash.leads_month);
+      setKPI('kpi-contacted', dash.contacted);
+      setKPI('kpi-quoted', dash.quoted);
+      setKPI('kpi-won', dash.won);
+      setKPI('kpi-revenue', '\u00a3' + (dash.actual_revenue || 0).toLocaleString());
+      setKPI('kpi-roi', dash.subscription_roi || '0%');
+      document.getElementById('kpi-month-desc').textContent = 'Est. value: \u00a3' + (dash.estimated_value || 0).toLocaleString();
+      document.getElementById('kpi-won-desc').textContent = 'Revenue: \u00a3' + (dash.actual_revenue || 0).toLocaleString();
+      document.getElementById('kpi-revenue-desc').textContent = 'Avg deal: \u00a3' + (dash.average_deal_size || 0).toLocaleString();
+    }
+  } catch(e) { console.log('Dashboard data error:', e); }
+
+  try {
+    // Load pipeline data
+    var pipe = await apiFetch('/api/pipeline');
+    if (pipe && pipe.pipeline) {
+      var html2 = '';
+      pipe.pipeline.forEach(function(stage) {
+        var color = stage.stage === 'new' ? '#0ea5e9' : stage.stage === 'contacted' ? '#f59e0b' : stage.stage === 'interested' ? '#8b5cf6' : stage.stage === 'quoted' ? '#6366f1' : stage.stage === 'won' ? '#22c55e' : '#ef4444';
+        html2 += '<div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center"><div style="font-size:24px;font-weight:800;color:' + color + '">' + stage.count + '</div><div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">' + stage.stage + '</div><div style="font-size:10px;color:var(--muted2);margin-top:4px">\u00a3' + (stage.revenue||0).toLocaleString() + '</div></div>';
+      });
+      document.getElementById('pipeline-content').innerHTML = html2 || '<div style="text-align:center;padding:20px;color:var(--muted2)">No leads in pipeline yet. Add your first lead to start tracking.</div>';
+    }
+  } catch(e) { console.log('Pipeline error:', e); }
+
+  try {
+    // Load ROI data
+    var roi = await apiFetch('/api/roi');
+    if (roi) {
+      var html3 = '';
+      var items = [
+        { label:'Total Revenue', value:'\u00a3'+(roi.total_revenue||0).toLocaleString(), color:'#22c55e' },
+        { label:'Total Spent', value:'\u00a3'+(roi.total_spent||0).toLocaleString(), color:'#ef4444' },
+        { label:'ROI', value:roi.roi_percent+'%', color:'#6366f1' },
+        { label:'Avg Deal', value:'\u00a3'+(roi.avg_deal_size||0).toLocaleString(), color:'#f59e0b' },
+        { label:'Won', value:roi.won_count||0, color:'#22c55e' },
+        { label:'Weeks Active', value:roi.weeks_active||0, color:'#0ea5e9' }
+      ];
+      items.forEach(function(item) {
+        html3 += '<div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:800;color:' + item.color + '">' + item.value + '</div><div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:500">' + item.label + '</div></div>';
+      });
+      document.getElementById('roi-content').innerHTML = html3;
+    }
+  } catch(e) { console.log('ROI error:', e); }
+
+  try {
+    // Load delivery info
+    var sub = await apiFetch('/api/subscription');
+    if (sub) {
+      var prefix = sub.up_to ? 'Up to ' : '';
+      var covLabel = sub.coverage_label || '';
+      var productLabel = sub.lead_type || 'Opportunities';
+      document.getElementById('delivery-content').innerHTML =
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">' +
+        '<div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Status</div><div style="font-size:14px;font-weight:700;color:var(--success);margin-top:4px"><i class="fas fa-check-circle"></i> Active</div></div>' +
+        '<div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Next Delivery</div><div style="font-size:14px;font-weight:700;color:var(--text);margin-top:4px">Tomorrow at 9:00 AM</div></div>' +
+        '<div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Lead Types</div><div style="font-size:14px;font-weight:700;color:var(--text);margin-top:4px">' + productLabel + '</div></div>' +
+        '<div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Coverage</div><div style="font-size:14px;font-weight:700;color:var(--text);margin-top:4px">' + covLabel + '</div></div>' +
+        '<div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Daily Allowance</div><div style="font-size:14px;font-weight:700;color:var(--text);margin-top:4px">' + prefix + sub.leads_per_day + '/day</div></div>' +
+        '<div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Delivered Today</div><div style="font-size:14px;font-weight:700;color:var(--primary);margin-top:4px">' + (sub.delivered_today || 0) + ' opportunities</div></div>' +
+        '</div>';
+    }
+  } catch(e) { console.log('Delivery widget error:', e); }
+}
+
+function setKPI(id, val) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = val !== undefined && val !== null ? val : '0';
 }
 
 function generateDemoLeads(session) {
@@ -435,7 +586,7 @@ function renderLeads() {
       html += '<div class="day-group"><div class="day-header" onclick="this.classList.toggle(\'collapsed\');this.nextElementSibling.classList.toggle(\'collapsed\')"><span class="day-date">' + day + '</span><span class="day-count">' + dayLeads.length + ' leads</span><span class="day-arrow"><i class="fas fa-chevron-down"></i></span></div><div class="day-body">';
       dayLeads.forEach(l => {
         const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
-        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || 'G��') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' -+ ' + d.type : '') + '</small></div><div class="value">' + (d.price || 'G��') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div></div>';
+        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || d.title || 'Lead') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' - ' + d.type : '') + '</small></div><div class="value">' + (d.price || d.estimated_value ? '\u00a3' + (d.price || d.estimated_value) : '') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div></div>';
       });
       html += '</div></div>';
     });
