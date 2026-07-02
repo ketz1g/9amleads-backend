@@ -3731,11 +3731,11 @@ function generateLeadEmailHTML(customer, leads) {
       title = d.deceasedName || 'Probate Estate';
       subtitle = d.estateValue ? '\u00a3' + Number(d.estateValue).toLocaleString() + ' estate' : '';
     } else if (leadProduct === 'newbusiness') {
-      title = d.companyName || d.name || 'New Company';
-      subtitle = d.sicCode ? 'SIC: ' + d.sicCode : '';
+      title = d.company || d.name || 'New Company';
+      subtitle = (d.sicCode ? 'SIC: ' + d.sicCode : '') || (d.address ? d.address.substring(0, 40) : '');
     } else if (leadProduct === 'planning') {
-      title = address.split(',')[0].trim() || d.council || 'Planning Application';
-      subtitle = d.applicationRef ? 'Ref: ' + d.applicationRef : '';
+      title = address.split(',')[0].trim() || d.description || 'Planning Application';
+      subtitle = d.council ? d.council : (d.applicationRef ? 'Ref: ' + d.applicationRef : '');
     } else {
       title = d.tenderTitle || d.description || 'Opportunity';
       subtitle = d.buyer || '';
@@ -3773,14 +3773,20 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.deceasedName) chips.push({ icon: '\uD83D\uDC68\u200D\u2696\uFE0F', text: d.deceasedName });
       if (d.registry) chips.push({ icon: '\uD83C\uDFE2', text: d.registry });
     } else if (leadProduct === 'newbusiness') {
-      if (d.companyName) chips.push({ icon: '\uD83C\uDFE2', text: d.companyName });
+      if (d.industryTags) chips.push({ icon: '\uD83C\uDF1F', text: d.industryTags });
+      if (d.company) chips.push({ icon: '\uD83C\uDFE2', text: d.company });
       if (d.sicCode) chips.push({ icon: '\uD83D\uDCCA', text: 'SIC: ' + d.sicCode });
-      if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: new Date(d.incorporationDate).toLocaleDateString() });
+      if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Incorporated ' + new Date(d.incorporationDate).toLocaleDateString() });
       if (d.companyNumber) chips.push({ icon: '\uD83D\uDCB3', text: 'No: ' + d.companyNumber });
+      // Link to Companies House
+      if (d.companyNumber) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">View on Companies House</a>' });
     } else if (leadProduct === 'planning') {
       if (d.council) chips.push({ icon: '\uD83C\uDFDB\uFE0F', text: d.council });
       if (d.applicationRef) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.applicationRef });
       if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 100) });
+      if (d.developmentType) chips.push({ icon: '\uD83C\uDFD7\uFE0F', text: d.developmentType });
+      // Link to planning portal
+      if (d.council && d.applicationRef) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="https://www.google.com/search?q=' + encodeURIComponent(d.council + ' planning application ' + d.applicationRef) + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">View application</a>' });
     } else {
       if (d.buyer) chips.push({ icon: '\uD83C\uDFED', text: d.buyer });
       if (d.contractValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.contractValue).toLocaleString() });
@@ -3788,6 +3794,7 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); chips.push({ icon: '\u23F3', text: 'Deadline: ' + days + ' days' }); }
       if (d.publishedDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Published: ' + new Date(d.publishedDate).toLocaleDateString() });
       if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 100) });
+      if (d.tenderUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.tenderUrl + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">View tender</a>' });
     }
 
     if (chips.length > 0) {
