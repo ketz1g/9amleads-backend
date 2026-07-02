@@ -517,8 +517,8 @@ async function distributeProduct(product) {
       var areaAlready = 0;
       for (var ci = 0; ci < db.leads.length; ci++) {
         var existingLead = db.leads[ci];
-        // Only count leads for this specific product to avoid cross-product interference
-        if (existingLead.customer_id === custGen.id && existingLead.product === product) {
+        // Only count undelivered leads for this specific product per area
+        if (existingLead.customer_id === custGen.id && existingLead.product === product && !existingLead.delivered) {
           try {
             var leadData = JSON.parse(existingLead.data);
             var leadPC = (leadData.postcode || leadData.address || '').toUpperCase();
