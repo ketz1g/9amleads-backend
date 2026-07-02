@@ -2789,6 +2789,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var custLeads = [];
       var custAreas = [];
       try { custAreas = JSON.parse(cust.target_areas || '[]'); } catch(e) {}
+      // Ensure customer's primary product always has at least 1 lead
+      if (cust.product) {
+        var primaryLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === cust.product; });
+        if (primaryLeads.length > 0) {
+          custLeads.push(primaryLeads[0]);
+        }
+      }
       // Round 1: pick 1 lead from EACH product (guarantees every product gets at least 1)
       for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
         var prod = products[pi];
@@ -3786,8 +3793,9 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.applicationRef) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.applicationRef });
       if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 100) });
       if (d.developmentType) chips.push({ icon: '\uD83C\uDFD7\uFE0F', text: d.developmentType });
-      // Link to planning portal
-      if (d.council && d.applicationRef) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="https://www.google.com/search?q=' + encodeURIComponent(d.council + ' planning application ' + d.applicationRef) + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">View application</a>' });
+      // Link to planning portal search
+      var searchQuery = (d.council || d.city || '') + ' planning application ' + (d.applicationRef || d.address || '');
+      chips.push({ icon: '\uD83D\uDD0D', text: '<a href="https://www.google.com/search?q=' + encodeURIComponent(searchQuery) + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">Search planning portal</a>' });
     } else {
       if (d.buyer) chips.push({ icon: '\uD83C\uDFED', text: d.buyer });
       if (d.contractValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.contractValue).toLocaleString() });
@@ -3796,6 +3804,7 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.publishedDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Published: ' + new Date(d.publishedDate).toLocaleDateString() });
       if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 100) });
       if (d.tenderUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.tenderUrl + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">View tender</a>' });
+      if (d.portalUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.portalUrl + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">View on portal</a>' });
     }
 
     if (chips.length > 0) {
