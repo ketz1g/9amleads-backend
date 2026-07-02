@@ -374,6 +374,155 @@ document.querySelectorAll('#s-plan-container input[type=radio]').forEach(functio
   });
 });
 
+// ===== MULTI-STEP COVERAGE & LEAD TYPE UI =====
+var currentStep = 1;
+var selectedCoverage = 'postcode';
+var leadTypeRules = null;
+var coverageLookup = { postcode:'Postcode Area(s)', county:'County', region:'Region', ukwide:'UK-wide' };
+
+// Load lead type rules from backend
+fetch(API + '/api/lead-types').then(function(r) { return r.json(); }).then(function(d) {
+  leadTypeRules = d.lead_types;
+  updatePlanDescriptions();
+}).catch(function() {});
+
+function onLeadTypeChange() {
+  updateCoverageOptions();
+  updatePlanDescriptions();
+}
+
+function updateCoverageOptions() {
+  var container = document.getElementById('coverage-options');
+  if (!container) return;
+  var checked = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
+  // Find the minimum available coverage across all selected types
+  var allCoverage = [];
+  var allMinArea = 'postcode';
+  for (var ci = 0; ci < checked.length; ci++) {
+    var p = checked[ci].value;
+    var rule = leadTypeRules && leadTypeRules[p];
+    if (rule) {
+      if (rule.coverage) allCoverage = allCoverage.concat(rule.coverage);
+      if (rule.min_area && COVERAGE_ORDER.indexOf(rule.min_area) > COVERAGE_ORDER.indexOf(allMinArea)) allMinArea = rule.min_area;
+    }
+  }
+  if (allCoverage.length === 0) { allCoverage = ['postcode','county','region','ukwide']; }
+  // Deduplicate and sort by coverage width
+  var unique = [];
+  for (var i = 0; i < allCoverage.length; i++) {
+    if (unique.indexOf(allCoverage[i]) === -1) unique.push(allCoverage[i]);
+  }
+  unique.sort(function(a,b) { return COVERAGE_ORDER.indexOf(a) - COVERAGE_ORDER.indexOf(b); });
+  // Render radio buttons
+  var html = '';
+  for (var i = 0; i < unique.length; i++) {
+    var c = unique[i];
+    var isMin = c === allMinArea;
+    var disabled = c === 'postcode' && allMinArea !== 'postcode';
+    html += '<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:' + (c === selectedCoverage ? 'rgba(14,165,233,0.06)' : '#0f111a') + ';border:' + (c === selectedCoverage ? '2px solid rgba(14,165,233,0.3)' : '1px solid #1e2030') + ';border-radius:8px;cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';font-size:12px;color:' + (disabled ? '#5c6480' : '#f1f5f9') + ';opacity:' + (disabled ? '0.4' : '1') + '" onclick="' + (disabled ? '' : 'selectCoverage(\'' + c + '\')') + '">';
+    html += '<input type="radio" name="coverage" value="' + c + '" ' + (c === selectedCoverage ? 'checked' : '') + (disabled ? ' disabled' : '') + ' style="accent-color:#0ea5e9;width:15px;height:15px">';
+    html += '<div style="flex:1"><strong>' + (coverageLookup[c] || c) + '</strong><br><span style="font-size:10px;color:#8890a8">' + getCoverageDesc(c) + '</span></div>';
+    if (isMin && disabled) html += '<span style="font-size:9px;color:#fbbf24;font-weight:600">Required</span>';
+    html += '</label>';
+  }
+  container.innerHTML = html;
+  // Show/hide postcode area selector
+  var areaSel = document.getElementById('area-selector');
+  if (areaSel) {
+    areaSel.style.display = (selectedCoverage === 'postcode') ? 'block' : 'none';
+  }
+}
+
+var COVERAGE_ORDER = ['postcode','county','region','ukwide'];
+
+function getCoverageDesc(type) {
+  var descs = { postcode:'1-3 specific postcode areas', county:'All postcodes in a county', region:'Multiple counties in a region', ukwide:'All UK postcodes, maximum coverage' };
+  return descs[type] || '';
+}
+
+function selectCoverage(type) {
+  selectedCoverage = type;
+  var radios = document.querySelectorAll('#coverage-options input[type=radio]');
+  for (var i = 0; i < radios.length; i++) { radios[i].checked = radios[i].value === type; }
+  updateCoverageOptions();
+  updatePlanDescriptions();
+}
+
+function updatePlanDescriptions() {
+  if (!leadTypeRules) return;
+  var primary = getPrimaryLeadType();
+  var rule = leadTypeRules[primary];
+  if (!rule) return;
+  var planKeys = ['free_trial', 'starter', 'pro', 'enterprise'];
+  for (var i = 0; i < planKeys.length; i++) {
+    var pk = planKeys[i];
+    var el = document.getElementById('plan-desc-' + pk);
+    if (!el) continue;
+    var limits = rule.plan_details && rule.plan_details[pk];
+    if (limits) {
+      var limit = limits[selectedCoverage] || limits.default || 5;
+      var prefix = rule.up_to ? 'Up to ' : '';
+      if (pk === 'enterprise' && selectedCoverage === 'ukwide') prefix = '';
+      el.textContent = (pk === 'free_trial' ? '7 days free &middot; ' : '') + prefix + limit + ' leads/day';
+    }
+  }
+}
+
+function getPrimaryLeadType() {
+  var checked = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
+  return checked.length > 0 ? checked[0].value : 'moving';
+}
+
+function goToStep(n) {
+  currentStep = n;
+  for (var i = 1; i <= 5; i++) {
+    var el = document.getElementById('step-' + i);
+    var indic = document.querySelector('.step[data-step="' + i + '"]');
+    if (el) el.style.display = i === n ? 'block' : 'none';
+    if (indic) {
+      indic.style.background = i === n ? 'rgba(14,165,233,0.1)' : '#0f111a';
+      indic.style.color = i === n ? '#0ea5e9' : '#5c6480';
+    }
+  }
+  // Show the outer signup container
+  document.getElementById('signup-form').style.display = 'block';
+  if (n === 2) { updateCoverageOptions(); }
+  if (n === 3) { updatePlanDescriptions(); }
+}
+
+async function checkAvailability() {
+  var resultDiv = document.getElementById('availability-result');
+  var loadingDiv = document.getElementById('availability-loading');
+  var contBtn = document.getElementById('avail-continue-btn');
+  resultDiv.style.display = 'none';
+  loadingDiv.style.display = 'block';
+  contBtn.style.display = 'none';
+  var primary = getPrimaryLeadType();
+  try {
+    var resp = await fetch(API + '/api/check-availability', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ product:primary, plan:document.querySelector('#s-plan-container input[type=radio]:checked')?.value || 'free_trial', coverage:selectedCoverage, postcodes:signupPostcodes }) });
+    var data = await resp.json();
+    loadingDiv.style.display = 'none';
+    resultDiv.style.display = 'block';
+    if (data.available) {
+      var msg = data.limited ? 'limited' : 'good';
+      resultDiv.innerHTML = '<div style="padding:16px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:10px;text-align:center"><i class="fas fa-check-circle" style="color:#22c55e;font-size:24px;display:block;margin-bottom:6px"></i><div style="font-weight:700;color:#22c55e;margin-bottom:4px">Availability Confirmed</div><div style="font-size:12px;color:#8890a8">' + (data.limited ? 'Limited availability in this area. Recommended wider coverage for more leads.' : 'Good availability. Your package can be fulfilled.') + '</div></div>';
+      contBtn.style.display = 'inline-flex';
+    } else {
+      resultDiv.innerHTML = '<div style="padding:16px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:10px;text-align:center"><i class="fas fa-exclamation-triangle" style="color:#ef4444;font-size:24px;display:block;margin-bottom:6px"></i><div style="font-weight:700;color:#ef4444;margin-bottom:4px">Limited Availability</div><div style="font-size:12px;color:#8890a8">' + (data.message || 'This package is not currently available in your selected area.') + '</div><div style="margin-top:8px;font-size:11px;color:#8890a8">' + (data.recommendation || '') + '</div></div>';
+    }
+  } catch(e) {
+    loadingDiv.style.display = 'none';
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div style="padding:16px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:10px;text-align:center;font-size:12px;color:#8890a8">Could not check availability. You can still proceed.</div>';
+    contBtn.style.display = 'inline-flex';
+  }
+}
+
+// Coverage selector initialization
+document.addEventListener('DOMContentLoaded', function() {
+  updateCoverageOptions();
+});
+
 // ===== SIGNUP =====
 function doSignup() {
   var name = document.getElementById('s-name').value.trim();
@@ -397,7 +546,7 @@ function doSignup() {
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
   fetch(API + '/api/auth/signup', {
     method:'POST', headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
+    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:d.customer?.plan || 'free_trial', email:email, product:product, products:products }));

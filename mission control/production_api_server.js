@@ -1326,6 +1326,49 @@ const PRODUCT_LEAD_FILES = {
 
 // Lead type rules: per-product, per-plan, per-coverage-area daily limits
 // Coverage types: 'postcode', 'county', 'region', 'ukwide'
+// POST /api/check-availability — check if a lead type/package can be fulfilled
+app.post('/api/check-availability', async (req, res) => {
+  try {
+    const { product, plan, coverage, postcodes } = req.body;
+    const rule = getLeadTypeRule(product);
+    const dailyLimit = getPlanLimit(product, plan || 'starter', coverage || 'region');
+
+    // Check coverage validity for this lead type
+    if (rule.coverage.indexOf(coverage) === -1) {
+      return res.json({ available: false, message: coverage + ' coverage is not available for ' + rule.name + '.', recommendation: 'Choose ' + rule.coverage.join(', ') + ' instead.', limited: true, recommended_coverage: rule.min_area });
+    }
+
+    // Check minimum area requirement
+    const areaOrder = { postcode: 1, county: 2, region: 3, ukwide: 4 };
+    if (areaOrder[coverage] < areaOrder[rule.min_area]) {
+      return res.json({ available: false, message: rule.name + ' in ' + coverage + ' areas are limited. To receive more daily opportunities, please choose ' + rule.min_area + ', ' + (rule.coverage.filter(c => c !== coverage).join(' or ')) + ' coverage.', recommendation: 'Recommended coverage: ' + rule.min_area + ' or wider.', limited: true, recommended_coverage: rule.min_area });
+    }
+
+    // Check if product is enabled
+    if (!rule.enabled) {
+      return res.json({ available: false, message: rule.name + ' are coming soon. Join the waiting list to be notified.', limited: true, waiting_list: true });
+    }
+
+    // Basic availability heuristic
+    const db = getDb();
+    const existingCustomers = (db.customers || []).filter(c => c.product === product && c.plan !== 'cancelled' && (!c.trial_ends || new Date(c.trial_ends) > new Date()));
+    const totalCommitted = existingCustomers.reduce((sum, c) => sum + (parseInt(c.leads_per_day) || 5), 0);
+    var leadsToday = (db.leads || []).filter(function(l) { return l.product === product && l.delivered === 0; }).length;
+
+    // Estimate available supply
+    var weeklyAvg = leadsToday; // Simplified: use today's available leads
+    var supplyRatio = dailyLimit > 0 ? (weeklyAvg / (totalCommitted + dailyLimit)) : 0;
+
+    if (supplyRatio < 0.3 && totalCommitted > 0) {
+      return res.json({ available: true, limited: true, message: rule.name + ' in this area have limited availability.', recommendation: 'Consider wider coverage or a starter package to begin with.', supply_ratio: supplyRatio });
+    }
+
+    res.json({ available: true, limited: supplyRatio < 0.8, daily_limit: dailyLimit, supply_ratio: supplyRatio, coverage: coverage });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/lead-types — return lead type rules for frontend
 app.get('/api/lead-types', (req, res) => {
   const summary = {};
