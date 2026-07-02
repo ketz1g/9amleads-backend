@@ -1666,8 +1666,8 @@ setTimeout(function(){var e=document.getElementById('liveProof'),t=document.getE
 <script>
 if(localStorage.getItem('cookies_accepted')) document.getElementById('cookieConsent').style.display='none';
 // Theme toggle — light mode default
-var savedTheme = localStorage.getItem('theme');
-if(savedTheme !== 'dark') { document.documentElement.classList.add('light'); }
+// Default to light mode always
+document.documentElement.classList.add('light');
 function toggleTheme() {
   var root = document.documentElement;
   root.classList.toggle('light');
@@ -1677,6 +1677,8 @@ function toggleTheme() {
 }
 // Set initial icon
 document.addEventListener('DOMContentLoaded', function() {
+  var savedTheme = localStorage.getItem('theme');
+  if(savedTheme === 'dark') { document.documentElement.classList.remove('light'); }
   var isLight = document.documentElement.classList.contains('light');
   document.getElementById('themeToggle').innerHTML = isLight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
 });
