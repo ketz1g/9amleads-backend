@@ -56,7 +56,24 @@ function loadAssignments() {
   catch { return { assignments: {} }; }
 }
 
-// On startup: purge demo migration accounts so fresh signups aren't mixed with old test data
+// On startup: ensure required data files exist on persistent disk
+try {
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  // Copy default data files from source if not present on persistent disk
+  var sourceDataDir = path.join(__dirname, '..', 'mission control', 'data');
+  if (!fs.existsSync(sourceDataDir)) sourceDataDir = path.join(__dirname, 'data');
+  ['uk-postcode-areas.json', 'uk-postcode-districts.json', 'postcode-assignments.json'].forEach(function(fn) {
+    var targetPath = path.join(DATA_DIR, fn);
+    if (!fs.existsSync(targetPath)) {
+      var sourcePath = path.join(sourceDataDir, fn);
+      if (fs.existsSync(sourcePath)) {
+        fs.copyFileSync(sourcePath, targetPath);
+        console.log('[BOOT] Copied ' + fn + ' to persistent disk');
+      }
+    }
+  });
+} catch(e) { console.log('[BOOT] Data file setup:', e.message); }
+
 try {
   var startupDb = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'database.json'), 'utf-8'));
   var beforeCust = (startupDb.customers || []).length;
