@@ -1369,6 +1369,47 @@ app.post('/api/check-availability', async (req, res) => {
   }
 });
 
+// POST /api/waiting-list — join waiting list for unavailable packages
+app.post('/api/waiting-list', async (req, res) => {
+  try {
+    const { name, email, phone, business_type, lead_type, area, package: pkg } = req.body;
+    if (!email || !lead_type) return res.status(400).json({ error: 'Email and lead type required' });
+    const db = getDb();
+    if (!db.waiting_list) db.waiting_list = [];
+    db.waiting_list.push({ id: uuidv4(), name: name || '', email, phone: phone || '', business_type: business_type || '', lead_type, area: area || '', package: pkg || '', date_joined: new Date().toISOString(), notified: false, notes: '' });
+    saveDb();
+    res.json({ success: true, message: 'You\'ve been added to the waiting list. We\'ll contact you when supply becomes available.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/availability — admin overview of supply vs demand
+app.get('/api/admin/availability', adminAuth, (req, res) => {
+  try {
+    const db = getDb();
+    const customers = db.customers || [];
+    const leads = db.leads || [];
+    const result = {};
+    for (const [key, rule] of Object.entries(LEAD_TYPE_RULES)) {
+      const activeCustomers = customers.filter(c => c.product === key && c.plan !== 'cancelled');
+      const totalCommitted = activeCustomers.reduce((sum, c) => sum + (parseInt(c.leads_per_day) || 5), 0);
+      const availableLeads = leads.filter(l => l.product === key && l.delivered === 0).length;
+      const leadsToday = leads.filter(l => l.product === key && l.delivered === 0 && l.created_at && l.created_at.startsWith(new Date().toISOString().split('T')[0])).length;
+      result[key] = {
+        name: rule.name,
+        enabled: rule.enabled,
+        active_customers: activeCustomers.length,
+        total_committed_daily: totalCommitted,
+        available_inventory: availableLeads,
+        leads_today: leadsToday,
+        supply_ratio: totalCommitted > 0 ? Math.min(1, availableLeads / totalCommitted) : 1,
+        oversold: totalCommitted > 0 && availableLeads < totalCommitted * 0.3,
+        coverage: rule.coverage
+      };
+    }
+    res.json({ lead_types: result, warnings: Object.values(result).filter(r => r.oversold).map(r => r.name + ' oversold') });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/lead-types — return lead type rules for frontend
 app.get('/api/lead-types', (req, res) => {
   const summary = {};
@@ -3599,6 +3640,33 @@ app.post('/api/admin/reset', async (req, res) => {
     saveAssignments(assignmentsData);
     console.log('[ADMIN] Database reset complete');
     res.json({ success: true, message: 'All customers, leads, and assignments cleared. Start fresh.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/update-lead-type — admin updates lead type rules
+app.post('/api/admin/update-lead-type', adminAuth, (req, res) => {
+  try {
+    const { key, updates } = req.body;
+    if (!key || !LEAD_TYPE_RULES[key]) return res.status(400).json({ error: 'Invalid lead type' });
+    if (updates.enabled !== undefined) LEAD_TYPE_RULES[key].enabled = updates.enabled;
+    if (updates.min_area) LEAD_TYPE_RULES[key].min_area = updates.min_area;
+    if (updates.coverage) LEAD_TYPE_RULES[key].coverage = updates.coverage;
+    if (updates.plan_limits && typeof updates.plan_limits === 'object') {
+      for (const [planKey, limits] of Object.entries(updates.plan_limits)) {
+        if (LEAD_TYPE_RULES[key].plans[planKey]) {
+          Object.assign(LEAD_TYPE_RULES[key].plans[planKey], limits);
+        }
+      }
+    }
+    // Save to a config file so changes persist across restarts
+    const configPath = path.join(DATA_DIR, 'lead-type-overrides.json');
+    let overrides = {};
+    try { overrides = JSON.parse(fs.readFileSync(configPath, 'utf-8')); } catch(e) {}
+    overrides[key] = overrides[key] || {};
+    Object.assign(overrides[key], updates);
+    fs.writeFileSync(configPath, JSON.stringify(overrides, null, 2));
+    console.log('[ADMIN] Lead type updated:', key);
+    res.json({ success: true, message: LEAD_TYPE_RULES[key].name + ' updated' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
