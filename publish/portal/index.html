@@ -532,6 +532,13 @@ function doSignup() {
   var productCheckboxes = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
   var products = Array.from(productCheckboxes).map(function(cb) { return cb.value; });
   if (products.length === 0) { document.getElementById('signup-error').textContent = 'Please select at least one lead type'; document.getElementById('signup-error').style.display = 'block'; return; }
+  var selectedPlan = document.querySelector('#s-plan-container input[type=radio]:checked');
+  var planVal = selectedPlan ? selectedPlan.value : 'free_trial';
+  var maxProducts = planVal === 'free_trial' ? 1 : planVal === 'starter' ? 2 : 99;
+  if (products.length > maxProducts) {
+    document.getElementById('signup-error').textContent = (planVal === 'free_trial' ? 'Free Trial' : planVal.charAt(0).toUpperCase() + planVal.slice(1)) + ' allows up to ' + maxProducts + ' lead type' + (maxProducts > 1 ? 's' : '') + '. ' + (maxProducts < 99 ? 'Upgrade to ' + (planVal === 'free_trial' ? 'Starter' : 'Pro') + ' for more.' : '');
+    document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
+  }
   var product = products[0];
   var targetAreas = signupPostcodes;
   if (targetAreas.length === 0) { document.getElementById('signup-error').textContent = 'Please add at least one postcode area (e.g. EN, SG, CM)'; document.getElementById('signup-error').style.display = 'block'; return; }
