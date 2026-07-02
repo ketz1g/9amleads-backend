@@ -634,17 +634,20 @@ async function loadDashboardData() {
     // Load KPI data
     var dash = await apiFetch('/api/dashboard');
     if (dash) {
-      setKPI('kpi-today', dash.leads_today);
+      setKPI('kpi-today', dash.delivered_today || dash.leads_today);
       setKPI('kpi-week', dash.leads_week);
-      setKPI('kpi-month', dash.leads_month);
+      setKPI('kpi-month', dash.delivered_this_month || dash.leads_month);
       setKPI('kpi-contacted', dash.contacted);
       setKPI('kpi-quoted', dash.quoted);
       setKPI('kpi-won', dash.won);
       setKPI('kpi-revenue', '\u00a3' + (dash.actual_revenue || 0).toLocaleString());
       setKPI('kpi-roi', dash.subscription_roi || '0%');
-      document.getElementById('kpi-month-desc').textContent = 'Est. value: \u00a3' + (dash.estimated_value || 0).toLocaleString();
+      document.getElementById('kpi-month-desc').textContent = dash.delivered_this_month ? (dash.delivered_this_month + ' delivered this month') : ('Est. value: \u00a3' + (dash.estimated_value || 0).toLocaleString());
       document.getElementById('kpi-won-desc').textContent = 'Revenue: \u00a3' + (dash.actual_revenue || 0).toLocaleString();
       document.getElementById('kpi-revenue-desc').textContent = 'Avg deal: \u00a3' + (dash.average_deal_size || 0).toLocaleString();
+      // Update today card description
+      var todayDesc = document.getElementById('kpi-today-desc');
+      if (todayDesc) todayDesc.textContent = dash.delivered_today ? dash.delivered_today + ' delivered today at 9am' : 'No deliveries yet';
     }
   } catch(e) { console.log('Dashboard data error:', e); }
 
