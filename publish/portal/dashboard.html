@@ -215,9 +215,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div id="roi-content" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px"><div style="text-align:center;padding:20px;color:var(--muted2)">Loading ROI data...</div></div>
 </div>
 
-<!-- Stats Grid (backward compat) -->
-<div class="stats-grid" id="statsGrid" style="display:none">
-<div class="stat-card"><div class="num" id="stat-leads">0</div><div class="label">Total Leads</div><div class="sub">All time</div><div class="stat-trend"><i class="fas fa-arrow-up"></i> Active</div></div>
+<div class="sub">All time</div><div class="stat-trend"><i class="fas fa-arrow-up"></i> Active</div></div>
 <div class="stat-card"><div class="num" id="stat-new">0</div><div class="label">This Week</div><div class="sub" id="stat-week-label">Last 7 days</div><div class="stat-trend"><i class="fas fa-chart-line"></i> New</div></div>
 <div class="stat-card"><div class="num" id="stat-plan">Free</div><div class="label">Your Plan</div><div class="sub" id="stat-trial">7 days remaining</div><div class="stat-trend"><i class="fas fa-crown"></i> Plan</div></div>
 <div class="stat-card"><div class="num" id="stat-crm">0</div><div class="label">CRM</div><div class="sub" id="crm-status-sub">Not connected</div><div class="stat-trend"><i class="fas fa-plug"></i> Status</div></div>
@@ -225,24 +223,21 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 
  <div class="card-header"><div class="card-title"><i class="fas fa-chart-line" style="color:var(--primary)"></i> Grow Your Business</div></div>
 <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">Need help with marketing materials, email campaigns, social media, or scaling your operations? We offer done-for-you services to help you convert more leads and grow faster.</p>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
-<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📧</div><h3>Email Campaigns</h3><p>Setup, templates, automation</p></div>
-<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📬</div><h3>Flyers &amp; Letters</h3><p>Branded designs, print-ready PDFs</p></div>
-<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📱</div><h3>Social Media</h3><p>Setup, content, management</p></div>
-<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">💼</div><h3>Business Consulting</h3><p>Strategy, scaling, automation</p></div>
-<div class="tool-card" onclick="window.open('/founder/','_blank')"><div class="icon">👤</div><h3>Speak to the Founder</h3><p>Direct help &amp; custom solutions</p></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
+<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📧</div><h3>Email Campaigns</h3><p>Setup, templates</p></div>
+<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📬</div><h3>Flyers &amp; Letters</h3><p>Design, print-ready</p></div>
+<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📱</div><h3>Social Media</h3><p>Content, management</p></div>
+<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">💼</div><h3>Business Consulting</h3><p>Strategy, scaling</p></div>
+<div class="tool-card" onclick="window.open('/founder/','_blank')"><div class="icon">👤</div><h3>Speak to Founder</h3><p>Direct custom help</p></div>
 </div>
 <div style="text-align:center;margin-top:14px">
 <a href="/founder/" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:8px;color:var(--primary);font-size:13px;font-weight:600;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(14,165,233,0.15)'" onmouseout="this.style.background=''"><i class="fas fa-comments"></i> Get a Custom Quote \u2014 Tell Us What You Need</a>
 </div>
 </div>
-<div class="card" style="background:rgba(245,158,11,0.02);border-color:rgba(245,158,11,0.1)">
-<div class="card-header"><div class="card-title"><i class="fas fa-comment-dots" style="color:var(--warning)"></i> We Want Your Feedback</div></div>
-<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-<div style="flex:1;min-width:200px">
-<p style="font-size:13px;color:var(--text2);line-height:1.6;margin:0">Something not working? Confusing? Missing a feature? Tell us directly � every response goes to the founder and is reviewed personally.</p>
-</div>
-<a href="/portal/feedback.html" class="btn btn-primary btn-sm" style="white-space:nowrap;flex-shrink:0"><i class="fas fa-paper-plane"></i> Send Feedback</a>
+<div class="card" style="background:rgba(245,158,11,0.02);border-color:rgba(245,158,11,0.1);padding:12px 16px">
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:8px"><i class="fas fa-comment-dots" style="color:var(--warning);font-size:18px"></i>
+<span style="font-size:12px;color:var(--text2);line-height:1.5">Missing a feature or found a bug? <a href="/portal/feedback.html" style="color:var(--primary);text-decoration:underline">Send feedback</a> — the founder reads every message.</span></div>
 </div>
 </div>
 <div class="card" id="sub-section">
