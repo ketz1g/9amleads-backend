@@ -601,6 +601,20 @@ setTimeout(function() {
   }
 }, 25000);
 
+// Reload data every 10 seconds if sections are still loading
+var loadRetries = 0;
+var retryInterval = setInterval(function() {
+  if (loadRetries > 5) { clearInterval(retryInterval); return; }
+  loadingElements = ['#pipeline-content', '#delivery-content', '#roi-content'];
+  var stillLoading = false;
+  for (var rx = 0; rx < loadingElements.length; rx++) {
+    var el = document.querySelector(loadingElements[rx]);
+    if (el && (el.textContent || '').includes('Loading')) stillLoading = true;
+  }
+  if (stillLoading) { loadRetries++; loadDashboardData(); }
+  else clearInterval(retryInterval);
+}, 10000);
+
 // ===== NEW DASHBOARD FUNCTIONS =====
 function showPage(page) {
   // Page navigation - scroll to relevant section or navigate

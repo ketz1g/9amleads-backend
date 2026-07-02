@@ -21,8 +21,8 @@ require('dotenv').config();
 
 // ===== CONFIG =====
 const PORT = process.env.PORT || process.env.API_PORT || 8012;
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-dev-secret-' + Date.now();
-if (!process.env.JWT_SECRET) console.warn('[WARN] JWT_SECRET not set. Using fallback. Set JWT_SECRET env var for production.');
+const JWT_SECRET = process.env.JWT_SECRET || '9amLeads-Production-JWT-Secret-2026!';
+if (!process.env.JWT_SECRET) console.log('[CONFIG] JWT_SECRET not set. Using hardcoded fallback.');
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.9amleads.com';
