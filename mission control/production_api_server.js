@@ -2564,9 +2564,8 @@ cron.schedule('50 8 * * *', async () => {
       }
       try {
         var html = generateLeadEmailHTML(cust, custLeads);
-        var ltName2 = cust.product ? (getLeadTypeRule(cust.product).name || cust.product) : 'Opportunities';
         var covName2 = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
-        var subject = 'Your 9am ' + ltName2 + ' for ' + covName2 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        var subject = 'Your 9am Opportunities for ' + covName2 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, subject, html);
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
@@ -2680,9 +2679,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       if (custLeads.length === 0) continue;
       try {
         var htmlContent = generateLeadEmailHTML(cust, custLeads);
-        var ltName3 = cust.product ? (getLeadTypeRule(cust.product).name || cust.product) : 'Opportunities';
         var covName3 = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
-        var subject = 'Your 9am ' + ltName3 + ' for ' + covName3 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        var subject = 'Your 9am Opportunities for ' + covName3 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, htmlContent);
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
@@ -3532,7 +3530,7 @@ function generateLeadEmailHTML(customer, leads) {
   // Header
   body += '<tr><td style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:28px 28px 22px;border-radius:16px 16px 0 0;text-align:center">';
   body += '<div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:900;color:#ffffff;letter-spacing:-.5px">9am<span style="color:' + accent + '">Leads</span></div>';
-  body += '<p style="color:rgba(255,255,255,0.5);font-size:10px;margin:6px 0 0;text-transform:uppercase;letter-spacing:2px">' + (customer.lead_type || 'Daily Opportunities') + ' for ' + (customer.coverage ? (COVERAGE_LABELS[customer.coverage] || customer.coverage) : 'your area') + '</p>';
+    body += '<p style="color:rgba(255,255,255,0.5);font-size:10px;margin:6px 0 0;text-transform:uppercase;letter-spacing:2px">Daily Opportunities for ' + (customer.coverage ? (COVERAGE_LABELS[customer.coverage] || customer.coverage) : 'your area') + '</p>';
   body += '</td></tr>';
 
   // Greeting + count
