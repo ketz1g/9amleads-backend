@@ -578,8 +578,18 @@ async function loadNotifications() {
     }).join('');
     document.getElementById('notifications-container').innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">&#128276; Notifications</div>' + html;
     document.getElementById('notifications-container').style.display = 'block';
-  } catch(e) { console.log('Notifications error:', e); }
+    } catch(e) { console.log('Notifications error:', e); }
 }
+
+// Loading timeout — show message if dashboard takes too long
+setTimeout(function() {
+  var els = document.querySelectorAll('#pipeline-content, #delivery-content, #roi-content, #kpiGrid');
+  for (var ei = 0; ei < els.length; ei++) {
+    if (els[ei] && (els[ei].textContent || '').includes('Loading')) {
+      els[ei].innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2);font-size:12px">Unable to load. Please <a href="javascript:location.reload()" style="color:var(--primary);text-decoration:underline">refresh</a> or <a href="#" onclick="showPage(\'support\');return false" style="color:var(--primary);text-decoration:underline">contact support</a>.</div>';
+    }
+  }
+}, 8000);
 
 // ===== NEW DASHBOARD FUNCTIONS =====
 function showPage(page) {
@@ -906,14 +916,14 @@ function showSettingsPage() {
   showPage = function(page) {
     var map = {
       dashboard: function() { window.scrollTo({top:0,behavior:'smooth'}); },
-      leads: function() { document.getElementById('leads-section')?.scrollIntoView({behavior:'smooth'}); },
+      leads: function() { window.scrollTo({top:0,behavior:'smooth'}); },
       pipeline: function() { showPipelineFull(); },
       areas: function() { showAreasPage(); },
       reports: function() { showReportsPage(); },
       crm: function() { showCrmPage(); },
       billing: function() { showBillingPage(); },
       settings: function() { showSettingsPage(); },
-      support: function() { showModal('Support', '<p style="color:var(--muted);margin-bottom:12px">Send us a message and we\'ll get back to you within 24 hours.</p><textarea id="support-msg" placeholder="Describe your issue or question..." style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-family:inherit;font-size:13px;min-height:100px;margin-bottom:12px;resize:vertical"></textarea><input type="text" id="support-subject" placeholder="Subject" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="submitSupport()">Send Message</button>'); }
+      support: function() { showModal('Support', '<p style="color:var(--muted);margin-bottom:12px">Send us a message.</p><textarea id="support-msg" placeholder="Describe your issue..." style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;min-height:80px;margin-bottom:8px;font-family:inherit"></textarea><input type="text" id="support-subject" placeholder="Subject" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;margin-bottom:8px"><button class="btn btn-primary btn-sm" onclick="submitSupport()">Send Message</button>'); }
     };
     (map[page] || map.dashboard)();
   };
