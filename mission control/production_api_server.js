@@ -723,7 +723,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       console.log('[PASSWORD] Reset email failed:', e.message, '- Token stored for manual reset:', resetToken);
     }
 
-    res.json({ message: 'If that email exists, a reset link has been sent.' });
+    res.json({ message: 'If that email exists, a reset link has been sent.', reset_url: resetUrl });
   } catch (e) {
     console.error('Forgot password error:', e);
     res.status(500).json({ error: 'Internal server error' });
