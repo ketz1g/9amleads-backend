@@ -112,8 +112,9 @@ function leadMatchesTarget(lead, customer) {
       const areaNorm = normalisePostcode(area);
       if (!areaNorm) continue;
       if (leadNorm.startsWith(areaNorm) || areaNorm.startsWith(leadNorm)) { areaMatch = true; break; }
-      if (leadLocation.toLowerCase().includes(area.toLowerCase())) { areaMatch = true; break; }
-      if (lead.city && lead.city.toLowerCase() === area.toLowerCase()) { areaMatch = true; break; }
+      // Only match by postcode prefix, not by full address text (prevents false matches like "EN" in "London")
+      if ((lead.postcode || '').toLowerCase().startsWith(areaNorm)) { areaMatch = true; break; }
+      if ((lead.city || '').toLowerCase() === area.toLowerCase()) { areaMatch = true; break; }
     }
     if (!areaMatch) return { match: false, tier: 0 };
   } else {
@@ -432,6 +433,9 @@ async function distributeProduct(product) {
       existingAddresses.add(ak);
       customerUsage[c.id]++;
       inserted++;
+      // Track lead count on customer record
+      var ldCust = db.customers.find(function(x) { return x.id === c.id; });
+      if (ldCust) ldCust.lead_count = (ldCust.lead_count || 0) + 1;
       // Mark source lead as claimed (exclusive)
       if (rl.id) claimedLeadIds.add(rl.id);
       return true;
