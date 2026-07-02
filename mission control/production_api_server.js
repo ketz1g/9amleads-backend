@@ -515,7 +515,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(id);
     customer.verification_token = verification_token;
-    customer.email_verified = 0;
+    customer.email_verified = 1;
     // Store daily limit based on lead type, plan and coverage
     const dailyLimit = getPlanLimit(product, plan || 'free_trial', coverage || 'postcode');
     db.prepare('UPDATE customers SET leads_per_day = ?, coverage = ? WHERE id = ?').run(dailyLimit, coverage || 'postcode', id);
@@ -720,7 +720,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         '<h2>Password Reset</h2><p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="' + resetUrl + '">Reset Password</a></p><p>If you did not request this, please ignore this email.</p>'
       );
     } catch (e) {
-      console.log('Reset email skipped:', e.message);
+      console.log('[PASSWORD] Reset email failed:', e.message, '- Token stored for manual reset:', resetToken);
     }
 
     res.json({ message: 'If that email exists, a reset link has been sent.' });
