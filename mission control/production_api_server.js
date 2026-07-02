@@ -3548,22 +3548,19 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
   // Header
-  body += '<tr><td style="background:linear-gradient(135deg,#070f1e,#131d3d);padding:36px 32px 28px;border-radius:18px 18px 0 0;text-align:center;border-bottom:2px solid ' + accent + '">';
-  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:14px"><tr><td style="width:38px;height:38px;border-radius:10px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:19px;font-weight:900;color:#ffffff;line-height:38px;background:linear-gradient(135deg,#0ea5e9,#2563eb)">9</td><td style="padding-left:10px;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#ffffff;letter-spacing:-0.3px">am<span style="color:' + accent + '">Leads</span></td></tr></table>';
+  body += '<tr><td style="background:linear-gradient(135deg,#0a2540,#0ea5e9);padding:32px 30px 24px;border-radius:16px 16px 0 0;text-align:center">';
+  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:12px"><tr><td style="width:36px;height:36px;border-radius:9px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:900;color:#ffffff;line-height:36px;background:rgba(255,255,255,0.2)">9</td><td style="padding-left:9px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#ffffff;letter-spacing:-0.3px">amLeads</td></tr></table>';
   var areasLabel = '';
   try { var custAreas = JSON.parse(customer.target_areas || '[]'); areasLabel = custAreas.length > 0 ? custAreas.join(', ') : ''; } catch(e) {}
-  body += '<div style="height:1px;width:40px;margin:0 auto 12px;background:' + accent + ';opacity:0.4"></div>';
-  body += '<p style="color:rgba(255,255,255,0.45);font-size:9px;margin:0;text-transform:uppercase;letter-spacing:3px;font-weight:600">' + (areasLabel || 'Daily Opportunities') + '</p>';
+  body += '<p style="color:rgba(255,255,255,0.7);font-size:10px;margin:0;text-transform:uppercase;letter-spacing:2.5px;font-weight:600">' + (areasLabel || 'Daily Opportunities') + '</p>';
   body += '</td></tr>';
 
   // Greeting + count
-  body += '<tr><td style="background:#ffffff;padding:28px 30px 20px">';
-  body += '<div style="width:100%;height:2px;background:#f3f4f6;margin:-28px 0 20px"></div>';
-  body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:21px;font-weight:800;color:#111827;margin:0 0 4px">Good Morning, ' + (customer.company || 'there') + '</h2>';
-  body += '<p style="color:#9ca3af;font-size:12px;margin:0 0 20px">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
-  body += '<div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #86efac;border-radius:12px;padding:14px 22px;margin-bottom:18px">';
-  body += '<table cellpadding="0" cellspacing="0" width="100%"><tr><td style="font-size:32px;font-weight:900;color:#16a34a;width:1%;white-space:nowrap;padding-right:12px">' + leads.length + '</td><td style="font-size:13px;color:#166534;font-weight:600">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' ready for you today</td></tr></table>';
-  body += '</div>';
+  body += '<tr><td style="background:#ffffff;padding:26px 30px 18px">';
+  body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#111827;margin:0 0 2px">Good Morning, ' + (customer.company || 'there') + '</h2>';
+  body += '<p style="color:#9ca3af;font-size:12px;margin:0 0 18px">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
+  body += '<div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #86efac;border-radius:10px;padding:12px 18px;margin-bottom:16px">';
+  body += '<span style="font-size:28px;font-weight:900;color:#16a34a;vertical-align:middle">' + leads.length + '</span><span style="font-size:13px;color:#166534;font-weight:600;vertical-align:middle;margin-left:10px">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' ready today</span></div>';
   body += '<p style="font-size:12px;color:#6b7280;line-height:1.5;margin:0;padding:12px 16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">' + aboutText + '</p>';
   body += '</td></tr>';
 
@@ -3680,21 +3677,20 @@ function generateLeadEmailHTML(customer, leads) {
   body += '</td></tr>';
 
   // Footer
-  body += '<tr><td style="background:linear-gradient(135deg,#070f1e,#131d3d);padding:28px 32px 24px;border-radius:0 0 18px 18px;text-align:center">';
-  body += '<div style="padding-bottom:20px;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.06)">';
-  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:16px"><tr><td style="width:34px;height:34px;border-radius:9px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:#ffffff;line-height:34px;background:linear-gradient(135deg,#0ea5e9,#2563eb)">9</td><td style="padding-left:8px;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:900;color:rgba(255,255,255,0.4);letter-spacing:-0.3px">am<span style="color:rgba(255,255,255,0.3)">Leads</span></td></tr></table>';
-  body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 30px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:12px;letter-spacing:0.5px">VIEW DASHBOARD</a>';
-  body += '<p style="color:rgba(255,255,255,0.3);font-size:10px;margin:10px 0 0"><a href="mailto:hello@9amleads.com?subject=Lead%20Issue" style="color:rgba(255,255,255,0.4);text-decoration:underline">Lead issue? Contact us &rarr;</a></p>';
+  body += '<tr><td style="background:#0f2847;padding:24px 30px 20px;border-radius:0 0 16px 16px;text-align:center">';
+  body += '<div style="padding-bottom:16px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08)">';
+  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:14px"><tr><td style="width:32px;height:32px;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:#ffffff;line-height:32px;background:rgba(255,255,255,0.15)">9</td><td style="padding-left:7px;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:900;color:rgba(255,255,255,0.5);letter-spacing:-0.3px">amLeads</td></tr></table>';
+  body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:9px 28px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:11px;letter-spacing:0.3px">VIEW DASHBOARD</a>';
+  body += '<p style="color:rgba(255,255,255,0.5);font-size:10px;margin:10px 0 0"><a href="mailto:hello@9amleads.com?subject=Lead%20Issue" style="color:rgba(255,255,255,0.6);text-decoration:underline">Lead issue? Contact us &rarr;</a></p>';
   body += '</div>';
-  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:14px"><tr>';
-  body += '<td style="padding:0 5px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.35);font-size:10px;font-family:Arial">fb</span></a></td>';
-  body += '<td style="padding:0 5px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.35);font-size:10px;font-family:Arial">tt</span></a></td>';
-  body += '<td style="padding:0 5px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.35);font-size:10px;font-family:Arial">ig</span></a></td>';
+  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:12px"><tr>';
+  body += '<td style="padding:0 4px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:28px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.5);font-size:10px;font-family:Arial">fb</span></a></td>';
+  body += '<td style="padding:0 4px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:28px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.5);font-size:10px;font-family:Arial">tt</span></a></td>';
+  body += '<td style="padding:0 4px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:28px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.5);font-size:10px;font-family:Arial">ig</span></a></td>';
   body += '</tr></table>';
-  body += '<p style="color:rgba(255,255,255,0.18);font-size:9px;margin:0 0 6px;letter-spacing:.3px">9am Leads Ltd &bull; Company No. 17168176</p>';
-  body += '<p style="color:rgba(255,255,255,0.12);font-size:8px;margin:0 0 12px;letter-spacing:.3px"><a href="mailto:hello@9amleads.com" style="color:rgba(255,255,255,0.2);text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:rgba(255,255,255,0.2);text-decoration:underline">Privacy Policy</a></p>';
-  body += '<div style="height:1px;width:30px;margin:0 auto 10px;background:rgba(255,255,255,0.08)"></div>';
-  body += '<p style="color:rgba(255,255,255,0.08);font-size:7px;margin:0;letter-spacing:.5px">Fresh exclusive opportunities delivered at 9am every morning &bull; 9amLeads.com</p>';
+  body += '<p style="color:rgba(255,255,255,0.3);font-size:9px;margin:0 0 4px;letter-spacing:.3px">9am Leads Ltd &bull; Company No. 17168176</p>';
+  body += '<p style="color:rgba(255,255,255,0.2);font-size:8px;margin:0 0 10px;letter-spacing:.3px"><a href="mailto:hello@9amleads.com" style="color:rgba(255,255,255,0.3);text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:rgba(255,255,255,0.3);text-decoration:underline">Privacy Policy</a></p>';
+  body += '<p style="color:rgba(255,255,255,0.15);font-size:7px;margin:0;letter-spacing:.4px">Fresh exclusive opportunities delivered at 9am every morning &bull; 9amLeads.com</p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
