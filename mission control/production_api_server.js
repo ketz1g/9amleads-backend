@@ -1601,27 +1601,27 @@ function getPlanLimit(product, plan, coverage) {
 
 // ===== TRIAL / CAMPAIGN CAMPAIGN EMAIL TEMPLATES =====
 const CAMPAIGN_EMAILS = [
-  { day: 1, subject: 'Your leads start tomorrow at 9am \u2705', template: 'trial_day1' },
-  { day: 3, subject: 'How are your first leads looking?', template: 'trial_day3' },
-  { day: 5, subject: '3 tips to convert more leads', template: 'trial_day5' },
+  { day: 1, subject: 'Your opportunities start tomorrow at 9am \u2705', template: 'trial_day1' },
+  { day: 3, subject: 'How are your first opportunities looking?', template: 'trial_day3' },
+  { day: 5, subject: '3 tips to convert more leads into revenue', template: 'trial_day5' },
   { day: 7, subject: 'Your free trial ends tomorrow', template: 'trial_day7' },
-  { day: 9, subject: 'Your leads have stopped \u23f8\ufe0f', template: 'trial_day9' },
+  { day: 9, subject: 'We miss you \u2014 come back for 30% off', template: 'trial_day9' },
   { day: 12, subject: 'Still not sure? Let us help.', template: 'trial_day12' },
   { day: 16, subject: '3 businesses that transformed their pipeline', template: 'trial_day16' },
   { day: 21, subject: 'Come back \u2014 30% off your first month\u2019s subscription', template: 'trial_day21' },
-  { day: 30, subject: 'Your account is still waiting', template: 'trial_day30' },
-  { day: 60, subject: 'Last chance to reactivate your account', template: 'trial_day60' }
+  { day: 30, subject: 'Your exclusive offer expires soon', template: 'trial_day30' },
+  { day: 60, subject: 'Last chance \u2014 30% off', template: 'trial_day60' },
 ];
 
 // Paid customer email series (sent weekly after subscription starts)
 const PAID_EMAIL_SERIES = [
-  { week: 0, subject: 'Welcome to 9amLeads Premium \u2014 Your Leads Keep Flowing', template: 'paid_welcome' },
+  { week: 0, subject: 'Welcome to 9amLeads \u2014 Your opportunities arrive tomorrow at 9am!', template: 'paid_welcome' },
   { week: 1, subject: 'Tip #1: The 30-Minute Rule \u2014 Why Speed Wins', template: 'paid_tip1' },
   { week: 2, subject: 'Tip #2: Script That Converts \u2014 What To Say', template: 'paid_tip2' },
-  { week: 3, subject: 'Tip #3: Track Everything \u2014 Know What Works', template: 'paid_tip3' },
+  { week: 3, subject: 'Tip #3: Wider coverage = more daily opportunities', template: 'paid_tip3' },
   { week: 4, subject: 'Tip #4: Follow Up \u2014 The Money Is In The Second Call', template: 'paid_tip4' },
-  { week: 8, subject: 'Check-in: How many leads have you converted?', template: 'paid_checkin1' },
-  { week: 12, subject: 'You\u2019ve been with us 3 months \u2014 here\u2019s your impact', template: 'paid_checkin2' }
+  { week: 8, subject: 'Check-in: How many opportunities have you converted?', template: 'paid_checkin1' },
+  { week: 12, subject: 'You\u2019ve been with us 3 months \u2014 here\u2019s your ROI', template: 'paid_checkin2' }
 ];
 
 function getCampaignEmailHTML(customer, template) {
