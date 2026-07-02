@@ -3529,8 +3529,10 @@ function generateLeadEmailHTML(customer, leads) {
 
   // Header
   body += '<tr><td style="background:linear-gradient(135deg,#0c1929,#16213e);padding:32px 28px 24px;border-radius:16px 16px 0 0;text-align:center">';
-  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#ffffff;text-align:center"><span style="display:inline-block;background:#0ea5e9;border-radius:8px;width:32px;height:32px;line-height:32px;font-size:16px;color:#fff;vertical-align:middle;margin-right:6px">9</span>9am<span style="color:' + accent + '">Leads</span></div>';
-  body += '<p style="color:rgba(255,255,255,0.6);font-size:10px;margin:10px 0 0;text-transform:uppercase;letter-spacing:2px;font-weight:600">Daily Opportunities for ' + (customer.coverage ? (COVERAGE_LABELS[customer.coverage] || customer.coverage) : 'your area') + '</p>';
+  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#ffffff;text-align:center"><span style="display:inline-block;background:#0ea5e9;border-radius:8px;width:32px;height:32px;line-height:32px;font-size:16px;color:#fff;vertical-align:middle;margin-right:6px">9</span><span style="color:' + accent + '">Leads</span></div>';
+  var areasLabel = '';
+  try { var custAreas = JSON.parse(customer.target_areas || '[]'); areasLabel = custAreas.length > 0 ? custAreas.join(', ') : ''; } catch(e) {}
+  body += '<p style="color:rgba(255,255,255,0.6);font-size:10px;margin:10px 0 0;text-transform:uppercase;letter-spacing:2px;font-weight:600">' + (areasLabel || 'Daily Opportunities') + '</p>';
   body += '</td></tr>';
 
   // Greeting + count
@@ -3585,9 +3587,9 @@ function generateLeadEmailHTML(customer, leads) {
 
     // Details as clean rows
     var chips = [];
-    if (postcode) chips.push('<span style="display:inline-block;background:#f3f4f6;padding:3px 10px;border-radius:5px;font-size:11px;color:#374151;font-weight:500;margin:2px">\uD83D\uDCCD ' + postcode + '</span>');
-    if (address && address.length > 10) chips.push('<span style="display:inline-block;background:#f3f4f6;padding:3px 10px;border-radius:5px;font-size:11px;color:#374151;font-weight:500;margin:2px">\uD83C\uDFE2 ' + address.substring(0, 55) + '</span>');
-    if (d.city) chips.push('<span style="display:inline-block;background:#f3f4f6;padding:3px 10px;border-radius:5px;font-size:11px;color:#374151;font-weight:500;margin:2px">\uD83C\uDFD9\uFE0F ' + d.city + '</span>');
+    if (postcode) chips.push({ icon: '\uD83D\uDCCD', text: postcode });
+    if (address && address.length > 10) chips.push({ icon: '\uD83C\uDFE2', text: address.substring(0, 55) });
+    if (d.city) chips.push({ icon: '\uD83C\uDFD9\uFE0F', text: d.city });
 
     if (leadProduct === 'moving') {
       if (d.bedrooms) chips.push({ icon: '\uD83C\uDFE0', text: d.bedrooms + ' bedrooms' });
