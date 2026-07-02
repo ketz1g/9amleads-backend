@@ -1421,34 +1421,6 @@ function renderTerritorySearchResults(items) {
   dropdown.innerHTML = html || '<div style="padding:12px;color:var(--muted2);font-size:12px;text-align:center">No matching areas</div>';
   dropdown.style.display = 'block';
 }
-  const selected = editedTerritories || [];
-
-  if (items.length === 0) {
-    dropdown.innerHTML = '<div style="padding:12px;color:var(--muted2);font-size:12px;text-align:center">No matching areas</div>';
-    return;
-  }
-  let lastArea = '';
-  let html = '';
-  for (const d of items) {
-    if (d.area_code !== lastArea) {
-      html += '<div style="padding:4px 12px 1px;font-size:9px;font-weight:700;color:var(--muted2)">' + d.area_code + ' G�� ' + d.area_name + '</div>';
-      lastArea = d.area_code;
-    }
-    const isSelected = selected.includes(d.code);
-    const isTaken = !d.available && !isSelected;
-    const isDisabled = isTaken || (!isSelected && selected.length >= maxLimit);
-    html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 12px;cursor:' + (isDisabled ? 'not-allowed' : 'pointer') + ';opacity:' + (isDisabled ? '0.35' : '1') + ';transition:.1s" ' +
-      'onmouseover="this.style.background=\'rgba(255,255,255,0.02)\'" onmouseout="this.style.background=\'transparent\'" ' +
-      'onclick="' + (isDisabled ? '' : 'toggleTerritoryPc(\'' + d.code + '\')') + '"' +
-      '>' +
-      '<span style="width:14px;height:14px;border-radius:3px;border:1px solid ' + (isSelected ? '#0ea5e9' : (isTaken ? '#ef4444' : '#2a2d42')) + ';display:flex;align-items:center;justify-content:center;font-size:7px;color:' + (isSelected ? '#fff' : (isTaken ? '#ef4444' : 'transparent')) + ';background:' + (isSelected ? '#0ea5e9' : 'transparent') + '">' + (isSelected ? '\u2713' : (isTaken ? '\u2717' : '')) + '</span>' +
-      '<span style="font-weight:600;font-size:11px;color:var(--text);min-width:36px">' + d.code + '</span>' +
-      '<span style="color:var(--muted);font-size:10px">' + d.name + '</span>' +
-      (isTaken ? '<span style="margin-left:auto;font-size:9px;color:var(--danger);font-weight:600">Taken</span>' : '') +
-      '</div>';
-  }
-  dropdown.innerHTML = html;
-}
 
 function toggleTerritoryDistrict(code) {
   if (!editedTerritories) editedTerritories = [];
