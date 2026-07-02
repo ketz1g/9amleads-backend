@@ -2787,6 +2787,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
       
       var custLeads = [];
+      var custAreas = [];
+      try { custAreas = JSON.parse(cust.target_areas || '[]'); } catch(e) {}
       var maxRound = Math.ceil(totalDailyLimit / products.length);
       for (var ri = 0; ri < maxRound && custLeads.length < totalDailyLimit; ri++) {
         for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
@@ -2794,11 +2796,22 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           var allProdLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
           var pickedIds = custLeads.map(function(cl) { return cl.id; });
           var prodLeads = allProdLeads.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+          // Sort by area cycle to ensure even distribution
           prodLeads.sort(function(a, b) {
             var aD = (a.created_at || a.scrapedAt || '').substring(0, 10);
             var bD = (b.created_at || b.scrapedAt || '').substring(0, 10);
             if (aD === today && bD !== today) return -1;
             if (bD === today && aD !== today) return 1;
+            // Group by area cycle
+            if (custAreas.length > 1) {
+              try {
+                var aArea = JSON.parse(a.data || '{}').postcode || '';
+                var bArea = JSON.parse(b.data || '{}').postcode || '';
+                var aMatch = custAreas.findIndex(function(ca){ return aArea.toUpperCase().startsWith(ca); });
+                var bMatch = custAreas.findIndex(function(ca){ return bArea.toUpperCase().startsWith(ca); });
+                if (aMatch !== bMatch) return (aMatch % custAreas.length) - (bMatch % custAreas.length);
+              } catch(e) {}
+            }
             return 0;
           });
           if (prodLeads.length > 0) {
@@ -3668,7 +3681,7 @@ function generateLeadEmailHTML(customer, leads) {
 
   // Header
   body += '<tr><td style="background:linear-gradient(135deg,#0a2540,#0ea5e9);padding:32px 30px 24px;border-radius:16px 16px 0 0;text-align:center">';
-  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:12px"><tr><td style="width:36px;height:36px;border-radius:9px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:900;color:#ffffff;line-height:36px;background:rgba(255,255,255,0.2)">9</td><td style="padding-left:10px;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#ffffff;letter-spacing:1px">am  <span style="letter-spacing:0">Leads</span></td></tr></table>';
+  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:12px"><tr><td style="width:36px;height:36px;border-radius:9px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:900;color:#ffffff;line-height:36px;background:rgba(255,255,255,0.2)">9</td><td style="padding-left:9px;font-family:Arial,Helvetica,sans-serif;font-size:23px;font-weight:900;color:#ffffff">amLeads</td></tr></table>';
   var areasLabel = '';
   try { var custAreas = JSON.parse(customer.target_areas || '[]'); areasLabel = custAreas.length > 0 ? custAreas.join(', ') : ''; } catch(e) {}
   body += '<p style="color:rgba(255,255,255,0.7);font-size:10px;margin:0;text-transform:uppercase;letter-spacing:2.5px;font-weight:600">' + (areasLabel || 'Daily Opportunities') + '</p>';
@@ -3798,7 +3811,7 @@ function generateLeadEmailHTML(customer, leads) {
   // Footer
   body += '<tr><td style="background:#0f2847;padding:24px 30px 20px;border-radius:0 0 16px 16px;text-align:center">';
   body += '<div style="padding-bottom:16px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08)">';
-  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:14px"><tr><td style="width:32px;height:32px;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:#ffffff;line-height:32px;background:rgba(255,255,255,0.2)">9</td><td style="padding-left:8px;font-family:Arial,Helvetica,sans-serif;font-size:19px;font-weight:900;color:rgba(255,255,255,0.7);letter-spacing:0.5px">am  <span style="letter-spacing:0">Leads</span></td></tr></table>';
+  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:14px"><tr><td style="width:32px;height:32px;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:#ffffff;line-height:32px;background:rgba(255,255,255,0.2)">9</td><td style="padding-left:7px;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:900;color:rgba(255,255,255,0.7)">amLeads</td></tr></table>';
   body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 30px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:12px;letter-spacing:0.5px">VIEW DASHBOARD</a>';
   body += '<p style="color:rgba(255,255,255,0.6);font-size:10px;margin:10px 0 0"><a href="mailto:hello@9amleads.com?subject=Lead%20Issue" style="color:rgba(255,255,255,0.7);text-decoration:underline">Lead issue? Contact us &rarr;</a></p>';
   body += '</div>';
