@@ -3829,7 +3829,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += '</td></tr>';
 
   // Footer
-  body += '<tr><td style="background:#0f2847;padding:24px 30px 20px;border-radius:0 0 16px 16px;text-align:center">';
+  body += '<tr><td style="background:linear-gradient(135deg,#0a2540,#0ea5e9);padding:24px 30px 20px;border-radius:0 0 16px 16px;text-align:center">';
   body += '<div style="padding-bottom:16px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08)">';
   body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:14px"><tr><td style="width:32px;height:32px;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:#ffffff;line-height:32px;background:rgba(255,255,255,0.2)">9</td><td style="padding-left:7px;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:900;color:rgba(255,255,255,0.7)">amLeads</td></tr></table>';
   body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 30px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:12px;letter-spacing:0.5px">VIEW DASHBOARD</a>';
