@@ -754,6 +754,199 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
+// ===== DASHBOARD API ENDPOINTS =====
+
+// GET /api/dashboard — KPI summary data
+app.get('/api/dashboard', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const leads = (db.leads || []).filter(l => l.customer_id === req.user.id);
+    const today = new Date().toISOString().split('T')[0];
+    const thisWeek = (function(){ var d = new Date(); d.setDate(d.getDate()-d.getDay()); return d.toISOString().split('T')[0]; })();
+    const thisMonth = today.substring(0, 7);
+
+    const leadsToday = leads.filter(l => l.created_at && l.created_at.startsWith(today));
+    const leadsWeek = leads.filter(l => l.created_at && l.created_at >= thisWeek);
+    const leadsMonth = leads.filter(l => l.created_at && l.created_at.startsWith(thisMonth));
+    const contacted = leads.filter(l => l.lead_status === 'contacted' || l.lead_status === 'interested' || l.lead_status === 'quoted' || l.lead_status === 'won');
+    const replied = leads.filter(l => l.lead_status === 'interested' || l.lead_status === 'quoted' || l.lead_status === 'won');
+    const quoted = leads.filter(l => l.lead_status === 'quoted' || l.lead_status === 'won');
+    const won = leads.filter(l => l.lead_status === 'won');
+    const lost = leads.filter(l => l.lead_status === 'lost');
+    const estimatedValue = leads.reduce((s, l) => s + (parseInt(l.estimated_value) || 0), 0);
+    const actualRevenue = won.reduce((s, l) => s + (parseInt(l.actual_revenue) || parseInt(l.deal_value) || 0), 0);
+    const quotedRevenue = quoted.reduce((s, l) => s + (parseInt(l.quote_value) || 0), 0);
+
+    // Customer + subscription for ROI
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    var weeklyCost = customer ? (customer.plan === 'starter' ? 25 : customer.plan === 'pro' ? 49 : customer.plan === 'enterprise' ? 99 : 0) : 0;
+    var roi = weeklyCost > 0 ? Math.round((actualRevenue / weeklyCost) * 100) + '%' : 'N/A';
+
+    res.json({
+      leads_today: leadsToday.length,
+      leads_week: leadsWeek.length,
+      leads_month: leadsMonth.length,
+      contacted: contacted.length,
+      replied: replied.length,
+      quoted: quoted.length,
+      won: won.length,
+      lost: lost.length,
+      estimated_value: estimatedValue,
+      quoted_revenue: quotedRevenue,
+      actual_revenue: actualRevenue,
+      average_deal_size: won.length > 0 ? Math.round(actualRevenue / won.length) : 0,
+      subscription_roi: roi,
+      weekly_cost: weeklyCost
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/pipeline — leads grouped by stage
+app.get('/api/pipeline', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const leads = (db.leads || []).filter(l => l.customer_id === req.user.id);
+    const stages = ['new', 'contacted', 'interested', 'quoted', 'won', 'lost'];
+    const pipeline = stages.map(stage => {
+      const stageLeads = leads.filter(l => (l.lead_status || 'new') === stage);
+      return {
+        stage,
+        count: stageLeads.length,
+        estimated_value: stageLeads.reduce((s, l) => s + (parseInt(l.estimated_value) || 0), 0),
+        quote_value: stageLeads.reduce((s, l) => s + (parseInt(l.quote_value) || 0), 0),
+        revenue: stageLeads.reduce((s, l) => s + (parseInt(l.actual_revenue) || parseInt(l.deal_value) || 0), 0),
+        leads: stageLeads.slice(0, 50).map(l => ({ id: l.id, title: (function(){ try{return JSON.parse(l.data).address||JSON.parse(l.data).name||JSON.parse(l.data).title||l.product}catch(e){return l.product}})() || l.product, product: l.product, status: l.lead_status || 'new', estimated_value: l.estimated_value, deal_value: l.deal_value, actual_revenue: l.actual_revenue, created_at: l.created_at }))
+      };
+    });
+    res.json({ pipeline });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/roi — ROI metrics
+app.get('/api/roi', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    const leads = (db.leads || []).filter(l => l.customer_id === req.user.id);
+    const won = leads.filter(l => l.lead_status === 'won');
+    const totalRevenue = won.reduce((s, l) => s + (parseInt(l.actual_revenue) || parseInt(l.deal_value) || 0), 0);
+    var weeklyCost = customer.plan === 'starter' ? 25 : customer.plan === 'pro' ? 49 : customer.plan === 'enterprise' ? 99 : 0;
+    var weeksActive = customer.created_at ? Math.max(1, Math.ceil((Date.now() - new Date(customer.created_at).getTime()) / (7 * 86400000))) : 1;
+    var totalSpent = weeklyCost * weeksActive;
+    var roiPercent = totalSpent > 0 ? Math.round((totalRevenue / totalSpent) * 10000) / 100 : 0;
+
+    // Per lead type breakdown
+    var byType = {};
+    won.forEach(l => {
+      if (!byType[l.product]) byType[l.product] = { count: 0, revenue: 0 };
+      byType[l.product].count++;
+      byType[l.product].revenue += parseInt(l.actual_revenue) || parseInt(l.deal_value) || 0;
+    });
+
+    res.json({
+      total_revenue: totalRevenue,
+      total_spent: totalSpent,
+      weeks_active: weeksActive,
+      weekly_cost: weeklyCost,
+      roi_percent: roiPercent,
+      won_count: won.length,
+      avg_deal_size: won.length > 0 ? Math.round(totalRevenue / won.length) : 0,
+      by_lead_type: byType,
+      best_type: Object.entries(byType).sort((a, b) => b[1].revenue - a[1].revenue)[0]?.[0] || null
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/leads/:id/status — update lead status
+app.put('/api/leads/:id/status', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const lead = (db.leads || []).find(l => l.id === req.params.id && l.customer_id === req.user.id);
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    const { status, deal_value, quote_value, actual_revenue, follow_up_date, outcome_reason } = req.body;
+    if (status) lead.lead_status = status;
+    if (deal_value) lead.deal_value = deal_value;
+    if (quote_value) lead.quote_value = quote_value;
+    if (actual_revenue) lead.actual_revenue = actual_revenue;
+    if (follow_up_date) lead.follow_up_date = follow_up_date;
+    if (outcome_reason) lead.outcome_reason = outcome_reason;
+    if (status === 'contacted' && !lead.contacted_at) lead.contacted_at = new Date().toISOString();
+    if (status === 'quoted' && !lead.quoted_at) lead.quoted_at = new Date().toISOString();
+    if (status === 'won' && !lead.won_at) lead.won_at = new Date().toISOString();
+    if (status === 'lost' && !lead.lost_at) lead.lost_at = new Date().toISOString();
+    saveDb();
+    res.json({ success: true, lead });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/leads/:id/note — add note to lead
+app.put('/api/leads/:id/note', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const lead = (db.leads || []).find(l => l.id === req.params.id && l.customer_id === req.user.id);
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    if (!lead.notes) lead.notes = [];
+    lead.notes.push({ text: req.body.note || '', created_at: new Date().toISOString() });
+    saveDb();
+    res.json({ success: true, notes: lead.notes });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/leads/:id — lead detail
+app.get('/api/leads/:id', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const lead = (db.leads || []).find(l => l.id === req.params.id && l.customer_id === req.user.id);
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    // Parse data field
+    try { lead.data = JSON.parse(lead.data); } catch(e) {}
+    res.json(lead);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/areas/performance — area-level performance
+app.get('/api/areas/performance', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    const leads = (db.leads || []).filter(l => l.customer_id === req.user.id);
+    const areas = JSON.parse(customer?.target_areas || '[]');
+    const result = {};
+    areas.forEach(area => {
+      const areaLeads = leads.filter(l => {
+        try {
+          var d = typeof l.data === 'string' ? JSON.parse(l.data) : (l.data || {});
+          return (d.postcode || d.address || '').toUpperCase().startsWith(area);
+        } catch(e) { return false; }
+      });
+      result[area] = {
+        total: areaLeads.length,
+        won: areaLeads.filter(l => l.lead_status === 'won').length,
+        revenue: areaLeads.filter(l => l.lead_status === 'won').reduce((s, l) => s + (parseInt(l.actual_revenue) || parseInt(l.deal_value) || 0), 0),
+        estimated_value: areaLeads.reduce((s, l) => s + (parseInt(l.estimated_value) || 0), 0),
+        conversion_rate: areaLeads.length > 0 ? Math.round((areaLeads.filter(l => l.lead_status === 'won').length / areaLeads.length) * 100) + '%' : '0%'
+      };
+    });
+    res.json({ areas: result, coverage: customer?.coverage || 'postcode' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/support — submit support request / feedback
+app.post('/api/support', authMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    if (!db.support_requests) db.support_requests = [];
+    db.support_requests.push({
+      id: uuidv4(), customer_id: req.user.id, type: req.body.type || 'general',
+      subject: req.body.subject || '', message: req.body.message || '',
+      created_at: new Date().toISOString(), resolved: false
+    });
+    saveDb();
+    res.json({ success: true, message: 'Your request has been submitted. We\'ll get back to you shortly.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== LEAD ENDPOINTS =====
 
 // GET /api/leads
