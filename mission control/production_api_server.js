@@ -1759,18 +1759,27 @@ cron.schedule('45 2 * * *', async () => {
       var products = [cust.product];
       try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
       var custLeads = [];
-      for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
-        var prod = products[pi];
-        var prodLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
-        prodLeads.sort(function(a, b) {
-          var aD = (a.created_at || a.scrapedAt || '').substring(0, 10);
-          var bD = (b.created_at || b.scrapedAt || '').substring(0, 10);
-          if (aD === today && bD !== today) return -1;
-          if (bD === today && aD !== today) return 1;
-          return 0;
-        });
-        var slots = totalDailyLimit - custLeads.length;
-        custLeads = custLeads.concat(prodLeads.slice(0, slots));
+      // Round-robin across all products: pick 1 lead per product, repeat until limit reached
+      var maxRound = Math.ceil(totalDailyLimit / products.length);
+      for (var ri = 0; ri < maxRound && custLeads.length < totalDailyLimit; ri++) {
+        for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
+          var prod = products[pi];
+          // Get ALL undelivered leads for this product (not already picked)
+          var allProdLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
+          // Remove leads already picked in custLeads
+          var pickedIds = custLeads.map(function(cl) { return cl.id; });
+          var prodLeads = allProdLeads.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+          prodLeads.sort(function(a, b) {
+            var aD = (a.created_at || a.scrapedAt || '').substring(0, 10);
+            var bD = (b.created_at || b.scrapedAt || '').substring(0, 10);
+            if (aD === today && bD !== today) return -1;
+            if (bD === today && aD !== today) return 1;
+            return 0;
+          });
+          if (prodLeads.length > 0) {
+            custLeads.push(prodLeads[0]); // Take 1 lead per product per round
+          }
+        }
       }
       if (custLeads.length === 0) continue;
       try {
