@@ -502,7 +502,7 @@ function showPlans() {
         '</div>';
     }).join('') +
     '<div style="margin-top:16px;padding:12px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:8px;font-size:11px;color:#8890a8;text-align:center">' +
-    '<strong>postcode areas:</strong> Starter: 3 areas &middot; Pro: 5 areas &middot; Enterprise: 10 areas<br>' +
+    '<strong>postcode areas:</strong> Starter: 3 areas &middot; Pro: 5 areas &middot; Enterprise: All UK<br>' +
     '<strong>Extra districts:</strong> Need more? Add 5 extra areas for just £20/mo from your dashboard.<br>' +
     'Switching plans creates a new Stripe subscription with prorated billing.</div>';
 
@@ -625,7 +625,7 @@ function toggleTerritoryArea(code) {
 function renderTerritoryFull() {
   const dropdown = document.getElementById('territory-dropdown');
   const currentPlan = getSession()?.plan || 'free_trial';
-  const maxLimit = { free_trial: 5, essential: 5, starter: 5, pro: 10, enterprise: 50 }[currentPlan] || 5;
+  const maxLimit = { free_trial: 5, essential: 5, starter: 5, pro: 6, enterprise: 50 }[currentPlan] || 5;
   const selected = editedTerritories || [];
 
   let html = '';
@@ -690,7 +690,7 @@ function searchTerritories(query) {
 function renderTerritorySearchResults(items) {
   const dropdown = document.getElementById('territory-dropdown');
   const currentPlan = getSession()?.plan || 'free_trial';
-  const maxLimit = { free_trial: 5, essential: 5, starter: 5, pro: 10, enterprise: 50 }[currentPlan] || 5;
+  const maxLimit = { free_trial: 5, essential: 5, starter: 5, pro: 6, enterprise: 50 }[currentPlan] || 5;
   const selected = editedTerritories || [];
 
   if (items.length === 0) {

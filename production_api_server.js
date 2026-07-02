@@ -34,11 +34,11 @@ const POSTCODE_ASSIGNMENTS_FILE = path.join(DATA_DIR, 'postcode-assignments.json
 
 // Postcode district limits per plan (districts are granular, so higher limits)
 const POSTCODE_LIMITS = {
-  free_trial: 5,
-  essential: 5,
-  starter: 5,
-  pro: 10,
-  enterprise: 50
+  free_trial: 3,
+  essential: 3,
+  starter: 3,
+  pro: 6,
+  enterprise: 999
 };
 
 function loadPostcodeDistricts() {

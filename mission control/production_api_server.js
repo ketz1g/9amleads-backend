@@ -37,8 +37,8 @@ const POSTCODE_LIMITS = {
   free_trial: 3,
   essential: 3,
   starter: 3,
-  pro: 5,
-  enterprise: 10
+  pro: 6,
+  enterprise: 999
 };
 
 function loadPostcodeDistricts() {
