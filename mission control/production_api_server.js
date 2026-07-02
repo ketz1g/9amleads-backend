@@ -3583,11 +3583,11 @@ function generateLeadEmailHTML(customer, leads) {
     if (subtitle) body += '<div style="font-size:12px;color:#6b7280;margin-top:3px">' + subtitle + '</div>';
     body += '</div></div>';
 
-    // Details as clean rows (not squished chips)
-    var details = [];
-    if (postcode) details.push('<span style="display:inline-block;background:#f3f4f6;padding:3px 10px;border-radius:5px;font-size:11px;color:#374151;font-weight:500;margin:2px">\uD83D\uDCCD ' + postcode + '</span>');
-    if (address && address.length > 10) details.push('<span style="display:inline-block;background:#f3f4f6;padding:3px 10px;border-radius:5px;font-size:11px;color:#374151;font-weight:500;margin:2px">\uD83C\uDFE2 ' + address.substring(0, 55) + '</span>');
-    if (d.city) details.push('<span style="display:inline-block;background:#f3f4f6;padding:3px 10px;border-radius:5px;font-size:11px;color:#374151;font-weight:500;margin:2px">\uD83C\uDFD9\uFE0F ' + d.city + '</span>');
+    // Details as clean rows
+    var chips = [];
+    if (postcode) chips.push('<span style="display:inline-block;background:#f3f4f6;padding:3px 10px;border-radius:5px;font-size:11px;color:#374151;font-weight:500;margin:2px">\uD83D\uDCCD ' + postcode + '</span>');
+    if (address && address.length > 10) chips.push('<span style="display:inline-block;background:#f3f4f6;padding:3px 10px;border-radius:5px;font-size:11px;color:#374151;font-weight:500;margin:2px">\uD83C\uDFE2 ' + address.substring(0, 55) + '</span>');
+    if (d.city) chips.push('<span style="display:inline-block;background:#f3f4f6;padding:3px 10px;border-radius:5px;font-size:11px;color:#374151;font-weight:500;margin:2px">\uD83C\uDFD9\uFE0F ' + d.city + '</span>');
 
     if (leadProduct === 'moving') {
       if (d.bedrooms) chips.push({ icon: '\uD83C\uDFE0', text: d.bedrooms + ' bedrooms' });
