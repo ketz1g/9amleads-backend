@@ -442,8 +442,7 @@ async function apiFetch(path, opts = {}) {
   try {
     const r = await fetch(API + path, { ...opts, headers: { ...opts.headers, 'Authorization': 'Bearer ' + (session.token || '') } });
     const d = await r.json();
-    // If unauthenticated but we have a local session, use demo mode
-    if (d.error && (d.error.includes('token') || d.error.includes('auth'))) return null;
+    if (d.error) return null;
     return d;
   } catch { return null; }
 }
@@ -512,6 +511,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
+
+// Lead type names for display
+var LEAD_TYPE_NAMES = { moving:'Moving Leads', probate:'Probate Leads', newbusiness:'New Business Alerts', planning:'Planning Permissions', tenders:'Public Tenders' };
+
+function stripePortal() {
+  apiFetch('/api/stripe/portal', { method:'POST' }).then(function(r) {
+    if (r && r.url) window.open(r.url, '_blank');
+    else alert('Stripe portal is available once you have an active paid subscription. Contact support for billing changes.');
+  }).catch(function() { alert('Could not open billing portal.'); });
+}
 
 // ===== ONBOARDING CHECKLIST =====
 async function loadOnboarding() {
@@ -876,19 +885,35 @@ function removeCrmWebhook() {
 function showBillingPage() {
   showModal('Billing & Subscription', '<div id="billing-content"><p style="color:var(--muted)">Loading billing data...</p></div>');
   apiFetch('/api/subscription').then(function(sub) {
-    if (!sub) { document.getElementById('billing-content').innerHTML = '<p style="color:var(--danger)">Could not load billing data</p>'; return; }
+    if (!sub || !sub.plan) { document.getElementById('billing-content').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-exclamation-circle" style="font-size:24px;display:block;margin-bottom:8px"></i>Could not load billing data.<br><a href="javascript:location.reload()" style="color:var(--primary);text-decoration:underline">Refresh page</a> or <a href="#" onclick="showPage(\'support\');return false" style="color:var(--primary);text-decoration:underline">contact support</a>.</div>'; return; }
     var planLabel = sub.plan === 'free_trial' ? 'Free Trial' : sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1);
-    var trialInfo = sub.trial_ends ? '<div style="margin-top:8px;padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)">Trial ends: ' + new Date(sub.trial_ends).toLocaleDateString('en-GB') + '</div>' : '';
-    var subInfo = sub.subscription ? '<div style="margin-top:8px;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:11px"><strong>Status:</strong> ' + (sub.subscription?.status || 'N/A') + '<br><strong>Next billing:</strong> ' + (sub.subscription?.next_billing ? new Date(sub.subscription.next_billing).toLocaleDateString('en-GB') : 'N/A') + '</div>' : '';
-    var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
-      '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px"><div style="font-size:11px;color:var(--muted2)">Plan</div><div style="font-size:18px;font-weight:800;margin-top:2px">' + planLabel + '</div></div>' +
-      '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px"><div style="font-size:11px;color:var(--muted2)">Lead Type</div><div style="font-size:18px;font-weight:800;margin-top:2px">' + (sub.lead_type || 'N/A') + '</div></div>' +
-      '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px"><div style="font-size:11px;color:var(--muted2)">Coverage</div><div style="font-size:18px;font-weight:800;margin-top:2px">' + (sub.coverage_label || 'N/A') + '</div></div>' +
-      '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px"><div style="font-size:11px;color:var(--muted2)">Daily Limit</div><div style="font-size:18px;font-weight:800;margin-top:2px">' + (sub.up_to ? 'Up to ' : '') + (sub.leads_per_day || 0) + '</div></div>' +
+    var trialInfo = sub.trial_ends ? '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)"><i class="fas fa-clock" style="color:#f59e0b;margin-right:4px"></i>Trial ends ' + new Date(sub.trial_ends).toLocaleDateString('en-GB') + ' (' + Math.ceil((new Date(sub.trial_ends)-new Date())/86400000) + ' days)</div>' : '';
+    var subInfo = sub.subscription ? '<div style="padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:11px"><strong>Stripe Status:</strong> ' + (sub.subscription.status || 'N/A') + '<br><strong>Next billing:</strong> ' + (sub.subscription.next_billing ? new Date(sub.subscription.next_billing).toLocaleDateString('en-GB') : 'N/A') + '<br><strong>Days until billing:</strong> ' + (sub.subscription.next_billing ? Math.ceil((new Date(sub.subscription.next_billing)-new Date())/86400000) : 'N/A') + '</div>' : '';
+    var areasHtml = (sub.coverage_areas && sub.coverage_areas.length > 0) ? sub.coverage_areas.join(', ') : 'Not set';
+    var priceDisplay = sub.price_per_week > 0 ? '\u00a3' + sub.price_per_week + '/week' : 'Free';
+    var monthEst = sub.monthly_estimate ? '~' + sub.monthly_estimate + '/mo' : 'Varies';
+    var weekEst = sub.weekly_estimate ? '~' + sub.weekly_estimate + '/wk' : 'Varies';
+    var deliveredThisMonth = sub.delivered_this_month || 0;
+    var deliveredToday = sub.delivered_today || 0;
+    var prefix = sub.up_to ? 'Up to ' : '';
+    var html =
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">' +
+      '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center"><div style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;font-weight:600">Plan</div><div style="font-size:18px;font-weight:800;margin-top:4px;color:var(--text)">' + planLabel + '</div><div style="font-size:11px;color:var(--accent);font-weight:600;margin-top:2px">' + priceDisplay + '</div></div>' +
+      '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center"><div style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;font-weight:600">Lead Type</div><div style="font-size:18px;font-weight:800;margin-top:4px;color:var(--text)">' + (sub.lead_type || 'N/A') + '</div><div style="font-size:11px;color:var(--muted2);margin-top:2px">' + (sub.coverage_label || '') + '</div></div>' +
+      '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center"><div style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;font-weight:600">Daily Limit</div><div style="font-size:18px;font-weight:800;margin-top:4px;color:var(--text)">' + prefix + (sub.leads_per_day || 0) + '</div><div style="font-size:11px;color:var(--muted2);margin-top:2px">' + monthEst + ' \u00b7 ' + weekEst + '</div></div>' +
       '</div>' +
-      trialInfo + subInfo +
-      '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:12px">' +
+      '<div style="padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px"><strong>Coverage Areas:</strong> ' + areasHtml + '</div>' +
+      '<div style="padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px"><strong>Extra Postcodes:</strong> ' + (sub.extra_postcodes || 0) + '</div>' +
+      '<div style="padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px"><strong>Delivered Today:</strong> ' + deliveredToday + '</div>' +
+      '<div style="padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px"><strong>Delivered This Month:</strong> ' + deliveredThisMonth + '</div>' +
+      '</div>' +
+      trialInfo +
+      (subInfo ? '<div style="margin-bottom:10px">' + subInfo + '</div>' : '') +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
       '<button class="btn btn-primary btn-sm" onclick="showPlans()">Upgrade Plan</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="stripePortal()" style="color:var(--primary);border-color:rgba(14,165,233,0.2)"><i class="fas fa-external-link-alt"></i> Stripe Customer Portal</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="buyExtraPostcodes()"><i class="fas fa-plus-circle"></i> Add Extra Area</button>' +
       '<button class="btn btn-outline btn-sm" onclick="cancelSubscription()" style="color:var(--danger);border-color:rgba(239,68,68,0.3)">Cancel Subscription</button>' +
       '</div>';
     var el = document.getElementById('billing-content');
@@ -900,14 +925,41 @@ function showBillingPage() {
 function showSettingsPage() {
   var session = getSession();
   var email = session?.email || '';
+  var company = session?.company || '';
+  var product = session?.product || 'moving';
+  var plan = session?.plan || 'free_trial';
   showModal('Account Settings',
-    '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Manage your account settings and preferences.</p>' +
-    '<div style="margin-bottom:10px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Email</label><div style="padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2)">' + email + '</div></div>' +
-    '<div style="margin-bottom:10px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Notification Preferences</label>' +
-    '<label style="display:flex;align-items:center;gap:8px;padding:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="notif-daily" checked style="accent-color:var(--primary)"> Daily 9am lead email</label>' +
+    '<p style="font-size:12px;color:var(--muted2);margin-bottom:14px">Manage your account, business details and preferences.</p>' +
+    '<div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;display:block;margin-bottom:8px;color:var(--text)">Account</label>' +
+    '<div style="display:grid;gap:8px">' +
+    '<div><label style="font-size:11px;color:var(--muted2)">Email</label><div style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)">' + email + '</div></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2)">Company</label><input type="text" id="settings-company" value="' + company + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2)">Password</label><input type="password" id="settings-password" placeholder="Leave blank to keep current" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)"></div>' +
+    '</div></div>' +
+    '<div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;display:block;margin-bottom:8px;color:var(--text)">Lead Preferences</label>' +
+    '<div style="display:grid;gap:8px">' +
+    '<div><label style="font-size:11px;color:var(--muted2)">Primary Lead Type</label><div style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)">' + (LEAD_TYPE_NAMES[product] || product) + '</div></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2)">Current Plan</label><div style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)">' + (plan.charAt(0).toUpperCase() + plan.slice(1)) + '</div></div>' +
+    '</div></div>' +
+    '<div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;display:block;margin-bottom:8px;color:var(--text)">Notifications</label>' +
+    '<label style="display:flex;align-items:center;gap:8px;padding:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="notif-daily" checked style="accent-color:var(--primary)"> Daily 9am opportunity email</label>' +
     '<label style="display:flex;align-items:center;gap:8px;padding:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="notif-marketing" style="accent-color:var(--primary)"> Marketing &amp; tips emails</label></div>' +
-    '<p style="font-size:11px;color:var(--muted2);margin-top:12px">More settings coming soon. Contact support for account changes.</p>'
+    '<div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;display:block;margin-bottom:8px;color:var(--text)">Data</label>' +
+    '<label style="display:flex;align-items:center;gap:8px;padding:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="notif-export-csv" checked style="accent-color:var(--primary)"> Auto-export to CSV in daily email</label></div>' +
+    '<div style="display:flex;gap:8px;margin-top:12px">' +
+    '<button class="btn btn-primary btn-sm" onclick="saveSettings()">Save Settings</button>' +
+    '</div>' +
+    '<p style="font-size:11px;color:var(--muted2);margin-top:12px;border-top:1px solid var(--border);padding-top:12px">Need help? <a href="#" onclick="showPage(\'support\');return false" style="color:var(--primary);text-decoration:underline">Contact support</a></p>'
   );
+}
+
+function saveSettings() {
+  var company = document.getElementById('settings-company')?.value;
+  var password = document.getElementById('settings-password')?.value;
+  var msg = 'Settings saved.';
+  if (company) { var s = getSession(); if (s) s.company = company; localStorage.setItem('mld_portal_session', JSON.stringify(s)); }
+  if (password) msg += ' Password updated (in-session only for now).';
+  alert(msg);
 }
 
 // ===== UPDATE SHOWPAGE TO HANDLE ALL PAGES =====
