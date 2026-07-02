@@ -305,8 +305,8 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
   <div class="card-header">
     <div class="card-title"><i class="fas fa-sliders-h" style="color:var(--primary)"></i> Lead Filters</div>
   </div>
-  <div id="lead-filters-body">
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Configure optional filters to refine which leads you receive. Only applies to new leads after saving.</p>
+  <div id="lead-filters-body"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--muted2);font-weight:500">Fine-tune which opportunities match your business.</span><button class="btn btn-outline btn-sm" onclick="var e=document.getElementById('lead-filters-editor');if(e){e.style.display=e.style.display==='none'?'block':'none';this.textContent=e.style.display==='block'?'Hide Filters':'Edit Filters'}" style="font-size:11px;padding:4px 12px">Edit Filters</button></div>
+    
     <div id="lead-filters-display" style="font-size:12px;color:var(--text2);margin-bottom:12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:12px">Loading filter configuration...</div>
     <div id="lead-filters-editor" style="display:none">
       <div id="dashboard-filter-moving" class="dashboard-filter-panel">
@@ -1350,7 +1350,8 @@ async function buyExtraPostcodes() {
 function showLowLeadsTip(postcodeCount, leadsThisWeek) {
   const banner = document.getElementById('onboardingBanner');
   if (leadsThisWeek < 10 && postcodeCount <= 3) {
-    banner.innerHTML = '<i class="fas fa-lightbulb" style="color:var(--warning)"></i> <strong>Not enough leads?</strong> You have <strong>' + postcodeCount + ' postcode district' + (postcodeCount !== 1 ? 's' : '') + '</strong> and only <strong>' + leadsThisWeek + ' leads this week</strong>. Try adding more postcode areas to increase your volume. <a href="#" onclick="document.getElementById(\'edit-territory-btn\').click();return false" style="color:var(--primary);text-decoration:underline">Add areas now</a>';
+    banner.style.cssText = 'background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.12);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--text2);line-height:1.5';
+    banner.innerHTML = '<i class="fas fa-lightbulb" style="color:var(--warning);font-size:18px;flex-shrink:0"></i><span style="flex:1;min-width:150px"><strong style="color:var(--text)">Not enough leads?</strong> You have <strong style="color:var(--text)">' + postcodeCount + ' postcode area' + (postcodeCount !== 1 ? 's' : '') + '</strong> and <strong style="color:var(--text)">' + leadsThisWeek + ' leads this week</strong>. Add more areas to increase volume.</span><a href="#" onclick="document.getElementById(\'edit-territory-btn\').click();return false" style="padding:8px 16px;background:var(--primary);color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap">Add Areas</a>';
     banner.style.display = 'flex';
   }
 }
