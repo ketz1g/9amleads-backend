@@ -43,7 +43,7 @@
 :root.dark .theme-toggle{color:#ddd!important}
 :root.dark .hamburger span{background:#ddd!important}
 /* Background elements lighter on dark theme */
-:root.dark .s-orb{opacity:0.18}
+.s-orb{display:none}
 :root.dark .s-bg{opacity:0.25}
 :root.dark .s-grid{opacity:0.5}
 
@@ -57,8 +57,8 @@ body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font
 .section-title span{color:var(--accent)}
 .section-sub{text-align:center;color:var(--text2);font-size:17px;margin-top:0;margin-bottom:60px;max-width:600px;margin-left:auto;margin-right:auto}
 .gradient-text{background:linear-gradient(135deg,var(--accent),#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(14,165,233,0.08) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,0.08) 1px,transparent 1px);background-size:60px 60px}
-.s-bg{position:absolute;inset:0;pointer-events:none;background-size:cover;background-position:center;opacity:.2}
+.s-grid{display:none}
+.s-bg{position:absolute;inset:0;pointer-events:none;background-size:cover;background-position:center;opacity:.08}
 .s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.18}
 .s-orb.tl{width:500px;height:500px;top:-200px;right:-100px;animation:float 8s ease-in-out infinite}
 .s-orb.br{width:400px;height:400px;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse}
