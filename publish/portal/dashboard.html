@@ -102,7 +102,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
   .kpi-card .kpi-icon{display:none}
   footer{font-size:10px;padding:16px}
 }
-</style>
+/* Tablet landscape */@media(min-width:768px)and(max-width:1023px){.sidebar-toggle{display:flex}.sidebar{transform:translateX(-100%);z-index:300}.sidebar.open{transform:translateX(0)}.sidebar-overlay.show{display:block}.main-content{margin-left:0;padding:20px}.kpi-grid{grid-template-columns:repeat(3,1fr)}.tools-grid{grid-template-columns:repeat(3,1fr)}#pipeline-content div[style*="display:grid"]{grid-template-columns:1fr 1fr 1fr!important}}/* Small laptop */@media(min-width:1024px)and(max-width:1279px){.sidebar-toggle{display:none}.sidebar{transform:none;z-index:200}.sidebar-overlay{display:none!important}.main-content{margin-left:var(--sidebar-w);padding:24px 28px}.kpi-grid{grid-template-columns:repeat(4,1fr)}}/* Large desktop */@media(min-width:1280px){.sidebar-toggle{display:none}.sidebar-overlay{display:none!important}}/* Safe area */@supports(padding:max(0px)){.sidebar{padding-top:max(env(safe-area-inset-top),16px)}.main-content{padding-left:max(env(safe-area-inset-left),24px);padding-right:max(env(safe-area-inset-right),24px)}}/* Reduced motion */@media(prefers-reduced-motion:reduce){.sidebar,.sidebar-overlay,.kpi-card,.btn{transition-duration:.01ms!important}}</style>
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" style="display:none"></div>
