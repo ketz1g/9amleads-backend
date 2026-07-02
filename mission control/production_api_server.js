@@ -3548,23 +3548,23 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
   // Header
-  body += '<tr><td style="background:linear-gradient(135deg,#0c1929,#16213e);padding:32px 28px 24px;border-radius:16px 16px 0 0;text-align:center">';
-  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#ffffff;text-align:center"><span style="display:inline-block;background:#0ea5e9;border-radius:8px;width:32px;height:32px;line-height:32px;font-size:16px;color:#fff;vertical-align:middle;margin-right:6px">9</span><span style="color:' + accent + '">Leads</span></div>';
+  body += '<tr><td style="background:linear-gradient(135deg,#0c1929,#1a2744);padding:36px 28px 28px;border-radius:16px 16px 0 0;text-align:center">';
+  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto"><tr><td style="background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:10px;width:36px;height:36px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:900;color:#ffffff;line-height:36px">9</td><td style="padding-left:8px;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#ffffff;letter-spacing:-0.5px">am<span style="color:' + accent + '">Leads</span></td></tr></table>';
   var areasLabel = '';
   try { var custAreas = JSON.parse(customer.target_areas || '[]'); areasLabel = custAreas.length > 0 ? custAreas.join(', ') : ''; } catch(e) {}
-  body += '<p style="color:rgba(255,255,255,0.6);font-size:10px;margin:10px 0 0;text-transform:uppercase;letter-spacing:2px;font-weight:600">' + (areasLabel || 'Daily Opportunities') + '</p>';
+  body += '<p style="color:rgba(255,255,255,0.5);font-size:10px;margin:12px 0 0;text-transform:uppercase;letter-spacing:2px;font-weight:600">' + (areasLabel || 'Daily Opportunities') + '</p>';
   body += '</td></tr>';
 
   // Greeting + count
-  body += '<tr><td style="background:#ffffff;padding:32px 28px 20px">';
-  body += '<h2 style="font-family:Outfit,sans-serif;font-size:20px;font-weight:800;color:#111827;margin:0 0 6px;line-height:1.2">Good Morning, ' + (customer.company || 'there') + '!</h2>';
-  body += '<p style="color:#6b7280;font-size:13px;margin:0 0 18px;line-height:1.5">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
-  body += '<div style="display:inline-flex;align-items:center;gap:10px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 20px;margin-bottom:18px"><span style="font-size:28px;font-weight:800;color:#16a34a">' + leads.length + '</span><span style="font-size:13px;color:#166534;font-weight:600">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' today</span></div>';
-  body += '<p style="font-size:12px;color:#6b7280;line-height:1.6;margin:0;padding:12px 16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">' + aboutText + '</p>';
+  body += '<tr><td style="background:#ffffff;padding:32px 28px 24px">';
+  body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:800;color:#111827;margin:0 0 8px;line-height:1.2">Good Morning, ' + (customer.company || 'there') + '!</h2>';
+  body += '<p style="color:#6b7280;font-size:13px;margin:0 0 20px;line-height:1.5">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
+  body += '<div style="display:inline-flex;align-items:center;gap:12px;background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:14px 22px;margin-bottom:20px"><span style="font-size:30px;font-weight:800;color:#16a34a;line-height:1">' + leads.length + '</span><span style="font-size:13px;color:#166534;font-weight:600">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' today</span></div>';
+  body += '<p style="font-size:12px;color:#6b7280;line-height:1.6;margin:0;padding:14px 18px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px">' + aboutText + '</p>';
   body += '</td></tr>';
 
   // Lead cards
-  body += '<tr><td style="background:#ffffff;padding:8px 28px 28px">';
+  body += '<tr><td style="background:#ffffff;padding:4px 28px 28px">';
   for (var i = 0; i < leads.length; i++) {
     var l = leads[i];
     var d = l.data || {};
