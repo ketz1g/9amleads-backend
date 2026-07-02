@@ -2641,43 +2641,48 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     var delivered = 0, errors = 0;
     _dbData = null;
     var db = getDb();
+    var today = new Date().toISOString().split('T')[0];
     var customers = (db.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
       var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
-      var isExpired = trialEnds && new Date() > trialEnds;
-      if (isExpired && cust.plan === 'free_trial') continue;
+      if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
       
-      // Determine daily lead limit based on plan
-      var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 25 };
-      var totalDailyLimit = dailyLimitByPlan[cust.plan] || 5;
+      // Use per-product limits based on lead type and coverage area
+      var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 40 };
+      var totalDailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || dailyLimitByPlan[cust.plan] || 5;
       
-      // Get all products for this customer
+      // Get all products for this customer (round-robin)
       var products = [cust.product];
       try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
       
       var custLeads = [];
-      for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
-        var prod = products[pi];
-        var prodLeads = (getDb().leads || []).filter(function(l) {
-          return l.customer_id === cust.id && l.delivered === 0 && l.product === prod;
-        });
-        // Prefer today's leads, then yesterday's, then older
-        var todayStr2 = new Date().toISOString().split('T')[0];
-        var yesterdayStr2 = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-        prodLeads.sort(function(a, b) {
-          var aFresh = (a.created_at && a.created_at.startsWith(todayStr2)) || (a.scrapedAt && a.scrapedAt.startsWith(todayStr2)) ? 0 : (a.created_at && a.created_at.startsWith(yesterdayStr2)) || (a.scrapedAt && a.scrapedAt.startsWith(yesterdayStr2)) ? 1 : 2;
-          var bFresh = (b.created_at && b.created_at.startsWith(todayStr2)) || (b.scrapedAt && b.scrapedAt.startsWith(todayStr2)) ? 0 : (b.created_at && b.created_at.startsWith(yesterdayStr2)) || (b.scrapedAt && b.scrapedAt.startsWith(yesterdayStr2)) ? 1 : 2;
-          return aFresh - bFresh;
-        });
-        var slots = totalDailyLimit - custLeads.length;
-        custLeads = custLeads.concat(prodLeads.slice(0, slots));
+      var maxRound = Math.ceil(totalDailyLimit / products.length);
+      for (var ri = 0; ri < maxRound && custLeads.length < totalDailyLimit; ri++) {
+        for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
+          var prod = products[pi];
+          var allProdLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
+          var pickedIds = custLeads.map(function(cl) { return cl.id; });
+          var prodLeads = allProdLeads.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+          prodLeads.sort(function(a, b) {
+            var aD = (a.created_at || a.scrapedAt || '').substring(0, 10);
+            var bD = (b.created_at || b.scrapedAt || '').substring(0, 10);
+            if (aD === today && bD !== today) return -1;
+            if (bD === today && aD !== today) return 1;
+            return 0;
+          });
+          if (prodLeads.length > 0) {
+            custLeads.push(prodLeads[0]); // Take 1 lead per product per round
+          }
+        }
       }
       
       if (custLeads.length === 0) continue;
       try {
         var htmlContent = generateLeadEmailHTML(cust, custLeads);
-        var subject = '9amLeads for ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        var ltName3 = cust.product ? (getLeadTypeRule(cust.product).name || cust.product) : 'Opportunities';
+        var covName3 = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
+        var subject = 'Your 9am ' + ltName3 + ' for ' + covName3 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, htmlContent);
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
