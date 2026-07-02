@@ -1219,7 +1219,7 @@ app.get('/api/areas/performance', authMiddleware, (req, res) => {
 });
 
 // POST /api/support — submit support request / feedback
-app.post('/api/support', authMiddleware, (req, res) => {
+app.post('/api/support', authMiddleware, async (req, res) => {
   try {
     const db = getDb();
     if (!db.support_requests) db.support_requests = [];
@@ -1229,6 +1229,17 @@ app.post('/api/support', authMiddleware, (req, res) => {
       created_at: new Date().toISOString(), resolved: false
     });
     saveDb();
+    // Email notification to admin
+    try {
+      const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+      if (customer && BREVO_API_KEY) {
+        await sendBrevoEmail(
+          { email: 'hello@9amleads.com', name: '9amLeads Admin' },
+          'Support Request: ' + (req.body.subject || 'No subject'),
+          '<div style="font-family:sans-serif;padding:24px"><h2>New Support Request</h2><p><strong>From:</strong> ' + customer.email + ' (' + (customer.company || '') + ')</p><p><strong>Subject:</strong> ' + (req.body.subject || 'None') + '</p><p><strong>Message:</strong></p><p>' + (req.body.message || '') + '</p></div>'
+        );
+      }
+    } catch(emailErr) { console.log('[SUPPORT] Email notification failed:', emailErr.message); }
     res.json({ success: true, message: 'Your request has been submitted. We\'ll get back to you shortly.' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
