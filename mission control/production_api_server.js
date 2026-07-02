@@ -3731,11 +3731,11 @@ function generateLeadEmailHTML(customer, leads) {
       title = d.deceasedName || 'Probate Estate';
       subtitle = d.estateValue ? '\u00a3' + Number(d.estateValue).toLocaleString() + ' estate' : '';
     } else if (leadProduct === 'newbusiness') {
-      title = d.company || d.name || 'New Company';
-      subtitle = (d.sicCode ? 'SIC: ' + d.sicCode : '') || (d.address ? d.address.substring(0, 40) : '');
+      title = d.company || d.name || d.businessName || (d.address && d.address.split(',')[0]) || 'New Company Registration';
+      subtitle = d.sicCode ? 'SIC: ' + d.sicCode : (d.address ? d.address.substring(0, 50) : '');
     } else if (leadProduct === 'planning') {
-      title = address.split(',')[0].trim() || d.description || 'Planning Application';
-      subtitle = d.council ? d.council : (d.applicationRef ? 'Ref: ' + d.applicationRef : '');
+      title = address.split(',')[0].trim() || d.description || (d.council ? d.council + ' Application' : 'Planning Application');
+      subtitle = d.council ? d.council : (d.description ? d.description.substring(0, 60) : '');
     } else {
       title = d.tenderTitle || d.description || 'Opportunity';
       subtitle = d.buyer || '';
@@ -3773,8 +3773,9 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.deceasedName) chips.push({ icon: '\uD83D\uDC68\u200D\u2696\uFE0F', text: d.deceasedName });
       if (d.registry) chips.push({ icon: '\uD83C\uDFE2', text: d.registry });
     } else if (leadProduct === 'newbusiness') {
+      var bizName = d.company || d.businessName || d.name || d.address;
+      if (bizName) chips.push({ icon: '\uD83C\uDFE2', text: bizName.substring(0, 40) });
       if (d.industryTags) chips.push({ icon: '\uD83C\uDF1F', text: d.industryTags });
-      if (d.company) chips.push({ icon: '\uD83C\uDFE2', text: d.company });
       if (d.sicCode) chips.push({ icon: '\uD83D\uDCCA', text: 'SIC: ' + d.sicCode });
       if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Incorporated ' + new Date(d.incorporationDate).toLocaleDateString() });
       if (d.companyNumber) chips.push({ icon: '\uD83D\uDCB3', text: 'No: ' + d.companyNumber });
@@ -3806,13 +3807,13 @@ function generateLeadEmailHTML(customer, leads) {
     }
 
     // Contact info
-    var hasEmail = d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail;
-    var hasPhone = d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone;
-    var hasWebsite = d.website;
+    var hasEmail = d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email;
+    var hasPhone = d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone || d.mobile;
+    var hasWebsite = d.website || d.url;
     if (hasEmail || hasPhone || hasWebsite) {
       body += '<div style="border-top:1px solid #f3f4f6;padding-top:8px;margin-top:6px">';
-      if (hasEmail) body += '<div style="font-size:11px;color:#6b7280;margin-bottom:2px">\u2709\uFE0F <a href="mailto:' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail) + '" style="color:' + accent + ';text-decoration:none">' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail) + '</a></div>';
-      if (hasPhone) body += '<div style="font-size:11px;color:#6b7280;margin-bottom:2px">\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone) + '</div>';
+      if (hasEmail) body += '<div style="font-size:11px;color:#6b7280;margin-bottom:2px">\u2709\uFE0F <a href="mailto:' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email) + '" style="color:' + accent + ';text-decoration:none">' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email) + '</a></div>';
+      if (hasPhone) body += '<div style="font-size:11px;color:#6b7280;margin-bottom:2px">\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone || d.mobile) + '</div>';
       if (hasWebsite) body += '<div style="font-size:11px;color:#6b7280;margin-bottom:2px">\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:' + accent + ';text-decoration:none" target="_blank">' + d.website + '</a></div>';
       body += '</div>';
     }
