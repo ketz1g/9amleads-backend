@@ -1042,7 +1042,19 @@ function renderLeads() {
       html += '<div class="day-group"><div class="day-header"><span class="day-date">' + viewDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + '</span><span class="day-count">' + todayLeads.length + ' leads</span></div><div class="day-body">';
       todayLeads.forEach(l => {
         const d = typeof l.data === 'string' ? JSON.parse(l.data || '{}') : (l.data || {});
-        html += '<div class="lead-row"><div class="details">' + (d.address || l.address || d.name || 'G��') + '<small>' + (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.type ? ' -+ ' + d.type : '') + '</small></div><div class="value">' + (d.price || 'G��') + '</div><div class="status">' + (statusLabel[l.status] || '<span class="badge badge-blue">New</span>') + '</div></div>';
+        var ls = l.lead_status || 'new';
+        var statusColors = { new:'#0ea5e9', contacted:'#f59e0b', interested:'#8b5cf6', quoted:'#6366f1', won:'#22c55e', lost:'#ef4444' };
+        var statusLabels = { new:'New', contacted:'Contacted', interested:'Interested', quoted:'Quoted', won:'Won', lost:'Lost' };
+        html += '<div class="lead-row" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;flex-wrap:wrap">' +
+          '<span style="flex:1;min-width:120px">' + (d.address || l.address || d.name || d.title || 'Opportunity') + '<br><span style="font-size:11px;color:var(--muted2)">' + (d.postcode || '') + (d.bedrooms ? ' · ' + d.bedrooms + ' bed' : '') + '</span></span>' +
+          '<span style="color:var(--accent);font-weight:600;font-size:12px;min-width:60px">' + (d.price || d.estimated_value ? '\u00a3' + (d.price || d.estimated_value) : '') + '</span>' +
+          '<span style="display:inline-flex;gap:3px;flex-wrap:wrap">' +
+          '<button onclick="openLeadDetail(\'' + l.id + '\')" style="padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;font-weight:600">View</button>' +
+          (ls === 'new' ? '<button onclick="updateLeadStatus(\'' + l.id + '\',\'contacted\');location.reload()" style="padding:3px 8px;border-radius:4px;border:1px solid #f59e0b;background:rgba(245,158,11,0.1);color:#f59e0b;font-size:10px;cursor:pointer;font-weight:600">Contact</button>' : '') +
+          (ls === 'contacted' ? '<button onclick="updateLeadStatus(\'' + l.id + '\',\'won\',prompt(\'Deal value (£)?\')||0);location.reload()" style="padding:3px 8px;border-radius:4px;border:1px solid #22c55e;background:rgba(34,197,94,0.1);color:#22c55e;font-size:10px;cursor:pointer;font-weight:600">Won</button><button onclick="updateLeadStatus(\'' + l.id + '\',\'lost\');location.reload()" style="padding:3px 8px;border-radius:4px;border:1px solid #ef4444;background:rgba(239,68,68,0.1);color:#ef4444;font-size:10px;cursor:pointer;font-weight:600">Lost</button>' : '') +
+          '</span>' +
+          '<span class="status" style="font-size:10px;padding:2px 8px;border-radius:4px;background:' + (statusColors[ls] || '#0ea5e9') + '20;color:' + (statusColors[ls] || '#0ea5e9') + ';font-weight:600">' + (statusLabels[ls] || 'New') + '</span>' +
+          '</div>';
       });
       html += '</div></div>';
     }
