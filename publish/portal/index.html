@@ -556,9 +556,11 @@ function doSignup() {
       error.textContent = d.error || 'Signup failed. Please try again.'; error.style.display = 'block';
       button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false;
     }
-  }).catch(function() {
-    error.textContent = 'Could not connect to server.'; error.style.display = 'block';
+  }).catch(function(e) {
+    error.textContent = 'Server is starting up. Please wait 10 seconds and try again. If the issue persists, contact hello@9amleads.com.';
+    error.style.display = 'block';
     button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false;
+    setTimeout(function() { error.style.display = 'none'; }, 10000);
   });
 }
 
