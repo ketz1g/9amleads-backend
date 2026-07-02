@@ -597,10 +597,10 @@ setTimeout(function() {
   var els = document.querySelectorAll('#pipeline-content, #delivery-content, #roi-content, #kpiGrid');
   for (var ei = 0; ei < els.length; ei++) {
     if (els[ei] && (els[ei].textContent || '').includes('Loading')) {
-      els[ei].innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2);font-size:12px">Unable to load. Please <a href="javascript:location.reload()" style="color:var(--primary);text-decoration:underline">refresh</a> or <a href="#" onclick="showPage(\'support\');return false" style="color:var(--primary);text-decoration:underline">contact support</a>.</div>';
+      els[ei].innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2);font-size:12px">Server warming up... <a href="javascript:location.reload()" style="color:var(--primary);text-decoration:underline">Refresh</a> if this persists.</div>';
     }
   }
-}, 8000);
+}, 25000);
 
 // ===== NEW DASHBOARD FUNCTIONS =====
 function showPage(page) {
