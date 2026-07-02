@@ -103,6 +103,12 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="tool-card" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'})"><div class="icon">📈</div><h3>Upgrade Plan</h3><p>Get more leads per day</p></div>
 </div>
 </div>
+<!-- Smart Prompts (Section 6) -->
+<div id="prompts-container" style="display:none;margin-bottom:16px"></div>
+
+<!-- Notifications (Section 8) -->
+<div id="notifications-container" style="display:none;margin-bottom:16px"></div>
+
 <!-- KPI Dashboard Cards -->
 <div class="kpi-grid" id="kpiGrid">
 <div class="kpi-card"><div class="kpi-num" id="kpi-today">0</div><div class="kpi-label">Today's Opportunities</div><div class="kpi-desc">Delivered at 9am</div><div class="kpi-icon"><i class="fas fa-sun"></i></div></div>
@@ -412,6 +418,8 @@ async function loadDashboard() {
   }
   loadDashboardData();
   loadOnboarding();
+  loadPrompts();
+  loadNotifications();
   calcConversion();
   updateOnboarding();
   if (typeof showLowLeadsTip === 'function') {
@@ -457,6 +465,37 @@ async function bookOnboardingCall() {
     if (r && r.success) { alert('Call booked! We\'ll contact you within 24 hours.'); loadOnboarding(); }
     else alert('Failed to book. Try again.');
   } catch(e) { alert('Could not connect.'); }
+}
+
+// ===== PROMPTS & NOTIFICATIONS =====
+async function loadPrompts() {
+  try {
+    var p = await apiFetch('/api/prompts');
+    if (!p || !p.prompts || p.prompts.length === 0) { document.getElementById('prompts-container').style.display = 'none'; return; }
+    var colors = { upgrade:'#6366f1', crm:'#0ea5e9', coverage:'#f59e0b', roi:'#22c55e' };
+    var html = p.prompts.map(function(pr) {
+      return '<div style="padding:10px 14px;margin-bottom:6px;background:rgba(' + (pr.priority === 'high' ? '239,68,68' : '245,158,11') + ',0.04);border:1px solid rgba(' + (pr.priority === 'high' ? '239,68,68' : '245,158,11') + ',0.12);border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">' +
+        '<div style="font-size:12px;color:var(--text2);flex:1;min-width:200px">' + pr.message + '</div>' +
+        (pr.action ? '<a href="#" onclick="showPage(\'' + (pr.page || 'billing') + '\');return false" style="font-size:11px;padding:5px 12px;background:' + (colors[pr.type] || 'var(--primary)') + ';color:#fff;border-radius:6px;text-decoration:none;font-weight:600;white-space:nowrap">' + pr.action + '</a>' : '') +
+        '</div>';
+    }).join('');
+    document.getElementById('prompts-container').innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">&#9733; Recommendations</div>' + html;
+    document.getElementById('prompts-container').style.display = 'block';
+  } catch(e) { console.log('Prompts error:', e); }
+}
+
+async function loadNotifications() {
+  try {
+    var n = await apiFetch('/api/notifications');
+    if (!n || !n.notifications || n.notifications.length === 0) { document.getElementById('notifications-container').style.display = 'none'; return; }
+    var html = n.notifications.map(function(nt) {
+      return '<div style="padding:8px 12px;margin-bottom:4px;background:var(--card2);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)">' +
+        '<span style="font-size:14px">' + (nt.type === 'trial_ending' ? '\u23F0' : nt.type === 'low_supply' ? '\u2139\uFE0F' : '\u2705') + '</span>' +
+        '<span><strong>' + nt.title + '</strong><br>' + nt.message + '</span></div>';
+    }).join('');
+    document.getElementById('notifications-container').innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">&#128276; Notifications</div>' + html;
+    document.getElementById('notifications-container').style.display = 'block';
+  } catch(e) { console.log('Notifications error:', e); }
 }
 
 // ===== NEW DASHBOARD FUNCTIONS =====
