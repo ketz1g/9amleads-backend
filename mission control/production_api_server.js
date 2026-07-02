@@ -1994,7 +1994,16 @@ cron.schedule('45 2 * * *', async () => {
           }
         }
       }
-      if (custLeads.length === 0) continue;
+      // Send low-supply message if no leads available
+      if (custLeads.length === 0) {
+        var lowSupplyMsg = '<div style="font-family:Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#1a1b2e;border-radius:12px"><div style="text-align:center;margin-bottom:16px"><img src="https://9amleads.com/logo.png" alt="9amLeads" style="height:32px"></div><h2 style="font-family:Outfit,sans-serif;font-size:18px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Daily Opportunities</h2><p style="color:#8890a8;font-size:13px;text-align:center;margin:0 0 16px">' + (cust.product ? getLeadTypeRule(cust.product).name : 'Opportunities') + ' for ' + (cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area') + '</p><div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.15);border-radius:8px;padding:16px;text-align:center;margin-bottom:16px"><p style="color:#fbbf24;font-size:13px;font-weight:600;margin:0 0 4px">Limited Availability Today</p><p style="color:#8890a8;font-size:12px;line-height:1.5;margin:0">Today\'s available opportunities are below your normal allowance because this category is based on live market activity. This is normal for specialist categories such as planning, probate and tenders, which may vary day by day. Additional matching leads will be added as soon as they appear.</p></div><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:12px 0 0"><a href="' + (process.env.PUBLIC_URL || 'https://9amleads.com') + '/portal/dashboard.html" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:700">View Dashboard</a></td></tr></table></div>';
+        if (cust.email) {
+          try {
+            await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, 'Your daily opportunities for ' + today, lowSupplyMsg);
+          } catch(emErr) { console.log('[DELIVERY] Low supply email failed:', cust.email, emErr.message); }
+        }
+        continue;
+      }
       try {
         var html = generateLeadEmailHTML(cust, custLeads);
         var subject = '9amLeads for ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -2182,6 +2191,17 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
 
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!customer) return res.status(404).json({ error: 'User not found' });
+
+    // Verify availability before checkout
+    if (!packageKeys[plan]) {
+      const availRule = getLeadTypeRule(customer.product);
+      if (!availRule.enabled) {
+        return res.status(400).json({ error: availRule.name + ' are not currently available. Please choose another lead type from your dashboard.' });
+      }
+      if (customer.coverage && availRule.coverage.indexOf(customer.coverage) === -1) {
+        return res.status(400).json({ error: customer.coverage + ' coverage is not available for ' + availRule.name + '. Please update your coverage area in the dashboard.' });
+      }
+    }
 
     // Handle packages and pro plan directly
     var packageKeys = { 'builder-package': 'bld-package', 'marketing-package': 'mkt-package', 'property-package': 'prp-package', 'moving-package': 'mov-package', 'pro': 'pro-plan' };
