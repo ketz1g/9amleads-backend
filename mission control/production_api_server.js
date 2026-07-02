@@ -2040,14 +2040,18 @@ cron.schedule('45 2 * * *', async () => {
         var lowSupplyMsg = '<div style="font-family:Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#1a1b2e;border-radius:12px"><div style="text-align:center;margin-bottom:16px"><img src="https://9amleads.com/logo.png" alt="9amLeads" style="height:32px"></div><h2 style="font-family:Outfit,sans-serif;font-size:18px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Daily Opportunities</h2><p style="color:#8890a8;font-size:13px;text-align:center;margin:0 0 16px">' + (cust.product ? getLeadTypeRule(cust.product).name : 'Opportunities') + ' for ' + (cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area') + '</p><div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.15);border-radius:8px;padding:16px;text-align:center;margin-bottom:16px"><p style="color:#fbbf24;font-size:13px;font-weight:600;margin:0 0 4px">Limited Availability Today</p><p style="color:#8890a8;font-size:12px;line-height:1.5;margin:0">Today\'s available opportunities are below your normal allowance because this category is based on live market activity. This is normal for specialist categories such as planning, probate and tenders, which may vary day by day. Additional matching leads will be added as soon as they appear.</p></div><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:12px 0 0"><a href="' + (process.env.PUBLIC_URL || 'https://9amleads.com') + '/portal/dashboard.html" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:700">View Dashboard</a></td></tr></table></div>';
         if (cust.email) {
           try {
-            await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, 'Your daily opportunities for ' + today, lowSupplyMsg);
+            var ltName = cust.product ? (getLeadTypeRule(cust.product).name || cust.product) : 'Opportunities';
+            var covName = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
+            await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, 'Your 9am ' + ltName + ' for ' + covName + ' — ' + today, lowSupplyMsg);
           } catch(emErr) { console.log('[DELIVERY] Low supply email failed:', cust.email, emErr.message); }
         }
         continue;
       }
       try {
         var html = generateLeadEmailHTML(cust, custLeads);
-        var subject = '9amLeads for ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        var ltName2 = cust.product ? (getLeadTypeRule(cust.product).name || cust.product) : 'Opportunities';
+        var covName2 = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
+        var subject = 'Your 9am ' + ltName2 + ' for ' + covName2 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, subject, html);
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
@@ -2973,7 +2977,7 @@ function generateLeadEmailHTML(customer, leads) {
   // Header
   body += '<tr><td style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:28px 28px 22px;border-radius:16px 16px 0 0;text-align:center">';
   body += '<div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:900;color:#ffffff;letter-spacing:-.5px">9am<span style="color:' + accent + '">Leads</span></div>';
-  body += '<p style="color:rgba(255,255,255,0.5);font-size:10px;margin:6px 0 0;text-transform:uppercase;letter-spacing:2px">' + (customer.lead_type || 'Daily Opportunities') + '</p>';
+  body += '<p style="color:rgba(255,255,255,0.5);font-size:10px;margin:6px 0 0;text-transform:uppercase;letter-spacing:2px">' + (customer.lead_type || 'Daily Opportunities') + ' for ' + (customer.coverage ? (COVERAGE_LABELS[customer.coverage] || customer.coverage) : 'your area') + '</p>';
   body += '</td></tr>';
 
   // Greeting + count
