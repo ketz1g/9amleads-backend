@@ -3548,19 +3548,19 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
   // Header
-  body += '<tr><td style="background:linear-gradient(135deg,#0c1929,#1a2744);padding:36px 28px 28px;border-radius:16px 16px 0 0;text-align:center">';
-  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#ffffff;text-align:center;line-height:1.3"><span style="display:inline-block;background:#0ea5e9;border-radius:8px;width:30px;height:30px;line-height:30px;font-size:16px;color:#fff;text-align:center;margin-right:4px;vertical-align:middle">9</span><span style="vertical-align:middle">am</span><span style="color:' + accent + ';vertical-align:middle">Leads</span></div>';
+  body += '<tr><td style="background:linear-gradient(135deg,#0b1424,#162044);padding:32px 28px;border-radius:16px 16px 0 0;text-align:center">';
+  body += '<table cellpadding="0" cellspacing="0" align="center"><tr><td style="background:#0ea5e9;width:32px;height:32px;border-radius:8px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:900;color:#ffffff;line-height:32px">9</td><td style="padding-left:8px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#ffffff;letter-spacing:-0.3px">am<span style="color:' + accent + '">Leads</span></td></tr></table>';
   var areasLabel = '';
   try { var custAreas = JSON.parse(customer.target_areas || '[]'); areasLabel = custAreas.length > 0 ? custAreas.join(', ') : ''; } catch(e) {}
-  body += '<p style="color:rgba(255,255,255,0.5);font-size:10px;margin:12px 0 0;text-transform:uppercase;letter-spacing:2px;font-weight:600">' + (areasLabel || 'Daily Opportunities') + '</p>';
+  body += '<p style="color:rgba(255,255,255,0.4);font-size:10px;margin:14px 0 0;text-transform:uppercase;letter-spacing:2.5px;font-weight:600">' + (areasLabel || 'Daily Opportunities') + '</p>';
   body += '</td></tr>';
 
   // Greeting + count
-  body += '<tr><td style="background:#ffffff;padding:32px 28px 24px">';
-  body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:800;color:#111827;margin:0 0 8px;line-height:1.2">Good Morning, ' + (customer.company || 'there') + '!</h2>';
-  body += '<p style="color:#6b7280;font-size:13px;margin:0 0 20px;line-height:1.5">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
-  body += '<div style="display:inline-flex;align-items:center;gap:12px;background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:14px 22px;margin-bottom:20px"><span style="font-size:30px;font-weight:800;color:#16a34a;line-height:1">' + leads.length + '</span><span style="font-size:13px;color:#166534;font-weight:600">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' today</span></div>';
-  body += '<p style="font-size:12px;color:#6b7280;line-height:1.6;margin:0;padding:14px 18px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px">' + aboutText + '</p>';
+  body += '<tr><td style="background:#ffffff;padding:30px 30px 22px">';
+  body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#111827;margin:0 0 6px">Good Morning, ' + (customer.company || 'there') + '!</h2>';
+  body += '<p style="color:#6b7280;font-size:13px;margin:0 0 18px">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
+  body += '<div style="display:inline-block;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 20px"><span style="font-size:26px;font-weight:800;color:#16a34a;vertical-align:middle">' + leads.length + '</span><span style="font-size:13px;color:#166534;font-weight:600;vertical-align:middle;margin-left:8px">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' today</span></div>';
+  body += '<p style="font-size:12px;color:#6b7280;line-height:1.5;margin:16px 0 0;padding:12px 16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">' + aboutText + '</p>';
   body += '</td></tr>';
 
   // Lead cards
@@ -3676,11 +3676,18 @@ function generateLeadEmailHTML(customer, leads) {
   body += '</td></tr>';
 
   // Footer
-  body += '<tr><td style="background:#0f1a2e;padding:32px 28px 24px;border-radius:0 0 16px 16px;text-align:center">';
-  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:rgba(255,255,255,0.3);margin-bottom:16px;line-height:1.3"><span style="display:inline-block;background:rgba(14,165,233,0.25);border-radius:7px;width:26px;height:26px;line-height:26px;font-size:12px;color:rgba(255,255,255,0.5);text-align:center;margin-right:3px;vertical-align:middle">9</span><span style="vertical-align:middle">amLeads</span></div>';
-  body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px;margin-bottom:16px">View Full Dashboard</a>';
-  body += '<p style="color:rgba(255,255,255,0.25);font-size:9px;margin:0 0 4px;line-height:1.6;letter-spacing:.3px">9am Leads Ltd &bull; Company No. 17168176 &bull; hello@9amleads.com</p>';
-  body += '<p style="color:rgba(255,255,255,0.15);font-size:8px;margin:0;letter-spacing:.5px">Fresh opportunities delivered every morning at 9am. This email was sent to you as part of your 9amLeads subscription.</p>';
+  body += '<tr><td style="background:#0b1424;padding:28px 28px 24px;border-radius:0 0 16px 16px;text-align:center">';
+  body += '<div style="border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:20px;margin-bottom:16px">';
+  body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:11px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px">View Full Dashboard</a>';
+  body += '</div>';
+  body += '<table cellpadding="0" cellspacing="0" align="center"><tr><td style="text-align:center;padding-bottom:12px">';
+  body += '<a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:28px;text-align:center;margin:0 3px;text-decoration:none"><span style="color:rgba(255,255,255,0.4);font-size:12px">f</span></a>';
+  body += '<a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:28px;text-align:center;margin:0 3px;text-decoration:none"><span style="color:rgba(255,255,255,0.4);font-size:12px">t</span></a>';
+  body += '<a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:28px;text-align:center;margin:0 3px;text-decoration:none"><span style="color:rgba(255,255,255,0.4);font-size:12px">ig</span></a>';
+  body += '</td></tr></table>';
+  body += '<p style="color:rgba(255,255,255,0.2);font-size:9px;margin:0 0 2px;letter-spacing:.3px">9am Leads Ltd &bull; Company No. 17168176</p>';
+  body += '<p style="color:rgba(255,255,255,0.15);font-size:8px;margin:0;letter-spacing:.3px"><a href="mailto:hello@9amleads.com" style="color:rgba(255,255,255,0.2);text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:rgba(255,255,255,0.2);text-decoration:underline">Privacy Policy</a></p>';
+  body += '<p style="color:rgba(255,255,255,0.1);font-size:7px;margin:12px 0 0;letter-spacing:.5px">Fresh opportunities delivered every morning at 9am</p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
