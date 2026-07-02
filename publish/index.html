@@ -15,37 +15,37 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-:root{--accent:#0ea5e9;--accent-subtle:rgba(14,165,233,0.12);--accent-glow:rgba(14,165,233,0.3);--bg:#111;--bg-card:#1a1a1a;--border:#2a2a2a;--border-h:#444;--text:#f5f5f5;--text2:#ddd;--muted:#bbb;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
-:root.light{--bg:#f8f9fb;--bg-card:#ffffff;--border:#e5e7eb;--border-h:#d1d5db;--text:#111827;--text2:#4b5563;--muted:#6b7280}
-:root.light [class*="s-bg"]{opacity:0.12}
-:root.light [class*="s-grid"]{opacity:0.5}
-:root.light .section-sub{color:#6b7280}
-:root.light .faq-a p{color:#6b7280}
-:root.light .test-grid blockquote{color:#6b7280}
-:root.light .test-grid .role{color:#8890a8}
-:root.light [style*="color:#444"],:root.light [style*="color:#555"],:root.light [style*="color:#666"]{color:#6b7280!important}
-:root.light [style*="color:#777"],:root.light [style*="color:#888"]{color:#9ca3af!important}
-:root.light [style*="color:#999"]{color:#b0b8cc!important}
-:root.light [style*="background:#0a0a0a"]{background:var(--bg)!important}
-:root.light [style*="background:#111"]{background:var(--bg)!important}
-:root.light .hero-section{color:var(--text)!important}
-:root.light .value-prop h4{color:var(--text)!important}
-:root.light .value-prop p{color:var(--text2)!important}
+:root{--accent:#0ea5e9;--accent-subtle:rgba(14,165,233,0.12);--accent-glow:rgba(14,165,233,0.3);--bg:#f8f9fb;--bg-card:#ffffff;--border:#e5e7eb;--border-h:#d1d5db;--text:#111827;--text2:#4b5563;--muted:#6b7280;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
+:root.dark{--bg:#111;--bg-card:#1a1a1a;--border:#2a2a2a;--border-h:#444;--text:#f5f5f5;--text2:#ddd;--muted:#bbb}
+:root.dark [class*="s-bg"]{opacity:0.12}
+:root.dark [class*="s-grid"]{opacity:0.5}
+:root.dark .section-sub{color:#6b7280}
+:root.dark .faq-a p{color:#6b7280}
+:root.dark .test-grid blockquote{color:#6b7280}
+:root.dark .test-grid .role{color:#8890a8}
+:root.dark [style*="color:#444"],:root.dark [style*="color:#555"],:root.dark [style*="color:#666"]{color:#6b7280!important}
+:root.dark [style*="color:#777"],:root.dark [style*="color:#888"]{color:#9ca3af!important}
+:root.dark [style*="color:#999"]{color:#b0b8cc!important}
+:root.dark [style*="background:#0a0a0a"]{background:var(--bg)!important}
+:root.dark [style*="background:#111"]{background:var(--bg)!important}
+:root.dark .hero-section{color:var(--text)!important}
+:root.dark .value-prop h4{color:var(--text)!important}
+:root.dark .value-prop p{color:var(--text2)!important}
 /* Hero section always stays dark with light text */
-:root.light .hero h1{color:#f5f5f5}
-:root.light .hero p{color:#ddd}
-:root.light .hero-stat-num{color:#f5f5f5}
-:root.light .hero-stat-label{color:#bbb}
-:root.light .hero-badge{color:#0ea5e9}
-:root.light nav{background:rgba(255,255,255,0.95);border-bottom-color:rgba(0,0,0,0.06)}
-:root.light .nav-links a{color:#111827!important}
-:root.light .nav-links a:hover{color:#000!important}
-:root.light .theme-toggle{color:#111827!important}
-:root.light .hamburger span{background:#111827!important}
+:root.dark .hero h1{color:#f5f5f5}
+:root.dark .hero p{color:#ddd}
+:root.dark .hero-stat-num{color:#f5f5f5}
+:root.dark .hero-stat-label{color:#bbb}
+:root.dark .hero-badge{color:#0ea5e9}
+:root.dark nav{background:rgba(255,255,255,0.95);border-bottom-color:rgba(0,0,0,0.06)}
+:root.dark .nav-links a{color:#111827!important}
+:root.dark .nav-links a:hover{color:#000!important}
+:root.dark .theme-toggle{color:#111827!important}
+:root.dark .hamburger span{background:#111827!important}
 /* Background elements lighter on light theme */
-:root.light .s-orb{opacity:0.15}
-:root.light .s-bg{opacity:0.3}
-:root.light .s-grid{opacity:0.6}
+:root.dark .s-orb{opacity:0.15}
+:root.dark .s-bg{opacity:0.3}
+:root.dark .s-grid{opacity:0.6}
 
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -1670,20 +1670,20 @@ setTimeout(function(){var e=document.getElementById('liveProof'),t=document.getE
 </div>
 <script>
 if(localStorage.getItem('cookies_accepted')) document.getElementById('cookieConsent').style.display='none';
-// Theme toggle — light mode default
-// Force light mode - clear any saved dark preference
-localStorage.removeItem('theme');
-document.documentElement.classList.add('light');
+// Theme toggle — light mode default (base CSS is light)
+document.documentElement.classList.remove('dark');
 function toggleTheme() {
   var root = document.documentElement;
-  root.classList.toggle('light');
-  var isLight = root.classList.contains('light');
-  document.getElementById('themeToggle').innerHTML = isLight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+  root.classList.toggle('dark');
+  var isDark = root.classList.contains('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  document.getElementById('themeToggle').innerHTML = isDark ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
 }
 // Set initial icon
 document.addEventListener('DOMContentLoaded', function() {
-  var isLight = document.documentElement.classList.contains('light');
-  document.getElementById('themeToggle').innerHTML = isLight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+  if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+  var isDark = document.documentElement.classList.contains('dark');
+  document.getElementById('themeToggle').innerHTML = isDark ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
 });
 </script>
 </body></html>
