@@ -1323,12 +1323,12 @@ const PRODUCT_LEAD_FILES = {
 
 const PLAN_LIMITS = {
   // Flat leads per day across ALL products
-  '*': { free_trial: 5, starter: 5, pro: 15, enterprise: 50 },
-  moving: { free_trial: 5, starter: 5, pro: 15, enterprise: 50 },
-  probate: { free_trial: 5, starter: 5, pro: 15, enterprise: 50 },
-  newbusiness: { free_trial: 5, starter: 5, pro: 15, enterprise: 50 },
-  planning: { free_trial: 5, starter: 5, pro: 15, enterprise: 50 },
-  tenders: { free_trial: 5, starter: 5, pro: 15, enterprise: 50 },
+  '*': { free_trial: 5, starter: 5, pro: 15, enterprise: 40 },
+  moving: { free_trial: 5, starter: 5, pro: 15, enterprise: 40 },
+  probate: { free_trial: 5, starter: 5, pro: 15, enterprise: 40 },
+  newbusiness: { free_trial: 5, starter: 5, pro: 15, enterprise: 40 },
+  planning: { free_trial: 5, starter: 5, pro: 15, enterprise: 40 },
+  tenders: { free_trial: 5, starter: 5, pro: 15, enterprise: 40 },
 };
 
 const PLAN_NAMES = {
@@ -1754,7 +1754,7 @@ cron.schedule('45 2 * * *', async () => {
       var cust = customers[ci];
       var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
       if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
-      var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 25 };
+      var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 40 };
       var totalDailyLimit = dailyLimitByPlan[cust.plan] || 5;
       var products = [cust.product];
       try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
