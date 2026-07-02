@@ -99,6 +99,14 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
   .page-header h1{font-size:18px}
   #prompts-container>div>div{padding:8px 10px;font-size:11px}
   #notifications-container>div>div{padding:6px 10px;font-size:11px}
+  .sidebar-toggle{display:flex;position:fixed;top:12px;left:12px;z-index:300;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:16px;box-shadow:var(--shadow-lg)}
+  .sidebar{position:fixed;top:0;left:-280px;bottom:0;width:260px;z-index:500;transition:left .3s;padding-top:60px}
+  .sidebar.open{left:0}
+  .sidebar-overlay.show{display:block;z-index:499}
+  .main-content{margin-left:0;padding:60px 14px 20px}
+  .top-bar{flex-direction:column;align-items:flex-start;gap:8px}
+  .top-bar .actions{width:100%}
+  .top-bar .actions .btn{flex:1;font-size:11px;padding:6px 8px}
   .kpi-card .kpi-icon{display:none}
   footer{font-size:10px;padding:16px}
 }
@@ -106,7 +114,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" style="display:none"></div>
-<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" style="display:none"><i class="fas fa-bars"></i></button>
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
 <div class="sidebar" id="sidebar">
 <a href="/portal/dashboard.html" class="logo"><div class="mark">9</div>9am<span>Leads</span></a>
 <div class="nav-items">
