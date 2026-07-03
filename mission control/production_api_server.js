@@ -4005,25 +4005,32 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
     const https = require('https');
     const dayOfWeek = new Date().getDay();
     const results = {};
+    // Background scrapers (long-running — planning, tenders)
+    var bgTasks = [];
+
+    function syncCustomers(product) {
+      const allCustomers = getDb().customers || [];
+      const productCustomers = allCustomers.filter(c => c.product === product && c.trial_ends && new Date(c.trial_ends) > new Date());
+      const customerFile = path.join(DATA_DIR, product + '-customers.json');
+      const existing = (() => { try { return JSON.parse(fs.readFileSync(customerFile, 'utf-8')); } catch { return {}; } })();
+      for (const c of productCustomers) {
+        existing[c.id] = existing[c.id] || {};
+        existing[c.id].active = true;
+        existing[c.id].company = c.company || c.name || '';
+        existing[c.id].email = c.email || '';
+        existing[c.id].postcodeAreas = (c.target_areas || []);
+        existing[c.id].leadsPerDay = c.leads_per_day || 5;
+        existing[c.id].plan = c.plan || 'free_trial';
+      }
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.writeFileSync(customerFile, JSON.stringify(existing, null, 2));
+    }
+
+    // Sync customers for ALL products first (quick)
+    for (const product of Object.keys(PRODUCT_LEAD_FILES)) syncCustomers(product);
+
     for (const [product, config] of Object.entries(PRODUCT_LEAD_FILES)) {
       try {
-        // Sync customers from main DB to scraper customer file
-        const allCustomers = getDb().customers || [];
-        const productCustomers = allCustomers.filter(c => c.product === product && c.trial_ends && new Date(c.trial_ends) > new Date());
-        const customerFile = path.join(DATA_DIR, product + '-customers.json');
-        const existing = (() => { try { return JSON.parse(fs.readFileSync(customerFile, 'utf-8')); } catch { return {}; } })();
-        for (const c of productCustomers) {
-          existing[c.id] = existing[c.id] || {};
-          existing[c.id].active = true;
-          existing[c.id].company = c.company || c.name || '';
-          existing[c.id].email = c.email || '';
-          existing[c.id].postcodeAreas = (c.target_areas || []);
-          existing[c.id].leadsPerDay = c.leads_per_day || 5;
-          existing[c.id].plan = c.plan || 'free_trial';
-        }
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-        fs.writeFileSync(customerFile, JSON.stringify(existing, null, 2));
-
         // Generate leads — use free APIs where available, else demo data
         var leads;
         if (product === 'newbusiness') {
@@ -4107,26 +4114,27 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             }
           } catch(e) { console.log('[SCRAPER] Tenders error: ' + e.message); leads = []; }
         } else if (product === 'planning') {
+          // Background scrape — planning API is slow (2-4 min), don't block
+          leads = [];
+          console.log('[SCRAPER] Planning scrape kicked off in background');
           try {
             var apifyKey2 = process.env.APIFY_API_KEY;
-            leads = await new Promise(function(resolve) {
-              var councils = ['woking','durham'];
-              var bodyData = JSON.stringify({ councils: councils, dateMode: 'validated', maxResultsPerCouncil: 2, stateKey: 'Output Only New Applications' });
-              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/illehius~uk-planning-monitor/run-sync-get-dataset-items?token=' + apifyKey2 + '&memory=512&timeout=180', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 240000 }, function(res) {
-                var body = ''; res.on('data', function(c) { body += c; });
-                res.on('end', function() {
-                  try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }
-                    resolve(items.map(function(p) { return { id: 'PLAN_' + (p.applicationRef || Date.now()), address: (p.address || '').trim(), postcode: p.postcode || '', description: p.proposal || '', council: p.councilName || '', applicationRef: p.applicationRef || '', applicationType: p.applicationType || 'Planning', status: p.status || '', url: p.detailUrl || '', source: 'UK Planning Monitor', scrapedAt: new Date().toISOString() }; }));
-                  } catch(e) { resolve([]); }
+            if (apifyKey2) {
+              setTimeout(function() {
+                var councils = ['woking','durham','southwark'];
+                var bodyData = JSON.stringify({ councils: councils, dateMode: 'validated', maxResultsPerCouncil: 5, stateKey: 'Output Only New Applications' });
+                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/illehius~uk-planning-monitor/run-sync-get-dataset-items?token=' + apifyKey2 + '&memory=512&timeout=180', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 240000 }, function(res) {
+                  var body = ''; res.on('data', function(c) { body += c; });
+                  res.on('end', function() {
+                    try { var items = JSON.parse(body); if (Array.isArray(items) && items.length > 0) { var ppLeads = items.map(function(p) { return { id: 'PLAN_' + (p.applicationRef || Date.now()), address: (p.address || '').trim(), postcode: p.postcode || '', description: p.proposal || '', council: p.councilName || '', applicationRef: p.applicationRef || '', applicationType: p.applicationType || 'Planning', status: p.status || '', url: p.detailUrl || '', source: 'UK Planning Monitor', scrapedAt: new Date().toISOString() }; }); fs.writeFileSync(path.join(DATA_DIR, PRODUCT_LEAD_FILES.planning.file), JSON.stringify(ppLeads, null, 2)); console.log('[SCRAPER] Background planning scrape saved ' + ppLeads.length + ' leads'); } } catch(e) {} });
                 });
-              });
-              req.on('error', function() { resolve([]); });
-              req.setTimeout(240000, function() { req.destroy(); resolve([]); });
-              req.write(bodyData);
-              req.end();
-            });
-            if (!leads || leads.length < 3) { console.log('[SCRAPER] Planning monitor returned ' + (leads ? leads.length : 0) + ', no leads for planning today'); leads = []; }
-          } catch(e) { console.log('[SCRAPER] Planning monitor error: ' + e.message); leads = []; }
+                req.on('error', function() {});
+                req.setTimeout(240000, function() { req.destroy(); });
+                if (bodyData) { req.write(bodyData); }
+                req.end();
+              }, 100);
+            }
+          } catch(e) { console.log('[SCRAPER] Planning background error:', e.message); }
         } else if (product === 'moving') {
           try {
             // Direct Rightmove API (free) - fetch UK properties
