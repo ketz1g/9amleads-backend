@@ -497,7 +497,7 @@ async function distributeProduct(product) {
   var citiesByPrefix = { 'EC': 'London', 'WC': 'London', 'SW': 'London', 'SE': 'London', 'W': 'London', 'N': 'London', 'NW': 'London', 'E': 'London', 'EN': 'Enfield', 'SG': 'Stevenage', 'CM': 'Chelmsford', 'ME': 'Maidstone', 'KT': 'Kingston', 'TW': 'Twickenham', 'UB': 'Uxbridge', 'HA': 'Harrow', 'WD': 'Watford', 'AL': 'St Albans', 'LU': 'Luton', 'SS': 'Southend', 'DA': 'Dartford', 'BR': 'Bromley', 'CR': 'Croydon', 'SM': 'Sutton', 'TN': 'Tonbridge', 'BN': 'Brighton', 'RH': 'Redhill', 'GU': 'Guildford', 'SL': 'Slough', 'RG': 'Reading', 'OX': 'Oxford' };
   var countyToPrefix = { 'hertfordshire': 'SG', 'buckinghamshire': 'HP', 'greater-london': 'N', 'bedfordshire': 'LU', 'berkshire': 'RG', 'bristol': 'BS', 'cambridgeshire': 'CB', 'cheshire': 'CH', 'cornwall': 'TR', 'cumbria': 'CA', 'derbyshire': 'DE', 'devon': 'EX', 'dorset': 'DT', 'durham': 'DH', 'east-sussex': 'BN', 'essex': 'CM', 'gloucestershire': 'GL', 'greater-manchester': 'M', 'hampshire': 'SO', 'herefordshire': 'HR', 'isle-of-wight': 'PO', 'kent': 'ME', 'lancashire': 'PR', 'leicestershire': 'LE', 'lincolnshire': 'LN', 'merseyside': 'L', 'norfolk': 'NR', 'north-yorkshire': 'YO', 'northamptonshire': 'NN', 'northumberland': 'NE', 'nottinghamshire': 'NG', 'oxfordshire': 'OX', 'rutland': 'LE', 'shropshire': 'SY', 'somerset': 'TA', 'south-yorkshire': 'S', 'staffordshire': 'ST', 'suffolk': 'IP', 'surrey': 'GU', 'tyne-and-wear': 'NE', 'warwickshire': 'CV', 'west-midlands': 'B', 'west-sussex': 'RH', 'west-yorkshire': 'LS', 'wiltshire': 'SN', 'worcestershire': 'WR' };
   var propTypes = ['House', 'Flat', 'Maisonette', 'Bungalow', 'Townhouse'];
-  var appTypes = ['Full Planning', 'Householder', 'Listed Building', 'Change of Use', 'Outline Planning', 'Permitted Development'];
+  var defaultAppTypes = ['Full Planning', 'Householder', 'Listed Building', 'Change of Use', 'Outline Planning', 'Permitted Development'];
   var statuses = ['SSTC', 'Under Offer', 'Available'];
   var bizNames = ['Premier', 'Elite', 'First Choice', 'Advanced', 'Apex', 'Meridian', 'Pinnacle', 'Signature', 'Horizon'];
   var bizSuffixes = ['Consulting', 'Services', 'Solutions', 'Partners', 'Group', 'Associates', 'Management'];
@@ -574,7 +574,9 @@ async function distributeProduct(product) {
           baseLead.companyNumber = 'NI' + (Math.floor(Math.random() * 900000) + 100000);
           baseLead.incorporationDate = new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString();
         } else if (product === 'planning') {
-          baseLead.applicationType = appTypes[ni % appTypes.length];
+          var custAppTypes = filters['f-app-type'] || defaultAppTypes;
+          if (!Array.isArray(custAppTypes)) custAppTypes = defaultAppTypes;
+          baseLead.applicationType = custAppTypes[ni % custAppTypes.length];
           baseLead.description = 'Proposed ' + (['residential', 'commercial', 'mixed-use'][ni % 3]) + ' development at ' + address;
           baseLead.council = city + ' Council';
           baseLead.estimatedValue = (['50000', '100000', '250000', '500000'][ni % 4]);
