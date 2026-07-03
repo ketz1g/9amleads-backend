@@ -210,7 +210,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 let _dbData = null;
 let _dbLock = Promise.resolve();
 function getDb() {
-  if (!_dbData) { _dbData = loadDb(); saveDb(); }
+  if (!_dbData) { _dbData = loadDb(); }
   return _dbData;
 }
 function loadDb() {
@@ -218,10 +218,7 @@ function loadDb() {
   catch { return { customers: [], leads: [], deliveries: [], scraper_logs: [], subscriptions: [] }; }
 }
 function saveDb() {
-  _dbLock = _dbLock.then(() => {
-    fs.writeFileSync(DB_FILE, JSON.stringify(_dbData, null, 2));
-  });
-  return _dbLock;
+  try { fs.writeFileSync(DB_FILE, JSON.stringify(_dbData, null, 2)); } catch(e) { console.error('[DB] Save error:', e.message); }
 }
 function _q(sql, params) {
   // Parse SQL to determine operation
