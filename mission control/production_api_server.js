@@ -1207,7 +1207,7 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     const db = getDb();
     const leads = (db.leads || []).filter(l => l.customer_id === req.user.id);
     const today = new Date().toISOString().split('T')[0];
-    const thisWeek = (function(){ var d = new Date(); d.setDate(d.getDate()-d.getDay()); return d.toISOString().split('T')[0]; })();
+    const thisWeek = (function(){ var d = new Date(); d.setDate(d.getDate() - (d.getDay() || 7) + 1); return d.toISOString().split('T')[0]; })();
     const thisMonth = today.substring(0, 7);
 
     const leadsToday = leads.filter(l => l.created_at && l.created_at.startsWith(today));
@@ -2674,7 +2674,7 @@ cron.schedule('36 2 * * *', async () => {
       var products = [cust.product];
       try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
       // Calculate this week start for weekly-model products
-      var thisWeek = new Date(); thisWeek.setDate(thisWeek.getDate() - thisWeek.getDay());
+      var thisWeek = new Date(); thisWeek.setDate(thisWeek.getDate() - (thisWeek.getDay() || 7) + 1);
       var weekStartStr = thisWeek.toISOString().split('T')[0];
       var custLeads = [];
       // Round-robin across all products: pick 1 lead per product, repeat until limit reached
@@ -2833,7 +2833,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           custLeads.push(primaryLeads[0]);
         }
       }
-      var thisWeekStart2 = new Date(); thisWeekStart2.setDate(thisWeekStart2.getDate() - thisWeekStart2.getDay());
+      var thisWeekStart2 = new Date(); thisWeekStart2.setDate(thisWeekStart2.getDate() - (thisWeekStart2.getDay() || 7) + 1);
       var weekStart2 = thisWeekStart2.toISOString().split('T')[0];
       // Round 1: pick 1 lead from EACH product (guarantees every product gets at least 1)
       for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
