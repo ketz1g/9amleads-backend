@@ -2682,12 +2682,16 @@ cron.schedule('36 2 * * *', async () => {
       for (var ri = 0; ri < maxRound && custLeads.length < totalDailyLimit; ri++) {
         for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
           var prod = products[pi];
-          // Check weekly limit for specialist products
+          // Check weekly limit + daily max for specialist products
           var prodRule = getLeadTypeRule(prod);
           if (prodRule.model === 'weekly') {
             var weeklyDelivered = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at >= weekStartStr && l.product === prod; }).length;
             var weeklyLimit = prodRule.weekly_est ? (prodRule.weekly_est[cust.plan] || prodRule.weekly_est.starter || 999) : 999;
             if (weeklyDelivered >= weeklyLimit) continue; // Weekly limit reached, skip this product
+            // Also enforce daily max (weekly/5) so the weekly cap isn't dumped in one day
+            var dailyMax = Math.max(1, Math.ceil(weeklyLimit / 5));
+            var todayDelivered = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today) && l.product === prod; }).length;
+            if (todayDelivered >= dailyMax) continue; // Daily max reached for this product
           }
           // Get ALL undelivered leads for this product (not already picked)
           var allProdLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
@@ -2840,6 +2844,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           var weekDel = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at >= weekStart2 && l.product === prod; }).length;
           var weekLim = prodRule2.weekly_est ? (prodRule2.weekly_est[cust.plan] || prodRule2.weekly_est.starter || 999) : 999;
           if (weekDel >= weekLim) continue;
+          var dayMax2 = Math.max(1, Math.ceil(weekLim / 5));
+          var todayDel2 = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today) && l.product === prod; }).length;
+          if (todayDel2 >= dayMax2) continue;
         }
         var allProdLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
         if (allProdLeads.length === 0) continue;
