@@ -1446,7 +1446,6 @@ function updateSubscriptionDisplay(sub) {
 function showPlans() {
   const session = getSession();
   if (!session) return;
-  // Fetch live subscription data if not already loaded
   var planData = liveSubscription;
   if (!planData) {
     apiFetch('/api/subscription').then(function(sub) {
@@ -1456,38 +1455,35 @@ function showPlans() {
     showModal('Plans', '<p style="color:#8890a8;text-align:center;padding:20px"><i class="fas fa-spinner fa-spin" style="font-size:18px;display:block;margin-bottom:8px"></i>Loading plans...</p>');
     return;
   }
-
-  const overlay = document.createElement('div');
+  var areasDisplay = (planData.coverage_areas && planData.coverage_areas.length > 0) ? planData.coverage_areas.join(', ') : (planData.coverage_label || 'None set');
+  var overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px';
-
-  const modal = document.createElement('div');
-  modal.style.cssText = 'background:#11131f;border:1px solid #1e2030;border-radius:16px;padding:32px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto';
-
-  var plans = [
-    { key:'starter', label:'Starter', price:25, leadsDesc: (planData.lead_type || '') + ' — depends on lead type and coverage', highlight: false },
-    { key:'pro', label:'Pro', price:49, leadsDesc: (planData.lead_type || '') + ' — depends on lead type and coverage', highlight: false },
-    { key:'enterprise', label:'Enterprise', price:99, leadsDesc: (planData.lead_type || '') + ' — depends on lead type and coverage', highlight: true },
-  ];
-
+  var modal = document.createElement('div');
+  modal.style.cssText = 'background:#11131f;border:1px solid #1e2030;border-radius:16px;padding:32px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto';
   modal.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">' +
-    '<h3 style="font-size:18px;font-weight:700">Plans for ' + (planData.lead_type || 'Leads') + '</h3>' +
+    '<h3 style="font-size:18px;font-weight:700">Upgrade Your Plan</h3>' +
     '<button onclick="this.parentElement.parentElement.parentElement.remove()" style="background:none;border:none;color:#8890a8;font-size:20px;cursor:pointer">\u2715</button></div>' +
-    '<p style="font-size:11px;color:#8890a8;margin-bottom:16px">Your lead type: <strong>' + (planData.lead_type || '') + '</strong> &middot; Coverage: <strong>' + (planData.coverage_label || '') + '</strong></p>' +
-    plans.map(function(p) {
-      var isCurrent = planData.plan === p.key;
-      return '<div style="background:' + (isCurrent ? 'rgba(14,165,233,0.06)' : 'var(--card)') + ';border:1px solid ' + (isCurrent ? 'rgba(14,165,233,0.2)' : '#1e2030') + ';border-radius:10px;padding:16px;margin-bottom:10px">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center">' +
-        '<div><strong style="font-size:15px;color:#fff">' + p.label + '</strong>' +
-        '<br><span style="font-size:11px;color:#8890a8">Check availability in checkout for exact daily limit</span></div>' +
-        '<div style="text-align:right"><span style="font-size:20px;font-weight:800">&pound;' + p.price + '</span><span style="font-size:12px;color:#8890a8">/wk</span>' +
-        (isCurrent ? '<br><span style="font-size:10px;color:#22c55e;font-weight:600">Current Plan</span>' : '') +
-        '</div></div>' +
-        (!isCurrent ? '<button onclick="checkout(\'' + p.key + '\')" style="margin-top:12px;width:100%;padding:8px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer">' + (p.key === 'starter' || planData.plan === 'free_trial' ? 'Upgrade' : 'Switch to ' + p.label) + '</button>' : '') +
-        '</div>';
+    '<div style="padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;font-size:12px;color:var(--text2)">' +
+    '<strong style="color:var(--text)">Your Current Settings</strong><br>' +
+    '<span style="font-size:11px">Lead types: <strong>' + (planData.lead_type || 'N/A') + '</strong></span><br>' +
+    '<span style="font-size:11px">Coverage: <strong>' + (planData.coverage_label || 'N/A') + '</strong> (' + areasDisplay + ')</span><br>' +
+    '<span style="font-size:11px">Daily limit: <strong>' + (planData.up_to ? 'Up to ' : '') + planData.leads_per_day + '</strong></span>' +
+    '<div style="margin-top:8px"><a href="javascript:location.reload()" style="font-size:10px;color:var(--primary);text-decoration:underline">Change your lead types and areas from the dashboard, then come back to upgrade.</a></div>' +
+    '</div>' +
+    '<div style="display:grid;gap:8px">' +
+    ['starter','pro','enterprise'].map(function(k) {
+      var isCurrent = planData.plan === k;
+      var label = k.charAt(0).toUpperCase() + k.slice(1);
+      var price = k === 'starter' ? 25 : k === 'pro' ? 49 : 99;
+      return '<label style="display:flex;align-items:center;gap:10px;padding:14px;background:' + (isCurrent ? 'rgba(14,165,233,0.06)' : 'var(--card2)') + ';border:1px solid ' + (isCurrent ? 'rgba(14,165,233,0.2)' : 'var(--border)') + ';border-radius:8px;cursor:pointer">' +
+        '<input type="radio" name="upgrade-plan" value="' + k + '" ' + (isCurrent ? 'checked' : '') + ' style="accent-color:var(--primary);width:16px;height:16px">' +
+        '<div style="flex:1"><strong style="color:var(--text)">' + label + '</strong><br><span style="font-size:11px;color:var(--muted2)">' + (k === 'starter' ? '3 areas' : k === 'pro' ? 'All UK areas' : 'All UK areas + priority') + '</span></div>' +
+        '<div style="text-align:right;font-size:18px;font-weight:800;color:var(--text)">&pound;' + price + '<span style="font-size:11px;color:var(--muted2)">/wk</span>' +
+        (isCurrent ? '<br><span style="font-size:9px;color:var(--success)">Current</span>' : '') + '</div></label>';
     }).join('') +
-    '<div style="margin-top:16px;padding:12px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:8px;font-size:10px;color:#8890a8;text-align:center">' +
-    'Lead limits depend on your lead type and coverage area. Check availability before purchasing. Pricing and plan availability subject to change.</div>';
-
+    '</div>' +
+    '<button id="upgrade-continue-btn" onclick="var r=document.querySelector(\'input[name=upgrade-plan]:checked\');if(r)checkout(r.value)" style="margin-top:16px;width:100%;padding:12px;background:linear-gradient(135deg,var(--primary),#2563eb);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer">Continue to Payment</button>' +
+    '<p style="margin-top:10px;font-size:10px;color:var(--muted2);text-align:center">Your lead types, areas and filters stay saved. <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">Need help?</a></p>';
   overlay.appendChild(modal);
   overlay.onclick = function(e) { if (e.target === this) this.remove(); };
   document.body.appendChild(overlay);
