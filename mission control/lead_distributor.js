@@ -609,7 +609,7 @@ async function distributeProduct(product) {
     if (count > 0) console.log(`    ${customerLabels[cid] || cid}: ${count} leads`);
   }
   console.log(`  Result: ${inserted} inserted (${inserted - generated} real + ${generated} generated), ${duplicates} duplicates, ${noMatch} unmatched`);
-  return { product, matched: totalMatched, total: leadsToProcess.length + generated, inserted, duplicates, noMatch };
+  return { product, matched: totalMatched, total: (allScrapedLeads ? allScrapedLeads.length : 0) + generated, inserted, duplicates, noMatch };
 }
 
 async function distributeAll(force) {
