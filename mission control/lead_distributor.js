@@ -106,23 +106,25 @@ function normaliseDistrict(pc) {
 }
 
 // Check if a lead's location matches a customer's target area (with filter tiering)
-function leadMatchesTarget(lead, customer) {
+function leadMatchesTarget(lead, customer, product) {
   const targets = JSON.parse(customer.target_areas || '[]');
-  // Area match (existing logic)
+  const coverage = customer.coverage || 'postcode';
+  // Area match
   let areaMatch = false;
-  if (targets.length > 0) {
+  if (targets.length > 0 && coverage === 'postcode') {
+    // Postcode-area matching (2-letter codes like EN, SW, CM)
     const leadLocation = lead.address || lead.location || lead.name || lead.postcode || '';
     const leadNorm = normalisePostcode(leadLocation);
     for (const area of targets) {
       const areaNorm = normalisePostcode(area);
       if (!areaNorm) continue;
       if (leadNorm.startsWith(areaNorm) || areaNorm.startsWith(leadNorm)) { areaMatch = true; break; }
-      // Only match by postcode prefix, not by full address text (prevents false matches like "EN" in "London")
       if ((lead.postcode || '').toLowerCase().startsWith(areaNorm)) { areaMatch = true; break; }
       if ((lead.city || '').toLowerCase() === area.toLowerCase()) { areaMatch = true; break; }
     }
     if (!areaMatch) return { match: false, tier: 0 };
   } else {
+    // County, region, ukwide or no targets: skip strict area check (scraper handles geographic scope)
     areaMatch = true;
   }
 
@@ -185,9 +187,14 @@ function leadMatchesTarget(lead, customer) {
         }
       }
       if (filters.product === 'planning') {
-        const appType = (lead.applicationType || '').toLowerCase();
-        const filterAppType = (filters.applicationType || '').toLowerCase();
-        if (filterAppType && !appType.includes(filterAppType)) tier = 2;
+        const appType = (lead.applicationType || lead.app_type || '').toLowerCase();
+        var filterTypes = filters['f-app-type'] || filters.applicationType || [];
+        if (typeof filterTypes === 'string') filterTypes = [filterTypes];
+        if (Array.isArray(filterTypes) && filterTypes.length > 0) {
+          filterTypes = filterTypes.map(function(t) { return t.toLowerCase(); });
+          var matched = filterTypes.some(function(t) { return appType.includes(t); });
+          if (!matched) tier = 2;
+        }
       }
       if (filters.product === 'tenders') {
         const val = parseInt(lead.contractValue) || 0;
@@ -402,7 +409,7 @@ async function distributeProduct(product) {
     // The specific leads delivered at 9am are exclusive to each recipient.
     const matchedCustomers = []; // { customer, tier }
     for (const customer of activeCustomers) {
-      const result = leadMatchesTarget(rawLead, customer);
+      const result = leadMatchesTarget(rawLead, customer, product);
       if (result.match) {
         matchedCustomers.push({ customer, tier: result.tier });
       }
@@ -489,6 +496,7 @@ async function distributeProduct(product) {
   // === Phase 4: Generate targeted leads — evenly split across customer's areas ===
   var streets = ['High Street', 'Station Road', 'London Road', 'Park Lane', 'Church Road', 'Victoria Street', 'Oak Avenue', 'The Crescent', 'Manor Road', 'Queen Street', 'Mill Lane', 'New Road', 'Green Lane', 'Grove Road', 'Kingsway'];
   var citiesByPrefix = { 'EC': 'London', 'WC': 'London', 'SW': 'London', 'SE': 'London', 'W': 'London', 'N': 'London', 'NW': 'London', 'E': 'London', 'EN': 'Enfield', 'SG': 'Stevenage', 'CM': 'Chelmsford', 'ME': 'Maidstone', 'KT': 'Kingston', 'TW': 'Twickenham', 'UB': 'Uxbridge', 'HA': 'Harrow', 'WD': 'Watford', 'AL': 'St Albans', 'LU': 'Luton', 'SS': 'Southend', 'DA': 'Dartford', 'BR': 'Bromley', 'CR': 'Croydon', 'SM': 'Sutton', 'TN': 'Tonbridge', 'BN': 'Brighton', 'RH': 'Redhill', 'GU': 'Guildford', 'SL': 'Slough', 'RG': 'Reading', 'OX': 'Oxford' };
+  var countyToPrefix = { 'hertfordshire': 'SG', 'buckinghamshire': 'HP', 'greater-london': 'N', 'bedfordshire': 'LU', 'berkshire': 'RG', 'bristol': 'BS', 'cambridgeshire': 'CB', 'cheshire': 'CH', 'cornwall': 'TR', 'cumbria': 'CA', 'derbyshire': 'DE', 'devon': 'EX', 'dorset': 'DT', 'durham': 'DH', 'east-sussex': 'BN', 'essex': 'CM', 'gloucestershire': 'GL', 'greater-manchester': 'M', 'hampshire': 'SO', 'herefordshire': 'HR', 'isle-of-wight': 'PO', 'kent': 'ME', 'lancashire': 'PR', 'leicestershire': 'LE', 'lincolnshire': 'LN', 'merseyside': 'L', 'norfolk': 'NR', 'north-yorkshire': 'YO', 'northamptonshire': 'NN', 'northumberland': 'NE', 'nottinghamshire': 'NG', 'oxfordshire': 'OX', 'rutland': 'LE', 'shropshire': 'SY', 'somerset': 'TA', 'south-yorkshire': 'S', 'staffordshire': 'ST', 'suffolk': 'IP', 'surrey': 'GU', 'tyne-and-wear': 'NE', 'warwickshire': 'CV', 'west-midlands': 'B', 'west-sussex': 'RH', 'west-yorkshire': 'LS', 'wiltshire': 'SN', 'worcestershire': 'WR' };
   var propTypes = ['House', 'Flat', 'Maisonette', 'Bungalow', 'Townhouse'];
   var appTypes = ['Full Planning', 'Householder', 'Listed Building', 'Change of Use', 'Outline Planning', 'Permitted Development'];
   var statuses = ['SSTC', 'Under Offer', 'Available'];
@@ -532,13 +540,15 @@ async function distributeProduct(product) {
       var areaQuota = basePerArea + (ti < extraCount ? 1 : 0);
       var areaAlready = areaExisting[targetDist] || 0;
       var areaNeeded = Math.max(0, areaQuota - areaAlready);
+      // Map county names to realistic postcode prefixes; otherwise use the target area as-is (postcode area code)
+      var pcPrefix = countyToPrefix[targetDist.toLowerCase()];
+      if (!pcPrefix) pcPrefix = targetDist.replace(/[0-9]/g, '');
+      var city = citiesByPrefix[pcPrefix] || 'London';
       for (var ni = 0; ni < areaNeeded; ni++) {
-        var prefix = targetDist.replace(/[0-9]/g, '');
-        var city = citiesByPrefix[prefix] || 'London';
         var street = streets[(ni + gi + ti) % streets.length];
         var num = Math.floor(Math.random() * 200) + 1;
         var distNum = Math.floor(Math.random() * 20) + 1;
-        var pcOut = targetDist + distNum + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
+        var pcOut = pcPrefix + distNum + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
         var address = num + ' ' + street + ', ' + city + ' ' + pcOut;
         var baseLead = { id: 'GEN_' + product.toUpperCase() + '_' + Date.now() + '_' + ti + '_' + ni, address: address, postcode: pcOut, city: city, source: '9amLeads Generated', scrapedAt: now };
         if (product === 'moving') {

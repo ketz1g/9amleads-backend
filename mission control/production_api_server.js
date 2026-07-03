@@ -2864,9 +2864,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             var pickedIds2 = custLeads.map(function(cl) { return cl.id; });
             var prodLeads2 = allProdLeads2.filter(function(l) { return pickedIds2.indexOf(l.id) === -1; });
             if (prodLeads2.length === 0) continue;
-            // Pick a lead from a different area than already picked
+            // Pick a lead from a different area than already picked (only for postcode coverage)
             var picked2 = prodLeads2[0];
-            if (custAreas.length > 0) {
+            if (cust.coverage === 'postcode' && custAreas.length > 0) {
               for (var ac = 0; ac < custAreas.length; ac++) {
                 var hasArea = false;
                 for (var pch = 0; pch < custLeads.length; pch++) {
