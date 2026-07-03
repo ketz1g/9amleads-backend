@@ -150,16 +150,12 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </div>
 <div id="specialist-area-selector" style="display:none">
 <div class="form-group">
-<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Coverage Area <span style="color:#8890a8;font-weight:400;font-size:11px">(choose 1 county, 1 region or All UK &middot; for planning, probate &amp; tenders)</span></label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Planning, probate and tenders require wider coverage for consistent daily delivery. Select 1 county, 1 region or go UK-wide. Pro and Enterprise can select All UK for maximum volume.</span></div>
+<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Coverage Areas <span style="color:#8890a8;font-weight:400;font-size:11px">(choose up to 3 counties or All UK &middot; for planning, probate &amp; tenders)</span></label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Planning, probate and tenders require wider coverage. Free Trial and Starter can pick up to 3 counties. Pro and Enterprise can select All UK for maximum volume.</span></div>
 <div style="margin-top:6px;display:grid;gap:6px">
 <label id="sc-county" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSpecialistArea('county')">
 <input type="radio" name="spec-area" value="county" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong>County</strong><br><span style="font-size:10px;color:#6b7280">Select 1 specific county (e.g. Hertfordshire, Essex)</span></div>
-</label>
-<label id="sc-region" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSpecialistArea('region')">
-<input type="radio" name="spec-area" value="region" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong>Region</strong><br><span style="font-size:10px;color:#6b7280">Select 1 region covering multiple counties</span></div>
+<div style="flex:1"><strong>County</strong><br><span style="font-size:10px;color:#6b7280">Pick up to 3 counties (e.g. Hertfordshire, Essex, Kent)</span></div>
 </label>
 <label id="sc-ukwide" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSpecialistArea('ukwide')">
 <input type="radio" name="spec-area" value="ukwide" style="accent-color:#0ea5e9;width:15px;height:15px">
@@ -167,7 +163,7 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </label>
 </div>
 <div id="spec-area-picker" style="margin-top:8px;display:none"></div>
-<div style="margin-top:4px;font-size:10px;color:#6b7280">Specialist types need wider areas for consistent daily delivery. Pro &amp; Enterprise can select All UK.</div>
+<div style="margin-top:4px;font-size:10px;color:#6b7280">Free Trial &amp; Starter: up to 3 counties. Pro &amp; Enterprise: All UK unlimited.</div>
 </div>
 </div>
 
@@ -438,19 +434,32 @@ function selectSpecialistArea(type) {
   }
   selectedCoverage = type;
   picker.style.display = 'block';
-  if (type === 'county') {
-    var counties = 'Bedfordshire,Berkshire,Bristol,Buckinghamshire,Cambridgeshire,Cheshire,Cornwall,Cumbria,Derbyshire,Devon,Dorset,Durham,East Sussex,Essex,Gloucestershire,Greater London,Greater Manchester,Hampshire,Herefordshire,Hertfordshire,Isle of Wight,Kent,Lancashire,Leicestershire,Lincolnshire,Merseyside,Norfolk,North Yorkshire,Northamptonshire,Northumberland,Nottinghamshire,Oxfordshire,Rutland,Shropshire,Somerset,South Yorkshire,Staffordshire,Suffolk,Surrey,Tyne and Wear,Warwickshire,West Midlands,West Sussex,West Yorkshire,Wiltshire,Worcestershire'.split(',');
-    picker.innerHTML = '<label style="font-size:11px;color:#6b7280;display:block;margin-bottom:4px;font-weight:600">Select county</label><select id="signup-county-select" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit" onchange="selectSpecialistCounty(this.value)"><option value="">Choose a county...</option>' + counties.map(function(c) { return '<option value="' + c.toLowerCase().replace(/\s+/g,'-') + '">' + c + '</option>'; }).join('') + '</select>';
-  } else if (type === 'region') {
-    var regions = 'East of England,East Midlands,London,North East,North West,South East,South West,West Midlands,Yorkshire and the Humber'.split(',');
-    picker.innerHTML = '<label style="font-size:11px;color:#6b7280;display:block;margin-bottom:4px;font-weight:600">Select region</label><select id="signup-region-select" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit" onchange="selectSpecialistCounty(this.value)"><option value="">Choose a region...</option>' + regions.map(function(r) { return '<option value="' + r.toLowerCase().replace(/\s+/g,'-') + '">' + r + '</option>'; }).join('') + '</select>';
-  }
+  signupPostcodes = [];
+  var counties = 'Bedfordshire,Berkshire,Bristol,Buckinghamshire,Cambridgeshire,Cheshire,Cornwall,Cumbria,Derbyshire,Devon,Dorset,Durham,East Sussex,Essex,Gloucestershire,Greater London,Greater Manchester,Hampshire,Herefordshire,Hertfordshire,Isle of Wight,Kent,Lancashire,Leicestershire,Lincolnshire,Merseyside,Norfolk,North Yorkshire,Northamptonshire,Northumberland,Nottinghamshire,Oxfordshire,Rutland,Shropshire,Somerset,South Yorkshire,Staffordshire,Suffolk,Surrey,Tyne and Wear,Warwickshire,West Midlands,West Sussex,West Yorkshire,Wiltshire,Worcestershire'.split(',');
+  picker.innerHTML = '<div style="margin-bottom:4px"><label style="font-size:11px;color:#6b7280;font-weight:600">Select up to 3 counties</label><span id="sc-county-count" style="font-size:10px;color:#8890a8;margin-left:6px">0/3 selected</span></div><div id="sc-county-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div><select id="signup-county-select" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit" onchange="addSpecialistCounty(this.value)"><option value="">Choose a county...</option>' + counties.map(function(c) { return '<option value="' + c.toLowerCase().replace(/\s+/g,'-') + '">' + c + '</option>'; }).join('') + '</select><div style="font-size:10px;color:#6b7280;margin-top:4px">Pick up to 3 counties for best coverage. Pro & Enterprise can go UK-wide.</div>';
 }
-
-function selectSpecialistCounty(val) {
-  if (!val) { signupPostcodes = []; renderSignupPostcodes(); return; }
-  signupPostcodes = [val];
+var specCounties = [];
+function addSpecialistCounty(val) {
+  if (!val || specCounties.length >= 3) { document.getElementById('signup-county-select').value = ''; return; }
+  if (specCounties.indexOf(val) === -1) {
+    specCounties.push(val);
+    signupPostcodes = specCounties;
+    renderSignupPostcodes();
+    var tags = document.getElementById('sc-county-tags');
+    var count = document.getElementById('sc-county-count');
+    if (tags) tags.innerHTML = specCounties.map(function(c) { return '<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:4px;font-size:10px;color:#0ea5e9;font-weight:600">' + c + ' <span style="cursor:pointer" onclick="removeSpecialistCounty(\'' + c + '\')">&times;</span></span>'; }).join('');
+    if (count) count.textContent = specCounties.length + '/3 selected';
+  }
+  document.getElementById('signup-county-select').value = '';
+}
+function removeSpecialistCounty(val) {
+  specCounties = specCounties.filter(function(c) { return c !== val; });
+  signupPostcodes = specCounties;
   renderSignupPostcodes();
+  var tags = document.getElementById('sc-county-tags');
+  var count = document.getElementById('sc-county-count');
+  if (tags) tags.innerHTML = specCounties.map(function(c) { return '<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:4px;font-size:10px;color:#0ea5e9;font-weight:600">' + c + ' <span style="cursor:pointer" onclick="removeSpecialistCounty(\'' + c + '\')">&times;</span></span>'; }).join('');
+  if (count) count.textContent = specCounties.length + '/3 selected';
 }
 
 function updateCoverageOptions() {
