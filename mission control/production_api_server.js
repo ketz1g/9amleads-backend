@@ -99,7 +99,17 @@ function saveAssignments(data) {
   fs.writeFileSync(POSTCODE_ASSIGNMENTS_FILE, JSON.stringify(data, null, 2));
 }
 
-function getPostcodeLimit(plan, extraPostcodes) {
+function getPostcodeLimit(plan, extraPostcodes, product) {
+  // Specialist types (planning, probate, tenders) use wider areas by default
+  var specialistTypes = { planning: true, probate: true, tenders: true };
+  if (product && specialistTypes[product]) {
+    var rule = getLeadTypeRule(product);
+    if (rule && rule.area_limit) {
+      var limit = rule.area_limit[plan] || rule.area_limit.starter || 3;
+      var extra = parseInt(extraPostcodes) || 0;
+      return Math.min(limit + extra, 999);
+    }
+  }
   const base = POSTCODE_LIMITS[plan] || POSTCODE_LIMITS.free_trial;
   const extra = parseInt(extraPostcodes) || 0;
   return base + extra;
@@ -2110,6 +2120,7 @@ const LEAD_TYPE_RULES = {
   planning: {
     name: 'Planning Permissions', key: 'planning', local: false, model: 'weekly',
     coverage: ['county', 'region', 'ukwide'],
+    area_limit: { free_trial: 1, starter: 1, pro: 999, enterprise: 999 },
     plans: {
       free_trial: { default: 1, county: 1, region: 2, ukwide: 3 },
       starter:  { default: 1,  county: 1,  region: 2,  ukwide: 5 },
@@ -2126,6 +2137,7 @@ const LEAD_TYPE_RULES = {
   probate: {
     name: 'Probate Leads', key: 'probate', local: false, model: 'weekly',
     coverage: ['county', 'region', 'ukwide'],
+    area_limit: { free_trial: 1, starter: 1, pro: 999, enterprise: 999 },
     plans: {
       free_trial: { default: 0, county: 0, region: 1, ukwide: 2 },
       starter:  { default: 0,  county: 0,  region: 1,  ukwide: 3 },
@@ -2142,6 +2154,7 @@ const LEAD_TYPE_RULES = {
   tenders: {
     name: 'Public Tenders', key: 'tenders', local: false, model: 'weekly',
     coverage: ['region', 'ukwide'],
+    area_limit: { free_trial: 1, starter: 1, pro: 999, enterprise: 999 },
     plans: {
       free_trial: { default: 0, region: 0, ukwide: 1 },
       starter:  { default: 0,  region: 0,  ukwide: 2 },
