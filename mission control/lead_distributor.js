@@ -345,22 +345,21 @@ async function distributeProduct(product) {
     }
   }
 
-  if (allScrapedLeads.length === 0) {
-    console.log(`  No leads found in scraped data`);
-    return { product, matched: 0, total: 0, inserted: 0 };
-  }
-
   console.log(`  Total scraped leads available: ${allScrapedLeads.length}`);
 
-  // Filter to today's leads only
-  const today = getTodayStr();
-  const todayLeads = allScrapedLeads.filter(l => {
-    const scrapedDate = l.scrapedAt ? l.scrapedAt.split('T')[0] : '';
-    return scrapedDate === today;
-  });
-
-  const leadsToProcess = todayLeads.length > 0 ? todayLeads : allScrapedLeads;
-  console.log(`  Leads from today: ${todayLeads.length} (using ${leadsToProcess.length})`);
+  // When no scraped leads exist, still continue to Phase 4 generation (targeted lead creation)
+  if (allScrapedLeads.length > 0) {
+    // Filter to today's leads only
+    const today = getTodayStr();
+    const todayLeads = allScrapedLeads.filter(l => {
+      const scrapedDate = l.scrapedAt ? l.scrapedAt.split('T')[0] : '';
+      return scrapedDate === today;
+    });
+    allScrapedLeads = todayLeads.length > 0 ? todayLeads : allScrapedLeads;
+    console.log(`  Leads from today: ${todayLeads.length} (using ${allScrapedLeads.length})`);
+  } else {
+    console.log('  No scraped leads — will generate Phase 4 targeted leads');
+  }
 
   // Get leads already in DB to avoid duplicates (same product only)
   const existingLeads = db.leads || [];
@@ -394,10 +393,10 @@ async function distributeProduct(product) {
   if (activeCustomers.length === 0) {
     console.log(`  No active customers for ${product}`);
     saveJSON(DB_FILE, db);
-    return { product, matched: 0, total: leadsToProcess.length, inserted: 0, duplicates: 0 };
+    return { product, matched: 0, total: allScrapedLeads.length, inserted: 0, duplicates: 0 };
   }
 
-  for (const rawLead of leadsToProcess) {
+  for (const rawLead of allScrapedLeads) {
     const normalised = normaliseLead(rawLead, product, '');
     const addrKey = normalised.address.toLowerCase().trim();
     if (addrKey && existingAddresses.has(addrKey)) { duplicates++; continue; }
