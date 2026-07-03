@@ -604,8 +604,27 @@ async function checkAvailability() {
 // Coverage selector initialization
 document.addEventListener('DOMContentLoaded', function() {
   updateCoverageOptions();
-  // Initialize area selector (Moving is checked by default)
-  setTimeout(function() { onLeadTypeChange(); }, 100);
+  // Initialize area selectors
+  setTimeout(function() {
+    onLeadTypeChange();
+    // Ensure specialist selector renders even if no specialist types checked
+    var container = document.getElementById('coverage-selector-container');
+    if (container && container.innerHTML.trim() === '') {
+      var html = '<div style="display:grid;gap:6px;margin-top:6px">';
+      var opts = [
+        { v:'county', l:'County', d:'A specific county (e.g. Hertfordshire, Essex)' },
+        { v:'region', l:'Region', d:'Multiple counties in a region' },
+        { v:'ukwide', l:'UK-wide', d:'All UK postcodes — maximum coverage' }
+      ];
+      opts.forEach(function(o) {
+        html += '<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSignupCoverage(\'' + o.v + '\')">';
+        html += '<input type="radio" name="signup-coverage" value="' + o.v + '" style="accent-color:#0ea5e9;width:15px;height:15px">';
+        html += '<div style="flex:1"><strong>' + o.l + '</strong><br><span style="font-size:10px;color:#6b7280">' + o.d + '</span></div></label>';
+      });
+      html += '</div><div id="county-region-picker" style="margin-top:8px;display:none"></div>';
+      container.innerHTML = html;
+    }
+  }, 200);
 });
 
 // ===== SIGNUP =====
