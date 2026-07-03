@@ -107,12 +107,12 @@ function getPostcodeLimit(plan, extraPostcodes, product) {
     if (rule && rule.area_limit) {
       var limit = rule.area_limit[plan] || rule.area_limit.starter || 3;
       var extra = parseInt(extraPostcodes) || 0;
-      return Math.min(limit + extra, 999);
+      return Math.min(limit + extra2, 999);
     }
   }
   const base = POSTCODE_LIMITS[plan] || POSTCODE_LIMITS.free_trial;
-  const extra = parseInt(extraPostcodes) || 0;
-  return base + extra;
+  var extra2 = parseInt(extraPostcodes) || 0;
+  return base + extra2;
 }
 
 const EXTRAS_PRICE = 5000; // £50 one-time per extra postcode area
