@@ -3825,9 +3825,11 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.propertyType) chips.push({ icon: '\uD83C\uDFE2', text: d.propertyType });
       if (d.agent) chips.push({ icon: '\uD83D\uDC64', text: d.agent });
     } else if (leadProduct === 'probate') {
-      if (d.estateValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.estateValue).toLocaleString() + ' estate' });
+      if (d.estateValue || d.estimatedValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.estateValue || d.estimatedValue).toLocaleString() + ' estate' });
       if (d.deceasedName) chips.push({ icon: '\uD83D\uDC68\u200D\u2696\uFE0F', text: d.deceasedName });
-      if (d.registry) chips.push({ icon: '\uD83C\uDFE2', text: d.registry });
+      if (d.probateRegistry || d.registry) chips.push({ icon: '\uD83C\uDFE2', text: d.probateRegistry || d.registry });
+      if (d.dateOfDeath) chips.push({ icon: '\uD83D\uDCC5', text: 'Died ' + new Date(d.dateOfDeath).toLocaleDateString() });
+      if (d.solicitor) chips.push({ icon: '\uD83D\uDC64', text: 'Solicitor: ' + d.solicitor });
     } else if (leadProduct === 'newbusiness') {
       var bizName = d.company || d.businessName || d.name || d.address;
       if (bizName) chips.push({ icon: '\uD83C\uDFE2', text: bizName.substring(0, 40) });
@@ -3842,16 +3844,20 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.applicationRef) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.applicationRef });
       if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 100) });
       if (d.developmentType) chips.push({ icon: '\uD83C\uDFD7\uFE0F', text: d.developmentType });
+      if (d.estimatedValue) chips.push({ icon: '\u00A3', text: 'Est. value: \u00a3' + Number(d.estimatedValue).toLocaleString() });
+      if (d.applicantName) chips.push({ icon: '\uD83D\uDC64', text: 'Applicant: ' + d.applicantName });
+      if (d.status) chips.push({ icon: '\uD83D\uDD34', text: d.status });
       // Link to planning portal search
       var searchQuery = (d.council || d.city || '') + ' planning application ' + (d.applicationRef || d.address || '');
       chips.push({ icon: '\uD83D\uDD0D', text: '<a href="https://www.google.com/search?q=' + encodeURIComponent(searchQuery) + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">Search planning portal</a>' });
     } else {
       if (d.buyer) chips.push({ icon: '\uD83C\uDFED', text: d.buyer });
-      if (d.contractValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.contractValue).toLocaleString() });
+      if (d.contractValue || d.estimatedValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.contractValue || d.estimatedValue).toLocaleString() });
       if (d.tenderNoticeId) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.tenderNoticeId });
       if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); chips.push({ icon: '\u23F3', text: 'Deadline: ' + days + ' days' }); }
       if (d.publishedDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Published: ' + new Date(d.publishedDate).toLocaleDateString() });
       if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 100) });
+      if (d.title) chips.push({ icon: '\uD83D\uDCCB', text: d.title.substring(0, 60) });
       if (d.tenderUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.tenderUrl + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">View tender</a>' });
       if (d.portalUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.portalUrl + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">View on portal</a>' });
     }
