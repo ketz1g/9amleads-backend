@@ -2076,7 +2076,7 @@ app.get('/api/lead-types', (req, res) => {
 
 const LEAD_TYPE_RULES = {
   moving: {
-    name: 'Moving Leads', key: 'moving', local: true,
+    name: 'Moving Leads', key: 'moving', local: true, model: 'daily',
     coverage: ['postcode', 'county', 'region'],
     plans: {
       free_trial: { default: 5, postcode: 5, county: 5, region: 5 },
@@ -2092,7 +2092,7 @@ const LEAD_TYPE_RULES = {
     monthly_est: { starter: 100, pro: 300, enterprise: 600 }
   },
   newbusiness: {
-    name: 'New Business Alerts', key: 'newbusiness', local: true,
+    name: 'New Business Alerts', key: 'newbusiness', local: true, model: 'daily',
     coverage: ['postcode', 'county', 'region'],
     plans: {
       free_trial: { default: 5, postcode: 5, county: 5, region: 5 },
@@ -2111,49 +2111,49 @@ const LEAD_TYPE_RULES = {
     name: 'Planning Permissions', key: 'planning', local: false, model: 'weekly',
     coverage: ['county', 'region', 'ukwide'],
     plans: {
-      free_trial: { default: 2, county: 2, region: 5, ukwide: 10 },
-      starter:  { default: 2,  county: 2,  region: 5,  ukwide: 10 },
-      pro:      { default: 5,  county: 5,  region: 15, ukwide: 25 },
-      enterprise: { default: 30, county: 10, region: 30, ukwide: 50 },
+      free_trial: { default: 1, county: 1, region: 2, ukwide: 3 },
+      starter:  { default: 1,  county: 1,  region: 2,  ukwide: 5 },
+      pro:      { default: 3,  county: 3,  region: 8,  ukwide: 15 },
+      enterprise: { default: 8, county: 5, region: 15, ukwide: 30 },
     },
     min_area: 'county', up_to: true, enabled: true,
     price_starter: 'price_1TmEKSADspDnFpfBrCHXJBFu',
     price_growth: 'price_1TmEKTADspDnFpfBVdi1APEq',
     price_power: 'price_1TmEKTADspDnFpfBxFjHeoP9',
-    weekly_est: { starter: 10, pro: 35, enterprise: 70 },
-    monthly_est: { starter: 40, pro: 140, enterprise: 280 }
+    weekly_est: { starter: 5, pro: 15, enterprise: 30 },
+    monthly_est: { starter: 20, pro: 60, enterprise: 120 }
   },
   probate: {
     name: 'Probate Leads', key: 'probate', local: false, model: 'weekly',
     coverage: ['county', 'region', 'ukwide'],
     plans: {
-      free_trial: { default: 1, county: 1, region: 2, ukwide: 5 },
-      starter:  { default: 1,  county: 1,  region: 2,  ukwide: 5 },
-      pro:      { default: 3,  county: 3,  region: 5,  ukwide: 10 },
-      enterprise: { default: 10, county: 10, region: 15, ukwide: 20 },
+      free_trial: { default: 0, county: 0, region: 1, ukwide: 2 },
+      starter:  { default: 0,  county: 0,  region: 1,  ukwide: 3 },
+      pro:      { default: 2,  county: 2,  region: 3,  ukwide: 8 },
+      enterprise: { default: 5, county: 3, region: 8, ukwide: 15 },
     },
     min_area: 'county', up_to: true, enabled: true,
     price_starter: 'price_1Tm6PPADspDnFpfBkewa97Bv',
     price_growth: 'price_1Tm6PPADspDnFpfB3q61i5FP',
     price_power: 'price_1Tm6PQADspDnFpfBazgz1UD7',
-    weekly_est: { starter: 5, pro: 15, enterprise: 50 },
-    monthly_est: { starter: 20, pro: 60, enterprise: 200 }
+    weekly_est: { starter: 3, pro: 8, enterprise: 15 },
+    monthly_est: { starter: 12, pro: 32, enterprise: 60 }
   },
   tenders: {
     name: 'Public Tenders', key: 'tenders', local: false, model: 'weekly',
     coverage: ['region', 'ukwide'],
     plans: {
-      free_trial: { default: 1, region: 1, ukwide: 3 },
-      starter:  { default: 1,  region: 1,  ukwide: 3 },
-      pro:      { default: 3,  region: 3,  ukwide: 10 },
-      enterprise: { default: 8, region: 8, ukwide: 25 },
+      free_trial: { default: 0, region: 0, ukwide: 1 },
+      starter:  { default: 0,  region: 0,  ukwide: 2 },
+      pro:      { default: 2,  region: 2,  ukwide: 6 },
+      enterprise: { default: 5, region: 5, ukwide: 15 },
     },
     min_area: 'region', up_to: true, enabled: true,
     price_starter: 'price_1TmEKTADspDnFpfBsi6jjA6B',
     price_growth: 'price_1TmEKUADspDnFpfBqnyKzJxM',
     price_power: 'price_1TmEKUADspDnFpfBugGOoqhD',
-    weekly_est: { starter: 5, pro: 15, enterprise: 40 },
-    monthly_est: { starter: 20, pro: 60, enterprise: 160 }
+    weekly_est: { starter: 2, pro: 6, enterprise: 15 },
+    monthly_est: { starter: 8, pro: 24, enterprise: 60 }
   },
   property: {
     name: 'Property Leads', key: 'property', local: true,
