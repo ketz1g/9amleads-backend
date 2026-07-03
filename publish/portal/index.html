@@ -135,19 +135,12 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <input type="checkbox" value="tenders" style="accent-color:#0ea5e9;width:14px;height:14px"> 📋 Public Tenders</label>
 </div></div>
 
-<!-- POSTCODE AREAS -->
-<div class="form-group" style="margin-top:8px">
-<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Your Postcode Areas <span style="color:#8890a8;font-weight:400;font-size:11px">(choose up to 3 &middot; e.g. <strong>CM</strong> for Chelmsford, <strong>EN</strong> for Enfield, <strong>SG</strong> for Stevenage)</span></label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Choose up to 3 broad postcode areas (2-letter codes) for the regions you serve. Each area covers all districts within it — e.g. area EN covers EN1, EN2, EN3... EN99. Your leads are evenly split across your chosen areas and are exclusive to you. Need more than 3 areas? You can purchase extras for £50/area.</span></div>
-<div id="s-postcode-wrapper" style="position:relative;margin-top:4px">
-<div id="s-postcode-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px"></div>
-<input type="text" id="s-postcode-input" placeholder="Type area code e.g. CM, EN, SG" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
-<div id="s-postcode-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#ffffff;border:1px solid #d1d5db;border-top:none;border-radius:0 0 6px 6px;max-height:160px;overflow-y:auto"></div>
-<button type="button" onclick="addSignupPostcode()" style="margin-top:4px;font-size:11px;padding:5px 12px;background:rgba(14,165,233,0.12);border:1px solid #0ea5e9;border-radius:6px;color:#f1f5f9;cursor:pointer;font-weight:600"><i class="fas fa-plus" style="color:#0ea5e9"></i> Add Area</button>
-<span id="s-postcode-count" style="font-size:10px;color:#8890a8;margin-left:8px"></span>
+<div id="specialist-area-selector" style="display:none">
+<div class="form-group">
+<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Coverage Area <span style="color:#8890a8;font-weight:400;font-size:11px">(specialist types use wider areas)</span></label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Planning, probate and tenders require wider coverage for consistent daily delivery. Select county, region or UK-wide.</span></div>
+<div id="coverage-selector-container" style="margin-top:4px"></div>
 </div>
-<div id="s-postcode-error" style="font-size:10px;color:#ef4444;margin-top:4px;display:none"></div>
-<div style="font-size:10px;color:#6b7280;margin-top:6px">Leads are evenly split across your areas. Need more? <a href="/pricing/" style="color:#0ea5e9;text-decoration:underline">Extra areas £50 each</a></div>
 </div>
 
 <!-- LEAD FILTERS -->
@@ -389,6 +382,80 @@ fetch(API + '/api/lead-types').then(function(r) { return r.json(); }).then(funct
 function onLeadTypeChange() {
   updateCoverageOptions();
   updatePlanDescriptions();
+  // Show/hide area selector based on selected lead types
+  var checked = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
+  var hasSpecialist = false;
+  var hasLocal = false;
+  for (var lt = 0; lt < checked.length; lt++) {
+    var v = checked[lt].value;
+    if (v === 'planning' || v === 'probate' || v === 'tenders') hasSpecialist = true;
+    if (v === 'moving' || v === 'newbusiness') hasLocal = true;
+  }
+  var areaStep = document.getElementById('area-selector-step');
+  var postcodeArea = document.getElementById('postcode-area-selector');
+  var countyArea = document.getElementById('county-area-selector');
+  if (areaStep) areaStep.style.display = (checked.length > 0) ? 'block' : 'none';
+  if (postcodeArea) postcodeArea.style.display = (hasLocal && !hasSpecialist) ? 'block' : 'none';
+  if (countyArea) countyArea.style.display = (hasSpecialist && !hasLocal) ? 'block' : 'none';
+  // If both types selected, show postcode (local types can narrow by postcode)
+  if (hasLocal && hasSpecialist) {
+    if (postcodeArea) postcodeArea.style.display = 'block';
+    if (countyArea) countyArea.style.display = 'block';
+  }
+  // Build county/region/ukwide selector
+  buildCoverageSelector(checked);
+}
+
+function buildCoverageSelector(checked) {
+  var container = document.getElementById('coverage-selector-container');
+  if (!container) return;
+  var html = '<div style="display:grid;gap:6px;margin-top:6px">';
+  var options = [
+    { value:'county', label:'County', desc:'A specific county (e.g. Hertfordshire, Essex)' },
+    { value:'region', label:'Region', desc:'Multiple counties in a region' },
+    { value:'ukwide', label:'UK-wide', desc:'All UK postcodes — maximum coverage' }
+  ];
+  options.forEach(function(o) {
+    html += '<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9" onclick="selectSignupCoverage(\'' + o.value + '\')">';
+    html += '<input type="radio" name="signup-coverage" value="' + o.value + '" style="accent-color:#0ea5e9;width:15px;height:15px">';
+    html += '<div style="flex:1"><strong>' + o.label + '</strong><br><span style="font-size:10px;color:#8890a8">' + o.desc + '</span></div></label>';
+  });
+  html += '</div>';
+  html += '<div id="county-region-picker" style="margin-top:8px;display:none"></div>';
+  container.innerHTML = html;
+}
+
+var signupCoverageType = 'county';
+
+function selectSignupCoverage(type) {
+  signupCoverageType = type;
+  var radios = document.querySelectorAll('#coverage-selector-container input[type=radio]');
+  radios.forEach(function(r) { r.checked = r.value === type; });
+  // Show the appropriate picker
+  var picker = document.getElementById('county-region-picker');
+  if (!picker) return;
+  if (type === 'ukwide') {
+    picker.style.display = 'none';
+    selectedCoverage = 'ukwide';
+    signupPostcodes = ['all-uk'];
+    renderSignupPostcodes();
+    return;
+  }
+  selectedCoverage = type;
+  picker.style.display = 'block';
+  if (type === 'county') {
+    var counties = 'Bedfordshire,Berkshire,Bristol,Buckinghamshire,Cambridgeshire,Cheshire,Cornwall,Cumbria,Derbyshire,Devon,Dorset,Durham,East Sussex,Essex,Gloucestershire,Greater London,Greater Manchester,Hampshire,Herefordshire,Hertfordshire,Isle of Wight,Kent,Lancashire,Leicestershire,Lincolnshire,Merseyside,Norfolk,North Yorkshire,Northamptonshire,Northumberland,Nottinghamshire,Oxfordshire,Rutland,Shropshire,Somerset,South Yorkshire,Staffordshire,Suffolk,Surrey,Tyne and Wear,Warwickshire,West Midlands,West Sussex,West Yorkshire,Wiltshire,Worcestershire'.split(',');
+    picker.innerHTML = '<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Select county</label><select id="signup-county-select" style="width:100%;padding:8px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit" onchange="selectSignupCounty(this.value)"><option value="">Choose a county...</option>' + counties.map(function(c) { return '<option value="' + c.toLowerCase().replace(/\s+/g,'-') + '">' + c + '</option>'; }).join('') + '</select>';
+  } else if (type === 'region') {
+    var regions = 'East of England,East Midlands,London,North East,North West,South East,South West,West Midlands,Yorkshire and the Humber'.split(',');
+    picker.innerHTML = '<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Select region</label><select id="signup-region-select" style="width:100%;padding:8px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit" onchange="selectSignupCounty(this.value)"><option value="">Choose a region...</option>' + regions.map(function(r) { return '<option value="' + r.toLowerCase().replace(/\s+/g,'-') + '">' + r + '</option>'; }).join('') + '</select>';
+  }
+}
+
+function selectSignupCounty(val) {
+  if (!val) { signupPostcodes = []; renderSignupPostcodes(); return; }
+  signupPostcodes = [val];
+  renderSignupPostcodes();
 }
 
 function updateCoverageOptions() {
