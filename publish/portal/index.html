@@ -124,15 +124,15 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Choose the types of UK business opportunities you want to receive daily at 9am. Select multiple to get leads from different sources. Each lead type sources from different official UK data registers. You can change this later.</span></div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px" id="s-products-container">
 <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="checkbox" value="moving" checked style="accent-color:#0ea5e9;width:14px;height:14px"> 🚚 Moving Leads</label>
+<input type="checkbox" value="moving" checked onchange="onLeadTypeChange()" style="accent-color:#0ea5e9;width:14px;height:14px"> 🚚 Moving Leads</label>
 <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="checkbox" value="probate" style="accent-color:#0ea5e9;width:14px;height:14px"> ⚖️ Probate Leads</label>
+<input type="checkbox" value="probate" onchange="onLeadTypeChange()" style="accent-color:#0ea5e9;width:14px;height:14px"> ⚖️ Probate Leads</label>
 <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="checkbox" value="newbusiness" style="accent-color:#0ea5e9;width:14px;height:14px"> 🏢 New Business Alerts</label>
+<input type="checkbox" value="newbusiness" onchange="onLeadTypeChange()" style="accent-color:#0ea5e9;width:14px;height:14px"> 🏢 New Business Alerts</label>
 <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="checkbox" value="planning" style="accent-color:#0ea5e9;width:14px;height:14px"> 🔨 Planning Permission</label>
+<input type="checkbox" value="planning" onchange="onLeadTypeChange()" style="accent-color:#0ea5e9;width:14px;height:14px"> 🔨 Planning Permission</label>
 <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="checkbox" value="tenders" style="accent-color:#0ea5e9;width:14px;height:14px"> 📋 Public Tenders</label>
+<input type="checkbox" value="tenders" onchange="onLeadTypeChange()" style="accent-color:#0ea5e9;width:14px;height:14px"> 📋 Public Tenders</label>
 </div></div>
 
 <div id="local-area-selector">
