@@ -284,6 +284,8 @@ var API = window.location.hostname === 'localhost' || window.location.hostname =
 
 // ===== SIGNUP POSTCODE AREA SELECTOR =====
 var signupPostcodes = [];
+var VALID_POSTCODE_AREAS = ['AB','AL','B','BA','BB','BD','BH','BL','BN','BR','BS','BT','CA','CB','CF','CH','CM','CO','CR','CT','CV','CW','DA','DD','DE','DG','DH','DL','DN','DT','DY','E','EC','EH','EN','EX','FK','FY','G','GL','GU','GY','HA','HD','HG','HP','HR','HS','HU','HX','IG','IM','IP','IV','JE','KA','KT','KW','KY','L','LA','LD','LE','LL','LN','LS','LU','M','ME','MK','ML','MN','MS','N','NE','NG','NL','NN','NP','NR','NW','OL','OX','PA','PE','PH','PL','PO','PR','RG','RH','RM','S','SA','SE','SG','SK','SL','SM','SN','SO','SP','SR','SS','ST','SW','SY','TA','TD','TF','TN','TQ','TR','TS','TW','UB','W','WA','WC','WD','WF','WN','WR','WS','WV','YO','ZE'];
+function isValidPostcodeArea(code) { return VALID_POSTCODE_AREAS.includes(code); }
 async function addSignupPostcode() {
   var input = document.getElementById('s-postcode-input');
   var code = input.value.trim().toUpperCase();
@@ -292,15 +294,17 @@ async function addSignupPostcode() {
   if (!code) return;
   if (signupPostcodes.length >= 3) { err.textContent = 'Maximum 3 areas allowed'; err.style.display = 'block'; return; }
   if (signupPostcodes.includes(code)) { err.textContent = '"' + code + '" already added'; err.style.display = 'block'; return; }
+  if (!isValidPostcodeArea(code)) { err.textContent = '"' + code + '" is not a valid UK postcode area (use 2-letter code like EN, SG, CM, SW, NW)'; err.style.display = 'block'; return; }
+  // Server verification (optional — area is validated client-side already)
   try {
     var r = await fetch(API + '/api/postcodes/check?code=' + encodeURIComponent(code));
     var data = await r.json();
     if (data.valid === false) { err.textContent = data.error || '"' + code + '" is not a valid postcode area (use 2-letter code like EN, SG, CM)'; err.style.display = 'block'; return; }
-    signupPostcodes.push(code);
-    input.value = '';
-    renderSignupPostcodes();
-    input.focus();
-  } catch(e) { err.textContent = 'Could not verify area'; err.style.display = 'block'; }
+  } catch(e) { /* server unreachable — trusted client-side validation is sufficient */ }
+  signupPostcodes.push(code);
+  input.value = '';
+  renderSignupPostcodes();
+  input.focus();
 }
 function removeSignupPostcode(code) {
   signupPostcodes = signupPostcodes.filter(function(c) { return c !== code; });
