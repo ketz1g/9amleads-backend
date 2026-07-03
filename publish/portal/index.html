@@ -426,10 +426,21 @@ function updateCoverageOptions() {
     html += '</label>';
   }
   container.innerHTML = html;
-  // Show/hide postcode area selector
+  // Show/hide area selector based on coverage type
   var areaSel = document.getElementById('area-selector');
   if (areaSel) {
-    areaSel.style.display = (selectedCoverage === 'postcode') ? 'block' : 'none';
+    if (selectedCoverage === 'postcode') {
+      areaSel.style.display = 'block';
+      areaSel.innerHTML = document.getElementById('postcode-area-selector') ? document.getElementById('postcode-area-selector').innerHTML : '';
+    } else if (selectedCoverage === 'county') {
+      areaSel.style.display = 'block';
+      areaSel.innerHTML = '<div style="margin-top:6px"><label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Select county or choose All UK</label><select id="county-select" style="width:100%;padding:8px 10px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit;outline:none" onchange="if(this.value==\'all-uk\'){document.querySelector(\'#coverage-options input[value=\\\'ukwide\\\']\')?.click()}"><option value="">Choose a county...</option><option value="bedfordshire">Bedfordshire</option><option value="berkshire">Berkshire</option><option value="bristol">Bristol</option><option value="buckinghamshire">Buckinghamshire</option><option value="cambridgeshire">Cambridgeshire</option><option value="cheshire">Cheshire</option><option value="city-of-london">City of London</option><option value="cornwall">Cornwall</option><option value="cumbria">Cumbria</option><option value="derbyshire">Derbyshire</option><option value="devon">Devon</option><option value="dorset">Dorset</option><option value="durham">Durham</option><option value="east-sussex">East Sussex</option><option value="essex">Essex</option><option value="gloucestershire">Gloucestershire</option><option value="greater-london">Greater London</option><option value="greater-manchester">Greater Manchester</option><option value="hampshire">Hampshire</option><option value="herefordshire">Herefordshire</option><option value="hertfordshire">Hertfordshire</option><option value="isle-of-wight">Isle of Wight</option><option value="kent">Kent</option><option value="lancashire">Lancashire</option><option value="leicestershire">Leicestershire</option><option value="lincolnshire">Lincolnshire</option><option value="merseyside">Merseyside</option><option value="norfolk">Norfolk</option><option value="north-yorkshire">North Yorkshire</option><option value="northamptonshire">Northamptonshire</option><option value="northumberland">Northumberland</option><option value="nottinghamshire">Nottinghamshire</option><option value="oxfordshire">Oxfordshire</option><option value="rutland">Rutland</option><option value="shropshire">Shropshire</option><option value="somerset">Somerset</option><option value="south-yorkshire">South Yorkshire</option><option value="staffordshire">Staffordshire</option><option value="suffolk">Suffolk</option><option value="surrey">Surrey</option><option value="tyne-and-wear">Tyne and Wear</option><option value="warwickshire">Warwickshire</option><option value="west-midlands">West Midlands</option><option value="west-sussex">West Sussex</option><option value="west-yorkshire">West Yorkshire</option><option value="wiltshire">Wiltshire</option><option value="worcestershire">Worcestershire</option><option value="all-uk" style="font-weight:700;color:#0ea5e9">— All UK —</option></select><div style="font-size:10px;color:#5c6480;margin-top:4px">Pro and Enterprise can select All UK for maximum coverage.</div></div>';
+    } else if (selectedCoverage === 'region') {
+      areaSel.style.display = 'block';
+      areaSel.innerHTML = '<div style="margin-top:6px"><label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Select region or choose All UK</label><select id="region-select" style="width:100%;padding:8px 10px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit;outline:none" onchange="if(this.value==\'all-uk\'){document.querySelector(\'#coverage-options input[value=\\\'ukwide\\\']\')?.click()}"><option value="">Choose a region...</option><option value="east-of-england">East of England</option><option value="east-midlands">East Midlands</option><option value="london">London</option><option value="north-east">North East</option><option value="north-west">North West</option><option value="south-east">South East</option><option value="south-west">South West</option><option value="west-midlands-region">West Midlands</option><option value="yorkshire">Yorkshire and the Humber</option><option value="all-uk" style="font-weight:700;color:#0ea5e9">— All UK —</option></select><div style="font-size:10px;color:#5c6480;margin-top:4px">Pro and Enterprise can select All UK for maximum coverage.</div></div>';
+    } else {
+      areaSel.style.display = 'none';
+    }
   }
 }
 
@@ -541,7 +552,18 @@ function doSignup() {
   }
   var product = products[0];
   var targetAreas = signupPostcodes;
-  if (targetAreas.length === 0) { document.getElementById('signup-error').textContent = 'Please add at least one postcode area (e.g. EN, SG, CM)'; document.getElementById('signup-error').style.display = 'block'; return; }
+  // For county/region coverage, get the selected county/region instead of postcodes
+  if (selectedCoverage === 'county') {
+    var countyVal = document.getElementById('county-select')?.value;
+    if (countyVal && countyVal !== 'all-uk') { targetAreas = [countyVal]; }
+  } else if (selectedCoverage === 'region') {
+    var regionVal = document.getElementById('region-select')?.value;
+    if (regionVal && regionVal !== 'all-uk') { targetAreas = [regionVal]; }
+  }
+  if (targetAreas.length === 0 && selectedCoverage !== 'ukwide') {
+    document.getElementById('signup-error').textContent = 'Please add at least one postcode area or select a county/region';
+    document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
+  }
   var planRadio = document.querySelector('#s-plan-container input[type=radio]:checked');
   var plan = planRadio ? planRadio.value : 'free_trial';
   // Show upgrade recommendation if multiple products on free trial
