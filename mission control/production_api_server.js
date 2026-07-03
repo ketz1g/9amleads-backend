@@ -4241,14 +4241,16 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           }
           var newLeads = [];
           var streetOpts = ['High Street', 'Station Road', 'London Road', 'Park Lane', 'Church Road', 'Victoria Street', 'Oak Avenue', 'The Crescent', 'Manor Road', 'Queen Street'];
+          var countyToPrefix2 = { 'hertfordshire': 'SG', 'buckinghamshire': 'HP', 'greater-london': 'N', 'bedfordshire': 'LU', 'berkshire': 'RG', 'bristol': 'BS', 'cambridgeshire': 'CB', 'cheshire': 'CH', 'cornwall': 'TR', 'cumbria': 'CA', 'derbyshire': 'DE', 'devon': 'EX', 'dorset': 'DT', 'durham': 'DH', 'east-sussex': 'BN', 'essex': 'CM', 'gloucestershire': 'GL', 'greater-manchester': 'M', 'hampshire': 'SO', 'herefordshire': 'HR', 'isle-of-wight': 'PO', 'kent': 'ME', 'lancashire': 'PR', 'leicestershire': 'LE', 'lincolnshire': 'LN', 'merseyside': 'L', 'norfolk': 'NR', 'north-yorkshire': 'YO', 'northamptonshire': 'NN', 'northumberland': 'NE', 'nottinghamshire': 'NG', 'oxfordshire': 'OX', 'rutland': 'LE', 'shropshire': 'SY', 'somerset': 'TA', 'south-yorkshire': 'S', 'staffordshire': 'ST', 'suffolk': 'IP', 'surrey': 'GU', 'tyne-and-wear': 'NE', 'warwickshire': 'CV', 'west-midlands': 'B', 'west-sussex': 'RH', 'west-yorkshire': 'LS', 'wiltshire': 'SN', 'worcestershire': 'WR' };
           for (var tdidx = 0; tdidx < targetDistsUniq.length; tdidx++) {
             var dist = targetDistsUniq[tdidx];
             if (existingPostcodes[dist]) continue;
+            var pcPrefix2 = countyToPrefix2[dist] || dist.replace(/[0-9]/g, '');
             for (var li = 0; li < 5; li++) {
               var fakeNum = Math.floor(Math.random() * 200) + 1;
               var fakeStreet = streetOpts[(tdidx + li) % streetOpts.length];
               var fakeDistNum = Math.floor(Math.random() * 20) + 1;
-              var fakePC = dist.toUpperCase() + fakeDistNum + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
+              var fakePC = pcPrefix2 + fakeDistNum + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
               var base = { id: 'DEMO_' + prodKey.toUpperCase() + '_' + Date.now() + '_' + li, address: fakeNum + ' ' + fakeStreet + ', ' + fakePC, postcode: fakePC, source: '9amLeads Demo', scrapedAt: new Date().toISOString() };
               if (prodKey === 'moving') {
                 var bedC = (li % 4) + 1;
