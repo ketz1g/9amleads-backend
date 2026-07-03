@@ -292,7 +292,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
     <div id="lead-filters-display" style="font-size:12px;color:var(--text2);margin-bottom:12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:12px">Loading filter configuration...</div>
     <div id="lead-filters-editor" style="display:none">
       <div id="dashboard-filter-moving" class="dashboard-filter-panel">
-        <div style="font-size:13px;font-weight:700;color:#ff6b35;margin-bottom:10px;padding:6px 10px;background:rgba(255,107,53,0.06);border-radius:6px;border-left:3px solid #ff6b35">🚛 Moving Leads � Filters</div>
+        <div style="font-size:13px;font-weight:700;color:#ff6b35;margin-bottom:10px;padding:6px 10px;background:rgba(255,107,53,0.06);border-radius:6px;border-left:3px solid #ff6b35">🚛 Moving Leads · Filters</div>
           <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Min Bedrooms</label>
             <select id="df-moving-minbeds" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5+</option><option value="6">6+</option><option value="7">7+</option><option value="8">8+</option><option value="9">9+</option><option value="10">10+</option></select></div>
           <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Max Bedrooms</label>
@@ -302,14 +302,14 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
           <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Property Type</label>
             <select id="df-moving-proptype" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="house">House</option><option value="flat">Flat</option><option value="bungalow">Bungalow</option><option value="maisonette">Maisonette</option><option value="townhouse">Townhouse</option></select></div>
           <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Max Property Value</label>
-            <select id="df-moving-maxprice" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="100000">�100k</option><option value="200000">�200k</option><option value="350000">�350k</option><option value="500000">�500k</option><option value="750000">�750k</option><option value="1000000">�1M</option><option value="2000000">�2M</option><option value="3000000">�3M</option><option value="5000000">�5M</option><option value="10000000">�10M</option></select></div>
+            <select id="df-moving-maxprice" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="100000">·100k</option><option value="200000">·200k</option><option value="350000">·350k</option><option value="500000">·500k</option><option value="750000">·750k</option><option value="1000000">·1M</option><option value="2000000">·2M</option><option value="3000000">·3M</option><option value="5000000">·5M</option><option value="10000000">·10M</option></select></div>
         </div>
         <div style="margin-top:8px"><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Lead Status</label>
           <div style="display:flex;gap:8px"><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="df-moving-status-sstc" checked style="accent-color:var(--primary)"> SSTC</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="df-moving-status-offer" checked style="accent-color:var(--primary)"> Under Offer</label></div>
         </div>
       </div>
       <div id="dashboard-filter-probate" class="dashboard-filter-panel" style="display:none">
-        <div style="font-size:13px;font-weight:700;color:#a855f7;margin-bottom:10px;padding:6px 10px;background:rgba(168,85,247,0.06);border-radius:6px;border-left:3px solid #a855f7">⚖️ Probate Leads � Filters</div>
+        <div style="font-size:13px;font-weight:700;color:#a855f7;margin-bottom:10px;padding:6px 10px;background:rgba(168,85,247,0.06);border-radius:6px;border-left:3px solid #a855f7">⚖️ Probate Leads · Filters</div>
         <p style="font-size:11px;color:var(--muted2);margin-bottom:8px">Probate leads are filtered by postcode territory. No additional filters available for this lead type.</p>
       </div>
       </div>
@@ -341,7 +341,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
       <div id="dashboard-filter-tenders" class="dashboard-filter-panel" style="display:none">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Min Contract Value</label>
-            <select id="df-tenders-minvalue" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="10000">�10k</option><option value="50000">�50k</option><option value="100000">�100k</option><option value="250000">�250k</option><option value="500000">�500k</option><option value="1000000">�1M</option><option value="2000000">�2M</option><option value="5000000">�5M</option><option value="10000000">�10M</option></select></div>
+            <select id="df-tenders-minvalue" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"><option value="">Any</option><option value="10000">·10k</option><option value="50000">·50k</option><option value="100000">·100k</option><option value="250000">·250k</option><option value="500000">·500k</option><option value="1000000">·1M</option><option value="2000000">·2M</option><option value="5000000">·5M</option><option value="10000000">·10M</option></select></div>
           <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Keywords</label>
             <input type="text" id="df-tenders-keywords" placeholder="construction, IT, cleaning..." style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none"></div>
         </div>
@@ -1160,7 +1160,7 @@ function generateDemoLeads(session) {
     const daysAgo = Math.floor(Math.random() * 14);
     const d = new Date(); d.setDate(d.getDate() - daysAgo);
     leads.push({
-      data: JSON.stringify({ address: Math.floor(Math.random()*200)+1 + ' ' + ['Acacia Avenue','Victoria Road','Green Lane','Park Crescent','Oakwood Gardens','Market Street','Church Road'][i%7] + ', ' + areas[i%areas.length], type: types[i%types.length], price: '-�' + (Math.floor(Math.random()*900)+100) + ',000', bedrooms: Math.floor(Math.random()*4)+1 }),
+      data: JSON.stringify({ address: Math.floor(Math.random()*200)+1 + ' ' + ['Acacia Avenue','Victoria Road','Green Lane','Park Crescent','Oakwood Gardens','Market Street','Church Road'][i%7] + ', ' + areas[i%areas.length], type: types[i%types.length], price: '-·' + (Math.floor(Math.random()*900)+100) + ',000', bedrooms: Math.floor(Math.random()*4)+1 }),
       status: ['new','new','new','contacted','booked'][i%5],
       created_at: d.toISOString()
     });
@@ -1170,7 +1170,7 @@ function generateDemoLeads(session) {
   renderLeads();
   // Show demo mode banner
   const banner = document.getElementById('onboardingBanner');
-  banner.innerHTML = '<i class="fas fa-flask" style="color:var(--warning)"></i> <strong>Demo Mode</strong> G�� Showing sample leads. Your real leads will appear after the 9am daily scrape and distribution pipeline runs.';
+  banner.innerHTML = '<i class="fas fa-flask" style="color:var(--warning)"></i> <strong>Demo Mode</strong> G·· Showing sample leads. Your real leads will appear after the 9am daily scrape and distribution pipeline runs.';
   banner.style.display = 'flex';
 }
 
@@ -1191,7 +1191,7 @@ function renderLeads() {
   const titleEl = document.getElementById('leadTitle');
 
   if (leads.length === 0) {
-    container.innerHTML = '<div class="empty-state"><div class="icon">=���</div>No leads yet. They will appear here at 9am.<br><span style="font-size:11px;color:var(--muted2)">New leads arrive every morning.</span></div>';
+    container.innerHTML = '<div class="empty-state"><div class="icon">=···</div>No leads yet. They will appear here at 9am.<br><span style="font-size:11px;color:var(--muted2)">New leads arrive every morning.</span></div>';
     document.getElementById('dateLabel').textContent = 'No leads';
     countEl.textContent = '0 leads';
     return;
@@ -1208,7 +1208,7 @@ function renderLeads() {
     countEl.textContent = todayLeads.length + ' leads';
 
     if (todayLeads.length === 0) {
-      html = '<div class="empty-state"><div class="icon">=���</div>No leads for this day.</div>';
+      html = '<div class="empty-state"><div class="icon">=···</div>No leads for this day.</div>';
     } else {
       html += '<div class="day-group"><div class="day-header"><span class="day-date">' + viewDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + '</span><span class="day-count">' + todayLeads.length + ' leads</span></div><div class="day-body">';
       todayLeads.forEach(l => {
@@ -1334,7 +1334,7 @@ async function checkout(plan) {
       msg.innerHTML = 'Payments are being set up. For now, please email <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">hello@9amleads.com</a> to upgrade your plan.';
     } else {
       msg.style.color = 'var(--danger)';
-      msg.textContent = 'Error: ' + errMsg + ' G�� Contact hello@9amleads.com for help.';
+      msg.textContent = 'Error: ' + errMsg + ' G·· Contact hello@9amleads.com for help.';
     }
     msg.style.display = 'block';
   }
@@ -1353,10 +1353,10 @@ function filterByStatus(s) {
 }
 
 // Modal placeholders (populated on first open)
-function openSuccessCentre() { showModal('Success Centre', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Tips and best practices for contacting your leads.</p><p style="font-size:12px;color:var(--muted)">Coming soon � contact strategies, email templates, and call scripts will appear here.</p></div>'); }
-function openCampaigns() { showModal('Campaigns', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Automated email follow-up campaigns for your leads.</p><p style="font-size:12px;color:var(--muted)">Coming soon � set up Day 1/3/5/10 sequences.</p></div>'); }
-function openPartnerMarketplace() { showModal('Partner Marketplace', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Find partners to refer or receive leads from.</p><p style="font-size:12px;color:var(--muted)">Coming soon � connect with complementary businesses.</p></div>'); }
-function openWhiteLabel() { showModal('White Label Branding', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Customise your exports and reports with your branding.</p><p style="font-size:12px;color:var(--muted)">Coming soon � upload your logo and set brand colours.</p></div>'); }
+function openSuccessCentre() { showModal('Success Centre', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Tips and best practices for contacting your leads.</p><p style="font-size:12px;color:var(--muted)">Coming soon · contact strategies, email templates, and call scripts will appear here.</p></div>'); }
+function openCampaigns() { showModal('Campaigns', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Automated email follow-up campaigns for your leads.</p><p style="font-size:12px;color:var(--muted)">Coming soon · set up Day 1/3/5/10 sequences.</p></div>'); }
+function openPartnerMarketplace() { showModal('Partner Marketplace', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Find partners to refer or receive leads from.</p><p style="font-size:12px;color:var(--muted)">Coming soon · connect with complementary businesses.</p></div>'); }
+function openWhiteLabel() { showModal('White Label Branding', '<div style="padding:10px;text-align:center"><p style="color:var(--text2);margin-bottom:16px">Customise your exports and reports with your branding.</p><p style="font-size:12px;color:var(--muted)">Coming soon · upload your logo and set brand colours.</p></div>'); }
 function openFeatureDiscovery() {
   var features = ['Lead Scoring', 'AI Outreach', 'CRM Sync', 'Territory Management', 'Export CSV', 'Lead Timeline', 'Performance Dashboard', 'Saved Searches'];
   var html = '<div style="padding:10px"><p style="color:var(--text2);margin-bottom:16px">Tools available in your account:</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
