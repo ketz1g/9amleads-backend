@@ -37,7 +37,7 @@ const POSTCODE_LIMITS = {
   free_trial: 3,
   essential: 3,
   starter: 3,
-  pro: 6,
+  pro: 999,
   enterprise: 999
 };
 

@@ -150,23 +150,24 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </div>
 <div id="specialist-area-selector" style="display:none">
 <div class="form-group">
-<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Coverage Area <span style="color:#8890a8;font-weight:400;font-size:11px">(for planning, probate &amp; tenders)</span></label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Planning, probate and tenders require wider coverage for consistent daily delivery. Select county, region or UK-wide.</span></div>
+<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Coverage Area <span style="color:#8890a8;font-weight:400;font-size:11px">(choose 1 county, 1 region or All UK &middot; for planning, probate &amp; tenders)</span></label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Planning, probate and tenders require wider coverage for consistent daily delivery. Select 1 county, 1 region or go UK-wide. Pro and Enterprise can select All UK for maximum volume.</span></div>
 <div style="margin-top:6px;display:grid;gap:6px">
 <label id="sc-county" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSpecialistArea('county')">
 <input type="radio" name="spec-area" value="county" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong>County</strong><br><span style="font-size:10px;color:#6b7280">A specific county (e.g. Hertfordshire, Essex)</span></div>
+<div style="flex:1"><strong>County</strong><br><span style="font-size:10px;color:#6b7280">Select 1 specific county (e.g. Hertfordshire, Essex)</span></div>
 </label>
 <label id="sc-region" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSpecialistArea('region')">
 <input type="radio" name="spec-area" value="region" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong>Region</strong><br><span style="font-size:10px;color:#6b7280">Multiple counties in a region</span></div>
+<div style="flex:1"><strong>Region</strong><br><span style="font-size:10px;color:#6b7280">Select 1 region covering multiple counties</span></div>
 </label>
 <label id="sc-ukwide" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSpecialistArea('ukwide')">
 <input type="radio" name="spec-area" value="ukwide" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong>UK-wide</strong><br><span style="font-size:10px;color:#6b7280">All UK postcodes — maximum coverage</span></div>
+<div style="flex:1"><strong>UK-wide</strong><br><span style="font-size:10px;color:#6b7280">All UK — maximum coverage (Pro &amp; Enterprise)</span></div>
 </label>
 </div>
 <div id="spec-area-picker" style="margin-top:8px;display:none"></div>
+<div style="margin-top:4px;font-size:10px;color:#6b7280">Specialist types need wider areas for consistent daily delivery. Pro &amp; Enterprise can select All UK.</div>
 </div>
 </div>
 
@@ -179,7 +180,7 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div style="display:grid;gap:6px" id="s-plan-container">
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(14,165,233,0.06);border:2px solid rgba(14,165,233,0.3);border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-free_trial" onmouseover="this.style.borderColor='rgba(14,165,233,0.5)'" onmouseout="this.style.borderColor='rgba(14,165,233,0.3)'">
 <input type="radio" name="plan" value="free_trial" checked style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong style="color:#f1f5f9">Free Trial</strong><br><span style="font-size:10px;color:#8890a8">7 days free &middot; 5 leads/day &middot; 3 postcode areas</span></div>
+<div style="flex:1"><strong style="color:#f1f5f9">Free Trial</strong><br><span style="font-size:10px;color:#8890a8">7 days free &middot; 5 leads/day &middot; 3 areas</span></div>
 <div style="font-size:14px;font-weight:800;color:#22c55e">Free</div>
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-starter" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
@@ -189,12 +190,12 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-pro" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
 <input type="radio" name="plan" value="pro" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong style="color:#f1f5f9">Pro</strong><br><span style="font-size:10px;color:#8890a8">15 leads/day &middot; 6 postcode areas</span></div>
+<div style="flex:1"><strong style="color:#f1f5f9">Pro</strong><br><span style="font-size:10px;color:#8890a8">15 leads/day &middot; All UK</span></div>
 <div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;49<span style="font-size:10px;color:#8890a8">/wk</span></div>
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-enterprise" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
 <input type="radio" name="plan" value="enterprise" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong style="color:#f1f5f9">Enterprise</strong><br><span style="font-size:10px;color:#8890a8">40 leads/day &middot; All UK postcodes</span></div>
+<div style="flex:1"><strong style="color:#f1f5f9">Enterprise</strong><br><span style="font-size:10px;color:#8890a8">40 leads/day &middot; All UK</span></div>
 <div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;99<span style="font-size:10px;color:#8890a8">/wk</span></div>
 </label>
 </div>
