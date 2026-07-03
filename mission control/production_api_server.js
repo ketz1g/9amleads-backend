@@ -2157,16 +2157,16 @@ const LEAD_TYPE_RULES = {
     area_limit: { free_trial: 1, starter: 1, pro: 999, enterprise: 999 },
     plans: {
       free_trial: { default: 0, region: 0, ukwide: 1 },
-      starter:  { default: 0,  region: 0,  ukwide: 2 },
-      pro:      { default: 2,  region: 2,  ukwide: 6 },
-      enterprise: { default: 5, region: 5, ukwide: 15 },
+      starter:  { default: 3,  region: 3,  ukwide: 5 },
+      pro:      { default: 8,  region: 8,  ukwide: 20 },
+      enterprise: { default: 15, region: 15, ukwide: 50 },
     },
     min_area: 'region', up_to: true, enabled: true,
     price_starter: 'price_1TmEKTADspDnFpfBsi6jjA6B',
     price_growth: 'price_1TmEKUADspDnFpfBqnyKzJxM',
     price_power: 'price_1TmEKUADspDnFpfBugGOoqhD',
-    weekly_est: { starter: 2, pro: 6, enterprise: 15 },
-    monthly_est: { starter: 8, pro: 24, enterprise: 60 }
+    weekly_est: { starter: 5, pro: 20, enterprise: 50 },
+    monthly_est: { starter: 20, pro: 80, enterprise: 200 }
   },
   property: {
     name: 'Property Leads', key: 'property', local: true,
