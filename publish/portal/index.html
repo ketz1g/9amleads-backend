@@ -421,9 +421,9 @@ function buildCoverageSelector(checked) {
     { value:'ukwide', label:'UK-wide', desc:'All UK postcodes — maximum coverage' }
   ];
   options.forEach(function(o) {
-    html += '<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9" onclick="selectSignupCoverage(\'' + o.value + '\')">';
+    html += '<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSignupCoverage(\'' + o.value + '\')">';
     html += '<input type="radio" name="signup-coverage" value="' + o.value + '" style="accent-color:#0ea5e9;width:15px;height:15px">';
-    html += '<div style="flex:1"><strong>' + o.label + '</strong><br><span style="font-size:10px;color:#8890a8">' + o.desc + '</span></div></label>';
+    html += '<div style="flex:1"><strong>' + o.label + '</strong><br><span style="font-size:10px;color:#6b7280">' + o.desc + '</span></div></label>';
   });
   html += '</div>';
   html += '<div id="county-region-picker" style="margin-top:8px;display:none"></div>';
@@ -450,10 +450,10 @@ function selectSignupCoverage(type) {
   picker.style.display = 'block';
   if (type === 'county') {
     var counties = 'Bedfordshire,Berkshire,Bristol,Buckinghamshire,Cambridgeshire,Cheshire,Cornwall,Cumbria,Derbyshire,Devon,Dorset,Durham,East Sussex,Essex,Gloucestershire,Greater London,Greater Manchester,Hampshire,Herefordshire,Hertfordshire,Isle of Wight,Kent,Lancashire,Leicestershire,Lincolnshire,Merseyside,Norfolk,North Yorkshire,Northamptonshire,Northumberland,Nottinghamshire,Oxfordshire,Rutland,Shropshire,Somerset,South Yorkshire,Staffordshire,Suffolk,Surrey,Tyne and Wear,Warwickshire,West Midlands,West Sussex,West Yorkshire,Wiltshire,Worcestershire'.split(',');
-    picker.innerHTML = '<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Select county</label><select id="signup-county-select" style="width:100%;padding:8px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit" onchange="selectSignupCounty(this.value)"><option value="">Choose a county...</option>' + counties.map(function(c) { return '<option value="' + c.toLowerCase().replace(/\s+/g,'-') + '">' + c + '</option>'; }).join('') + '</select>';
+    picker.innerHTML = '<label style="font-size:11px;color:#6b7280;display:block;margin-bottom:4px;font-weight:600">Select county</label><select id="signup-county-select" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit" onchange="selectSignupCounty(this.value)"><option value="">Choose a county...</option>' + counties.map(function(c) { return '<option value="' + c.toLowerCase().replace(/\s+/g,'-') + '">' + c + '</option>'; }).join('') + '</select>';
   } else if (type === 'region') {
     var regions = 'East of England,East Midlands,London,North East,North West,South East,South West,West Midlands,Yorkshire and the Humber'.split(',');
-    picker.innerHTML = '<label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Select region</label><select id="signup-region-select" style="width:100%;padding:8px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit" onchange="selectSignupCounty(this.value)"><option value="">Choose a region...</option>' + regions.map(function(r) { return '<option value="' + r.toLowerCase().replace(/\s+/g,'-') + '">' + r + '</option>'; }).join('') + '</select>';
+    picker.innerHTML = '<label style="font-size:11px;color:#6b7280;display:block;margin-bottom:4px;font-weight:600">Select region</label><select id="signup-region-select" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit" onchange="selectSignupCounty(this.value)"><option value="">Choose a region...</option>' + regions.map(function(r) { return '<option value="' + r.toLowerCase().replace(/\s+/g,'-') + '">' + r + '</option>'; }).join('') + '</select>';
   }
 }
 
