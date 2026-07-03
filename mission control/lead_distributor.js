@@ -556,14 +556,23 @@ async function distributeProduct(product) {
           baseLead.name = 'Estate of ' + surnames[ni % surnames.length];
           baseLead.deceasedName = surnames[ni % surnames.length];
           baseLead.estateValue = Math.floor(Math.random() * 500000) + 100000;
+          baseLead.estimatedValue = baseLead.estateValue;
+          baseLead.probateRegistry = city + ' Probate Registry';
+          baseLead.dateOfDeath = new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString().split('T')[0];
+          baseLead.solicitor = bizNames[ni % bizNames.length] + ' Solicitors';
         } else if (product === 'newbusiness') {
           baseLead.name = bizNames[ni % bizNames.length] + ' ' + bizSuffixes[ni % bizSuffixes.length] + ' Ltd';
           baseLead.companyNumber = 'NI' + (Math.floor(Math.random() * 900000) + 100000);
           baseLead.incorporationDate = new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString();
         } else if (product === 'planning') {
           baseLead.applicationType = appTypes[ni % appTypes.length];
-          baseLead.description = 'Proposed ' + (['residential', 'commercial', 'mixed-use'][ni % 3]) + ' development';
+          baseLead.description = 'Proposed ' + (['residential', 'commercial', 'mixed-use'][ni % 3]) + ' development at ' + address;
           baseLead.council = city + ' Council';
+          baseLead.estimatedValue = (['50000', '100000', '250000', '500000'][ni % 4]);
+          baseLead.applicationRef = (city.substring(0, 3).toUpperCase() + '/' + Math.floor(Math.random() * 90000 + 10000) + '/' + Math.floor(Math.random() * 9 + 1));
+          baseLead.developmentType = ['Householder', 'Full Planning', 'Outline'][ni % 3];
+          baseLead.status = ['Pending', 'Approved', 'Validated'][ni % 3];
+          baseLead.applicantName = bizNames[ni % bizNames.length] + ' ' + surnames[(ni + 1) % surnames.length];
         } else if (product === 'tenders') {
           baseLead.title = (['Construction', 'IT Services', 'Facilities Management', 'Consultancy', 'Cleaning'][ni % 5]) + ' Tender';
           baseLead.buyer = city + ' Council';
