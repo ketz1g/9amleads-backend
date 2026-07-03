@@ -2123,16 +2123,16 @@ const LEAD_TYPE_RULES = {
     area_limit: { free_trial: 1, starter: 1, pro: 999, enterprise: 999 },
     plans: {
       free_trial: { default: 1, county: 1, region: 2, ukwide: 3 },
-      starter:  { default: 1,  county: 1,  region: 2,  ukwide: 5 },
-      pro:      { default: 3,  county: 3,  region: 8,  ukwide: 15 },
-      enterprise: { default: 8, county: 5, region: 15, ukwide: 30 },
+      starter:  { default: 2,  county: 2,  region: 3,  ukwide: 5 },
+      pro:      { default: 3,  county: 3,  region: 5,  ukwide: 10 },
+      enterprise: { default: 8, county: 5, region: 10, ukwide: 25 },
     },
     min_area: 'county', up_to: true, enabled: true,
     price_starter: 'price_1TmEKSADspDnFpfBrCHXJBFu',
     price_growth: 'price_1TmEKTADspDnFpfBVdi1APEq',
     price_power: 'price_1TmEKTADspDnFpfBxFjHeoP9',
-    weekly_est: { starter: 5, pro: 15, enterprise: 30 },
-    monthly_est: { starter: 20, pro: 60, enterprise: 120 }
+    weekly_est: { starter: 5, pro: 10, enterprise: 25 },
+    monthly_est: { starter: 20, pro: 40, enterprise: 100 }
   },
   probate: {
     name: 'Probate Leads', key: 'probate', local: false, model: 'weekly',
