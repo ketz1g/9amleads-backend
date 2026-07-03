@@ -2060,6 +2060,7 @@ app.get('/api/lead-types', (req, res) => {
     summary[key] = {
       name: rule.name,
       local: rule.local,
+      model: rule.model || 'daily',
       coverage: rule.coverage,
       min_area: rule.min_area,
       up_to: rule.up_to,
@@ -2107,7 +2108,7 @@ const LEAD_TYPE_RULES = {
     monthly_est: { starter: 200, pro: 500, enterprise: 1000 }
   },
   planning: {
-    name: 'Planning Permissions', key: 'planning', local: false,
+    name: 'Planning Permissions', key: 'planning', local: false, model: 'weekly',
     coverage: ['county', 'region', 'ukwide'],
     plans: {
       free_trial: { default: 2, county: 2, region: 5, ukwide: 10 },
@@ -2123,7 +2124,7 @@ const LEAD_TYPE_RULES = {
     monthly_est: { starter: 40, pro: 140, enterprise: 280 }
   },
   probate: {
-    name: 'Probate Leads', key: 'probate', local: false,
+    name: 'Probate Leads', key: 'probate', local: false, model: 'weekly',
     coverage: ['county', 'region', 'ukwide'],
     plans: {
       free_trial: { default: 1, county: 1, region: 2, ukwide: 5 },
@@ -2139,7 +2140,7 @@ const LEAD_TYPE_RULES = {
     monthly_est: { starter: 20, pro: 60, enterprise: 200 }
   },
   tenders: {
-    name: 'Public Tenders', key: 'tenders', local: false,
+    name: 'Public Tenders', key: 'tenders', local: false, model: 'weekly',
     coverage: ['region', 'ukwide'],
     plans: {
       free_trial: { default: 1, region: 1, ukwide: 3 },
@@ -2659,12 +2660,22 @@ cron.schedule('36 2 * * *', async () => {
       var totalDailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || dailyLimitByPlan[cust.plan] || 5;
       var products = [cust.product];
       try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
+      // Calculate this week start for weekly-model products
+      var thisWeek = new Date(); thisWeek.setDate(thisWeek.getDate() - thisWeek.getDay());
+      var weekStartStr = thisWeek.toISOString().split('T')[0];
       var custLeads = [];
       // Round-robin across all products: pick 1 lead per product, repeat until limit reached
       var maxRound = Math.ceil(totalDailyLimit / products.length);
       for (var ri = 0; ri < maxRound && custLeads.length < totalDailyLimit; ri++) {
         for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
           var prod = products[pi];
+          // Check weekly limit for specialist products
+          var prodRule = getLeadTypeRule(prod);
+          if (prodRule.model === 'weekly') {
+            var weeklyDelivered = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at >= weekStartStr && l.product === prod; }).length;
+            var weeklyLimit = prodRule.weekly_est ? (prodRule.weekly_est[cust.plan] || prodRule.weekly_est.starter || 999) : 999;
+            if (weeklyDelivered >= weeklyLimit) continue; // Weekly limit reached, skip this product
+          }
           // Get ALL undelivered leads for this product (not already picked)
           var allProdLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
           // Remove leads already picked in custLeads
