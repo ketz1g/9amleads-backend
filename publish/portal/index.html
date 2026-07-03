@@ -152,7 +152,21 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div class="form-group">
 <label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Coverage Area <span style="color:#8890a8;font-weight:400;font-size:11px">(for planning, probate &amp; tenders)</span></label>
 <div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Planning, probate and tenders require wider coverage for consistent daily delivery. Select county, region or UK-wide.</span></div>
-<div id="coverage-selector-container" style="margin-top:4px"></div>
+<div style="margin-top:6px;display:grid;gap:6px">
+<label id="sc-county" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSpecialistArea('county')">
+<input type="radio" name="spec-area" value="county" style="accent-color:#0ea5e9;width:15px;height:15px">
+<div style="flex:1"><strong>County</strong><br><span style="font-size:10px;color:#6b7280">A specific county (e.g. Hertfordshire, Essex)</span></div>
+</label>
+<label id="sc-region" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSpecialistArea('region')">
+<input type="radio" name="spec-area" value="region" style="accent-color:#0ea5e9;width:15px;height:15px">
+<div style="flex:1"><strong>Region</strong><br><span style="font-size:10px;color:#6b7280">Multiple counties in a region</span></div>
+</label>
+<label id="sc-ukwide" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSpecialistArea('ukwide')">
+<input type="radio" name="spec-area" value="ukwide" style="accent-color:#0ea5e9;width:15px;height:15px">
+<div style="flex:1"><strong>UK-wide</strong><br><span style="font-size:10px;color:#6b7280">All UK postcodes — maximum coverage</span></div>
+</label>
+</div>
+<div id="spec-area-picker" style="margin-top:8px;display:none"></div>
 </div>
 </div>
 
@@ -407,37 +421,12 @@ function onLeadTypeChange() {
   var specSel = document.getElementById('specialist-area-selector');
   if (localSel) localSel.style.display = (hasLocal || !hasSpecialist) ? 'block' : 'none';
   if (specSel) specSel.style.display = hasSpecialist ? 'block' : 'none';
-  // Build specialist coverage selector
-  if (hasSpecialist) buildCoverageSelector(checked);
 }
 
-function buildCoverageSelector(checked) {
-  var container = document.getElementById('coverage-selector-container');
-  if (!container) return;
-  var html = '<div style="display:grid;gap:6px;margin-top:6px">';
-  var options = [
-    { value:'county', label:'County', desc:'A specific county (e.g. Hertfordshire, Essex)' },
-    { value:'region', label:'Region', desc:'Multiple counties in a region' },
-    { value:'ukwide', label:'UK-wide', desc:'All UK postcodes — maximum coverage' }
-  ];
-  options.forEach(function(o) {
-    html += '<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSignupCoverage(\'' + o.value + '\')">';
-    html += '<input type="radio" name="signup-coverage" value="' + o.value + '" style="accent-color:#0ea5e9;width:15px;height:15px">';
-    html += '<div style="flex:1"><strong>' + o.label + '</strong><br><span style="font-size:10px;color:#6b7280">' + o.desc + '</span></div></label>';
-  });
-  html += '</div>';
-  html += '<div id="county-region-picker" style="margin-top:8px;display:none"></div>';
-  container.innerHTML = html;
-}
-
-var signupCoverageType = 'county';
-
-function selectSignupCoverage(type) {
-  signupCoverageType = type;
-  var radios = document.querySelectorAll('#coverage-selector-container input[type=radio]');
+function selectSpecialistArea(type) {
+  var radios = document.querySelectorAll('#specialist-area-selector input[type=radio]');
   radios.forEach(function(r) { r.checked = r.value === type; });
-  // Show the appropriate picker
-  var picker = document.getElementById('county-region-picker');
+  var picker = document.getElementById('spec-area-picker');
   if (!picker) return;
   if (type === 'ukwide') {
     picker.style.display = 'none';
@@ -450,14 +439,14 @@ function selectSignupCoverage(type) {
   picker.style.display = 'block';
   if (type === 'county') {
     var counties = 'Bedfordshire,Berkshire,Bristol,Buckinghamshire,Cambridgeshire,Cheshire,Cornwall,Cumbria,Derbyshire,Devon,Dorset,Durham,East Sussex,Essex,Gloucestershire,Greater London,Greater Manchester,Hampshire,Herefordshire,Hertfordshire,Isle of Wight,Kent,Lancashire,Leicestershire,Lincolnshire,Merseyside,Norfolk,North Yorkshire,Northamptonshire,Northumberland,Nottinghamshire,Oxfordshire,Rutland,Shropshire,Somerset,South Yorkshire,Staffordshire,Suffolk,Surrey,Tyne and Wear,Warwickshire,West Midlands,West Sussex,West Yorkshire,Wiltshire,Worcestershire'.split(',');
-    picker.innerHTML = '<label style="font-size:11px;color:#6b7280;display:block;margin-bottom:4px;font-weight:600">Select county</label><select id="signup-county-select" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit" onchange="selectSignupCounty(this.value)"><option value="">Choose a county...</option>' + counties.map(function(c) { return '<option value="' + c.toLowerCase().replace(/\s+/g,'-') + '">' + c + '</option>'; }).join('') + '</select>';
+    picker.innerHTML = '<label style="font-size:11px;color:#6b7280;display:block;margin-bottom:4px;font-weight:600">Select county</label><select id="signup-county-select" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit" onchange="selectSpecialistCounty(this.value)"><option value="">Choose a county...</option>' + counties.map(function(c) { return '<option value="' + c.toLowerCase().replace(/\s+/g,'-') + '">' + c + '</option>'; }).join('') + '</select>';
   } else if (type === 'region') {
     var regions = 'East of England,East Midlands,London,North East,North West,South East,South West,West Midlands,Yorkshire and the Humber'.split(',');
-    picker.innerHTML = '<label style="font-size:11px;color:#6b7280;display:block;margin-bottom:4px;font-weight:600">Select region</label><select id="signup-region-select" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit" onchange="selectSignupCounty(this.value)"><option value="">Choose a region...</option>' + regions.map(function(r) { return '<option value="' + r.toLowerCase().replace(/\s+/g,'-') + '">' + r + '</option>'; }).join('') + '</select>';
+    picker.innerHTML = '<label style="font-size:11px;color:#6b7280;display:block;margin-bottom:4px;font-weight:600">Select region</label><select id="signup-region-select" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#111827;font-family:inherit" onchange="selectSpecialistCounty(this.value)"><option value="">Choose a region...</option>' + regions.map(function(r) { return '<option value="' + r.toLowerCase().replace(/\s+/g,'-') + '">' + r + '</option>'; }).join('') + '</select>';
   }
 }
 
-function selectSignupCounty(val) {
+function selectSpecialistCounty(val) {
   if (!val) { signupPostcodes = []; renderSignupPostcodes(); return; }
   signupPostcodes = [val];
   renderSignupPostcodes();
