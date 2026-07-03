@@ -2816,9 +2816,18 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           custLeads.push(primaryLeads[0]);
         }
       }
+      var thisWeekStart2 = new Date(); thisWeekStart2.setDate(thisWeekStart2.getDate() - thisWeekStart2.getDay());
+      var weekStart2 = thisWeekStart2.toISOString().split('T')[0];
       // Round 1: pick 1 lead from EACH product (guarantees every product gets at least 1)
       for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
         var prod = products[pi];
+        // Check weekly model limits
+        var prodRule2 = getLeadTypeRule(prod);
+        if (prodRule2.model === 'weekly') {
+          var weekDel = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at >= weekStart2 && l.product === prod; }).length;
+          var weekLim = prodRule2.weekly_est ? (prodRule2.weekly_est[cust.plan] || prodRule2.weekly_est.starter || 999) : 999;
+          if (weekDel >= weekLim) continue;
+        }
         var allProdLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
         if (allProdLeads.length === 0) continue;
         var pickedIds = custLeads.map(function(cl) { return cl.id; });
