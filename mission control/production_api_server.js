@@ -3736,35 +3736,35 @@ app.get('/api/health', (req, res) => {
 function generateLeadEmailHTML(customer, leads) {
   const accent = customer.product === 'moving' ? '#ff6b35' : customer.product === 'probate' ? '#a855f7' : customer.product === 'newbusiness' ? '#06b6d4' : customer.product === 'planning' ? '#10b981' : '#6366f1';
   const productName = customer.product || 'opportunities';
-  const aboutText = productName === 'moving' ? 'The address and property details are shown below.'
-    : productName === 'probate' ? 'The deceased name and estate details are shown below.'
-    : productName === 'newbusiness' ? 'New company registration details are shown below.'
-    : productName === 'planning' ? 'The planning application details are shown below.'
-    : 'Tender opportunity details are shown below.';
+  const aboutText = productName === 'moving' ? 'Property and moving details'
+    : productName === 'probate' ? 'Estate and probate details'
+    : productName === 'newbusiness' ? 'New business registration details'
+    : productName === 'planning' ? 'Planning application details'
+    : 'Tender opportunity details';
   const dashboardUrl = 'https://www.9amleads.com/portal/dashboard.html';
-  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>@media only screen and (max-width:480px){.card{padding:12px!important}.inner{padding:12px 14px!important}.chips span{font-size:10px!important}}</style></head><body style="margin:0;padding:0;background-color:#f4f6f9;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#1a1a2e">';
-  body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f6f9"><tr><td align="center" style="padding:20px 16px">';
+  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>@media only screen and (max-width:480px){.card{padding:12px!important}.inner{padding:12px 14px!important}.chips span{font-size:10px!important}}.lead-card{margin-bottom:16px!important}}</style></head><body style="margin:0;padding:0;background-color:#0f111a;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#e2e8f0">';
+  body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px">';
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
-  // Header
-  body += '<tr><td style="background:linear-gradient(135deg,#0a2540,#0ea5e9);padding:32px 30px 24px;border-radius:16px 16px 0 0;text-align:center">';
-  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:12px"><tr><td style="width:36px;height:36px;border-radius:9px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:900;color:#ffffff;line-height:36px;background:rgba(255,255,255,0.2)">9</td><td style="padding-left:9px;font-family:Arial,Helvetica,sans-serif;font-size:23px;font-weight:900;color:#ffffff">amLeads</td></tr></table>';
+  // Header — dark sleek
+  body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:36px 30px 24px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
+  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:10px"><tr><td style="width:38px;height:38px;border-radius:10px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:900;color:#ffffff;line-height:38px;background:linear-gradient(135deg,' + accent + ',#6366f1)">9</td><td style="padding-left:10px;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#ffffff;letter-spacing:-0.5px">amLeads</td></tr></table>';
   var areasLabel = '';
   try { var custAreas = JSON.parse(customer.target_areas || '[]'); areasLabel = custAreas.length > 0 ? custAreas.join(', ') : ''; } catch(e) {}
-  body += '<p style="color:rgba(255,255,255,0.7);font-size:10px;margin:0;text-transform:uppercase;letter-spacing:2.5px;font-weight:600">' + (areasLabel || 'Daily Opportunities') + '</p>';
+  if (areasLabel) body += '<p style="color:#94a3b8;font-size:11px;margin:0;text-transform:uppercase;letter-spacing:3px;font-weight:600">' + areasLabel + '</p>';
   body += '</td></tr>';
 
-  // Greeting + count
-  body += '<tr><td style="background:#ffffff;padding:26px 30px 18px">';
-  body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#111827;margin:0 0 2px">Good Morning, ' + (customer.company || 'there') + '</h2>';
-  body += '<p style="color:#9ca3af;font-size:12px;margin:0 0 18px">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
-  body += '<div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #86efac;border-radius:10px;padding:12px 18px;margin-bottom:16px">';
-  body += '<span style="font-size:28px;font-weight:900;color:#16a34a;vertical-align:middle">' + leads.length + '</span><span style="font-size:13px;color:#166534;font-weight:600;vertical-align:middle;margin-left:10px">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' ready today</span></div>';
-  body += '<p style="font-size:12px;color:#6b7280;line-height:1.5;margin:0;padding:12px 16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">' + aboutText + '</p>';
+  // Greeting + count — dark card
+  body += '<tr><td style="background:#12141e;padding:28px 30px 20px">';
+  body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:800;color:#f1f5f9;margin:0 0 4px;letter-spacing:-0.3px">Good Morning, ' + (customer.company || 'there') + '</h2>';
+  body += '<p style="color:#64748b;font-size:13px;margin:0 0 20px">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
+  body += '<div style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.05));border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:14px 20px;margin-bottom:16px">';
+  body += '<table cellpadding="0" cellspacing="0"><tr><td style="vertical-align:middle"><span style="font-size:32px;font-weight:900;color:#10b981;line-height:1">' + leads.length + '</span></td><td style="padding-left:14px;vertical-align:middle"><span style="font-size:14px;color:#6ee7b7;font-weight:600">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' ready today</span></td></tr></table></div>';
+  body += '<p style="font-size:12px;color:#64748b;line-height:1.6;margin:0;padding:12px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px">' + aboutText + '</p>';
   body += '</td></tr>';
 
   // Lead cards
-  body += '<tr><td style="background:#ffffff;padding:4px 28px 28px">';
+  body += '<tr><td style="background:#12141e;padding:8px 28px 28px">';
   for (var i = 0; i < leads.length; i++) {
     var l = leads[i];
     var d = l.data || {};
@@ -3794,18 +3794,19 @@ function generateLeadEmailHTML(customer, leads) {
       subtitle = d.buyer || '';
     }
 
-    body += '<div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">';
-    body += '<div style="height:4px;background:' + leadAccent + '"></div>';
+    body += '<div style="background:#181b28;border:1px solid rgba(255,255,255,0.06);border-radius:14px;margin-bottom:16px;overflow:hidden">';
+    body += '<div style="height:3px;background:linear-gradient(90deg,' + leadAccent + ',rgba(99,102,241,0.4))"></div>';
     body += '<div style="padding:18px 20px 16px">';
 
     // Badge + title row
-    body += '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px">';
-    body += '<span style="padding:3px 10px;border-radius:4px;background:' + leadAccent + ';color:#fff;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:3px;letter-spacing:0.5px">' + (leadProduct === 'moving' ? 'MOVING' : leadProduct === 'probate' ? 'PROBATE' : leadProduct === 'newbusiness' ? 'NEW BIZ' : leadProduct === 'planning' ? 'PLANNING' : 'TENDER') + '</span>';
-    body += '<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#111827;line-height:1.3">' + (title || 'Opportunity') + '</div>';
-    if (subtitle) body += '<div style="font-size:12px;color:#6b7280;margin-top:3px">' + subtitle + '</div>';
-    body += '</div></div>';
+    body += '<div style="margin-bottom:12px">';
+    body += '<table cellpadding="0" cellspacing="0" width="100%"><tr>';
+    body += '<td style="vertical-align:top;width:auto;padding-right:10px"><span style="display:inline-block;padding:4px 12px;border-radius:6px;background:linear-gradient(135deg,' + leadAccent + ',rgba(99,102,241,0.6));color:#fff;font-size:10px;font-weight:700;letter-spacing:0.8px">' + (leadProduct === 'moving' ? 'MOVING' : leadProduct === 'probate' ? 'PROBATE' : leadProduct === 'newbusiness' ? 'NEW BIZ' : leadProduct === 'planning' ? 'PLANNING' : 'TENDER') + '</span></td>';
+    body += '<td style="vertical-align:top;width:100%"><div style="font-size:16px;font-weight:700;color:#f1f5f9;line-height:1.3">' + (title || 'Opportunity') + '</div>';
+    if (subtitle) body += '<div style="font-size:13px;color:#64748b;margin-top:4px">' + subtitle + '</div>';
+    body += '</td></tr></table></div>';
 
-    // Details as clean rows
+    // Details as badge chips
     var chips = [];
     if (postcode) chips.push({ icon: '\uD83D\uDCCD', text: postcode });
     if (address && address.length > 10) chips.push({ icon: '\uD83C\uDFE2', text: address.substring(0, 55) });
@@ -3834,8 +3835,7 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.sicCode) chips.push({ icon: '\uD83D\uDCCA', text: 'SIC: ' + d.sicCode });
       if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Incorporated ' + new Date(d.incorporationDate).toLocaleDateString() });
       if (d.companyNumber) chips.push({ icon: '\uD83D\uDCB3', text: 'No: ' + d.companyNumber });
-      // Link to Companies House
-      if (d.companyNumber) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">View on Companies House</a>' });
+      if (d.companyNumber) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View on Companies House</a>' });
     } else if (leadProduct === 'planning') {
       if (d.council) chips.push({ icon: '\uD83C\uDFDB\uFE0F', text: d.council });
       if (d.applicationRef) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.applicationRef });
@@ -3844,9 +3844,8 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.estimatedValue) chips.push({ icon: '\u00A3', text: 'Est. value: \u00a3' + Number(d.estimatedValue).toLocaleString() });
       if (d.applicantName) chips.push({ icon: '\uD83D\uDC64', text: 'Applicant: ' + d.applicantName });
       if (d.status) chips.push({ icon: '\uD83D\uDD34', text: d.status });
-      // Link to planning portal search
       var searchQuery = (d.council || d.city || '') + ' planning application ' + (d.applicationRef || d.address || '');
-      chips.push({ icon: '\uD83D\uDD0D', text: '<a href="https://www.google.com/search?q=' + encodeURIComponent(searchQuery) + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">Search planning portal</a>' });
+      chips.push({ icon: '\uD83D\uDD0D', text: '<a href="https://www.google.com/search?q=' + encodeURIComponent(searchQuery) + '" target="_blank" style="color:#38bdf8;text-decoration:underline">Search planning portal</a>' });
     } else {
       if (d.buyer) chips.push({ icon: '\uD83C\uDFED', text: d.buyer });
       if (d.contractValue || d.estimatedValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.contractValue || d.estimatedValue).toLocaleString() });
@@ -3855,14 +3854,14 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.publishedDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Published: ' + new Date(d.publishedDate).toLocaleDateString() });
       if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 100) });
       if (d.title) chips.push({ icon: '\uD83D\uDCCB', text: d.title.substring(0, 60) });
-      if (d.tenderUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.tenderUrl + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">View tender</a>' });
-      if (d.portalUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.portalUrl + '" target="_blank" style="color:#0ea5e9;text-decoration:underline">View on portal</a>' });
+      if (d.tenderUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.tenderUrl + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View tender</a>' });
+      if (d.portalUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.portalUrl + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View on portal</a>' });
     }
 
     if (chips.length > 0) {
       body += '<div style="margin-bottom:8px">';
       for (var c = 0; c < chips.length; c++) {
-        body += '<span style="display:inline-block;padding:3px 8px;margin:0 3px 3px 0;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;font-size:11px;color:#374151;white-space:nowrap">' + chips[c].icon + ' ' + chips[c].text + '</span>';
+        body += '<span style="display:inline-block;padding:4px 10px;margin:0 4px 4px 0;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:8px;font-size:12px;color:#94a3b8;white-space:nowrap">' + chips[c].icon + ' ' + chips[c].text + '</span>';
       }
       body += '</div>';
     }
@@ -3872,40 +3871,38 @@ function generateLeadEmailHTML(customer, leads) {
     var hasPhone = d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone || d.mobile;
     var hasWebsite = d.website || d.url;
     if (hasEmail || hasPhone || hasWebsite) {
-      body += '<div style="border-top:1px solid #f3f4f6;padding-top:8px;margin-top:6px">';
-      if (hasEmail) body += '<div style="font-size:11px;color:#6b7280;margin-bottom:2px">\u2709\uFE0F <a href="mailto:' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email) + '" style="color:' + accent + ';text-decoration:none">' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email) + '</a></div>';
-      if (hasPhone) body += '<div style="font-size:11px;color:#6b7280;margin-bottom:2px">\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone || d.mobile) + '</div>';
-      if (hasWebsite) body += '<div style="font-size:11px;color:#6b7280;margin-bottom:2px">\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:' + accent + ';text-decoration:none" target="_blank">' + d.website + '</a></div>';
+      body += '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;margin-top:8px">';
+      if (hasEmail) body += '<div style="font-size:12px;color:#64748b;margin-bottom:3px">\u2709\uFE0F <a href="mailto:' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email) + '" style="color:#38bdf8;text-decoration:none">' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email) + '</a></div>';
+      if (hasPhone) body += '<div style="font-size:12px;color:#64748b;margin-bottom:3px">\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone || d.mobile) + '</div>';
+      if (hasWebsite) body += '<div style="font-size:12px;color:#64748b;margin-bottom:3px">\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:#38bdf8;text-decoration:none" target="_blank">' + d.website + '</a></div>';
       body += '</div>';
     }
 
     // Product-specific action buttons
     if (productName === 'tenders' && d.tenderNoticeId) {
-      body += '<div style="margin-top:10px"><a href="https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId + '" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Apply on Contracts Finder</a></div>';
+      body += '<div style="margin-top:12px"><a href="https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId + '" target="_blank" style="display:block;text-align:center;padding:10px 0;background:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:10px;font-size:13px;font-weight:600">\uD83D\uDD0D Apply on Contracts Finder</a></div>';
     }
     if (productName === 'newbusiness' && d.name) {
-      body += '<div style="margin-top:10px"><a href="https://www.google.com/search?q=' + encodeURIComponent(d.name + ' contact email phone') + '" target="_blank" style="display:block;text-align:center;padding:8px 0;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600">\uD83D\uDD0D Find Contact Details</a></div>';
+      body += '<div style="margin-top:12px"><a href="https://www.google.com/search?q=' + encodeURIComponent(d.name + ' contact email phone') + '" target="_blank" style="display:block;text-align:center;padding:10px 0;background:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:10px;font-size:13px;font-weight:600">\uD83D\uDD0D Find Contact Details</a></div>';
     }
 
     body += '</div></div>';
   }
   body += '</td></tr>';
 
-  // Footer
-  body += '<tr><td style="background:linear-gradient(135deg,#0a2540,#0ea5e9);padding:24px 30px 20px;border-radius:0 0 16px 16px;text-align:center">';
-  body += '<div style="padding-bottom:16px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08)">';
-  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:14px"><tr><td style="width:32px;height:32px;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:#ffffff;line-height:32px;background:rgba(255,255,255,0.2)">9</td><td style="padding-left:7px;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:900;color:rgba(255,255,255,0.7)">amLeads</td></tr></table>';
-  body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:10px 30px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:12px;letter-spacing:0.5px">VIEW DASHBOARD</a>';
-  body += '<p style="color:rgba(255,255,255,0.6);font-size:10px;margin:10px 0 0"><a href="mailto:hello@9amleads.com?subject=Lead%20Issue" style="color:rgba(255,255,255,0.7);text-decoration:underline">Lead issue? Contact us &rarr;</a></p>';
-  body += '</div>';
-  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:12px"><tr>';
-  body += '<td style="padding:0 4px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);line-height:28px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.6);font-size:10px;font-family:Arial">fb</span></a></td>';
-  body += '<td style="padding:0 4px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);line-height:28px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.6);font-size:10px;font-family:Arial">tt</span></a></td>';
-  body += '<td style="padding:0 4px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);line-height:28px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.6);font-size:10px;font-family:Arial">ig</span></a></td>';
+  // Footer — dark sleek
+  body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:28px 30px 24px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">';
+  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:16px"><tr><td style="width:34px;height:34px;border-radius:9px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:#ffffff;line-height:34px;background:linear-gradient(135deg,' + accent + ',#6366f1)">9</td><td style="padding-left:8px;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:900;color:rgba(255,255,255,0.8)">amLeads</td></tr></table>';
+  body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:12px 36px;background:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px;letter-spacing:0.8px">VIEW DASHBOARD</a>';
+  body += '<p style="color:rgba(255,255,255,0.5);font-size:11px;margin:14px 0 0"><a href="mailto:hello@9amleads.com?subject=Lead%20Issue" style="color:rgba(255,255,255,0.6);text-decoration:underline">Lead issue? Contact us &rarr;</a></p>';
+  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:16px 0 12px"><tr>';
+  body += '<td style="padding:0 5px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:600">fb</span></a></td>';
+  body += '<td style="padding:0 5px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:600">tt</span></a></td>';
+  body += '<td style="padding:0 5px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:600">ig</span></a></td>';
   body += '</tr></table>';
-  body += '<p style="color:rgba(255,255,255,0.4);font-size:9px;margin:0 0 4px;letter-spacing:.4px">9am Leads Ltd &bull; Company No. 17168176</p>';
-  body += '<p style="color:rgba(255,255,255,0.35);font-size:8px;margin:0 0 10px;letter-spacing:.3px"><a href="mailto:hello@9amleads.com" style="color:rgba(255,255,255,0.5);text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:rgba(255,255,255,0.5);text-decoration:underline">Privacy Policy</a></p>';
-  body += '<p style="color:rgba(255,255,255,0.25);font-size:7px;margin:0;letter-spacing:.4px">Fresh exclusive opportunities delivered at 9am every morning &bull; 9amLeads.com</p>';
+  body += '<p style="color:rgba(255,255,255,0.3);font-size:10px;margin:0 0 4px;letter-spacing:.4px">9am Leads Ltd &bull; Company No. 17168176</p>';
+  body += '<p style="color:rgba(255,255,255,0.25);font-size:9px;margin:0 0 12px;letter-spacing:.3px"><a href="mailto:hello@9amleads.com" style="color:rgba(255,255,255,0.4);text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:rgba(255,255,255,0.4);text-decoration:underline">Privacy Policy</a></p>';
+  body += '<p style="color:rgba(255,255,255,0.2);font-size:8px;margin:0;letter-spacing:.4px">Fresh exclusive opportunities delivered at 9am every morning &bull; 9amLeads.com</p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
