@@ -2279,9 +2279,12 @@ const PAID_EMAIL_SERIES = [
 ];
 
 function getCampaignEmailHTML(customer, template) {
-  const accent = { moving: '#ff6b35', probate: '#a855f7', newbusiness: '#06b6d4', planning: '#10b981', tenders: '#6366f1' }[customer.product] || '#0ea5e9';
+  var allProds = [customer.product];
+  try { var extra = JSON.parse(customer.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) allProds = extra; } catch(e) {}
+  const productNames = allProds.map(function(p) { var r = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permissions', tenders: 'Public Tenders' }[p]; return r || p; });
+  const accent = { moving: '#ff6b35', probate: '#a855f7', newbusiness: '#06b6d4', planning: '#10b981', tenders: '#6366f1' }[allProds[0]] || '#0ea5e9';
   const bizType = customer.business_type || 'business';
-  const productName = customer.lead_type || 'leads';
+  const productName = productNames.join(' + ');
   
   const templates = {
     trial_day1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Is Active</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Your daily <strong style="color:#fff">' + productName + '</strong> land at <strong style="color:' + accent + '">9am tomorrow</strong>.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to 9amLeads. Over the next 7 days you\'ll receive exclusive <strong>' + productName + '</strong> delivered to your inbox every morning at 9am. Here\'s how to get the most out of your trial:</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:2;margin:0">📥 <strong style="color:#fff">9:00am</strong> : Lead sheet arrives in your inbox<br>📞 <strong style="color:#fff">9:01am</strong> : Start contacting your hot leads<br>💰 <strong style="color:#fff">9:30am</strong> : First quotes going out<br>✅ <strong style="color:#fff">By noon</strong> : Bookings coming in</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">What makes these leads exclusive?</strong> Unlike lead generation sites where your quote is one of dozens, every lead we send is sent to <strong>you alone</strong>. No competitors. No bidding wars. You are the first and only person to contact them.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">💡 Pro tip:</strong> Speed wins in this business. Contact every lead within 30 minutes of receiving them and you\'ll convert at 3x the average rate. Use the AI-drafted email, WhatsApp, and phone scripts in your dashboard for every lead. Set your alarm for 9am and start your lead hour.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">To get the most from your trial, <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">log into your dashboard</a> and set up your CRM webhook so leads flow straight into your system. If you don\'t use a CRM, no problem : leads arrive by email too.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
@@ -2617,12 +2620,15 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
       html = html.replace(/<a href="'/g, '<a href="https://9amleads.com');
       try { await sendBrevoEmail({ email: email, name: 'Test Customer' }, '[REVIEW] ' + subject, html); results.push({ template: template, subject: subject, status: 'sent' }); } catch(s_err) { results.push({ template: template, subject: subject, status: 'error: ' + s_err.message }); }
     }
-    var demoCustomer = { product: 'moving', lead_type: 'Moving Leads', business_type: 'Removal Company', name: 'Test Customer', company: 'Test Company', email: email, plan: 'free_trial' };
+    var testProduct = req.body.product || 'moving';
+    var testLeadType = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permissions', tenders: 'Public Tenders' }[testProduct] || 'Moving Leads';
+    var testBizType = { moving: 'Removal Company', probate: 'Probate Practitioner', newbusiness: 'Agency', planning: 'Architect & Builder', tenders: 'Contractor' }[testProduct] || 'Business';
+    var demoCustomer = { product: testProduct, lead_type: testLeadType, business_type: testBizType, name: 'Test Customer', company: 'Test Company', email: email, plan: 'free_trial' };
     for (var ei = 0; ei < CAMPAIGN_EMAILS.length; ei++) {
       var e = CAMPAIGN_EMAILS[ei];
       await sendIfMatch(e.template, e.subject, demoCustomer);
     }
-    var demoPaid = { product: 'moving', lead_type: 'Moving Leads', business_type: 'Removal Company', name: 'Test Customer', company: 'Test Company', email: email, plan: 'starter' };
+    var demoPaid = { product: testProduct, lead_type: testLeadType, business_type: testBizType, name: 'Test Customer', company: 'Test Company', email: email, plan: 'starter' };
     for (var pi = 0; pi < PAID_EMAIL_SERIES.length; pi++) {
       var p = PAID_EMAIL_SERIES[pi];
       await sendIfMatch(p.template, p.subject, demoPaid);
