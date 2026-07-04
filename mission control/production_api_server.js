@@ -2609,20 +2609,22 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
   try {
     var email = req.body.email || 'ketzman1g@gmail.com';
     var results = [];
-    // Send all trial campaign emails
+    var templateFilter = req.body.template || '';
+    async function sendIfMatch(template, subject, cust) {
+      if (templateFilter && template !== templateFilter) return;
+      var html = getCampaignEmailHTML(cust, template);
+      html = html.replace(/<a href="'/g, '<a href="https://9amleads.com');
+      try { await sendBrevoEmail({ email: email, name: 'Test Customer' }, '[REVIEW] ' + subject, html); results.push({ template: template, subject: subject, status: 'sent' }); } catch(s_err) { results.push({ template: template, subject: subject, status: 'error: ' + s_err.message }); }
+    }
+    var demoCustomer = { product: 'moving', lead_type: 'Moving Leads', business_type: 'Removal Company', name: 'Test Customer', company: 'Test Company', email: email, plan: 'free_trial' };
     for (var ei = 0; ei < CAMPAIGN_EMAILS.length; ei++) {
       var e = CAMPAIGN_EMAILS[ei];
-      var demoCustomer = { product: 'moving', lead_type: 'Moving Leads', business_type: 'Removal Company', name: 'Test Customer', company: 'Test Company', email: email, plan: 'free_trial' };
-      var html = getCampaignEmailHTML(demoCustomer, e.template);
-      html = html.replace(/<a href="'/g, '<a href="https://9amleads.com');
-      try { await sendBrevoEmail({ email: email, name: 'Test Customer' }, '[REVIEW] ' + e.subject, html); results.push({ template: e.template, subject: e.subject, status: 'sent' }); } catch(s_err) { results.push({ template: e.template, subject: e.subject, status: 'error: ' + s_err.message }); }
+      await sendIfMatch(e.template, e.subject, demoCustomer);
     }
-    // Send all paid campaign emails
+    var demoPaid = { product: 'moving', lead_type: 'Moving Leads', business_type: 'Removal Company', name: 'Test Customer', company: 'Test Company', email: email, plan: 'starter' };
     for (var pi = 0; pi < PAID_EMAIL_SERIES.length; pi++) {
       var p = PAID_EMAIL_SERIES[pi];
-      var demoPaid = { product: 'moving', lead_type: 'Moving Leads', business_type: 'Removal Company', name: 'Test Customer', company: 'Test Company', email: email, plan: 'starter' };
-      var html2 = getCampaignEmailHTML(demoPaid, p.template);
-      try { await sendBrevoEmail({ email: email, name: 'Test Customer' }, '[REVIEW] ' + p.subject, html2); results.push({ template: p.template, subject: p.subject, status: 'sent' }); } catch(s_err) { results.push({ template: p.template, subject: p.subject, status: 'error: ' + s_err.message }); }
+      await sendIfMatch(p.template, p.subject, demoPaid);
     }
     res.json({ success: true, total: results.length, results: results });
   } catch(e) { res.status(500).json({ error: e.message }); }
