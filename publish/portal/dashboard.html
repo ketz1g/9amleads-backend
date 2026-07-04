@@ -504,7 +504,7 @@ function toggleSidebar() {
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.sidebar .nav-items a, .sidebar .nav-bottom a').forEach(function(el) {
     el.addEventListener('click', function() {
-      if (window.innerWidth <= 900) { document.getElementById('sidebar')?.classList.remove('open'); document.getElementById('sidebarOverlay')?.classList.remove('show'); }
+      if (window.innerWidth <= 900) { var s = document.getElementById('sidebar'); s?.classList.remove('open'); s?.classList.add('collapsed'); document.querySelector('.main-content')?.classList.add('sidebar-closed'); document.getElementById('sidebarOverlay')?.classList.remove('show'); }
     });
   });
 });
@@ -1523,7 +1523,7 @@ function showPlans() {
       if (sub && sub.plan) { liveSubscription = sub; showPlans(); }
       else { showModal('Plans', '<p style="color:var(--muted2);text-align:center;padding:20px">Unable to load your plan data. <a href="javascript:location.reload()" style="color:var(--primary);text-decoration:underline">Refresh</a> or <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">contact support</a>.</p>'); }
     });
-    showModal('Plans', '<p style="color:#8890a8;text-align:center;padding:20px"><i class="fas fa-spinner fa-spin" style="font-size:18px;display:block;margin-bottom:8px"></i>Loading plans...</p>');
+    showModal('Plans', '<p style="color:#8890a8;text-align:center;padding:20px"><i class="fas fa-spinner fa-spin" style="font-size:18px;display:block;margin-bottom:8px"></i>Loading plans...</p>', '520px');
     return;
   }
   var areasDisplay = (planData.coverage_areas && planData.coverage_areas.length > 0) ? planData.coverage_areas.join(', ') : (planData.coverage_label || 'None set');
@@ -1558,6 +1558,15 @@ function showPlans() {
   overlay.appendChild(modal);
   overlay.onclick = function(e) { if (e.target === this) this.remove(); };
   document.body.appendChild(overlay);
+}
+
+function upgradeTo(plan) {
+  if (!liveSubscription) { showModal('Upgrade', '<p style="color:var(--muted2);text-align:center;padding:20px">Please wait for your plan data to load then try again.</p>'); return; }
+  if (plan === 'enterprise') { window.location.href = 'mailto:hello@9amleads.com?subject=Enterprise%20plan%20enquiry'; return; }
+  apiFetch('/api/subscription/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: plan }) }).then(function(r) {
+    if (r && r.url) { window.location.href = r.url; }
+    else { showModal('Upgrade', '<p style="color:var(--danger);text-align:center;padding:20px">Upgrade failed. Please <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">contact support</a>.</p>'); }
+  });
 }
 
 async function buyExtraPostcodes() {
