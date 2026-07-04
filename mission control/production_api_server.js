@@ -2989,6 +2989,19 @@ function stripeApiRequest(method, path, data) {
   });
 }
 
+// POST /api/admin/upgrade — upgrade a customer's plan (admin only)
+app.post('/api/admin/upgrade', adminAuth, (req, res) => {
+  try {
+    const { email, plan, leads_per_day } = req.body;
+    if (!email || !plan) return res.status(400).json({ error: 'email and plan required' });
+    const customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    db.prepare('UPDATE customers SET plan = ?, leads_per_day = ? WHERE id = ?').run(plan, leads_per_day || 15, customer.id);
+    saveDb();
+    res.json({ success: true, message: customer.company + ' upgraded to ' + plan });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/create-checkout — create Stripe Checkout Session
 app.post('/api/create-checkout', authMiddleware, async (req, res) => {
   try {
