@@ -571,7 +571,7 @@ async function loadNotifications() {
     var n = await apiFetch('/api/notifications');
     if (!n || !n.notifications || n.notifications.length === 0) { document.getElementById('notifications-container').style.display = 'none'; return; }
     var html = n.notifications.map(function(nt) {
-      return '<div style="padding:8px 12px;margin-bottom:4px;background:var(--card2);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)">' +
+      return '<div style="padding:8px 12px;margin-bottom:4px;background:var(--card2);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text)">' +
         '<span style="font-size:14px">' + (nt.type === 'trial_ending' ? '\u23F0' : nt.type === 'low_supply' ? '\u2139\uFE0F' : '\u2705') + '</span>' +
         '<span><strong>' + nt.title + '</strong><br>' + nt.message + '</span></div>';
     }).join('');
