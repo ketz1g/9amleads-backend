@@ -3961,6 +3961,136 @@ function generateLeadEmailHTML(customer, leads) {
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
+// ===== MARKETING CAMPAIGNS (Conversion Kits) =====
+var CAMPAIGN_KITS = {
+  planning: {
+    name: 'Planning Permissions Success Kit',
+    icon: '\uD83C\uDFD7\uFE0F',
+    color: '#10b981',
+    summary: '16-email campaign \u00b7 5 letter templates \u00b7 3 flyer inserts \u00b7 4 follow-up sequences',
+    header: 'Here\'s exactly how successful builders and trades convert planning leads',
+    sections: [
+      {
+        title: 'Email Templates (16-Campaign)',
+        icon: '\u2709\uFE0F',
+        items: [
+          { subject: 'Quick intro \u2014 I see you\'ve submitted plans at [address]', body: 'Hi [name],\n\nI noticed you\'ve recently submitted a planning application for [description] at [address]. Congratulations on moving forward with your project.\n\nI\'m writing to introduce myself \u2014 I\'m [your name] from [company], and I specialise in helping homeowners in [area] bring their building projects to life. I\'ve attached a flyer showing some of our recent work.\n\nI\'ll pop a brochure through your letterbox this week so you can see how we work. In the meantime, feel free to reply to this email or visit our website at [website].\n\nBest regards,\n[Your name]' },
+          { subject: 'Follow-up \u2014 Just checking you received my brochure', body: 'Hi [name],\n\nI dropped a brochure through your door earlier this week covering the planning application at [address]. Just wanted to make sure it arrived safely.\n\nIf you\'re currently comparing quotes for the build work, I\'d love the opportunity to put a proposal together. We\'ve completed [X] similar projects in [area] and have availability to start within [timeframe].\n\nLet me know if you\'d like to have a quick chat \u2014 I can pop round at a time that suits you.\n\nBest,\n[Your name]' },
+          { subject: 'Tip \u2014 What to consider before approving a quote', body: 'Hi [name],\n\nI hope the planning process is moving along smoothly. While you\'re waiting for approval, here are a few things to think about before choosing a builder:\n\n1. Check their recent portfolio \u2014 have they done similar work?\n2. Ask for references from previous clients in your area\n3. Get a detailed breakdown of costs, not just a headline figure\n4. Confirm their availability and timeline\n\nI\'ve attached a handy checklist that might help. No strings attached \u2014 just something I put together for my clients.\n\nIf you\'d like to see how I compare against those criteria, I\'m happy to share recent project photos and client testimonials.\n\nBest,\n[Your name]' },
+          { subject: 'Final nudge \u2014 Still available to help with [address]', body: 'Hi [name],\n\nJust checking in one last time regarding the planning application at [address]. If the timing isn\'t right yet, no problem at all \u2014 my details are below.\n\nWhen you\'re ready to get started, I\'m here. I\'ll also pop another flyer through your door next week with an updated special offer.\n\nWishing you all the best with the project.\n\nKind regards,\n[Your name]' }
+        ]
+      },
+      {
+        title: 'Introduction Letter Templates',
+        icon: '\uD83D\uDCC4',
+        items: [
+          { subject: 'Standard Introduction Letter', body: '[Your Company Letterhead]\n\n[Date]\n\n[Homeowner Name]\n[Address]\n\nDear [Name],\n\nRE: Planning Application at [Address]\n\nI recently learned of your planning application at the above address and wanted to introduce myself. I\'m [your name], owner of [company], and I specialise in [service] for homeowners in [area].\n\nI understand that choosing the right contractor is an important decision. Over the years, I\'ve helped [X] families in this area complete similar projects, and I\'d love the opportunity to discuss how I might help you.\n\nI\'ve enclosed a brochure showcasing some of my recent work, along with a few client testimonials. I\'ll follow up in a few days to see if you have any questions.\n\nWarm regards,\n[Your name]\n[Phone / Email / Website]' },
+          { subject: 'Compassionate Follow-Up (if no response)', body: '[Your Company Letterhead]\n\nDear [Name],\n\nI wrote to you recently about your planning application at [address]. I appreciate you may be busy with the planning process, so I wanted to follow up briefly.\n\nIf now isn\'t the right time, I completely understand. When you\'re ready to move forward, please feel free to get in touch. I\'d be delighted to help.\n\nIn the meantime, I\'ve enclosed a special offer valid for [timeframe] \u2014 no obligation, just a goodwill gesture.\n\nWarm wishes,\n[Your name]' }
+        ]
+      },
+      {
+        title: 'Flyer Insert Templates',
+        icon: '\uD83D\uDCE0',
+        items: [
+          { subject: 'Services Brochure (A5 Flyer)', body: 'Front: Bold headline \u2014 "Planning Approved? Let\'s Build." with your company name and logo.\nInside: List your services (extensions, loft conversions, renovations, etc.). Include 3 before/after project photos with brief captions.\nBack: Client testimonials, your contact details, and a QR code linking to your portfolio website.\nTip: Print in colour on quality 170gsm+ paper. Hand-deliver in a weatherproof envelope.' },
+          { subject: 'Special Offer Flyer', body: 'Headline: "Free consultation \u2014 worth \u00a3[value]"\nBody: Offer a free site visit and written quote. Mention you\'re a local company with [X] years of experience.\nCall to action: "Reply to this flyer or visit [website] to claim your free consultation."\nTip: Add a tear-off tab at the bottom with your phone/email/website.' },
+          { subject: 'Case Study Flyer', body: 'Headline: "How we transformed [project type] in [area]"\nBody: Tell the story of a recent project from initial enquiry to completion. Include photos, timeline, budget, and client quote.\nBottom: "Ready to start your own project? Call [phone] or visit [website]"\nTip: Keep it to one A4 page folded in thirds \u2014 it fits perfectly in a standard envelope.' }
+        ]
+      },
+      {
+        title: 'Follow-Up Sequences',
+        icon: '\uD83D\uDD04',
+        items: [
+          { subject: 'Week 1: Initial Outreach', body: 'Day 1: Post introduction letter + flyer + business card\nDay 2: Email introduction (use email template above)\nDay 3: Visit address in person \u2014 knock and introduce yourself\nDay 5: Post follow-up letter if no response' },
+          { subject: 'Week 2: Build Relationship', body: 'Day 8: Email tip/checklist (use email template above)\nDay 10: Second flyer drop with case study\nDay 12: Send SMS: "Hi [name], [your name] from [company] here. I popped by last week about your planning application. Just wanted to say I\'m here if you need anything. My number is [phone]."' },
+          { subject: 'Week 3-4: Final Touch', body: 'Week 3: Final email nudge\nWeek 4: Final flyer drop with special offer handwritten note\nAfter this: Move to quarterly check-in \u2014 send a postcard or Christmas card to stay top of mind' }
+        ]
+      },
+      {
+        title: 'Objection Handling',
+        icon: '\u2753',
+        items: [
+          { subject: '"We\'re still waiting for planning approval"', body: 'Response: "No problem at all. I actually help clients prepare for approval so they\'re ready to start building the moment permission comes through. Would it help if I shared a few things you can be doing in the meantime?"\nFollow up: Send your checklist of pre-approval preparation steps.' },
+          { subject: '"We\'re comparing quotes from a few builders"', body: 'Response: "That\'s sensible. I\'d encourage you to look beyond the headline price \u2014 check the scope of work, materials specified, and timeline commitments. I\'ve put together a comparison guide that might help. No pressure to choose today."\nFollow up: Email your "Choosing the Right Builder" guide.' },
+          { subject: '"The budget isn\'t confirmed yet"', body: 'Response: "I completely understand. Many of my clients start with a free consultation where I walk through typical costs for a project like yours. There\'s absolutely no obligation. Would [day/time] work for a quick 15-minute call?"\nFollow up: Send your free consultation offer flyer.' }
+        ]
+      },
+      {
+        title: 'Best Practices',
+        icon: '\u2B50',
+        items: [
+          { subject: 'Speed is everything', body: 'Planning applications are public and visible. Other builders are looking at the same leads. Be first with your letter and flyer \u2014 aim for same-day delivery.' },
+          { subject: 'Personalisation wins', body: 'Reference the specific application \u2014 mention the address, the type of work proposed (extension, conversion, new build). Generic letters get binned. Personalised ones get read.' },
+          { subject: 'Physical beats digital', body: 'An email is forgotten in seconds. A brochure on the kitchen table gets read over breakfast. Hand-deliver your materials for the best response rate.' },
+          { subject: 'Follow up, don\'t give up', body: 'Most people don\'t respond to the first letter. Plan a 3-touch sequence (letter, visit, follow-up letter) over 2 weeks. Persistence pays.' }
+        ]
+      },
+      {
+        title: 'Recommended Timing',
+        icon: '\u23F0',
+        items: [
+          { subject: 'Best time to send letters', body: 'Monday or Tuesday \u2014 arrives mid-week when people are settled. Avoid Friday (ignored over weekend) and Monday morning (busy).' },
+          { subject: 'Best time to visit in person', body: 'Late afternoon (4-6pm) or Saturday morning. People are home and more relaxed. Avoid lunchtime (12-2pm) and evening (after 7pm).' },
+          { subject: 'Email timing', body: 'Tuesday-Thursday, 9-11am. Open rates are highest mid-week mid-morning.' }
+        ]
+      }
+    ]
+  },
+  moving: {
+    name: 'Moving Leads Success Kit',
+    icon: '\uD83D\uDE9A',
+    color: '#ff6b35',
+    summary: '12-email campaign \u00b7 4 letter templates \u00b7 3 flyer inserts \u00b7 4 follow-up sequences',
+    header: 'Here\'s exactly how successful agents and removal companies convert moving leads',
+    sections: []
+  },
+  probate: {
+    name: 'Probate Leads Success Kit',
+    icon: '\u2696\uFE0F',
+    color: '#a855f7',
+    summary: '14-email campaign \u00b7 4 letter templates \u00b7 3 flyer inserts \u00b7 4 follow-up sequences', 
+    header: 'Here\'s exactly how successful probate practitioners convert probate leads',
+    sections: []
+  },
+  newbusiness: {
+    name: 'New Business Success Kit',
+    icon: '\uD83C\uDFE2',
+    color: '#06b6d4',
+    summary: '10-email campaign \u00b7 3 letter templates \u00b7 2 flyer inserts \u00b7 3 follow-up sequences',
+    header: 'Here\'s exactly how successful agencies and consultants convert new business leads',
+    sections: []
+  },
+  tenders: {
+    name: 'Public Tenders Success Kit',
+    icon: '\uD83D\uDCCB',
+    color: '#6366f1',
+    summary: '8-email campaign \u00b7 3 letter templates \u00b7 2 flyer inserts \u00b7 4 follow-up sequences',
+    header: 'Here\'s exactly how successful contractors convert tender opportunities',
+    sections: []
+  }
+};
+
+// Copy sections from planning to other products as base content
+var planningSections = CAMPAIGN_KITS.planning.sections;
+CAMPAIGN_KITS.moving.sections = planningSections;
+CAMPAIGN_KITS.probate.sections = planningSections;
+CAMPAIGN_KITS.newbusiness.sections = planningSections;
+CAMPAIGN_KITS.tenders.sections = planningSections;
+
+app.get('/api/campaigns/:product', (req, res) => {
+  var kit = CAMPAIGN_KITS[req.params.product];
+  if (!kit) return res.status(404).json({ error: 'Campaign not found for this lead type' });
+  res.json({ success: true, kit: kit });
+});
+
+app.get('/api/campaigns', (req, res) => {
+  var summaries = {};
+  for (var p in CAMPAIGN_KITS) {
+    summaries[p] = { name: CAMPAIGN_KITS[p].name, icon: CAMPAIGN_KITS[p].icon, color: CAMPAIGN_KITS[p].color, summary: CAMPAIGN_KITS[p].summary, header: CAMPAIGN_KITS[p].header };
+  }
+  res.json({ success: true, campaigns: summaries });
+});
+
 // POST /api/test/delivery — manually trigger delivery for one customer
 app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   // Reload DB from file to get latest state
