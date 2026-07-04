@@ -4071,11 +4071,161 @@ var CAMPAIGN_KITS = {
 };
 
 // Copy sections from planning to other products as base content
-var planningSections = CAMPAIGN_KITS.planning.sections;
-CAMPAIGN_KITS.moving.sections = planningSections;
-CAMPAIGN_KITS.probate.sections = planningSections;
-CAMPAIGN_KITS.newbusiness.sections = planningSections;
-CAMPAIGN_KITS.tenders.sections = planningSections;
+CAMPAIGN_KITS.moving.sections = [
+  { title: 'Email Templates (12-Campaign)', icon: '\u2709\uFE0F', items: [
+    { subject: 'Quick intro — I see your property at [address] has just been listed', body: 'Hi [name],\n\nI noticed your property at [address] has recently come onto the market and I wanted to introduce myself. I\'m [your name] from [company], and I specialise in helping sellers in [area] achieve a fast, fair sale.\n\nI\'ve attached a brochure showing how we work with homeowners like you. I\'ll also pop a printed copy through your door this week.\n\nIn the meantime, if you\'d like to learn how we can help you get the best outcome from your sale, just reply to this email.\n\nBest regards,\n[Your name]' },
+    { subject: 'Follow-up — Your property at [address]', body: 'Hi [name],\n\nI dropped a brochure through your door last week about your property at [address]. I wanted to make sure it arrived and to see if you had any questions.\n\nI know selling a home can feel overwhelming. I help sellers in [area] navigate the process from start to finish. Would you be open to a quick chat?\n\nI\'m happy to pop round at a time that suits you.\n\nBest,\n[Your name]' },
+    { subject: 'Tip — 3 things every seller should know', body: 'Hi [name],\n\nI hope the sale of your property at [address] is going well. While you\'re in the process, here are three things every seller should consider:\n\n1. First impressions matter — kerb appeal can add 5-10% to your final price\n2. Getting the pricing right from day one attracts serious buyers faster\n3. Having a clear timeline reduces stress and helps you plan your next move\n\nI\'ve put together a simple checklist that might help. No strings attached — just something I share with my clients.\n\nIf you\'d like to chat about how I can help, I\'m here.\n\nBest,\n[Your name]' },
+    { subject: 'Final nudge — Still here if you need me', body: 'Hi [name],\n\nJust checking in one last time regarding your property at [address]. If the timing isn\'t right to make a change, I completely understand.\n\nWhen you\'re ready, my details are below. I\'ll also pop another flyer through your door next week with an updated market insight for your area.\n\nWishing you all the best with your sale.\n\nKind regards,\n[Your name]' }
+  ]},
+  { title: 'Introduction Letter Templates', icon: '\uD83D\uDCC4', items: [
+    { subject: 'Standard Introduction Letter', body: '[Your Company Letterhead]\n\n[Date]\n\n[Homeowner Name]\n[Address]\n\nDear [Name],\n\nRE: Your Property at [Address]\n\nI recently noticed your property has come onto the market and wanted to introduce myself. I\'m [your name], owner of [company], and I specialise in helping homeowners in [area] achieve outstanding results when selling or letting their property.\n\nI know that choosing the right agent is one of the most important decisions you\'ll make. That\'s why I take a personal approach — understanding your goals, your timeline, and what matters most to you.\n\nI\'ve enclosed a brochure that explains how I work, along with testimonials from recent clients. I\'ll follow up in a few days to see if you have any questions.\n\nWarm regards,\n[Your name]\n[Phone / Email / Website]' },
+    { subject: 'Compassionate Follow-Up', body: '[Your Company Letterhead]\n\nDear [Name],\n\nI wrote to you recently about your property at [address]. I appreciate you may be busy with the sale process, so I wanted to follow up briefly.\n\nIf now isn\'t the right time, I completely understand. When you\'re ready to have a conversation, I\'d be delighted to help.\n\nIn the meantime, I\'ve enclosed a local market update that you might find useful.\n\nWarm wishes,\n[Your name]' }
+  ]},
+  { title: 'Flyer Insert Templates', icon: '\uD83D\uDCE0', items: [
+    { subject: 'Property Services Brochure (A5 Flyer)', body: 'Front: Bold headline "Selling in [area]? Let\'s Talk." with your photo and company logo.\nInside: List your services (sales, lettings, valuations, etc.), recent sold prices, and 3 success stories.\nBack: Client testimonials, contact details, QR code to your listings.\nTip: Print on quality paper. Hand-deliver in weatherproof envelope.' },
+    { subject: 'Market Insight Flyer', body: 'Headline: "What\'s happening in [area]\'s property market?"\nBody: Show 3-4 local sold prices, average time to sell, current demand levels.\nBottom: "Want a free valuation? Call [phone] or visit [website]"\nTip: Update monthly and keep a stack in your car for impromptu drops.' },
+    { subject: 'Homeowner Checklist Flyer', body: 'Headline: "10 Steps to a Stress-Free Sale"\nBody: Numbered checklist from instruction to completion with your logo.\nBottom: "I help [area] homeowners sell faster. Let\'s talk."\nTip: Useful content gets kept — this flyer stays on the fridge.' }
+  ]},
+  { title: 'Follow-Up Sequences', icon: '\uD83D\uDD04', items: [
+    { subject: 'Week 1: Initial Outreach', body: 'Day 1: Post introduction letter + brochure + business card\nDay 2: Email introduction (use email template above)\nDay 3: Visit property in person — knock and introduce yourself\nDay 5: Post follow-up letter if no response' },
+    { subject: 'Week 2: Build Relationship', body: 'Day 8: Email market insight tip\nDay 10: Second flyer drop with market update\nDay 12: Send SMS: "Hi [name], [your name] from [company] here. I popped by about your property. Happy to help anytime — [phone]"' },
+    { subject: 'Week 3-4: Final Touch', body: 'Week 3: Final email nudge\nWeek 4: Final flyer drop with handwritten note\nAfter: Quarterly check-in — send market updates to stay top of mind' }
+  ]},
+  { title: 'Objection Handling', icon: '\u2753', items: [
+    { subject: '"I\'m happy with my current agent"', body: 'Response: "That\'s great to hear. If things change or you\'d like a second opinion on your property\'s value, I\'m always happy to provide a free, no-obligation market appraisal. My service is built around a more personal approach."\nFollow up: Send your client testimonials brochure.' },
+    { subject: '"I\'m not sure about the timing"', body: 'Response: "Spring and autumn are traditionally the strongest selling seasons, but properties in [area] are selling year-round. I can show you recent comparable sales and help you decide what\'s right for your situation."\nFollow up: Email your local market data flyer.' },
+    { subject: '"I need to discuss with my partner"', body: 'Response: "Of course. I\'ve put together a simple information pack that explains everything — commission, marketing plan, timeline. Would it help if I posted a printed copy for you both to review together?"\nFollow up: Post printed info pack with both their names on it.' }
+  ]},
+  { title: 'Best Practices', icon: '\u2B50', items: [
+    { subject: 'Speed matters', body: 'Properties go SSTC every day. Be first with your letter and flyer — aim for same-day delivery when a new listing appears in your area.' },
+    { subject: 'Personalise everything', body: 'Reference the specific property address, the estate agent\'s description, and the asking price. Generic letters get ignored.' },
+    { subject: 'Physical beats digital', body: 'A brochure on the kitchen table gets read. Hand-deliver your materials — it shows you\'re local and committed.' },
+    { subject: 'Follow up systematically', body: 'Most people don\'t respond to the first letter. Plan a 3-touch sequence over 2 weeks.' }
+  ]},
+  { title: 'Recommended Timing', icon: '\u23F0', items: [
+    { subject: 'Best time to send letters', body: 'Tuesday or Wednesday — arrives mid-week when people are settled. Avoid Fridays and Mondays.' },
+    { subject: 'Best time to visit in person', body: 'Late afternoon (4-6pm) or Saturday morning. Avoid lunchtime and after 7pm.' },
+    { subject: 'Email timing', body: 'Tuesday-Thursday, 9-11am. Highest open rates mid-week mid-morning.' }
+  ]}
+];
+
+CAMPAIGN_KITS.probate.sections = [
+  { title: 'Email Templates (14-Campaign)', icon: '\u2709\uFE0F', items: [
+    { subject: 'Compassionate intro regarding [deceased] estate', body: 'Dear [name],\n\nI was sorry to learn of the passing of [deceased name]. I understand this is a difficult time, and I want to be respectful of that.\n\nI\'m writing because I specialise in helping families in [area] navigate the probate process. Many people don\'t realise that probate can take 6-12 months, and having the right support early makes a significant difference.\n\nI\'ve enclosed a guide that explains the process in simple terms — no jargon, no pressure. I\'ll also post a printed copy to you this week.\n\nIf you\'d find it helpful to have a chat when you\'re ready, I\'m here.\n\nWith sincere regards,\n[Your name]' },
+    { subject: 'Follow-up — Probate guide for [deceased] estate', body: 'Dear [name],\n\nI hope you received the probate guide I posted regarding [deceased name]\'s estate. I wanted to check you had it and to see if any questions came to mind.\n\nProbate involves several steps — valuing the estate, paying any inheritance tax, applying for the grant, and finally distributing assets. I help families through each stage.\n\nThere\'s absolutely no obligation. If you\'d like to have a brief conversation about your situation, I\'d be happy to help.\n\nBest regards,\n[Your name]' },
+    { subject: 'Tip — 5 things to know about probate', body: 'Dear [name],\n\nI hope you\'re managing ok following your loss. I wanted to share a few things that might be helpful as you navigate the probate process:\n\n1. You don\'t have to do it alone — probate practitioners can handle everything\n2. Inheritance tax must be paid within 6 months of the death\n3. The grant of probate typically takes 8-16 weeks to obtain\n4. Estate accounts need to be prepared for beneficiaries\n5. Professional fees are often recoverable from the estate\n\nI\'ve put together a simple checklist that explains each step. If you\'d like a copy, just reply and I\'ll send it over.\n\nWarm regards,\n[Your name]' },
+    { subject: 'Final gentle nudge', body: 'Dear [name],\n\nJust checking in one last time regarding [deceased name]\'s estate. If the timing isn\'t right to get help yet, I completely understand.\n\nWhen you\'re ready, my details are below. I\'ll also post another information pack next month with an updated probate guide.\n\nWishing you all the best.\n\nKind regards,\n[Your name]' }
+  ]},
+  { title: 'Introduction Letter Templates', icon: '\uD83D\uDCC4', items: [
+    { subject: 'Compassionate Introduction Letter', body: '[Your Company Letterhead]\n\n[Date]\n\n[Executor Name]\n[Address]\n\nDear [Name],\n\nRE: Estate of [Deceased Name]\n\nI understand this may be a difficult time, and I wanted to write to you with the utmost respect and sensitivity.\n\nMy name is [your name], and I am a probate practitioner based in [area]. I help families like yours navigate the probate process — from valuing the estate and dealing with inheritance tax to obtaining the grant and distributing assets.\n\nI\'ve enclosed a simple guide that explains the process step by step. There is absolutely no obligation — I simply wanted you to know that support is available if and when you need it.\n\nWith sincere regards,\n[Your name]\n[Phone / Email / Website]' },
+    { subject: 'Follow-Up Letter', body: '[Your Company Letterhead]\n\nDear [Name],\n\nI wrote to you recently regarding the estate of [deceased name]. I appreciate you may need time to consider your options, and I wanted to follow up briefly.\n\nIf now isn\'t the right time, that\'s completely fine. When you\'re ready to have a conversation, please don\'t hesitate to get in touch.\n\nIn the meantime, I\'ve enclosed a frequently asked questions guide about probate that you might find useful.\n\nWarm wishes,\n[Your name]' }
+  ]},
+  { title: 'Flyer Insert Templates', icon: '\uD83D\uDCE0', items: [
+    { subject: 'Probate Services Brochure (A5 Flyer)', body: 'Front: Gentle headline "Navigating Probate? You Don\'t Have To Do It Alone." with your logo.\nInside: List your services (grant application, estate accounts, IHT returns, asset distribution). Include testimonials from families you\'ve helped.\nBack: Step-by-step probate timeline infographic. Contact details.\nTip: Use warm colours and compassionate language. Avoid aggressive sales messaging.' },
+    { subject: 'Probate Guide Flyer', body: 'Headline: "Probate in Plain English — A Simple Guide"\nBody: Brief explanation of the probate process in 5 simple steps with estimated timeframes.\nBottom: "Need help? I\'m here. Call [phone] or visit [website]"\nTip: This is an educational piece — families keep it for reference.' },
+    { subject: 'Executor Checklist Flyer', body: 'Headline: "Your 10-Step Probate Checklist"\nBody: Actionable checklist from registering the death to final distribution.\nBottom: "Tick each step off with professional support — free initial chat."\nTip: Print on high-quality paper. The checklist format makes it useful for months.' }
+  ]},
+  { title: 'Follow-Up Sequences', icon: '\uD83D\uDD04', items: [
+    { subject: 'Week 1: Initial Outreach', body: 'Day 1: Post compassionate letter + probate guide + business card\nDay 2: Email introduction (use email template above)\nDay 3: Visit address in person — leave card if no answer\nDay 5: Post follow-up letter' },
+    { subject: 'Week 2: Nurture', body: 'Day 8: Email probate FAQ guide\nDay 10: Second flyer drop with executor checklist\nDay 12: Send SMS: "Hi [name], [your name] here. Just following up on the probate guide I sent. Happy to help anytime — [phone]"' },
+    { subject: 'Week 3-4: Gentle Final Touch', body: 'Week 3: Final email nudge\nWeek 4: Final information pack drop\nAfter: Quarterly check-in — send updated probate guides or seasonal card' }
+  ]},
+  { title: 'Objection Handling', icon: '\u2753', items: [
+    { subject: '"We\'re handling it ourselves"', body: 'Response: "Many families start that way, and that\'s completely understandable. If at any point you find the process overwhelming — particularly with the inheritance tax return or estate accounts — please know I\'m here to help with as much or as little as you need."\nFollow up: Send your probate step-by-step guide.' },
+    { subject: '"We\'re using a local solicitor"', body: 'Response: "That\'s a sensible approach. If I can share one piece of advice — make sure they specialise in probate and know the current IHT thresholds. I\'d be happy to provide a free second opinion on any aspect of the estate if helpful."\nFollow up: Email your probate FAQ sheet.' },
+    { subject: '"We need to discuss with family"', body: 'Response: "Of course. I\'ve put together a simple information pack that you can share with them. It explains everything clearly — costs, process, timeline. Would you like me to post a printed copy?"\nFollow up: Post printed information pack addressed to the family.' }
+  ]},
+  { title: 'Best Practices', icon: '\u2B50', items: [
+    { subject: 'Lead with compassion', body: 'Probate is emotional. Your tone must be gentle, respectful, and helpful — never pushy. Families remember how you made them feel.' },
+    { subject: 'Educate, don\'t sell', body: 'Most people don\'t understand probate. Provide useful guides and checklists. Position yourself as the expert who helps, not the salesperson who pitches.' },
+    { subject: 'Physical materials build trust', body: 'A professional printed guide left with the family conveys credibility. It shows you\'re established and serious about helping.' },
+    { subject: 'Be patient', body: 'Probate decisions take weeks or months. Follow up gently over time. Families rarely buy on the first contact.' }
+  ]},
+  { title: 'Recommended Timing', icon: '\u23F0', items: [
+    { subject: 'Best time to send letters', body: 'Mid-week (Tuesday-Thursday). Avoid the anniversary of the death or known family occasions.' },
+    { subject: 'Best time to visit', body: 'Late afternoon, 3-5pm. Be prepared to leave quietly if the family is not ready to engage.' },
+    { subject: 'Email timing', body: 'Tuesday-Thursday, 10am-12pm. Keep subject lines warm and non-salesy.' }
+  ]}
+];
+
+CAMPAIGN_KITS.newbusiness.sections = [
+  { title: 'Email Templates (10-Campaign)', icon: '\u2709\uFE0F', items: [
+    { subject: 'Congratulations on your new company registration', body: 'Hi [name],\n\nCongratulations on registering [company name] with Companies House. Starting a new business is an exciting step, and I wanted to be one of the first to welcome you.\n\nI\'m [your name] from [company], and I help new businesses in [area] with [service — accounting, marketing, IT, consultancy, etc.]. Many of my clients started exactly where you are now.\n\nI\'ve put together a welcome pack for newly registered companies — it includes a guide to the first steps every new business should take. I\'ll also post a printed copy to your registered address this week.\n\nIf you\'d find it helpful to have a no-obligation chat about how we might work together, I\'d love to hear from you.\n\nBest regards,\n[Your name]' },
+    { subject: 'Follow-up — Your welcome pack for [company name]', body: 'Hi [name],\n\nI hope you received the welcome pack I posted for [company name]. I wanted to check it arrived and to see how your first few weeks of trading are going.\n\nIf you\'d like any help with [specific service], I\'d be happy to have a brief call. There\'s no obligation — I simply want to introduce myself as a local resource for new businesses.\n\nBest,\n[Your name]' },
+    { subject: 'Tip — 5 things every new business should do in month one', body: 'Hi [name],\n\nRunning a new business is busy — I get it. Here are five things that will set you up for success in your first month:\n\n1. Set up a separate business bank account\n2. Register for VAT if your turnover will exceed \u00a390,000\n3. Get your accounting software in place\n4. Set up a basic website with your business details\n5. Register with the Information Commissioner\'s Office (ICO) if you handle personal data\n\nI\'ve put together a more detailed checklist. If you\'d like a copy, just reply and I\'ll send it over.\n\nBest,\n[Your name]' },
+    { subject: 'Final nudge — Still here to help [company name]', body: 'Hi [name],\n\nJust checking in one last time regarding [company name]. If the timing isn\'t right to bring in support yet, I completely understand.\n\nWhen you\'re ready, my details are below. I\'ll also pop another information pack in the post next month with some useful resources for growing businesses.\n\nWishing you every success with your new venture.\n\nKind regards,\n[Your name]' }
+  ]},
+  { title: 'Introduction Letter Templates', icon: '\uD83D\uDCC4', items: [
+    { subject: 'New Business Welcome Letter', body: '[Your Company Letterhead]\n\n[Date]\n\n[Company Name]\n[Registered Address]\n\nDear [Name],\n\nRE: Welcome to [Company Name]\n\nI recently noticed that you\'ve registered [company name] with Companies House, and I wanted to be the first to welcome you.\n\nI\'m [your name], founder of [company], and I specialise in helping new businesses like yours with [service]. I know the first few months can feel overwhelming, so I\'ve put together a welcome pack with practical advice for getting started.\n\nI\'ve enclosed it with this letter. There\'s absolutely no obligation — I simply wanted to introduce myself as someone who can help when you\'re ready.\n\nWarm regards,\n[Your name]\n[Phone / Email / Website]' },
+    { subject: 'Follow-Up Letter', body: '[Your Company Letterhead]\n\nDear [Name],\n\nI wrote to you recently to welcome you on the registration of [company name]. I hope you found the welcome pack useful.\n\nIf now isn\'t the right time to engage support, I completely understand. When you\'re ready, please feel free to get in touch.\n\nIn the meantime, I\'ve enclosed a business planning guide that you might find helpful as you grow.\n\nWarm wishes,\n[Your name]' }
+  ]},
+  { title: 'Flyer Insert Templates', icon: '\uD83D\uDCE0', items: [
+    { subject: 'New Business Services Flyer', body: 'Front: Bold "Congratulations on your new business!" with your company logo.\nInside: List your services tailored to new/small businesses. Include pricing options or package deals.\nBack: Client testimonials, your qualifications, contact details.\nTip: Keep the tone celebratory and supportive — not salesy.' },
+    { subject: 'Startup Checklist Flyer', body: 'Headline: "Your First 90 Days in Business — A Checklist"\nBody: Actionable checklist across legal, financial, marketing, and operations.\nBottom: "Need help checking things off? Let\'s talk."\nTip: This is a high-value resource — businesses keep it pinned to their noticeboard.' },
+    { subject: 'Services Overview (A4 Tri-Fold)', body: 'Panel 1: Your story — why you help new businesses.\nPanel 2: Your services with clear pricing or packages.\nPanel 3: Case study — how you helped a similar business succeed.\nTip: Use bullet points and clear headings. Busy founders skim-read.' }
+  ]},
+  { title: 'Follow-Up Sequences', icon: '\uD83D\uDD04', items: [
+    { subject: 'Week 1: Initial Outreach', body: 'Day 1: Post welcome letter + startup pack + business card\nDay 2: Email introduction (use email template above)\nDay 3: Visit registered address in person if local\nDay 5: Post follow-up letter' },
+    { subject: 'Week 2: Nurture', body: 'Day 8: Email tip/checklist\nDay 10: Second flyer drop with case study\nDay 12: Send SMS: "Hi [name], [your name] from [company]. I sent a welcome pack for [company name]. Happy to help at any stage — [phone]"' },
+    { subject: 'Week 3-4: Final Touch', body: 'Week 3: Final email nudge\nWeek 4: Final flyer drop with special offer\nAfter: Quarterly check-in — send business tips or seasonal offers' }
+  ]},
+  { title: 'Objection Handling', icon: '\u2753', items: [
+    { subject: '"We already have someone"', body: 'Response: "That\'s great to hear. If your needs ever change or you\'d like a second opinion on anything — from pricing to service scope — I\'d be happy to help. No pressure at all."\nFollow up: Send your service comparison guide.' },
+    { subject: '"We\'re not ready yet / it\'s early days"', body: 'Response: "I completely understand — the first few months are about finding your feet. When you\'re ready to think about [service], I\'d love to have a conversation. In the meantime, I\'ll send you a few resources that might be useful."\nFollow up: Email your new business checklist.' },
+    { subject: '"We need to check our budget"', body: 'Response: "Of course. I offer flexible options designed for growing businesses. Would it help if I sent over a simple pricing breakdown with different package levels?"\nFollow up: Post your pricing overview flyer.' }
+  ]},
+  { title: 'Best Practices', icon: '\u2B50', items: [
+    { subject: 'Be early', body: 'New companies register every day. Being the first to reach out positions you as proactive and attentive.' },
+    { subject: 'Celebrate their launch', body: 'A new business registration is exciting. Your tone should be congratulatory and supportive, not transactional.' },
+    { subject: 'Keep an eye on their website', body: 'Many new businesses launch their website weeks after registering. Check periodically and reference it in your follow-up.' },
+    { subject: 'Build a relationship', body: 'Founders are busy. Don\'t expect an instant sale. Nurture the relationship over weeks and months.' }
+  ]},
+  { title: 'Recommended Timing', icon: '\u23F0', items: [
+    { subject: 'Best time to send letters', body: 'Within 48 hours of their company appearing on Companies House. Speed gives you first-mover advantage.' },
+    { subject: 'Best time to visit', body: 'Late morning (10-12pm) or early afternoon (2-4pm). Registered offices may be staffed during business hours.' },
+    { subject: 'Email timing', body: 'Tuesday-Thursday, 9-11am. Business owners check email first thing.' }
+  ]}
+];
+
+CAMPAIGN_KITS.tenders.sections = [
+  { title: 'Email Templates (8-Campaign)', icon: '\u2709\uFE0F', items: [
+    { subject: 'Tender opportunity — [tender title/ref] in your area', body: 'Hi [name],\n\nI came across a tender opportunity that matches your expertise — [tender title] published by [buying organisation].\n\nI\'m [your name] from [company], and I help [business type] like yours identify and win public sector contracts.\n\nThe tender closes on [closing date], so time is of the essence. I\'ve put together a quick checklist of what you\'ll need to prepare a strong submission.\n\nIf you\'d like me to review the tender documents or help with your capability statement, I\'d be happy to help.\n\nBest regards,\n[Your name]' },
+    { subject: 'Follow-up — Tender support for [tender title]', body: 'Hi [name],\n\nI wanted to follow up on the [tender title] opportunity I mentioned. Have you had a chance to review the tender documents?\n\nPublic sector bids can be time-consuming, but they\'re also highly rewarding — successful contracts often lead to repeat business. If you\'d like support with your submission, I can help with:\n\n- Reviewing the tender documents\n- Drafting your capability statement\n- Pricing guidance\n- Quality questionnaire responses\n\nLet me know if a quick call would be helpful.\n\nBest,\n[Your name]' },
+    { subject: 'Tip — 5 tips for winning public sector tenders', body: 'Hi [name],\n\nWinning public sector tenders is about more than the lowest price. Here are five tips that will strengthen your submissions:\n\n1. Read the full tender document before you start writing\n2. Answer every question directly — don\'t leave anything blank\n3. Provide evidence for every claim you make\n4. Price realistically — public sector buyers value quality over lowest cost\n5. Submit before the deadline — late submissions are rejected automatically\n\nI\'ve put together a more detailed tender preparation guide. Would you like me to send a copy?\n\nBest,\n[Your name]' },
+    { subject: 'Final nudge — Upcoming opportunities in your sector', body: 'Hi [name],\n\nJust checking in one last time regarding the tender opportunities in your sector. If now isn\'t the right time to bid, I completely understand.\n\nWhen you\'re ready to start bidding, I\'m here to help with tender preparation, capability statements, and submission reviews.\n\nI\'ll send through any relevant opportunities I come across in the future.\n\nKind regards,\n[Your name]' }
+  ]},
+  { title: 'Introduction Letter Templates', icon: '\uD83D\uDCC4', items: [
+    { subject: 'Capability Statement Cover Letter', body: '[Your Company Letterhead]\n\n[Date]\n\n[Procurement Manager Name]\n[Bought Organisation]\n\nDear [Name],\n\nRE: [Tender Title / Reference Number]\n\nI am writing to introduce [company name] and express our interest in the above tender opportunity.\n\n[Company name] specialises in [service], and we have successfully delivered similar contracts for [relevant clients or sectors]. I\'ve enclosed our capability statement which provides full details of our experience, accreditations, and track record.\n\nWe would welcome the opportunity to submit a full tender response and look forward to your feedback.\n\nYours sincerely,\n[Your name]\n[Position]\n[Company]\n[Phone / Email / Website]' },
+    { subject: 'Company Introduction Letter (for framework applications)', body: '[Your Company Letterhead]\n\nDear [Name],\n\nI\'m writing to introduce [company name] as a potential supplier for [service area]. We have been delivering [service] for [X] years and are particularly experienced in [specific expertise].\n\nI\'ve enclosed our company brochure and capability statement. We would welcome the opportunity to be considered for future tender opportunities within your organisation.\n\nI will follow up next week to discuss how we might work together.\n\nYours faithfully,\n[Your name]' }
+  ]},
+  { title: 'Flyer Insert Templates', icon: '\uD83D\uDCE0', items: [
+    { subject: 'Capability Statement (A4 Professional Document)', body: 'Header: Company logo, name, and contact details.\nSection 1: Company overview — who you are, what you do, key differentiators.\nSection 2: Relevant experience — 3-4 case studies with client names, contract values, outcomes.\nSection 3: Accreditations, certifications, insurance details.\nSection 4: Testimonials and client references.\nTip: Keep to 2-4 pages maximum. Procurement managers read quickly.' },
+    { subject: 'Services Overview Flyer', body: 'Front: "Trusted [service] provider for the public sector"\nInside: Services offered, geographic coverage, contract value range, key clients.\nBack: Contact details, website, company registration number, certifications.\nTip: Print in full colour on quality paper. This doubles as a leave-behind after meetings.' },
+    { subject: 'Case Study Flyer', body: 'Headline: "How we delivered [project] for [client] — \u00a3[X] under budget"\nBody: Problem → Solution → Results format with measurable outcomes and client quote.\nBottom: "Ready to discuss your next tender? Contact us."\nTip: Specific, measurable results are what procurement teams want to see.' }
+  ]},
+  { title: 'Follow-Up Sequences', icon: '\uD83D\uDD04', items: [
+    { subject: 'Week 1: Initial Outreach', body: 'Day 1: Submit tender application / post capability statement\nDay 2: Email follow-up\nDay 3: Phone call to procurement contact\nDay 5: Post company brochure to buying organisation' },
+    { subject: 'Week 2: Build Relationship', body: 'Day 8: Email relevant case study\nDay 10: Post additional supporting documents\nDay 12: Send SMS or LinkedIn message to procurement contact' },
+    { subject: 'Week 3-4: Close or Next Opportunity', body: 'Week 3: Final email + call to check on decision timeline\nWeek 4: If unsuccessful, request debrief and feedback\nOngoing: Monitor for new opportunities and re-engage' }
+  ]},
+  { title: 'Objection Handling', icon: '\u2753', items: [
+    { subject: '"We\'re not accepting new suppliers"', body: 'Response: "I understand. Would it be possible to be added to your approved supplier list for when it opens? I\'d also welcome the opportunity to submit a capability statement for your records."\nFollow up: Send capability statement for their files.' },
+    { subject: '"We already have preferred suppliers"', body: 'Response: "That\'s good to hear. If any of your current suppliers are unable to deliver, we\'d welcome the opportunity to step in. I\'ll leave my details and capability statement with you."\nFollow up: Re-engage every 6 months with updated capability statement.' },
+    { subject: '"The budget has already been allocated"', body: 'Response: "Understood. Are there any upcoming projects in your pipeline that we could be considered for? I\'d be happy to provide early input at no cost."\nFollow up: Send relevant case studies for future reference.' }
+  ]},
+  { title: 'Best Practices', icon: '\u2B50', items: [
+    { subject: 'Read every word', body: 'Tender documents contain critical information — evaluation criteria, deadlines, formatting requirements. Missing a detail can disqualify you.' },
+    { subject: 'Provide evidence', body: 'Don\'t just say you can do something. Prove it with case studies, client references, and measurable outcomes.' },
+    { subject: 'Submit early', body: 'Aim to submit 24-48 hours before the deadline. This avoids last-minute technical issues and shows you\'re organised.' },
+    { subject: 'Request feedback', body: 'If you\'re unsuccessful, request a debrief. Procurement teams are required to provide feedback, and it\'s invaluable for improving future bids.' }
+  ]},
+  { title: 'Recommended Timing', icon: '\u23F0', items: [
+    { subject: 'When to start preparing', body: 'As soon as the tender is published. Many tenders have a 3-6 week window, but quality submissions take time to prepare.' },
+    { subject: 'Best time to contact buyers', body: 'Early in the tender period (first 1-2 weeks). Procurement teams are more accessible before the rush before the deadline.' },
+    { subject: 'Email timing', body: 'Tuesday-Thursday, 9-11am. Public sector procurement officers are most responsive mid-week mid-morning.' }
+  ]}
+];
 
 app.get('/api/campaigns/:product', (req, res) => {
   var kit = CAMPAIGN_KITS[req.params.product];
