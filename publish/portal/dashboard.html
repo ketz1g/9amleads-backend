@@ -473,7 +473,7 @@ async function loadDashboard() {
     document.getElementById('stat-new').textContent = '0';
     renderLeads();
     var banner = document.getElementById('onboardingBanner');
-    banner.innerHTML = '<i class="fas fa-clock" style="color:var(--primary)"></i> <strong>Waiting for leads</strong> \u2014 Your real leads will arrive at 9am after the daily scrape and distribution pipeline runs.';
+    banner.innerHTML = '<i class="fas fa-clock" style="color:var(--primary)"></i> <strong>Waiting for leads</strong> \u2014 Your first leads will arrive at 9am tomorrow. We\'re sourcing and matching them to your criteria now.';
     banner.style.display = 'flex';
   }
   loadDashboardData();
@@ -1240,7 +1240,7 @@ function generateDemoLeads(session) {
   renderLeads();
   // Show demo mode banner
   const banner = document.getElementById('onboardingBanner');
-  banner.innerHTML = '<i class="fas fa-flask" style="color:var(--warning)"></i> <strong>Demo Mode</strong> G·· Showing sample leads. Your real leads will appear after the 9am daily scrape and distribution pipeline runs.';
+  banner.innerHTML = '<i class="fas fa-flask" style="color:var(--warning)"></i> <strong>Demo Mode</strong> \u2014 Showing sample leads. Your real leads will arrive at 9am tomorrow once matched to your area.';
   banner.style.display = 'flex';
 }
 
