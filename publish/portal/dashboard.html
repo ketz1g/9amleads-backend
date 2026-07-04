@@ -10,7 +10,7 @@
 :root.dark{--bg:#07090f;--bg2:#04060a;--card:#0c0f1a;--card2:#090b14;--border:#151929;--border2:#1e2340;--text:#dce2f0;--text2:#8890b0;--muted:#5a6280;--muted2:#3a4160;--shadow:0 1px 3px rgba(0,0,0,.3);--shadow-lg:0 8px 32px rgba(0,0,0,.5)}
 body{font-family:var(--ff-b);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);z-index:200;display:flex;flex-direction:column;overflow-y:auto;transition:.3s;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);z-index:200;display:flex;flex-direction:column;overflow-y:auto;transition:transform .3s;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}.sidebar.collapsed{transform:translateX(-100%)}
 .sidebar .logo{padding:20px 20px 16px;display:flex;align-items:center;gap:8px;font-size:17px;font-weight:900;font-family:var(--ff-h);text-decoration:none;color:var(--text)}.sidebar .logo .mark{width:28px;height:28px;background:linear-gradient(135deg,var(--primary),#2563eb);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:900}.sidebar .logo span{color:var(--primary)}
 .sidebar .nav-items{flex:1;padding:8px 10px}.sidebar .nav-items a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;transition:all .15s;margin-bottom:2px}.sidebar .nav-items a:hover{color:var(--text);background:var(--card2)}.sidebar .nav-items a.active{color:var(--primary);background:rgba(14,165,233,.08);font-weight:600}.sidebar .nav-items a i{width:18px;text-align:center;font-size:14px}
 .sidebar .nav-bottom{padding:8px 10px;border-top:1px solid var(--border)}.sidebar .nav-bottom a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;transition:all .15s}.sidebar .nav-bottom a:hover{color:var(--text);background:var(--card2)}
@@ -32,15 +32,14 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 .cal-popup{position:absolute;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-lg);width:260px;display:none;right:0}.cal-popup.show{display:block}.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px}.cal-grid .cal-day{text-align:center;padding:6px 4px;border-radius:6px;font-size:12px;cursor:pointer;color:var(--text2);transition:all .15s}.cal-grid .cal-day:hover{background:rgba(14,165,233,.1);color:var(--primary)}.cal-grid .cal-day.active{background:var(--primary);color:#fff}.cal-grid .cal-day.muted{color:var(--muted2)}.cal-grid .cal-day.today{background:rgba(14,165,233,.12);color:var(--primary);font-weight:700}.cal-grid .cal-header{text-align:center;padding:4px;font-size:10px;color:var(--muted2);font-weight:600;text-transform:uppercase}.cal-month-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.cal-month-nav span{font-size:13px;font-weight:700;font-family:var(--ff-h)}.cal-month-nav button{background:none;border:none;color:var(--text2);cursor:pointer;padding:4px 8px;font-size:14px;transition:color .15s}.cal-month-nav button:hover{color:var(--primary)}
 /* === MOBILE RESPONSIVE === */
 /* Sidebar toggle button (hidden on desktop) */
-.sidebar-toggle{display:none;position:fixed;top:12px;left:12px;z-index:300;width:40px;height:40px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:18px;cursor:pointer;align-items:center;justify-content:center;box-shadow:var(--shadow-lg)}.sidebar-toggle:hover{background:var(--card2)}
+.sidebar-toggle{display:flex;position:fixed;top:12px;left:12px;z-index:300;width:40px;height:40px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:18px;cursor:pointer;align-items:center;justify-content:center;box-shadow:var(--shadow-lg);transition:.15s}.sidebar-toggle:hover{background:var(--card2)}.sidebar-toggle.closed{left:12px}.sidebar.collapsed{transform:translateX(-100%)}.main-content.sidebar-closed{margin-left:0}
 .sidebar-overlay{display:none;position:fixed;inset:0;z-index:199;background:rgba(0,0,0,0.5)}
 
 @media(max-width:900px){
-  .sidebar-toggle{display:flex}
-  .sidebar{transform:translateX(-100%);z-index:300;box-shadow:var(--shadow-lg)}
+  .sidebar{z-index:300;box-shadow:var(--shadow-lg)}
   .sidebar.open{transform:translateX(0)}
   .sidebar-overlay.show{display:block}
-  .main-content{margin-left:0;padding:16px}
+  .main-content{padding:16px}
   .kpi-grid{grid-template-columns:repeat(2,1fr);gap:10px}
   .kpi-card{padding:14px}.kpi-card .kpi-num{font-size:22px}
   .section{padding:14px}
@@ -97,11 +96,10 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
   .page-header h1{font-size:18px}
   #prompts-container>div>div{padding:8px 10px;font-size:11px}
   #notifications-container>div>div{padding:6px 10px;font-size:11px}
-  .sidebar-toggle{display:flex;position:fixed;top:12px;left:12px;z-index:300;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:16px;box-shadow:var(--shadow-lg)}
-  .sidebar{position:fixed;top:0;left:-280px;bottom:0;width:260px;z-index:500;transition:left .3s;padding-top:60px}
-  .sidebar.open{left:0}
+  .sidebar{z-index:500;padding-top:60px;width:260px}
+  .sidebar.open{transform:translateX(0)}
   .sidebar-overlay.show{display:block;z-index:499}
-  .main-content{margin-left:0;padding:60px 14px 20px}
+  .main-content{padding:60px 14px 20px}
   .top-bar{flex-direction:column;align-items:flex-start;gap:8px}
   .top-bar .actions{width:100%}
   .top-bar .actions .btn{flex:1;font-size:11px;padding:6px 8px}
@@ -113,7 +111,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <body>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" style="display:none"></div>
 <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-<div class="sidebar" id="sidebar">
+<div class="sidebar collapsed" id="sidebar">
 <a href="/portal/dashboard.html" class="logo"><div class="mark">9</div>9am<span>Leads</span></a>
 <div class="nav-items">
 <a href="/portal/dashboard.html" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
@@ -134,7 +132,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <button class="nav-signout" id="logout-btn" onclick="logout()" style="background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;padding:9px 12px;border-radius:8px;display:flex;align-items:center;gap:10px;width:100%;font-family:inherit;font-weight:500"><i class="fas fa-sign-out-alt" style="width:18px;text-align:center"></i> Sign Out</button>
 </div>
 </div>
-<div class="main-content">
+<div class="main-content sidebar-closed">
 <div class="top-bar">
 <div class="greeting" id="greeting">Good morning<span id="customer-name"></span><small id="delivery-status">Loading your dashboard...</small></div>
 <!-- Onboarding Progress Widget -->
@@ -490,8 +488,13 @@ async function loadDashboard() {
 
 // ===== MOBILE SIDEBAR TOGGLE =====
 function toggleSidebar() {
-  document.getElementById('sidebar')?.classList.toggle('open');
-  document.getElementById('sidebarOverlay')?.classList.toggle('show');
+  var s = document.getElementById('sidebar');
+  var mc = document.querySelector('.main-content');
+  var ov = document.getElementById('sidebarOverlay');
+  s?.classList.toggle('open');
+  s?.classList.toggle('collapsed');
+  mc?.classList.toggle('sidebar-closed');
+  ov?.classList.toggle('show');
 }
 // Close sidebar when clicking a nav link on mobile
 document.addEventListener('DOMContentLoaded', function() {
