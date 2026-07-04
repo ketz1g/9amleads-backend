@@ -201,17 +201,21 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div id="roi-content" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px"><div style="text-align:center;padding:20px;color:var(--muted2)">Loading ROI data...</div></div>
 </div>
 
-<div class="sub">All time</div><div class="stat-trend"><i class="fas fa-arrow-up"></i> Active</div></div>
+<div class="card" id="stats-section">
+<div class="card-header"><div class="card-title"><i class="fas fa-chart-pie" style="color:var(--primary)"></i> Account Summary</div></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
+<div class="stat-card"><div class="num" id="stat-active">0</div><div class="label">Active</div><div class="sub">All time</div><div class="stat-trend"><i class="fas fa-arrow-up"></i> Active</div></div>
 <div class="stat-card"><div class="num" id="stat-new">0</div><div class="label">This Week</div><div class="sub" id="stat-week-label">Last 7 days</div><div class="stat-trend"><i class="fas fa-chart-line"></i> New</div></div>
 <div class="stat-card"><div class="num" id="stat-plan">Free</div><div class="label">Your Plan</div><div class="sub" id="stat-trial">7 days remaining</div><div class="stat-trend"><i class="fas fa-crown"></i> Plan</div></div>
 <div class="stat-card"><div class="num" id="stat-crm">0</div><div class="label">CRM</div><div class="sub" id="crm-status-sub">Not connected</div><div class="stat-trend"><i class="fas fa-plug"></i> Status</div></div>
 </div>
+</div>
 
- <div class="card-header"><div class="card-title"><i class="fas fa-chart-line" style="color:var(--primary)"></i> Grow Your Business</div></div>
+<div class="card">
+<div class="card-header"><div class="card-title"><i class="fas fa-chart-line" style="color:var(--primary)"></i> Grow Your Business</div></div>
 <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">Need help with marketing materials, email campaigns, social media, or scaling your operations? We offer done-for-you services to help you convert more leads and grow faster.</p>
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
-<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📧</div><h3>Email Campaigns</h3><p>Setup, templates</p></div>
-<div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📬</div><h3>Flyers &amp; Letters</h3><p>Design, print-ready</p></div>
+<div class="tool-card" onclick="showPage('campaigns')"><div class="icon">📦</div><h3>Success Kits</h3><p>Campaigns in your dashboard</p></div>
 <div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">📱</div><h3>Social Media</h3><p>Content, management</p></div>
 <div class="tool-card" onclick="window.open('/portal/enquiry.html','_blank')"><div class="icon">💼</div><h3>Business Consulting</h3><p>Strategy, scaling</p></div>
 <div class="tool-card" onclick="window.open('/founder/','_blank')"><div class="icon">👤</div><h3>Speak to Founder</h3><p>Direct custom help</p></div>
@@ -459,13 +463,13 @@ async function loadDashboard() {
   const leadData = await apiFetch('/api/leads');
   if (leadData && Array.isArray(leadData) && leadData.length > 0) {
     leads = leadData;
-    document.getElementById('stat-leads').textContent = leads.length;
+    document.getElementById('stat-active').textContent = leads.length;
     document.getElementById('stat-new').textContent = leads.filter(l => l.created_at && new Date(l.created_at) > new Date(Date.now() - 7*86400000)).length;
     renderLeads();
     document.getElementById('onboardingBanner').style.display = 'none';
   } else {
     leads = [];
-    document.getElementById('stat-leads').textContent = '0';
+    document.getElementById('stat-active').textContent = '0';
     document.getElementById('stat-new').textContent = '0';
     renderLeads();
     var banner = document.getElementById('onboardingBanner');
@@ -1231,7 +1235,7 @@ function generateDemoLeads(session) {
       created_at: d.toISOString()
     });
   }
-  document.getElementById('stat-leads').textContent = leads.length;
+  document.getElementById('stat-active').textContent = leads.length;
   document.getElementById('stat-new').textContent = leads.filter(l => new Date(l.created_at) > new Date(Date.now()-7*86400000)).length;
   renderLeads();
   // Show demo mode banner
