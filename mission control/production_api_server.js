@@ -3748,7 +3748,7 @@ function generateLeadEmailHTML(customer, leads) {
 
   // Header — dark sleek
   body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:36px 30px 24px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
-  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:10px"><tr><td style="width:38px;height:38px;border-radius:10px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:900;color:#ffffff;line-height:38px;background:linear-gradient(135deg,' + accent + ',#6366f1)">9</td><td style="padding-left:10px;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#ffffff;letter-spacing:-0.5px">amLeads</td></tr></table>';
+  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#ffffff;text-align:center;margin-bottom:10px"><span style="display:inline-block;width:38px;height:38px;border-radius:10px;text-align:center;line-height:38px;font-size:18px;background:linear-gradient(135deg,' + accent + ',#6366f1);margin-right:6px;vertical-align:middle">9</span><span style="vertical-align:middle;letter-spacing:-0.5px">amLeads</span></div>';
   var areasLabel = '';
   try { var custAreas = JSON.parse(customer.target_areas || '[]'); areasLabel = custAreas.length > 0 ? custAreas.join(', ') : ''; } catch(e) {}
   if (areasLabel) body += '<p style="color:#94a3b8;font-size:11px;margin:0;text-transform:uppercase;letter-spacing:3px;font-weight:600">' + areasLabel + '</p>';
@@ -3878,12 +3878,32 @@ function generateLeadEmailHTML(customer, leads) {
       body += '</div>';
     }
 
-    // Product-specific action buttons
-    if (productName === 'tenders' && d.tenderNoticeId) {
-      body += '<div style="margin-top:12px"><a href="https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId + '" target="_blank" style="display:block;text-align:center;padding:10px 0;background:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:10px;font-size:13px;font-weight:600">\uD83D\uDD0D Apply on Contracts Finder</a></div>';
+    // Action buttons — website / portal links
+    var actionLinks = [];
+    if (leadProduct === 'planning') {
+      var searchQ = (d.council || d.city || '') + ' planning application ' + (d.applicationRef || d.address || '');
+      actionLinks.push({ url: 'https://www.google.com/search?q=' + encodeURIComponent(searchQ), label: 'Search Planning Portal' });
+      if (d.estimatedValue) actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
+    } else if (leadProduct === 'moving') {
+      if (d.url) actionLinks.push({ url: d.url, label: 'View Property' });
+      else actionLinks.push({ url: 'https://www.rightmove.co.uk/property-for-sale/search.html?searchLocation=' + encodeURIComponent(d.postcode || d.city || ''), label: 'Search Similar' });
+      actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
+    } else if (leadProduct === 'newbusiness') {
+      if (d.companyNumber) actionLinks.push({ url: 'https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber, label: 'View on Companies House' });
+      if (d.name) actionLinks.push({ url: 'https://www.google.com/search?q=' + encodeURIComponent(d.name + ' contact email phone'), label: 'Find Contact Details' });
+    } else if (leadProduct === 'probate') {
+      actionLinks.push({ url: 'https://www.gov.uk/search-probate-records', label: 'Search Probate Records' });
+      actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
+    } else if (leadProduct === 'tenders') {
+      if (d.tenderNoticeId) actionLinks.push({ url: 'https://www.gov.uk/contracts-finder/notice/' + d.tenderNoticeId, label: 'Apply on Contracts Finder' });
+      else actionLinks.push({ url: 'https://www.gov.uk/contracts-finder', label: 'Browse Contracts Finder' });
     }
-    if (productName === 'newbusiness' && d.name) {
-      body += '<div style="margin-top:12px"><a href="https://www.google.com/search?q=' + encodeURIComponent(d.name + ' contact email phone') + '" target="_blank" style="display:block;text-align:center;padding:10px 0;background:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:10px;font-size:13px;font-weight:600">\uD83D\uDD0D Find Contact Details</a></div>';
+    if (actionLinks.length > 0) {
+      body += '<div style="margin-top:12px;display:flex;gap:8px">';
+      for (var ai = 0; ai < actionLinks.length; ai++) {
+        body += '<a href="' + actionLinks[ai].url + '" target="_blank" style="flex:1;display:block;text-align:center;padding:10px 8px;background:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:10px;font-size:12px;font-weight:600">\uD83D\uDD0D ' + actionLinks[ai].label + '</a>';
+      }
+      body += '</div>';
     }
 
     body += '</div></div>';
@@ -3892,7 +3912,7 @@ function generateLeadEmailHTML(customer, leads) {
 
   // Footer — dark sleek
   body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:28px 30px 24px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">';
-  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:16px"><tr><td style="width:34px;height:34px;border-radius:9px;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:#ffffff;line-height:34px;background:linear-gradient(135deg,' + accent + ',#6366f1)">9</td><td style="padding-left:8px;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:900;color:rgba(255,255,255,0.8)">amLeads</td></tr></table>';
+  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:900;color:rgba(255,255,255,0.8);text-align:center;margin-bottom:16px"><span style="display:inline-block;width:34px;height:34px;border-radius:9px;text-align:center;line-height:34px;font-size:15px;background:linear-gradient(135deg,' + accent + ',#6366f1);margin-right:5px;vertical-align:middle">9</span><span style="vertical-align:middle;letter-spacing:-0.5px">amLeads</span></div>';
   body += '<a href="' + dashboardUrl + '" style="display:inline-block;padding:12px 36px;background:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px;letter-spacing:0.8px">VIEW DASHBOARD</a>';
   body += '<p style="color:rgba(255,255,255,0.5);font-size:11px;margin:14px 0 0"><a href="mailto:hello@9amleads.com?subject=Lead%20Issue" style="color:rgba(255,255,255,0.6);text-decoration:underline">Lead issue? Contact us &rarr;</a></p>';
   body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:16px 0 12px"><tr>';
