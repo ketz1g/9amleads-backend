@@ -546,7 +546,7 @@ async function distributeProduct(product) {
       for (var ni = 0; ni < areaNeeded; ni++) {
         var street = streets[(ni + gi + ti) % streets.length];
         var num = Math.floor(Math.random() * 200) + 1;
-        var distNum = Math.floor(Math.random() * 20) + 1;
+        var distNum = Math.floor(Math.random() * 9) + 1;
         var pcOut = pcPrefix + distNum + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
         var address = num + ' ' + street + ', ' + city + ' ' + pcOut;
         var baseLead = { id: 'GEN_' + product.toUpperCase() + '_' + Date.now() + '_' + ti + '_' + ni, address: address, postcode: pcOut, city: city, source: '9amLeads Generated', scrapedAt: now };
