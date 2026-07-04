@@ -1430,15 +1430,16 @@ function openFeatureDiscovery() {
   showModal('Features & Tools', html);
 }
 
-function showModal(title, content) {
+function showModal(title, content, maxWidth) {
   var existing = document.getElementById('modal-overlay');
   if (existing) existing.remove();
+  maxWidth = maxWidth || '480px';
   var overlay = document.createElement('div');
   overlay.id = 'modal-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto';
   overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
   var box = document.createElement('div');
-  box.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:480px;width:100%';
+  box.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:' + maxWidth + ';width:100%;margin:24px 0';
   box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="font-weight:700;font-family:var(--ff-h);font-size:16px">' + title + '</h3><button onclick="this.closest(\'#modal-overlay\').remove()" style="background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer">?</button></div>' + content;
   overlay.appendChild(box);
   document.body.appendChild(overlay);
