@@ -1494,7 +1494,7 @@ function updateSubscriptionDisplay(sub) {
   var covEl = document.getElementById('sub-coverage-info');
   if (covEl) covEl.textContent = sub.coverage_label + (sub.coverage_areas && sub.coverage_areas.length > 0 ? ' \u00b7 ' + sub.coverage_areas.join(', ') : '');
   // Weekly/monthly
-  var statsEl = document.getElementById('stat-leads');
+  var statsEl = document.getElementById('stat-active');
   if (statsEl) statsEl.textContent = sub.delivered_this_month + ' this month (est. ' + sub.monthly_estimate + '/mo)';
   // Trial
   if (sub.trial_ends) {
