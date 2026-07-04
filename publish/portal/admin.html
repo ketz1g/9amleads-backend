@@ -74,6 +74,16 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 
 <div class="stats-grid" id="statsGrid"><div class="loading">Loading stats...</div></div>
 
+<div class="card" style="margin-bottom:16px">
+<div class="card-header"><div class="card-title"><i class="fas fa-bullhorn" style="color:var(--primary)"></i> Outbound Campaigns</div></div>
+<div style="font-size:12px;color:var(--muted2);line-height:1.6">Upload all 80 outbound prospecting emails (5 campaigns × 16 emails) to Brevo as templates. Lists and tags are created automatically.</div>
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+<button class="btn btn-primary btn-sm" onclick="uploadBrevoCampaigns()"><i class="fas fa-upload"></i> Upload All to Brevo</button>
+<button class="btn btn-outline btn-sm" onclick="checkBrevoTemplates()"><i class="fas fa-search"></i> Check Templates</button>
+</div>
+<div id="brevo-upload-status" style="margin-top:10px;font-size:12px;display:none"></div>
+</div>
+
 <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
 <input type="text" id="searchInput" placeholder="Search by name, email or company..." oninput="filterCustomers()" style="flex:1;min-width:200px;padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none">
 <select id="filterPlan" onchange="filterCustomers()" style="padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none"><option value="">All Plans</option><option value="free_trial">Free Trial</option><option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option><option value="cancelled">Cancelled</option></select>
@@ -170,6 +180,33 @@ function renderCustomers(customers) {
       '<td style="font-size:11px;color:#5c6480">' + signupDate + '</td>' +
       '<td><button class="btn btn-view btn-sm" onclick="loginAs(\'' + c.id + '\')"><i class="fas fa-eye"></i></button></td></tr>';
   }).join('');
+}
+
+async function uploadBrevoCampaigns() {
+  var status = document.getElementById('brevo-upload-status');
+  status.style.display = 'block';
+  status.innerHTML = '<i class="fas fa-spinner fa-spin" style="color:var(--primary)"></i> Uploading 80 templates to Brevo... this will take a minute.';
+  try {
+    var r = await fetch(API + '/api/admin/brevo/upload', { headers: adminHeaders() });
+    var d = await r.json();
+    if (d.success) {
+      status.innerHTML = '<span style="color:#22c55e">✅ Upload complete: ' + d.templates + ' templates, ' + d.lists + ' lists (' + d.errors + ' errors)</span><br><pre style="font-size:10px;color:#8890a8;margin-top:6px;max-height:200px;overflow-y:auto">' + JSON.stringify(d.details, null, 2) + '</pre>';
+    } else {
+      status.innerHTML = '<span style="color:#ef4444">❌ Upload failed: ' + (d.error || 'Unknown error') + '</span>';
+    }
+  } catch(e) { status.innerHTML = '<span style="color:#ef4444">❌ Error: ' + e.message + '</span>'; }
+}
+
+async function checkBrevoTemplates() {
+  var status = document.getElementById('brevo-upload-status');
+  status.style.display = 'block';
+  status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking Brevo templates...';
+  try {
+    var r = await fetch(API + '/api/admin/brevo/templates', { headers: adminHeaders() });
+    var d = await r.json();
+    var count = d.templates ? d.templates.length : (Array.isArray(d) ? d.length : (d.count || '?'));
+    status.innerHTML = '<span style="color:#22c55e">✅ Brevo has ' + count + ' templates</span>';
+  } catch(e) { status.innerHTML = '<span style="color:#ef4444">❌ Error: ' + e.message + '</span>'; }
 }
 
 function filterCustomers() {
