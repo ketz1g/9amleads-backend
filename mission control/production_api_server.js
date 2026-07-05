@@ -4088,6 +4088,25 @@ app.post('/api/distribute', async (req, res) => {
   }
 });
 
+// GET /api/debug/last-email — view the last generated lead email HTML in browser
+app.get('/api/debug/last-email', adminAuth, async (req, res) => {
+  try {
+    _dbData = null;
+    var db2 = getDb();
+    var cust = (db2.customers || []).filter(function(c) { return c.email === req.query.email; })[0];
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var custLeads = (db2.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0; }).slice(0, 5);
+    if (custLeads.length === 0) {
+      // Get previously delivered
+      custLeads = (db2.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered; }).slice(-3);
+    }
+    if (custLeads.length === 0) return res.status(404).json({ error: 'No leads found' });
+    var html = generateLeadEmailHTML(cust, custLeads);
+    res.set('Content-Type', 'text/html');
+    res.send(html);
+  } catch(e) { res.status(500).send('<p>Error: ' + e.message + '</p>'); }
+});
+
 // GET /api/distribute/status — distribution summary
 app.get('/api/distribute/status', (req, res) => {
   try {
