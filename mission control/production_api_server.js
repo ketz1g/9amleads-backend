@@ -5087,6 +5087,23 @@ app.post('/api/admin/reset-weekly', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/purge-leads — remove ALL leads for a customer to start fresh
+app.post('/api/admin/purge-leads', adminAuth, (req, res) => {
+  try {
+    const email = req.body.email;
+    if (!email) return res.status(400).json({ error: 'email required' });
+    _dbData = null;
+    const db = getDb();
+    const customer = (db.customers || []).filter(function(c) { return c.email === email; })[0];
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    const before = (db.leads || []).length;
+    db.leads = (db.leads || []).filter(function(l) { return l.customer_id !== customer.id; });
+    const removed = before - (db.leads || []).length;
+    saveDb();
+    res.json({ success: true, message: 'Purged ' + removed + ' leads for ' + customer.company + ', ' + (db.leads || []).length + ' remaining in DB' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/cleanup', adminAuth, (req, res) => {
   try {
     const db = getDb();
