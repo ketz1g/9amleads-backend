@@ -4851,29 +4851,32 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           } catch(e) { console.log('[SCRAPER] Apify error: ' + e.message); leads = []; }
         } else if (product === 'tenders') {
           try {
+            // Try Public Contracts Scotland API (free, OCDS format)
             leads = await new Promise(function(resolve) {
-               var url = '/api/rest/2.0/notices?status=Open&size=30';
-               var req = require('https').request({ hostname: 'www.contractsfinder.service.gov.uk', path: url, method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 30000 }, function(res) {
-                var body = '';
-                res.on('data', function(c) { body += c; });
+              var req = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=30', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 30000 }, function(res) {
+                var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try {
                     var data = JSON.parse(body);
-                    var items = data.notices || data.results || data.items || data || [];
-                    if (!Array.isArray(items)) { resolve([]); return; }
-                    resolve(items.slice(0, 30).map(function(n) { return {
-                      id: n.id || n.noticeId || 'CF_' + Date.now(),
-                      title: n.title || n.noticeTitle || '',
-                      buyer: n.contractingAuthority || n.organisationName || n.buyerName || '',
-                      contractValue: n.estimatedValue || n.valueLow || n.value || 0,
-                      description: n.description || n.shortDescription || '',
-                      closingDate: n.deadlineDate || n.closingDate || '',
-                      publishedDate: n.publishedDate || n.publicationDate || '',
-                      cpvCode: (n.cpvCodes || n.cpvCode || []).join(', '),
-                      tenderNoticeId: n.noticeId || n.id || '',
-                      source: 'Contracts Finder',
-                      scrapedAt: new Date().toISOString()
-                    }; }));
+                    var releases = data.releases || [];
+                    resolve(releases.slice(0, 30).map(function(r) {
+                      var t = r.tender || {};
+                      var b = r.buyer || {};
+                      var bName = b.name || (b.identifier && b.identifier.legalName) || '';
+                      var tValue = t.value ? (t.value.amount || t.value) : 0;
+                      return {
+                        id: r.id || r.ocid || 'PCS_' + Date.now(),
+                        title: t.title || r.description || '',
+                        buyer: bName,
+                        contractValue: tValue,
+                        description: (t.description || r.description || '').substring(0, 500),
+                        closingDate: t.tenderPeriod ? t.tenderPeriod.endDate : '',
+                        publishedDate: r.date || data.publishedDate || '',
+                        tenderNoticeId: r.ocid || r.id || '',
+                        source: 'Public Contracts Scotland',
+                        scrapedAt: new Date().toISOString()
+                      };
+                    }));
                   } catch(e) { resolve([]); }
                 });
               });
@@ -4881,9 +4884,12 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               req.setTimeout(30000, function() { req.destroy(); resolve([]); });
               req.end();
             });
-            if (!leads || leads.length === 0) {
+            if (leads && leads.length > 5) {
+              console.log('[SCRAPER] PCS returned ' + leads.length + ' real tender leads');
+            } else {
+              console.log('[SCRAPER] PCS returned ' + (leads ? leads.length : 0) + ', trying Sell2Wales...');
               leads = await new Promise(function(resolve) {
-                var req2 = require('https').request({ hostname: 'api.sell2wales.gov.wales', path: '/api/v1/notices?status=Open&size=30', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res2) {
+                var req2 = require('https').request({ hostname: 'api.sell2wales.gov.wales', path: '/api/v1/notices?status=Open&size=30', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000, rejectUnauthorized: false }, function(res2) {
                   var b2 = ''; res2.on('data', function(c) { b2 += c; });
                   res2.on('end', function() {
                     try { var d2 = JSON.parse(b2); var items2 = d2.notices || d2.results || d2.items || d2 || []; if (!Array.isArray(items2)) items2 = []; resolve(items2.slice(0, 30).map(function(n) { return { id: 'SW_' + (n.id || Date.now()), title: n.title || n.noticeTitle || '', buyer: n.contractingAuthority || n.buyerName || '', contractValue: n.estimatedValue || n.value || 0, description: n.description || '', closingDate: n.deadlineDate || '', publishedDate: n.publishedDate || '', cpvCode: '', tenderNoticeId: n.noticeId || n.id || '', source: 'Sell2Wales', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
@@ -4893,23 +4899,8 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
                 req2.setTimeout(15000, function() { req2.destroy(); resolve([]); });
                 req2.end();
               });
-              if (!leads || leads.length === 0) {
-                console.log('[SCRAPER] No tender leads from any source');
-                console.log('[SCRAPER] Trying data.gov.uk for tender opportunities...');
-                leads = await new Promise(function(resolve) {
-                  var req3 = require('https').request({ hostname: 'data.gov.uk', path: '/api/3/action/package_search?q=tenders&rows=30', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res3) {
-                    var b3 = ''; res3.on('data', function(c) { b3 += c; });
-                    res3.on('end', function() {
-                      try { var d3 = JSON.parse(b3); var r3 = d3.result && d3.result.results ? d3.result.results : []; resolve(r3.slice(0, 30).map(function(n) { return { id: 'DG_' + (n.id || Date.now()), title: n.title || n.name || '', description: n.notes || n.description || '', tenderNoticeId: n.id || '', source: 'data.gov.uk', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
-                    });
-                  });
-                  req3.on('error', function() { resolve([]); });
-                  req3.setTimeout(15000, function() { req3.destroy(); resolve([]); });
-                  req3.end();
-                });
-                if (!leads || leads.length === 0) { console.log('[SCRAPER] No tender leads from any source'); leads = []; }
-                else { console.log('[SCRAPER] data.gov.uk returned ' + leads.length + ' tender leads'); }
-              }
+              if (!leads || leads.length === 0) { console.log('[SCRAPER] No tender leads from any source'); leads = []; }
+              else { console.log('[SCRAPER] Sell2Wales returned ' + leads.length + ' tender leads'); }
             }
           } catch(e) { console.log('[SCRAPER] Tenders error: ' + e.message); leads = []; }
         } else if (product === 'planning') {
