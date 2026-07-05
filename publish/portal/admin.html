@@ -202,7 +202,7 @@ async function checkBrevoTemplates() {
   status.style.display = 'block';
   status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking Brevo templates...';
   try {
-    var r = await fetch(API + '/api/admin/brevo/templates', { headers: adminHeaders() });
+    var r = await fetch(API + '/api/admin/brevo-templates', { headers: adminHeaders() });
     var d = await r.json();
     var count = d.templates ? d.templates.length : (Array.isArray(d) ? d.length : (d.count || '?'));
     status.innerHTML = '<span style="color:#22c55e">✅ Brevo has ' + count + ' templates</span>';
