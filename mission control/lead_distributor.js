@@ -105,10 +105,22 @@ function normaliseDistrict(pc) {
   return extractDistrict(pc);
 }
 
+// Get per-product config if available, else fall back to customer-level fields
+function getProductConfig(customer, product) {
+  var config = {};
+  try { config = JSON.parse(customer.product_config || '{}'); } catch(e) {}
+  var prodCfg = config[product] || {};
+  return {
+    targets: prodCfg.target_areas ? JSON.parse(prodCfg.target_areas) : (JSON.parse(customer.target_areas || '[]')),
+    coverage: prodCfg.coverage || customer.coverage || 'postcode'
+  };
+}
+
 // Check if a lead's location matches a customer's target area (with filter tiering)
 function leadMatchesTarget(lead, customer, product) {
-  const targets = JSON.parse(customer.target_areas || '[]');
-  const coverage = customer.coverage || 'postcode';
+  var pc = getProductConfig(customer, product);
+  const targets = pc.targets;
+  const coverage = pc.coverage;
   // Area match
   let areaMatch = false;
   if (targets.length > 0 && coverage === 'postcode') {
@@ -505,9 +517,9 @@ async function distributeProduct(product) {
   var generated = 0;
   for (var gi = 0; gi < activeCustomers.length; gi++) {
     var custGen = activeCustomers[gi];
+    var genCfg = getProductConfig(custGen, product);
     var limit = customerLimits[custGen.id] || 5;
-    var targets = [];
-    try { targets = JSON.parse(custGen.target_areas || '[]'); } catch(e) {}
+    var targets = genCfg.targets;
     if (targets.length === 0) continue;
     var numAreas = targets.length;
     var basePerArea = Math.floor(limit / numAreas);

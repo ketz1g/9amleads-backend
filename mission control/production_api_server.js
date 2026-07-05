@@ -3189,7 +3189,16 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       
       var custLeads = [];
       var custAreas = [];
-      try { custAreas = JSON.parse(cust.target_areas || '[]'); } catch(e) {}
+      // Get per-product config for this customer
+      var pcfg = {};
+      try { pcfg = JSON.parse(cust.product_config || '{}'); } catch(e) {}
+      var primCfg = pcfg[cust.product] || {};
+      var primCoverage = primCfg.coverage || cust.coverage || 'postcode';
+      try {
+        if (primCfg.target_areas) { custAreas = JSON.parse(primCfg.target_areas); }
+        else { custAreas = JSON.parse(cust.target_areas || '[]'); }
+      } catch(e) { custAreas = []; }
+      var totalDailyLimit = getPlanLimit(cust.product, cust.plan, primCoverage) || 5;
       // Ensure customer's primary product always has at least 1 lead
       if (cust.product) {
         var primaryLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === cust.product; });
@@ -3350,6 +3359,7 @@ app.post('/api/admin/upgrade', adminAuth, (req, res) => {
     if (target_areas) db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(target_areas, customer.id);
     if (lead_type) db.prepare('UPDATE customers SET lead_type = ? WHERE id = ?').run(lead_type, customer.id);
     if (biz_field3) db.prepare('UPDATE customers SET biz_field3 = ? WHERE id = ?').run(biz_field3, customer.id);
+    if (req.body.product_config) db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(req.body.product_config, customer.id);
     saveDb();
     res.json({ success: true, message: customer.company + ' upgraded to ' + plan });
   } catch (e) { res.status(500).json({ error: e.message }); }
