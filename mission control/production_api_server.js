@@ -4897,25 +4897,71 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             }
           } catch(e) { console.log('[SCRAPER] Tenders error: ' + e.message); leads = []; }
         } else if (product === 'planning') {
-          // Background scrape — planning API is slow (2-4 min), don't block
+          // Background scrape — async (non-blocking)
           leads = [];
-          console.log('[SCRAPER] Planning scrape kicked off in background');
+          console.log('[SCRAPER] Planning scrape started async');
           try {
             var apifyKey2 = process.env.APIFY_API_KEY;
             if (apifyKey2) {
-              setTimeout(function() {
+              (function() {
                 var councils = ['woking','durham','southwark','bristol','leeds','manchester','birmingham','cambridge','oxford','brighton'];
-                var bodyData = JSON.stringify({ councils: councils, dateMode: 'validated', maxResultsPerCouncil: 10, stateKey: 'Output Only New Applications' });
-                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/illehius~uk-planning-monitor/run-sync-get-dataset-items?token=' + apifyKey2 + '&memory=1024&timeout=300', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 310000 }, function(res) {
-                  var body = ''; res.on('data', function(c) { body += c; });
-                  res.on('end', function() {
-                    try { var items = JSON.parse(body); if (Array.isArray(items) && items.length > 0) { var ppLeads = items.map(function(p) { return { id: 'PLAN_' + (p.applicationRef || Date.now()), address: (p.address || '').trim(), postcode: p.postcode || '', description: p.proposal || '', council: p.councilName || '', applicationRef: p.applicationRef || '', applicationType: p.applicationType || 'Planning', status: p.status || '', url: p.detailUrl || '', source: 'UK Planning Monitor', scrapedAt: new Date().toISOString() }; }); fs.writeFileSync(path.join(DATA_DIR, PRODUCT_LEAD_FILES.planning.file), JSON.stringify(ppLeads, null, 2)); console.log('[SCRAPER] Background planning scrape saved ' + ppLeads.length + ' leads from ' + councils.length + ' councils'); } } catch(e) { console.log('[SCRAPER] Planning parse error:', e.message); } });
+                var inputData = JSON.stringify({ councils: councils, dateMode: 'validated', maxResultsPerCouncil: 10, stateKey: 'Output Only New Applications' });
+                // Step 1: Start the actor run (async)
+                var runReq = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/illehius~uk-planning-monitor/runs', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apifyKey2, 'Content-Length': Buffer.byteLength(inputData) }, timeout: 30000 }, function(runRes) {
+                  var runBody = ''; runRes.on('data', function(c) { runBody += c; });
+                  runRes.on('end', function() {
+                    try {
+                      var runData = JSON.parse(runBody);
+                      var runId = runData.data && runData.data.id;
+                      if (!runId) { console.log('[SCRAPER] Planning run failed to start:', runBody.slice(0, 200)); return; }
+                      console.log('[SCRAPER] Planning run started: ' + runId);
+                      // Step 2: Poll for completion (up to 5 minutes)
+                      var pollAttempts = 0;
+                      var poll = setInterval(function() {
+                        pollAttempts++;
+                        if (pollAttempts > 30) { clearInterval(poll); console.log('[SCRAPER] Planning poll timed out'); return; }
+                        var pollReq = require('https').request({ hostname: 'api.apify.com', method: 'GET', path: '/v2/actor-runs/' + runId, headers: { 'Authorization': 'Bearer ' + apifyKey2 } }, function(pollRes) {
+                          var pollBody = ''; pollRes.on('data', function(c) { pollBody += c; });
+                          pollRes.on('end', function() {
+                            try {
+                              var pollData = JSON.parse(pollBody);
+                              var status = pollData.data && pollData.data.status;
+                              if (status === 'SUCCEEDED') {
+                                clearInterval(poll);
+                                // Step 3: Fetch results
+                                var fetchReq = require('https').request({ hostname: 'api.apify.com', method: 'GET', path: '/v2/actor-runs/' + runId + '/dataset/items', headers: { 'Authorization': 'Bearer ' + apifyKey2 } }, function(fetchRes) {
+                                  var fetchBody = ''; fetchRes.on('data', function(c) { fetchBody += c; });
+                                  fetchRes.on('end', function() {
+                                    try {
+                                      var items = JSON.parse(fetchBody);
+                                      if (Array.isArray(items) && items.length > 0) {
+                                        var ppLeads = items.map(function(p) { return { id: 'PLAN_' + (p.applicationRef || Date.now()), address: (p.address || '').trim(), postcode: p.postcode || '', description: p.proposal || '', council: p.councilName || '', applicationRef: p.applicationRef || '', applicationType: p.applicationType || 'Planning', status: p.status || '', url: p.detailUrl || '', source: 'UK Planning Monitor', scrapedAt: new Date().toISOString() }; });
+                                        fs.writeFileSync(path.join(DATA_DIR, PRODUCT_LEAD_FILES.planning.file), JSON.stringify(ppLeads, null, 2));
+                                        console.log('[SCRAPER] Planning scrape saved ' + ppLeads.length + ' leads');
+                                      } else { console.log('[SCRAPER] Planning scrape returned 0 items'); }
+                                    } catch(e) { console.log('[SCRAPER] Planning fetch parse error:', e.message); }
+                                  });
+                                });
+                                fetchReq.on('error', function(e) { console.log('[SCRAPER] Planning fetch error:', e.message); });
+                                fetchReq.end();
+                              } else if (status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') {
+                                clearInterval(poll);
+                                console.log('[SCRAPER] Planning run failed:', status);
+                              }
+                              // else still running, wait for next poll
+                            } catch(e) {}
+                          });
+                        });
+                        pollReq.on('error', function() {});
+                        pollReq.end();
+                      }, 10000); // poll every 10 seconds
+                    } catch(e) { console.log('[SCRAPER] Planning run parse error:', e.message); }
+                  });
                 });
-                req.on('error', function(e) { console.log('[SCRAPER] Planning request error:', e.message); });
-                req.setTimeout(310000, function() { req.destroy(); });
-                if (bodyData) { req.write(bodyData); }
-                req.end();
-              }, 100);
+                runReq.on('error', function(e) { console.log('[SCRAPER] Planning run request error:', e.message); });
+                runReq.write(inputData);
+                runReq.end();
+              })();
             }
           } catch(e) { console.log('[SCRAPER] Planning background error:', e.message); }
         } else if (product === 'moving') {
