@@ -4839,7 +4839,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try {
             var apifyKey = process.env.APIFY_API_KEY;
             leads = await new Promise(function(resolve) {
-              var bodyData = JSON.stringify({ search: 'Consulting|Accounting|Design', maxItems: 5, includeOfficers: false });
+              var bodyData = JSON.stringify({ search: 'Consulting|Accounting|Design', maxItems: 100000, includeOfficers: false });
               var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
@@ -4857,7 +4857,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               var chKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
               var yesterday2 = new Date(Date.now() - 48 * 86400000).toISOString().split('T')[0];
               leads = await new Promise(function(resolve) {
-                var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&incorporation_date_from=' + yesterday2 + '&size=30', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+                var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&incorporation_date_from=' + yesterday2 + '&size=100', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; });
                   res.on('end', function() {
                     try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.company_name && c.company_number && c.company_status !== 'dissolved'}).map(function(c) { var a = c.registered_office_address || {}; return { id: 'CH_' + (c.company_number || Date.now()), name: (c.company_name || '').trim(), companyNumber: c.company_number || '', companyName: c.company_name || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', dateOfCreation: c.incorporation_date || c.date_of_creation || '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
@@ -4874,7 +4874,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try {
             var chKeyTen = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
             leads = await new Promise(function(resolve) {
-              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=contractor&size=30', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyTen + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=contractor&size=100', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyTen + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.title && c.company_number && c.company_status !== 'dissolved'}).map(function(c) { var a = c.address || {}; return { id: 'CH_TEN_' + (c.company_number || Date.now()), name: (c.title || '').trim() + ' - Contract Opportunity', buyer: (c.title || '').trim(), companyNumber: c.company_number || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House Contractors', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
@@ -4891,7 +4891,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try {
             var chKeyPlan = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
             leads = await new Promise(function(resolve) {
-              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=builders&size=30', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyPlan + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=builders&size=100', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyPlan + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.title && c.company_number && c.company_status !== 'dissolved'}).map(function(c) { var a = c.address || {}; return { id: 'CH_BLD_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House Builders', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
@@ -4926,7 +4926,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               for (var st = 0; st < searchTerms.length; st++) {
                 try {
                   var termLeads = await new Promise(function(resolve2) {
-                    var req2 = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=' + encodeURIComponent(searchTerms[st]) + '&size=20', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res2) {
+                    var req2 = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=' + encodeURIComponent(searchTerms[st]) + '&size=100', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res2) {
                       var body2 = ''; res2.on('data', function(c) { body2 += c; });
                       res2.on('end', function() {
                         try { var data2 = JSON.parse(body2); var items2 = data2.items || []; resolve2(items2.filter(function(c){return c.title && c.company_number && c.company_status !== 'dissolved'}).map(function(c) { var a = c.address || {}; return { id: 'CH_MV_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.title || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve2([]); }
@@ -4949,7 +4949,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             var chKeyProb = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
             var lastYearProb = new Date(Date.now() - 365 * 86400000).toISOString().split('T')[0];
             leads = await new Promise(function(resolve) {
-              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&incorporation_date_from=' + lastYearProb + '&size=30&q=probate', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyProb + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&incorporation_date_from=' + lastYearProb + '&size=100&q=probate', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyProb + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.company_name && c.company_number && c.company_status !== 'dissolved'}).map(function(c) { var a = c.registered_office_address || {}; return { id: 'CH_PROB_' + (c.company_number || Date.now()), name: (c.company_name || '').trim(), companyNumber: c.company_number || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House Probate', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
