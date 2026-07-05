@@ -4873,7 +4873,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
                 req.setTimeout(120000, function() { req.destroy(); });
                 req.write(bodyDataTen);
                 req.end();
-              }, 100);
+              }, 500);
             }
           } catch(e) { console.log('[SCRAPER] Tenders background error:', e.message); }
         } else if (product === 'planning') {
@@ -4897,7 +4897,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
                 req.setTimeout(120000, function() { req.destroy(); });
                 req.write(bodyData2);
                 req.end();
-              }, 100);
+              }, 500);
             }
           } catch(e) { console.log('[SCRAPER] Planning background error:', e.message); }
         } else if (product === 'moving') {
@@ -4942,28 +4942,28 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           } catch(e) { console.log('[SCRAPER] Moving error: ' + e.message); leads = []; }
         } else if (product === 'probate') {
           leads = [];
-          console.log('[SCRAPER] Probate GitHub scrape started in background');
-          try {
-            var apifyKeyProb = process.env.APIFY_API_KEY;
-            if (apifyKeyProb) {
-              setTimeout(function() {
+          var apifyKeyProb = process.env.APIFY_API_KEY;
+          if (apifyKeyProb) {
+            try {
+              leads = await new Promise(function(resolve) {
                 var bodyDataProb = JSON.stringify({ sp_intended_usage: 'personal', sp_improvement_suggestions: 'testing', maxResults: 20 });
-                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/rcfzPm2dJk9vig8hp/run-sync-get-dataset-items?token=' + apifyKeyProb + '&memory=512&timeout=90', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyDataProb), 'Accept': 'application/json' }, timeout: 120000 }, function(res) {
+                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/rcfzPm2dJk9vig8hp/run-sync-get-dataset-items?token=' + apifyKeyProb + '&memory=512&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyDataProb), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; });
                   res.on('end', function() {
-                    try { var items = JSON.parse(body); if (Array.isArray(items) && items.length > 0) {
-                      var probLeads = items.map(function(p) { return { id: 'PROB_' + (p.notice_id || Date.now()), name: p.decedent_name || '', deceasedName: p.decedent_name || '', address: p.decedent_address || '', postcode: (p.decedent_address || '').split(',').pop().trim(), estateValue: p.estate_value || '', estimatedValue: p.estate_value || '', dateOfDeath: p.decedent_dod || '', noticeUrl: p.notice_url || '', noticeId: p.notice_id || '', source: 'UK Gazette Probate', scrapedAt: new Date().toISOString() }; });
-                      fs.writeFileSync(path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate.file), JSON.stringify(probLeads, null, 2));
-                      console.log('[SCRAPER] Background probate GitHub scrape saved ' + probLeads.length + ' leads');
-                    } } catch(e) {} });
+                    try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }
+                      resolve(items.map(function(p) { return { id: 'PROB_' + (p.notice_id || Date.now()), name: p.decedent_name || '', deceasedName: p.decedent_name || '', address: p.decedent_address || '', postcode: (p.decedent_address || '').split(',').pop().trim(), estateValue: p.estate_value || '', estimatedValue: p.estate_value || '', dateOfDeath: p.decedent_dod || '', noticeUrl: p.notice_url || '', noticeId: p.notice_id || '', source: 'UK Gazette Probate', scrapedAt: new Date().toISOString() }; }));
+                    } catch(e) { resolve([]); }
+                  });
                 });
-                req.on('error', function() {});
-                req.setTimeout(120000, function() { req.destroy(); });
+                req.on('error', function() { resolve([]); });
+                req.setTimeout(150000, function() { req.destroy(); resolve([]); });
                 req.write(bodyDataProb);
                 req.end();
-              }, 100);
-            }
-          } catch(e) { console.log('[SCRAPER] Probate background error:', e.message); }
+              });
+              if (leads && leads.length > 0) console.log('[SCRAPER] Probate returned ' + leads.length + ' real probate cases');
+              else console.log('[SCRAPER] Probate returned 0');
+            } catch(e) { console.log('[SCRAPER] Probate error:', e.message); }
+          } else { console.log('[SCRAPER] No Apify key for probate'); }
         } else {
           leads = [];
         }
