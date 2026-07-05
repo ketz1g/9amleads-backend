@@ -4975,21 +4975,29 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             }
           } catch(e) { console.log('[SCRAPER] Moving error: ' + e.message); leads = []; }
         } else if (product === 'probate') {
-          try {
-            var chKey5 = process.env.COMPANIES_HOUSE_API_KEY || process.env.GOVUK_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
-            leads = await new Promise(function(resolve) {
-              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=probate&size=30', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey5 + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
-                var body = ''; res.on('data', function(c) { body += c; });
-                res.on('end', function() {
-                  try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.title && c.company_number && c.company_status !== 'dissolved'}).map(function(c) { var a = c.address || {}; return { id: 'CH_PROB_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House Probate', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+          leads = [];
+          var apifyKeyProb = process.env.APIFY_API_KEY;
+          if (apifyKeyProb) {
+            try {
+              leads = await new Promise(function(resolve) {
+                var bodyDataProb = JSON.stringify({ sp_intended_usage: 'personal', sp_improvement_suggestions: 'testing', maxResults: 20 });
+                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/rcfzPm2dJk9vig8hp/run-sync-get-dataset-items?token=' + apifyKeyProb + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyDataProb), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
+                  var body = ''; res.on('data', function(c) { body += c; });
+                  res.on('end', function() {
+                    try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }
+                      resolve(items.map(function(p) { return { id: 'PROB_' + (p.notice_id || Date.now()), name: p.decedent_name || '', deceasedName: p.decedent_name || '', address: p.decedent_address || '', postcode: (p.decedent_address || '').split(',').pop().trim(), estateValue: p.estate_value || '', estimatedValue: p.estate_value || '', dateOfDeath: p.decedent_dod || '', noticeUrl: p.notice_url || '', noticeId: p.notice_id || '', source: 'UK Gazette Probate', scrapedAt: new Date().toISOString() }; }));
+                    } catch(e) { resolve([]); }
+                  });
                 });
+                req.on('error', function() { resolve([]); });
+                req.setTimeout(90000, function() { req.destroy(); resolve([]); });
+                req.write(bodyDataProb);
+                req.end();
               });
-              req.on('error', function() { resolve([]); });
-              req.setTimeout(15000, function() { req.destroy(); resolve([]); });
-              req.end();
-            });
-            if (!leads || leads.length < 3) { console.log('[SCRAPER] Companies House probate returned ' + (leads ? leads.length : 0) + ', no probate leads today'); leads = []; }
-          } catch(e) { console.log('[SCRAPER] Companies House probate error: ' + e.message); leads = []; }
+              if (leads && leads.length > 0) console.log('[SCRAPER] UK Gazette Probate returned ' + leads.length + ' real probate cases');
+              else console.log('[SCRAPER] UK Gazette Probate returned 0');
+            } catch(e) { console.log('[SCRAPER] Probate Gazette error:', e.message); }
+          } else { console.log('[SCRAPER] No Apify key for probate'); }
         } else {
           leads = [];
         }
