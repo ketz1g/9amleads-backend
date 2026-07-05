@@ -584,7 +584,10 @@ async function distributeProduct(product) {
         } else if (product === 'newbusiness') {
           baseLead.name = bizNames[ni % bizNames.length] + ' ' + bizSuffixes[ni % bizSuffixes.length] + ' Ltd';
           baseLead.companyNumber = 'NI' + (Math.floor(Math.random() * 900000) + 100000);
-          baseLead.incorporationDate = new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString();
+          baseLead.incorporationDate = new Date(Date.now() - Math.floor(Math.random() * 30) * 86400000).toISOString();
+          baseLead.sicCode = ['62020','70229','69201','41100','43210','82990'][ni % 6];
+          baseLead.industryTags = ['IT Consulting','Management Consultancy','Accounting','Construction','Electrical','Business Support'][ni % 6];
+          baseLead.registeredAddress = address;
         } else if (product === 'planning') {
           var custAppTypes = filters['f-app-type'] || defaultAppTypes;
           if (!Array.isArray(custAppTypes)) custAppTypes = defaultAppTypes;
@@ -592,15 +595,20 @@ async function distributeProduct(product) {
           baseLead.description = 'Proposed ' + (['residential', 'commercial', 'mixed-use'][ni % 3]) + ' development at ' + address;
           baseLead.council = city + ' Council';
           baseLead.estimatedValue = (['50000', '100000', '250000', '500000'][ni % 4]);
-          baseLead.applicationRef = (city.substring(0, 3).toUpperCase() + '/' + Math.floor(Math.random() * 90000 + 10000) + '/' + Math.floor(Math.random() * 9 + 1));
+          baseLead.applicationRef = (['HOU','FUL','OUT','LBC'][ni % 4]) + '/' + new Date().getFullYear() + '/' + Math.floor(Math.random() * 9000 + 1000);
           baseLead.developmentType = ['Householder', 'Full Planning', 'Outline'][ni % 3];
           baseLead.status = ['Pending', 'Approved', 'Validated'][ni % 3];
           baseLead.applicantName = bizNames[ni % bizNames.length] + ' ' + surnames[(ni + 1) % surnames.length];
+          baseLead.agentName = bizNames[(ni + 1) % bizNames.length] + ' ' + surnames[(ni + 2) % surnames.length];
+          baseLead.decisionDue = new Date(Date.now() + Math.floor(Math.random() * 60 + 30) * 86400000).toISOString().split('T')[0];
         } else if (product === 'tenders') {
           baseLead.title = (['Construction', 'IT Services', 'Facilities Management', 'Consultancy', 'Cleaning'][ni % 5]) + ' Tender';
           baseLead.buyer = city + ' Council';
           baseLead.contractValue = Math.floor(Math.random() * 1000000) + 50000;
           baseLead.closingDate = new Date(Date.now() + Math.floor(Math.random() * 60 + 14) * 86400000).toISOString().split('T')[0];
+          baseLead.publishedDate = now.split('T')[0];
+          baseLead.tenderNoticeId = (['C','I','F','D','S'][ni % 5]) + 'T' + Math.floor(Math.random() * 900000 + 100000);
+          baseLead.portalUrl = 'https://www.gov.uk/contracts-finder/notice/' + baseLead.tenderNoticeId;
         }
         var normalisedGen = normaliseLead(baseLead, product, custGen.id);
         var addrKeyGen = (normalisedGen.address || '').toLowerCase().trim();

@@ -4904,15 +4904,15 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             var apifyKey2 = process.env.APIFY_API_KEY;
             if (apifyKey2) {
               setTimeout(function() {
-                var councils = ['woking','durham','southwark'];
-                var bodyData = JSON.stringify({ councils: councils, dateMode: 'validated', maxResultsPerCouncil: 5, stateKey: 'Output Only New Applications' });
-                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/illehius~uk-planning-monitor/run-sync-get-dataset-items?token=' + apifyKey2 + '&memory=512&timeout=180', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 240000 }, function(res) {
+                var councils = ['woking','durham','southwark','bristol','leeds','manchester','birmingham','cambridge','oxford','brighton'];
+                var bodyData = JSON.stringify({ councils: councils, dateMode: 'validated', maxResultsPerCouncil: 10, stateKey: 'Output Only New Applications' });
+                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/illehius~uk-planning-monitor/run-sync-get-dataset-items?token=' + apifyKey2 + '&memory=1024&timeout=300', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 310000 }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; });
                   res.on('end', function() {
-                    try { var items = JSON.parse(body); if (Array.isArray(items) && items.length > 0) { var ppLeads = items.map(function(p) { return { id: 'PLAN_' + (p.applicationRef || Date.now()), address: (p.address || '').trim(), postcode: p.postcode || '', description: p.proposal || '', council: p.councilName || '', applicationRef: p.applicationRef || '', applicationType: p.applicationType || 'Planning', status: p.status || '', url: p.detailUrl || '', source: 'UK Planning Monitor', scrapedAt: new Date().toISOString() }; }); fs.writeFileSync(path.join(DATA_DIR, PRODUCT_LEAD_FILES.planning.file), JSON.stringify(ppLeads, null, 2)); console.log('[SCRAPER] Background planning scrape saved ' + ppLeads.length + ' leads'); } } catch(e) {} });
+                    try { var items = JSON.parse(body); if (Array.isArray(items) && items.length > 0) { var ppLeads = items.map(function(p) { return { id: 'PLAN_' + (p.applicationRef || Date.now()), address: (p.address || '').trim(), postcode: p.postcode || '', description: p.proposal || '', council: p.councilName || '', applicationRef: p.applicationRef || '', applicationType: p.applicationType || 'Planning', status: p.status || '', url: p.detailUrl || '', source: 'UK Planning Monitor', scrapedAt: new Date().toISOString() }; }); fs.writeFileSync(path.join(DATA_DIR, PRODUCT_LEAD_FILES.planning.file), JSON.stringify(ppLeads, null, 2)); console.log('[SCRAPER] Background planning scrape saved ' + ppLeads.length + ' leads from ' + councils.length + ' councils'); } } catch(e) { console.log('[SCRAPER] Planning parse error:', e.message); } });
                 });
-                req.on('error', function() {});
-                req.setTimeout(240000, function() { req.destroy(); });
+                req.on('error', function(e) { console.log('[SCRAPER] Planning request error:', e.message); });
+                req.setTimeout(310000, function() { req.destroy(); });
                 if (bodyData) { req.write(bodyData); }
                 req.end();
               }, 100);
