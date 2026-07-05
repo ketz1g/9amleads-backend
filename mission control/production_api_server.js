@@ -5049,7 +5049,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
     // === SUPPLEMENT: generate leads matching customer target postcodes ===
     try {
       var dbForDemo = getDb();
-      var activeCusts = (dbForDemo.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && c.target_areas && c.trial_ends && new Date(c.trial_ends) > new Date(); });
+      var activeCusts = (dbForDemo.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && c.target_areas; });
       if (activeCusts.length > 0) {
         var uniqueTargets = {};
         for (var di = 0; di < activeCusts.length; di++) {
@@ -5060,7 +5060,9 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             var pName = prods[pi2];
             uniqueTargets[pName] = uniqueTargets[pName] || [];
             try {
-              var ta = JSON.parse(c.target_areas || '[]');
+              var pcfg = JSON.parse(c.product_config || '{}');
+              var prodCfg = pcfg[pName] || {};
+              var ta = prodCfg.target_areas ? JSON.parse(prodCfg.target_areas) : (JSON.parse(c.target_areas || '[]'));
               if (Array.isArray(ta)) uniqueTargets[pName] = uniqueTargets[pName].concat(ta);
             } catch(e) {}
           }
