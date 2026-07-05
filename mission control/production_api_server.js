@@ -4853,10 +4853,13 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             }
           } catch(e) { console.log('[SCRAPER] Apify error: ' + e.message); leads = []; }
         } else if (product === 'tenders') {
-          try {
-            // Try Public Contracts Scotland API (free, OCDS format)
-            leads = await new Promise(function(resolve) {
-              var req = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=30', method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 30000 }, function(res) {
+          leads = [];
+          var apifyKeyTen = process.env.APIFY_API_KEY;
+          if (apifyKeyTen) {
+            try {
+              leads = await new Promise(function(resolve) {
+                var bodyDataTen = JSON.stringify({ maxResults: 30 });
+                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/IDHZwbIUCGhlAGWbA/run-sync-get-dataset-items?token=' + apifyKeyTen + '&memory=512&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyDataTen), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try {
@@ -4883,33 +4886,16 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
                     }));
                   } catch(e) { resolve([]); }
                 });
-              });
-              req.on('error', function() { resolve([]); });
-              req.setTimeout(30000, function() { req.destroy(); resolve([]); });
-              req.end();
-            });
-    if (leads && leads.length > 5) {
-              console.log('[SCRAPER] PCS returned ' + leads.length + ' real tender leads');
-            } else {
-              if (!leads || leads.length === 0) {
-                // PCS failed - try Sell2Wales
-                console.log('[SCRAPER] PCS returned 0, trying Sell2Wales...');
-                leads = await new Promise(function(resolve) {
-                  var req2 = require('https').request({ hostname: 'api.sell2wales.gov.wales', path: '/api/v1/notices?status=Open&size=30', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000, rejectUnauthorized: false }, function(res2) {
-                    var b2 = ''; res2.on('data', function(c) { b2 += c; });
-                    res2.on('end', function() {
-                      try { var d2 = JSON.parse(b2); var items2 = d2.notices || d2.results || d2.items || d2 || []; if (!Array.isArray(items2)) items2 = []; resolve(items2.slice(0, 30).map(function(n) { return { id: 'SW_' + (n.id || Date.now()), title: n.title || n.noticeTitle || '', buyer: n.contractingAuthority || n.buyerName || '', contractValue: n.estimatedValue || n.value || 0, description: n.description || '', closingDate: n.deadlineDate || '', publishedDate: n.publishedDate || '', cpvCode: '', tenderNoticeId: n.noticeId || n.id || '', source: 'Sell2Wales', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
-                    });
-                  });
-                  req2.on('error', function() { resolve([]); });
-                  req2.setTimeout(15000, function() { req2.destroy(); resolve([]); });
-                  req2.end();
                 });
-              }
-              if (!leads || leads.length === 0) { console.log('[SCRAPER] No tender leads from any source'); leads = []; }
-              else { console.log('[SCRAPER] Sell2Wales returned ' + leads.length + ' tender leads'); }
-            }
-          } catch(e) { console.log('[SCRAPER] Tenders error: ' + e.message); leads = []; }
+                req.on('error', function() { resolve([]); });
+                req.setTimeout(90000, function() { req.destroy(); resolve([]); });
+                req.write(bodyDataTen);
+                req.end();
+              });
+              if (leads && leads.length > 0) console.log('[SCRAPER] Apify CF returned ' + leads.length + ' real tender leads');
+              else console.log('[SCRAPER] Apify CF returned 0');
+            } catch(e) { console.log('[SCRAPER] Apify CF error:', e.message); }
+          } else { console.log('[SCRAPER] No Apify key for tenders'); }
         } else if (product === 'planning') {
           leads = [];
           var apifyKey2 = process.env.APIFY_API_KEY;
