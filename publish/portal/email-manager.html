@@ -42,11 +42,26 @@ async function refreshList() {
     var d = await r.json();
     if (!d || !d.success) { document.getElementById('templateList').innerHTML = '<div class="empty">Failed to load templates.</div>'; return; }
     allData = d;
-    renderList(d.categories);
+    // Convert old format ({signup_emails, paid_emails, outbound_campaigns}) to categories array
+    var t = d.templates || d;
+    var cats = [];
+    if (t.signup_emails) cats.push({ name: 'Customer Signup Emails (' + t.signup_emails.length + ')', key: 'signup', emails: t.signup_emails });
+    if (t.paid_emails) cats.push({ name: 'Paid Customer Emails (' + t.paid_emails.length + ')', key: 'paid', emails: t.paid_emails });
+    if (t.outbound_campaigns) {
+      for (var pk in t.outbound_campaigns) {
+        var c = t.outbound_campaigns[pk];
+        cats.push({ name: 'Outbound ' + (c.name || pk) + ' (' + (c.emails ? c.emails.length : 0) + ')', key: 'outbound_' + pk, emails: (c.emails || []).map(function(e) { return { id: e.id || e.emailId, subject: e.subject, week: e.week, emailNum: e.emailNum, bodyPreview: e.bodyPreview }; }) });
+      }
+    }
+    if (d.categories) cats = d.categories;
+    var allDataCats = cats;
+    renderList(cats);
   } catch(e) { document.getElementById('templateList').innerHTML = '<div class="empty">Error: ' + e.message + '</div>'; }
 }
 
+var allDataCats = null;
 function renderList(categories) {
+  allDataCats = categories;
   var html = '<div class="tree-wrapper">';
   for (var ci = 0; ci < categories.length; ci++) {
     var cat = categories[ci];
@@ -73,12 +88,12 @@ function toggleCat(el) {
 
 function filterList() {
   var q = document.getElementById('search').value.toLowerCase();
-  if (!allData) return;
+  if (!allDataCats) return;
   var filtered = [];
-  for (var ci = 0; ci < allData.categories.length; ci++) {
-    var cat = allData.categories[ci];
+  for (var ci = 0; ci < allDataCats.length; ci++) {
+    var cat = allDataCats[ci];
     var match = cat.key.toLowerCase().includes(q) || (cat.name || '').toLowerCase().includes(q);
-    var emails = (cat.emails || []).filter(function(e) { return e.id.toLowerCase().includes(q) || (e.subject || '').toLowerCase().includes(q) || (e.bodyPreview || '').toLowerCase().includes(q); });
+    var emails = (cat.emails || []).filter(function(e) { return (e.id || '').toLowerCase().includes(q) || (e.subject || '').toLowerCase().includes(q) || (e.bodyPreview || '').toLowerCase().includes(q); });
     if (match) emails = cat.emails;
     if (emails.length > 0) filtered.push({ name: cat.name, key: cat.key, emails: emails });
   }
