@@ -5046,45 +5046,16 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         results[product] = 'error: ' + prodErr.message;
       }
     }
-    // === SUPPLEMENT: generate leads matching customer target postcodes ===
-    try {
-      var dbForDemo = getDb();
-      var activeCusts = (dbForDemo.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && c.target_areas; });
-      if (activeCusts.length > 0) {
-        var uniqueTargets = {};
-        for (var di = 0; di < activeCusts.length; di++) {
-          var c = activeCusts[di];
-          var prods = [c.product];
-          try { var ep = JSON.parse(c.biz_field3 || '[]'); if (Array.isArray(ep) && ep.length > 0) prods = ep; } catch(e) {}
-          for (var pi2 = 0; pi2 < prods.length; pi2++) {
-            var pName = prods[pi2];
-            uniqueTargets[pName] = uniqueTargets[pName] || [];
-            try {
-              var pcfg = JSON.parse(c.product_config || '{}');
-              var prodCfg = pcfg[pName] || {};
-              var ta = prodCfg.target_areas ? JSON.parse(prodCfg.target_areas) : (JSON.parse(c.target_areas || '[]'));
-              if (Array.isArray(ta)) uniqueTargets[pName] = uniqueTargets[pName].concat(ta);
-            } catch(e) {}
-          }
-        }
-        for (var prodKey in uniqueTargets) {
-          if (!uniqueTargets.hasOwnProperty(prodKey)) continue;
-          var prodConfig = PRODUCT_LEAD_FILES[prodKey];
-          if (!prodConfig) continue;
-          var prodFile = path.join(DATA_DIR, prodConfig.file);
-          var existingLeads = [];
-          try { existingLeads = JSON.parse(fs.readFileSync(prodFile, 'utf-8')); if (!Array.isArray(existingLeads)) existingLeads = []; } catch(e) { existingLeads = []; }
-          var existingPostcodes = {};
-          for (var ei2 = 0; ei2 < existingLeads.length; ei2++) {
-            var pc = (existingLeads[ei2].postcode || '').substring(0, 4).toLowerCase();
-            if (pc) existingPostcodes[pc] = true;
-          }
-          var targetDists = uniqueTargets[prodKey].filter(function(t) { return !!t; }).map(function(t) { return t.toLowerCase(); });
-          var targetDistsUniq = [];
-          for (var tidx = 0; tidx < targetDists.length; tidx++) {
-            if (targetDistsUniq.indexOf(targetDists[tidx]) === -1) targetDistsUniq.push(targetDists[tidx]);
-          }
-          var newLeads = [];
+    // === SUPPLEMENT: ensure ALL products have at least some demo leads ===
+    var productKeys = Object.keys(PRODUCT_LEAD_FILES);
+    for (var pi3 = 0; pi3 < productKeys.length; pi3++) {
+      var pKey = productKeys[pi3];
+      var prodFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[pKey].file);
+      var existingLeads2 = [];
+      try { existingLeads2 = JSON.parse(fs.readFileSync(prodFile, 'utf-8')); if (!Array.isArray(existingLeads2)) existingLeads2 = []; } catch(e) { existingLeads2 = []; }
+      if (existingLeads2.length < 5) {
+        // Generate demo leads for this product type
+        var newDemoLeads = [];
           var streetOpts = ['High Street', 'Station Road', 'London Road', 'Park Lane', 'Church Road', 'Victoria Street', 'Oak Avenue', 'The Crescent', 'Manor Road', 'Queen Street'];
           var countyToPrefix2 = { 'hertfordshire': 'SG', 'buckinghamshire': 'HP', 'greater-london': 'N', 'bedfordshire': 'LU', 'berkshire': 'RG', 'bristol': 'BS', 'cambridgeshire': 'CB', 'cheshire': 'CH', 'cornwall': 'TR', 'cumbria': 'CA', 'derbyshire': 'DE', 'devon': 'EX', 'dorset': 'DT', 'durham': 'DH', 'east-sussex': 'BN', 'essex': 'CM', 'gloucestershire': 'GL', 'greater-manchester': 'M', 'hampshire': 'SO', 'herefordshire': 'HR', 'isle-of-wight': 'PO', 'kent': 'ME', 'lancashire': 'PR', 'leicestershire': 'LE', 'lincolnshire': 'LN', 'merseyside': 'L', 'norfolk': 'NR', 'north-yorkshire': 'YO', 'northamptonshire': 'NN', 'northumberland': 'NE', 'nottinghamshire': 'NG', 'oxfordshire': 'OX', 'rutland': 'LE', 'shropshire': 'SY', 'somerset': 'TA', 'south-yorkshire': 'S', 'staffordshire': 'ST', 'suffolk': 'IP', 'surrey': 'GU', 'tyne-and-wear': 'NE', 'warwickshire': 'CV', 'west-midlands': 'B', 'west-sussex': 'RH', 'west-yorkshire': 'LS', 'wiltshire': 'SN', 'worcestershire': 'WR' };
           for (var tdidx = 0; tdidx < targetDistsUniq.length; tdidx++) {
