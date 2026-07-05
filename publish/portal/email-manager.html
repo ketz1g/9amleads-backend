@@ -175,7 +175,7 @@ function showEditor(tpl) {
   // Action buttons
   editHtml += '<div class="action-bar">';
   editHtml += '<button class="btn btn-success btn-sm" onclick="saveTemplate(\'' + tpl.id + '\')"><i class="fas fa-save"></i> Save Changes</button>';
-  editHtml += '<button class="btn btn-outline btn-sm" onclick="previewEmail(\'' + tpl.id + '\')"><i class="fas fa-eye"></i> Preview</button>';
+  editHtml += '<button class="btn btn-primary btn-sm" onclick="previewRendered(\'' + tpl.id + '\')"><i class="fas fa-eye"></i> Live Preview</button>';
   editHtml += '<span style="flex:1"></span>';
   editHtml += '<button class="btn btn-outline btn-sm" onclick="currentId=null;refreshList()"><i class="fas fa-times"></i> Close</button>';
   editHtml += '</div>';
@@ -184,6 +184,69 @@ function showEditor(tpl) {
   editHtml += '</div>';
 
   list.innerHTML = editHtml;
+}
+
+function previewRendered(id) {
+  var bodyEl = document.getElementById('edit-body');
+  if (!bodyEl) return;
+  var body = bodyEl.value;
+  var subject = document.getElementById('edit-subject')?.value || '';
+  var preview = document.getElementById('edit-preview')?.value || '';
+  var cta = document.getElementById('edit-cta')?.value || '';
+
+  // Determine campaign key from ID prefix
+  var campKey = 'planning';
+  if (id.startsWith('9AM-MOV')) campKey = 'moving';
+  else if (id.startsWith('9AM-PLAN')) campKey = 'planning';
+  else if (id.startsWith('9AM-PROB')) campKey = 'probate';
+  else if (id.startsWith('9AM-NBZ')) campKey = 'newbusiness';
+  else if (id.startsWith('9AM-TEN')) campKey = 'tenders';
+
+  // Build the full HTML using the same function the server uses
+  var html = buildPreviewEmailHTML(body, campKey, cta);
+
+  var w = window.open('', '_blank', 'width=800,height=900');
+  if (!w) { alert('Please allow popups for preview'); return; }
+  w.document.write(html);
+  w.document.title = 'Preview: ' + subject;
+  w.document.close();
+}
+
+function buildPreviewEmailHTML(body, campaignKey, cta) {
+  var accent = { moving: '#ff6b35', planning: '#10b981', probate: '#a855f7', newbusiness: '#06b6d4', tenders: '#6366f1' }[campaignKey] || '#0ea5e9';
+  var campName = { moving: 'Moving Leads Campaign', planning: 'Planning Permissions Campaign', probate: 'Probate Leads Campaign', newbusiness: 'New Business Alerts Campaign', tenders: 'Public Tenders Campaign' }[campaignKey] || '';
+  var ctaBtn = cta && !cta.toLowerCase().includes('reply')
+    ? '<a href="' + cta + '" target="_blank" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#6366f1);color:#fff;text-decoration:none;border-radius:50px;font-size:13px;font-weight:700">' + cta + '</a>'
+    : '<p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0">' + cta + '</p>';
+
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>' +
+    '<body style="margin:0;padding:0;background:#0f111a;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#e2e8f0">' +
+    '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px">' +
+    '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">' +
+    '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:32px 30px 20px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">' +
+    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#ffffff;text-align:center;margin-bottom:6px">' +
+    '<span style="display:inline-block;width:38px;height:38px;border-radius:10px;text-align:center;line-height:38px;font-size:18px;background:linear-gradient(135deg,#0ea5e9,#6366f1);margin-right:6px;vertical-align:middle">9</span>' +
+    '<span style="vertical-align:middle">am Leads</span></div>' +
+    '<p style="color:#f1f5f9;font-size:10px;margin:0;text-transform:uppercase;letter-spacing:2.5px;font-weight:600">' + campName + '</p>' +
+    '</td></tr>' +
+    '<tr><td style="background:#12141e;padding:28px 30px 24px">' +
+    '<p style="color:#f1f5f9;font-size:14px;margin:0 0 6px">Hi {{FIRSTNAME}},</p>' +
+    '<div style="font-size:14px;color:#e2e8f0;line-height:1.8">' + body.replace(/\n/g, '<br>') + '</div>' +
+    '<div style="margin-top:20px;text-align:center">' + ctaBtn + '</div>' +
+    '</td></tr>' +
+    '<tr><td style="background:#12141e;padding:0 30px"><div style="height:1px;background:rgba(255,255,255,0.06)"></div></td></tr>' +
+    '<tr><td style="background:#12141e;padding:16px 30px 12px">' +
+    '<div style="text-align:center">' +
+    '<p style="color:#94a3b8;font-size:11px;margin:0 0 4px;font-style:italic">Written by</p>' +
+    '<p style="color:#f1f5f9;font-size:13px;font-weight:600;margin:0">Ketz Mandalia</p>' +
+    '<p style="color:#64748b;font-size:10px;margin:2px 0 0">Founder, 9amLeads</p>' +
+    '</div></td></tr>' +
+    '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:20px 30px 16px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">' +
+    '<p style="color:#64748b;font-size:10px;margin:0 0 6px">9am Leads Ltd &bull; Company No. 17168176</p>' +
+    '<p style="color:#64748b;font-size:9px;margin:0 0 8px"><a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a>' +
+    ' &bull; <a href="{{UNSUBSCRIBE}}" style="color:#38bdf8;text-decoration:underline">Unsubscribe</a></p>' +
+    '<p style="color:#475569;font-size:8px;margin:0;letter-spacing:.4px">Fresh exclusive opportunities at 9am every morning &bull; 9amLeads.com</p>' +
+    '</td></tr></table></td></tr></table></body></html>';
 }
 
 function escapeHtml(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -211,15 +274,6 @@ async function saveTemplate(id) {
     if (d.success) { st.textContent = 'Saved successfully'; st.style.color = 'var(--success)'; st.style.display = 'block'; }
     else { st.textContent = 'Save failed: ' + (d.error || 'Unknown'); st.style.color = 'var(--danger)'; st.style.display = 'block'; }
   } catch(e) { setStatus('error', e.message); }
-}
-
-function previewEmail(id) {
-  var bodyEl = document.getElementById('edit-body');
-  if (!bodyEl) return;
-  var w = window.open('', '_blank');
-  if (!w) { alert('Please allow popups for preview'); return; }
-  w.document.write(bodyEl.value);
-  w.document.close();
 }
 
 async function syncBrevo() {
