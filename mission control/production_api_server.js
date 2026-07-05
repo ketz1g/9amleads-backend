@@ -2377,7 +2377,7 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
 }
 
 // GET /api/admin/outbound-campaigns — list outbound prospecting campaigns
-app.get('/api/admin/outbound-campaigns', adminAuth, (req, res) => {
+app.get('/api/admin/test-outbound', adminAuth, (req, res) => {
   var summaries = {};
   for (var p in OUTBOUND_CAMPAIGNS) {
     var c = OUTBOUND_CAMPAIGNS[p];
