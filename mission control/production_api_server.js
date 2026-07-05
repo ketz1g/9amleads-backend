@@ -2335,6 +2335,15 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
   var campaign = OUTBOUND_CAMPAIGNS[campaignKey];
   if (!campaign) return '';
   var accent = { moving: '#ff6b35', planning: '#10b981', probate: '#a855f7', newbusiness: '#06b6d4', tenders: '#6366f1' }[campaignKey] || '#0ea5e9';
+  var prodLabel = { moving: 'Moving Leads', planning: 'Planning Permissions', probate: 'Probate Leads', newbusiness: 'New Business Alerts', tenders: 'Public Tenders' }[campaignKey] || '';
+  var insightCards = {
+    moving: { emoji: '\uD83D\uDE9A', tip: 'Moving leads convert fastest when you\'re the first to contact the seller. Your brochure and letter should arrive the same day the property goes SSTC.', metric: 'Avg. move value: \u00a31,000-\u00a33,000' },
+    planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Planning applicants are actively choosing builders. Your flyer arriving the same week the application is submitted positions you ahead of every competitor.', metric: 'Avg. project value: \u00a320,000-\u00a3100,000' },
+    probate: { emoji: '\u2696\uFE0F', tip: 'Probate requires a compassionate approach. Families remember who reached out with sensitivity, not who pushed the hardest.', metric: 'Avg. estate value: \u00a3150,000+' },
+    newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often don\'t have a website or phone number yet. Check Companies House weekly and be ready when their details go live.', metric: 'Avg. client LTV: 2-5 years' },
+    tenders: { emoji: '\uD83D\uDCCB', tip: 'Tenders close on deadlines. Submit your capability statement early and follow up with a printed pack to stand out.', metric: 'Avg. contract value: \u00a350,000-\u00a3500,000' }
+  };
+  var insight = insightCards[campaignKey] || { emoji: '\uD83D\uDCA1', tip: 'Follow up within 30 minutes to maximise your conversion rate.', metric: '' };
   var name = recipientName || '{{FIRSTNAME}}';
   var bodyText = (email.body || '').replace(/\n/g, '<br>');
   var ctaBtn = email.cta && !email.cta.toLowerCase().includes('reply') 
@@ -2358,6 +2367,15 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
     '<div style="font-size:14px;color:#e2e8f0;line-height:1.8">' + bodyText + '</div>' +
     '<div style="margin-top:20px;text-align:center">' + ctaBtn + '</div>' +
     '</td></tr>' +
+    // Product insight card
+    '<tr><td style="background:#12141e;padding:0 30px 16px"><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px">' +
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">' + insight.emoji + '</span><span style="font-size:12px;font-weight:700;color:#f1f5f9">' + prodLabel + ' Insight</span></div>' +
+    '<p style="font-size:12px;color:#cbd5e1;line-height:1.6;margin:0 0 6px">' + insight.tip + '</p>' +
+    (insight.metric ? '<p style="font-size:11px;color:#38bdf8;margin:0 0 8px"><strong>' + insight.metric + '</strong></p>' : '') +
+    '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">' +
+    '<p style="font-size:10px;color:#94a3b8;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
+    '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">ig</a></div>' +
+    '</div></div></td></tr>' +
     // Premium separator
     '<tr><td style="background:#12141e;padding:0 30px"><div style="height:1px;background:rgba(255,255,255,0.06)"></div></td></tr>' +
     // Founder section
