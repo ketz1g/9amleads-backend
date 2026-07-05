@@ -3222,7 +3222,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       }
       // Round 2: fill remaining slots with round-robin across products + areas
       if (custLeads.length < totalDailyLimit) {
-        var maxRounds2 = Math.min(10, Math.ceil(totalDailyLimit / Math.max(1, products.length)));
+        var maxRounds2 = Math.min(50, Math.ceil(totalDailyLimit / Math.max(1, products.length)));
         for (var ri2 = 0; ri2 < maxRounds2 && custLeads.length < totalDailyLimit; ri2++) {
           for (var pi2 = 0; pi2 < products.length && custLeads.length < totalDailyLimit; pi2++) {
             var prod2 = products[pi2];
