@@ -4360,8 +4360,9 @@ function generateLeadEmailHTML(customer, leads) {
       actionLinks.push({ url: 'https://www.gov.uk/search-probate-records', label: 'Search Probate Records' });
       actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'tenders') {
-      if (d.tenderNoticeId) actionLinks.push({ url: 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId, label: 'Apply on Contracts Finder' });
-      else actionLinks.push({ url: 'https://www.gov.uk/contracts-finder', label: 'View on Public Contracts Scotland' });
+      if (d.pcsUrl) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' }); else if (d.tenderNoticeId) actionLinks.push({ url: 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId, label: 'Apply on Contracts Finder' });
+      else if (d.pcsUrl) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' });
+      else actionLinks.push({ url: 'https://www.gov.uk/contracts-finder', label: 'Browse Tenders' });
     }
     if (actionLinks.length > 0) {
       body += '<div style="margin-top:12px;display:flex;gap:8px">';
@@ -4873,6 +4874,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
                         closingDate: t.tenderPeriod ? t.tenderPeriod.endDate : '',
                         publishedDate: r.date || data.publishedDate || '',
                         tenderNoticeId: r.ocid || r.id || '',
+                        pcsUrl: r.ocid ? 'https://www.publiccontractsscotland.gov.uk/Notice/' + r.ocid : '',
                         source: 'Public Contracts Scotland',
                         scrapedAt: new Date().toISOString()
                       };
