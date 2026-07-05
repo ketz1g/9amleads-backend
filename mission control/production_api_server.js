@@ -5000,42 +5000,8 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         results[product] = 'error: ' + prodErr.message;
       }
     }
-    // === SUPPLEMENT: ensure ALL products have at least some demo leads ===
-    try {
-      var productKeys = Object.keys(PRODUCT_LEAD_FILES);
-      for (var pi3 = 0; pi3 < productKeys.length; pi3++) {
-        var pKey = productKeys[pi3];
-        var prodFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[pKey].file);
-        var existingLeads2 = [];
-        try { existingLeads2 = JSON.parse(fs.readFileSync(prodFile, 'utf-8')); if (!Array.isArray(existingLeads2)) existingLeads2 = []; } catch(e) { existingLeads2 = []; }
-        if (existingLeads2.length < 5) {
-          var defaultDist = 'london';
-          var newDemoLeads = [];
-          var streetOpts = ['High Street', 'Station Road', 'London Road', 'Park Lane', 'Church Road', 'Victoria Street', 'Oak Avenue', 'The Crescent', 'Manor Road', 'Queen Street'];
-          var countyToPrefix2 = { 'hertfordshire': 'SG', 'buckinghamshire': 'HP', 'greater-london': 'N', 'essex': 'CM', 'kent': 'ME', 'surrey': 'GU' };
-          var pcPrefix2 = countyToPrefix2[defaultDist] || 'N';
-          for (var li2 = 0; li2 < 5; li2++) {
-            var fakeNum = Math.floor(Math.random() * 200) + 1;
-            var fakeStreet = streetOpts[li2 % streetOpts.length];
-            var fakeDistNum = Math.floor(Math.random() * 9) + 1;
-            var fakePC = pcPrefix2 + fakeDistNum + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
-            var demoLead = { id: 'DEMO_' + pKey.toUpperCase() + '_' + Date.now() + '_' + li2, address: fakeNum + ' ' + fakeStreet + ', ' + fakePC, postcode: fakePC, source: '9amLeads Demo', scrapedAt: new Date().toISOString(), generated: true };
-            if (pKey === 'moving') { var bedC = (li2 % 4) + 1; demoLead.bedrooms = bedC; demoLead.price = bedC <= 2 ? 300000 : 600000; demoLead.propertyType = ['House','Flat','Maisonette'][li2 % 3]; demoLead.status = ['SSTC','Under Offer','Available'][li2 % 3]; demoLead.city = 'London'; }
-            else if (pKey === 'probate') { demoLead.name = 'Estate of ' + ['Smith','Jones','Williams'][li2 % 3]; demoLead.estateValue = Math.floor(Math.random() * 500000) + 100000; demoLead.city = 'London'; }
-            else if (pKey === 'newbusiness') { demoLead.name = ['Premier','Elite','First Choice'][li2 % 3] + ' Services Ltd'; demoLead.companyNumber = 'NI' + (Math.floor(Math.random() * 900000) + 100000); baseLead.verifyCH = true; demoLead.city = 'London'; }
-            else if (pKey === 'planning') { demoLead.applicationType = ['Full Planning','Householder','Change of Use'][li2 % 3]; demoLead.description = 'Proposed residential development'; demoLead.city = 'London'; }
-            else if (pKey === 'tenders') { demoLead.title = ['Construction','IT Services','Cleaning'][li2 % 3] + ' Tender'; demoLead.buyer = 'UK Public Sector'; demoLead.contractValue = Math.floor(Math.random() * 1000000) + 50000; }
-            newDemoLeads.push(demoLead);
-          }
-          if (newDemoLeads.length > 0) {
-            existingLeads2 = existingLeads2.concat(newDemoLeads);
-            fs.writeFileSync(prodFile, JSON.stringify(existingLeads2, null, 2));
-            console.log('[SCRAPER] Added ' + newDemoLeads.length + ' demo leads for ' + pKey);
-            results[pKey] = (results[pKey] || '') + '+demo_' + newDemoLeads.length;
-          }
-        }
-      }
-    } catch(e) { console.log('[SCRAPER] Demo supplement error:', e.message); }
+    // === SUPPLEMENT: Disabled — no demo leads are generated ===
+    // Only real scraped data is used for all lead types.
     // Log scraper run to database
     try {
       var scraperLog = getDb();

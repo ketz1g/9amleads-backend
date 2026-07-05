@@ -504,8 +504,8 @@ async function distributeProduct(product) {
     assignLead(assignment, null, null, 2);
   }
 
-  // === Phase 4: Generate targeted leads — evenly split across customer's areas ===
-  var streets = ['High Street', 'Station Road', 'London Road', 'Park Lane', 'Church Road', 'Victoria Street', 'Oak Avenue', 'The Crescent', 'Manor Road', 'Queen Street', 'Mill Lane', 'New Road', 'Green Lane', 'Grove Road', 'Kingsway'];
+  // === Phase 4: Disabled — only real scraped data is used ===
+  var generated = 0;
   var citiesByPrefix = { 'EC': 'London', 'WC': 'London', 'SW': 'London', 'SE': 'London', 'W': 'London', 'N': 'London', 'NW': 'London', 'E': 'London', 'EN': 'Enfield', 'SG': 'Stevenage', 'CM': 'Chelmsford', 'ME': 'Maidstone', 'KT': 'Kingston', 'TW': 'Twickenham', 'UB': 'Uxbridge', 'HA': 'Harrow', 'WD': 'Watford', 'AL': 'St Albans', 'LU': 'Luton', 'SS': 'Southend', 'DA': 'Dartford', 'BR': 'Bromley', 'CR': 'Croydon', 'SM': 'Sutton', 'TN': 'Tonbridge', 'BN': 'Brighton', 'RH': 'Redhill', 'GU': 'Guildford', 'SL': 'Slough', 'RG': 'Reading', 'OX': 'Oxford' };
   var countyToPrefix = { 'hertfordshire': 'SG', 'buckinghamshire': 'HP', 'greater-london': 'N', 'bedfordshire': 'LU', 'berkshire': 'RG', 'bristol': 'BS', 'cambridgeshire': 'CB', 'cheshire': 'CH', 'cornwall': 'TR', 'cumbria': 'CA', 'derbyshire': 'DE', 'devon': 'EX', 'dorset': 'DT', 'durham': 'DH', 'east-sussex': 'BN', 'essex': 'CM', 'gloucestershire': 'GL', 'greater-manchester': 'M', 'hampshire': 'SO', 'herefordshire': 'HR', 'isle-of-wight': 'PO', 'kent': 'ME', 'lancashire': 'PR', 'leicestershire': 'LE', 'lincolnshire': 'LN', 'merseyside': 'L', 'norfolk': 'NR', 'north-yorkshire': 'YO', 'northamptonshire': 'NN', 'northumberland': 'NE', 'nottinghamshire': 'NG', 'oxfordshire': 'OX', 'rutland': 'LE', 'shropshire': 'SY', 'somerset': 'TA', 'south-yorkshire': 'S', 'staffordshire': 'ST', 'suffolk': 'IP', 'surrey': 'GU', 'tyne-and-wear': 'NE', 'warwickshire': 'CV', 'west-midlands': 'B', 'west-sussex': 'RH', 'west-yorkshire': 'LS', 'wiltshire': 'SN', 'worcestershire': 'WR' };
   var propTypes = ['House', 'Flat', 'Maisonette', 'Bungalow', 'Townhouse'];
