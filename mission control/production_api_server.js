@@ -4357,7 +4357,7 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.companyNumber && !d.generated) actionLinks.push({ url: 'https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber, label: 'View on Companies House' });
       if (d.name) actionLinks.push({ url: 'https://www.google.com/search?q=' + encodeURIComponent(d.name + ' contact email phone'), label: 'Find Contact Details' });
     } else if (leadProduct === 'probate') {
-      actionLinks.push({ url: 'https://www.gov.uk/search-probate-records', label: 'Search Probate Records' });
+      if (d.noticeUrl) actionLinks.push({ url: d.noticeUrl, label: 'View on UK Gazette' }); else actionLinks.push({ url: 'https://www.gov.uk/government/publications/how-to-search-for-probate-records', label: 'Search Probate Records' });
       actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'tenders') {
       if (d.pcsUrl && !d.generated) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' }); else if (d.tenderNoticeId && !d.generated) actionLinks.push({ url: 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId, label: 'View Tender' });
@@ -4978,7 +4978,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try {
             var chKey5 = process.env.COMPANIES_HOUSE_API_KEY || process.env.GOVUK_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
             leads = await new Promise(function(resolve) {
-              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=probate%20solicitor%20probate%20practitioner&size=30', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey5 + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=probate&size=30', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey5 + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.title && c.company_number && c.company_status !== 'dissolved'}).map(function(c) { var a = c.address || {}; return { id: 'CH_PROB_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House Probate', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
