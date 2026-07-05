@@ -2272,7 +2272,7 @@ const PAID_EMAIL_SERIES = [
   { week: 0, subject: 'Welcome to 9amLeads \u2014 Your opportunities arrive tomorrow at 9am!', template: 'paid_welcome' },
   { week: 1, subject: 'Tip #1: The 30-Minute Rule \u2014 Why Speed Wins', template: 'paid_tip1' },
   { week: 2, subject: 'Tip #2: Script That Converts \u2014 What To Say', template: 'paid_tip2' },
-  { week: 3, subject: 'Tip #3: Wider coverage = more daily opportunities', template: 'paid_tip3' },
+  { week: 3, subject: 'Tip #3: Track Everything to Improve Conversion', template: 'paid_tip3' },
   { week: 4, subject: 'Tip #4: Follow Up \u2014 The Money Is In The Follow-Up', template: 'paid_tip4' },
   { week: 8, subject: 'Check-in: How many opportunities have you converted?', template: 'paid_checkin1' },
   { week: 12, subject: 'You\u2019ve been with us 3 months \u2014 here\u2019s your ROI', template: 'paid_checkin2' }
@@ -4374,6 +4374,24 @@ function generateLeadEmailHTML(customer, leads) {
     body += '</div></div>';
   }
   body += '</td></tr>';
+
+  // Product insight card — consistent with campaign emails
+  var insightCards2 = {
+    moving: { emoji: '\uD83D\uDE9A', tip: 'Moving leads convert fastest when you\'re the first to contact the seller. Your brochure and letter should arrive the same day the property goes SSTC.', metric: 'Avg. move value: £1,000-£3,000' },
+    planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Planning applicants are actively choosing builders. Your flyer arriving the same week positions you ahead of every competitor.', metric: 'Avg. project value: £20,000-£100,000' },
+    probate: { emoji: '\u2696\uFE0F', tip: 'Probate requires a compassionate approach. Families remember who reached out with sensitivity, not who pushed the hardest.', metric: 'Avg. estate value: £150,000+' },
+    newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often don\'t have a website yet. Check Companies House weekly and be ready when their details go live.', metric: 'Avg. client LTV: 2-5 years' },
+    tenders: { emoji: '\uD83D\uDCCB', tip: 'Tenders close on deadlines. Submit your capability statement early and follow up with a printed pack to stand out.', metric: 'Avg. contract value: £50,000-£500,000' }
+  };
+  var insight2 = insightCards2[customer.product] || { emoji: '\uD83D\uDCA1', tip: 'Follow up within 30 minutes to maximise your conversion rate.', metric: '' };
+  body += '<tr><td style="background:#12141e;padding:0 28px 16px"><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px">';
+  body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">' + insight2.emoji + '</span><span style="font-size:12px;font-weight:700;color:#f1f5f9">' + getLeadTypeRule(customer.product).name + ' Insight</span></div>';
+  body += '<p style="font-size:12px;color:#cbd5e1;line-height:1.6;margin:0 0 6px">' + insight2.tip + '</p>';
+  body += (insight2.metric ? '<p style="font-size:11px;color:#38bdf8;margin:0 0 8px"><strong>' + insight2.metric + '</strong></p>' : '');
+  body += '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">';
+  body += '<p style="font-size:10px;color:#94a3b8;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>';
+  body += '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">ig</a></div>';
+  body += '</div></div></td></tr>';
 
   // Footer — dark sleek
   body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:28px 30px 24px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">';
