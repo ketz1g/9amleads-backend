@@ -79,6 +79,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 <div style="font-size:12px;color:var(--muted2);line-height:1.6">Upload all 80 outbound prospecting emails (5 campaigns × 16 emails) to Brevo as templates. Lists and tags are created automatically.</div>
 <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
 <button class="btn btn-primary btn-sm" onclick="uploadBrevoCampaigns()"><i class="fas fa-upload"></i> Upload All to Brevo</button>
+<button class="btn btn-outline btn-sm" onclick="previewCampaigns()"><i class="fas fa-eye"></i> Preview Emails</button>
 <button class="btn btn-outline btn-sm" onclick="checkBrevoTemplates()"><i class="fas fa-search"></i> Check Templates</button>
 </div>
 <div id="brevo-upload-status" style="margin-top:10px;font-size:12px;display:none"></div>
@@ -195,6 +196,61 @@ async function uploadBrevoCampaigns() {
       status.innerHTML = '<span style="color:#ef4444">❌ Upload failed: ' + (d.error || 'Unknown error') + '</span>';
     }
   } catch(e) { status.innerHTML = '<span style="color:#ef4444">❌ Error: ' + e.message + '</span>'; }
+}
+
+var ICONS = { moving: '🚚', planning: '🏗️', probate: '⚖️', newbusiness: '🏢', tenders: '📋' };
+var LABELS = { moving: 'Moving Leads', planning: 'Planning Permissions', probate: 'Probate Leads', newbusiness: 'New Business Alerts', tenders: 'Public Tenders' };
+
+function previewCampaigns() {
+  fetch(API + '/api/admin/outbound-campaigns', { headers: adminHeaders() }).then(function(r) { return r.json(); }).then(function(data) {
+    if (!data || !data.campaigns) { alert('Could not load campaigns'); return; }
+    var campaigns = data.campaigns;
+    var html = '<div style="display:grid;gap:10px">';
+    for (var p in campaigns) {
+      var c = campaigns[p];
+      html += '<div style="background:#181b28;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;cursor:pointer" onclick="previewOutboundCampaign(\'' + p + '\')">' +
+        '<div style="font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:4px">' + (ICONS[p] || '📧') + ' ' + (LABELS[p] || c.name) + '</div>' +
+        '<div style="font-size:11px;color:#94a3b8">' + c.emailCount + ' emails · ' + c.tag + '</div></div>';
+    }
+    html += '</div>';
+    showAdminModal('Outbound Prospecting Campaigns', html);
+  })['catch'](function() { alert('Could not load campaigns'); });
+}
+
+function previewOutboundCampaign(product) {
+  fetch(API + '/api/admin/outbound-campaigns/' + product, { headers: adminHeaders() }).then(function(r) { return r.json(); }).then(function(data) {
+    if (!data || !data.campaign) { alert('Could not load campaign'); return; }
+    var camp = data.campaign;
+    var html = '<div style="margin-bottom:12px"><div style="font-size:18px;font-weight:700;color:#f1f5f9">' + (ICONS[product] || '📧') + ' ' + camp.name + '</div><div style="font-size:12px;color:#94a3b8;margin-top:4px">' + camp.listName + ' · ' + camp.emails.length + ' emails · Tag: ' + camp.tag + '</div></div>';
+    for (var ei = 0; ei < camp.emails.length; ei++) {
+      var e = camp.emails[ei];
+      html += '<div style="background:#181b28;border:1px solid rgba(255,255,255,0.06);border-radius:8px;margin-bottom:6px;overflow:hidden">' +
+        '<div style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:8px" onclick="var e=this.nextElementSibling;e.style.display=e.style.display===\'none\'?\'block\':\'none\'">' +
+        '<span style="font-size:10px;color:#64748b;width:60px;flex-shrink:0">' + e.id + '</span>' +
+        '<span style="flex:1;font-size:12px;font-weight:600;color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + e.subject + '</span>' +
+        '<span style="color:#64748b">▼</span></div>' +
+        '<div style="display:none;padding:0 14px 12px">' +
+        '<div style="font-size:10px;color:#64748b;margin-bottom:6px"><strong>B Subject:</strong> ' + e.subjectB + ' · <strong>Preview:</strong> ' + e.preview + '</div>' +
+        '<div style="font-size:11px;color:#94a3b8;line-height:1.6;white-space:pre-wrap;background:#0f111a;padding:10px;border-radius:6px;max-height:300px;overflow-y:auto">' + e.body + '</div>' +
+        '<div style="margin-top:6px;font-size:10px;color:#38bdf8"><strong>CTA:</strong> ' + e.cta + '</div></div></div>';
+    }
+    html += '<div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="previewCampaigns()" style="font-size:11px">← Back</button></div>';
+    showAdminModal(camp.name, html);
+  })['catch'](function() { alert('Could not load campaign'); });
+}
+
+function showAdminModal(title, content) {
+  var existing = document.getElementById('adminModalOverlay');
+  if (existing) existing.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'adminModalOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#12141e;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;max-width:700px;width:100%;margin:20px 0;color:#e2e8f0';
+  box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h3 style="font-size:15px;font-weight:700;margin:0">' + title + '</h3><button onclick="this.closest(\'#adminModalOverlay\').remove()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer">✕</button></div>' + content;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
 }
 
 async function checkBrevoTemplates() {

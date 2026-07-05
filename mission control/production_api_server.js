@@ -2376,6 +2376,23 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
     '</td></tr></table></td></tr></table></body></html>';
 }
 
+// GET /api/admin/outbound-campaigns — list outbound prospecting campaigns
+app.get('/api/admin/outbound-campaigns', adminAuth, (req, res) => {
+  var summaries = {};
+  for (var p in OUTBOUND_CAMPAIGNS) {
+    var c = OUTBOUND_CAMPAIGNS[p];
+    summaries[p] = { name: c.name, tag: c.tag, listName: c.listName, emailCount: c.emails.length };
+  }
+  res.json({ success: true, campaigns: summaries });
+});
+
+// GET /api/admin/outbound-campaigns/:product — get emails for a campaign
+app.get('/api/admin/outbound-campaigns/:product', adminAuth, (req, res) => {
+  var camp = OUTBOUND_CAMPAIGNS[req.params.product];
+  if (!camp) return res.status(404).json({ error: 'Campaign not found' });
+  res.json({ success: true, campaign: { name: camp.name, tag: camp.tag, listName: camp.listName, emails: camp.emails } });
+});
+
 // GET /api/admin/brevo/upload — upload all 80 campaign templates to Brevo
 app.get('/api/admin/brevo/upload', adminAuth, async (req, res) => {
   try {
