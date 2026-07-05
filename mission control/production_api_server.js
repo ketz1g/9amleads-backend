@@ -4853,7 +4853,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try {
             // Try Public Contracts Scotland API (free, OCDS format)
             leads = await new Promise(function(resolve) {
-              var req = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=30', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 30000 }, function(res) {
+              var req = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=30', method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 30000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try {
@@ -5052,7 +5052,7 @@ app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
     var key = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
     // Also test PCS tender API
     var tenderResult = await new Promise(function(resolve) {
-      var req3 = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=2', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res3) {
+      var req3 = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=2', method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res3) {
         var b3 = ''; res3.on('data', function(c) { b3 += c; });
         res3.on('end', function() { try { var d3 = JSON.parse(b3); resolve({ status: res3.statusCode, releases: (d3.releases || []).length, first: d3.releases && d3.releases[0] ? d3.releases[0].ocid : 'none' }); } catch(e) { resolve({ error: 'Parse error', body: b3.slice(0, 200) }); }
         });
