@@ -3331,16 +3331,12 @@ app.post('/api/admin/upgrade', adminAuth, (req, res) => {
     if (!email || !plan) return res.status(400).json({ error: 'email and plan required' });
     const customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
     if (!customer) return res.status(404).json({ error: 'Customer not found' });
-    var updates = { plan: plan, leads_per_day: leads_per_day || 15 };
-    if (product) updates.product = product;
-    if (coverage) updates.coverage = coverage;
-    if (target_areas) updates.target_areas = target_areas;
-    if (lead_type) updates.lead_type = lead_type;
-    if (biz_field3) updates.biz_field3 = biz_field3;
-    var setClauses = Object.keys(updates).map(function(k) { return k + ' = ?'; }).join(', ');
-    var values = Object.values(updates);
-    values.push(customer.id);
-    db.prepare('UPDATE customers SET ' + setClauses + ' WHERE id = ?').run.apply(db, values);
+    db.prepare('UPDATE customers SET plan = ?, leads_per_day = ? WHERE id = ?').run(plan, leads_per_day || 15, customer.id);
+    if (product) db.prepare('UPDATE customers SET product = ? WHERE id = ?').run(product, customer.id);
+    if (coverage) db.prepare('UPDATE customers SET coverage = ? WHERE id = ?').run(coverage, customer.id);
+    if (target_areas) db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(target_areas, customer.id);
+    if (lead_type) db.prepare('UPDATE customers SET lead_type = ? WHERE id = ?').run(lead_type, customer.id);
+    if (biz_field3) db.prepare('UPDATE customers SET biz_field3 = ? WHERE id = ?').run(biz_field3, customer.id);
     saveDb();
     res.json({ success: true, message: customer.company + ' upgraded to ' + plan });
   } catch (e) { res.status(500).json({ error: e.message }); }
