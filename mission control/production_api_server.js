@@ -4360,7 +4360,7 @@ function generateLeadEmailHTML(customer, leads) {
       actionLinks.push({ url: 'https://www.gov.uk/search-probate-records', label: 'Search Probate Records' });
       actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'tenders') {
-      if (d.pcsUrl && !d.generated) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' }); else if (d.tenderNoticeId && !d.generated) actionLinks.push({ url: 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId, label: 'Apply on Contracts Finder' });
+      if (d.pcsUrl && !d.generated) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' }); else if (d.tenderNoticeId && !d.generated) actionLinks.push({ url: 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId, label: 'View Tender' });
       else if (d.pcsUrl && !d.generated) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' });
       else actionLinks.push({ url: 'https://www.gov.uk/contracts-finder', label: 'Browse Tenders' });
     }
