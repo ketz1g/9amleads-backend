@@ -4893,91 +4893,49 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
                 req2.setTimeout(15000, function() { req2.destroy(); resolve([]); });
                 req2.end();
               });
-              if (!leads || leads.length === 0) {               console.log('[SCRAPER] No tender leads from any source');
-              console.log('[SCRAPER] Trying data.gov.uk for tender opportunities...');
-              leads = await new Promise(function(resolve) {
-                var req3 = require('https').request({ hostname: 'data.gov.uk', path: '/api/3/action/package_search?q=tenders&rows=30', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res3) {
-                  var b3 = ''; res3.on('data', function(c) { b3 += c; });
-                  res3.on('end', function() {
-                    try { var d3 = JSON.parse(b3); var r3 = d3.result && d3.result.results ? d3.result.results : []; resolve(r3.slice(0, 30).map(function(n) { return { id: 'DG_' + (n.id || Date.now()), title: n.title || n.name || '', description: n.notes || n.description || '', tenderNoticeId: n.id || '', source: 'data.gov.uk', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+              if (!leads || leads.length === 0) {
+                console.log('[SCRAPER] No tender leads from any source');
+                console.log('[SCRAPER] Trying data.gov.uk for tender opportunities...');
+                leads = await new Promise(function(resolve) {
+                  var req3 = require('https').request({ hostname: 'data.gov.uk', path: '/api/3/action/package_search?q=tenders&rows=30', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res3) {
+                    var b3 = ''; res3.on('data', function(c) { b3 += c; });
+                    res3.on('end', function() {
+                      try { var d3 = JSON.parse(b3); var r3 = d3.result && d3.result.results ? d3.result.results : []; resolve(r3.slice(0, 30).map(function(n) { return { id: 'DG_' + (n.id || Date.now()), title: n.title || n.name || '', description: n.notes || n.description || '', tenderNoticeId: n.id || '', source: 'data.gov.uk', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                    });
                   });
+                  req3.on('error', function() { resolve([]); });
+                  req3.setTimeout(15000, function() { req3.destroy(); resolve([]); });
+                  req3.end();
                 });
-                req3.on('error', function() { resolve([]); });
-                req3.setTimeout(15000, function() { req3.destroy(); resolve([]); });
-                req3.end();
-              });
-              if (!leads || leads.length === 0) { console.log('[SCRAPER] No tender leads from any source'); leads = []; }
-              else { console.log('[SCRAPER] data.gov.uk returned ' + leads.length + ' tender leads'); } }
+                if (!leads || leads.length === 0) { console.log('[SCRAPER] No tender leads from any source'); leads = []; }
+                else { console.log('[SCRAPER] data.gov.uk returned ' + leads.length + ' tender leads'); }
+              }
             }
           } catch(e) { console.log('[SCRAPER] Tenders error: ' + e.message); leads = []; }
         } else if (product === 'planning') {
-          // Background scrape — async (non-blocking)
           leads = [];
-          console.log('[SCRAPER] Planning scrape started async');
-          try {
-            var apifyKey2 = process.env.APIFY_API_KEY;
-            if (apifyKey2) {
-              (function() {
-                var councils = ['woking','durham','southwark','bristol','leeds','manchester','birmingham','cambridge','oxford','brighton'];
-                var inputData = JSON.stringify({ councils: councils, dateMode: 'validated', maxResultsPerCouncil: 10, stateKey: 'Output Only New Applications' });
-                // Step 1: Start the actor run (async)
-                var runReq = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/illehius~uk-planning-monitor/runs', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apifyKey2, 'Content-Length': Buffer.byteLength(inputData) }, timeout: 30000 }, function(runRes) {
-                  var runBody = ''; runRes.on('data', function(c) { runBody += c; });
-                  runRes.on('end', function() {
-                    try {
-                      var runData = JSON.parse(runBody);
-                      var runId = runData.data && runData.data.id;
-                      if (!runId) { console.log('[SCRAPER] Planning run failed to start:', runBody.slice(0, 200)); return; }
-                      console.log('[SCRAPER] Planning run started: ' + runId);
-                      // Step 2: Poll for completion (up to 5 minutes)
-                      var pollAttempts = 0;
-                      var poll = setInterval(function() {
-                        pollAttempts++;
-                        if (pollAttempts > 30) { clearInterval(poll); console.log('[SCRAPER] Planning poll timed out'); return; }
-                        var pollReq = require('https').request({ hostname: 'api.apify.com', method: 'GET', path: '/v2/actor-runs/' + runId, headers: { 'Authorization': 'Bearer ' + apifyKey2 } }, function(pollRes) {
-                          var pollBody = ''; pollRes.on('data', function(c) { pollBody += c; });
-                          pollRes.on('end', function() {
-                            try {
-                              var pollData = JSON.parse(pollBody);
-                              var status = pollData.data && pollData.data.status;
-                              if (status === 'SUCCEEDED') {
-                                clearInterval(poll);
-                                // Step 3: Fetch results
-                                var fetchReq = require('https').request({ hostname: 'api.apify.com', method: 'GET', path: '/v2/actor-runs/' + runId + '/dataset/items', headers: { 'Authorization': 'Bearer ' + apifyKey2 } }, function(fetchRes) {
-                                  var fetchBody = ''; fetchRes.on('data', function(c) { fetchBody += c; });
-                                  fetchRes.on('end', function() {
-                                    try {
-                                      var items = JSON.parse(fetchBody);
-                                      if (Array.isArray(items) && items.length > 0) {
-                                        var ppLeads = items.map(function(p) { return { id: 'PLAN_' + (p.applicationRef || Date.now()), address: (p.address || '').trim(), postcode: p.postcode || '', description: p.proposal || '', council: p.councilName || '', applicationRef: p.applicationRef || '', applicationType: p.applicationType || 'Planning', status: p.status || '', url: p.detailUrl || '', source: 'UK Planning Monitor', scrapedAt: new Date().toISOString() }; });
-                                        fs.writeFileSync(path.join(DATA_DIR, PRODUCT_LEAD_FILES.planning.file), JSON.stringify(ppLeads, null, 2));
-                                        console.log('[SCRAPER] Planning scrape saved ' + ppLeads.length + ' leads');
-                                      } else { console.log('[SCRAPER] Planning scrape returned 0 items'); }
-                                    } catch(e) { console.log('[SCRAPER] Planning fetch parse error:', e.message); }
-                                  });
-                                });
-                                fetchReq.on('error', function(e) { console.log('[SCRAPER] Planning fetch error:', e.message); });
-                                fetchReq.end();
-                              } else if (status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') {
-                                clearInterval(poll);
-                                console.log('[SCRAPER] Planning run failed:', status);
-                              }
-                              // else still running, wait for next poll
-                            } catch(e) {}
-                          });
-                        });
-                        pollReq.on('error', function() {});
-                        pollReq.end();
-                      }, 10000); // poll every 10 seconds
-                    } catch(e) { console.log('[SCRAPER] Planning run parse error:', e.message); }
+          var apifyKey2 = process.env.APIFY_API_KEY;
+          if (apifyKey2) {
+            try {
+              leads = await new Promise(function(resolve) {
+                var bodyData2 = JSON.stringify({ location: 'UK', maxResults: 10 });
+                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/rwURYayTtJ7mv9jFr/run-sync-get-dataset-items?token=' + apifyKey2 + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData2), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
+                  var body = ''; res.on('data', function(c) { body += c; });
+                  res.on('end', function() {
+                    try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }
+                      resolve(items.map(function(p) { return { id: 'PLAN_' + (p.applicationRef || Date.now()), address: (p.address || '').trim(), postcode: p.postcode || '', description: p.proposal || p.description || '', council: p.councilName || p.council || '', applicationRef: p.applicationRef || '', applicationType: p.applicationType || 'Planning', status: p.status || '', source: 'UK Planning Apps', scrapedAt: new Date().toISOString() }; }));
+                    } catch(e) { resolve([]); }
                   });
                 });
-                runReq.on('error', function(e) { console.log('[SCRAPER] Planning run request error:', e.message); });
-                runReq.write(inputData);
-                runReq.end();
-              })();
-            }
-          } catch(e) { console.log('[SCRAPER] Planning background error:', e.message); }
+                req.on('error', function() { resolve([]); });
+                req.setTimeout(90000, function() { req.destroy(); resolve([]); });
+                req.write(bodyData2);
+                req.end();
+              });
+              if (leads && leads.length > 0) console.log('[SCRAPER] Planning Apps returned ' + leads.length + ' real leads');
+              else console.log('[SCRAPER] Planning scraper returned 0');
+            } catch(e) { console.log('[SCRAPER] Planning error:', e.message); leads = []; }
+          } else { console.log('[SCRAPER] No Apify key for planning'); leads = []; }
         } else if (product === 'moving') {
           try {
             // Direct Rightmove API (free) - fetch UK properties
@@ -5047,59 +5005,37 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
       }
     }
     // === SUPPLEMENT: ensure ALL products have at least some demo leads ===
-    var productKeys = Object.keys(PRODUCT_LEAD_FILES);
-    for (var pi3 = 0; pi3 < productKeys.length; pi3++) {
-      var pKey = productKeys[pi3];
-      var prodFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[pKey].file);
-      var existingLeads2 = [];
-      try { existingLeads2 = JSON.parse(fs.readFileSync(prodFile, 'utf-8')); if (!Array.isArray(existingLeads2)) existingLeads2 = []; } catch(e) { existingLeads2 = []; }
-      if (existingLeads2.length < 5) {
-        // Generate demo leads for this product type
-        var newDemoLeads = [];
+    try {
+      var productKeys = Object.keys(PRODUCT_LEAD_FILES);
+      for (var pi3 = 0; pi3 < productKeys.length; pi3++) {
+        var pKey = productKeys[pi3];
+        var prodFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[pKey].file);
+        var existingLeads2 = [];
+        try { existingLeads2 = JSON.parse(fs.readFileSync(prodFile, 'utf-8')); if (!Array.isArray(existingLeads2)) existingLeads2 = []; } catch(e) { existingLeads2 = []; }
+        if (existingLeads2.length < 5) {
+          var defaultDist = 'london';
+          var newDemoLeads = [];
           var streetOpts = ['High Street', 'Station Road', 'London Road', 'Park Lane', 'Church Road', 'Victoria Street', 'Oak Avenue', 'The Crescent', 'Manor Road', 'Queen Street'];
-          var countyToPrefix2 = { 'hertfordshire': 'SG', 'buckinghamshire': 'HP', 'greater-london': 'N', 'bedfordshire': 'LU', 'berkshire': 'RG', 'bristol': 'BS', 'cambridgeshire': 'CB', 'cheshire': 'CH', 'cornwall': 'TR', 'cumbria': 'CA', 'derbyshire': 'DE', 'devon': 'EX', 'dorset': 'DT', 'durham': 'DH', 'east-sussex': 'BN', 'essex': 'CM', 'gloucestershire': 'GL', 'greater-manchester': 'M', 'hampshire': 'SO', 'herefordshire': 'HR', 'isle-of-wight': 'PO', 'kent': 'ME', 'lancashire': 'PR', 'leicestershire': 'LE', 'lincolnshire': 'LN', 'merseyside': 'L', 'norfolk': 'NR', 'north-yorkshire': 'YO', 'northamptonshire': 'NN', 'northumberland': 'NE', 'nottinghamshire': 'NG', 'oxfordshire': 'OX', 'rutland': 'LE', 'shropshire': 'SY', 'somerset': 'TA', 'south-yorkshire': 'S', 'staffordshire': 'ST', 'suffolk': 'IP', 'surrey': 'GU', 'tyne-and-wear': 'NE', 'warwickshire': 'CV', 'west-midlands': 'B', 'west-sussex': 'RH', 'west-yorkshire': 'LS', 'wiltshire': 'SN', 'worcestershire': 'WR' };
-          for (var tdidx = 0; tdidx < targetDistsUniq.length; tdidx++) {
-            var dist = targetDistsUniq[tdidx];
-            if (existingPostcodes[dist]) continue;
-            var pcPrefix2 = countyToPrefix2[dist] || dist.replace(/[0-9]/g, '');
-            for (var li = 0; li < 5; li++) {
-              var fakeNum = Math.floor(Math.random() * 200) + 1;
-              var fakeStreet = streetOpts[(tdidx + li) % streetOpts.length];
-              var fakeDistNum = Math.floor(Math.random() * 9) + 1;
-              var fakePC = pcPrefix2 + fakeDistNum + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
-              var base = { id: 'DEMO_' + prodKey.toUpperCase() + '_' + Date.now() + '_' + li, address: fakeNum + ' ' + fakeStreet + ', ' + fakePC, postcode: fakePC, source: '9amLeads Demo', scrapedAt: new Date().toISOString() };
-              if (prodKey === 'moving') {
-                var bedC = (li % 4) + 1;
-                base.bedrooms = bedC;
-                base.price = bedC <= 2 ? [250000, 300000, 350000][li % 3] : [500000, 600000, 750000][li % 3];
-                base.propertyType = ['House', 'Flat', 'Maisonette', 'Bungalow', 'Townhouse'][li % 5];
-                base.status = ['SSTC', 'Under Offer', 'Available'][li % 3];
-                base.city = 'London';
-              } else if (prodKey === 'probate') {
-                base.name = 'Estate of ' + ['Smith', 'Jones', 'Williams'][li % 3];
-                base.estateValue = Math.floor(Math.random() * 500000) + 100000;
-                base.city = 'London';
-              } else if (prodKey === 'newbusiness') {
-                base.name = ['Premier', 'Elite', 'First Choice'][li % 3] + ' Services Ltd';
-                base.companyNumber = 'NI' + (Math.floor(Math.random() * 900000) + 100000);
-                base.city = 'London';
-              } else if (prodKey === 'planning') {
-                base.applicationType = ['Full Planning', 'Householder', 'Change of Use'][li % 3];
-                base.description = 'Proposed residential development';
-                base.city = 'London';
-              } else if (prodKey === 'tenders') {
-                base.title = ['Construction', 'IT Services', 'Cleaning'][li % 3] + ' Tender';
-                base.buyer = 'UK Public Sector';
-                base.contractValue = Math.floor(Math.random() * 1000000) + 50000;
-              }
-              newLeads.push(base);
-            }
+          var countyToPrefix2 = { 'hertfordshire': 'SG', 'buckinghamshire': 'HP', 'greater-london': 'N', 'essex': 'CM', 'kent': 'ME', 'surrey': 'GU' };
+          var pcPrefix2 = countyToPrefix2[defaultDist] || 'N';
+          for (var li2 = 0; li2 < 5; li2++) {
+            var fakeNum = Math.floor(Math.random() * 200) + 1;
+            var fakeStreet = streetOpts[li2 % streetOpts.length];
+            var fakeDistNum = Math.floor(Math.random() * 9) + 1;
+            var fakePC = pcPrefix2 + fakeDistNum + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
+            var demoLead = { id: 'DEMO_' + pKey.toUpperCase() + '_' + Date.now() + '_' + li2, address: fakeNum + ' ' + fakeStreet + ', ' + fakePC, postcode: fakePC, source: '9amLeads Demo', scrapedAt: new Date().toISOString() };
+            if (pKey === 'moving') { var bedC = (li2 % 4) + 1; demoLead.bedrooms = bedC; demoLead.price = bedC <= 2 ? 300000 : 600000; demoLead.propertyType = ['House','Flat','Maisonette'][li2 % 3]; demoLead.status = ['SSTC','Under Offer','Available'][li2 % 3]; demoLead.city = 'London'; }
+            else if (pKey === 'probate') { demoLead.name = 'Estate of ' + ['Smith','Jones','Williams'][li2 % 3]; demoLead.estateValue = Math.floor(Math.random() * 500000) + 100000; demoLead.city = 'London'; }
+            else if (pKey === 'newbusiness') { demoLead.name = ['Premier','Elite','First Choice'][li2 % 3] + ' Services Ltd'; demoLead.companyNumber = 'NI' + (Math.floor(Math.random() * 900000) + 100000); demoLead.city = 'London'; }
+            else if (pKey === 'planning') { demoLead.applicationType = ['Full Planning','Householder','Change of Use'][li2 % 3]; demoLead.description = 'Proposed residential development'; demoLead.city = 'London'; }
+            else if (pKey === 'tenders') { demoLead.title = ['Construction','IT Services','Cleaning'][li2 % 3] + ' Tender'; demoLead.buyer = 'UK Public Sector'; demoLead.contractValue = Math.floor(Math.random() * 1000000) + 50000; }
+            newDemoLeads.push(demoLead);
           }
-          if (newLeads.length > 0) {
-            existingLeads = existingLeads.concat(newLeads);
-            fs.writeFileSync(prodFile, JSON.stringify(existingLeads, null, 2));
-            console.log('[SCRAPER] Added ' + newLeads.length + ' demo leads for ' + prodKey + ' covering ' + targetDistsUniq.filter(function(d) { return !existingPostcodes[d]; }).join(', '));
-            results[prodKey] = (results[prodKey] || '') + '+demo_' + newLeads.length;
+          if (newDemoLeads.length > 0) {
+            existingLeads2 = existingLeads2.concat(newDemoLeads);
+            fs.writeFileSync(prodFile, JSON.stringify(existingLeads2, null, 2));
+            console.log('[SCRAPER] Added ' + newDemoLeads.length + ' demo leads for ' + pKey);
+            results[pKey] = (results[pKey] || '') + '+demo_' + newDemoLeads.length;
           }
         }
       }
