@@ -4854,72 +4854,52 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           } catch(e) { console.log('[SCRAPER] Apify error: ' + e.message); leads = []; }
         } else if (product === 'tenders') {
           leads = [];
-          var apifyKeyTen = process.env.APIFY_API_KEY;
-          if (apifyKeyTen) {
-            try {
-              leads = await new Promise(function(resolve) {
+          console.log('[SCRAPER] Tenders scrape started in background');
+          try {
+            var apifyKeyTen = process.env.APIFY_API_KEY;
+            if (apifyKeyTen) {
+              setTimeout(function() {
                 var bodyDataTen = JSON.stringify({ maxResults: 30 });
-                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/IDHZwbIUCGhlAGWbA/run-sync-get-dataset-items?token=' + apifyKeyTen + '&memory=512&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyDataTen), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
-                var body = ''; res.on('data', function(c) { body += c; });
-                res.on('end', function() {
-                  try {
-                    var data = JSON.parse(body);
-                    var releases = data.releases || [];
-                    resolve(releases.slice(0, 30).map(function(r) {
-                      var t = r.tender || {};
-                      var b = r.buyer || {};
-                      var bName = b.name || (b.identifier && b.identifier.legalName) || '';
-                      var tValue = t.value ? (t.value.amount || t.value) : 0;
-                      return {
-                        id: r.id || r.ocid || 'PCS_' + Date.now(),
-                        title: t.title || r.description || '',
-                        buyer: bName,
-                        contractValue: tValue,
-                        description: (t.description || r.description || '').substring(0, 500),
-                        closingDate: t.tenderPeriod ? t.tenderPeriod.endDate : '',
-                        publishedDate: r.date || data.publishedDate || '',
-                        tenderNoticeId: r.ocid || r.id || '',
-                        pcsUrl: r.ocid ? 'https://www.publiccontractsscotland.gov.uk/Notice/' + r.ocid : '',
-                        source: 'Public Contracts Scotland',
-                        scrapedAt: new Date().toISOString()
-                      };
-                    }));
-                  } catch(e) { resolve([]); }
-                });
-                });
-                req.on('error', function() { resolve([]); });
-                req.setTimeout(90000, function() { req.destroy(); resolve([]); });
-                req.write(bodyDataTen);
-                req.end();
-              });
-              if (leads && leads.length > 0) console.log('[SCRAPER] Apify CF returned ' + leads.length + ' real tender leads');
-              else console.log('[SCRAPER] Apify CF returned 0');
-            } catch(e) { console.log('[SCRAPER] Apify CF error:', e.message); }
-          } else { console.log('[SCRAPER] No Apify key for tenders'); }
-        } else if (product === 'planning') {
-          leads = [];
-          var apifyKey2 = process.env.APIFY_API_KEY;
-          if (apifyKey2) {
-            try {
-              leads = await new Promise(function(resolve) {
-                var bodyData2 = JSON.stringify({ location: 'UK', maxResults: 10 });
-                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/rwURYayTtJ7mv9jFr/run-sync-get-dataset-items?token=' + apifyKey2 + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData2), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
+                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/IDHZwbIUCGhlAGWbA/run-sync-get-dataset-items?token=' + apifyKeyTen + '&memory=512&timeout=90', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyDataTen), 'Accept': 'application/json' }, timeout: 120000 }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; });
                   res.on('end', function() {
-                    try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }
-                      resolve(items.map(function(p) { return { id: 'PLAN_' + (p.applicationRef || Date.now()), address: (p.address || '').trim(), postcode: p.postcode || '', description: p.proposal || p.description || '', council: p.councilName || p.council || '', applicationRef: p.applicationRef || '', applicationType: p.applicationType || 'Planning', status: p.status || '', source: 'UK Planning Apps', scrapedAt: new Date().toISOString() }; }));
-                    } catch(e) { resolve([]); }
-                  });
+                    try { var items = JSON.parse(body); if (Array.isArray(items) && items.length > 0) {
+                      var cfLeads = items.slice(0, 30).map(function(t) { return { id: 'CF_' + (t.noticeIdentifier || Date.now()), title: t.title || '', buyer: t.organisationName || t.buyerName || '', contractValue: t.valueHigh || t.valueLow || t.awardedValue || 0, description: (t.description || '').substring(0, 300), closingDate: t.closingDate || '', publishedDate: t.publishedDate || '', tenderNoticeId: t.noticeIdentifier || '', url: t.links && t.links[0] ? t.links[0].href : '', source: 'Contracts Finder Apify', scrapedAt: new Date().toISOString() }; });
+                      fs.writeFileSync(path.join(DATA_DIR, PRODUCT_LEAD_FILES.tenders.file), JSON.stringify(cfLeads, null, 2));
+                      console.log('[SCRAPER] Background tenders scrape saved ' + cfLeads.length + ' leads');
+                    } } catch(e) {} });
                 });
-                req.on('error', function() { resolve([]); });
-                req.setTimeout(90000, function() { req.destroy(); resolve([]); });
+                req.on('error', function() {});
+                req.setTimeout(120000, function() { req.destroy(); });
+                req.write(bodyDataTen);
+                req.end();
+              }, 100);
+            }
+          } catch(e) { console.log('[SCRAPER] Tenders background error:', e.message); }
+        } else if (product === 'planning') {
+          leads = [];
+          console.log('[SCRAPER] Planning scrape started in background');
+          try {
+            var apifyKey2 = process.env.APIFY_API_KEY;
+            if (apifyKey2) {
+              setTimeout(function() {
+                var bodyData2 = JSON.stringify({ location: 'UK', maxResults: 10 });
+                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/rwURYayTtJ7mv9jFr/run-sync-get-dataset-items?token=' + apifyKey2 + '&memory=512&timeout=90', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData2), 'Accept': 'application/json' }, timeout: 120000 }, function(res) {
+                  var body = ''; res.on('data', function(c) { body += c; });
+                  res.on('end', function() {
+                    try { var items = JSON.parse(body); if (Array.isArray(items) && items.length > 0) {
+                      var ppLeads = items.map(function(p) { return { id: 'PLAN_' + (p.applicationRef || Date.now()), address: (p.address || '').trim(), postcode: p.postcode || '', description: p.proposal || p.description || '', council: p.councilName || p.council || '', applicationRef: p.applicationRef || '', applicationType: p.applicationType || 'Planning', status: p.status || '', source: 'UK Planning Apps', scrapedAt: new Date().toISOString() }; });
+                      fs.writeFileSync(path.join(DATA_DIR, PRODUCT_LEAD_FILES.planning.file), JSON.stringify(ppLeads, null, 2));
+                      console.log('[SCRAPER] Background planning scrape saved ' + ppLeads.length + ' leads');
+                    } } catch(e) {} });
+                });
+                req.on('error', function() {});
+                req.setTimeout(120000, function() { req.destroy(); });
                 req.write(bodyData2);
                 req.end();
-              });
-              if (leads && leads.length > 0) console.log('[SCRAPER] Planning Apps returned ' + leads.length + ' real leads');
-              else console.log('[SCRAPER] Planning scraper returned 0');
-            } catch(e) { console.log('[SCRAPER] Planning error:', e.message); leads = []; }
-          } else { console.log('[SCRAPER] No Apify key for planning'); leads = []; }
+              }, 100);
+            }
+          } catch(e) { console.log('[SCRAPER] Planning background error:', e.message); }
         } else if (product === 'moving') {
           try {
             // Direct Rightmove API (free) - fetch UK properties
