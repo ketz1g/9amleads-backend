@@ -2662,6 +2662,7 @@ app.post('/api/admin/brevo/create-seq', adminAuth, async (req, res) => {
 
 console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + ' (' + 
   Object.values(OUTBOUND_CAMPAIGNS).reduce(function(a, c) { return a + c.emails.length; }, 0) + ' emails)');
+// Force Render re-deploy
 
     var pricingUrl = customer.product === 'planning' ? PUBLIC_URL + '/planningleads' : customer.product === 'moving' ? PUBLIC_URL + '/movingleadsdaily' : customer.product === 'probate' ? PUBLIC_URL + '/probateleads' : customer.product === 'newbusiness' ? PUBLIC_URL + '/newbusinessalert' : customer.product === 'tenders' ? PUBLIC_URL + '/tenders' : PUBLIC_URL + '/pricing';
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#0f111a;font-family:Inter,Arial,sans-serif;color:#e2e8f0"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%"><tr><td style="background:#12141e;padding:28px 30px 22px;border-radius:16px 16px 0 0;border-bottom:1px solid rgba(255,255,255,0.06);text-align:center"><div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:4px"><span style="display:inline-block;width:36px;height:36px;border-radius:9px;text-align:center;line-height:36px;font-size:16px;background:linear-gradient(135deg,#0ea5e9,#6366f1);margin-right:5px;vertical-align:middle">9</span><span style="vertical-align:middle">am Leads</span></div></td></tr><tr><td style="background:#12141e;padding:20px 30px">' + (templates[template] || templates.trial_day1) + '</td></tr><tr><td style="background:#12141e;padding:20px 30px 24px;border-radius:0 0 16px 16px;border-top:1px solid rgba(255,255,255,0.06);text-align:center"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:0 0 12px"><a href="' + pricingUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">View Pricing</a> <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,#6366f1,#0ea5e9);color:#fff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Sign In</a></td></tr></table><p style="color:#e2e8f0;font-size:11px;margin:0 0 4px">9am Leads Ltd &bull; Company No. 17168176</p><p style="color:#e2e8f0;font-size:10px;margin:0"><a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a> &bull; <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>';
@@ -5542,113 +5543,6 @@ function getEditedCampaignSubject(template, originalSubject) {
   var edits = loadEmailEdits();
   return (edits[template] && edits[template].subject) || originalSubject;
 }
-
-// GET /api/admin/email-templates — list ALL templates grouped by category
-app.get('/api/admin/email-templates', adminAuth, (req, res) => {
-  var result = { signup_emails: [], paid_emails: [], outbound_campaigns: {} };
-  for (var i = 0; i < CAMPAIGN_EMAILS.length; i++) {
-    var e = CAMPAIGN_EMAILS[i];
-    try { result.signup_emails.push({ id: e.template, day: e.day, subject: e.subject, category: 'signup', bodyPreview: getCampaignBodyHTML(e.template).substring(0, 200) }); } catch(ex) { result.signup_emails.push({ id: e.template, day: e.day, subject: e.subject, category: 'signup', bodyPreview: '' }); }
-  }
-  for (var i = 0; i < PAID_EMAIL_SERIES.length; i++) {
-    var p = PAID_EMAIL_SERIES[i];
-    try { result.paid_emails.push({ id: p.template, week: p.week, subject: p.subject, category: 'paid', bodyPreview: getCampaignBodyHTML(p.template).substring(0, 200) }); } catch(ex) { result.paid_emails.push({ id: p.template, week: p.week, subject: p.subject, category: 'paid', bodyPreview: '' }); }
-  }
-  for (var ck in OUTBOUND_CAMPAIGNS) {
-    var camp = OUTBOUND_CAMPAIGNS[ck];
-    result.outbound_campaigns[ck] = { name: camp.name, tag: camp.tag, emails: camp.emails.map(function(e) { return { id: ck + '_' + e.id, emailId: e.id, week: e.week, emailNum: e.emailNum, subject: e.subject, subjectB: e.subjectB, preview: e.preview, bodyPreview: (e.body || '').substring(0, 200), cta: e.cta }; }) };
-  }
-  res.json({ success: true, templates: result });
-});
-
-// GET /api/admin/email-templates/:id — get full template content
-app.get('/api/admin/email-templates/:id', adminAuth, (req, res) => {
-  var id = req.params.id;
-  var edits = loadEmailEdits();
-  var allCamp = [];
-  for (var i = 0; i < CAMPAIGN_EMAILS.length; i++) allCamp.push(CAMPAIGN_EMAILS[i]);
-  for (var i = 0; i < PAID_EMAIL_SERIES.length; i++) allCamp.push(PAID_EMAIL_SERIES[i]);
-  for (var i = 0; i < allCamp.length; i++) {
-    var t = allCamp[i];
-    if (t.template === id) {
-      var bodyHtml = '';
-      try { bodyHtml = getCampaignBodyHTML(t.template); } catch(ex) { bodyHtml = '<p>Error rendering template</p>'; }
-      if (edits[id] && edits[id].body) bodyHtml = edits[id].body;
-      return res.json({ success: true, template: { id: id, subject: (edits[id] && edits[id].subject) || t.subject, category: t.day !== void 0 ? 'signup' : 'paid', dayOrWeek: t.day !== void 0 ? t.day : t.week, body: bodyHtml, hasEdits: !!edits[id] } });
-    }
-  }
-  for (var ck in OUTBOUND_CAMPAIGNS) {
-    var camp = OUTBOUND_CAMPAIGNS[ck];
-    for (var ei = 0; ei < camp.emails.length; ei++) {
-      var email = camp.emails[ei];
-      var fullId = ck + '_' + email.id;
-      if (fullId === id || email.id === id) {
-        var bodyContent = email.body;
-        if (edits[fullId] && edits[fullId].body) bodyContent = edits[fullId].body;
-        return res.json({ success: true, template: { id: fullId, product: ck, emailId: email.id, week: email.week, emailNum: email.emailNum, subject: (edits[fullId] && edits[fullId].subject) || email.subject, subjectB: (edits[fullId] && edits[fullId].subjectB) || email.subjectB, preview: (edits[fullId] && edits[fullId].preview) || email.preview, body: bodyContent, cta: (edits[fullId] && edits[fullId].cta) || email.cta, category: 'outbound', hasEdits: !!edits[fullId] } });
-      }
-    }
-  }
-  res.status(404).json({ error: 'Template not found' });
-});
-
-// PUT /api/admin/email-templates/:id — save template edits
-app.put('/api/admin/email-templates/:id', adminAuth, (req, res) => {
-  var id = req.params.id;
-  var edits = loadEmailEdits();
-  edits[id] = edits[id] || {};
-  if (req.body.subject !== void 0) edits[id].subject = req.body.subject;
-  if (req.body.subjectB !== void 0) edits[id].subjectB = req.body.subjectB;
-  if (req.body.preview !== void 0) edits[id].preview = req.body.preview;
-  if (req.body.body !== void 0) edits[id].body = req.body.body;
-  if (req.body.cta !== void 0) edits[id].cta = req.body.cta;
-  saveEmailEdits(edits);
-  res.json({ success: true, message: 'Saved', template: edits[id] });
-});
-
-// POST /api/admin/email-templates/sync-brevo — push templates to Brevo
-app.post('/api/admin/email-templates/sync-brevo', adminAuth, async (req, res) => {
-  try {
-    var key = process.env.BREVO_API_KEY || '';
-    if (!key) return res.json({ error: 'No Brevo API key configured' });
-    var https = require('https');
-    var results = { templates: [], errors: [] };
-    var edits = loadEmailEdits();
-    var allTpls = [];
-    for (var i = 0; i < CAMPAIGN_EMAILS.length; i++) {
-      var e = CAMPAIGN_EMAILS[i];
-      var bh = '';
-      try { bh = getCampaignBodyHTML(e.template); } catch(ex) {}
-      if (edits[e.template] && edits[e.template].body) bh = edits[e.template].body;
-      allTpls.push({ id: e.template, name: e.template + ' - ' + e.subject.substring(0, 60), subject: (edits[e.template] && edits[e.template].subject) || e.subject, body: bh, tag: 'campaign' });
-    }
-    for (var i = 0; i < PAID_EMAIL_SERIES.length; i++) {
-      var p = PAID_EMAIL_SERIES[i];
-      var bh = '';
-      try { bh = getCampaignBodyHTML(p.template); } catch(ex) {}
-      if (edits[p.template] && edits[p.template].body) bh = edits[p.template].body;
-      allTpls.push({ id: p.template, name: p.template + ' - ' + p.subject.substring(0, 60), subject: (edits[p.template] && edits[p.template].subject) || p.subject, body: bh, tag: 'campaign' });
-    }
-    var sender = { name: '9amLeads', email: 'hello@9amleads.com' };
-    for (var ti = 0; ti < allTpls.length; ti++) {
-      var tpl = allTpls[ti];
-      var tplBody = JSON.stringify({ templateName: tpl.name, htmlContent: tpl.body, subject: tpl.subject, isCampaign: true, tag: tpl.tag, sender: sender, replyTo: sender, templateType: 'campaign' });
-      try {
-        var r = await new Promise(function(resolve) {
-          var req = https.request({ hostname: 'api.brevo.com', path: '/v3/smtp/templates', method: 'POST', headers: { 'Content-Type': 'application/json', 'api-key': key, 'Content-Length': Buffer.byteLength(tplBody) } }, function(resp) {
-            var b = ''; resp.on('data', function(c) { b += c; });
-            resp.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ id: null }); } });
-          });
-          req.on('error', function(e) { resolve({ error: e.message }); });
-          req.write(tplBody);
-          req.end();
-        });
-        results.templates.push({ id: tpl.id, templateId: r.id || 'created', status: 'ok' });
-      } catch(e) { results.errors.push(tpl.id + ': ' + e.message); }
-    }
-    res.json({ success: true, message: 'Sync complete', templates: results.templates.length, errors: results.errors.length, details: results });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
 
 // ===== OUTBOUND PROSPECTING CAMPAIGNS (Brevo) =====
 // 5 campaigns � 16 emails = 80 total
