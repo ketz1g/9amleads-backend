@@ -5149,6 +5149,29 @@ app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
     res.json({ success: true, result: result });
   } catch(e) { res.json({ error: e.message }); }
 });
+app.post('/api/admin/reset-weekly', adminAuth, (req, res) => {
+  try {
+    const email = req.body.email;
+    const products = req.body.products || ['planning','probate','tenders'];
+    if (!email) return res.status(400).json({ error: 'email required' });
+    _dbData = null;
+    const db = getDb();
+    const customer = (db.customers || []).filter(function(c) { return c.email === email; })[0];
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    var count = 0;
+    for (var li = 0; li < (db.leads || []).length; li++) {
+      var l = db.leads[li];
+      if (l.customer_id === customer.id && products.indexOf(l.product) >= 0 && l.delivered) {
+        l.delivered = 0;
+        l.delivered_at = null;
+        count++;
+      }
+    }
+    saveDb();
+    res.json({ success: true, message: 'Reset ' + count + ' deliveries for ' + products.join(', ') });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/cleanup', adminAuth, (req, res) => {
   try {
     const db = getDb();
