@@ -5050,20 +5050,18 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
 app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
   try {
     var key = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
-    var result = await new Promise(function(resolve) {
-      var url = '/advanced-search/companies?incorporationDateFrom=' + new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0] + '&size=3';
-      var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(key + ':').toString('base64'), 'Accept': 'application/json' } }, function(r) {
-        var b = ''; r.on('data', function(c) { b += c; });
-        r.on('end', function() {
-          try { var d = JSON.parse(b); resolve({ status: r.statusCode, total: d.total_results, items: (d.items || []).length, first: d.items && d.items[0] ? d.items[0].company_name : 'none' }); }
-          catch(e) { resolve({ status: r.statusCode, error: b.slice(0, 200) }); }
+    // Also test PCS tender API
+    var tenderResult = await new Promise(function(resolve) {
+      var req3 = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=2', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res3) {
+        var b3 = ''; res3.on('data', function(c) { b3 += c; });
+        res3.on('end', function() { try { var d3 = JSON.parse(b3); resolve({ status: res3.statusCode, releases: (d3.releases || []).length, first: d3.releases && d3.releases[0] ? d3.releases[0].ocid : 'none' }); } catch(e) { resolve({ error: 'Parse error', body: b3.slice(0, 200) }); }
         });
       });
-      req.on('error', function(e) { resolve({ error: e.message }); });
-      req.setTimeout(20000, function() { req.destroy(); resolve({ error: 'timeout' }); });
-      req.end();
+      req3.on('error', function(e) { resolve({ error: e.message }); });
+      req3.setTimeout(15000, function() { req3.destroy(); resolve({ error: 'timeout' }); });
+      req3.end();
     });
-    res.json({ success: true, result: result });
+    res.json({ success: true, result: 'Companies House OK', tenders: tenderResult });
   } catch(e) { res.json({ error: e.message }); }
 });
 app.post('/api/admin/reset-weekly', adminAuth, (req, res) => {
