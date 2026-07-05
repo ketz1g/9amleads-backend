@@ -38,11 +38,20 @@ var allData = null; var currentId = null;
 async function refreshList() {
   document.getElementById('templateList').innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading templates...</div>';
   try {
-    var r = await fetch(API + '/api/admin/email-templates', { headers: headers() });
-    var d = await r.json();
+    var r, d;
+    // Try server API first, fallback to static JSON
+    try {
+      r = await fetch(API + '/api/admin/email-templates', { headers: headers() });
+      if (r.ok) { d = await r.json(); }
+      else throw new Error('API returned ' + r.status);
+    } catch(e) {
+      // Fallback: load from static JSON
+      r = await fetch('/data/outbound-campaigns.json');
+      var staticData = await r.json();
+      d = { success: true, templates: { outbound_campaigns: staticData } };
+    }
     if (!d || !d.success) { document.getElementById('templateList').innerHTML = '<div class="empty">Failed to load templates.</div>'; return; }
     allData = d;
-    // Convert old format ({signup_emails, paid_emails, outbound_campaigns}) to categories array
     var t = d.templates || d;
     var cats = [];
     if (t.signup_emails) cats.push({ name: 'Customer Signup Emails (' + t.signup_emails.length + ')', key: 'signup', emails: t.signup_emails });
@@ -50,11 +59,11 @@ async function refreshList() {
     if (t.outbound_campaigns) {
       for (var pk in t.outbound_campaigns) {
         var c = t.outbound_campaigns[pk];
-        cats.push({ name: 'Outbound ' + (c.name || pk) + ' (' + (c.emails ? c.emails.length : 0) + ')', key: 'outbound_' + pk, emails: (c.emails || []).map(function(e) { return { id: e.id || e.emailId, subject: e.subject, week: e.week, emailNum: e.emailNum, bodyPreview: e.bodyPreview }; }) });
+        cats.push({ name: 'Outbound ' + (c.name || pk) + ' (' + (c.emails ? c.emails.length : 0) + ')', key: 'outbound_' + pk, emails: (c.emails || []).map(function(e) { return { id: e.id || e.emailId, subject: e.subject, week: e.week, emailNum: e.emailNum, bodyPreview: (e.body || '').substring(0,200) }; }) });
       }
     }
     if (d.categories) cats = d.categories;
-    var allDataCats = cats;
+    allDataCats = cats;
     renderList(cats);
   } catch(e) { document.getElementById('templateList').innerHTML = '<div class="empty">Error: ' + e.message + '</div>'; }
 }
@@ -107,8 +116,27 @@ async function loadTemplate(id) {
   if (el) el.classList.add('selected');
 
   try {
-    var r = await fetch(API + '/api/admin/email-templates/' + id, { headers: headers() });
-    var d = await r.json();
+    var r, d;
+    try {
+      r = await fetch(API + '/api/admin/email-templates/' + encodeURIComponent(id), { headers: headers() });
+      if (r.ok) { d = await r.json(); }
+      else throw new Error('API error');
+    } catch(e) {
+      // Fallback: find from static JSON
+      r = await fetch('/data/outbound-campaigns.json');
+      var staticData = await r.json();
+      for (var pk in staticData) {
+        var camp = staticData[pk];
+        for (var ei = 0; ei < camp.emails.length; ei++) {
+          if (camp.emails[ei].id === id) {
+            d = { success: true, template: { id: id, subject: camp.emails[ei].subject, subjectB: camp.emails[ei].subjectB, preview: camp.emails[ei].preview, week: camp.emails[ei].week, emailNum: camp.emails[ei].emailNum, category: 'outbound', body: camp.emails[ei].body, cta: camp.emails[ei].cta } };
+            break;
+          }
+        }
+        if (d) break;
+      }
+      if (!d) { setStatus('error', 'Template not found'); return; }
+    }
     if (!d || !d.success) { setStatus('error', 'Failed to load template'); return; }
     showEditor(d.template);
   } catch(e) { setStatus('error', e.message); }
