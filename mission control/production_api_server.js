@@ -4299,8 +4299,8 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.industryTags) chips.push({ icon: '\uD83C\uDF1F', text: d.industryTags });
       if (d.sicCode) chips.push({ icon: '\uD83D\uDCCA', text: 'SIC: ' + d.sicCode });
       if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Incorporated ' + new Date(d.incorporationDate).toLocaleDateString() });
-      if (d.companyNumber) chips.push({ icon: '\uD83D\uDCB3', text: 'No: ' + d.companyNumber + (d.verifyCH ? ' (verify)' : '') });
-      if (d.companyNumber) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View on Companies House</a>' });
+      if (d.companyNumber && !d.generated) chips.push({ icon: '\uD83D\uDCB3', text: 'No: ' + d.companyNumber });
+      if (d.companyNumber && !d.generated) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View on Companies House</a>' });
     } else if (leadProduct === 'planning') {
       if (d.council) chips.push({ icon: '\uD83C\uDFDB\uFE0F', text: d.council });
       if (d.applicationRef) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.applicationRef });
@@ -4354,14 +4354,14 @@ function generateLeadEmailHTML(customer, leads) {
       else actionLinks.push({ url: 'https://www.rightmove.co.uk/property-for-sale/search.html?searchLocation=' + encodeURIComponent(d.postcode || d.city || ''), label: 'Search Similar' });
       actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'newbusiness') {
-      if (d.companyNumber) actionLinks.push({ url: 'https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber, label: (d.verifyCH ? 'Check on Companies House' : 'View on Companies House') });
+      if (d.companyNumber && !d.generated) actionLinks.push({ url: 'https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber, label: 'View on Companies House' });
       if (d.name) actionLinks.push({ url: 'https://www.google.com/search?q=' + encodeURIComponent(d.name + ' contact email phone'), label: 'Find Contact Details' });
     } else if (leadProduct === 'probate') {
       actionLinks.push({ url: 'https://www.gov.uk/search-probate-records', label: 'Search Probate Records' });
       actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'tenders') {
-      if (d.pcsUrl) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' }); else if (d.tenderNoticeId) actionLinks.push({ url: 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId, label: 'Apply on Contracts Finder' });
-      else if (d.pcsUrl) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' });
+      if (d.pcsUrl && !d.generated) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' }); else if (d.tenderNoticeId && !d.generated) actionLinks.push({ url: 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId, label: 'Apply on Contracts Finder' });
+      else if (d.pcsUrl && !d.generated) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' });
       else actionLinks.push({ url: 'https://www.gov.uk/contracts-finder', label: 'Browse Tenders' });
     }
     if (actionLinks.length > 0) {
@@ -5019,7 +5019,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             var fakeStreet = streetOpts[li2 % streetOpts.length];
             var fakeDistNum = Math.floor(Math.random() * 9) + 1;
             var fakePC = pcPrefix2 + fakeDistNum + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
-            var demoLead = { id: 'DEMO_' + pKey.toUpperCase() + '_' + Date.now() + '_' + li2, address: fakeNum + ' ' + fakeStreet + ', ' + fakePC, postcode: fakePC, source: '9amLeads Demo', scrapedAt: new Date().toISOString() };
+            var demoLead = { id: 'DEMO_' + pKey.toUpperCase() + '_' + Date.now() + '_' + li2, address: fakeNum + ' ' + fakeStreet + ', ' + fakePC, postcode: fakePC, source: '9amLeads Demo', scrapedAt: new Date().toISOString(), generated: true };
             if (pKey === 'moving') { var bedC = (li2 % 4) + 1; demoLead.bedrooms = bedC; demoLead.price = bedC <= 2 ? 300000 : 600000; demoLead.propertyType = ['House','Flat','Maisonette'][li2 % 3]; demoLead.status = ['SSTC','Under Offer','Available'][li2 % 3]; demoLead.city = 'London'; }
             else if (pKey === 'probate') { demoLead.name = 'Estate of ' + ['Smith','Jones','Williams'][li2 % 3]; demoLead.estateValue = Math.floor(Math.random() * 500000) + 100000; demoLead.city = 'London'; }
             else if (pKey === 'newbusiness') { demoLead.name = ['Premier','Elite','First Choice'][li2 % 3] + ' Services Ltd'; demoLead.companyNumber = 'NI' + (Math.floor(Math.random() * 900000) + 100000); baseLead.verifyCH = true; demoLead.city = 'London'; }
