@@ -4789,8 +4789,17 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
     const https = require('https');
     const dayOfWeek = new Date().getDay();
     const results = {};
-    // Background scrapers (long-running — planning, tenders)
+    const todayStr = new Date().toISOString().split('T')[0];
+    const forceScrape = req.body && req.body.force ? true : false;
+    if (forceScrape) console.log('[SCRAPER] Force scrape requested - ignoring daily cache');
     var bgTasks = [];
+
+    // Load last scrape dates (persisted to JSON file, resets daily)
+    var lastScrapeFile = path.join(DATA_DIR, 'last-scrape.json');
+    var lastScrape = {};
+    try { lastScrape = JSON.parse(fs.readFileSync(lastScrapeFile, 'utf-8')); } catch(e) {}
+    function wasScrapedToday(product) { return lastScrape[product] === todayStr; }
+    function markScrapedToday(product) { lastScrape[product] = todayStr; fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape)); }
 
     function syncCustomers(product) {
       const allCustomers = getDb().customers || [];
@@ -4815,6 +4824,15 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
 
     for (const [product, config] of Object.entries(PRODUCT_LEAD_FILES)) {
       try {
+        // Skip if already scraped today (cost saving - Apify runs once daily)
+        if (wasScrapedToday(product) && !forceScrape) {
+          var existingFile = path.join(DATA_DIR, config.file);
+          try { leads = JSON.parse(fs.readFileSync(existingFile, 'utf-8')); if (!Array.isArray(leads)) leads = []; } catch(e) { leads = []; }
+          var leadSource = leads && leads.length > 0 ? (leads[0].source || 'cached') : 'cached';
+          results[product] = leadSource + '_' + (leads ? leads.length : 0) + '_cached';
+          console.log('[SCRAPER] ' + product + ' already scraped today, using cached data (' + (leads ? leads.length : 0) + ' leads)');
+          continue;
+        }
         // Generate leads — use free APIs where available, else demo data
         var leads;
         if (product === 'newbusiness') {
@@ -4949,6 +4967,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         }
         fs.mkdirSync(DATA_DIR, { recursive: true });
         fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
+        markScrapedToday(product); // Record this product as scraped today
         var leadSource = leads && leads.length > 0 ? (leads[0].source || 'unknown') : 'empty';
         fs.writeFileSync(path.join(DATA_DIR, product + '-source.txt'), leadSource);
         results[product] = leadSource + '_' + (leads ? leads.length : 0);
