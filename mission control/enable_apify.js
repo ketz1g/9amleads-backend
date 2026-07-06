@@ -1,49 +1,81 @@
-// RUN THIS WHEN APIFY BILL IS PAID:  node enable_apify.js
-// Replaces Companies House scrapers with Apify actors (all real data)
-// Falls back to Companies House if Apify returns 0 (graceful degradation)
-// Cost: ~$0.15/day for all 5 actors = ~$4.50/month
+// RUN: node enable_apify.js
+// TEST: maxResults=5, ~$0.03/day. PRODUCTION: edit MAX=1000 below.
 
-var fs = require('fs');
-var f = __dirname + '/production_api_server.js';
-var c = fs.readFileSync(f, 'utf8');
+var fs = require('fs'), f = __dirname + '/production_api_server.js', c = fs.readFileSync(f, 'utf8');
+var MAX = 5, MEM = 256;
 
-function replaceBetween(startMarker, endMarker, newBlock) {
-  var s = c.indexOf(startMarker);
-  if (s === -1) { console.log('ERROR: ' + startMarker); process.exit(1); }
-  var e = c.indexOf(endMarker, s + startMarker.length);
-  if (e === -1) { console.log('ERROR end: ' + endMarker); process.exit(1); }
-  c = c.substring(0, s) + newBlock + c.substring(e);
+// ===== BLOCKS (same structure for each) =====
+function makeBlock(name, actor, inputObj, mapFn) {
+  var inputJSON = JSON.stringify(inputObj);
+  return `\n        } else if (product === '${name}') {
+          try { var k = process.env.APIFY_API_KEY; leads = []; if (k) {
+            leads = await new Promise(function(r) {
+              var b = ${inputJSON};
+              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/${actor}/run-sync-get-dataset-items?token=' + k + '&memory=${MEM}&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
+                var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
+                  try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
+                    r(items.map(function(p,i) { return ${mapFn}; }));
+                  } catch(e) { r([]); }
+                });
+              });
+              req.on('error', function() { r([]); }); req.setTimeout(90000, function() { req.destroy(); r([]); });
+              req.write(b); req.end();
+            });
+            if (leads && leads.length > 0) console.log('[SCRAPER] ${name} returned ' + leads.length);
+            else { console.log('[SCRAPER] ${name} 0'); leads = []; }
+          } catch(e) { console.log('[SCRAPER] ${name} error:', e.message); leads = []; }
+        `;
 }
 
-replaceBetween(
-  "} else if (product === 'moving') {",
-  "} else if (product === 'probate') {",
-  "} else if (product === 'moving') {\n          try {\n            var apifyKeyMV = process.env.APIFY_API_KEY;\n            leads = [];\n            if (apifyKeyMV) {\n              leads = await new Promise(function(resolve) {\n                var bodyMV = JSON.stringify({ location: 'London', maxResults: 1000, radius: 100 });\n                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/jKpgGfgRfzrGgEMa8/run-sync-get-dataset-items?token=' + apifyKeyMV + '&memory=1024&timeout=300', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyMV), 'Accept': 'application/json' }, timeout: 310000 }, function(res) {\n                  var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {\n                    try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }\n                      resolve(items.map(function(p) { return { id: 'RM_' + (p.id || Date.now()), title: p.title || p.address || '', address: p.displayAddress || p.address || '', price: p.price || 0, bedrooms: p.bedrooms || 0, propertyType: p.propertyType || '', url: p.url || '', listingStatus: p.status || (p.soldDate ? 'SSTC' : 'Available'), source: 'Rightmove Apify', scrapedAt: new Date().toISOString() }; }));\n                    } catch(e) { resolve([]); }\n                  });\n                });\n                req.on('error', function() { resolve([]); }); req.setTimeout(310000, function() { req.destroy(); resolve([]); });\n                req.write(bodyMV); req.end();\n              });\n            }\n            if (leads && leads.length > 0) console.log('[SCRAPER] Rightmove returned ' + leads.length + ' properties');\n            else { console.log('[SCRAPER] Rightmove 0 - using CH fallback');\n              var chKeyMV = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';\n              leads = await new Promise(function(resolve) {\n                var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=removals&size=100', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyMV + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {\n                  var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {\n                    try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.title && c.company_number && c.company_status !== 'dissolved'}).map(function(c) { var a = c.address || {}; return { id: 'CH_MV_' + (c.company_number || Date.now()), name: (c.title || '').trim(), address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'CH Fallback', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }\n                  });\n                });\n                req.on('error', function() { resolve([]); }); req.setTimeout(15000, function() { req.destroy(); resolve([]); }); req.end();\n              });\n              console.log('[SCRAPER] CH fallback returned ' + leads.length + ' leads');\n            }\n          } catch(e) { console.log('[SCRAPER] Moving error:', e.message); leads = []; }\n"
-);
-console.log('1/5 Moving ✅');
+var B = {
+  moving: makeBlock('moving', 'jKpgGfgRfzrGgEMa8', { location: 'London', maxResults: MAX, radius: 100 },
+    "{ id: 'RM_' + (p.id || Date.now()), title: p.title || '', address: p.displayAddress || p.address || '', price: p.price || 0, bedrooms: p.bedrooms || 0, listingStatus: p.status || (p.soldDate ? 'SSTC' : 'Available'), url: p.url || '', source: 'Rightmove', scrapedAt: new Date().toISOString() }"),
+  planning: makeBlock('planning', 'rwURYayTtJ7mv9jFr', { location: 'UK', maxResults: MAX },
+    "{ id: 'PLAN_' + (p.applicationRef || Date.now()), address: (p.address || '').trim(), postcode: p.postcode || '', description: p.proposal || p.description || '', council: p.councilName || p.council || '', applicationRef: p.applicationRef || '', applicationType: p.applicationType || 'Planning', status: p.status || '', source: 'UK Planning Apps', scrapedAt: new Date().toISOString() }"),
+  probate: makeBlock('probate', 'rcfzPm2dJk9vig8hp', { sp_intended_usage: 'personal', sp_improvement_suggestions: 'testing', maxResults: MAX },
+    "{ id: 'PROB_' + (p.notice_id || Date.now()), name: p.decedent_name || '', deceasedName: p.decedent_name || '', address: p.decedent_address || '', postcode: (p.decedent_address || '').split(',').pop().trim(), estateValue: p.estate_value || '', dateOfDeath: p.decedent_dod || '', noticeUrl: p.notice_url || '', source: 'Gazette Probate', scrapedAt: new Date().toISOString() }"),
+  tenders: makeBlock('tenders', 'IDHZwbIUCGhlAGWbA', { maxResults: MAX },
+    "{ id: 'CF_' + (t.noticeIdentifier || Date.now()), title: t.title || '', buyer: t.organisationName || t.buyerName || '', contractValue: t.valueHigh || t.valueLow || t.awardedValue || 0, description: (t.description || '').substring(0, 500), closingDate: t.closingDate || '', publishedDate: t.publishedDate || '', tenderNoticeId: t.noticeIdentifier || '', source: 'Contracts Finder', scrapedAt: new Date().toISOString() }")
+};
 
-replaceBetween(
-  "} else if (product === 'planning') {",
-  "} else if (product === 'moving') {",
-  "} else if (product === 'planning') {\n          try {\n            var apifyKeyPL = process.env.APIFY_API_KEY;\n            leads = [];\n            if (apifyKeyPL) {\n              leads = await new Promise(function(resolve) {\n                var bodyPL = JSON.stringify({ location: 'UK', maxResults: 1000 });\n                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/rwURYayTtJ7mv9jFr/run-sync-get-dataset-items?token=' + apifyKeyPL + '&memory=1024&timeout=300', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyPL), 'Accept': 'application/json' }, timeout: 310000 }, function(res) {\n                  var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {\n                    try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }\n                      resolve(items.map(function(p) { return { id: 'PLAN_' + (p.applicationRef || Date.now()), address: (p.address || '').trim(), postcode: p.postcode || '', description: p.proposal || p.description || '', council: p.councilName || p.council || '', applicationRef: p.applicationRef || '', applicationType: p.applicationType || 'Planning', status: p.status || '', source: 'UK Planning Apps Apify', scrapedAt: new Date().toISOString() }; }));\n                    } catch(e) { resolve([]); }\n                  });\n                });\n                req.on('error', function() { resolve([]); }); req.setTimeout(310000, function() { req.destroy(); resolve([]); });\n                req.write(bodyPL); req.end();\n              });\n            }\n            if (leads && leads.length > 0) console.log('[SCRAPER] Planning Apps returned ' + leads.length + ' applications');\n            else { console.log('[SCRAPER] Planning 0'); leads = []; }\n          } catch(e) { console.log('[SCRAPER] Planning error:', e.message); leads = []; }\n"
-);
-console.log('2/5 Planning ✅');
+// ===== REPLACE =====
+// Each product appears ONCE in the scraper section (after newbusiness, before else {}).
+// Find each by its unique start marker and its following product's start.
 
-replaceBetween(
-  "} else if (product === 'probate') {",
-  "} else {",
-  "} else if (product === 'probate') {\n          try {\n            var apifyKeyPR = process.env.APIFY_API_KEY;\n            leads = [];\n            if (apifyKeyPR) {\n              leads = await new Promise(function(resolve) {\n                var bodyPR = JSON.stringify({ sp_intended_usage: 'personal', sp_improvement_suggestions: 'testing', maxResults: 1000 });\n                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/rcfzPm2dJk9vig8hp/run-sync-get-dataset-items?token=' + apifyKeyPR + '&memory=1024&timeout=300', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyPR), 'Accept': 'application/json' }, timeout: 310000 }, function(res) {\n                  var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {\n                    try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }\n                      resolve(items.map(function(p) { return { id: 'PROB_' + (p.notice_id || Date.now()), name: p.decedent_name || '', deceasedName: p.decedent_name || '', address: p.decedent_address || '', postcode: (p.decedent_address || '').split(',').pop().trim(), estateValue: p.estate_value || '', estimatedValue: p.estate_value || '', dateOfDeath: p.decedent_dod || '', noticeUrl: p.notice_url || '', source: 'UK Gazette Probate Apify', scrapedAt: new Date().toISOString() }; }));\n                    } catch(e) { resolve([]); }\n                  });\n                });\n                req.on('error', function() { resolve([]); }); req.setTimeout(310000, function() { req.destroy(); resolve([]); });\n                req.write(bodyPR); req.end();\n              });\n            }\n            if (leads && leads.length > 0) console.log('[SCRAPER] Gazette returned ' + leads.length + ' probate cases');\n            else { console.log('[SCRAPER] Probate 0'); leads = []; }\n          } catch(e) { console.log('[SCRAPER] Probate error:', e.message); leads = []; }\n"
-);
-console.log('3/5 Probate ✅');
+var pEnd = c.lastIndexOf("fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));");
+if (pEnd === -1) { console.log('❌ Cannot find save line'); process.exit(1); }
 
-replaceBetween(
-  "} else if (product === 'tenders') {",
-  "} else if (product === 'planning') {",
-  "} else if (product === 'tenders') {\n          try {\n            var apifyKeyTE = process.env.APIFY_API_KEY;\n            leads = [];\n            if (apifyKeyTE) {\n              leads = await new Promise(function(resolve) {\n                var bodyTE = JSON.stringify({ maxResults: 1000 });\n                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/IDHZwbIUCGhlAGWbA/run-sync-get-dataset-items?token=' + apifyKeyTE + '&memory=1024&timeout=300', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyTE), 'Accept': 'application/json' }, timeout: 310000 }, function(res) {\n                  var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {\n                    try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }\n                      resolve(items.slice(0, 1000).map(function(t) { return { id: 'CF_' + (t.noticeIdentifier || Date.now()), title: t.title || '', buyer: t.organisationName || t.buyerName || '', contractValue: t.valueHigh || t.valueLow || t.awardedValue || 0, description: (t.description || '').substring(0, 500), closingDate: t.closingDate || '', publishedDate: t.publishedDate || '', tenderNoticeId: t.noticeIdentifier || '', source: 'Contracts Finder Apify', scrapedAt: new Date().toISOString() }; }));\n                    } catch(e) { resolve([]); }\n                  });\n                });\n                req.on('error', function() { resolve([]); }); req.setTimeout(310000, function() { req.destroy(); resolve([]); });\n                req.write(bodyTE); req.end();\n              });\n            }\n            if (leads && leads.length > 0) console.log('[SCRAPER] CF returned ' + leads.length + ' tenders');\n            else { console.log('[SCRAPER] Tenders 0'); leads = []; }\n          } catch(e) { console.log('[SCRAPER] Tenders error:', e.message); leads = []; }\n"
-);
-console.log('4/5 Tenders ✅');
-console.log('5/5 New Business: already using Apify Companies House (keeping as-is) ✅');
+// Position markers (computed ONCE from original file)
+var prods = ['tenders', 'planning', 'moving', 'probate'];
+var next = { tenders: 'planning', planning: 'moving', moving: 'probate', probate: pEnd };
+var pos = {};
+
+for (var i = 0; i < prods.length; i++) {
+  var p = prods[i];
+  var start = 'product === \'' + p + '\')';
+  var s = c.lastIndexOf(start, pEnd);
+  if (s === -1) { console.log('❌ ' + p + ' start not found'); process.exit(1); }
+  // Find the actual ELSE IF line start (go back to the }
+  var s2 = c.lastIndexOf('\n', s - 5);
+  s2 = c.lastIndexOf('\n', s2 - 1) + 1;
+  // End marker: next product's ELSE IF
+  var n = next[p];
+  var e = typeof n === 'number' ? n : c.lastIndexOf('\n        } else if (product === \'' + n + '\') {', pEnd);
+  if (e === -1) { console.log('❌ ' + p + ' end not found (' + n + ')'); process.exit(1); }
+  pos[p] = { start: s2, end: e };
+}
+
+// Replace (all positions computed, now modify)
+var parts = [];
+var lastEnd = 0;
+for (var i = 0; i < prods.length; i++) {
+  var p = prods[i];
+  parts.push(c.substring(lastEnd, pos[p].start));
+  parts.push(B[p]);
+  lastEnd = pos[p].end;
+}
+parts.push(c.substring(lastEnd));
+c = parts.join('');
 
 fs.writeFileSync(f, c);
-
-try { var cp = require('child_process'); cp.execSync('node --check "' + f + '"', { stdio: 'pipe' }); console.log('\n✅ ALL SCRAPERS NOW USE APIFY - Syntax OK!'); console.log('   Cost: ~$0.15/day = ~$4.50/month'); console.log('   Daily cache prevents re-runs'); } catch(e) { console.log('\n❌ ERROR:', e.stderr.toString()); process.exit(1); }
+try { require('child_process').execSync('node --check "' + f + '"', { stdio: 'pipe' }); console.log('✅ All Apify scrapers installed! maxResults=' + MAX + ' MB=' + MEM); } catch(e) { console.log('❌', e.stderr.toString()); }
