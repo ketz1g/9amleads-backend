@@ -4871,21 +4871,25 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             }
           } catch(e) { console.log('[SCRAPER] Apify error: ' + e.message); leads = []; }
         } else if (product === 'tenders') {
+          leads = [];
           try {
-            var chKeyTen = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
             leads = await new Promise(function(resolve) {
-              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=contractor&size=100', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyTen + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
-                var body = ''; res.on('data', function(c) { body += c; });
-                res.on('end', function() {
-                  try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.title && c.company_number && c.company_status !== 'dissolved'}).map(function(c) { var a = c.address || {}; return { id: 'CH_TEN_' + (c.company_number || Date.now()), name: (c.title || '').trim() + ' - Contract Opportunity', buyer: (c.title || '').trim(), companyNumber: c.company_number || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House Contractors', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+              var req = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=30', method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 30000 }, function(res) {
+                var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
+                  try { var data = JSON.parse(body); var releases = data.releases || []; resolve(releases.slice(0, 30).map(function(r) {
+                    var t = r.tender || {}; var b = r.buyer || {}; var bName = b.name || (b.identifier && b.identifier.legalName) || '';
+                    var docUrl = t.documents && t.documents[0] ? 'https://www.publiccontractsscotland.gov.uk/search/show/search_view.aspx?ID=' + t.documents[0].id : '';
+                    return { id: r.id || r.ocid || 'PCS_' + Date.now(), title: t.title || r.description || '', buyer: bName, contractValue: t.value ? (t.value.amount || t.value) : 0,
+                      description: (t.description || r.description || '').substring(0, 500), closingDate: t.tenderPeriod ? t.tenderPeriod.endDate : '', publishedDate: r.date || '',
+                      tenderNoticeId: r.id || r.ocid || '', url: docUrl, source: 'Public Contracts Scotland', scrapedAt: new Date().toISOString() };
+                    }));
+                  } catch(e) { resolve([]); }
                 });
               });
-              req.on('error', function() { resolve([]); });
-              req.setTimeout(15000, function() { req.destroy(); resolve([]); });
-              req.end();
+              req.on('error', function() { resolve([]); }); req.setTimeout(30000, function() { req.destroy(); resolve([]); }); req.end();
             });
-            if (leads && leads.length > 0) console.log('[SCRAPER] CH Contractors returned ' + leads.length + ' tender leads');
-            else { console.log('[SCRAPER] No tender leads today'); leads = []; }
+            if (leads && leads.length > 0) console.log('[SCRAPER] PCS returned ' + leads.length + ' real tenders');
+            else { console.log('[SCRAPER] PCS returned 0'); leads = []; }
           } catch(e) { console.log('[SCRAPER] Tenders error:', e.message); leads = []; }
         } else if (product === 'planning') {
           try {
