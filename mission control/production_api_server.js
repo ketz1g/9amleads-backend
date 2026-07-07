@@ -3205,6 +3205,86 @@ cron.schedule('0 10 * * *', async () => {
   }
   console.log('[CAMPAIGN] Sent ' + sent + ' campaign emails');
 });
+
+// ===== DAILY HEALTH CHECK (Midnight) =====
+// Tests all critical functions and auto-fixes common issues
+cron.schedule('0 0 * * *', async () => {
+  console.log('[HEALTH] Running daily health check...');
+  var issues = [], fixes = [];
+  
+  // 1. Check database integrity
+  try {
+    _dbData = null;
+    var db = getDb();
+    var custCount = (db.customers || []).length;
+    var leadCount = (db.leads || []).length;
+    // Check for leads with no customer reference
+    var validIds = new Set((db.customers || []).map(c => c.id));
+    var orphanLeads = (db.leads || []).filter(l => !validIds.has(l.customer_id));
+    if (orphanLeads.length > 0) {
+      db.leads = (db.leads || []).filter(l => validIds.has(l.customer_id));
+      saveDb();
+      fixes.push('Removed ' + orphanLeads.length + ' orphan leads');
+    }
+    console.log('[HEALTH] DB: ' + custCount + ' customers, ' + leadCount + ' leads');
+  } catch(e) { issues.push('Database: ' + e.message); }
+  
+  // 2. Check scraper data files exist
+  for (var p in PRODUCT_LEAD_FILES) {
+    try {
+      var f = path.join(DATA_DIR, PRODUCT_LEAD_FILES[p].file);
+      if (!fs.existsSync(f)) {
+        fs.writeFileSync(f, JSON.stringify([], null, 2));
+        fixes.push('Created empty ' + p + ' leads file');
+      } else {
+        var data = JSON.parse(fs.readFileSync(f, 'utf-8'));
+        if (!Array.isArray(data)) {
+          fs.writeFileSync(f, JSON.stringify([], null, 2));
+          fixes.push('Fixed corrupted ' + p + ' leads file');
+        }
+      }
+    } catch(e) { issues.push(p + ' file: ' + e.message); }
+  }
+  
+  // 3. Check last-scrape cache is valid
+  try {
+    var lsFile = path.join(DATA_DIR, 'last-scrape.json');
+    if (fs.existsSync(lsFile)) {
+      var ls = JSON.parse(fs.readFileSync(lsFile, 'utf-8'));
+      var today = new Date().toISOString().split('T')[0];
+      for (var p in ls) {
+        if (ls[p] !== today) {
+          console.log('[HEALTH] ' + p + ' last scraped ' + ls[p] + ', not today');
+        }
+      }
+    }
+  } catch(e) {}
+  
+  // 4. Check Stripe config
+  try {
+    var scFile = path.join(DATA_DIR, 'stripe-config.json');
+    if (!fs.existsSync(scFile)) issues.push('Stripe config missing');
+  } catch(e) {}
+  
+  // 5. Auto-fix: if environment restarted, ensure DATA_DIR exists
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch(e) {}
+  try { fs.mkdirSync(path.join(ROOT_DIR, 'portal'), { recursive: true }); } catch(e) {}
+  
+  // 6. Check server uptime and memory
+  var mem = process.memoryUsage();
+  console.log('[HEALTH] Memory: ' + Math.round(mem.heapUsed / 1024 / 1024) + '/' + Math.round(mem.heapTotal / 1024 / 1024) + ' MB');
+  
+  if (issues.length > 0) console.log('[HEALTH] Issues found: ' + issues.join(', '));
+  if (fixes.length > 0) console.log('[HEALTH] Auto-fixes applied: ' + fixes.join(', '));
+  if (issues.length === 0 && fixes.length === 0) console.log('[HEALTH] All systems healthy');
+  
+  // Alert if issues found
+  if (issues.length > 0) {
+    try {
+      await sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Admin' }, '[HEALTH ALERT] ' + issues.length + ' issues found', '<div style="background:#1a1b2e;padding:20px;color:#e2e8f0"><h2>Health Check Alert</h2><p>Issues found:</p><ul>' + issues.map(i => '<li>' + i + '</li>').join('') + '</ul><p>Fixes applied:</p><ul>' + fixes.map(f => '<li>' + f + '</li>').join('') + '</ul></div>');
+    } catch(e) { console.log('[HEALTH] Alert email failed:', e.message); }
+  }
+});
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   try {
     var delivered = 0, errors = 0;
