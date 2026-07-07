@@ -202,20 +202,22 @@ function leadMatchesTarget(lead, customer, product) {
         const appType = (lead.applicationType || lead.app_type || '').toLowerCase();
         var filterTypes = filters['f-app-type'] || filters.applicationType || [];
         if (typeof filterTypes === 'string') filterTypes = [filterTypes];
+        var appTypeMatched = false;
         if (Array.isArray(filterTypes) && filterTypes.length > 0) {
           filterTypes = filterTypes.map(function(t) { return t.toLowerCase(); });
-          var matched = filterTypes.some(function(t) { return appType.includes(t); });
-          if (!matched) tier = 2;
+          appTypeMatched = filterTypes.some(function(t) { return appType.includes(t); });
+          if (!appTypeMatched) tier = 2;
         }
-        // Keyword matching for planning descriptions
+        // Keyword matching — if set, further narrows results but doesn't block if none match
         if (filters.keywords) {
           const keywords = filters.keywords.toLowerCase().split(',').map(k => k.trim()).filter(k => k);
           if (keywords.length > 0) {
             const desc = (lead.description || lead.proposal || '').toLowerCase();
             const title = (lead.council || lead.address || '').toLowerCase();
             const combined = title + ' ' + desc;
-            const matched = keywords.some(k => combined.includes(k));
-            if (!matched) tier = 2;
+            const kwMatched = keywords.some(k => combined.includes(k));
+            // Keywords matched: keep tier (tier 1 if app type also matched). No keywords match: still deliver (tier 2) but lower priority
+            if (!kwMatched) tier = 2;
           }
         }
       }
