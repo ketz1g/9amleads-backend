@@ -328,8 +328,9 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
         </div>
       </div>
       <div id="dashboard-filter-planning" class="dashboard-filter-panel" style="display:none">
+        <div style="font-size:13px;font-weight:700;color:#10b981;margin-bottom:10px;padding:6px 10px;background:rgba(16,185,129,0.06);border-radius:6px;border-left:3px solid #10b981">🏗️ Planning Permissions · Filters</div>
         <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Application Types</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
           <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-plan-apptype" value="householder" checked style="accent-color:#10b981"> Householder</label>
           <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-plan-apptype" value="full" checked style="accent-color:#10b981"> Full Planning</label>
           <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-plan-apptype" value="outline" checked style="accent-color:#10b981"> Outline</label>
@@ -337,7 +338,10 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
           <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-plan-apptype" value="change" checked style="accent-color:#10b981"> Change of Use</label>
           <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" class="df-plan-apptype" value="lawful" checked style="accent-color:#10b981"> Lawful Dev</label>
         </div>
-      </div>
+        <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Keywords (comma separated)</label>
+          <input type="text" id="df-planning-keywords" placeholder="roof, extension, loft, solar, kitchen..." style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;outline:none">
+        </div>
+        <p style="font-size:10px;color:var(--muted2);margin-top:6px">Only leads with matching keywords in the description will be prioritised. Leave blank for all application types.</p>
       </div>
       <div id="dashboard-filter-tenders" class="dashboard-filter-panel" style="display:none">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -1942,7 +1946,10 @@ function renderFilterSummary(filters, product) {
       var sics = pf.sicCodes || []; var labels = { tech_software: 'Tech', construction: 'Construction', retail: 'Retail', hospitality: 'Hospitality', healthcare: 'Healthcare', professional_services: 'Prof Services', financial: 'Financial', creative: 'Creative' };
       if (sics.length) pl.push(sics.map(function(s) { return labels[s] || s; }).join(', '));
     } else if (p === 'planning') {
-      if (pf.applicationType) pl.push(pf.applicationType);
+      var appTypes = pf['f-app-type'] || [];
+      if (typeof appTypes === 'string') appTypes = [appTypes];
+      if (appTypes.length) pl.push(appTypes.join(', '));
+      if (pf.keywords) pl.push('Keywords: "' + pf.keywords + '"');
     } else if (p === 'tenders') {
       if (pf.minValue) pl.push('Min \u00a3' + Number(pf.minValue).toLocaleString());
       if (pf.keywords) pl.push('"' + pf.keywords + '"');
@@ -1967,7 +1974,12 @@ function populateFilterEditor(filters, product) {
       const sics = filters.sicCodes || [];
       document.querySelectorAll('.df-nb-sic').forEach(cb => { cb.checked = sics.includes(cb.value); });
     } else if (product === 'planning') {
-      setSelect('df-planning-apptype', filters.applicationType || '');
+      const appTypes = filters['f-app-type'] || filters.applicationType || [];
+      const appTypeArr = typeof appTypes === 'string' ? [appTypes] : appTypes;
+      document.querySelectorAll('.df-plan-apptype').forEach(function(cb) {
+        cb.checked = appTypeArr.some(function(t) { return t.toLowerCase().includes(cb.value); });
+      });
+      document.getElementById('df-planning-keywords').value = filters.keywords || '';
     } else if (product === 'tenders') {
     setSelect('df-tenders-minvalue', filters.minValue || '');
     document.getElementById('df-tenders-keywords').value = filters.keywords || '';
@@ -2022,7 +2034,8 @@ async function saveLeadFilters() {
     } else if (prod === 'newbusiness') {
       pf.sicCodes = Array.from(document.querySelectorAll('.df-nb-sic:checked')).map(function(cb) { return cb.value; });
     } else if (prod === 'planning') {
-      pf.applicationType = document.getElementById('df-planning-apptype').value;
+      pf['f-app-type'] = Array.from(document.querySelectorAll('.df-plan-apptype:checked')).map(function(cb) { return cb.value; });
+      pf.keywords = document.getElementById('df-planning-keywords').value.trim();
     } else if (prod === 'tenders') {
       pf.minValue = document.getElementById('df-tenders-minvalue').value;
       pf.keywords = document.getElementById('df-tenders-keywords').value;
