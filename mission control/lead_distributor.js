@@ -207,6 +207,17 @@ function leadMatchesTarget(lead, customer, product) {
           var matched = filterTypes.some(function(t) { return appType.includes(t); });
           if (!matched) tier = 2;
         }
+        // Keyword matching for planning descriptions
+        if (filters.keywords) {
+          const keywords = filters.keywords.toLowerCase().split(',').map(k => k.trim()).filter(k => k);
+          if (keywords.length > 0) {
+            const desc = (lead.description || lead.proposal || '').toLowerCase();
+            const title = (lead.council || lead.address || '').toLowerCase();
+            const combined = title + ' ' + desc;
+            const matched = keywords.some(k => combined.includes(k));
+            if (!matched) tier = 2;
+          }
+        }
       }
       if (filters.product === 'tenders') {
         const val = parseInt(lead.contractValue) || 0;
@@ -505,7 +516,7 @@ async function distributeProduct(product) {
   }
 
   // === Phase 4: Disabled â€” only real scraped data is used ===
-  // === Phase 4: Disabled — no fake leads generated ===
+  // === Phase 4: Disabled ï¿½ no fake leads generated ===
   var generated = 0;
   // All leads come from real scrapers only
   saveJSON(DB_FILE, db);
