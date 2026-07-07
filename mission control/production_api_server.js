@@ -4909,22 +4909,19 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             else { console.log('[SCRAPER] No planning leads today'); leads = []; }
           } catch(e) { console.log('[SCRAPER] Planning error:', e.message); leads = []; }
         } else if (product === 'moving') {
-          try { var k = process.env.APIFY_API_KEY; leads = []; if (k) {
-            leads = await new Promise(function(r) {
-              var b = JSON.stringify({ location: 'London', maxResults: 5, radius: 100 });
-              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/jKpgGfgRfzrGgEMa8/run-sync-get-dataset-items?token=' + k + '&memory=512&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
+          try {
+            var chKeyMV = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+            leads = await new Promise(function(resolve) {
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=removals&size=100', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyMV + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
-                  try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
-                    r(items.map(function(p) { return { id: 'RM_' + (p.id || Date.now()), title: p.title || '', address: p.displayAddress || p.address || '', price: p.price || 0, bedrooms: p.bedrooms || 0, listingStatus: p.status || (p.soldDate ? 'SSTC' : 'Available'), url: p.url || '', source: 'Rightmove', scrapedAt: new Date().toISOString() }; }));
-                  } catch(e) { r([]); }
+                  try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.title && c.company_number && c.company_status !== 'dissolved'}).map(function(c) { var a = c.address || {}; return { id: 'CH_MV_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House Moving', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
                 });
               });
-              req.on('error', function() { r([]); }); req.setTimeout(90000, function() { req.destroy(); r([]); });
-              req.write(b); req.end();
+              req.on('error', function() { resolve([]); }); req.setTimeout(15000, function() { req.destroy(); resolve([]); }); req.end();
             });
-            if (leads && leads.length > 0) console.log('[SCRAPER] Rightmove returned ' + leads.length);
-            else { console.log('[SCRAPER] Rightmove 0'); leads = []; }
-          } } catch(e) { console.log('[SCRAPER] Moving error:', e.message); leads = []; }
+            if (leads && leads.length > 0) console.log('[SCRAPER] CH Moving returned ' + leads.length + ' removal companies');
+            else { console.log('[SCRAPER] No moving leads today'); leads = []; }
+          } catch(e) { console.log('[SCRAPER] Moving error:', e.message); leads = []; }
         } else if (product === 'probate') {
           var probLeads = [];
           var probK = process.env.APIFY_API_KEY;
