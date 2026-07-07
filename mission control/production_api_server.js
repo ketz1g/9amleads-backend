@@ -4712,7 +4712,7 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
       if (prod === 'moving' && apifyK) {
         var lm = await new Promise(function(resolve) {
           var bd = JSON.stringify({ location: 'London', maxResults: 5 });
-          var rq = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyK + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd) }, timeout: 90000 }, function(s) {
+          var rq = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyK + '&memory=512&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd) }, timeout: 150000 }, function(s) {
             var t = ''; s.on('data', function(c) { t += c; }); s.on('end', function() {
               try { var j = JSON.parse(t); if (Array.isArray(j)) resolve(j); else resolve([]); } catch(e) { resolve([]); }
             });
@@ -4840,7 +4840,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             var apifyKey = process.env.APIFY_API_KEY;
             leads = await new Promise(function(resolve) {
               var bodyData = JSON.stringify({ search: 'Consulting|Accounting|Design', maxItems: 100000, includeOfficers: false });
-              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
+              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=512&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }
@@ -4912,7 +4912,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           try { var k = process.env.APIFY_API_KEY; leads = []; if (k) {
             leads = await new Promise(function(r) {
               var b = JSON.stringify({ location: 'London', maxResults: 5, radius: 100 });
-              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/jKpgGfgRfzrGgEMa8/run-sync-get-dataset-items?token=' + k + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
+              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/jKpgGfgRfzrGgEMa8/run-sync-get-dataset-items?token=' + k + '&memory=512&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
                   try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
                     r(items.map(function(p) { return { id: 'RM_' + (p.id || Date.now()), title: p.title || '', address: p.displayAddress || p.address || '', price: p.price || 0, bedrooms: p.bedrooms || 0, listingStatus: p.status || (p.soldDate ? 'SSTC' : 'Available'), url: p.url || '', source: 'Rightmove', scrapedAt: new Date().toISOString() }; }));
@@ -4932,7 +4932,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             try {
               probLeads = await new Promise(function(r) {
                 var b = JSON.stringify({ sp_intended_usage: 'personal', sp_improvement_suggestions: 'testing', maxResults: 5 });
-                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/rcfzPm2dJk9vig8hp/run-sync-get-dataset-items?token=' + probK + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
+                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/rcfzPm2dJk9vig8hp/run-sync-get-dataset-items?token=' + probK + '&memory=512&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
                     try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
                       r(items.map(function(p) { return { id: 'PROB_' + (p.notice_id || Date.now()), name: p.decedent_name || '', deceasedName: p.decedent_name || '', address: p.decedent_address || '', postcode: (p.decedent_address || '').split(',').pop().trim(), estateValue: p.estate_value || '', dateOfDeath: p.decedent_dod || '', noticeUrl: p.notice_url || '', source: 'Gazette Probate', scrapedAt: new Date().toISOString() }; }));
