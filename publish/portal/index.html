@@ -294,7 +294,7 @@ var VALID_POSTCODE_AREAS = ['AB','AL','B','BA','BB','BD','BH','BL','BN','BR','BS
 function isValidPostcodeArea(code) { return VALID_POSTCODE_AREAS.includes(code); }
 async function addSignupPostcode() {
   var input = document.getElementById('s-postcode-input');
-  var code = input.value.trim().toUpperCase();
+  var code = input.value.trim().toUpperCase().replace(/[0-9].*$/, '');
   var err = document.getElementById('s-postcode-error');
   err.style.display = 'none';
   if (!code) return;
@@ -305,7 +305,7 @@ async function addSignupPostcode() {
   try {
     var r = await fetch(API + '/api/postcodes/check?code=' + encodeURIComponent(code));
     var data = await r.json();
-    if (data.valid === false) { err.textContent = data.error || '"' + code + '" is not a valid postcode area (use 2-letter code like EN, SG, CM)'; err.style.display = 'block'; return; }
+    if (data.valid === false) { err.textContent = data.error || '"' + code + '" is not a valid UK postcode area (use 1 or 2-letter code like B, N, EN, SG, CM)'; err.style.display = 'block'; return; }
   } catch(e) { /* server unreachable — trusted client-side validation is sufficient */ }
   signupPostcodes.push(code);
   input.value = '';
