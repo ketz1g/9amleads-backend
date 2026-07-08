@@ -137,6 +137,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <a href="#" onclick="showPage('reports')"><i class="fas fa-chart-bar"></i> Reports</a>
 <a href="#" onclick="showPage('success-centre')"><i class="fas fa-graduation-cap"></i> Success</a>
 <a href="#" onclick="showPage('campaigns')"><i class="fas fa-bullhorn"></i> Campaigns</a>
+<a href="#" onclick="showPage('business-profile')"><i class="fas fa-briefcase"></i> Business Profile</a>
 <a href="#" onclick="document.getElementById('crm-section').scrollIntoView({behavior:'smooth'});return false"><i class="fas fa-plug"></i> CRM</a>
 <a href="#" onclick="showPage('billing')"><i class="fas fa-credit-card"></i> Billing</a>
 <a href="#" onclick="showPage('settings')"><i class="fas fa-cog"></i> Settings</a>
@@ -482,7 +483,13 @@ async function apiFetch(path, opts = {}) {
   try {
     const r = await fetch(API + path, { ...opts, headers: { ...opts.headers, 'Authorization': 'Bearer ' + (session.token || '') } });
     const d = await r.json();
-    if (d.error) return null;
+    if (d.error) {
+      if (d.error === 'User not found' || d.error === 'Invalid token' || d.error === 'No token provided') {
+        localStorage.removeItem('mld_portal_session');
+        window.location.href = '/portal/';
+      }
+      return null;
+    }
     return d;
   } catch { return null; }
 }
@@ -630,24 +637,48 @@ async function loadPrompts() {
 }
 
 var TIPS = [
+  '🔥 <strong>Get fired up!</strong> Your leads are waiting. Print your flyers, put on your best shirt, and go knock some doors. Every conversation is a potential sale!',
+  '📬 <strong>Flyers ready?</strong> Hand-deliver them today. A professional flyer on a kitchen table converts 5x better than an email. Make it count!',
+  '🚀 <strong>Morning energy!</strong> New leads just landed at 9am. Be the first to reach out and you\'ll be the first they trust. Go get \'em!',
+  '💷 <strong>One lead could be worth thousands.</strong> A single moving contract, probate case, or tender win can pay your subscription for a year. Every lead matters.',
+  '🎯 <strong>You\'ve got this.</strong> Every lead is a person who needs exactly what you offer. Your job is to show up, be helpful, and close the deal.',
+  '💰 <strong>That lead in your inbox?</strong> It could be a £5k probate case, a £10k extension project, or a £50k tender win. Don\'t leave money on the table.',
+  '💪 <strong>Consistency wins.</strong> Show up every day, follow up every lead, and the results will compound. Your future self will thank you.',
+  '📋 <strong>Get those flyers out!</strong> Print a batch today and drop them door-to-door in your target areas. Physical presence builds trust fast.',
+  '🏃 <strong>First mover wins.</strong> The person who follows up first gets the business. Don\'t wait — grab those leads and start dialling or knocking.',
+  '😃 <strong>Smile on your face, flyer in hand.</strong> A friendly face with a professional brochure is unstoppable. Go visit your leads in person today!',
+  '⚡ <strong>Energy is contagious.</strong> When you\'re excited about what you offer, your customers will feel it. Bring the energy today!',
+  '📈 <strong>Small actions, big results.</strong> One flyer drop. One phone call. One follow-up. Do it consistently and watch your pipeline grow.',
+  '🏆 <strong>Someone out there needs you right now.</strong> Your leads are real people with real problems. Be the solution they\'re looking for today.',
+  '🎒 <strong>Pack your bag.</strong> Flyers, business cards, a smile. Head out and make today your most productive day yet. Your competition is sleeping.',
+  '🎤 <strong>You\'re the expert.</strong> Own it. Walk in with confidence, hand over your brochure, and show them why you\'re the best choice in town.',
+  '⏰ <strong>Right now, someone is comparing quotes.</strong> Be the first name they see. Be the first person they speak to. Speed wins. Move now!',
+  '☕ <strong>Grab a coffee, then hit the road.</strong> Your leads aren\'t going to convert themselves. Get out there and make it happen today!',
+  '📝 <strong>Didn\'t convert today?</strong> Keep notes on every lead — name, email, phone, what they said. Follow up in 2 weeks. Timing is everything.',
+  '📞 <strong>Don\'t have their number yet?</strong> Every interaction is a chance to get their email or phone. Build your contact list one lead at a time.',
+  '🗓️ <strong>Not ready to buy?</strong> Add them to your follow-up list. Send a text in 30 days. Drop another flyer in 60 days. Persistence pays off.',
+  '📇 <strong>Get their details first.</strong> Before you leave, ask for their email and phone. Even if they don\'t buy now, you\'ve got a warm lead for later.',
+  '🔄 <strong>Follow up, don\'t give up.</strong> Most sales happen after the 3rd contact. Keep showing up, keep adding value, keep building the relationship.',
+  '📓 <strong>Keep a lead journal.</strong> Who did you speak to? What did they say? When to follow up? Notes turn cold leads into future closers.',
+  '🔁 <strong>No response?</strong> Try again in 2 weeks with a different angle — a new flyer, a special offer, or a helpful update. Silence isn\'t a no.',
+  '🎨 <strong>Need a professional look?</strong> We can help with your business branding — logos, flyers, letterheads, and social media graphics. You focus on selling, we\'ll make you look the part.',
+  '📱 <strong>Social media too much?</strong> Use the Success Kit templates to create posts. We can also handle your social media — content, scheduling, engagement. Let us help you grow your presence.',
+  '🖼️ <strong>First impressions matter.</strong> A polished logo, professional flyer, and consistent branding build trust before you even speak. We can design it all for you.',
+  '📸 <strong>Show off your work.</strong> Use our flyer templates to create before/after posts, customer testimonials, and case studies. Great content wins more leads.',
   'Follow up within <strong>30 minutes</strong> of receiving a lead — speed triples your conversion rate.',
   'Hand-delivered flyers convert <strong>5x better</strong> than posted letters. A personal touch builds trust.',
   'Add <strong>more postcode areas</strong> in Settings to increase your daily lead volume at no extra cost.',
-  'Leads that receive a <strong>physical brochure</strong> are 3x more likely to convert than email-only outreach.',
   'Track your <strong>conversion rate</strong> in the Pipeline section — aim for 20%+ from contacted to won.',
   'New leads land at <strong>9am every morning</strong>. Make it a habit to review them first thing.',
   'Personalise every outreach — reference the <strong>specific address, company, or project</strong> in your first message.',
   'Most customers don\'t respond on first contact. Plan a <strong>3-touch sequence</strong> over 2 weeks.',
   'Use the <strong>CRM integration</strong> to automatically push leads into your existing workflow.',
-  'Export your leads as <strong>CSV</strong> anytime from the Leads section for offline analysis.',
   'Probate leads convert best with a <strong>compassionate approach</strong> — educate, don\'t sell.',
   'For moving leads, <strong>same-day delivery</strong> of your flyer gives you first-mover advantage.',
   'New business leads are most responsive within <strong>48 hours</strong> of company registration.',
   'Planning leads: visit the property in person <strong>after 4pm</strong> when homeowners are home.',
   'Tender bids submitted <strong>24-48 hours early</strong> have a higher success rate.',
-  'Set up your <strong>postcode areas</strong> to match where your ideal customers are located.',
   'Consistency beats intensity — small daily efforts compound into <strong>big results</strong> over time.',
-  'Refer a friend and get <strong>1 month free</strong>. Share your referral link from the Dashboard.',
   'Review your <strong>weekly stats</strong> every Monday to spot trends and adjust your approach.',
   'The businesses that succeed with leads are the ones that <strong>act fast and follow up</strong>. Be first, be persistent.'
 ];
@@ -724,7 +755,8 @@ function showPage(page) {
     settings: function() { document.getElementById('lead-filters-section')?.scrollIntoView({behavior:'smooth'}); },
     support: function() { showSupport(); },
     reports: function() { showReportsPage(); },
-    campaigns: function() { loadCampaigns(); }
+    campaigns: function() { loadCampaigns(); },
+    'business-profile': function() { showBusinessProfile(); }
   };
   (sections[page] || sections.dashboard)();
 }
@@ -1138,7 +1170,107 @@ function showBillingPage() {
   }).catch(function() {});
 }
 
-// ===== SETTINGS PAGE (Step 14) =====
+var BUSINESS_TYPES = ['Removals','Roofing','Plumbing','Cleaning','Solar','Windows and Doors','Estate Agency','Mortgage Broker','Insurance','Gardening','Pest Control','Other'];
+
+function showBusinessProfile() {
+  var main = document.querySelector('.main-content');
+  main.innerHTML = '<div style="max-width:800px;margin:0 auto">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">' +
+    '<div><h1 style="font-size:20px;font-weight:800;font-family:var(--ff-h)">Business Profile</h1><p style="font-size:12px;color:var(--muted2);margin-top:2px">Used for AI flyers, letters, and direct mail campaigns</p></div>' +
+    '<a href="/portal/dashboard.html" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back to Dashboard</a></div>' +
+    '<div id="bp-status" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:12px"></div>' +
+    '<div id="bp-content" style="animation:slideUp .3s ease"><div style="text-align:center;padding:40px;color:var(--muted2)"><i class="fas fa-spinner fa-spin" style="font-size:20px;display:block;margin-bottom:10px"></i>Loading profile...</div></div></div>';
+  apiFetch('/api/direct-mail/profile').then(function(prof) {
+    var p = prof && prof.profile ? prof.profile : {};
+    var typeOptions = BUSINESS_TYPES.map(function(t) { return '<option value="' + t + '"' + (p.business_type === t ? ' selected' : '') + '>' + t + '</option>'; }).join('');
+    var html = '<div style="display:grid;gap:16px">' +
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-building" style="color:var(--primary)"></i> Business Details</div></div><div style="display:grid;gap:12px">' +
+      '<div class="form-row" style="grid-template-columns:2fr 1fr">' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Business Name *</label><input type="text" id="bp-name" value="' + (p.company_name||'').replace(/"/g,'&quot;') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Business Type *</label><select id="bp-type" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)">' + typeOptions + '</select></div></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Short Business Description</label><textarea id="bp-desc" rows="2" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);font-family:inherit;resize:vertical">' + (p.short_description||'') + '</textarea></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Services Offered</label><textarea id="bp-services" rows="2" placeholder="e.g. House removals, office moves" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);font-family:inherit;resize:vertical">' + (p.services_offered||'') + '</textarea></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Service Areas</label><input type="text" id="bp-areas" placeholder="e.g. London, Surrey, Kent" value="' + (p.service_areas||'') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
+      '</div></div>' +
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-address-card" style="color:var(--success)"></i> Contact Info</div></div><div style="display:grid;gap:12px">' +
+      '<div class="form-row" style="grid-template-columns:1fr 1fr">' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Email *</label><input type="email" id="bp-email" value="' + (p.email||'') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Phone *</label><input type="tel" id="bp-phone" value="' + (p.phone||'') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Website</label><input type="url" id="bp-website" placeholder="https://yourcompany.com" value="' + (p.website||'') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Address Line 1</label><input type="text" id="bp-addr1" value="' + (p.address_line1||'') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Address Line 2</label><input type="text" id="bp-addr2" value="' + (p.address_line2||'') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div></div>' +
+      '<div class="form-row"><div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">City</label><input type="text" id="bp-city" value="' + (p.city||'') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Postcode</label><input type="text" id="bp-postcode" value="' + (p.postcode||'') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div></div></div></div>' +
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-palette" style="color:var(--warning)"></i> Branding &amp; Social</div></div><div style="display:grid;gap:12px">' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Logo</label><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
+      (p.logo_url ? '<img id="bp-logo-preview" src="' + p.logo_url + '" style="width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid var(--border)">' : '<div id="bp-logo-preview" style="width:64px;height:64px;border-radius:8px;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--muted2)">Foto</div>') +
+      '<input type="file" id="bp-logo-input" accept="image/*" style="font-size:12px;color:var(--text2)" onchange="previewBusinessLogo(event)">' +
+      '<input type="hidden" id="bp-logo" value="' + (p.logo_url||'') + '"></div></div>' +
+      '<div class="form-row"><div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Preferred Colours</label><input type="text" id="bp-colours" placeholder="e.g. Blue #0ea5e9, White" value="' + (p.preferred_colours||'') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Brand Tone</label><select id="bp-tone" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)">' + ['Professional','Friendly','Luxury','Modern','Traditional','Bold','Warm','Technical'].map(function(t){return '<option value="'+t+'"'+(p.brand_tone===t?' selected':'')+'>'+t+'</option>';}).join('') + '</select></div></div>' +
+      '<div class="form-row"><div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Facebook</label><input type="url" id="bp-facebook" placeholder="https://facebook.com/yourpage" value="' + (p.facebook_page||'') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Instagram</label><input type="url" id="bp-instagram" placeholder="https://instagram.com/yourpage" value="' + (p.instagram_page||'') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Google Reviews Link</label><input type="url" id="bp-reviews" placeholder="https://g.page/r/..." value="' + (p.google_reviews_link||'') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div></div></div>' +
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-bullhorn" style="color:var(--danger)"></i> Marketing</div></div><div style="display:grid;gap:12px">' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Special Offer / USP</label><textarea id="bp-offer" rows="2" placeholder="e.g. Free no-obligation quote, 10% off first booking" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);font-family:inherit;resize:vertical">' + (p.special_offer||'') + '</textarea></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Call to Action</label><input type="text" id="bp-cta" placeholder="e.g. Call us today, Get a free quote, Book now" value="' + (p.call_to_action||'') + '" style="width:100%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
+      '</div></div>' +
+      '<button class="btn btn-primary" onclick="saveBusinessProfile()" style="padding:12px 32px"><i class="fas fa-save"></i> Save Profile</button></div>';
+    document.getElementById('bp-content').innerHTML = html;
+  }).catch(function() { document.getElementById('bp-content').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted2)"><i class="fas fa-exclamation-circle" style="font-size:28px;display:block;margin-bottom:10px"></i>Could not load profile.<br><a href="javascript:location.reload()" style="color:var(--primary)">Refresh page</a></div>'; });
+}
+function previewBusinessLogo(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 500000) { alert('Logo too large. Max 500KB.'); e.target.value = ''; return; }
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    document.getElementById('bp-logo').value = ev.target.result;
+    var prev = document.getElementById('bp-logo-preview');
+    if (prev) { prev.src = ev.target.result; prev.style = 'width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid var(--border)'; }
+  };
+  reader.readAsDataURL(file);
+}
+function saveBusinessProfile() {
+  var name = document.getElementById('bp-name')?.value.trim();
+  var btype = document.getElementById('bp-type')?.value;
+  if (!name) { showStatus('bp-status','Business name is required','var(--danger)'); return; }
+  if (!btype) { showStatus('bp-status','Business type is required','var(--danger)'); return; }
+  var email = document.getElementById('bp-email')?.value.trim();
+  var phone = document.getElementById('bp-phone')?.value.trim();
+  if (!email && !phone) { showStatus('bp-status','Email or phone is required','var(--danger)'); return; }
+  apiFetch('/api/direct-mail/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    company_name: name, business_type: btype,
+    short_description: document.getElementById('bp-desc')?.value||'',
+    services_offered: document.getElementById('bp-services')?.value||'',
+    service_areas: document.getElementById('bp-areas')?.value||'',
+    email: email, phone: phone,
+    website: document.getElementById('bp-website')?.value||'',
+    address_line1: document.getElementById('bp-addr1')?.value||'',
+    address_line2: document.getElementById('bp-addr2')?.value||'',
+    city: document.getElementById('bp-city')?.value||'',
+    postcode: document.getElementById('bp-postcode')?.value||'',
+    logo_url: document.getElementById('bp-logo')?.value||'',
+    preferred_colours: document.getElementById('bp-colours')?.value||'',
+    brand_tone: document.getElementById('bp-tone')?.value||'',
+    facebook_page: document.getElementById('bp-facebook')?.value||'',
+    instagram_page: document.getElementById('bp-instagram')?.value||'',
+    google_reviews_link: document.getElementById('bp-reviews')?.value||'',
+    special_offer: document.getElementById('bp-offer')?.value||'',
+    call_to_action: document.getElementById('bp-cta')?.value||''
+  })}).then(function(r) {
+    if (r && r.success) { showStatus('bp-status','Business profile saved!','var(--success)'); }
+    else { showStatus('bp-status','Failed to save. Try again.','var(--danger)'); }
+  }).catch(function() { showStatus('bp-status','Connection error. Try again.','var(--danger)'); });
+}
+function showStatus(id, msg, color) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = 'block'; el.innerHTML = msg;
+  el.style.color = '#fff'; el.style.background = color;
+  setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+
 // ===== SUCCESS CENTRE =====
 function showSuccessCentre() {
   var industryFilter = '';
@@ -1328,21 +1460,21 @@ function showSettingsPage() {
   document.querySelector('.main-content').innerHTML = mainHtml;
   
   var contentEl = document.getElementById('settingsContent');
-  contentEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted2)"><i class="fas fa-spinner fa-spin" style="font-size:20px;display:block;margin-bottom:10px"></i>Loading...</div>';
+  contentEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted2)"><i class="fas fa-spinner fa-spin" style="font-size:20px;display:block;margin-bottom:10px"></i>Loading billing info...</div>';
 
   if (tab === 'billing') {
     apiFetch('/api/subscription').then(function(sub) {
-      if (!sub) { contentEl.innerHTML = '<p style="color:var(--muted2)">Could not load billing data.</p>'; return; }
+      if (!sub) { contentEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted2)"><i class="fas fa-exclamation-circle" style="font-size:28px;display:block;margin-bottom:10px;color:var(--warning)"></i><p style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">Billing information unavailable</p><p style="font-size:12px;line-height:1.5">This usually happens after a fresh account setup. Try <a href="/portal/dashboard.html" style="color:var(--primary)">refreshing the page</a> or <a href="#" onclick="showPage(\'support\');return false" style="color:var(--primary)">contacting support</a> if the issue persists.</p></div>'; return; }
       var isTrial = sub.plan === 'free_trial';
       var isPaid = !isTrial && sub.plan !== 'cancelled';
       var subLabel = isTrial ? 'Free Trial' : sub.plan ? sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1) : 'Free Trial';
       var leadsPerDay = sub.leads_per_day || 0;
-      var pricePerWeek = sub.price_per_week || '£9.99';
+      var pricePerWeek = isTrial ? 'Free' : (sub.price_per_week ? '£' + sub.price_per_week : '£49');
       var deliveredToday = sub.delivered_today || 0;
       var deliveredMonth = sub.delivered_this_month || 0;
       var trialEnds = sub.trial_ends || '';
       var nextBilling = sub.next_billing || '';
-      var monthlyEst = sub.monthly_estimate || '£49';
+      var monthlyEst = isTrial ? 'Free' : (sub.monthly_estimate || '£49');
       
       var html = '<div style="display:grid;gap:16px;animation:slideUp .3s ease">';
 
@@ -1534,6 +1666,7 @@ function doCancel() {
       billing: function() { showBillingPage(); },
       campaigns: function() { loadCampaigns(); },
       'success-centre': function() { showSuccessCentre(); },
+      'business-profile': function() { showBusinessProfile(); },
       settings: function() { showSettingsPage(); },
       support: function() { showSupport(); },
     };
@@ -2148,6 +2281,13 @@ async function saveTerritories() {
 }
 
 loadDashboard();
+// Handle page query param
+(function() {
+  var p = new URLSearchParams(window.location.search).get('page');
+  if (p === 'leads') { setTimeout(function() { document.getElementById('leads-section')?.scrollIntoView({behavior:'smooth'}); }, 1000); }
+  if (p === 'campaigns') { setTimeout(function() { loadCampaigns(); }, 500); }
+  if (p === 'settings') { setTimeout(function() { showSettingsPage(); }, 500); }
+})();
 </script>
 <script src="/chat.js"></script>
 <style>

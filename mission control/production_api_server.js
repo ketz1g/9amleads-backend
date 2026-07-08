@@ -4820,35 +4820,58 @@ app.get('/api/campaigns', (req, res) => {
 var DIRECT_MAIL_STATUSES = ['draft','awaiting_approval','approved','awaiting_payment','paid','queued','sent_to_provider','printing','dispatched','completed','failed','cancelled'];
 
 // 1. Customer Business Profiles
+var BUSINESS_TYPES = ['Removals','Roofing','Plumbing','Cleaning','Solar','Windows and Doors','Estate Agency','Mortgage Broker','Insurance','Gardening','Pest Control','Other'];
+
 // POST /api/direct-mail/profile — Create or update business profile
 app.post('/api/direct-mail/profile', authMiddleware, (req, res) => {
   try {
+    if (!req.body.company_name) return res.status(400).json({ error: 'Business name is required' });
+    if (!req.body.phone && !req.body.email) return res.status(400).json({ error: 'Phone or email is required' });
+    if (!req.body.business_type) return res.status(400).json({ error: 'Business type is required' });
     const existing = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
     const profile = {
       id: existing ? existing.id : uuidv4(),
       customer_id: req.user.id,
-      company_name: req.body.company_name || '',
-      contact_name: req.body.contact_name || '',
-      email: req.body.email || '',
+      company_name: req.body.company_name,
+      business_type: req.body.business_type,
+      logo_url: req.body.logo_url || '',
+      website: req.body.website || '',
       phone: req.body.phone || '',
+      email: req.body.email || '',
       address_line1: req.body.address_line1 || '',
       address_line2: req.body.address_line2 || '',
       city: req.body.city || '',
       postcode: req.body.postcode || '',
       country: req.body.country || 'United Kingdom',
-      website: req.body.website || '',
-      logo_url: req.body.logo_url || '',
-      brand_colors: req.body.brand_colors || '{}',
-      business_type: req.body.business_type || '',
+      services_offered: req.body.services_offered || '',
+      service_areas: req.body.service_areas || '',
+      special_offer: req.body.special_offer || '',
+      preferred_colours: req.body.preferred_colours || '',
+      brand_tone: req.body.brand_tone || '',
+      google_reviews_link: req.body.google_reviews_link || '',
+      facebook_page: req.body.facebook_page || '',
+      instagram_page: req.body.instagram_page || '',
+      short_description: req.body.short_description || '',
+      call_to_action: req.body.call_to_action || '',
       created_at: existing ? existing.created_at : new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     if (existing) {
-      db.prepare('UPDATE customer_business_profiles SET company_name=?,contact_name=?,email=?,phone=?,address_line1=?,address_line2=?,city=?,postcode=?,country=?,website=?,logo_url=?,brand_colors=?,business_type=?,updated_at=? WHERE id=?').run(profile.company_name, profile.contact_name, profile.email, profile.phone, profile.address_line1, profile.address_line2, profile.city, profile.postcode, profile.country, profile.website, profile.logo_url, profile.brand_colors, profile.business_type, profile.updated_at, profile.id);
+      db.prepare('UPDATE customer_business_profiles SET company_name=?,business_type=?,logo_url=?,website=?,phone=?,email=?,address_line1=?,address_line2=?,city=?,postcode=?,country=?,services_offered=?,service_areas=?,special_offer=?,preferred_colours=?,brand_tone=?,google_reviews_link=?,facebook_page=?,instagram_page=?,short_description=?,call_to_action=?,updated_at=? WHERE id=?').run(profile.company_name, profile.business_type, profile.logo_url, profile.website, profile.phone, profile.email, profile.address_line1, profile.address_line2, profile.city, profile.postcode, profile.country, profile.services_offered, profile.service_areas, profile.special_offer, profile.preferred_colours, profile.brand_tone, profile.google_reviews_link, profile.facebook_page, profile.instagram_page, profile.short_description, profile.call_to_action, profile.updated_at, profile.id);
     } else {
-      db.prepare('INSERT INTO customer_business_profiles (id,customer_id,company_name,contact_name,email,phone,address_line1,address_line2,city,postcode,country,website,logo_url,brand_colors,business_type,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(profile.id, profile.customer_id, profile.company_name, profile.contact_name, profile.email, profile.phone, profile.address_line1, profile.address_line2, profile.city, profile.postcode, profile.country, profile.website, profile.logo_url, profile.brand_colors, profile.business_type, profile.created_at, profile.updated_at);
+      db.prepare('INSERT INTO customer_business_profiles (id,customer_id,company_name,business_type,logo_url,website,phone,email,address_line1,address_line2,city,postcode,country,services_offered,service_areas,special_offer,preferred_colours,brand_tone,google_reviews_link,facebook_page,instagram_page,short_description,call_to_action,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(profile.id, profile.customer_id, profile.company_name, profile.business_type, profile.logo_url, profile.website, profile.phone, profile.email, profile.address_line1, profile.address_line2, profile.city, profile.postcode, profile.country, profile.services_offered, profile.service_areas, profile.special_offer, profile.preferred_colours, profile.brand_tone, profile.google_reviews_link, profile.facebook_page, profile.instagram_page, profile.short_description, profile.call_to_action, profile.created_at, profile.updated_at);
     }
     res.json({ success: true, profile: profile });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/logo — Upload logo (base64)
+app.post('/api/direct-mail/logo', authMiddleware, (req, res) => {
+  try {
+    if (!req.body.logo) return res.status(400).json({ error: 'No logo data provided' });
+    var logoUrl = req.body.logo;
+    if (logoUrl.length > 500000) return res.status(400).json({ error: 'Logo too large (max 500KB)' });
+    res.json({ success: true, logo_url: logoUrl });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
