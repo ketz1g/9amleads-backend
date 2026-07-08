@@ -209,7 +209,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 // ===== JSON DATABASE (drop-in replacement for better-sqlite3) =====
 let _dbData = null;
 let _dbLock = Promise.resolve();
-var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates','seasonal_campaigns','postal_sequences','postal_sequence_steps','campaign_requests','campaign_notes','onboarding_progress','activity_timeline'];
+var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates','seasonal_campaigns','postal_sequences','postal_sequence_steps','campaign_requests','campaign_notes','onboarding_progress','activity_timeline','knowledge_articles','knowledge_bookmarks'];
 
 // Direct Mail feature access by plan
 var DM_FEATURE_ACCESS = {
@@ -9428,6 +9428,114 @@ app.get('/api/admin/onboarding', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== KNOWLEDGE CENTRE =====
+var KNOWLEDGE_CATEGORIES = ['Getting Started','Lead Generation','Direct Mail','AI Marketing Builder','Campaign Packs','Auto Send','Templates','FAQs','Video Tutorials'];
+
+// Seed default articles
+function seedKnowledgeArticles() {
+  try {
+    var db2 = getDb();
+    if (db2.knowledge_articles && db2.knowledge_articles.length > 0) return;
+    if (!db2.knowledge_articles) db2.knowledge_articles = [];
+    var defaults = [
+      { category:'Getting Started', title:'Welcome to 9am Leads', content:'9am Leads delivers fresh sales opportunities to your dashboard every morning at 9am. You can view, export, and take action on your leads immediately. Plus, our Direct Mail Centre lets you automatically send professional flyers and letters to your leads by post.', video_url:'', order:1 },
+      { category:'Getting Started', title:'Setting Up Your Business Profile', content:'Your Business Profile is used across the platform — for AI-generated flyers and letters, campaign packs, and direct mail campaigns. Complete your business name, type, services, area, logo, and contact details.', video_url:'', order:2 },
+      { category:'Lead Generation', title:'How Daily Leads Work', content:'New leads are delivered to your dashboard every morning at 9am. Each lead includes name, address, and details based on your selected lead type and postcode areas. You can filter, search, and export your leads.', video_url:'', order:1 },
+      { category:'Direct Mail', title:'Creating Your First Campaign', content:'Go to Direct Mail Centre → Create Campaign. Choose your leads, select or generate your materials, review and approve, then send. Your campaign will be printed and posted by our partner.', video_url:'', order:1 },
+      { category:'Direct Mail', title:'Campaign Packs', content:'Campaign Packs are pre-built industry templates. Select a pack for your business type, apply your Business Profile details, and save it as a template. Available for 20+ industries.', video_url:'', order:2 },
+      { category:'AI Marketing Builder', title:'AI Letter Generator', content:'The AI Letter Generator creates professional introduction letters based on your Business Profile. Choose from Professional, Short, Friendly, Premium, or Call-to-Action versions. Edit, save as template, or use in campaign.', video_url:'', order:1 },
+      { category:'AI Marketing Builder', title:'AI Flyer Content Generator', content:'Generate flyer content with AI including headline, subheadline, services, offer, trust section, CTA, back page, QR text, and slogan. Choose from 6 style options.', video_url:'', order:2 },
+      { category:'AI Marketing Builder', title:'AI Flyer PDF Generator', content:'Turn your AI-generated flyer content into a print-ready A5 PDF. Includes your logo, business name, headline, services, offer, contact details, and CTA. Choose from 4 layout styles.', video_url:'', order:3 },
+      { category:'Campaign Packs', title:'Using Campaign Packs', content:'Browse 20 pre-built campaign packs by industry. Preview the headline, offer, and CTA. Apply your Business Profile to merge your details. Save as a template or use directly in a campaign.', video_url:'', order:1 },
+      { category:'Auto Send', title:'Setting Up Auto Send', content:'Auto Send automatically mails your new leads every day. Select a template, set your spend limits, add a payment method, and enable. You control the daily and monthly budget.', video_url:'', order:1 },
+      { category:'Auto Send', title:'Auto Send Safety Features', content:'Auto Send respects your suppression list, duplicate mailing rules, spend limits, and payment method. Failed payments pause Auto Send automatically. You can pause or cancel anytime.', video_url:'', order:2 },
+      { category:'Templates', title:'Saving and Managing Templates', content:'Save your AI-generated content as reusable templates. Templates include your business details, content, and style choices. Use templates in manual campaigns or Auto Send.', video_url:'', order:1 },
+      { category:'FAQs', title:'How do I get more leads?', content:'Add more postcode areas in your dashboard settings. You can also upgrade your plan for more leads per day. Make sure your target areas match where your ideal customers are located.', video_url:'', order:1 },
+      { category:'FAQs', title:'Can I cancel anytime?', content:'Yes. You can cancel your subscription at any time from Settings. Auto Send can be paused or cancelled from the Auto Send Settings page. There are no long-term contracts.', video_url:'', order:2 },
+      { category:'Video Tutorials', title:'Dashboard Overview', content:'A quick tour of your 9am Leads dashboard — leads, campaigns, Direct Mail Centre, AI Marketing Builder, and analytics.', video_url:'https://www.youtube.com/embed/dQw4w9WgXcQ', order:1 },
+      { category:'Video Tutorials', title:'Creating a Direct Mail Campaign', content:'Step-by-step guide to creating your first direct mail campaign from lead selection to sending.', video_url:'https://www.youtube.com/embed/dQw4w9WgXcQ', order:2 },
+      { category:'Video Tutorials', title:'Using the AI Marketing Builder', content:'How to generate professional flyers and letters using AI, edit them, save as templates, and use in campaigns.', video_url:'https://www.youtube.com/embed/dQw4w9WgXcQ', order:3 }
+    ];
+    defaults.forEach(function(a) {
+      db2.knowledge_articles.push({ id: uuidv4(), category: a.category, title: a.title, content: a.content, video_url: a.video_url || '', article_order: a.order, is_published: 1, is_featured: a.order <= 2 ? 1 : 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+    });
+    saveDb();
+    console.log('[KNOWLEDGE] Seeded ' + defaults.length + ' articles');
+  } catch(e) { console.log('[KNOWLEDGE] Seed error:', e.message); }
+}
+
+// GET /api/knowledge/articles — List articles (published only for customers)
+app.get('/api/knowledge/articles', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var category = req.query.category || '';
+    var search = (req.query.search || '').toLowerCase();
+    var articles = (db2.knowledge_articles || []).filter(function(a) { return a.is_published; });
+    // Get customer bookmarks
+    var bookmarked = {};
+    (db2.knowledge_bookmarks || []).forEach(function(b) { if (b.customer_id === req.user.id) bookmarked[b.article_id] = true; });
+    if (category) articles = articles.filter(function(a) { return a.category === category; });
+    if (search) articles = articles.filter(function(a) { return (a.title || '').toLowerCase().indexOf(search) !== -1 || (a.content || '').toLowerCase().indexOf(search) !== -1; });
+    articles.sort(function(a, b) { return (a.article_order || 999) - (b.article_order || 999); });
+    var featured = articles.filter(function(a) { return a.is_featured; }).slice(0, 3);
+    res.json({ success: true, articles: articles, featured: featured, total: articles.length, categories: KNOWLEDGE_CATEGORIES, bookmarked: bookmarked });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/knowledge/articles/:id — Get article detail
+app.get('/api/knowledge/articles/:id', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var article = (db2.knowledge_articles || []).find(function(a) { return a.id === req.params.id && a.is_published; });
+    if (!article) return res.status(404).json({ error: 'Article not found' });
+    // Check bookmark
+    var bookmarked = false;
+    if (db2.knowledge_bookmarks) bookmarked = db2.knowledge_bookmarks.some(function(b) { return b.customer_id === req.user.id && b.article_id === req.params.id; });
+    res.json({ success: true, article: article, bookmarked: bookmarked });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/knowledge/bookmarks — Toggle bookmark
+app.post('/api/knowledge/bookmarks', authMiddleware, (req, res) => {
+  try {
+    var articleId = req.body.article_id;
+    if (!articleId) return res.status(400).json({ error: 'Article ID required' });
+    var db2 = getDb();
+    if (!db2.knowledge_bookmarks) db2.knowledge_bookmarks = [];
+    var existing = db2.knowledge_bookmarks.findIndex(function(b) { return b.customer_id === req.user.id && b.article_id === articleId; });
+    if (existing !== -1) { db2.knowledge_bookmarks.splice(existing, 1); saveDb(); res.json({ success: true, bookmarked: false }); }
+    else { db2.knowledge_bookmarks.push({ id: uuidv4(), customer_id: req.user.id, article_id: articleId, created_at: new Date().toISOString() }); saveDb(); res.json({ success: true, bookmarked: true }); }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin endpoints
+// GET /api/admin/knowledge/articles — All articles (including unpublished)
+app.get('/api/admin/knowledge/articles', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    res.json({ success: true, articles: db2.knowledge_articles || [], total: (db2.knowledge_articles || []).length, categories: KNOWLEDGE_CATEGORIES });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/knowledge/articles — Create/update article
+app.post('/api/admin/knowledge/articles', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    if (!db2.knowledge_articles) db2.knowledge_articles = [];
+    var existingIdx = req.body.id ? db2.knowledge_articles.findIndex(function(a) { return a.id === req.body.id; }) : -1;
+    var article = { title: req.body.title || 'New Article', category: req.body.category || 'Getting Started', content: req.body.content || '', video_url: req.body.video_url || '', article_order: parseInt(req.body.article_order) || 999, is_published: req.body.is_published !== undefined ? (req.body.is_published ? 1 : 0) : 1, is_featured: req.body.is_featured ? 1 : 0 };
+    if (existingIdx !== -1) { Object.assign(db2.knowledge_articles[existingIdx], article, { updated_at: new Date().toISOString() }); }
+    else { article.id = uuidv4(); article.created_at = new Date().toISOString(); article.updated_at = new Date().toISOString(); db2.knowledge_articles.push(article); }
+    saveDb();
+    res.json({ success: true, article: existingIdx !== -1 ? db2.knowledge_articles[existingIdx] : article });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/knowledge/seed — Re-seed default articles
+app.post('/api/admin/knowledge/seed', adminAuth, (req, res) => {
+  try { var db2 = getDb(); db2.knowledge_articles = []; saveDb(); seedKnowledgeArticles(); res.json({ success: true, message: 'Articles re-seeded' }); } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== MARKETING HEALTH SCORE =====
 // GET /api/direct-mail/health-score — Customer's marketing health score
 app.get('/api/direct-mail/health-score', authMiddleware, (req, res) => {
@@ -9947,7 +10055,7 @@ app.listen(PORT, () => {
   seedDefaultCampaignPacks();
   seedMarketplaceTemplates();
   seedSeasonalCampaigns();
-  seedMarketplaceTemplates();
+  seedKnowledgeArticles();
   console.log('\n========================================');
   console.log('  9amLeads Production API Server');
   console.log('  Domain: www.9amleads.com');

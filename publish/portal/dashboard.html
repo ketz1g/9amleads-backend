@@ -1453,9 +1453,9 @@ function showStatus(id, msg, color) {
   setTimeout(function() { el.style.display = 'none'; }, 4000);
 }
 
-var DM_TABS = ['overview','create','suppression','done-for-you','analytics','calendar','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments','timeline'];
-var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', suppression:'Suppression List', 'done-for-you':'Done For You', analytics:'Analytics', calendar:'Campaign Calendar', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices', timeline:'Activity Timeline' };
-var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', suppression:'fa-ban', 'done-for-you':'fa-handshake', analytics:'fa-chart-bar', calendar:'fa-calendar', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar', timeline:'fa-stream' };
+var DM_TABS = ['overview','create','suppression','done-for-you','analytics','calendar','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments','timeline','knowledge'];
+var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', suppression:'Suppression List', 'done-for-you':'Done For You', analytics:'Analytics', calendar:'Campaign Calendar', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices', timeline:'Activity Timeline', knowledge:'Knowledge Centre' };
+var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', suppression:'fa-ban', 'done-for-you':'fa-handshake', analytics:'fa-chart-bar', calendar:'fa-calendar', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar', timeline:'fa-stream', knowledge:'fa-graduation-cap' };
 
 function showDirectMailCentre(tab) {
   tab = tab || localStorage.getItem('dmTab') || 'overview';
@@ -1474,7 +1474,7 @@ function showDirectMailCentre(tab) {
 
   var el = document.getElementById('dm-content');
   // Check feature access first
-  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, analytics: null, calendar: null, sequences: null, suppression: null, 'done-for-you': null, timeline: null, settings: 'auto_send', proof: 'proof_tracking' };
+  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, analytics: null, calendar: null, sequences: null, suppression: null, 'done-for-you': null, timeline: null, knowledge: null, settings: 'auto_send', proof: 'proof_tracking' };
   apiFetch('/api/direct-mail/features').then(function(fr) {
     var plan = fr && fr.plan ? fr.plan : 'free_trial';
     var features = fr && fr.features ? fr.features : {};
@@ -1507,6 +1507,7 @@ function showDirectMailCentre(tab) {
     else if (tab === 'proof') { el.innerHTML = '<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px"><h2 style="font-size:16px;font-weight:700">Proof of Sending</h2><button class="btn btn-outline btn-sm" onclick="dmRefreshProof()"><i class="fas fa-sync"></i> Refresh</button></div><div id="dm-proof-list"><div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div>'; dmRefreshProof(); }
     else if (tab === 'payments') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-file-invoice-dollar" style="font-size:40px;color:var(--success);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Payments &amp; Invoices</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto">Payment history and invoices will appear here once your first campaign is submitted.</p></div>'; }
     else if (tab === 'timeline') { showDMTimeline(el); }
+    else if (tab === 'knowledge') { showDMKnowledge(el); }
   }).catch(function() { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted2)">Error loading features</div>'; });
 }
 
@@ -3418,6 +3419,66 @@ function showDMTimeline(el) {
           (e.details ? '<div style="font-size:10px;color:var(--muted2)">' + e.details + '</div>' : '') +
           '<div style="font-size:9px;color:var(--muted2);margin-top:1px">' + new Date(e.created_at).toLocaleString() + '</div></div>';
       }).join('') + '</div>';
+  });
+}
+
+function showDMKnowledge(el) {
+  el.innerHTML = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-graduation-cap" style="color:var(--primary)"></i> Knowledge Centre</div></div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' +
+    '<input type="text" id="kw-search" placeholder="Search articles..." style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);flex:1;min-width:150px" onkeyup="dmLoadKnowledge()">' +
+    '<select id="kw-category" onchange="dmLoadKnowledge()" style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option value="">All Categories</option></select>' +
+    '</div><div id="kw-content"><div style="text-align:center;padding:30px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div></div>';
+  dmLoadKnowledge();
+}
+
+function dmLoadKnowledge() {
+  var search = encodeURIComponent(document.getElementById('kw-search')?.value || '');
+  var category = encodeURIComponent(document.getElementById('kw-category')?.value || '');
+  apiFetch('/api/knowledge/articles?search=' + search + '&category=' + category).then(function(r) {
+    var el = document.getElementById('kw-content');
+    var catFilter = document.getElementById('kw-category');
+    if (!el) return;
+    if (r && r.categories && catFilter && catFilter.options.length <= 1) {
+      r.categories.forEach(function(c) { catFilter.innerHTML += '<option value="' + c + '">' + c + '</option>'; });
+    }
+    if (!r || !r.articles) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2)">Error loading articles</div>'; return; }
+    var bk = r.bookmarked || {};
+    if (r.articles.length === 0) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted2)">No articles found</div>'; return; }
+    // Show featured first if no search/category filter
+    var displayArticles = r.articles;
+    if (!search && !category && r.featured && r.featured.length > 0) {
+      el.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">&#127775; Featured</div>' +
+        r.featured.map(function(a) { return '<div style="padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;margin-bottom:4px;cursor:pointer;transition:all .2s" onclick="dmShowArticle(\'' + a.id + '\')" onmouseover="this.style.borderColor=\'var(--primary)\'" onmouseout="this.style.borderColor=\'\'"><div style="font-size:12px;font-weight:600;color:var(--text)">' + a.title + '</div><div style="font-size:10px;color:var(--muted2);margin-top:2px"><span class="badge badge-blue" style="font-size:9px">' + a.category + '</span></div></div>'; }).join('') +
+        '<div style="font-size:13px;font-weight:700;color:var(--text);margin:10px 0 6px">All Articles</div>';
+    }
+    el.innerHTML += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px">' +
+      displayArticles.map(function(a) {
+        var isBk = bk[a.id];
+        return '<div style="padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .2s" onclick="dmShowArticle(\'' + a.id + '\')" onmouseover="this.style.borderColor=\'var(--primary)\'" onmouseout="this.style.borderColor=\'\'">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="font-size:12px;font-weight:600;color:var(--text);flex:1">' + a.title + '</div>' +
+          (isBk ? '<span style="color:var(--warning);font-size:12px;flex-shrink:0">&#9733;</span>' : '') + '</div>' +
+          '<div style="font-size:10px;color:var(--muted2);margin-top:2px"><span class="badge badge-blue" style="font-size:9px">' + a.category + '</span></div></div>';
+      }).join('') + '</div>';
+  });
+}
+
+function dmShowArticle(id) {
+  apiFetch('/api/knowledge/articles/' + id).then(function(r) {
+    if (!r || !r.article) return;
+    var a = r.article;
+    var isBk = r.bookmarked;
+    var videoHtml = a.video_url ? '<div style="margin-bottom:10px"><iframe src="' + a.video_url + '" style="width:100%;height:200px;border:none;border-radius:8px" allowfullscreen></iframe></div>' : '';
+    showModal(a.title,
+      '<div style="font-size:10px;color:var(--muted2);margin-bottom:4px"><span class="badge badge-blue" style="font-size:9px">' + a.category + '</span></div>' +
+      videoHtml +
+      '<div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px">' + (a.content || '') + '</div>' +
+      '<button class="btn btn-sm ' + (isBk ? 'btn-outline' : 'btn-primary') + '" onclick="dmToggleBookmark(\'' + a.id + '\')" style="font-size:10px">' + (isBk ? '&#9733; Bookmarked' : '&#9734; Bookmark') + '</button>', '520px');
+  });
+}
+
+function dmToggleBookmark(id) {
+  apiFetch('/api/knowledge/bookmarks', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ article_id: id }) }).then(function(r) {
+    if (r && r.success) { document.getElementById('modal-overlay')?.remove(); dmLoadKnowledge(); }
   });
 }
 
