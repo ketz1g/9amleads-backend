@@ -1273,9 +1273,9 @@ function showStatus(id, msg, color) {
   setTimeout(function() { el.style.display = 'none'; }, 4000);
 }
 
-var DM_TABS = ['overview','create','ai-builder','upload','templates','settings','history','proof','payments'];
-var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
-var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
+var DM_TABS = ['overview','create','packs','ai-builder','upload','templates','settings','history','proof','payments'];
+var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', packs:'Campaign Packs', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
+var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', packs:'fa-box', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
 
 function showDirectMailCentre(tab) {
   tab = tab || localStorage.getItem('dmTab') || 'overview';
@@ -1294,7 +1294,7 @@ function showDirectMailCentre(tab) {
 
   var el = document.getElementById('dm-content');
   // Check feature access first
-  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', settings: 'auto_send', proof: 'proof_tracking' };
+  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, settings: 'auto_send', proof: 'proof_tracking' };
   apiFetch('/api/direct-mail/features').then(function(fr) {
     var plan = fr && fr.plan ? fr.plan : 'free_trial';
     var features = fr && fr.features ? fr.features : {};
@@ -1313,6 +1313,7 @@ function showDirectMailCentre(tab) {
     else if (tab === 'create') { showDMCreate(el); }
     else if (tab === 'ai-builder') { showDMLetterGen(el); }
     else if (tab === 'upload') { showDMUpload(el); }
+    else if (tab === 'packs') { showDMPacks(el); }
     else if (tab === 'templates') { showDMTemplates(el); }
     else if (tab === 'settings') { showDMSettings(el, canUse('auto_send')); }
     else if (tab === 'history') { showDMHistory(el); }
@@ -2341,6 +2342,135 @@ function dmDeleteFile(id) {
   if (!confirm('Delete this file?')) return;
   apiFetch('/api/direct-mail/materials/' + id, { method:'DELETE' }).then(function(r) {
     if (r && r.success) { dmLoadUploaded(); }
+    else { alert('Failed to delete'); }
+  });
+}
+
+function showDMPacks(el) {
+  el.innerHTML = '<div style="margin-bottom:12px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">Campaign Packs</div><p style="font-size:12px;color:var(--muted2);margin-bottom:10px">Pre-built campaign templates for your industry. Select a pack to preview, apply your business details, and save as a template.</p>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"><input type="text" id="dm-pack-search" placeholder="Search packs..." style="padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);flex:1;min-width:150px" oninput="dmFilterPacks()">' +
+    '<select id="dm-pack-filter" onchange="dmFilterPacks()" style="padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option value="">All Industries</option></select></div>' +
+    '<div id="dm-pack-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px"><div style="text-align:center;padding:30px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div></div>';
+  // Load business types for filter
+  apiFetch('/api/campaign-packs').then(function(r) {
+    if (!r || !r.packs) { document.getElementById('dm-pack-grid').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted2)">No packs available</div>'; return; }
+    var filter = document.getElementById('dm-pack-filter');
+    var seen = {};
+    r.packs.forEach(function(p) { if (p.business_type && !seen[p.business_type]) { seen[p.business_type] = true; filter.innerHTML += '<option value="' + p.business_type + '">' + p.business_type + '</option>'; } });
+    dmRenderPacks(r.packs);
+  });
+}
+
+function dmFilterPacks() {
+  apiFetch('/api/campaign-packs').then(function(r) {
+    if (!r || !r.packs) return;
+    var search = (document.getElementById('dm-pack-search')?.value || '').toLowerCase();
+    var typeFilter = document.getElementById('dm-pack-filter')?.value || '';
+    var filtered = r.packs.filter(function(p) {
+      if (typeFilter && p.business_type !== typeFilter) return false;
+      if (search && p.name.toLowerCase().indexOf(search) === -1 && (p.business_type || '').toLowerCase().indexOf(search) === -1 && (p.objective || '').toLowerCase().indexOf(search) === -1) return false;
+      return true;
+    });
+    dmRenderPacks(filtered);
+  });
+}
+
+function dmRenderPacks(packs) {
+  var grid = document.getElementById('dm-pack-grid');
+  if (!grid) return;
+  if (!packs || packs.length === 0) { grid.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted2)">No packs match your search</div>'; return; }
+  var html = packs.map(function(p) {
+    var isCustom = !p.is_default;
+    return '<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .25s" onclick="dmShowPackDetail(\'' + p.id + '\')" onmouseover="this.style.borderColor=\'var(--primary)\'" onmouseout="this.style.borderColor=\'\'">' +
+      '<div style="height:6px;background:' + (p.color_style || '#0ea5e9') + '"></div>' +
+      '<div style="padding:14px"><div style="font-size:11px;color:var(--muted2);margin-bottom:2px;text-transform:uppercase;letter-spacing:.3px">' + (p.business_type || 'General') + '</div>' +
+      '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">' + p.name + '</div>' +
+      '<div style="font-size:10px;color:var(--muted2);line-height:1.5">' + (p.objective || '') + '</div>' +
+      '<div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">' +
+      (isCustom ? '<span class="badge badge-blue" style="font-size:9px">Custom</span>' : '') +
+      (p.cta ? '<span class="badge badge-green" style="font-size:9px">' + p.cta.substring(0, 25) + '</span>' : '') +
+      '</div></div></div>';
+  }).join('');
+  grid.innerHTML = html;
+}
+
+function dmShowPackDetail(id) {
+  apiFetch('/api/campaign-packs/' + id).then(function(r) {
+    if (!r || !r.pack) return;
+    var p = r.pack;
+    var isCustom = !p.is_default;
+    var ctaColor = p.color_style || '#0ea5e9';
+    showModal('Campaign Pack: ' + p.name,
+      '<div style="display:grid;gap:10px">' +
+      '<div style="height:4px;border-radius:2px;background:' + ctaColor + ';margin-bottom:4px"></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">' +
+      '<div><strong style="color:var(--text)">Industry</strong><br><span style="color:var(--muted2)">' + (p.business_type || 'General') + '</span></div>' +
+      '<div><strong style="color:var(--text)">Objective</strong><br><span style="color:var(--muted2)">' + (p.objective || '-') + '</span></div>' +
+      '<div><strong style="color:var(--text)">Audience</strong><br><span style="color:var(--muted2)">' + (p.audience || '-') + '</span></div>' +
+      '<div><strong style="color:var(--text)">QR Setting</strong><br><span style="color:var(--muted2)">' + (p.qr_setting || 'URL') + '</span></div></div>' +
+      '<div style="padding:12px;background:var(--card2);border-radius:8px;border:1px solid var(--border);text-align:center">' +
+      '<div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px">' + (p.headline || '') + '</div>' +
+      '<div style="font-size:12px;color:var(--muted2);margin-bottom:6px">' + (p.suggested_offer || '') + '</div>' +
+      '<div style="display:inline-block;padding:6px 16px;background:' + ctaColor + ';color:#fff;border-radius:6px;font-size:11px;font-weight:700">' + (p.cta || 'Get Started') + '</div></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();dmApplyPack(\'' + id + '\')" style="flex:1"><i class="fas fa-magic"></i> Apply My Profile</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();dmDuplicatePack(\'' + id + '\')" style="flex:1"><i class="fas fa-copy"></i> Duplicate</button>' +
+      (isCustom ? '<button class="btn btn-outline btn-sm" style="color:var(--danger);flex:1" onclick="document.getElementById(\'modal-overlay\')?.remove();dmDeleteCustomPack(\'' + id + '\')"><i class="fas fa-trash"></i> Delete</button>' : '') +
+      '</div></div>', '480px');
+  });
+}
+
+function dmApplyPack(id) {
+  apiFetch('/api/campaign-packs/' + id + '/apply-profile', { method:'POST' }).then(function(r) {
+    if (!r || !r.success) { showStatus('dm-content', r?.error || 'Please complete your Business Profile first.', 'var(--warning)'); return; }
+    showModal('Apply Pack', '<div style="text-align:center;padding:10px 0"><p style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:8px">Business details merged with pack!</p>' +
+      '<div style="display:grid;gap:6px;text-align:left;font-size:12px;color:var(--muted2);padding:8px;background:var(--card2);border-radius:8px;margin-bottom:12px">' +
+      '<div><strong>Campaign:</strong> ' + r.campaign_name + '</div><div><strong>Company:</strong> ' + r.company_name + '</div>' +
+      '<div><strong>Headline:</strong> ' + r.headline + '</div><div><strong>Offer:</strong> ' + r.offer + '</div><div><strong>CTA:</strong> ' + r.cta + '</div>' +
+      '</div>' +
+      '<button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();dmSavePackAsTemplate(\'' + id + '\')" style="margin-bottom:6px;width:100%"><i class="fas fa-save"></i> Save as Template</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();showDirectMailCentre(\'create\')" style="width:100%"><i class="fas fa-bullhorn"></i> Use in Campaign</button></div>', '440px');
+  });
+}
+
+function dmSavePackAsTemplate(packId) {
+  apiFetch('/api/campaign-packs/' + packId).then(function(r) {
+    if (!r || !r.pack) return;
+    var p = r.pack;
+    showModal('Save as Template', '<div style="display:grid;gap:8px"><div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Template Name</label><input type="text" id="pk-tpl-name" value="' + p.name + ' - Template" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+      '<button class="btn btn-primary btn-sm" onclick="dmConfirmSavePackTemplate(\'' + packId + '\')"><i class="fas fa-save"></i> Save Template</button></div>', '420px');
+  });
+}
+
+function dmConfirmSavePackTemplate(packId) {
+  var name = document.getElementById('pk-tpl-name')?.value.trim();
+  if (!name) { alert('Template name is required'); return; }
+  apiFetch('/api/campaign-packs/' + packId).then(function(r) {
+    if (!r || !r.pack) return;
+    var p = r.pack;
+    apiFetch('/api/direct-mail/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+      name: name, type: 'letter', description: 'From Campaign Pack: ' + p.name,
+      ai_generated_text: 'Headline: ' + (p.headline || '') + '\nOffer: ' + (p.suggested_offer || '') + '\nCTA: ' + (p.cta || '')
+    })}).then(function(t) {
+      if (t && t.success) {
+        document.getElementById('modal-overlay')?.remove();
+        showStatus('dm-content', 'Template saved! You can use it in your campaigns.', 'var(--success)');
+      } else { alert(t?.error || 'Failed to save'); }
+    });
+  });
+}
+
+function dmDuplicatePack(id) {
+  apiFetch('/api/campaign-packs/' + id + '/duplicate', { method:'POST' }).then(function(r) {
+    if (r && r.success) { showStatus('dm-content', 'Pack duplicated!', 'var(--success)'); dmFilterPacks(); }
+    else { alert('Failed to duplicate'); }
+  });
+}
+
+function dmDeleteCustomPack(id) {
+  if (!confirm('Delete this custom pack?')) return;
+  apiFetch('/api/campaign-packs/' + id, { method:'DELETE' }).then(function(r) {
+    if (r && r.success) { showStatus('dm-content', 'Pack deleted', 'var(--success)'); dmFilterPacks(); }
     else { alert('Failed to delete'); }
   });
 }

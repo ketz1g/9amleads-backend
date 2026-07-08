@@ -209,7 +209,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 // ===== JSON DATABASE (drop-in replacement for better-sqlite3) =====
 let _dbData = null;
 let _dbLock = Promise.resolve();
-var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression'];
+var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs'];
 
 // Direct Mail feature access by plan
 var DM_FEATURE_ACCESS = {
@@ -8131,8 +8131,235 @@ app.use(function(err, req, res, next) {
   res.status(500).json({ error: 'Internal server error' });
 });
 
+// ===== CAMPAIGN PACKS =====
+const CAMPAIGN_BUSINESS_TYPES = ['Plumbing','Roofing','Removals','Cleaning','Gardening','Estate Agents','Mortgage Brokers','Solar','Pest Control','Locksmith','Electrician','Builder','Decorator','Carpet Cleaning','Driveways','Windows and Doors','Kitchens','Bathrooms','General Trades','Other'];
+
+// Seed default campaign packs on startup
+function seedDefaultCampaignPacks() {
+  try {
+    var db2 = getDb();
+    // Only seed if no packs exist
+    if (db2.campaign_packs && db2.campaign_packs.length > 0) return;
+    var defaults = [
+      { name:'Emergency Plumbing Offer', business_type:'Plumbing', objective:'Generate emergency plumbing calls', headline:'Burst Pipe? Same-Day Emergency Plumbing', suggested_offer:'£50 off any emergency repair', cta:'Call Now for Immediate Help', color_style:'#dc2626', qr_setting:'url', audience:'Homeowners with recent water issues' },
+      { name:'Roof Inspection & Repair', business_type:'Roofing', objective:'Get roof inspection bookings', headline:'Free Roof Inspection — No Obligation', suggested_offer:'Free no-obligation roof inspection', cta:'Book Your Free Survey Today', color_style:'#ea580c', qr_setting:'phone', audience:'Homeowners in target postcode areas' },
+      { name:'Professional Moving Services', business_type:'Removals', objective:'Win moving contracts', headline:'Moving Soon? Get a Free Quote Today', suggested_offer:'Free no-obligation moving quote', cta:'Get Your Free Quote', color_style:'#0ea5e9', qr_setting:'url', audience:'Homeowners who have listed their property' },
+      { name:'Deep Clean Special Offer', business_type:'Cleaning', objective:'Book cleaning appointments', headline:'Professional Deep Clean — 20% Off First Booking', suggested_offer:'20% off first deep clean', cta:'Book Your Clean Now', color_style:'#10b981', qr_setting:'phone', audience:'New homeowners and tenants' },
+      { name:'Garden Clearance & Maintenance', business_type:'Gardening', objective:'Get gardening service bookings', headline:'Transform Your Garden This Season', suggested_offer:'Free quote + 10% off first month', cta:'Get Your Free Garden Quote', color_style:'#16a34a', qr_setting:'url', audience:'Homeowners with gardens in target areas' },
+      { name:'Sell Your Property Faster', business_type:'Estate Agents', objective:'Win property listings', headline:'Sold in 30 Days or We\'ll Market for Free', suggested_offer:'Free property valuation', cta:'Book Your Free Valuation', color_style:'#6366f1', qr_setting:'url', audience:'Homeowners planning to sell' },
+      { name:'Mortgage Pre-Approval', business_type:'Mortgage Brokers', objective:'Generate mortgage enquiries', headline:'Secure Your Mortgage Before You House Hunt', suggested_offer:'Free mortgage pre-approval check', cta:'Check Your Eligibility Free', color_style:'#7c3aed', qr_setting:'url', audience:'First-time buyers and movers' },
+      { name:'Solar Panel Installation', business_type:'Solar', objective:'Get solar panel enquiries', headline:'Slash Your Energy Bills with Solar Panels', suggested_offer:'Free solar feasibility survey', cta:'Get Your Free Solar Quote', color_style:'#f59e0b', qr_setting:'url', audience:'Homeowners with suitable roof space' },
+      { name:'Pest Control Emergency Service', business_type:'Pest Control', objective:'Generate pest control calls', headline:'Pests in Your Home? Fast Same-Day Service', suggested_offer:'£25 off first treatment', cta:'Call Us Now', color_style:'#92400e', qr_setting:'phone', audience:'Homeowners in target postcode areas' },
+      { name:'24/7 Emergency Locksmith', business_type:'Locksmith', objective:'Generate emergency lockout calls', headline:'Locked Out? We\'re Here in 30 Minutes', suggested_offer:'£10 off for new customers', cta:'Call for Immediate Help', color_style:'#1e293b', qr_setting:'phone', audience:'Homeowners and landlords' },
+      { name:'Electrical Safety Check', business_type:'Electrician', objective:'Get electrical inspection bookings', headline:'Full Electrical Safety Check — Just £99', suggested_offer:'Electrical safety check for £99', cta:'Book Your Safety Check', color_style:'#2563eb', qr_setting:'url', audience:'Homeowners in target postcode areas' },
+      { name:'Building & Renovation Services', business_type:'Builder', objective:'Win building project enquiries', headline:'Planning a Home Renovation? Let\'s Talk', suggested_offer:'Free consultation and written quote', cta:'Get Your Free Quote', color_style:'#475569', qr_setting:'url', audience:'Homeowners with planning permission' },
+      { name:'Professional Decorating Services', business_type:'Decorator', objective:'Get decorating job bookings', headline:'Transform Your Home with Expert Decorating', suggested_offer:'Free colour consultation with quote', cta:'Book Your Free Quote', color_style:'#db2777', qr_setting:'url', audience:'Homeowners who recently moved' },
+      { name:'Carpet & Upholstery Cleaning', business_type:'Carpet Cleaning', objective:'Book carpet cleaning jobs', headline:'Professional Carpet Cleaning — 3 Rooms for £99', suggested_offer:'3 rooms cleaned for just £99', cta:'Book Your Clean Now', color_style:'#0891b2', qr_setting:'phone', audience:'Homeowners and landlords' },
+      { name:'Driveway & Patio Installations', business_type:'Driveways', objective:'Get driveway installation leads', headline:'Transform Your Driveway — Free Quote', suggested_offer:'Free design consultation and quote', cta:'Get Your Free Driveway Quote', color_style:'#4f46e5', qr_setting:'url', audience:'Homeowners in target postcode areas' },
+      { name:'Windows & Doors Installation', business_type:'Windows and Doors', objective:'Generate window replacement enquiries', headline:'New Windows & Doors — Up to 40% Off', suggested_offer:'Free survey and quote', cta:'Book Your Free Survey', color_style:'#0d9488', qr_setting:'url', audience:'Homeowners with older properties' },
+      { name:'Kitchen Design & Installation', business_type:'Kitchens', objective:'Get kitchen project enquiries', headline:'Your Dream Kitchen Awaits — Free Design Visit', suggested_offer:'Free kitchen design consultation', cta:'Book Your Free Design Visit', color_style:'#be123c', qr_setting:'url', audience:'Homeowners planning renovations' },
+      { name:'Bathroom Renovation Services', business_type:'Bathrooms', objective:'Get bathroom project bookings', headline:'Luxury Bathroom Renovation — From £3,999', suggested_offer:'Free design and quote', cta:'Get Your Free Bathroom Quote', color_style:'#0284c7', qr_setting:'url', audience:'Homeowners in target postcode areas' },
+      { name:'Reliable Trade Services', business_type:'General Trades', objective:'Generate multi-trade enquiries', headline:'Your Trusted Local Tradesperson — Free Quotes', suggested_offer:'Free no-obligation quote for any job', cta:'Get Your Free Quote', color_style:'#6b7280', qr_setting:'url', audience:'Homeowners and property managers' },
+      { name:'Professional Services', business_type:'Other', objective:'Generate service enquiries', headline:'Professional Service — Free Consultation', suggested_offer:'Free initial consultation', cta:'Book Your Free Consultation', color_style:'#0ea5e9', qr_setting:'url', audience:'Targeted local homeowners' }
+    ];
+    if (!db2.campaign_packs) db2.campaign_packs = [];
+    var uuid = require('uuid');
+    defaults.forEach(function(d, i) {
+      db2.campaign_packs.push({
+        id: uuidv4(), is_default: 1, is_enabled: 1,
+        name: d.name, business_type: d.business_type, objective: d.objective,
+        headline: d.headline, suggested_offer: d.suggested_offer, cta: d.cta,
+        color_style: d.color_style, qr_setting: d.qr_setting, audience: d.audience,
+        flyer_template: 'A5 Flyer - ' + d.business_type, letter_template: 'Introduction Letter - ' + d.business_type,
+        print_settings: 'A5 portrait, full colour, 170gsm',
+        created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+      });
+    });
+    saveDb();
+    console.log('[CAMPAIGN-PACKS] Seeded ' + defaults.length + ' default packs');
+  } catch(e) { console.log('[CAMPAIGN-PACKS] Seed error:', e.message); }
+}
+
+// Campaign Pack API endpoints
+// GET /api/campaign-packs — Get available packs (defaults + customer's custom)
+app.get('/api/campaign-packs', authMiddleware, (req, res) => {
+  try {
+    var businessType = req.query.business_type || '';
+    var db2 = getDb();
+    var packs = [];
+    // Default packs
+    if (db2.campaign_packs) {
+      packs = db2.campaign_packs.filter(function(p) { return p.is_default && p.is_enabled; });
+    }
+    // Customer's custom packs
+    if (db2.customer_campaign_packs) {
+      var custom = db2.customer_campaign_packs.filter(function(p) { return p.customer_id === req.user.id; });
+      packs = packs.concat(custom);
+    }
+    if (businessType) { packs = packs.filter(function(p) { return p.business_type === businessType; }); }
+    res.json({ success: true, packs: packs, total: packs.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/campaign-packs/:id — Get pack details
+app.get('/api/campaign-packs/:id', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    // Check default packs
+    var pack = db2.campaign_packs ? db2.campaign_packs.find(function(p) { return p.id === req.params.id; }) : null;
+    if (!pack) {
+      // Check customer custom packs
+      pack = db2.customer_campaign_packs ? db2.customer_campaign_packs.find(function(p) { return p.id === req.params.id && p.customer_id === req.user.id; }) : null;
+    }
+    if (!pack) return res.status(404).json({ error: 'Pack not found' });
+    res.json({ success: true, pack: pack });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/campaign-packs/:id/apply-profile — Apply business profile to pack
+app.post('/api/campaign-packs/:id/apply-profile', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var pack = db2.campaign_packs ? db2.campaign_packs.find(function(p) { return p.id === req.params.id; }) : null;
+    if (!pack) return res.status(404).json({ error: 'Pack not found' });
+    var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+    if (!profile) return res.status(400).json({ error: 'Complete your Business Profile first.' });
+    res.json({
+      success: true, merged: true,
+      campaign_name: pack.name, headline: pack.headline, offer: pack.suggested_offer, cta: pack.cta,
+      company_name: profile.company_name, business_type: profile.business_type,
+      phone: profile.phone, email: profile.email, website: profile.website,
+      logo_url: profile.logo_url, colour: pack.color_style
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/campaign-packs/save — Save a pack as customer's template
+app.post('/api/campaign-packs/save', authMiddleware, (req, res) => {
+  try {
+    var packData = req.body;
+    if (!packData.name) return res.status(400).json({ error: 'Pack name required' });
+    var db2 = getDb();
+    if (!db2.customer_campaign_packs) db2.customer_campaign_packs = [];
+    var pack = {
+      id: uuidv4(), customer_id: req.user.id, is_default: 0, is_enabled: 1,
+      name: packData.name, business_type: packData.business_type || '',
+      objective: packData.objective || '', headline: packData.headline || '',
+      suggested_offer: packData.suggested_offer || '', cta: packData.cta || '',
+      color_style: packData.color_style || '#0ea5e9', qr_setting: packData.qr_setting || 'url',
+      audience: packData.audience || '', flyer_template: packData.flyer_template || '',
+      letter_template: packData.letter_template || '', print_settings: packData.print_settings || '',
+      source_pack_id: packData.source_pack_id || '',
+      created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+    };
+    db2.customer_campaign_packs.push(pack);
+    saveDb();
+    res.json({ success: true, pack: pack });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/campaign-packs/:id — Update customer's custom pack
+app.put('/api/campaign-packs/:id', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    if (!db2.customer_campaign_packs) return res.status(404).json({ error: 'Pack not found' });
+    var idx = db2.customer_campaign_packs.findIndex(function(p) { return p.id === req.params.id && p.customer_id === req.user.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Pack not found' });
+    Object.assign(db2.customer_campaign_packs[idx], req.body, { id: req.params.id, customer_id: req.user.id, updated_at: new Date().toISOString() });
+    saveDb();
+    res.json({ success: true, pack: db2.customer_campaign_packs[idx] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/campaign-packs/:id/duplicate — Duplicate a pack (default or custom)
+app.post('/api/campaign-packs/:id/duplicate', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    // Check default packs
+    var source = db2.campaign_packs ? db2.campaign_packs.find(function(p) { return p.id === req.params.id; }) : null;
+    if (!source) {
+      // Check customer custom packs
+      source = db2.customer_campaign_packs ? db2.customer_campaign_packs.find(function(p) { return p.id === req.params.id && p.customer_id === req.user.id; }) : null;
+    }
+    if (!source) return res.status(404).json({ error: 'Pack not found' });
+    if (!db2.customer_campaign_packs) db2.customer_campaign_packs = [];
+    var copy = JSON.parse(JSON.stringify(source));
+    copy.id = uuidv4(); copy.customer_id = req.user.id; copy.is_default = 0;
+    copy.name = source.name + ' (Copy)';
+    copy.source_pack_id = source.id;
+    copy.created_at = new Date().toISOString(); copy.updated_at = new Date().toISOString();
+    db2.customer_campaign_packs.push(copy);
+    saveDb();
+    res.json({ success: true, pack: copy });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/campaign-packs/:id — Delete customer's custom pack
+app.delete('/api/campaign-packs/:id', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    if (!db2.customer_campaign_packs) return res.status(404).json({ error: 'Pack not found' });
+    var idx = db2.customer_campaign_packs.findIndex(function(p) { return p.id === req.params.id && p.customer_id === req.user.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Pack not found' });
+    db2.customer_campaign_packs.splice(idx, 1);
+    saveDb();
+    res.json({ success: true, message: 'Pack deleted' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin endpoints
+// GET /api/admin/campaign-packs — Get all packs (admin)
+app.get('/api/admin/campaign-packs', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var defaults = db2.campaign_packs || [];
+    var custom = db2.customer_campaign_packs || [];
+    res.json({ success: true, default_packs: defaults, custom_packs: custom, total_defaults: defaults.length, total_custom: custom.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/campaign-packs — Create or update a default pack (admin)
+app.post('/api/admin/campaign-packs', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    if (!db2.campaign_packs) db2.campaign_packs = [];
+    var existingIdx = req.body.id ? db2.campaign_packs.findIndex(function(p) { return p.id === req.body.id; }) : -1;
+    var packData = {
+      name: req.body.name || 'New Pack', business_type: req.body.business_type || 'Other',
+      objective: req.body.objective || '', headline: req.body.headline || '',
+      suggested_offer: req.body.suggested_offer || '', cta: req.body.cta || '',
+      color_style: req.body.color_style || '#0ea5e9', qr_setting: req.body.qr_setting || 'url',
+      audience: req.body.audience || '', flyer_template: req.body.flyer_template || '',
+      letter_template: req.body.letter_template || '', print_settings: req.body.print_settings || '',
+      is_enabled: req.body.is_enabled !== undefined ? (req.body.is_enabled ? 1 : 0) : 1
+    };
+    if (existingIdx !== -1) {
+      Object.assign(db2.campaign_packs[existingIdx], packData, { updated_at: new Date().toISOString() });
+    } else {
+      packData.id = uuidv4(); packData.is_default = 1;
+      packData.created_at = new Date().toISOString(); packData.updated_at = new Date().toISOString();
+      db2.campaign_packs.push(packData);
+    }
+    saveDb();
+    res.json({ success: true, pack: existingIdx !== -1 ? db2.campaign_packs[existingIdx] : packData });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/campaign-packs/:id/toggle — Enable/disable a default pack
+app.post('/api/admin/campaign-packs/:id/toggle', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var idx = (db2.campaign_packs || []).findIndex(function(p) { return p.id === req.params.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Pack not found' });
+    db2.campaign_packs[idx].is_enabled = db2.campaign_packs[idx].is_enabled ? 0 : 1;
+    saveDb();
+    res.json({ success: true, is_enabled: db2.campaign_packs[idx].is_enabled });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== START SERVER =====
 app.listen(PORT, () => {
+  seedDefaultCampaignPacks();
   console.log('\n========================================');
   console.log('  9amLeads Production API Server');
   console.log('  Domain: www.9amleads.com');
