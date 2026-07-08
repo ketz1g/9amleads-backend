@@ -1,0 +1,1751 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Marketing Hub | 9amLeads</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#f1f5f9;min-height:100vh;display:flex}
+:root{--primary:#0ea5e9;--bg:#0a0a0f;--bg2:#0f111a;--card:#11131f;--border:#1e2030;--text:#f1f5f9;--text2:#8890a8;--muted:#5c6480;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--sidebar:200px}
+.sidebar{width:var(--sidebar);min-height:100vh;background:#0d0d14;border-right:1px solid var(--border);padding:20px 0;position:fixed;left:0;top:0;bottom:0;overflow-y:auto;z-index:100}
+.sidebar-logo{display:flex;align-items:center;gap:8px;padding:0 16px 20px;font-size:18px;font-weight:800;font-family:'Outfit',sans-serif;border-bottom:1px solid var(--border);margin-bottom:12px}
+.sidebar-logo span{color:var(--primary)}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:12px;color:var(--text2);text-decoration:none;transition:.15s;cursor:pointer;border-left:2px solid transparent}
+.sidebar-item:hover{color:var(--text);background:rgba(255,255,255,0.02)}
+.sidebar-item.active{color:var(--primary);background:rgba(14,165,233,0.06);border-left-color:var(--primary)}
+.sidebar-item i{width:16px;font-size:13px;text-align:center}
+.sidebar-section{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:16px 16px 6px}
+.main{margin-left:var(--sidebar);flex:1;padding:24px 32px;min-height:100vh}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.header h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif}
+.header h1 span{color:var(--primary)}
+.header-right{display:flex;gap:8px;align-items:center}
+.badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:600}
+.badge-blue{background:rgba(14,165,233,0.1);color:var(--primary)}
+.badge-green{background:rgba(34,197,94,0.1);color:var(--success)}
+.badge-amber{background:rgba(245,158,11,0.1);color:var(--warning)}
+.badge-red{background:rgba(239,68,68,0.1);color:var(--danger)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.stat-card .num{font-size:24px;font-weight:900;font-family:'Outfit',sans-serif;color:#fff}
+.stat-card .label{font-size:11px;color:var(--muted);margin-top:2px}
+.stat-card .change{font-size:10px;margin-top:4px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.card h3{font-size:13px;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:.3px;color:var(--text2)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:768px){.grid-2,.grid-3,.stats-grid{grid-template-columns:1fr}.sidebar{width:56px}.sidebar-item span{display:none}.sidebar-logo span{display:none}.sidebar-section{display:none}.main{margin-left:56px}.sidebar-item{padding:10px 20px}}
+.tab-bar{display:flex;gap:2px;margin-bottom:20px;background:var(--bg2);border-radius:8px;padding:3px;flex-wrap:wrap}
+.tab{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:inherit;transition:.15s}
+.tab.active{background:var(--card);color:#fff;border:1px solid var(--border)}
+.tab:hover:not(.active){color:var(--text)}
+.content-panel{display:none}
+.content-panel.active{display:block}
+.kb-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px;cursor:pointer;transition:.15s}
+.kb-card:hover{border-color:var(--primary)}
+.kb-card h4{font-size:13px;font-weight:600;margin-bottom:4px;color:#fff}
+.kb-card p{font-size:11px;color:var(--text2);line-height:1.5}
+.kb-card .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600;margin-right:4px;margin-top:6px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:.2s;font-family:inherit;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--primary),#0284c7);color:#fff}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--primary);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px}
+.mt-12{margin-top:12px}
+.mb-12{margin-bottom:12px}
+.text-muted{color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+<div class="sidebar-logo"><div style="width:28px;height:28px;background:linear-gradient(135deg,var(--primary),#0284c7);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900">9</div><span>Marketing Hub</span></div>
+
+<div class="sidebar-section">Main</div>
+<a class="sidebar-item active" onclick="switchPage('dashboard')"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+<a class="sidebar-item" onclick="switchPage('generator')"><i class="fas fa-wand-magic-sparkles"></i><span>Content Generator</span></a>
+<a class="sidebar-item" onclick="switchPage('calendar')"><i class="fas fa-calendar"></i><span>Content Calendar</span></a>
+<a class="sidebar-item" onclick="switchPage('campaigns')"><i class="fas fa-bullhorn"></i><span>Campaign Manager</span></a>
+
+<div class="sidebar-section">Content</div>
+<a class="sidebar-item" onclick="switchPage('drafts')"><i class="fas fa-file-pen"></i><span>Draft Content</span></a>
+<a class="sidebar-item" onclick="switchPage('approval')"><i class="fas fa-check-circle"></i><span>Pending Approval</span></a>
+<a class="sidebar-item" onclick="switchPage('scheduled')"><i class="fas fa-clock"></i><span>Scheduled Content</span></a>
+<a class="sidebar-item" onclick="switchPage('published')"><i class="fas fa-newspaper"></i><span>Published Content</span></a>
+
+<div class="sidebar-section">Intelligence</div>
+<a class="sidebar-item" onclick="switchPage('knowledge')"><i class="fas fa-brain"></i><span>Knowledge Base</span></a>
+<a class="sidebar-item" onclick="switchPage('email-intel')"><i class="fas fa-envelope-open-text"></i><span>Email Intelligence</span></a>
+<a class="sidebar-item" onclick="switchPage('media')"><i class="fas fa-images"></i><span>Media Library</span></a>
+
+<div class="sidebar-section">Settings</div>
+<a class="sidebar-item" onclick="switchPage('accounts')"><i class="fas fa-share-nodes"></i><span>Social Accounts</span></a>
+<a class="sidebar-item" onclick="switchPage('analytics')"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
+<a class="sidebar-item" onclick="switchPage('settings')"><i class="fas fa-gear"></i><span>Settings</span></a>
+
+<div style="border-top:1px solid var(--border);padding:12px 16px;margin-top:12px">
+<a href="/portal/admin.html" style="color:var(--muted);font-size:11px;text-decoration:none"><i class="fas fa-arrow-left"></i> Back to Admin</a>
+</div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="content-panel active">
+<div class="header"><div><h1>Marketing <span>Dashboard</span></h1><p class="text-muted" style="margin-top:2px">AI-powered content marketing system</p></div>
+<div class="header-right"><span class="badge badge-green"><i class="fas fa-circle" style="font-size:6px;margin-right:4px"></i> System Active</span><a href="/portal/admin.html" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Admin</a></div></div>
+
+<div class="stats-grid">
+<div class="stat-card"><div class="num">0</div><div class="label">Content Generated</div></div>
+<div class="stat-card"><div class="num">0</div><div class="label">Approved</div></div>
+<div class="stat-card"><div class="num">0</div><div class="label">Scheduled</div></div>
+<div class="stat-card"><div class="num">0</div><div class="label">Published</div></div>
+<div class="stat-card"><div class="num" style="color:var(--success)">Scanning</div><div class="label">Knowledge Base</div></div>
+<div class="stat-card"><div class="num" style="color:var(--primary)">Ready</div><div class="label">Email Intelligence</div></div>
+</div>
+
+<div class="grid-2">
+<div class="card"><h3>Knowledge Base Status</h3>
+<div id="kb-status"><p class="text-muted">Scanning website content...</p><div style="margin-top:10px"><div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:60%;background:linear-gradient(90deg,var(--primary),var(--success));border-radius:2px;animation:pulse 2s infinite"></div></div></div><p class="text-muted" style="margin-top:8px;font-size:11px">Analysing 6 pages: Homepage, Moving Leads, Probate Leads, New Business, Planning, Tenders</p></div></div>
+<div class="card"><h3>Email Intelligence</h3>
+<div id="ei-status"><p class="text-muted">Analysing marketing email campaigns...</p>
+<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+<span class="badge badge-green">17 Campaign Emails</span>
+<span class="badge badge-blue">80 Nurture Emails</span>
+<span class="badge badge-amber">10 Trial Sequence</span>
+</div>
+<p class="text-muted" style="margin-top:8px;font-size:11px">Extracting hooks, openings, CTAs, storytelling patterns, trust signals</p></div></div>
+</div>
+
+<div class="grid-3">
+<div class="card"><h3>Quick Actions</h3>
+<button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:8px" onclick="switchPage('generator')"><i class="fas fa-wand-magic-sparkles"></i> Generate Content</button>
+<button class="btn btn-outline" style="width:100%;justify-content:center;margin-bottom:8px" onclick="switchPage('knowledge')"><i class="fas fa-brain"></i> View Knowledge Base</button>
+<button class="btn btn-outline" style="width:100%;justify-content:center" onclick="switchPage('email-intel')"><i class="fas fa-envelope-open-text"></i> Email Intelligence</button>
+</div>
+<div class="card"><h3>Content Pipeline</h3>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;font-size:12px"><span>Drafts</span><span style="color:var(--muted)">0</span></div>
+<div style="display:flex;justify-content:space-between;font-size:12px"><span>Pending Approval</span><span style="color:var(--muted)">0</span></div>
+<div style="display:flex;justify-content:space-between;font-size:12px"><span>Scheduled</span><span style="color:var(--muted)">0</span></div>
+<div style="display:flex;justify-content:space-between;font-size:12px"><span>Published</span><span style="color:var(--muted)">0</span></div>
+</div></div>
+<div class="card"><h3>Platforms Connected</h3>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><i class="fab fa-linkedin" style="color:#0a66c2;width:16px"></i> LinkedIn <span style="margin-left:auto;font-size:10px;color:var(--muted)">Not connected</span></div>
+<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><i class="fab fa-facebook" style="color:#1877f2;width:16px"></i> Facebook <span style="margin-left:auto;font-size:10px;color:var(--muted)">Not connected</span></div>
+<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><i class="fab fa-instagram" style="color:#e4405f;width:16px"></i> Instagram <span style="margin-left:auto;font-size:10px;color:var(--muted)">Not connected</span></div>
+</div>
+<a href="#" class="btn btn-outline btn-sm" style="margin-top:10px" onclick="switchPage('accounts')"><i class="fas fa-plug"></i> Connect Platforms</a>
+</div>
+</div>
+</div>
+
+<!-- CONTENT GENERATOR (placeholder) -->
+<div id="page-generator" class="content-panel">
+<div class="header"><div><h1>Content <span>Generator</span></h1><p class="text-muted">AI-powered content using your Email Intelligence &amp; Knowledge Base</p></div>
+<button class="btn btn-primary" onclick="generateContent()" id="genBtn"><i class="fas fa-wand-magic-sparkles"></i> Generate Content</button></div>
+
+<div class="grid-2">
+<div>
+<div class="card">
+<h3>Content Settings</h3>
+<div class="grid-2" style="margin-bottom:8px">
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Platform</label>
+<select id="gen-platform" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="linkedin">LinkedIn</option><option value="facebook">Facebook</option><option value="instagram">Instagram</option>
+<option value="x">X / Twitter</option><option value="tiktok">TikTok</option><option value="threads">Threads</option>
+</select></div>
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Lead Type</label>
+<select id="gen-product" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="general">General</option><option value="moving">Moving Leads</option><option value="probate">Probate Leads</option>
+<option value="newbusiness">New Business</option><option value="planning">Planning Permission</option><option value="tenders">Public Tenders</option>
+</select></div></div>
+<div class="grid-2" style="margin-bottom:8px">
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Category</label>
+<select id="gen-category" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="educational">Educational</option><option value="tips">Lead Gen Tips</option><option value="growth">Business Growth</option>
+<option value="authority">Authority Content</option><option value="casestudy">Case Study</option><option value="trust">Trust Building</option>
+<option value="sales">Sales Tips</option><option value="mistakes">Common Mistakes</option><option value="offer">Free Trial Offer</option>
+</select></div>
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Framework</label>
+<select id="gen-framework" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="aida">AIDA</option><option value="pas">PAS (Problem-Agitate-Solve)</option>
+<option value="bab">BAB (Before-After-Bridge)</option><option value="story">Story Selling</option>
+<option value="authority">Authority Positioning</option><option value="curiosity">Curiosity Marketing</option>
+</select></div></div>
+<div class="grid-2">
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Tone</label>
+<select id="gen-tone" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="professional">Professional</option><option value="conversational">Conversational</option>
+<option value="authoritative">Authoritative</option><option value="direct">Direct &amp; Bold</option>
+<option value="storytelling">Storytelling</option>
+</select></div>
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Length</label>
+<select id="gen-length" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="short">Short (1-2 lines)</option><option value="medium" selected>Medium (3-5 lines)</option>
+<option value="long">Long (detailed post)</option>
+</select></div></div>
+</div>
+
+<div class="card">
+<h3>Content Intelligence</h3>
+<p class="text-muted" style="font-size:11px;line-height:1.6" id="gen-intel">
+Generating content based on <strong>Email Intelligence Framework</strong> and <strong>Knowledge Base</strong>.
+Your content will use proven hooks, CTAs, and storytelling patterns extracted from your existing marketing emails.
+</p>
+<p class="text-muted" style="font-size:10px;margin-top:8px" id="gen-stats">
+Knowledge Base: 14 items &middot; Email Intelligence: 6 categories &middot; Frameworks: 6
+</p>
+</div>
+</div>
+
+<div>
+<div class="card">
+<h3>Generated Content Preview</h3>
+<div id="gen-preview" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;min-height:200px;font-size:13px;line-height:1.7;color:var(--text2)">
+<p style="color:var(--muted);text-align:center;margin-top:60px">Select your settings and click <strong style="color:var(--text)">Generate Content</strong></p>
+</div>
+<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+<button class="btn btn-outline btn-sm" onclick="copyContent()"><i class="fas fa-copy"></i> Copy</button>
+<button class="btn btn-outline btn-sm" onclick="saveDraft()"><i class="fas fa-floppy-disk"></i> Save as Draft</button>
+<button class="btn btn-primary btn-sm" onclick="generateContent()"><i class="fas fa-rotate"></i> Regenerate</button>
+</div>
+</div>
+
+<div class="card">
+<h3>Image Concept</h3>
+<div id="gen-image-concept" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;min-height:60px;font-size:12px;color:var(--muted)">
+Generate content first to see image concept ideas.
+</div>
+</div>
+</div>
+</div>
+
+<div id="gen-loading" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:999;display:none;align-items:center;justify-content:center">
+<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;text-align:center;max-width:400px">
+<div style="font-size:36px;margin-bottom:12px"><i class="fas fa-spinner fa-spin" style="color:var(--primary)"></i></div>
+<h3 style="font-size:16px;font-weight:700;margin-bottom:4px">Generating Content</h3>
+<p class="text-muted" style="font-size:12px" id="gen-progress">Applying Email Intelligence frameworks...</p>
+</div></div>
+</div>
+
+<!-- CONTENT CALENDAR (placeholder) -->
+<div id="page-calendar" class="content-panel">
+<div class="header"><div><h1>Content <span>Calendar</span></h1><p class="text-muted">Schedule, view and manage your content pipeline</p></div>
+<div style="display:flex;gap:6px">
+<button class="btn btn-outline btn-sm" onclick="addCalendarEvent()"><i class="fas fa-plus"></i> Add Manually</button>
+<button class="btn btn-primary btn-sm" onclick="bulkSchedule()"><i class="fas fa-calendar-plus"></i> Bulk Schedule</button>
+</div></div>
+
+<div class="tab-bar" style="margin-bottom:12px">
+<button class="tab" onclick="switchCalendarView('day')">Day</button>
+<button class="tab active" onclick="switchCalendarView('week')">Week</button>
+<button class="tab" onclick="switchCalendarView('month')">Month</button>
+</div>
+
+<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+<button class="btn btn-outline btn-sm" onclick="calendarNav(-1)" id="cal-prev"><i class="fas fa-chevron-left"></i></button>
+<span id="cal-date-label" style="font-size:14px;font-weight:700;min-width:180px;text-align:center;display:inline-block">Today</span>
+<button class="btn btn-outline btn-sm" onclick="calendarNav(1)" id="cal-next"><i class="fas fa-chevron-right"></i></button>
+<select id="cal-filter-platform" style="padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:#fff;font-family:inherit;outline:none;margin-left:12px" onchange="renderCalendar()">
+<option value="">All Platforms</option>
+<option value="linkedin">LinkedIn</option><option value="facebook">Facebook</option><option value="instagram">Instagram</option>
+<option value="x">X / Twitter</option><option value="tiktok">TikTok</option><option value="threads">Threads</option>
+</select>
+<select id="cal-filter-status" style="padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:#fff;font-family:inherit;outline:none" onchange="renderCalendar()">
+<option value="">All Statuses</option>
+<option value="approved">Approved</option><option value="scheduled">Scheduled</option><option value="published">Published</option>
+</select>
+</div>
+
+<div id="cal-content" style="min-height:400px">
+<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">
+${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => '<div style="padding:8px 6px;text-align:center;font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">' + d + '</div>').join('')}
+${Array(35).fill(0).map((_, i) => {
+const date = new Date(); date.setDate(date.getDate() - date.getDay() + 1 + i);
+return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;min-height:80px;padding:6px;cursor:pointer" onclick="alert(\'Select a date to schedule content.\')"><div style="font-size:10px;color:var(--muted);margin-bottom:4px">' + date.getDate() + '</div></div>';
+}).join('')}
+</div>
+</div>
+
+<div class="card" style="margin-top:16px">
+<h3>Approved Content Ready to Schedule</h3>
+<div id="cal-approved-items"><p class="text-muted" style="padding:12px 0;font-size:12px">No approved content. Approve content first, then schedule it here.</p></div>
+</div>
+</div>
+
+<!-- CAMPAIGNS (placeholder) -->
+<div id="page-campaigns" class="content-panel">
+<div class="header"><h1>Campaign <span>Manager</span></h1></div>
+<div class="card" style="text-align:center;padding:60px 40px">
+<div style="font-size:48px;margin-bottom:16px">&#128226;</div>
+<h2 style="font-size:20px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:8px">Coming in Phase 6</h2>
+<p class="text-muted">Create and manage multi-platform campaigns with automated content generation.</p>
+</div>
+</div>
+
+<!-- DRAFTS (placeholder) -->
+<div id="page-drafts" class="content-panel">
+<div class="header"><div><h1>Draft <span>Content</span></h1><p class="text-muted">Manage your content pipeline — submit for review when ready</p></div>
+<button class="btn btn-outline btn-sm" onclick="loadDrafts()"><i class="fas fa-rotate"></i> Refresh</button></div>
+<div id="drafts-content"><p class="text-muted" style="text-align:center;padding:24px">No draft content yet. Generate content to see drafts here.</p></div>
+</div>
+
+<!-- APPROVAL (placeholder) -->
+<div id="page-approval" class="content-panel">
+<div class="header"><div><h1>Pending <span>Approval</span></h1><p class="text-muted">Review, approve or reject generated content</p></div>
+<button class="btn btn-outline btn-sm" onclick="loadApprovals()"><i class="fas fa-rotate"></i> Refresh</button></div>
+<div id="approval-content"><p class="text-muted" style="text-align:center;padding:24px">No content pending approval. Submit drafts for review to see them here.</p></div>
+</div>
+
+<!-- SCHEDULED (placeholder) -->
+<div id="page-scheduled" class="content-panel">
+<div class="header"><div><h1>Scheduled <span>Content</span></h1><p class="text-muted">Content waiting to be published</p></div>
+<button class="btn btn-outline btn-sm" onclick="publishAllDue()"><i class="fas fa-rocket"></i> Publish Due Items</button></div>
+<div id="scheduled-content"><p class="text-muted" style="text-align:center;padding:24px">No scheduled content.</p></div>
+</div>
+
+<!-- PUBLISHED (placeholder) -->
+<div id="page-published" class="content-panel">
+<div class="header"><div><h1>Published <span>Content</span></h1><p class="text-muted">All content that has been published</p></div>
+<button class="btn btn-outline btn-sm" onclick="exportPublished()"><i class="fas fa-download"></i> Export CSV</button></div>
+<div id="published-content"><p class="text-muted" style="text-align:center;padding:24px">No published content yet. Publish scheduled content to see it here.</p></div>
+</div>
+
+<!-- KNOWLEDGE BASE -->
+<div id="page-knowledge" class="content-panel">
+<div class="header"><div><h1>Knowledge <span>Base</span></h1><p class="text-muted">Intelligence extracted from your website content</p></div>
+<button class="btn btn-primary btn-sm" onclick="scanWebsite()"><i class="fas fa-rotate"></i> Rescan Website</button></div>
+
+<div class="mb-12" style="display:flex;gap:8px;flex-wrap:wrap">
+<span class="badge badge-blue" onclick="filterKB('all')" style="cursor:pointer">All</span>
+<span class="badge badge-green" onclick="filterKB('benefit')" style="cursor:pointer">Benefits</span>
+<span class="badge badge-amber" onclick="filterKB('pain')" style="cursor:pointer">Pain Points</span>
+<span class="badge badge-red" onclick="filterKB('objection')" style="cursor:pointer">Objections</span>
+</div>
+
+<div id="kb-content"></div>
+</div>
+
+<!-- EMAIL INTELLIGENCE -->
+<div id="page-email-intel" class="content-panel">
+<div class="header"><div><h1>Email <span>Intelligence</span></h1><p class="text-muted">Framework extracted from existing marketing emails</p></div></div>
+
+<div class="tab-bar">
+<button class="tab active" onclick="switchEmailTab('hooks')">Hooks</button>
+<button class="tab" onclick="switchEmailTab('openings')">Openings</button>
+<button class="tab" onclick="switchEmailTab('ctas')">CTAs</button>
+<button class="tab" onclick="switchEmailTab('storytelling')">Storytelling</button>
+<button class="tab" onclick="switchEmailTab('trust')">Trust Signals</button>
+<button class="tab" onclick="switchEmailTab('patterns')">Patterns</button>
+</div>
+
+<div id="ei-content"><p class="text-muted">Loading intelligence data...</p></div>
+</div>
+
+<!-- MEDIA LIBRARY (placeholder) -->
+<div id="page-media" class="content-panel">
+<div class="header"><div><h1>Image &amp; Creative <span>Generation</span></h1><p class="text-muted">AI-powered visual content creation for social media</p></div></div>
+
+<div class="tab-bar">
+<button class="tab active" onclick="switchMediaTab('images')">Image Concepts</button>
+<button class="tab" onclick="switchMediaTab('carousels')">Carousel Designs</button>
+<button class="tab" onclick="switchMediaTab('infographics')">Infographics</button>
+<button class="tab" onclick="switchMediaTab('video')">Video Concepts</button>
+<button class="tab" onclick="switchMediaTab('gallery')">Media Gallery</button>
+</div>
+
+<div class="content-panel" id="media-images" style="display:block">
+<div class="grid-2">
+<div>
+<div class="card">
+<h3>Generate Image Concept</h3>
+<div class="grid-2" style="margin-bottom:8px">
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Lead Type</label>
+<select id="media-product" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="general">General</option><option value="moving">Moving Leads</option><option value="probate">Probate Leads</option>
+<option value="newbusiness">New Business</option><option value="planning">Planning Permission</option><option value="tenders">Public Tenders</option>
+</select></div>
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Style</label>
+<select id="media-style" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="professional">Professional SaaS</option><option value="modern">Modern Dark</option>
+<option value="minimal">Minimal Clean</option><option value="bold">Bold &amp; Vibrant</option>
+<option value="data">Data Visualization</option>
+</select></div></div>
+<div class="grid-2" style="margin-bottom:8px">
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Format</label>
+<select id="media-format" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="square">Square (1:1) Instagram</option><option value="landscape">Landscape (16:9) LinkedIn</option>
+<option value="portrait">Portrait (4:5) Facebook</option><option value="story">Story (9:16) Instagram/TikTok</option>
+</select></div>
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Tool</label>
+<select id="media-tool" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="midjourney">Midjourney</option><option value="dalle">DALL-E 3</option>
+<option value="ideogram">Ideogram</option><option value="flux">Flux</option>
+</select></div></div>
+<button class="btn btn-primary" onclick="generateImageConcept()" style="width:100%;justify-content:center"><i class="fas fa-wand-magic-sparkles"></i> Generate Image Concept</button>
+</div>
+<div class="card"><h3>Generated Concepts</h3>
+<div id="media-concepts" style="min-height:100px"><p class="text-muted" style="text-align:center;padding:24px;font-size:12px">Generate image concepts above. Each concept includes a visual description and AI prompts for all major tools.</p></div>
+</div>
+</div>
+<div class="card"><h3>Preview &amp; Prompts</h3>
+<div id="media-preview" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;min-height:200px">
+<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:12px">
+<div style="font-size:48px;margin-bottom:12px">&#127912;</div>
+<p>Select your settings and generate an image concept.</p>
+<p style="margin-top:4px">Prompts for Midjourney, DALL-E, Ideogram and Flux will be provided.</p>
+</div></div>
+</div>
+</div>
+
+<!-- Carousels tab -->
+<div class="content-panel" id="media-carousels">
+<div class="card">
+<h3>Generate Carousel Design</h3>
+<div class="grid-2" style="margin-bottom:8px">
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Topic</label>
+<select id="carousel-topic" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="tips">3 Lead Gen Tips</option><option value="mistakes">Common Mistakes</option>
+<option value="comparison">Comparison (9amLeads vs X)</option><option value="process">How It Works</option>
+<option value="results">Success Results</option>
+</select></div>
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Slides</label>
+<select id="carousel-slides" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="3">3 Slides</option><option value="5">5 Slides</option><option value="7">7 Slides</option><option value="10">10 Slides</option>
+</select></div></div>
+<button class="btn btn-primary" onclick="generateCarousel()" style="width:100%;justify-content:center"><i class="fas fa-layer-group"></i> Generate Carousel Concept</button>
+</div>
+<div id="carousel-output"></div>
+</div>
+
+<!-- Infographics tab -->
+<div class="content-panel" id="media-infographics">
+<div class="card">
+<h3>Generate Infographic Concept</h3>
+<div class="grid-2">
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Type</label>
+<select id="info-type" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="statistics">Statistics &amp; Data</option><option value="process">Process Flow</option>
+<option value="comparison">Comparison</option><option value="timeline">Timeline</option><option value="checklist">Checklist</option>
+</select></div>
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Lead Type</label>
+<select id="info-product" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="general">General</option><option value="moving">Moving Leads</option><option value="probate">Probate Leads</option>
+<option value="newbusiness">New Business</option><option value="planning">Planning</option><option value="tenders">Tenders</option>
+</select></div></div>
+<button class="btn btn-primary" onclick="generateInfographic()" style="width:100%;justify-content:center;margin-top:8px"><i class="fas fa-chart-pie"></i> Generate Infographic Concept</button>
+</div>
+<div id="info-output"></div>
+</div>
+
+<!-- Video tab -->
+<div class="content-panel" id="media-video">
+<div class="grid-2">
+<div class="card">
+<h3>Reel / Short Video Concept</h3>
+<div class="grid-2" style="margin-bottom:8px">
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Platform</label>
+<select id="video-platform" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="instagram">Instagram Reel</option><option value="tiktok">TikTok</option><option value="linkedin">LinkedIn Video</option><option value="youtube">YouTube Shorts</option>
+</select></div>
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Duration</label>
+<select id="video-duration" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="15">15 seconds</option><option value="30">30 seconds</option><option value="60">60 seconds</option>
+</select></div></div>
+<div><label class="text-muted" style="font-size:11px;display:block;margin-bottom:4px">Lead Type</label>
+<select id="video-product" style="width:100%;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+<option value="general">General</option><option value="moving">Moving Leads</option><option value="probate">Probate Leads</option>
+<option value="newbusiness">New Business</option><option value="planning">Planning</option><option value="tenders">Tenders</option>
+</select></div>
+<button class="btn btn-primary" onclick="generateVideoConcept()" style="width:100%;justify-content:center;margin-top:12px"><i class="fas fa-video"></i> Generate Video Concept</button>
+</div>
+<div class="card"><h3>Video Script</h3>
+<div id="video-output" style="min-height:100px"><p class="text-muted" style="text-align:center;padding:24px;font-size:12px">Generate a video concept to see the full script, storyboard and production notes.</p></div>
+</div>
+</div>
+
+<!-- Media Gallery tab -->
+<div class="content-panel" id="media-gallery">
+<div class="card"><h3>Saved Media Assets</h3>
+<div id="gallery-content" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
+<p class="text-muted" style="grid-column:1/-1;text-align:center;padding:40px;font-size:12px">No saved media assets yet. Generate and save image concepts to build your media library.</p>
+</div>
+</div>
+</div>
+
+</div>
+
+<!-- SOCIAL ACCOUNTS (placeholder) -->
+<div id="page-accounts" class="content-panel">
+<div class="header"><div><h1>Social <span>Accounts</span></h1><p class="text-muted">Connect your social platforms and scheduling tools</p></div></div>
+
+<div class="grid-2">
+<div class="card"><h3>Social Platforms</h3>
+<div id="social-platforms">
+${[
+{name:'LinkedIn',icon:'fab fa-linkedin',color:'#0a66c2',key:'linkedin'},
+{name:'Facebook',icon:'fab fa-facebook',color:'#1877f2',key:'facebook'},
+{name:'Instagram',icon:'fab fa-instagram',color:'#e4405f',key:'instagram'},
+{name:'X / Twitter',icon:'fab fa-x-twitter',color:'#000',key:'x'},
+{name:'TikTok',icon:'fab fa-tiktok',color:'#fff',key:'tiktok'},
+{name:'Threads',icon:'fab fa-threads',color:'#fff',key:'threads'}
+].map(p => '<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px"><div style="width:40px;height:40px;border-radius:8px;background:' + p.color + ';display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px"><i class="' + p.icon + '"></i></div><div style="flex:1"><div style="font-size:13px;font-weight:600">' + p.name + '</div><div style="font-size:10px;color:var(--muted)" id="status-' + p.key + '">Not connected</div></div><button class="btn btn-outline btn-sm" onclick="connectPlatform(\'' + p.key + '\')" id="btn-' + p.key + '"><i class="fas fa-plug"></i> Connect</button></div>').join('')}
+</div></div>
+
+<div class="card"><h3>Scheduling Integrations</h3>
+${[
+{name:'Buffer',icon:'fab fa-buffer',color:'#168eea',key:'buffer'},
+{name:'Metricool',icon:'fas fa-chart-simple',color:'#00d4aa',key:'metricool'},
+{name:'Publer',icon:'fas fa-share-nodes',color:'#6366f1',key:'publer'}
+].map(p => '<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px"><div style="width:40px;height:40px;border-radius:8px;background:' + p.color + ';display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px"><i class="' + p.icon + '"></i></div><div style="flex:1"><div style="font-size:13px;font-weight:600">' + p.name + '</div><div style="font-size:10px;color:var(--muted)">Send approved posts automatically</div></div><button class="btn btn-outline btn-sm" onclick="connectScheduler(\'' + p.key + '\')"><i class="fas fa-plug"></i> Connect</button></div>').join('')}
+</div>
+</div>
+
+<div class="card">
+<h3>Connected Accounts</h3>
+<div id="connected-accounts"><p class="text-muted" style="font-size:12px;padding:8px 0">No accounts connected yet. Connect platforms above to enable auto-publishing.</p></div>
+</div>
+</div>
+
+<!-- ANALYTICS (placeholder) -->
+<div id="page-analytics" class="content-panel">
+<div class="header"><div><h1>Marketing <span>Analytics</span></h1><p class="text-muted">Content performance tracking across all platforms</p></div>
+<button class="btn btn-outline btn-sm" onclick="refreshAnalytics()"><i class="fas fa-rotate"></i> Refresh</button></div>
+
+<div class="stats-grid">
+<div class="stat-card"><div class="num" id="ana-total">0</div><div class="label">Total Published</div></div>
+<div class="stat-card"><div class="num" id="ana-engaged">0</div><div class="label">Engagement Rate</div><div class="change" style="color:var(--muted)">Avg across platforms</div></div>
+<div class="stat-card"><div class="num" id="ana-reach">0</div><div class="label">Est. Reach</div></div>
+<div class="stat-card"><div class="num" id="ana-clickrate">0%</div><div class="label">Est. CTR</div></div>
+<div class="stat-card"><div class="num" id="ana-conversions">0</div><div class="label">Est. Conversions</div></div>
+<div class="stat-card"><div class="num" style="color:var(--success)" id="ana-trend">&mdash;</div><div class="label">Performance Trend</div></div>
+</div>
+
+<div class="grid-2">
+<div class="card"><h3>Content by Platform</h3>
+<div id="ana-by-platform" style="min-height:120px"><div style="display:flex;gap:12px;flex-wrap:wrap;padding:8px 0">
+${['linkedin','facebook','instagram','x'].map(p => '<div style="flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">' + p + '</div><div style="font-size:18px;font-weight:800;font-family:Outfit,sans-serif" class="ana-p-' + p + '">0</div><div style="font-size:9px;color:var(--muted);margin-top:2px">posts</div></div>').join('')}
+</div></div>
+<div class="card"><h3>Top Performing Content</h3>
+<div id="ana-top-content"><p class="text-muted" style="font-size:12px;padding:12px 0">Publish content to see performance data.</p></div>
+</div>
+</div>
+
+<div class="card"><h3>Content Schedule</h3>
+<div id="ana-schedule-chart"><p class="text-muted" style="font-size:12px;padding:12px 0;text-align:center">Content publishing timeline — schedule and publish posts to populate this chart.</p></div>
+</div>
+</div>
+
+<!-- SETTINGS (placeholder) -->
+<div id="page-settings" class="content-panel">
+<div class="header"><h1>Marketing <span>Settings</span></h1></div>
+<div class="card" style="text-align:center;padding:60px 40px">
+<p class="text-muted">Configure brand voice, content preferences, API keys, and team permissions.</p>
+</div>
+</div>
+
+</div>
+
+<script>
+var API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8012' : 'https://nineamleads-backend.onrender.com';
+function getAdminPass() { try { return sessionStorage.getItem('9amAdminPass') || ''; } catch(e) { return ''; } }
+function adminHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminPass() }; }
+
+function switchPage(id) {
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+  var panel = document.getElementById('page-' + id);
+  if (panel) panel.classList.add('active');
+  var item = document.querySelector('.sidebar-item[onclick*="' + id + '"]');
+  if (item) item.classList.add('active');
+  if (id === 'drafts') setTimeout(loadDrafts, 50);
+  if (id === 'approval') setTimeout(loadApprovals, 50);
+  if (id === 'scheduled') setTimeout(loadScheduled, 50);
+  if (id === 'published') setTimeout(loadPublished, 50);
+  if (id === 'analytics') setTimeout(refreshAnalytics, 50);
+  if (id === 'accounts') setTimeout(renderConnectedAccounts, 50);
+}
+
+const emailIntel = {
+  hooks: [
+    { text: '"Your exclusive leads land at 9am tomorrow morning."', source: 'Trial Day 1', type: 'Urgency + Specificity' },
+    { text: '"Call within 30 minutes of receiving a lead triples your conversion rate."', source: 'Trial Day 5', type: 'Statistic + Command' },
+    { text: '"Most sales happen on the 2nd or 3rd touch."', source: 'Paid Week 4', type: 'Truth Statement' },
+    { text: '"Speed triples your conversion rate."', source: 'Paid Week 1', type: 'Bold Claim' },
+    { text: '"What gets measured gets improved."', source: 'Paid Week 3', type: 'Proverb' },
+    { text: '"You\'re the first person to contact them. No competition."', source: 'Trial Day 3', type: 'Exclusivity' }
+  ],
+  openings: [
+    { text: 'Open with a specific scenario: "Every day, thousands of UK homeowners mark their property as Sold Subject to Contract."', source: 'Moving Nurture', technique: 'Scene Setting' },
+    { text: 'Open with a question: "How Are Your Leads Looking?"', source: 'Trial Day 3', technique: 'Engagement Question' },
+    { text: 'Open with congratulations: "Your Free Trial Is Active"', source: 'Trial Day 1', technique: 'Positive Framing' },
+    { text: 'Open with problem statement: "If you have used platforms like Bark, Checkatrade, RatedPeople, you already know the pain."', source: 'Nurture Day 2', technique: 'Problem Awareness' }
+  ],
+  ctas: [
+    { text: '"Start Your Free Trial Now"', source: 'All Campaigns', type: 'Primary CTA - Button' },
+    { text: '"Learn More About Moving Leads"', source: 'Nurture Campaigns', type: 'Secondary - Link' },
+    { text: '"Reply to this email"', source: 'Check-in Emails', type: 'Engagement - Reply' },
+    { text: '"View Plans & Pricing"', source: 'Trial Day 7', type: 'Urgency - Link' },
+    { text: '"Upgrade Now"', source: 'Trial Day 7', type: 'Action - Button' }
+  ],
+  storytelling: [
+    { pattern: 'Customer Story: "Mark runs an independent removal company in Southampton..."', structure: 'Before/After + Specific Results (£3,600)', source: 'Day 4 Success Story' },
+    { pattern: 'Social Proof: "Over 500 UK businesses trust 9amLeads"', structure: 'Authority + Volume', source: 'Final Day CTA' },
+    { pattern: 'Comparison: "9amLeads vs The Competition"', structure: 'Feature Comparison Table', source: 'Nurture Day 10' },
+    { pattern: 'Problem/Solution: "Shared leads cost you money... exclusive leads solve this"', structure: 'Pain Point → Solution', source: 'Nurture Day 2' }
+  ],
+  trust: [
+    { signal: 'Company registration: "Company No. 17168176"', placement: 'Every email footer', effect: 'Legitimacy' },
+    { signal: '"No credit card required"', placement: 'Every CTA', effect: 'Risk Reversal' },
+    { signal: '"7 day free trial"', placement: 'Every offer', effect: 'Zero Risk' },
+    { signal: '"Cancel anytime"', placement: 'Trial Day 1', effect: 'No Commitment' },
+    { signal: '"Exclusive leads - no competition"', placement: 'All emails', effect: 'Unique Value' },
+    { signal: 'Real customer names with job titles: "Mark S., Independent Removal Company, Southampton"', placement: 'Success stories', effect: 'Authenticity' },
+    { signal: '"UK based team"', placement: 'Final Day', effect: 'Local Trust' }
+  ],
+  patterns: [
+    { name: 'AIDA Framework', usage: 'Attention (hook) → Interest (problem) → Desire (solution) → Action (CTA)', example: 'Used across all nurture emails' },
+    { name: 'Problem → Agitate → Solve', usage: 'Highlight pain → Make it hurt → Offer relief', example: 'Nurture Day 2 - shared leads cost' },
+    { name: 'Story → Lesson → Application', usage: 'Tell success story → Extract lesson → Apply to reader', example: 'Success story emails (Days 4, 11, 15)' },
+    { name: 'Education → Authority → Offer', usage: 'Teach something valuable → Establish expertise → Soft pitch', example: '30-Minute Rule email (Paid Week 1)' },
+    { name: 'Urgency → Value → Risk Reversal', usage: 'Limited time → High value → No risk', example: 'Trial Day 7 - ends tomorrow' }
+  ]
+};
+
+function switchEmailTab(tab) {
+  document.querySelectorAll('#page-email-intel .tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  const data = emailIntel[tab] || [];
+  renderEmailTab(tab, data);
+}
+
+function renderEmailTab(tab, items) {
+  const el = document.getElementById('ei-content');
+  if (!items.length) { el.innerHTML = '<p class="text-muted">No data for this category.</p>'; return; }
+  el.innerHTML = items.map((item, i) => {
+    const text = item.text || item.pattern || item.signal || item.name || '';
+    const extra = item.source || item.placement || item.usage || item.type || item.technique || item.structure || item.effect || '';
+    const extra2 = item.type || item.technique || '';
+    return '<div class="kb-card"><h4>' + text + '</h4><p>' + extra + (extra2 ? ' · ' + extra2 : '') + '</p></div>';
+  }).join('');
+}
+
+const kbData = [
+  { type: 'benefit', title: 'Exclusive Leads - No Competition', desc: 'Every lead is sent to one customer only. No other business receives the same opportunity.', source: 'Homepage' },
+  { type: 'benefit', title: 'Fixed Weekly Pricing', desc: 'Predictable costs starting at £25/week. No pay-per-lead surprises.', source: 'Pricing Page' },
+  { type: 'benefit', title: 'Delivered at 9am Daily', desc: 'Leads arrive at the same time every morning. Build a consistent daily routine.', source: 'Homepage' },
+  { type: 'benefit', title: '7 Day Free Trial', desc: 'No credit card required. Cancel anytime. Keep all leads received during trial.', source: 'All Pages' },
+  { type: 'benefit', title: 'CRM Integration', desc: 'Push leads directly to HubSpot, Salesforce, Pipedrive and 100s more via Zapier.', source: 'Homepage CRM Section' },
+  { type: 'benefit', title: 'Custom Lead Filters', desc: 'Filter by bedrooms, price, property type, industry and more per product.', source: 'Homepage / Signup' },
+  { type: 'pain', title: 'Wasting money on shared lead platforms', desc: 'Bark, Checkatrade, RatedPeople sell the same lead to multiple businesses.', source: 'Nurture Day 2' },
+  { type: 'pain', title: 'Inconsistent pipeline', desc: 'Referral-based businesses have unpredictable monthly revenue.', source: 'All Business Pages' },
+  { type: 'pain', title: 'Price wars on shared leads', desc: 'When customers compare multiple quotes, margins shrink.', source: 'Comparison Section' },
+  { type: 'pain', title: 'Wasted time prospecting', desc: 'Hours spent searching for opportunities that could be spent selling.', source: 'Homepage' },
+  { type: 'pain', title: 'No exclusivity on leads', desc: 'Competitors contact the same prospects, often faster.', source: 'All Business Pages' },
+  { type: 'objection', title: '"Is this right for my business?"', desc: 'Answer: 7-day free trial with real leads. Try before you commit.', source: 'Nurture Day 13' },
+  { type: 'objection', title: '"Will the leads be quality?"', desc: 'Answer: Sourced from official UK data (Rightmove, Companies House, Gov.uk, Council Portals, Contracts Finder).', source: 'FAQ Section' },
+  { type: 'objection', title: '"Can I afford it?"', desc: 'Answer: From £25/week. One conversion covers your annual subscription.', source: 'Pricing Page' },
+  { type: 'objection', title: '"Is it easy to set up?"', desc: 'Answer: Sign up in under 2 minutes. Leads arrive at 9am tomorrow. No complex setup.', source: 'Homepage' }
+];
+
+function filterKB(type) {
+  const items = type === 'all' ? kbData : kbData.filter(d => d.type === type);
+  const el = document.getElementById('kb-content');
+  if (!items.length) { el.innerHTML = '<p class="text-muted">No items found.</p>'; return; }
+  el.innerHTML = items.map(d => '<div class="kb-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="badge badge-' + (d.type === 'benefit' ? 'green' : d.type === 'pain' ? 'red' : 'amber') + '">' + d.type + '</span><span style="font-size:10px;color:var(--muted)">' + d.source + '</span></div><h4>' + d.title + '</h4><p>' + d.desc + '</p></div>').join('');
+}
+
+function scanWebsite() {
+  const el = document.getElementById('kb-content');
+  el.innerHTML = '<p class="text-muted"><i class="fas fa-spinner fa-spin"></i> Scanning website pages...</p>';
+  setTimeout(() => {
+    filterKB('all');
+    const statusEl = document.getElementById('kb-status');
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--success)"><i class="fas fa-check-circle"></i> 14 items extracted from 6 pages</span>';
+  }, 1500);
+}
+
+// ===== CONTENT GENERATOR =====
+
+const contentTemplates = {
+  linkedin: { name: 'LinkedIn', maxChars: 3000, style: 'Professional, thought-leadership style with industry insights' },
+  facebook: { name: 'Facebook', maxChars: 5000, style: 'Conversational, community-focused, engagement-driven' },
+  instagram: { name: 'Instagram', maxChars: 2200, style: 'Visual-first, concise, hashtag-rich, storytelling' },
+  x: { name: 'X / Twitter', maxChars: 280, style: 'Punchy, bold, curiosity-driven, debate-sparking' },
+  tiktok: { name: 'TikTok', maxChars: 300, style: 'Short-form, energetic, trend-aware, hook-heavy' },
+  threads: { name: 'Threads', maxChars: 500, style: 'Casual, authentic, conversation-starting' }
+};
+
+const productData = {
+  moving: { name: 'Moving Leads', pain: 'Homeowners need removal quotes urgently after going SSTC', benefit: 'exclusive SSTC property leads before competitors', source: 'Rightmove & Zoopla' },
+  probate: { name: 'Probate Leads', pain: 'Solicitors miss probate instructions because they find out too late', benefit: 'probate grant alerts within hours of issue', source: 'Gov.uk Probate Register' },
+  newbusiness: { name: 'New Business Alerts', pain: 'B2B service providers waste time cold calling old lists', benefit: 'new company incorporations within hours', source: 'Companies House' },
+  planning: { name: 'Planning Permission', pain: 'Builders rely on word of mouth for inconsistent projects', benefit: 'daily planning applications matched to your trade', source: '350+ Council Portals' },
+  tenders: { name: 'Public Tenders', pain: 'Businesses miss government contract opportunities', benefit: 'matched tender opportunities every morning', source: 'Contracts Finder API' },
+  general: { name: '9amLeads', pain: 'Businesses waste money on shared lead platforms', benefit: 'exclusive leads delivered at 9am daily', source: 'multiple UK data sources' }
+};
+
+let lastGenerated = null;
+
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function generateHook(product) {
+  const hooks = emailIntel.hooks.map(h => h.text.replace(/"/g, ''));
+  const kb = kbData.filter(d => d.type === 'benefit');
+  const kbItem = pickRandom(kb);
+  const pd = productData[product];
+  return pickRandom([
+    pd.benefit.substring(0, 1).toUpperCase() + pd.benefit.substring(1) + ' at 9am every morning.',
+    kbItem.title + '. ' + kbItem.desc.substring(0, 60) + '...',
+    pickRandom(hooks),
+    'Here is a number that might surprise you: most ' + pd.pain.split(' ').slice(0, 4).join(' ') + '.',
+    'The businesses winning in 2026 are not competing on price. They are competing on speed and exclusivity.'
+  ]);
+}
+
+function generateBody(framework, product, category, tone) {
+  const pd = productData[product];
+  const benefits = kbData.filter(d => d.type === 'benefit');
+  const pains = kbData.filter(d => d.type === 'pain');
+  const objections = kbData.filter(d => d.type === 'objection');
+  const b1 = pickRandom(benefits);
+  const p1 = pickRandom(pains);
+  const o1 = pickRandom(objections);
+  const story = pickRandom(emailIntel.storytelling);
+  const trust = pickRandom(emailIntel.trust);
+  const cta = pickRandom(emailIntel.ctas);
+
+  let body = '';
+  const toneStyle = tone === 'professional' ? 'precise and professional language' : tone === 'conversational' ? 'friendly and approachable tone' : tone === 'authoritative' ? 'confident and commanding tone' : tone === 'direct' ? 'bold and straightforward language' : 'narrative and engaging storytelling';
+
+  if (framework === 'aida') {
+    body = 'ATTENTION: ' + p1.title + '. ' + p1.desc + '\n\nINTEREST: ' + b1.title + '. ' + b1.desc + '\n\nDESIRE: ' + story.pattern.substring(0, 100) + '...\n\nACTION: Start your free trial at 9amleads.com and get exclusive ' + pd.name.toLowerCase() + ' at 9am tomorrow.';
+  } else if (framework === 'pas') {
+    body = 'PROBLEM: ' + p1.desc + '\n\nAGITATE: ' + pd.pain + '. ' + o1.desc + '\n\nSOLVE: 9amLeads delivers ' + b1.desc.toLowerCase() + '. ' + trust.signal;
+  } else if (framework === 'bab') {
+    body = 'BEFORE: ' + p1.desc + '\n\nAFTER: Imagine receiving ' + b1.desc.toLowerCase() + ' at 9am every morning. ' + story.pattern.substring(0, 80) + '...\n\nBRIDGE: 9amLeads makes this possible. Sign up for your free trial today.';
+  } else if (framework === 'story') {
+    body = story.pattern + '\n\nThe lesson: ' + b1.title.toLowerCase() + ' is the difference between inconsistent revenue and predictable growth.\n\n' + story.structure;
+  } else if (framework === 'authority') {
+    body = pd.name + ' professionals trust 9amLeads to deliver exclusive leads every morning. Here is why:\n\n' + b1.desc + '\n\n' + b1.title + '. ' + trust.signal;
+  } else {
+    body = p1.title + '. ' + p1.desc + '\n\n' + b1.title + '. ' + b1.desc + '\n\n' + cta.text;
+  }
+
+  return body;
+}
+
+function generateCTA(product, platform) {
+  const options = [
+    'Start your free trial at 9amleads.com. Your first leads arrive at 9am tomorrow.',
+    'Try it free for 7 days. No card required. Visit 9amleads.com to start.',
+    'Stop paying for shared leads. Get exclusive ' + productData[product].name.toLowerCase() + ' at 9amleads.com.',
+    'Ready to transform your pipeline? Start your free trial at 9amleads.com.',
+    'Your exclusive leads are waiting. Claim your free trial at 9amleads.com.'
+  ];
+  return pickRandom(options);
+}
+
+function generateHashtags(product, platform) {
+  const base = ['#9amLeads', '#LeadGeneration', '#UKBusiness', '#BusinessGrowth', '#SalesStrategy', '#ExclusiveLeads'];
+  const productTags = { moving: ['#MovingLeads', '#Removals', '#Property', '#SSTC'], probate: ['#Probate', '#Solicitors', '#LegalLeads', '#EstateAdministration'], newbusiness: ['#NewBusiness', '#B2BLeads', '#CompaniesHouse', '#BusinessGrowth'], planning: ['#PlanningPermission', '#Construction', '#Builders', '#HomeImprovement'], tenders: ['#PublicTenders', '#GovernmentContracts', '#TenderAlert', '#UKProcurement'], general: ['#Leads', '#Sales', '#Marketing', '#Business'] };
+  return [...base, ...(productTags[product] || productTags.general)].slice(0, 8).join(' ');
+}
+
+function generateImageConcept(product, category) {
+  const concepts = {
+    general: ['Professional laptop with dashboard showing lead metrics - dark theme, blue accent glowing charts', 'Split screen: frustrated business owner on phone vs confident professional receiving leads', 'Calendar showing 9am with lead delivery notification - clean SaaS style UI mockup'],
+    moving: ['House with moving truck icon, glowing blue data stream showing lead flow', 'UK map with postcode pins lighting up - data visualization style', 'Before/after: empty calendar vs full calendar with booking confirmations'],
+    probate: ['Legal professional reviewing digital lead sheet with estate values', 'Shield and document icon with flowing data streams - trust and security theme', 'Court building silhouette with digital overlay showing real-time lead alerts'],
+    newbusiness: ['Digital office with Companies House data feed showing new registrations', 'Network visualization of B2B connections flowing into CRM dashboard', 'Startup rocket ship with data metrics dashboard background'],
+    planning: ['Architectural blueprints with digital overlay showing planning applications', 'Construction site with augmented reality data displaying project details', 'House extension concept with before/after visualization and data points'],
+    tenders: ['Government building silhouette with contract document digital overlay', 'Dashboard showing tender alerts with value metrics and deadlines', 'Handshake icon with data streams - business contract awarded visualization']
+  };
+  return concepts[product] || concepts.general;
+}
+
+function formatForPlatform(platform, content, hashtags) {
+  const p = contentTemplates[platform];
+  if (platform === 'x') {
+    const lines = content.split('\n').filter(l => l.trim());
+    let xPost = lines.map(l => l.replace(/^[A-Z]+:\s*/, '')).join('\n\n');
+    if (xPost.length > 220) xPost = xPost.substring(0, 217) + '...';
+    return xPost + '\n\n' + hashtags.split(' ').slice(0, 3).join(' ');
+  }
+  if (platform === 'tiktok') {
+    const lines = content.split('\n').filter(l => l.trim());
+    return lines.map(l => l.replace(/^[A-Z]+:\s*/, '')).join('.\n').substring(0, 280) + '\n\n' + hashtags;
+  }
+  if (platform === 'instagram') {
+    return content + '\n\n.\n.\n.\n' + hashtags;
+  }
+  return content + '\n\n' + hashtags;
+}
+
+function generateContent() {
+  const loading = document.getElementById('gen-loading');
+  const progress = document.getElementById('gen-progress');
+  loading.style.display = 'flex';
+
+  setTimeout(() => {
+    const platform = document.getElementById('gen-platform').value;
+    const product = document.getElementById('gen-product').value;
+    const category = document.getElementById('gen-category').value;
+    const framework = document.getElementById('gen-framework').value;
+    const tone = document.getElementById('gen-tone').value;
+    const length = document.getElementById('gen-length').value;
+    const pd = productData[product];
+    const pf = contentTemplates[platform];
+
+    const hook = generateHook(product);
+    const body = generateBody(framework, product, category, tone);
+    const cta = generateCTA(product, platform);
+    const hashtags = generateHashtags(product, platform);
+    const imgConcept = generateImageConcept(product, category);
+
+    let rawContent = '';
+    if (length === 'short') {
+      const lines = (hook + '\n\n' + body + '\n\n' + cta).split('\n').filter(l => l.trim());
+      rawContent = lines.slice(0, 4).join('\n\n');
+    } else if (length === 'long') {
+      rawContent = hook + '\n\n' + body + '\n\n' + cta;
+    } else {
+      const lines = (hook + '\n\n' + body + '\n\n' + cta).split('\n').filter(l => l.trim());
+      rawContent = lines.slice(0, 8).join('\n\n');
+    }
+
+    const formatted = formatForPlatform(platform, rawContent, hashtags);
+
+    lastGenerated = {
+      platform, product, category, framework, tone,
+      content: formatted,
+      hashtags,
+      imageConcept: imgConcept,
+      created: new Date().toISOString(),
+      status: 'draft'
+    };
+
+    const preview = document.getElementById('gen-preview');
+    const postHTML = renderSocialPostHTML({
+      platform: platform, content: formatted, product: product, framework: framework,
+      imageConcept: { visual: imgConcept }
+    });
+    preview.innerHTML = '<div style="margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap">' +
+      '<span class="badge badge-blue">' + pf.name + '</span>' +
+      '<span class="badge badge-green">' + framework.toUpperCase() + '</span>' +
+      '<span class="badge badge-amber">' + category + '</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:center;margin-bottom:12px">' + postHTML + '</div>' +
+      '<div style="padding:12px;border-top:1px solid var(--border)">' +
+      '<p style="font-size:10px;color:var(--muted)">🎯 ' + pd.name + ' · ' + tone + ' tone · ' + pf.style + '</p></div>';
+
+    const imgEl = document.getElementById('gen-image-concept');
+    imgEl.innerHTML = '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
+      '<div style="flex:1;min-width:200px;background:linear-gradient(135deg,rgba(14,165,233,0.1),rgba(2,132,199,0.05));border:1px solid rgba(14,165,233,0.15);border-radius:8px;padding:14px">' +
+      '<p style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px">&#127912; Visual Concept</p>' +
+      '<p style="font-size:11px;color:var(--text2);line-height:1.6">' + imgConcept + '</p></div>' +
+      '<div style="flex:0 0 auto"><p style="font-size:10px;color:var(--muted);margin-bottom:6px;font-weight:600">AI PROMPTS</p>' +
+      '<div style="display:flex;flex-direction:column;gap:4px">' +
+      '<span class="badge badge-blue" style="cursor:pointer" onclick="alert(\'Midjourney prompt ready\')">Midjourney</span>' +
+      '<span class="badge badge-green" style="cursor:pointer" onclick="alert(\'DALL-E prompt ready\')">DALL-E 3</span>' +
+      '<span class="badge badge-amber" style="cursor:pointer" onclick="alert(\'Ideogram prompt ready\')">Ideogram</span></div></div></div>' +
+      '<div style="margin-top:10px">' + renderSocialPostHTML({
+        platform: platform, content: imgConcept, product: product, framework: framework
+      }) + '</div>';
+
+    lastGenerated.imageConcept = { visual: imgConcept, prompts: { midjourney: 'Midjourney prompt', dalle: 'DALL-E prompt', ideogram: 'Ideogram prompt' } };
+
+    loading.style.display = 'none';
+  }, 1200);
+}
+
+function copyContent() {
+  if (!lastGenerated) return;
+  navigator.clipboard.writeText(lastGenerated.content).then(() => {
+    const btn = document.querySelector('#page-generator .btn-outline');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> Copied';
+    setTimeout(() => btn.innerHTML = orig, 2000);
+  });
+}
+
+function saveDraft() {
+  if (!lastGenerated) return;
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  lastGenerated.id = 'draft_' + Date.now();
+  lastGenerated.status = lastGenerated.status || 'draft';
+  drafts.push(JSON.parse(JSON.stringify(lastGenerated)));
+  localStorage.setItem('mh_drafts', JSON.stringify(drafts));
+  const btn = document.querySelector('#genBtn');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-check"></i> Saved to Drafts';
+  setTimeout(() => btn.innerHTML = orig, 2000);
+}
+
+// ===== PHASE 5: CONTENT APPROVAL WORKFLOW =====
+
+function getStatusBadge(status) {
+  const m = { draft: 'badge-amber', review: 'badge-blue', approved: 'badge-green', scheduled: 'badge-blue', published: 'badge-green', archived: 'badge-red' };
+  return '<span class="badge ' + (m[status] || 'badge-amber') + '">' + (status || 'draft') + '</span>';
+}
+
+function submitForReview(id) {
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const idx = drafts.findIndex(d => d.id === id);
+  if (idx > -1) {
+    drafts[idx].status = 'review';
+    localStorage.setItem('mh_drafts', JSON.stringify(drafts));
+    loadDrafts();
+    loadApprovals();
+  }
+}
+
+function approveContent(id) {
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const idx = drafts.findIndex(d => d.id === id);
+  if (idx > -1) {
+    drafts[idx].status = 'approved';
+    drafts[idx].approvedAt = new Date().toISOString();
+    localStorage.setItem('mh_drafts', JSON.stringify(drafts));
+    loadApprovals();
+  }
+}
+
+function rejectContent(id) {
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const idx = drafts.findIndex(d => d.id === id);
+  if (idx > -1) {
+    drafts[idx].status = 'draft';
+    drafts[idx].rejectedAt = new Date().toISOString();
+    localStorage.setItem('mh_drafts', JSON.stringify(drafts));
+    loadApprovals();
+  }
+}
+
+function deleteContent(id) {
+  if (!confirm('Delete this content permanently?')) return;
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const filtered = drafts.filter(d => d.id !== id);
+  localStorage.setItem('mh_drafts', JSON.stringify(filtered));
+  const active = document.querySelector('.content-panel.active');
+  if (active && active.id === 'page-drafts') loadDrafts();
+  if (active && active.id === 'page-approval') loadApprovals();
+}
+
+function duplicateContent(id) {
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const idx = drafts.findIndex(d => d.id === id);
+  if (idx > -1) {
+    const copy = JSON.parse(JSON.stringify(drafts[idx]));
+    copy.id = 'draft_' + Date.now();
+    copy.status = 'draft';
+    copy.created = new Date().toISOString();
+    copy.originalId = id;
+    drafts.push(copy);
+    localStorage.setItem('mh_drafts', JSON.stringify(drafts));
+    loadDrafts();
+  }
+}
+
+function renderStatusActions(d, id) {
+  let btns = '';
+  if (d.status === 'draft' || !d.status) {
+    btns = '<button class="btn btn-primary btn-sm" onclick="submitForReview(\'' + id + '\')"><i class="fas fa-check-circle"></i> Submit for Review</button>';
+  } else if (d.status === 'review') {
+    btns = '<button class="btn btn-primary btn-sm" onclick="approveContent(\'' + id + '\')"><i class="fas fa-check"></i> Approve</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="rejectContent(\'' + id + '\')" style="color:var(--danger)"><i class="fas fa-xmark"></i> Reject</button>';
+  } else if (d.status === 'approved') {
+    btns = '<span class="badge badge-green">Approved ✓</span>';
+  }
+  return btns + '<button class="btn btn-outline btn-sm" onclick="deleteContent(\'' + id + '\')"><i class="fas fa-trash"></i></button>' +
+    '<button class="btn btn-outline btn-sm" onclick="duplicateContent(\'' + id + '\')"><i class="fas fa-copy"></i></button>';
+}
+
+function renderContentCard(d, showStatusActions) {
+  const id = d.id || 'no_id';
+  const ic = d.imageConcept;
+  var thumbnailHTML = '';
+  if (d.content || d.platform) {
+    var thumbData = { platform: d.platform || 'linkedin', content: d.content, product: d.product || 'general', framework: d.framework || '' };
+    if (typeof d.imageConcept === 'object') thumbData.imageConcept = d.imageConcept;
+    thumbnailHTML = '<div style="display:flex;gap:10px;margin-bottom:6px">' +
+      renderSocialPostHTML(thumbData, 100) +
+      '<div style="flex:1;min-width:0"><div style="white-space:pre-wrap;font-size:12px;color:var(--text2);line-height:1.6;max-height:48px;overflow:hidden">' + (d.content || '').substring(0, 120) + '...</div></div></div>';
+  }
+  return '<div class="kb-card" style="cursor:default"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">' +
+    getStatusBadge(d.status) +
+    '<span class="badge badge-blue">' + (d.platform || 'general') + '</span>' +
+    '<span class="badge badge-green">' + (d.framework || 'AIDA').toUpperCase() + '</span>' +
+    '<span style="margin-left:auto;font-size:10px;color:var(--muted)">' + (d.created ? new Date(d.created).toLocaleDateString() : '') + '</span></div>' +
+    thumbnailHTML +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap">' + (showStatusActions !== false ? renderStatusActions(d, id) : '') + '</div></div>';
+}
+
+// ===== DRAFTS PAGE =====
+function loadDrafts() {
+  const el = document.getElementById('drafts-content');
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  if (!drafts.length) { el.innerHTML = '<p class="text-muted" style="text-align:center;padding:24px">No draft content yet. Generate content to see drafts here.</p>'; return; }
+  const filtered = drafts.filter(d => d.status === 'draft' || !d.status);
+  if (!filtered.length) { el.innerHTML = '<p class="text-muted" style="text-align:center;padding:24px">No drafts. Generate content or check the approval page for submitted items.</p>'; return; }
+  el.innerHTML = filtered.reverse().map(d => renderContentCard(d, true)).join('');
+}
+
+function loadApprovals() {
+  const el = document.getElementById('approval-content');
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const pending = drafts.filter(d => d.status === 'review');
+  if (!pending.length) { el.innerHTML = '<p class="text-muted" style="text-align:center;padding:24px">No content pending approval. Submit drafts for review to see them here.</p>'; return; }
+  el.innerHTML = pending.reverse().map(d => renderContentCard(d, true)).join('');
+}
+
+function deleteDraft(idx) {
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  drafts.splice(idx, 1);
+  localStorage.setItem('mh_drafts', JSON.stringify(drafts));
+  loadDrafts();
+}
+
+// Override switchPage to load drafts when viewing drafts page
+// switchPage handles all page loading natively (see definition above)
+
+// ===== PHASE 4: IMAGE & CREATIVE GENERATION =====
+
+const imageConcepts = {
+  general: { visual: 'SaaS dashboard showing lead metrics with blue/teal gradient glow', composition: 'Split screen: frustrated phone call vs confident professional at desk with lead sheet', dof: 'Deep depth of field with sharp focus on data dashboard foreground', lighting: 'Dramatic blue ambient light from screen, warm rim light', mood: 'Professional, premium, confident', colors: '#0ea5e9, #0284c7, #1a1a2e' },
+  moving: { visual: 'House silhouette with glowing data streams showing lead flow, orange/blue contrast', composition: 'Removal truck icon with UK map postcode pins lighting up sequentially', dof: 'Shallow focus on property details overlay, soft urban background', lighting: 'Morning golden hour lighting, warm amber accents', mood: 'Energetic, opportunistic, urgent', colors: '#ff6b35, #0ea5e9, #1a1a2e' },
+  probate: { visual: 'Legal document with estate values glowing, purple/gold professional scheme', composition: 'Shield icon over court building facade with real-time data feed overlay', dof: 'Mid-depth, document details in focus with blurred legal background', lighting: 'Soft office lighting with warm desk lamp accent', mood: 'Trustworthy, serious, authoritative', colors: '#a855f7, #d946ef, #1a1a2e' },
+  newbusiness: { visual: 'Digital network of B2B connections flowing into CRM, cyan/teal scheme', composition: 'Startup rocket ship with metrics dashboard background, graph lines', dof: 'Deep focus, network nodes sharp throughout', lighting: 'Cool modern office lighting, screen glow dominant', mood: 'Innovative, fast-paced, growth-oriented', colors: '#06b6d4, #0891b2, #1a1a2e' },
+  planning: { visual: 'Architectural blueprint with digital overlay of planning approvals, green accent', composition: 'Construction site mockup with augmented reality data showing project details', dof: 'Mixed depth, blueprint foreground sharp, construction background soft', lighting: 'Natural daylight, warm afternoon tones', mood: 'Reliable, professional, constructive', colors: '#10b981, #059669, #1a1a2e' },
+  tenders: { visual: 'Government building with contract document overlay, indigo/gold scheme', composition: 'Handshake icon with data streams, monetary values flowing, official document aesthetic', dof: 'Sharp center focus on contract details, blurred civic background', lighting: 'Formal office lighting, authoritative', mood: 'Official, credible, established', colors: '#6366f1, #8b5cf6, #1a1a2e' }
+};
+
+function switchMediaTab(tab) {
+  document.querySelectorAll('#page-media .tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('#page-media .content-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('media-' + tab).style.display = 'block';
+}
+
+function generateImageConcept() {
+  const product = document.getElementById('media-product').value;
+  const style = document.getElementById('media-style').value;
+  const format = document.getElementById('media-format').value;
+  const tool = document.getElementById('media-tool').value;
+  
+  // Try to generate a real AI image via the API
+  var btn = document.querySelector('#page-media .btn-primary');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+  btn.disabled = true;
+  
+  var pd = productData[product] || {name: '9amLeads'};
+  var apiPrompt = 'A professional ' + style + ' marketing image for ' + pd.name + '. The image should show a ' + (product === 'moving' ? 'removal truck outside a UK home, warm afternoon light' : product === 'probate' ? 'solicitor or legal professional at a desk with documents, professional office' : product === 'newbusiness' ? 'modern office with digital network visualization, tech startup vibe' : product === 'planning' ? 'architectural blueprints on a desk with construction site background' : product === 'tenders' ? 'government building with contract documents, professional official setting' : 'professional business setting with charts and data') + '. Premium quality, photorealistic, commercial photography style, dark background with blue accent lighting. No text in the image.';
+  
+  fetch(API + '/api/ai/generate-image', {
+    method: 'POST',
+    headers: adminHeaders(),
+    body: JSON.stringify({ prompt: apiPrompt, size: '1024x1024' })
+  }).then(function(r) { return r.json(); }).then(function(resp) {
+    btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate Image Concept';
+    btn.disabled = false;
+    
+    if (resp.url) {
+      // Show the real AI-generated image
+      preview.innerHTML = '<div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap">' +
+        '<span class="badge badge-blue">' + pd.name + '</span>' +
+        '<span class="badge badge-green">DALL-E 3</span>' +
+        '<span class="badge badge-amber">1024x1024</span></div>' +
+        '<img src="' + resp.url + '" style="width:100%;max-width:560px;border-radius:8px;display:block" alt="AI generated image">' +
+        '<div style="margin-top:8px;display:flex;gap:6px">' +
+        '<button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(\'' + resp.url + '\')"><i class="fas fa-copy"></i> Copy URL</button>' +
+        '</div>';
+    } else {
+      // Fall back to concept description
+      fallbackImageConcept(product, style, format, tool);
+    }
+  }).catch(function() {
+    btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate Image Concept';
+    btn.disabled = false;
+    fallbackImageConcept(product, style, format, tool);
+  });
+}
+
+// Fallback image concept generator (same as before)
+function fallbackImageConcept(product, style, format, tool) {
+  const pd = productData[product];
+  const ic = imageConcepts[product];
+
+  const formatSizes = { square: '1:1 aspect ratio, 1080x1080px', landscape: '16:9 aspect ratio, 1920x1080px', portrait: '4:5 aspect ratio, 1080x1350px', story: '9:16 aspect ratio, 1080x1920px' };
+
+  const toolPrompts = {
+    midjourney: 'Midjourney Prompt: "A professional ' + style + ' marketing visual for ' + pd.name + '. ' + ic.visual + '. ' + ic.composition + '. ' + ic.lighting + '. ' + ic.mood + '. ' + formatSizes[format] + '. Dark background with ' + ic.colors + ' color scheme. High quality, 8k, commercial photography style, photorealistic. --ar ' + (format === 'square' ? '1:1' : format === 'landscape' ? '16:9' : format === 'portrait' ? '4:5' : '9:16') + ' --v 6.1 --style raw --s 250"',
+    dalle: 'DALL-E 3 Prompt: "A professional ' + style + ' marketing visual for ' + pd.name + '. The image shows ' + ic.visual + '. ' + ic.composition + '. The mood is ' + ic.mood + '. ' + formatSizes[format] + '. Dark background, ' + ic.colors + ' color palette. Premium SaaS aesthetic, clean and modern. No text."',
+    ideogram: 'Ideogram Prompt: "A ' + style + ' marketing image for ' + pd.name + '. ' + ic.visual + '. ' + ic.composition + '. ' + ic.mood + ' mood. ' + formatSizes[format] + '. Color palette: ' + ic.colors + '. Professional, clean, premium look. No text overlay. Photorealistic style."',
+    flux: 'Flux Prompt: "A ' + style + ' ' + pd.name.toLowerCase() + ' marketing visual. ' + ic.visual + '. ' + ic.composition + '. The image conveys ' + ic.mood + '. ' + formatSizes[format] + '. Colors: ' + ic.colors + '. High quality, commercial grade, professional marketing image."'
+  };
+
+  const platformMap = { square:'instagram', landscape:'linkedin', portrait:'facebook', story:'tiktok' };
+  const mockupPlatform = platformMap[format] || 'instagram';
+  const mockupHTML = renderSocialPostHTML({
+    platform: mockupPlatform, content: ic.visual + '. ' + ic.composition, product: product,
+    imageConcept: ic.visual
+  });
+
+  const preview = document.getElementById('media-preview');
+  preview.innerHTML = '<div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap">' +
+    '<span class="badge badge-blue">' + pd.name + '</span>' +
+    '<span class="badge badge-green">' + style + '</span>' +
+    '<span class="badge badge-amber">' + formatSizes[format] + '</span></div>' +
+    '<div style="display:flex;justify-content:center;margin-bottom:12px">' + mockupHTML + '</div>' +
+    '<div style="margin-bottom:10px"><p style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px">Visual Description</p><p style="font-size:12px;color:var(--text2);line-height:1.6">' + ic.visual + '. ' + ic.composition + '. ' + ic.lighting + '. ' + ic.dof + '</p></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px"><p style="font-size:10px;color:var(--muted);margin-bottom:4px;font-family:monospace">' + toolPrompts[tool].substring(0, 100) + '...</p><p style="font-size:10px;color:var(--primary);cursor:pointer" onclick="copyPrompt(\'' + tool + '\')"><i class="fas fa-copy"></i> Copy full prompt</p></div>';
+
+  const list = document.getElementById('media-concepts');
+  const concepts = JSON.parse(localStorage.getItem('mh_concepts') || '[]');
+  concepts.unshift({ product, style, format, tool, visual: ic.visual, created: new Date().toISOString() });
+  if (concepts.length > 20) concepts.pop();
+  localStorage.setItem('mh_concepts', JSON.stringify(concepts));
+  renderMediaConcepts();
+}
+
+function renderMediaConcepts() {
+  const list = document.getElementById('media-concepts');
+  const concepts = JSON.parse(localStorage.getItem('mh_concepts') || '[]');
+  if (!concepts.length) { list.innerHTML = '<p class="text-muted" style="text-align:center;padding:24px;font-size:12px">Generate image concepts above. Each concept includes a visual description and AI prompts for all major tools.</p>'; return; }
+  list.innerHTML = concepts.map((c, i) =>
+    '<div class="kb-card" style="cursor:default;padding:12px;margin-bottom:6px"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">' +
+    '<span class="badge badge-blue">' + c.product + '</span><span class="badge badge-green">' + c.style + '</span>' +
+    '<span style="margin-left:auto;font-size:9px;color:var(--muted)">' + new Date(c.created).toLocaleDateString() + '</span></div>' +
+    '<p style="font-size:11px;color:var(--text2);line-height:1.5">' + c.visual.substring(0, 80) + '...</p></div>'
+  ).join('');
+}
+
+function generateCarousel() {
+  const topic = document.getElementById('carousel-topic').value;
+  const slides = parseInt(document.getElementById('carousel-slides').value);
+  const carouselData = {
+    tips: { title: '3 Lead Gen Tips That Actually Work', slides: ['Slide 1: Call within 30 minutes. Speed triples your conversion rate.', 'Slide 2: Personalise every pitch. Generic scripts lose. Mention their specific situation.', 'Slide 3: Follow up. Most sales happen on the 2nd or 3rd touch.', '', 'Bonus: Try 7 days free at 9amleads.com'] },
+    mistakes: { title: 'Common Lead Gen Mistakes Costing You Money', slides: ['Slide 1: Paying for the same lead as your competitors on shared platforms.', 'Slide 2: Not calling within 30 minutes. Speed is your biggest advantage.', 'Slide 3: Using generic scripts. Personalised pitches convert 3x better.', '', 'Fix: Get exclusive leads at 9amleads.com'] },
+    comparison: { title: '9amLeads vs Traditional Lead Gen', slides: ['Slide 1: Shared Platforms: Same lead sold to 3-5 businesses. Price war follows.', 'Slide 2: 9amLeads: Exclusive lead sent to YOU alone. No competition. Better margins.', 'Slide 3: Shared Platforms: Pay per lead. Unpredictable costs.', 'Slide 4: 9amLeads: Fixed weekly pricing from £25/week. Predictable and profitable.', '', 'See the difference: 9amleads.com'] },
+    process: { title: 'How 9amLeads Works in 3 Simple Steps', slides: ['Slide 1: We source leads from official UK data sources daily.', 'Slide 2: We match them to your business based on your criteria and postcode areas.', 'Slide 3: Your exclusive leads arrive at 9am every morning. You start calling.', '', 'Start your free trial at 9amleads.com'] },
+    results: { title: 'Real Results from 9amLeads Customers', slides: ['Slide 1: "Made £3,600 in my first week" - Removal Company', 'Slide 2: "4 new clients in our first month" - Probate Practice', 'Slide 3: "Won £1.4M in contracts" - Construction Company', '', 'Join 500+ UK businesses. Start at 9amleads.com'] }
+  };
+
+  const data = carouselData[topic] || carouselData.tips;
+  const output = document.getElementById('carousel-output');
+  output.innerHTML = '<div class="card"><h3>' + data.title + '</h3>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:12px">' +
+    data.slides.filter(s => s).map((s, i) => '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center"><span class="badge badge-blue" style="margin-bottom:6px">' + (i + 1) + ' / ' + (data.slides.filter(x => x).length) + '</span><p style="font-size:11px;color:var(--text2);line-height:1.5">' + s.replace(/^Slide \d+: /, '') + '</p></div>').join('') +
+    '</div><button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="copyCarousel()"><i class="fas fa-copy"></i> Copy All Slides</button></div>';
+  window.lastCarousel = data;
+}
+
+function copyCarousel() {
+  if (!window.lastCarousel) return;
+  const text = window.lastCarousel.title + '\n\n' + window.lastCarousel.slides.filter(s => s).map((s, i) => (i + 1) + '. ' + s.replace(/^Slide \d+: /, '')).join('\n');
+  navigator.clipboard.writeText(text);
+}
+
+function generateInfographic() {
+  const type = document.getElementById('info-type').value;
+  const product = document.getElementById('info-product').value;
+  const pd = productData[product];
+
+  const infographics = {
+    statistics: { title: pd.name + ' in Numbers', data: ['85% of leads converted within the first week of contact', '9am delivery means you call before competitors even know', 'Fixed pricing from £25/week vs £500+ on traditional platforms', '20-30% conversion rate with exclusive leads vs 2-5% shared'], layout: 'Bar charts with key metrics, large numbers, comparison visual' },
+    process: { title: 'How ' + pd.name + ' Works', data: ['Step 1: Data sourced from ' + pd.source, 'Step 2: Matched to your business and postcode areas', 'Step 3: Exclusive leads delivered at 9am daily', 'Step 4: You call within 30 minutes and win'], layout: 'Simple flow chart with arrows, 4 stages, icon per step' },
+    comparison: { title: pd.name + ': Exclusive vs Shared', data: ['Exclusive: You are the only business contacting the prospect', 'Shared: 3-5 businesses compete for the same customer', 'Exclusive: Fixed weekly pricing from £25/week', 'Shared: Pay per lead, costs unpredictable'], layout: 'Split screen comparison, green vs red, column layout' },
+    timeline: { title: 'Your First Week with ' + pd.name, data: ['Day 1 - Sign up (2 minutes, no card required)', 'Day 2 - First leads arrive at 9am', 'Day 3 - Start calling and converting', 'Day 7 - See results, upgrade or continue trial'], layout: 'Horizontal timeline with dates, icons, brief descriptions' },
+    checklist: { title: 'Lead Conversion Checklist for ' + pd.name, data: ['Call within 30 minutes of receiving lead', 'Personalise your pitch using lead details', 'Follow up on day 2 if no answer', 'Track your conversion rate in dashboard', 'Review postcode areas monthly'], layout: 'Checkbox list with icons, clean minimalist design' }
+  };
+
+  const data = infographics[type] || infographics.statistics;
+  const output = document.getElementById('info-output');
+  output.innerHTML = '<div class="card"><h3>' + data.title + '</h3><div class="grid-2" style="margin-top:12px"><div><p class="text-muted" style="font-size:11px;margin-bottom:8px;font-weight:600">Content</p>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">' + data.data.map(d => '<p style="font-size:11px;color:var(--text2);padding:6px 0;border-bottom:1px solid var(--border)">' + d + '</p>').join('') + '</div></div>' +
+    '<div><p class="text-muted" style="font-size:11px;margin-bottom:8px;font-weight:600">Layout & Design Notes</p><div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px"><p style="font-size:11px;color:var(--text2);line-height:1.6">' + data.layout + '</p><p style="font-size:11px;color:var(--text2);margin-top:12px"><strong style="color:var(--text)">AI Prompt:</strong> Create a professional ' + type + ' infographic about ' + pd.name + '. ' + data.layout + '. Color scheme: ' + (imageConcepts[product] ? imageConcepts[product].colors : '#0ea5e9, #1a1a2e') + '. Dark background, white text, premium B2B SaaS style.</p></div></div></div>' +
+    '<button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="navigator.clipboard.writeText(document.getElementById(\'info-output\').querySelector(\'p:last-child\').textContent)"><i class="fas fa-copy"></i> Copy AI Prompt</button></div>';
+}
+
+function generateVideoConcept() {
+  const platform = document.getElementById('video-platform').value;
+  const duration = parseInt(document.getElementById('video-duration').value);
+  const product = document.getElementById('video-product').value;
+  const pd = productData[product];
+
+  const scripts = {
+    general: {
+      hook: 'Are you still paying for the same leads as your competitors?',
+      body: 'Every day, businesses waste money on shared lead platforms where 3-5 companies fight for the same customer. Meanwhile, 9amLeads customers get exclusive leads delivered at 9am every morning. No competition. No price wars. Just fresh opportunities. Our customers report 20-30% conversion rates because they are the only business contacting the prospect.',
+      close: 'Stop sharing leads. Start winning. Start your free trial at 9amleads.com.'
+    },
+    moving: {
+      hook: 'Homeowners just sold their property. Are you calling them before any other removal company?',
+      body: 'Every day, thousands of properties go SSTC on Rightmove and Zoopla. These homeowners urgently need removal quotes. With 9amLeads, their details land in your inbox at 9am. You call them before any competitor even knows they are moving. One removal company made £3,600 in their first week.',
+      close: 'Be first. Be exclusive. Start your free trial at 9amleads.com.'
+    }
+  };
+
+  const s = scripts[product] || scripts.general;
+  const wordCount = duration === 15 ? 30 : duration === 30 ? 60 : 120;
+  const shortBody = s.body.split(' ').slice(0, wordCount).join(' ') + '.';
+
+  const platformNotes = {
+    instagram: 'Vertical 9:16 video. Text overlay on first 3 seconds. Fast cuts, trending audio. On-screen captions throughout.',
+    tiktok: 'Vertical 9:16. Hook in first 2 seconds. Green screen or direct to camera. Fast paced editing. Trending sound.',
+    linkedin: 'Horizontal 16:9. Professional setting. Direct to camera. Slower pace. Subtle background music.',
+    youtube: 'Vertical 9:16. Hook in first 3 seconds. Text on screen. Fast cuts. Energetic background music.'
+  };
+
+  const output = document.getElementById('video-output');
+  output.innerHTML = '<div style="margin-bottom:12px"><span class="badge badge-blue">' + platform + '</span> <span class="badge badge-green">' + duration + 's</span> <span class="badge badge-amber">' + pd.name + '</span></div>' +
+    '<div style="margin-bottom:12px"><p class="text-muted" style="font-size:10px;font-weight:600;margin-bottom:4px">PLATFORM NOTES</p><p style="font-size:11px;color:var(--text2)">' + platformNotes[platform] + '</p></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center"><p style="font-size:9px;color:var(--muted);margin-bottom:4px">HOOK</p><p style="font-size:11px;color:var(--text)">' + s.hook.substring(0, 50) + '...</p></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center"><p style="font-size:9px;color:var(--muted);margin-bottom:4px">BODY</p><p style="font-size:11px;color:var(--text)">' + shortBody.substring(0, 60) + '...</p></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center"><p style="font-size:9px;color:var(--muted);margin-bottom:4px">CTA</p><p style="font-size:11px;color:var(--text)">' + s.close.substring(0, 40) + '...</p></div></div>' +
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px"><p class="text-muted" style="font-size:10px;font-weight:600;margin-bottom:6px">FULL SCRIPT</p><p style="font-size:12px;color:var(--text2);line-height:1.7;white-space:pre-wrap">' + s.hook + '\n\n' + shortBody + '\n\n' + s.close + '</p></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><p style="font-size:10px;color:var(--muted)"><strong>Cover:</strong> ' + s.hook.substring(0, 40) + '...</p><p style="font-size:10px;color:var(--muted)"><strong>Hashtags:</strong> #9amLeads #LeadGen #' + pd.name.replace(/\s/g, '') + '</p><p style="font-size:10px;color:var(--muted)"><strong>Music:</strong> Trending up-beat instrumental, energetic</p></div>';
+}
+
+function copyPrompt(tool) {
+  const product = document.getElementById('media-product').value;
+  const style = document.getElementById('media-style').value;
+  const format = document.getElementById('media-format').value;
+  const ic = imageConcepts[product];
+  const formatSizes = { square: '1:1 aspect ratio, 1080x1080px', landscape: '16:9 aspect ratio, 1920x1080px', portrait: '4:5 aspect ratio, 1080x1350px', story: '9:16 aspect ratio, 1080x1920px' };
+  const pd = productData[product];
+
+  const prompts = {
+    midjourney: 'Midjourney Prompt: "A professional ' + style + ' marketing visual for ' + pd.name + '. ' + ic.visual + '. ' + ic.composition + '. ' + ic.lighting + '. ' + ic.mood + '. ' + formatSizes[format] + '. Dark background with ' + ic.colors + ' color scheme. High quality, 8k, commercial photography style. --ar ' + (format === 'square' ? '1:1' : format === 'landscape' ? '16:9' : format === 'portrait' ? '4:5' : '9:16') + ' --v 6.1 --style raw --s 250"',
+    dalle: 'DALL-E 3 Prompt: "A professional ' + style + ' marketing visual for ' + pd.name + '. The image shows ' + ic.visual + '. ' + ic.composition + '. The mood is ' + ic.mood + '. ' + formatSizes[format] + '. Dark background, ' + ic.colors + ' color palette. Premium SaaS aesthetic, clean and modern. No text."',
+    ideogram: 'Ideogram Prompt: "A ' + style + ' marketing image for ' + pd.name + '. ' + ic.visual + '. ' + ic.composition + '. ' + ic.mood + ' mood. ' + formatSizes[format] + '. Color palette: ' + ic.colors + '. Professional, clean, premium look. No text overlay. Photorealistic style."',
+    flux: 'Flux Prompt: "A ' + style + ' ' + pd.name.toLowerCase() + ' marketing visual. ' + ic.visual + '. ' + ic.composition + '. The image conveys ' + ic.mood + '. ' + formatSizes[format] + '. Colors: ' + ic.colors + '. High quality, commercial grade, professional marketing image."'
+  };
+
+  navigator.clipboard.writeText(prompts[tool]);
+  alert(tool + ' prompt copied to clipboard!');
+}
+
+// ===== PHASE 6: CONTENT CALENDAR =====
+
+let calendarView = 'week';
+let calendarDate = new Date();
+
+function switchCalendarView(view) {
+  calendarView = view;
+  document.querySelectorAll('#page-calendar .tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  renderCalendar();
+}
+
+function calendarNav(dir) {
+  if (calendarView === 'day') calendarDate.setDate(calendarDate.getDate() + dir);
+  else if (calendarView === 'week') calendarDate.setDate(calendarDate.getDate() + (dir * 7));
+  else calendarDate.setMonth(calendarDate.getMonth() + dir);
+  renderCalendar();
+}
+
+function getCalendarEvents() {
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const scheduled = JSON.parse(localStorage.getItem('mh_scheduled') || '[]');
+  return [...drafts.filter(d => d.scheduledDate || d.status === 'published'), ...scheduled];
+}
+
+function renderCalendar() {
+  const container = document.getElementById('cal-content');
+  const label = document.getElementById('cal-date-label');
+  const platformFilter = document.getElementById('cal-filter-platform').value;
+  const statusFilter = document.getElementById('cal-filter-status').value;
+  const events = getCalendarEvents().filter(e => {
+    if (platformFilter && e.platform !== platformFilter) return false;
+    if (statusFilter && e.status !== statusFilter) return false;
+    return true;
+  });
+
+  let html = '';
+  if (calendarView === 'day') {
+    label.textContent = calendarDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const dayEvents = events.filter(e => {
+      if (!e.scheduledDate) return false;
+      const ed = new Date(e.scheduledDate);
+      return ed.toDateString() === calendarDate.toDateString();
+    });
+    html = '<div class="card"><p style="font-size:13px;font-weight:600;margin-bottom:12px">Schedule for ' + label.textContent + '</p>';
+    if (!dayEvents.length) html += '<p class="text-muted" style="font-size:12px">No content scheduled for this day.</p>';
+    else html += dayEvents.map(e => '<div class="kb-card" style="cursor:default;padding:12px;margin-bottom:6px"><div style="display:flex;align-items:center;gap:6px"><span class="badge badge-blue">' + e.platform + '</span>' + getStatusBadge(e.status) + '<span style="margin-left:auto;font-size:10px;color:var(--muted)">' + (e.scheduledTime || '09:00') + '</span></div><p style="font-size:11px;color:var(--text2);margin-top:4px">' + (e.content || '').substring(0, 100) + '...</p></div>').join('');
+    html += '</div>';
+  } else if (calendarView === 'week') {
+    const startOfWeek = new Date(calendarDate);
+    startOfWeek.setDate(calendarDate.getDate() - calendarDate.getDay() + 1);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    label.textContent = startOfWeek.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' - ' + endOfWeek.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">' +
+      days.map(d => '<div style="padding:6px;text-align:center;font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase">' + d + '</div>').join('');
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayEvents = events.filter(e => e.scheduledDate && e.scheduledDate.startsWith(dateStr));
+      const isToday = date.toDateString() === new Date().toDateString();
+      html += '<div style="background:' + (isToday ? 'rgba(14,165,233,0.05)' : 'var(--bg2)') + ';border:1px solid ' + (isToday ? 'rgba(14,165,233,0.2)' : 'var(--border)') + ';border-radius:6px;min-height:90px;padding:6px;cursor:pointer" onclick="scheduleOnDate(\'' + dateStr + '\')">' +
+        '<div style="font-size:10px;color:' + (isToday ? 'var(--primary)' : 'var(--muted)') + ';font-weight:' + (isToday ? '700' : '400') + ';margin-bottom:4px">' + date.getDate() + '</div>' +
+        dayEvents.slice(0, 3).map(e => '<div style="font-size:8px;padding:2px 4px;margin-bottom:2px;border-radius:3px;background:rgba(14,165,233,0.06);color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (e.platform || '') + ': ' + (e.content || '').substring(0, 20) + '...</div>').join('') +
+        (dayEvents.length > 3 ? '<div style="font-size:8px;color:var(--muted);padding:2px 4px">+' + (dayEvents.length - 3) + ' more</div>' : '') +
+        '</div>';
+    }
+    html += '</div>';
+  } else {
+    label.textContent = calendarDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    const firstDay = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1);
+    const lastDay = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 0);
+    const startPad = (firstDay.getDay() + 6) % 7;
+    const daysInMonth = lastDay.getDate();
+    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+    html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">' +
+      days.map(d => '<div style="padding:4px;text-align:center;font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase">' + d + '</div>').join('') +
+      Array(startPad).fill(0).map(() => '<div></div>').join('');
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), d);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayEvents = events.filter(e => e.scheduledDate && e.scheduledDate.startsWith(dateStr));
+      const isToday = date.toDateString() === new Date().toDateString();
+      html += '<div style="background:' + (isToday ? 'rgba(14,165,233,0.05)' : 'var(--bg2)') + ';border:1px solid ' + (isToday ? 'rgba(14,165,233,0.2)' : 'var(--border)') + ';border-radius:4px;min-height:60px;padding:4px;cursor:pointer" onclick="scheduleOnDate(\'' + dateStr + '\')">' +
+        '<div style="font-size:9px;color:' + (isToday ? 'var(--primary)' : 'var(--muted)') + ';font-weight:' + (isToday ? '700' : '400') + ';margin-bottom:2px">' + d + '</div>' +
+        dayEvents.slice(0, 2).map(e => '<div style="font-size:7px;padding:1px 3px;margin-bottom:1px;border-radius:2px;background:rgba(14,165,233,0.06);color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (e.content || '').substring(0, 15) + '...</div>').join('') +
+        (dayEvents.length > 2 ? '<div style="font-size:7px;color:var(--muted)">+' + (dayEvents.length - 2) + '</div>' : '') +
+        '</div>';
+    }
+    html += '</div>';
+  }
+  container.innerHTML = html;
+  loadApprovedItems();
+}
+
+function scheduleOnDate(dateStr) {
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const approved = drafts.filter(d => d.status === 'approved');
+  if (!approved.length) { alert('No approved content to schedule. Approve content first.'); return; }
+  const list = approved.map((d, i) => (i + 1) + '. [' + d.platform + '] ' + (d.content || '').substring(0, 50) + '...').join('\n');
+  const choice = prompt('Select item to schedule on ' + dateStr + ':\n' + list + '\n\nEnter number (1-' + approved.length + '):');
+  if (choice) {
+    const idx = parseInt(choice) - 1;
+    if (idx >= 0 && idx < approved.length) {
+      const drafts2 = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+      const realIdx = drafts2.findIndex(d => d.id === approved[idx].id);
+      if (realIdx > -1) {
+        drafts2[realIdx].scheduledDate = dateStr;
+        drafts2[realIdx].scheduledTime = '09:00';
+        drafts2[realIdx].status = 'scheduled';
+        localStorage.setItem('mh_drafts', JSON.stringify(drafts2));
+        renderCalendar();
+      }
+    }
+  }
+}
+
+function loadApprovedItems() {
+  const el = document.getElementById('cal-approved-items');
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const approved = drafts.filter(d => d.status === 'approved' && !d.scheduledDate);
+  if (!approved.length) { el.innerHTML = '<p class="text-muted" style="font-size:12px">No approved content ready to schedule.</p>'; return; }
+  el.innerHTML = approved.map(d => '<div class="kb-card" style="cursor:default;padding:10px;margin-bottom:4px"><div style="display:flex;align-items:center;gap:6px"><span class="badge badge-blue">' + (d.platform || 'general') + '</span><span style="font-size:11px;color:var(--text2);flex:1">' + (d.content || '').substring(0, 80) + '...</span><button class="btn btn-primary btn-sm" onclick="scheduleItem(\'' + d.id + '\')"><i class="fas fa-calendar-plus"></i> Schedule</button></div></div>').join('');
+}
+
+function scheduleItem(id) {
+  const date = prompt('Enter date (YYYY-MM-DD) or leave blank for tomorrow:');
+  const targetDate = date || new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  const time = prompt('Enter time (HH:MM, e.g. 09:00):') || '09:00';
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const idx = drafts.findIndex(d => d.id === id);
+  if (idx > -1) {
+    drafts[idx].scheduledDate = targetDate;
+    drafts[idx].scheduledTime = time;
+    drafts[idx].status = 'scheduled';
+    localStorage.setItem('mh_drafts', JSON.stringify(drafts));
+    renderCalendar();
+    loadApprovals();
+  }
+}
+
+function addCalendarEvent() {
+  const date = prompt('Date (YYYY-MM-DD):') || new Date().toISOString().split('T')[0];
+  const time = prompt('Time (HH:MM):') || '09:00';
+  const platform = prompt('Platform (linkedin, facebook, instagram, x, tiktok, threads):') || 'linkedin';
+  const text = prompt('Content text:') || 'New post';
+  const scheduled = JSON.parse(localStorage.getItem('mh_scheduled') || '[]');
+  scheduled.push({ id: 'sched_' + Date.now(), platform, scheduledDate: date, scheduledTime: time, content: text, status: 'scheduled', created: new Date().toISOString() });
+  localStorage.setItem('mh_scheduled', JSON.stringify(scheduled));
+  renderCalendar();
+}
+
+function bulkSchedule() {
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const approved = drafts.filter(d => d.status === 'approved' && !d.scheduledDate);
+  if (!approved.length) { alert('No approved content to schedule.'); return; }
+  const startDate = prompt('Start date (YYYY-MM-DD) or leave blank for tomorrow:');
+  const start = startDate ? new Date(startDate) : new Date(Date.now() + 86400000);
+  const daysPerWeek = prompt('Posts per week (1-7):') || '3';
+  const interval = Math.floor(7 / parseInt(daysPerWeek));
+
+  approved.forEach((item, i) => {
+    const idx = drafts.findIndex(d => d.id === item.id);
+    if (idx > -1) {
+      const d = new Date(start);
+      d.setDate(d.getDate() + (i * interval));
+      drafts[idx].scheduledDate = d.toISOString().split('T')[0];
+      drafts[idx].scheduledTime = '09:00';
+      drafts[idx].status = 'scheduled';
+    }
+  });
+  localStorage.setItem('mh_drafts', JSON.stringify(drafts));
+  renderCalendar();
+  alert('Scheduled ' + approved.length + ' items starting ' + start.toISOString().split('T')[0]);
+}
+
+// ===== PHASES 7-9: SOCIAL INTEGRATIONS + PUBLISHING + ANALYTICS =====
+
+// Phase 7: Social Account Connections
+function connectPlatform(platform) {
+  document.getElementById('status-' + platform).textContent = 'Connecting...';
+  document.getElementById('status-' + platform).style.color = 'var(--primary)';
+  setTimeout(() => {
+    const connections = JSON.parse(localStorage.getItem('mh_connections') || '{}');
+    connections[platform] = { connected: true, connectedAt: new Date().toISOString(), name: platform.charAt(0).toUpperCase() + platform.slice(1) + ' Page' };
+    localStorage.setItem('mh_connections', JSON.stringify(connections));
+    document.getElementById('status-' + platform).textContent = 'Connected ✓';
+    document.getElementById('status-' + platform).style.color = 'var(--success)';
+    document.getElementById('btn-' + platform).innerHTML = '<i class="fas fa-check"></i> Connected';
+    document.getElementById('btn-' + platform).className = 'btn btn-primary btn-sm';
+    renderConnectedAccounts();
+  }, 1200);
+}
+
+function connectScheduler(platform) {
+  const key = prompt('Enter your ' + platform + ' API key (or leave blank for demo mode):');
+  const schedulers = JSON.parse(localStorage.getItem('mh_schedulers') || '{}');
+  schedulers[platform] = { connected: true, key: key || 'demo', connectedAt: new Date().toISOString() };
+  localStorage.setItem('mh_schedulers', JSON.stringify(schedulers));
+  alert(platform + ' connected! Approved posts can now be sent to ' + platform + '.');
+}
+
+function renderConnectedAccounts() {
+  const el = document.getElementById('connected-accounts');
+  const connections = JSON.parse(localStorage.getItem('mh_connections') || '{}');
+  const platforms = Object.keys(connections);
+  if (!platforms.length) { el.innerHTML = '<p class="text-muted" style="font-size:12px;padding:8px 0">No accounts connected yet. Connect platforms above to enable auto-publishing.</p>'; return; }
+  el.innerHTML = platforms.map(p => '<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;margin-bottom:6px"><span style="color:var(--success)"><i class="fas fa-check-circle"></i></span><span style="font-size:13px">' + connections[p].name + '</span><span style="font-size:10px;color:var(--muted);margin-left:auto">Connected ' + new Date(connections[p].connectedAt).toLocaleDateString() + '</span></div>').join('');
+}
+
+// Phase 8: Scheduling & Publishing
+function loadScheduled() {
+  const el = document.getElementById('scheduled-content');
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const manual = JSON.parse(localStorage.getItem('mh_scheduled') || '[]');
+  const all = [...drafts.filter(d => d.status === 'scheduled'), ...manual.filter(m => m.status === 'scheduled')];
+  if (!all.length) { el.innerHTML = '<p class="text-muted" style="text-align:center;padding:24px">No scheduled content. Approve content and schedule it from the Content Calendar.</p>'; return; }
+  el.innerHTML = all.sort((a, b) => (a.scheduledDate || '').localeCompare(b.scheduledDate || '')).map(d =>
+    '<div class="kb-card" style="cursor:default;padding:12px;margin-bottom:6px">' +
+    '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
+    '<span class="badge badge-blue">' + (d.platform || 'general') + '</span>' +
+    getStatusBadge(d.status) +
+    '<span style="font-size:11px;color:var(--muted)">' + (d.scheduledDate || 'No date') + ' at ' + (d.scheduledTime || '09:00') + '</span>' +
+    '<span style="margin-left:auto">' +
+    '<button class="btn btn-primary btn-sm" onclick="publishNow(\'' + d.id + '\')" ' + (isDue(d) ? '' : 'disabled style="opacity:.4"') + '><i class="fas fa-rocket"></i> Publish</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="rescheduleItem(\'' + d.id + '\')"><i class="fas fa-clock"></i></button>' +
+    '</span></div>' +
+    '<p style="font-size:11px;color:var(--text2);margin-top:6px">' + (d.content || '').substring(0, 150) + '...</p></div>'
+  ).join('');
+}
+
+function isDue(item) {
+  if (!item.scheduledDate) return false;
+  const now = new Date();
+  const due = new Date(item.scheduledDate + 'T' + (item.scheduledTime || '09:00'));
+  return due <= now;
+}
+
+function publishNow(id) {
+  if (!confirm('Publish this content now?')) return;
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const idx = drafts.findIndex(d => d.id === id);
+  if (idx > -1) {
+    drafts[idx].status = 'published';
+    drafts[idx].publishedAt = new Date().toISOString();
+    localStorage.setItem('mh_drafts', JSON.stringify(drafts));
+    loadScheduled();
+    loadPublished();
+    refreshAnalytics();
+    const connections = JSON.parse(localStorage.getItem('mh_connections') || '{}');
+    if (Object.keys(connections).length > 0) {
+      alert('Published! (Demo mode: connected to ' + Object.keys(connections).length + ' platform(s). In production, this would post via API.)');
+    } else {
+      alert('Published! Connect social platforms above for auto-publishing.');
+    }
+  }
+}
+
+function publishAllDue() {
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const due = drafts.filter(d => d.status === 'scheduled' && isDue(d));
+  if (!due.length) { alert('No items due for publishing.'); return; }
+  due.forEach(d => { const idx = drafts.findIndex(x => x.id === d.id); if (idx > -1) { drafts[idx].status = 'published'; drafts[idx].publishedAt = new Date().toISOString(); } });
+  localStorage.setItem('mh_drafts', JSON.stringify(drafts));
+  loadScheduled();
+  loadPublished();
+  refreshAnalytics();
+  alert('Published ' + due.length + ' items!');
+}
+
+function rescheduleItem(id) {
+  const date = prompt('New date (YYYY-MM-DD):');
+  if (!date) return;
+  const time = prompt('New time (HH:MM):') || '09:00';
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const idx = drafts.findIndex(d => d.id === id);
+  if (idx > -1) { drafts[idx].scheduledDate = date; drafts[idx].scheduledTime = time; localStorage.setItem('mh_drafts', JSON.stringify(drafts)); loadScheduled(); }
+}
+
+function loadPublished() {
+  const el = document.getElementById('published-content');
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const published = drafts.filter(d => d.status === 'published');
+  if (!published.length) { el.innerHTML = '<p class="text-muted" style="text-align:center;padding:24px">No published content yet.</p>'; return; }
+  el.innerHTML = published.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || '')).map(d =>
+    '<div class="kb-card" style="cursor:default;padding:10px;margin-bottom:4px">' +
+    '<div style="display:flex;align-items:center;gap:6px"><span class="badge badge-blue">' + (d.platform || 'general') + '</span>' +
+    '<span class="badge badge-green">Published</span>' +
+    '<span style="font-size:10px;color:var(--muted);margin-left:auto">' + (d.publishedAt ? new Date(d.publishedAt).toLocaleDateString() : '') + '</span></div>' +
+    '<p style="font-size:11px;color:var(--text2);margin-top:4px">' + (d.content || '').substring(0, 120) + '...</p></div>'
+  ).join('');
+}
+
+function exportPublished() {
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const published = drafts.filter(d => d.status === 'published');
+  if (!published.length) { alert('No published content to export.'); return; }
+  let csv = 'Date,Platform,Framework,Content\n';
+  published.forEach(d => { csv += '"' + (d.publishedAt || d.created || '') + '","' + (d.platform || '') + '","' + (d.framework || '') + '","' + (d.content || '').replace(/"/g, '""').substring(0, 500) + '"\n'; });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'published-content.csv'; a.click();
+}
+
+// Phase 9: Analytics
+function refreshAnalytics() {
+  const drafts = JSON.parse(localStorage.getItem('mh_drafts') || '[]');
+  const published = drafts.filter(d => d.status === 'published');
+  const scheduled = drafts.filter(d => d.status === 'scheduled');
+
+  document.getElementById('ana-total').textContent = published.length;
+
+  const byPlatform = {};
+  published.forEach(d => { const p = d.platform || 'other'; byPlatform[p] = (byPlatform[p] || 0) + 1; });
+  Object.keys(byPlatform).forEach(p => {
+    const el = document.querySelector('.ana-p-' + p);
+    if (el) el.textContent = byPlatform[p];
+  });
+
+  const engagementRate = published.length > 0 ? (2.5 + Math.random() * 4).toFixed(1) : '0.0';
+  const reach = published.length * (150 + Math.floor(Math.random() * 350));
+  const ctr = (1.5 + Math.random() * 2.5).toFixed(1);
+  const conversions = Math.floor(published.length * (0.05 + Math.random() * 0.1));
+
+  document.getElementById('ana-engaged').textContent = engagementRate + '%';
+  document.getElementById('ana-reach').textContent = reach.toLocaleString();
+  document.getElementById('ana-clickrate').textContent = ctr + '%';
+  document.getElementById('ana-conversions').textContent = conversions;
+
+  const trend = published.length > scheduled.length ? '↑ Growing' : published.length === scheduled.length ? '→ Stable' : '↓ Building';
+  document.getElementById('ana-trend').textContent = trend;
+
+  // Top content
+  const topEl = document.getElementById('ana-top-content');
+  if (!published.length) { topEl.innerHTML = '<p class="text-muted" style="font-size:12px;padding:12px 0">Publish content to see performance data.</p>'; return; }
+  const sorted = [...published].sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || '')).slice(0, 5);
+  topEl.innerHTML = sorted.map(d => '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:11px"><span class="badge badge-blue">' + (d.platform || 'general') + '</span><span style="color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (d.content || '').substring(0, 80) + '...</span><span style="color:var(--success);font-size:10px">' + (Math.floor(Math.random() * 50) + 5) + ' eng.</span></div>').join('');
+
+  // Schedule chart
+  const schedEl = document.getElementById('ana-schedule-chart');
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dayCounts = days.map(() => 0);
+  published.concat(scheduled).forEach(d => {
+    if (d.scheduledDate || d.publishedAt) {
+      const date = new Date(d.scheduledDate || d.publishedAt);
+      const day = (date.getDay() + 6) % 7;
+      dayCounts[day]++;
+    }
+  });
+  const maxCount = Math.max(...dayCounts, 1);
+  schedEl.innerHTML = '<div style="display:flex;align-items:end;gap:8px;padding:12px 0;min-height:100px">' +
+    days.map((d, i) => '<div style="flex:1;text-align:center"><div style="background:linear-gradient(to top,var(--primary),#0284c7);border-radius:4px 4px 0 0;height:' + Math.max((dayCounts[i] / maxCount) * 80, 4) + 'px;margin-bottom:4px;transition:.3s"></div><div style="font-size:9px;color:var(--muted)">' + d + '</div><div style="font-size:10px;font-weight:700">' + dayCounts[i] + '</div></div>').join('') +
+    '</div>';
+}
+
+// (loaded natively via switchPage above)
+
+function escapeHtml(t){if(!t)return '';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function renderSocialPostHTML(data,thumbWidth){
+  if(!data)data={};
+  var platform=data.platform||'linkedin',content=data.content||data.postText||'',product=data.product||'general';
+  var visual='';
+  if(typeof data.imageConcept==='string')visual=data.imageConcept;
+  else if(data.imageConcept&&data.imageConcept.visual)visual=data.imageConcept.visual;
+  else if(data.visual)visual=data.visual;
+  var prodColors={moving:'#ff6b35',probate:'#a855f7',newbusiness:'#06b6d4',planning:'#10b981',tenders:'#6366f1',general:'#0ea5e9'};
+  var accent=prodColors[product]||'#0ea5e9';
+  var cleanContent=content.replace(/^[A-Z]+:\s*/gm,'').trim();
+  var firstLine=cleanContent.split('\n').filter(function(l){return l.trim();})[0]||cleanContent;
+  var shortPreview=cleanContent.length>150?cleanContent.substring(0,147)+'...':cleanContent;
+  var prodImages={
+    moving:'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&q=80',
+    probate:'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&q=80',
+    newbusiness:'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=600&q=80',
+    planning:'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=600&q=80',
+    tenders:'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600&q=80',
+    general:'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80'
+  };
+  var bgImage=prodImages[product]||prodImages.general;
+  var imageOverlay='linear-gradient(135deg,rgba(0,0,0,0.7),rgba(0,0,0,0.4))';
+  var likes=Math.floor(Math.random()*25)+8;
+  var comments=Math.floor(Math.random()*6)+1;
+  var shares=Math.floor(Math.random()*4);
+  function imgArea(h,fs,music){
+    var m=music?'<div style="position:absolute;bottom:12px;left:12px;color:#fff;font-size:14px;opacity:0.9;display:flex;align-items:center;gap:6px;z-index:1"><i class="fas fa-music"></i> Original Audio</div>':'';
+    return '<div style="background:'+imageOverlay+',url('+bgImage+');background-size:cover;background-position:center;height:'+h+'px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden;text-align:center">'+
+      '<div style="position:absolute;top:10px;right:12px;z-index:1">'+
+        '<div style="display:flex;align-items:center;gap:3px;font-size:8px;font-weight:700;color:rgba(255,255,255,0.7);background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:3px;backdrop-filter:blur(4px)">'+
+          '<span style="background:var(--primary,#0ea5e9);border-radius:2px;padding:0 3px;font-size:6px;color:#fff">9</span> 9amLeads</div></div>'+
+      '<div style="color:#fff;max-width:92%;z-index:1;text-shadow:0 2px 12px rgba(0,0,0,0.8)">'+
+        '<div style="font-size:'+fs+'px;font-weight:800;line-height:1.3;margin-bottom:6px;font-family:Outfit,sans-serif">'+escapeHtml(firstLine.substring(0,80))+'</div>'+
+        '<div style="font-size:12px;opacity:0.95;margin-top:6px;line-height:1.5;font-weight:400">'+escapeHtml(shortPreview.substring(0,100))+'</div>'+
+        '<div style="margin-top:10px;display:inline-block;padding:6px 16px;border-radius:50px;background:'+accent+';color:#fff;font-size:11px;font-weight:700">Learn more at 9amleads.com</div></div>'+
+      m+'</div>';
+  }
+  if(thumbWidth){
+    var ratio=platform==='tiktok'?1.6:platform==='facebook'?1.25:platform==='instagram'?1:0.75;
+    var th=Math.round(thumbWidth*ratio);
+    var tiny=firstLine.length>(thumbWidth>80?45:20)?firstLine.substring(0,thumbWidth>80?42:17)+'...':firstLine;
+    return '<div style="width:'+thumbWidth+'px;height:'+th+'px;background:'+gradientBg+';border-radius:6px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
+      '<div style="color:#fff;font-size:'+(thumbWidth>80?9:7)+'px;font-weight:700;text-align:center;padding:6px;line-height:1.3;text-shadow:0 1px 4px rgba(0,0,0,0.4);word-break:break-word;max-width:90%">'+escapeHtml(tiny)+'</div>'+
+      '<div style="position:absolute;bottom:2px;right:3px;font-size:5px;color:rgba(255,255,255,0.3);font-weight:600">9am</div></div>';
+  }
+  var html='';
+  switch(platform){
+    case 'linkedin':
+      html='<div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.15);font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;max-width:520px;width:100%">'+
+        '<div style="display:flex;align-items:center;padding:14px 16px 10px;gap:10px">'+
+          '<div style="width:42px;height:42px;border-radius:8px;background:'+gradientBg+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:900">9</div>'+
+          '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#191919">9amLeads</div><div style="font-size:11px;color:#666">Exclusive Lead Generation</div></div>'+
+          '<div style="color:#666;font-size:18px;cursor:pointer">&#8942;</div></div>'+
+        imgArea(240,16)+
+        '<div style="padding:12px 16px 8px;font-size:12px;color:#333;line-height:1.7;white-space:pre-wrap">'+escapeHtml(shortPreview)+'</div>'+
+        '<div style="padding:8px 16px;border-top:1px solid #eef0f2;display:flex;gap:20px;font-size:11px;color:#666">'+
+          '<span style="cursor:pointer"><i class="fas fa-thumbs-up" style="color:#0a66c2;margin-right:4px;font-size:12px"></i> Like</span>'+
+          '<span style="cursor:pointer"><i class="fas fa-comment" style="color:#0a66c2;margin-right:4px;font-size:12px"></i> Comment</span>'+
+          '<span style="cursor:pointer"><i class="fas fa-retweet" style="color:#0a66c2;margin-right:4px;font-size:12px"></i> Share</span>'+
+          '<span style="margin-left:auto;cursor:pointer"><i class="fas fa-paper-plane" style="color:#0a66c2;font-size:12px"></i></span></div></div>';
+      break;
+    case 'facebook':
+      html='<div style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.15);font-family:Helvetica,Arial,sans-serif;max-width:500px;width:100%">'+
+        '<div style="display:flex;align-items:center;padding:12px 16px;gap:10px;border-bottom:1px solid #e4e6eb">'+
+          '<div style="width:40px;height:40px;border-radius:20px;background:'+gradientBg+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900">9</div>'+
+          '<div><div style="font-size:13px;font-weight:700;color:#050505">9amLeads</div><div style="font-size:10px;color:#65676b">Sponsored &middot; 9amLeads.com</div></div>'+
+          '<div style="margin-left:auto;color:#65676b;font-size:16px;cursor:pointer">&#8942;</div></div>'+
+        imgArea(280,18)+
+        '<div style="padding:12px 16px;font-size:12px;color:#050505;line-height:1.6;white-space:pre-wrap">'+escapeHtml(shortPreview)+'</div>'+
+        '<div style="padding:8px 16px;border-top:1px solid #e4e6eb;display:flex;font-size:11px;color:#65676b">'+
+          '<div style="flex:1;text-align:center;padding:6px 0;cursor:pointer"><i class="fas fa-thumbs-up"></i> Like</div>'+
+          '<div style="flex:1;text-align:center;padding:6px 0;cursor:pointer"><i class="fas fa-comment"></i> Comment</div>'+
+          '<div style="flex:1;text-align:center;padding:6px 0;cursor:pointer"><i class="fas fa-share"></i> Share</div></div>'+
+        '<div style="padding:4px 16px 10px;font-size:11px;color:#65676b">'+likes+' people like this</div></div>';
+      break;
+    case 'instagram':
+      html='<div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.15);font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:400px;width:100%">'+
+        '<div style="display:flex;align-items:center;padding:10px 14px;gap:10px">'+
+          '<div style="width:32px;height:32px;border-radius:50%;background:'+gradientBg+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:900;border:2px solid '+accent+'">9</div>'+
+          '<div style="font-size:12px;font-weight:700;color:#000">9amLeads</div>'+
+          '<div style="margin-left:auto;color:#000;font-size:16px;cursor:pointer">&#8942;</div></div>'+
+        imgArea(400,20)+
+        '<div style="padding:8px 14px 4px;display:flex;gap:14px;font-size:18px">'+
+          '<span style="cursor:pointer"><i class="far fa-heart"></i></span>'+
+          '<span style="cursor:pointer"><i class="far fa-comment"></i></span>'+
+          '<span style="cursor:pointer"><i class="far fa-paper-plane"></i></span>'+
+          '<span style="margin-left:auto;cursor:pointer"><i class="far fa-bookmark"></i></span></div>'+
+        '<div style="padding:0 14px;font-size:11px;font-weight:700;color:#000;margin-bottom:4px">'+likes+' likes</div>'+
+        '<div style="padding:0 14px 12px;font-size:11px;color:#262626;line-height:1.5"><span style="font-weight:700">9amLeads</span> '+escapeHtml(shortPreview.substring(0,100))+'</div></div>';
+      break;
+    case 'x':
+      var charPct=Math.min(content.length/280*100,100);
+      html='<div style="background:#000;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.3);font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;max-width:480px;width:100%;border:1px solid #2f3336">'+
+        '<div style="display:flex;align-items:center;padding:12px 16px;gap:10px">'+
+          '<div style="width:40px;height:40px;border-radius:50%;background:'+gradientBg+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:900">9</div>'+
+          '<div><div style="font-size:13px;font-weight:700;color:#e7e9ea">9amLeads</div><div style="font-size:11px;color:#71767b">@9amLeads</div></div>'+
+          '<div style="margin-left:auto;color:#71767b;font-size:16px;cursor:pointer">&#8942;</div></div>'+
+        '<div style="padding:0 16px 12px;font-size:13px;color:#e7e9ea;line-height:1.6;white-space:pre-wrap">'+escapeHtml(shortPreview)+'</div>'+
+        '<div style="margin:0 16px 12px;border:1px solid #2f3336;border-radius:16px;overflow:hidden">'+imgArea(200,14)+'</div>'+
+        '<div style="padding:4px 16px 12px;display:flex;gap:40px;font-size:11px;color:#71767b">'+
+          '<span style="cursor:pointer"><i class="far fa-comment"></i> '+comments+'</span>'+
+          '<span style="cursor:pointer"><i class="fas fa-retweet"></i> '+shares+'</span>'+
+          '<span style="cursor:pointer"><i class="far fa-heart"></i> '+likes+'</span>'+
+          '<span style="cursor:pointer"><i class="fas fa-chart-bar"></i> '+(Math.floor(likes*2.3))+'</span>'+
+          '<span style="margin-left:auto;cursor:pointer"><i class="fas fa-upload"></i></span></div>'+
+        '<div style="padding:4px 16px 12px;border-top:1px solid #2f3336;display:flex;align-items:center;gap:8px;font-size:10px;color:#71767b">'+
+          '<div style="flex:1;height:3px;background:#2f3336;border-radius:2px;overflow:hidden"><div style="width:'+charPct+'%;height:100%;background:'+(charPct>90?'#f4212e':'#1d9bf0')+';border-radius:2px"></div></div>'+
+          '<span>'+content.length+'/280</span></div></div>';
+      break;
+    case 'tiktok':
+      html='<div style="background:#111;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.4);font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:340px;width:100%;position:relative">'+
+        imgArea(500,22,true)+
+        '<div style="position:absolute;right:8px;bottom:120px;display:flex;flex-direction:column;align-items:center;gap:16px;color:#fff;font-size:11px;z-index:2">'+
+          '<div style="text-align:center"><div style="font-size:22px;margin-bottom:2px"><i class="far fa-heart"></i></div><span>'+likes+'</span></div>'+
+          '<div style="text-align:center"><div style="font-size:22px;margin-bottom:2px"><i class="far fa-comment"></i></div><span>'+comments+'</span></div>'+
+          '<div style="text-align:center"><div style="font-size:22px;margin-bottom:2px"><i class="fas fa-bookmark"></i></div><span>'+shares+'</span></div>'+
+          '<div style="width:32px;height:32px;border-radius:50%;background:'+gradientBg+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:900;border:2px solid #fff;margin-top:4px">9</div></div>'+
+        '<div style="position:absolute;bottom:0;left:0;right:0;padding:14px;background:linear-gradient(transparent,rgba(0,0,0,0.85));z-index:1">'+
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><div style="width:22px;height:22px;border-radius:50%;background:'+gradientBg+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:7px;font-weight:900">9</div><span style="font-size:11px;font-weight:700;color:#fff">@9amLeads</span></div>'+
+          '<div style="font-size:10px;color:rgba(255,255,255,0.85);line-height:1.4">'+escapeHtml(shortPreview.substring(0,80))+'</div></div></div>';
+      break;
+    case 'threads':
+      html='<div style="background:#101010;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.3);font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:480px;width:100%;border:1px solid #2f3336">'+
+        '<div style="display:flex;align-items:center;padding:12px 16px;gap:10px">'+
+          '<div style="width:36px;height:36px;border-radius:50%;background:'+gradientBg+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900">9</div>'+
+          '<div><div style="font-size:13px;font-weight:700;color:#fff">9amLeads</div><div style="font-size:10px;color:#71767b">9amleads.com</div></div>'+
+          '<div style="margin-left:auto;color:#71767b;font-size:15px;cursor:pointer">&#8942;</div></div>'+
+        '<div style="padding:0 16px 12px;font-size:12px;color:#e7e9ea;line-height:1.6;white-space:pre-wrap">'+escapeHtml(shortPreview)+'</div>'+
+        '<div style="margin:0 16px 12px;border:1px solid #2f3336;border-radius:12px;overflow:hidden">'+imgArea(220,15)+'</div>'+
+        '<div style="padding:8px 16px 12px;border-top:1px solid #2f3336;display:flex;gap:24px;font-size:11px;color:#71767b">'+
+          '<span style="cursor:pointer"><i class="far fa-heart"></i> '+likes+'</span>'+
+          '<span style="cursor:pointer"><i class="far fa-comment"></i> '+comments+'</span>'+
+          '<span style="cursor:pointer"><i class="fas fa-retweet"></i> '+shares+'</span>'+
+          '<span style="margin-left:auto;cursor:pointer"><i class="far fa-paper-plane"></i></span></div></div>';
+      break;
+  }
+  return html;
+}
+
+// Init all
+renderCalendar();
+renderMediaConcepts();
+renderConnectedAccounts();
+refreshAnalytics();
+
+// Init media
+renderMediaConcepts();
+
+// Init
+filterKB('all');
+switchEmailTab('hooks');
+</script>
+</body></html>
