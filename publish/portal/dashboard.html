@@ -138,6 +138,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <a href="#" onclick="showPage('success-centre')"><i class="fas fa-graduation-cap"></i> Success</a>
 <a href="#" onclick="showPage('campaigns')"><i class="fas fa-bullhorn"></i> Campaigns</a>
 <a href="#" onclick="showPage('business-profile')"><i class="fas fa-briefcase"></i> Business Profile</a>
+<a href="#" onclick="showPage('direct-mail')"><i class="fas fa-envelope-open-text"></i> Direct Mail</a>
 <a href="#" onclick="document.getElementById('crm-section').scrollIntoView({behavior:'smooth'});return false"><i class="fas fa-plug"></i> CRM</a>
 <a href="#" onclick="showPage('billing')"><i class="fas fa-credit-card"></i> Billing</a>
 <a href="#" onclick="showPage('settings')"><i class="fas fa-cog"></i> Settings</a>
@@ -756,7 +757,8 @@ function showPage(page) {
     support: function() { showSupport(); },
     reports: function() { showReportsPage(); },
     campaigns: function() { loadCampaigns(); },
-    'business-profile': function() { showBusinessProfile(); }
+    'business-profile': function() { showBusinessProfile(); },
+    'direct-mail': function() { showDirectMailCentre(); }
   };
   (sections[page] || sections.dashboard)();
 }
@@ -1271,6 +1273,185 @@ function showStatus(id, msg, color) {
   setTimeout(function() { el.style.display = 'none'; }, 4000);
 }
 
+var DM_TABS = ['overview','create','ai-builder','upload','templates','settings','history','proof','payments'];
+var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
+var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
+
+function showDirectMailCentre(tab) {
+  tab = tab || localStorage.getItem('dmTab') || 'overview';
+  localStorage.setItem('dmTab', tab);
+  var main = document.querySelector('.main-content');
+  var tabsHtml = DM_TABS.map(function(t) {
+    return '<button class="btn ' + (tab === t ? 'btn-primary' : 'btn-outline') + ' btn-sm" onclick="showDirectMailCentre(\'' + t + '\')" style="font-size:10px;padding:6px 10px"><i class="fas ' + DM_TAB_ICONS[t] + '"></i> ' + DM_TAB_NAMES[t] + '</button>';
+  }).join('');
+
+  main.innerHTML = '<div style="max-width:1000px;margin:0 auto">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">' +
+    '<div><h1 style="font-size:20px;font-weight:800;font-family:var(--ff-h)">Direct Mail Centre</h1><p style="font-size:12px;color:var(--muted2);margin-top:2px">Create and manage your direct mail campaigns</p></div>' +
+    '<a href="/portal/dashboard.html" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back</a></div>' +
+    '<div style="display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:10px;overflow-x:auto">' + tabsHtml + '</div>' +
+    '<div id="dm-content" style="animation:slideUp .3s ease"><div style="text-align:center;padding:40px;color:var(--muted2)"><i class="fas fa-spinner fa-spin" style="font-size:20px;display:block;margin-bottom:10px"></i>Loading...</div></div></div>';
+
+  var el = document.getElementById('dm-content');
+  if (tab === 'overview') { showDMOverview(el); }
+  else if (tab === 'create') { showDMCreate(el); }
+  else if (tab === 'ai-builder') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-magic" style="font-size:40px;color:var(--primary);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">AI Marketing Builder</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto 20px">Generate professional flyers, letters, and postcards using AI. Describe your offer and we\'ll create the design.</p><div style="max-width:500px;margin:0 auto"><textarea id="ai-prompt" rows="3" placeholder="Describe your campaign... e.g. A professional flyer for my removal company offering free quotes in London" style="width:100%;padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);font-family:inherit;resize:vertical;margin-bottom:12px"></textarea><button class="btn btn-primary" disabled style="opacity:.5;width:100%"><i class="fas fa-magic"></i> Generate with AI (Coming Soon)</button></div></div>'; }
+  else if (tab === 'upload') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-upload" style="font-size:40px;color:var(--primary);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Upload Your Own Materials</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto 20px">Upload PDF or image files to use in your campaigns. Supported: PDF, PNG, JPG (max 10MB).</p><div style="max-width:400px;margin:0 auto;padding:30px;border:2px dashed var(--border);border-radius:12px;background:var(--card2)"><i class="fas fa-cloud-upload-alt" style="font-size:32px;color:var(--muted2);display:block;margin-bottom:10px"></i><input type="file" accept=".pdf,.png,.jpg,.jpeg" style="font-size:12px;color:var(--text2)"></div></div>'; }
+  else if (tab === 'templates') { showDMTemplates(el); }
+  else if (tab === 'settings') { showDMSettings(el); }
+  else if (tab === 'history') { showDMHistory(el); }
+  else if (tab === 'proof') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-check-circle" style="font-size:40px;color:var(--warning);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Proof of Sending</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto">Proof of sending documents will appear here once campaigns are dispatched through our print provider. No campaigns have been sent yet.</p></div>'; }
+  else if (tab === 'payments') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-file-invoice-dollar" style="font-size:40px;color:var(--success);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Payments &amp; Invoices</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto">Payment history and invoices will appear here once your first campaign is submitted. Payments are processed securely through Stripe.</p></div>'; }
+}
+
+function showDMOverview(el) {
+  apiFetch('/api/direct-mail/stats').then(function(s) {
+    var stats = s || {};
+    var total = stats.total_campaigns || 0;
+    var byStatus = stats.by_status || [];
+    var drafts = 0, sent = 0;
+    for (var si = 0; si < byStatus.length; si++) {
+      if (byStatus[si].status === 'draft') drafts = byStatus[si].count;
+      if (byStatus[si].status === 'completed' || byStatus[si].status === 'dispatched') sent += byStatus[si].count;
+    }
+    var html = '<div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">' +
+      '<div class="kpi-card" style="border-left:3px solid #0ea5e9"><div class="kpi-num" style="color:#0ea5e9">' + total + '</div><div class="kpi-label">Total Campaigns</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #f59e0b"><div class="kpi-num" style="color:#f59e0b">' + drafts + '</div><div class="kpi-label">Drafts</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #22c55e"><div class="kpi-num" style="color:#22c55e">' + sent + '</div><div class="kpi-label">Sent</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #6366f1"><div class="kpi-num" style="color:#6366f1">' + (stats.total_recipients || 0) + '</div><div class="kpi-label">Letters Posted</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #ef4444"><div class="kpi-num" style="color:#ef4444">&pound;' + (stats.total_spend || 0) + '</div><div class="kpi-label">This Month</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #ec4899"><div class="kpi-num" style="color:#ec4899;font-size:14px">' + (stats.auto_send ? 'On' : 'Off') + '</div><div class="kpi-label">Auto Send</div></div>' +
+      '</div>';
+    html += '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-clock" style="color:var(--primary)"></i> Latest Campaign Status</div><button class="btn btn-outline btn-sm" onclick="showDirectMailCentre(\'history\')">View All</button></div><div id="dm-latest-status"><p style="color:var(--muted2);font-size:12px;padding:8px 0">No campaigns yet. <a href="#" onclick="showDirectMailCentre(\'create\');return false" style="color:var(--primary)">Create your first campaign</a></p></div></div>';
+    el.innerHTML = html;
+    // Load latest campaign
+    apiFetch('/api/direct-mail/campaigns').then(function(cr) {
+      if (cr && cr.campaigns && cr.campaigns.length > 0) {
+        var latest = cr.campaigns[0];
+        document.getElementById('dm-latest-status').innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;flex-wrap:wrap;gap:8px"><div><strong>' + latest.name + '</strong><br><span style="font-size:11px;color:var(--muted2)">Created ' + new Date(latest.created_at).toLocaleDateString() + '</span></div><span class="badge ' + (latest.status === 'draft' ? 'badge-orange' : latest.status === 'completed' ? 'badge-green' : 'badge-blue') + '">' + latest.status + '</span></div>';
+      }
+    });
+  });
+}
+
+function showDMCreate(el) {
+  var step = parseInt(localStorage.getItem('dmStep') || '1');
+  var steps = ['Choose Leads', 'Choose Materials', 'Preview', 'Approve', 'Pay & Send'];
+  var stepHtml = steps.map(function(s, i) {
+    var num = i + 1;
+    var active = num === step;
+    var done = num < step;
+    return '<div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;opacity:' + (active ? 1 : done ? 0.7 : 0.4) + '">' +
+      '<div style="width:24px;height:24px;border-radius:50%;background:' + (active ? 'var(--primary)' : done ? 'var(--success)' : 'var(--card2)') + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">' + (done ? '✓' : num) + '</div>' +
+      '<span style="font-size:10px;font-weight:600;color:' + (active ? 'var(--text)' : 'var(--muted2)') + ';white-space:nowrap">' + s + '</span>' +
+      (i < steps.length - 1 ? '<div style="flex:1;height:1px;background:var(--border);margin:0 4px"></div>' : '') + '</div>';
+  }).join('');
+
+  var contentHtml = '';
+  if (step === 1) {
+    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-users" style="color:var(--primary)"></i> Step 1: Choose Your Leads</div></div>' +
+      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Select leads from your pipeline to include in this campaign. You can filter by date range and lead type.</p>' +
+      '<div style="display:grid;gap:10px"><div class="form-row"><div><label style="font-size:11px;color:var(--muted2);margin-bottom:4px;display:block">Lead Type</label><select id="dm-lead-type" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option>All Types</option><option>Moving</option><option>Probate</option><option>New Business</option><option>Planning</option><option>Tenders</option></select></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);margin-bottom:4px;display:block">Date Range</label><select id="dm-date-range" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option>Last 7 days</option><option>Last 30 days</option><option>Last 90 days</option><option>All time</option></select></div></div>' +
+      '<div style="padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:13px;color:var(--muted2)">' +
+      '<i class="fas fa-inbox" style="font-size:24px;display:block;margin-bottom:6px;color:var(--muted)"></i>Your leads will appear here once you have leads in your pipeline.' +
+      '</div></div></div>';
+  } else if (step === 2) {
+    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-file-alt" style="color:var(--primary)"></i> Step 2: Choose Your Materials</div></div>' +
+      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Select a template or upload your own materials for this campaign.</p>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">' +
+      '<div onclick="document.querySelectorAll(\'.dm-mat\').forEach(function(e){e.style.borderColor=\'var(--border)\'});this.style.borderColor=\'var(--primary)\'" class="dm-mat" style="padding:14px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;background:var(--card2);transition:.2s"><div style="font-size:28px;margin-bottom:6px">📄</div><div style="font-size:12px;font-weight:600;color:var(--text)">A4 Letter</div><div style="font-size:10px;color:var(--muted2)">Standard letter</div></div>' +
+      '<div onclick="document.querySelectorAll(\'.dm-mat\').forEach(function(e){e.style.borderColor=\'var(--border)\'});this.style.borderColor=\'var(--primary)\'" class="dm-mat" style="padding:14px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;background:var(--card2);transition:.2s"><div style="font-size:28px;margin-bottom:6px">📃</div><div style="font-size:12px;font-weight:600;color:var(--text)">A5 Flyer</div><div style="font-size:10px;color:var(--muted2)">Half-page flyer</div></div>' +
+      '<div onclick="document.querySelectorAll(\'.dm-mat\').forEach(function(e){e.style.borderColor=\'var(--border)\'});this.style.borderColor=\'var(--primary)\'" class="dm-mat" style="padding:14px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;background:var(--card2);transition:.2s"><div style="font-size:28px;margin-bottom:6px">📮</div><div style="font-size:12px;font-weight:600;color:var(--text)">DL Postcard</div><div style="font-size:10px;color:var(--muted2)">Standard postcard</div></div>' +
+      '<div onclick="document.querySelectorAll(\'.dm-mat\').forEach(function(e){e.style.borderColor=\'var(--border)\'});this.style.borderColor=\'var(--primary)\'" class="dm-mat" style="padding:14px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;background:var(--card2);transition:.2s"><div style="font-size:28px;margin-bottom:6px">📘</div><div style="font-size:12px;font-weight:600;color:var(--text)">A5 Brochure</div><div style="font-size:10px;color:var(--muted2)">Folded brochure</div></div>' +
+      '</div><div style="margin-top:12px;font-size:11px;color:var(--muted2)">Or <a href="#" onclick="showDirectMailCentre(\'upload\');return false" style="color:var(--primary)">upload your own materials</a></div></div>';
+  } else if (step === 3) {
+    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-eye" style="color:var(--primary)"></i> Step 3: Preview</div></div>' +
+      '<div style="padding:20px;background:var(--card2);border:1px solid var(--border);border-radius:8px;text-align:center;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center">' +
+      '<i class="fas fa-file-alt" style="font-size:48px;color:var(--muted2);margin-bottom:12px"></i>' +
+      '<p style="font-size:13px;color:var(--muted2)">Preview of your campaign materials will appear here once generated.<br><span style="font-size:11px">AI-generated content and print previews will be available in the next update.</span></p></div></div>';
+  } else if (step === 4) {
+    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-check-double" style="color:var(--primary)"></i> Step 4: Approve</div></div>' +
+      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Review your campaign details before submitting for printing.</p>' +
+      '<div style="display:grid;gap:8px">' +
+      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Campaign</span><span style="font-weight:600;color:var(--text)">Summer Promotion</span></div>' +
+      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Material</span><span style="font-weight:600;color:var(--text)">A5 Flyer</span></div>' +
+      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Recipients</span><span style="font-weight:600;color:var(--text)">50 leads</span></div>' +
+      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Estimated Cost</span><span style="font-weight:600;color:var(--text)">&pound;37.50</span></div>' +
+      '</div><div style="margin-top:12px;padding:10px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)"><i class="fas fa-info-circle" style="color:#f59e0b;margin-right:4px"></i>By approving, you confirm the content is accurate and ready for printing.</div></div>';
+  } else if (step === 5) {
+    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-credit-card" style="color:var(--primary)"></i> Step 5: Pay &amp; Send</div></div>' +
+      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Payment processing will be handled securely via Stripe. This feature will be available in the next update.</p>' +
+      '<div style="padding:20px;background:var(--card2);border:1px solid var(--border);border-radius:8px;text-align:center;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center">' +
+      '<i class="fas fa-lock" style="font-size:32px;color:var(--muted2);margin-bottom:8px"></i>' +
+      '<p style="font-size:13px;color:var(--muted2)">Stripe payment integration coming soon.<br>Your campaigns will be saved as drafts until then.</p></div></div>';
+  }
+
+  var navHtml = '<div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px">' +
+    (step > 1 ? '<button class="btn btn-outline btn-sm" onclick="localStorage.setItem(\'dmStep\',\'' + (step - 1) + '\');showDirectMailCentre(\'create\')"><i class="fas fa-arrow-left"></i> Back</button>' : '<div></div>') +
+    (step < 5 ? '<button class="btn btn-primary btn-sm" onclick="localStorage.setItem(\'dmStep\',\'' + (step + 1) + '\');showDirectMailCentre(\'create\')">Continue <i class="fas fa-arrow-right"></i></button>' :
+    '<button class="btn btn-success btn-sm" onclick="showDirectMailCentre(\'overview\')"><i class="fas fa-check"></i> Submit Campaign</button>') + '</div>';
+
+  el.innerHTML = '<div style="margin-bottom:20px"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">' + stepHtml + '</div><div style="font-size:10px;color:var(--muted2);text-align:center">Step ' + step + ' of 5</div></div>' + contentHtml + navHtml;
+}
+
+function showDMTemplates(el) {
+  apiFetch('/api/direct-mail/templates').then(function(r) {
+    var templates = r && r.templates ? r.templates : [];
+    var html = '';
+    if (templates.length === 0) {
+      html = '<div style="text-align:center;padding:40px 20px"><i class="fas fa-folder-open" style="font-size:40px;color:var(--muted2);display:block;margin-bottom:12px"></i><h3 style="font-size:16px;font-weight:700;margin-bottom:6px">No Templates Yet</h3><p style="font-size:12px;color:var(--muted2);margin-bottom:16px">Create a template or use the AI Marketing Builder to generate one.</p><button class="btn btn-primary btn-sm" onclick="showDirectMailCentre(\'create\')"><i class="fas fa-plus"></i> Create Campaign</button></div>';
+    } else {
+      html = '<div style="display:grid;gap:8px">' + templates.map(function(t) {
+        return '<div style="padding:12px 16px;background:var(--card2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><strong style="color:var(--text);font-size:13px">' + t.name + '</strong><br><span style="font-size:11px;color:var(--muted2)">' + t.type + ' · ' + t.size + ' · ' + t.page_count + ' page(s)</span></div><span class="badge ' + (t.is_draft ? 'badge-orange' : 'badge-green') + '">' + (t.is_draft ? 'Draft' : 'Ready') + '</span></div>';
+      }).join('') + '</div>';
+    }
+    el.innerHTML = '<div style="animation:slideUp .3s ease">' + html + '</div>';
+  });
+}
+
+function showDMSettings(el) {
+  apiFetch('/api/direct-mail/automation').then(function(r) {
+    var s = r && r.settings ? r.settings : {};
+    el.innerHTML = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-cog" style="color:var(--primary)"></i> Auto Send Settings</div></div>' +
+      '<p style="font-size:12px;color:var(--muted2);margin-bottom:14px">Configure automatic sending rules for your direct mail campaigns.</p>' +
+      '<div style="display:grid;gap:10px">' +
+      '<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;cursor:pointer"><input type="checkbox" id="dm-auto-approve" ' + (s.auto_approve ? 'checked' : '') + ' style="accent-color:var(--primary);width:16px;height:16px"><div><div style="font-weight:600;font-size:13px;color:var(--text)">Auto-Approve Campaigns</div><div style="font-size:11px;color:var(--muted2)">Automatically approve campaigns that meet your criteria</div></div></label>' +
+      '<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;cursor:pointer"><input type="checkbox" id="dm-auto-send" ' + (s.auto_send ? 'checked' : '') + ' style="accent-color:var(--primary);width:16px;height:16px"><div><div style="font-weight:600;font-size:13px;color:var(--text)">Auto-Send to Printer</div><div style="font-size:11px;color:var(--muted2)">Automatically send approved campaigns to our print partner</div></div></label>' +
+      '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Max Weekly Budget</label><input type="number" id="dm-budget" value="' + (s.max_budget || 0) + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Notification Email</label><input type="email" id="dm-notif-email" value="' + (s.notification_email || '') + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+      '<button class="btn btn-primary btn-sm" onclick="saveDMSettings()"><i class="fas fa-save"></i> Save Settings</button></div></div>';
+  });
+}
+
+function saveDMSettings() {
+  var data = {
+    auto_approve: document.getElementById('dm-auto-approve')?.checked ? 1 : 0,
+    auto_send: document.getElementById('dm-auto-send')?.checked ? 1 : 0,
+    max_budget: parseInt(document.getElementById('dm-budget')?.value) || 0,
+    notification_email: document.getElementById('dm-notif-email')?.value || ''
+  };
+  apiFetch('/api/direct-mail/automation', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(function(r) {
+    if (r && r.success) { showStatus('dm-content','Settings saved!','var(--success)'); }
+    else { showStatus('dm-content','Failed to save','var(--danger)'); }
+  });
+}
+
+function showDMHistory(el) {
+  apiFetch('/api/direct-mail/campaigns').then(function(r) {
+    var campaigns = r && r.campaigns ? r.campaigns : [];
+    if (campaigns.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:40px 20px"><i class="fas fa-clock" style="font-size:40px;color:var(--muted2);display:block;margin-bottom:12px"></i><h3 style="font-size:16px;font-weight:700;margin-bottom:6px">No Campaign History</h3><p style="font-size:12px;color:var(--muted2);margin-bottom:16px">Your campaign history will appear here once you create and send campaigns.</p><button class="btn btn-primary btn-sm" onclick="showDirectMailCentre(\'create\')"><i class="fas fa-plus"></i> Create Campaign</button></div>';
+    } else {
+      var html = '<div style="display:grid;gap:6px">' + campaigns.map(function(c) {
+        var badges = { draft:'badge-orange', awaiting_approval:'badge-blue', approved:'badge-green', completed:'badge-green', failed:'badge-red', cancelled:'badge-red' };
+        return '<div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><strong style="font-size:12px;color:var(--text)">' + c.name + '</strong><br><span style="font-size:10px;color:var(--muted2)">' + new Date(c.created_at).toLocaleDateString() + ' · ' + (c.target_count || 0) + ' recipients</span></div><span class="badge ' + (badges[c.status] || 'badge-blue') + '" style="font-size:9px">' + c.status + '</span></div>';
+      }).join('') + '</div>';
+      el.innerHTML = html;
+    }
+  });
+}
+
 // ===== SUCCESS CENTRE =====
 function showSuccessCentre() {
   var industryFilter = '';
@@ -1667,6 +1848,7 @@ function doCancel() {
       campaigns: function() { loadCampaigns(); },
       'success-centre': function() { showSuccessCentre(); },
       'business-profile': function() { showBusinessProfile(); },
+      'direct-mail': function() { showDirectMailCentre(); },
       settings: function() { showSettingsPage(); },
       support: function() { showSupport(); },
     };
@@ -2287,6 +2469,7 @@ loadDashboard();
   if (p === 'leads') { setTimeout(function() { document.getElementById('leads-section')?.scrollIntoView({behavior:'smooth'}); }, 1000); }
   if (p === 'campaigns') { setTimeout(function() { loadCampaigns(); }, 500); }
   if (p === 'settings') { setTimeout(function() { showSettingsPage(); }, 500); }
+  if (p === 'direct-mail') { setTimeout(function() { showDirectMailCentre(); }, 500); }
 })();
 </script>
 <script src="/chat.js"></script>
