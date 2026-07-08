@@ -1273,9 +1273,9 @@ function showStatus(id, msg, color) {
   setTimeout(function() { el.style.display = 'none'; }, 4000);
 }
 
-var DM_TABS = ['overview','create','analytics','calendar','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments'];
-var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', analytics:'Analytics', calendar:'Campaign Calendar', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
-var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', analytics:'fa-chart-bar', calendar:'fa-calendar', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
+var DM_TABS = ['overview','create','done-for-you','analytics','calendar','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments'];
+var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', 'done-for-you':'Done For You', analytics:'Analytics', calendar:'Campaign Calendar', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
+var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', 'done-for-you':'fa-handshake', analytics:'fa-chart-bar', calendar:'fa-calendar', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
 
 function showDirectMailCentre(tab) {
   tab = tab || localStorage.getItem('dmTab') || 'overview';
@@ -1294,7 +1294,7 @@ function showDirectMailCentre(tab) {
 
   var el = document.getElementById('dm-content');
   // Check feature access first
-  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, analytics: null, calendar: null, sequences: null, settings: 'auto_send', proof: 'proof_tracking' };
+  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, analytics: null, calendar: null, sequences: null, 'done-for-you': null, settings: 'auto_send', proof: 'proof_tracking' };
   apiFetch('/api/direct-mail/features').then(function(fr) {
     var plan = fr && fr.plan ? fr.plan : 'free_trial';
     var features = fr && fr.features ? fr.features : {};
@@ -1316,6 +1316,7 @@ function showDirectMailCentre(tab) {
     else if (tab === 'packs') { showDMPacks(el); }
     else if (tab === 'marketplace') { showDMMarketplace(el); }
     else if (tab === 'seasonal') { showDMSeasonal(el); }
+    else if (tab === 'done-for-you') { showDMRequests(el); }
     else if (tab === 'analytics') { showDMAnalytics(el); }
     else if (tab === 'calendar') { showDMCalendar(el); }
     else if (tab === 'sequences') { showDMSequences(el); }
@@ -2800,6 +2801,58 @@ function dmScheduleSeasonal(headline, offer) {
 }
 
 var DM_CALENDAR_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function showDMRequests(el) {
+  el.innerHTML = '<div style="animation:slideUp .3s ease">' +
+    '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-handshake" style="color:var(--primary)"></i> Done For You Campaign</div></div>' +
+    '<p style="font-size:12px;color:var(--muted2);margin-bottom:10px">Let our team create your campaign for you. Fill in the details and we\'ll handle the rest.</p>' +
+    '<div style="display:grid;gap:10px">' +
+    '<button class="btn btn-primary" onclick="dmShowRequestForm()" style="width:100%;padding:14px"><i class="fas fa-plus-circle"></i> Request Done For You Campaign</button>' +
+    '</div></div>' +
+    '<div id="dm-requests-list" style="margin-top:12px"><div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div></div>';
+  apiFetch('/api/direct-mail/requests').then(function(r) {
+    var el2 = document.getElementById('dm-requests-list');
+    if (!el2) return;
+    var reqs = r && r.requests ? r.requests : [];
+    if (reqs.length === 0) { el2.innerHTML = ''; return; }
+    var statusBadges = { requested:'badge-orange', in_review:'badge-blue', draft_preparing:'badge-blue', ready_for_approval:'badge-blue', approved:'badge-green', paid:'badge-green', sent:'badge-blue', completed:'badge-green' };
+    el2.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">Your Requests</div>' +
+      reqs.map(function(r) { return '<div style="padding:8px 10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:4px;font-size:11px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px"><div><strong>' + r.campaign_goal + '</strong><br><span style="color:var(--muted2)">' + r.business_type + ' · ' + new Date(r.created_at).toLocaleDateString() + '</span></div><span class="badge ' + (statusBadges[r.status] || 'badge-orange') + '" style="font-size:9px">' + r.status.replace(/_/g,' ') + '</span></div>'; }).join('');
+  });
+}
+
+function dmShowRequestForm() {
+  showModal('Request Done For You Campaign', '<div style="display:grid;gap:8px;max-height:70vh;overflow-y:auto">' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Business Type *</label><input type="text" id="df-business" value="' + (document.getElementById('ai-industry')?.value || '') + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Campaign Goal *</label><select id="df-goal" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option>New Customer Introduction</option><option>Free Quote Offer</option><option>Discount Offer</option><option>Seasonal Campaign</option><option>Emergency Service</option><option>Local Awareness</option><option>Premium Service</option><option>Reminder</option><option value="custom">Custom</option></select></div>' +
+    '<div id="df-goal-custom" style="display:none"><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Custom Goal</label><input type="text" id="df-goal-text" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Special Offer</label><input type="text" id="df-offer" value="' + (document.getElementById('ai-offer')?.value || '') + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Target Area</label><input type="text" id="df-area" value="' + (document.getElementById('ai-area')?.value || '') + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Number of Leads</label><input type="number" id="df-leads" value="50" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Budget (£)</label><input type="number" id="df-budget" value="50" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Desired Send Date</label><input type="date" id="df-date" value="' + new Date(Date.now() + 14*86400000).toISOString().split('T')[0] + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Notes</label><textarea id="df-notes" rows="2" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;resize:vertical"></textarea></div>' +
+    '<button class="btn btn-primary btn-sm" onclick="dmSubmitRequest()" style="width:100%"><i class="fas fa-paper-plane"></i> Submit Request</button></div>', '520px');
+  document.getElementById('df-goal').onchange = function() { document.getElementById('df-goal-custom').style.display = this.value === 'custom' ? 'block' : 'none'; };
+}
+
+function dmSubmitRequest() {
+  var goal = document.getElementById('df-goal')?.value;
+  if (goal === 'custom') goal = document.getElementById('df-goal-text')?.value || 'Custom campaign';
+  if (!document.getElementById('df-business')?.value || !goal) { showStatus('dm-content','Business type and goal required','var(--warning)'); return; }
+  apiFetch('/api/direct-mail/requests', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    business_type: document.getElementById('df-business').value,
+    campaign_goal: goal, offer: document.getElementById('df-offer')?.value || '',
+    target_area: document.getElementById('df-area')?.value || '',
+    lead_count: parseInt(document.getElementById('df-leads')?.value) || 0,
+    budget: parseFloat(document.getElementById('df-budget')?.value) || 0,
+    desired_send_date: document.getElementById('df-date')?.value || '',
+    notes: document.getElementById('df-notes')?.value || ''
+  })}).then(function(r) {
+    if (r && r.success) { document.getElementById('modal-overlay')?.remove(); showStatus('dm-content','Request submitted! Our team will review it shortly.','var(--success)'); showDirectMailCentre('done-for-you'); }
+    else { showStatus('dm-content',r?.error || 'Failed to submit','var(--danger)'); }
+  });
+}
 
 function showDMAnalytics(el) {
   el.innerHTML = '<div style="animation:slideUp .3s ease">' +

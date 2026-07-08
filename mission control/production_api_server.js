@@ -209,7 +209,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 // ===== JSON DATABASE (drop-in replacement for better-sqlite3) =====
 let _dbData = null;
 let _dbLock = Promise.resolve();
-var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates','seasonal_campaigns','postal_sequences','postal_sequence_steps'];
+var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates','seasonal_campaigns','postal_sequences','postal_sequence_steps','campaign_requests'];
 
 // Direct Mail feature access by plan
 var DM_FEATURE_ACCESS = {
@@ -8762,6 +8762,84 @@ app.post('/api/admin/seasonal/campaigns', adminAuth, (req, res) => {
     else { data.id = uuidv4(); data.created_at = new Date().toISOString(); db2.seasonal_campaigns.push(data); }
     saveDb();
     res.json({ success: true, campaign: existingIdx !== -1 ? db2.seasonal_campaigns[existingIdx] : data });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== DONE FOR YOU CAMPAIGN REQUEST =====
+var REQUEST_STATUSES = ['requested','in_review','draft_preparing','ready_for_approval','approved','paid','sent','completed'];
+
+// POST /api/direct-mail/requests — Submit a campaign request
+app.post('/api/direct-mail/requests', authMiddleware, (req, res) => {
+  try {
+    if (!req.body.business_type || !req.body.campaign_goal) return res.status(400).json({ error: 'Business type and campaign goal required' });
+    var db2 = getDb();
+    if (!db2.campaign_requests) db2.campaign_requests = [];
+    var reqData = {
+      id: uuidv4(), customer_id: req.user.id, status: 'requested',
+      business_type: req.body.business_type, campaign_goal: req.body.campaign_goal,
+      offer: req.body.offer || '', target_area: req.body.target_area || '',
+      lead_count: parseInt(req.body.lead_count) || 0, notes: req.body.notes || '',
+      budget: parseFloat(req.body.budget) || 0, desired_send_date: req.body.desired_send_date || '',
+      logo_data: req.body.logo_data || '', admin_notes: '',
+      created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+    };
+    db2.campaign_requests.push(reqData);
+    saveDb();
+    res.json({ success: true, request: reqData });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/requests — Get customer's requests
+app.get('/api/direct-mail/requests', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var requests = (db2.campaign_requests || []).filter(function(r) { return r.customer_id === req.user.id; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    res.json({ success: true, requests: requests, total: requests.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin endpoints
+// GET /api/admin/direct-mail/requests — Get all requests
+app.get('/api/admin/direct-mail/requests', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var statusFilter = req.query.status || '';
+    var requests = (db2.campaign_requests || []).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    var expanded = requests.map(function(r) {
+      var cust = (db2.customers || []).find(function(c) { return c.id === r.customer_id; });
+      return Object.assign({}, r, { customer_email: cust ? cust.email : 'unknown', customer_company: cust ? cust.company : '' });
+    });
+    if (statusFilter) expanded = expanded.filter(function(r) { return r.status === statusFilter; });
+    res.json({ success: true, requests: expanded, total: expanded.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/admin/direct-mail/requests/:id — Update request status/admin notes
+app.put('/api/admin/direct-mail/requests/:id', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var idx = (db2.campaign_requests || []).findIndex(function(r) { return r.id === req.params.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Request not found' });
+    if (req.body.status && REQUEST_STATUSES.indexOf(req.body.status) === -1) return res.status(400).json({ error: 'Invalid status' });
+    if (req.body.status) db2.campaign_requests[idx].status = req.body.status;
+    if (req.body.admin_notes !== undefined) db2.campaign_requests[idx].admin_notes = req.body.admin_notes;
+    db2.campaign_requests[idx].updated_at = new Date().toISOString();
+    saveDb();
+    res.json({ success: true, request: db2.campaign_requests[idx] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/direct-mail/requests/:id/create-campaign — Create campaign from request
+app.post('/api/admin/direct-mail/requests/:id/create-campaign', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var requestData = (db2.campaign_requests || []).find(function(r) { return r.id === req.params.id; });
+    if (!requestData) return res.status(404).json({ error: 'Request not found' });
+    var campaign = { id: uuidv4(), customer_id: requestData.customer_id, name: requestData.campaign_goal + ' - Done For You', description: requestData.notes || '', status: 'draft', template_id: req.body.template_id || '', material_id: '', target_count: requestData.lead_count || 1, sent_count: 0, delivery_date: requestData.desired_send_date || '', budget: requestData.budget || 0, notes: 'Created from Done For You request: ' + requestData.id, provider: '', provider_campaign_id: '', provider_status: '', stripe_session_id: '', stripe_payment_id: '', stripe_payment_status: '', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(campaign.id, campaign.customer_id, campaign.name, campaign.description, campaign.status, campaign.template_id, campaign.material_id, campaign.target_count, campaign.sent_count, campaign.delivery_date, campaign.budget, campaign.notes, campaign.provider, campaign.provider_campaign_id, campaign.provider_status, campaign.stripe_session_id, campaign.stripe_payment_id, campaign.stripe_payment_status, campaign.created_at, campaign.updated_at);
+    requestData.status = 'draft_preparing'; requestData.updated_at = new Date().toISOString();
+    saveDb();
+    res.json({ success: true, campaign: campaign });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
