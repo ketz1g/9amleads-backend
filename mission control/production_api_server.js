@@ -8765,6 +8765,98 @@ app.post('/api/admin/seasonal/campaigns', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== CAMPAIGN CALENDAR =====
+// GET /api/direct-mail/calendar — Get all campaign events for calendar view
+app.get('/api/direct-mail/calendar', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var customerId = req.user.id;
+    var month = parseInt(req.query.month) || (new Date().getMonth() + 1);
+    var year = parseInt(req.query.year) || new Date().getFullYear();
+    var startDate = new Date(year, month - 1, 1).toISOString();
+    var endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
+
+    var events = [];
+
+    // 1. Manual campaigns
+    var campaigns = (db2.direct_mail_campaigns || []).filter(function(c) { return c.customer_id === customerId; });
+    campaigns.forEach(function(c) {
+      if (c.created_at && c.created_at >= startDate && c.created_at <= endDate) {
+        events.push({
+          id: c.id, type: 'campaign', sub_type: c.status === 'draft' ? 'draft' : 'sent',
+          name: c.name, status: c.status, recipients: c.sent_count || c.target_count || 0,
+          cost: c.budget || 0, date: c.created_at.split('T')[0],
+          template_id: c.template_id, provider: c.provider,
+          delivery_date: c.delivery_date || ''
+        });
+      }
+    });
+
+    // 2. Sequence steps
+    var steps = (db2.postal_sequence_steps || []).filter(function(st) { return st.customer_id === customerId; });
+    steps.forEach(function(st) {
+      var sched = st.scheduled_for ? st.scheduled_for.split('T')[0] : '';
+      if (sched && sched >= startDate.substring(0, 10) && sched <= endDate.substring(0, 10)) {
+        events.push({
+          id: st.id, sequence_id: st.sequence_id, type: 'sequence_step',
+          sub_type: st.status, name: 'Sequence Step ' + st.step_number + ': ' + (st.material || ''),
+          status: st.status, recipients: 0, cost: 0, date: sched,
+          template_id: st.template_id || '', step_number: st.step_number
+        });
+      }
+    });
+
+    // 3. Auto Send campaigns (from the same data)
+    var autoSend = campaigns.filter(function(c) { return c.notes === 'Auto Send'; });
+    autoSend.forEach(function(c) {
+      if (c.delivery_date && c.delivery_date >= startDate.substring(0, 10) && c.delivery_date <= endDate.substring(0, 10)) {
+        events.push({
+          id: c.id, type: 'auto_send', sub_type: 'auto',
+          name: c.name, status: c.status, recipients: c.sent_count || c.target_count || 0,
+          cost: c.budget || 0, date: c.delivery_date, template_id: c.template_id
+        });
+      }
+    });
+
+    // Sort by date
+    events.sort(function(a, b) { return (a.date || '').localeCompare(b.date || ''); });
+
+    res.json({ success: true, month: month, year: year, events: events, total: events.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin: GET /api/admin/direct-mail/calendar — All customers' campaign calendar
+app.get('/api/admin/direct-mail/calendar', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var month = parseInt(req.query.month) || (new Date().getMonth() + 1);
+    var year = parseInt(req.query.year) || new Date().getFullYear();
+    var customerFilter = req.query.customer_id || '';
+    var statusFilter = req.query.status || '';
+    var providerFilter = req.query.provider || '';
+    var startDate = new Date(year, month - 1, 1).toISOString();
+    var endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
+    var events = [];
+    var campaigns = db2.direct_mail_campaigns || [];
+    campaigns.forEach(function(c) {
+      if (customerFilter && c.customer_id !== customerFilter) return;
+      if (statusFilter && c.status !== statusFilter) return;
+      if (providerFilter && c.provider !== providerFilter) return;
+      if (c.created_at && c.created_at >= startDate && c.created_at <= endDate) {
+        var cust = db2.customers ? db2.customers.find(function(cu) { return cu.id === c.customer_id; }) : null;
+        events.push({
+          id: c.id, customer_email: cust ? cust.email : 'unknown', customer_company: cust ? cust.company : '',
+          name: c.name, status: c.status, recipients: c.sent_count || c.target_count || 0,
+          cost: c.budget || 0, date: c.created_at.split('T')[0], provider: c.provider || '',
+          template_id: c.template_id
+        });
+      }
+    });
+    events.sort(function(a, b) { return (a.date || '').localeCompare(b.date || ''); });
+    res.json({ success: true, month: month, year: year, events: events, total: events.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== MULTI-TOUCH POSTAL SEQUENCES =====
 var SEQUENCE_STATUSES = ['active','paused','completed','cancelled'];
 

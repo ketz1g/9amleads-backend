@@ -1273,9 +1273,9 @@ function showStatus(id, msg, color) {
   setTimeout(function() { el.style.display = 'none'; }, 4000);
 }
 
-var DM_TABS = ['overview','create','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments'];
-var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
-var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
+var DM_TABS = ['overview','create','calendar','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments'];
+var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', calendar:'Campaign Calendar', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
+var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', calendar:'fa-calendar', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
 
 function showDirectMailCentre(tab) {
   tab = tab || localStorage.getItem('dmTab') || 'overview';
@@ -1294,7 +1294,7 @@ function showDirectMailCentre(tab) {
 
   var el = document.getElementById('dm-content');
   // Check feature access first
-  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, sequences: null, settings: 'auto_send', proof: 'proof_tracking' };
+  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, calendar: null, sequences: null, settings: 'auto_send', proof: 'proof_tracking' };
   apiFetch('/api/direct-mail/features').then(function(fr) {
     var plan = fr && fr.plan ? fr.plan : 'free_trial';
     var features = fr && fr.features ? fr.features : {};
@@ -1316,6 +1316,7 @@ function showDirectMailCentre(tab) {
     else if (tab === 'packs') { showDMPacks(el); }
     else if (tab === 'marketplace') { showDMMarketplace(el); }
     else if (tab === 'seasonal') { showDMSeasonal(el); }
+    else if (tab === 'calendar') { showDMCalendar(el); }
     else if (tab === 'sequences') { showDMSequences(el); }
     else if (tab === 'templates') { showDMTemplates(el); }
     else if (tab === 'settings') { showDMSettings(el, canUse('auto_send')); }
@@ -2795,6 +2796,95 @@ function dmScheduleSeasonal(headline, offer) {
   headline = decodeURIComponent(headline); offer = decodeURIComponent(offer);
   showModal('Schedule Campaign', '<div style="text-align:center;padding:10px 0"><p style="font-size:13px;color:var(--muted2);margin-bottom:12px">Scheduling will be available once Auto Send is configured. Go to Auto Send Settings to set up your schedule.</p>' +
     '<button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();showDirectMailCentre(\'settings\')">Go to Auto Send Settings</button></div>', '400px');
+}
+
+var DM_CALENDAR_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function showDMCalendar(el) {
+  var now = new Date();
+  var currentMonth = now.getMonth() + 1;
+  var currentYear = now.getFullYear();
+  el.innerHTML = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-calendar" style="color:var(--primary)"></i> Campaign Calendar</div>' +
+    '<div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="dmChangeMonth(-1)" style="font-size:10px;padding:4px 8px;min-height:auto"><i class="fas fa-chevron-left"></i></button>' +
+    '<span id="dm-cal-month" style="font-size:12px;font-weight:600;min-width:100px;text-align:center;line-height:36px">' + DM_CALENDAR_MONTHS[currentMonth - 1] + ' ' + currentYear + '</span>' +
+    '<button class="btn btn-outline btn-sm" onclick="dmChangeMonth(1)" style="font-size:10px;padding:4px 8px;min-height:auto"><i class="fas fa-chevron-right"></i></button></div></div>' +
+    '<div id="dm-cal-content" style="min-height:100px"><div style="text-align:center;padding:30px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div></div>';
+  window._dmCalMonth = currentMonth;
+  window._dmCalYear = currentYear;
+  dmLoadCalendar();
+}
+
+function dmChangeMonth(delta) {
+  window._dmCalMonth += delta;
+  if (window._dmCalMonth > 12) { window._dmCalMonth = 1; window._dmCalYear++; }
+  if (window._dmCalMonth < 1) { window._dmCalMonth = 12; window._dmCalYear--; }
+  document.getElementById('dm-cal-month').textContent = DM_CALENDAR_MONTHS[window._dmCalMonth - 1] + ' ' + window._dmCalYear;
+  dmLoadCalendar();
+}
+
+function dmLoadCalendar() {
+  var el = document.getElementById('dm-cal-content');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div>';
+  var m = window._dmCalMonth || (new Date().getMonth() + 1);
+  var y = window._dmCalYear || new Date().getFullYear();
+  apiFetch('/api/direct-mail/calendar?month=' + m + '&year=' + y).then(function(r) {
+    if (!r || !r.events) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2)">Could not load calendar</div>'; return; }
+    // Build calendar grid
+    var firstDay = new Date(y, m - 1, 1).getDay();
+    var daysInMonth = new Date(y, m, 0).getDate();
+    var eventsByDay = {};
+    r.events.forEach(function(e) {
+      var day = parseInt(e.date.split('-')[2]) || 0;
+      if (!eventsByDay[day]) eventsByDay[day] = [];
+      eventsByDay[day].push(e);
+    });
+    var html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px">' +
+      ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(function(d) { return '<div style="text-align:center;padding:6px 2px;font-weight:600;color:var(--muted2)">' + d + '</div>'; }).join('');
+    // Adjust firstDay - JavaScript uses Sunday=0, we want Monday first
+    firstDay = firstDay === 0 ? 6 : firstDay - 1;
+    for (var i = 0; i < firstDay; i++) { html += '<div></div>'; }
+    for (var day = 1; day <= daysInMonth; day++) {
+      var dayEvents = eventsByDay[day] || [];
+      var hasEvents = dayEvents.length > 0;
+      var hasFailed = dayEvents.some(function(e) { return e.status === 'failed'; });
+      var isToday = day === new Date().getDate() && m === (new Date().getMonth() + 1) && y === new Date().getFullYear();
+      html += '<div style="min-height:60px;background:var(--card2);border:1px solid var(--border);border-radius:4px;padding:3px;cursor:pointer;' + (isToday ? 'border-color:var(--primary)' : '') + '" onclick="dmShowDayEvents(' + day + ')">' +
+        '<div style="font-size:10px;font-weight:700;color:' + (isToday ? 'var(--primary)' : 'var(--text)') + ';margin-bottom:2px">' + day + '</div>' +
+        (hasEvents ? '<div style="display:flex;gap:2px;flex-wrap:wrap">' +
+          (hasFailed ? '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ef4444" title="Failed"></span>' : '') +
+          (dayEvents.filter(function(e) { return e.status === 'completed' || e.status === 'dispatched'; }).length > 0 ? '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#22c55e" title="Completed"></span>' : '') +
+          (dayEvents.filter(function(e) { return e.status === 'queued' || e.status === 'paid' || e.status === 'approved'; }).length > 0 ? '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#0ea5e9" title="Active"></span>' : '') +
+          (dayEvents.filter(function(e) { return e.status === 'draft'; }).length > 0 ? '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b" title="Draft"></span>' : '') +
+          '</div>' : '') +
+        (hasEvents ? '<div style="font-size:8px;color:var(--muted2);margin-top:2px">' + dayEvents.length + ' event(s)</div>' : '') +
+        '</div>';
+    }
+    html += '</div><div style="margin-top:8px;font-size:10px;color:var(--muted2);text-align:center">' + r.total + ' campaign events this month</div>';
+    el.innerHTML = html;
+  });
+}
+
+function dmShowDayEvents(day) {
+  var m = window._dmCalMonth || (new Date().getMonth() + 1);
+  var y = window._dmCalYear || new Date().getFullYear();
+  var dateStr = y + '-' + String(m).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+  apiFetch('/api/direct-mail/calendar?month=' + m + '&year=' + y).then(function(r) {
+    if (!r || !r.events) return;
+    var dayEvents = r.events.filter(function(e) { return e.date === dateStr; });
+    if (dayEvents.length === 0) { showModal(dateStr, '<div style="text-align:center;padding:20px;color:var(--muted2)">No events</div>'); return; }
+    var html = dayEvents.map(function(e) {
+      var badge = e.status === 'completed' ? 'badge-green' : e.status === 'failed' ? 'badge-red' : e.status === 'draft' ? 'badge-orange' : 'badge-blue';
+      var typeLabel = e.type === 'sequence_step' ? '📋 Sequence' : e.type === 'auto_send' ? '🤖 Auto Send' : (e.sub_type === 'draft' ? '📝 Draft' : '📬 Campaign');
+      return '<div style="padding:8px 10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:4px;font-size:11px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px">' +
+        '<div><span style="font-size:12px">' + typeLabel + '</span> <strong style="color:var(--text)">' + e.name + '</strong></div>' +
+        '<span class="badge ' + badge + '" style="font-size:9px">' + e.status + '</span></div>' +
+        (e.recipients > 0 ? '<div style="font-size:10px;color:var(--muted2);margin-top:2px">' + e.recipients + ' recipients' + (e.cost > 0 ? ' · £' + e.cost.toFixed(2) : '') + '</div>' : '') +
+        '</div>';
+    }).join('');
+    showModal('📅 ' + dateStr, '<div style="display:grid;gap:4px">' + html + '</div>', '480px');
+  });
 }
 
 function showDMSequences(el) {
