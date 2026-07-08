@@ -769,27 +769,6 @@ async function sendDMAdminAlert(type, title, message) {
   } catch(e) { console.log('[DM-NOTIF] Admin alert error:', e.message); }
 }
 
-// GET /api/direct-mail/notifications — Get customer dashboard notifications
-app.get('/api/direct-mail/notifications', authMiddleware, (req, res) => {
-  try {
-    var db2 = getDb();
-    var notifs = (db2.dm_notifications || []).filter(function(n) { return n.customer_id === req.user.id; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); }).slice(0, 50);
-    res.json({ success: true, notifications: notifs, unread: notifs.filter(function(n) { return !n.read; }).length });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/direct-mail/notifications/read — Mark notification as read
-app.post('/api/direct-mail/notifications/read', authMiddleware, (req, res) => {
-  try {
-    var notifId = req.body.notification_id;
-    if (!notifId) return res.status(400).json({ error: 'Notification ID required' });
-    var db2 = getDb();
-    var idx = (db2.dm_notifications || []).findIndex(function(n) { return n.id === notifId && n.customer_id === req.user.id; });
-    if (idx !== -1) { db2.dm_notifications[idx].read = 1; saveDb(); }
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
 // ===== HELPERS =====
 function generateToken(customer) {
   return jwt.sign(
@@ -827,6 +806,25 @@ const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { er
 app.use('/api/', apiLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/signup', authLimiter);
+
+// Direct Mail notification routes
+app.get('/api/direct-mail/notifications', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var notifs = (db2.dm_notifications || []).filter(function(n) { return n.customer_id === req.user.id; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); }).slice(0, 50);
+    res.json({ success: true, notifications: notifs, unread: notifs.filter(function(n) { return !n.read; }).length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/direct-mail/notifications/read', authMiddleware, (req, res) => {
+  try {
+    var notifId = req.body.notification_id;
+    if (!notifId) return res.status(400).json({ error: 'Notification ID required' });
+    var db2 = getDb();
+    var idx = (db2.dm_notifications || []).findIndex(function(n) { return n.id === notifId && n.customer_id === req.user.id; });
+    if (idx !== -1) { db2.dm_notifications[idx].read = 1; saveDb(); }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // Serve static frontend files
 const FRONTEND_DIR = path.join(__dirname, '9amleads');
