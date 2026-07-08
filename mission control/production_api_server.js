@@ -152,12 +152,12 @@ function validatePostcodes(postcodes, customerPlan, customerProduct, customerId,
     // Check if it's a valid postcode area (e.g., "EN", "SG", "CM")
     const matchedArea = getMatchingArea(upper, areas);
     if (!matchedArea) {
-      errors.push('"' + pc + '" is not a valid UK postcode area. Please pick a 2-letter area code (e.g. "EN" for Enfield, "SG" for Stevenage, "CM" for Chelmsford).');
+      errors.push('"' + pc + '" is not a valid UK postcode area. Use 1 or 2-letter codes like B (Birmingham), N (North London), EN (Enfield), SG (Stevenage), CM (Chelmsford).');
       continue;
     }
 
-    if (upper.length !== 2) {
-      errors.push('"' + pc + '" should be a 2-letter area code (e.g. "EN", "SG", "CM").');
+    if (upper.length < 1 || upper.length > 2) {
+      errors.push('"' + pc + '" is not a valid UK postcode area code (use 1 or 2 letters like B, N, EN, SG, CM).');
       continue;
     }
 
