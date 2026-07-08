@@ -3787,8 +3787,159 @@ cron.schedule('36 2 * * *', async () => {
       } catch(e) { console.log('[02:36 UTC] Error for ' + cust.email + ': ' + e.message); }
     }
     console.log('[02:36 UTC] Delivery complete: ' + delivered + ' leads');
+    // Run Auto Send after delivery
+    try { await runAutoSend(); } catch(ase) { console.log('[02:36 UTC] Auto Send error:', ase.message); }
   } catch(e) { console.log('[02:36 UTC] Delivery error: ' + e.message); }
 });
+
+// ===== AUTO SEND DAILY JOB =====
+async function runAutoSend() {
+  console.log('[AUTO-SEND] Starting...');
+  var db = getDb();
+  var today = new Date().toISOString().split('T')[0];
+  var customers = (db.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
+  var results = { checked: 0, enabled: 0, skipped: 0, sent: 0, failed: 0, total_spend: 0 };
+
+  for (var ci = 0; ci < customers.length; ci++) {
+    var cust = customers[ci];
+    results.checked++;
+    try {
+      // 1. Check customer has auto send settings
+      var settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(cust.id);
+      if (!settings || !settings.enable_auto_send) { results.skipped++; continue; }
+      results.enabled++;
+
+      // 2. Check consent
+      if (!settings.consent_given) { console.log('[AUTO-SEND] Skip:', cust.email, 'no consent'); results.skipped++; continue; }
+
+      // 3. Check approved template exists
+      if (!settings.default_template_id) { console.log('[AUTO-SEND] Skip:', cust.email, 'no template'); results.skipped++; continue; }
+      var template = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(settings.default_template_id, cust.id);
+      if (!template) { console.log('[AUTO-SEND] Skip:', cust.email, 'template not found'); results.skipped++; continue; }
+
+      // 4. Get today's delivered leads
+      var todaysLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today); });
+      var pickedIds = {};
+      // Filter by lead types if set
+      if (settings.lead_types) {
+        var types = settings.lead_types.split(',').filter(Boolean);
+        if (types.length > 0) todaysLeads = todaysLeads.filter(function(l) { return types.indexOf(l.product) !== -1; });
+      }
+      // Filter by postcode areas if set
+      if (settings.postcode_areas) {
+        var areas = settings.postcode_areas.split(',').map(function(a) { return a.trim().toUpperCase(); }).filter(Boolean);
+        if (areas.length > 0) {
+          todaysLeads = todaysLeads.filter(function(l) {
+            var parsed = {}; try { parsed = JSON.parse(l.data || '{}'); } catch(e) {}
+            var pc = (parsed.postcode || '').toUpperCase().substring(0, 2);
+            return areas.some(function(a) { return pc.startsWith(a); });
+          });
+        }
+      }
+      // 5. Check minimum leads before sending
+      if (todaysLeads.length < (settings.min_leads_before_send || 1)) { console.log('[AUTO-SEND] Skip:', cust.email, 'only', todaysLeads.length, 'leads'); results.skipped++; continue; }
+
+      // 6. Check duplicate mailing rules
+      var recentCampaigns = db.prepare('SELECT * FROM direct_mail_campaigns WHERE customer_id = ? AND created_at >= ?').all(cust.id, new Date(Date.now() - (settings.repeat_mailing_days || 90) * 86400000).toISOString());
+      var recentLeadIds = {};
+      recentCampaigns.forEach(function(rc) {
+        var recips = db.prepare('SELECT lead_id FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(rc.id, cust.id);
+        recips.forEach(function(r) { if (r.lead_id) recentLeadIds[r.lead_id] = true; });
+      });
+      if (settings.avoid_duplicate_mailing) {
+        todaysLeads = todaysLeads.filter(function(l) { return !recentLeadIds[l.id]; });
+      }
+      // 7. Limit to max letters per day
+      if (settings.max_letters_per_day > 0 && todaysLeads.length > settings.max_letters_per_day) {
+        todaysLeads = todaysLeads.slice(0, settings.max_letters_per_day);
+      }
+      if (todaysLeads.length === 0) { console.log('[AUTO-SEND] Skip:', cust.email, 'no leads after dedup'); results.skipped++; continue; }
+
+      // 8. Check daily spend limit
+      var pricing = calcDmPrice(todaysLeads.length);
+      var totalCost = pricing.total;
+      if (settings.max_daily_spend > 0 && totalCost > settings.max_daily_spend) {
+        var capped = Math.floor(settings.max_daily_spend / (totalCost / todaysLeads.length));
+        if (capped < 1) { console.log('[AUTO-SEND] Skip:', cust.email, 'daily spend limit exceeded'); results.skipped++; continue; }
+        todaysLeads = todaysLeads.slice(0, capped);
+        pricing = calcDmPrice(todaysLeads.length);
+        totalCost = pricing.total;
+      }
+
+      // 9. Check monthly spend limit
+      var thisMonthLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today.substring(0, 7)) === 0; });
+      var monthCost = calcDmPrice(thisMonthLeads.length).total;
+      if (settings.max_monthly_spend > 0 && (monthCost + totalCost) > settings.max_monthly_spend) {
+        console.log('[AUTO-SEND] Skip:', cust.email, 'monthly spend limit would exceed');
+        results.skipped++; continue;
+      }
+
+      // 10. Check if paused due to payment or provider failure
+      if (settings.pause_on_payment_fail) { var latestPayment = db.prepare('SELECT stripe_payment_status FROM direct_mail_campaigns WHERE customer_id = ? ORDER BY created_at DESC').get(cust.id); if (latestPayment && latestPayment.stripe_payment_status === 'failed') { console.log('[AUTO-SEND] Skip:', cust.email, 'payment failed'); results.skipped++; continue; } }
+      if (settings.pause_on_provider_fail) { var latestCamp = db.prepare('SELECT status FROM direct_mail_campaigns WHERE customer_id = ? ORDER BY created_at DESC').get(cust.id); if (latestCamp && latestCamp.status === 'failed') { console.log('[AUTO-SEND] Skip:', cust.email, 'provider failed'); results.skipped++; continue; } }
+      var thisMonthSpend = 0;
+      try { var monthOrders = db.prepare('SELECT * FROM direct_mail_orders WHERE customer_id = ?').all(cust.id); monthOrders.forEach(function(o) { thisMonthSpend += Number(o.total_cost || 0); }); } catch(e) {}
+      if (settings.pause_on_spend_limit && settings.max_monthly_spend > 0 && thisMonthSpend >= settings.max_monthly_spend) { console.log('[AUTO-SEND] Skip:', cust.email, 'spend limit reached'); results.skipped++; continue; }
+
+      // 11. Create campaign automatically
+      var campaign = {
+        id: uuidv4(), customer_id: cust.id, name: 'Auto Send - ' + today,
+        description: 'Automatically generated campaign from daily leads', status: 'draft',
+        template_id: settings.default_template_id, material_id: '',
+        target_count: todaysLeads.length, sent_count: 0,
+        delivery_date: today, budget: totalCost, notes: 'Auto Send',
+        provider: '', provider_campaign_id: '', provider_status: '',
+        stripe_session_id: '', stripe_payment_id: 'auto_send_mock', stripe_payment_status: 'paid',
+        created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+      };
+      db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(campaign.id, campaign.customer_id, campaign.name, campaign.description, 'approved', campaign.template_id, campaign.material_id, campaign.target_count, campaign.sent_count, campaign.delivery_date, campaign.budget, campaign.notes, campaign.provider, campaign.provider_campaign_id, campaign.provider_status, campaign.stripe_session_id, campaign.stripe_payment_id, campaign.stripe_payment_status, campaign.created_at, campaign.updated_at);
+      db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, '', 'approved', 'system', 'Auto Send campaign created', new Date().toISOString());
+
+      // 12. Add leads as recipients
+      var validAddressCount = 0;
+      for (var li = 0; li < todaysLeads.length; li++) {
+        var l = todaysLeads[li];
+        var parsed = {}; try { parsed = JSON.parse(l.data || '{}'); } catch(e) {}
+        if (parsed.postcode && (parsed.address_line1 || parsed.address || parsed.street)) {
+          db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, parsed.name || parsed.address || 'Lead', '', parsed.address_line1 || parsed.address || parsed.street || '', parsed.city || parsed.town || '', parsed.postcode || '', 'United Kingdom', l.id, 'pending', new Date().toISOString());
+          validAddressCount++;
+        }
+      }
+
+      // 13. Send to provider (mock payment assumed success)
+      if (validAddressCount > 0) {
+        db.prepare('UPDATE direct_mail_campaigns SET status = ?, target_count = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('paid', validAddressCount, 'paid', new Date().toISOString(), campaign.id, cust.id);
+        db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'paid', 'system', 'Mock payment success', new Date().toISOString());
+
+        var provider = getDirectMailProvider();
+        var createResult = await provider.createCampaign({ name: campaign.name, recipient_count: validAddressCount, description: campaign.description });
+        if (createResult && createResult.success) {
+          db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, provider_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('queued', provider.name, createResult.provider_campaign_id, 'accepted', new Date().toISOString(), campaign.id, cust.id);
+          db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'paid', 'queued', 'system', 'Sent to provider: ' + provider.name, new Date().toISOString());
+          db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, provider.name, 'createCampaign', JSON.stringify({ name: campaign.name, recipient_count: validAddressCount }), JSON.stringify(createResult), 200, 1, '', new Date().toISOString());
+          results.sent++;
+          results.total_spend += totalCost;
+          console.log('[AUTO-SEND] Sent:', cust.email, validAddressCount, 'leads, cost: £' + totalCost.toFixed(2));
+        } else {
+          db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, cust.id);
+          results.failed++;
+          console.log('[AUTO-SEND] Failed:', cust.email, createResult?.error || 'provider error');
+        }
+      }
+    } catch(e) { console.log('[AUTO-SEND] Error for', cust.email || cust.id, ':', e.message); results.failed++; }
+  }
+  console.log('[AUTO-SEND] Complete:', JSON.stringify(results));
+  return results;
+}
+
+// Auto Send can also be triggered via API
+app.post('/api/direct-mail/run-auto-send', async (req, res) => {
+  try {
+    var results = await runAutoSend();
+    res.json({ success: true, results: results });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 cron.schedule('0 10 * * *', async () => {
   console.log('[CAMPAIGN] Starting campaign email check...');
   var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && c.marketing_consent === 1; });
