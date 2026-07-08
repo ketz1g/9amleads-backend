@@ -770,6 +770,36 @@ async function sendDMAdminAlert(type, title, message) {
 }
 
 // ===== HELPERS =====
+// Merge tag function for letter/flyer personalisation
+var MERGE_TAGS = ['{{first_name}}','{{full_name}}','{{town}}','{{postcode}}','{{postcode_area}}','{{business_name}}','{{phone}}','{{website}}','{{offer}}'];
+
+function applyMergeTags(text, lead, business) {
+  if (!text) return text;
+  var data = {
+    '{{first_name}}': lead.first_name || lead.name || lead.name || 'Homeowner',
+    '{{full_name}}': lead.full_name || lead.name || 'Homeowner',
+    '{{town}}': lead.town || lead.city || 'your area',
+    '{{postcode}}': lead.postcode || '',
+    '{{postcode_area}}': lead.postcode_area || (lead.postcode ? lead.postcode.substring(0, 2) : 'your area'),
+    '{{business_name}}': business.company_name || 'our company',
+    '{{phone}}': business.phone || '',
+    '{{website}}': business.website || '',
+    '{{offer}}': business.offer || lead.offer || 'our current offer'
+  };
+  var result = text;
+  for (var key in data) {
+    var val = data[key];
+    if (!val || val === '') val = getFallback(key);
+    result = result.split(key).join(val);
+  }
+  return result;
+}
+
+function getFallback(tag) {
+  var map = { '{{first_name}}': 'there', '{{full_name}}': 'neighbour', '{{town}}': 'your area', '{{postcode}}': 'your postcode', '{{postcode_area}}': 'your area', '{{phone}}': '', '{{website}}': '', '{{offer}}': 'our services' };
+  return map[tag] || '';
+}
+
 function generateToken(customer) {
   return jwt.sign(
     { id: customer.id, email: customer.email, product: customer.product },
@@ -2415,6 +2445,26 @@ app.post('/api/ai/generate-offers', authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'AI Marketing Builder error. Please try again.' }); }
 });
 
+// POST /api/ai/preview-personalisation — Preview personalised letter content
+app.post('/api/ai/preview-personalisation', authMiddleware, (req, res) => {
+  try {
+    var content = req.body.content || '';
+    if (!content) return res.status(400).json({ error: 'Content required' });
+    var lead = req.body.lead || {};
+    var business = req.body.business || {};
+    // If no business data provided, use customer's profile
+    if (!business.company_name) {
+      var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+      if (profile) business = { company_name: profile.company_name || 'our company', phone: profile.phone || '', website: profile.website || '', offer: req.body.business?.offer || '' };
+    }
+    var personalised = applyMergeTags(content, lead, business);
+    // Also check if any tags remain unmerged
+    var remaining = [];
+    MERGE_TAGS.forEach(function(tag) { if (personalised.indexOf(tag) !== -1) remaining.push(tag); });
+    res.json({ success: true, original: content, personalised: personalised, unmerged_tags: remaining, has_unmerged: remaining.length > 0 });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/ai/generate-flyer-pdf — Generate print-ready A5 flyer PDF
 app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
   try {
@@ -2438,6 +2488,10 @@ app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
       data.call_to_action = data.call_to_action || profile.call_to_action || 'Get in touch';
       data.logo_url = data.logo_url || profile.logo_url || '';
       data.style = data.style || profile.brand_tone || 'professional';
+    }
+    // Apply personalisation merge tags if lead data provided
+    if (data.lead_data) {
+      ['headline','subheadline','services','special_offer','offer','trust','call_to_action','back_page','slogan','qr_text'].forEach(function(f) { if (data[f]) data[f] = applyMergeTags(String(data[f]), data.lead_data, { company_name: data.company_name, phone: data.phone, website: data.website }); });
     }
 
     var style = data.style || 'professional';

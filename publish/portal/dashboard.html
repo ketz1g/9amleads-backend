@@ -1358,7 +1358,12 @@ function showDMLetterGen(el) {
     '<div class="card" style="margin-top:12px"><div class="card-header"><div class="card-title"><i class="fas fa-tag" style="color:var(--warning)"></i> AI Offer Generator</div></div>' +
     '<p style="font-size:11px;color:var(--muted2);margin-bottom:8px">Generate promotional offers based on your business profile. Use them in flyers, letters, and campaigns.</p>' +
     '<button class="btn btn-outline btn-sm" onclick="dmShowOfferGenerator()" style="width:100%"><i class="fas fa-magic"></i> Generate Offers</button>' +
-    '<div id="ai-offers" style="display:none;margin-top:10px"></div></div>';
+    '<div id="ai-offers" style="display:none;margin-top:10px"></div></div>' +
+    '<div class="card" style="margin-top:12px"><div class="card-header"><div class="card-title"><i class="fas fa-user-tag" style="color:var(--primary)"></i> Local Personalisation</div></div>' +
+    '<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;margin-bottom:8px"><input type="checkbox" id="ai-personalise" checked style="accent-color:var(--primary);width:16px;height:16px"> <span>Personalise content with lead data (name, town, postcode area)</span></label>' +
+    (isLetter ? '' : '<div style="font-size:10px;color:var(--muted2);line-height:1.5;margin-bottom:6px">Use merge tags in content:<br><code style="background:var(--card2);padding:2px 5px;border-radius:3px;font-size:10px">{{first_name}}</code> <code style="background:var(--card2);padding:2px 5px;border-radius:3px;font-size:10px">{{town}}</code> <code style="background:var(--card2);padding:2px 5px;border-radius:3px;font-size:10px">{{postcode_area}}</code> <code style="background:var(--card2);padding:2px 5px;border-radius:3px;font-size:10px">{{offer}}</code></div>' +
+    '<div><button class="btn btn-outline btn-sm" onclick="dmPreviewPersonalisation()" style="font-size:10px;padding:4px 10px"><i class="fas fa-eye"></i> Preview</button></div>' +
+    '<div id="ai-preview-personalisation" style="display:none;margin-top:6px;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--muted2);line-height:1.5"></div>')
   html += '<div id="ai-results" style="display:none"></div>';
   el.innerHTML = html;
 
@@ -1625,6 +1630,25 @@ function dmConfirmSaveOffer(idx) {
   });
 }
 
+function dmPreviewPersonalisation() {
+  var el = document.getElementById('ai-preview-personalisation');
+  if (!el) return;
+  el.style.display = 'block';
+  el.innerHTML = '<div style="text-align:center;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i> Previewing...</div>';
+  var sampleContent = 'Dear {{first_name}},\n\nWe are helping homeowners in the {{town}} area and beyond. As a local {{postcode_area}} business, {{business_name}} offers quality service. Call {{phone}} or visit {{website}} to claim {{offer}}.';
+  apiFetch('/api/ai/preview-personalisation', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    content: sampleContent,
+    lead: { first_name: 'John', name: 'John Smith', town: 'London', postcode: 'SW1A 1AA', postcode_area: 'SW1' },
+    business: { company_name: document.getElementById('ai-company')?.value || 'Your Company', phone: document.getElementById('ai-phone')?.value || '020 7123 4567', website: document.getElementById('ai-website')?.value || 'yourwebsite.com', offer: 'a free quote' }
+  })}).then(function(r) {
+    if (r && r.success) {
+      el.innerHTML = '<div style="margin-bottom:6px;font-weight:600;color:var(--text);font-size:11px">Preview (sample lead)</div>' +
+        '<div style="padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:11px;line-height:1.7;color:var(--text2)">' + r.personalised.replace(/\n/g, '<br>') + '</div>' +
+        (r.unmerged_tags.length > 0 ? '<div style="margin-top:6px;color:var(--warning);font-size:10px">⚠️ Unmerged tags: ' + r.unmerged_tags.join(', ') + '</div>' : '<div style="margin-top:6px;color:var(--success);font-size:10px">✅ All tags merged successfully</div>');
+    } else { el.innerHTML = '<div style="color:var(--danger);font-size:11px">Preview failed</div>'; }
+  }).catch(function() { el.innerHTML = '<div style="color:var(--danger);font-size:11px">Preview error</div>'; });
+}
+
 var dmFlyerBgImage = null;
 
 function dmGenerateFlyerImage() {
@@ -1666,6 +1690,7 @@ function dmGenerateFlyerPDF() {
   var btn = document.getElementById('ai-pdf-section');
   if (btn) btn.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i> Generating print-ready PDF...</div>';
 
+  var personalise = document.getElementById('ai-personalise')?.checked;
   var data = {
     company_name: document.getElementById('ai-company')?.value || '',
     business_type: document.getElementById('ai-industry')?.value || '',
@@ -1684,7 +1709,9 @@ function dmGenerateFlyerPDF() {
     qr_text: dmGenContent?.qr_text || '',
     slogan: dmGenContent?.slogan || '',
     logo_url: dmGenContent?.logo_url || '',
-    background_image: dmFlyerBgImage || ''
+    background_image: dmFlyerBgImage || '',
+    personalise: personalise ? true : false,
+    lead_data: personalise ? { first_name: 'Homeowner', town: document.getElementById('ai-area')?.value || 'your area', postcode_area: (document.getElementById('ai-area')?.value || '').substring(0, 2) } : null
   };
 
   apiFetch('/api/ai/generate-flyer-pdf', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(function(r) {
