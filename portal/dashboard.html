@@ -1349,13 +1349,22 @@ function showDMCreate(el) {
 
   var contentHtml = '';
   if (step === 1) {
-    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-users" style="color:var(--primary)"></i> Step 1: Choose Your Leads</div></div>' +
-      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Select leads from your pipeline to include in this campaign. You can filter by date range and lead type.</p>' +
-      '<div style="display:grid;gap:10px"><div class="form-row"><div><label style="font-size:11px;color:var(--muted2);margin-bottom:4px;display:block">Lead Type</label><select id="dm-lead-type" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option>All Types</option><option>Moving</option><option>Probate</option><option>New Business</option><option>Planning</option><option>Tenders</option></select></div>' +
-      '<div><label style="font-size:11px;color:var(--muted2);margin-bottom:4px;display:block">Date Range</label><select id="dm-date-range" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option>Last 7 days</option><option>Last 30 days</option><option>Last 90 days</option><option>All time</option></select></div></div>' +
-      '<div style="padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:13px;color:var(--muted2)">' +
-      '<i class="fas fa-inbox" style="font-size:24px;display:block;margin-bottom:6px;color:var(--muted)"></i>Your leads will appear here once you have leads in your pipeline.' +
-      '</div></div></div>';
+    contentHtml = '<div id="dm-step1"><div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-users" style="color:var(--primary)"></i> Step 1: Choose Your Leads</div></div>' +
+      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Select leads from your pipeline. Filter to find the right audience for your campaign.</p>' +
+      '<div style="display:grid;gap:10px"><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">' +
+      '<div><label style="font-size:11px;color:var(--muted2);margin-bottom:4px;display:block">Lead Type</label><select id="dm-lead-type" onchange="dmFilterLeads()" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option value="">All Types</option><option value="moving">Moving</option><option value="probate">Probate</option><option value="newbusiness">New Business</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);margin-bottom:4px;display:block">Postcode Area</label><input type="text" id="dm-postcode" oninput="dmFilterLeads()" placeholder="e.g. EN, SG, CM" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);text-transform:uppercase"></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);margin-bottom:4px;display:block">Date Range</label><select id="dm-date-range" onchange="dmFilterLeads()" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="">All time</option></select></div></div>' +
+      '<div id="dm-lead-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px"></div>' +
+      '<div id="dm-lead-list" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px;background:var(--card2)">' +
+      '<div style="text-align:center;padding:20px;color:var(--muted2);font-size:12px"><i class="fas fa-spinner fa-spin"></i> Loading leads...</div></div>' +
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-outline btn-sm" onclick="dmSelectAll()"><i class="fas fa-check-double"></i> Select All</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="dmDeselectAll()"><i class="fas fa-times"></i> Deselect All</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="dmSelectValid()"><i class="fas fa-map-pin"></i> Select Valid Addresses Only</button>' +
+      '<span id="dm-sel-count" style="font-size:11px;color:var(--muted2)">0 selected</span></div></div></div>' +
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-cog" style="color:var(--muted2)"></i> Repeat Mailing Settings</div></div>' +
+      '<label style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px;cursor:pointer"><input type="checkbox" id="dm-allow-repeat" style="accent-color:var(--primary);width:16px;height:16px"> <span>Allow repeat mailing to same lead after <input type="number" id="dm-repeat-days" value="90" style="width:60px;padding:4px 8px;background:var(--card2);border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--text);text-align:center"> days</span></label>' +
+      '</div></div>';
   } else if (step === 2) {
     contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-file-alt" style="color:var(--primary)"></i> Step 2: Choose Your Materials</div></div>' +
       '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Select a template or upload your own materials for this campaign.</p>' +
@@ -1435,6 +1444,73 @@ function saveDMSettings() {
     if (r && r.success) { showStatus('dm-content','Settings saved!','var(--success)'); }
     else { showStatus('dm-content','Failed to save','var(--danger)'); }
   });
+}
+
+var dmSelectedLeads = {};
+var dmAllLeads = [];
+
+function dmFilterLeads() {
+  var leadType = document.getElementById('dm-lead-type')?.value || '';
+  var postcode = document.getElementById('dm-postcode')?.value || '';
+  var dateRange = parseInt(document.getElementById('dm-date-range')?.value) || 0;
+  var url = '/api/direct-mail/leads?';
+  if (leadType) url += 'lead_type=' + leadType + '&';
+  if (postcode) url += 'postcode=' + encodeURIComponent(postcode) + '&';
+  if (dateRange) {
+    var d = new Date(); d.setDate(d.getDate() - dateRange);
+    url += 'date_from=' + d.toISOString().split('T')[0] + '&';
+  }
+  document.getElementById('dm-lead-list').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2);font-size:12px"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+  apiFetch(url).then(function(r) {
+    if (!r || !r.leads) { document.getElementById('dm-lead-list').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2);font-size:12px">No leads found.</div>'; return; }
+    dmAllLeads = r.leads;
+    var summaryHtml = '<div style="text-align:center;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px"><span style="font-weight:700;font-size:18px;color:var(--primary)">' + r.total + '</span><br><span style="font-size:10px;color:var(--muted2)">Total Leads</span></div>' +
+      '<div style="text-align:center;padding:8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:6px"><span style="font-weight:700;font-size:18px;color:#22c55e">' + r.valid_postal + '</span><br><span style="font-size:10px;color:var(--muted2)">Valid Address</span></div>' +
+      '<div style="text-align:center;padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px"><span style="font-weight:700;font-size:18px;color:#f59e0b">' + r.invalid_address + '</span><br><span style="font-size:10px;color:var(--muted2)">Missing Postcode</span></div>' +
+      '<div style="text-align:center;padding:8px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.1);border-radius:6px"><span style="font-weight:700;font-size:18px;color:#ef4444">' + r.missing_address + '</span><br><span style="font-size:10px;color:var(--muted2)">No Address</span></div>';
+    document.getElementById('dm-lead-summary').innerHTML = summaryHtml;
+    var listHtml = '';
+    for (var li = 0; li < dmAllLeads.length; li++) {
+      var l = dmAllLeads[li];
+      var checked = dmSelectedLeads[l.id] ? 'checked' : '';
+      var disabled = l.already_in_campaign ? 'disabled' : '';
+      listHtml += '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--border);cursor:pointer;font-size:12px;opacity:' + (l.already_in_campaign ? 0.4 : 1) + '">' +
+        '<input type="checkbox" class="dm-lead-cb" data-id="' + l.id + '" ' + checked + ' ' + disabled + ' onchange="dmToggleLead(this)" style="accent-color:var(--primary);width:15px;height:15px;flex-shrink:0">' +
+        '<div style="flex:1;min-width:0"><div style="font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (l.name || 'Unknown') + '</div>' +
+        '<div style="font-size:10px;color:var(--muted2)">' + (l.address_line1 ? l.address_line1 + ', ' : '') + (l.city || '') + (l.postcode ? ' · ' + l.postcode : '') + '</div></div>' +
+        '<span class="badge ' + (l.is_valid_postal ? 'badge-green' : l.has_address ? 'badge-orange' : 'badge-red') + '" style="font-size:9px;flex-shrink:0">' + (l.is_valid_postal ? '✓' : l.has_address ? '~' : '✗') + '</span>' +
+        (l.already_in_campaign ? '<span class="badge badge-blue" style="font-size:9px">Mailed</span>' : '') + '</label>';
+    }
+    document.getElementById('dm-lead-list').innerHTML = listHtml || '<div style="text-align:center;padding:20px;color:var(--muted2);font-size:12px">No leads match your filters.</div>';
+    dmUpdateCount();
+  });
+}
+
+function dmToggleLead(cb) {
+  if (cb.checked) dmSelectedLeads[cb.dataset.id] = true;
+  else delete dmSelectedLeads[cb.dataset.id];
+  dmUpdateCount();
+}
+function dmSelectAll() {
+  document.querySelectorAll('.dm-lead-cb:not(:disabled)').forEach(function(cb) { cb.checked = true; dmSelectedLeads[cb.dataset.id] = true; });
+  dmUpdateCount();
+}
+function dmDeselectAll() {
+  document.querySelectorAll('.dm-lead-cb').forEach(function(cb) { cb.checked = false; delete dmSelectedLeads[cb.dataset.id]; });
+  dmUpdateCount();
+}
+function dmSelectValid() {
+  document.querySelectorAll('.dm-lead-cb:not(:disabled)').forEach(function(cb) {
+    var lead = dmAllLeads.find(function(l) { return l.id === cb.dataset.id; });
+    if (lead && lead.is_valid_postal) { cb.checked = true; dmSelectedLeads[cb.dataset.id] = true; }
+    else { cb.checked = false; delete dmSelectedLeads[cb.dataset.id]; }
+  });
+  dmUpdateCount();
+}
+function dmUpdateCount() {
+  var count = Object.keys(dmSelectedLeads).length;
+  var el = document.getElementById('dm-sel-count');
+  if (el) el.textContent = count + ' selected';
 }
 
 function showDMHistory(el) {

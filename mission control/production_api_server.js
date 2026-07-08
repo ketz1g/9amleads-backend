@@ -5095,6 +5095,64 @@ app.post('/api/direct-mail/campaigns/:id/recipients', authMiddleware, (req, res)
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/direct-mail/leads — Get leads available for campaign selection
+app.get('/api/direct-mail/leads', authMiddleware, (req, res) => {
+  try {
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    var allLeads = db.prepare('SELECT * FROM leads WHERE customer_id = ? ORDER BY created_at DESC').all(req.user.id);
+    var campaignId = req.query.campaign_id || '';
+    var alreadyInCampaign = [];
+    if (campaignId) {
+      alreadyInCampaign = db.prepare('SELECT lead_id FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(campaignId, req.user.id).map(function(r) { return r.lead_id; });
+    }
+    var leadType = req.query.lead_type || '';
+    var postcodeArea = req.query.postcode || '';
+    var dateFrom = req.query.date_from || '';
+    var dateTo = req.query.date_to || '';
+    var filtered = allLeads.filter(function(l) {
+      var parsed = {};
+      try { parsed = JSON.parse(l.data || '{}'); } catch(e) {}
+      if (leadType && l.product !== leadType) return false;
+      if (postcodeArea) {
+        var lc = (parsed.postcode || '').toUpperCase();
+        if (lc.indexOf(postcodeArea.toUpperCase()) !== 0) return false;
+      }
+      if (dateFrom && l.created_at && l.created_at < dateFrom) return false;
+      if (dateTo && l.created_at && l.created_at > dateTo) return false;
+      return true;
+    });
+    var leadResults = filtered.map(function(l) {
+      var parsed = {};
+      try { parsed = JSON.parse(l.data || '{}'); } catch(e) {}
+      var hasAddress = parsed.address_line1 || parsed.address || parsed.street || (parsed.postcode ? true : false);
+      var isValidPostal = !!(parsed.postcode && (parsed.address_line1 || parsed.address || parsed.street));
+      return {
+        id: l.id, product: l.product, status: l.status,
+        name: parsed.name || parsed.address || '', address: parsed.address || '',
+        address_line1: parsed.address_line1 || parsed.address || parsed.street || '',
+        city: parsed.city || parsed.town || '',
+        postcode: parsed.postcode || '',
+        has_address: hasAddress,
+        is_valid_postal: isValidPostal,
+        already_in_campaign: alreadyInCampaign.indexOf(l.id) !== -1,
+        created_at: l.created_at
+      };
+    });
+    var validCount = leadResults.filter(function(l) { return l.is_valid_postal; }).length;
+    var invalidCount = leadResults.filter(function(l) { return !l.is_valid_postal && l.has_address; }).length;
+    var noAddress = leadResults.filter(function(l) { return !l.has_address; }).length;
+    res.json({
+      success: true,
+      leads: leadResults,
+      total: leadResults.length,
+      valid_postal: validCount,
+      missing_address: noAddress,
+      invalid_address: invalidCount,
+      already_mailed: alreadyInCampaign.length
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/direct-mail/stats — Get direct mail stats for customer
 app.get('/api/direct-mail/stats', authMiddleware, (req, res) => {
   try {
