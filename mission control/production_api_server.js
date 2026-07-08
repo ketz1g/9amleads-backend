@@ -9022,6 +9022,83 @@ app.get('/api/admin/direct-mail/analytics', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== ADDRESS QUALITY CHECKER =====
+// POST /api/direct-mail/check-addresses — Check address quality before sending
+app.post('/api/direct-mail/check-addresses', authMiddleware, (req, res) => {
+  try {
+    var leadIds = req.body.lead_ids || [];
+    var campaignId = req.body.campaign_id || '';
+    if (leadIds.length === 0 && !campaignId) return res.status(400).json({ error: 'Lead IDs or campaign ID required' });
+
+    // Get leads from campaign if campaign ID provided
+    var leadsToCheck = [];
+    if (campaignId) {
+      var recipients = db.prepare('SELECT * FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(campaignId, req.user.id);
+      leadsToCheck = recipients.map(function(r) {
+        return { id: r.lead_id || r.id, name: r.name, address_line1: r.address_line1, city: r.city, postcode: r.postcode, company: r.company };
+      });
+    } else if (leadIds.length > 0) {
+      var allLeads = db.prepare('SELECT * FROM leads WHERE customer_id = ?').all(req.user.id);
+      leadsToCheck = leadIds.map(function(lid) {
+        var lead = allLeads.find(function(l) { return l.id === lid; });
+        if (!lead) return null;
+        var parsed = {}; try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
+        return { id: lead.id, name: parsed.name || '', address_line1: parsed.address_line1 || parsed.address || parsed.street || '', city: parsed.city || parsed.town || '', postcode: parsed.postcode || '', company: parsed.company || '' };
+      }).filter(Boolean);
+    }
+
+    var results = [];
+    var validCount = 0; var invalidCount = 0; var duplicateCount = 0; var suppressedCount = 0; var alreadyMailedCount = 0;
+    var seenAddresses = {};
+
+    leadsToCheck.forEach(function(lead) {
+      var issues = [];
+      // Missing postcode
+      if (!lead.postcode || lead.postcode.trim().length < 2) issues.push('Missing postcode');
+      // Missing house number/name
+      if (!lead.address_line1 || lead.address_line1.trim().length < 3) issues.push('Missing house number or street name');
+      // Missing town
+      if (!lead.city || lead.city.trim().length < 2) issues.push('Missing town/city');
+      // Invalid postcode format (basic check)
+      if (lead.postcode && lead.postcode.trim().length > 1) {
+        var pc = lead.postcode.replace(/\s/g, '').toUpperCase();
+        if (!pc.match(/^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$/)) issues.push('Invalid postcode format');
+      }
+      // Duplicate address
+      var addrKey = (lead.postcode || '').toUpperCase() + '|' + (lead.address_line1 || '').toLowerCase();
+      if (seenAddresses[addrKey]) { issues.push('Duplicate address'); duplicateCount++; }
+      seenAddresses[addrKey] = true;
+      // Suppressed address
+      if (isAddressSuppressed(req.user.id, lead.postcode, lead.address_line1)) { issues.push('Suppressed address'); suppressedCount++; }
+      // Previously mailed
+      if (lead.id) {
+        var alreadyMailed = db.prepare('SELECT COUNT(*) as count FROM direct_mail_recipients WHERE lead_id = ? AND customer_id = ? AND status = \'sent\'').get(lead.id, req.user.id);
+        if (alreadyMailed && alreadyMailed.count > 0) { issues.push('Previously mailed'); alreadyMailedCount++; }
+      }
+
+      var valid = issues.length === 0;
+      if (valid) validCount++; else invalidCount++;
+      results.push({
+        id: lead.id, name: lead.name, address_line1: lead.address_line1,
+        city: lead.city, postcode: lead.postcode,
+        valid: valid, issues: issues, quality_score: valid ? 100 : Math.max(0, 100 - issues.length * 25)
+      });
+    });
+
+    res.json({
+      success: true,
+      total_checked: leadsToCheck.length,
+      valid_addresses: validCount,
+      invalid_addresses: invalidCount,
+      duplicates_removed: duplicateCount,
+      suppressed_removed: suppressedCount,
+      previously_mailed: alreadyMailedCount,
+      final_send_quantity: validCount,
+      details: results
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== CAMPAIGN CALENDAR =====
 // GET /api/direct-mail/calendar — Get all campaign events for calendar view
 app.get('/api/direct-mail/calendar', authMiddleware, (req, res) => {

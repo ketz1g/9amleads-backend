@@ -1853,6 +1853,7 @@ function showDMCreate(el) {
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-outline btn-sm" onclick="dmSelectAll()"><i class="fas fa-check-double"></i> Select All</button>' +
       '<button class="btn btn-outline btn-sm" onclick="dmDeselectAll()"><i class="fas fa-times"></i> Deselect All</button>' +
       '<button class="btn btn-outline btn-sm" onclick="dmSelectValid()"><i class="fas fa-map-pin"></i> Select Valid Addresses Only</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="dmCheckAddressQuality()"><i class="fas fa-check-circle"></i> Check Quality</button>' +
       '<span id="dm-sel-count" style="font-size:11px;color:var(--muted2)">0 selected</span></div></div></div>' +
       '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-cog" style="color:var(--muted2)"></i> Repeat Mailing Settings</div></div>' +
       '<label style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px;cursor:pointer"><input type="checkbox" id="dm-allow-repeat" style="accent-color:var(--primary);width:16px;height:16px"> <span>Allow repeat mailing to same lead after <input type="number" id="dm-repeat-days" value="90" style="width:60px;padding:4px 8px;background:var(--card2);border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--text);text-align:center"> days</span></label>' +
@@ -2313,6 +2314,36 @@ function dmUpdateCount() {
   var count = Object.keys(dmSelectedLeads).length;
   var el = document.getElementById('dm-sel-count');
   if (el) el.textContent = count + ' selected';
+}
+
+function dmCheckAddressQuality() {
+  var leadIds = Object.keys(dmSelectedLeads);
+  if (leadIds.length === 0) { showStatus('dm-content','Select leads first','var(--warning)'); return; }
+  showModal('Address Quality Check', '<div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i> Checking addresses...</div>', '500px');
+  apiFetch('/api/direct-mail/check-addresses', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ lead_ids: leadIds }) }).then(function(r) {
+    if (!r || !r.success) { showModal('Address Quality Check', '<div style="text-align:center;padding:20px;color:var(--danger)">Check failed</div>'); return; }
+    var overlay = document.getElementById('modal-overlay');
+    if (overlay) overlay.innerHTML = '';
+    var html = '<div style="display:grid;gap:6px;font-size:12px">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px">' +
+      '<div style="text-align:center;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px"><div style="font-size:18px;font-weight:900;color:var(--primary)">' + r.total_checked + '</div><div style="font-size:9px;color:var(--muted2)">Total Leads</div></div>' +
+      '<div style="text-align:center;padding:8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:6px"><div style="font-size:18px;font-weight:900;color:#22c55e">' + r.valid_addresses + '</div><div style="font-size:9px;color:var(--muted2)">Valid</div></div>' +
+      '<div style="text-align:center;padding:8px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.1);border-radius:6px"><div style="font-size:18px;font-weight:900;color:#ef4444">' + r.invalid_addresses + '</div><div style="font-size:9px;color:var(--muted2)">Invalid</div></div>' +
+      '<div style="text-align:center;padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px"><div style="font-size:18px;font-weight:900;color:#f59e0b">' + r.final_send_quantity + '</div><div style="font-size:9px;color:var(--muted2)">Final Send</div></div>' +
+      '</div>';
+    if (r.duplicates_removed > 0) html += '<div style="padding:4px 8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:4px;font-size:11px;color:var(--warning)">⚠️ ' + r.duplicates_removed + ' duplicate(s) removed</div>';
+    if (r.suppressed_removed > 0) html += '<div style="padding:4px 8px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.1);border-radius:4px;font-size:11px;color:var(--danger)">🚫 ' + r.suppressed_removed + ' suppressed address(es) removed</div>';
+    if (r.previously_mailed > 0) html += '<div style="padding:4px 8px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.1);border-radius:4px;font-size:11px;color:var(--primary)">📬 ' + r.previously_mailed + ' previously mailed</div>';
+    html += '<div style="margin-top:8px;max-height:200px;overflow-y:auto">';
+    (r.details || []).forEach(function(d) {
+      if (d.valid) return;
+      html += '<div style="padding:6px 8px;background:var(--card2);border:1px solid var(--border);border-radius:4px;margin-bottom:3px;font-size:10px">' +
+        (d.name ? '<strong>' + d.name + '</strong> — ' : '') + (d.address_line1 || '') + (d.city ? ', ' + d.city : '') + (d.postcode ? ' · ' + d.postcode : '') +
+        '<div style="color:var(--danger);font-size:9px;margin-top:2px">' + d.issues.join(', ') + '</div></div>';
+    });
+    html += '</div></div>';
+    showModal('Address Quality Check Results', html, '500px');
+  });
 }
 
 var dmSendingCampaignId = null;
