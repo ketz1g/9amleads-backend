@@ -10,7 +10,7 @@
 :root.dark{--bg:#07090f;--bg2:#04060a;--card:#0b0e1a;--card2:#080b14;--border:#13172b;--border2:#1a2040;--text:#dce2f0;--text2:#8890b0;--muted:#4a5270;--muted2:#3a4160;--shadow:0 1px 3px rgba(0,0,0,.3);--shadow-md:0 4px 12px rgba(0,0,0,.4);--shadow-lg:0 8px 32px rgba(0,0,0,.5);--shadow-xl:0 16px 48px rgba(0,0,0,.6)}
 body{font-family:var(--ff-b);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:linear-gradient(180deg,var(--bg2) 0%,var(--card) 100%);border-right:1px solid var(--border);z-index:200;display:flex;flex-direction:column;overflow-y:auto;transition:transform .3s ease;backdrop-filter:blur(20px);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:2px 0 20px rgba(0,0,0,.03)}.sidebar.collapsed{transform:translateX(-100%)}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:linear-gradient(180deg,var(--bg2) 0%,var(--card) 100%);border-right:1px solid var(--border);z-index:200;display:flex;flex-direction:column;overflow-y:auto;transition:transform .3s ease;backdrop-filter:blur(20px);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:2px 0 20px rgba(0,0,0,.03)}.sidebar.collapsed{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
 .sidebar .logo{padding:20px 20px 16px;display:flex;align-items:center;gap:10px;font-size:17px;font-weight:900;font-family:var(--ff-h);text-decoration:none;color:var(--text)}.sidebar .logo .mark{width:30px;height:30px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;box-shadow:0 2px 8px rgba(14,165,233,.3)}.sidebar .logo span{color:var(--primary)}
 .sidebar .nav-items{flex:1;padding:12px 10px}.sidebar .nav-items a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;transition:all .2s ease;margin-bottom:2px;position:relative}.sidebar .nav-items a:hover{color:var(--text);background:var(--card2);transform:translateX(2px)}.sidebar .nav-items a.active{color:var(--primary);background:linear-gradient(135deg,rgba(14,165,233,.1),rgba(14,165,233,.04));font-weight:600;border:1px solid rgba(14,165,233,.12)}.sidebar .nav-items a.active::before{content:'';position:absolute;left:-1px;top:50%;transform:translateY(-50%);width:3px;height:20px;background:linear-gradient(180deg,var(--primary),var(--primary-dark));border-radius:0 3px 3px 0}.sidebar .nav-items a i{width:18px;text-align:center;font-size:14px;color:var(--muted2)}.sidebar .nav-items a.active i{color:var(--primary)}
 .sidebar .nav-bottom{padding:10px 10px 16px;border-top:1px solid var(--border)}.sidebar .nav-bottom button{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;transition:all .2s;width:100%;background:none;border:none;cursor:pointer;font-family:inherit}.sidebar .nav-bottom button:hover{color:var(--text);background:var(--card2);transform:translateX(2px)}
@@ -36,7 +36,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 .sidebar-overlay{display:none;position:fixed;inset:0;z-index:199;background:rgba(0,0,0,0.5)}
 
 @media(max-width:900px){
-  .sidebar{z-index:300;box-shadow:var(--shadow-lg)}
+  .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
   .sidebar-overlay.show{display:block}
   .main-content{padding:16px}
@@ -127,7 +127,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <body>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" style="display:none"></div>
 <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-<div class="sidebar collapsed" id="sidebar">
+<div class="sidebar" id="sidebar">
 <a href="/portal/dashboard.html" class="logo"><div class="mark">9</div>9am<span>Leads</span></a>
 <div class="nav-items">
 <a href="/portal/dashboard.html" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
@@ -153,7 +153,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div id="admin-mode-banner" style="display:none;background:linear-gradient(135deg,#dc2626,#991b1b);padding:8px 16px;text-align:center;font-size:12px;font-weight:600;color:#fff;position:sticky;top:0;z-index:300">
   <i class="fas fa-shield-alt"></i> Admin Mode — You are viewing this customer's dashboard. <a href="/admin/" style="color:#fff;text-decoration:underline;margin-left:8px;font-weight:700">Return to Admin</a>
 </div>
-<div class="main-content sidebar-closed">
+<div class="main-content">
 <!-- Company Header Bar -->
 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0 16px;margin-bottom:8px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px">
 <div style="display:flex;align-items:center;gap:12px">
