@@ -1273,9 +1273,9 @@ function showStatus(id, msg, color) {
   setTimeout(function() { el.style.display = 'none'; }, 4000);
 }
 
-var DM_TABS = ['overview','create','packs','marketplace','ai-builder','upload','templates','settings','history','proof','payments'];
-var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', packs:'Campaign Packs', marketplace:'Template Marketplace', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
-var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', packs:'fa-box', marketplace:'fa-store', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
+var DM_TABS = ['overview','create','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments'];
+var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
+var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
 
 function showDirectMailCentre(tab) {
   tab = tab || localStorage.getItem('dmTab') || 'overview';
@@ -1294,7 +1294,7 @@ function showDirectMailCentre(tab) {
 
   var el = document.getElementById('dm-content');
   // Check feature access first
-  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, settings: 'auto_send', proof: 'proof_tracking' };
+  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, settings: 'auto_send', proof: 'proof_tracking' };
   apiFetch('/api/direct-mail/features').then(function(fr) {
     var plan = fr && fr.plan ? fr.plan : 'free_trial';
     var features = fr && fr.features ? fr.features : {};
@@ -1315,6 +1315,7 @@ function showDirectMailCentre(tab) {
     else if (tab === 'upload') { showDMUpload(el); }
     else if (tab === 'packs') { showDMPacks(el); }
     else if (tab === 'marketplace') { showDMMarketplace(el); }
+    else if (tab === 'seasonal') { showDMSeasonal(el); }
     else if (tab === 'templates') { showDMTemplates(el); }
     else if (tab === 'settings') { showDMSettings(el, canUse('auto_send')); }
     else if (tab === 'history') { showDMHistory(el); }
@@ -2567,6 +2568,64 @@ function dmDeleteMarketplaceTemplate(id) {
     if (r && r.success) { showStatus('dm-content', 'Template removed', 'var(--success)'); dmLoadMarketplace(); }
     else { alert('Failed to remove'); }
   });
+}
+
+function showDMSeasonal(el) {
+  el.innerHTML = '<div style="animation:slideUp .3s ease"><div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-calendar-alt" style="color:var(--primary)"></i> Seasonal Campaign Recommendations</div></div>' +
+    '<div id="seasonal-content"><div style="text-align:center;padding:30px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i> Matching campaigns for your business...</div></div></div></div>';
+  apiFetch('/api/seasonal/recommendations').then(function(r) {
+    var container = document.getElementById('seasonal-content');
+    if (!r || !r.campaigns) { if (container) container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted2)">Could not load recommendations</div>'; return; }
+    var html = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:12px">' +
+      '<span style="font-weight:600">' + r.current_month + '</span> <span style="color:var(--muted2)">—</span> ' +
+      '<span style="color:var(--muted2)">' + r.current_season + '</span> <span style="color:var(--muted2)">·</span> ' +
+      '<span style="color:var(--muted2)">Your business:</span> <span class="badge badge-blue">' + (r.business_type || 'General') + '</span>' +
+      '<span style="margin-left:auto;font-weight:600">' + r.total + ' recommendations</span></div>';
+    if (r.campaigns.length === 0) {
+      html += '<div style="text-align:center;padding:30px;color:var(--muted2)"><i class="fas fa-calendar-check" style="font-size:32px;display:block;margin-bottom:8px"></i>No specific recommendations for your industry this month. Check back next month!</div>';
+      if (container) container.innerHTML = html; return;
+    }
+    html += '<div style="display:grid;gap:8px">' + r.campaigns.map(function(c) {
+      var icons = { 'Home improvement':'🏠', 'New Year cleaning':'🧹', 'New Year promotion':'🎉', 'Winter maintenance':'❄️', 'Spring cleaning':'🌸', 'Spring garden prep':'🌱', 'Spring roof check':'🔍', 'Exterior spring clean':'💦', 'Easter promotion':'🐣', 'Spring driveway':'🛣️', 'Moving season':'🚚', 'Summer promotion':'☀️', 'Summer solar':'☀️', 'Summer pest control':'🐜', 'Summer improvements':'🔨', 'Back to school':'📚', 'Boiler service':'🔥', 'Winter prep':'🧊', 'Autumn gutter clearance':'🍂', 'Autumn promotion':'🍁', 'Pre-winter roof check':'🏠', 'Autumn garden':'🌿', 'Emergency readiness':'🆘', 'Christmas cleaning':'🎄', 'Year-end promotion':'🎊', 'Year-end planning':'📋' };
+      var icon = icons[c.objective] || '📬';
+      return '<div style="padding:12px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+        '<span style="font-size:22px">' + icon + '</span>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--text)">' + (c.headline || '') + '</div>' +
+        '<div style="font-size:11px;color:var(--muted2)">' + (c.offer || '') + ' · <span style="color:var(--primary)">' + (c.cta || '') + '</span></div></div>' +
+        '<div style="display:flex;gap:4px">' +
+        '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto" onclick="dmUseSeasonal(\'' + encodeURIComponent(c.headline || '') + '\',\'' + encodeURIComponent(c.offer || '') + '\',\'' + encodeURIComponent(c.cta || '') + '\')"><i class="fas fa-bullhorn"></i> Use</button>' +
+        '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto" onclick="dmScheduleSeasonal(\'' + encodeURIComponent(c.headline || '') + '\',\'' + encodeURIComponent(c.offer || '') + '\')"><i class="fas fa-clock"></i> Schedule</button>' +
+        '</div></div>';
+    }).join('') + '</div>';
+    if (container) container.innerHTML = html;
+  });
+}
+
+function dmUseSeasonal(headline, offer, cta) {
+  headline = decodeURIComponent(headline); offer = decodeURIComponent(offer); cta = decodeURIComponent(cta);
+  showModal('Use Recommendation', '<div style="text-align:center;padding:10px 0"><div style="font-size:32px;margin-bottom:8px">📬</div><p style="font-size:13px;color:var(--muted2);margin-bottom:12px">Save this as a template to use in your campaigns.</p>' +
+    '<input type="text" id="seasonal-tpl-name" value="Seasonal: ' + headline.substring(0, 40) + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);margin-bottom:10px">' +
+    '<button class="btn btn-primary btn-sm" onclick="dmSaveSeasonalTemplate()" style="width:100%"><i class="fas fa-save"></i> Save as Template</button></div>', '420px');
+}
+
+var dmSeasonalData = {};
+
+function dmSaveSeasonalTemplate() {
+  var name = document.getElementById('seasonal-tpl-name')?.value.trim();
+  if (!name) { alert('Name is required'); return; }
+  apiFetch('/api/direct-mail/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    name: name, type: 'letter', description: 'Seasonal campaign recommendation',
+    ai_generated_text: 'Headline: ' + (dmSeasonalData.headline || '') + ' Offer: ' + (dmSeasonalData.offer || '') + ' CTA: ' + (dmSeasonalData.cta || '')
+  })}).then(function(r) {
+    if (r && r.success) { document.getElementById('modal-overlay')?.remove(); showStatus('dm-content','Template saved!','var(--success)'); showDirectMailCentre('create'); }
+    else { alert('Failed to save'); }
+  });
+}
+
+function dmScheduleSeasonal(headline, offer) {
+  headline = decodeURIComponent(headline); offer = decodeURIComponent(offer);
+  showModal('Schedule Campaign', '<div style="text-align:center;padding:10px 0"><p style="font-size:13px;color:var(--muted2);margin-bottom:12px">Scheduling will be available once Auto Send is configured. Go to Auto Send Settings to set up your schedule.</p>' +
+    '<button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();showDirectMailCentre(\'settings\')">Go to Auto Send Settings</button></div>', '400px');
 }
 
 function showDMHistory(el) {

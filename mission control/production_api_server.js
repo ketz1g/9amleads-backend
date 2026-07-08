@@ -209,7 +209,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 // ===== JSON DATABASE (drop-in replacement for better-sqlite3) =====
 let _dbData = null;
 let _dbLock = Promise.resolve();
-var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates'];
+var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates','seasonal_campaigns'];
 
 // Direct Mail feature access by plan
 var DM_FEATURE_ACCESS = {
@@ -8495,9 +8495,126 @@ app.post('/api/admin/marketplace/templates/:id/toggle', adminAuth, (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== SEASONAL CAMPAIGNS =====
+var SEASONAL_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+var SEASONAL_SEASONS = { 'January':'Winter','February':'Winter','March':'Spring','April':'Spring','May':'Spring','June':'Summer','July':'Summer','August':'Summer','September':'Autumn','October':'Autumn','November':'Autumn','December':'Winter' };
+
+function seedSeasonalCampaigns() {
+  try {
+    var db2 = getDb();
+    if (db2.seasonal_campaigns && db2.seasonal_campaigns.length > 0) return;
+    if (!db2.seasonal_campaigns) db2.seasonal_campaigns = [];
+    var data = [
+      { month:1, season:'Winter', headline:'New Year, Fresh Start — Book Your Home Improvement', offer:'10% off January bookings', cta:'Start Your Project', business_types:'Builder,Kitchens,Bathrooms,Decorator,General Trades', objective:'Home improvement' },
+      { month:1, season:'Winter', headline:'New Year Deep Clean — Start the Year Fresh', offer:'£20 off full home deep clean', cta:'Book Your Clean', business_types:'Cleaning,Carpet Cleaning', objective:'New Year cleaning' },
+      { month:1, season:'Winter', headline:'January Sale — 15% Off All Services', offer:'15% off first booking of 2025', cta:'Claim Your Discount', business_types:'All', objective:'New Year promotion' },
+      { month:2, season:'Winter', headline:'Beat the Winter Chills — Heating & Insulation Check', offer:'Free heating system check', cta:'Book Your Check', business_types:'Plumbing,Electrician,Builder', objective:'Winter maintenance' },
+      { month:3, season:'Spring', headline:'Spring Cleaning Special —£50 Off Full Clean', offer:'£50 off full spring clean', cta:'Book Spring Clean', business_types:'Cleaning,Carpet Cleaning', objective:'Spring cleaning' },
+      { month:3, season:'Spring', headline:'Get Your Garden Ready for Spring', offer:'Free garden consultation', cta:'Book Your Garden Service', business_types:'Gardening', objective:'Spring garden prep' },
+      { month:3, season:'Spring', headline:'Spring Roof Check — Free Inspection', offer:'Free roof inspection', cta:'Book Roof Check', business_types:'Roofing', objective:'Spring roof check' },
+      { month:3, season:'Spring', headline:'Exterior Spring Clean — Pressure Washing', offer:'20% off exterior cleaning', cta:'Book Exterior Clean', business_types:'Cleaning,Windows and Doors', objective:'Exterior spring clean' },
+      { month:4, season:'Spring', headline:'Easter Special — Book Before [Date] for 10% Off', offer:'10% off if booked before Easter', cta:'Claim Easter Offer', business_types:'All', objective:'Easter promotion' },
+      { month:4, season:'Spring', headline:'Spring Driveway & Patio Refresh', offer:'Free design consultation', cta:'Get Your Driveway Quote', business_types:'Driveways', objective:'Spring driveway' },
+      { month:5, season:'Spring', headline:'Moving Season — Book Your Removals Early', offer:'£50 off any removal booking', cta:'Get Moving Quote', business_types:'Removals,Estate Agents', objective:'Moving season' },
+      { month:6, season:'Summer', headline:'Summer Sale — 20% Off All Services', offer:'20% off summer bookings', cta:'Book Summer Service', business_types:'All', objective:'Summer promotion' },
+      { month:6, season:'Summer', headline:'Solar Ready for Summer — Save on Bills', offer:'Free solar viability survey', cta:'Get Solar Quote', business_types:'Solar', objective:'Summer solar' },
+      { month:7, season:'Summer', headline:'Summer Pest Control — Protect Your Home', offer:'£25 off pest control treatment', cta:'Call Pest Control', business_types:'Pest Control', objective:'Summer pest control' },
+      { month:7, season:'Summer', headline:'Summer Home Improvements — No VAT', offer:'No VAT on projects booked this month', cta:'Start Your Project', business_types:'Builder,Kitchens,Bathrooms', objective:'Summer improvements' },
+      { month:8, season:'Summer', headline:'Back to School — Organise Your Home', offer:'Free home organisation consultation', cta:'Book Now', business_types:'Cleaning,Removals', objective:'Back to school' },
+      { month:9, season:'Autumn', headline:'Autumn Boiler Service — Stay Warm This Winter', offer:'£79 boiler service — normally £120', cta:'Book Boiler Service', business_types:'Plumbing', objective:'Boiler service' },
+      { month:9, season:'Autumn', headline:'Winter-Proof Your Home — Free Survey', offer:'Free winter readiness survey', cta:'Book Winter Check', business_types:'Roofing,Builder,Electrician', objective:'Winter prep' },
+      { month:9, season:'Autumn', headline:'Gutter Clearance for Autumn — £60', offer:'Full gutter clearance for £60', cta:'Book Gutter Clearance', business_types:'Roofing,Cleaning,Gardening', objective:'Autumn gutter clearance' },
+      { month:10, season:'Autumn', headline:'October Fall Sale — Save Big', offer:'25% off all services this month', cta:'Claim Offer', business_types:'All', objective:'Autumn promotion' },
+      { month:10, season:'Autumn', headline:'Pre-Winter Roof Inspection', offer:'Free inspection + discounted repairs', cta:'Book Roof Check', business_types:'Roofing', objective:'Pre-winter roof check' },
+      { month:10, season:'Autumn', headline:'Autumn Garden Clearance — Leaf Removal', offer:'Free quote for garden clearance', cta:'Book Garden Clearance', business_types:'Gardening', objective:'Autumn garden' },
+      { month:11, season:'Autumn', headline:'Emergency Services — Fast Response This Winter', offer:'Priority response — call now', cta:'Call Emergency Line', business_types:'Plumbing,Electrician,Locksmith,Pest Control', objective:'Emergency readiness' },
+      { month:12, season:'Winter', headline:'Christmas Clean — Sparkling Home for the Holidays', offer:'15% off pre-Christmas clean', cta:'Book Christmas Clean', business_types:'Cleaning,Carpet Cleaning', objective:'Christmas cleaning' },
+      { month:12, season:'Winter', headline:'End of Year Sale — 30% Off All Services', offer:'30% off — our best offer of the year', cta:'Claim Year-End Offer', business_types:'All', objective:'Year-end promotion' },
+      { month:12, season:'Winter', headline:'New Year, New Home — Plan Your 2026 Project', offer:'Free consultation for 2026 projects', cta:'Plan Your Project', business_types:'Builder,Kitchens,Bathrooms,Driveways,Windows and Doors', objective:'Year-end planning' }
+    ];
+    data.forEach(function(d) {
+      db2.seasonal_campaigns.push({
+        id: uuidv4(), month: d.month, season: d.season,
+        headline: d.headline, offer: d.offer, cta: d.cta,
+        business_types: d.business_types, objective: d.objective, is_enabled: 1,
+        created_at: new Date().toISOString()
+      });
+    });
+    saveDb();
+    console.log('[SEASONAL] Seeded ' + data.length + ' campaigns');
+  } catch(e) { console.log('[SEASONAL] Seed error:', e.message); }
+}
+
+// GET /api/seasonal/recommendations — Get seasonal campaign recommendations for customer
+app.get('/api/seasonal/recommendations', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var now = new Date();
+    var currentMonth = now.getMonth() + 1; // 1-12
+    var currentSeason = SEASONAL_SEASONS[SEASONAL_MONTHS[currentMonth - 1]] || 'Winter';
+
+    // Get customer business type
+    var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+    var businessType = (profile && profile.business_type) || '';
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    var product = (customer && customer.product) || '';
+
+    // Get campaigns for current month AND next month
+    var campaigns = (db2.seasonal_campaigns || []).filter(function(c) {
+      if (!c.is_enabled) return false;
+      // Match current month or next month
+      var nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
+      if (c.month !== currentMonth && c.month !== nextMonth) return false;
+      // Match business type or 'All'
+      var types = (c.business_types || '').split(',').map(function(t) { return t.trim(); });
+      if (types.indexOf('All') === -1 && types.indexOf(businessType) === -1 && types.indexOf(product) === -1) return false;
+      return true;
+    });
+
+    res.json({
+      success: true,
+      current_month: SEASONAL_MONTHS[currentMonth - 1],
+      current_season: currentSeason,
+      business_type: businessType || product || 'General',
+      campaigns: campaigns,
+      total: campaigns.length
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/seasonal/:month — Get campaigns for a specific month
+app.get('/api/seasonal/:month', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var month = parseInt(req.params.month) || (new Date().getMonth() + 1);
+    var campaigns = (db2.seasonal_campaigns || []).filter(function(c) { return c.month === month && c.is_enabled; });
+    res.json({ success: true, month: SEASONAL_MONTHS[month - 1], season: SEASONAL_SEASONS[SEASONAL_MONTHS[month - 1]], campaigns: campaigns, total: campaigns.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin endpoints
+app.get('/api/admin/seasonal/campaigns', adminAuth, (req, res) => {
+  try { var db2 = getDb(); res.json({ success: true, campaigns: db2.seasonal_campaigns || [] }); } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/seasonal/campaigns', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    if (!db2.seasonal_campaigns) db2.seasonal_campaigns = [];
+    var existingIdx = req.body.id ? db2.seasonal_campaigns.findIndex(function(c) { return c.id === req.body.id; }) : -1;
+    var data = { month: parseInt(req.body.month) || 1, season: req.body.season || 'Winter', headline: req.body.headline || '', offer: req.body.offer || '', cta: req.body.cta || '', business_types: req.body.business_types || 'All', objective: req.body.objective || '', is_enabled: req.body.is_enabled !== undefined ? (req.body.is_enabled ? 1 : 0) : 1 };
+    if (existingIdx !== -1) { Object.assign(db2.seasonal_campaigns[existingIdx], data, { updated_at: new Date().toISOString() }); }
+    else { data.id = uuidv4(); data.created_at = new Date().toISOString(); db2.seasonal_campaigns.push(data); }
+    saveDb();
+    res.json({ success: true, campaign: existingIdx !== -1 ? db2.seasonal_campaigns[existingIdx] : data });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== START SERVER =====
 app.listen(PORT, () => {
   seedDefaultCampaignPacks();
+  seedMarketplaceTemplates();
+  seedSeasonalCampaigns();
   seedMarketplaceTemplates();
   console.log('\n========================================');
   console.log('  9amLeads Production API Server');
