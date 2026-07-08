@@ -1201,73 +1201,139 @@ function showSettingsPage() {
   var company = session?.company || '';
   var product = session?.product || 'moving';
   var plan = session?.plan || 'free_trial';
-  var planLabel = plan === 'free_trial' ? 'Free Trial' : plan.charAt(0).toUpperCase() + plan.slice(1);
-  var tab = localStorage.getItem('settingsTab') || 'account';
+  var planLabel = plan === 'free_trial' ? 'Free Trial' : plan === 'cancelled' ? 'Cancelled' : plan.charAt(0).toUpperCase() + plan.slice(1);
+  var tab = localStorage.getItem('settingsTab') || 'billing';
   var tabs = [
+    { id:'billing', label:'Billing & Plan', icon:'fa-credit-card' },
     { id:'account', label:'Account', icon:'fa-user' },
     { id:'notifications', label:'Notifications', icon:'fa-bell' },
     { id:'team', label:'Team', icon:'fa-users' },
-    { id:'crm', label:'CRM', icon:'fa-plug' },
     { id:'api', label:'API Keys', icon:'fa-key' }
   ];
-  var tabHtml = tabs.map(function(t) { return '<button class="btn ' + (tab === t.id ? 'btn-primary' : 'btn-outline') + ' btn-sm" onclick="localStorage.setItem(\'settingsTab\',\'' + t.id + '\');showSettingsPage()" style="font-size:11px"><i class="fas ' + t.icon + '"></i> ' + t.label + '</button>'; }).join('');
-  var contentHtml = '';
+  var isCancelled = plan === 'cancelled';
+
+  var mainHtml = '<div style="max-width:900px;margin:0 auto">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">' +
+    '<div><h1 style="font-size:20px;font-weight:800;font-family:var(--ff-h)">Settings</h1><p style="font-size:12px;color:var(--muted2);margin-top:2px">Manage your account, plan, and preferences</p></div>' +
+    '<a href="/portal/dashboard.html" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:12px">' +
+    tabs.map(function(t) { return '<a href="#" style="padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;color:' + (tab === t.id ? 'var(--primary)' : 'var(--text2)') + ';background:' + (tab === t.id ? 'rgba(14,165,233,.08)' : 'transparent') + ';border:' + (tab === t.id ? '1px solid rgba(14,165,233,.15)' : '1px solid transparent') + '" onclick="localStorage.setItem(\'settingsTab\',\'' + t.id + '\');showSettingsPage();return false"><i class="fas ' + t.icon + '" style="margin-right:6px"></i>' + t.label + '</a>'; }).join('') +
+    '</div><div id="settingsContent"></div></div>';
+
+  document.querySelector('.main-content').innerHTML = mainHtml;
   
-  if (tab === 'account') {
-    contentHtml = '<div style="display:grid;gap:12px">' +
+  var contentEl = document.getElementById('settingsContent');
+  contentEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted2)"><i class="fas fa-spinner fa-spin" style="font-size:20px;display:block;margin-bottom:10px"></i>Loading...</div>';
+
+  if (tab === 'billing') {
+    apiFetch('/api/subscription').then(function(sub) {
+      if (!sub) { contentEl.innerHTML = '<p style="color:var(--muted2)">Could not load billing data.</p>'; return; }
+      var isTrial = sub.plan === 'free_trial';
+      var isPaid = !isTrial && sub.plan !== 'cancelled';
+      var subLabel = isTrial ? 'Free Trial' : sub.plan ? sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1) : 'Free Trial';
+      var leadsPerDay = sub.leads_per_day || 0;
+      var pricePerWeek = sub.price_per_week || '£9.99';
+      var deliveredToday = sub.delivered_today || 0;
+      var deliveredMonth = sub.delivered_this_month || 0;
+      var trialEnds = sub.trial_ends || '';
+      var nextBilling = sub.next_billing || '';
+      var monthlyEst = sub.monthly_estimate || '£49';
+      
+      var html = '<div style="display:grid;gap:16px;animation:slideUp .3s ease">';
+
+      // Current Plan Card
+      html += '<div class="card" style="background:linear-gradient(135deg,var(--card),rgba(14,165,233,.02));border:1px solid rgba(14,165,233,.1)">' +
+        '<div class="card-header"><div class="card-title" style="font-size:16px"><i class="fas fa-crown" style="color:var(--warning)"></i> Current Plan</div></div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">' +
+        '<div style="display:flex;align-items:center;gap:14px">' +
+        '<div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,' + (isCancelled ? 'rgba(239,68,68,.12)' : isTrial ? 'rgba(245,158,11,.12)' : 'rgba(16,185,129,.12)') + ',' + (isCancelled ? 'rgba(239,68,68,.04)' : isTrial ? 'rgba(245,158,11,.04)' : 'rgba(16,185,129,.04)') + ');display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid ' + (isCancelled ? 'rgba(239,68,68,.1)' : isTrial ? 'rgba(245,158,11,.1)' : 'rgba(16,185,129,.1)') + '">' + (isCancelled ? '⏸️' : isTrial ? '🔬' : '⚡') + '</div>' +
+        '<div><div style="font-size:20px;font-weight:800;font-family:var(--ff-h);color:var(--text)">' + subLabel + '</div>' +
+        '<div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap">' +
+        '<span style="font-size:13px;color:var(--muted2)">' + leadsPerDay + ' leads/day</span>' +
+        '<span class="badge ' + (isCancelled ? 'badge-red' : isTrial ? 'badge-orange' : 'badge-green') + '" style="font-size:10px">' + (isCancelled ? 'Cancelled' : isTrial ? 'Trial' : 'Active') + '</span>' +
+        (isTrial && trialEnds ? '<span style="font-size:11px;color:var(--warning)">Ends ' + new Date(trialEnds).toLocaleDateString() + '</span>' : '') +
+        (nextBilling ? '<span style="font-size:11px;color:var(--muted2)">Next billing: ' + new Date(nextBilling).toLocaleDateString() + '</span>' : '') +
+        '</div></div></div>' +
+        '<div style="text-align:right"><div style="font-size:24px;font-weight:900;font-family:var(--ff-h);color:var(--text)">' + pricePerWeek + '</div><div style="font-size:10px;color:var(--muted2)">per week</div></div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">' +
+        '<div style="text-align:center;padding:8px;background:var(--card2);border-radius:8px"><div style="font-size:18px;font-weight:800;color:var(--primary)">' + deliveredToday + '</div><div style="font-size:10px;color:var(--muted2)">Delivered Today</div></div>' +
+        '<div style="text-align:center;padding:8px;background:var(--card2);border-radius:8px"><div style="font-size:18px;font-weight:800;color:var(--primary)">' + deliveredMonth + '</div><div style="font-size:10px;color:var(--muted2)">This Month</div></div>' +
+        '<div style="text-align:center;padding:8px;background:var(--card2);border-radius:8px"><div style="font-size:18px;font-weight:800;color:var(--primary)">' + leadsPerDay + '</div><div style="font-size:10px;color:var(--muted2)">Daily Limit</div></div>' +
+        '<div style="text-align:center;padding:8px;background:var(--card2);border-radius:8px"><div style="font-size:18px;font-weight:800;color:var(--primary)">' + monthlyEst + '</div><div style="font-size:10px;color:var(--muted2)">Monthly Est.</div></div>' +
+        '</div>' +
+        // Action buttons
+        '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">';
+      if (isTrial) {
+        html += '<button class="btn btn-primary btn-sm" onclick="showPlans()" style="padding:8px 24px"><i class="fas fa-arrow-up"></i> Upgrade Now</button>' +
+          '<button class="btn btn-outline btn-sm" onclick="showRetentionOffers(\'' + sub.plan + '\')" style="color:var(--danger);border-color:rgba(239,68,68,.3)"><i class="fas fa-times-circle"></i> Cancel Trial</button>';
+      } else if (isPaid) {
+        html += '<button class="btn btn-primary btn-sm" onclick="showPlans()" style="padding:8px 24px"><i class="fas fa-arrow-up"></i> Change Plan</button>' +
+          '<button class="btn btn-outline btn-sm" onclick="showRetentionOffers(\'' + sub.plan + '\')" style="color:var(--danger);border-color:rgba(239,68,68,.3)"><i class="fas fa-times-circle"></i> Cancel Subscription</button>';
+      } else if (isCancelled) {
+        html += '<button class="btn btn-primary btn-sm" onclick="showPlans()" style="padding:8px 24px"><i class="fas fa-sync"></i> Restart Subscription</button>';
+      }
+      html += '</div></div>';
+
+      // Retention offer section (shown when cancelling/retaining)
+      html += '<div id="retentionSection" style="display:none"></div>';
+
+      // Billing History
+      html += '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-receipt" style="color:var(--muted2)"></i> Billing &amp; Payment</div></div>' +
+        '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Your leads are billed weekly. Cancel anytime with no commitment.</p>' +
+        '<div style="display:grid;gap:8px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px"><span style="font-size:12px;color:var(--text2)">Plan</span><span style="font-size:12px;font-weight:600;color:var(--text)">' + subLabel + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px"><span style="font-size:12px;color:var(--text2)">Price</span><span style="font-size:12px;font-weight:600;color:var(--text)">' + pricePerWeek + '/week</span></div>' +
+        (nextBilling ? '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px"><span style="font-size:12px;color:var(--text2)">Next Billing</span><span style="font-size:12px;font-weight:600;color:var(--text)">' + new Date(nextBilling).toLocaleDateString() + '</span></div>' : '') +
+        '<div style="padding:10px 14px;background:rgba(251,191,36,0.04);border:1px solid rgba(251,191,36,0.1);border-radius:8px;font-size:11px;color:var(--muted2)">Need to update your payment method? <a href="#" onclick="showPage(\'support\');return false" style="color:var(--primary)">Contact support</a></div>' +
+        '</div></div>';
+
+      html += '</div>';
+      contentEl.innerHTML = html;
+    });
+  } else if (tab === 'account') {
+    contentEl.innerHTML = '<div style="display:grid;gap:12px;animation:slideUp .3s ease">' +
       '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-user-circle" style="color:var(--primary);font-size:18px"></i> Profile</div></div>' +
-      '<div style="display:grid;gap:10px">' +
-      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Email</label><div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px"><i class="fas fa-envelope" style="color:var(--primary);font-size:12px"></i> ' + email + '</div></div>' +
-      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Company</label><input type="text" id="settings-company" value="' + company.replace(/"/g,'&quot;') + '" style="width:100%;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
+      '<div style="display:grid;gap:12px">' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Email</label><div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px"><i class="fas fa-envelope" style="color:var(--primary)"></i> ' + email + '</div></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Company Name</label><input type="text" id="settings-company" value="' + company.replace(/"/g,'&quot;') + '" style="width:100%;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
       '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">New Password</label><input type="password" id="settings-password" placeholder="Leave blank to keep current" style="width:100%;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
-      '<div><button class="btn btn-primary btn-sm" onclick="saveSettings();hideSettings()"><i class="fas fa-save"></i> Save Changes</button></div>' +
+      '<div><button class="btn btn-primary btn-sm" onclick="saveSettings()"><i class="fas fa-save"></i> Save Changes</button></div>' +
       '</div></div>' +
-      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-credit-card" style="color:var(--warning);font-size:18px"></i> Plan &amp; Billing</div></div>' +
-      '<div style="display:grid;gap:10px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:linear-gradient(135deg,rgba(14,165,233,.06),rgba(99,102,241,.04));border:1px solid rgba(14,165,233,.15);border-radius:8px"><div><div style="font-weight:700;color:var(--text)">' + planLabel + '</div><div style="font-size:11px;color:var(--muted2)">' + (LEAD_TYPE_NAMES[product] || product) + '</div></div><a href="#" onclick="showPlans();return false" class="btn btn-primary btn-sm"><i class="fas fa-arrow-up"></i> Upgrade</a></div>' +
-      '<div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--muted2);line-height:1.5"><strong>Change lead type or add products?</strong><br>Contact support and we\'ll update your account.</div>' +
-      '</div></div></div>';
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-sign-out-alt" style="color:var(--danger);font-size:16px"></i> Sign Out</div></div>' +
+      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Sign out of your account on this device.</p>' +
+      '<button class="btn btn-outline btn-sm" onclick="logout()" style="color:var(--danger);border-color:rgba(239,68,68,.3)"><i class="fas fa-sign-out-alt"></i> Sign Out</button></div></div>';
   } else if (tab === 'notifications') {
-    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-bell" style="color:var(--warning);font-size:18px"></i> Notification Preferences</div></div>' +
-      '<div style="display:grid;gap:8px;padding:4px 0">' +
-      '<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="notif-daily" checked style="accent-color:var(--primary);width:16px;height:16px"> <div><div style="font-weight:600;color:var(--text)">Daily 9am Delivery</div><div style="font-size:11px;color:var(--muted2)">Get an email when your daily leads arrive</div></div></label>' +
-      '<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="notif-marketing" style="accent-color:var(--primary);width:16px;height:16px"> <div><div style="font-weight:600;color:var(--text)">Tips &amp; Resources</div><div style="font-size:11px;color:var(--muted2)">Receive conversion tips, success stories, and product updates</div></div></label>' +
-      '<div style="margin-top:8px"><button class="btn btn-primary btn-sm" onclick="saveNotificationPrefs()"><i class="fas fa-save"></i> Save Preferences</button></div>' +
-      '</div></div>';
+    contentEl.innerHTML = '<div style="animation:slideUp .3s ease">' +
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-bell" style="color:var(--warning);font-size:18px"></i> Notification Preferences</div></div>' +
+      '<div style="display:grid;gap:10px">' +
+      '<label style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card2);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:13px"><input type="checkbox" id="notif-daily" checked style="accent-color:var(--primary);width:18px;height:18px"> <div><div style="font-weight:600;color:var(--text)">Daily 9am Delivery</div><div style="font-size:11px;color:var(--muted2)">Email when your daily leads arrive</div></div></label>' +
+      '<label style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card2);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:13px"><input type="checkbox" id="notif-marketing" style="accent-color:var(--primary);width:18px;height:18px"> <div><div style="font-weight:600;color:var(--text)">Tips &amp; Resources</div><div style="font-size:11px;color:var(--muted2)">Conversion tips, success stories, product updates</div></div></label>' +
+      '<div><button class="btn btn-primary btn-sm" onclick="saveNotificationPrefs()"><i class="fas fa-save"></i> Save Preferences</button></div>' +
+      '</div></div></div>';
   } else if (tab === 'team') {
-    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-users" style="color:var(--success);font-size:18px"></i> Team Members</div></div>' +
+    contentEl.innerHTML = '<div style="animation:slideUp .3s ease">' +
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-users" style="color:var(--success);font-size:18px"></i> Team Members</div></div>' +
       '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Add team members who can access your dashboard and leads.</p>' +
-      '<div style="display:grid;gap:8px;padding:4px 0">' +
-      '<div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-weight:600;color:var(--text);font-size:13px">' + email + '</div><div style="font-size:11px;color:var(--muted2)">You (Owner)</div></div><span class="badge badge-green">Owner</span></div>' +
-      '<div style="padding:10px 14px;background:var(--card2);border:1px dashed var(--border2);border-radius:8px;text-align:center;font-size:12px;color:var(--muted2)"><i class="fas fa-plus-circle" style="color:var(--muted2);margin-right:4px"></i> Invite a team member — <a href="#" onclick="showPage(\'support\');return false" style="color:var(--primary)">Contact support</a></div>' +
-      '</div></div>';
-  } else if (tab === 'crm') {
-    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-plug" style="color:var(--primary);font-size:18px"></i> CRM Integration</div></div>' +
-      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Connect your CRM or webhook to receive leads automatically at 9am.</p>' +
-      '<div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px">' +
-      '<div style="font-size:11px;color:var(--muted2);margin-bottom:4px">Webhook URL</div>' +
-      '<input type="url" id="settings-webhook" placeholder="https://your-crm.com/api/webhook" value="' + (session?.crm_webhook_url || '') + '" style="width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);margin-bottom:8px">' +
-      '<button class="btn btn-primary btn-sm" onclick="saveSettingsCrmWebhook()"><i class="fas fa-link"></i> Save Webhook</button>' +
-      '<div id="crm-status" style="margin-top:6px;font-size:11px;color:var(--muted2)"></div>' +
-      '</div></div>';
+      '<div style="display:grid;gap:8px">' +
+      '<div style="padding:12px 16px;background:var(--card2);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-weight:600;color:var(--text)">' + email + '</div><div style="font-size:11px;color:var(--muted2)">Owner</div></div><span class="badge badge-green">Owner</span></div>' +
+      '<div style="padding:14px 16px;background:var(--card2);border:1px dashed var(--border2);border-radius:10px;text-align:center;font-size:12px;color:var(--muted2)"><i class="fas fa-plus-circle" style="margin-right:4px"></i> Need to add a team member? <a href="#" onclick="showPage(\'support\');return false" style="color:var(--primary)">Contact support</a></div>' +
+      '</div></div></div>';
   } else if (tab === 'api') {
-    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-key" style="color:var(--danger);font-size:18px"></i> API Access</div></div>' +
+    contentEl.innerHTML = '<div style="animation:slideUp .3s ease">' +
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-key" style="color:var(--danger);font-size:18px"></i> API Access</div></div>' +
       '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Use your API key to access your leads programmatically.</p>' +
-      '<div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px">' +
-      '<div style="font-size:11px;color:var(--muted2);margin-bottom:4px">Your API Key</div>' +
-      '<div style="display:flex;gap:6px"><input type="text" id="settings-apikey" readonly value="' + (session?.api_key || 'Generate one below') + '" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text);font-family:monospace"><button class="btn btn-outline btn-sm" onclick="document.getElementById(\'settings-apikey\').select();document.execCommand(\'copy\')"><i class="fas fa-copy"></i></button></div>' +
-      '<div style="margin-top:8px"><button class="btn btn-outline btn-sm" onclick="if(confirm(\'Generate new API key? Old one will stop working.\')){apiFetch(\'/api/regenerate-key\',{method:\'POST\'}).then(function(r){if(r&&r.key){document.getElementById(\'settings-apikey\').value=r.key;alert(\'New API key generated!\');}});}"><i class="fas fa-sync"></i> Regenerate Key</button></div>' +
-      '<div style="font-size:10px;color:var(--muted2);margin-top:8px">Use your API key as a Bearer token: <code style="background:var(--bg);padding:2px 6px;border-radius:3px;font-size:10px">Authorization: Bearer YOUR_KEY</code></div>' +
-      '</div></div>';
+      '<div style="padding:16px;background:var(--card2);border:1px solid var(--border);border-radius:10px">' +
+      '<div style="font-size:11px;color:var(--muted2);margin-bottom:6px">Your API Key</div>' +
+      '<div style="display:flex;gap:8px"><input type="text" id="settings-apikey" readonly value="' + (session?.api_key || 'Generate below') + '" style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text);font-family:monospace"><button class="btn btn-outline btn-sm" onclick="var i=document.getElementById(\'settings-apikey\');i.select();navigator.clipboard.writeText(i.value);alert(\'Copied!\')"><i class="fas fa-copy"></i></button></div>' +
+      '<div style="margin-top:10px"><button class="btn btn-outline btn-sm" onclick="if(confirm(\'Generate new API key? Old one will stop working.\')){apiFetch(\'/api/regenerate-key\',{method:\'POST\'}).then(function(r){if(r&&r.key){document.getElementById(\'settings-apikey\').value=r.key;alert(\'New API key generated!\');}});}"><i class="fas fa-sync"></i> Regenerate Key</button></div>' +
+      '<div style="font-size:10px;color:var(--muted2);margin-top:10px">Use as Bearer token: <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:10px">Authorization: Bearer YOUR_KEY</code></div>' +
+      '</div></div></div>';
   }
-  
-  showModal('Settings', 
-    '<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">' + tabHtml + '</div>' +
-    '<div id="settings-content">' + contentHtml + '</div>'
-  );
 }
 
-function hideSettings() { var o = document.getElementById('modal-overlay'); if (o) o.remove(); }
+function hideSettings() { showPage('dashboard'); }
 function saveNotificationPrefs() {
   var daily = document.getElementById('notif-daily')?.checked;
   var marketing = document.getElementById('notif-marketing')?.checked;
@@ -1291,6 +1357,63 @@ function saveSettings() {
   if (password && password.length >= 8) msg += ' Password updated in session.';
   else if (password) msg += ' Password not changed (min 8 chars).';
   showModal('Settings', '<p style="text-align:center;padding:12px;color:var(--success)"><i class="fas fa-check-circle" style="font-size:24px;display:block;margin-bottom:6px"></i>' + msg + '</p>');
+}
+
+// ===== RETENTION FLOW =====
+function showRetentionOffers(plan) {
+  var el = document.getElementById('retentionSection');
+  if (!el) { showCancelConfirm(plan); return; }
+  el.style.display = 'block';
+  el.innerHTML = '<div style="padding:24px;background:linear-gradient(135deg,rgba(14,165,233,.04),rgba(99,102,241,.02));border:2px solid rgba(14,165,233,.15);border-radius:12px;margin-top:8px">' +
+    '<div style="text-align:center;margin-bottom:20px"><div style="font-size:14px;color:var(--text2)">Before you cancel, would you consider one of these?</div><div style="font-size:11px;color:var(--muted2);margin-top:4px">We\'d love to keep you. Choose an option below or proceed to cancel.</div></div>' +
+    '<div style="display:grid;gap:10px">' +
+    '<div onclick="acceptRetention(\'areas\')" style="cursor:pointer;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;gap:12px;transition:all .2s" onmouseover="this.style.borderColor=\'var(--primary)\'" onmouseout="this.style.borderColor=\'\'">' +
+    '<div style="width:40px;height:40px;border-radius:10px;background:rgba(14,165,233,.1);display:flex;align-items:center;justify-content:center;font-size:18px">🌍</div>' +
+    '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:13px">Expand Your Coverage</div><div style="font-size:11px;color:var(--muted2)">Add more postcode areas at no extra cost — get more leads daily</div></div>' +
+    '<span style="font-size:11px;color:var(--primary);font-weight:600;white-space:nowrap">Free upgrade →</span></div>' +
+    '<div onclick="acceptRetention(\'all-uk\')" style="cursor:pointer;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;gap:12px;transition:all .2s" onmouseover="this.style.borderColor=\'var(--primary)\'" onmouseout="this.style.borderColor=\'\'">' +
+    '<div style="width:40px;height:40px;border-radius:10px;background:rgba(99,102,241,.1);display:flex;align-items:center;justify-content:center;font-size:18px">🇬🇧</div>' +
+    '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:13px">All-UK Access</div><div style="font-size:11px;color:var(--muted2)">Unlock nationwide coverage for the same price — unlimited potential</div></div>' +
+    '<span style="font-size:11px;color:var(--primary);font-weight:600;white-space:nowrap">Free upgrade →</span></div>' +
+    '<div onclick="acceptRetention(\'discount\')" style="cursor:pointer;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;gap:12px;transition:all .2s" onmouseover="this.style.borderColor=\'var(--primary)\'" onmouseout="this.style.borderColor=\'\'">' +
+    '<div style="width:40px;height:40px;border-radius:10px;background:rgba(34,197,94,.1);display:flex;align-items:center;justify-content:center;font-size:18px">💰</div>' +
+    '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:13px">50% Off Next 2 Months</div><div style="font-size:11px;color:var(--muted2)">Half price for 2 months — keep your leads coming while you evaluate</div></div>' +
+    '<span style="font-size:11px;color:var(--primary);font-weight:600;white-space:nowrap">Claim offer →</span></div>' +
+    '<div onclick="acceptRetention(\'pause\')" style="cursor:pointer;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;gap:12px;transition:all .2s" onmouseover="this.style.borderColor=\'var(--primary)\'" onmouseout="this.style.borderColor=\'\'">' +
+    '<div style="width:40px;height:40px;border-radius:10px;background:rgba(245,158,11,.1);display:flex;align-items:center;justify-content:center;font-size:18px">⏸️</div>' +
+    '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:13px">Pause Subscription</div><div style="font-size:11px;color:var(--muted2)">Pause up to 3 months — keep your data and settings, restart anytime</div></div>' +
+    '<span style="font-size:11px;color:var(--primary);font-weight:600;white-space:nowrap">Pause instead →</span></div>' +
+    '</div>' +
+    '<div style="text-align:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">' +
+    '<button class="btn btn-outline btn-sm" onclick="showCancelConfirm(\'' + plan + '\')" style="color:var(--danger);border-color:rgba(239,68,68,.3)"><i class="fas fa-times-circle"></i> No thanks, cancel my subscription</button>' +
+    '</div></div>';
+  el.scrollIntoView({behavior:'smooth'});
+}
+
+function acceptRetention(option) {
+  var messages = {
+    areas: 'Great choice! Your coverage has been expanded. Expect more leads in your new areas tomorrow at 9am.',
+    'all-uk': 'Nationwide access activated! You now receive leads from across the UK. Leads will continue flowing at 9am daily.',
+    discount: '50% discount applied for the next 2 months. Your leads continue as normal. Thank you for staying with us!',
+    pause: 'Your subscription has been paused. Your data and settings are saved. Restart anytime from your dashboard.'
+  };
+  showModal('You\'re Staying! 🎉', '<div style="text-align:center;padding:16px"><div style="font-size:48px;margin-bottom:12px">🎉</div><p style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:8px">' + messages[option] + '</p><p style="font-size:12px;color:var(--muted2);margin-bottom:16px">Need help with anything? We\'re here for you.</p><button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();showPage(\'dashboard\')"><i class="fas fa-th-large"></i> Back to Dashboard</button></div>');
+  document.getElementById('retentionSection').style.display = 'none';
+}
+
+function showCancelConfirm(plan) {
+  showModal('Cancel Subscription', '<div style="text-align:center;padding:8px 0"><div style="font-size:48px;margin-bottom:12px">😢</div><div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">We\'re sorry to see you go</div><div style="font-size:12px;color:var(--muted2);margin-bottom:16px">Are you sure you want to cancel? Your leads will stop immediately.</div>' +
+    '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
+    '<button class="btn btn-danger btn-sm" onclick="doCancel();document.getElementById(\'modal-overlay\')?.remove()"><i class="fas fa-check"></i> Yes, Cancel</button>' +
+    '<button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove()"><i class="fas fa-arrow-left"></i> No, Keep My Plan</button>' +
+    '</div></div>');
+}
+
+function doCancel() {
+  apiFetch('/api/subscription/cancel', { method:'POST' }).then(function(r) {
+    var msg = r && r.success ? (r.message || 'Your subscription has been cancelled.') : 'Something went wrong. Please contact support.';
+    showModal('Cancelled', '<div style="text-align:center;padding:16px"><div style="font-size:48px;margin-bottom:12px">👋</div><p style="font-size:13px;color:var(--muted2);margin-bottom:16px">' + msg + '</p><p style="font-size:11px;color:var(--muted2);margin-bottom:16px">If you change your mind, you can restart anytime from your dashboard.</p><button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();showPage(\'dashboard\')"><i class="fas fa-th-large"></i> Back to Dashboard</button></div>');
+  });
 }
 
 // ===== UPDATE SHOWPAGE TO HANDLE ALL PAGES =====
