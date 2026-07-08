@@ -1921,11 +1921,27 @@ function showDMSettings(el) {
         '<span>I approve 9am Leads to automatically send my approved marketing materials to my selected leads daily, subject to my chosen spend limits.</span></label>' +
         (s.consent_date ? '<div style="font-size:10px;color:var(--muted2);padding-left:28px">Consented: ' + new Date(s.consent_date).toLocaleDateString() + (s.consent_ip ? ' · IP: ' + s.consent_ip : '') + '</div>' : '') +
         '</div>' +
-
+        // Payment method
+        '<div class="card" id="dm-payment-card"><div class="card-header"><div class="card-title"><i class="fas fa-credit-card" style="color:var(--primary)"></i> 7. Payment Method</div>' +
+        '<div id="dm-payment-status" style="font-size:11px"></div></div>' +
+        '<div id="dm-payment-info" style="font-size:12px;color:var(--muted2)">Loading payment info...</div></div>' +
         // Save button
         '<button class="btn btn-primary" onclick="saveDMSettings()" style="padding:14px"><i class="fas fa-save"></i> Save Auto Send Settings</button>' +
         '<div id="dm-auto-status" style="font-size:11px;color:var(--muted2);text-align:center"></div>' +
         '</div></div>';
+      // Load payment method info
+      apiFetch('/api/direct-mail/payment-method').then(function(pm) {
+        var pmEl = document.getElementById('dm-payment-info');
+        var pmStatus = document.getElementById('dm-payment-status');
+        if (pm && pm.has_payment_method && pm.card) {
+          if (pmEl) pmEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:6px 0"><span style="font-size:18px">💳</span><div><div style="font-weight:600;color:var(--text);font-size:13px">' + pm.card.brand.charAt(0).toUpperCase() + pm.card.brand.slice(1) + ' ending in ' + pm.card.last4 + '</div><div style="font-size:10px;color:var(--muted2)">Expires ' + pm.card.exp_month + '/' + pm.card.exp_year + (pm.auto_send_paused ? ' · <span style="color:var(--warning)">Auto Send paused</span>' : '') + '</div></div><button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:10px;padding:4px 8px;min-height:auto;color:var(--danger)" onclick="dmRemoveCard()">Remove</button></div>';
+          if (pmStatus) pmStatus.innerHTML = '<span style="color:var(--success)">✅ Card on file</span>';
+        } else {
+          if (pmEl) pmEl.innerHTML = '<div style="padding:6px 0"><div style="font-size:12px;color:var(--muted2);margin-bottom:6px">No payment method saved. Add a card to enable real payments for Auto Send.</div><button class="btn btn-outline btn-sm" onclick="dmAddCard()" style="font-size:11px"><i class="fas fa-plus-circle"></i> Add Payment Card</button></div>';
+          if (pmStatus) pmStatus.innerHTML = '<span style="color:var(--warning)">⚠️ No card</span>';
+        }
+      });
+
       // Render lead type checkboxes
       var leadTypes = ['moving','probate','newbusiness','planning','tenders'];
       var savedTypes = (val('lead_types','') || '').split(',').filter(Boolean);
@@ -1945,6 +1961,57 @@ function dmToggleAutoSend() {
   var enabled = document.getElementById('dm-enable')?.checked;
   var panel = document.getElementById('dm-auto-panel');
   if (panel) panel.style.display = enabled ? 'grid' : 'none';
+}
+
+function dmAddCard() {
+  apiFetch('/api/direct-mail/setup-payment', { method:'POST' }).then(function(r) {
+    if (r && r.client_secret) {
+      // Use Stripe Elements to set up the payment method
+      showModal('Add Payment Card', '<div style="text-align:center;padding:10px 0"><p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Your card details are processed securely by Stripe. We never see or store your full card number.</p>' +
+        '<div id="stripe-card-element" style="padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;margin-bottom:12px"></div>' +
+        '<p style="font-size:10px;color:var(--muted2);margin-bottom:12px">By adding a card, you authorise 9am Leads to charge it for Auto Send campaigns based on your spend limits.</p>' +
+        '<button class="btn btn-primary btn-sm" onclick="dmConfirmCard()" style="width:100%">Save Card</button></div>', '420px');
+      // Load Stripe.js
+      if (!window.Stripe) {
+        var script = document.createElement('script');
+        script.src = 'https://js.stripe.com/v3/';
+        script.onload = function() {
+          var stripe = Stripe('pk_live_placeholder'); // Will be replaced with actual publishable key
+          var elements = stripe.elements();
+          var cardElement = elements.create('card', { style: { base: { fontSize: '14px', color: '#fff', fontFamily: 'Inter, sans-serif' } } });
+          cardElement.mount('#stripe-card-element');
+          window._dmStripe = stripe;
+          window._dmCardElement = cardElement;
+          window._dmSetupSecret = r.client_secret;
+        };
+        document.body.appendChild(script);
+      } else {
+        window._dmSetupSecret = r.client_secret;
+      }
+    } else { alert(r?.error || 'Failed to set up payment'); }
+  });
+}
+
+function dmConfirmCard() {
+  if (!window._dmStripe || !window._dmCardElement || !window._dmSetupSecret) { alert('Stripe not loaded yet. Please wait.'); return; }
+  window._dmStripe.confirmCardSetup(window._dmSetupSecret, { payment_method: { card: window._dmCardElement } }).then(function(result) {
+    if (result.error) { alert(result.error.message); return; }
+    // Payment method set up successfully
+    apiFetch('/api/direct-mail/confirm-payment-method', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ payment_method_id: result.setupIntent.payment_method }) }).then(function(r) {
+      if (r && r.success) {
+        document.getElementById('modal-overlay')?.remove();
+        showDMSettings(document.getElementById('dm-content'));
+      } else { alert(r?.error || 'Failed to save payment method'); }
+    });
+  });
+}
+
+function dmRemoveCard() {
+  if (!confirm('Remove this payment method? Auto Send will use mock payments until you add a new card.')) return;
+  apiFetch('/api/direct-mail/payment-method', { method:'DELETE' }).then(function(r) {
+    if (r && r.success) { showDMSettings(document.getElementById('dm-content')); }
+    else { alert('Failed to remove card'); }
+  });
 }
 
 function dmUpdateLeadTypes() {

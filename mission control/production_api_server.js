@@ -3906,24 +3906,84 @@ async function runAutoSend() {
         }
       }
 
-      // 13. Send to provider (mock payment assumed success)
+      // 13. Process payment (Stripe if available, mock fallback)
+      var paymentSuccess = false;
+      var paymentIntentId = '';
       if (validAddressCount > 0) {
-        db.prepare('UPDATE direct_mail_campaigns SET status = ?, target_count = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('paid', validAddressCount, 'paid', new Date().toISOString(), campaign.id, cust.id);
-        db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'paid', 'system', 'Mock payment success', new Date().toISOString());
-
-        var provider = getDirectMailProvider();
-        var createResult = await provider.createCampaign({ name: campaign.name, recipient_count: validAddressCount, description: campaign.description });
-        if (createResult && createResult.success) {
-          db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, provider_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('queued', provider.name, createResult.provider_campaign_id, 'accepted', new Date().toISOString(), campaign.id, cust.id);
-          db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'paid', 'queued', 'system', 'Sent to provider: ' + provider.name, new Date().toISOString());
-          db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, provider.name, 'createCampaign', JSON.stringify({ name: campaign.name, recipient_count: validAddressCount }), JSON.stringify(createResult), 200, 1, '', new Date().toISOString());
-          results.sent++;
-          results.total_spend += totalCost;
-          console.log('[AUTO-SEND] Sent:', cust.email, validAddressCount, 'leads, cost: £' + totalCost.toFixed(2));
+        // Try Stripe charge if customer has saved payment method
+        if (STRIPE_SECRET_KEY && cust.stripe_payment_method_id && cust.stripe_customer_id) {
+          try {
+            var amountPence = Math.round(totalCost * 100);
+            var chargeResult = await stripeApiRequest('POST', 'payment_intents', {
+              amount: String(amountPence),
+              currency: 'gbp',
+              customer: cust.stripe_customer_id,
+              'payment_method': cust.stripe_payment_method_id,
+              off_session: 'true',
+              confirm: 'true',
+              'metadata[campaign_id]': campaign.id,
+              'metadata[customer_id]': cust.id,
+              'metadata[type]': 'auto_send',
+              description: 'Auto Send: ' + campaign.name
+            });
+            if (chargeResult && chargeResult.status === 'succeeded') {
+              paymentSuccess = true;
+              paymentIntentId = chargeResult.id;
+              db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(chargeResult.id, 'paid', new Date().toISOString(), campaign.id, cust.id);
+              db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'paid', 'system', 'Payment succeeded: ' + chargeResult.id, new Date().toISOString());
+              console.log('[AUTO-SEND] Payment success:', cust.email, '£' + totalCost.toFixed(2), chargeResult.id);
+            } else if (chargeResult && chargeResult.status === 'requires_action') {
+              // 3D Secure needed - cannot process automatically
+              db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(chargeResult.id, 'requires_action', new Date().toISOString(), campaign.id, cust.id);
+              db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'failed', 'system', 'Payment requires 3D Secure - cannot auto-charge', new Date().toISOString());
+              console.log('[AUTO-SEND] Payment needs 3DS:', cust.email);
+              // Pause Auto Send
+              db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(1, cust.id);
+              results.failed++;
+            } else {
+              // Payment failed
+              db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(chargeResult && chargeResult.id ? chargeResult.id : '', 'failed', new Date().toISOString(), campaign.id, cust.id);
+              db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'failed', 'system', 'Payment failed: ' + ((chargeResult && chargeResult.last_payment_error && chargeResult.last_payment_error.message) || 'Unknown error'), new Date().toISOString());
+              console.log('[AUTO-SEND] Payment failed:', cust.email, chargeResult?.last_payment_error?.message || 'unknown');
+              // Pause Auto Send if setting enabled
+              if (settings.pause_on_payment_fail) {
+                db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(1, cust.id);
+                console.log('[AUTO-SEND] Auto Send paused for:', cust.email);
+              }
+              results.failed++;
+            }
+          } catch(stripeError) {
+            console.log('[AUTO-SEND] Stripe error:', cust.email, stripeError.message);
+            results.failed++;
+          }
+        } else if (cust.stripe_payment_method_id || cust.stripe_customer_id) {
+          // Has partial Stripe setup but incomplete - pause
+          console.log('[AUTO-SEND] Skip:', cust.email, 'incomplete Stripe setup');
+          db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(1, cust.id);
+          results.skipped++;
         } else {
-          db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, cust.id);
-          results.failed++;
-          console.log('[AUTO-SEND] Failed:', cust.email, createResult?.error || 'provider error');
+          // No Stripe at all - use mock payment
+          paymentSuccess = true;
+          db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('auto_send_mock', 'paid', new Date().toISOString(), campaign.id, cust.id);
+          db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'paid', 'system', 'Mock payment (no Stripe configured)', new Date().toISOString());
+        }
+
+        // 14. Send to provider if payment succeeded
+        if (paymentSuccess) {
+          var provider = getDirectMailProvider();
+          var createResult = await provider.createCampaign({ name: campaign.name, recipient_count: validAddressCount, description: campaign.description });
+          if (createResult && createResult.success) {
+            db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, provider_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('queued', provider.name, createResult.provider_campaign_id, 'accepted', new Date().toISOString(), campaign.id, cust.id);
+            db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'paid', 'queued', 'system', 'Sent to provider: ' + provider.name, new Date().toISOString());
+            db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, provider.name, 'createCampaign', JSON.stringify({ name: campaign.name, recipient_count: validAddressCount }), JSON.stringify(createResult), 200, 1, '', new Date().toISOString());
+            results.sent++;
+            results.total_spend += totalCost;
+            console.log('[AUTO-SEND] Sent:', cust.email, validAddressCount, 'leads, cost: £' + totalCost.toFixed(2));
+          } else {
+            db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, cust.id);
+            results.failed++;
+            console.log('[AUTO-SEND] Failed:', cust.email, createResult?.error || 'provider error');
+          }
         }
       }
     } catch(e) { console.log('[AUTO-SEND] Error for', cust.email || cust.id, ':', e.message); results.failed++; }
@@ -4934,6 +4994,116 @@ app.post('/api/subscription/update', authMiddleware, async (req, res) => {
 });
 
 // ===== DEDUPLICATION DATABASE =====
+// ===== DIRECT MAIL PAYMENT METHODS =====
+// POST /api/direct-mail/setup-payment — Create SetupIntent to save a payment method
+app.post('/api/direct-mail/setup-payment', authMiddleware, async (req, res) => {
+  try {
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+
+    // Create or get Stripe customer
+    if (!customer.stripe_customer_id) {
+      var stripeCustomer = await stripeApiRequest('POST', 'customers', { email: customer.email, name: customer.company || customer.email, metadata: { customer_id: customer.id } });
+      if (stripeCustomer && stripeCustomer.id) {
+        db.prepare('UPDATE customers SET stripe_customer_id = ? WHERE id = ?').run(stripeCustomer.id, req.user.id);
+        customer.stripe_customer_id = stripeCustomer.id;
+      } else {
+        return res.status(500).json({ error: 'Failed to create Stripe customer' });
+      }
+    }
+
+    // Create SetupIntent
+    var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    var setupIntent = await stripeApiRequest('POST', 'setup_intents', {
+      customer: customer.stripe_customer_id,
+      'payment_method_types[0]': 'card',
+      usage: 'off_session',
+      'metadata[customer_id]': customer.id,
+      return_url: baseUrl + '/portal/dashboard.html?dm_payment=setup_complete'
+    });
+
+    if (setupIntent && setupIntent.client_secret) {
+      res.json({ success: true, client_secret: setupIntent.client_secret, stripe_customer_id: customer.stripe_customer_id });
+    } else {
+      res.status(500).json({ error: 'Failed to create SetupIntent' });
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/confirm-payment-method — Store confirmed payment method
+app.post('/api/direct-mail/confirm-payment-method', authMiddleware, async (req, res) => {
+  try {
+    const { payment_method_id } = req.body;
+    if (!payment_method_id) return res.status(400).json({ error: 'Payment method ID required' });
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+
+    // If no Stripe customer, create one
+    var stripeCustomerId = customer.stripe_customer_id;
+    if (!stripeCustomerId) {
+      var sc = await stripeApiRequest('POST', 'customers', { email: customer.email, metadata: { customer_id: customer.id } });
+      if (sc && sc.id) { stripeCustomerId = sc.id; db.prepare('UPDATE customers SET stripe_customer_id = ? WHERE id = ?').run(sc.id, req.user.id); }
+      else return res.status(500).json({ error: 'Failed to create Stripe customer' });
+    }
+
+    // Attach payment method to customer
+    var attachResult = await stripeApiRequest('POST', 'payment_methods/' + payment_method_id + '/attach', { customer: stripeCustomerId });
+    if (!attachResult || attachResult.error) return res.status(500).json({ error: attachResult?.error?.message || 'Failed to attach payment method' });
+
+    // Set as default payment method
+    await stripeApiRequest('POST', 'customers/' + stripeCustomerId, { invoice_settings: '{default_payment_method: "' + payment_method_id + '"}' });
+
+    // Get card details
+    var pmDetails = await stripeApiRequest('GET', 'payment_methods/' + payment_method_id, {});
+    var cardInfo = pmDetails && pmDetails.card ? { brand: pmDetails.card.brand, last4: pmDetails.card.last4, exp_month: pmDetails.card.exp_month, exp_year: pmDetails.card.exp_year } : {};
+
+    // Store on customer record
+    db.prepare('UPDATE customers SET stripe_payment_method_id = ?, stripe_customer_id = ? WHERE id = ?').run(payment_method_id, stripeCustomerId, req.user.id);
+
+    res.json({ success: true, payment_method_id: payment_method_id, stripe_customer_id: stripeCustomerId, card: cardInfo, message: 'Payment method saved' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/payment-method — Get saved payment method info
+app.get('/api/direct-mail/payment-method', authMiddleware, async (req, res) => {
+  try {
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    var hasPaymentMethod = !!(customer.stripe_payment_method_id);
+    var cardInfo = null;
+    if (hasPaymentMethod && customer.stripe_customer_id) {
+      try {
+        var pm = await stripeApiRequest('GET', 'payment_methods/' + customer.stripe_payment_method_id, {});
+        if (pm && pm.card) cardInfo = { brand: pm.card.brand, last4: pm.card.last4, exp_month: pm.card.exp_month, exp_year: pm.card.exp_year };
+      } catch(e) { /* payment method may have been removed */ }
+    }
+    res.json({ success: true, has_payment_method: hasPaymentMethod, stripe_customer_id: customer.stripe_customer_id || '', payment_method_id: customer.stripe_payment_method_id || '', card: cardInfo, auto_send_paused: customer.auto_send_paused ? 1 : 0 });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/direct-mail/payment-method — Remove saved payment method
+app.delete('/api/direct-mail/payment-method', authMiddleware, async (req, res) => {
+  try {
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    if (customer.stripe_payment_method_id) {
+      try { await stripeApiRequest('POST', 'payment_methods/' + customer.stripe_payment_method_id + '/detach', {}); } catch(e) {}
+    }
+    db.prepare('UPDATE customers SET stripe_payment_method_id = NULL WHERE id = ?').run(req.user.id);
+    res.json({ success: true, message: 'Payment method removed' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/auto-send-pause — Toggle auto-send paused state
+app.post('/api/direct-mail/auto-send-pause', authMiddleware, (req, res) => {
+  try {
+    var paused = req.body.paused ? 1 : 0;
+    db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(paused, req.user.id);
+    res.json({ success: true, paused: paused });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 const SCRAPED_BIZ_FILE = path.join(DATA_DIR, 'scraped-businesses.json');
 
 function loadScrapedBusinesses() {
