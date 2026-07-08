@@ -6785,10 +6785,12 @@ app.post('/api/direct-mail/suppression', authMiddleware, (req, res) => {
     if (existing) return res.json({ success: true, message: 'Already suppressed' });
     db2.direct_mail_suppression.push({
       id: uuidv4(), customer_id: req.user.id,
+      name: req.body.name || '', address_line1: req.body.address_line1 || '',
+      address_line2: req.body.address_line2 || '', town: req.body.town || '',
       postcode: (req.body.postcode || '').toUpperCase(),
-      address_line1: req.body.address_line1 || '',
-      name: req.body.name || '',
       reason: req.body.reason || 'Customer request',
+      added_by: req.body.name || 'Customer',
+      added_by_type: 'customer',
       created_at: new Date().toISOString()
     });
     saveDb();
@@ -6808,14 +6810,47 @@ app.delete('/api/direct-mail/suppression/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Function to check suppression before adding recipients
+// Admin global suppression
+app.post('/api/admin/direct-mail/suppression', adminAuth, (req, res) => {
+  try {
+    if (!req.body.postcode && !req.body.address_line1) return res.status(400).json({ error: 'Postcode or address required' });
+    var db2 = getDb();
+    if (!db2.direct_mail_suppression) db2.direct_mail_suppression = [];
+    db2.direct_mail_suppression.push({
+      id: uuidv4(), customer_id: '__global__',
+      name: req.body.name || '', address_line1: req.body.address_line1 || '',
+      address_line2: req.body.address_line2 || '', town: req.body.town || '',
+      postcode: (req.body.postcode || '').toUpperCase(),
+      reason: req.body.reason || 'Admin global suppression',
+      added_by: 'Admin', added_by_type: 'admin',
+      created_at: new Date().toISOString()
+    });
+    saveDb();
+    res.json({ success: true, message: 'Global suppression added' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/direct-mail/suppression — Get all suppression entries
+app.get('/api/admin/direct-mail/suppression', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var entries = (db2.direct_mail_suppression || []).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    var expanded = entries.map(function(e) {
+      var cust = (db2.customers || []).find(function(c) { return c.id === e.customer_id; });
+      return Object.assign({}, e, { customer_email: cust ? cust.email : (e.customer_id === '__global__' ? 'Global' : 'unknown') });
+    });
+    res.json({ success: true, entries: expanded, total: expanded.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Function to check suppression (customer + global)
 function isAddressSuppressed(customerId, postcode, addressLine1) {
   try {
     var db2 = getDb();
     if (!db2.direct_mail_suppression) return false;
     var pc = (postcode || '').toUpperCase();
     return db2.direct_mail_suppression.some(function(s) {
-      return s.customer_id === customerId && s.postcode === pc && s.address_line1 === (addressLine1 || '');
+      return (s.customer_id === customerId || s.customer_id === '__global__') && s.postcode === pc && s.address_line1 === (addressLine1 || '');
     });
   } catch(e) { return false; }
 }

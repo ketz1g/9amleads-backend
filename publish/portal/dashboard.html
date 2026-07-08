@@ -1273,9 +1273,9 @@ function showStatus(id, msg, color) {
   setTimeout(function() { el.style.display = 'none'; }, 4000);
 }
 
-var DM_TABS = ['overview','create','done-for-you','analytics','calendar','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments'];
-var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', 'done-for-you':'Done For You', analytics:'Analytics', calendar:'Campaign Calendar', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
-var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', 'done-for-you':'fa-handshake', analytics:'fa-chart-bar', calendar:'fa-calendar', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
+var DM_TABS = ['overview','create','suppression','done-for-you','analytics','calendar','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments'];
+var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', suppression:'Suppression List', 'done-for-you':'Done For You', analytics:'Analytics', calendar:'Campaign Calendar', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
+var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', suppression:'fa-ban', 'done-for-you':'fa-handshake', analytics:'fa-chart-bar', calendar:'fa-calendar', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
 
 function showDirectMailCentre(tab) {
   tab = tab || localStorage.getItem('dmTab') || 'overview';
@@ -1294,7 +1294,7 @@ function showDirectMailCentre(tab) {
 
   var el = document.getElementById('dm-content');
   // Check feature access first
-  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, analytics: null, calendar: null, sequences: null, 'done-for-you': null, settings: 'auto_send', proof: 'proof_tracking' };
+  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, analytics: null, calendar: null, sequences: null, suppression: null, 'done-for-you': null, settings: 'auto_send', proof: 'proof_tracking' };
   apiFetch('/api/direct-mail/features').then(function(fr) {
     var plan = fr && fr.plan ? fr.plan : 'free_trial';
     var features = fr && fr.features ? fr.features : {};
@@ -1316,6 +1316,7 @@ function showDirectMailCentre(tab) {
     else if (tab === 'packs') { showDMPacks(el); }
     else if (tab === 'marketplace') { showDMMarketplace(el); }
     else if (tab === 'seasonal') { showDMSeasonal(el); }
+    else if (tab === 'suppression') { showDMSuppression(el); }
     else if (tab === 'done-for-you') { showDMRequests(el); }
     else if (tab === 'analytics') { showDMAnalytics(el); }
     else if (tab === 'calendar') { showDMCalendar(el); }
@@ -2801,6 +2802,58 @@ function dmScheduleSeasonal(headline, offer) {
 }
 
 var DM_CALENDAR_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function showDMSuppression(el) {
+  el.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="btn btn-primary btn-sm" onclick="dmShowAddSuppression()"><i class="fas fa-ban"></i> Add to Suppression List</button><button class="btn btn-outline btn-sm" onclick="showDMSuppression(el)"><i class="fas fa-sync"></i> Refresh</button></div>' +
+    '<div id="dm-suppression-list"><div style="text-align:center;padding:30px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div>';
+  apiFetch('/api/direct-mail/suppression').then(function(r) {
+    var el2 = document.getElementById('dm-suppression-list');
+    if (!el2) return;
+    var entries = r && r.suppressed ? r.suppressed : [];
+    if (entries.length === 0) {
+      el2.innerHTML = '<div style="text-align:center;padding:40px 20px"><i class="fas fa-ban" style="font-size:36px;color:var(--muted2);display:block;margin-bottom:8px"></i><p style="font-size:12px;color:var(--muted2);margin-bottom:12px">No suppressed addresses. Add an address to prevent it from receiving your campaigns.</p><button class="btn btn-primary btn-sm" onclick="dmShowAddSuppression()"><i class="fas fa-ban"></i> Suppress an Address</button></div>';
+      return;
+    }
+    el2.innerHTML = '<div style="margin-bottom:6px;font-size:11px;color:var(--muted2)">' + entries.length + ' suppressed address(es)</div>' +
+      entries.map(function(e) { return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:4px;font-size:11px">' +
+        '<span style="font-size:16px">🚫</span>' +
+        '<div style="flex:1;min-width:0"><div style="font-weight:600;color:var(--text)">' + (e.address_line1 || '') + (e.town ? ', ' + e.town : '') + (e.postcode ? ' · ' + e.postcode : '') + '</div>' +
+        '<div style="font-size:10px;color:var(--muted2)">' + (e.name ? e.name + ' · ' : '') + (e.reason || '') + ' · ' + new Date(e.created_at).toLocaleDateString() + '</div></div>' +
+        '<button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px;min-height:auto;color:var(--danger)" onclick="dmRemoveSuppression(\'' + e.id + '\')"><i class="fas fa-trash"></i></button></div>'; }).join('');
+  });
+}
+
+function dmShowAddSuppression() {
+  showModal('Add to Suppression List', '<div style="display:grid;gap:8px"><p style="font-size:11px;color:var(--muted2)">This address will be blocked from ALL future campaigns including Auto Send and sequences.</p>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Name (optional)</label><input type="text" id="sup-name" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Address Line 1 *</label><input type="text" id="sup-addr1" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Town</label><input type="text" id="sup-town" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Postcode *</label><input type="text" id="sup-postcode" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Reason</label><select id="sup-reason" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option>Customer request</option><option>Moved away</option><option>Complaint</option><option>Not interested</option><option>Duplicate</option><option>Invalid address</option><option>Other</option></select></div>' +
+    '<button class="btn btn-danger btn-sm" onclick="dmAddSuppression()"><i class="fas fa-ban"></i> Suppress Address</button></div>', '440px');
+}
+
+function dmAddSuppression() {
+  var addr1 = document.getElementById('sup-addr1')?.value.trim();
+  var postcode = document.getElementById('sup-postcode')?.value.trim();
+  if (!addr1 || !postcode) { alert('Address and postcode required'); return; }
+  apiFetch('/api/direct-mail/suppression', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    name: document.getElementById('sup-name')?.value || '',
+    address_line1: addr1, town: document.getElementById('sup-town')?.value || '',
+    postcode: postcode, reason: document.getElementById('sup-reason')?.value || 'Customer request'
+  })}).then(function(r) {
+    if (r && r.success) { document.getElementById('modal-overlay')?.remove(); showStatus('dm-content','Address suppressed','var(--success)'); showDirectMailCentre('suppression'); }
+    else { alert(r?.error || 'Failed'); }
+  });
+}
+
+function dmRemoveSuppression(id) {
+  if (!confirm('Remove this address from the suppression list?')) return;
+  apiFetch('/api/direct-mail/suppression/' + id, { method:'DELETE' }).then(function(r) {
+    if (r && r.success) { showStatus('dm-content','Removed from suppression list','var(--success)'); showDirectMailCentre('suppression'); }
+    else { alert('Failed'); }
+  });
+}
 
 function showDMRequests(el) {
   el.innerHTML = '<div style="animation:slideUp .3s ease">' +
