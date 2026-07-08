@@ -6057,26 +6057,48 @@ app.post('/api/direct-mail/campaigns/:id/cancel-with-provider', authMiddleware, 
 // POST /api/direct-mail/automation — Save automation settings
 app.post('/api/direct-mail/automation', authMiddleware, (req, res) => {
   try {
-    const existing = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
-    const settings = {
+    var enabled = req.body.enable_auto_send ? 1 : 0;
+    if (enabled) {
+      if (!req.body.default_template_id) return res.status(400).json({ error: 'Please select a saved template before enabling Auto Send.' });
+      if (!req.body.max_daily_spend || parseInt(req.body.max_daily_spend) < 10) return res.status(400).json({ error: 'Please set a minimum daily spend of at least £10.' });
+      if (req.body.consent_given !== true && req.body.consent_given !== 1) return res.status(400).json({ error: 'You must approve the consent to enable Auto Send.' });
+    }
+    var existing = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
+    var settings = {
       id: existing ? existing.id : uuidv4(),
       customer_id: req.user.id,
-      auto_approve: req.body.auto_approve ? 1 : 0,
-      auto_send: req.body.auto_send ? 1 : 0,
+      enable_auto_send: enabled,
+      lead_types: req.body.lead_types || '',
+      postcode_areas: req.body.postcode_areas || '',
       default_template_id: req.body.default_template_id || '',
-      default_material_id: req.body.default_material_id || '',
-      max_budget: req.body.max_budget || 0,
-      notification_email: req.body.notification_email || '',
-      weekly_limit: req.body.weekly_limit || 0,
+      mail_type: req.body.mail_type || 'letter',
+      max_daily_spend: parseInt(req.body.max_daily_spend) || 0,
+      max_monthly_spend: parseInt(req.body.max_monthly_spend) || 0,
+      max_letters_per_day: parseInt(req.body.max_letters_per_day) || 0,
+      min_leads_before_send: parseInt(req.body.min_leads_before_send) || 1,
+      send_timing: req.body.send_timing || 'after_9am',
+      pause_on_payment_fail: req.body.pause_on_payment_fail ? 1 : 0,
+      pause_on_provider_fail: req.body.pause_on_provider_fail ? 1 : 0,
+      pause_on_spend_limit: req.body.pause_on_spend_limit ? 1 : 0,
+      avoid_duplicate_mailing: req.body.avoid_duplicate_mailing !== false ? 1 : 0,
+      repeat_mailing_days: parseInt(req.body.repeat_mailing_days) || 90,
+      consent_given: 0,
+      consent_date: '',
+      consent_ip: '',
       created_at: existing ? existing.created_at : new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
-    if (existing) {
-      db.prepare('UPDATE direct_mail_automation_settings SET auto_approve=?,auto_send=?,default_template_id=?,default_material_id=?,max_budget=?,notification_email=?,weekly_limit=?,updated_at=? WHERE customer_id=?').run(settings.auto_approve, settings.auto_send, settings.default_template_id, settings.default_material_id, settings.max_budget, settings.notification_email, settings.weekly_limit, settings.updated_at, req.user.id);
-    } else {
-      db.prepare('INSERT INTO direct_mail_automation_settings (id,customer_id,auto_approve,auto_send,default_template_id,default_material_id,max_budget,notification_email,weekly_limit,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(settings.id, settings.customer_id, settings.auto_approve, settings.auto_send, settings.default_template_id, settings.default_material_id, settings.max_budget, settings.notification_email, settings.weekly_limit, settings.created_at, settings.updated_at);
+    if (enabled && req.body.consent_given) {
+      settings.consent_given = 1;
+      settings.consent_date = new Date().toISOString();
+      settings.consent_ip = req.headers['x-forwarded-for'] || req.ip || '';
     }
-    res.json({ success: true, settings: settings });
+    if (existing) {
+      db.prepare('UPDATE direct_mail_automation_settings SET enable_auto_send=?,lead_types=?,postcode_areas=?,default_template_id=?,mail_type=?,max_daily_spend=?,max_monthly_spend=?,max_letters_per_day=?,min_leads_before_send=?,send_timing=?,pause_on_payment_fail=?,pause_on_provider_fail=?,pause_on_spend_limit=?,avoid_duplicate_mailing=?,repeat_mailing_days=?,consent_given=?,consent_date=?,consent_ip=?,updated_at=? WHERE customer_id=?').run(settings.enable_auto_send, settings.lead_types, settings.postcode_areas, settings.default_template_id, settings.mail_type, settings.max_daily_spend, settings.max_monthly_spend, settings.max_letters_per_day, settings.min_leads_before_send, settings.send_timing, settings.pause_on_payment_fail, settings.pause_on_provider_fail, settings.pause_on_spend_limit, settings.avoid_duplicate_mailing, settings.repeat_mailing_days, settings.consent_given, settings.consent_date, settings.consent_ip, settings.updated_at, req.user.id);
+    } else {
+      db.prepare('INSERT INTO direct_mail_automation_settings (id,customer_id,enable_auto_send,lead_types,postcode_areas,default_template_id,mail_type,max_daily_spend,max_monthly_spend,max_letters_per_day,min_leads_before_send,send_timing,pause_on_payment_fail,pause_on_provider_fail,pause_on_spend_limit,avoid_duplicate_mailing,repeat_mailing_days,consent_given,consent_date,consent_ip,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(settings.id, settings.customer_id, settings.enable_auto_send, settings.lead_types, settings.postcode_areas, settings.default_template_id, settings.mail_type, settings.max_daily_spend, settings.max_monthly_spend, settings.max_letters_per_day, settings.min_leads_before_send, settings.send_timing, settings.pause_on_payment_fail, settings.pause_on_provider_fail, settings.pause_on_spend_limit, settings.avoid_duplicate_mailing, settings.repeat_mailing_days, settings.consent_given, settings.consent_date, settings.consent_ip, settings.created_at, settings.updated_at);
+    }
+    res.json({ success: true, settings: settings, message: enabled ? 'Auto Send enabled' : 'Auto Send disabled' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

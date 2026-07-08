@@ -1862,27 +1862,129 @@ function dmDeleteTemplate(id) {
 function showDMSettings(el) {
   apiFetch('/api/direct-mail/automation').then(function(r) {
     var s = r && r.settings ? r.settings : {};
-    el.innerHTML = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-cog" style="color:var(--primary)"></i> Auto Send Settings</div></div>' +
-      '<p style="font-size:12px;color:var(--muted2);margin-bottom:14px">Configure automatic sending rules for your direct mail campaigns.</p>' +
-      '<div style="display:grid;gap:10px">' +
-      '<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;cursor:pointer"><input type="checkbox" id="dm-auto-approve" ' + (s.auto_approve ? 'checked' : '') + ' style="accent-color:var(--primary);width:16px;height:16px"><div><div style="font-weight:600;font-size:13px;color:var(--text)">Auto-Approve Campaigns</div><div style="font-size:11px;color:var(--muted2)">Automatically approve campaigns that meet your criteria</div></div></label>' +
-      '<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;cursor:pointer"><input type="checkbox" id="dm-auto-send" ' + (s.auto_send ? 'checked' : '') + ' style="accent-color:var(--primary);width:16px;height:16px"><div><div style="font-weight:600;font-size:13px;color:var(--text)">Auto-Send to Printer</div><div style="font-size:11px;color:var(--muted2)">Automatically send approved campaigns to our print partner</div></div></label>' +
-      '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Max Weekly Budget</label><input type="number" id="dm-budget" value="' + (s.max_budget || 0) + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
-      '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Notification Email</label><input type="email" id="dm-notif-email" value="' + (s.notification_email || '') + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
-      '<button class="btn btn-primary btn-sm" onclick="saveDMSettings()"><i class="fas fa-save"></i> Save Settings</button></div></div>';
+    var checked = function(field) { return s[field] ? 'checked' : ''; };
+    var val = function(field, def) { return s[field] !== undefined && s[field] !== null ? s[field] : (def || ''); };
+    var sel = function(field, v) { return val(field) === v ? 'selected' : ''; };
+    // Load templates for dropdown
+    apiFetch('/api/direct-mail/templates').then(function(tr) {
+      var templates = tr && tr.templates ? tr.templates : [];
+      var tplOpts = templates.map(function(t) { return '<option value="' + t.id + '" ' + (val('default_template_id') === t.id ? 'selected' : '') + '>' + t.name + '</option>'; }).join('');
+      el.innerHTML = '<div style="animation:slideUp .3s ease;display:grid;gap:14px;max-width:700px" id="dm-auto-settings">' +
+
+        // Enable/disable toggle
+        '<div class="card" style="' + (s.enable_auto_send ? 'border:2px solid var(--success)' : '') + '">' +
+        '<label style="display:flex;align-items:center;gap:14px;padding:6px 0;cursor:pointer">' +
+        '<input type="checkbox" id="dm-enable" ' + checked('enable_auto_send') + ' style="accent-color:var(--success);width:20px;height:20px" onchange="dmToggleAutoSend()">' +
+        '<div><div style="font-weight:700;font-size:15px;color:var(--text)">Automatically mail my new leads every day</div>' +
+        '<div style="font-size:11px;color:var(--muted2);margin-top:2px">Review your leads each morning and we\'ll mail them for you</div></div></label></div>' +
+
+        // Settings panel (shown only when enabled)
+        '<div id="dm-auto-panel" style="display:' + (s.enable_auto_send ? 'grid' : 'none') + ';gap:14px">' +
+
+        // Templates
+        '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-file-alt" style="color:var(--primary)"></i> 1. Select Your Template</div></div>' +
+        '<p style="font-size:11px;color:var(--muted2);margin-bottom:8px">Choose which saved template to use for Auto Send campaigns.</p>' +
+        '<select id="dm-tpl" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)">' +
+        '<option value="">-- Select a template --</option>' + tplOpts + '</select>' +
+        '<div style="margin-top:6px;font-size:11px;color:var(--muted2)">Mail type: <select id="dm-mail-type" style="padding:4px 8px;background:var(--card2);border:1px solid var(--border);border-radius:4px;font-size:11px;color:var(--text)"><option value="letter" ' + sel('mail_type','letter') + '>Letter only</option><option value="flyer" ' + sel('mail_type','flyer') + '>Flyer only</option><option value="letter+flyer" ' + sel('mail_type','letter+flyer') + '>Letter + Flyer</option></select></div></div>' +
+
+        // Lead selection
+        '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-filter" style="color:var(--primary)"></i> 2. Select Lead Types &amp; Areas</div></div>' +
+        '<div class="form-row"><div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Lead Types</label>' +
+        '<div id="dm-lead-type-checks" style="display:flex;gap:6px;flex-wrap:wrap">' +
+        '</div><input type="hidden" id="dm-lead-types" value="' + val('lead_types','') + '"></div>' +
+        '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Postcode Areas</label><input type="text" id="dm-areas" placeholder="e.g. EN, N, SW, SE" value="' + val('postcode_areas','') + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div></div></div>' +
+
+        // Spend limits
+        '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-pound-sign" style="color:var(--success)"></i> 3. Set Your Spend Limits</div></div>' +
+        '<div class="form-row"><div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Max Daily Spend (£)</label><input type="number" id="dm-daily-spend" value="' + val('max_daily_spend','25') + '" min="10" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+        '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Max Monthly Spend (£)</label><input type="number" id="dm-monthly-spend" value="' + val('max_monthly_spend','500') + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div></div>' +
+        '<div class="form-row"><div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Max Letters Per Day</label><input type="number" id="dm-max-letters" value="' + val('max_letters_per_day','50') + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+        '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Min Leads Before Sending</label><input type="number" id="dm-min-leads" value="' + val('min_leads_before_send','1') + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div></div></div>' +
+
+        // Schedule
+        '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-clock" style="color:var(--primary)"></i> 4. Schedule &amp; Timing</div></div>' +
+        '<div class="form-row"><div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Send Timing</label><select id="dm-timing" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option value="after_9am" ' + sel('send_timing','after_9am') + '>Once daily after 9am</option><option value="immediate" ' + sel('send_timing','immediate') + '>Send immediately when leads arrive</option></select></div>' +
+        '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Repeat Mailing</label><select id="dm-repeat-days" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option value="0" ' + sel('repeat_mailing_days','0') + '>Never repeat</option><option value="30" ' + sel('repeat_mailing_days','30') + '>After 30 days</option><option value="60" ' + sel('repeat_mailing_days','60') + '>After 60 days</option><option value="90" ' + sel('repeat_mailing_days','90') + '>After 90 days</option><option value="180" ' + sel('repeat_mailing_days','180') + '>After 180 days</option></select></div></div></div>' +
+
+        // Pause rules
+        '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-pause-circle" style="color:var(--warning)"></i> 5. Pause Rules</div></div>' +
+        '<label style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px;cursor:pointer"><input type="checkbox" id="dm-pause-payment" ' + checked('pause_on_payment_fail') + ' style="accent-color:var(--primary);width:16px;height:16px"><span>Pause if payment fails</span></label>' +
+        '<label style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px;cursor:pointer"><input type="checkbox" id="dm-pause-provider" ' + checked('pause_on_provider_fail') + ' style="accent-color:var(--primary);width:16px;height:16px"><span>Pause if provider fails</span></label>' +
+        '<label style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px;cursor:pointer"><input type="checkbox" id="dm-pause-spend" ' + checked('pause_on_spend_limit') + ' style="accent-color:var(--primary);width:16px;height:16px"><span>Pause if spend limit reached</span></label>' +
+        '<label style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px;cursor:pointer"><input type="checkbox" id="dm-avoid-duplicate" ' + checked('avoid_duplicate_mailing') + ' style="accent-color:var(--primary);width:16px;height:16px"><span>Avoid duplicate mailing</span></label></div>' +
+
+        // Consent
+        '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-check-circle" style="color:var(--success)"></i> 6. Consent</div></div>' +
+        '<label style="display:flex;align-items:flex-start;gap:10px;padding:6px 0;cursor:pointer;font-size:12px;line-height:1.5">' +
+        '<input type="checkbox" id="dm-consent" ' + (s.consent_given ? 'checked' : '') + ' style="accent-color:var(--primary);width:18px;height:18px;margin-top:2px;flex-shrink:0">' +
+        '<span>I approve 9am Leads to automatically send my approved marketing materials to my selected leads daily, subject to my chosen spend limits.</span></label>' +
+        (s.consent_date ? '<div style="font-size:10px;color:var(--muted2);padding-left:28px">Consented: ' + new Date(s.consent_date).toLocaleDateString() + (s.consent_ip ? ' · IP: ' + s.consent_ip : '') + '</div>' : '') +
+        '</div>' +
+
+        // Save button
+        '<button class="btn btn-primary" onclick="saveDMSettings()" style="padding:14px"><i class="fas fa-save"></i> Save Auto Send Settings</button>' +
+        '<div id="dm-auto-status" style="font-size:11px;color:var(--muted2);text-align:center"></div>' +
+        '</div></div>';
+      // Render lead type checkboxes
+      var leadTypes = ['moving','probate','newbusiness','planning','tenders'];
+      var savedTypes = (val('lead_types','') || '').split(',').filter(Boolean);
+      var checksHtml = leadTypes.map(function(lt) {
+        var isChecked = savedTypes.indexOf(lt) !== -1;
+        var label = lt.charAt(0).toUpperCase() + lt.slice(1);
+        return '<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:4px 8px;background:var(--card2);border:1px solid var(--border);border-radius:6px"><input type="checkbox" value="' + lt + '" ' + (isChecked ? 'checked' : '') + ' onchange="dmUpdateLeadTypes()" style="accent-color:var(--primary);width:14px;height:14px"> ' + label + '</label>';
+      }).join('');
+      var checksDiv = document.getElementById('dm-lead-type-checks');
+      if (checksDiv) checksDiv.innerHTML = checksHtml;
+      dmToggleAutoSend();
+    });
   });
 }
 
+function dmToggleAutoSend() {
+  var enabled = document.getElementById('dm-enable')?.checked;
+  var panel = document.getElementById('dm-auto-panel');
+  if (panel) panel.style.display = enabled ? 'grid' : 'none';
+}
+
+function dmUpdateLeadTypes() {
+  var checks = document.querySelectorAll('#dm-auto-settings input[type="checkbox"][value]');
+  var types = [];
+  checks.forEach(function(c) { if (c.checked && c.value) types.push(c.value); });
+  document.getElementById('dm-lead-types').value = types.join(',');
+}
+
 function saveDMSettings() {
+  var enabled = document.getElementById('dm-enable')?.checked;
+  var consent = document.getElementById('dm-consent')?.checked;
+  if (enabled && !document.getElementById('dm-tpl')?.value) { showStatus('dm-auto-status','Please select a saved template.','var(--warning)'); return; }
+  if (enabled && (!document.getElementById('dm-daily-spend')?.value || parseInt(document.getElementById('dm-daily-spend')?.value) < 10)) { showStatus('dm-auto-status','Daily spend must be at least £10.','var(--warning)'); return; }
+  if (enabled && !consent) { showStatus('dm-auto-status','You must tick the consent box to enable Auto Send.','var(--warning)'); return; }
+  
+  var leadTypes = [];
+  document.querySelectorAll('#dm-auto-settings input[type="checkbox"][value]').forEach(function(c) { if (c.checked && c.value) leadTypes.push(c.value); });
+  
   var data = {
-    auto_approve: document.getElementById('dm-auto-approve')?.checked ? 1 : 0,
-    auto_send: document.getElementById('dm-auto-send')?.checked ? 1 : 0,
-    max_budget: parseInt(document.getElementById('dm-budget')?.value) || 0,
-    notification_email: document.getElementById('dm-notif-email')?.value || ''
+    enable_auto_send: enabled ? 1 : 0,
+    lead_types: leadTypes.join(','),
+    postcode_areas: document.getElementById('dm-areas')?.value || '',
+    default_template_id: document.getElementById('dm-tpl')?.value || '',
+    mail_type: document.getElementById('dm-mail-type')?.value || 'letter',
+    max_daily_spend: parseInt(document.getElementById('dm-daily-spend')?.value) || 0,
+    max_monthly_spend: parseInt(document.getElementById('dm-monthly-spend')?.value) || 0,
+    max_letters_per_day: parseInt(document.getElementById('dm-max-letters')?.value) || 0,
+    min_leads_before_send: parseInt(document.getElementById('dm-min-leads')?.value) || 1,
+    send_timing: document.getElementById('dm-timing')?.value || 'after_9am',
+    pause_on_payment_fail: document.getElementById('dm-pause-payment')?.checked ? 1 : 0,
+    pause_on_provider_fail: document.getElementById('dm-pause-provider')?.checked ? 1 : 0,
+    pause_on_spend_limit: document.getElementById('dm-pause-spend')?.checked ? 1 : 0,
+    avoid_duplicate_mailing: document.getElementById('dm-avoid-duplicate')?.checked !== false ? 1 : 0,
+    repeat_mailing_days: parseInt(document.getElementById('dm-repeat-days')?.value) || 0,
+    consent_given: consent ? true : false
   };
   apiFetch('/api/direct-mail/automation', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(function(r) {
-    if (r && r.success) { showStatus('dm-content','Settings saved!','var(--success)'); }
-    else { showStatus('dm-content','Failed to save','var(--danger)'); }
+    if (r && r.success) { showStatus('dm-auto-status', r.message || 'Settings saved!', 'var(--success)'); showDMSettings(document.getElementById('dm-content')); }
+    else { showStatus('dm-auto-status', r?.error || 'Failed to save', 'var(--danger)'); }
   });
 }
 
