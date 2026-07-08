@@ -8765,6 +8765,51 @@ app.post('/api/admin/seasonal/campaigns', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== MARKETING HEALTH SCORE =====
+// GET /api/direct-mail/health-score — Customer's marketing health score
+app.get('/api/direct-mail/health-score', authMiddleware, (req, res) => {
+  try {
+    var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+    var templates = db.prepare('SELECT COUNT(*) as count FROM direct_mail_templates WHERE customer_id = ?').get(req.user.id);
+    var campaigns = db.prepare('SELECT COUNT(*) as count FROM direct_mail_campaigns WHERE customer_id = ?').get(req.user.id);
+    var sentCampaigns = db.prepare('SELECT COUNT(*) as count FROM direct_mail_campaigns WHERE customer_id = ? AND status IN (\'sent\',\'queued\',\'completed\',\'dispatched\')').get(req.user.id);
+    var settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
+    var db2 = getDb();
+    var packs = (db2.customer_campaign_packs || []).filter(function(p) { return p.customer_id === req.user.id; });
+    var score = 0; var factors = []; var recommendations = [];
+    // 1. Business Profile completed (10 pts)
+    if (profile) { score += 10; factors.push({ name:'Business Profile', met: true, pts:10 }); } else { factors.push({ name:'Business Profile', met: false, pts:0 }); recommendations.push({ text:'Complete your Business Profile', action:'business-profile', emoji:'📋' }); }
+    // 2. Logo uploaded (5 pts)
+    if (profile && profile.logo_url) { score += 5; factors.push({ name:'Logo', met: true, pts:5 }); } else { factors.push({ name:'Logo', met: false, pts:0 }); recommendations.push({ text:'Upload your logo', action:'business-profile', emoji:'🖼️' }); }
+    // 3. Phone number (5 pts)
+    if (profile && profile.phone) { score += 5; factors.push({ name:'Phone', met: true, pts:5 }); } else { factors.push({ name:'Phone', met: false, pts:0 }); recommendations.push({ text:'Add your phone number', action:'business-profile', emoji:'📞' }); }
+    // 4. Website (5 pts)
+    if (profile && profile.website) { score += 5; factors.push({ name:'Website', met: true, pts:5 }); } else { factors.push({ name:'Website', met: false, pts:0 }); recommendations.push({ text:'Add your website', action:'business-profile', emoji:'🌐' }); }
+    // 5. Services added (10 pts)
+    if (profile && profile.services_offered) { score += 10; factors.push({ name:'Services', met: true, pts:10 }); } else { factors.push({ name:'Services', met: false, pts:0 }); recommendations.push({ text:'Add your services', action:'business-profile', emoji:'🔧' }); }
+    // 6. Offer added (10 pts)
+    if (profile && (profile.special_offer || profile.call_to_action)) { score += 10; factors.push({ name:'Offer/CTA', met: true, pts:10 }); } else { factors.push({ name:'Offer/CTA', met: false, pts:0 }); recommendations.push({ text:'Add a special offer', action:'business-profile', emoji:'🎁' }); }
+    // 7. Template created (10 pts)
+    var tplCount = templates ? (templates.count || 0) : 0;
+    if (tplCount > 0) { score += 10; factors.push({ name:'Saved Templates', met: true, pts:10 }); } else { factors.push({ name:'Saved Templates', met: false, pts:0 }); recommendations.push({ text:'Create your first flyer template', action:'templates', emoji:'📄' }); }
+    // 8. Campaign Pack selected (10 pts)
+    if (packs.length > 0) { score += 10; factors.push({ name:'Campaign Pack', met: true, pts:10 }); } else { factors.push({ name:'Campaign Pack', met: false, pts:0 }); recommendations.push({ text:'Select a Campaign Pack', action:'packs', emoji:'📦' }); }
+    // 9. Auto Send enabled (10 pts)
+    var autoSend = settings && settings.enable_auto_send;
+    if (autoSend) { score += 10; factors.push({ name:'Auto Send', met: true, pts:10 }); } else { factors.push({ name:'Auto Send', met: false, pts:0 }); recommendations.push({ text:'Enable Auto Send', action:'settings', emoji:'🤖' }); }
+    // 10. Spend limits set (10 pts)
+    var hasLimits = settings && (parseInt(settings.max_daily_spend) > 0 || parseInt(settings.max_monthly_spend) > 0);
+    if (hasLimits) { score += 10; factors.push({ name:'Spend Limits', met: true, pts:10 }); } else { factors.push({ name:'Spend Limits', met: false, pts:0 }); recommendations.push({ text:'Set daily/monthly spend limits', action:'settings', emoji:'💰' }); }
+    // 11. First campaign sent (10 pts)
+    var sent = sentCampaigns ? sentCampaigns.count || 0 : 0;
+    if (sent > 0) { score += 10; factors.push({ name:'Campaign Sent', met: true, pts:10 }); } else { factors.push({ name:'Campaign Sent', met: false, pts:0 }); recommendations.push({ text:'Send your first campaign', action:'create', emoji:'📬' }); }
+    // 12. Sent more than 1 campaign (10 pts)
+    if (sent > 1) { score += 10; factors.push({ name:'Repeat Sending', met: true, pts:10 }); } else { factors.push({ name:'Repeat Sending', met: false, pts:0 }); recommendations.push({ text:'Send another campaign to build momentum', action:'create', emoji:'🚀' }); }
+    var level = score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : score >= 40 ? 'Needs Work' : 'Getting Started';
+    res.json({ success: true, score: score, level: level, factors: factors, recommendations: recommendations.slice(0, 5), completed: factors.filter(function(f) { return f.met; }).length, total: factors.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== CAMPAIGN ANALYTICS =====
 // GET /api/direct-mail/analytics — Customer campaign analytics
 app.get('/api/direct-mail/analytics', authMiddleware, (req, res) => {

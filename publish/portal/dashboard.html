@@ -2802,8 +2802,27 @@ function dmScheduleSeasonal(headline, offer) {
 var DM_CALENDAR_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 function showDMAnalytics(el) {
-  el.innerHTML = '<div style="animation:slideUp .3s ease"><div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-chart-bar" style="color:var(--primary)"></i> Campaign Analytics</div></div>' +
+  el.innerHTML = '<div style="animation:slideUp .3s ease">' +
+    '<div id="dm-health-score"></div>' +
+    '<div class="card" style="margin-top:12px"><div class="card-header"><div class="card-title"><i class="fas fa-chart-bar" style="color:var(--primary)"></i> Campaign Analytics</div></div>' +
     '<div id="dm-analytics-content"><div style="text-align:center;padding:30px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i> Loading analytics...</div></div></div></div>';
+  // Load health score
+  apiFetch('/api/direct-mail/health-score').then(function(h) {
+    if (h && h.success) {
+      var color = h.score >= 80 ? '#22c55e' : h.score >= 60 ? '#f59e0b' : h.score >= 40 ? '#f97316' : '#ef4444';
+      var html = '<div class="card" style="background:linear-gradient(135deg,var(--card),rgba(14,165,233,.02));border:1px solid rgba(14,165,233,.1)"><div class="card-header"><div class="card-title" style="font-size:16px"><i class="fas fa-heartbeat" style="color:var(--primary)"></i> Marketing Health Score</div></div>' +
+        '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">' +
+        '<div style="width:80px;height:80px;border-radius:50%;background:conic-gradient(' + color + ' ' + h.score + '%, var(--card2) ' + h.score + '%);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:22px;font-weight:900;color:' + color + '">' + h.score + '</span></div>' +
+        '<div style="flex:1;min-width:150px"><div style="font-size:16px;font-weight:700;color:var(--text)">' + h.score + '/100 — ' + h.level + '</div>' +
+        '<div style="font-size:11px;color:var(--muted2);margin-top:2px">' + h.completed + ' of ' + h.total + ' factors complete</div>';
+      if (h.recommendations && h.recommendations.length > 0) {
+        html += '<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">' +
+          h.recommendations.map(function(r) { return '<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.12);border-radius:4px;font-size:10px;color:var(--warning);cursor:pointer" onclick="showDirectMailCentre(\'' + r.action + '\')">' + r.emoji + ' ' + r.text + '</span>'; }).join('') + '</div>';
+      }
+      html += '</div></div></div>';
+      document.getElementById('dm-health-score').innerHTML = html;
+    }
+  });
   apiFetch('/api/direct-mail/analytics').then(function(a) {
     if (!a || !a.success) { document.getElementById('dm-analytics-content').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2)">Could not load analytics</div>'; return; }
     var html = '<div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))">' +
