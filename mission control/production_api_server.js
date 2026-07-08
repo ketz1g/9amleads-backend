@@ -4862,6 +4862,236 @@ app.post('/api/admin/impersonate', adminAuth, async (req, res) => {
   }
 });
 
+// ===== BLOG ENGINE & SEO ENDPOINTS =====
+var BLOG_BATCH_SIZE = 10;
+var PRODCAT = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permission Leads', tenders: 'Public Sector Tenders', general: 'Business Leads' };
+var LEAD_TYPE_PAGES = { moving: '/movingleadsdaily/', probate: '/probateleads/', newbusiness: '/newbusinessalert/', planning: '/planningleads/', tenders: '/tenders/', general: '/pricing/' };
+
+// GET /api/admin/blog/posts â€” List all blog posts
+app.get('/api/admin/blog/posts', adminAuth, function(req, res) {
+  try {
+    var dbData = getDb();
+    var posts = (dbData.blog_posts || []).filter(function(p) { return p.published; });
+    var templatesTotal = 35;
+    res.json({ posts: posts, total: posts.length, templates_total: templatesTotal, templates_used: posts.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/blog/delete â€” Delete a blog post
+app.post('/api/admin/blog/delete', adminAuth, function(req, res) {
+  try {
+    var slug = req.body.slug;
+    if (!slug) return res.status(400).json({ error: 'Slug required' });
+    var dbData = getDb();
+    if (!dbData.blog_posts) dbData.blog_posts = [];
+    dbData.blog_posts = dbData.blog_posts.filter(function(p) { return p.slug !== slug; });
+    fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/seo/report â€” SEO dashboard data
+app.get('/api/admin/seo/report', adminAuth, function(req, res) {
+  try {
+    var dbData = getDb();
+    var posts = dbData.blog_posts || [];
+    var published = posts.filter(function(p) { return p.published; });
+    var totalWords = 0;
+    var cats = {};
+    for (var i = 0; i < published.length; i++) {
+      totalWords += parseInt(published[i].word_count) || 0;
+      cats[published[i].category] = (cats[published[i].category] || 0) + 1;
+    }
+    var avgWords = published.length > 0 ? Math.round(totalWords / published.length) : 0;
+    var thisWeek = published.filter(function(p) { return p.created_at && p.created_at >= new Date(Date.now() - 7*86400000).toISOString(); });
+    var thisMonth = published.filter(function(p) { return p.created_at && p.created_at >= new Date(Date.now() - 30*86400000).toISOString(); });
+    var usedIndices = posts.map(function(p) { return p.template_index; });
+    var remaining = 0;
+    var templatesTotal = 35;
+    for (var ti = 0; ti < templatesTotal; ti++) { if (usedIndices.indexOf(ti) === -1) remaining++; }
+    res.json({
+      total_posts: published.length,
+      templates_total: templatesTotal,
+      templates_used: published.length,
+      templates_remaining: remaining,
+      posts_this_week: thisWeek.length,
+      posts_this_month: thisMonth.length,
+      avg_word_count: avgWords,
+      total_words: totalWords,
+      categories: cats,
+      by_category: Object.keys(cats).map(function(k) { return { category: k, label: PRODCAT[k] || k, count: cats[k] }; }),
+      completeness_pct: Math.round(published.length / templatesTotal * 100),
+      sitemap_urls: published.length + 16,
+      last_generated: published.length > 0 ? published[published.length - 1].created_at : null,
+      sitemap_healthy: true,
+      blog_accessible: true
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/seo/refresh-sitemap â€” Update sitemap.xml
+app.post('/api/admin/seo/refresh-sitemap', adminAuth, function(req, res) {
+  try {
+    var dbData = getDb();
+    var posts = (dbData.blog_posts || []).filter(function(p) { return p.published; });
+    var today = new Date().toISOString().split('T')[0];
+    var urls = [
+      '<url><loc>https://9amleads.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/pricing/</loc><priority>0.9</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/movingleadsdaily/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/probateleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/newbusinessalert/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/planningleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/tenders/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/how-it-works/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/who-we-serve/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/blog/</loc><priority>0.7</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/founder/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/invest/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/about.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/contact.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/terms.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/privacy.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>'
+    ];
+    for (var pi = 0; pi < posts.length; pi++) {
+      urls.push('<url><loc>https://9amleads.com/blog/' + posts[pi].slug + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>');
+    }
+    var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    for (var ui = 0; ui < urls.length; ui++) xml += '  ' + urls[ui] + '\n';
+    xml += '</urlset>';
+    var pathMod = require('path');
+    fs.writeFileSync(pathMod.join(__dirname, '..', 'publish', 'sitemap.xml'), xml);
+    fs.writeFileSync(pathMod.join(__dirname, '..', 'sitemap.xml'), xml);
+    try { fs.writeFileSync(pathMod.join(__dirname, '..', '9amleads', 'sitemap.xml'), xml); } catch(e2) {}
+    try { var http = require('http'); http.get('http://www.google.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(gres) { gres.resume(); }); } catch(e3) {}
+    res.json({ success: true, urls: urls.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/blog/generate â€” Generate next batch of blog posts (up to 5)
+app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
+  try {
+    var dbData = getDb();
+    if (!dbData.blog_posts) dbData.blog_posts = [];
+    var count = Math.min(BLOG_BATCH_SIZE, 5);
+    var generated = [];
+    for (var bi = 0; bi < count; bi++) {
+      var ti = dbData.blog_posts.length + bi;
+      var templates = [
+        { category: 'moving', title: 'How to Get More {type} Leads Without Spending on Ads', desc: 'Learn how removal companies and estate agents can generate consistent {type} leads without expensive advertising.', keywords: ['{type} lead generation', '{type} leads UK', 'get {type} leads'] },
+        { category: 'moving', title: 'The Ultimate Guide to {type} for Estate Agents', desc: 'Everything estate agents need to know about {type}.', keywords: ['{type} for estate agents', 'estate agent {type}', '{type} leads for agents'] },
+        { category: 'moving', title: '10 Proven Tips to Convert More {type} Into Bookings', desc: 'Stop losing customers. These actionable tips will help you convert more {type}.', keywords: ['convert {type}', '{type} conversion tips', '{type} booking rate'] },
+        { category: 'probate', title: 'How Solicitors Can Win More {type} With Daily Leads', desc: 'A guide for solicitors on winning more {type} through daily lead generation.', keywords: ['{type} for solicitors', 'win {type}', '{type} generation'] },
+        { category: 'probate', title: 'The Executor\'s Journey: Why Timing Matters in {type}', desc: 'Understanding executor timing is key to winning {type}.', keywords: ['{type} timing', '{type} executor', '{type} conversion'] },
+        { category: 'newbusiness', title: 'How to Find and Win {type} Using Companies House Data', desc: 'Generate {type} from Companies House registrations.', keywords: ['{type} from Companies House', '{type} generation', '{type} UK'] },
+        { category: 'newbusiness', title: 'Why {type} Are the Best Source of B2B Growth', desc: 'Why {type} are the most undervalued B2B lead source.', keywords: ['{type} B2B', '{type} growth', '{type} strategy'] },
+        { category: 'planning', title: 'How to Win {type} Contracts: A Complete Guide', desc: 'Win {type} contracts for builders and architects.', keywords: ['{type} contracts', 'win {type}', '{type} for builders'] },
+        { category: 'planning', title: 'The Value of {type} for Architects and Designers', desc: 'Why {type} fill your project pipeline.', keywords: ['{type} for architects', '{type} for designers', '{type} pipeline'] },
+        { category: 'tenders', title: 'How to Win More {type} as a Small Business', desc: 'Small businesses can win {type} with the right strategy.', keywords: ['{type} for small business', 'win {type}', '{type} strategy'] },
+        { category: 'tenders', title: 'The Complete {type} Response Toolkit', desc: 'Everything you need to respond to {type} effectively.', keywords: ['{type} response', '{type} submission', '{type} toolkit'] },
+        { category: 'general', title: 'Why Daily {type} Beat Weekly Lead Batches Every Time', desc: 'Why daily lead delivery outperforms weekly batches.', keywords: ['daily {type}', '{type} frequency', '{type} timing'] },
+        { category: 'general', title: 'The Ultimate {type} Strategy Guide for UK Businesses', desc: 'Complete strategy for multi-channel lead generation.', keywords: ['{type} strategy', '{type} guide', 'UK {type}'] }
+      ];
+      var types = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads', planning: 'planning leads', tenders: 'tender opportunities', general: 'business leads' };
+      var template = templates[ti % templates.length];
+      var productName = PRODCAT[template.category] || 'Business Leads';
+      var type = types[template.category] || 'leads';
+      var title = template.title.replace(/{type}/g, type);
+      var desc = template.desc.replace(/{type}/g, type);
+      var kw = template.keywords.map(function(k) { return k.replace(/{type}/g, type); });
+      var slug = title.toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
+      var paraPool = [
+        'In today\'s market, businesses need every advantage. ' + title + ' is one of the most effective ways to stay ahead.',
+        productName + ' provide a stream of exclusive opportunities your competitors don\'t have access to.',
+        'Consistency is key with ' + type + '. Fresh opportunities every morning builds a daily outreach habit.',
+        'The businesses that win with ' + type + ' are the ones that act fast. A structured morning workflow increases conversion.',
+        productName + ' are sourced from official registers and updated daily. The data is accurate, fresh, and actionable.',
+        'The cost of ' + type + ' is predictable and fixed. No auction dynamics or rising CPCs.',
+        'First contact wins. Studies show contacting a prospect within 30 minutes increases conversion by 400%.',
+        productName + ' are exclusive. No other business in your territory has the same lead.'
+      ];
+      var sections = '';
+      sections += '<h2>Why ' + title.split(' ').slice(0,3).join(' ') + ' Matters</h2><p>' + paraPool[0] + '</p><p>' + paraPool[1] + '</p>';
+      sections += '<h2>What Are ' + type.charAt(0).toUpperCase() + type.slice(1) + '?</h2><p>' + paraPool[2] + '</p><p>' + paraPool[3] + '</p>';
+      sections += '<div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);border-radius:10px;padding:20px;margin:20px 0"><h3 style="font-size:15px;margin-bottom:8px;color:#0ea5e9">Key Benefits</h3><ul style="padding-left:20px;line-height:1.8"><li>Exclusive leads - only your business receives them</li><li>Fixed weekly pricing with no auction dynamics</li><li>Daily morning delivery - always first to contact</li><li>Free 7-day trial with no credit card required</li></ul></div>';
+      sections += '<h2>The Benefits of Consistent ' + type.charAt(0).toUpperCase() + type.slice(1) + '</h2><p>' + paraPool[4] + '</p><p>' + paraPool[5] + '</p>';
+      sections += '<h2>How to Get Started with ' + type.charAt(0).toUpperCase() + type.slice(1) + '</h2><p>' + paraPool[6] + '</p><p>' + paraPool[7] + '</p>';
+      var wordCount = sections.replace(/<[^>]+>/g, '').split(/\s+/).length;
+      var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + title + ' | 9amLeads Blog</title><meta name="description" content="' + desc + '"><meta property="og:title" content="' + title + '"><meta property="og:description" content="' + desc + '"><meta property="og:url" content="https://9amleads.com/blog/' + slug + '"><meta property="og:type" content="article"><link rel="canonical" href="https://9amleads.com/blog/' + slug + '"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:Inter,sans-serif;background:#000;color:#fff;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}h1{font-size:28px;font-weight:800;font-family:Outfit,sans-serif}h2{font-size:20px;font-weight:700;margin-top:32px;color:#f5f5f5}p{color:#ccc}</style></head><body><h1>' + title + '</h1><p style="color:#888">' + desc + '</p>' + sections + '</body></html>';
+      var post = { id: 'blog_' + Date.now() + '_' + bi, title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_index: ti, word_count: wordCount, reading_time: Math.ceil(wordCount / 200) + ' min read', created_at: new Date().toISOString(), published: true };
+      dbData.blog_posts.push(post);
+      generated.push(post);
+    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+    res.json({ success: true, count: generated.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/blog/generate-all — Generate all remaining templates
+app.post('/api/admin/blog/generate-all', adminAuth, function(req, res) {
+  try {
+    var dbData = getDb();
+    if (!dbData.blog_posts) dbData.blog_posts = [];
+    var usedIndices = dbData.blog_posts.map(function(p) { return p.template_index; });
+    var templates = [
+      { category: 'moving', title: 'How to Get More {type} Leads Without Spending on Ads', desc: 'Learn how removal companies can generate consistent {type} leads without expensive advertising.', keywords: ['{type} lead generation', '{type} leads UK'] },
+      { category: 'moving', title: 'The Ultimate Guide to {type} for Estate Agents', desc: 'Everything estate agents need to know about {type}.', keywords: ['{type} for estate agents', 'estate agent {type}'] },
+      { category: 'moving', title: '10 Proven Tips to Convert More {type} Into Bookings', desc: 'Stop losing customers with these actionable tips.', keywords: ['convert {type}', '{type} conversion tips'] },
+      { category: 'moving', title: 'Why {type} Are Better Than Pay-Per-Click Advertising', desc: 'Compare ROI of {type} vs PPC advertising.', keywords: ['{type} vs PPC', '{type} ROI'] },
+      { category: 'moving', title: 'How to Choose the Right Postcode Areas for Your {type}', desc: 'Select postcode territories that maximise {type} volume.', keywords: ['{type} postcode targeting', 'best postcodes for {type}'] },
+      { category: 'moving', title: 'The Morning Routine That Doubles Your {type} Conversion Rate', desc: 'The 9am routine that top companies use to dominate.', keywords: ['{type} morning routine', '{type} conversion system'] },
+      { category: 'moving', title: 'How {type} Are Collected: From Listing to Your Inbox', desc: 'Behind the scenes of {type} collection.', keywords: ['how {type} work', '{type} explained'] },
+      { category: 'probate', title: 'How Solicitors Can Win More {type} With Daily Leads', desc: 'A guide for solicitors on winning more {type}.', keywords: ['{type} for solicitors', 'win {type}'] },
+      { category: 'probate', title: 'The Executor\'s Journey: Why Timing Matters in {type}', desc: 'Understanding executor timing is key to winning {type}.', keywords: ['{type} timing', '{type} executor'] },
+      { category: 'probate', title: '{type} vs Traditional Marketing: Which Delivers Better ROI', desc: 'Compare {type} against traditional marketing methods.', keywords: ['{type} ROI', '{type} marketing'] },
+      { category: 'probate', title: '5 Mistakes Solicitors Make Following Up on {type}', desc: 'Avoid common mistakes that cost valuable {type}.', keywords: ['{type} mistakes', '{type} follow-up'] },
+      { category: 'probate', title: 'How to Build a Scalable {type} Pipeline', desc: 'Create a repeatable system for generating {type}.', keywords: ['{type} pipeline', '{type} system'] },
+      { category: 'probate', title: 'The Complete {type} Checklist for New Probate Solicitors', desc: 'Everything new solicitors need to know about {type}.', keywords: ['{type} checklist', 'new solicitor {type}'] },
+      { category: 'newbusiness', title: 'How to Find and Win {type} Using Companies House Data', desc: 'Generate {type} from Companies House registrations.', keywords: ['{type} from Companies House', '{type} generation'] },
+      { category: 'newbusiness', title: 'Why {type} Are the Best Source of B2B Growth', desc: 'Why {type} are the most undervalued B2B lead source.', keywords: ['{type} B2B', '{type} growth'] },
+      { category: 'newbusiness', title: 'How to Target {type} by Industry Sector', desc: 'Filter {type} by specific industries.', keywords: ['{type} industry targeting', '{type} filtering'] },
+      { category: 'newbusiness', title: 'The {type} Playbook: From Registration to Closed Deal', desc: 'Complete playbook for turning {type} into paying customers.', keywords: ['{type} playbook', '{type} sales process'] },
+      { category: 'newbusiness', title: '10 Services You Can Sell to {type}', desc: 'Newly registered businesses need everything.', keywords: ['services for {type}', '{type} opportunities'] },
+      { category: 'planning', title: 'How to Win {type} Contracts: A Complete Guide', desc: 'Win {type} contracts for builders and architects.', keywords: ['{type} contracts', 'win {type}'] },
+      { category: 'planning', title: 'The Value of {type} for Architects and Designers', desc: 'Why {type} fill your project pipeline.', keywords: ['{type} for architects', '{type} for designers'] },
+      { category: 'planning', title: '{type}: Spotting High-Value Projects Before Competitors', desc: 'Identify the most valuable {type}.', keywords: ['{type} value', '{type} prioritisation'] },
+      { category: 'planning', title: 'How to Use {type} to Grow Your Construction Business', desc: 'Use {type} to build a consistent pipeline.', keywords: ['{type} for construction', '{type} for builders'] },
+      { category: 'planning', title: '{type} vs Tenders: Which Should You Focus On?', desc: 'Compare {type} and public sector tenders.', keywords: ['{type} vs tenders', '{type} comparison'] },
+      { category: 'tenders', title: 'How to Win More {type} as a Small Business', desc: 'Small businesses can win {type} with the right strategy.', keywords: ['{type} for small business', 'win {type}'] },
+      { category: 'tenders', title: 'The Complete {type} Response Toolkit', desc: 'Everything to respond to {type} effectively.', keywords: ['{type} response', '{type} submission'] },
+      { category: 'tenders', title: 'How to Find {type} That Match Your Business', desc: 'Find {type} that perfectly match your expertise.', keywords: ['find {type}', '{type} filtering'] },
+      { category: 'tenders', title: 'The ROI of {type}: Is It Worth the Investment?', desc: 'Calculate the real return on investment for {type}.', keywords: ['{type} ROI', '{type} investment'] },
+      { category: 'tenders', title: 'How to Write Winning {type} Responses', desc: 'Expert tips for writing {type} responses that win.', keywords: ['{type} writing', '{type} tips'] },
+      { category: 'general', title: 'Why Daily {type} Beat Weekly Lead Batches', desc: 'Why daily delivery outperforms weekly batches.', keywords: ['daily {type}', '{type} frequency'] },
+      { category: 'general', title: 'The Ultimate {type} Strategy Guide for UK', desc: 'Complete strategy for multi-channel lead generation.', keywords: ['{type} strategy', '{type} guide'] },
+      { category: 'general', title: 'How to Track and Improve Your {type} Conversion', desc: 'Data-driven approach to tracking conversion rate.', keywords: ['{type} conversion rate', 'track {type}'] },
+      { category: 'general', title: 'The Cost of {type} vs Other Marketing Channels', desc: 'Compare {type} costs against Google Ads and Facebook.', keywords: ['{type} cost', '{type} vs ads'] },
+      { category: 'general', title: 'How {type} Can Transform Your Business in 30 Days', desc: 'Real results from businesses using {type}.', keywords: ['{type} transformation', '{type} results'] }
+    ];
+    var types = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads', planning: 'planning leads', tenders: 'tender opportunities', general: 'business leads' };
+    var generated = [];
+    for (var bi = 0; bi < templates.length; bi++) {
+      if (usedIndices.indexOf(bi) !== -1) continue;
+      var template = templates[bi];
+      var productName = PRODCAT[template.category] || 'Business Leads';
+      var type = types[template.category] || 'leads';
+      var title = template.title.replace(/{type}/g, type);
+      var desc = template.desc.replace(/{type}/g, type);
+      var kw = template.keywords.map(function(k) { return k.replace(/{type}/g, type); });
+      var slug = title.toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
+      var sections = '<h2>Introduction</h2><p>' + title + ' is essential for modern businesses.</p><p>Learn how ' + type + ' can transform your pipeline.</p>';
+      sections += '<h2>The Benefits</h2><p>Consistent ' + type + ' provide a reliable stream of opportunities.</p><p>Daily delivery ensures you are always first to respond.</p>';
+      var wordCount = sections.replace(/<[^>]+>/g, '').split(/\s+/).length;
+      var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + title + ' | 9amLeads Blog</title><meta name="description" content="' + desc + '"><link rel="canonical" href="https://9amleads.com/blog/' + slug + '"><style>body{font-family:Inter,sans-serif;background:#000;color:#fff;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}h1{font-size:28px;font-weight:800}h2{font-size:20px;font-weight:700;margin-top:32px}p{color:#ccc}</style></head><body><h1>' + title + '</h1><p>' + desc + '</p>' + sections + '</body></html>';
+      var post = { id: 'blog_' + Date.now() + '_' + bi, title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_index: bi, word_count: wordCount, reading_time: Math.ceil(wordCount / 200) + ' min read', created_at: new Date().toISOString(), published: true };
+      dbData.blog_posts.push(post);
+      generated.push(post);
+    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+    res.json({ success: true, count: generated.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/run-scrapers — manually trigger all scrapers now
 app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
   try {

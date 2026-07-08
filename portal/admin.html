@@ -21,7 +21,9 @@ h1 span{color:#0ea5e9}
 .search-bar input:focus,.search-bar select:focus{border-color:#0ea5e9}
 .search-bar input{flex:1;min-width:200px}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;padding:10px 12px;color:#5c6480;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #1e2030;font-weight:600}
+th{text-align:left;padding:10px 12px;color:#5c6480;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #1e2030;font-weight:600;cursor:pointer;user-select:none}
+th:hover{color:#8890a8}
+th .sort-icon{font-size:8px;margin-left:4px;color:#3a4050}
 td{padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#c8cbd6}
 tr:hover td{background:rgba(255,255,255,0.02)}
 .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
@@ -68,8 +70,31 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 <div><div style="display:flex;align-items:center;gap:8px"><div style="width:32px;height:32px;background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;font-family:'Outfit',sans-serif">9</div><h1 style="margin-bottom:0">9am<span>Leads</span> Admin</h1></div><p class="sub" style="margin-bottom:0">Customer management &amp; system overview</p></div>
 <div style="display:flex;gap:8px">
 <a href="/portal/" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Portal</a>
+<button class="btn btn-outline btn-sm" onclick="document.getElementById('blogSection').scrollIntoView({behavior:'smooth'})"><i class="fas fa-newspaper"></i> Blog</button>
 <button class="btn btn-outline btn-sm" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
 </div>
+</div>
+
+<div class="card" id="healthCard" style="margin-bottom:16px;display:none">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+<div style="display:flex;align-items:center;gap:8px"><span id="healthIcon" style="width:10px;height:10px;border-radius:50%;display:inline-block"></span><strong style="font-size:15px">System Health</strong><span id="healthSummary" style="font-size:12px;color:#8890a8"></span></div>
+<span id="healthTimestamp" style="font-size:11px;color:#5c6480"></span>
+</div>
+<div id="healthIssues"></div>
+<div id="healthSystem" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#8890a8"></div>
+</div>
+
+<div class="card" id="blogSection">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+<div class="card-title" style="margin:0"><i class="fas fa-newspaper" style="color:var(--accent)"></i> SEO Blog Engine</div>
+<div style="display:flex;gap:8px">
+<button class="btn btn-primary btn-sm" onclick="generateBlogPost()"><i class="fas fa-plus"></i> Generate</button>
+<button class="btn btn-sm" style="background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2)" onclick="generateAllPosts()"><i class="fas fa-forward"></i> Generate All</button>
+</div>
+</div>
+<div id="blogStatus" style="font-size:12px;color:#8890a8;margin-bottom:8px">Loading...</div>
+<div id="seoDashboard" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:12px"></div>
+<div id="blogList"></div>
 </div>
 
 <div class="stats-grid" id="statsGrid"><div class="loading">Loading stats...</div></div>
@@ -82,11 +107,22 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 </div>
 
 <div class="card" style="padding:0;overflow:auto">
-<table><thead><tr><th>Company</th><th>Email</th><th>Product</th><th>Plan</th><th>Areas</th><th>Leads</th><th>CRM</th><th>Signup</th><th></th></tr></thead><tbody id="customerTable"><tr><td colspan="9" class="loading">Loading customers...</td></tr></tbody></table></div>
+<table><thead><tr>
+<th onclick="sortBy('company')">Company<span class="sort-icon"></span></th>
+<th onclick="sortBy('email')">Email<span class="sort-icon"></span></th>
+<th>Products</th>
+<th onclick="sortBy('plan')">Plan<span class="sort-icon"></span></th>
+<th>Areas</th>
+<th onclick="sortBy('lead_count')">Leads<span class="sort-icon"></span></th>
+<th onclick="sortBy('booked_count')">Booked<span class="sort-icon"></span></th>
+<th>CRM</th>
+<th onclick="sortBy('created_at')">Signup<span class="sort-icon"></span></th>
+<th></th>
+</tr></thead><tbody id="customerTable"><tr><td colspan="10" class="loading">Loading customers...</td></tr></tbody></table></div>
 </div>
 
 <script>
-const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : 'https://www.9amleads.com';
+const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
 let allCustomers = [];
 
 function saveAdminAuth() { sessionStorage.setItem('9amAdminAuth', 'true'); }
@@ -147,6 +183,9 @@ async function loadData() {
     const custData = custResp.ok ? await custResp.json() : { customers: [] };
     allCustomers = custData.customers || [];
     renderCustomers(allCustomers);
+    loadHealth();
+    loadBlogPosts();
+    loadSeoReport();
   } catch (e) {
     document.getElementById('statsGrid').innerHTML = '<div class="empty" style="color:#ef4444">Failed to load: ' + e.message + '</div>';
   }
@@ -154,18 +193,28 @@ async function loadData() {
 
 function renderCustomers(customers) {
   const tbody = document.getElementById('customerTable');
-  if (customers.length === 0) { tbody.innerHTML = '<tr><td colspan="9" class="empty">No customers found</td></tr>'; return; }
+  if (customers.length === 0) { tbody.innerHTML = '<tr><td colspan="10" class="empty">No customers found</td></tr>'; return; }
   tbody.innerHTML = customers.map(c => {
     const areas = c.target_areas ? JSON.parse(c.target_areas).slice(0, 3).join(', ') + (JSON.parse(c.target_areas).length > 3 ? '...' : '') : '';
     const hasCrm = c.crm_webhook_url ? '<span style="color:#22c55e;font-size:11px">Connected</span>' : '<span style="color:#5c6480;font-size:11px">No</span>';
     const signupDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
+    // Multi-product: parse biz_field3 to show all products
+    let productsHtml = '<span class="badge ' + badgeClass(c.product) + '">' + (c.lead_type || c.product) + '</span>';
+    try { var extraProds = JSON.parse(c.biz_field3 || '[]'); if (Array.isArray(extraProds) && extraProds.length > 0) { productsHtml += extraProds.map(function(p) { return ' <span class="badge ' + badgeClass(p) + '">' + p + '</span>'; }).join(''); } } catch(e) {}
+    // Lead stats: contacted / booked / lost
+    var bookedVal = parseInt(c.booked_count) || 0;
+    var lostVal = parseInt(c.lost_count) || 0;
+    var leadsVal = parseInt(c.lead_count) || 0;
+    var convPct = leadsVal > 0 ? Math.round(bookedVal / leadsVal * 100) : 0;
+    var extendBtn = (c.plan === 'free_trial') ? '<button class="btn btn-sm" style="background:rgba(14,165,233,0.1);color:#0ea5e9;border:1px solid rgba(14,165,233,0.2);padding:3px 7px;font-size:10px;margin-left:4px" onclick="event.stopPropagation();fixExtendTrial(\'' + c.id + '\')" title="Extend trial"><i class="fas fa-clock"></i></button>' : '';
     return '<tr>' +
-      '<td><strong>' + (c.company || '-') + '</strong></td>' +
+      '<td><strong>' + (c.company || '-') + '</strong>' + extendBtn + '</td>' +
       '<td style="font-size:12px;color:#8890a8">' + c.email + '</td>' +
-      '<td><span class="badge ' + badgeClass(c.product) + '">' + (c.lead_type || c.product) + '</span></td>' +
+      '<td style="white-space:nowrap">' + productsHtml + '</td>' +
       '<td><span class="badge ' + planBadge(c.plan) + '">' + (c.plan || 'free_trial') + '</span></td>' +
-      '<td style="font-size:11px;color:#5c6480;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + areas + '</td>' +
-      '<td>' + (c.leads_count || 0) + '</td>' +
+      '<td style="font-size:11px;color:#5c6480;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + areas + '</td>' +
+      '<td>' + leadsVal + '</td>' +
+      '<td style="font-size:11px">' + bookedVal + ' <span style="color:#5c6480">(' + convPct + '%)</span></td>' +
       '<td>' + hasCrm + '</td>' +
       '<td style="font-size:11px;color:#5c6480">' + signupDate + '</td>' +
       '<td><button class="btn btn-view btn-sm" onclick="loginAs(\'' + c.id + '\')"><i class="fas fa-eye"></i></button></td></tr>';
@@ -181,6 +230,195 @@ function filterCustomers() {
   if (plan) filtered = filtered.filter(c => c.plan === plan || (plan === 'paid' && c.plan !== 'free_trial' && c.plan !== 'cancelled'));
   if (product) filtered = filtered.filter(c => c.product === product);
   renderCustomers(filtered);
+}
+
+// ===== SORTING =====
+let sortField = null;
+let sortDir = 1; // 1 = asc, -1 = desc
+function sortBy(field) {
+  if (sortField === field) sortDir *= -1; else { sortField = field; sortDir = 1; }
+  // Update sort icons
+  document.querySelectorAll('th .sort-icon').forEach(function(el) { el.textContent = ''; });
+  var activeTh = document.querySelector('th[onclick*="sortBy(\'' + field + '\')"]');
+  if (activeTh) { var icon = activeTh.querySelector('.sort-icon'); if (icon) icon.textContent = sortDir === 1 ? '\u25B2' : '\u25BC'; }
+  var sorted = [].concat(allCustomers).sort(function(a, b) {
+    var va = (a[field] || '').toString().toLowerCase();
+    var vb = (b[field] || '').toString().toLowerCase();
+    if (field === 'lead_count' || field === 'booked_count') { va = parseInt(a[field]) || 0; vb = parseInt(b[field]) || 0; }
+    if (field === 'created_at') { va = a[field] || ''; vb = b[field] || ''; }
+    if (va < vb) return -1 * sortDir;
+    if (va > vb) return 1 * sortDir;
+    return 0;
+  });
+  renderCustomers(sorted);
+}
+
+// ===== BLOG MANAGEMENT =====
+async function loadBlogPosts() {
+  try {
+    var r = await fetch(API + '/api/admin/blog/posts', { headers: adminHeaders() });
+    var d = await r.json();
+    document.getElementById('blogStatus').textContent = d.templates_used + '/' + d.templates_total + ' templates used';
+    var container = document.getElementById('blogList');
+    if (!d.posts || d.posts.length === 0) {
+      container.innerHTML = '<div style="font-size:12px;color:#5c6480;padding:8px 0">No blog posts yet. Click "Generate Post" to create your first SEO-optimised article.</div>';
+      return;
+    }
+    container.innerHTML = d.posts.map(function(p) {
+      var dateStr = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:12px">' +
+        '<div style="flex:1;min-width:0"><strong>' + p.title + '</strong><br><span style="color:#5c6480">' + p.product_name + ' \u00b7 ' + dateStr + '</span></div>' +
+        '<div style="display:flex;gap:6px;flex-shrink:0">' +
+        '<a href="/blog/' + p.slug + '" target="_blank" class="btn btn-view btn-sm" style="padding:3px 8px;font-size:10px"><i class="fas fa-eye"></i></a>' +
+        '<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);padding:3px 8px;font-size:10px" onclick="deleteBlogPost(\'' + p.slug + '\')"><i class="fas fa-trash"></i></button>' +
+        '</div></div>';
+    }).join('');
+  } catch(e) { document.getElementById('blogStatus').textContent = 'Error loading posts'; }
+}
+
+async function loadSeoReport() {
+  try {
+    var r = await fetch(API + '/api/admin/seo/report', { headers: adminHeaders() });
+    if (!r.ok) { document.getElementById('seoDashboard').innerHTML = '<div style="color:#5c6480;font-size:11px">SEO data unavailable</div>'; return; }
+    var d = await r.json();
+    var html = '';
+    html += '<div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);border-radius:8px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:900;color:#0ea5e9">' + d.total_posts + '/' + d.templates_total + '</div><div style="font-size:10px;color:#5c6480">Posts Generated</div><div style="font-size:11px;color:#22c55e;margin-top:4px">' + d.completeness_pct + '% complete</div></div>';
+    html += '<div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.1);border-radius:8px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:900;color:#22c55e">' + d.sitemap_urls + '</div><div style="font-size:10px;color:#5c6480">Sitemap URLs</div><div style="font-size:11px;color:#5c6480;margin-top:4px">' + d.posts_this_week + ' this week</div></div>';
+    html += '<div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.1);border-radius:8px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:900;color:#f59e0b">' + (d.avg_word_count || 0).toLocaleString() + '</div><div style="font-size:10px;color:#5c6480">Avg Word Count</div><div style="font-size:11px;color:#5c6480;margin-top:4px">' + (d.total_words || 0).toLocaleString() + ' total</div></div>';
+    html += '<div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.1);border-radius:8px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:900;color:#a855f7">' + d.templates_remaining + '</div><div style="font-size:10px;color:#5c6480">Templates Left</div><div style="font-size:11px;color:#a855f7;margin-top:4px">Generate to complete</div></div>';
+    if (d.by_category && d.by_category.length > 0) {
+      html += '<div style="grid-column:1/-1;font-size:11px;color:#5c6480;display:flex;gap:8px;flex-wrap:wrap;padding:4px 0">' + d.by_category.map(function(c) { return '<span style="background:rgba(255,255,255,0.04);padding:3px 8px;border-radius:4px;font-size:10px">' + c.label + ': ' + c.count + '</span>'; }).join('') + '</div>';
+    }
+    if (d.last_generated) {
+      html += '<div style="grid-column:1/-1;font-size:10px;color:#5c6480;text-align:center;padding:2px 0">Last post: ' + new Date(d.last_generated).toLocaleDateString() + '</div>';
+    }
+    document.getElementById('seoDashboard').innerHTML = html;
+  } catch(e) { document.getElementById('seoDashboard').innerHTML = '<div style="color:#5c6480;font-size:11px">Error loading SEO data</div>'; }
+}
+
+async function generateBlogPost() {
+  var btn = document.querySelector('#blogSection .btn-primary');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+  try {
+    var r = await fetch(API + '/api/admin/blog/generate', { method: 'POST', headers: adminHeaders() });
+    var d = await r.json();
+    alert('Generated ' + d.count + ' post' + (d.count !== 1 ? 's' : '') + '!');
+    loadBlogPosts();
+  } catch(e) { alert('Error: ' + e.message); }
+  btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus"></i> Generate Post';
+}
+
+async function deleteBlogPost(slug) {
+  if (!confirm('Delete "' + slug + '"?')) return;
+  try {
+    await fetch(API + '/api/admin/blog/delete', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ slug: slug }) });
+    loadBlogPosts();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function fixExtendTrial(customerId) {
+  var days = prompt('Extend trial by how many days?', '7');
+  if (!days || isNaN(parseInt(days))) return;
+  try {
+    var r = await fetch(API + '/api/admin/extend-trial', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ customer_id: customerId, days: parseInt(days) }) });
+    var d = await r.json();
+    alert(d.message || 'Done');
+    loadHealth();
+    loadData();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ===== HEALTH DASHBOARD =====
+async function loadHealth() {
+  try {
+    const r = await fetch(API + '/api/admin/health-report', { headers: adminHeaders() });
+    if (!r.ok) return;
+    const h = await r.json();
+    const card = document.getElementById('healthCard');
+    card.style.display = 'block';
+    const icon = document.getElementById('healthIcon');
+    icon.style.background = h.status === 'green' ? '#22c55e' : h.status === 'yellow' ? '#eab308' : '#ef4444';
+    document.getElementById('healthSummary').textContent = h.summary.high_issues + ' high, ' + h.summary.total_issues + ' total issues';
+    document.getElementById('healthTimestamp').textContent = 'Checked: ' + new Date(h.checked_at).toLocaleTimeString();
+    const container = document.getElementById('healthIssues');
+    if (h.issues.length === 0) {
+      container.innerHTML = '<div style="padding:8px 0;color:#22c55e;font-size:13px"><i class="fas fa-check-circle"></i> All systems operational</div>';
+    } else {
+      container.innerHTML = h.issues.map(function(issue) {
+        var color = issue.severity === 'high' ? '#ef4444' : issue.severity === 'medium' ? '#eab308' : '#0ea5e9';
+        var iconName = issue.severity === 'high' ? 'fa-exclamation-circle' : issue.severity === 'medium' ? 'fa-exclamation-triangle' : 'fa-info-circle';
+        var btnHtml = '';
+        if (issue.fix === 'clear-bounce') {
+          btnHtml = '<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2)" onclick="fixClearBounce(\'' + issue.details[0].id + '\')"><i class="fas fa-undo"></i> Clear All</button>';
+        }
+        if (issue.fix === 'reset-deliveries') {
+          btnHtml = '<button class="btn btn-sm" style="background:rgba(234,179,8,0.1);color:#eab308;border:1px solid rgba(234,179,8,0.2)" onclick="fixResetDeliveries(\'' + issue.details[0].id + '\')"><i class="fas fa-sync"></i> Reset</button>';
+        }
+        if (issue.fix === 'send-reminder') {
+          btnHtml = '<button class="btn btn-sm" style="background:rgba(14,165,233,0.1);color:#0ea5e9;border:1px solid rgba(14,165,233,0.2)" onclick="fixSendReminder(\'' + issue.details[0].id + '\')"><i class="fas fa-envelope"></i> Send Reminder</button>';
+          btnHtml += '<button class="btn btn-sm" style="background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2)" onclick="fixExtendTrial(\'' + issue.details[0].id + '\')"><i class="fas fa-clock"></i> Extend</button>';
+        }
+        var detailsHtml = issue.details.slice(0, 5).map(function(d) {
+          var info = d.company || d.email;
+          if (d.days_since !== undefined) info += ' (' + (d.days_since >= 999 ? 'never' : d.days_since + 'd ago') + ')';
+          if (d.bounced !== undefined) info += ' (bounced ' + d.bounced + 'x)';
+          if (d.days_overdue !== undefined) info += ' (' + d.days_overdue + 'd overdue)';
+          if (d.fail_count !== undefined) info += ' (' + d.fail_count + ' attempts)';
+          return '<div style="padding:2px 0;font-size:12px;display:flex;align-items:center;gap:6px">' +
+            '<span style="color:#5c6480;width:16px;font-size:10px">' + (d.bounced ? '\u2709\uFE0F' : d.fail_count ? '\U0001F4B3' : d.days_since !== undefined ? '\U0001F4E9' : '\u23F3') + '</span>' +
+            '<span>' + info + '</span>' +
+            '<a href="mailto:' + d.email + '" style="color:#0ea5e9;font-size:10px;text-decoration:none;margin-left:auto"><i class="fas fa-envelope"></i></a>' +
+            '</div>';
+        }).join('');
+        if (issue.details.length > 5) detailsHtml += '<div style="font-size:11px;color:#5c6480;padding:2px 0">+' + (issue.details.length - 5) + ' more</div>';
+        return '<div style="border-left:3px solid ' + color + ';padding:8px 12px;margin:6px 0;background:rgba(255,255,255,0.02);border-radius:0 6px 6px 0">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">' +
+          '<span><i class="fas ' + iconName + '" style="color:' + color + ';width:16px"></i> ' + issue.label + '</span>' +
+          '<div style="display:flex;gap:6px">' + btnHtml + '</div></div>' +
+          (detailsHtml ? '<div style="margin-top:4px">' + detailsHtml + '</div>' : '') +
+          '</div>';
+      }).join('');
+    }
+    var sysHtml = '';
+    sysHtml += '<span><i class="fas ' + (h.system.brevo_configured ? 'fa-check-circle" style="color:#22c55e"> Brevo' : 'fa-times-circle" style="color:#ef4444"> Brevo') + '</i></span>';
+    sysHtml += '<span><i class="fas ' + (h.system.stripe_configured ? 'fa-check-circle" style="color:#22c55e"> Stripe' : 'fa-times-circle" style="color:#ef4444"> Stripe') + '</i></span>';
+    var scrapeStatus = h.system.scraper_stale ? 'stale' : 'fresh';
+    var scrapeColor = h.system.scraper_stale ? '#eab308' : '#22c55e';
+    sysHtml += '<span><i class="fas fa-database" style="color:' + scrapeColor + '"> Scrapers ' + scrapeStatus + '</i></span>';
+    if (h.system.last_scrape) sysHtml += '<span style="color:#5c6480">Last scrape: ' + new Date(h.system.last_scrape).toLocaleDateString() + '</span>';
+    document.getElementById('healthSystem').innerHTML = sysHtml;
+  } catch(e) { /* health check non-critical */ }
+}
+
+async function fixClearBounce(customerId) {
+  if (!confirm('Clear bounce for all shown customers?')) return;
+  try {
+    const r = await fetch(API + '/api/admin/clear-bounce', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ customer_id: customerId }) });
+    const d = await r.json();
+    alert(d.message || 'Done');
+    loadHealth();
+    loadData();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function fixResetDeliveries(customerId) {
+  if (!confirm('Reset deliveries for this customer?')) return;
+  try {
+    const r = await fetch(API + '/api/admin/reset-deliveries', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ customer_id: customerId }) });
+    const d = await r.json();
+    alert('Reset ' + (d.reset_count || 0) + ' deliveries');
+    loadHealth();
+    loadData();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function fixSendReminder(customerId) {
+  if (!confirm('Send trial-ending reminder email to this customer?')) return;
+  try {
+    const r = await fetch(API + '/api/admin/send-reminder', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ customer_id: customerId }) });
+    const d = await r.json();
+    alert(d.message || 'Reminder sent');
+  } catch(e) { alert('Error: ' + e.message); }
 }
 
 async function loginAs(customerId) {
