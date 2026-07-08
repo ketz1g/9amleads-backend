@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 9amLeads Production API Server
  * Handles: Auth, Customers, Leads, Delivery, Subscriptions
  * Database: SQLite (upgrade to PostgreSQL via .env)
@@ -2060,11 +2060,6 @@ function generateBlogPost(template) {
   var wordCount = html.replace(/<[^>]+>/g, '').split(/\s+/).length;
   return { title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_index: BLOG_TEMPLATES.indexOf(template), word_count: wordCount, reading_time: readingTime };
 }
-  
-  var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + title + ' | 9amLeads Blog</title><meta name="description" content="' + desc + '"><meta property="og:title" content="' + title + '"><meta property="og:description" content="' + desc + '"><meta property="og:url" content="https://9amleads.com/blog/' + slug + '"><meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image"><link rel="canonical" href="https://9amleads.com/blog/' + slug + '"><link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'.9em\' font-size=\'90\'>\uD83D\uDD58</text></svg>"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>:root{--primary:#0ea5e9;--bg:#000;--bg2:#08080c;--card:#0a0a0a;--border:#1a1a1a;--text:#fff;--text2:#ccc;--muted:#888;--ff-h:\'Outfit\',sans-serif;--ff-b:\'Inter\',sans-serif;--nav-h:72px;--max-w:800px}*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth;font-size:16px}body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6}.container{max-width:var(--max-w);margin:0 auto;padding:0 24px}.container-wide{max-width:1140px;margin:0 auto;padding:0 24px}a{color:inherit;text-decoration:none}nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);z-index:200;background:rgba(0,0,0,.85);backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,.05)}.nav-inner{display:flex;align-items:center;justify-content:space-between;height:100%;max-width:1140px;margin:0 auto;padding:0 24px}.logo{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:900;font-family:var(--ff-h);letter-spacing:-.5px}.logo .icon{width:38px;height:38px;background:linear-gradient(135deg,var(--primary),#0284c7);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:800;box-shadow:0 0 20px rgba(14,165,233,0.25)}.logo span{color:var(--primary)}.nav-links{display:flex;align-items:center;gap:4px}.nav-links a{padding:8px 14px;font-size:14px;font-weight:500;color:var(--text2);border-radius:6px;transition:.2s}.nav-links a:hover{color:var(--text);background:rgba(255,255,255,.04)}.nav-links .btn-nav{padding:9px 20px;background:linear-gradient(135deg,var(--primary),#0284c7);color:#fff!important;font-weight:600}article{padding:120px 0 60px}.post-meta{color:var(--muted);font-size:13px;margin-bottom:24px;display:flex;gap:12px;align-items:center}.post-category{display:inline-block;padding:4px 10px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:4px;color:var(--primary);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}article h1{font-size:clamp(28px,3.5vw,38px);font-weight:800;font-family:var(--ff-h);line-height:1.15;margin-bottom:16px;letter-spacing:-1px}article h2{font-size:22px;font-weight:700;font-family:var(--ff-h);margin:36px 0 12px;color:#f5f5f5}article h3{font-size:17px;font-weight:700;margin:24px 0 10px;color:#e0e0e0}article p{font-size:16px;line-height:1.8;color:var(--text2);margin-bottom:16px}article ul{font-size:15px;line-height:1.8;color:var(--text2);margin-bottom:16px;padding-left:20px}article li{margin-bottom:6px}.cta-section{background:linear-gradient(135deg,rgba(14,165,233,0.04),rgba(6,182,212,0.02));border:1px solid rgba(14,165,233,0.1);border-radius:12px;padding:28px;text-align:center;margin:40px 0}.cta-section h3{font-size:20px;font-weight:700;margin-bottom:8px}.cta-section p{font-size:14px;color:var(--muted);margin-bottom:16px}.cta-btn{display:inline-block;padding:14px 32px;background:linear-gradient(135deg,var(--primary),#0284c7);color:#fff;border-radius:8px;font-weight:600;font-size:15px}.related-posts{padding:60px 0;border-top:1px solid var(--border);margin-top:40px}.related-posts h2{font-size:22px;font-weight:700;font-family:var(--ff-h);margin-bottom:20px}.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}.related-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;transition:.2s}.related-card:hover{border-color:rgba(14,165,233,0.2)}.related-card h4{font-size:14px;font-weight:600;margin-bottom:6px}.related-card p{font-size:12px;color:var(--muted);line-height:1.5}footer{padding:40px 0;text-align:center;color:var(--muted);font-size:13px;border-top:1px solid var(--border)}footer a{color:var(--primary);font-weight:600}</style></head><body><nav><div class="nav-inner"><a href="/" class="logo"><div class="icon">9</div>9am<span>Leads</span></a><div class="nav-links"><a href="/">Home</a><a href="/pricing/">Pricing</a><a href="/blog/">Blog</a><a href="/portal/" class="btn-nav">Get Started Free</a></div></div></nav><article><div class="container"><div class="post-meta"><span class="post-category">' + productName + '</span><span>' + new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' }) + '</span></div><h1>' + title + '</h1><p style="font-size:15px;color:var(--muted);line-height:1.7;margin-bottom:32px">' + desc + '</p>' + sections + '<div class="cta-section"><h3>Start Receiving Exclusive ' + type.charAt(0).toUpperCase() + type.slice(1) + '</h3><p>Try any lead type free for 7 days. No credit card required.</p><a href="/pricing/" class="cta-btn">View Plans &amp; Start Free Trial</a></div></div></article><footer><div class="container"><a href="https://9amleads.com">9amLeads.com</a> &middot; <a href="/blog/">Blog</a> &middot; <a href="/privacy.html">Privacy</a> &middot; <a href="/terms.html">Terms</a></div></footer></body></html>';
-  
-  return { title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_index: BLOG_TEMPLATES.indexOf(template) };
-}
 
 // GET /api/blog/posts â€” Public blog listing
 app.get('/api/blog/posts', function(req, res) {
@@ -2206,43 +2201,46 @@ app.get('/api/admin/seo/report', adminAuth, function(req, res) {
 // POST /api/admin/seo/refresh-sitemap â€” Update sitemap with all blog posts
 app.post('/api/admin/seo/refresh-sitemap', adminAuth, function(req, res) {
   try {
-    var fs = require('fs');
-    var path = require('path');
-    var db = getDb();
-    var posts = (db.blog_posts || []).filter(function(p) { return p.published; });
-    var today = new Date().toISOString().split('T')[0];
-    var urls = [
-      '<url><loc>https://9amleads.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/pricing/</loc><priority>0.9</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/movingleadsdaily/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/probateleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/newbusinessalert/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/planningleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/tenders/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/how-it-works/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/who-we-serve/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/blog/</loc><priority>0.7</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/founder/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/invest/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/about.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/contact.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/terms.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/privacy.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>'
-    ];
-    for (var pi = 0; pi < posts.length; pi++) {
-      urls.push('<url><loc>https://9amleads.com/blog/' + posts[pi].slug + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>');
-    }
-    var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
-    for (var ui = 0; ui < urls.length; ui++) xml += '  ' + urls[ui] + '\n';
-    xml += '</urlset>';
-    // Write to publish and root
-    fs.writeFileSync(path.join(__dirname, 'publish', 'sitemap.xml'), xml);
-    fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), xml);
-    // Also write to 9amleads for dev
-    try { fs.writeFileSync(path.join(__dirname, '9amleads', 'sitemap.xml'), xml); } catch(e2) {}
-    res.json({ success: true, urls: urls.length });
+    refreshSitemap();
+    res.json({ success: true, urls: (getDb().blog_posts || []).filter(function(p) { return p.published; }).length + 16 });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+// Standalone sitemap refresh function (used by cron and admin)
+function refreshSitemap() {
+  var fs = require('fs');
+  var path = require('path');
+  var db = getDb();
+  var posts = (db.blog_posts || []).filter(function(p) { return p.published; });
+  var today = new Date().toISOString().split('T')[0];
+  var urls = [
+    '<url><loc>https://9amleads.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/pricing/</loc><priority>0.9</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/movingleadsdaily/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/probateleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/newbusinessalert/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/planningleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/tenders/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/how-it-works/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/who-we-serve/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/blog/</loc><priority>0.7</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/founder/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/invest/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/about.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/contact.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/terms.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+    '<url><loc>https://9amleads.com/privacy.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>'
+  ];
+  for (var pi = 0; pi < posts.length; pi++) {
+    urls.push('<url><loc>https://9amleads.com/blog/' + posts[pi].slug + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>');
+  }
+  var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+  for (var ui = 0; ui < urls.length; ui++) xml += '  ' + urls[ui] + '\n';
+  xml += '</urlset>';
+  fs.writeFileSync(path.join(__dirname, 'publish', 'sitemap.xml'), xml);
+  fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), xml);
+  try { fs.writeFileSync(path.join(__dirname, '9amleads', 'sitemap.xml'), xml); } catch(e2) {}
+}
 
 // Daily blog post generation scheduler (11 AM â€” batch of 10)
 cron.schedule('0 11 * * *', async function() {
@@ -2263,7 +2261,8 @@ cron.schedule('0 11 * * *', async function() {
       db.blog_posts.push(post);
     }
     saveDb();
-    console.log('[BLOG CRON] Generated ' + count + ' posts');
+    refreshSitemap();
+    console.log('[BLOG CRON] Generated ' + count + ' posts, sitemap refreshed');
   } catch(e) { console.log('[BLOG CRON] Error: ' + e.message); }
 });
 
@@ -2286,8 +2285,17 @@ cron.schedule('0 14 * * *', async function() {
       db.blog_posts.push(post);
     }
     saveDb();
-    console.log('[BLOG CRON 2PM] Generated ' + count + ' posts');
+    refreshSitemap();
+    console.log('[BLOG CRON 2PM] Generated ' + count + ' posts, sitemap refreshed');
   } catch(e) { console.log('[BLOG CRON 2PM] Error: ' + e.message); }
+});
+
+// Daily sitemap-only refresh (3 AM â€” ensures sitemap is always current)
+cron.schedule('0 3 * * *', function() {
+  try {
+    refreshSitemap();
+    console.log('[SITEMAP] Daily sitemap refresh complete');
+  } catch(e) { console.log('[SITEMAP] Error: ' + e.message); }
 });
 
 // ===== ADMIN SEND ALL CAMPAIGN EMAILS (for review) =====
@@ -3666,7 +3674,7 @@ app.get('/api/analytics/pages', (req, res) => {
 
 // Tracking snippet to inject into HTML pages
 const TRACKING_SNIPPET = `<script>
-(function(){var i=new Image();i.src='https://nineamleads-backend.onrender.com/api/track?p='+encodeURIComponent(window.location.pathname)+'&r='+encodeURIComponent(document.referrer||'')})();
+(function(){var i=new Image();i.src='${PUBLIC_URL}/api/track?p='+encodeURIComponent(window.location.pathname)+'&r='+encodeURIComponent(document.referrer||'')})();
 </script>`;
 
 // ===== ENQUIRY FORM API =====
