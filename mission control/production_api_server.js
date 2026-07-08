@@ -4887,23 +4887,76 @@ app.get('/api/direct-mail/profile', authMiddleware, (req, res) => {
 // POST /api/direct-mail/templates — Create a new template
 app.post('/api/direct-mail/templates', authMiddleware, (req, res) => {
   try {
-    const template = {
+    if (!req.body.name) return res.status(400).json({ error: 'Template name is required' });
+    var validTypes = ['letter','flyer','flyer_front_back','letter_flyer_pack','postcard'];
+    if (req.body.type && validTypes.indexOf(req.body.type) === -1) return res.status(400).json({ error: 'Invalid template type. Valid: ' + validTypes.join(', ') });
+    var customerProfile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+    var template = {
       id: uuidv4(),
       customer_id: req.user.id,
-      name: req.body.name || 'Untitled Template',
+      name: req.body.name,
       description: req.body.description || '',
-      type: req.body.type || 'letter',
-      orientation: req.body.orientation || 'portrait',
-      size: req.body.size || 'A4',
-      page_count: req.body.page_count || 1,
-      content_json: req.body.content_json || '{}',
-      preview_url: req.body.preview_url || '',
-      is_draft: req.body.is_draft !== undefined ? (req.body.is_draft ? 1 : 0) : 1,
+      template_type: req.body.type || 'letter',
+      business_type: customerProfile ? (customerProfile.business_type || '') : '',
+      flyer_front_material_id: req.body.flyer_front_material_id || '',
+      flyer_back_material_id: req.body.flyer_back_material_id || '',
+      letter_material_id: req.body.letter_material_id || '',
+      ai_generated_text: req.body.ai_generated_text || '',
+      status: req.body.status || 'draft',
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      last_used_at: ''
     };
-    db.prepare('INSERT INTO direct_mail_templates (id,customer_id,name,description,type,orientation,size,page_count,content_json,preview_url,is_draft,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').run(template.id, template.customer_id, template.name, template.description, template.type, template.orientation, template.size, template.page_count, template.content_json, template.preview_url, template.is_draft, template.created_at, template.updated_at);
+    db.prepare('INSERT INTO direct_mail_templates (id,customer_id,name,description,template_type,business_type,flyer_front_material_id,flyer_back_material_id,letter_material_id,ai_generated_text,status,created_at,updated_at,last_used_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(template.id, template.customer_id, template.name, template.description, template.template_type, template.business_type, template.flyer_front_material_id, template.flyer_back_material_id, template.letter_material_id, template.ai_generated_text, template.status, template.created_at, template.updated_at, template.last_used_at);
     res.json({ success: true, template: template });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/direct-mail/templates/:id — Update a template
+app.put('/api/direct-mail/templates/:id', authMiddleware, (req, res) => {
+  try {
+    var existing = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!existing) return res.status(404).json({ error: 'Template not found' });
+    var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+    db.prepare('UPDATE direct_mail_templates SET name=?,description=?,template_type=?,business_type=?,flyer_front_material_id=?,flyer_back_material_id=?,letter_material_id=?,ai_generated_text=?,status=?,updated_at=? WHERE id=? AND customer_id=?').run(
+      req.body.name || existing.name, req.body.description !== undefined ? req.body.description : existing.description,
+      req.body.type || existing.template_type, profile ? (profile.business_type || '') : existing.business_type,
+      req.body.flyer_front_material_id !== undefined ? req.body.flyer_front_material_id : existing.flyer_front_material_id,
+      req.body.flyer_back_material_id !== undefined ? req.body.flyer_back_material_id : existing.flyer_back_material_id,
+      req.body.letter_material_id !== undefined ? req.body.letter_material_id : existing.letter_material_id,
+      req.body.ai_generated_text !== undefined ? req.body.ai_generated_text : existing.ai_generated_text,
+      req.body.status || existing.status, new Date().toISOString(), req.params.id, req.user.id
+    );
+    var updated = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    res.json({ success: true, template: updated });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/templates/:id/duplicate — Duplicate a template
+app.post('/api/direct-mail/templates/:id/duplicate', authMiddleware, (req, res) => {
+  try {
+    var source = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!source) return res.status(404).json({ error: 'Template not found' });
+    var dup = {
+      id: uuidv4(), customer_id: req.user.id,
+      name: source.name + ' (Copy)', description: source.description,
+      template_type: source.template_type, business_type: source.business_type,
+      flyer_front_material_id: source.flyer_front_material_id, flyer_back_material_id: source.flyer_back_material_id,
+      letter_material_id: source.letter_material_id, ai_generated_text: source.ai_generated_text,
+      status: 'draft', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), last_used_at: ''
+    };
+    db.prepare('INSERT INTO direct_mail_templates (id,customer_id,name,description,template_type,business_type,flyer_front_material_id,flyer_back_material_id,letter_material_id,ai_generated_text,status,created_at,updated_at,last_used_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(dup.id, dup.customer_id, dup.name, dup.description, dup.template_type, dup.business_type, dup.flyer_front_material_id, dup.flyer_back_material_id, dup.letter_material_id, dup.ai_generated_text, dup.status, dup.created_at, dup.updated_at, dup.last_used_at);
+    res.json({ success: true, template: dup });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/templates/:id/approve — Approve a template
+app.post('/api/direct-mail/templates/:id/approve', authMiddleware, (req, res) => {
+  try {
+    var existing = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!existing) return res.status(404).json({ error: 'Template not found' });
+    db.prepare('UPDATE direct_mail_templates SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('approved', new Date().toISOString(), req.params.id, req.user.id);
+    res.json({ success: true, status: 'approved' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -4911,7 +4964,18 @@ app.post('/api/direct-mail/templates', authMiddleware, (req, res) => {
 app.get('/api/direct-mail/templates', authMiddleware, (req, res) => {
   try {
     const templates = db.prepare('SELECT * FROM direct_mail_templates WHERE customer_id = ? ORDER BY created_at DESC').all(req.user.id);
-    res.json({ success: true, templates: templates });
+    // Optionally include material previews
+    var expanded = templates.map(function(t) {
+      var result = { id: t.id, name: t.name, description: t.description, template_type: t.template_type, business_type: t.business_type, status: t.status, created_at: t.created_at, updated_at: t.updated_at, last_used_at: t.last_used_at };
+      result.flyer_front = null; result.flyer_back = null; result.letter = null;
+      if (req.query.include_materials === '1') {
+        if (t.flyer_front_material_id) { var m = db.prepare('SELECT id,name,type,file_type,file_size,created_at FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(t.flyer_front_material_id, req.user.id); if (m) result.flyer_front = { id: m.id, name: m.name, file_type: m.file_type }; }
+        if (t.flyer_back_material_id) { var m2 = db.prepare('SELECT id,name,type,file_type,file_size,created_at FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(t.flyer_back_material_id, req.user.id); if (m2) result.flyer_back = { id: m2.id, name: m2.name, file_type: m2.file_type }; }
+        if (t.letter_material_id) { var m3 = db.prepare('SELECT id,name,type,file_type,file_size,created_at FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(t.letter_material_id, req.user.id); if (m3) result.letter = { id: m3.id, name: m3.name, file_type: m3.file_type }; }
+      }
+      return result;
+    });
+    res.json({ success: true, templates: expanded });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -4921,6 +4985,16 @@ app.get('/api/direct-mail/templates/:id', authMiddleware, (req, res) => {
     const template = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
     if (!template) return res.status(404).json({ error: 'Template not found' });
     res.json({ success: true, template: template });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/direct-mail/templates/:id — Delete a template
+app.delete('/api/direct-mail/templates/:id', authMiddleware, (req, res) => {
+  try {
+    var existing = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!existing) return res.status(404).json({ error: 'Template not found' });
+    db.prepare('DELETE FROM direct_mail_templates WHERE id = ? AND customer_id = ?').run(req.params.id, req.user.id);
+    res.json({ success: true, message: 'Template deleted' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

@@ -1405,17 +1405,126 @@ function showDMCreate(el) {
 }
 
 function showDMTemplates(el) {
-  apiFetch('/api/direct-mail/templates').then(function(r) {
+  el.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="dmCreateTemplate()"><i class="fas fa-plus"></i> New Template</button></div>' +
+    '<div id="dm-tpl-list" style="min-height:100px"><div style="text-align:center;padding:30px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div>';
+  dmLoadTemplates();
+}
+
+function dmLoadTemplates() {
+  var el = document.getElementById('dm-tpl-list');
+  if (!el) return;
+  apiFetch('/api/direct-mail/templates?include_materials=1').then(function(r) {
     var templates = r && r.templates ? r.templates : [];
-    var html = '';
     if (templates.length === 0) {
-      html = '<div style="text-align:center;padding:40px 20px"><i class="fas fa-folder-open" style="font-size:40px;color:var(--muted2);display:block;margin-bottom:12px"></i><h3 style="font-size:16px;font-weight:700;margin-bottom:6px">No Templates Yet</h3><p style="font-size:12px;color:var(--muted2);margin-bottom:16px">Create a template or use the AI Marketing Builder to generate one.</p><button class="btn btn-primary btn-sm" onclick="showDirectMailCentre(\'create\')"><i class="fas fa-plus"></i> Create Campaign</button></div>';
-    } else {
-      html = '<div style="display:grid;gap:8px">' + templates.map(function(t) {
-        return '<div style="padding:12px 16px;background:var(--card2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><strong style="color:var(--text);font-size:13px">' + t.name + '</strong><br><span style="font-size:11px;color:var(--muted2)">' + t.type + ' · ' + t.size + ' · ' + t.page_count + ' page(s)</span></div><span class="badge ' + (t.is_draft ? 'badge-orange' : 'badge-green') + '">' + (t.is_draft ? 'Draft' : 'Ready') + '</span></div>';
-      }).join('') + '</div>';
+      el.innerHTML = '<div style="text-align:center;padding:40px 20px"><i class="fas fa-folder-open" style="font-size:40px;color:var(--muted2);display:block;margin-bottom:12px"></i><h3 style="font-size:16px;font-weight:700;margin-bottom:6px">No Templates Yet</h3><p style="font-size:12px;color:var(--muted2);margin-bottom:16px">Save a template to reuse across campaigns.</p><button class="btn btn-primary btn-sm" onclick="dmCreateTemplate()"><i class="fas fa-plus"></i> Create Template</button></div>';
+      return;
     }
+    var typeLabels = { letter:'Letter Only', flyer:'Flyer Only', flyer_front_back:'Flyer Front + Back', letter_flyer_pack:'Letter + Flyer Pack', postcard:'Postcard' };
+    var icons = { letter:'📝', flyer:'📄', flyer_front_back:'📄📄', letter_flyer_pack:'📝📄', postcard:'📮' };
+    var html = templates.map(function(t) {
+      var badgeClass = t.status === 'approved' ? 'badge-green' : 'badge-orange';
+      return '<div style="padding:12px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
+        '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">' + (icons[t.template_type] || '📄') + '</span>' +
+        '<div><div style="font-size:13px;font-weight:600;color:var(--text)">' + t.name + '</div>' +
+        '<div style="font-size:10px;color:var(--muted2)">' + (typeLabels[t.template_type] || t.template_type) + (t.business_type ? ' · ' + t.business_type : '') + ' · ' + new Date(t.created_at).toLocaleDateString() + '</div></div></div>' +
+        '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">' +
+        '<span class="badge ' + badgeClass + '" style="font-size:9px">' + t.status + '</span>' +
+        (t.flyer_front ? '<span class="badge badge-blue" style="font-size:9px" title="' + t.flyer_front.name + '">Flyer</span>' : '') +
+        (t.letter ? '<span class="badge badge-blue" style="font-size:9px" title="' + t.letter.name + '">Letter</span>' : '') +
+        '</div></div>' +
+        '<div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">' +
+        '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto" onclick="dmPreviewTemplate(\'' + t.id + '\')"><i class="fas fa-eye"></i> Preview</button>' +
+        '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto" onclick="dmEditTemplate(\'' + t.id + '\')"><i class="fas fa-edit"></i> Edit</button>' +
+        '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto" onclick="dmDuplicateTemplate(\'' + t.id + '\')"><i class="fas fa-copy"></i> Duplicate</button>' +
+        (t.status !== 'approved' ? '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto;color:var(--success)" onclick="dmApproveTemplate(\'' + t.id + '\')"><i class="fas fa-check"></i> Approve</button>' : '') +
+        '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto;color:var(--danger)" onclick="dmDeleteTemplate(\'' + t.id + '\')"><i class="fas fa-trash"></i></button>' +
+        '</div></div>';
+    }).join('');
     el.innerHTML = '<div style="animation:slideUp .3s ease">' + html + '</div>';
+  });
+}
+
+function dmCreateTemplate() {
+  showModal('Create Template', '<div style="display:grid;gap:10px">' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Template Name *</label><input type="text" id="tpl-name" placeholder="e.g. Summer Flyer 2026" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Template Type</label><select id="tpl-type" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option value="letter">Letter Only</option><option value="flyer">Flyer Only</option><option value="flyer_front_back">Flyer Front + Back</option><option value="letter_flyer_pack">Letter + Flyer Pack</option><option value="postcard">Postcard</option></select></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Description</label><textarea id="tpl-desc" rows="2" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;resize:vertical"></textarea></div>' +
+    '<button class="btn btn-primary btn-sm" onclick="dmSaveNewTemplate()" style="width:100%"><i class="fas fa-save"></i> Save Template</button></div>', '420px');
+}
+
+function dmSaveNewTemplate() {
+  var name = document.getElementById('tpl-name')?.value.trim();
+  if (!name) { alert('Template name is required'); return; }
+  apiFetch('/api/direct-mail/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    name: name, type: document.getElementById('tpl-type')?.value || 'letter',
+    description: document.getElementById('tpl-desc')?.value || ''
+  })}).then(function(r) {
+    if (r && r.success) { document.getElementById('modal-overlay')?.remove(); dmLoadTemplates(); }
+    else { alert(r?.error || 'Failed to create'); }
+  });
+}
+
+function dmEditTemplate(id) {
+  apiFetch('/api/direct-mail/templates/' + id).then(function(r) {
+    if (!r || !r.template) return;
+    var t = r.template;
+    var typeOptions = ['letter','flyer','flyer_front_back','letter_flyer_pack','postcard'].map(function(v) { return '<option value="' + v + '"' + (t.template_type === v ? ' selected' : '') + '>' + v.charAt(0).toUpperCase() + v.slice(1).replace(/_/g,' ') + '</option>'; }).join('');
+    showModal('Edit Template', '<div style="display:grid;gap:10px">' +
+      '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Template Name</label><input type="text" id="tpl-edit-name" value="' + t.name.replace(/"/g,'&quot;') + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Type</label><select id="tpl-edit-type" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)">' + typeOptions + '</select></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Description</label><textarea id="tpl-edit-desc" rows="2" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;resize:vertical">' + (t.description||'') + '</textarea></div>' +
+      '<button class="btn btn-primary btn-sm" onclick="dmSaveEditTemplate(\'' + id + '\')" style="width:100%"><i class="fas fa-save"></i> Save Changes</button></div>', '420px');
+  });
+}
+
+function dmSaveEditTemplate(id) {
+  var name = document.getElementById('tpl-edit-name')?.value.trim();
+  if (!name) { alert('Name is required'); return; }
+  apiFetch('/api/direct-mail/templates/' + id, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    name: name, type: document.getElementById('tpl-edit-type')?.value || 'letter',
+    description: document.getElementById('tpl-edit-desc')?.value || ''
+  })}).then(function(r) {
+    if (r && r.success) { document.getElementById('modal-overlay')?.remove(); dmLoadTemplates(); }
+    else { alert('Failed to update'); }
+  });
+}
+
+function dmPreviewTemplate(id) {
+  apiFetch('/api/direct-mail/templates/' + id).then(function(r) {
+    if (!r || !r.template) return;
+    var t = r.template;
+    var typeLabels = { letter:'Letter Only', flyer:'Flyer Only', flyer_front_back:'Flyer Front + Back', letter_flyer_pack:'Letter + Flyer Pack', postcard:'Postcard' };
+    showModal('Template: ' + t.name, '<div style="font-size:12px;color:var(--text2);line-height:1.6"><div style="display:grid;gap:6px;margin-bottom:12px">' +
+      '<div><strong>Type:</strong> ' + (typeLabels[t.template_type] || t.template_type) + '</div>' +
+      '<div><strong>Business Type:</strong> ' + (t.business_type || 'Not set') + '</div>' +
+      '<div><strong>Status:</strong> <span style="color:' + (t.status === 'approved' ? 'var(--success)' : 'var(--warning)') + '">' + t.status + '</span></div>' +
+      (t.description ? '<div><strong>Description:</strong> ' + t.description + '</div>' : '') +
+      '<div><strong>Created:</strong> ' + new Date(t.created_at).toLocaleDateString() + '</div>' +
+      (t.last_used_at ? '<div><strong>Last Used:</strong> ' + new Date(t.last_used_at).toLocaleDateString() + '</div>' : '') +
+      '</div></div>', '480px');
+  });
+}
+
+function dmDuplicateTemplate(id) {
+  apiFetch('/api/direct-mail/templates/' + id + '/duplicate', { method:'POST' }).then(function(r) {
+    if (r && r.success) { dmLoadTemplates(); }
+    else { alert('Failed to duplicate'); }
+  });
+}
+
+function dmApproveTemplate(id) {
+  apiFetch('/api/direct-mail/templates/' + id + '/approve', { method:'POST' }).then(function(r) {
+    if (r && r.success) { dmLoadTemplates(); }
+    else { alert('Failed to approve'); }
+  });
+}
+
+function dmDeleteTemplate(id) {
+  if (!confirm('Delete this template?')) return;
+  apiFetch('/api/direct-mail/templates/' + id, { method:'DELETE' }).then(function(r) {
+    if (r && r.success) { dmLoadTemplates(); }
+    else { alert('Failed to delete'); }
   });
 }
 
