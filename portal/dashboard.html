@@ -1530,29 +1530,18 @@ function showStatus(id, msg, color) {
   setTimeout(function() { el.style.display = 'none'; }, 4000);
 }
 
-var DM_TABS = ['overview','create','suppression','done-for-you','analytics','calendar','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments','timeline','knowledge'];
-var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', suppression:'Suppression List', 'done-for-you':'Done For You', analytics:'Analytics', calendar:'Campaign Calendar', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices', timeline:'Activity Timeline', knowledge:'Knowledge Centre' };
-var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', suppression:'fa-ban', 'done-for-you':'fa-handshake', analytics:'fa-chart-bar', calendar:'fa-calendar', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar', timeline:'fa-stream', knowledge:'fa-graduation-cap' };
+var DM_TABS = ['overview','create','packs','ai-builder','templates','settings','history','proof'];
+var DM_TAB_NAMES = { overview:'Dashboard', create:'Create', packs:'Templates', 'ai-builder':'AI Builder', templates:'Saved', settings:'Auto Send', history:'History', proof:'Proof' };
+var DM_TAB_ICONS = { overview:'fa-chart-simple', create:'fa-plus-circle', packs:'fa-box', 'ai-builder':'fa-wand-magic-sparkles', templates:'fa-folder-open', settings:'fa-gear', history:'fa-clock-rotate-left', proof:'fa-check-circle' };
 var DM_HELP = {
-  overview: '<i class="fas fa-trophy" style="color:var(--warning)"></i> <strong>Welcome!</strong> This is your success dashboard. Complete milestones to unlock the full power of Direct Mail. Your <strong>Marketing Health Score</strong> shows how ready your account is.',
-  create: '<i class="fas fa-rocket" style="color:var(--primary)"></i> <strong>Create a campaign in 5 steps:</strong> Choose leads → Pick materials → Preview → Approve → Send. Start with a test campaign to see how it works.',
-  suppression: '<i class="fas fa-ban" style="color:var(--danger)"></i> <strong>Do-Not-Mail list.</strong> Add addresses you never want to mail. Blocked addresses are automatically excluded from ALL campaigns including Auto Send.',
-  'done-for-you': '<i class="fas fa-handshake" style="color:var(--success)"></i> <strong>Let us do the work.</strong> Tell us your campaign goal and we\'ll create the flyer, letter, and campaign for you. We\'ll send you a preview to approve.',
-  analytics: '<i class="fas fa-chart-bar" style="color:var(--primary)"></i> <strong>Track your results.</strong> See campaign stats, ROI, and completion rates. Add outcomes to campaigns to track revenue and jobs won.',
-  calendar: '<i class="fas fa-calendar" style="color:var(--primary)"></i> <strong>View all campaigns on a calendar.</strong> See when campaigns were created, sent, and completed. Click any day for details.',
-  sequences: '<i class="fas fa-layer-group" style="color:var(--primary)"></i> <strong>Multi-touch follow-up.</strong> Create sequences that send multiple mailings over time. E.g. Day 1: Letter → Day 14: Flyer → Day 30: Offer.',
-  packs: '<i class="fas fa-box" style="color:var(--primary)"></i> <strong>Pre-built industry templates.</strong> Choose a campaign pack for your business type. Apply your Business Profile details and save as a template.',
-  marketplace: '<i class="fas fa-store" style="color:var(--primary)"></i> <strong>Ready-made templates.</strong> Browse templates by category. Preview, save to your account, and use in your campaigns.',
-  seasonal: '<i class="fas fa-calendar-alt" style="color:var(--primary)"></i> <strong>Timely campaign ideas.</strong> Recommendations matched to your business type and the current month. Use them or get inspired.',
-  'ai-builder': '<i class="fas fa-magic" style="color:var(--primary)"></i> <strong>Create content with AI.</strong> Generate professional letters, flyers, and offers. Edit, save as templates, and use in campaigns.',
-  upload: '<i class="fas fa-upload" style="color:var(--primary)"></i> <strong>Upload your own files.</strong> PDF, PNG, or JPG. Upload flyers, letters, or logos to use in your campaigns.',
-  templates: '<i class="fas fa-folder-open" style="color:var(--success)"></i> <strong>Your saved templates.</strong> Create, edit, duplicate, and approve templates. Use them in manual campaigns or Auto Send.',
-  settings: '<i class="fas fa-cog" style="color:var(--primary)"></i> <strong>Automate your mailing.</strong> Auto Send automatically mails new leads every day. Set spend limits, choose your template, and enable.',
-  history: '<i class="fas fa-clock" style="color:var(--primary)"></i> <strong>All past campaigns.</strong> View status, recipients, and costs. Add outcomes to track revenue and jobs won from each campaign.',
-  proof: '<i class="fas fa-check-circle" style="color:var(--success)"></i> <strong>Proof of posting.</strong> Once a campaign is dispatched, proof documents appear here showing what was sent and when.',
-  payments: '<i class="fas fa-file-invoice-dollar" style="color:var(--success)"></i> <strong>Payment history.</strong> Invoices and payment records for all campaigns. Payments are processed securely via Stripe.',
-  timeline: '<i class="fas fa-stream" style="color:var(--primary)"></i> <strong>Activity log.</strong> Every action is recorded here — profile updates, campaign creation, sending, and payments.',
-  knowledge: '<i class="fas fa-graduation-cap" style="color:var(--primary)"></i> <strong>Learn the platform.</strong> Browse articles, tutorials, and FAQs. Bookmark your favourites for quick access.'
+  overview: '<i class="fas fa-trophy" style="color:var(--warning)"></i> <strong>Your success dashboard.</strong> See your milestones, health score, and recent campaign activity.',
+  create: '<i class="fas fa-rocket" style="color:var(--primary)"></i> <strong>Send a campaign in 5 steps:</strong> Choose leads → Pick materials → Preview → Approve → Send.',
+  packs: '<i class="fas fa-box" style="color:var(--primary)"></i> <strong>Pre-made templates</strong> for your industry — plus Seasonal campaigns and the Marketplace. Pick one, apply your details, and send.',
+  'ai-builder': '<i class="fas fa-wand-magic-sparkles" style="color:var(--primary)"></i> <strong>Create flyers and letters with AI.</strong> Generate, edit, and save as templates. Also includes the Offer Generator.',
+  templates: '<i class="fas fa-folder-open" style="color:var(--success)"></i> <strong>Your saved templates.</strong> Create, edit, duplicate, and approve. Use them in manual campaigns or Auto Send.',
+  settings: '<i class="fas fa-gear" style="color:var(--primary)"></i> <strong>Auto Send.</strong> Automatically mail new leads every day. Set spend limits and choose your template.',
+  history: '<i class="fas fa-clock-rotate-left" style="color:var(--primary)"></i> <strong>Past campaigns, calendar, timeline &amp; analytics.</strong> View everything in one place.',
+  proof: '<i class="fas fa-check-circle" style="color:var(--success)"></i> <strong>Proof of posting.</strong> Documents showing what was sent and when.'
 };
 
 function showDirectMailCentre(tab) {
@@ -1560,37 +1549,24 @@ function showDirectMailCentre(tab) {
   localStorage.setItem('dmTab', tab);
   var main = document.querySelector('.main-content');
 
-  // Group tabs into categories
-  var tabGroups = [
-    { label:'Overview', tabs:['overview'] },
-    { label:'Create', tabs:['create','packs','marketplace','seasonal'] },
-    { label:'Content', tabs:['ai-builder','upload','templates'] },
-    { label:'Track', tabs:['history','proof','analytics','calendar','timeline'] },
-    { label:'Automate', tabs:['settings','sequences','suppression'] },
-    { label:'Support', tabs:['done-for-you','knowledge','payments'] }
-  ];
-
-  var tabsHtml = tabGroups.map(function(g) {
-    return '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;padding:0 4px;border-right:1px solid var(--border);margin-right:4px">' +
-      (g.tabs.length > 1 ? '<span style="font-size:9px;color:var(--muted2);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px">' + g.label + '</span>' : '') +
-      g.tabs.map(function(t) {
-        var active = tab === t;
-        return '<button onclick="showDirectMailCentre(\'' + t + '\')" style="padding:5px 8px;font-size:10px;font-weight:' + (active ? '700' : '500') + ';color:' + (active ? 'var(--primary)' : 'var(--text2)') + ';background:' + (active ? 'rgba(14,165,233,.08)' : 'transparent') + ';border:' + (active ? '1px solid rgba(14,165,233,.15)' : '1px solid transparent') + ';border-radius:5px;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s" onmouseover="this.style.background=\'rgba(14,165,233,.04)\'" onmouseout="this.style.background=\'' + (active ? 'rgba(14,165,233,.08)' : 'transparent') + '\'" title="' + (DM_TAB_NAMES[t] || '') + '"><i class="fas ' + DM_TAB_ICONS[t] + '" style="margin-right:3px;font-size:9px"></i>' + DM_TAB_NAMES[t] + '</button>';
-      }).join('') + '</div>';
+  // Simple tab bar — just 8 core tabs
+  var tabsHtml = DM_TABS.map(function(t) {
+    var active = tab === t;
+    return '<button onclick="showDirectMailCentre(\'' + t + '\')" style="padding:6px 12px;font-size:11px;font-weight:' + (active ? '700' : '500') + ';color:' + (active ? '#fff' : 'var(--text2)') + ';background:' + (active ? 'var(--primary)' : 'transparent') + ';border:none;border-radius:6px;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s;margin:0 1px" onmouseover="this.style.background=\'' + (active ? 'var(--primary)' : 'rgba(14,165,233,.06)') + '\'" onmouseout="this.style.background=\'' + (active ? 'var(--primary)' : 'transparent') + '\'"><i class="fas ' + DM_TAB_ICONS[t] + '" style="margin-right:5px;font-size:10px"></i>' + DM_TAB_NAMES[t] + '</button>';
   }).join('');
 
   var showHelp = localStorage.getItem('dmShowHelp') !== '0';
-  main.innerHTML = '<div style="max-width:1000px;margin:0 auto;padding:8px 0">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">' +
-    '<div style="display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(99,102,241,.08));display:flex;align-items:center;justify-content:center;font-size:16px"><i class="fas fa-envelope-open-text" style="color:var(--primary)"></i></div><div><h1 style="font-size:18px;font-weight:800;font-family:var(--ff-h)">Direct Mail Centre</h1><p style="font-size:11px;color:var(--muted2);margin-top:1px">Create, manage and automate your postal campaigns</p></div></div>' +
-    '<div style="display:flex;gap:6px;align-items:center"><a href="#" onclick="dmToggleHelp();return false" style="font-size:10px;color:var(--muted2);text-decoration:none;display:flex;align-items:center;gap:3px;padding:5px 10px;border:1px solid var(--border);border-radius:6px" id="dm-help-link"><i class="fas fa-question-circle" style="color:var(--primary);font-size:10px"></i> ' + (showHelp ? 'Hide tips' : 'Tips') + '</a><a href="/portal/dashboard.html" class="btn btn-outline btn-sm" style="padding:5px 10px;font-size:10px"><i class="fas fa-arrow-left"></i> Back</a></div></div>' +
-    '<div style="display:flex;gap:2px;margin-bottom:14px;padding:6px 8px;background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow-x:auto;scrollbar-width:thin">' + tabsHtml + '</div>' +
-    (showHelp ? '<div id="dm-help-tip" style="padding:10px 14px;background:rgba(14,165,233,.03);border:1px solid rgba(14,165,233,.08);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:16px">' + (DM_HELP[tab] || '') + '</div>' : '<div id="dm-help-tip" style="display:none"></div>') +
-    '<div id="dm-content" style="animation:slideUp .3s ease;min-height:200px"><div style="text-align:center;padding:60px 20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin" style="font-size:24px;display:block;margin-bottom:10px"></i>Loading...</div></div></div>';
+  main.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:4px 0">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">' +
+    '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">&#9993;</span><div><h1 style="font-size:17px;font-weight:800;font-family:var(--ff-h)">Direct Mail</h1><p style="font-size:11px;color:var(--muted2);margin-top:0">Postal campaigns, automated</p></div></div>' +
+    '<div style="display:flex;gap:4px"><a href="#" onclick="dmToggleHelp();return false" style="font-size:10px;color:var(--muted2);padding:4px 8px;border:1px solid var(--border);border-radius:5px;text-decoration:none" id="dm-help-link">&#63; ' + (showHelp ? 'Hide' : 'Help') + '</a><a href="/portal/dashboard.html" style="font-size:10px;color:var(--muted2);padding:4px 8px;border:1px solid var(--border);border-radius:5px;text-decoration:none">&larr; Back</a></div></div>' +
+    '<div style="display:flex;gap:2px;margin-bottom:10px;padding:4px;background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow-x:auto;scrollbar-width:thin">' + tabsHtml + '</div>' +
+    (showHelp ? '<div id="dm-help-tip" style="padding:8px 12px;background:rgba(14,165,233,.03);border:1px solid rgba(14,165,233,.08);border-radius:6px;font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:12px">' + (DM_HELP[tab] || '') + '</div>' : '<div id="dm-help-tip" style="display:none"></div>') +
+    '<div id="dm-content" style="animation:slideUp .3s ease;min-height:150px"><div style="text-align:center;padding:50px 20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin" style="font-size:20px;display:block;margin-bottom:8px"></i>Loading...</div></div></div>';
 
   var el = document.getElementById('dm-content');
   // Check feature access first
-  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, analytics: null, calendar: null, sequences: null, suppression: null, 'done-for-you': null, timeline: null, knowledge: null, settings: 'auto_send', proof: 'proof_tracking' };
+  var featureChecks = { overview: null, create: null, packs: null, 'ai-builder': 'ai_letter', templates: 'saved_templates', settings: 'auto_send', history: null, proof: 'proof_tracking' };
   apiFetch('/api/direct-mail/features').then(function(fr) {
     var plan = fr && fr.plan ? fr.plan : 'free_trial';
     var features = fr && fr.features ? fr.features : {};
@@ -1607,23 +1583,12 @@ function showDirectMailCentre(tab) {
 
     if (tab === 'overview') { showDMOverview(el); }
     else if (tab === 'create') { showDMCreate(el); }
-    else if (tab === 'ai-builder') { showDMLetterGen(el); }
-    else if (tab === 'upload') { showDMUpload(el); }
     else if (tab === 'packs') { showDMPacks(el); }
-    else if (tab === 'marketplace') { showDMMarketplace(el); }
-    else if (tab === 'seasonal') { showDMSeasonal(el); }
-    else if (tab === 'suppression') { showDMSuppression(el); }
-    else if (tab === 'done-for-you') { showDMRequests(el); }
-    else if (tab === 'analytics') { showDMAnalytics(el); }
-    else if (tab === 'calendar') { showDMCalendar(el); }
-    else if (tab === 'sequences') { showDMSequences(el); }
+    else if (tab === 'ai-builder') { showDMLetterGen(el); }
     else if (tab === 'templates') { showDMTemplates(el); }
     else if (tab === 'settings') { showDMSettings(el, canUse('auto_send')); }
     else if (tab === 'history') { showDMHistory(el); }
     else if (tab === 'proof') { el.innerHTML = '<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px"><h2 style="font-size:16px;font-weight:700">Proof of Sending</h2><button class="btn btn-outline btn-sm" onclick="dmRefreshProof()"><i class="fas fa-sync"></i> Refresh</button></div><div id="dm-proof-list"><div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div>'; dmRefreshProof(); }
-    else if (tab === 'payments') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-file-invoice-dollar" style="font-size:40px;color:var(--success);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Payments &amp; Invoices</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto">Payment history and invoices will appear here once your first campaign is submitted.</p></div>'; }
-    else if (tab === 'timeline') { showDMTimeline(el); }
-    else if (tab === 'knowledge') { showDMKnowledge(el); }
   }).catch(function() { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted2)">Error loading features</div>'; });
 }
 
