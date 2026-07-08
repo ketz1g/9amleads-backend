@@ -215,7 +215,7 @@ function getDb() {
 }
 function loadDb() {
   try { return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); }
-  catch { return { customers: [], leads: [], deliveries: [], scraper_logs: [], subscriptions: [] }; }
+  catch { return { customers: [], leads: [], deliveries: [], scraper_logs: [], subscriptions: [], blog_posts: [], customer_business_profiles: [], direct_mail_templates: [], direct_mail_campaigns: [], direct_mail_materials: [], direct_mail_recipients: [], direct_mail_automation_settings: [], direct_mail_orders: [], direct_mail_provider_logs: [], direct_mail_status_history: [], direct_mail_test_logs: [] }; }
 }
 function saveDb() {
   try { fs.writeFileSync(DB_FILE, JSON.stringify(_dbData, null, 2)); } catch(e) { console.error('[DB] Save error:', e.message); }
@@ -307,6 +307,28 @@ function _run(sql, params) {
       if (idVal === null || idVal === undefined) idVal = params[params.length - 1];
       const idx = getDb()[q.table].findIndex(r => r[idField] == idVal);
       if (idx !== -1) { getDb()[q.table][idx] = { ...getDb()[q.table][idx], ...updates }; saveDb(); return { changes: 1 }; }
+    }
+    return { changes: 0 };
+  }
+  if (q.isDelete) {
+    const whereMatch = sql.match(/WHERE\s+(.+?)$/i);
+    if (whereMatch) {
+      const whereStr = whereMatch[1].trim();
+      const eqIdx = whereStr.indexOf('=');
+      const conditions = whereStr.split(/\s+AND\s+/i);
+      let paramIdx = 0;
+      let rows = getDb()[q.table];
+      conditions.forEach(function(cond) {
+        const eq = cond.indexOf('=');
+        const field = cond.substring(0, eq).trim();
+        let val = cond.substring(eq + 1).trim();
+        if (val === '?') { val = params[paramIdx++]; }
+        else { val = val.replace(/^'(.*)'$/, '$1'); }
+        rows = rows.filter(function(r) { return r[field] != val; });
+      });
+      getDb()[q.table] = rows;
+      saveDb();
+      return { changes: 1 };
     }
     return { changes: 0 };
   }
@@ -4786,6 +4808,274 @@ app.get('/api/campaigns', (req, res) => {
     summaries[p] = { name: CAMPAIGN_KITS[p].name, icon: CAMPAIGN_KITS[p].icon, color: CAMPAIGN_KITS[p].color, summary: CAMPAIGN_KITS[p].summary, header: CAMPAIGN_KITS[p].header };
   }
   res.json({ success: true, campaigns: summaries });
+});
+
+// ===== DIRECT MAIL MARKETING AUTOMATION =====
+var DIRECT_MAIL_STATUSES = ['draft','awaiting_approval','approved','awaiting_payment','paid','queued','sent_to_provider','printing','dispatched','completed','failed','cancelled'];
+
+// 1. Customer Business Profiles
+// POST /api/direct-mail/profile — Create or update business profile
+app.post('/api/direct-mail/profile', authMiddleware, (req, res) => {
+  try {
+    const existing = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+    const profile = {
+      id: existing ? existing.id : uuidv4(),
+      customer_id: req.user.id,
+      company_name: req.body.company_name || '',
+      contact_name: req.body.contact_name || '',
+      email: req.body.email || '',
+      phone: req.body.phone || '',
+      address_line1: req.body.address_line1 || '',
+      address_line2: req.body.address_line2 || '',
+      city: req.body.city || '',
+      postcode: req.body.postcode || '',
+      country: req.body.country || 'United Kingdom',
+      website: req.body.website || '',
+      logo_url: req.body.logo_url || '',
+      brand_colors: req.body.brand_colors || '{}',
+      business_type: req.body.business_type || '',
+      created_at: existing ? existing.created_at : new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    if (existing) {
+      db.prepare('UPDATE customer_business_profiles SET company_name=?,contact_name=?,email=?,phone=?,address_line1=?,address_line2=?,city=?,postcode=?,country=?,website=?,logo_url=?,brand_colors=?,business_type=?,updated_at=? WHERE id=?').run(profile.company_name, profile.contact_name, profile.email, profile.phone, profile.address_line1, profile.address_line2, profile.city, profile.postcode, profile.country, profile.website, profile.logo_url, profile.brand_colors, profile.business_type, profile.updated_at, profile.id);
+    } else {
+      db.prepare('INSERT INTO customer_business_profiles (id,customer_id,company_name,contact_name,email,phone,address_line1,address_line2,city,postcode,country,website,logo_url,brand_colors,business_type,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(profile.id, profile.customer_id, profile.company_name, profile.contact_name, profile.email, profile.phone, profile.address_line1, profile.address_line2, profile.city, profile.postcode, profile.country, profile.website, profile.logo_url, profile.brand_colors, profile.business_type, profile.created_at, profile.updated_at);
+    }
+    res.json({ success: true, profile: profile });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/profile — Get customer's business profile
+app.get('/api/direct-mail/profile', authMiddleware, (req, res) => {
+  try {
+    const profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+    res.json({ success: true, profile: profile || null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 2. Direct Mail Templates
+// POST /api/direct-mail/templates — Create a new template
+app.post('/api/direct-mail/templates', authMiddleware, (req, res) => {
+  try {
+    const template = {
+      id: uuidv4(),
+      customer_id: req.user.id,
+      name: req.body.name || 'Untitled Template',
+      description: req.body.description || '',
+      type: req.body.type || 'letter',
+      orientation: req.body.orientation || 'portrait',
+      size: req.body.size || 'A4',
+      page_count: req.body.page_count || 1,
+      content_json: req.body.content_json || '{}',
+      preview_url: req.body.preview_url || '',
+      is_draft: req.body.is_draft !== undefined ? (req.body.is_draft ? 1 : 0) : 1,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    db.prepare('INSERT INTO direct_mail_templates (id,customer_id,name,description,type,orientation,size,page_count,content_json,preview_url,is_draft,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').run(template.id, template.customer_id, template.name, template.description, template.type, template.orientation, template.size, template.page_count, template.content_json, template.preview_url, template.is_draft, template.created_at, template.updated_at);
+    res.json({ success: true, template: template });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/templates — Get customer's templates
+app.get('/api/direct-mail/templates', authMiddleware, (req, res) => {
+  try {
+    const templates = db.prepare('SELECT * FROM direct_mail_templates WHERE customer_id = ? ORDER BY created_at DESC').all(req.user.id);
+    res.json({ success: true, templates: templates });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/templates/:id — Get template by ID (customer data isolated)
+app.get('/api/direct-mail/templates/:id', authMiddleware, (req, res) => {
+  try {
+    const template = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!template) return res.status(404).json({ error: 'Template not found' });
+    res.json({ success: true, template: template });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 3. Direct Mail Campaigns
+// POST /api/direct-mail/campaigns — Create a new campaign
+app.post('/api/direct-mail/campaigns', authMiddleware, (req, res) => {
+  try {
+    if (!req.body.name) return res.status(400).json({ error: 'Campaign name is required' });
+    const campaign = {
+      id: uuidv4(),
+      customer_id: req.user.id,
+      name: req.body.name,
+      description: req.body.description || '',
+      status: 'draft',
+      template_id: req.body.template_id || '',
+      material_id: req.body.material_id || '',
+      target_count: req.body.target_count || 0,
+      sent_count: 0,
+      delivery_date: req.body.delivery_date || '',
+      budget: req.body.budget || 0,
+      notes: req.body.notes || '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(campaign.id, campaign.customer_id, campaign.name, campaign.description, campaign.status, campaign.template_id, campaign.material_id, campaign.target_count, campaign.sent_count, campaign.delivery_date, campaign.budget, campaign.notes, campaign.created_at, campaign.updated_at);
+    // Log initial status
+    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, campaign.id, '', 'draft', 'customer', 'Campaign created', new Date().toISOString());
+    res.json({ success: true, campaign: campaign });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/campaigns — Get customer's campaigns
+app.get('/api/direct-mail/campaigns', authMiddleware, (req, res) => {
+  try {
+    const campaigns = db.prepare('SELECT * FROM direct_mail_campaigns WHERE customer_id = ? ORDER BY created_at DESC').all(req.user.id);
+    res.json({ success: true, campaigns: campaigns });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/campaigns/:id — Get campaign by ID (customer data isolated)
+app.get('/api/direct-mail/campaigns/:id', authMiddleware, (req, res) => {
+  try {
+    const campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    // Get associated data
+    const template = campaign.template_id ? db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(campaign.template_id, req.user.id) : null;
+    const recipients = db.prepare('SELECT * FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(campaign.id, req.user.id);
+    const statusHistory = db.prepare('SELECT * FROM direct_mail_status_history WHERE campaign_id = ? AND customer_id = ? ORDER BY created_at DESC').all(campaign.id, req.user.id);
+    res.json({ success: true, campaign: campaign, template: template, recipients: recipients, status_history: statusHistory });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/direct-mail/campaigns/:id/status — Update campaign status
+app.put('/api/direct-mail/campaigns/:id/status', authMiddleware, (req, res) => {
+  try {
+    const { status, notes } = req.body;
+    if (!status) return res.status(400).json({ error: 'Status is required' });
+    if (DIRECT_MAIL_STATUSES.indexOf(status) === -1) return res.status(400).json({ error: 'Invalid status. Valid: ' + DIRECT_MAIL_STATUSES.join(', ') });
+    const campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    const fromStatus = campaign.status;
+    db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(status, new Date().toISOString(), req.params.id, req.user.id);
+    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, req.params.id, fromStatus, status, 'customer', notes || 'Status updated to ' + status, new Date().toISOString());
+    res.json({ success: true, from_status: fromStatus, to_status: status });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/direct-mail/campaigns/:id — Delete draft campaign
+app.delete('/api/direct-mail/campaigns/:id', authMiddleware, (req, res) => {
+  try {
+    const campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    if (campaign.status !== 'draft') return res.status(400).json({ error: 'Only draft campaigns can be deleted' });
+    db.prepare('DELETE FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').run(req.params.id, req.user.id);
+    db.prepare('DELETE FROM direct_mail_status_history WHERE campaign_id = ? AND customer_id = ?').run(req.params.id, req.user.id);
+    db.prepare('DELETE FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').run(req.params.id, req.user.id);
+    res.json({ success: true, message: 'Campaign deleted' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/campaigns/:id/status-history — Get campaign status history
+app.get('/api/direct-mail/campaigns/:id/status-history', authMiddleware, (req, res) => {
+  try {
+    const history = db.prepare('SELECT * FROM direct_mail_status_history WHERE campaign_id = ? AND customer_id = ? ORDER BY created_at DESC').all(req.params.id, req.user.id);
+    res.json({ success: true, history: history });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/test — Log a test result for a campaign
+app.post('/api/direct-mail/test', authMiddleware, (req, res) => {
+  try {
+    const testLog = {
+      id: uuidv4(),
+      customer_id: req.user.id,
+      campaign_id: req.body.campaign_id || '',
+      test_type: req.body.test_type || 'content_review',
+      result: req.body.result || 'pending',
+      notes: req.body.notes || '',
+      file_url: req.body.file_url || '',
+      created_at: new Date().toISOString()
+    };
+    db.prepare('INSERT INTO direct_mail_test_logs (id,customer_id,campaign_id,test_type,result,notes,file_url,created_at) VALUES (?,?,?,?,?,?,?,?)').run(testLog.id, testLog.customer_id, testLog.campaign_id, testLog.test_type, testLog.result, testLog.notes, testLog.file_url, testLog.created_at);
+    res.json({ success: true, test: testLog });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/test/:campaignId — Get test logs for a campaign
+app.get('/api/direct-mail/test/:campaignId', authMiddleware, (req, res) => {
+  try {
+    const tests = db.prepare('SELECT * FROM direct_mail_test_logs WHERE campaign_id = ? AND customer_id = ? ORDER BY created_at DESC').all(req.params.campaignId, req.user.id);
+    res.json({ success: true, tests: tests });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/automation — Save automation settings
+app.post('/api/direct-mail/automation', authMiddleware, (req, res) => {
+  try {
+    const existing = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
+    const settings = {
+      id: existing ? existing.id : uuidv4(),
+      customer_id: req.user.id,
+      auto_approve: req.body.auto_approve ? 1 : 0,
+      auto_send: req.body.auto_send ? 1 : 0,
+      default_template_id: req.body.default_template_id || '',
+      default_material_id: req.body.default_material_id || '',
+      max_budget: req.body.max_budget || 0,
+      notification_email: req.body.notification_email || '',
+      weekly_limit: req.body.weekly_limit || 0,
+      created_at: existing ? existing.created_at : new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    if (existing) {
+      db.prepare('UPDATE direct_mail_automation_settings SET auto_approve=?,auto_send=?,default_template_id=?,default_material_id=?,max_budget=?,notification_email=?,weekly_limit=?,updated_at=? WHERE customer_id=?').run(settings.auto_approve, settings.auto_send, settings.default_template_id, settings.default_material_id, settings.max_budget, settings.notification_email, settings.weekly_limit, settings.updated_at, req.user.id);
+    } else {
+      db.prepare('INSERT INTO direct_mail_automation_settings (id,customer_id,auto_approve,auto_send,default_template_id,default_material_id,max_budget,notification_email,weekly_limit,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(settings.id, settings.customer_id, settings.auto_approve, settings.auto_send, settings.default_template_id, settings.default_material_id, settings.max_budget, settings.notification_email, settings.weekly_limit, settings.created_at, settings.updated_at);
+    }
+    res.json({ success: true, settings: settings });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/automation — Get automation settings
+app.get('/api/direct-mail/automation', authMiddleware, (req, res) => {
+  try {
+    const settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
+    res.json({ success: true, settings: settings || null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/campaigns/:id/recipients — Add recipient to campaign
+app.post('/api/direct-mail/campaigns/:id/recipients', authMiddleware, (req, res) => {
+  try {
+    const campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    const recipient = {
+      id: uuidv4(),
+      customer_id: req.user.id,
+      campaign_id: req.params.id,
+      name: req.body.name || '',
+      company: req.body.company || '',
+      address_line1: req.body.address_line1 || '',
+      address_line2: req.body.address_line2 || '',
+      city: req.body.city || '',
+      postcode: req.body.postcode || '',
+      country: req.body.country || 'United Kingdom',
+      lead_id: req.body.lead_id || '',
+      status: 'pending',
+      created_at: new Date().toISOString()
+    };
+    db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').run(recipient.id, recipient.customer_id, recipient.campaign_id, recipient.name, recipient.company, recipient.address_line1, recipient.address_line2, recipient.city, recipient.postcode, recipient.country, recipient.lead_id, recipient.status, recipient.created_at);
+    db.prepare('UPDATE direct_mail_campaigns SET target_count = target_count + 1, updated_at = ? WHERE id = ? AND customer_id = ?').run(new Date().toISOString(), req.params.id, req.user.id);
+    res.json({ success: true, recipient: recipient });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/stats — Get direct mail stats for customer
+app.get('/api/direct-mail/stats', authMiddleware, (req, res) => {
+  try {
+    const total = db.prepare('SELECT COUNT(*) as count FROM direct_mail_campaigns WHERE customer_id = ?').get(req.user.id);
+    const byStatus = db.prepare('SELECT status, COUNT(*) as count FROM direct_mail_campaigns WHERE customer_id = ? GROUP BY status').all(req.user.id);
+    const totalRecipients = db.prepare('SELECT COUNT(*) as count FROM direct_mail_recipients WHERE customer_id = ?').get(req.user.id);
+    const sentRecipients = db.prepare('SELECT COUNT(*) as count FROM direct_mail_recipients WHERE customer_id = ? AND status = \'sent\'').get(req.user.id);
+    const totalSpend = db.prepare('SELECT SUM(total_cost) as total FROM direct_mail_orders WHERE customer_id = ?').get(req.user.id);
+    res.json({ success: true, total_campaigns: total.count, by_status: byStatus, total_recipients: totalRecipients.count, sent_recipients: sentRecipients.count, total_spend: totalSpend.total || 0 });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // POST /api/test/delivery — manually trigger delivery for one customer
