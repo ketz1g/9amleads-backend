@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DM Admin - 9am Leads</title>
+<style>
+body{font-family:Inter,sans-serif;background:#07090f;color:#dce2f0;margin:0;padding:24px}
+.card{background:#0c0f1a;border:1px solid #151929;border-radius:12px;padding:20px;margin-bottom:16px}
+h1{font-size:22px;font-weight:800;font-family:Outfit,sans-serif}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.kpi{background:#0c0f1a;border:1px solid #151929;border-radius:10px;padding:14px;text-align:center}
+.kpi .num{font-size:22px;font-weight:900;color:#0ea5e9}
+.kpi .label{font-size:10px;color:#5a6280;margin-top:4px}
+.badge{display:inline-flex;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:600}
+.badge-green{background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.2)}
+.badge-red{background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.2)}
+.badge-orange{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.2)}
+.badge-blue{background:rgba(14,165,233,.12);color:#0ea5e9;border:1px solid rgba(14,165,233,.2)}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{text-align:left;padding:8px 10px;color:#5a6280;border-bottom:1px solid #151929;font-weight:600}
+td{padding:8px 10px;border-bottom:1px solid #0f1320;font-size:11px}
+tr:hover{background:rgba(14,165,233,.02)}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:none;color:#fff;font-family:inherit}
+.btn-primary{background:linear-gradient(135deg,#0ea5e9,#2563eb)}
+.btn-danger{background:#ef4444}
+.btn-outline{background:transparent;border:1px solid #151929;color:#8890b0}
+.btn-sm{padding:4px 8px;font-size:9px}
+input,select{padding:6px 10px;background:#080b14;border:1px solid #151929;border-radius:6px;color:#dce2f0;font-size:11px;font-family:inherit;margin:0 4px 4px 0}
+.tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;background:transparent;color:#8890b0;text-decoration:none}
+.tab.active{background:rgba(14,165,233,.1);border-color:rgba(14,165,233,.2);color:#0ea5e9}
+a{color:#0ea5e9;text-decoration:none}
+@media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div style="max-width:1200px;margin:0 auto">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+<h1><span style="color:#0ea5e9">&#128640;</span> Direct Mail Admin</h1>
+<a href="/admin/" style="font-size:12px;color:#5a6280">&larr; Back to Admin</a>
+</div>
+<div class="tabs" id="tabs">
+<a href="#" class="tab active" data-tab="overview">Overview</a>
+<a href="#" class="tab" data-tab="campaigns">Campaigns</a>
+<a href="#" class="tab" data-tab="logs">Provider Logs</a>
+<a href="#" class="tab" data-tab="pricing">Pricing</a>
+</div>
+<div id="dm-admin-content"><div style="text-align:center;padding:40px;color:#5a6280">Loading...</div></div>
+</div>
+<script>
+var TOKEN = prompt('Admin password:') || '';
+document.querySelectorAll('.tab').forEach(function(t) {
+  t.onclick = function() {
+    document.querySelectorAll('.tab').forEach(function(x) { x.className = 'tab'; });
+    this.className = 'tab active';
+    var tab = this.getAttribute('data-tab');
+    if (tab === 'campaigns') loadCampaigns();
+    else if (tab === 'logs') loadLogs();
+    else if (tab === 'pricing') loadPricing();
+    else loadOverview();
+  };
+});
+
+function api(path, opts) {
+  return fetch(path, Object.assign({ headers: { 'Authorization': 'Bearer ' + TOKEN } }, opts || {})).then(function(r) { return r.json(); });
+}
+
+function loadOverview() {
+  api('/api/admin/direct-mail/dashboard').then(function(d) {
+    if (!d.success) { document.getElementById('dm-admin-content').innerHTML = '<p style=color:#ef4444>Auth failed</p>'; return; }
+    var h = '<div class="kpi-grid">' +
+      '<div class="kpi"><div class="num">' + d.total_campaigns + '</div><div class="label">Total Campaigns</div></div>' +
+      '<div class="kpi"><div class="num">' + d.today_campaigns + '</div><div class="label">Today</div></div>' +
+      '<div class="kpi"><div class="num" style="color:#22c55e">' + d.letters_today + '</div><div class="label">Letters Today</div></div>' +
+      '<div class="kpi"><div class="num" style="color:#10b981">&pound;' + d.revenue_today.toFixed(2) + '</div><div class="label">Revenue Today</div></div>' +
+      '<div class="kpi"><div class="num" style="color:#f59e0b">&pound;' + d.profit_today.toFixed(2) + '</div><div class="label">Profit Today</div></div>' +
+      '<div class="kpi"><div class="num" style="color:#ef4444">' + d.failed_campaigns + '</div><div class="label">Failed</div></div>' +
+      '<div class="kpi"><div class="num" style="color:#6366f1">' + d.auto_send_active + '</div><div class="label">Auto Send</div></div>' +
+      '<div class="kpi"><div class="num">' + d.auto_send_paused + '</div><div class="label">Paused</div></div>' +
+      '<div class="kpi"><div class="num" style="color:' + (d.stripe_configured ? '#22c55e' : '#ef4444') + '">' + (d.stripe_configured ? 'OK' : 'NO') + '</div><div class="label">Stripe</div></div>' +
+      '<div class="kpi"><div class="num">' + d.provider + '</div><div class="label">Provider</div></div>' +
+      '</div>' +
+      '<button class="btn btn-primary btn-sm" onclick="runAutoSend()">Run Auto Send Now</button>';
+    document.getElementById('dm-admin-content').innerHTML = h;
+  });
+}
+
+function runAutoSend() {
+  api('/api/admin/direct-mail/run-auto-send', { method: 'POST' }).then(function(d) {
+    alert('Auto Send complete: ' + d.results.sent + ' sent, ' + d.results.failed + ' failed');
+    loadOverview();
+  });
+}
+
+function loadCampaigns() {
+  api('/api/admin/direct-mail/campaigns').then(function(d) {
+    var h = '<div style="font-size:13px;font-weight:700;color:#dce2f0;margin-bottom:10px">All Campaigns (' + d.total + ')</div>' +
+      '<div style="overflow-x:auto"><table><tr><th>Name</th><th>Customer</th><th>Status</th><th>Provider</th><th>Leads</th><th>Budget</th><th>Stripe</th><th>Actions</th></tr>';
+    (d.campaigns || []).forEach(function(c) {
+      var badge = c.status === 'completed' ? 'badge-green' : c.status === 'failed' ? 'badge-red' : c.status === 'draft' ? 'badge-orange' : 'badge-blue';
+      h += '<tr><td>' + c.name + '</td><td>' + c.customer_email + '</td><td><span class="badge ' + badge + '">' + c.status + '</span>' +
+        (c.provider_status ? ' <span class="badge badge-blue">' + c.provider_status + '</span>' : '') + '</td><td>' + (c.provider || '-') + '</td><td>' + (c.sent_count || c.target_count || 0) + '</td><td>&pound;' + (c.budget || 0) + '</td><td>' + (c.stripe_payment_status || '-') + '</td><td>' +
+        (c.status === 'failed' ? '<button class="btn btn-sm btn-primary" onclick="retryCampaign(\'' + c.id + '\')">Retry</button> ' : '') +
+        (c.status !== 'cancelled' && c.status !== 'completed' ? '<button class="btn btn-sm btn-danger" onclick="cancelCampaign(\'' + c.id + '\')">Cancel</button> ' : '') +
+        (c.stripe_payment_status === 'paid' ? '<button class="btn btn-sm btn-outline" onclick="refundCampaign(\'' + c.id + '\')">Refund</button> ' : '') +
+        '<button class="btn btn-sm btn-outline" onclick="syncCampaign(\'' + c.id + '\')">Sync</button>' +
+        '</td></tr>';
+    });
+    h += '</table></div>';
+    document.getElementById('dm-admin-content').innerHTML = h;
+  });
+}
+
+function loadLogs() {
+  api('/api/admin/direct-mail/provider-logs').then(function(d) {
+    var h = '<div style="font-size:13px;font-weight:700;color:#dce2f0;margin-bottom:10px">Provider Logs (' + d.total + ')</div><div style="overflow-x:auto"><table><tr><th>Time</th><th>Customer</th><th>Provider</th><th>Endpoint</th><th>Result</th><th>Error</th></tr>';
+    (d.logs || []).forEach(function(l) {
+      h += '<tr><td>' + new Date(l.created_at).toLocaleString() + '</td><td>' + l.customer_email + '</td><td>' + l.provider + '</td><td>' + l.endpoint + '</td><td>' + (l.success ? '<span style="color:#22c55e">OK</span>' : '<span style="color:#ef4444">FAIL</span>') + '</td><td style="color:#ef4444">' + (l.error_message || '') + '</td></tr>';
+    });
+    h += '</table></div>';
+    document.getElementById('dm-admin-content').innerHTML = h;
+  });
+}
+
+function loadPricing() {
+  api('/api/admin/direct-mail/pricing').then(function(d) {
+    var p = d.pricing;
+    var h = '<div style="font-size:13px;font-weight:700;color:#dce2f0;margin-bottom:10px">Pricing Configuration</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Min Fee (&pound;)</div><input type="number" id="pf-min" value="' + p.min_fee + '" style="width:100%"></div>' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Platform Fee (&pound;)</div><input type="number" id="pf-platform" value="' + p.platform_fee + '" style="width:100%"></div>' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Markup (%)</div><input type="number" id="pf-markup" value="' + p.markup_pct + '" style="width:100%"></div>' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">VAT (%)</div><input type="number" id="pf-vat" value="' + p.vat_pct + '" style="width:100%"></div>' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">AI Gen Fee (&pound;)</div><input type="number" id="pf-ai" value="' + p.ai_gen_fee + '" style="width:100%"></div>' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Auto Send Monthly (&pound;)</div><input type="number" id="pf-auto" value="' + p.auto_send_monthly_fee + '" style="width:100%"></div>' +
+      '</div><button class="btn btn-primary" onclick="savePricing()">Save Pricing</button>';
+    document.getElementById('dm-admin-content').innerHTML = h;
+  });
+}
+
+function savePricing() {
+  api('/api/admin/direct-mail/pricing', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      min_fee: document.getElementById('pf-min')?.value,
+      platform_fee: document.getElementById('pf-platform')?.value,
+      markup_pct: document.getElementById('pf-markup')?.value,
+      vat_pct: document.getElementById('pf-vat')?.value,
+      ai_gen_fee: document.getElementById('pf-ai')?.value,
+      auto_send_monthly_fee: document.getElementById('pf-auto')?.value
+    })
+  }).then(function(d) { alert(d.success ? 'Saved!' : d.error); });
+}
+
+function retryCampaign(id) {
+  api('/api/admin/direct-mail/campaigns/' + id + '/retry', { method: 'POST' }).then(function(d) { alert(d.message); loadCampaigns(); });
+}
+
+function cancelCampaign(id) {
+  if (!confirm('Cancel this campaign?')) return;
+  api('/api/admin/direct-mail/campaigns/' + id + '/cancel', { method: 'POST' }).then(function(d) { alert(d.message); loadCampaigns(); });
+}
+
+function refundCampaign(id) {
+  if (!confirm('Refund this campaign?')) return;
+  api('/api/admin/direct-mail/campaigns/' + id + '/refund', { method: 'POST' }).then(function(d) { alert(d.message); loadCampaigns(); });
+}
+
+function syncCampaign(id) {
+  api('/api/admin/direct-mail/campaigns/' + id + '/sync', { method: 'POST' }).then(function(d) {
+    alert('Provider status: ' + (d.provider_status || 'unknown'));
+    loadCampaigns();
+  });
+}
+
+loadOverview();
+</script>
+</body>
+</html>

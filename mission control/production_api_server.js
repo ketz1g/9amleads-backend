@@ -6936,6 +6936,189 @@ app.post('/api/admin/blog/generate-all', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== ADMIN DIRECT MAIL DASHBOARD =====
+
+// GET /api/admin/direct-mail/dashboard — Admin DM overview
+app.get('/api/admin/direct-mail/dashboard', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var thisMonth = today.substring(0, 7);
+
+    var allCampaigns = db2.direct_mail_campaigns || [];
+    var allSettings = db2.direct_mail_automation_settings || [];
+    var allLogs = db2.direct_mail_provider_logs || [];
+
+    var todayCampaigns = allCampaigns.filter(function(c) { return c.created_at && c.created_at.startsWith(today); });
+    var failedCampaigns = allCampaigns.filter(function(c) { return c.status === 'failed'; });
+    var sentToday = todayCampaigns.filter(function(c) { return c.status === 'completed' || c.status === 'dispatched' || c.status === 'queued'; });
+    var lettersToday = 0;
+    sentToday.forEach(function(c) { lettersToday += (c.sent_count || c.target_count || 0); });
+    var autoSendActive = allSettings.filter(function(s) { return s.enable_auto_send && s.consent_given; }).length;
+    var autoSendPaused = db2.customers ? db2.customers.filter(function(c) { return c.auto_send_paused; }).length : 0;
+
+    // Revenue/profit (use pricing model)
+    var revenueToday = 0;
+    var profitToday = 0;
+    todayCampaigns.forEach(function(c) {
+      var budget = Number(c.budget || 0);
+      revenueToday += budget;
+      var provCost = budget * 0.6; // Rough estimate: 60% provider cost
+      profitToday += (budget - provCost);
+    });
+
+    // Customers with campaigns
+    var customerIds = {};
+    allCampaigns.forEach(function(c) { customerIds[c.customer_id] = true; });
+    var campaignCustomerCount = Object.keys(customerIds).length;
+
+    res.json({
+      success: true,
+      total_campaigns: allCampaigns.length,
+      today_campaigns: todayCampaigns.length,
+      sent_today: sentToday.length,
+      letters_today: lettersToday,
+      failed_campaigns: failedCampaigns.length,
+      revenue_today: Math.round(revenueToday * 100) / 100,
+      profit_today: Math.round(profitToday * 100) / 100,
+      auto_send_active: autoSendActive,
+      auto_send_paused: autoSendPaused,
+      campaign_customers: campaignCustomerCount,
+      provider_logs_count: allLogs.length,
+      stripe_configured: !!STRIPE_SECRET_KEY,
+      provider: DIRECT_MAIL_PROVIDER
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/direct-mail/campaigns — All campaigns
+app.get('/api/admin/direct-mail/campaigns', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var campaigns = (db2.direct_mail_campaigns || []).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    var expanded = campaigns.map(function(c) {
+      var cust = db2.customers ? db2.customers.find(function(cu) { return cu.id === c.customer_id; }) : null;
+      return {
+        id: c.id, name: c.name, customer_email: cust ? cust.email : 'unknown', customer_company: cust ? cust.company : '',
+        status: c.status, provider: c.provider, provider_campaign_id: c.provider_campaign_id,
+        provider_status: c.provider_status, stripe_payment_status: c.stripe_payment_status,
+        target_count: c.target_count, sent_count: c.sent_count, budget: c.budget,
+        created_at: c.created_at, updated_at: c.updated_at
+      };
+    });
+    res.json({ success: true, campaigns: expanded, total: expanded.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/direct-mail/campaigns/:id/retry — Retry a failed campaign
+app.post('/api/admin/direct-mail/campaigns/:id/retry', adminAuth, async (req, res) => {
+  try {
+    var db2 = getDb();
+    var campaign = db2.direct_mail_campaigns ? db2.direct_mail_campaigns.find(function(c) { return c.id === req.params.id; }) : null;
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ?').run('approved', new Date().toISOString(), req.params.id);
+    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), campaign.customer_id, req.params.id, campaign.status, 'approved', 'admin', 'Manually retried by admin', new Date().toISOString());
+    res.json({ success: true, message: 'Campaign reset to approved for retry' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/direct-mail/campaigns/:id/cancel — Cancel a campaign
+app.post('/api/admin/direct-mail/campaigns/:id/cancel', adminAuth, (req, res) => {
+  try {
+    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(req.params.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ?').run('cancelled', new Date().toISOString(), req.params.id);
+    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), campaign.customer_id, req.params.id, campaign.status, 'cancelled', 'admin', 'Cancelled by admin', new Date().toISOString());
+    res.json({ success: true, message: 'Campaign cancelled' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/direct-mail/campaigns/:id/refund — Mark as refunded
+app.post('/api/admin/direct-mail/campaigns/:id/refund', adminAuth, (req, res) => {
+  try {
+    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(req.params.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run('refunded', 'cancelled', new Date().toISOString(), req.params.id);
+    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), campaign.customer_id, req.params.id, campaign.status, 'cancelled', 'admin', 'Payment refunded by admin', new Date().toISOString());
+    res.json({ success: true, message: 'Campaign refunded' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/direct-mail/campaigns/:id/sync — Manually sync provider status
+app.post('/api/admin/direct-mail/campaigns/:id/sync', adminAuth, async (req, res) => {
+  try {
+    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(req.params.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    if (!campaign.provider_campaign_id) return res.status(400).json({ error: 'No provider campaign ID' });
+    var provider = getDirectMailProvider();
+    var statusResult = await provider.getCampaignStatus(campaign.provider_campaign_id);
+    if (!statusResult.success) return res.status(500).json({ error: statusResult.error || 'Sync failed' });
+    res.json({ success: true, provider_status: statusResult.status, provider_campaign_id: campaign.provider_campaign_id, raw: statusResult });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/direct-mail/customers/:id/suspend-auto-send — Suspend customer Auto Send
+app.post('/api/admin/direct-mail/customers/:id/suspend-auto-send', adminAuth, (req, res) => {
+  try {
+    db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(req.body.paused !== false ? 1 : 0, req.params.id);
+    res.json({ success: true, message: 'Auto Send ' + (req.body.paused !== false ? 'suspended' : 'resumed') });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/direct-mail/provider-logs — Get provider logs
+app.get('/api/admin/direct-mail/provider-logs', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var logs = (db2.direct_mail_provider_logs || []).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); }).slice(0, 200);
+    var expanded = logs.map(function(l) {
+      var cust = db2.customers ? db2.customers.find(function(c) { return c.id === l.customer_id; }) : null;
+      return { id: l.id, customer_email: cust ? cust.email : 'unknown', campaign_id: l.campaign_id, provider: l.provider, endpoint: l.endpoint, success: l.success, error_message: l.error_message, created_at: l.created_at, request_body: l.request_body ? l.request_body.substring(0, 300) : '', response_body: l.response_body ? l.response_body.substring(0, 300) : '' };
+    });
+    res.json({ success: true, logs: expanded, total: logs.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/direct-mail/pricing — Get pricing config
+app.get('/api/admin/direct-mail/pricing', adminAuth, (req, res) => {
+  res.json({ success: true, pricing: DM_PRICE_CONFIG });
+});
+
+// POST /api/admin/direct-mail/pricing — Update pricing config
+app.post('/api/admin/direct-mail/pricing', adminAuth, (req, res) => {
+  try {
+    var newPricing = {
+      min_fee: parseFloat(req.body.min_fee) || DM_PRICE_CONFIG.min_fee,
+      platform_fee: parseFloat(req.body.platform_fee) || DM_PRICE_CONFIG.platform_fee,
+      markup_pct: parseFloat(req.body.markup_pct) || DM_PRICE_CONFIG.markup_pct,
+      ai_gen_fee: parseFloat(req.body.ai_gen_fee) || DM_PRICE_CONFIG.ai_gen_fee,
+      auto_send_monthly_fee: parseFloat(req.body.auto_send_monthly_fee) || DM_PRICE_CONFIG.auto_send_monthly_fee,
+      vat_pct: parseFloat(req.body.vat_pct) || DM_PRICE_CONFIG.vat_pct
+    };
+    var fs2 = require('fs');
+    fs2.writeFileSync(path.join(DATA_DIR, 'dm-pricing.json'), JSON.stringify(newPricing, null, 2));
+    DM_PRICE_CONFIG = newPricing;
+    res.json({ success: true, pricing: newPricing });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/direct-mail/run-auto-send — Trigger Auto Send
+app.post('/api/admin/direct-mail/run-auto-send', adminAuth, async (req, res) => {
+  try {
+    var results = await runAutoSend();
+    res.json({ success: true, results: results });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Static admin dashboard page
+app.get('/admin/direct-mail', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'publish', 'admin', 'direct-mail.html'));
+});
+
+// Static admin dashboard page
+app.get('/admin/direct-mail', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'publish', 'admin', 'direct-mail.html'));
+});
+
 // POST /api/admin/run-scrapers — manually trigger all scrapers now
 app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
   try {
