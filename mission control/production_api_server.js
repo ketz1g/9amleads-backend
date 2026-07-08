@@ -211,6 +211,37 @@ let _dbData = null;
 let _dbLock = Promise.resolve();
 var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs'];
 
+// Direct Mail feature access by plan
+var DM_FEATURE_ACCESS = {
+  manual_send: { free_trial: true, starter: true, pro: true, enterprise: true, label: 'Manual Campaign Sending', desc: 'Send direct mail campaigns manually' },
+  upload_materials: { free_trial: true, starter: true, pro: true, enterprise: true, label: 'Upload Materials', desc: 'Upload your own flyers and letters' },
+  ai_letter: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'AI Letter Generator', desc: 'Generate introduction letters with AI' },
+  ai_flyer: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'AI Flyer Generator', desc: 'Generate flyer content with AI' },
+  saved_templates: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'Saved Templates', desc: 'Save and reuse templates' },
+  campaign_history: { free_trial: true, starter: true, pro: true, enterprise: true, label: 'Campaign History', desc: 'View past campaign history' },
+  auto_send: { free_trial: false, starter: false, pro: false, enterprise: true, label: 'Auto Send', desc: 'Automated daily mail campaigns' },
+  saved_payment: { free_trial: false, starter: false, pro: false, enterprise: true, label: 'Saved Payment Method', desc: 'Store a card for automatic payments' },
+  daily_summaries: { free_trial: false, starter: false, pro: false, enterprise: true, label: 'Daily Summaries', desc: 'Daily campaign summary emails' },
+  proof_tracking: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'Proof Tracking', desc: 'Track proof of posting' },
+  multi_templates: { free_trial: false, starter: false, pro: false, enterprise: true, label: 'Multiple Templates', desc: 'Multiple templates by lead type' },
+  ai_pdf_generator: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'AI Flyer PDF Generator', desc: 'Generate print-ready flyer PDFs' }
+};
+
+// Load DM feature access from file (admin-configurable)
+var DM_FEATURE_FILE = path.join(DATA_DIR, 'dm-features.json');
+try {
+  if (fs.existsSync(DM_FEATURE_FILE)) {
+    var loadedFeatures = JSON.parse(fs.readFileSync(DM_FEATURE_FILE, 'utf-8'));
+    for (var _dmf in loadedFeatures) { if (DM_FEATURE_ACCESS[_dmf]) DM_FEATURE_ACCESS[_dmf] = loadedFeatures[_dmf]; }
+  }
+} catch(e) { console.log('[DM-FEATURES] Config error:', e.message); }
+
+function customerCanUseDMFeature(customerPlan, featureKey) {
+  var feature = DM_FEATURE_ACCESS[featureKey];
+  if (!feature) return false;
+  return feature[customerPlan] === true;
+}
+
 function getDb() {
   if (!_dbData) { _dbData = loadDb(); }
   // Ensure all direct mail tables exist (for backward compatibility with existing DB files)
@@ -7161,9 +7192,46 @@ app.post('/api/admin/direct-mail/run-auto-send', adminAuth, async (req, res) => 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Static admin dashboard page
-app.get('/admin/direct-mail', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'publish', 'admin', 'direct-mail.html'));
+// GET /api/direct-mail/features — Get feature access for current customer
+app.get('/api/direct-mail/features', authMiddleware, (req, res) => {
+  try {
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    var plan = customer ? customer.plan : 'free_trial';
+    var features = {};
+    for (var _fk in DM_FEATURE_ACCESS) {
+      features[_fk] = {
+        accessible: customerCanUseDMFeature(plan, _fk),
+        label: DM_FEATURE_ACCESS[_fk].label,
+        desc: DM_FEATURE_ACCESS[_fk].desc
+      };
+    }
+    res.json({ success: true, plan: plan, features: features });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/direct-mail/features — Get all feature config (admin)
+app.get('/api/admin/direct-mail/features', adminAuth, (req, res) => {
+  res.json({ success: true, features: DM_FEATURE_ACCESS });
+});
+
+// POST /api/admin/direct-mail/features — Update feature config (admin)
+app.post('/api/admin/direct-mail/features', adminAuth, (req, res) => {
+  try {
+    var plans = ['free_trial','starter','pro','enterprise'];
+    for (var _fk2 in DM_FEATURE_ACCESS) {
+      if (req.body[_fk2]) {
+        for (var _pi = 0; _pi < plans.length; _pi++) {
+          var p = plans[_pi];
+          if (req.body[_fk2][p] !== undefined) {
+            DM_FEATURE_ACCESS[_fk2][p] = req.body[_fk2][p] ? true : false;
+          }
+        }
+      }
+    }
+    var fs2 = require('fs');
+    fs2.writeFileSync(DM_FEATURE_FILE, JSON.stringify(DM_FEATURE_ACCESS, null, 2));
+    res.json({ success: true, features: DM_FEATURE_ACCESS });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // Static admin dashboard page

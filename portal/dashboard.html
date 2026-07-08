@@ -1293,15 +1293,32 @@ function showDirectMailCentre(tab) {
     '<div id="dm-content" style="animation:slideUp .3s ease"><div style="text-align:center;padding:40px;color:var(--muted2)"><i class="fas fa-spinner fa-spin" style="font-size:20px;display:block;margin-bottom:10px"></i>Loading...</div></div></div>';
 
   var el = document.getElementById('dm-content');
-  if (tab === 'overview') { showDMOverview(el); }
-  else if (tab === 'create') { showDMCreate(el); }
-  else if (tab === 'ai-builder') { showDMLetterGen(el); }
-  else if (tab === 'upload') { showDMUpload(el); }
-  else if (tab === 'templates') { showDMTemplates(el); }
-  else if (tab === 'settings') { showDMSettings(el); }
-  else if (tab === 'history') { showDMHistory(el); }
-  else if (tab === 'proof') { el.innerHTML = '<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px"><h2 style="font-size:16px;font-weight:700">Proof of Sending</h2><button class="btn btn-outline btn-sm" onclick="dmRefreshProof()"><i class="fas fa-sync"></i> Refresh</button></div><div id="dm-proof-list"><div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div>'; dmRefreshProof(); }
-  else if (tab === 'payments') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-file-invoice-dollar" style="font-size:40px;color:var(--success);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Payments &amp; Invoices</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto">Payment history and invoices will appear here once your first campaign is submitted. Payments are processed securely through Stripe.</p></div>'; }
+  // Check feature access first
+  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', settings: 'auto_send', proof: 'proof_tracking' };
+  apiFetch('/api/direct-mail/features').then(function(fr) {
+    var plan = fr && fr.plan ? fr.plan : 'free_trial';
+    var features = fr && fr.features ? fr.features : {};
+
+    function canUse(featureKey) { return features[featureKey] && features[featureKey].accessible; }
+
+    // Show upgrade prompt if feature is locked
+    var lockedFeature = featureChecks[tab];
+    if (lockedFeature && !canUse(lockedFeature)) {
+      var label = features[lockedFeature] ? features[lockedFeature].label : 'This feature';
+      el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-lock" style="font-size:40px;color:var(--muted2);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Upgrade to Access</h2><p style="font-size:12px;color:var(--muted2);max-width:400px;margin:0 auto 20px">' + label + ' is available on the <strong>Pro</strong> plan and above. Upgrade to unlock all Direct Mail features.</p><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="showPlans()"><i class="fas fa-arrow-up"></i> View Plans</button><button class="btn btn-outline btn-sm" onclick="showDirectMailCentre(\'overview\')"><i class="fas fa-arrow-left"></i> Back to Overview</button></div></div>';
+      return;
+    }
+
+    if (tab === 'overview') { showDMOverview(el); }
+    else if (tab === 'create') { showDMCreate(el); }
+    else if (tab === 'ai-builder') { showDMLetterGen(el); }
+    else if (tab === 'upload') { showDMUpload(el); }
+    else if (tab === 'templates') { showDMTemplates(el); }
+    else if (tab === 'settings') { showDMSettings(el, canUse('auto_send')); }
+    else if (tab === 'history') { showDMHistory(el); }
+    else if (tab === 'proof') { el.innerHTML = '<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px"><h2 style="font-size:16px;font-weight:700">Proof of Sending</h2><button class="btn btn-outline btn-sm" onclick="dmRefreshProof()"><i class="fas fa-sync"></i> Refresh</button></div><div id="dm-proof-list"><div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div>'; dmRefreshProof(); }
+    else if (tab === 'payments') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-file-invoice-dollar" style="font-size:40px;color:var(--success);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Payments &amp; Invoices</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto">Payment history and invoices will appear here once your first campaign is submitted.</p></div>'; }
+  }).catch(function() { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted2)">Error loading features</div>'; });
 }
 
 var dmGenContent = null;
@@ -1855,7 +1872,7 @@ function dmDeleteTemplate(id) {
   });
 }
 
-function showDMSettings(el) {
+function showDMSettings(el, canAutoSend) {
   apiFetch('/api/direct-mail/automation').then(function(r) {
     var s = r && r.settings ? r.settings : {};
     var checked = function(field) { return s[field] ? 'checked' : ''; };
@@ -1869,10 +1886,11 @@ function showDMSettings(el) {
 
         // Enable/disable toggle
         '<div class="card" style="' + (s.enable_auto_send ? 'border:2px solid var(--success)' : '') + '">' +
-        '<label style="display:flex;align-items:center;gap:14px;padding:6px 0;cursor:pointer">' +
-        '<input type="checkbox" id="dm-enable" ' + checked('enable_auto_send') + ' style="accent-color:var(--success);width:20px;height:20px" onchange="dmToggleAutoSend()">' +
+        '<label style="display:flex;align-items:center;gap:14px;padding:6px 0;cursor:' + (canAutoSend ? 'pointer' : 'not-allowed') + '">' +
+        '<input type="checkbox" id="dm-enable" ' + checked('enable_auto_send') + ' style="accent-color:var(--success);width:20px;height:20px"' + (canAutoSend ? ' onchange="dmToggleAutoSend()"' : ' disabled') + '>' +
         '<div><div style="font-weight:700;font-size:15px;color:var(--text)">Automatically mail my new leads every day</div>' +
-        '<div style="font-size:11px;color:var(--muted2);margin-top:2px">Review your leads each morning and we\'ll mail them for you</div></div></label></div>' +
+        (canAutoSend ? '<div style="font-size:11px;color:var(--muted2);margin-top:2px">Review your leads each morning and we\'ll mail them for you</div>' : '<div style="font-size:11px;color:var(--warning);margin-top:2px">Available on the Premium plan. <a href="#" onclick="showPlans();return false" style="color:var(--primary)">Upgrade now</a></div>') +
+        '</div></label></div>' +
 
         // Settings panel (shown only when enabled)
         '<div id="dm-auto-panel" style="display:' + (s.enable_auto_send ? 'grid' : 'none') + ';gap:14px">' +
