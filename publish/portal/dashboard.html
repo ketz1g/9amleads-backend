@@ -531,6 +531,13 @@ async function showDemoDashboard(demo) {
 }
 
 async function loadDashboard() {
+  // Clear session if ?clear=1 is in URL
+  if (window.location.search.indexOf('clear=1') !== -1) {
+    localStorage.removeItem('mld_portal_session');
+    window.location.href = '/portal/';
+    return;
+  }
+
   const session = getSession(); if (!session) return;
 
   // Admin impersonation mode
