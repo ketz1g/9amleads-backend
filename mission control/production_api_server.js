@@ -1219,8 +1219,7 @@ app.get('/api/onboarding', authMiddleware, (req, res) => {
     var db2 = getDb();
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!customer) return res.status(404).json({ error: 'User not found' });
-
-    const leads = (db.leads || []).filter(l => l.customer_id === req.user.id);
+    const leads = (db2.leads || []).filter(l => l.customer_id === req.user.id);
     const hasLeads = leads.length > 0;
     const hasContacted = leads.some(l => l.lead_status === 'contacted' || l.lead_status === 'interested' || l.lead_status === 'quoted' || l.lead_status === 'won');
     const hasPipeline = leads.some(l => l.lead_status && l.lead_status !== 'new' && l.lead_status !== 'lost');
@@ -1618,8 +1617,8 @@ app.post('/api/success-centre/generate', authMiddleware, (req, res) => {
 // GET /api/dashboard â€” KPI summary data
 app.get('/api/dashboard', authMiddleware, (req, res) => {
   try {
-    const db = getDb();
-    const leads = (db.leads || []).filter(l => l.customer_id === req.user.id);
+    var db2 = getDb();
+    const leads = (db2.leads || []).filter(l => l.customer_id === req.user.id);
     const today = new Date().toISOString().split('T')[0];
     const thisWeek = (function(){ var d = new Date(); d.setDate(d.getDate() - (d.getDay() || 7) + 1); return d.toISOString().split('T')[0]; })();
     const thisMonth = today.substring(0, 7);
