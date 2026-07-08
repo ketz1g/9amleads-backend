@@ -209,7 +209,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 // ===== JSON DATABASE (drop-in replacement for better-sqlite3) =====
 let _dbData = null;
 let _dbLock = Promise.resolve();
-var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs'];
+var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates'];
 
 // Direct Mail feature access by plan
 var DM_FEATURE_ACCESS = {
@@ -8357,9 +8357,148 @@ app.post('/api/admin/campaign-packs/:id/toggle', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== TEMPLATE MARKETPLACE =====
+const MARKETPLACE_CATEGORIES = ['New Customer Introduction','Free Quote Offer','Discount Offer','Seasonal Campaign','Emergency Service Campaign','Local Awareness Campaign','Premium Service Campaign','Reminder Campaign'];
+
+function seedMarketplaceTemplates() {
+  try {
+    var db2 = getDb();
+    if (db2.marketplace_templates && db2.marketplace_templates.length > 0) return;
+    if (!db2.marketplace_templates) db2.marketplace_templates = [];
+    var defaults = [
+      { name:'Welcome to Our Service', category:'New Customer Introduction', headline:'Welcome! Here\'s How We Can Help', suggested_offer:'10% off your first booking', cta:'Claim Your Welcome Offer', instructions:'Send this to new leads within 24 hours of receiving their details. Personalise with their name and your specific services.' },
+      { name:'Free Quote Offer', category:'Free Quote Offer', headline:'Get a Free, No-Obligation Quote Today', suggested_offer:'Free detailed quote', cta:'Get Your Free Quote', instructions:'Use for any lead type. Emphasise that there is no obligation and no hidden fees.' },
+      { name:'Limited Time Discount', category:'Discount Offer', headline:'Limited Time Offer — 20% Off', suggested_offer:'20% discount for new customers', cta:'Claim Your Discount', instructions:'Create urgency by mentioning the limited-time nature of the offer. Follow up within 48 hours.' },
+      { name:'Seasonal Check-Up Offer', category:'Seasonal Campaign', headline:'Prepare for [Season] — Book Your Service Today', suggested_offer:'Seasonal maintenance check at a fixed price', cta:'Book Your Seasonal Service', instructions:'Tailor the season to the timing of your campaign. Spring cleaning, autumn checks, winter readiness.' },
+      { name:'Emergency Service Available', category:'Emergency Service Campaign', headline:'Emergency? We\'re Here to Help — Fast Response', suggested_offer:'Priority emergency dispatch', cta:'Call Our Emergency Line', instructions:'Keep this template ready for urgent lead types. Response time is critical — aim to contact within 30 minutes.' },
+      { name:'Proudly Serving Your Neighbourhood', category:'Local Awareness Campaign', headline:'Your Local [Business Type] — Serving [Area] for [X] Years', suggested_offer:'Free initial consultation', cta:'Meet Your Local Team', instructions:'Replace [Area] with the specific neighbourhood. Emphasise local knowledge and community roots.' },
+      { name:'Premium Service Experience', category:'Premium Service Campaign', headline:'Experience Premium [Service] — Book a Consultation', suggested_offer:'Complimentary premium consultation', cta:'Book Your Premium Consultation', instructions:'Target high-value leads. Use premium language and emphasise quality over price.' },
+      { name:'Just Checking In', category:'Reminder Campaign', headline:'We\'re Still Here When You Need Us', suggested_offer:'Repeat customer discount', cta:'Get in Touch', instructions:'Send to leads who didn\'t convert initially. Keep it light and helpful — not pushy.' }
+    ];
+    defaults.forEach(function(t) {
+      db2.marketplace_templates.push({
+        id: uuidv4(), is_default: 1, is_featured: 0, is_enabled: 1,
+        name: t.name, category: t.category, headline: t.headline,
+        suggested_offer: t.suggested_offer, cta: t.cta, instructions: t.instructions,
+        business_types: '', flyer_preview: '', letter_preview: '',
+        created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+      });
+    });
+    saveDb();
+    console.log('[MARKETPLACE] Seeded ' + defaults.length + ' templates');
+  } catch(e) { console.log('[MARKETPLACE] Seed error:', e.message); }
+}
+
+// GET /api/marketplace/templates — Browse marketplace templates
+app.get('/api/marketplace/templates', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var category = req.query.category || '';
+    var businessType = req.query.business_type || '';
+    var templates = (db2.marketplace_templates || []).filter(function(t) { return t.is_enabled; });
+    // Also include customer's saved custom templates
+    var custom = (db2.customer_marketplace_templates || []).filter(function(t) { return t.customer_id === req.user.id; });
+    templates = templates.concat(custom);
+    if (category) templates = templates.filter(function(t) { return t.category === category; });
+    if (businessType) templates = templates.filter(function(t) { return !t.business_types || t.business_types.indexOf(businessType) !== -1; });
+    res.json({ success: true, templates: templates, total: templates.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/marketplace/templates/:id — Get template details
+app.get('/api/marketplace/templates/:id', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var tpl = db2.marketplace_templates ? db2.marketplace_templates.find(function(t) { return t.id === req.params.id; }) : null;
+    if (!tpl) tpl = db2.customer_marketplace_templates ? db2.customer_marketplace_templates.find(function(t) { return t.id === req.params.id && t.customer_id === req.user.id; }) : null;
+    if (!tpl) return res.status(404).json({ error: 'Template not found' });
+    res.json({ success: true, template: tpl });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/marketplace/templates/save — Save marketplace template to customer account
+app.post('/api/marketplace/templates/save', authMiddleware, (req, res) => {
+  try {
+    var sourceId = req.body.source_id;
+    if (!sourceId) return res.status(400).json({ error: 'Source template ID required' });
+    var db2 = getDb();
+    var source = db2.marketplace_templates ? db2.marketplace_templates.find(function(t) { return t.id === sourceId; }) : null;
+    if (!source) return res.status(404).json({ error: 'Source template not found' });
+    if (!db2.customer_marketplace_templates) db2.customer_marketplace_templates = [];
+    db2.customer_marketplace_templates.push({
+      id: uuidv4(), customer_id: req.user.id, source_id: sourceId,
+      name: source.name + ' (Saved)', category: source.category,
+      headline: source.headline, suggested_offer: source.suggested_offer,
+      cta: source.cta, instructions: source.instructions,
+      flyer_preview: source.flyer_preview, letter_preview: source.letter_preview,
+      is_default: 0, is_enabled: 1, business_types: source.business_types || '',
+      created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+    });
+    saveDb();
+    res.json({ success: true, message: 'Template saved to your account' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/marketplace/templates/:id — Update customer's saved template
+app.put('/api/marketplace/templates/:id', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var idx = (db2.customer_marketplace_templates || []).findIndex(function(t) { return t.id === req.params.id && t.customer_id === req.user.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Template not found or not editable' });
+    Object.assign(db2.customer_marketplace_templates[idx], req.body, { id: req.params.id, updated_at: new Date().toISOString() });
+    saveDb();
+    res.json({ success: true, template: db2.customer_marketplace_templates[idx] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/marketplace/templates/:id — Remove customer's saved template
+app.delete('/api/marketplace/templates/:id', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var idx = (db2.customer_marketplace_templates || []).findIndex(function(t) { return t.id === req.params.id && t.customer_id === req.user.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Template not found' });
+    db2.customer_marketplace_templates.splice(idx, 1);
+    saveDb();
+    res.json({ success: true, message: 'Template removed' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin endpoints
+app.get('/api/admin/marketplace/templates', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    res.json({ success: true, default_templates: db2.marketplace_templates || [], customer_templates: db2.customer_marketplace_templates || [] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/marketplace/templates', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    if (!db2.marketplace_templates) db2.marketplace_templates = [];
+    var existingIdx = req.body.id ? db2.marketplace_templates.findIndex(function(t) { return t.id === req.body.id; }) : -1;
+    var data = { name: req.body.name || 'New Template', category: req.body.category || 'New Customer Introduction', headline: req.body.headline || '', suggested_offer: req.body.suggested_offer || '', cta: req.body.cta || '', instructions: req.body.instructions || '', flyer_preview: req.body.flyer_preview || '', letter_preview: req.body.letter_preview || '', business_types: req.body.business_types || '', is_featured: req.body.is_featured ? 1 : 0, is_enabled: req.body.is_enabled !== undefined ? (req.body.is_enabled ? 1 : 0) : 1 };
+    if (existingIdx !== -1) { Object.assign(db2.marketplace_templates[existingIdx], data, { updated_at: new Date().toISOString() }); }
+    else { data.id = uuidv4(); data.is_default = 1; data.created_at = new Date().toISOString(); data.updated_at = new Date().toISOString(); db2.marketplace_templates.push(data); }
+    saveDb();
+    res.json({ success: true, template: existingIdx !== -1 ? db2.marketplace_templates[existingIdx] : data });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/marketplace/templates/:id/toggle', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var idx = (db2.marketplace_templates || []).findIndex(function(t) { return t.id === req.params.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Template not found' });
+    db2.marketplace_templates[idx].is_enabled = db2.marketplace_templates[idx].is_enabled ? 0 : 1;
+    saveDb();
+    res.json({ success: true, is_enabled: db2.marketplace_templates[idx].is_enabled });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== START SERVER =====
 app.listen(PORT, () => {
   seedDefaultCampaignPacks();
+  seedMarketplaceTemplates();
   console.log('\n========================================');
   console.log('  9amLeads Production API Server');
   console.log('  Domain: www.9amleads.com');
