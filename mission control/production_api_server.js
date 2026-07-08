@@ -4500,7 +4500,7 @@ var CAMPAIGN_KITS = {
     icon: '\uD83C\uDFD7\uFE0F',
     color: '#10b981',
     summary: '16-email campaign \u00b7 5 letter templates \u00b7 3 flyer inserts \u00b7 4 follow-up sequences',
-    header: 'Here\'s exactly how successful builders and trades convert planning leads',
+    header: 'Here\'s exactly how successful builders and trades convert planning leads. ⚠️ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
     sections: [
       {
         title: 'Email Templates (16-Campaign)',
@@ -4573,7 +4573,7 @@ var CAMPAIGN_KITS = {
     icon: '\uD83D\uDE9A',
     color: '#ff6b35',
     summary: '12-email campaign \u00b7 4 letter templates \u00b7 3 flyer inserts \u00b7 4 follow-up sequences',
-    header: 'Here\'s exactly how successful agents and removal companies convert moving leads',
+    header: 'Here\'s exactly how successful agents and removal companies convert moving leads. ⚠️ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
     sections: []
   },
   probate: {
@@ -4581,7 +4581,7 @@ var CAMPAIGN_KITS = {
     icon: '\u2696\uFE0F',
     color: '#a855f7',
     summary: '14-email campaign \u00b7 4 letter templates \u00b7 3 flyer inserts \u00b7 4 follow-up sequences', 
-    header: 'Here\'s exactly how successful probate practitioners convert probate leads',
+    header: 'Here\'s exactly how successful probate practitioners convert probate leads. ⚠️ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
     sections: []
   },
   newbusiness: {
@@ -4589,7 +4589,7 @@ var CAMPAIGN_KITS = {
     icon: '\uD83C\uDFE2',
     color: '#06b6d4',
     summary: '10-email campaign \u00b7 3 letter templates \u00b7 2 flyer inserts \u00b7 3 follow-up sequences',
-    header: 'Here\'s exactly how successful agencies and consultants convert new business leads',
+    header: 'Here\'s exactly how successful agencies and consultants convert new business leads. ⚠️ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
     sections: []
   },
   tenders: {
@@ -4597,7 +4597,7 @@ var CAMPAIGN_KITS = {
     icon: '\uD83D\uDCCB',
     color: '#6366f1',
     summary: '8-email campaign \u00b7 3 letter templates \u00b7 2 flyer inserts \u00b7 4 follow-up sequences',
-    header: 'Here\'s exactly how successful contractors convert tender opportunities',
+    header: 'Here\'s exactly how successful contractors convert tender opportunities. ⚠️ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
     sections: []
   }
 };

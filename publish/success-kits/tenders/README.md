@@ -4,6 +4,8 @@
 
 Here's exactly how successful contractors convert tender opportunities.
 
+> ⚠️ **Important:** 9amLeads provides **addresses only** — we do not supply email addresses or phone numbers. You source those yourself. The most effective approach is posting a flyer + introduction letter either in person or via Royal Mail. In-person drops work best when you represent yourself professionally — sign-written company vehicle, branded uniform or smart attire, quality flyers, and a clear pitch.
+
 ---
 
 ## 📧 Email Templates (8-Campaign)
