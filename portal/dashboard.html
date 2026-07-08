@@ -536,6 +536,7 @@ async function loadDashboard() {
   loadOnboarding();
   loadPrompts();
   loadTips();
+  checkOnboarding();
   // Auto-refresh every 60 seconds
   if (window._refreshTimer) clearInterval(window._refreshTimer);
   window._refreshTimer = setInterval(function() {
@@ -873,6 +874,138 @@ async function loadCampaignDetail(product) {
     showModal(kit.icon + ' ' + kit.name, html, '800px');
   } catch(e) { showModal('Campaign', '<p style="color:var(--muted)">Could not load campaign details.</p>'); }
 }
+
+// Onboarding Wizard
+var ONBOARDING_STEPS = [
+  { id:'welcome', title:'Welcome to 9am Leads', icon:'fa-rocket', desc:'How the platform works' },
+  { id:'profile', title:'Business Profile', icon:'fa-building', desc:'Tell us about your business' },
+  { id:'materials', title:'Marketing Materials', icon:'fa-file-alt', desc:'Create your flyer and letter' },
+  { id:'template', title:'Save Your Template', icon:'fa-save', desc:'Save your materials as a template' },
+  { id:'campaign', title:'Your First Campaign', icon:'fa-bullhorn', desc:'Create a test campaign' },
+  { id:'payment', title:'Payment Setup', icon:'fa-credit-card', desc:'Add your payment method' },
+  { id:'autosend', title:'Auto Send (Optional)', icon:'fa-clock', desc:'Set up automatic mailing' },
+  { id:'complete', title:'Complete!', icon:'fa-check-circle', desc:'You\'re ready to go' }
+];
+
+function checkOnboarding() {
+  apiFetch('/api/onboarding/progress').then(function(r) {
+    if (!r || !r.success) return;
+    if (r.is_complete) return;
+    // Show wizard if not completed and not currently showing
+    if (!document.getElementById('onboarding-overlay')) showOnboardingWizard(r.current_step || 1);
+  });
+}
+
+function showOnboardingWizard(step) {
+  step = step || 1;
+  var existing = document.getElementById('onboarding-overlay');
+  if (existing) existing.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'onboarding-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)';
+  overlay.onclick = function(e) { if (e.target === overlay) {} };
+  var content = getOnboardingStep(step, step >= 7);
+  overlay.innerHTML = content;
+  document.body.appendChild(overlay);
+}
+
+function getOnboardingStep(step, canSkip) {
+  var s = ONBOARDING_STEPS[step - 1] || ONBOARDING_STEPS[0];
+  var progress = Math.round(step / ONBOARDING_STEPS.length * 100);
+  var dots = ONBOARDING_STEPS.map(function(st, i) {
+    var cls = i + 1 === step ? 'active' : i + 1 < step ? 'done' : '';
+    return '<div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:' + (cls === 'active' ? 'var(--primary)' : cls === 'done' ? 'var(--success)' : 'var(--card2)') + ';color:#fff;border:2px solid ' + (cls === 'active' ? 'var(--primary)' : cls === 'done' ? 'var(--success)' : 'var(--border)') + '">' + (cls === 'done' ? '✓' : (i + 1)) + '</div>';
+  }).join('');
+  var body = getStepBody(step);
+  var skipHtml = canSkip ? '<div style="text-align:center;margin-top:12px"><button class="btn btn-outline btn-sm" onclick="closeOnboarding()" style="font-size:11px">Skip & Finish Later</button></div>' : '';
+
+  // Calculate current completion for profile step
+  var completionInfo = '';
+  if (step === 2) {
+    apiFetch('/api/onboarding/progress').then(function(r) {
+      var el = document.getElementById('ob-completion');
+      if (el && r) el.textContent = 'Profile completion: ' + r.completion_pct + '%';
+    });
+    completionInfo = '<div id="ob-completion" style="font-size:11px;color:var(--muted2);margin-bottom:6px">Profile completion: 0%</div>';
+  }
+
+  var outer = '<div style="max-width:560px;width:100%;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:slideUp .3s ease">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">' +
+    '<div><div style="font-size:15px;font-weight:700;color:var(--text)">Step ' + step + ' of ' + ONBOARDING_STEPS.length + '</div>' +
+    '<div style="font-size:10px;color:var(--muted2)">' + progress + '% complete</div></div>' +
+    '<div style="display:flex;gap:4px">' + dots + '</div></div>' +
+    '<div style="padding:4px 0 16px">' + body + '</div>' +
+    skipHtml + '</div>';
+  return outer;
+}
+
+function getStepBody(step) {
+  if (step === 1) {
+    return '<div style="text-align:center;padding:4px 0"><div style="font-size:48px;margin-bottom:8px">&#127881;</div><div style="font-size:20px;font-weight:800;margin-bottom:6px;font-family:Outfit,sans-serif">Welcome to 9am Leads!</div><div style="font-size:12px;color:var(--muted2);line-height:1.7;margin-bottom:16px;text-align:left">' +
+      'Here\'s how the platform works:<br><br> <strong>Daily Leads</strong> — New sales opportunities delivered to your dashboard every morning at 9am.<br><br> <strong>Direct Mail Centre</strong> — Create and send professional flyers and letters by post from your dashboard.<br><br> <strong>AI Marketing Builder</strong> — Generate flyers, letters, and offers using AI.<br><br> <strong>Auto Send</strong> — Automatically mail your new leads every day.<br><br> <strong>Dashboard</strong> — Track everything in one place: leads, campaigns, analytics, and outcomes.</div>' +
+      '<button class="btn btn-primary" onclick="nextOnboardingStep(1)" style="width:100%;padding:14px"><i class="fas fa-arrow-right"></i> Start Setup</button></div>';
+  } else if (step === 2) {
+    return '<div style="text-align:center;padding:4px 0"><div style="font-size:40px;margin-bottom:8px">&#127970;</div><div style="font-size:18px;font-weight:700;margin-bottom:6px">Business Profile</div><div style="font-size:11px;color:var(--muted2);margin-bottom:10px">Complete your business details. This is used for AI flyers, letters, and campaigns.</div>' +
+      '<div id="ob-completion" style="font-size:11px;color:var(--muted2);margin-bottom:6px">Loading...</div>' +
+      '<button class="btn btn-primary" onclick="goToProfile()" style="width:100%;padding:12px"><i class="fas fa-building"></i> Complete Business Profile</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="nextOnboardingStep(2)" style="width:100%;margin-top:6px;font-size:11px">I\'ll do this later</button></div>';
+  } else if (step === 3) {
+    return '<div style="text-align:center;padding:4px 0"><div style="font-size:40px;margin-bottom:8px">&#128196;</div><div style="font-size:18px;font-weight:700;margin-bottom:6px">Marketing Materials</div><div style="font-size:11px;color:var(--muted2);margin-bottom:10px">Create your flyer and letter. Choose AI generation or upload your own.</div>' +
+      '<div style="display:grid;gap:6px"><button class="btn btn-primary" onclick="goToAIBuilder()" style="width:100%;padding:12px"><i class="fas fa-magic"></i> Generate with AI</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="goToUpload()" style="width:100%;font-size:11px"><i class="fas fa-upload"></i> Upload My Own</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="nextOnboardingStep(3)" style="width:100%;font-size:11px">Skip for now</button></div></div>';
+  } else if (step === 4) {
+    return '<div style="text-align:center;padding:4px 0"><div style="font-size:40px;margin-bottom:8px">&#128451;</div><div style="font-size:18px;font-weight:700;margin-bottom:6px">Save Your Template</div><div style="font-size:11px;color:var(--muted2);margin-bottom:10px">Save your flyer and letter as a template so you can reuse them in future campaigns.</div>' +
+      '<button class="btn btn-primary" onclick="goToTemplates()" style="width:100%;padding:12px"><i class="fas fa-save"></i> Go to Saved Templates</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="nextOnboardingStep(4)" style="width:100%;margin-top:6px;font-size:11px">Skip</button></div>';
+  } else if (step === 5) {
+    return '<div style="text-align:center;padding:4px 0"><div style="font-size:40px;margin-bottom:8px">&#128231;</div><div style="font-size:18px;font-weight:700;margin-bottom:6px">Your First Campaign</div><div style="font-size:11px;color:var(--muted2);line-height:1.6;margin-bottom:10px">Direct Mail campaigns let you send professional letters and flyers to your leads by post. Select leads, choose your materials, and send — all from your dashboard.</div>' +
+      '<button class="btn btn-primary" onclick="goToCampaign()" style="width:100%;padding:12px"><i class="fas fa-bullhorn"></i> Create Test Campaign</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="nextOnboardingStep(5)" style="width:100%;margin-top:6px;font-size:11px">Skip</button></div>';
+  } else if (step === 6) {
+    return '<div style="text-align:center;padding:4px 0"><div style="font-size:40px;margin-bottom:8px">&#128179;</div><div style="font-size:18px;font-weight:700;margin-bottom:6px">Payment Setup</div><div style="font-size:11px;color:var(--muted2);line-height:1.6;margin-bottom:10px">Add a payment method to pay for campaigns. Your card details are processed securely by Stripe. Auto Send can automatically charge your saved card for daily campaigns.</div>' +
+      '<button class="btn btn-primary" onclick="goToPayment()" style="width:100%;padding:12px"><i class="fas fa-credit-card"></i> Add Payment Method</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="nextOnboardingStep(6)" style="width:100%;margin-top:6px;font-size:11px">Skip</button></div>';
+  } else if (step === 7) {
+    return '<div style="text-align:center;padding:4px 0"><div style="font-size:40px;margin-bottom:8px">&#9200;</div><div style="font-size:18px;font-weight:700;margin-bottom:6px">Auto Send <span style="font-size:10px;color:var(--warning)">(Optional)</span></div><div style="font-size:11px;color:var(--muted2);line-height:1.6;margin-bottom:10px">Auto Send automatically mails your new leads every day. Set a daily spend limit to control costs. You need a saved template and payment method first.</div>' +
+      '<button class="btn btn-primary" onclick="goToAutoSend()" style="width:100%;padding:12px"><i class="fas fa-clock"></i> Set Up Auto Send</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="nextOnboardingStep(7)" style="width:100%;margin-top:6px;font-size:11px">Skip</button></div>';
+  } else if (step === 8) {
+    apiFetch('/api/onboarding/progress').then(function(r) {
+      var el = document.getElementById('ob-final-score');
+      if (el && r) el.textContent = r.completion_pct + '%';
+    });
+    return '<div style="text-align:center;padding:10px 0"><div style="font-size:56px;margin-bottom:8px">&#127881;</div><div style="font-size:20px;font-weight:800;margin-bottom:4px;font-family:Outfit,sans-serif;color:var(--success)">You\'re All Set!</div><div style="font-size:12px;color:var(--muted2);margin-bottom:4px">Your 9am Leads account is ready.</div>' +
+      '<div id="ob-final-score" style="font-size:36px;font-weight:900;color:var(--primary);margin:8px 0">Loading...</div><div style="font-size:11px;color:var(--muted2);margin-bottom:14px">Setup completion score</div>' +
+      '<button class="btn btn-primary" onclick="completeOnboarding()" style="width:100%;padding:14px"><i class="fas fa-th-large"></i> Go to Dashboard</button></div>';
+  }
+  return '<div style="text-align:center;padding:20px;color:var(--muted2)">Step not found</div>';
+}
+
+function nextOnboardingStep(currentStep) {
+  apiFetch('/api/onboarding/progress', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ current_step: currentStep + 1 }) });
+  showOnboardingWizard(currentStep + 1);
+}
+
+function closeOnboarding() {
+  var el = document.getElementById('onboarding-overlay');
+  if (el) el.remove();
+}
+
+function completeOnboarding() {
+  apiFetch('/api/onboarding/progress', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ current_step: 8, is_complete: true }) });
+  closeOnboarding();
+  // Show final completion modal
+  showModal('Setup Complete!', '<div style="text-align:center;padding:16px"><div style="font-size:48px;margin-bottom:8px">&#127881;</div><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--success)">Your account is fully set up!</div><div style="font-size:12px;color:var(--muted2);margin-bottom:10px">You now have access to all Direct Mail features. Start exploring your dashboard.</div><button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove()"><i class="fas fa-th-large"></i> Go to Dashboard</button></div>');
+}
+
+function goToProfile() { closeOnboarding(); showPage('business-profile'); }
+function goToAIBuilder() { closeOnboarding(); showDirectMailCentre('ai-builder'); }
+function goToUpload() { closeOnboarding(); showDirectMailCentre('upload'); }
+function goToTemplates() { closeOnboarding(); showDirectMailCentre('templates'); }
+function goToCampaign() { closeOnboarding(); showDirectMailCentre('create'); }
+function goToPayment() { closeOnboarding(); showDirectMailCentre('settings'); }
+function goToAutoSend() { closeOnboarding(); showDirectMailCentre('settings'); }
 
 async function loadDashboardData() {
   try {

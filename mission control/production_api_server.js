@@ -209,7 +209,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 // ===== JSON DATABASE (drop-in replacement for better-sqlite3) =====
 let _dbData = null;
 let _dbLock = Promise.resolve();
-var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates','seasonal_campaigns','postal_sequences','postal_sequence_steps','campaign_requests','campaign_notes'];
+var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates','seasonal_campaigns','postal_sequences','postal_sequence_steps','campaign_requests','campaign_notes','onboarding_progress'];
 
 // Direct Mail feature access by plan
 var DM_FEATURE_ACCESS = {
@@ -8948,6 +8948,65 @@ app.get('/api/direct-mail/outcomes', authMiddleware, (req, res) => {
       total_jobs_won: totalJobsWon, total_quotes: totalQuotes,
       overall_roi: overallRoi, avg_cost_per_win: avgCostPerWin
     });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== ONBOARDING WIZARD =====
+// GET /api/onboarding/progress — Get customer onboarding progress
+app.get('/api/onboarding/progress', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var progress = (db2.onboarding_progress || []).find(function(p) { return p.customer_id === req.user.id; });
+    var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+    var templates = db.prepare('SELECT COUNT(*) as count FROM direct_mail_templates WHERE customer_id = ?').get(req.user.id);
+    var campaigns = db.prepare('SELECT COUNT(*) as count FROM direct_mail_campaigns WHERE customer_id = ?').get(req.user.id);
+    var settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
+    var autoSendEnabled = settings && settings.enable_auto_send;
+    var hasPaymentMethod = false;
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (customer && customer.stripe_payment_method_id) hasPaymentMethod = true;
+    // Calculate completion
+    var steps = {
+      profile_complete: !!(profile && profile.company_name && profile.business_type),
+      materials_created: (templates && templates.count > 0),
+      campaign_created: (campaigns && campaigns.count > 0),
+      payment_setup: hasPaymentMethod,
+      auto_send_enabled: !!autoSendEnabled
+    };
+    var completedSteps = 0;
+    for (var k in steps) { if (steps[k]) completedSteps++; }
+    var totalSteps = Object.keys(steps).length;
+    var completionPct = Math.round(completedSteps / totalSteps * 100);
+    var currentStep = progress ? progress.current_step : 1;
+    var isComplete = progress ? progress.is_complete : false;
+    res.json({ success: true, current_step: currentStep, is_complete: isComplete, completion_pct: completionPct, steps: steps, profile_exists: !!profile, onboarding_started: !!progress });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/onboarding/progress — Save onboarding progress
+app.post('/api/onboarding/progress', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    if (!db2.onboarding_progress) db2.onboarding_progress = [];
+    var existing = db2.onboarding_progress.findIndex(function(p) { return p.customer_id === req.user.id; });
+    var entry = { customer_id: req.user.id, current_step: parseInt(req.body.current_step) || 1, is_complete: req.body.is_complete ? true : false, updated_at: new Date().toISOString() };
+    if (existing !== -1) { Object.assign(db2.onboarding_progress[existing], entry, { created_at: db2.onboarding_progress[existing].created_at }); }
+    else { entry.id = uuidv4(); entry.created_at = new Date().toISOString(); db2.onboarding_progress.push(entry); }
+    saveDb();
+    res.json({ success: true, progress: entry });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin: GET /api/admin/onboarding — View all customers' onboarding progress
+app.get('/api/admin/onboarding', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var progressEntries = db2.onboarding_progress || [];
+    var expanded = progressEntries.map(function(p) {
+      var cust = (db2.customers || []).find(function(c) { return c.id === p.customer_id; });
+      return Object.assign({}, p, { customer_email: cust ? cust.email : 'unknown', customer_company: cust ? cust.company : '' });
+    });
+    res.json({ success: true, entries: expanded, total: expanded.length, completed: expanded.filter(function(e) { return e.is_complete; }).length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
