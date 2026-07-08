@@ -2240,6 +2240,13 @@ function refreshSitemap() {
   fs.writeFileSync(path.join(__dirname, 'publish', 'sitemap.xml'), xml);
   fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), xml);
   try { fs.writeFileSync(path.join(__dirname, '9amleads', 'sitemap.xml'), xml); } catch(e2) {}
+  // Ping Google Search Console to trigger re-crawl
+  try {
+    var http = require('http');
+    var sitemapUrl = 'https://9amleads.com/sitemap.xml';
+    http.get('http://www.google.com/ping?sitemap=' + encodeURIComponent(sitemapUrl), function(gres) { gres.resume(); });
+    console.log('[SITEMAP] Pinged Google with sitemap URL');
+  } catch(e) { console.log('[SITEMAP] Google ping error: ' + e.message); }
 }
 
 // Daily blog post generation scheduler (11 AM â€” batch of 10)
