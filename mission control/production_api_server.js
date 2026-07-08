@@ -2447,10 +2447,10 @@ app.post('/api/ai/generate-offers', authMiddleware, async (req, res) => {
     if (result && result.choices && result.choices[0] && result.choices[0].message) {
       var content = result.choices[0].message.content;
       var offers = [];
-      var sections = content.split(/=== OFFER ===/);
+      var sections = content.split(/(?:=== OFFER ===|OFFER \d+:|^OFFER:)/mi);
       sections.forEach(function(s) {
         s = s.trim(); if (!s) return;
-        var g = function(label) { var m = s.match(new RegExp(label + ':\\s*([\\s\\S]*?)(?:\\n\\n(?:[A-Z ]+):|\\n===|$)', 'i')); return m ? m[1].trim() : ''; };
+        var g = function(label) { var variants = [label, label.toUpperCase()]; for (var vi=0;vi<variants.length;vi++) { var m = s.match(new RegExp(variants[vi].replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ':\\s*([\\s\\S]*?)(?:\\n(?:[A-Z ]+):|\\n===|\\n\\n|$)', 'i')); if (m && m[1].trim()) return m[1].trim(); } return ''; };
         var title = g('OFFER TITLE'); if (!title) return;
         offers.push({ title: title, type: g('OFFER TYPE'), explanation: g('SHORT EXPLANATION'), flyer_wording: g('FLYER WORDING'), letter_wording: g('LETTER WORDING'), call_to_action: g('CALL TO ACTION'), terms: g('TERMS') });
       });
