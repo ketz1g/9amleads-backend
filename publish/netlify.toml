@@ -2,8 +2,18 @@
   publish = "publish"
 
 [[redirects]]
+  from = "/googlebe0f016002d131d5.html"
+  to = "https://nineamleads-backend.onrender.com/googlebe0f016002d131d5.html"
+  status = 200
+
+[[redirects]]
   from = "/api/*"
   to = "https://nineamleads-backend.onrender.com/api/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/portal/*"
+  to = "https://nineamleads-backend.onrender.com/portal/:splat"
   status = 200
 
 [[headers]]
