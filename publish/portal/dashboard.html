@@ -1396,11 +1396,37 @@ function showDMCreate(el) {
       '<div style="margin-top:12px;padding:10px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)"><i class="fas fa-info-circle" style="color:#f59e0b;margin-right:4px"></i>By approving, you confirm the content is accurate. <strong>Test Mode — No real mail will be sent.</strong></div>' +
       '<div style="margin-top:12px"><button class="btn btn-primary" onclick="dmApproveAndSend()" style="width:100%;padding:12px"><i class="fas fa-check"></i> Approve &amp; Send Test Campaign</button></div></div>';
   } else if (step === 5) {
-    contentHtml = '<div id="dm-send-result"><div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-paper-plane" style="color:var(--success)"></i> Sending Campaign</div></div>' +
-      '<div style="text-align:center;padding:30px"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--primary);display:block;margin-bottom:12px"></i>' +
-      '<p style="font-size:14px;color:var(--text)">Sending to Mock Provider...</p><p style="font-size:11px;color:var(--muted2);margin-top:4px">Test Mode — No real mail will be sent</p></div></div></div>';
-    // Auto-send
-    dmExecuteSend();
+    var dmCampId = localStorage.getItem('dmCampaignId') || '';
+    contentHtml = '<div id="dm-send-result"><div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-credit-card" style="color:var(--primary)"></i> Payment &amp; Send</div></div>' +
+      '<div id="dm-payment-info"><div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i> Loading pricing...</div></div></div></div>';
+    // Load pricing info
+    if (dmCampId) {
+      apiFetch('/api/direct-mail/campaigns/' + dmCampId + '/pricing', { method:'POST' }).then(function(p) {
+        if (p && p.success) {
+          var pr = p.pricing;
+          var html = '<div style="display:grid;gap:8px;padding:8px 0">' +
+            '<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:12px"><span style="color:var(--text2)">Recipients</span><span style="font-weight:600">' + pr.recipient_count + '</span></div>' +
+            '<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:12px"><span style="color:var(--text2)">Provider Cost</span><span>&pound;' + pr.provider_cost.toFixed(2) + '</span></div>' +
+            '<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:12px"><span style="color:var(--text2)">Platform Fee</span><span>&pound;' + pr.platform_fee.toFixed(2) + '</span></div>' +
+            '<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:12px"><span style="color:var(--text2)">Markup (' + pr.markup_pct + '%)</span><span>&pound;' + pr.markup_amount.toFixed(2) + '</span></div>' +
+            (pr.vat_amount > 0 ? '<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:12px"><span style="color:var(--text2)">VAT</span><span>&pound;' + pr.vat_amount.toFixed(2) + '</span></div>' : '') +
+            '<div style="display:flex;justify-content:space-between;padding:8px 10px;font-size:14px;font-weight:800;border-top:1px solid var(--border)"><span>Total</span><span>&pound;' + pr.total.toFixed(2) + '</span></div>' +
+            '</div>' +
+            '<div style="padding:10px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.1);border-radius:8px;font-size:11px;color:var(--muted2);text-align:center">' +
+            '<i class="fas fa-lock" style="color:var(--primary);margin-right:4px"></i>Secured by Stripe · Test Mode — No real payment will be taken' +
+            '</div>' +
+            '<button class="btn btn-primary" onclick="dmStripeCheckout()" style="width:100%;padding:12px"><i class="fas fa-credit-card"></i> Pay with Card</button>';
+          document.getElementById('dm-payment-info').innerHTML = html;
+        } else {
+          document.getElementById('dm-payment-info').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-exclamation-circle"></i> Could not load pricing</div>';
+        }
+      }).catch(function() {
+        document.getElementById('dm-payment-info').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-exclamation-circle"></i> Error loading pricing</div>';
+      });
+    } else {
+      document.getElementById('dm-payment-info').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted2)">Campaign ready. <strong>Test Mode — No real payment will be taken.</strong></div>' +
+        '<button class="btn btn-primary" onclick="dmSkipPayment()" style="width:100%;padding:12px"><i class="fas fa-paper-plane"></i> Send Test Campaign (Free)</button>';
+    }
   }
 
   var navHtml = '<div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px">' +
@@ -1631,6 +1657,19 @@ function dmUpdateCount() {
 
 var dmSendingCampaignId = null;
 
+function dmStripeCheckout() {
+  var cid = localStorage.getItem('dmCampaignId');
+  if (!cid) { alert('No campaign found'); return; }
+  apiFetch('/api/direct-mail/campaigns/' + cid + '/checkout', { method:'POST' }).then(function(r) {
+    if (r && r.url) { window.location.href = r.url; }
+    else { alert(r?.error || 'Failed to create checkout'); }
+  });
+}
+
+function dmSkipPayment() {
+  dmExecuteSend();
+}
+
 function dmApproveAndSend() {
   var name = localStorage.getItem('dmCampaignName') || 'Test Campaign ' + new Date().toLocaleDateString();
   var leadIds = Object.keys(dmSelectedLeads);
@@ -1640,6 +1679,7 @@ function dmApproveAndSend() {
   })}).then(function(r) {
     if (r && r.success) {
       dmSendingCampaignId = r.campaign.id;
+      localStorage.setItem('dmCampaignId', r.campaign.id);
       // Add selected leads as recipients
       var addPromises = [];
       var validLeads = dmAllLeads.filter(function(l) { return leadIds.indexOf(l.id) !== -1; });

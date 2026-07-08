@@ -3722,6 +3722,92 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
   }
 });
 
+// ===== DIRECT MAIL PAYMENTS =====
+var DM_PRICE_CONFIG = { min_fee: 15, platform_fee: 2, markup_pct: 25, ai_gen_fee: 5, auto_send_monthly_fee: 10, vat_pct: 0 };
+try {
+  var dmPricingFile = path.join(DATA_DIR, 'dm-pricing.json');
+  if (fs.existsSync(dmPricingFile)) DM_PRICE_CONFIG = JSON.parse(fs.readFileSync(dmPricingFile, 'utf-8'));
+} catch(e) { console.log('[DM-PRICE] Config error:', e.message); }
+
+function calcDmPrice(recipientCount, providerCostPerUnit) {
+  var pCost = providerCostPerUnit || 0.75;
+  var providerCost = recipientCount * pCost;
+  var subTotal = providerCost + DM_PRICE_CONFIG.platform_fee;
+  var markup = subTotal * (DM_PRICE_CONFIG.markup_pct / 100);
+  var beforeVat = subTotal + markup;
+  if (beforeVat < DM_PRICE_CONFIG.min_fee) beforeVat = DM_PRICE_CONFIG.min_fee;
+  var vat = beforeVat * (DM_PRICE_CONFIG.vat_pct / 100);
+  var total = Math.round((beforeVat + vat) * 100) / 100;
+  return { provider_cost: providerCost, platform_fee: DM_PRICE_CONFIG.platform_fee, markup_pct: DM_PRICE_CONFIG.markup_pct, markup_amount: Math.round(markup * 100) / 100, vat_pct: DM_PRICE_CONFIG.vat_pct, vat_amount: Math.round(vat * 100) / 100, subtotal: Math.round(subTotal * 100) / 100, total: total, min_fee_applied: beforeVat > (subTotal + markup) };
+}
+
+// POST /api/direct-mail/campaigns/:id/pricing — Calculate campaign price
+app.post('/api/direct-mail/campaigns/:id/pricing', authMiddleware, (req, res) => {
+  try {
+    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    var recipients = db.prepare('SELECT COUNT(*) as count FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ? AND status != \'failed\'').get(req.params.id, req.user.id);
+    var count = Math.max(1, recipients.count || campaign.target_count || 1);
+    var pricing = calcDmPrice(count);
+    pricing.recipient_count = count;
+    pricing.ai_gen_fee = DM_PRICE_CONFIG.ai_gen_fee;
+    pricing.auto_send_fee = DM_PRICE_CONFIG.auto_send_monthly_fee;
+    res.json({ success: true, pricing: pricing });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/campaigns/:id/checkout — Create Stripe checkout for campaign
+app.post('/api/direct-mail/campaigns/:id/checkout', authMiddleware, async (req, res) => {
+  try {
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    if (campaign.status !== 'approved') return res.status(400).json({ error: 'Campaign must be approved before payment' });
+    if (campaign.stripe_payment_id) return res.status(400).json({ error: 'Campaign already has a pending payment' });
+
+    var recipients = db.prepare('SELECT COUNT(*) as count FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ? AND status != \'failed\'').get(req.params.id, req.user.id);
+    var count = Math.max(1, recipients.count || campaign.target_count || 1);
+    var pricing = calcDmPrice(count);
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    var amountPence = Math.round(pricing.total * 100); // Stripe uses pence/cents
+
+    var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    var sessionBody = {
+      mode: 'payment',
+      customer_email: customer.email,
+      'line_items[0][price_data][currency]': 'gbp',
+      'line_items[0][price_data][product_data][name]': 'Direct Mail Campaign: ' + campaign.name,
+      'line_items[0][price_data][product_data][description]': count + ' recipients · Provider cost £' + pricing.provider_cost.toFixed(2) + ' · Platform fee £' + pricing.platform_fee.toFixed(2),
+      'line_items[0][price_data][unit_amount]': String(amountPence),
+      'line_items[0][quantity]': '1',
+      success_url: baseUrl + '/portal/dashboard.html?dm_payment=success&campaign_id=' + campaign.id,
+      cancel_url: baseUrl + '/portal/dashboard.html?dm_payment=cancel&campaign_id=' + campaign.id,
+      'metadata[customer_id]': customer.id,
+      'metadata[campaign_id]': campaign.id,
+      'metadata[type]': 'direct_mail_campaign',
+      'metadata[recipient_count]': String(count),
+      'metadata[total_amount]': String(amountPence)
+    };
+
+    var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
+    if (session.url) {
+      db.prepare('UPDATE direct_mail_campaigns SET stripe_session_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(session.id, 'pending', new Date().toISOString(), req.params.id, req.user.id);
+      res.json({ url: session.url, session_id: session.id });
+    } else {
+      res.status(400).json({ error: session.error?.message || 'Checkout creation failed' });
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/campaigns/:id/payment — Get payment status
+app.get('/api/direct-mail/campaigns/:id/payment', authMiddleware, (req, res) => {
+  try {
+    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    res.json({ success: true, stripe_session_id: campaign.stripe_session_id || '', stripe_payment_id: campaign.stripe_payment_id || '', stripe_payment_status: campaign.stripe_payment_status || '' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Stripe webhook — receives checkout.session.completed events
 // IMPORTANT: This route uses raw body parser for Stripe signature verification
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -3767,6 +3853,21 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           saveDb();
           console.log('[WEBHOOK] Extra area purchased:', custRecord.email, 'now has', newExtra, 'extra areas');
         }
+        return res.json({ received: true });
+      }
+
+      // Handle direct mail campaign payment
+      if (type === 'direct_mail_campaign') {
+        var campaignId = session.metadata?.campaign_id;
+        if (!campaignId) { console.log('[WEBHOOK] Missing campaign_id in direct_mail metadata'); return res.json({ received: true }); }
+        var campaignRecord = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(campaignId);
+        if (!campaignRecord) { console.log('[WEBHOOK] Campaign not found:', campaignId); return res.json({ received: true }); }
+        if (campaignRecord.stripe_payment_status === 'paid') { console.log('[WEBHOOK] Duplicate webhook - campaign already paid:', campaignId); return res.json({ received: true }); }
+
+        var paymentId = session.payment_intent || session.id || '';
+        db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run(paymentId, 'paid', 'paid', new Date().toISOString(), campaignId);
+        db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaignId, 'approved', 'paid', 'system', 'Payment received: ' + paymentId, new Date().toISOString());
+        console.log('[WEBHOOK] Campaign payment received:', campaignRecord.name, 'ID:', paymentId);
         return res.json({ received: true });
       }
 
@@ -3870,6 +3971,21 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           console.log('[WEBHOOK] Payment succeeded:', invSub.customer_id, '-', invSub.plan, '-', amount);
         }
       }
+    }
+
+    // Handle refunds (direct mail campaigns)
+    if (event.type === 'charge.refunded') {
+      var refundCharge = event.data.object;
+      var refundPaymentId = refundCharge.payment_intent || refundCharge.id || '';
+      var refundCamp = db.prepare('SELECT * FROM direct_mail_campaigns WHERE stripe_payment_id = ?').get(refundPaymentId);
+      if (refundCamp) {
+        var prevStatus = refundCamp.status;
+        var refundAmount = refundCharge.amount_refunded ? '£' + (refundCharge.amount_refunded / 100).toFixed(2) : 'unknown';
+        db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run('refunded', 'cancelled', new Date().toISOString(), refundCamp.id);
+        db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), refundCamp.customer_id, refundCamp.id, prevStatus, 'cancelled', 'system', 'Payment refunded: ' + refundAmount, new Date().toISOString());
+        console.log('[WEBHOOK] Campaign refunded:', refundCamp.name, refundAmount);
+      }
+      res.json({ received: true }); return;
     }
 
     // Handle failed invoice payment
@@ -5125,10 +5241,15 @@ app.post('/api/direct-mail/campaigns', authMiddleware, (req, res) => {
       delivery_date: req.body.delivery_date || '',
       budget: req.body.budget || 0,
       notes: req.body.notes || '',
+      provider: '',
+      provider_campaign_id: '',
+      stripe_session_id: '',
+      stripe_payment_id: '',
+      stripe_payment_status: '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
-    db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(campaign.id, campaign.customer_id, campaign.name, campaign.description, campaign.status, campaign.template_id, campaign.material_id, campaign.target_count, campaign.sent_count, campaign.delivery_date, campaign.budget, campaign.notes, campaign.created_at, campaign.updated_at);
+    db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(campaign.id, campaign.customer_id, campaign.name, campaign.description, campaign.status, campaign.template_id, campaign.material_id, campaign.target_count, campaign.sent_count, campaign.delivery_date, campaign.budget, campaign.notes, campaign.provider, campaign.provider_campaign_id, campaign.stripe_session_id, campaign.stripe_payment_id, campaign.stripe_payment_status, campaign.created_at, campaign.updated_at);
     // Log initial status
     db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, campaign.id, '', 'draft', 'customer', 'Campaign created', new Date().toISOString());
     res.json({ success: true, campaign: campaign });
