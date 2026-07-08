@@ -209,7 +209,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 // ===== JSON DATABASE (drop-in replacement for better-sqlite3) =====
 let _dbData = null;
 let _dbLock = Promise.resolve();
-var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates','seasonal_campaigns','postal_sequences','postal_sequence_steps','campaign_requests'];
+var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates','seasonal_campaigns','postal_sequences','postal_sequence_steps','campaign_requests','campaign_notes'];
 
 // Direct Mail feature access by plan
 var DM_FEATURE_ACCESS = {
@@ -8875,6 +8875,79 @@ app.post('/api/admin/direct-mail/requests/:id/create-campaign', adminAuth, (req,
     requestData.status = 'draft_preparing'; requestData.updated_at = new Date().toISOString();
     saveDb();
     res.json({ success: true, campaign: campaign });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== CAMPAIGN NOTES & OUTCOMES =====
+// POST /api/direct-mail/campaigns/:id/outcome — Add/update outcome for a campaign
+app.post('/api/direct-mail/campaigns/:id/outcome', authMiddleware, (req, res) => {
+  try {
+    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    var db2 = getDb();
+    if (!db2.campaign_notes) db2.campaign_notes = [];
+    var existing = db2.campaign_notes.findIndex(function(n) { return n.campaign_id === req.params.id && n.customer_id === req.user.id; });
+    var entry = {
+      campaign_id: req.params.id, customer_id: req.user.id,
+      notes: req.body.notes || '',
+      calls_received: parseInt(req.body.calls_received) || 0,
+      quotes_booked: parseInt(req.body.quotes_booked) || 0,
+      jobs_won: parseInt(req.body.jobs_won) || 0,
+      estimated_revenue: parseFloat(req.body.estimated_revenue) || 0,
+      actual_revenue: parseFloat(req.body.actual_revenue) || 0,
+      customer_feedback: req.body.customer_feedback || '',
+      follow_up_date: req.body.follow_up_date || '',
+      updated_at: new Date().toISOString()
+    };
+    if (existing !== -1) { Object.assign(db2.campaign_notes[existing], entry); }
+    else { entry.id = uuidv4(); entry.created_at = new Date().toISOString(); db2.campaign_notes.push(entry); }
+    saveDb();
+    // Calculate ROI
+    var spend = parseFloat(campaign.budget) || 0;
+    var revenue = entry.actual_revenue || entry.estimated_revenue || 0;
+    var roi = spend > 0 ? ((revenue - spend) / spend * 100).toFixed(0) : 0;
+    var costPerWin = entry.jobs_won > 0 ? (spend / entry.jobs_won).toFixed(2) : 0;
+    res.json({ success: true, outcome: entry, roi: roi, cost_per_win: costPerWin, spend: spend });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/campaigns/:id/outcome — Get outcome for a campaign
+app.get('/api/direct-mail/campaigns/:id/outcome', authMiddleware, (req, res) => {
+  try {
+    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    var db2 = getDb();
+    var entry = (db2.campaign_notes || []).find(function(n) { return n.campaign_id === req.params.id && n.customer_id === req.user.id; }) || null;
+    var spend = parseFloat(campaign.budget) || 0;
+    var revenue = entry ? (entry.actual_revenue || entry.estimated_revenue || 0) : 0;
+    var roi = spend > 0 ? ((revenue - spend) / spend * 100).toFixed(0) : 0;
+    var costPerWin = entry && entry.jobs_won > 0 ? (spend / entry.jobs_won).toFixed(2) : 0;
+    res.json({ success: true, outcome: entry, roi: roi, cost_per_win: costPerWin, spend: spend });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/outcomes — Get all outcomes for customer (for analytics)
+app.get('/api/direct-mail/outcomes', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var notes = (db2.campaign_notes || []).filter(function(n) { return n.customer_id === req.user.id; });
+    var campaigns = db.prepare('SELECT * FROM direct_mail_campaigns WHERE customer_id = ?').all(req.user.id);
+    var totalSpend = 0; var totalRevenue = 0; var totalJobsWon = 0; var totalQuotes = 0;
+    notes.forEach(function(n) {
+      var c = campaigns.find(function(c2) { return c2.id === n.campaign_id; });
+      var spend = c ? parseFloat(c.budget) || 0 : 0;
+      totalSpend += spend;
+      totalRevenue += (n.actual_revenue || n.estimated_revenue || 0);
+      totalJobsWon += n.jobs_won || 0;
+      totalQuotes += n.quotes_booked || 0;
+    });
+    var overallRoi = totalSpend > 0 ? ((totalRevenue - totalSpend) / totalSpend * 100).toFixed(0) : 0;
+    var avgCostPerWin = totalJobsWon > 0 ? (totalSpend / totalJobsWon).toFixed(2) : 0;
+    res.json({
+      success: true, outcomes: notes, total_spend: totalSpend, total_revenue: totalRevenue,
+      total_jobs_won: totalJobsWon, total_quotes: totalQuotes,
+      overall_roi: overallRoi, avg_cost_per_win: avgCostPerWin
+    });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
