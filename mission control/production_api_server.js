@@ -8951,6 +8951,56 @@ app.get('/api/direct-mail/outcomes', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== DEMO MODE =====
+var DEMO_MODE_ENABLED = false;
+var DEMO_MODE_FILE = path.join(DATA_DIR, 'demo-mode.json');
+try { if (fs.existsSync(DEMO_MODE_FILE)) DEMO_MODE_ENABLED = JSON.parse(fs.readFileSync(DEMO_MODE_FILE, 'utf-8')).enabled === true; } catch(e) {}
+
+// GET /api/demo/data — Get sample demo data (no auth required)
+app.get('/api/demo/data', (req, res) => {
+  if (!DEMO_MODE_ENABLED) return res.json({ success: false, error: 'Demo mode disabled' });
+  res.json({
+    success: true, demo: true,
+    profile: { company_name: 'Your Demo Company', business_type: 'Removals', phone: '020 7123 4567', email: 'demo@9amleads.com', website: 'https://demo.9amleads.com', services_offered: 'House removals, office moves, packing, storage', service_areas: 'London, Surrey, Kent', logo_url: '' },
+    leads: [
+      { id:'demo_1', name:'John Smith', address:'123 High Street', town:'London', postcode:'SW1A 1AA', type:'moving', status:'new', delivered_at:new Date().toISOString() },
+      { id:'demo_2', name:'Sarah Jones', address:'45 Oak Avenue', town:'Croydon', postcode:'CR0 2AB', type:'moving', status:'new', delivered_at:new Date().toISOString() },
+      { id:'demo_3', name:'David Brown', address:'78 Elm Road', town:'Kingston', postcode:'KT1 3CD', type:'probate', status:'new', delivered_at:new Date().toISOString() }
+    ],
+    campaigns: [
+      { id:'demo_c1', name:'Summer Promo Flyer', status:'completed', target_count:50, sent_count:48, budget:37.50, provider:'mock', provider_campaign_id:'DEMO-001', created_at:new Date(Date.now()-14*86400000).toISOString(), completed:true },
+      { id:'demo_c2', name:'New Client Introduction', status:'sent', target_count:25, sent_count:25, budget:18.75, provider:'mock', created_at:new Date(Date.now()-7*86400000).toISOString() },
+      { id:'demo_c3', name:'Autumn Offer Campaign', status:'draft', target_count:100, budget:75.00, created_at:new Date(Date.now()-2*86400000).toISOString() }
+    ],
+    templates: [
+      { id:'demo_t1', name:'Professional Introduction Letter', template_type:'letter', status:'approved', created_at:new Date(Date.now()-20*86400000).toISOString() },
+      { id:'demo_t2', name:'Summer Sale Flyer', template_type:'flyer', status:'approved', created_at:new Date(Date.now()-15*86400000).toISOString() }
+    ],
+    stats: { total_campaigns:3, campaigns_sent:2, letters_sent:73, total_spend:56.25, failed_campaigns:0 },
+    health_score: { score:72, level:'Good', completed:6, total:12 },
+    proof: { proof_url:'https://demo.9amleads.com/proof/demo-001.pdf', postage_date:new Date(Date.now()-10*86400000).toISOString().split('T')[0], estimated_delivery:new Date(Date.now()-7*86400000).toISOString().split('T')[0] },
+    notifications: [
+      { id:'demo_n1', type:'campaign_completed', title:'✅ Campaign Completed', message:'Your Summer Promo Flyer campaign was completed successfully.' },
+      { id:'demo_n2', type:'tips', title:'💡 Quick Tip', message:'Hand-delivered flyers convert 5x better than posted letters.' }
+    ]
+  });
+});
+
+// POST /api/admin/demo-mode/toggle — Enable/disable demo mode
+app.post('/api/admin/demo-mode/toggle', adminAuth, (req, res) => {
+  try {
+    DEMO_MODE_ENABLED = req.body.enabled === true;
+    var fs3 = require('fs');
+    fs3.writeFileSync(DEMO_MODE_FILE, JSON.stringify({ enabled: DEMO_MODE_ENABLED }, null, 2));
+    res.json({ success: true, demo_mode: DEMO_MODE_ENABLED });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/demo-mode/status — Get demo mode status
+app.get('/api/admin/demo-mode/status', adminAuth, (req, res) => {
+  res.json({ success: true, demo_mode: DEMO_MODE_ENABLED });
+});
+
 // ===== ONBOARDING WIZARD =====
 // GET /api/onboarding/progress — Get customer onboarding progress
 app.get('/api/onboarding/progress', authMiddleware, (req, res) => {
