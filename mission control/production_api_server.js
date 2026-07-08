@@ -516,14 +516,14 @@ class MockDirectMailProvider extends DirectMailProvider {
   }
 
   async getCampaignStatus(providerCampaignId) {
-    var camp = this.campaigns[providerCampaignId];
-    if (!camp) return { success: false, error: 'Campaign not found' };
-    return { success: true, provider_campaign_id: providerCampaignId, status: camp.status, updated_at: camp.updated_at || camp.created_at };
+    // Stateless mock: return simulated status progression
+    var statuses = ['accepted','printing','dispatched','completed'];
+    var hash = 0; for (var si = 0; si < (providerCampaignId||'').length; si++) { hash = ((hash << 5) - hash) + providerCampaignId.charCodeAt(si); hash |= 0; }
+    var idx = Math.abs(hash) % statuses.length;
+    return { success: true, provider_campaign_id: providerCampaignId, status: statuses[idx], updated_at: new Date().toISOString() };
   }
 
   async getProofOfPosting(providerCampaignId) {
-    var camp = this.campaigns[providerCampaignId];
-    if (!camp) return { success: false, error: 'Campaign not found' };
     return {
       success: true, provider_campaign_id: providerCampaignId,
       proof_url: 'https://mock-provider.local/proof/' + providerCampaignId + '.pdf',
