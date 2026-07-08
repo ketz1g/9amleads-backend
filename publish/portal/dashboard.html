@@ -134,7 +134,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 </div>
 <div class="main-content sidebar-closed">
 <div class="top-bar">
-<div class="greeting" id="greeting">Good morning<span id="customer-name"></span><small id="delivery-status">Loading your dashboard...</small></div>
+<div class="greeting" id="greeting">Good morning<span id="customer-name"></span><small id="delivery-status">Loading your dashboard...</small><small id="last-updated" style="font-size:10px;color:var(--muted2);font-weight:400;margin-top:2px"></small></div>
 <!-- Onboarding Progress Widget -->
 <div id="onboarding-widget" style="display:none;margin-bottom:16px;padding:16px;background:linear-gradient(135deg,rgba(14,165,233,0.08),rgba(99,102,241,0.04));border:1px solid rgba(14,165,233,0.15);border-radius:12px">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -160,9 +160,9 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="card">
 <div class="card-title"><i class="fas fa-rocket" style="color:var(--primary)"></i> Your Tools</div>
 <div class="tools-grid">
-<div class="tool-card" onclick="scrollToLeads()"><div class="icon">📋</div><h3>View Leads</h3><p>See all your leads by day</p></div>
-<div class="tool-card" onclick="exportRange('csv')"><div class="icon">📋</div><h3>Export CSV</h3><p>Download leads as spreadsheet</p></div>
-<div class="tool-card" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'})"><div class="icon">📈</div><h3>Upgrade Plan</h3><p>Get more leads per day</p></div>
+<div class="tool-card" onclick="scrollToLeads()" style="background:linear-gradient(135deg,rgba(14,165,233,.06),transparent);border:1px solid rgba(14,165,233,.15)"><div class="icon">📋</div><h3>View Leads</h3><p>See all your leads by day</p></div>
+<div class="tool-card" onclick="exportRange('csv')" style="background:linear-gradient(135deg,rgba(99,102,241,.06),transparent);border:1px solid rgba(99,102,241,.15)"><div class="icon">📊</div><h3>Export CSV</h3><p>Download leads as spreadsheet</p></div>
+<div class="tool-card" onclick="document.getElementById('sub-section').scrollIntoView({behavior:'smooth'})" style="background:linear-gradient(135deg,rgba(34,197,94,.06),transparent);border:1px solid rgba(34,197,94,.15)"><div class="icon">📈</div><h3>Upgrade Plan</h3><p>Get more leads per day</p></div>
 </div>
 </div>
 <!-- Smart Prompts (Section 6) -->
@@ -173,14 +173,14 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 
 <!-- KPI Dashboard Cards -->
 <div class="kpi-grid" id="kpiGrid">
-<div class="kpi-card"><div class="kpi-num" id="kpi-today">0</div><div class="kpi-label">Today's Opportunities</div><div class="kpi-desc">Delivered at 9am</div><div class="kpi-icon"><i class="fas fa-sun"></i></div></div>
-<div class="kpi-card"><div class="kpi-num" id="kpi-week">0</div><div class="kpi-label">This Week</div><div class="kpi-desc">Last 7 days</div><div class="kpi-icon"><i class="fas fa-calendar-week"></i></div></div>
-<div class="kpi-card"><div class="kpi-num" id="kpi-month">0</div><div class="kpi-label">This Month</div><div class="kpi-desc">Est. value: &pound;0</div><div class="kpi-icon"><i class="fas fa-calendar-alt"></i></div></div>
-<div class="kpi-card"><div class="kpi-num" id="kpi-contacted">0</div><div class="kpi-label">Contacted</div><div class="kpi-desc">Outreach started</div><div class="kpi-icon"><i class="fas fa-phone"></i></div></div>
-<div class="kpi-card"><div class="kpi-num" id="kpi-quoted">0</div><div class="kpi-label">Quoted</div><div class="kpi-desc">Sent proposals</div><div class="kpi-icon"><i class="fas fa-file-invoice"></i></div></div>
-<div class="kpi-card"><div class="kpi-num" id="kpi-won">0</div><div class="kpi-label">Jobs Won</div><div class="kpi-desc">Revenue: &pound;0</div><div class="kpi-icon"><i class="fas fa-trophy"></i></div></div>
-<div class="kpi-card"><div class="kpi-num" id="kpi-revenue">&pound;0</div><div class="kpi-label">Revenue Generated</div><div class="kpi-desc">Avg deal: &pound;0</div><div class="kpi-icon"><i class="fas fa-pound-sign"></i></div></div>
-<div class="kpi-card"><div class="kpi-num" id="kpi-roi">0%</div><div class="kpi-label">Subscription ROI</div><div class="kpi-desc">Revenue / cost</div><div class="kpi-icon"><i class="fas fa-chart-line"></i></div></div>
+<div class="kpi-card" style="background:linear-gradient(135deg,rgba(14,165,233,.08),rgba(99,102,241,.04));border-left:3px solid #0ea5e9"><div class="kpi-num" id="kpi-today" style="color:#0ea5e9">0</div><div class="kpi-label">Today's Opportunities</div><div class="kpi-desc">Delivered at 9am</div><div class="kpi-icon"><i class="fas fa-sun" style="color:#0ea5e9"></i></div></div>
+<div class="kpi-card" style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(139,92,246,.04));border-left:3px solid #6366f1"><div class="kpi-num" id="kpi-week" style="color:#6366f1">0</div><div class="kpi-label">This Week</div><div class="kpi-desc">Last 7 days</div><div class="kpi-icon"><i class="fas fa-calendar-week" style="color:#6366f1"></i></div></div>
+<div class="kpi-card" style="background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(34,197,94,.04));border-left:3px solid #10b981"><div class="kpi-num" id="kpi-month" style="color:#10b981">0</div><div class="kpi-label">This Month</div><div class="kpi-desc">Est. value: &pound;0</div><div class="kpi-icon"><i class="fas fa-calendar-alt" style="color:#10b981"></i></div></div>
+<div class="kpi-card" style="background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(251,191,36,.04));border-left:3px solid #f59e0b"><div class="kpi-num" id="kpi-contacted" style="color:#f59e0b">0</div><div class="kpi-label">Contacted</div><div class="kpi-desc">Outreach started</div><div class="kpi-icon"><i class="fas fa-phone" style="color:#f59e0b"></i></div></div>
+<div class="kpi-card" style="background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(192,132,252,.04));border-left:3px solid #a855f7"><div class="kpi-num" id="kpi-quoted" style="color:#a855f7">0</div><div class="kpi-label">Quoted</div><div class="kpi-desc">Sent proposals</div><div class="kpi-icon"><i class="fas fa-file-invoice" style="color:#a855f7"></i></div></div>
+<div class="kpi-card" style="background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(74,222,128,.04));border-left:3px solid #22c55e"><div class="kpi-num" id="kpi-won" style="color:#22c55e">0</div><div class="kpi-label">Jobs Won</div><div class="kpi-desc">Revenue: &pound;0</div><div class="kpi-icon"><i class="fas fa-trophy" style="color:#22c55e"></i></div></div>
+<div class="kpi-card" style="background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(248,113,113,.04));border-left:3px solid #ef4444"><div class="kpi-num" id="kpi-revenue" style="color:#ef4444">&pound;0</div><div class="kpi-label">Revenue Generated</div><div class="kpi-desc">Avg deal: &pound;0</div><div class="kpi-icon"><i class="fas fa-pound-sign" style="color:#ef4444"></i></div></div>
+<div class="kpi-card" style="background:linear-gradient(135deg,rgba(236,72,153,.08),rgba(244,114,182,.04));border-left:3px solid #ec4899"><div class="kpi-num" id="kpi-roi" style="color:#ec4899">0%</div><div class="kpi-label">Subscription ROI</div><div class="kpi-desc">Revenue / cost</div><div class="kpi-icon"><i class="fas fa-chart-line" style="color:#ec4899"></i></div></div>
 </div>
 
 <!-- Today's Delivery Widget -->
@@ -481,6 +481,13 @@ async function loadDashboard() {
   loadDashboardData();
   loadOnboarding();
   loadPrompts();
+  // Auto-refresh every 60 seconds
+  if (window._refreshTimer) clearInterval(window._refreshTimer);
+  window._refreshTimer = setInterval(function() {
+    loadDashboardData();
+    document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+  }, 60000);
+  document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
   loadNotifications();
   calcConversion();
   updateOnboarding();
@@ -1167,32 +1174,85 @@ function showSettingsPage() {
   var product = session?.product || 'moving';
   var plan = session?.plan || 'free_trial';
   var planLabel = plan === 'free_trial' ? 'Free Trial' : plan.charAt(0).toUpperCase() + plan.slice(1);
-  showModal('Account Settings',
-    '<p style="font-size:12px;color:var(--muted2);margin-bottom:14px">Manage your account, business details and preferences.</p>' +
-    '<div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;display:block;margin-bottom:8px;color:var(--text)">Account</label>' +
-    '<div style="display:grid;gap:8px">' +
-    '<div><label style="font-size:11px;color:var(--muted2)">Email</label><div style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)">' + email + '</div></div>' +
-    '<div><label style="font-size:11px;color:var(--muted2)">Company</label><input type="text" id="settings-company" value="' + company.replace(/"/g,'&quot;') + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)"></div>' +
-    '<div><label style="font-size:11px;color:var(--muted2)">Password</label><div style="position:relative;display:inline-block;width:100%"><input type="password" id="settings-password" placeholder="Leave blank to keep current" style="width:100%;padding:9px 36px 9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)"></div>' +
-    '</div></div>' +
-    '<div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;display:block;margin-bottom:8px;color:var(--text)">Plan &amp; Lead Type</label>' +
-    '<div style="display:grid;gap:8px">' +
-    '<div><label style="font-size:11px;color:var(--muted2)">Plan</label><div style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);display:flex;justify-content:space-between;align-items:center">' + planLabel + '<a href="#" onclick="showPlans();return false" style="font-size:11px;color:var(--primary);text-decoration:underline">Upgrade</a></div></div>' +
-    '<div><label style="font-size:11px;color:var(--muted2)">Lead Type</label><div style="padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)">' + (LEAD_TYPE_NAMES[product] || product) + '</div></div>' +
-    '</div></div>' +
-    '<div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;display:block;margin-bottom:8px;color:var(--text)">Lead Filters</label>' +
-    '<p style="font-size:11px;color:var(--muted2);margin-bottom:8px">Set your lead preferences in the <a href="#" onclick="document.getElementById(\'territories-section\')?.scrollIntoView({behavior:\'smooth\'});return false" style="color:var(--primary);text-decoration:underline">Areas</a> section and <a href="#" onclick="document.getElementById(\'lead-filters-section\')?.scrollIntoView({behavior:\'smooth\'});return false" style="color:var(--primary);text-decoration:underline">Filters</a> section on the main dashboard page. Filters control which opportunities match your business.</p>' +
-    '<div style="padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--muted2);line-height:1.5">' +
-    '<strong>Need to change your lead type or add a new one?</strong><br>Contact support and we\'ll update your account.' +
-    '</div></div>' +
-    '<div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;display:block;margin-bottom:8px;color:var(--text)">Notifications</label>' +
-    '<label style="display:flex;align-items:center;gap:8px;padding:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="notif-daily" checked style="accent-color:var(--primary)"> Daily 9am opportunity email</label>' +
-    '<label style="display:flex;align-items:center;gap:8px;padding:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="notif-marketing" style="accent-color:var(--primary)"> Marketing &amp; tips emails</label></div>' +
-    '<div style="display:flex;gap:8px;margin-top:12px">' +
-    '<button class="btn btn-primary btn-sm" onclick="saveSettings()">Save Settings</button>' +
-    '</div>' +
-    '<p style="font-size:11px;color:var(--muted2);margin-top:12px;border-top:1px solid var(--border);padding-top:12px">Need help? <a href="#" onclick="showPage(\'support\');return false" style="color:var(--primary);text-decoration:underline">Contact support</a></p>'
+  var tab = localStorage.getItem('settingsTab') || 'account';
+  var tabs = [
+    { id:'account', label:'Account', icon:'fa-user' },
+    { id:'notifications', label:'Notifications', icon:'fa-bell' },
+    { id:'team', label:'Team', icon:'fa-users' },
+    { id:'crm', label:'CRM', icon:'fa-plug' },
+    { id:'api', label:'API Keys', icon:'fa-key' }
+  ];
+  var tabHtml = tabs.map(function(t) { return '<button class="btn ' + (tab === t.id ? 'btn-primary' : 'btn-outline') + ' btn-sm" onclick="localStorage.setItem(\'settingsTab\',\'' + t.id + '\');showSettingsPage()" style="font-size:11px"><i class="fas ' + t.icon + '"></i> ' + t.label + '</button>'; }).join('');
+  var contentHtml = '';
+  
+  if (tab === 'account') {
+    contentHtml = '<div style="display:grid;gap:12px">' +
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-user-circle" style="color:var(--primary);font-size:18px"></i> Profile</div></div>' +
+      '<div style="display:grid;gap:10px">' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Email</label><div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px"><i class="fas fa-envelope" style="color:var(--primary);font-size:12px"></i> ' + email + '</div></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">Company</label><input type="text" id="settings-company" value="' + company.replace(/"/g,'&quot;') + '" style="width:100%;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
+      '<div><label style="font-size:11px;color:var(--muted2);font-weight:600;display:block;margin-bottom:4px">New Password</label><input type="password" id="settings-password" placeholder="Leave blank to keep current" style="width:100%;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text)"></div>' +
+      '<div><button class="btn btn-primary btn-sm" onclick="saveSettings();hideSettings()"><i class="fas fa-save"></i> Save Changes</button></div>' +
+      '</div></div>' +
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-credit-card" style="color:var(--warning);font-size:18px"></i> Plan &amp; Billing</div></div>' +
+      '<div style="display:grid;gap:10px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:linear-gradient(135deg,rgba(14,165,233,.06),rgba(99,102,241,.04));border:1px solid rgba(14,165,233,.15);border-radius:8px"><div><div style="font-weight:700;color:var(--text)">' + planLabel + '</div><div style="font-size:11px;color:var(--muted2)">' + (LEAD_TYPE_NAMES[product] || product) + '</div></div><a href="#" onclick="showPlans();return false" class="btn btn-primary btn-sm"><i class="fas fa-arrow-up"></i> Upgrade</a></div>' +
+      '<div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--muted2);line-height:1.5"><strong>Change lead type or add products?</strong><br>Contact support and we\'ll update your account.</div>' +
+      '</div></div></div>';
+  } else if (tab === 'notifications') {
+    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-bell" style="color:var(--warning);font-size:18px"></i> Notification Preferences</div></div>' +
+      '<div style="display:grid;gap:8px;padding:4px 0">' +
+      '<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="notif-daily" checked style="accent-color:var(--primary);width:16px;height:16px"> <div><div style="font-weight:600;color:var(--text)">Daily 9am Delivery</div><div style="font-size:11px;color:var(--muted2)">Get an email when your daily leads arrive</div></div></label>' +
+      '<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="notif-marketing" style="accent-color:var(--primary);width:16px;height:16px"> <div><div style="font-weight:600;color:var(--text)">Tips &amp; Resources</div><div style="font-size:11px;color:var(--muted2)">Receive conversion tips, success stories, and product updates</div></div></label>' +
+      '<div style="margin-top:8px"><button class="btn btn-primary btn-sm" onclick="saveNotificationPrefs()"><i class="fas fa-save"></i> Save Preferences</button></div>' +
+      '</div></div>';
+  } else if (tab === 'team') {
+    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-users" style="color:var(--success);font-size:18px"></i> Team Members</div></div>' +
+      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Add team members who can access your dashboard and leads.</p>' +
+      '<div style="display:grid;gap:8px;padding:4px 0">' +
+      '<div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-weight:600;color:var(--text);font-size:13px">' + email + '</div><div style="font-size:11px;color:var(--muted2)">You (Owner)</div></div><span class="badge badge-green">Owner</span></div>' +
+      '<div style="padding:10px 14px;background:var(--card2);border:1px dashed var(--border2);border-radius:8px;text-align:center;font-size:12px;color:var(--muted2)"><i class="fas fa-plus-circle" style="color:var(--muted2);margin-right:4px"></i> Invite a team member — <a href="#" onclick="showPage(\'support\');return false" style="color:var(--primary)">Contact support</a></div>' +
+      '</div></div>';
+  } else if (tab === 'crm') {
+    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-plug" style="color:var(--primary);font-size:18px"></i> CRM Integration</div></div>' +
+      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Connect your CRM or webhook to receive leads automatically at 9am.</p>' +
+      '<div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px">' +
+      '<div style="font-size:11px;color:var(--muted2);margin-bottom:4px">Webhook URL</div>' +
+      '<input type="url" id="settings-webhook" placeholder="https://your-crm.com/api/webhook" value="' + (session?.crm_webhook_url || '') + '" style="width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);margin-bottom:8px">' +
+      '<button class="btn btn-primary btn-sm" onclick="saveCrmWebhook()"><i class="fas fa-link"></i> Save Webhook</button>' +
+      '<div id="crm-status" style="margin-top:6px;font-size:11px;color:var(--muted2)"></div>' +
+      '</div></div>';
+  } else if (tab === 'api') {
+    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-key" style="color:var(--danger);font-size:18px"></i> API Access</div></div>' +
+      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Use your API key to access your leads programmatically.</p>' +
+      '<div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px">' +
+      '<div style="font-size:11px;color:var(--muted2);margin-bottom:4px">Your API Key</div>' +
+      '<div style="display:flex;gap:6px"><input type="text" id="settings-apikey" readonly value="' + (session?.api_key || 'Generate one below') + '" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text);font-family:monospace"><button class="btn btn-outline btn-sm" onclick="document.getElementById(\'settings-apikey\').select();document.execCommand(\'copy\')"><i class="fas fa-copy"></i></button></div>' +
+      '<div style="margin-top:8px"><button class="btn btn-outline btn-sm" onclick="if(confirm(\'Generate new API key? Old one will stop working.\')){apiFetch(\'/api/regenerate-key\',{method:\'POST\'}).then(function(r){if(r&&r.key){document.getElementById(\'settings-apikey\').value=r.key;alert(\'New API key generated!\');}});}"><i class="fas fa-sync"></i> Regenerate Key</button></div>' +
+      '<div style="font-size:10px;color:var(--muted2);margin-top:8px">Use your API key as a Bearer token: <code style="background:var(--bg);padding:2px 6px;border-radius:3px;font-size:10px">Authorization: Bearer YOUR_KEY</code></div>' +
+      '</div></div>';
+  }
+  
+  showModal('Settings', 
+    '<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">' + tabHtml + '</div>' +
+    '<div id="settings-content">' + contentHtml + '</div>'
   );
+}
+
+function hideSettings() { document.getElementById('modal-overlay').style.display = 'none'; }
+function saveNotificationPrefs() {
+  var daily = document.getElementById('notif-daily')?.checked;
+  var marketing = document.getElementById('notif-marketing')?.checked;
+  var s = getSession(); if (s) { s.notif_daily = daily; s.notif_marketing = marketing; localStorage.setItem('mld_portal_session', JSON.stringify(s)); }
+  showModal('Notifications', '<p style="text-align:center;padding:12px;color:var(--success)"><i class="fas fa-check-circle" style="font-size:24px;display:block;margin-bottom:6px"></i>Notification preferences saved!</p>');
+}
+function saveCrmWebhook() {
+  var url = document.getElementById('settings-webhook')?.value;
+  document.getElementById('crm-status').textContent = 'Saving...';
+  apiFetch('/api/settings/webhook', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ webhook_url: url }) }).then(function(r) {
+    document.getElementById('crm-status').textContent = r && r.success ? 'Saved!' : 'Error saving webhook';
+    if (r && r.success) { var s = getSession(); if (s) { s.crm_webhook_url = url; localStorage.setItem('mld_portal_session', JSON.stringify(s)); } }
+  });
 }
 
 function saveSettings() {
