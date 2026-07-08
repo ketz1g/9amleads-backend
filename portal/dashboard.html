@@ -1304,30 +1304,39 @@ function showDirectMailCentre(tab) {
   else if (tab === 'payments') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-file-invoice-dollar" style="font-size:40px;color:var(--success);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Payments &amp; Invoices</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto">Payment history and invoices will appear here once your first campaign is submitted. Payments are processed securely through Stripe.</p></div>'; }
 }
 
-var dmGenLetter = null;
+var dmGenContent = null;
+var dmGenMode = 'letter';
 var dmGenTemplateId = null;
 
 function showDMLetterGen(el) {
+  dmGenMode = localStorage.getItem('dmGenMode') || 'letter';
+  var modeBtns = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">' +
+    '<button class="btn ' + (dmGenMode === 'letter' ? 'btn-primary' : 'btn-outline') + ' btn-sm" onclick="localStorage.setItem(\'dmGenMode\',\'letter\');showDirectMailCentre(\'ai-builder\')" style="font-size:11px"><i class="fas fa-file-alt"></i> Introduction Letter</button>' +
+    '<button class="btn ' + (dmGenMode === 'flyer' ? 'btn-primary' : 'btn-outline') + ' btn-sm" onclick="localStorage.setItem(\'dmGenMode\',\'flyer\');showDirectMailCentre(\'ai-builder\')" style="font-size:11px"><i class="fas fa-file-image"></i> Flyer Content</button></div>';
+  var isLetter = dmGenMode === 'letter';
+
   var html = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-magic" style="color:var(--primary)"></i> 9am Leads AI Marketing Builder</div></div>' +
-    '<p style="font-size:12px;color:var(--muted2);margin-bottom:14px;line-height:1.5">Generate a professional introduction letter using your Business Profile. Edit, save as a template, or use it in a campaign.</p>' +
+    modeBtns +
     '<div id="ai-gen-status" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:10px;font-size:12px"></div>' +
     '<div id="ai-gen-form"><div style="display:grid;gap:10px">' +
-    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Business Name</label><input type="text" id="ai-company" placeholder="Auto-filled from profile" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
-    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Industry / Business Type</label><input type="text" id="ai-industry" placeholder="e.g. Removal Company, Roofer" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
-    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Services</label><input type="text" id="ai-services" placeholder="e.g. House removals, packing, storage" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
-    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Service Area</label><input type="text" id="ai-area" placeholder="e.g. London, Surrey" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
-    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Special Offer / USP</label><input type="text" id="ai-offer" placeholder="e.g. Free no-obligation quote" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
-    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Tone</label><select id="ai-tone" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option value="professional">Professional</option><option value="friendly">Friendly</option><option value="premium">Premium</option><option value="bold">Bold &amp; Direct</option><option value="warm">Warm</option></select></div>' +
+    '<div class="form-row"><div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Business Name</label><input type="text" id="ai-company" placeholder="Auto-filled from profile" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Industry / Type</label><input type="text" id="ai-industry" placeholder="e.g. Removal Company" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Services Offered</label><input type="text" id="ai-services" placeholder="e.g. House removals, packing" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div class="form-row"><div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Service Area</label><input type="text" id="ai-area" placeholder="e.g. London" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Special Offer / USP</label><input type="text" id="ai-offer" placeholder="e.g. Free quote" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div></div>' +
+    '<div class="form-row"><div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">' + (isLetter ? 'Tone' : 'Style') + '</label><select id="ai-style" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)">' +
+    (isLetter ? '<option value="professional">Professional</option><option value="friendly">Friendly</option><option value="premium">Premium</option><option value="bold">Bold</option><option value="warm">Warm</option>' :
+     '<option value="professional">Professional</option><option value="friendly">Friendly</option><option value="premium">Premium</option><option value="urgent">Urgent Offer</option><option value="local">Local Trusted</option><option value="bold">Bold Sales</option>') +
+    '</select></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Call to Action</label><input type="text" id="ai-cta" placeholder="e.g. Call us today" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div></div>' +
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Phone</label><input type="tel" id="ai-phone" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
-    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Email</label><input type="email" id="ai-email" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
-    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Website</label><input type="url" id="ai-website" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div></div>' +
-    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Call to Action</label><input type="text" id="ai-cta" placeholder="e.g. Call us today for a free quote" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
-    '<button class="btn btn-primary" onclick="dmGenerateLetter()" id="ai-gen-btn" style="width:100%;padding:12px"><i class="fas fa-magic"></i> Generate Introduction Letter</button>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Website</label><input type="url" id="ai-website" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Email</label><input type="email" id="ai-email" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div></div>' +
+    '<button class="btn btn-primary" onclick="dmGenerateContent()" id="ai-gen-btn" style="width:100%;padding:12px"><i class="fas fa-magic"></i> Generate ' + (isLetter ? 'Introduction Letter' : 'Flyer Content') + '</button>' +
     '</div></div>';
   html += '<div id="ai-results" style="display:none"></div>';
   el.innerHTML = html;
 
-  // Auto-fill from business profile
   apiFetch('/api/direct-mail/profile').then(function(r) {
     var p = r && r.profile ? r.profile : {};
     if (p.company_name) document.getElementById('ai-company').value = p.company_name;
@@ -1339,11 +1348,11 @@ function showDMLetterGen(el) {
     if (p.email) document.getElementById('ai-email').value = p.email;
     if (p.website) document.getElementById('ai-website').value = p.website;
     if (p.call_to_action) document.getElementById('ai-cta').value = p.call_to_action;
-    if (p.brand_tone) document.getElementById('ai-tone').value = p.brand_tone;
+    if (p.brand_tone) document.getElementById('ai-style').value = p.brand_tone;
   });
 }
 
-function dmGenerateLetter() {
+function dmGenerateContent() {
   var btn = document.getElementById('ai-gen-btn');
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...'; }
   var status = document.getElementById('ai-gen-status');
@@ -1355,7 +1364,7 @@ function dmGenerateLetter() {
     services: document.getElementById('ai-services')?.value || '',
     service_area: document.getElementById('ai-area')?.value || '',
     special_offer: document.getElementById('ai-offer')?.value || '',
-    tone: document.getElementById('ai-tone')?.value || 'professional',
+    tone: document.getElementById('ai-style')?.value || 'professional',
     phone: document.getElementById('ai-phone')?.value || '',
     email: document.getElementById('ai-email')?.value || '',
     website: document.getElementById('ai-website')?.value || '',
@@ -1364,82 +1373,110 @@ function dmGenerateLetter() {
 
   if (!data.company_name || !data.business_type) {
     if (status) { status.style.display = 'block'; status.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please complete your Business Profile first, or fill in the Business Name and Industry fields above.'; status.style.background = 'rgba(245,158,11,0.1)'; status.style.color = 'var(--warning)'; }
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic"></i> Generate Introduction Letter'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic"></i> Generate'; }
     return;
   }
 
-  apiFetch('/api/ai/generate-letter', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(function(r) {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic"></i> Regenerate Letters'; }
+  var endpoint = dmGenMode === 'letter' ? '/api/ai/generate-letter' : '/api/ai/generate-flyer';
+  var label = dmGenMode === 'letter' ? 'Letters' : 'Flyer Content';
+
+  apiFetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(function(r) {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic"></i> Regenerate'; }
     if (r && r.success) {
-      dmGenLetter = r;
-      var html = '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><i class="fas fa-file-alt" style="color:var(--success)"></i> Generated Letters</div>' +
-        '<div style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn btn-outline btn-sm" onclick="dmGenerateLetter()" style="font-size:10px;padding:4px 10px"><i class="fas fa-sync"></i> Regenerate</button></div></div>' +
-        '<div style="display:grid;gap:10px">';
-      var versions = [
-        { id:'professional', label:'Professional', icon:'📝' },
-        { id:'short', label:'Short Version', icon:'📄' },
-        { id:'friendly', label:'Friendly Version', icon:'😊' },
-        { id:'premium', label:'Premium', icon:'✨' },
-        { id:'call_to_action', label:'Call to Action', icon:'🎯' }
-      ];
-      versions.forEach(function(v) {
-        var content = dmGenLetter[v.id] || '';
-        html += '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow:hidden">' +
-          '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border)">' +
-          '<span style="font-size:12px;font-weight:700;color:var(--text)">' + v.icon + ' ' + v.label + '</span>' +
-          '<div style="display:flex;gap:4px">' +
-          '<button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px;min-height:auto" onclick="dmCopyLetter(' + v.id + ')"><i class="fas fa-copy"></i> Copy</button>' +
-          '<button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px;min-height:auto" onclick="dmEditLetter(\'' + v.id + '\')"><i class="fas fa-edit"></i> Edit</button></div></div>' +
-          '<div id="ai-letter-' + v.id + '" style="padding:12px;font-size:12px;color:var(--text2);line-height:1.7;white-space:pre-wrap;font-family:Georgia,serif;max-height:300px;overflow-y:auto">' + (content || '<span style="color:var(--muted2)">Not generated</span>') + '</div></div>';
-      });
-      html += '</div>' +
-        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
-        '<button class="btn btn-primary btn-sm" onclick="dmSaveLetterAsTemplate()"><i class="fas fa-save"></i> Save as Template</button>' +
-        '<button class="btn btn-outline btn-sm" onclick="dmUseLetterInCampaign()"><i class="fas fa-bullhorn"></i> Use in Campaign</button>' +
-        '</div></div>';
+      dmGenContent = r;
+      var html = '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><i class="fas fa-' + (dmGenMode === 'letter' ? 'file-alt' : 'file-image') + '" style="color:var(--success)"></i> Generated ' + label + '</div>' +
+        '<div style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn btn-outline btn-sm" onclick="dmGenerateContent()" style="font-size:10px;padding:4px 10px"><i class="fas fa-sync"></i> Regenerate</button></div></div><div style="display:grid;gap:10px">';
+
+      if (dmGenMode === 'letter') {
+        var versions = [
+          { id:'professional', label:'Professional', icon:'📝' },
+          { id:'short', label:'Short Version', icon:'📄' },
+          { id:'friendly', label:'Friendly Version', icon:'😊' },
+          { id:'premium', label:'Premium', icon:'✨' },
+          { id:'call_to_action', label:'Call to Action', icon:'🎯' }
+        ];
+        versions.forEach(function(v) {
+          var content = dmGenContent[v.id] || '';
+          html += dmContentBlock(v.id, v.icon, v.label, content);
+        });
+        html += '</div><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+          '<button class="btn btn-primary btn-sm" onclick="dmSaveContentAsTemplate()"><i class="fas fa-save"></i> Save as Template</button>' +
+          '<button class="btn btn-outline btn-sm" onclick="dmUseContent()"><i class="fas fa-bullhorn"></i> Use in Campaign</button></div></div>';
+      } else {
+        var flyerSections = [
+          { id:'headline', label:'Headline', icon:'🔥' },
+          { id:'subheadline', label:'Subheadline', icon:'📢' },
+          { id:'services', label:'Services', icon:'✅' },
+          { id:'offer', label:'Offer', icon:'🎁' },
+          { id:'trust', label:'Trust', icon:'⭐' },
+          { id:'call_to_action', label:'Call to Action', icon:'🎯' },
+          { id:'back_page', label:'Back Page', icon:'📄' },
+          { id:'qr_text', label:'QR Code Text', icon:'📱' },
+          { id:'slogan', label:'Slogan', icon:'💬' }
+        ];
+        flyerSections.forEach(function(s) {
+          var content = dmGenContent[s.id] || '';
+          html += dmContentBlock('flyer-'+s.id, s.icon, s.label, content);
+        });
+        html += '</div><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+          '<button class="btn btn-primary btn-sm" onclick="dmSaveContentAsTemplate()"><i class="fas fa-save"></i> Save as Template</button>' +
+          '<button class="btn btn-outline btn-sm" onclick="dmUseContent()"><i class="fas fa-bullhorn"></i> Use in Campaign</button></div></div>';
+      }
       document.getElementById('ai-results').innerHTML = html;
       document.getElementById('ai-results').style.display = 'block';
       document.getElementById('ai-results').scrollIntoView({behavior:'smooth'});
     } else {
-      if (status) { status.style.display = 'block'; status.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (r?.error || 'Failed to generate. Please try again.'); status.style.background = 'rgba(239,68,68,0.1)'; status.style.color = 'var(--danger)'; }
+      if (status) { status.style.display = 'block'; status.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (r?.error || 'Failed to generate. Try again.'); status.style.background = 'rgba(239,68,68,0.1)'; status.style.color = 'var(--danger)'; }
     }
   }).catch(function() {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic"></i> Generate Introduction Letter'; }
-    if (status) { status.style.display = 'block'; status.innerHTML = '<i class="fas fa-exclamation-circle"></i> Connection error. Please try again.'; status.style.background = 'rgba(239,68,68,0.1)'; status.style.color = 'var(--danger)'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic"></i> Generate'; }
+    if (status) { status.style.display = 'block'; status.innerHTML = '<i class="fas fa-exclamation-circle"></i> Connection error. Try again.'; status.style.background = 'rgba(239,68,68,0.1)'; status.style.color = 'var(--danger)'; }
   });
 }
 
-function dmCopyLetter(id) {
-  var el = document.getElementById('ai-letter-' + id);
-  if (!el) return;
-  navigator.clipboard.writeText(el.textContent).then(function() { showStatus('ai-gen-status','Copied to clipboard!','var(--success)'); });
+function dmContentBlock(id, icon, label, content) {
+  return '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow:hidden">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border)">' +
+    '<span style="font-size:12px;font-weight:700;color:var(--text)">' + icon + ' ' + label + '</span>' +
+    '<div style="display:flex;gap:4px">' +
+    '<button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px;min-height:auto" onclick="dmCopyBlock(\'' + id + '\')"><i class="fas fa-copy"></i> Copy</button>' +
+    '<button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px;min-height:auto" onclick="dmEditBlock(\'' + id + '\')"><i class="fas fa-edit"></i> Edit</button></div></div>' +
+    '<div id="ai-block-' + id + '" style="padding:12px;font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap;max-height:200px;overflow-y:auto">' + (content || '<span style="color:var(--muted2)">Not generated</span>') + '</div></div>';
 }
 
-function dmEditLetter(id) {
-  var el = document.getElementById('ai-letter-' + id);
+function dmCopyBlock(id) {
+  var el = document.getElementById('ai-block-' + id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(function() { showStatus('ai-gen-status','Copied!','var(--success)'); });
+}
+
+function dmEditBlock(id) {
+  var el = document.getElementById('ai-block-' + id);
   if (!el) return;
   var current = el.textContent;
   var textarea = document.createElement('textarea');
   textarea.value = current;
-  textarea.style.cssText = 'width:100%;min-height:150px;padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:Georgia,serif;line-height:1.7;resize:vertical';
+  textarea.style.cssText = 'width:100%;min-height:120px;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:inherit;line-height:1.6;resize:vertical';
   textarea.id = 'ai-edit-' + id;
   el.innerHTML = '';
   el.appendChild(textarea);
-  // Add save button
   var saveBtn = document.createElement('button');
   saveBtn.className = 'btn btn-primary btn-sm';
   saveBtn.style.cssText = 'margin-top:6px;font-size:10px';
-  saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Edit';
-  saveBtn.onclick = function() { document.getElementById('ai-letter-' + id).innerHTML = textarea.value.replace(/\n/g,'<br>'); };
+  saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+  saveBtn.onclick = function() { el.innerHTML = textarea.value.replace(/\n/g,'<br>'); saveBtn.remove(); };
   el.parentNode.appendChild(saveBtn);
 }
 
-function dmSaveLetterAsTemplate() {
+function dmSaveContentAsTemplate() {
   var company = document.getElementById('ai-company')?.value || 'My Business';
-  var bestContent = dmGenLetter?.professional || dmGenLetter?.short || '';
-  if (!bestContent) { showStatus('ai-gen-status','No letter content to save. Generate a letter first.','var(--warning)'); return; }
-  showModal('Save as Template', '<div style="display:grid;gap:10px"><div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Template Name</label><input type="text" id="ai-tpl-name" value="Introduction Letter - ' + company + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
-    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Type</label><select id="ai-tpl-type" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option value="letter">Letter Only</option><option value="letter_flyer_pack">Letter + Flyer Pack</option></select></div>' +
+  var desc = dmGenMode === 'letter' ? (dmGenContent?.professional || '') : (dmGenContent?.headline || '');
+  if (!desc) { showStatus('ai-gen-status','No content to save. Generate first.','var(--warning)'); return; }
+  var bestContent = dmGenMode === 'letter' ?
+    (dmGenContent?.professional || '') + '\n\n---\n\n' + (dmGenContent?.short || '') + '\n\n---\n\n' + (dmGenContent?.call_to_action || '') :
+    'HEADLINE: ' + (dmGenContent?.headline || '') + '\nSUBHEADLINE: ' + (dmGenContent?.subheadline || '') + '\nSERVICES: ' + (dmGenContent?.services || '') + '\nOFFER: ' + (dmGenContent?.offer || '') + '\nCTA: ' + (dmGenContent?.call_to_action || '') + '\nSLOGAN: ' + (dmGenContent?.slogan || '');
+  showModal('Save as Template', '<div style="display:grid;gap:10px"><div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Template Name</label><input type="text" id="ai-tpl-name" value="' + (dmGenMode === 'letter' ? 'Introduction Letter' : 'Flyer Content') + ' - ' + company + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Type</label><select id="ai-tpl-type" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option value="' + (dmGenMode === 'letter' ? 'letter' : 'flyer') + '">' + (dmGenMode === 'letter' ? 'Letter Only' : 'Flyer Only') + '</option>' + (dmGenMode === 'letter' ? '<option value="letter_flyer_pack">Letter + Flyer Pack</option>' : '<option value="flyer_front_back">Flyer Front + Back</option>') + '</select></div>' +
     '<button class="btn btn-primary btn-sm" onclick="dmConfirmSaveTemplate()"><i class="fas fa-save"></i> Save Template</button></div>', '420px');
 }
 
@@ -1447,10 +1484,12 @@ function dmConfirmSaveTemplate() {
   var name = document.getElementById('ai-tpl-name')?.value.trim();
   if (!name) { alert('Template name is required'); return; }
   var type = document.getElementById('ai-tpl-type')?.value || 'letter';
-  var bestContent = dmGenLetter?.professional + '\n\n---\n\n' + (dmGenLetter?.short || '') + '\n\n---\n\n' + (dmGenLetter?.call_to_action || '');
+  var bestContent = dmGenMode === 'letter' ?
+    (dmGenContent?.professional || '') + '\n\n---\n\n' + (dmGenContent?.short || '') + '\n\n---\n\n' + (dmGenContent?.call_to_action || '') :
+    JSON.stringify({ headline: dmGenContent?.headline, subheadline: dmGenContent?.subheadline, services: dmGenContent?.services, offer: dmGenContent?.offer, trust: dmGenContent?.trust, cta: dmGenContent?.call_to_action, back_page: dmGenContent?.back_page, qr_text: dmGenContent?.qr_text, slogan: dmGenContent?.slogan });
   apiFetch('/api/direct-mail/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
     name: name, type: type,
-    description: 'AI-generated introduction letter',
+    description: 'AI-generated ' + (dmGenMode === 'letter' ? 'introduction letter' : 'flyer content'),
     ai_generated_text: bestContent
   })}).then(function(r) {
     if (r && r.success) {
@@ -1461,8 +1500,8 @@ function dmConfirmSaveTemplate() {
   });
 }
 
-function dmUseLetterInCampaign() {
-  showModal('Use in Campaign', '<div style="text-align:center;padding:20px"><i class="fas fa-bullhorn" style="font-size:40px;color:var(--primary);display:block;margin-bottom:12px"></i><p style="font-size:13px;color:var(--muted2);margin-bottom:16px">Go to Create Campaign to use your AI-generated letter. The letter will be available as a template.</p>' +
+function dmUseContent() {
+  showModal('Use in Campaign', '<div style="text-align:center;padding:20px"><i class="fas fa-bullhorn" style="font-size:40px;color:var(--primary);display:block;margin-bottom:12px"></i><p style="font-size:13px;color:var(--muted2);margin-bottom:16px">Go to Create Campaign to use your AI-generated content. It will be available as a template.</p>' +
     '<button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();showDirectMailCentre(\'create\')"><i class="fas fa-plus"></i> Create Campaign</button></div>', '400px');
 }
 

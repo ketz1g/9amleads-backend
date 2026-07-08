@@ -2055,6 +2055,97 @@ app.post('/api/ai/generate-letter', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/ai/generate-flyer — Generate flyer content via 9am Leads AI Marketing Builder
+app.post('/api/ai/generate-flyer', authMiddleware, async (req, res) => {
+  try {
+    const OPENAI_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_KEY) return res.status(400).json({ error: 'AI Marketing Builder is not configured yet. Please contact support.' });
+
+    var businessData = req.body;
+    if (!businessData.company_name || !businessData.business_type) {
+      var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+      if (!profile) return res.status(400).json({ error: 'Please complete your Business Profile first. Go to Dashboard → Business Profile to set up your details.' });
+      businessData = {
+        company_name: profile.company_name || 'Your Company',
+        business_type: profile.business_type || 'Business',
+        services: profile.services_offered || '',
+        service_area: profile.service_areas || 'your local area',
+        special_offer: profile.special_offer || '',
+        style: profile.brand_tone || 'professional',
+        phone: profile.phone || '',
+        website: profile.website || '',
+        call_to_action: profile.call_to_action || 'Get in touch today',
+        social_proof: profile.google_reviews_link ? 'Has Google reviews' : ''
+      };
+    }
+
+    var styleDesc = businessData.style === 'friendly' ? 'warm and approachable' :
+                    businessData.style === 'premium' ? 'high-end and sophisticated' :
+                    businessData.style === 'urgent' ? 'urgent and time-sensitive' :
+                    businessData.style === 'local' ? 'local community-focused and trusted' :
+                    businessData.style === 'bold' ? 'confident and direct' :
+                    'professional and trustworthy';
+
+    var prompt = 'You are a professional flyer copywriter for ' + businessData.company_name + ' in the ' + businessData.business_type + ' industry. Style: ' + styleDesc + '.\n\n' +
+      'Generate flyer content in the following structured format. Label each section clearly:\n\n' +
+      'HEADLINE:\n(A powerful, attention-grabbing headline for the flyer front)\n\n' +
+      'SUBHEADLINE:\n(A supporting subheadline that adds context)\n\n' +
+      'SERVICES:\n(3-5 bullet points of services offered. Services include: ' + (businessData.services || 'Not specified') + ')\n\n' +
+      'OFFER:\n(A compelling offer or unique selling proposition. Special offer: ' + (businessData.special_offer || 'Quality service') + ')\n\n' +
+      'TRUST:\n(A trust-building statement. Why customers should choose them. Service area: ' + (businessData.service_area || 'Local area') + ')\n\n' +
+      'CALL TO ACTION:\n(A clear, direct call to action. CTA: ' + (businessData.call_to_action || 'Get in touch') + ')\n\n' +
+      'BACK PAGE:\n(Full back page content with more detail about the company, why choose them, areas covered)\n\n' +
+      'QR TEXT:\n(Short text to display near a QR code, encouraging scan)\n\n' +
+      'SLOGAN:\n(A short, memorable slogan for the company, max 8 words)\n\n' +
+      'Include contact details naturally where relevant: Phone: ' + (businessData.phone || 'N/A') + ', Website: ' + (businessData.website || 'N/A');
+
+    var requestBody = JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 1500,
+      temperature: 0.7
+    });
+
+    var result = await new Promise(function(resolve) {
+      const https = require('https');
+      var req = https.request({
+        hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(requestBody) }
+      }, function(r) { var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: { message: 'Failed to parse response' } }); } }); });
+      req.on('error', function(e) { resolve({ error: { message: e.message } }); });
+      req.write(requestBody); req.end();
+    });
+
+    if (result && result.choices && result.choices[0] && result.choices[0].message) {
+      var content = result.choices[0].message.content;
+      // Parse sections from response
+      var parse = function(label) {
+        var regex = new RegExp(label + ':\\s*([\\s\\S]*?)(?:\\n\\n(?:[A-Z ]+):|$)', 'i');
+        var m = content.match(regex);
+        return m ? m[1].trim() : '';
+      };
+      res.json({
+        success: true,
+        headline: parse('HEADLINE'),
+        subheadline: parse('SUBHEADLINE'),
+        services: parse('SERVICES'),
+        offer: parse('OFFER'),
+        trust: parse('TRUST'),
+        call_to_action: parse('CALL TO ACTION'),
+        back_page: parse('BACK PAGE'),
+        qr_text: parse('QR TEXT'),
+        slogan: parse('SLOGAN'),
+        raw: content,
+        input: businessData
+      });
+    } else {
+      res.status(500).json({ error: 'Failed to generate flyer content. Please try again.' });
+    }
+  } catch (e) {
+    res.status(500).json({ error: 'Sorry, the AI Marketing Builder encountered an error. Please try again.' });
+  }
+});
+
 // ===== ADMIN ENDPOINTS =====
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '9amAdmin2024!';
