@@ -150,6 +150,9 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <button class="nav-signout" id="logout-btn" onclick="logout()" style="background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;padding:9px 12px;border-radius:8px;display:flex;align-items:center;gap:10px;width:100%;font-family:inherit;font-weight:500"><i class="fas fa-sign-out-alt" style="width:18px;text-align:center"></i> Sign Out</button>
 </div>
 </div>
+<div id="admin-mode-banner" style="display:none;background:linear-gradient(135deg,#dc2626,#991b1b);padding:8px 16px;text-align:center;font-size:12px;font-weight:600;color:#fff;position:sticky;top:0;z-index:300">
+  <i class="fas fa-shield-alt"></i> Admin Mode — You are viewing this customer's dashboard. <a href="/admin/" style="color:#fff;text-decoration:underline;margin-left:8px;font-weight:700">Return to Admin</a>
+</div>
 <div class="main-content sidebar-closed">
 <!-- Company Header Bar -->
 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0 16px;margin-bottom:8px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px">
@@ -525,6 +528,12 @@ async function showDemoDashboard(demo) {
 
 async function loadDashboard() {
   const session = getSession(); if (!session) return;
+
+  // Admin impersonation mode
+  if (session.admin_impersonating) {
+    var banner = document.getElementById('admin-mode-banner');
+    if (banner) { banner.style.display = 'block'; banner.innerHTML = '<i class="fas fa-shield-alt"></i> Admin Mode — Viewing <strong>' + (session.email || 'this customer') + '</strong>\'s dashboard. Impersonated by <strong>' + (session.impersonated_by || 'Admin') + '</strong>. <a href="/admin/" style="color:#fff;text-decoration:underline;margin-left:8px;font-weight:700">Return to Admin</a>'; }
+  }
 
   // Demo mode — show sample data, no live actions
   var isDemo = window.location.search.indexOf('demo=1') !== -1;

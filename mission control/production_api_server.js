@@ -8951,6 +8951,35 @@ app.get('/api/direct-mail/outcomes', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== ADMIN IMPERSONATION =====
+// POST /api/admin/impersonate — Generate a token to login as a customer
+app.post('/api/admin/impersonate', adminAuth, (req, res) => {
+  try {
+    var customerId = req.body.customer_id;
+    var reason = req.body.reason || 'Admin assistance';
+    if (!customerId) return res.status(400).json({ error: 'Customer ID required' });
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    // Generate a temporary JWT token for this customer (admin is impersonating)
+    var token = jwt.sign({ id: customer.id, email: customer.email, product: customer.product, plan: customer.plan, admin_impersonating: true, impersonated_by: req.user.email || 'admin', impersonated_at: new Date().toISOString(), reason: reason }, JWT_SECRET || '9amleads_jwt_secret_2024', { expiresIn: '2h' });
+    // Log impersonation
+    var db2 = getDb();
+    if (!db2.impersonation_logs) db2.impersonation_logs = [];
+    db2.impersonation_logs.push({ id: uuidv4(), admin_email: req.user.email || 'admin', customer_id: customerId, customer_email: customer.email, reason: reason, created_at: new Date().toISOString() });
+    saveDb();
+    res.json({ success: true, token: token, customer: { id: customer.id, email: customer.email, company: customer.company, product: customer.product }, admin_email: req.user.email, message: 'Impersonation token generated for 2 hours' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/impersonate/logs — View impersonation logs
+app.get('/api/admin/impersonate/logs', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var logs = (db2.impersonation_logs || []).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    res.json({ success: true, logs: logs, total: logs.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== CUSTOMER SUCCESS DASHBOARD =====
 // GET /api/direct-mail/success — Customer success dashboard data
 app.get('/api/direct-mail/success', authMiddleware, (req, res) => {

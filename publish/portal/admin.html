@@ -104,6 +104,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 <select id="filterPlan" onchange="filterCustomers()" style="padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none"><option value="">All Plans</option><option value="free_trial">Free Trial</option><option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option><option value="cancelled">Cancelled</option></select>
 <select id="filterProduct" onchange="filterCustomers()" style="padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none"><option value="">All Products</option><option value="moving">Moving</option><option value="probate">Probate</option><option value="newbusiness">New Business</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select>
 <button class="btn btn-outline btn-sm" onclick="exportCsv()" style="white-space:nowrap"><i class="fas fa-download"></i> Export CSV</button>
+<button class="btn btn-outline btn-sm" onclick="showImpersonationLogs()" style="white-space:nowrap"><i class="fas fa-shield-alt"></i> Impersonation Logs</button>
 </div>
 
 <div class="card" style="padding:0;overflow:auto">
@@ -217,7 +218,7 @@ function renderCustomers(customers) {
       '<td style="font-size:11px">' + bookedVal + ' <span style="color:#5c6480">(' + convPct + '%)</span></td>' +
       '<td>' + hasCrm + '</td>' +
       '<td style="font-size:11px;color:#5c6480">' + signupDate + '</td>' +
-      '<td><button class="btn btn-view btn-sm" onclick="loginAs(\'' + c.id + '\')"><i class="fas fa-eye"></i></button></td></tr>';
+      '<td><div style="display:flex;gap:3px"><button class="btn btn-view btn-sm" onclick="loginAs(\'' + c.id + '\')" title="View details"><i class="fas fa-eye"></i></button><button class="btn btn-view btn-sm" onclick="impersonateCustomer(\'' + c.id + '\',\'' + (c.email || '').replace(/'/g,"\\'") + '\')" title="Login as customer" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i></button></div></td></tr>';
   }).join('');
 }
 
@@ -423,19 +424,27 @@ async function fixSendReminder(customerId) {
 
 async function loginAs(customerId) {
   try {
-    const r = await fetch(API + '/api/admin/impersonate', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ customer_id: customerId }) });
+    const r = await fetch(API + '/api/admin/impersonate', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ customer_id: customerId, reason: 'View profile' }) });
     const d = await r.json();
     if (d.token) {
-      try {
-        const payload = JSON.parse(atob(d.token.split('.')[1]));
-        localStorage.setItem('mld_portal_session', JSON.stringify({ token: d.token, clientId: customerId, name: payload.name || 'Admin', plan: payload.plan || 'free_trial', email: payload.email || '', product: payload.product || 'moving' }));
-      } catch(e) {
-        const c = d.customer || {};
-        localStorage.setItem('mld_portal_session', JSON.stringify({ token: d.token, clientId: customerId, name: c.name || 'Admin', plan: c.plan || 'free_trial', email: c.email || '', product: c.product || 'moving' }));
-      }
+      var session = { token: d.token, clientId: customerId, name: 'Admin', plan: d.customer?.plan || 'free_trial', email: d.customer?.email || '', product: d.customer?.product || 'moving', admin_impersonating: true, impersonated_by: d.admin_email || 'Admin' };
+      try { var payload = JSON.parse(atob(d.token.split('.')[1])); if (payload) { session.admin_impersonating = payload.admin_impersonating || true; session.impersonated_by = payload.impersonated_by || session.impersonated_by; } } catch(e2) {}
+      localStorage.setItem('mld_portal_session', JSON.stringify(session));
       window.location.href = '/portal/dashboard.html';
     } else { alert('Failed: ' + (d.error || 'unknown')); }
   } catch(e) { alert('Error: ' + e.message); }
+}
+
+function impersonateCustomer(id, email) {
+  var reason = prompt('Reason for impersonating ' + email + ':', 'Customer support');
+  if (!reason) return;
+  fetch(API + '/api/admin/impersonate', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ customer_id: id, reason: reason }) }).then(function(r) { return r.json(); }).then(function(d) {
+    if (d.token) {
+      var session = { token: d.token, clientId: id, name: 'Admin', plan: d.customer?.plan || 'free_trial', email: d.customer?.email || '', product: d.customer?.product || 'moving', admin_impersonating: true, impersonated_by: d.admin_email || 'Admin', impersonation_reason: reason };
+      localStorage.setItem('mld_portal_session', JSON.stringify(session));
+      window.location.href = '/portal/dashboard.html';
+    } else { alert('Failed: ' + (d.error || 'unknown')); }
+  }).catch(function(e) { alert('Error: ' + e.message); });
 }
 
 function exportCsv() {
@@ -449,6 +458,19 @@ function exportCsv() {
   const csv = [headers.join(','), ...rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '9amleads-customers.csv'; a.click();
+}
+
+// Impersonation logs
+function showImpersonationLogs() {
+  fetch(API + '/api/admin/impersonate/logs', { headers: adminHeaders() }).then(function(r) { return r.json(); }).then(function(d) {
+    if (!d.success) { showModal('Error', d.error); return; }
+    var h = '<table style="width:100%;border-collapse:collapse"><tr><th>Time</th><th>Admin</th><th>Customer</th><th>Customer Email</th><th>Reason</th></tr>';
+    (d.logs || []).slice(0, 50).forEach(function(l) {
+      h += '<tr><td style="font-size:11px;padding:6px 4px">' + new Date(l.created_at).toLocaleString() + '</td><td style="font-size:11px;padding:6px 4px">' + l.admin_email + '</td><td style="font-size:11px;padding:6px 4px">' + (l.customer_id || '').substring(0, 8) + '</td><td style="font-size:11px;padding:6px 4px">' + l.customer_email + '</td><td style="font-size:11px;padding:6px 4px">' + l.reason + '</td></tr>';
+    });
+    h += '</table>';
+    showModal('Impersonation Logs', h, '700px');
+  });
 }
 </script>
 </body></html>
