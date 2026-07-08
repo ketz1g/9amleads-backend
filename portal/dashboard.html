@@ -1354,7 +1354,11 @@ function showDMLetterGen(el) {
     '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Website</label><input type="url" id="ai-website" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
     '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:3px">Email</label><input type="email" id="ai-email" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div></div>' +
     '<button class="btn btn-primary" onclick="dmGenerateContent()" id="ai-gen-btn" style="width:100%;padding:12px"><i class="fas fa-magic"></i> Generate ' + (isLetter ? 'Introduction Letter' : 'Flyer Content') + '</button>' +
-    '</div></div>';
+    '</div></div>' +
+    '<div class="card" style="margin-top:12px"><div class="card-header"><div class="card-title"><i class="fas fa-tag" style="color:var(--warning)"></i> AI Offer Generator</div></div>' +
+    '<p style="font-size:11px;color:var(--muted2);margin-bottom:8px">Generate promotional offers based on your business profile. Use them in flyers, letters, and campaigns.</p>' +
+    '<button class="btn btn-outline btn-sm" onclick="dmShowOfferGenerator()" style="width:100%"><i class="fas fa-magic"></i> Generate Offers</button>' +
+    '<div id="ai-offers" style="display:none;margin-top:10px"></div></div>';
   html += '<div id="ai-results" style="display:none"></div>';
   el.innerHTML = html;
 
@@ -1529,6 +1533,96 @@ function dmConfirmSaveTemplate() {
 function dmUseContent() {
   showModal('Use in Campaign', '<div style="text-align:center;padding:20px"><i class="fas fa-bullhorn" style="font-size:40px;color:var(--primary);display:block;margin-bottom:12px"></i><p style="font-size:13px;color:var(--muted2);margin-bottom:16px">Go to Create Campaign to use your AI-generated content. It will be available as a template.</p>' +
     '<button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();showDirectMailCentre(\'create\')"><i class="fas fa-plus"></i> Create Campaign</button></div>', '400px');
+}
+
+var dmOffers = [];
+
+function dmShowOfferGenerator() {
+  var el = document.getElementById('ai-offers');
+  if (el) el.style.display = 'block';
+  if (dmOffers.length > 0) { dmRenderOffers(); return; }
+  if (el) el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i> Generating offers...</div>';
+  apiFetch('/api/ai/generate-offers', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    company_name: document.getElementById('ai-company')?.value || '',
+    business_type: document.getElementById('ai-industry')?.value || '',
+    services: document.getElementById('ai-services')?.value || '',
+    service_area: document.getElementById('ai-area')?.value || '',
+    phone: document.getElementById('ai-phone')?.value || '',
+    website: document.getElementById('ai-website')?.value || ''
+  })}).then(function(r) {
+    if (r && r.success && r.offers && r.offers.length > 0) { dmOffers = r.offers; dmRenderOffers(); }
+    else {
+      if (el) el.innerHTML = '<div style="padding:10px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)">No offers generated. Try again or complete your Business Profile.</div>';
+    }
+  }).catch(function() {
+    if (el) el.innerHTML = '<div style="padding:10px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.1);border-radius:6px;font-size:11px;color:var(--danger)">Connection error. Try again.</div>';
+  });
+}
+
+function dmRenderOffers() {
+  var el = document.getElementById('ai-offers');
+  if (!el) return;
+  var html = '<div style="display:grid;gap:8px;margin-top:4px">' + dmOffers.map(function(o, idx) {
+    var typeColors = { 'Free quote':'#10b981', 'Free inspection':'#6366f1', 'No call-out fee':'#f59e0b', 'Limited-time discount':'#ef4444', 'First job discount':'#8b5cf6', 'Seasonal offer':'#06b6d4', 'Bundle offer':'#ec4899', 'Local customer offer':'#14b8a6' };
+    var color = typeColors[o.type] || '#0ea5e9';
+    return '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow:hidden">' +
+      '<div style="height:3px;background:' + color + '"></div>' +
+      '<div style="padding:10px 12px"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:4px">' +
+      '<div style="font-size:13px;font-weight:700;color:var(--text)">' + o.title + '</div>' +
+      '<span style="font-size:10px;color:' + color + ';font-weight:600;text-transform:uppercase">' + (o.type || 'Offer') + '</span></div>' +
+      '<div style="font-size:11px;color:var(--muted2);margin-bottom:6px">' + (o.explanation || '') + '</div>' +
+      '<div style="display:flex;gap:4px;flex-wrap:wrap">' +
+      '<button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px;min-height:auto" onclick="dmViewOffer(' + idx + ')"><i class="fas fa-eye"></i> View</button>' +
+      '<button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px;min-height:auto" onclick="dmApplyOfferToFlyer(' + idx + ')"><i class="fas fa-file-image"></i> Use in Flyer</button>' +
+      '<button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px;min-height:auto" onclick="dmSaveOfferAsTemplate(' + idx + ')"><i class="fas fa-save"></i> Save</button>' +
+      '</div></div></div>';
+  }).join('') + '</div>' +
+    '<button class="btn btn-outline btn-sm" onclick="dmOffers = []; dmShowOfferGenerator();" style="margin-top:8px;width:100%;font-size:11px"><i class="fas fa-sync"></i> Regenerate Offers</button>';
+  el.innerHTML = html;
+}
+
+function dmViewOffer(idx) {
+  var o = dmOffers[idx];
+  if (!o) return;
+  var typeColors = { 'Free quote':'#10b981','Free inspection':'#6366f1','No call-out fee':'#f59e0b','Limited-time discount':'#ef4444','First job discount':'#8b5cf6','Seasonal offer':'#06b6d4','Bundle offer':'#ec4899','Local customer offer':'#14b8a6' };
+  showModal(o.title,
+    '<div style="display:grid;gap:8px;font-size:12px">' +
+    '<div><span class="badge" style="background:' + (typeColors[o.type] || '#0ea5e9') + ';color:#fff;padding:3px 10px;font-size:10px">' + (o.type || 'Offer') + '</span></div>' +
+    '<div><strong style="color:var(--text)">Explanation</strong><br><p style="color:var(--muted2);line-height:1.5">' + (o.explanation || '') + '</p></div>' +
+    '<div><strong style="color:var(--text)">Flyer Wording</strong><br><p style="color:var(--muted2);line-height:1.5">' + (o.flyer_wording || '') + '</p></div>' +
+    '<div><strong style="color:var(--text)">Letter Wording</strong><br><p style="color:var(--muted2);line-height:1.5">' + (o.letter_wording || '') + '</p></div>' +
+    '<div><strong style="color:var(--text)">Call to Action</strong><br><p style="color:var(--primary);font-weight:600">' + (o.call_to_action || '') + '</p></div>' +
+    '<div><strong style="color:var(--text)">Terms</strong><br><p style="color:var(--muted2);font-size:10px">' + (o.terms || '') + '</p></div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">' +
+    '<button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();dmApplyOfferToFlyer(' + idx + ')" style="flex:1;font-size:10px"><i class="fas fa-file-image"></i> Use in Flyer</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();dmSaveOfferAsTemplate(' + idx + ')" style="flex:1;font-size:10px"><i class="fas fa-save"></i> Save</button></div></div>', '500px');
+}
+
+function dmApplyOfferToFlyer(idx) {
+  var o = dmOffers[idx];
+  if (!o) return;
+  document.getElementById('ai-offer').value = o.title + ' - ' + (o.explanation || '');
+  document.getElementById('ai-cta').value = o.call_to_action || '';
+  showStatus('ai-gen-status', 'Offer applied to flyer/letter fields!', 'var(--success)');
+}
+
+function dmSaveOfferAsTemplate(idx) {
+  var o = dmOffers[idx];
+  if (!o) return;
+  var company = document.getElementById('ai-company')?.value || 'My Business';
+  showModal('Save Offer', '<div style="display:grid;gap:8px"><div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Template Name</label><input type="text" id="off-tpl-name" value="Offer: ' + o.title + ' - ' + company + '" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<button class="btn btn-primary btn-sm" onclick="dmConfirmSaveOffer(' + idx + ')"><i class="fas fa-save"></i> Save</button></div>', '420px');
+}
+
+function dmConfirmSaveOffer(idx) {
+  var o = dmOffers[idx];
+  var name = document.getElementById('off-tpl-name')?.value.trim();
+  if (!name) { alert('Name required'); return; }
+  var content = 'Offer: ' + (o.title || '') + '\nType: ' + (o.type || '') + '\nExplanation: ' + (o.explanation || '') + '\nFlyer: ' + (o.flyer_wording || '') + '\nLetter: ' + (o.letter_wording || '') + '\nCTA: ' + (o.call_to_action || '') + '\nTerms: ' + (o.terms || '');
+  apiFetch('/api/direct-mail/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name, type: 'letter', description: 'AI-generated offer', ai_generated_text: content }) }).then(function(r) {
+    if (r && r.success) { document.getElementById('modal-overlay')?.remove(); showStatus('ai-gen-status','Offer saved as template!','var(--success)'); }
+    else { alert('Failed to save'); }
+  });
 }
 
 var dmFlyerBgImage = null;

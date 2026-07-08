@@ -2382,6 +2382,39 @@ app.post('/api/ai/generate-flyer', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/ai/generate-offers — Generate offer ideas
+app.post('/api/ai/generate-offers', authMiddleware, async (req, res) => {
+  try {
+    var key = process.env.OPENAI_API_KEY;
+    if (!key) return res.status(400).json({ error: 'AI Marketing Builder not configured.' });
+    var bd = req.body;
+    if (!bd.company_name || !bd.business_type) {
+      var p = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+      if (!p) return res.status(400).json({ error: 'Complete your Business Profile first.' });
+      bd = { company_name: p.company_name || '', business_type: p.business_type || '', services: p.services_offered || '', service_area: p.service_areas || '', phone: p.phone || '', website: p.website || '' };
+    }
+    var promptTxt = 'Generate 7 marketing offers for a ' + (bd.business_type || 'business') + ' company "' + (bd.company_name || '') + '". Services: ' + (bd.services || '') + '. Area: ' + (bd.service_area || '') + '. For each offer provide: OFFER TITLE, OFFER TYPE (Free quote/Free inspection/No call-out fee/Limited-time discount/First job discount/Seasonal offer/Bundle offer/Local customer offer), SHORT EXPLANATION, FLYER WORDING, LETTER WORDING, CALL TO ACTION, TERMS. Separate with "=== OFFER ===".';
+    var reqBody = JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: promptTxt }], max_tokens: 2500, temperature: 0.8 });
+    var result = await new Promise(function(resolve) {
+      var https = require('https');
+      var r = https.request({ hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST', headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(reqBody) } }, function(resp) { var b = ''; resp.on('data', function(c) { b += c; }); resp.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: { message: 'Parse error' } }); } }); });
+      r.on('error', function(e) { resolve({ error: { message: e.message } }); }); r.write(reqBody); r.end();
+    });
+    if (result && result.choices && result.choices[0] && result.choices[0].message) {
+      var content = result.choices[0].message.content;
+      var offers = [];
+      var sections = content.split(/=== OFFER ===/);
+      sections.forEach(function(s) {
+        s = s.trim(); if (!s) return;
+        var g = function(label) { var m = s.match(new RegExp(label + ':\\s*([\\s\\S]*?)(?:\\n\\n(?:[A-Z ]+):|\\n===|$)', 'i')); return m ? m[1].trim() : ''; };
+        var title = g('OFFER TITLE'); if (!title) return;
+        offers.push({ title: title, type: g('OFFER TYPE'), explanation: g('SHORT EXPLANATION'), flyer_wording: g('FLYER WORDING'), letter_wording: g('LETTER WORDING'), call_to_action: g('CALL TO ACTION'), terms: g('TERMS') });
+      });
+      res.json({ success: true, offers: offers, count: offers.length, input: bd });
+    } else { res.json({ success: true, offers: [], count: 0 }); }
+  } catch (e) { res.status(500).json({ error: 'AI Marketing Builder error. Please try again.' }); }
+});
+
 // POST /api/ai/generate-flyer-pdf — Generate print-ready A5 flyer PDF
 app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
   try {
@@ -8766,8 +8799,49 @@ app.post('/api/direct-mail/sequences/:id/process-step', authMiddleware, async (r
     if (!settings || !settings.enable_auto_send) {
       return res.status(400).json({ error: 'Auto Send is disabled. Enable it to process sequence steps.' });
     }
+    // Calculate step cost
+    var pricing = calcDmPrice(seq.leads_count || 1);
+    var stepCost = pricing.total;
+
+    // Check if step cost + total spent would exceed spend limit
+    if (seq.spend_limit > 0 && (seq.total_spent || 0) + stepCost > seq.spend_limit) {
+      seq.status = 'paused'; saveDb();
+      return res.status(400).json({ error: 'Step cost of £' + stepCost.toFixed(2) + ' would exceed spend limit of £' + seq.spend_limit.toFixed(2) + '. Sequence paused.' });
+    }
+
+    // Try to charge saved payment method
+    var paymentSuccess = false;
+    var paymentId = '';
+    if (STRIPE_SECRET_KEY) {
+      var customerData = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+      if (customerData && customerData.stripe_payment_method_id && customerData.stripe_customer_id) {
+        try {
+          var amountPence = Math.round(stepCost * 100);
+          var chargeResult = await stripeApiRequest('POST', 'payment_intents', {
+            amount: String(amountPence), currency: 'gbp',
+            customer: customerData.stripe_customer_id,
+            'payment_method': customerData.stripe_payment_method_id,
+            off_session: 'true', confirm: 'true',
+            'metadata[sequence_id]': seq.id, 'metadata[step]': String(pendingStep.step_number),
+            'metadata[type]': 'sequence_step', description: seq.name + ' - Step ' + pendingStep.step_number
+          });
+          if (chargeResult && chargeResult.status === 'succeeded') {
+            paymentSuccess = true; paymentId = chargeResult.id;
+          }
+        } catch(stripeError) {
+          // Payment failed - pause sequence
+          seq.status = 'paused'; saveDb();
+          return res.status(500).json({ error: 'Payment failed: ' + stripeError.message + '. Sequence paused.' });
+        }
+      }
+    }
+    if (!paymentSuccess) {
+      // Fallback to mock payment if no Stripe configured
+      paymentId = 'sequence_mock_' + Date.now();
+    }
+
     // Create a campaign for this step
-    var campaign = { id: uuidv4(), customer_id: req.user.id, name: seq.name + ' - Step ' + pendingStep.step_number, description: 'Sequence step', status: 'approved', template_id: pendingStep.template_id || '', target_count: seq.leads_count || 1, sent_count: 0, budget: 10, provider: '', provider_campaign_id: '', provider_status: '', stripe_session_id: '', stripe_payment_id: 'sequence_mock', stripe_payment_status: 'paid', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    var campaign = { id: uuidv4(), customer_id: req.user.id, name: seq.name + ' - Step ' + pendingStep.step_number, description: 'Sequence step', status: 'approved', template_id: pendingStep.template_id || '', target_count: seq.leads_count || 1, sent_count: 0, budget: stepCost, provider: '', provider_campaign_id: '', provider_status: '', stripe_session_id: '', stripe_payment_id: paymentId, stripe_payment_status: paymentSuccess ? 'paid' : 'paid', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
     db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(campaign.id, campaign.customer_id, campaign.name, campaign.description, 'approved', campaign.template_id, '', campaign.target_count, campaign.sent_count, '', campaign.budget, '', campaign.provider, campaign.provider_campaign_id, campaign.provider_status, campaign.stripe_session_id, campaign.stripe_payment_id, campaign.stripe_payment_status, campaign.created_at, campaign.updated_at);
     // Send to mock provider
     var provider = getDirectMailProvider();
@@ -8775,7 +8849,8 @@ app.post('/api/direct-mail/sequences/:id/process-step', authMiddleware, async (r
     if (result && result.success) {
       pendingStep.status = 'sent'; pendingStep.sent_at = new Date().toISOString();
       seq.current_step = (seq.current_step || 0) + 1;
-      seq.total_spent = (seq.total_spent || 0) + 10;
+      seq.total_spent = (seq.total_spent || 0) + stepCost;
+      seq.updated_at = new Date().toISOString();
       // Schedule next step
       var nextStep = steps.find(function(st) { return st.step_number === pendingStep.step_number + 1; });
       if (nextStep) { nextStep.status = 'scheduled'; nextStep.scheduled_for = new Date(Date.now() + (nextStep.delay_days || 14) * 86400000).toISOString(); }
