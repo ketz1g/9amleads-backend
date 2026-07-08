@@ -1555,18 +1555,33 @@ function showDirectMailCentre(tab) {
   tab = tab || localStorage.getItem('dmTab') || 'overview';
   localStorage.setItem('dmTab', tab);
   var main = document.querySelector('.main-content');
-  var tabsHtml = DM_TABS.map(function(t) {
-    var active = tab === t;
-    return '<button class="btn btn-sm" onclick="showDirectMailCentre(\'' + t + '\')" style="font-size:10px;padding:6px 10px;background:' + (active ? 'var(--primary)' : 'var(--card2)') + ';color:' + (active ? '#fff' : 'var(--text2)') + ';border:1px solid ' + (active ? 'var(--primary)' : 'var(--border)') + ';border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;font-family:inherit;font-weight:' + (active ? '700' : '500') + '" onmouseover="this.style.opacity=\'0.85\'" onmouseout="this.style.opacity=\'1\'"><i class="fas ' + DM_TAB_ICONS[t] + '" style="margin-right:3px"></i>' + DM_TAB_NAMES[t] + '</button>';
+
+  // Group tabs into categories
+  var tabGroups = [
+    { label:'Overview', tabs:['overview'] },
+    { label:'Create', tabs:['create','packs','marketplace','seasonal'] },
+    { label:'Content', tabs:['ai-builder','upload','templates'] },
+    { label:'Track', tabs:['history','proof','analytics','calendar','timeline'] },
+    { label:'Automate', tabs:['settings','sequences','suppression'] },
+    { label:'Support', tabs:['done-for-you','knowledge','payments'] }
+  ];
+
+  var tabsHtml = tabGroups.map(function(g) {
+    return '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;padding:0 4px;border-right:1px solid var(--border);margin-right:4px">' +
+      (g.tabs.length > 1 ? '<span style="font-size:9px;color:var(--muted2);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px">' + g.label + '</span>' : '') +
+      g.tabs.map(function(t) {
+        var active = tab === t;
+        return '<button onclick="showDirectMailCentre(\'' + t + '\')" style="padding:5px 8px;font-size:10px;font-weight:' + (active ? '700' : '500') + ';color:' + (active ? 'var(--primary)' : 'var(--text2)') + ';background:' + (active ? 'rgba(14,165,233,.08)' : 'transparent') + ';border:' + (active ? '1px solid rgba(14,165,233,.15)' : '1px solid transparent') + ';border-radius:5px;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s" onmouseover="this.style.background=\'rgba(14,165,233,.04)\'" onmouseout="this.style.background=\'' + (active ? 'rgba(14,165,233,.08)' : 'transparent') + '\'" title="' + (DM_TAB_NAMES[t] || '') + '"><i class="fas ' + DM_TAB_ICONS[t] + '" style="margin-right:3px;font-size:9px"></i>' + DM_TAB_NAMES[t] + '</button>';
+      }).join('') + '</div>';
   }).join('');
 
   var showHelp = localStorage.getItem('dmShowHelp') !== '0';
-  main.innerHTML = '<div style="max-width:1000px;margin:0 auto">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">' +
-    '<div><h1 style="font-size:20px;font-weight:800;font-family:var(--ff-h)">Direct Mail Centre</h1><p style="font-size:12px;color:var(--muted2);margin-top:2px">Create, manage and automate your postal campaigns. <a href="#" onclick="dmToggleHelp();return false" style="color:var(--primary);text-decoration:underline;font-size:11px" id="dm-help-link">' + (showHelp ? 'Hide help' : 'Show help') + '</a></p></div>' +
-    '<a href="/portal/dashboard.html" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back to Dashboard</a></div>' +
-    '<div style="display:flex;gap:4px;margin-bottom:12px;padding:8px 0;overflow-x:auto;scrollbar-width:thin">' + tabsHtml + '</div>' +
-    (showHelp ? '<div id="dm-help-tip" style="padding:10px 14px;background:linear-gradient(135deg,rgba(14,165,233,.04),rgba(99,102,241,.02));border:1px solid rgba(14,165,233,.1);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:16px">' + (DM_HELP[tab] || '') + '</div>' : '<div id="dm-help-tip" style="display:none"></div>') +
+  main.innerHTML = '<div style="max-width:1000px;margin:0 auto;padding:8px 0">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">' +
+    '<div style="display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(99,102,241,.08));display:flex;align-items:center;justify-content:center;font-size:16px"><i class="fas fa-envelope-open-text" style="color:var(--primary)"></i></div><div><h1 style="font-size:18px;font-weight:800;font-family:var(--ff-h)">Direct Mail Centre</h1><p style="font-size:11px;color:var(--muted2);margin-top:1px">Create, manage and automate your postal campaigns</p></div></div>' +
+    '<div style="display:flex;gap:6px;align-items:center"><a href="#" onclick="dmToggleHelp();return false" style="font-size:10px;color:var(--muted2);text-decoration:none;display:flex;align-items:center;gap:3px;padding:5px 10px;border:1px solid var(--border);border-radius:6px" id="dm-help-link"><i class="fas fa-question-circle" style="color:var(--primary);font-size:10px"></i> ' + (showHelp ? 'Hide tips' : 'Tips') + '</a><a href="/portal/dashboard.html" class="btn btn-outline btn-sm" style="padding:5px 10px;font-size:10px"><i class="fas fa-arrow-left"></i> Back</a></div></div>' +
+    '<div style="display:flex;gap:2px;margin-bottom:14px;padding:6px 8px;background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow-x:auto;scrollbar-width:thin">' + tabsHtml + '</div>' +
+    (showHelp ? '<div id="dm-help-tip" style="padding:10px 14px;background:rgba(14,165,233,.03);border:1px solid rgba(14,165,233,.08);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:16px">' + (DM_HELP[tab] || '') + '</div>' : '<div id="dm-help-tip" style="display:none"></div>') +
     '<div id="dm-content" style="animation:slideUp .3s ease;min-height:200px"><div style="text-align:center;padding:60px 20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin" style="font-size:24px;display:block;margin-bottom:10px"></i>Loading...</div></div></div>';
 
   var el = document.getElementById('dm-content');
