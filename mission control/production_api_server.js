@@ -209,8 +209,14 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 // ===== JSON DATABASE (drop-in replacement for better-sqlite3) =====
 let _dbData = null;
 let _dbLock = Promise.resolve();
+var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs'];
+
 function getDb() {
   if (!_dbData) { _dbData = loadDb(); }
+  // Ensure all direct mail tables exist (for backward compatibility with existing DB files)
+  for (var _dmi = 0; _dmi < DIRECT_MAIL_TABLES.length; _dmi++) {
+    if (!_dbData[DIRECT_MAIL_TABLES[_dmi]]) _dbData[DIRECT_MAIL_TABLES[_dmi]] = [];
+  }
   return _dbData;
 }
 function loadDb() {
@@ -5073,8 +5079,10 @@ app.get('/api/direct-mail/stats', authMiddleware, (req, res) => {
     const byStatus = db.prepare('SELECT status, COUNT(*) as count FROM direct_mail_campaigns WHERE customer_id = ? GROUP BY status').all(req.user.id);
     const totalRecipients = db.prepare('SELECT COUNT(*) as count FROM direct_mail_recipients WHERE customer_id = ?').get(req.user.id);
     const sentRecipients = db.prepare('SELECT COUNT(*) as count FROM direct_mail_recipients WHERE customer_id = ? AND status = \'sent\'').get(req.user.id);
-    const totalSpend = db.prepare('SELECT SUM(total_cost) as total FROM direct_mail_orders WHERE customer_id = ?').get(req.user.id);
-    res.json({ success: true, total_campaigns: total.count, by_status: byStatus, total_recipients: totalRecipients.count, sent_recipients: sentRecipients.count, total_spend: totalSpend.total || 0 });
+    var allOrders = db.prepare('SELECT * FROM direct_mail_orders WHERE customer_id = ?').all(req.user.id);
+    var totalSpend = 0;
+    for (var _oi = 0; _oi < allOrders.length; _oi++) { totalSpend += Number(allOrders[_oi].total_cost || 0); }
+    res.json({ success: true, total_campaigns: total.count, by_status: byStatus, total_recipients: totalRecipients.count, sent_recipients: sentRecipients.count, total_spend: totalSpend });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
