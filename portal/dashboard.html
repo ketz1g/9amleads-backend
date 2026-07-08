@@ -1967,33 +1967,38 @@ function dmUsePDFInCampaign(frontId, backId) {
 }
 
 function showDMOverview(el) {
-  apiFetch('/api/direct-mail/stats').then(function(s) {
-    var stats = s || {};
-    var total = stats.total_campaigns || 0;
-    var byStatus = stats.by_status || [];
-    var drafts = 0, sent = 0;
-    for (var si = 0; si < byStatus.length; si++) {
-      if (byStatus[si].status === 'draft') drafts = byStatus[si].count;
-      if (byStatus[si].status === 'completed' || byStatus[si].status === 'dispatched') sent += byStatus[si].count;
-    }
-    var html = '<div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">' +
-      '<div class="kpi-card" style="border-left:3px solid #0ea5e9"><div class="kpi-num" style="color:#0ea5e9">' + total + '</div><div class="kpi-label">Total Campaigns</div></div>' +
-      '<div class="kpi-card" style="border-left:3px solid #f59e0b"><div class="kpi-num" style="color:#f59e0b">' + drafts + '</div><div class="kpi-label">Drafts</div></div>' +
-      '<div class="kpi-card" style="border-left:3px solid #22c55e"><div class="kpi-num" style="color:#22c55e">' + sent + '</div><div class="kpi-label">Sent</div></div>' +
-      '<div class="kpi-card" style="border-left:3px solid #6366f1"><div class="kpi-num" style="color:#6366f1">' + (stats.total_recipients || 0) + '</div><div class="kpi-label">Letters Posted</div></div>' +
-      '<div class="kpi-card" style="border-left:3px solid #ef4444"><div class="kpi-num" style="color:#ef4444">&pound;' + (stats.total_spend || 0) + '</div><div class="kpi-label">This Month</div></div>' +
-      '<div class="kpi-card" style="border-left:3px solid #ec4899"><div class="kpi-num" style="color:#ec4899;font-size:14px">' + (stats.auto_send ? 'On' : 'Off') + '</div><div class="kpi-label">Auto Send</div></div>' +
+  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i> Loading your success dashboard...</div>';
+  apiFetch('/api/direct-mail/success').then(function(sd) {
+    if (!sd || !sd.success) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted2)">Could not load</div>'; return; }
+    var pct = sd.completion_pct;
+    var pctColor = pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444';
+    var html = '<div class="card" style="background:linear-gradient(135deg,var(--card),rgba(14,165,233,.02));border:1px solid rgba(14,165,233,.1)"><div class="card-header"><div class="card-title" style="font-size:16px"><i class="fas fa-trophy" style="color:var(--warning)"></i> Customer Success Dashboard</div></div>' +
+      '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:12px">' +
+      '<div style="width:80px;height:80px;border-radius:50%;background:conic-gradient(' + pctColor + ' ' + pct + '%, var(--card2) ' + pct + '%);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:22px;font-weight:900;color:' + pctColor + '">' + pct + '</span></div>' +
+      '<div style="flex:1;min-width:150px"><div style="font-size:18px;font-weight:800;color:var(--text)">' + sd.completed + ' of ' + sd.total + ' milestones</div>' +
+      '<div style="font-size:11px;color:var(--muted2);margin-top:2px">' + (sd.next_action ? 'Next: <a href="#" onclick="showDirectMailCentre(\'' + sd.next_action.action + '\');return false" style="color:var(--primary);font-weight:600">' + sd.next_action.label + '</a>' : 'All milestones complete! <span style="color:var(--success)">&#10003;</span>') + '</div></div></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">' +
+      sd.milestones.map(function(m) {
+        return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:' + (m.met ? 'rgba(34,197,94,0.04)' : 'var(--card2)') + ';border:1px solid ' + (m.met ? 'rgba(34,197,94,0.15)' : 'var(--border)') + ';border-radius:6px;font-size:11px;cursor:pointer" onclick="' + (m.met ? '' : 'showDirectMailCentre(\'' + m.action + '\')') + '">' +
+          '<span style="font-size:16px;color:' + (m.met ? '#22c55e' : 'var(--muted2)') + '">' + (m.met ? '&#10003;' : '&#9711;') + '</span>' +
+          '<div style="flex:1"><div style="font-weight:600;color:' + (m.met ? 'var(--success)' : 'var(--text2)') + '">' + m.label + '</div></div></div>';
+      }).join('') +
+      '</div></div>';
+    // Add recent campaigns and stats
+    html += '<div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">' +
+      '<div class="kpi-card" style="border-left:3px solid #0ea5e9"><div class="kpi-num" style="color:#0ea5e9">' + sd.completed + '/' + sd.total + '</div><div class="kpi-label">Milestones</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #22c55e"><div class="kpi-num" style="color:#22c55e">' + sd.recent_campaigns.length + '</div><div class="kpi-label">Campaigns</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #6366f1"><div class="kpi-num" style="color:#6366f1">' + (sd.auto_send_enabled ? 'On' : 'Off') + '</div><div class="kpi-label">Auto Send</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #ec4899"><div class="kpi-num" style="color:#ec4899;font-size:14px">' + pct + '%</div><div class="kpi-label">Complete</div></div>' +
       '</div>';
-    html += '<div style="margin-bottom:8px;padding:8px 12px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:8px;font-size:11px;color:var(--muted2);text-align:center"><i class="fas fa-flask" style="color:#f59e0b;margin-right:4px"></i>Test Mode Active — No real mail will be sent. MockDirectMailProvider is simulating all campaigns.</div>' +
-      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-clock" style="color:var(--primary)"></i> Latest Campaign Status</div><button class="btn btn-outline btn-sm" onclick="showDirectMailCentre(\'history\')">View All</button></div><div id="dm-latest-status"><p style="color:var(--muted2);font-size:12px;padding:8px 0">No campaigns yet. <a href="#" onclick="showDirectMailCentre(\'create\');return false" style="color:var(--primary)">Create your first campaign</a></p></div></div>';
+    if (sd.recent_campaigns.length > 0) {
+      html += '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-clock" style="color:var(--primary)"></i> Recent Campaigns</div><button class="btn btn-outline btn-sm" onclick="showDirectMailCentre(\'history\')">View All</button></div>' +
+        sd.recent_campaigns.map(function(c) {
+          var badge = c.status === 'completed' || c.status === 'dispatched' ? 'badge-green' : c.status === 'draft' ? 'badge-orange' : 'badge-blue';
+          return '<div style="padding:8px 10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:11px"><div><strong>' + c.name + '</strong> <span style="font-size:10px;color:var(--muted2)">' + new Date(c.created_at).toLocaleDateString() + '</span></div><span class="badge ' + badge + '" style="font-size:9px">' + c.status + '</span></div>';
+        }).join('') + '</div>';
+    }
     el.innerHTML = html;
-    // Load latest campaign
-    apiFetch('/api/direct-mail/campaigns').then(function(cr) {
-      if (cr && cr.campaigns && cr.campaigns.length > 0) {
-        var latest = cr.campaigns[0];
-        document.getElementById('dm-latest-status').innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;flex-wrap:wrap;gap:8px"><div><strong>' + latest.name + '</strong><br><span style="font-size:11px;color:var(--muted2)">Created ' + new Date(latest.created_at).toLocaleDateString() + '</span></div><span class="badge ' + (latest.status === 'draft' ? 'badge-orange' : latest.status === 'completed' ? 'badge-green' : 'badge-blue') + '">' + latest.status + '</span></div>';
-      }
-    });
   });
 }
 

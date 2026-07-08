@@ -8951,6 +8951,69 @@ app.get('/api/direct-mail/outcomes', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== CUSTOMER SUCCESS DASHBOARD =====
+// GET /api/direct-mail/success — Customer success dashboard data
+app.get('/api/direct-mail/success', authMiddleware, (req, res) => {
+  try {
+    var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+    var templates = db.prepare('SELECT COUNT(*) as count FROM direct_mail_templates WHERE customer_id = ?').get(req.user.id);
+    var campaigns = db.prepare('SELECT * FROM direct_mail_campaigns WHERE customer_id = ?').all(req.user.id);
+    var settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    var db2 = getDb();
+    var packs = (db2.customer_campaign_packs || []).filter(function(p) { return p.customer_id === req.user.id; });
+    // Define milestones
+    var milestones = [
+      { id:'profile', label:'Business Profile completed', met: !!(profile && profile.company_name && profile.business_type), icon:'fa-building', action:'business-profile' },
+      { id:'logo', label:'Logo uploaded', met: !!(profile && profile.logo_url), icon:'fa-image', action:'business-profile' },
+      { id:'first_template', label:'First template created', met: (templates && templates.count > 0), icon:'fa-file-alt', action:'templates' },
+      { id:'campaign_pack', label:'Campaign Pack selected', met: packs.length > 0, icon:'fa-box', action:'packs' },
+      { id:'first_campaign', label:'First campaign created', met: campaigns.length > 0, icon:'fa-bullhorn', action:'create' },
+      { id:'first_sent', label:'First campaign sent', met: campaigns.some(function(c) { return c.status === 'sent' || c.status === 'completed' || c.status === 'dispatched' || c.status === 'queued'; }), icon:'fa-paper-plane', action:'history' },
+      { id:'first_completed', label:'First campaign completed', met: campaigns.some(function(c) { return c.status === 'completed' || c.status === 'dispatched'; }), icon:'fa-check-circle', action:'history' },
+      { id:'auto_send', label:'Auto Send enabled', met: settings && settings.enable_auto_send, icon:'fa-clock', action:'settings' },
+      { id:'payment_method', label:'Payment method added', met: customer && customer.stripe_payment_method_id ? true : false, icon:'fa-credit-card', action:'settings' },
+      { id:'spend_limits', label:'Spend limits set', met: settings && (parseInt(settings.max_daily_spend) > 0 || parseInt(settings.max_monthly_spend) > 0), icon:'fa-pound-sign', action:'settings' }
+    ];
+    var completed = milestones.filter(function(m) { return m.met; }).length;
+    var total = milestones.length;
+    var pct = Math.round(completed / total * 100);
+    var nextAction = milestones.find(function(m) { return !m.met; });
+    var recents = campaigns.sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); }).slice(0, 3);
+    res.json({
+      success: true, completion_pct: pct, completed: completed, total: total,
+      milestones: milestones, next_action: nextAction ? nextAction : null,
+      recent_campaigns: recents, auto_send_enabled: settings && settings.enable_auto_send ? true : false
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin: GET /api/admin/direct-mail/success — All customers' success progress
+app.get('/api/admin/direct-mail/success', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var customers = db2.customers || [];
+    var results = [];
+    customers.forEach(function(cust) {
+      var profile = (db2.customer_business_profiles || []).find(function(p) { return p.customer_id === cust.id; });
+      var templates = (db2.direct_mail_templates || []).filter(function(t) { return t.customer_id === cust.id; });
+      var campaigns = (db2.direct_mail_campaigns || []).filter(function(c) { return c.customer_id === cust.id; });
+      var settings = (db2.direct_mail_automation_settings || []).find(function(s) { return s.customer_id === cust.id; });
+      var packs = (db2.customer_campaign_packs || []).filter(function(p) { return p.customer_id === cust.id; });
+      var milestones = [
+        !!profile, !!profile && profile.company_name && profile.business_type,
+        templates.length > 0, packs.length > 0, campaigns.length > 0,
+        campaigns.some(function(c) { return c.status === 'sent' || c.status === 'completed' || c.status === 'dispatched'; }),
+        campaigns.some(function(c) { return c.status === 'completed' || c.status === 'dispatched'; }),
+        settings && settings.enable_auto_send, cust.stripe_payment_method_id ? true : false
+      ];
+      var completed = milestones.filter(Boolean).length;
+      results.push({ customer_id: cust.id, email: cust.email || 'unknown', company: cust.company || '', plan: cust.plan || '', completed: completed, total: milestones.length, pct: Math.round(completed / milestones.length * 100), milestones: { profile: !!profile, business_details: !!(profile && profile.company_name), template: templates.length > 0, pack: packs.length > 0, first_campaign: campaigns.length > 0, sent: milestones[5], completed_campaign: milestones[6], auto_send: milestones[7], payment_method: milestones[8] } });
+    });
+    res.json({ success: true, entries: results, total: results.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== DEMO MODE =====
 var DEMO_MODE_ENABLED = false;
 var DEMO_MODE_FILE = path.join(DATA_DIR, 'demo-mode.json');
