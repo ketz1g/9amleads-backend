@@ -1418,7 +1418,10 @@ function dmGenerateContent() {
         var content = dmGenContent[s.id] || '';
         html += dmContentBlock('flyer-'+s.id, s.icon, s.label, content);
       });
-      html += '</div><div id="ai-pdf-section" style="margin-top:12px"></div>' +
+      html += '<div class="card" style="margin-top:12px"><div class="card-header"><div class="card-title"><i class="fas fa-image" style="color:var(--primary)"></i> Optional Visual Concept</div></div>' +
+        '<p style="font-size:11px;color:var(--muted2);margin-bottom:8px">Generate an AI design concept to use as a background visual in your flyer. This is optional — the standard PDF layout works without it.</p>' +
+        '<div id="ai-image-section"><button class="btn btn-outline btn-sm" onclick="dmGenerateFlyerImage()"><i class="fas fa-sparkles"></i> Generate Visual Concept</button></div></div>' +
+        '</div><div id="ai-pdf-section" style="margin-top:12px"></div>' +
         '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
         '<button class="btn btn-primary btn-sm" onclick="dmGenerateFlyerPDF()" style="background:linear-gradient(135deg,#7c3aed,#6d28d9)"><i class="fas fa-file-pdf"></i> Generate Print-Ready PDF</button>' +
         '<button class="btn btn-primary btn-sm" onclick="dmSaveContentAsTemplate()"><i class="fas fa-save"></i> Save as Template</button>' +
@@ -1507,6 +1510,42 @@ function dmUseContent() {
     '<button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();showDirectMailCentre(\'create\')"><i class="fas fa-plus"></i> Create Campaign</button></div>', '400px');
 }
 
+var dmFlyerBgImage = null;
+
+function dmGenerateFlyerImage() {
+  var section = document.getElementById('ai-image-section');
+  if (section) section.innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i> Generating visual concept...</div>';
+  var company = document.getElementById('ai-company')?.value || 'business';
+  var industry = document.getElementById('ai-industry')?.value || 'professional service';
+  var prompt = 'A professional, clean background image for a ' + industry + ' flyer. Abstract, light colors, suitable for text overlay. No text. Minimalist design. High quality. Style: modern corporate.';
+  apiFetch('/api/ai/generate-image', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ prompt: prompt, size: '1024x1024', quality: 'standard' }) }).then(function(r) {
+    if (r && r.url) {
+      dmFlyerBgImage = r.url;
+      if (section) section.innerHTML = '<div style="position:relative;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:8px;text-align:center">' +
+        '<img src="' + r.url + '" style="max-width:100%;max-height:180px;border-radius:6px;display:block;margin:0 auto">' +
+        '<div style="display:flex;gap:6px;margin-top:6px;justify-content:center;flex-wrap:wrap">' +
+        '<button class="btn btn-success btn-sm" onclick="dmAcceptFlyerImage()" style="font-size:10px;padding:4px 10px"><i class="fas fa-check"></i> Use This Image</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="dmGenerateFlyerImage()" style="font-size:10px;padding:4px 10px"><i class="fas fa-sync"></i> Regenerate</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="dmRemoveFlyerImage()" style="font-size:10px;padding:4px 10px;color:var(--danger)"><i class="fas fa-times"></i> Remove</button></div></div>';
+    } else {
+      if (section) section.innerHTML = '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2);text-align:center">Visual concept unavailable — continue with standard layout.</div>';
+    }
+  }).catch(function() {
+    if (section) section.innerHTML = '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2);text-align:center">Visual concept unavailable — continue with standard layout.</div>';
+  });
+}
+
+function dmAcceptFlyerImage() {
+  var section = document.getElementById('ai-image-section');
+  if (section) section.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:8px;font-size:11px;color:var(--success)"><i class="fas fa-check-circle"></i> Image accepted — will be used in PDF as background.</div>';
+}
+
+function dmRemoveFlyerImage() {
+  dmFlyerBgImage = null;
+  var section = document.getElementById('ai-image-section');
+  if (section) section.innerHTML = '<button class="btn btn-outline btn-sm" onclick="dmGenerateFlyerImage()"><i class="fas fa-sparkles"></i> Generate Visual Concept</button>';
+}
+
 function dmGenerateFlyerPDF() {
   var style = document.getElementById('ai-style')?.value || 'professional';
   var btn = document.getElementById('ai-pdf-section');
@@ -1529,7 +1568,8 @@ function dmGenerateFlyerPDF() {
     back_page: dmGenContent?.back_page || '',
     qr_text: dmGenContent?.qr_text || '',
     slogan: dmGenContent?.slogan || '',
-    logo_url: dmGenContent?.logo_url || ''
+    logo_url: dmGenContent?.logo_url || '',
+    background_image: dmFlyerBgImage || ''
   };
 
   apiFetch('/api/ai/generate-flyer-pdf', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(function(r) {

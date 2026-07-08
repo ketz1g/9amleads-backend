@@ -2196,6 +2196,11 @@ app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
           // Background
           doc.rect(0, 0, pageW, pageH).fill(c.light);
 
+          // Optional background image
+          if (data.background_image && data.background_image.startsWith('data:image') || data.background_image && data.background_image.startsWith('http')) {
+            try { doc.image(data.background_image, 0, 0, { width: pageW, height: pageH, opacity: 0.08 }); } catch(e) { /* skip background */ }
+          }
+
           // Top color bar
           doc.rect(0, 0, pageW, 6).fill(c.primary);
 
