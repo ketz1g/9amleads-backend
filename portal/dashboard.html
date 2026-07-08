@@ -1300,7 +1300,7 @@ function showDirectMailCentre(tab) {
   else if (tab === 'templates') { showDMTemplates(el); }
   else if (tab === 'settings') { showDMSettings(el); }
   else if (tab === 'history') { showDMHistory(el); }
-  else if (tab === 'proof') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-check-circle" style="font-size:40px;color:var(--warning);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Proof of Sending</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto">Proof of sending documents will appear here once campaigns are dispatched through our print provider. No campaigns have been sent yet.</p></div>'; }
+  else if (tab === 'proof') { el.innerHTML = '<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px"><h2 style="font-size:16px;font-weight:700">Proof of Sending</h2><button class="btn btn-outline btn-sm" onclick="dmRefreshProof()"><i class="fas fa-sync"></i> Refresh</button></div><div id="dm-proof-list"><div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div>'; dmRefreshProof(); }
   else if (tab === 'payments') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-file-invoice-dollar" style="font-size:40px;color:var(--success);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Payments &amp; Invoices</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto">Payment history and invoices will appear here once your first campaign is submitted. Payments are processed securely through Stripe.</p></div>'; }
 }
 
@@ -1322,7 +1322,8 @@ function showDMOverview(el) {
       '<div class="kpi-card" style="border-left:3px solid #ef4444"><div class="kpi-num" style="color:#ef4444">&pound;' + (stats.total_spend || 0) + '</div><div class="kpi-label">This Month</div></div>' +
       '<div class="kpi-card" style="border-left:3px solid #ec4899"><div class="kpi-num" style="color:#ec4899;font-size:14px">' + (stats.auto_send ? 'On' : 'Off') + '</div><div class="kpi-label">Auto Send</div></div>' +
       '</div>';
-    html += '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-clock" style="color:var(--primary)"></i> Latest Campaign Status</div><button class="btn btn-outline btn-sm" onclick="showDirectMailCentre(\'history\')">View All</button></div><div id="dm-latest-status"><p style="color:var(--muted2);font-size:12px;padding:8px 0">No campaigns yet. <a href="#" onclick="showDirectMailCentre(\'create\');return false" style="color:var(--primary)">Create your first campaign</a></p></div></div>';
+    html += '<div style="margin-bottom:8px;padding:8px 12px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:8px;font-size:11px;color:var(--muted2);text-align:center"><i class="fas fa-flask" style="color:#f59e0b;margin-right:4px"></i>Test Mode Active — No real mail will be sent. MockDirectMailProvider is simulating all campaigns.</div>' +
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-clock" style="color:var(--primary)"></i> Latest Campaign Status</div><button class="btn btn-outline btn-sm" onclick="showDirectMailCentre(\'history\')">View All</button></div><div id="dm-latest-status"><p style="color:var(--muted2);font-size:12px;padding:8px 0">No campaigns yet. <a href="#" onclick="showDirectMailCentre(\'create\');return false" style="color:var(--primary)">Create your first campaign</a></p></div></div>';
     el.innerHTML = html;
     // Load latest campaign
     apiFetch('/api/direct-mail/campaigns').then(function(cr) {
@@ -1380,20 +1381,26 @@ function showDMCreate(el) {
       '<i class="fas fa-file-alt" style="font-size:48px;color:var(--muted2);margin-bottom:12px"></i>' +
       '<p style="font-size:13px;color:var(--muted2)">Preview of your campaign materials will appear here once generated.<br><span style="font-size:11px">AI-generated content and print previews will be available in the next update.</span></p></div></div>';
   } else if (step === 4) {
+    // Get stored campaign info
+    var dmCampaignName = localStorage.getItem('dmCampaignName') || 'My Campaign';
+    var dmCampaignType = localStorage.getItem('dmCampaignType') || 'A5 Flyer';
+    var dmLeadCount = localStorage.getItem('dmLeadCount') || '0';
     contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-check-double" style="color:var(--primary)"></i> Step 4: Approve</div></div>' +
-      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Review your campaign details before submitting for printing.</p>' +
+      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Review your campaign details before submitting.</p>' +
       '<div style="display:grid;gap:8px">' +
-      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Campaign</span><span style="font-weight:600;color:var(--text)">Summer Promotion</span></div>' +
-      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Material</span><span style="font-weight:600;color:var(--text)">A5 Flyer</span></div>' +
-      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Recipients</span><span style="font-weight:600;color:var(--text)">50 leads</span></div>' +
-      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Estimated Cost</span><span style="font-weight:600;color:var(--text)">&pound;37.50</span></div>' +
-      '</div><div style="margin-top:12px;padding:10px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)"><i class="fas fa-info-circle" style="color:#f59e0b;margin-right:4px"></i>By approving, you confirm the content is accurate and ready for printing.</div></div>';
+      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Campaign Name</span><span id="dm-review-name" style="font-weight:600;color:var(--text)">' + dmCampaignName + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Material Type</span><span id="dm-review-type" style="font-weight:600;color:var(--text)">' + dmCampaignType + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Recipients</span><span id="dm-review-recipients" style="font-weight:600;color:var(--text)">' + dmLeadCount + ' leads selected</span></div>' +
+      '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Test Mode</span><span style="font-weight:600;color:var(--warning)"><i class="fas fa-flask"></i> Mock Provider</span></div>' +
+      '</div>' +
+      '<div style="margin-top:12px;padding:10px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)"><i class="fas fa-info-circle" style="color:#f59e0b;margin-right:4px"></i>By approving, you confirm the content is accurate. <strong>Test Mode — No real mail will be sent.</strong></div>' +
+      '<div style="margin-top:12px"><button class="btn btn-primary" onclick="dmApproveAndSend()" style="width:100%;padding:12px"><i class="fas fa-check"></i> Approve &amp; Send Test Campaign</button></div></div>';
   } else if (step === 5) {
-    contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-credit-card" style="color:var(--primary)"></i> Step 5: Pay &amp; Send</div></div>' +
-      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Payment processing will be handled securely via Stripe. This feature will be available in the next update.</p>' +
-      '<div style="padding:20px;background:var(--card2);border:1px solid var(--border);border-radius:8px;text-align:center;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center">' +
-      '<i class="fas fa-lock" style="font-size:32px;color:var(--muted2);margin-bottom:8px"></i>' +
-      '<p style="font-size:13px;color:var(--muted2)">Stripe payment integration coming soon.<br>Your campaigns will be saved as drafts until then.</p></div></div>';
+    contentHtml = '<div id="dm-send-result"><div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-paper-plane" style="color:var(--success)"></i> Sending Campaign</div></div>' +
+      '<div style="text-align:center;padding:30px"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--primary);display:block;margin-bottom:12px"></i>' +
+      '<p style="font-size:14px;color:var(--text)">Sending to Mock Provider...</p><p style="font-size:11px;color:var(--muted2);margin-top:4px">Test Mode — No real mail will be sent</p></div></div></div>';
+    // Auto-send
+    dmExecuteSend();
   }
 
   var navHtml = '<div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px">' +
@@ -1620,6 +1627,89 @@ function dmUpdateCount() {
   var count = Object.keys(dmSelectedLeads).length;
   var el = document.getElementById('dm-sel-count');
   if (el) el.textContent = count + ' selected';
+}
+
+var dmSendingCampaignId = null;
+
+function dmApproveAndSend() {
+  var name = localStorage.getItem('dmCampaignName') || 'Test Campaign ' + new Date().toLocaleDateString();
+  var leadIds = Object.keys(dmSelectedLeads);
+  // Create the campaign
+  apiFetch('/api/direct-mail/campaigns', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    name: name, description: 'Created via Direct Mail Centre', target_count: leadIds.length, budget: 0
+  })}).then(function(r) {
+    if (r && r.success) {
+      dmSendingCampaignId = r.campaign.id;
+      // Add selected leads as recipients
+      var addPromises = [];
+      var validLeads = dmAllLeads.filter(function(l) { return leadIds.indexOf(l.id) !== -1; });
+      validLeads.forEach(function(l) {
+        addPromises.push(apiFetch('/api/direct-mail/campaigns/' + dmSendingCampaignId + '/recipients', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+          name: l.name || 'Lead', lead_id: l.id, address_line1: l.address_line1 || l.address || '', city: l.city || '', postcode: l.postcode || ''
+        })}));
+      });
+      // Wait for all recipients to be added, then update status to approved and send
+      Promise.all(addPromises).then(function() {
+        apiFetch('/api/direct-mail/campaigns/' + dmSendingCampaignId + '/status', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ status: 'approved' }) }).then(function() {
+          // Move to step 5 to trigger send
+          localStorage.setItem('dmStep', '5');
+          showDirectMailCentre('create');
+        });
+      });
+    } else { alert('Failed to create campaign: ' + (r?.error || 'Unknown error')); }
+  });
+}
+
+function dmExecuteSend() {
+  if (!dmSendingCampaignId) { 
+    document.getElementById('dm-send-result').innerHTML = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-times-circle" style="color:var(--danger)"></i> Send Failed</div></div><div style="text-align:center;padding:20px;color:var(--muted2);font-size:13px">No campaign to send. Please go back to Step 4 and approve first.</div></div>';
+    return;
+  }
+  apiFetch('/api/direct-mail/campaigns/' + dmSendingCampaignId + '/send', { method:'POST' }).then(function(r) {
+    if (r && r.success) {
+      var html = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-check-circle" style="color:var(--success)"></i> Campaign Sent!</div></div>' +
+        '<div style="text-align:center;padding:20px">' +
+        '<div style="font-size:40px;margin-bottom:8px">📬</div>' +
+        '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Test Campaign Sent Successfully</div>' +
+        '<div style="font-size:11px;color:var(--muted2);margin-bottom:12px;line-height:1.6">Provider: <strong>' + r.provider + '</strong><br>Provider ID: <strong>' + r.provider_campaign_id + '</strong><br>Recipients: <strong>' + r.total_valid + '</strong><br>Invalid Addresses: <strong>' + (r.invalid_addresses || 0) + '</strong></div>' +
+        '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2);margin-bottom:12px"><i class="fas fa-flask" style="color:#f59e0b;margin-right:4px"></i>Test Mode — No real mail was sent. Status updates are simulated.</div>' +
+        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
+        '<button class="btn btn-primary btn-sm" onclick="showDirectMailCentre(\'overview\')"><i class="fas fa-chart-pie"></i> View Overview</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="showDirectMailCentre(\'history\')"><i class="fas fa-clock"></i> Campaign History</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="showDirectMailCentre(\'proof\')"><i class="fas fa-check-circle"></i> Proof of Sending</button>' +
+        '</div></div></div>';
+      document.getElementById('dm-send-result').innerHTML = html;
+    } else {
+      document.getElementById('dm-send-result').innerHTML = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-times-circle" style="color:var(--danger)"></i> Send Failed</div></div><div style="text-align:center;padding:20px;color:var(--muted2);font-size:13px">' + (r?.error || 'Unknown error') + '</div></div>';
+    }
+  }).catch(function() {
+    document.getElementById('dm-send-result').innerHTML = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-times-circle" style="color:var(--danger)"></i> Send Failed</div></div><div style="text-align:center;padding:20px;color:var(--muted2);font-size:13px">Connection error. Please try again.</div></div>';
+  });
+}
+
+function dmRefreshProof() {
+  var el = document.getElementById('dm-proof-list');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div>';
+  apiFetch('/api/direct-mail/campaigns').then(function(r) {
+    var campaigns = r && r.campaigns ? r.campaigns.filter(function(c) { return c.provider_campaign_id; }) : [];
+    if (campaigns.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:40px 20px"><i class="fas fa-check-circle" style="font-size:40px;color:var(--muted2);display:block;margin-bottom:12px"></i><h3 style="font-size:16px;font-weight:700;margin-bottom:6px">No Sent Campaigns</h3><p style="font-size:12px;color:var(--muted2);margin-bottom:16px">Proof of sending will appear here once you send a campaign through the provider.</p><button class="btn btn-primary btn-sm" onclick="showDirectMailCentre(\'create\')">Send a Test Campaign</button></div>';
+      return;
+    }
+    var html = '<div style="display:grid;gap:8px">';
+    var checkIdx = 0;
+    (function loadProofs() {
+      if (checkIdx >= campaigns.length) { el.innerHTML = html + '</div>'; return; }
+      var c = campaigns[checkIdx];
+      apiFetch('/api/direct-mail/campaigns/' + c.id + '/proof').then(function(p) {
+        var label = c.status === 'completed' || c.status === 'dispatched' ? '✅ Proof Available' : '⏳ Pending';
+        var proofInfo = p && p.proof ? '<span style="font-size:10px">Postage: ' + p.proof.postage_date + ' · Est. delivery: ' + p.proof.estimated_delivery + '</span>' : '<span style="font-size:10px;color:var(--muted2)">Proof not ready yet</span>';
+        html += '<div style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><strong style="font-size:12px;color:var(--text)">' + c.name + '</strong><br>' + proofInfo + '</div><span style="font-size:11px;color:var(--muted2)">' + label + '</span></div>';
+        checkIdx++; loadProofs();
+      }).catch(function() { checkIdx++; loadProofs(); });
+    })();
+  });
 }
 
 function showDMUpload(el) {
