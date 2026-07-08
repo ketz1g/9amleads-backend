@@ -5153,6 +5153,94 @@ app.get('/api/direct-mail/leads', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+var ALLOWED_FILE_TYPES = ['application/pdf','image/png','image/jpeg','image/jpg'];
+var ALLOWED_EXTENSIONS = ['.pdf','.png','.jpg','.jpeg'];
+var MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+// POST /api/direct-mail/upload — Upload a file (base64 JSON)
+app.post('/api/direct-mail/upload', authMiddleware, (req, res) => {
+  try {
+    var fileType = req.body.file_type || '';
+    var fileName = req.body.file_name || 'untitled';
+    var fileData = req.body.file_data || '';
+    var campaignId = req.body.campaign_id || '';
+    var templateId = req.body.template_id || '';
+    var description = req.body.description || '';
+
+    if (!fileData) return res.status(400).json({ error: 'No file data provided' });
+    if (fileData.length > MAX_FILE_SIZE) return res.status(400).json({ error: 'File too large. Maximum 10MB.' });
+
+    var ext = '.' + (fileName.split('.').pop() || '').toLowerCase();
+    if (ALLOWED_EXTENSIONS.indexOf(ext) === -1) return res.status(400).json({ error: 'Invalid file type. Allowed: PDF, PNG, JPG, JPEG' });
+
+    if (!['flyer_front','flyer_back','letter','logo','extra'].includes(fileType)) {
+      return res.status(400).json({ error: 'Invalid file type. Must be: flyer_front, flyer_back, letter, logo, or extra' });
+    }
+
+    // Store file in database
+    var material = {
+      id: uuidv4(),
+      customer_id: req.user.id,
+      name: fileName,
+      type: fileType,
+      file_data: fileData,
+      file_type: ext === '.pdf' ? 'pdf' : 'image',
+      file_size: fileData.length,
+      description: description,
+      campaign_id: campaignId || '',
+      template_id: templateId || '',
+      created_at: new Date().toISOString()
+    };
+
+    db.prepare('INSERT INTO direct_mail_materials (id,customer_id,name,type,file_data,file_type,file_size,description,campaign_id,template_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(
+      material.id, material.customer_id, material.name, material.type,
+      material.file_data, material.file_type, material.file_size,
+      material.description, material.campaign_id, material.template_id,
+      material.created_at
+    );
+
+    res.json({ success: true, material: { id: material.id, name: material.name, type: material.type, file_type: material.file_type, file_size: material.file_size, description: material.description, campaign_id: material.campaign_id, template_id: material.template_id, created_at: material.created_at } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/materials — Get customer's uploaded materials
+app.get('/api/direct-mail/materials', authMiddleware, (req, res) => {
+  try {
+    var campaignId = req.query.campaign_id || '';
+    var type = req.query.type || '';
+    var sql = 'SELECT * FROM direct_mail_materials WHERE customer_id = ?';
+    var params = [req.user.id];
+    if (campaignId) { sql += ' AND campaign_id = ?'; params.push(campaignId); }
+    if (type) { sql += ' AND type = ?'; params.push(type); }
+    sql += ' ORDER BY created_at DESC';
+    var materials = db.prepare(sql).all.apply(null, params);
+    // Strip file_data from list response for performance
+    var list = materials.map(function(m) {
+      return { id: m.id, name: m.name, type: m.type, file_type: m.file_type, file_size: m.file_size, description: m.description, campaign_id: m.campaign_id, template_id: m.template_id, has_preview: !!m.file_data, created_at: m.created_at };
+    });
+    res.json({ success: true, materials: list });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/materials/:id — Get a single material with file data (customer isolated)
+app.get('/api/direct-mail/materials/:id', authMiddleware, (req, res) => {
+  try {
+    var material = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!material) return res.status(404).json({ error: 'Material not found' });
+    res.json({ success: true, material: { id: material.id, name: material.name, type: material.type, file_type: material.file_type, file_size: material.file_size, file_data: material.file_data || '', description: material.description, campaign_id: material.campaign_id, template_id: material.template_id, created_at: material.created_at } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/direct-mail/materials/:id — Delete a material (customer isolated)
+app.delete('/api/direct-mail/materials/:id', authMiddleware, (req, res) => {
+  try {
+    var material = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!material) return res.status(404).json({ error: 'Material not found' });
+    db.prepare('DELETE FROM direct_mail_materials WHERE id = ? AND customer_id = ?').run(req.params.id, req.user.id);
+    res.json({ success: true, message: 'Material deleted' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/direct-mail/stats — Get direct mail stats for customer
 app.get('/api/direct-mail/stats', authMiddleware, (req, res) => {
   try {

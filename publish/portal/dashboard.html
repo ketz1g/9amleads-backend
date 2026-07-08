@@ -1296,7 +1296,7 @@ function showDirectMailCentre(tab) {
   if (tab === 'overview') { showDMOverview(el); }
   else if (tab === 'create') { showDMCreate(el); }
   else if (tab === 'ai-builder') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-magic" style="font-size:40px;color:var(--primary);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">AI Marketing Builder</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto 20px">Generate professional flyers, letters, and postcards using AI. Describe your offer and we\'ll create the design.</p><div style="max-width:500px;margin:0 auto"><textarea id="ai-prompt" rows="3" placeholder="Describe your campaign... e.g. A professional flyer for my removal company offering free quotes in London" style="width:100%;padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);font-family:inherit;resize:vertical;margin-bottom:12px"></textarea><button class="btn btn-primary" disabled style="opacity:.5;width:100%"><i class="fas fa-magic"></i> Generate with AI (Coming Soon)</button></div></div>'; }
-  else if (tab === 'upload') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-upload" style="font-size:40px;color:var(--primary);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Upload Your Own Materials</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto 20px">Upload PDF or image files to use in your campaigns. Supported: PDF, PNG, JPG (max 10MB).</p><div style="max-width:400px;margin:0 auto;padding:30px;border:2px dashed var(--border);border-radius:12px;background:var(--card2)"><i class="fas fa-cloud-upload-alt" style="font-size:32px;color:var(--muted2);display:block;margin-bottom:10px"></i><input type="file" accept=".pdf,.png,.jpg,.jpeg" style="font-size:12px;color:var(--text2)"></div></div>'; }
+  else if (tab === 'upload') { showDMUpload(el); }
   else if (tab === 'templates') { showDMTemplates(el); }
   else if (tab === 'settings') { showDMSettings(el); }
   else if (tab === 'history') { showDMHistory(el); }
@@ -1511,6 +1511,113 @@ function dmUpdateCount() {
   var count = Object.keys(dmSelectedLeads).length;
   var el = document.getElementById('dm-sel-count');
   if (el) el.textContent = count + ' selected';
+}
+
+function showDMUpload(el) {
+  el.innerHTML = '<div style="animation:slideUp .3s ease"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+    '<div class="card" id="dm-upload-card"><div class="card-header"><div class="card-title"><i class="fas fa-cloud-upload-alt" style="color:var(--primary)"></i> Upload File</div></div>' +
+    '<p style="font-size:11px;color:var(--muted2);margin-bottom:10px">Upload flyers, letters, or logos to use in your campaigns.</p>' +
+    '<div style="display:grid;gap:8px">' +
+    '<div><label style="font-size:10px;color:var(--muted2);display:block;margin-bottom:3px">File Type</label><select id="dm-up-type" style="width:100%;padding:8px 10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option value="flyer_front">Flyer Front</option><option value="flyer_back">Flyer Back</option><option value="letter">Introduction Letter</option><option value="logo">Company Logo</option><option value="extra">Extra Document</option></select></div>' +
+    '<div><label style="font-size:10px;color:var(--muted2);display:block;margin-bottom:3px">Description (optional)</label><input type="text" id="dm-up-desc" placeholder="e.g. Summer promo flyer v2" style="width:100%;padding:8px 10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div style="padding:16px;border:2px dashed var(--border);border-radius:8px;text-align:center;background:var(--card2);cursor:pointer" onclick="document.getElementById(\'dm-file-input\').click()">' +
+    '<i class="fas fa-file-upload" style="font-size:22px;color:var(--muted2);display:block;margin-bottom:6px"></i>' +
+    '<div style="font-size:11px;color:var(--muted2)" id="dm-file-label">Click to select file (PDF, PNG, JPG — max 10MB)</div>' +
+    '<input type="file" id="dm-file-input" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="dmFileSelected(event)">' +
+    '</div>' +
+    '<div id="dm-file-info" style="display:none;padding:8px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.1);border-radius:6px;font-size:11px;color:var(--text2)"></div>' +
+    '<button class="btn btn-primary btn-sm" onclick="dmUploadFile()" style="width:100%"><i class="fas fa-upload"></i> Upload</button>' +
+    '<div id="dm-upload-status" style="display:none;padding:8px;border-radius:6px;font-size:11px;text-align:center"></div>' +
+    '</div></div>' +
+    '<div class="card" style="grid-column:1/-1"><div class="card-header"><div class="card-title"><i class="fas fa-folder-open" style="color:var(--success)"></i> Your Uploaded Materials</div></div>' +
+    '<div id="dm-uploaded-list" style="min-height:60px"><div style="text-align:center;padding:20px;color:var(--muted2);font-size:12px"><i class="fas fa-spinner fa-spin"></i> Loading...</div></div></div>' +
+    '</div></div>';
+  dmLoadUploaded();
+}
+
+var dmSelectedFile = null;
+
+function dmFileSelected(e) {
+  var file = e.target.files[0];
+  if (!file) { dmSelectedFile = null; document.getElementById('dm-file-label').textContent = 'Click to select file'; document.getElementById('dm-file-info').style.display = 'none'; return; }
+  var ext = '.' + file.name.split('.').pop().toLowerCase();
+  if (['.pdf','.png','.jpg','.jpeg'].indexOf(ext) === -1) { alert('Invalid file type. Allowed: PDF, PNG, JPG, JPEG'); e.target.value = ''; return; }
+  if (file.size > 10485760) { alert('File too large. Maximum 10MB.'); e.target.value = ''; return; }
+  dmSelectedFile = file;
+  document.getElementById('dm-file-label').textContent = file.name;
+  document.getElementById('dm-file-info').style.display = 'block';
+  document.getElementById('dm-file-info').innerHTML = '<strong>' + file.name + '</strong> · ' + (file.size / 1024).toFixed(1) + 'KB · ' + ext.toUpperCase();
+}
+
+function dmUploadFile() {
+  var status = document.getElementById('dm-upload-status');
+  if (!dmSelectedFile) { status.style.display = 'block'; status.style.background = 'rgba(239,68,68,0.1)'; status.style.color = 'var(--danger)'; status.textContent = 'Please select a file first.'; return; }
+  var fileType = document.getElementById('dm-up-type')?.value || 'flyer_front';
+  var desc = document.getElementById('dm-up-desc')?.value || '';
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var base64 = ev.target.result;
+    status.style.display = 'block'; status.style.background = 'rgba(14,165,233,0.1)'; status.style.color = 'var(--primary)'; status.textContent = 'Uploading...';
+    apiFetch('/api/direct-mail/upload', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+      file_type: fileType, file_name: dmSelectedFile.name, file_data: base64, description: desc
+    })}).then(function(r) {
+      if (r && r.success) {
+        status.style.background = 'rgba(34,197,94,0.1)'; status.style.color = 'var(--success)'; status.textContent = 'Uploaded!';
+        document.getElementById('dm-file-input').value = '';
+        dmSelectedFile = null;
+        document.getElementById('dm-file-label').textContent = 'Click to select file';
+        document.getElementById('dm-file-info').style.display = 'none';
+        dmLoadUploaded();
+      } else {
+        status.style.background = 'rgba(239,68,68,0.1)'; status.style.color = 'var(--danger)'; status.textContent = r?.error || 'Upload failed';
+      }
+    }).catch(function() { status.style.background = 'rgba(239,68,68,0.1)'; status.style.color = 'var(--danger)'; status.textContent = 'Connection error'; });
+  };
+  reader.readAsDataURL(dmSelectedFile);
+}
+
+function dmLoadUploaded() {
+  var el = document.getElementById('dm-uploaded-list');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2);font-size:12px"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+  apiFetch('/api/direct-mail/materials').then(function(r) {
+    var materials = r && r.materials ? r.materials : [];
+    if (materials.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2);font-size:12px"><i class="fas fa-folder-open" style="font-size:24px;display:block;margin-bottom:6px"></i>No files uploaded yet.</div>';
+      return;
+    }
+    var typeLabels = { flyer_front:'Flyer Front', flyer_back:'Flyer Back', letter:'Introduction Letter', logo:'Logo', extra:'Extra' };
+    var icons = { flyer_front:'📄', flyer_back:'📄', letter:'📝', logo:'🖼️', extra:'📎' };
+    var html = materials.map(function(m) {
+      return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:4px">' +
+        '<span style="font-size:18px">' + (icons[m.type] || '📄') + '</span>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (typeLabels[m.type] || m.type) + '</div>' +
+        '<div style="font-size:10px;color:var(--muted2)">' + m.name + ' · ' + (m.file_size > 1024 ? (m.file_size/1024).toFixed(0) + 'KB' : m.file_size + 'B') + ' · ' + new Date(m.created_at).toLocaleDateString() + '</div></div>' +
+        '<div style="display:flex;gap:4px">' +
+        '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto" onclick="dmPreviewFile(\'' + m.id + '\')"><i class="fas fa-eye"></i></button>' +
+        '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto;color:var(--danger)" onclick="dmDeleteFile(\'' + m.id + '\')"><i class="fas fa-trash"></i></button>' +
+        '</div></div>';
+    }).join('');
+    el.innerHTML = html;
+  });
+}
+
+function dmPreviewFile(id) {
+  apiFetch('/api/direct-mail/materials/' + id).then(function(r) {
+    if (!r || !r.material || !r.material.file_data) { alert('Preview not available'); return; }
+    var m = r.material;
+    var isPdf = m.file_type === 'pdf';
+    var content = isPdf ? '<iframe src="' + m.file_data + '" style="width:100%;height:500px;border:none;border-radius:8px"></iframe>' : '<img src="' + m.file_data + '" style="max-width:100%;max-height:500px;border-radius:8px;display:block;margin:0 auto">';
+    showModal('Preview: ' + m.name, '<div style="text-align:center;margin-bottom:8px;font-size:11px;color:var(--muted2)">' + (m.description || 'No description') + '</div>' + content, '700px');
+  });
+}
+
+function dmDeleteFile(id) {
+  if (!confirm('Delete this file?')) return;
+  apiFetch('/api/direct-mail/materials/' + id, { method:'DELETE' }).then(function(r) {
+    if (r && r.success) { dmLoadUploaded(); }
+    else { alert('Failed to delete'); }
+  });
 }
 
 function showDMHistory(el) {
