@@ -4505,6 +4505,108 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   }
 });
 
+// POST /api/stannp/webhook — Receive Stannp status updates
+app.post('/api/stannp/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    // Verify webhook signature if secret is configured
+    if (STANNP_WEBHOOK_SECRET) {
+      var sig = req.headers['stannp-signature'] || req.headers['x-stannp-signature'] || '';
+      if (!sig) return res.status(401).json({ error: 'Missing signature' });
+      var computedSig = require('crypto').createHmac('sha256', STANNP_WEBHOOK_SECRET).update(req.body.toString()).digest('hex');
+      if (computedSig !== sig) return res.status(401).json({ error: 'Invalid signature' });
+    }
+
+    var payload = JSON.parse(req.body.toString() || '{}');
+    var eventType = payload.event || payload.type || 'status_update';
+    var providerCampaignId = String(payload.campaign_id || payload.id || '');
+    var providerStatus = (payload.status || payload.event || '').toLowerCase();
+    var webhookId = payload.webhook_id || payload.id || 'wh_' + Date.now();
+
+    // Idempotency check — skip if already processed
+    if (webhookId) {
+      var existingLog = db.prepare('SELECT id FROM direct_mail_provider_logs WHERE provider = ? AND request_body LIKE ?').get('stannp', '%' + webhookId + '%');
+      if (existingLog) { console.log('[STANNP-WEBHOOK] Duplicate webhook skipped:', webhookId); return res.json({ received: true }); }
+    }
+
+    // Find matching campaign
+    if (!providerCampaignId) { console.log('[STANNP-WEBHOOK] No campaign_id in payload'); return res.json({ received: true }); }
+    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE provider_campaign_id = ?').get(providerCampaignId);
+    if (!campaign) { console.log('[STANNP-WEBHOOK] Campaign not found:', providerCampaignId); return res.json({ received: true }); }
+
+    // Map Stannp statuses to internal statuses
+    var statusMap = {
+      'accepted': 'queued',
+      'in-progress': 'printing',
+      'printing': 'printing',
+      'in_progress': 'printing',
+      'dispatched': 'dispatched',
+      'posted': 'dispatched',
+      'completed': 'completed',
+      'delivered': 'completed',
+      'failed': 'failed',
+      'cancelled': 'cancelled',
+      'canceled': 'cancelled',
+      'rejected': 'failed',
+      'returned': 'failed'
+    };
+    var newStatus = statusMap[providerStatus] || campaign.status;
+
+    var dispatchDate = payload.dispatch_date || payload.postage_date || '';
+    var sentCount = payload.sent_count || payload.recipient_count || campaign.sent_count || 0;
+    var failedCount = payload.failed_count || 0;
+    var failedAddresses = payload.failed_addresses || [];
+    var proofUrl = payload.proof_url || payload.proof_of_posting || '';
+    var providerReference = payload.invoice_reference || payload.reference || '';
+
+    // Update campaign
+    db.prepare('UPDATE direct_mail_campaigns SET provider_status = ?, status = ?, sent_count = ?, delivery_date = ?, updated_at = ? WHERE id = ?').run(providerStatus, newStatus, sentCount, dispatchDate.split('T')[0] || '', new Date().toISOString(), campaign.id);
+
+    // Log status history
+    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), campaign.customer_id, campaign.id, campaign.status, newStatus, 'provider', 'Stannp status: ' + providerStatus + (dispatchDate ? ' · Dispatched: ' + dispatchDate : ''), new Date().toISOString());
+
+    // Log provider interaction
+    db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), campaign.customer_id, campaign.id, 'stannp', 'webhook:' + eventType, JSON.stringify(payload), JSON.stringify({ new_status: newStatus, dispatch_date: dispatchDate, sent_count: sentCount, proof_url: proofUrl }), 200, 1, '', new Date().toISOString());
+
+    // If failed addresses, mark them
+    if (failedAddresses.length > 0) {
+      failedAddresses.forEach(function(fa) {
+        var addr = fa.address || fa.address_line1 || '';
+        db.prepare('UPDATE direct_mail_recipients SET status = ? WHERE campaign_id = ? AND address_line1 = ? AND customer_id = ?').run('failed', campaign.id, addr.substring(0, 100), campaign.customer_id);
+      });
+    }
+
+    console.log('[STANNP-WEBHOOK] Campaign', campaign.id, '→', providerStatus, '(' + newStatus + ')', dispatchDate ? '· dispatched: ' + dispatchDate : '');
+    res.json({ received: true });
+  } catch (e) {
+    console.error('[STANNP-WEBHOOK] Error:', e.message);
+    res.status(200).json({ received: true });
+  }
+});
+
+// POST /api/direct-mail/campaigns/:id/sync-status — Manually sync provider status (admin)
+app.post('/api/direct-mail/campaigns/:id/sync-status', authMiddleware, async (req, res) => {
+  try {
+    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    if (!campaign.provider_campaign_id) return res.status(400).json({ error: 'Campaign has no provider campaign ID' });
+    var provider = getDirectMailProvider();
+    var statusResult = await provider.getCampaignStatus(campaign.provider_campaign_id);
+    if (!statusResult.success) return res.status(500).json({ error: statusResult.error || 'Failed to sync status from provider' });
+    var fromStatus = campaign.status;
+    var newStatus = 'failed';
+    var statuses = ['queued','printing','dispatched','completed','failed','cancelled'];
+    if (statusResult.status === 'accepted') newStatus = 'queued';
+    else if (statusResult.status === 'printing' || statusResult.status === 'in_progress') newStatus = 'printing';
+    else if (statusResult.status === 'dispatched' || statusResult.status === 'posted') newStatus = 'dispatched';
+    else if (statusResult.status === 'completed' || statusResult.status === 'delivered') newStatus = 'completed';
+    else if (statusResult.status === 'failed' || statusResult.status === 'rejected') newStatus = 'failed';
+    else if (statusResult.status === 'cancelled' || statusResult.status === 'canceled') newStatus = 'cancelled';
+    db.prepare('UPDATE direct_mail_campaigns SET provider_status = ?, status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(statusResult.status, newStatus, new Date().toISOString(), req.params.id, req.user.id);
+    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, req.params.id, fromStatus, newStatus, 'customer', 'Manual sync: provider status is ' + statusResult.status, new Date().toISOString());
+    res.json({ success: true, from_status: fromStatus, to_status: newStatus, provider_status: statusResult.status });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/subscribe — upgrade current user's plan (after Stripe payment confirmed)
 app.post('/api/subscribe', authMiddleware, async (req, res) => {
   const { plan, session_id } = req.body;
@@ -5734,13 +5836,14 @@ app.post('/api/direct-mail/campaigns', authMiddleware, (req, res) => {
       notes: req.body.notes || '',
       provider: '',
       provider_campaign_id: '',
+      provider_status: '',
       stripe_session_id: '',
       stripe_payment_id: '',
       stripe_payment_status: '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
-    db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(campaign.id, campaign.customer_id, campaign.name, campaign.description, campaign.status, campaign.template_id, campaign.material_id, campaign.target_count, campaign.sent_count, campaign.delivery_date, campaign.budget, campaign.notes, campaign.provider, campaign.provider_campaign_id, campaign.stripe_session_id, campaign.stripe_payment_id, campaign.stripe_payment_status, campaign.created_at, campaign.updated_at);
+    db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(campaign.id, campaign.customer_id, campaign.name, campaign.description, campaign.status, campaign.template_id, campaign.material_id, campaign.target_count, campaign.sent_count, campaign.delivery_date, campaign.budget, campaign.notes, campaign.provider, campaign.provider_campaign_id, campaign.provider_status, campaign.stripe_session_id, campaign.stripe_payment_id, campaign.stripe_payment_status, campaign.created_at, campaign.updated_at);
     // Log initial status
     db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, campaign.id, '', 'draft', 'customer', 'Campaign created', new Date().toISOString());
     res.json({ success: true, campaign: campaign });
@@ -5864,7 +5967,7 @@ app.post('/api/direct-mail/campaigns/:id/send', authMiddleware, async (req, res)
     var providerCampaignId = campaignResult.provider_campaign_id;
 
     // 4. Update campaign with provider info
-    db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, sent_count = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('queued', provider.name, providerCampaignId, recipientCount, new Date().toISOString(), req.params.id, req.user.id);
+    db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, provider_status = ?, sent_count = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('queued', provider.name, providerCampaignId, 'accepted', recipientCount, new Date().toISOString(), req.params.id, req.user.id);
 
     // 5. Status history
     db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, req.params.id, campaign.status, 'queued', 'system', 'Sent to provider: ' + provider.name + ' (ID: ' + providerCampaignId + ')', new Date().toISOString());
