@@ -209,7 +209,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 // ===== JSON DATABASE (drop-in replacement for better-sqlite3) =====
 let _dbData = null;
 let _dbLock = Promise.resolve();
-var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs'];
+var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression'];
 
 // Direct Mail feature access by plan
 var DM_FEATURE_ACCESS = {
@@ -4004,9 +4004,14 @@ async function runAutoSend() {
       for (var li = 0; li < todaysLeads.length; li++) {
         var l = todaysLeads[li];
         var parsed = {}; try { parsed = JSON.parse(l.data || '{}'); } catch(e) {}
-        if (parsed.postcode && (parsed.address_line1 || parsed.address || parsed.street)) {
-          db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, parsed.name || parsed.address || 'Lead', '', parsed.address_line1 || parsed.address || parsed.street || '', parsed.city || parsed.town || '', parsed.postcode || '', 'United Kingdom', l.id, 'pending', new Date().toISOString());
-          validAddressCount++;
+        var leadAddress = parsed.address_line1 || parsed.address || parsed.street || '';
+        var leadPostcode = parsed.postcode || '';
+        if (leadPostcode && leadAddress) {
+          // Check suppression
+          if (!isAddressSuppressed(cust.id, leadPostcode, leadAddress)) {
+            db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, parsed.name || parsed.address || 'Lead', '', leadAddress, parsed.city || parsed.town || '', leadPostcode, 'United Kingdom', l.id, 'pending', new Date().toISOString());
+            validAddressCount++;
+          }
         }
       }
 
@@ -6607,6 +6612,83 @@ app.get('/api/direct-mail/automation', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== GDPR / SUPPRESSION / PRIVACY =====
+// GET /api/direct-mail/suppression — Get customer's suppression list
+app.get('/api/direct-mail/suppression', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var list = (db2.direct_mail_suppression || []).filter(function(s) { return s.customer_id === req.user.id; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    res.json({ success: true, suppressed: list, total: list.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/suppression — Add address to suppression list
+app.post('/api/direct-mail/suppression', authMiddleware, (req, res) => {
+  try {
+    if (!req.body.postcode && !req.body.address_line1) return res.status(400).json({ error: 'Postcode or address required' });
+    var db2 = getDb();
+    if (!db2.direct_mail_suppression) db2.direct_mail_suppression = [];
+    var existing = db2.direct_mail_suppression.some(function(s) { return s.customer_id === req.user.id && s.postcode === (req.body.postcode || '').toUpperCase() && s.address_line1 === (req.body.address_line1 || ''); });
+    if (existing) return res.json({ success: true, message: 'Already suppressed' });
+    db2.direct_mail_suppression.push({
+      id: uuidv4(), customer_id: req.user.id,
+      postcode: (req.body.postcode || '').toUpperCase(),
+      address_line1: req.body.address_line1 || '',
+      name: req.body.name || '',
+      reason: req.body.reason || 'Customer request',
+      created_at: new Date().toISOString()
+    });
+    saveDb();
+    res.json({ success: true, message: 'Address suppressed' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/direct-mail/suppression/:id — Remove from suppression list
+app.delete('/api/direct-mail/suppression/:id', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var idx = (db2.direct_mail_suppression || []).findIndex(function(s) { return s.id === req.params.id && s.customer_id === req.user.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Not found' });
+    db2.direct_mail_suppression.splice(idx, 1);
+    saveDb();
+    res.json({ success: true, message: 'Suppression removed' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Function to check suppression before adding recipients
+function isAddressSuppressed(customerId, postcode, addressLine1) {
+  try {
+    var db2 = getDb();
+    if (!db2.direct_mail_suppression) return false;
+    var pc = (postcode || '').toUpperCase();
+    return db2.direct_mail_suppression.some(function(s) {
+      return s.customer_id === customerId && s.postcode === pc && s.address_line1 === (addressLine1 || '');
+    });
+  } catch(e) { return false; }
+}
+
+// GET /api/direct-mail/terms — Get terms acceptance
+app.get('/api/direct-mail/terms', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    if (!db2.dm_terms) db2.dm_terms = {};
+    var accepted = db2.dm_terms[req.user.id] || false;
+    res.json({ success: true, accepted: accepted, accepted_at: accepted ? db2.dm_terms[req.user.id + '_at'] || '' : '' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/terms — Accept terms
+app.post('/api/direct-mail/terms', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    if (!db2.dm_terms) db2.dm_terms = {};
+    db2.dm_terms[req.user.id] = true;
+    db2.dm_terms[req.user.id + '_at'] = new Date().toISOString();
+    saveDb();
+    res.json({ success: true, accepted: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/direct-mail/campaigns/:id/recipients — Add recipient to campaign
 app.post('/api/direct-mail/campaigns/:id/recipients', authMiddleware, (req, res) => {
   try {
@@ -6627,6 +6709,10 @@ app.post('/api/direct-mail/campaigns/:id/recipients', authMiddleware, (req, res)
       status: 'pending',
       created_at: new Date().toISOString()
     };
+    // Check suppression
+    if (isAddressSuppressed(req.user.id, recipient.postcode, recipient.address_line1)) {
+      return res.status(400).json({ error: 'This address is on your do-not-mail list. Remove the suppression first.' });
+    }
     db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').run(recipient.id, recipient.customer_id, recipient.campaign_id, recipient.name, recipient.company, recipient.address_line1, recipient.address_line2, recipient.city, recipient.postcode, recipient.country, recipient.lead_id, recipient.status, recipient.created_at);
     db.prepare('UPDATE direct_mail_campaigns SET target_count = target_count + 1, updated_at = ? WHERE id = ? AND customer_id = ?').run(new Date().toISOString(), req.params.id, req.user.id);
     res.json({ success: true, recipient: recipient });
