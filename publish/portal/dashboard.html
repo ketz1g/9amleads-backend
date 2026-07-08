@@ -1429,7 +1429,9 @@ function dmGenerateContent() {
           var content = dmGenContent[v.id] || '';
           html += dmContentBlock(v.id, v.icon, v.label, content);
         });
-        html += '</div><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+        html += '</div><div id="ai-review-section" style="margin-top:12px"></div>' +
+        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+          '<button class="btn btn-outline btn-sm" onclick="dmReviewContent()"><i class="fas fa-check-circle"></i> Review with AI</button>' +
           '<button class="btn btn-primary btn-sm" onclick="dmSaveContentAsTemplate()"><i class="fas fa-save"></i> Save as Template</button>' +
           '<button class="btn btn-outline btn-sm" onclick="dmUseContent()"><i class="fas fa-bullhorn"></i> Use in Campaign</button></div></div>';
       } else {
@@ -1448,11 +1450,10 @@ function dmGenerateContent() {
         var content = dmGenContent[s.id] || '';
         html += dmContentBlock('flyer-'+s.id, s.icon, s.label, content);
       });
-      html += '<div class="card" style="margin-top:12px"><div class="card-header"><div class="card-title"><i class="fas fa-image" style="color:var(--primary)"></i> Optional Visual Concept</div></div>' +
-        '<p style="font-size:11px;color:var(--muted2);margin-bottom:8px">Generate an AI design concept to use as a background visual in your flyer. This is optional — the standard PDF layout works without it.</p>' +
-        '<div id="ai-image-section"><button class="btn btn-outline btn-sm" onclick="dmGenerateFlyerImage()"><i class="fas fa-sparkles"></i> Generate Visual Concept</button></div></div>' +
-        '</div><div id="ai-pdf-section" style="margin-top:12px"></div>' +
+      '</div><div id="ai-pdf-section" style="margin-top:12px"></div>' +
+        '<div id="ai-review-section" style="margin-top:12px"></div>' +
         '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+        '<button class="btn btn-outline btn-sm" onclick="dmReviewContent()"><i class="fas fa-check-circle"></i> Review with AI</button>' +
         '<button class="btn btn-primary btn-sm" onclick="dmGenerateFlyerPDF()" style="background:linear-gradient(135deg,#7c3aed,#6d28d9)"><i class="fas fa-file-pdf"></i> Generate Print-Ready PDF</button>' +
         '<button class="btn btn-primary btn-sm" onclick="dmSaveContentAsTemplate()"><i class="fas fa-save"></i> Save as Template</button>' +
         '<button class="btn btn-outline btn-sm" onclick="dmUseContent()"><i class="fas fa-bullhorn"></i> Use in Campaign</button></div></div>';
@@ -1647,6 +1648,52 @@ function dmPreviewPersonalisation() {
         (r.unmerged_tags.length > 0 ? '<div style="margin-top:6px;color:var(--warning);font-size:10px">⚠️ Unmerged tags: ' + r.unmerged_tags.join(', ') + '</div>' : '<div style="margin-top:6px;color:var(--success);font-size:10px">✅ All tags merged successfully</div>');
     } else { el.innerHTML = '<div style="color:var(--danger);font-size:11px">Preview failed</div>'; }
   }).catch(function() { el.innerHTML = '<div style="color:var(--danger);font-size:11px">Preview error</div>'; });
+}
+
+function dmReviewContent() {
+  var el = document.getElementById('ai-review-section');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i> Reviewing content...</div>';
+  // Build content from all generated sections
+  var content = '';
+  if (dmGenMode === 'letter') {
+    content = (dmGenContent?.professional || '') + '\n\n' + (dmGenContent?.short || '') + '\n\n' + (dmGenContent?.friendly || '') + '\n\n' + (dmGenContent?.premium || '') + '\n\n' + (dmGenContent?.call_to_action || '');
+  } else {
+    content = 'Headline: ' + (dmGenContent?.headline || '') + '\nSubheadline: ' + (dmGenContent?.subheadline || '') + '\nServices: ' + (dmGenContent?.services || '') + '\nOffer: ' + (dmGenContent?.offer || '') + '\nTrust: ' + (dmGenContent?.trust || '') + '\nCTA: ' + (dmGenContent?.call_to_action || '') + '\nBack: ' + (dmGenContent?.back_page || '') + '\nSlogan: ' + (dmGenContent?.slogan || '');
+  }
+  apiFetch('/api/ai/review-content', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    content: content.substring(0, 3000),
+    type: dmGenMode === 'letter' ? 'letter' : 'flyer',
+    business_type: document.getElementById('ai-industry')?.value || ''
+  })}).then(function(r) {
+    if (r && r.success && r.score > 0) {
+      var scoreColor = r.score >= 80 ? '#22c55e' : r.score >= 60 ? '#f59e0b' : '#ef4444';
+      var html = '<div class="card" style="margin-top:0"><div class="card-header"><div class="card-title"><i class="fas fa-check-circle" style="color:var(--primary)"></i> AI Marketing Advisor</div></div>' +
+        '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px">' +
+        '<div style="width:72px;height:72px;border-radius:50%;background:conic-gradient(' + scoreColor + ' ' + r.score + '%, var(--card2) ' + r.score + '%);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:18px;font-weight:900;color:' + scoreColor + '">' + r.score + '</span></div>' +
+        '<div><div style="font-size:14px;font-weight:700;color:var(--text)">Marketing Score: ' + r.score + '/100</div>' +
+        '<div style="font-size:11px;color:var(--muted2);margin-top:2px">' + (r.score >= 80 ? 'Great! Your content is ready for campaigns.' : r.score >= 60 ? 'Good, but could be improved.' : 'Needs improvement before sending.') + '</div></div></div>';
+      if (r.strengths && r.strengths.length > 0) {
+        html += '<div style="margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:var(--success);margin-bottom:4px">✅ Strengths</div>' +
+          r.strengths.map(function(s) { return '<div style="font-size:11px;color:var(--muted2);padding:2px 0">• ' + s + '</div>'; }).join('') + '</div>';
+      }
+      if (r.suggestions && r.suggestions.length > 0) {
+        html += '<div><div style="font-size:11px;font-weight:700;color:var(--warning);margin-bottom:4px">💡 Suggestions</div>' +
+          r.suggestions.map(function(s) { return '<div style="font-size:11px;color:var(--muted2);padding:2px 0">• ' + s + '</div>'; }).join('') + '</div>';
+      }
+      html += '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">' +
+        '<button class="btn btn-primary btn-sm" onclick="dmRegenerateWithSuggestions()" style="font-size:10px;padding:5px 12px"><i class="fas fa-magic"></i> Regenerate with AI</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'ai-review-section\').innerHTML=\'\'" style="font-size:10px;padding:5px 12px"><i class="fas fa-times"></i> Dismiss</button></div></div>';
+      el.innerHTML = html;
+    } else {
+      el.innerHTML = '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)">Review unavailable — content may be too short. Generate more content first.</div>';
+    }
+  }).catch(function() { el.innerHTML = '<div style="padding:8px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.1);border-radius:6px;font-size:11px;color:var(--danger)">Review error. Please try again.</div>'; });
+}
+
+function dmRegenerateWithSuggestions() {
+  document.getElementById('ai-review-section').innerHTML = '';
+  dmGenerateContent();
 }
 
 var dmFlyerBgImage = null;

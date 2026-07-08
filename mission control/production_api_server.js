@@ -2445,6 +2445,37 @@ app.post('/api/ai/generate-offers', authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'AI Marketing Builder error. Please try again.' }); }
 });
 
+// POST /api/ai/review-content — AI Marketing Advisor: review flyer/letter content
+app.post('/api/ai/review-content', authMiddleware, async (req, res) => {
+  try {
+    var key = process.env.OPENAI_API_KEY;
+    if (!key) return res.status(400).json({ error: 'AI Marketing Builder not configured.' });
+    var content = req.body.content || '';
+    var type = req.body.type || 'flyer';
+    var businessType = req.body.business_type || '';
+    if (!content) return res.status(400).json({ error: 'Content required' });
+    var promptTxt = 'You are a professional marketing advisor. Review this ' + type + ' content for a ' + (businessType || 'business') + ' company.\n\nContent to review:\n' + content.substring(0, 3000) + '\n\nEvaluate: headline strength, offer quality, CTA clarity, phone/website presence, business name, grammar, spelling, tone, length, readability, contact visibility, professional appearance.\n\nRespond in this exact format:\nSCORE: (number between 0-100)\nSTRENGTHS: (list key strengths)\nSUGGESTIONS: (numbered list of specific improvements)\nRAW_SCORE: (just the number)';
+    var reqBody = JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: promptTxt }], max_tokens: 1000, temperature: 0.3 });
+    var result = await new Promise(function(resolve) {
+      var https = require('https');
+      var r = https.request({ hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST', headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(reqBody) } }, function(resp) { var b = ''; resp.on('data', function(c) { b += c; }); resp.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: { message: 'Parse error' } }); } }); });
+      r.on('error', function(e) { resolve({ error: { message: e.message } }); }); r.write(reqBody); r.end();
+    });
+    if (result && result.choices && result.choices[0] && result.choices[0].message) {
+      var text = result.choices[0].message.content;
+      var scoreMatch = text.match(/SCORE:\s*(\d+)/i);
+      var rawMatch = text.match(/RAW_SCORE:\s*(\d+)/i);
+      var score = parseInt(rawMatch && rawMatch[1] ? rawMatch[1] : (scoreMatch && scoreMatch[1] ? scoreMatch[1] : 0));
+      var strengths = []; var sugg = [];
+      var sMatch = text.match(/STRENGTHS:\s*([\s\S]*?)(?:SUGGESTIONS:|$)/i);
+      if (sMatch) strengths = sMatch[1].split('\n').map(function(s) { return s.replace(/^[-*\d.\s]+/, '').trim(); }).filter(Boolean);
+      var sugMatch = text.match(/SUGGESTIONS:\s*([\s\S]*?)$/i);
+      if (sugMatch) sugg = sugMatch[1].split('\n').map(function(s) { return s.replace(/^[-*\d.\s]+/, '').trim(); }).filter(Boolean);
+      res.json({ success: true, score: Math.min(100, Math.max(0, score)), strengths: strengths.slice(0, 5), suggestions: sugg.slice(0, 8), raw: text });
+    } else { res.json({ success: true, score: 0, strengths: [], suggestions: ['Unable to review content'], raw: '' }); }
+  } catch (e) { res.status(500).json({ error: 'Marketing Advisor error. Please try again.' }); }
+});
+
 // POST /api/ai/preview-personalisation — Preview personalised letter content
 app.post('/api/ai/preview-personalisation', authMiddleware, (req, res) => {
   try {
