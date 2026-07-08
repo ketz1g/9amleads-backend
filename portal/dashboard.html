@@ -1453,9 +1453,9 @@ function showStatus(id, msg, color) {
   setTimeout(function() { el.style.display = 'none'; }, 4000);
 }
 
-var DM_TABS = ['overview','create','suppression','done-for-you','analytics','calendar','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments'];
-var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', suppression:'Suppression List', 'done-for-you':'Done For You', analytics:'Analytics', calendar:'Campaign Calendar', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
-var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', suppression:'fa-ban', 'done-for-you':'fa-handshake', analytics:'fa-chart-bar', calendar:'fa-calendar', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
+var DM_TABS = ['overview','create','suppression','done-for-you','analytics','calendar','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments','timeline'];
+var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', suppression:'Suppression List', 'done-for-you':'Done For You', analytics:'Analytics', calendar:'Campaign Calendar', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices', timeline:'Activity Timeline' };
+var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', suppression:'fa-ban', 'done-for-you':'fa-handshake', analytics:'fa-chart-bar', calendar:'fa-calendar', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar', timeline:'fa-stream' };
 
 function showDirectMailCentre(tab) {
   tab = tab || localStorage.getItem('dmTab') || 'overview';
@@ -1474,7 +1474,7 @@ function showDirectMailCentre(tab) {
 
   var el = document.getElementById('dm-content');
   // Check feature access first
-  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, analytics: null, calendar: null, sequences: null, suppression: null, 'done-for-you': null, settings: 'auto_send', proof: 'proof_tracking' };
+  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, analytics: null, calendar: null, sequences: null, suppression: null, 'done-for-you': null, timeline: null, settings: 'auto_send', proof: 'proof_tracking' };
   apiFetch('/api/direct-mail/features').then(function(fr) {
     var plan = fr && fr.plan ? fr.plan : 'free_trial';
     var features = fr && fr.features ? fr.features : {};
@@ -1506,6 +1506,7 @@ function showDirectMailCentre(tab) {
     else if (tab === 'history') { showDMHistory(el); }
     else if (tab === 'proof') { el.innerHTML = '<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px"><h2 style="font-size:16px;font-weight:700">Proof of Sending</h2><button class="btn btn-outline btn-sm" onclick="dmRefreshProof()"><i class="fas fa-sync"></i> Refresh</button></div><div id="dm-proof-list"><div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div>'; dmRefreshProof(); }
     else if (tab === 'payments') { el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-file-invoice-dollar" style="font-size:40px;color:var(--success);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Payments &amp; Invoices</h2><p style="font-size:13px;color:var(--muted2);max-width:400px;margin:0 auto">Payment history and invoices will appear here once your first campaign is submitted.</p></div>'; }
+    else if (tab === 'timeline') { showDMTimeline(el); }
   }).catch(function() { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted2)">Error loading features</div>'; });
 }
 
@@ -3389,6 +3390,34 @@ function dmProcessSequenceStep(id) {
   apiFetch('/api/direct-mail/sequences/' + id + '/process-step', { method:'POST' }).then(function(r) {
     if (r && r.success) { showStatus('dm-content','Step ' + r.step_sent + ' sent! Next: Step ' + (r.next_step || 'Complete'),'var(--success)'); dmLoadSequences(); }
     else { showStatus('dm-content', r?.error || 'Failed to process step','var(--danger)'); }
+  });
+}
+
+function showDMTimeline(el) {
+  el.innerHTML = '<div style="animation:slideUp .3s ease"><div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-stream" style="color:var(--primary)"></i> Activity Timeline</div></div>' +
+    '<div id="dm-timeline"><div style="text-align:center;padding:30px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div></div></div>';
+  apiFetch('/api/direct-mail/timeline').then(function(r) {
+    var el2 = document.getElementById('dm-timeline');
+    if (!el2) return;
+    var entries = r && r.entries ? r.entries : [];
+    if (entries.length === 0) { el2.innerHTML = '<div style="text-align:center;padding:40px 20px"><i class="fas fa-stream" style="font-size:36px;color:var(--muted2);display:block;margin-bottom:8px"></i><p style="font-size:12px;color:var(--muted2)">No activity recorded yet. Your actions will appear here.</p></div>'; return; }
+    el2.innerHTML = '<div style="position:relative;padding-left:20px">' +
+      '<div style="position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border)"></div>' +
+      entries.map(function(e) {
+        var icon = 'fa-circle';
+        var color = '#0ea5e9';
+        if (e.action.indexOf('Created') !== -1 || e.action.indexOf('Saved') !== -1) { icon = 'fa-plus-circle'; color = '#22c55e'; }
+        else if (e.action.indexOf('Sent') !== -1 || e.action.indexOf('Dispatched') !== -1) { icon = 'fa-paper-plane'; color = '#0ea5e9'; }
+        else if (e.action.indexOf('Failed') !== -1 || e.action.indexOf('Refund') !== -1) { icon = 'fa-exclamation-circle'; color = '#ef4444'; }
+        else if (e.action.indexOf('Payment') !== -1 || e.action.indexOf('paid') !== -1) { icon = 'fa-credit-card'; color = '#f59e0b'; }
+        else if (e.action.indexOf('Completed') !== -1) { icon = 'fa-check-circle'; color = '#22c55e'; }
+        else if (e.action.indexOf('Profile') !== -1 || e.action.indexOf('Logo') !== -1) { icon = 'fa-building'; color = '#6366f1'; }
+        else if (e.action.indexOf('Template') !== -1) { icon = 'fa-file-alt'; color = '#8b5cf6'; }
+        return '<div style="position:relative;padding:0 0 14px 16px"><div style="position:absolute;left:-12px;top:4px;width:16px;height:16px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff"><i class="fas ' + icon + '"></i></div>' +
+          '<div style="font-size:12px;font-weight:600;color:var(--text)">' + e.action + '</div>' +
+          (e.details ? '<div style="font-size:10px;color:var(--muted2)">' + e.details + '</div>' : '') +
+          '<div style="font-size:9px;color:var(--muted2);margin-top:1px">' + new Date(e.created_at).toLocaleString() + '</div></div>';
+      }).join('') + '</div>';
   });
 }
 

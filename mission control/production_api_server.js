@@ -209,7 +209,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 // ===== JSON DATABASE (drop-in replacement for better-sqlite3) =====
 let _dbData = null;
 let _dbLock = Promise.resolve();
-var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates','seasonal_campaigns','postal_sequences','postal_sequence_steps','campaign_requests','campaign_notes','onboarding_progress'];
+var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates','seasonal_campaigns','postal_sequences','postal_sequence_steps','campaign_requests','campaign_notes','onboarding_progress','activity_timeline'];
 
 // Direct Mail feature access by plan
 var DM_FEATURE_ACCESS = {
@@ -798,6 +798,20 @@ function applyMergeTags(text, lead, business) {
 function getFallback(tag) {
   var map = { '{{first_name}}': 'there', '{{full_name}}': 'neighbour', '{{town}}': 'your area', '{{postcode}}': 'your postcode', '{{postcode_area}}': 'your area', '{{phone}}': '', '{{website}}': '', '{{offer}}': 'our services' };
   return map[tag] || '';
+}
+
+// Activity Timeline
+function addTimelineEntry(customerId, action, details, campaignId) {
+  try {
+    var db2 = getDb();
+    if (!db2.activity_timeline) db2.activity_timeline = [];
+    db2.activity_timeline.push({
+      id: uuidv4(), customer_id: customerId, action: action,
+      details: details || '', campaign_id: campaignId || '',
+      created_at: new Date().toISOString()
+    });
+    saveDb();
+  } catch(e) { console.log('[TIMELINE] Error:', e.message); }
 }
 
 function generateToken(customer) {
@@ -6317,6 +6331,7 @@ app.post('/api/direct-mail/profile', authMiddleware, (req, res) => {
     } else {
       db.prepare('INSERT INTO customer_business_profiles (id,customer_id,company_name,business_type,logo_url,website,phone,email,address_line1,address_line2,city,postcode,country,services_offered,service_areas,special_offer,preferred_colours,brand_tone,google_reviews_link,facebook_page,instagram_page,short_description,call_to_action,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(profile.id, profile.customer_id, profile.company_name, profile.business_type, profile.logo_url, profile.website, profile.phone, profile.email, profile.address_line1, profile.address_line2, profile.city, profile.postcode, profile.country, profile.services_offered, profile.service_areas, profile.special_offer, profile.preferred_colours, profile.brand_tone, profile.google_reviews_link, profile.facebook_page, profile.instagram_page, profile.short_description, profile.call_to_action, profile.created_at, profile.updated_at);
     }
+    addTimelineEntry(req.user.id, 'Business Profile ' + (existing ? 'Updated' : 'Created'), profile.company_name);
     res.json({ success: true, profile: profile });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -6484,6 +6499,7 @@ app.post('/api/direct-mail/campaigns', authMiddleware, (req, res) => {
     db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(campaign.id, campaign.customer_id, campaign.name, campaign.description, campaign.status, campaign.template_id, campaign.material_id, campaign.target_count, campaign.sent_count, campaign.delivery_date, campaign.budget, campaign.notes, campaign.provider, campaign.provider_campaign_id, campaign.provider_status, campaign.stripe_session_id, campaign.stripe_payment_id, campaign.stripe_payment_status, campaign.created_at, campaign.updated_at);
     // Log initial status
     db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, campaign.id, '', 'draft', 'customer', 'Campaign created', new Date().toISOString());
+    addTimelineEntry(req.user.id, 'Campaign Created', campaign.name, campaign.id);
     res.json({ success: true, campaign: campaign });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -6529,6 +6545,7 @@ app.put('/api/direct-mail/campaigns/:id/status', authMiddleware, (req, res) => {
     };
     var nt = notifTypes[status];
     if (nt) { sendDMNotification(req.user.id, 'campaign_' + status, nt.subj, nt.title, '<p>' + nt.body + '</p><p style="font-size:12px;color:#5a6280">Recipients: ' + (campaign.target_count || 0) + ' · Budget: £' + (campaign.budget || 0) + '</p>', 'View Campaign', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail'); }
+    addTimelineEntry(req.user.id, 'Campaign ' + status.charAt(0).toUpperCase() + status.slice(1), campaign.name + ' (' + fromStatus + ' → ' + status + ')', campaign.id);
     res.json({ success: true, from_status: fromStatus, to_status: status });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -9040,6 +9057,33 @@ app.get('/api/admin/direct-mail/success', adminAuth, (req, res) => {
       results.push({ customer_id: cust.id, email: cust.email || 'unknown', company: cust.company || '', plan: cust.plan || '', completed: completed, total: milestones.length, pct: Math.round(completed / milestones.length * 100), milestones: { profile: !!profile, business_details: !!(profile && profile.company_name), template: templates.length > 0, pack: packs.length > 0, first_campaign: campaigns.length > 0, sent: milestones[5], completed_campaign: milestones[6], auto_send: milestones[7], payment_method: milestones[8] } });
     });
     res.json({ success: true, entries: results, total: results.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== ACTIVITY TIMELINE =====
+// GET /api/direct-mail/timeline — Get customer's activity timeline
+app.get('/api/direct-mail/timeline', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var entries = (db2.activity_timeline || []).filter(function(e) { return e.customer_id === req.user.id; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); }).slice(0, 100);
+    res.json({ success: true, entries: entries, total: entries.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin: GET /api/admin/direct-mail/timeline — All activity
+app.get('/api/admin/direct-mail/timeline', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var actionFilter = req.query.action || '';
+    var customerFilter = req.query.customer_id || '';
+    var entries = (db2.activity_timeline || []).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    if (actionFilter) entries = entries.filter(function(e) { return e.action === actionFilter; });
+    if (customerFilter) entries = entries.filter(function(e) { return e.customer_id === customerFilter; });
+    var expanded = entries.slice(0, 200).map(function(e) {
+      var cust = (db2.customers || []).find(function(c) { return c.id === e.customer_id; });
+      return Object.assign({}, e, { customer_email: cust ? cust.email : 'unknown', customer_company: cust ? cust.company : '' });
+    });
+    res.json({ success: true, entries: expanded, total: expanded.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
