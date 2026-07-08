@@ -1988,7 +1988,7 @@ app.get('/api/postcodes/check', async (req, res) => {
     var code = (req.query.code || '').toUpperCase().trim();
     if (!code) return res.json({ valid: false, error: 'No postcode provided' });
     var areas = loadPostcodeAreas();
-    if (!areas[code]) return res.json({ valid: false, error: '"' + code + '" is not a valid UK postcode area' });
+    if (!areas[code]) return res.json({ valid: false, error: '"' + code + '" is not a valid UK postcode area (use 1 or 2-letter code like B, N, EN, SG, CM)' });
     res.json({ valid: true, area: code, name: (areas[code] || {}).name || code, region: (areas[code] || {}).region || '' });
   } catch(e) { res.json({ valid: false, error: 'Server error' }); }
 });
@@ -2447,12 +2447,36 @@ app.post('/api/ai/generate-offers', authMiddleware, async (req, res) => {
     if (result && result.choices && result.choices[0] && result.choices[0].message) {
       var content = result.choices[0].message.content;
       var offers = [];
-      var sections = content.split(/(?:=== OFFER ===|OFFER \d+:|^OFFER:)/mi);
-      sections.forEach(function(s) {
-        s = s.trim(); if (!s) return;
-        var g = function(label) { var variants = [label, label.toUpperCase()]; for (var vi=0;vi<variants.length;vi++) { var m = s.match(new RegExp(variants[vi].replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ':\\s*([\\s\\S]*?)(?:\\n(?:[A-Z ]+):|\\n===|\\n\\n|$)', 'i')); if (m && m[1].trim()) return m[1].trim(); } return ''; };
-        var title = g('OFFER TITLE'); if (!title) return;
-        offers.push({ title: title, type: g('OFFER TYPE'), explanation: g('SHORT EXPLANATION'), flyer_wording: g('FLYER WORDING'), letter_wording: g('LETTER WORDING'), call_to_action: g('CALL TO ACTION'), terms: g('TERMS') });
+      var sections = content.split(/(?:=== OFFER ===|OFFER \d+:|^OFFER\s*:)/mi);
+      sections.forEach(function(section) {
+        var s = section.trim(); if (!s || s.length < 10) return;
+        var g = function(labels) {
+          if (typeof labels === 'string') labels = [labels];
+          for (var li = 0; li < labels.length; li++) {
+            var escLabel = labels[li].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            var patterns = [
+              new RegExp(escLabel + '\\s*:\\s*([\\s\\S]*?)(?:\\n(?:[A-Z][A-Z ]+):|\\n===|\\n\\n|$)', 'i'),
+              new RegExp(escLabel + '\\s*[:\\-]\\s*([^\\n]+)', 'i')
+            ];
+            for (var pi = 0; pi < patterns.length; pi++) {
+              var m = s.match(patterns[pi]);
+              if (m && m[1] && m[1].trim()) return m[1].trim();
+            }
+          }
+          return '';
+        };
+        var title = g(['OFFER TITLE', 'TITLE', 'OFFER']);
+        if (!title) title = s.split('\n')[0].trim().substring(0, 60);
+        if (!title || title.length < 3) return;
+        offers.push({
+          title: title,
+          type: g(['OFFER TYPE', 'TYPE']),
+          explanation: g(['SHORT EXPLANATION', 'EXPLANATION', 'DESCRIPTION']),
+          flyer_wording: g(['FLYER WORDING', 'FLYER TEXT']),
+          letter_wording: g(['LETTER WORDING', 'LETTER TEXT']),
+          call_to_action: g(['CALL TO ACTION', 'CTA', 'CALL TO ACTION']),
+          terms: g(['TERMS', 'TERMS AND CONDITIONS'])
+        });
       });
       res.json({ success: true, offers: offers, count: offers.length, input: bd });
     } else { res.json({ success: true, offers: [], count: 0 }); }
