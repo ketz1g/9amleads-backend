@@ -112,6 +112,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes chatPulse{0%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.2)}100%{opacity:1;transform:scale(1)}}
 .kpi-card,.section,.card{animation:fadeIn .4s ease}
 .kpi-card:nth-child(1){animation-delay:0s}
 .kpi-card:nth-child(2){animation-delay:.05s}
@@ -657,11 +658,50 @@ function showPage(page) {
     pipeline: function() { document.getElementById('pipeline-section')?.scrollIntoView({behavior:'smooth'}); },
     billing: function() { document.getElementById('sub-section')?.scrollIntoView({behavior:'smooth'}); },
     settings: function() { document.getElementById('lead-filters-section')?.scrollIntoView({behavior:'smooth'}); },
-    support: function() { showModal('Support', '<p style="color:var(--muted);margin-bottom:12px">Send us a message and we\'ll get back to you within 24 hours.</p><textarea id="support-msg" placeholder="Describe your issue or question..." style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-family:inherit;font-size:13px;min-height:100px;margin-bottom:12px;resize:vertical"></textarea><input type="text" id="support-subject" placeholder="Subject" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-family:inherit;font-size:13px;margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="submitSupport()">Send Message</button>'); },
-    reports: function() { showModal('Reports', '<p style="color:var(--muted)">Full reports are being built. Your key metrics are shown on the dashboard above.</p>'); },
+    support: function() { showSupport(); },
+    reports: function() { showReportsPage(); },
     campaigns: function() { loadCampaigns(); }
   };
   (sections[page] || sections.dashboard)();
+}
+
+function showSupport() {
+  var faq = [
+    { q:'How do I get more leads?', a:'Make sure your postcode areas are set up in the Areas section. You can also upgrade to a higher plan for more daily leads or contact support about expanding your territory.' },
+    { q:'Where do my daily leads come from?', a:'We source data from official UK registers including Rightmove, Companies House, Gov.uk, council planning portals, and public sector tender databases.' },
+    { q:'Can I change my lead type or add new products?', a:'Contact support via the form below and we\'ll update your account. You can also sign up for additional lead types through the Upgrade page.' },
+    { q:'How does billing work?', a:'Billing is weekly. You can cancel anytime with no commitment. View your plan and billing details in Settings > Billing & Plan.' },
+    { q:'Can I pause my subscription?', a:'Yes! Go to Settings > Billing & Plan and click Cancel to see pause options. You can pause up to 3 months and keep all your data.' },
+    { q:'How do I export my leads?', a:'Use the Export button in the Leads section to download as CSV or JSON. Your entire lead history is always accessible.' },
+    { q:'What happens when my free trial ends?', a:'Your leads pause but your account stays active with all your data intact. Upgrade anytime to restart delivery at 9am the next morning.' },
+    { q:'Can I invite team members?', a:'Currently each account is single-user. Contact support if you need multi-user access and we\'ll help set it up.' },
+    { q:'How do I connect my CRM?', a:'Go to Settings > CRM tab or use the CRM section on the dashboard. Enter your webhook URL and we\'ll push leads there daily at 9am.' },
+    { q:'Is Google Search Console set up?', a:'Yes — https://9amleads.com is verified and our sitemap is submitted. Blog content is being indexed automatically.' }
+  ];
+  var faqHtml = faq.map(function(f, i) { return '<div style="margin-bottom:6px;background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow:hidden">' +
+    '<div style="padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--text)" onclick="var p=this.nextElementSibling;p.style.display=p.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.faq-arrow\').style.transform=p.style.display===\'block\'?\'rotate(180deg)\':\'rotate(0)\'">' +
+    '<span style="flex:1">' + f.q + '</span>' +
+    '<span class="faq-arrow" style="color:var(--muted2);font-size:10px;transition:transform .2s">&#9660;</span></div>' +
+    '<div style="display:none;padding:0 14px 12px;font-size:12px;color:var(--text2);line-height:1.6">' + f.a + '</div></div>'; }).join('');
+
+  showModal('Help & Support',
+    '<div style="margin-bottom:16px">' +
+    '<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">' +
+    '<a href="mailto:hello@9amleads.com" style="flex:1;display:flex;align-items:center;gap:8px;padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:13px;font-weight:600;min-width:140px">&#128231; Email Us</a>' +
+    '<a href="tel:+442071234567" style="flex:1;display:flex;align-items:center;gap:8px;padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:13px;font-weight:600;min-width:140px">&#128222; Call Us</a>' +
+    '<a href="https://wa.me/447709788772" target="_blank" style="flex:1;display:flex;align-items:center;gap:8px;padding:12px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);border-radius:10px;text-decoration:none;color:#22c55e;font-size:13px;font-weight:600;min-width:140px">&#128172; WhatsApp</a>' +
+    '</div>' +
+    '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">Frequently Asked Questions</div>' +
+    '<div style="max-height:300px;overflow-y:auto">' + faqHtml + '</div>' +
+    '</div>' +
+    '<div style="padding-top:12px;border-top:1px solid var(--border)">' +
+    '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px">Send Us a Message</div>' +
+    '<textarea id="support-msg" placeholder="Describe your issue or question..." style="width:100%;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;min-height:80px;margin-bottom:8px;resize:vertical"></textarea>' +
+    '<input type="text" id="support-subject" placeholder="Subject (optional)" style="width:100%;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;margin-bottom:10px">' +
+    '<button class="btn btn-primary btn-sm" onclick="submitSupport()" style="width:100%"><i class="fas fa-paper-plane"></i> Send Message</button>' +
+    '</div>',
+    '640px'
+  );
 }
 
 async function submitSupport() {
@@ -670,7 +710,7 @@ async function submitSupport() {
   if (!msg) return alert('Please enter a message');
   try {
     var r = await apiFetch('/api/support', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ type:'support', subject:subject||'', message:msg }) });
-    if (r && r.success) { alert(r.message || 'Sent!'); showModal('Support', '<p style="color:var(--success)">Your message has been sent. We\'ll reply within 24 hours.</p>'); }
+    if (r && r.success) { showModal('Sent!', '<p style="text-align:center;padding:16px;color:var(--success)"><i class="fas fa-check-circle" style="font-size:32px;display:block;margin-bottom:8px"></i>Your message has been sent. We\'ll reply within 24 hours.</p>'); }
     else alert('Failed to send. Please try again.');
   } catch(e) { alert('Could not connect. Please try again.'); }
 }
@@ -1431,7 +1471,7 @@ function doCancel() {
       campaigns: function() { loadCampaigns(); },
       'success-centre': function() { showSuccessCentre(); },
       settings: function() { showSettingsPage(); },
-      support: function() { showModal('Support', '<p style="color:var(--muted);margin-bottom:12px">Send us a message.</p><textarea id="support-msg" placeholder="Describe your issue..." style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;min-height:80px;margin-bottom:8px;font-family:inherit"></textarea><input type="text" id="support-subject" placeholder="Subject" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;margin-bottom:8px"><button class="btn btn-primary btn-sm" onclick="submitSupport()">Send Message</button>'); }
+      support: function() { showSupport(); },
     };
     (map[page] || map.dashboard)();
   };
@@ -2044,6 +2084,19 @@ async function saveTerritories() {
 }
 
 loadDashboard();
+</script>
+<script src="/chat.js"></script>
+<style>
+/* Chat widget overrides for dashboard theme */
+#chatPanel{background:var(--card)!important;border-color:var(--border)!important;box-shadow:var(--shadow-xl)!important}
+#chatPanel input,#chatPanel textarea{background:var(--card2)!important;border-color:var(--border)!important;color:var(--text)!important}
+#chatMsgs .chat-bot div{background:var(--card2)!important;border-color:var(--border)!important;color:var(--text2)!important}
+#chatMsgs .chat-bot div strong{color:var(--text)!important}
+#chatForm{border-top-color:var(--border)!important}
+#chatSuccess div{color:var(--text2)!important}
+#chatSuccess #chatSentEmail{color:var(--primary)!important}
+</style>
+<script>
 loadTerritories();
 loadCrmUrl();
 // ===== CRM WEBHOOK =====

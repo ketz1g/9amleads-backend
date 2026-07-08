@@ -1378,6 +1378,21 @@ app.get('/api/areas/performance', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/chat — chat widget messages (no auth needed)
+app.post('/api/chat', async (req, res) => {
+  try {
+    const db = getDb();
+    if (!db.chat_messages) db.chat_messages = [];
+    db.chat_messages.push({
+      id: uuidv4(), name: req.body.name || 'Anonymous', email: req.body.email || '',
+      message: req.body.message || '', page: req.body.page || '',
+      created_at: new Date().toISOString()
+    });
+    saveDb();
+    res.json({ success: true });
+  } catch(e) { res.json({ success: false, error: e.message }); }
+});
+
 // POST /api/support — submit support request / feedback
 app.post('/api/support', authMiddleware, async (req, res) => {
   try {
