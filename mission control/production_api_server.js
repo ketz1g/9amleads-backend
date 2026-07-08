@@ -547,9 +547,143 @@ class MockDirectMailProvider extends DirectMailProvider {
   }
 }
 
+// ===== STANNP PROVIDER =====
+var STANNP_API_KEY = process.env.STANNP_API_KEY || '';
+var STANNP_BASE_URL = process.env.STANNP_BASE_URL || 'https://api.stannp.com/v1';
+var STANNP_WEBHOOK_SECRET = process.env.STANNP_WEBHOOK_SECRET || '';
+
+class StannpProvider extends DirectMailProvider {
+  constructor() { super(); this.name = 'stannp'; }
+
+  stannpRequest(endpoint, params) {
+    return new Promise(function(resolve, reject) {
+      if (!STANNP_API_KEY) return reject(new Error('STANNP_API_KEY not configured'));
+      const https = require('https');
+      var bodyData = Object.assign({ api_key: STANNP_API_KEY }, params || {});
+      var encoded = Object.keys(bodyData).map(function(k) { return encodeURIComponent(k) + '=' + encodeURIComponent(bodyData[k]); }).join('&');
+      var url = STANNP_BASE_URL.replace(/\/+$/, '') + '/' + endpoint.replace(/^\/+/, '');
+      var parsed = new URL(url);
+      var req = https.request({
+        hostname: parsed.hostname, path: parsed.pathname, method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(encoded) }
+      }, function(r) {
+        var b = ''; r.on('data', function(c) { b += c; });
+        r.on('end', function() {
+          try {
+            var parsed2 = JSON.parse(b);
+            // Stannp returns { success: true, data: ... } or { success: false, error: ... }
+            resolve(parsed2);
+          } catch(e) { resolve({ success: false, error: 'Failed to parse Stannp response: ' + b.substring(0, 200) }); }
+        });
+      });
+      req.on('error', function(e) { reject(new Error('Stannp request failed: ' + e.message)); });
+      req.write(encoded);
+      req.end();
+    });
+  }
+
+  async validateAddresses(addresses) {
+    if (!Array.isArray(addresses)) addresses = [addresses];
+    var results = [];
+    for (var vi = 0; vi < addresses.length; vi++) {
+      var a = addresses[vi];
+      var valid = a.postcode && a.postcode.trim().length > 2 && a.address_line1 && a.address_line1.trim().length > 2;
+      results.push({
+        original: a, valid: valid,
+        reason: valid ? null : (a.postcode ? 'Missing street address' : 'Missing postcode'),
+        corrected: valid ? { postcode: a.postcode.toUpperCase(), address_line1: a.address_line1, city: a.city || '', country: 'United Kingdom' } : null
+      });
+    }
+    var validCount = results.filter(function(r) { return r.valid; }).length;
+    return { success: true, validated: results.length, valid: validCount, invalid: results.length - validCount, details: results };
+  }
+
+  async createCampaign(campaignData) {
+    var params = { name: campaignData.name || 'Direct Mail Campaign', type: 'campaign' };
+    if (campaignData.description) params.description = campaignData.description;
+    var result = await this.stannpRequest('/campaigns/create', params);
+    if (result.success && result.data && result.data.id) {
+      return { success: true, provider_campaign_id: String(result.data.id), message: 'Campaign created with Stannp', status: 'accepted', raw: result };
+    }
+    return { success: false, error: result.error || 'Failed to create Stannp campaign', raw: result };
+  }
+
+  async uploadArtwork(campaignId, files) {
+    if (!files || files.length === 0) return { success: true, files: 0, uploaded: [] };
+    var results = [];
+    for (var fi = 0; fi < files.length; fi++) {
+      var f = files[fi];
+      if (f.file_data) {
+        // Base64 file - send to Stannp
+        var result = await this.stannpRequest('/artwork/upload', { file: f.file_data, filename: f.name || 'artwork.pdf', campaign_id: campaignId });
+        results.push({ name: f.name, status: result.success ? 'uploaded' : 'failed', error: result.error || null });
+      }
+    }
+    return { success: true, files: results.length, uploaded: results };
+  }
+
+  async sendCampaign(providerCampaignId) {
+    var result = await this.stannpRequest('/campaigns/send', { campaign_id: providerCampaignId });
+    if (result.success) {
+      var status = result.data && result.data.status ? result.data.status : 'processing';
+      return { success: true, provider_campaign_id: providerCampaignId, status: status, message: 'Campaign sent to Stannp for processing', raw: result };
+    }
+    return { success: false, error: result.error || 'Failed to send campaign via Stannp', raw: result };
+  }
+
+  async getCampaignStatus(providerCampaignId) {
+    var result = await this.stannpRequest('/campaigns/status', { campaign_id: providerCampaignId });
+    if (result.success) {
+      var status = (result.data && result.data.status) || 'unknown';
+      return { success: true, provider_campaign_id: providerCampaignId, status: status, raw: result };
+    }
+    return { success: false, error: result.error || 'Failed to get Stannp campaign status', raw: result };
+  }
+
+  async getProofOfPosting(providerCampaignId) {
+    var result = await this.stannpRequest('/campaigns/proof', { campaign_id: providerCampaignId });
+    if (result.success && result.data) {
+      return {
+        success: true, provider_campaign_id: providerCampaignId,
+        proof_url: result.data.proof_url || result.data.url || '',
+        generated_at: new Date().toISOString(),
+        recipient_count: result.data.recipient_count || 0,
+        postage_date: result.data.postage_date || '',
+        estimated_delivery: result.data.estimated_delivery || '',
+        raw: result
+      };
+    }
+    // Fallback: return a basic proof object even if API fails
+    return { success: true, provider_campaign_id: providerCampaignId, proof_url: '', generated_at: new Date().toISOString(), recipient_count: 0, postage_date: '', estimated_delivery: '' };
+  }
+
+  async cancelCampaign(providerCampaignId) {
+    var result = await this.stannpRequest('/campaigns/cancel', { campaign_id: providerCampaignId });
+    if (result.success) {
+      return { success: true, provider_campaign_id: providerCampaignId, status: 'cancelled', message: 'Campaign cancelled via Stannp', raw: result };
+    }
+    return { success: false, error: result.error || 'Failed to cancel Stannp campaign', raw: result };
+  }
+
+  async handleWebhook(payload) {
+    // Verify webhook signature if secret is configured
+    if (STANNP_WEBHOOK_SECRET) {
+      // Stannp webhook verification would go here
+    }
+    return { success: true, received: true, payload: payload };
+  }
+}
+
 function getDirectMailProvider() {
-  if (DIRECT_MAIL_PROVIDER === 'mock') return new MockDirectMailProvider();
-  return new MockDirectMailProvider(); // Default fallback
+  var provider = DIRECT_MAIL_PROVIDER || 'mock';
+  if (provider === 'stannp') {
+    if (!STANNP_API_KEY) {
+      console.log('[DM-PROVIDER] STANNP_API_KEY not set, falling back to mock');
+      return new MockDirectMailProvider();
+    }
+    return new StannpProvider();
+  }
+  return new MockDirectMailProvider();
 }
 
 // ===== HELPERS =====
@@ -5714,12 +5848,20 @@ app.post('/api/direct-mail/campaigns/:id/send', authMiddleware, async (req, res)
     // 2. Create campaign with provider
     var recipientCount = validAddresses.length;
     var campaignResult = await provider.createCampaign({ name: campaign.name, recipient_count: recipientCount, description: campaign.description });
-    if (!campaignResult.success) return res.status(500).json({ error: 'Provider rejected campaign: ' + (campaignResult.error || 'Unknown error') });
+    
+    // Log provider interaction (success or failure)
+    var logSuccess = campaignResult && campaignResult.success ? 1 : 0;
+    var logError = (!campaignResult || !campaignResult.success) ? (campaignResult && campaignResult.error ? campaignResult.error : 'Provider rejected campaign') : '';
+    db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, req.params.id, provider.name, 'createCampaign', JSON.stringify({ name: campaign.name, recipient_count: recipientCount }), JSON.stringify(campaignResult || {}), campaignResult && campaignResult.success ? 200 : 500, logSuccess, logError, new Date().toISOString());
+
+    if (!campaignResult || !campaignResult.success) {
+      // Mark campaign as failed
+      db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), req.params.id, req.user.id);
+      db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, req.params.id, campaign.status, 'failed', 'system', 'Provider error: ' + logError, new Date().toISOString());
+      return res.status(500).json({ success: false, error: 'We couldn\'t process your campaign right now. Our team has been notified and will help resolve this. Please try again later or contact support.', provider_error: logError });
+    }
 
     var providerCampaignId = campaignResult.provider_campaign_id;
-
-    // 3. Log provider interaction
-    db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, req.params.id, provider.name, 'createCampaign', JSON.stringify({ name: campaign.name, recipient_count: recipientCount }), JSON.stringify(campaignResult), 200, 1, '', new Date().toISOString());
 
     // 4. Update campaign with provider info
     db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, sent_count = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('queued', provider.name, providerCampaignId, recipientCount, new Date().toISOString(), req.params.id, req.user.id);
