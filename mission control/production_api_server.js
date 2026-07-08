@@ -2146,6 +2146,170 @@ app.post('/api/ai/generate-flyer', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/ai/generate-flyer-pdf — Generate print-ready A5 flyer PDF
+app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
+  try {
+    const PDFDocument = require('pdfkit');
+    const fs = require('fs');
+    const path = require('path');
+
+    var data = req.body;
+    // Fall back to business profile for missing data
+    if (!data.company_name || !data.business_type) {
+      var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+      if (!profile) return res.status(400).json({ error: 'Complete your Business Profile first.' });
+      data.company_name = data.company_name || profile.company_name || 'Your Business';
+      data.business_type = data.business_type || profile.business_type || 'Business';
+      data.services = data.services || profile.services_offered || '';
+      data.service_area = data.service_area || profile.service_areas || '';
+      data.special_offer = data.special_offer || profile.special_offer || '';
+      data.phone = data.phone || profile.phone || '';
+      data.website = data.website || profile.website || '';
+      data.email = data.email || profile.email || '';
+      data.call_to_action = data.call_to_action || profile.call_to_action || 'Get in touch';
+      data.logo_url = data.logo_url || profile.logo_url || '';
+      data.style = data.style || profile.brand_tone || 'professional';
+    }
+
+    var style = data.style || 'professional';
+    var colors = {
+      professional: { primary: '#0ea5e9', text: '#1e293b', bg: '#ffffff', accent: '#0284c7', light: '#f0f9ff' },
+      bold: { primary: '#dc2626', text: '#1e293b', bg: '#ffffff', accent: '#b91c1c', light: '#fef2f2' },
+      premium: { primary: '#7c3aed', text: '#1e293b', bg: '#faf5ff', accent: '#6d28d9', light: '#f5f3ff' },
+      local: { primary: '#16a34a', text: '#1e293b', bg: '#ffffff', accent: '#15803d', light: '#f0fdf4' },
+      urgent: { primary: '#ea580c', text: '#1e293b', bg: '#fff7ed', accent: '#c2410c', light: '#fff7ed' },
+      friendly: { primary: '#0ea5e9', text: '#1e293b', bg: '#ffffff', accent: '#0284c7', light: '#f0f9ff' }
+    };
+    var c = colors[style] || colors.professional;
+
+    var safeTop = 28, safeBottom = 28, safeLeft = 28, safeRight = 28;
+    var pageW = 420, pageH = 595; // A5 in points (148mm x 210mm)
+
+    function generatePDF(side) {
+      return new Promise(function(resolve, reject) {
+        try {
+          var buffers = [];
+          var doc = new PDFDocument({ size: 'A5', layout: 'portrait', margin: 0, info: { Title: data.company_name + ' Flyer', Creator: '9am Leads AI Marketing Builder' } });
+          doc.on('data', buffers.push.bind(buffers));
+          doc.on('end', function() { resolve(Buffer.concat(buffers)); });
+
+          // Background
+          doc.rect(0, 0, pageW, pageH).fill(c.light);
+
+          // Top color bar
+          doc.rect(0, 0, pageW, 6).fill(c.primary);
+
+          if (side === 'front') {
+            // Logo or placeholder
+            var logoY = safeTop + 10;
+            if (data.logo_url && data.logo_url.startsWith('data:image')) {
+              try { doc.image(data.logo_url, safeLeft, logoY, { width: 60 }); } catch(e) { /* skip logo */ }
+            }
+
+            // Business name
+            doc.fontSize(11).font('Helvetica-Bold').fillColor(c.primary);
+            doc.text(data.company_name || 'Your Business', safeLeft, logoY + 70, { width: pageW - safeLeft - safeRight, align: 'center' });
+
+            // Headline
+            var headlineY = logoY + 95;
+            doc.fontSize(22).font('Helvetica-Bold').fillColor(c.text);
+            doc.text(data.headline || 'Get the Best Service in Town', safeLeft, headlineY, { width: pageW - safeLeft - safeRight, align: 'center' });
+
+            // Subheadline
+            var subY = headlineY + 55;
+            doc.fontSize(11).font('Helvetica').fillColor('#475569');
+            doc.text(data.subheadline || '', safeLeft, subY, { width: pageW - safeLeft - safeRight, align: 'center' });
+
+            // Services bullet points
+            var servicesY = subY + 45;
+            doc.fontSize(10).font('Helvetica').fillColor(c.text);
+            var services = (data.services || 'Quality service').split('\n').filter(Boolean);
+            if (services.length === 0) services = ['Quality service', 'Professional team', 'Satisfaction guaranteed'];
+            services.forEach(function(svc, i) {
+              doc.text('• ' + svc.trim(), safeLeft + 10, servicesY + i * 18, { width: pageW - safeLeft - safeRight - 20 });
+            });
+
+            // Offer highlight box
+            var offerY = servicesY + services.length * 18 + 15;
+            doc.rect(safeLeft, offerY, pageW - safeLeft - safeRight, 40).fill(c.primary);
+            doc.fontSize(12).font('Helvetica-Bold').fillColor('#ffffff');
+            doc.text(data.special_offer || 'Free Quote — Call Today', safeLeft + 10, offerY + 12, { width: pageW - safeLeft - safeRight - 20, align: 'center' });
+
+            // Bottom contact bar
+            var contactY = pageH - safeBottom - 50;
+            doc.rect(safeLeft, contactY, pageW - safeLeft - safeRight, 50).fillColor('#1e293b').fill();
+            doc.fontSize(9).font('Helvetica').fillColor('#ffffff');
+            var contactText = (data.phone ? '📞 ' + data.phone + '  ' : '') + (data.website ? '🌐 ' + data.website : '');
+            doc.text(contactText, safeLeft + 10, contactY + 10, { width: pageW - safeLeft - safeRight - 20, align: 'center' });
+            doc.fontSize(10).font('Helvetica-Bold').fillColor(c.primary);
+            doc.text((data.call_to_action || 'Get in Touch') + ' →', safeLeft + 10, contactY + 28, { width: pageW - safeLeft - safeRight - 20, align: 'center' });
+          } else {
+            // BACK PAGE
+            doc.fontSize(16).font('Helvetica-Bold').fillColor(c.primary);
+            doc.text('Why Choose ' + (data.company_name || 'Us') + '?', safeLeft, safeTop + 15, { width: pageW - safeLeft - safeRight, align: 'center' });
+
+            var backY = safeTop + 50;
+            doc.fontSize(10).font('Helvetica').fillColor(c.text);
+            var trustText = data.trust || 'We are a trusted local business serving our community with quality service.';
+            doc.text(trustText, safeLeft, backY, { width: pageW - safeLeft - safeRight, align: 'left', lineGap: 4 });
+
+            // Back page content
+            var backContentY = backY + doc.heightOfString(trustText, { width: pageW - safeLeft - safeRight }) + 15;
+            doc.fontSize(10).font('Helvetica').fillColor('#475569');
+            doc.text(data.back_page || '', safeLeft, backContentY, { width: pageW - safeLeft - safeRight, align: 'left' });
+
+            // Slogan
+            var sloganY = pageH - safeBottom - 70;
+            doc.fontSize(13).font('Helvetica-Bold').fillColor(c.primary);
+            doc.text((data.slogan || 'Your Trusted Local Partner'), safeLeft, sloganY, { width: pageW - safeLeft - safeRight, align: 'center' });
+
+            // QR section + email
+            var qrY = sloganY + 30;
+            doc.fontSize(8).font('Helvetica').fillColor('#475569');
+            doc.text((data.qr_text || 'Scan for more info') + '  |  ' + (data.email || ''), safeLeft, qrY, { width: pageW - safeLeft - safeRight, align: 'center' });
+
+            // Bottom bar
+            doc.rect(0, pageH - 6, pageW, 6).fill(c.primary);
+          }
+          doc.end();
+        } catch(e) { reject(e); }
+      });
+    }
+
+    // Generate both front and back
+    var [frontPdf, backPdf] = await Promise.all([generatePDF('front'), generatePDF('back')]);
+    var frontBase64 = 'data:application/pdf;base64,' + frontPdf.toString('base64');
+    var backBase64 = 'data:application/pdf;base64,' + backPdf.toString('base64');
+
+    // Store files in materials
+    var materialId = uuidv4();
+    db.prepare('INSERT INTO direct_mail_materials (id,customer_id,name,type,file_data,file_type,file_size,description,campaign_id,template_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(
+      materialId, req.user.id, data.company_name + ' - Flyer Front.pdf', 'flyer_front',
+      frontBase64, 'pdf', frontPdf.length, 'AI-generated flyer front', '', '', new Date().toISOString()
+    );
+    var materialIdBack = uuidv4();
+    db.prepare('INSERT INTO direct_mail_materials (id,customer_id,name,type,file_data,file_type,file_size,description,campaign_id,template_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(
+      materialIdBack, req.user.id, data.company_name + ' - Flyer Back.pdf', 'flyer_back',
+      backBase64, 'pdf', backPdf.length, 'AI-generated flyer back', '', '', new Date().toISOString()
+    );
+
+    res.json({
+      success: true,
+      front_pdf: frontBase64,
+      back_pdf: backBase64,
+      front_material_id: materialId,
+      back_material_id: materialIdBack,
+      page_count: 2,
+      size: 'A5',
+      orientation: 'portrait',
+      style: style,
+      message: 'Print-ready flyer generated'
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to generate flyer PDF. Please try again.' });
+  }
+});
+
 // ===== ADMIN ENDPOINTS =====
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '9amAdmin2024!';
