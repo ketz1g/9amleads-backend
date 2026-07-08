@@ -559,7 +559,7 @@ class MockDirectMailProvider extends DirectMailProvider {
       success: true, provider_campaign_id: providerCampaignId,
       proof_url: 'https://mock-provider.local/proof/' + providerCampaignId + '.pdf',
       generated_at: new Date().toISOString(),
-      recipient_count: (camp.data && camp.data.recipient_count) || 0,
+      recipient_count: 0,
       postage_date: new Date().toISOString().split('T')[0],
       estimated_delivery: new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0]
     };
