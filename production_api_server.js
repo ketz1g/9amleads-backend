@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 9amLeads Production API Server
  * Handles: Auth, Customers, Leads, Delivery, Subscriptions
  * Database: SQLite (upgrade to PostgreSQL via .env)
@@ -67,7 +67,7 @@ function getPostcodeLimit(plan, extraPostcodes) {
   return base + extra;
 }
 
-const EXTRAS_PRICE = 2000; // £20 per extra 5 postcode districts
+const EXTRAS_PRICE = 2000; // Â£20 per extra 5 postcode districts
 
 function validatePostcodes(postcodes, customerPlan, customerProduct, customerId, extraPostcodes) {
   const districts = loadPostcodeDistricts();
@@ -478,7 +478,7 @@ app.post('/api/auth/signup', async (req, res) => {
     customer.email_verified = 0;
     saveDb();
 
-    // Verification email disabled — was causing spam during testing
+    // Verification email disabled â€” was causing spam during testing
     /*try {
       const verifyUrl = PUBLIC_URL.replace(/\/+$/, '') + '/api/auth/verify-email?token=' + verification_token;
       await sendBrevoEmail(
@@ -552,7 +552,7 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 });
 
-// GET /api/auth/verify-email — Verify email address
+// GET /api/auth/verify-email â€” Verify email address
 app.get('/api/auth/verify-email', async (req, res) => {
   try {
     const { token } = req.query;
@@ -564,7 +564,7 @@ app.get('/api/auth/verify-email', async (req, res) => {
     db.prepare('UPDATE customers SET email_verified = 1, verification_token = NULL WHERE id = ?').run(customer.id);
     saveDb();
 
-    // Redirect to portal with success — user can now log in
+    // Redirect to portal with success â€” user can now log in
     res.redirect(PUBLIC_URL + '/portal/?verified=true');
   } catch (e) {
     console.error('Verification error:', e);
@@ -648,7 +648,7 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
 
 // ===== PASSWORD RESET =====
 
-// POST /api/auth/forgot-password — send reset link
+// POST /api/auth/forgot-password â€” send reset link
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
@@ -683,7 +683,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 });
 
-// POST /api/auth/reset-password — reset password with token
+// POST /api/auth/reset-password â€” reset password with token
 app.post('/api/auth/reset-password', async (req, res) => {
   try {
     const { token, password } = req.body;
@@ -793,7 +793,7 @@ app.get('/api/stats', authMiddleware, (req, res) => {
 
 // ===== POSTCODE ENDPOINTS =====
 
-// GET /api/postcodes — List all UK postcode districts grouped by area with availability
+// GET /api/postcodes â€” List all UK postcode districts grouped by area with availability
 app.get('/api/postcodes', (req, res) => {
   const districts = loadPostcodeDistricts();
   const areas = loadPostcodeAreas();
@@ -827,7 +827,7 @@ app.get('/api/postcodes', (req, res) => {
   res.json({ areas: result, districts: Object.keys(districts).length, regions });
 });
 
-// GET /api/postcodes/mine — Get current customer's assigned postcode districts with limits
+// GET /api/postcodes/mine â€” Get current customer's assigned postcode districts with limits
 app.get('/api/postcodes/mine', authMiddleware, (req, res) => {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
@@ -862,7 +862,7 @@ app.get('/api/postcodes/mine', authMiddleware, (req, res) => {
   });
 });
 
-// PUT /api/postcodes/update — Update the customer's selected postcodes
+// PUT /api/postcodes/update â€” Update the customer's selected postcodes
 app.put('/api/postcodes/update', authMiddleware, (req, res) => {
   const { postcodes } = req.body;
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -883,7 +883,7 @@ app.put('/api/postcodes/update', authMiddleware, (req, res) => {
   res.json({ success: true, postcodes, count: postcodes.length, max_limit: getPostcodeLimit(customer.plan) });
 });
 
-// POST /api/postcodes/extra — Purchase extra postcode districts
+// POST /api/postcodes/extra â€” Purchase extra postcode districts
 app.post('/api/postcodes/extra', authMiddleware, async (req, res) => {
   try {
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -903,7 +903,7 @@ app.post('/api/postcodes/extra', authMiddleware, async (req, res) => {
       success: true,
       extra_postcodes: newExtra,
       total_postcode_limit: newLimit,
-      message: 'Added 5 extra postcode districts (£20/mo). Your limit is now ' + newLimit + ' districts.'
+      message: 'Added 5 extra postcode districts (Â£20/mo). Your limit is now ' + newLimit + ' districts.'
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -946,7 +946,7 @@ app.put('/api/settings', authMiddleware, (req, res) => {
   res.json({ success: true });
 });
 
-// PUT /api/settings/lead-filters — Update lead filters
+// PUT /api/settings/lead-filters â€” Update lead filters
 app.put('/api/settings/lead-filters', authMiddleware, (req, res) => {
   const { leadFilters } = req.body;
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -1036,7 +1036,7 @@ app.post('/api/crm/push', authMiddleware, async (req, res) => {
 
 // ===== AI IMAGE GENERATION =====
 
-// POST /api/ai/generate-image — Generate image via DALL-E 3
+// POST /api/ai/generate-image â€” Generate image via DALL-E 3
 app.post('/api/ai/generate-image', async (req, res) => {
   try {
     const { prompt, size, quality } = req.body;
@@ -1105,7 +1105,7 @@ function adminAuth(req, res, next) {
   next();
 }
 
-// GET /api/admin/stats — overall system stats
+// GET /api/admin/stats â€” overall system stats
 app.get('/api/admin/stats', adminAuth, (req, res) => {
   const totalCustomers = db.prepare('SELECT COUNT(*) as count FROM customers').get();
   const freeTrials = db.prepare('SELECT COUNT(*) as count FROM customers WHERE plan = \'free_trial\'').get();
@@ -1133,7 +1133,7 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
   });
 });
 
-// GET /api/admin/customers — list all customers (paginated)
+// GET /api/admin/customers â€” list all customers (paginated)
 app.get('/api/admin/customers', adminAuth, (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 50;
@@ -1142,10 +1142,13 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
   const total = db.prepare('SELECT COUNT(*) as count FROM customers').get();
   const customers = allCustomers.slice((page - 1) * limit, page * limit);
 
-  // Get lead counts for each customer
+  // Get lead counts + status counts for each customer
   const result = customers.map(c => {
     const leadCount = db.prepare('SELECT COUNT(*) as count FROM leads WHERE customer_id = ?').get(c.id);
-    return { ...c, lead_count: leadCount.count };
+    const contacted = db.prepare('SELECT COUNT(*) as count FROM leads WHERE customer_id = ? AND status = ?').get(c.id, 'contacted');
+    const booked = db.prepare('SELECT COUNT(*) as count FROM leads WHERE customer_id = ? AND status = ?').get(c.id, 'booked');
+    const lost = db.prepare('SELECT COUNT(*) as count FROM leads WHERE customer_id = ? AND status = ?').get(c.id, 'lost');
+    return { ...c, lead_count: leadCount.count, contacted_count: contacted.count, booked_count: booked.count, lost_count: lost.count };
   });
 
   res.json({
@@ -1154,6 +1157,239 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
     page,
     total_pages: Math.ceil(total.count / limit)
   });
+});
+
+// ===== ADMIN HEALTH REPORT =====
+app.get('/api/admin/health-report', adminAuth, (req, res) => {
+  try {
+    const db = getDb();
+    const customers = db.customers || [];
+    const leads = db.leads || [];
+    const subscriptions = db.subscriptions || [];
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const threeDaysAgo = new Date(now.getTime() - 3 * 86400000).toISOString();
+
+    const issues = [];
+
+    // 1. Bounced emails
+    const bouncedCusts = customers.filter(c => parseInt(c.bounced) > 0);
+    if (bouncedCusts.length > 0) {
+      issues.push({
+        severity: 'high',
+        category: 'bounced_emails',
+        label: bouncedCusts.length + ' customer' + (bouncedCusts.length !== 1 ? 's' : '') + ' with bounced emails',
+        details: bouncedCusts.map(c => ({
+          id: c.id,
+          email: c.email,
+          company: c.company || '',
+          bounced: parseInt(c.bounced),
+          plan: c.plan
+        })),
+        fix: 'clear-bounce'
+      });
+    }
+
+    // 2. Expired trials (free_trial past trial_ends date)
+    const expiredCusts = customers.filter(c =>
+      c.plan === 'free_trial' && c.trial_ends && new Date(c.trial_ends) < now
+    );
+    if (expiredCusts.length > 0) {
+      issues.push({
+        severity: 'medium',
+        category: 'expired_trials',
+        label: expiredCusts.length + ' expired trial' + (expiredCusts.length !== 1 ? 's' : ''),
+        details: expiredCusts.map(c => ({
+          id: c.id,
+          email: c.email,
+          company: c.company || '',
+          trial_ended: c.trial_ends,
+          days_overdue: Math.floor((now - new Date(c.trial_ends)) / 86400000)
+        })),
+        fix: null
+      });
+    }
+
+    // 3. Trials expiring within 3 days
+    const threeDaysFromNow = new Date(now.getTime() + 3 * 86400000);
+    const expiringCusts = customers.filter(c =>
+      c.plan === 'free_trial' && c.trial_ends &&
+      new Date(c.trial_ends) > now && new Date(c.trial_ends) <= threeDaysFromNow
+    );
+    if (expiringCusts.length > 0) {
+      issues.push({
+        severity: 'low',
+        category: 'expiring_trials',
+        label: expiringCusts.length + ' trial' + (expiringCusts.length !== 1 ? 's' : '') + ' expiring within 3 days',
+        details: expiringCusts.map(c => ({
+          id: c.id,
+          email: c.email,
+          company: c.company || '',
+          trial_ends: c.trial_ends
+        })),
+        fix: 'send-reminder'
+      });
+    }
+
+    // 4. Customers with no leads delivered in 3+ days
+    var activeCusts = customers.filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || parseInt(c.bounced) < 3); });
+    var staleCusts = [];
+    for (var i = 0; i < activeCusts.length; i++) {
+      var c = activeCusts[i];
+      var custLeads = leads.filter(function(l) { return l.customer_id === c.id && l.delivered === 1; });
+      custLeads.sort(function(a, b) { return (b.delivered_at || '').localeCompare(a.delivered_at || ''); });
+      var lastDelivery = custLeads.length > 0 ? custLeads[0].delivered_at : null;
+      if (!lastDelivery || lastDelivery < threeDaysAgo) {
+        staleCusts.push({
+          id: c.id,
+          email: c.email,
+          company: c.company || '',
+          plan: c.plan,
+          last_delivery: lastDelivery || 'never',
+          days_since: lastDelivery ? Math.floor((now - new Date(lastDelivery)) / 86400000) : 999
+        });
+      }
+    }
+    if (staleCusts.length > 0) {
+      issues.push({
+        severity: 'high',
+        category: 'stale_deliveries',
+        label: staleCusts.length + ' customer' + (staleCusts.length !== 1 ? 's' : '') + ' haven\'t received leads in 3+ days',
+        details: staleCusts.slice(0, 20),
+        fix: 'reset-deliveries'
+      });
+    }
+
+    // 5. Payment failures (subscriptions with fail_count > 0)
+    var failedSubs = subscriptions.filter(function(s) { return parseInt(s.fail_count) > 0; });
+    if (failedSubs.length > 0) {
+      var failedDetails = failedSubs.map(function(s) {
+        var cust = customers.find(function(c) { return c.id === s.customer_id; });
+        return {
+          id: s.customer_id,
+          email: cust ? cust.email : 'unknown',
+          company: cust ? (cust.company || '') : '',
+          fail_count: parseInt(s.fail_count),
+          plan: s.plan,
+          status: s.status
+        };
+      });
+      issues.push({
+        severity: 'high',
+        category: 'payment_failures',
+        label: failedSubs.length + ' customer' + (failedSubs.length !== 1 ? 's' : '') + ' with failed payments',
+        details: failedDetails,
+        fix: null
+      });
+    }
+
+    // 6. Scraper freshness check
+    var scraperLogs = db.scraper_logs || [];
+    scraperLogs.sort(function(a, b) { return (b.created_at || b.timestamp || '').localeCompare(a.created_at || a.timestamp || ''); });
+    var lastScrape = scraperLogs.length > 0 ? (scraperLogs[0].created_at || scraperLogs[0].timestamp) : null;
+    var scraperStale = lastScrape && lastScrape < threeDaysAgo;
+
+    // 7. Unverified emails
+    var unverifiedCusts = customers.filter(function(c) { return c.email_verified === 0 || c.email_verified === '0'; });
+    if (unverifiedCusts.length > 0) {
+      issues.push({
+        severity: 'low',
+        category: 'unverified_emails',
+        label: unverifiedCusts.length + ' unverified email' + (unverifiedCusts.length !== 1 ? 's' : ''),
+        details: unverifiedCusts.slice(0, 10).map(c => ({
+          id: c.id,
+          email: c.email,
+          company: c.company || ''
+        })),
+        fix: null
+      });
+    }
+
+    // Determine overall status
+    var highIssues = issues.filter(function(i) { return i.severity === 'high'; }).length;
+    var overallStatus = highIssues > 0 ? 'red' : issues.length > 0 ? 'yellow' : 'green';
+
+    res.json({
+      status: overallStatus,
+      checked_at: now.toISOString(),
+      summary: {
+        total_customers: customers.length,
+        active_customers: activeCusts.length,
+        total_leads: leads.length,
+        total_subscriptions: subscriptions.length,
+        high_issues: highIssues,
+        total_issues: issues.length
+      },
+      system: {
+        brevo_configured: !!BREVO_API_KEY,
+        stripe_configured: !!STRIPE_SECRET_KEY,
+        last_scrape: lastScrape,
+        scraper_stale: scraperStale
+      },
+      issues: issues
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/admin/clear-bounce â€” Reset bounced count for a customer
+app.post('/api/admin/clear-bounce', adminAuth, (req, res) => {
+  try {
+    var customerId = req.body.customer_id;
+    if (!customerId) return res.status(400).json({ error: 'customer_id required' });
+    var allCustomers = db.prepare('SELECT * FROM customers').all();
+    var cust = allCustomers.find(function(c) { return c.id === customerId; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    db.prepare('UPDATE customers SET bounced = 0 WHERE id = ?').run(customerId);
+    res.json({ success: true, message: 'Bounce cleared for ' + cust.email });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/reset-deliveries â€” Reset undelivered leads for a customer
+app.post('/api/admin/reset-deliveries', adminAuth, (req, res) => {
+  try {
+    var customerId = req.body.customer_id;
+    var allLeads = db.prepare('SELECT * FROM leads WHERE customer_id = ? AND delivered = 1').all(customerId);
+    var count = 0;
+    for (var i = 0; i < allLeads.length; i++) {
+      db.prepare('UPDATE leads SET delivered = 0, delivered_at = NULL WHERE id = ?').run(allLeads[i].id);
+      count++;
+    }
+    res.json({ success: true, reset_count: count });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/send-reminder â€” Send trial-ending email to a customer
+app.post('/api/admin/send-reminder', adminAuth, function(req, res) {
+  var customerId = req.body.customer_id;
+  if (!customerId) return res.status(400).json({ error: 'customer_id required' });
+  var allCustomers = db.prepare('SELECT * FROM customers').all();
+  var cust = allCustomers.find(function(c) { return c.id === customerId; });
+  if (!cust) return res.status(404).json({ error: 'Customer not found' });
+  var html = '<div style="font-family:sans-serif;padding:20px;max-width:600px;margin:0 auto"><h2 style="color:#1a1a2e">Your trial ends soon</h2><p>Your 9amLeads free trial is ending. Keep your leads coming by upgrading today.</p><a href="https://www.9amleads.com/portal/dashboard.html" style="display:inline-block;padding:12px 24px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;text-decoration:none;border-radius:8px;font-weight:600">Upgrade Now</a></div>';
+  sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, 'Your 9amLeads trial is ending', html).then(function() {
+    res.json({ success: true, message: 'Reminder sent to ' + cust.email });
+  }).catch(function(e) {
+    res.status(500).json({ error: e.message });
+  });
+});
+
+// POST /api/admin/extend-trial â€” Add days to a customer's trial
+app.post('/api/admin/extend-trial', adminAuth, function(req, res) {
+  try {
+    var customerId = req.body.customer_id;
+    var days = parseInt(req.body.days) || 7;
+    if (!customerId) return res.status(400).json({ error: 'customer_id required' });
+    var allCustomers = db.prepare('SELECT * FROM customers').all();
+    var cust = allCustomers.find(function(c) { return c.id === customerId; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var currentEnd = cust.trial_ends ? new Date(cust.trial_ends) : new Date();
+    if (currentEnd < new Date()) currentEnd = new Date();
+    var newEnd = new Date(currentEnd.getTime() + days * 86400000);
+    db.prepare('UPDATE customers SET trial_ends = ? WHERE id = ?').run(newEnd.toISOString(), customerId);
+    res.json({ success: true, message: 'Trial extended by ' + days + ' days. New end: ' + newEnd.toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'}) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ===== BREVO EMAIL INTEGRATION =====
@@ -1316,23 +1552,23 @@ function getCampaignEmailHTML(customer, template) {
   const productName = customer.lead_type || 'leads';
   
   const templates = {
-    trial_day1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Is Active</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Your daily <strong style="color:#fff">' + productName + '</strong> land at <strong style="color:' + accent + '">9am tomorrow</strong>.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to 9amLeads. Over the next 7 days you\'ll receive exclusive <strong>' + productName + '</strong> delivered to your inbox every morning at 9am. Here\'s how to get the most out of your trial:</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:2;margin:0">📥 <strong style="color:#fff">9:00am</strong> : Lead sheet arrives in your inbox<br>📞 <strong style="color:#fff">9:01am</strong> : Start calling your hot leads<br>💰 <strong style="color:#fff">9:30am</strong> : First quotes going out<br>✅ <strong style="color:#fff">By noon</strong> : Bookings coming in</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">What makes these leads exclusive?</strong> Unlike lead generation sites where your quote is one of dozens, every lead we send is sent to <strong>you alone</strong>. No competitors. No bidding wars. You are the first and only person to call them.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">💡 Pro tip:</strong> Speed wins in this business. Call every lead within 30 minutes of receiving them and you\'ll convert at 3x the average rate. Use the AI-drafted email, WhatsApp, and phone scripts in your dashboard for every lead. Set your alarm for 9am and make it your lead hour.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">To get the most from your trial, <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">log into your dashboard</a> and set up your CRM webhook so leads flow straight into your system. If you don\'t use a CRM, no problem : leads arrive by email too.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
-    trial_day3: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">How Are Your First Leads Looking?</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">3 days in : time for a quick check-in.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">You\'re three days into your 9amLeads trial. By now you should have received a few days\' worth of <strong>' + productName + '</strong>. We wanted to check in and see how things are going.</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0">✅ Are the leads relevant to your <strong>specific business</strong>?<br>✅ Is the volume what you <strong>expected</strong>?<br>✅ Have you managed to <strong>call any yet</strong>?<br>✅ Are the postcode areas <strong>working for you</strong>?</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">If the answer to any of these is &ldquo;no&rdquo; : don\'t worry. You can <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">adjust your territory settings in the dashboard</a> to refine which opportunities you receive. Every lead includes AI-drafted email, WhatsApp, and phone scripts ready to use. Narrow it down, expand it out, or target specific cities.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">💡 Tip of the day:</strong> Call within 30 minutes. We know we keep saying it, but it\'s because it works. Your lead is a real person who needs help <em>right now</em>. Every minute you wait, they\'re calling someone else. Be first.</p><p style="color:#666;font-size:13px;margin:0 0 16px">Not loving it? Reply to this email and tell us what\'s off. We can tweak your settings or switch you to a different lead type.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
-    trial_day5: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Tips to Convert More Leads</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">You\'ve got 2 days left in your trial. Let\'s make them count.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">By now you\'ve had a few days of <strong>' + productName + '</strong> landing in your inbox. Whether you\'ve closed deals yet or not, here are three tips that will dramatically improve your conversion rate:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:20px;margin:0 0 16px"><div style="margin-bottom:16px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">1</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Call within 30 minutes</strong><br><span style="color:#666;font-size:13px">Speed is your superpower. When a lead goes SSTC, registers a company, or a probate grant is issued : they are actively looking for help. Our data shows that calling within 30 minutes triples your conversion rate compared to calling after 2 hours. Set your alarm, drop everything, and dial.</span></div></div><div style="margin-bottom:16px;clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">2</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Personalise your pitch</strong><br><span style="color:#666;font-size:13px">Don\'t read from a script. Reference their specific situation : the property address, the company they just registered, the probate value. &ldquo;I see you\'ve just listed [property] on Rightmove : congratulations. I specialise in helping sellers in [area] get a fast, fair price.&rdquo; Personalised pitches close at 2x the rate of generic ones.</span></div></div><div style="clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">3</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Follow up : the money is in the 2nd call</strong><br><span style="color:#666;font-size:13px">Most sales don\'t happen on the first call. People are busy, they need to check with a partner, or they\'re comparing options. Follow up on day 2 with an email, call again on day 4. Exclusive leads mean no one else is calling them : take your time and build the relationship.</span></div></div></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Your free trial ends in <strong style="color:' + accent + '">2 days</strong>. After that, your leads will pause. Upgrade now to keep them flowing without interruption.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Upgrade & Keep Your Leads →</a></td></tr></table>',
-    trial_day7: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Ends Tomorrow</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Action needed : your daily leads will pause after today.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">This is your 7-day reminder. Tomorrow your free trial ends, and your daily <strong>' + productName + '</strong> delivery will pause. Here\'s what you\'ll lose:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0">📥 <strong style="color:#fff">Daily exclusive leads</strong> at 9am every morning<br>🔒 <strong style="color:#fff">No competition</strong> : you\'re the only person who gets them<br>📊 <strong style="color:#fff">Full dashboard access</strong> with lead history & analytics<br>🔌 <strong style="color:#fff">CRM integration</strong> : push leads to your system<br>📞 <strong style="color:#fff">Priority support</strong> when you need it</p></div><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.6;margin:0"><em>&ldquo;I got 12 leads in my first week using 9amLeads. Converted 3. Made <strong style="color:' + accent + '">£3,600</strong> in additional revenue. Best £49 I\'ve ever spent.&rdquo;</em><br><span style="color:#666;font-size:11px">: Mark S., Southampton</span></p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">Plans start from just <strong style="color:#fff">£49/month</strong>. No long-term contract. Cancel anytime. Upgrade now and your leads keep flowing tomorrow at 9am as if nothing happened.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Now : Keep Your Leads</a></td></tr></table>',
-    trial_day9: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Daily Leads Have Paused</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Your 7-day trial has ended. Here\'s how to restart.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">As expected, your free trial has ended and your daily <strong>' + productName + '</strong> delivery has been paused. Don\'t worry : your lead history is still intact, and you can restart in 3 simple steps:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">To restart your leads:</strong><br>1. <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">Log into your dashboard</a><br>2. Choose your plan<br>3. Leads restart at <strong style="color:' + accent + '">9am tomorrow</strong></p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'re not sure whether 9amLeads is right for you, reply to this email and tell us what\'s holding you back. We\'re a small UK team and we personally read every reply. We\'ll help you decide : no pushy sales pitch, just honest advice.</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.6;margin:0"><em>&ldquo;I was sceptical at first but decided to give it a month. We picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month : already covered our annual subscription 10x over.&rdquo;</em><br><span style="color:#666;font-size:11px">: Sarah L., Manchester</span></p></div><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px">Restart My Leads →</a></td></tr></table>',
+    trial_day1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Is Active</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Your daily <strong style="color:#fff">' + productName + '</strong> land at <strong style="color:' + accent + '">9am tomorrow</strong>.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to 9amLeads. Over the next 7 days you\'ll receive exclusive <strong>' + productName + '</strong> delivered to your inbox every morning at 9am. Here\'s how to get the most out of your trial:</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:2;margin:0">ðŸ“¥ <strong style="color:#fff">9:00am</strong> : Lead sheet arrives in your inbox<br>ðŸ“ž <strong style="color:#fff">9:01am</strong> : Start calling your hot leads<br>ðŸ’° <strong style="color:#fff">9:30am</strong> : First quotes going out<br>âœ… <strong style="color:#fff">By noon</strong> : Bookings coming in</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">What makes these leads exclusive?</strong> Unlike lead generation sites where your quote is one of dozens, every lead we send is sent to <strong>you alone</strong>. No competitors. No bidding wars. You are the first and only person to call them.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">ðŸ’¡ Pro tip:</strong> Speed wins in this business. Call every lead within 30 minutes of receiving them and you\'ll convert at 3x the average rate. Use the AI-drafted email, WhatsApp, and phone scripts in your dashboard for every lead. Set your alarm for 9am and make it your lead hour.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">To get the most from your trial, <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">log into your dashboard</a> and set up your CRM webhook so leads flow straight into your system. If you don\'t use a CRM, no problem : leads arrive by email too.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
+    trial_day3: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">How Are Your First Leads Looking?</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">3 days in : time for a quick check-in.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">You\'re three days into your 9amLeads trial. By now you should have received a few days\' worth of <strong>' + productName + '</strong>. We wanted to check in and see how things are going.</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0">âœ… Are the leads relevant to your <strong>specific business</strong>?<br>âœ… Is the volume what you <strong>expected</strong>?<br>âœ… Have you managed to <strong>call any yet</strong>?<br>âœ… Are the postcode areas <strong>working for you</strong>?</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">If the answer to any of these is &ldquo;no&rdquo; : don\'t worry. You can <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">adjust your territory settings in the dashboard</a> to refine which opportunities you receive. Every lead includes AI-drafted email, WhatsApp, and phone scripts ready to use. Narrow it down, expand it out, or target specific cities.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">ðŸ’¡ Tip of the day:</strong> Call within 30 minutes. We know we keep saying it, but it\'s because it works. Your lead is a real person who needs help <em>right now</em>. Every minute you wait, they\'re calling someone else. Be first.</p><p style="color:#666;font-size:13px;margin:0 0 16px">Not loving it? Reply to this email and tell us what\'s off. We can tweak your settings or switch you to a different lead type.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
+    trial_day5: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Tips to Convert More Leads</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">You\'ve got 2 days left in your trial. Let\'s make them count.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">By now you\'ve had a few days of <strong>' + productName + '</strong> landing in your inbox. Whether you\'ve closed deals yet or not, here are three tips that will dramatically improve your conversion rate:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:20px;margin:0 0 16px"><div style="margin-bottom:16px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">1</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Call within 30 minutes</strong><br><span style="color:#666;font-size:13px">Speed is your superpower. When a lead goes SSTC, registers a company, or a probate grant is issued : they are actively looking for help. Our data shows that calling within 30 minutes triples your conversion rate compared to calling after 2 hours. Set your alarm, drop everything, and dial.</span></div></div><div style="margin-bottom:16px;clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">2</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Personalise your pitch</strong><br><span style="color:#666;font-size:13px">Don\'t read from a script. Reference their specific situation : the property address, the company they just registered, the probate value. &ldquo;I see you\'ve just listed [property] on Rightmove : congratulations. I specialise in helping sellers in [area] get a fast, fair price.&rdquo; Personalised pitches close at 2x the rate of generic ones.</span></div></div><div style="clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">3</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Follow up : the money is in the 2nd call</strong><br><span style="color:#666;font-size:13px">Most sales don\'t happen on the first call. People are busy, they need to check with a partner, or they\'re comparing options. Follow up on day 2 with an email, call again on day 4. Exclusive leads mean no one else is calling them : take your time and build the relationship.</span></div></div></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Your free trial ends in <strong style="color:' + accent + '">2 days</strong>. After that, your leads will pause. Upgrade now to keep them flowing without interruption.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Upgrade & Keep Your Leads â†’</a></td></tr></table>',
+    trial_day7: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Ends Tomorrow</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Action needed : your daily leads will pause after today.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">This is your 7-day reminder. Tomorrow your free trial ends, and your daily <strong>' + productName + '</strong> delivery will pause. Here\'s what you\'ll lose:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0">ðŸ“¥ <strong style="color:#fff">Daily exclusive leads</strong> at 9am every morning<br>ðŸ”’ <strong style="color:#fff">No competition</strong> : you\'re the only person who gets them<br>ðŸ“Š <strong style="color:#fff">Full dashboard access</strong> with lead history & analytics<br>ðŸ”Œ <strong style="color:#fff">CRM integration</strong> : push leads to your system<br>ðŸ“ž <strong style="color:#fff">Priority support</strong> when you need it</p></div><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.6;margin:0"><em>&ldquo;I got 12 leads in my first week using 9amLeads. Converted 3. Made <strong style="color:' + accent + '">Â£3,600</strong> in additional revenue. Best Â£49 I\'ve ever spent.&rdquo;</em><br><span style="color:#666;font-size:11px">: Mark S., Southampton</span></p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">Plans start from just <strong style="color:#fff">Â£49/month</strong>. No long-term contract. Cancel anytime. Upgrade now and your leads keep flowing tomorrow at 9am as if nothing happened.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Now : Keep Your Leads</a></td></tr></table>',
+    trial_day9: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Daily Leads Have Paused</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Your 7-day trial has ended. Here\'s how to restart.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">As expected, your free trial has ended and your daily <strong>' + productName + '</strong> delivery has been paused. Don\'t worry : your lead history is still intact, and you can restart in 3 simple steps:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">To restart your leads:</strong><br>1. <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">Log into your dashboard</a><br>2. Choose your plan<br>3. Leads restart at <strong style="color:' + accent + '">9am tomorrow</strong></p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'re not sure whether 9amLeads is right for you, reply to this email and tell us what\'s holding you back. We\'re a small UK team and we personally read every reply. We\'ll help you decide : no pushy sales pitch, just honest advice.</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.6;margin:0"><em>&ldquo;I was sceptical at first but decided to give it a month. We picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month : already covered our annual subscription 10x over.&rdquo;</em><br><span style="color:#666;font-size:11px">: Sarah L., Manchester</span></p></div><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px">Restart My Leads â†’</a></td></tr></table>',
     trial_day12: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Still Not Sure? Let\'s Talk</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">We understand. Let\'s figure this out together.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">We know that choosing a lead generation service is a big decision. Maybe the leads weren\'t quite right for your ' + bizType + '. Maybe the timing wasn\'t perfect. Maybe you just need more information before committing.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Whatever it is : <strong style="color:#fff">we want to help</strong>. Reply to this email and tell us what\'s holding you back. Are the postcodes not quite right? Wrong lead type? Budget concerns? Not enough time to call? We\'ll help you find a solution.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">To sweeten the deal, here\'s a <strong style="color:#fff">30% discount</strong> on your first month when you\'re ready to give it another go:</p><div style="background:rgba(14,165,233,0.06);border:2px dashed ' + accent + ';border-radius:12px;padding:16px;text-align:center;margin:0 0 16px"><p style="color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 4px;color:#666">Discount Code</p><p style="font-family:Outfit,sans-serif;font-size:28px;font-weight:800;color:' + accent + ';margin:0;letter-spacing:3px">WELCOME30</p><p style="color:#666;font-size:11px;margin:4px 0 0">30% off your first month</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">See if 9amLeads is right for your business by visiting our <a href="' + PUBLIC_URL + '/who-we-serve" style="color:' + accent + '">who we serve page</a> : we work with estate agents, probate practitioners, accountants, solicitors, and more.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/who-we-serve" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Who We Serve</a></td></tr></table>',
-    trial_day16: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Businesses That Transformed Their Pipeline</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Real results from real 9amLeads customers.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Still on the fence? Here are three stories from businesses just like yours who use 9amLeads to fill their pipeline every single day:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#555;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Estate Agent : Southampton</strong><br>&ldquo;Got 12 moving leads in my first week using 9amLeads. Called every one within 30 minutes. Converted 3 instructions and made <strong style="color:' + accent + '">£3,600</strong> in additional revenue. My monthly subscription paid for itself on the first call.&rdquo;<br><span style="color:#666;font-size:11px">: Mark S., Independent Estate Agent</span></p></div><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#555;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Probate Practitioner : Manchester</strong><br>&ldquo;We\'ve picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month using 9amLeads probate leads. Already covered our annual subscription 10x over. The exclusivity is the game-changer : no one else is calling these families.&rdquo;<br><span style="color:#666;font-size:11px">: Sarah L., Probate Services Ltd</span></p></div><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Construction Company : Bristol</strong><br>&ldquo;Won 2 contracts worth <strong style="color:' + accent + '">£1.4M</strong> in our first quarter using 9amLeads tenders. We went from scrambling for work to having a consistent pipeline. Best business decision we\'ve made in 10 years.&rdquo;<br><span style="color:#666;font-size:11px">: James R., Bristol Construction Co</span></p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">Your success story could be next. Your account is still waiting, and your <strong style="color:' + accent + '">WELCOME30</strong> discount code is ready for you. Upgrade now and your leads restart at 9am tomorrow.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Restart With 30% Off →</a></td></tr></table>',
-    trial_day21: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Come Back : 30% Off Your First Month</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">We\'d love to have you back. Here\'s a little incentive.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">It\'s been a few weeks since your trial ended. Since then, hundreds of new exclusive <strong>' + productName + '</strong> have been delivered to our customers every single morning. Here\'s what you\'ve been missing:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0">📥 <strong style="color:#fff">Daily leads</strong> arriving at 9am every morning<br>🔒 <strong style="color:#fff">Zero competition</strong> : exclusive to you<br>⚡ <strong style="color:#fff">First to call</strong> : every single time<br>📊 <strong style="color:#fff">Dashboard & CRM</strong> : manage everything in one place</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Come back and try again with <strong style="color:#fff">30% off your first month</strong>. Use the code below at checkout:</p><div style="background:rgba(14,165,233,0.06);border:2px dashed ' + accent + ';border-radius:12px;padding:16px;text-align:center;margin:0 0 16px"><p style="color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 4px;color:#666">Discount Code</p><p style="font-family:Outfit,sans-serif;font-size:28px;font-weight:800;color:' + accent + ';margin:0;letter-spacing:3px">WELCOME30</p><p style="color:#666;font-size:11px;margin:4px 0 0">Expires soon : use it before it\'s gone</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">No commitment. No long-term contract. Cancel anytime. Your leads restart at 9am tomorrow.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Claim 30% Off Now</a></td></tr></table>',
+    trial_day16: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Businesses That Transformed Their Pipeline</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Real results from real 9amLeads customers.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Still on the fence? Here are three stories from businesses just like yours who use 9amLeads to fill their pipeline every single day:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#555;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Estate Agent : Southampton</strong><br>&ldquo;Got 12 moving leads in my first week using 9amLeads. Called every one within 30 minutes. Converted 3 instructions and made <strong style="color:' + accent + '">Â£3,600</strong> in additional revenue. My monthly subscription paid for itself on the first call.&rdquo;<br><span style="color:#666;font-size:11px">: Mark S., Independent Estate Agent</span></p></div><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#555;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Probate Practitioner : Manchester</strong><br>&ldquo;We\'ve picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month using 9amLeads probate leads. Already covered our annual subscription 10x over. The exclusivity is the game-changer : no one else is calling these families.&rdquo;<br><span style="color:#666;font-size:11px">: Sarah L., Probate Services Ltd</span></p></div><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Construction Company : Bristol</strong><br>&ldquo;Won 2 contracts worth <strong style="color:' + accent + '">Â£1.4M</strong> in our first quarter using 9amLeads tenders. We went from scrambling for work to having a consistent pipeline. Best business decision we\'ve made in 10 years.&rdquo;<br><span style="color:#666;font-size:11px">: James R., Bristol Construction Co</span></p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">Your success story could be next. Your account is still waiting, and your <strong style="color:' + accent + '">WELCOME30</strong> discount code is ready for you. Upgrade now and your leads restart at 9am tomorrow.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Restart With 30% Off â†’</a></td></tr></table>',
+    trial_day21: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Come Back : 30% Off Your First Month</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">We\'d love to have you back. Here\'s a little incentive.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">It\'s been a few weeks since your trial ended. Since then, hundreds of new exclusive <strong>' + productName + '</strong> have been delivered to our customers every single morning. Here\'s what you\'ve been missing:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0">ðŸ“¥ <strong style="color:#fff">Daily leads</strong> arriving at 9am every morning<br>ðŸ”’ <strong style="color:#fff">Zero competition</strong> : exclusive to you<br>âš¡ <strong style="color:#fff">First to call</strong> : every single time<br>ðŸ“Š <strong style="color:#fff">Dashboard & CRM</strong> : manage everything in one place</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Come back and try again with <strong style="color:#fff">30% off your first month</strong>. Use the code below at checkout:</p><div style="background:rgba(14,165,233,0.06);border:2px dashed ' + accent + ';border-radius:12px;padding:16px;text-align:center;margin:0 0 16px"><p style="color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 4px;color:#666">Discount Code</p><p style="font-family:Outfit,sans-serif;font-size:28px;font-weight:800;color:' + accent + ';margin:0;letter-spacing:3px">WELCOME30</p><p style="color:#666;font-size:11px;margin:4px 0 0">Expires soon : use it before it\'s gone</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">No commitment. No long-term contract. Cancel anytime. Your leads restart at 9am tomorrow.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Claim 30% Off Now</a></td></tr></table>',
     trial_day30: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Account Is Still Waiting</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">No pressure. Your account is safe and ready when you are.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">It\'s been 30 days since your trial ended, and we wanted to let you know that your 9amLeads account is <strong style="color:#fff">still here</strong>. Nothing has been deleted. All your lead history, settings, postcode preferences, and dashboard access are preserved exactly as you left them.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Whenever you\'re ready, upgrading takes 30 seconds. Your leads will restart at <strong style="color:' + accent + '">9am the next morning</strong> as if you never paused. No setup required. No waiting period.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'d like to have a chat with our team about whether 9amLeads is right for your ' + bizType + ', just reply to this email. We\'re here to help.</p><p style="color:#666;font-size:13px;margin:0 0 20px">No pressure. Just wanted to remind you that your account is waiting.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Visit Dashboard</a></td></tr></table>',
-    trial_day60: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Last Chance : Account Will Be Archived</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Final notice : your account will be archived in 30 days.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">This is your final notice. Your 9amLeads account has been inactive for 60 days. In <strong style="color:' + accent + '">30 days</strong>, your account will be archived to free up resources.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">What does archiving mean?</strong> Your lead history and account data will be preserved and stored securely. You won\'t lose anything. However, you\'ll need to <a href="mailto:hello@9amleads.com" style="color:' + accent + '">contact our support team</a> to reactivate your account : it won\'t be available for instant self-service upgrade.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">If you upgrade in the next 30 days, everything stays active. Your postcode areas, your settings, your lead history : all of it. Leads restart at 9am tomorrow morning.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px"><strong style="color:#fff">This is your last chance</strong> to keep your account active without needing to contact us. Don\'t let your leads slip away.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Before Archive →</a></td></tr></table>',
-    paid_welcome: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Welcome to 9amLeads Premium</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">You\'re now a paid subscriber. Let\'s make this work for you.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Thank you for upgrading to 9amLeads Premium. Your daily <strong>' + productName + '</strong> will keep arriving at your inbox every morning at 9am <strong style="color:#fff">without interruption</strong>. Here\'s everything you now have access to:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">Your Premium Benefits:</strong><br>📥 <strong style="color:#fff">Daily leads</strong> at 9am every morning : consistently<br>🔒 <strong style="color:#fff">Exclusive access</strong> : no one else receives these leads<br>📊 <strong style="color:#fff">Dashboard</strong> : full lead history, analytics, and management<br>🔌 <strong style="color:#fff">CRM integration</strong> : leads pushed straight to your CRM<br>📞 <strong style="color:#fff">Priority support</strong> : reply anytime and we\'ll help</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Over the coming weeks we\'ll send you weekly tips and strategies : everything from calling scripts to follow-up sequences : to help you convert as many leads as possible.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">First step: <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">log into your dashboard</a> and make sure your CRM webhook is configured (or just check your leads are landing in your inbox). If you need help setting anything up, reply to this email and we\'ll walk you through it.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Go to Dashboard</a></td></tr></table>',
-    paid_tip1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">The 30-Minute Rule</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Why speed wins : and how to make it your habit.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to your first weekly tip. This one is the most important, so we\'re leading with it: <strong style="color:' + accent + '">call every lead within 30 minutes of receiving them</strong>.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Why does speed matter so much? Because your lead is a real person who has just taken a specific action : their house went SSTC on Rightmove, they registered a new company at Companies House, or a probate grant was issued. They are <strong style="color:#fff">actively looking for help right now</strong>. Every minute you wait, they\'re calling a competitor, booking with someone else, or losing interest.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">Here\'s your 3-part system:</strong></p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">1</div><div><strong style="color:#fff;font-size:14px">Set your alarm for 9:00am</strong><br><span style="color:#666;font-size:13px">When the lead email arrives, drop everything and make the call. Block 9-10am as your dedicated lead hour every morning.</span></div></div></div><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">2</div><div><strong style="color:#fff;font-size:14px">Keep your script ready</strong><br><span style="color:#666;font-size:13px">You only need 3-5 talking points. Have them printed or pinned to your monitor so you\'re ready before the lead arrives.</span></div></div></div><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">3</div><div><strong style="color:#fff;font-size:14px">Track your response time</strong><br><span style="color:#666;font-size:13px">Note what time you called each lead. If you\'re calling outside 30 minutes, set an earlier alarm or use push notifications.</span></div></div></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">Our data shows that callers who reach leads within 30 minutes convert at <strong style="color:' + accent + '">3x the rate</strong> of those who wait 2+ hours. Speed isn\'t just a nice-to-have : it\'s your biggest competitive advantage. Learn more about <a href="' + PUBLIC_URL + '/how-it-works" style="color:' + accent + '">how it works</a>.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/how-it-works" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Learn More →</a></td></tr></table>',
+    trial_day60: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Last Chance : Account Will Be Archived</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Final notice : your account will be archived in 30 days.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">This is your final notice. Your 9amLeads account has been inactive for 60 days. In <strong style="color:' + accent + '">30 days</strong>, your account will be archived to free up resources.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">What does archiving mean?</strong> Your lead history and account data will be preserved and stored securely. You won\'t lose anything. However, you\'ll need to <a href="mailto:hello@9amleads.com" style="color:' + accent + '">contact our support team</a> to reactivate your account : it won\'t be available for instant self-service upgrade.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">If you upgrade in the next 30 days, everything stays active. Your postcode areas, your settings, your lead history : all of it. Leads restart at 9am tomorrow morning.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px"><strong style="color:#fff">This is your last chance</strong> to keep your account active without needing to contact us. Don\'t let your leads slip away.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Before Archive â†’</a></td></tr></table>',
+    paid_welcome: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Welcome to 9amLeads Premium</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">You\'re now a paid subscriber. Let\'s make this work for you.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Thank you for upgrading to 9amLeads Premium. Your daily <strong>' + productName + '</strong> will keep arriving at your inbox every morning at 9am <strong style="color:#fff">without interruption</strong>. Here\'s everything you now have access to:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">Your Premium Benefits:</strong><br>ðŸ“¥ <strong style="color:#fff">Daily leads</strong> at 9am every morning : consistently<br>ðŸ”’ <strong style="color:#fff">Exclusive access</strong> : no one else receives these leads<br>ðŸ“Š <strong style="color:#fff">Dashboard</strong> : full lead history, analytics, and management<br>ðŸ”Œ <strong style="color:#fff">CRM integration</strong> : leads pushed straight to your CRM<br>ðŸ“ž <strong style="color:#fff">Priority support</strong> : reply anytime and we\'ll help</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Over the coming weeks we\'ll send you weekly tips and strategies : everything from calling scripts to follow-up sequences : to help you convert as many leads as possible.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">First step: <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">log into your dashboard</a> and make sure your CRM webhook is configured (or just check your leads are landing in your inbox). If you need help setting anything up, reply to this email and we\'ll walk you through it.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Go to Dashboard</a></td></tr></table>',
+    paid_tip1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">The 30-Minute Rule</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Why speed wins : and how to make it your habit.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to your first weekly tip. This one is the most important, so we\'re leading with it: <strong style="color:' + accent + '">call every lead within 30 minutes of receiving them</strong>.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Why does speed matter so much? Because your lead is a real person who has just taken a specific action : their house went SSTC on Rightmove, they registered a new company at Companies House, or a probate grant was issued. They are <strong style="color:#fff">actively looking for help right now</strong>. Every minute you wait, they\'re calling a competitor, booking with someone else, or losing interest.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">Here\'s your 3-part system:</strong></p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">1</div><div><strong style="color:#fff;font-size:14px">Set your alarm for 9:00am</strong><br><span style="color:#666;font-size:13px">When the lead email arrives, drop everything and make the call. Block 9-10am as your dedicated lead hour every morning.</span></div></div></div><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">2</div><div><strong style="color:#fff;font-size:14px">Keep your script ready</strong><br><span style="color:#666;font-size:13px">You only need 3-5 talking points. Have them printed or pinned to your monitor so you\'re ready before the lead arrives.</span></div></div></div><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">3</div><div><strong style="color:#fff;font-size:14px">Track your response time</strong><br><span style="color:#666;font-size:13px">Note what time you called each lead. If you\'re calling outside 30 minutes, set an earlier alarm or use push notifications.</span></div></div></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">Our data shows that callers who reach leads within 30 minutes convert at <strong style="color:' + accent + '">3x the rate</strong> of those who wait 2+ hours. Speed isn\'t just a nice-to-have : it\'s your biggest competitive advantage. Learn more about <a href="' + PUBLIC_URL + '/how-it-works" style="color:' + accent + '">how it works</a>.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/how-it-works" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Learn More â†’</a></td></tr></table>',
     paid_tip2: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">A Script That Converts</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">What to say when your lead picks up the phone.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Calling within 30 minutes is step one. But knowing <strong style="color:#fff">what to say</strong> when they answer is what separates the pros from the amateurs. Here\'s a full script template that works across every lead type : moving, probate, new business, planning, and tenders.</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#555;font-size:13px;line-height:1.7;margin:0"><strong style="color:' + accent + '">The Opening (15 seconds)</strong><br>&ldquo;Hi [name], this is [your name] from [company]. I see you\'ve [had your property go SSTC / registered a new company / applied for planning permission] : congratulations. The reason I\'m calling is we help [business type] with [specific service]. I\'m actually the first person to reach out to you : would it help if I sent over some info?&rdquo;</p></div><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#555;font-size:13px;line-height:1.7;margin:0"><strong style="color:' + accent + '">The Hook (30 seconds)</strong><br>&ldquo;I\'ve helped [X] other [business type] in your area this month alone. Most of them book within a week because we\'re fast and straightforward. I can have a quote ready in 10 minutes : shall we quickly run through what you need?&rdquo;</p></div><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.7;margin:0"><strong style="color:' + accent + '">The Close (15 seconds)</strong><br>&ldquo;I\'ve got a slot at [time] today or [time] tomorrow. Which works better for you? Let me confirm that and I\'ll send everything over straight away.&rdquo;</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">Why this works:</strong> The opening establishes relevance and speed (&ldquo;first to reach out&rdquo;), the hook builds credibility with social proof, and the close assumes the sale : you\'re not asking &ldquo;if&rdquo;, you\'re asking &ldquo;when&rdquo;.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">Adapt this for your industry. If you\'re in probate, reference the estate value and location. If you\'re in new business, mention their SIC code or recent incorporation date. The more specific, the better.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Go to Dashboard</a></td></tr></table>',
-    paid_tip3: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Track Everything to Improve</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Three metrics that will transform your conversion rate.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">The most successful 9amLeads customers do one thing differently: they <strong style="color:#fff">track their numbers</strong>. Not because they love spreadsheets : because what gets measured gets improved. Here are the three metrics you should be tracking:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0"><strong style="color:' + accent + '">📞 Calls Made</strong><br>Of the leads you receive, how many do you actually call? Aim for <strong style="color:#fff">100%</strong>. Every lead you don\'t call is money left on the table.<br><br><strong style="color:' + accent + '">✅ Conversations Had</strong><br>How many people actually answer the phone? Aim for <strong style="color:#fff">60%+</strong>. If you\'re below this, try calling at different times of day.<br><br><strong style="color:' + accent + '">💰 Conversions Closed</strong><br>How many conversations turn into paying customers? Industry average with exclusive leads is <strong style="color:#fff">20-30%</strong>. If you\'re below this, work on your script and follow-up process.</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'re calling 100% of leads, having conversations with 60%+, and closing 25%+ : you\'re performing at an elite level. If not, focus on the weakest link and improve it.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">Your dashboard shows your full lead history. Use it to identify which postcode areas and lead types perform best, then <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">double down on what works</a>.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">View Lead History</a></td></tr></table>',
+    paid_tip3: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Track Everything to Improve</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Three metrics that will transform your conversion rate.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">The most successful 9amLeads customers do one thing differently: they <strong style="color:#fff">track their numbers</strong>. Not because they love spreadsheets : because what gets measured gets improved. Here are the three metrics you should be tracking:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0"><strong style="color:' + accent + '">ðŸ“ž Calls Made</strong><br>Of the leads you receive, how many do you actually call? Aim for <strong style="color:#fff">100%</strong>. Every lead you don\'t call is money left on the table.<br><br><strong style="color:' + accent + '">âœ… Conversations Had</strong><br>How many people actually answer the phone? Aim for <strong style="color:#fff">60%+</strong>. If you\'re below this, try calling at different times of day.<br><br><strong style="color:' + accent + '">ðŸ’° Conversions Closed</strong><br>How many conversations turn into paying customers? Industry average with exclusive leads is <strong style="color:#fff">20-30%</strong>. If you\'re below this, work on your script and follow-up process.</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'re calling 100% of leads, having conversations with 60%+, and closing 25%+ : you\'re performing at an elite level. If not, focus on the weakest link and improve it.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">Your dashboard shows your full lead history. Use it to identify which postcode areas and lead types perform best, then <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">double down on what works</a>.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">View Lead History</a></td></tr></table>',
     paid_tip4: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Follow Up : The Money Is In The Second Call</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Why most sales happen after the first conversation.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Here\'s a truth that most lead buyers ignore: <strong style="color:#fff">most people don\'t buy on the first call</strong>. They\'re busy. They need to check with a partner. They want to compare options. They\'re overwhelmed by the process.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">The money is made on the second, third, and fourth touchpoints. Here\'s a proven follow-up sequence:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0"><strong style="color:' + accent + '">Day 1 : First call</strong><br>Introduction, quick pitch, offer to send information or a quote. Establish trust and relevance.<br><br><strong style="color:' + accent + '">Day 2 : Email or text follow-up</strong><br>&ldquo;Hi [name], just sending over that info I mentioned. No rush at all : happy to talk through it if that\'s helpful. Cheers, [your name]&rdquo;<br><br><strong style="color:' + accent + '">Day 4 : Second call</strong><br>&ldquo;Hey [name], following up on my email. Did you get a chance to look? I\'ve got a window at [time] if you want to run through it quickly.&rdquo;<br><br><strong style="color:' + accent + '">Day 7 : Final touch</strong><br>&ldquo;Just checking in one last time. If the timing\'s not right, no problem at all. My number is [number] : call me whenever you\'re ready.&rdquo;</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">Why this works with exclusive leads:</strong> Because you\'re the only person calling them, there\'s no urgency to rush. You can follow up professionally over a week without worrying that a competitor will swoop in. Take your time, build the relationship, and close on your terms.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">Most of our top-performing customers close deals 4-10 days after the lead first arrives. Patience + persistence = profit.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Go to Dashboard</a></td></tr></table>',
-    paid_checkin1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Check-in: How Many Leads Have You Converted?</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">8 weeks in : let\'s take stock of your results.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">You\'ve been receiving <strong>' + productName + '</strong> for 8 weeks now. That\'s roughly 40 days of exclusive leads delivered straight to your inbox. Let\'s do a quick audit:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0">✅ Are you calling within <strong style="color:#fff">30 minutes</strong> of receiving leads?<br>✅ Are you <strong style="color:#fff">following up</strong> with everyone who doesn\'t answer?<br>✅ Are your <strong style="color:#fff">postcode areas</strong> performing well?<br>✅ Could you <strong style="color:#fff">add more areas</strong> for more volume?<br>✅ Are you tracking your <strong style="color:#fff">conversion rate</strong>?</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'re happy with your results : fantastic. If not, let\'s fix it. Reply to this email and tell us what\'s not working. We can help you optimise your postcode areas, upgrade your plan for more leads, or switch to a different lead type that might perform better for your ' + bizType + '.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">Check your dashboard</a> for lead history and conversion analytics.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">View Dashboard</a></td></tr></table>',
-    paid_checkin2: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Months Strong : Here\'s Your Impact</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Three months of daily leads. Let\'s look at what you\'ve achieved.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Congratulations : you\'ve been with 9amLeads for <strong style="color:' + accent + '">3 months</strong>. That\'s roughly 90 days of exclusive <strong>' + productName + '</strong> delivered straight to your inbox every morning at 9am. By now you should have a clear picture of what works and what doesn\'t.</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">Ready to scale up?</strong><br>📈 <strong style="color:#fff">Add a second lead type</strong> : diversify your pipeline with probate, new business, or planning leads<br>🌍 <strong style="color:#fff">Expand your postcodes</strong> : cover more areas for more volume<br>⬆️ <strong style="color:#fff">Upgrade your plan</strong> : get more leads per day at a better per-lead price<br>📊 <strong style="color:#fff">Check your dashboard</strong> : see which territories convert best</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">We\'d love to hear your story. How many leads have you converted? What\'s the biggest deal you\'ve closed? Reply to this email and let us know : your feedback helps us improve, and we might feature your success story.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">Thank you for being a valued 9amLeads customer. We\'re here whenever you need us : just hit reply.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Scale Up Now</a></td></tr></table>',
+    paid_checkin1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Check-in: How Many Leads Have You Converted?</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">8 weeks in : let\'s take stock of your results.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">You\'ve been receiving <strong>' + productName + '</strong> for 8 weeks now. That\'s roughly 40 days of exclusive leads delivered straight to your inbox. Let\'s do a quick audit:</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0">âœ… Are you calling within <strong style="color:#fff">30 minutes</strong> of receiving leads?<br>âœ… Are you <strong style="color:#fff">following up</strong> with everyone who doesn\'t answer?<br>âœ… Are your <strong style="color:#fff">postcode areas</strong> performing well?<br>âœ… Could you <strong style="color:#fff">add more areas</strong> for more volume?<br>âœ… Are you tracking your <strong style="color:#fff">conversion rate</strong>?</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'re happy with your results : fantastic. If not, let\'s fix it. Reply to this email and tell us what\'s not working. We can help you optimise your postcode areas, upgrade your plan for more leads, or switch to a different lead type that might perform better for your ' + bizType + '.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">Check your dashboard</a> for lead history and conversion analytics.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">View Dashboard</a></td></tr></table>',
+    paid_checkin2: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Months Strong : Here\'s Your Impact</h2><p style="color:#666;font-size:13px;text-align:center;margin:0 0 20px">Three months of daily leads. Let\'s look at what you\'ve achieved.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">Congratulations : you\'ve been with 9amLeads for <strong style="color:' + accent + '">3 months</strong>. That\'s roughly 90 days of exclusive <strong>' + productName + '</strong> delivered straight to your inbox every morning at 9am. By now you should have a clear picture of what works and what doesn\'t.</p><div style="background:#f0f2f5;border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#555;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">Ready to scale up?</strong><br>ðŸ“ˆ <strong style="color:#fff">Add a second lead type</strong> : diversify your pipeline with probate, new business, or planning leads<br>ðŸŒ <strong style="color:#fff">Expand your postcodes</strong> : cover more areas for more volume<br>â¬†ï¸ <strong style="color:#fff">Upgrade your plan</strong> : get more leads per day at a better per-lead price<br>ðŸ“Š <strong style="color:#fff">Check your dashboard</strong> : see which territories convert best</p></div><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 16px">We\'d love to hear your story. How many leads have you converted? What\'s the biggest deal you\'ve closed? Reply to this email and let us know : your feedback helps us improve, and we might feature your success story.</p><p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px">Thank you for being a valued 9amLeads customer. We\'re here whenever you need us : just hit reply.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Scale Up Now</a></td></tr></table>',
   };
   
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#000;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%"><tr><td style="background:#0a0a0a;padding:28px;border-bottom:3px solid ' + accent + ';text-align:center"><div style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff"><span style="color:' + accent + '">9am</span>Leads</div><p style="color:#666;font-size:12px;margin-top:4px">' + customer.company + '</p></td></tr><tr><td style="background:#0a0a0a;padding:24px 28px">' + (templates[template] || templates.trial_day1) + '</td></tr><tr><td style="background:#0a0a0a;padding:20px 28px;border-top:1px solid #1a1a1a;text-align:center"><p style="color:#666;font-size:11px;margin:0">9am Leads Ltd \u00b7 Company No. 17168176 \u00b7 <a href="https://www.9amleads.com/privacy.html" style="color:#666">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>';
@@ -1549,7 +1785,7 @@ function attachOpportunityScore(data, product) {
     if (projVal > 100000) { score += 3; reasons.push('High value project'); }
   } else if (product === 'tenders') {
     var contractVal = parseInt(data.contractValue || data.value) || 0;
-    if (contractVal > 500000) { score += 15; reasons.push('Major contract (£' + (contractVal/1000).toFixed(0) + 'k)'); }
+    if (contractVal > 500000) { score += 15; reasons.push('Major contract (Â£' + (contractVal/1000).toFixed(0) + 'k)'); }
     else if (contractVal > 100000) { score += 12; reasons.push('Substantial contract'); }
     else if (contractVal > 0) { score += 8; reasons.push('Contract opportunity'); }
     else { score += 5; }
@@ -1588,7 +1824,7 @@ function attachOpportunityScore(data, product) {
   if (scrapedAt && ageHours < 1) score += 5;
   else if (data.status) {
     var st = (data.status || '').toLowerCase();
-    if (st.includes('sstc') || st.includes('sold') || st.includes('offer')) { score += 7; reasons.push('Active status — urgent'); }
+    if (st.includes('sstc') || st.includes('sold') || st.includes('offer')) { score += 7; reasons.push('Active status â€” urgent'); }
   }
 
   // Urgency for tenders
@@ -1685,6 +1921,375 @@ cron.schedule('0 9 * * *', async () => {
   } catch(e) { console.log('[9AM CRON] Delivery error: ' + e.message); }
 });
 
+// ===== BLOG ENGINE =====
+var BLOG_TEMPLATES = [
+  { category: 'moving', title: 'How to Get More {type} Leads Without Spending on Ads', desc: 'Learn how removal companies and estate agents can generate consistent {type} leads without expensive advertising. Proven strategies that work.', keywords: ['{type} lead generation', '{type} leads UK', 'get {type} leads', 'lead generation for removal companies'] },
+  { category: 'moving', title: 'The Ultimate Guide to {type} for Estate Agents', desc: 'Everything estate agents need to know about {type}. From lead sources to conversion tips, maximise your instruction rate.', keywords: ['{type} for estate agents', 'estate agent {type}', '{type} leads for agents', 'property lead generation'] },
+  { category: 'moving', title: '10 Proven Tips to Convert More {type} Into Bookings', desc: 'Stop losing potential customers. These 10 actionable tips will help you convert more {type} into confirmed bookings and grow your revenue.', keywords: ['convert {type}', '{type} conversion tips', '{type} booking rate', 'turn {type} into sales'] },
+  { category: 'moving', title: 'Why {type} Are Better Than Pay-Per-Click Advertising', desc: 'Compare the ROI of {type} vs PPC advertising. See why leading removal companies are switching to daily exclusive leads.', keywords: ['{type} vs PPC', '{type} ROI', '{type} advertising', 'lead generation cost comparison'] },
+  { category: 'moving', title: 'How to Choose the Right Postcode Areas for Your {type}', desc: 'A strategic guide to selecting postcode territories that maximise your {type} volume and quality. Data-driven area selection.', keywords: ['{type} postcode targeting', 'best postcodes for {type}', '{type} territory selection', 'local {type}'] },
+  { category: 'moving', title: 'The Morning Routine That Doubles Your {type} Conversion Rate', desc: 'Discover the 9am routine that top-performing removal companies use to dominate their {type} and convert more instructions.', keywords: ['{type} morning routine', '{type} conversion system', '{type} workflow', 'daily {type} routine'] },
+  { category: 'moving', title: 'How {type} Are Collected: From Listing to Your Inbox at 9am', desc: 'Behind the scenes of {type} collection. Learn how property data becomes actionable leads delivered to your inbox every morning.', keywords: ['how {type} work', '{type} explained', '{type} collection process', '{type} delivery'] },
+  { category: 'probate', title: 'How Solicitors Can Win More {type} With Daily Leads', desc: 'A complete guide for solicitors on winning more {type} through consistent daily lead generation and timely executor outreach.', keywords: ['{type} for solicitors', 'win {type}', '{type} generation', 'probate solicitor leads'] },
+  { category: 'probate', title: 'The Executor\'s Journey: Why Timing Matters in {type}', desc: 'Understanding the emotional and practical journey of executors is key to winning {type}. Learn what makes executors choose a solicitor.', keywords: ['{type} timing', '{type} executor', '{type} conversion', 'probate instruction timing'] },
+  { category: 'probate', title: '{type} vs Traditional Marketing: Which Delivers Better ROI', desc: 'Compare the cost and effectiveness of {type} against traditional marketing methods like direct mail, ads, and networking events.', keywords: ['{type} ROI', '{type} marketing', '{type} vs direct mail', 'probate lead cost'] },
+  { category: 'probate', title: '5 Mistakes Solicitors Make When Following Up on {type}', desc: 'Avoid these common mistakes that cost solicitors valuable {type}. Improve your executor communication and win more instructions.', keywords: ['{type} mistakes', '{type} follow-up', '{type} communication', 'probate instruction mistakes'] },
+  { category: 'probate', title: 'How to Build a Scalable {type} Pipeline for Your Law Firm', desc: 'Create a repeatable system for generating and converting {type} that scales with your law firm without increasing marketing costs.', keywords: ['{type} pipeline', '{type} system', '{type} law firm', 'scalable probate generation'] },
+  { category: 'probate', title: 'The Complete {type} Checklist for New Probate Solicitors', desc: 'Everything new probate solicitors need to know about {type}: where they come from, how to win them, and how much they\'re worth.', keywords: ['{type} checklist', 'new solicitor {type}', '{type} guide', 'probate lead beginner'] },
+  { category: 'newbusiness', title: 'How to Find and Win {type} Using Companies House Data', desc: 'Learn how to generate {type} from Companies House new business registrations. Identify growing companies that need your services.', keywords: ['{type} from Companies House', '{type} generation', '{type} UK', 'new business data'] },
+  { category: 'newbusiness', title: 'Why {type} Are the Best Source of B2B Growth', desc: 'Discover why {type} from newly registered companies are the most undervalued B2B lead source and how to make them your primary growth channel.', keywords: ['{type} B2B', '{type} growth', '{type} strategy', 'B2B lead generation'] },
+  { category: 'newbusiness', title: 'How to Target {type} by Industry Sector', desc: 'A detailed guide on filtering {type} by specific industries. Target construction, tech, retail, and more with precision.', keywords: ['{type} industry targeting', '{type} filtering', '{type} by sector', 'targeted {type}'] },
+  { category: 'newbusiness', title: 'The {type} Playbook: From Registration to Closed Deal', desc: 'Follow this complete playbook for turning {type} from Companies House registrations into paying customers for your business.', keywords: ['{type} playbook', '{type} sales process', '{type} conversion', 'close new business leads'] },
+  { category: 'newbusiness', title: '10 Services You Can Sell to {type}', desc: 'Newly registered businesses need everything. Discover 10 high-value services you can offer to {type} and multiply your revenue per lead.', keywords: ['services for {type}', '{type} opportunities', 'sell to {type}', 'cross-sell to new businesses'] },
+  { category: 'planning', title: 'How to Win {type} Contracts: A Complete Guide', desc: 'A comprehensive guide to winning {type} contracts. Learn how architects, builders, and planning consultants find and convert {type}.', keywords: ['{type} contracts', 'win {type}', '{type} for builders', 'planning lead generation'] },
+  { category: 'planning', title: 'The Value of {type} for Architects and Designers', desc: 'Discover why {type} are the lifeblood of architectural practices and how daily planning alerts can fill your project pipeline.', keywords: ['{type} for architects', '{type} for designers', '{type} pipeline', 'architect lead generation'] },
+  { category: 'planning', title: '{type}: Spotting High-Value Projects Before Your Competitors', desc: 'Learn to identify the most valuable {type} based on project scope, property value, and application type. Get there first.', keywords: ['{type} value', '{type} prioritisation', 'high-value {type}', '{type} scoring'] },
+  { category: 'planning', title: 'How to Use {type} to Grow Your Construction Business', desc: 'A practical guide for construction companies using {type} to build a consistent pipeline of new projects and win more bids.', keywords: ['{type} for construction', '{type} for builders', 'construction lead generation', '{type} bids'] },
+  { category: 'planning', title: '{type} vs Tenders: Which Should You Focus On?', desc: 'Compare the pros and cons of {type} and public sector tenders. Learn which lead type suits your business model best.', keywords: ['{type} vs tenders', '{type} comparison', '{type} or tenders', 'planning vs tender leads'] },
+  { category: 'tenders', title: 'How to Win More {type} as a Small Business', desc: 'Small businesses can win {type}. Learn the strategies, tools, and approaches that level the playing field against larger competitors.', keywords: ['{type} for small business', 'win {type}', '{type} strategy', 'small business tender tips'] },
+  { category: 'tenders', title: 'The Complete {type} Response Toolkit', desc: 'Everything you need to respond to {type} effectively. From PQQ to final submission, build a winning tender response process.', keywords: ['{type} response', '{type} submission', '{type} toolkit', 'tender writing tips'] },
+  { category: 'tenders', title: 'How to Find {type} That Match Your Business', desc: 'Stop wasting time on irrelevant opportunities. Learn to filter and find {type} that perfectly match your expertise and capacity.', keywords: ['find {type}', '{type} filtering', '{type} matching', 'relevant {type}'] },
+  { category: 'tenders', title: 'The ROI of {type}: Is It Worth the Investment?', desc: 'Calculate the real return on investment for {type}. See real examples of businesses that grew through public sector contracts.', keywords: ['{type} ROI', '{type} investment', '{type} value', 'public sector lead ROI'] },
+  { category: 'tenders', title: 'How to Write Winning {type} Responses: Tips From Experts', desc: 'Expert tips for writing {type} responses that win. Learn from procurement professionals what makes a tender submission stand out.', keywords: ['{type} writing', '{type} tips', 'winning {type}', 'tender expert advice'] },
+  { category: 'general', title: 'Why Daily {type} Beat Weekly Lead Batches Every Time', desc: 'Discover the science behind daily lead delivery and why {type} arriving every morning at 9am outperforms weekly or monthly batches.', keywords: ['daily {type}', '{type} frequency', '{type} timing', 'lead delivery schedule'] },
+  { category: 'general', title: 'The Ultimate {type} Strategy Guide for UK Businesses', desc: 'A complete strategy guide covering all five {type} types. Build a multi-channel lead generation system that delivers daily.', keywords: ['{type} strategy', '{type} guide', 'UK {type}', 'multi-channel {type}'] },
+  { category: 'general', title: 'How to Track and Improve Your {type} Conversion Rate', desc: 'A data-driven approach to tracking your {type} conversion rate and implementing improvements that turn more leads into revenue.', keywords: ['{type} conversion rate', 'track {type}', 'improve {type}', '{type} analytics'] },
+  { category: 'general', title: 'The Cost of {type} vs Other Marketing Channels', desc: 'An honest comparison of {type} costs against Google Ads, Facebook, directories, and traditional marketing. See which delivers the best value.', keywords: ['{type} cost', '{type} vs ads', '{type} marketing cost', 'lead generation pricing'] },
+  { category: 'general', title: 'How {type} Can Transform Your Business in 30 Days', desc: 'Real results from businesses that started using {type}. See how consistent daily leads can transform your pipeline in just one month.', keywords: ['{type} transformation', '{type} results', '{type} 30 days', 'business growth leads'] },
+];
+
+var PRODCAT = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permission Leads', tenders: 'Public Sector Tenders', general: 'Business Leads' };
+var BLOG_BATCH_SIZE = 10;
+var LEAD_TYPE_PAGES = { moving: '/movingleadsdaily/', probate: '/probateleads/', newbusiness: '/newbusinessalert/', planning: '/planningleads/', tenders: '/tenders/', general: '/pricing/' };
+
+function generateBlogPost(template) {
+  var types = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads', planning: 'planning leads', tenders: 'tender opportunities', general: 'business leads' };
+  var productName = PRODCAT[template.category] || 'Business Leads';
+  var type = types[template.category] || 'leads';
+  var typeUpper = type.charAt(0).toUpperCase() + type.slice(1);
+  var leadPage = LEAD_TYPE_PAGES[template.category] || '/pricing/';
+  var title = template.title.replace(/{type}/g, type);
+  var desc = template.desc.replace(/{type}/g, type);
+  var kw = template.keywords.map(function(k) { return k.replace(/{type}/g, type); });
+  var slug = title.toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
+  var readingTime = Math.ceil(1800 / 200) + ' min read';
+  var todayFormatted = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+
+  var paraPool = [
+    'In today\'s competitive market, businesses need every advantage they can get. ' + title + ' is one of the most effective ways to stay ahead and build a consistent pipeline.',
+    productName + ' provide a reliable stream of exclusive opportunities your competitors don\'t have access to. Unlike shared directories or pay-per-click, these are delivered to you and you alone.',
+    'When you receive ' + type + ' at 9am every morning, you\'re always first to reach out. Speed is the single biggest factor in conversion success â€” daily delivery at a fixed time makes it part of your routine.',
+    'Consistency is the key with ' + type + '. Fresh opportunities every morning builds a daily outreach habit that compounds. One deal can cover your entire annual investment.',
+    'Many businesses treat all leads equally. With ' + type + ', prioritise by value, location, and fit. Not every opportunity is right for every business.',
+    'Tracking conversion from ' + type + ' is essential. Monitor which sources generate the best returns, which postcodes perform best, and refine your targeting for better results.',
+    'The businesses that win with ' + type + ' are the ones that act fast. A structured morning workflow â€” review leads, prioritise, contact within 30 minutes â€” dramatically increases conversion.',
+    'Unlike traditional marketing channels where you compete for every customer, ' + type + ' give you a direct line to prospects who need your services right now.',
+    productName + ' are sourced from official registers and updated daily. This means the data is accurate, fresh, and actionable â€” not stale leads that have been sold to ten other companies.',
+    'One of the biggest advantages of ' + type + ' is the ability to scale. Start with one postcode and one lead type, then expand as your team grows and your process matures.',
+    'Your time is valuable. Instead of spending hours searching for prospects, ' + type + ' arrive in your inbox ready to action. That\'s hours saved every week that can go into closing deals.',
+    'The cost of ' + type + ' is predictable and fixed. No auction dynamics, no bidding wars, no rising CPCs. You pay the same price whether you\'re in London or a small market town.',
+    'Every business has a different approach to sales. ' + type + ' work with any outreach method â€” phone, email, direct mail, or social media. Adapt them to your strengths.',
+    'First contact wins. Studies show that contacting a prospect within 30 minutes of receiving a lead increases conversion by 400%. With 9am delivery, you\'re always first.',
+    productName + ' are exclusive. When you receive a lead, no other business in your territory has it. Zero competition means higher conversion rates and better margins.'
+  ];
+
+  var sections = '';
+  var usedParas = [];
+  function getPara() { var p = paraPool[usedParas.length % paraPool.length]; usedParas.push(p); return p; }
+
+  // Section 1: Why it matters
+  sections += '<h2>Why ' + title.split(' ').slice(0,4).join(' ') + ' Matters</h2><p>' + getPara() + '</p><p>' + getPara() + '</p>';
+  
+  // Section 2: What are they
+  sections += '<h2>What Are ' + typeUpper + '?</h2><p>' + getPara() + '</p><p>' + getPara() + '</p>';
+  sections += '<div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);border-radius:10px;padding:20px;margin:20px 0"><h3 style="font-size:15px;margin-bottom:8px;color:#0ea5e9">\u2705 Key Benefits</h3><ul style="padding-left:20px;line-height:1.8;font-size:14px"><li>Exclusive leads â€” only your business receives them in your territory</li><li>Fixed weekly pricing with no auction dynamics or bidding wars</li><li>Daily morning delivery â€” always first to contact the prospect</li><li>CRM integration to track every lead from first contact to conversion</li><li>Flexible postcode targeting to focus on your best performing areas</li><li>Free 7-day trial with no credit card required</li></ul></div>';
+
+  // Section 3: Benefits
+  sections += '<h2>The Benefits of Consistent ' + typeUpper + '</h2><p>' + getPara() + '</p><p>' + getPara() + '</p>';
+  sections += '<div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.1);border-radius:10px;padding:20px;margin:20px 0"><h3 style="font-size:15px;margin-bottom:8px;color:#22c55e">\U0001F4A1 Why Consistency Wins</h3><ul style="padding-left:20px;line-height:1.8;font-size:14px"><li>Daily leads create a habit â€” your team knows to review every morning at 9am</li><li>Compounding pipeline â€” each day adds to your opportunity pool</li><li>Predictable growth â€” know exactly how many leads you\'ll receive each week</li><li>Build relationships â€” regular contact with prospects in your territory</li></ul></div>';
+
+  // Section 4: Getting Started
+  sections += '<h2>How to Get Started with ' + typeUpper + '</h2><p>' + getPara() + '</p><p>' + getPara() + '</p>';
+  sections += '<div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.1);border-radius:10px;padding:20px;margin:20px 0"><h3 style="font-size:15px;margin-bottom:8px;color:#f59e0b">\U0001F3ED Quick Start Checklist</h3><ul style="padding-left:20px;line-height:1.8;font-size:14px"><li>Choose your lead type â€” <a href="' + leadPage + '" style="color:#0ea5e9;font-weight:600">' + productName + '</a></li><li>Select 1-3 postcode territories to start</li><li>Set up your CRM webhook for automatic lead delivery</li><li>Create an outreach template you can personalise in under 2 minutes</li><li>Commit to daily outreach at 9am â€” set a recurring calendar block</li><li>Track every outcome to measure your ROI</li></ul></div>';
+
+  // Section 5: Sources
+  sections += '<h2>Where Do ' + typeUpper + ' Come From?</h2><p>' + getPara() + '</p><p>' + getPara() + '</p>';
+
+  // Section 6: Mistakes
+  sections += '<h2>Common Mistakes to Avoid With ' + typeUpper + '</h2><p>' + getPara() + '</p><p>' + getPara() + '</p>';
+  sections += '<div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.1);border-radius:10px;padding:20px;margin:20px 0"><h3 style="font-size:15px;margin-bottom:8px;color:#ef4444">\u26A0\uFE0F Avoid These Pitfalls</h3><ul style="padding-left:20px;line-height:1.8;font-size:14px"><li>Not acting fast enough â€” speed is your biggest advantage</li><li>Treating all leads the same â€” prioritise by value and fit</li><li>Inconsistent follow-up â€” daily routine beats sporadic bursts</li><li>Ignoring data â€” track conversion by postcode, source, and outreach method</li><li>Starting too wide â€” master one area before expanding</li></ul></div>';
+
+  // Section 7: Measuring
+  sections += '<h2>Measuring Your Success with ' + typeUpper + '</h2><p>' + getPara() + '</p><p>' + getPara() + '</p>';
+
+  // Section 8: Pricing & Value
+  sections += '<h2>What Do ' + typeUpper + ' Cost?</h2><p>' + getPara() + '</p><p>' + getPara() + '</p>';
+
+  // Section 9: Integration
+  sections += '<h2>Integrating ' + typeUpper + ' With Your CRM</h2><p>' + getPara() + '</p><p>' + getPara() + '</p>';
+
+  // Section 10: FAQ
+  sections += '<h2>Frequently Asked Questions About ' + typeUpper + '</h2>';
+  var faqs = [
+    { q: 'How many ' + type + ' will I receive each day?', a: 'The number varies by postcode area and lead type. On average, customers receive 5-15 ' + type + ' per day depending on their plan and territory selection. Check our <a href="/pricing/" style="color:#0ea5e9;font-weight:600">pricing page</a> for volume estimates by plan.' },
+    { q: 'Are ' + type + ' exclusive to my business?', a: 'Yes. When you receive ' + type + ' through 9amLeads, no other business in your industry or territory receives the same lead. This exclusivity is what makes our service different from directories and PPC.' },
+    { q: 'Can I try ' + type + ' before committing?', a: 'Absolutely. We offer a 7-day free trial with no credit card required. You\'ll receive real, exclusive ' + type + ' every morning at 9am to evaluate the quality and fit for your business.' },
+    { q: 'How soon will I see results from ' + type + '?', a: 'Most customers see their first conversion within the first week. Because you\'re contacting fresh prospects who need your services, the response time is significantly faster than cold outreach or advertising.' },
+    { q: 'Can I change my postcode areas later?', a: 'Yes. You can update your postcode territories at any time through your dashboard. Start with one area and expand as you see results.' }
+  ];
+  sections += '<div itemscope="" itemtype="https://schema.org/FAQPage">';
+  for (var fi = 0; fi < faqs.length; fi++) {
+    sections += '<div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom:12px"><div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:16px"><h3 itemprop="name" style="font-size:15px;font-weight:600;color:#fff;margin-bottom:6px">' + faqs[fi].q + '</h3><div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer"><div itemprop="text" style="font-size:14px;color:var(--text2);line-height:1.7">' + faqs[fi].a + '</div></div></div></div>';
+  }
+  sections += '</div>';
+
+  // Final CTA
+  sections += '<div class="cta-section"><h3>Start Receiving Exclusive ' + typeUpper + '</h3><p>Try any lead type free for 7 days. No credit card required. Cancel anytime.</p><a href="/pricing/" class="cta-btn"><i class="fas fa-clock"></i> Start Free Trial</a></div>';
+
+  // Related posts
+  var related = (db && db.blog_posts ? db.blog_posts : []).filter(function(p) { return p.slug !== slug && p.published; }).slice(0, 3);
+  var relatedHtml = '';
+  for (var ri = 0; ri < related.length; ri++) {
+    var rp = related[ri];
+    relatedHtml += '<div class="related-card"><a href="/blog/' + rp.slug + '"><h4>' + rp.title + '</h4><p>' + (rp.description || '').substring(0, 120) + '</p></a></div>';
+  }
+  if (relatedHtml) sections += '<div class="related-posts"><h2>Related Articles</h2><div class="related-grid">' + relatedHtml + '</div></div>';
+
+  var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + title + ' | 9amLeads Blog</title><meta name="description" content="' + desc + '"><meta property="og:title" content="' + title + '"><meta property="og:description" content="' + desc + '"><meta property="og:url" content="https://9amleads.com/blog/' + slug + '"><meta property="og:type" content="article"><meta property="og:image" content="https://9amleads.com/og-image.png"><meta property="article:published_time" content="' + new Date().toISOString() + '"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="' + title + '"><link rel="canonical" href="https://9amleads.com/blog/' + slug + '"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"' + title.replace(/"/g, '\\"') + '","description":"' + desc.replace(/"/g, '\\"') + '","datePublished":"' + new Date().toISOString() + '","author":{"@type":"Organization","name":"9amLeads"},"publisher":{"@type":"Organization","name":"9amLeads","logo":{"@type":"ImageObject","url":"https://9amleads.com/og-image.png"}}}</script><link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'.9em\' font-size=\'90\'>\uD83D\uDD58</text></svg>"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>:root{--primary:#0ea5e9;--bg:#000;--bg2:#08080c;--card:#0a0a0a;--border:#1a1a1a;--text:#fff;--text2:#ccc;--muted:#888;--ff-h:\'Outfit\',sans-serif;--ff-b:\'Inter\',sans-serif;--nav-h:72px;--max-w:800px}*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth;font-size:16px}body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6}.container{max-width:var(--max-w);margin:0 auto;padding:0 24px}.container-wide{max-width:1140px;margin:0 auto;padding:0 24px}a{color:inherit;text-decoration:none}nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);z-index:200;background:rgba(0,0,0,.85);backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,.05)}.nav-inner{display:flex;align-items:center;justify-content:space-between;height:100%;max-width:1140px;margin:0 auto;padding:0 24px}.logo{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:900;font-family:var(--ff-h);letter-spacing:-.5px}.logo .icon{width:38px;height:38px;background:linear-gradient(135deg,var(--primary),#0284c7);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:800;box-shadow:0 0 20px rgba(14,165,233,0.25)}.logo span{color:var(--primary)}.nav-links{display:flex;align-items:center;gap:4px}.nav-links a{padding:8px 14px;font-size:14px;font-weight:500;color:var(--text2);border-radius:6px;transition:.2s}.nav-links a:hover{color:var(--text);background:rgba(255,255,255,.04)}.nav-links .btn-nav{padding:9px 20px;background:linear-gradient(135deg,var(--primary),#0284c7);color:#fff!important;font-weight:600}article{padding:120px 0 60px}.post-meta{color:var(--muted);font-size:13px;margin-bottom:24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.post-category{display:inline-block;padding:4px 10px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:4px;color:var(--primary);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}.reading-time{color:var(--muted);font-size:12px}article h1{font-size:clamp(28px,3.5vw,38px);font-weight:800;font-family:var(--ff-h);line-height:1.15;margin-bottom:16px;letter-spacing:-1px}article h2{font-size:22px;font-weight:700;font-family:var(--ff-h);margin:36px 0 12px;color:#f5f5f5}article h3{font-size:17px;font-weight:700;margin:24px 0 10px;color:#e0e0e0}article p{font-size:16px;line-height:1.8;color:var(--text2);margin-bottom:16px}article ul,article ol{font-size:15px;line-height:1.8;color:var(--text2);margin-bottom:16px;padding-left:20px}article li{margin-bottom:6px}.cta-section{background:linear-gradient(135deg,rgba(14,165,233,0.04),rgba(6,182,212,0.02));border:1px solid rgba(14,165,233,0.1);border-radius:12px;padding:28px;text-align:center;margin:40px 0}.cta-section h3{font-size:20px;font-weight:700;margin-bottom:8px}.cta-section p{font-size:14px;color:var(--muted);margin-bottom:16px}.cta-btn{display:inline-block;padding:14px 32px;background:linear-gradient(135deg,var(--primary),#0284c7);color:#fff;border-radius:8px;font-weight:600;font-size:15px;text-decoration:none}.related-posts{padding:60px 0;border-top:1px solid var(--border);margin-top:40px}.related-posts h2{font-size:22px;font-weight:700;font-family:var(--ff-h);margin-bottom:20px}.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}.related-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;transition:.2s}.related-card:hover{border-color:rgba(14,165,233,0.2)}.related-card h4{font-size:14px;font-weight:600;margin-bottom:6px}.related-card p{font-size:12px;color:var(--muted);line-height:1.5}.author-section{display:flex;align-items:center;gap:14px;padding:20px;background:rgba(255,255,255,0.02);border-radius:10px;margin:32px 0}.author-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#0284c7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;flex-shrink:0}.author-info h4{font-size:14px;font-weight:600;margin-bottom:2px}.author-info p{font-size:12px;color:var(--muted);margin:0}footer{padding:40px 0;text-align:center;color:var(--muted);font-size:13px;border-top:1px solid var(--border)}footer a{color:var(--primary);font-weight:600}</style></head><body><nav><div class="nav-inner"><a href="/" class="logo"><div class="icon">9</div>9am<span>Leads</span></a><div class="nav-links"><a href="/">Home</a><a href="/pricing/">Pricing</a><a href="/blog/">Blog</a><a href="/portal/" class="btn-nav">Get Started Free</a></div></div></nav><article><div class="container"><div class="post-meta"><span class="post-category">' + productName + '</span><span class="reading-time"><i class="far fa-clock"></i> ' + readingTime + '</span><span>' + todayFormatted + '</span></div><h1>' + title + '</h1><p style="font-size:16px;color:var(--muted);line-height:1.7;margin-bottom:32px">' + desc + '</p>' + sections + '<div class="author-section"><div class="author-avatar">9L</div><div class="author-info"><h4>9amLeads Team</h4><p>We help UK businesses find and convert exclusive daily leads. Our team researches and shares strategies that work in real markets.</p></div></div></div></article><footer><div class="container"><a href="https://9amleads.com">9amLeads.com</a> \u00b7 <a href="/blog/">Blog</a> \u00b7 <a href="/pricing/">Pricing</a> \u00b7 <a href="/privacy.html">Privacy</a> \u00b7 <a href="/terms.html">Terms</a></div></footer></body></html>';
+
+  var wordCount = html.replace(/<[^>]+>/g, '').split(/\s+/).length;
+  return { title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_index: BLOG_TEMPLATES.indexOf(template), word_count: wordCount, reading_time: readingTime };
+}
+  
+  var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + title + ' | 9amLeads Blog</title><meta name="description" content="' + desc + '"><meta property="og:title" content="' + title + '"><meta property="og:description" content="' + desc + '"><meta property="og:url" content="https://9amleads.com/blog/' + slug + '"><meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image"><link rel="canonical" href="https://9amleads.com/blog/' + slug + '"><link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'.9em\' font-size=\'90\'>\uD83D\uDD58</text></svg>"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>:root{--primary:#0ea5e9;--bg:#000;--bg2:#08080c;--card:#0a0a0a;--border:#1a1a1a;--text:#fff;--text2:#ccc;--muted:#888;--ff-h:\'Outfit\',sans-serif;--ff-b:\'Inter\',sans-serif;--nav-h:72px;--max-w:800px}*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth;font-size:16px}body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6}.container{max-width:var(--max-w);margin:0 auto;padding:0 24px}.container-wide{max-width:1140px;margin:0 auto;padding:0 24px}a{color:inherit;text-decoration:none}nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);z-index:200;background:rgba(0,0,0,.85);backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,.05)}.nav-inner{display:flex;align-items:center;justify-content:space-between;height:100%;max-width:1140px;margin:0 auto;padding:0 24px}.logo{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:900;font-family:var(--ff-h);letter-spacing:-.5px}.logo .icon{width:38px;height:38px;background:linear-gradient(135deg,var(--primary),#0284c7);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:800;box-shadow:0 0 20px rgba(14,165,233,0.25)}.logo span{color:var(--primary)}.nav-links{display:flex;align-items:center;gap:4px}.nav-links a{padding:8px 14px;font-size:14px;font-weight:500;color:var(--text2);border-radius:6px;transition:.2s}.nav-links a:hover{color:var(--text);background:rgba(255,255,255,.04)}.nav-links .btn-nav{padding:9px 20px;background:linear-gradient(135deg,var(--primary),#0284c7);color:#fff!important;font-weight:600}article{padding:120px 0 60px}.post-meta{color:var(--muted);font-size:13px;margin-bottom:24px;display:flex;gap:12px;align-items:center}.post-category{display:inline-block;padding:4px 10px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:4px;color:var(--primary);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}article h1{font-size:clamp(28px,3.5vw,38px);font-weight:800;font-family:var(--ff-h);line-height:1.15;margin-bottom:16px;letter-spacing:-1px}article h2{font-size:22px;font-weight:700;font-family:var(--ff-h);margin:36px 0 12px;color:#f5f5f5}article h3{font-size:17px;font-weight:700;margin:24px 0 10px;color:#e0e0e0}article p{font-size:16px;line-height:1.8;color:var(--text2);margin-bottom:16px}article ul{font-size:15px;line-height:1.8;color:var(--text2);margin-bottom:16px;padding-left:20px}article li{margin-bottom:6px}.cta-section{background:linear-gradient(135deg,rgba(14,165,233,0.04),rgba(6,182,212,0.02));border:1px solid rgba(14,165,233,0.1);border-radius:12px;padding:28px;text-align:center;margin:40px 0}.cta-section h3{font-size:20px;font-weight:700;margin-bottom:8px}.cta-section p{font-size:14px;color:var(--muted);margin-bottom:16px}.cta-btn{display:inline-block;padding:14px 32px;background:linear-gradient(135deg,var(--primary),#0284c7);color:#fff;border-radius:8px;font-weight:600;font-size:15px}.related-posts{padding:60px 0;border-top:1px solid var(--border);margin-top:40px}.related-posts h2{font-size:22px;font-weight:700;font-family:var(--ff-h);margin-bottom:20px}.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}.related-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;transition:.2s}.related-card:hover{border-color:rgba(14,165,233,0.2)}.related-card h4{font-size:14px;font-weight:600;margin-bottom:6px}.related-card p{font-size:12px;color:var(--muted);line-height:1.5}footer{padding:40px 0;text-align:center;color:var(--muted);font-size:13px;border-top:1px solid var(--border)}footer a{color:var(--primary);font-weight:600}</style></head><body><nav><div class="nav-inner"><a href="/" class="logo"><div class="icon">9</div>9am<span>Leads</span></a><div class="nav-links"><a href="/">Home</a><a href="/pricing/">Pricing</a><a href="/blog/">Blog</a><a href="/portal/" class="btn-nav">Get Started Free</a></div></div></nav><article><div class="container"><div class="post-meta"><span class="post-category">' + productName + '</span><span>' + new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' }) + '</span></div><h1>' + title + '</h1><p style="font-size:15px;color:var(--muted);line-height:1.7;margin-bottom:32px">' + desc + '</p>' + sections + '<div class="cta-section"><h3>Start Receiving Exclusive ' + type.charAt(0).toUpperCase() + type.slice(1) + '</h3><p>Try any lead type free for 7 days. No credit card required.</p><a href="/pricing/" class="cta-btn">View Plans &amp; Start Free Trial</a></div></div></article><footer><div class="container"><a href="https://9amleads.com">9amLeads.com</a> &middot; <a href="/blog/">Blog</a> &middot; <a href="/privacy.html">Privacy</a> &middot; <a href="/terms.html">Terms</a></div></footer></body></html>';
+  
+  return { title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_index: BLOG_TEMPLATES.indexOf(template) };
+}
+
+// GET /api/blog/posts â€” Public blog listing
+app.get('/api/blog/posts', function(req, res) {
+  var db = getDb();
+  var posts = (db.blog_posts || []).filter(function(p) { return p.published; });
+  posts.sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+  var page = parseInt(req.query.page) || 1;
+  var limit = parseInt(req.query.limit) || 20;
+  var start = (page - 1) * limit;
+  var paged = posts.slice(start, start + limit);
+  res.json({ posts: paged.map(function(p) { return { title: p.title, slug: p.slug, description: p.description, category: p.category, product_name: p.product_name, created_at: p.created_at, keywords: p.keywords }; }), total: posts.length, page: page, total_pages: Math.ceil(posts.length / limit) });
+});
+
+// GET /blog/:slug â€” Server-rendered blog post
+app.get('/blog/:slug', function(req, res) {
+  var db = getDb();
+  var slug = req.params.slug.replace(/\.html$/, '');
+  var post = (db.blog_posts || []).find(function(p) { return p.slug === slug && p.published; });
+  if (!post) {
+    res.status(404).send('<html><body><h1>Not Found</h1><p>Post not found. <a href="/blog/">View all blog posts</a></p></body></html>');
+    return;
+  }
+  res.send(post.html);
+});
+
+// POST /api/admin/blog/generate â€” Generate new blog posts
+app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
+  try {
+    var db = getDb();
+    if (!db.blog_posts) db.blog_posts = [];
+    // Find next unused template
+    var usedIndices = db.blog_posts.map(function(p) { return p.template_index; });
+    var available = [];
+    for (var i = 0; i < BLOG_TEMPLATES.length; i++) {
+      if (usedIndices.indexOf(i) === -1) available.push(BLOG_TEMPLATES[i]);
+    }
+    if (available.length === 0) return res.json({ success: true, message: 'All templates used. No new posts generated.' });
+    var count = Math.min(BLOG_BATCH_SIZE, available.length);
+    var generated = [];
+    for (var ci = 0; ci < count; ci++) {
+      var post = generateBlogPost(available[ci]);
+      post.id = 'blog_' + Date.now() + '_' + ci;
+      post.created_at = new Date().toISOString();
+      post.published = true;
+      db.blog_posts.push(post);
+      generated.push(post);
+    }
+    saveDb();
+    res.json({ success: true, count: generated.length, posts: generated.map(function(g) { return { title: g.title, slug: g.slug }; }) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/blog/posts â€” Admin blog management
+app.get('/api/admin/blog/posts', adminAuth, function(req, res) {
+  var db = getDb();
+  var posts = (db.blog_posts || []).slice();
+  posts.sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+  res.json({ posts: posts, total: posts.length, templates_total: BLOG_TEMPLATES.length, templates_used: posts.length });
+});
+
+// POST /api/admin/blog/delete â€” Delete a blog post
+app.post('/api/admin/blog/delete', adminAuth, function(req, res) {
+  try {
+    var db = getDb();
+    var slug = req.body.slug;
+    if (!slug) return res.status(400).json({ error: 'slug required' });
+    var idx = (db.blog_posts || []).findIndex(function(p) { return p.slug === slug; });
+    if (idx === -1) return res.status(404).json({ error: 'Post not found' });
+    db.blog_posts.splice(idx, 1);
+    saveDb();
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/blog/generate-all â€” Generate all remaining templates at once
+app.post('/api/admin/blog/generate-all', adminAuth, function(req, res) {
+  try {
+    var db = getDb();
+    if (!db.blog_posts) db.blog_posts = [];
+    var usedIndices = (db.blog_posts || []).map(function(p) { return p.template_index; });
+    var available = [];
+    for (var i = 0; i < BLOG_TEMPLATES.length; i++) { if (usedIndices.indexOf(i) === -1) available.push(BLOG_TEMPLATES[i]); }
+    if (available.length === 0) return res.json({ success: true, message: 'All templates used.' });
+    var generated = [];
+    for (var ci = 0; ci < available.length; ci++) {
+      var post = generateBlogPost(available[ci]);
+      post.id = 'blog_' + Date.now() + '_' + ci;
+      post.created_at = new Date().toISOString();
+      post.published = true;
+      db.blog_posts.push(post);
+      generated.push(post);
+    }
+    saveDb();
+    res.json({ success: true, count: generated.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/seo/report â€” SEO dashboard data
+app.get('/api/admin/seo/report', adminAuth, function(req, res) {
+  try {
+    var db = getDb();
+    var posts = db.blog_posts || [];
+    var published = posts.filter(function(p) { return p.published; });
+    var totalWords = 0;
+    var cats = {};
+    for (var i = 0; i < published.length; i++) {
+      var p = published[i];
+      totalWords += parseInt(p.word_count) || 0;
+      cats[p.category] = (cats[p.category] || 0) + 1;
+    }
+    var avgWords = published.length > 0 ? Math.round(totalWords / published.length) : 0;
+    var today = new Date().toISOString().split('T')[0];
+    var thisWeek = published.filter(function(p) { return p.created_at && p.created_at >= new Date(Date.now() - 7*86400000).toISOString(); });
+    var thisMonth = published.filter(function(p) { return p.created_at && p.created_at >= new Date(Date.now() - 30*86400000).toISOString(); });
+    var usedIndices = posts.map(function(p) { return p.template_index; });
+    var remaining = 0;
+    for (var ti = 0; ti < BLOG_TEMPLATES.length; ti++) { if (usedIndices.indexOf(ti) === -1) remaining++; }
+
+    res.json({
+      total_posts: published.length,
+      templates_total: BLOG_TEMPLATES.length,
+      templates_used: published.length,
+      templates_remaining: remaining,
+      posts_this_week: thisWeek.length,
+      posts_this_month: thisMonth.length,
+      avg_word_count: avgWords,
+      total_words: totalWords,
+      categories: cats,
+      by_category: Object.keys(cats).map(function(k) { return { category: k, label: PRODCAT[k] || k, count: cats[k] }; }),
+      completeness_pct: Math.round(published.length / BLOG_TEMPLATES.length * 100),
+      sitemap_urls: published.length + 16,
+      last_generated: published.length > 0 ? published[published.length - 1].created_at : null,
+      sitemap_healthy: true,
+      blog_accessible: true
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/seo/refresh-sitemap â€” Update sitemap with all blog posts
+app.post('/api/admin/seo/refresh-sitemap', adminAuth, function(req, res) {
+  try {
+    var fs = require('fs');
+    var path = require('path');
+    var db = getDb();
+    var posts = (db.blog_posts || []).filter(function(p) { return p.published; });
+    var today = new Date().toISOString().split('T')[0];
+    var urls = [
+      '<url><loc>https://9amleads.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/pricing/</loc><priority>0.9</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/movingleadsdaily/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/probateleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/newbusinessalert/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/planningleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/tenders/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/how-it-works/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/who-we-serve/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/blog/</loc><priority>0.7</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/founder/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/invest/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/about.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/contact.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/terms.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/privacy.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>'
+    ];
+    for (var pi = 0; pi < posts.length; pi++) {
+      urls.push('<url><loc>https://9amleads.com/blog/' + posts[pi].slug + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>');
+    }
+    var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    for (var ui = 0; ui < urls.length; ui++) xml += '  ' + urls[ui] + '\n';
+    xml += '</urlset>';
+    // Write to publish and root
+    fs.writeFileSync(path.join(__dirname, 'publish', 'sitemap.xml'), xml);
+    fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), xml);
+    // Also write to 9amleads for dev
+    try { fs.writeFileSync(path.join(__dirname, '9amleads', 'sitemap.xml'), xml); } catch(e2) {}
+    res.json({ success: true, urls: urls.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Daily blog post generation scheduler (11 AM â€” batch of 10)
+cron.schedule('0 11 * * *', async function() {
+  try {
+    console.log('[BLOG CRON] Running daily batch generation...');
+    var db = getDb();
+    if (!db.blog_posts) db.blog_posts = [];
+    var usedIndices = db.blog_posts.map(function(p) { return p.template_index; });
+    var available = [];
+    for (var i = 0; i < BLOG_TEMPLATES.length; i++) { if (usedIndices.indexOf(i) === -1) available.push(BLOG_TEMPLATES[i]); }
+    if (available.length === 0) { console.log('[BLOG CRON] All templates used. Skipping.'); return; }
+    var count = Math.min(BLOG_BATCH_SIZE, available.length);
+    for (var bi = 0; bi < count; bi++) {
+      var post = generateBlogPost(available[bi]);
+      post.id = 'blog_' + Date.now() + '_' + bi;
+      post.created_at = new Date().toISOString();
+      post.published = true;
+      db.blog_posts.push(post);
+    }
+    saveDb();
+    console.log('[BLOG CRON] Generated ' + count + ' posts');
+  } catch(e) { console.log('[BLOG CRON] Error: ' + e.message); }
+});
+
+// Second daily blog post generation scheduler (2 PM â€” batch of 10)
+cron.schedule('0 14 * * *', async function() {
+  try {
+    console.log('[BLOG CRON 2PM] Running afternoon batch generation...');
+    var db = getDb();
+    if (!db.blog_posts) db.blog_posts = [];
+    var usedIndices = db.blog_posts.map(function(p) { return p.template_index; });
+    var available = [];
+    for (var i = 0; i < BLOG_TEMPLATES.length; i++) { if (usedIndices.indexOf(i) === -1) available.push(BLOG_TEMPLATES[i]); }
+    if (available.length === 0) { console.log('[BLOG CRON 2PM] All templates used. Skipping.'); return; }
+    var count = Math.min(BLOG_BATCH_SIZE, available.length);
+    for (var bi = 0; bi < count; bi++) {
+      var post = generateBlogPost(available[bi]);
+      post.id = 'blog_' + Date.now() + '_' + bi;
+      post.created_at = new Date().toISOString();
+      post.published = true;
+      db.blog_posts.push(post);
+    }
+    saveDb();
+    console.log('[BLOG CRON 2PM] Generated ' + count + ' posts');
+  } catch(e) { console.log('[BLOG CRON 2PM] Error: ' + e.message); }
+});
+
 // ===== ADMIN SEND ALL CAMPAIGN EMAILS (for review) =====
 app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
   try {
@@ -1760,7 +2365,7 @@ cron.schedule('0 10 * * *', async () => {
   console.log('[CAMPAIGN] Sent ' + sent + ' campaign emails');
 });
 
-// POST /api/admin/deliver — manually trigger daily delivery to all customers
+// POST /api/admin/deliver â€” manually trigger daily delivery to all customers
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   try {
     var delivered = 0, errors = 0;
@@ -1855,11 +2460,11 @@ function stripeApiRequest(method, path, data) {
   });
 }
 
-// POST /api/create-checkout — create Stripe Checkout Session
+// POST /api/create-checkout â€” create Stripe Checkout Session
 app.post('/api/create-checkout', authMiddleware, async (req, res) => {
   try {
     if (!STRIPE_SECRET_KEY) {
-      return res.status(500).json({ error: 'Stripe not configured. Add keys in Settings → Stripe Payments.' });
+      return res.status(500).json({ error: 'Stripe not configured. Add keys in Settings â†’ Stripe Payments.' });
     }
 
     const { plan } = req.body;
@@ -1921,7 +2526,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
   }
 });
 
-// Stripe webhook — receives checkout.session.completed events
+// Stripe webhook â€” receives checkout.session.completed events
 // IMPORTANT: This route uses raw body parser for Stripe signature verification
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
@@ -1992,7 +2597,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           .run(uuidv4(), customerId, subscriptionId || '', plan, now, monthEnd, now);
       }
 
-      console.log('[WEBHOOK] Payment confirmed:', customer.email, '→', plan, '(product:', product + ')');
+      console.log('[WEBHOOK] Payment confirmed:', customer.email, 'â†’', plan, '(product:', product + ')');
     }
 
     // Handle subscription updates (upgrades, downgrades, cancellation at period end)
@@ -2017,7 +2622,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             db.prepare('UPDATE customers SET leads_per_day = 0 WHERE id = ?').run(existingSub.customer_id);
           }
         }
-        console.log('[WEBHOOK] Subscription updated:', subId, '→', status);
+        console.log('[WEBHOOK] Subscription updated:', subId, 'â†’', status);
       }
     }
 
@@ -2041,7 +2646,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         const invSub = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(invSubId);
         if (invSub) {
           const periodEnd = invoice.period_end ? new Date(invoice.period_end * 1000).toISOString() : new Date(Date.now() + 30 * 86400000).toISOString();
-          const amount = invoice.total ? '£' + (invoice.total / 100).toFixed(2) : 'unknown';
+          const amount = invoice.total ? 'Â£' + (invoice.total / 100).toFixed(2) : 'unknown';
           // Reset fail_count on successful payment
           db.prepare('UPDATE subscriptions SET current_period_end = ?, status = \'active\', fail_count = 0, updated_at = datetime(\'now\') WHERE stripe_id = ?').run(periodEnd, invSubId);
           // Reactivate customer if they were in cancelled state
@@ -2078,7 +2683,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   }
 });
 
-// POST /api/subscribe — upgrade current user's plan (after Stripe payment confirmed)
+// POST /api/subscribe â€” upgrade current user's plan (after Stripe payment confirmed)
 app.post('/api/subscribe', authMiddleware, async (req, res) => {
   const { plan, session_id } = req.body;
   const validPlans = ['starter', 'pro', 'enterprise'];
@@ -2121,7 +2726,7 @@ app.post('/api/subscribe', authMiddleware, async (req, res) => {
   });
 });
 
-// GET /api/subscription — check current subscription status
+// GET /api/subscription â€” check current subscription status
 app.get('/api/subscription', authMiddleware, (req, res) => {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
@@ -2143,7 +2748,7 @@ app.get('/api/subscription', authMiddleware, (req, res) => {
   });
 });
 
-// POST /api/subscription/cancel — cancel subscription at period end
+// POST /api/subscription/cancel â€” cancel subscription at period end
 app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
   try {
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -2182,7 +2787,7 @@ app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/subscription/update — change plan (upgrade or downgrade)
+// POST /api/subscription/update â€” change plan (upgrade or downgrade)
 app.post('/api/subscription/update', authMiddleware, async (req, res) => {
   try {
     const { plan } = req.body;
@@ -2240,7 +2845,7 @@ function normalizeName(name) {
   return (name || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
 }
 
-// GET /api/scraped-businesses — return all known businesses (for dedup client-side)
+// GET /api/scraped-businesses â€” return all known businesses (for dedup client-side)
 app.get('/api/scraped-businesses', (req, res) => {
   const { product } = req.query;
   let list = loadScrapedBusinesses();
@@ -2248,7 +2853,7 @@ app.get('/api/scraped-businesses', (req, res) => {
   res.json(list);
 });
 
-// POST /api/scraped-businesses/check — check which of the submitted businesses are new
+// POST /api/scraped-businesses/check â€” check which of the submitted businesses are new
 app.post('/api/scraped-businesses/check', (req, res) => {
   try {
     const { candidates } = req.body;
@@ -2287,7 +2892,7 @@ app.post('/api/scraped-businesses/check', (req, res) => {
   }
 });
 
-// POST /api/scraped-businesses/add — save newly scraped businesses
+// POST /api/scraped-businesses/add â€” save newly scraped businesses
 app.post('/api/scraped-businesses/add', (req, res) => {
   try {
     const { businesses, product, query } = req.body;
@@ -2335,7 +2940,7 @@ app.post('/api/scraped-businesses/add', (req, res) => {
   }
 });
 
-// GET /api/scraped-businesses/stats — dedup statistics
+// GET /api/scraped-businesses/stats â€” dedup statistics
 app.get('/api/scraped-businesses/stats', (req, res) => {
   const list = loadScrapedBusinesses();
   const byProduct = {};
@@ -2352,7 +2957,7 @@ app.get('/api/scraped-businesses/stats', (req, res) => {
 
 // ===== SCRAPER ENDPOINTS =====
 
-// POST /api/scrape-run — execute a scraper for a given product and store results
+// POST /api/scrape-run â€” execute a scraper for a given product and store results
 app.post('/api/scrape-run', async (req, res) => {
   try {
     const { product, query, location, instructions, maxResults, emails } = req.body;
@@ -2404,7 +3009,7 @@ app.post('/api/scrape-run', async (req, res) => {
   }
 });
 
-// GET /api/scrape-results — list all scrape runs
+// GET /api/scrape-results â€” list all scrape runs
 app.get('/api/scrape-results', (req, res) => {
   const configDir = path.join(DATA_DIR, 'scrape-runs');
   try {
@@ -2421,7 +3026,7 @@ app.get('/api/scrape-results', (req, res) => {
   }
 });
 
-// GET /api/scrape-results/:id — get a specific scrape run
+// GET /api/scrape-results/:id â€” get a specific scrape run
 app.get('/api/scrape-results/:id', (req, res) => {
   const filePath = path.join(DATA_DIR, 'scrape-runs', req.params.id + '.json');
   try {
@@ -2436,7 +3041,7 @@ app.get('/api/scrape-results/:id', (req, res) => {
   }
 });
 
-// POST /api/scrape-save — save scraped leads to customer records
+// POST /api/scrape-save â€” save scraped leads to customer records
 app.post('/api/scrape-save', async (req, res) => {
   try {
     const { product, leads } = req.body;
@@ -2461,7 +3066,7 @@ app.post('/api/scrape-save', async (req, res) => {
   }
 });
 
-// POST /api/scrape-generate — force generate demo leads for all products
+// POST /api/scrape-generate â€” force generate demo leads for all products
 app.post('/api/scrape-generate', async (req, res) => {
   try {
     let total = 0;
@@ -2480,7 +3085,7 @@ app.post('/api/scrape-generate', async (req, res) => {
 });
 
 // ===== LEAD DISTRIBUTION ENDPOINTS =====
-// POST /api/distribute — trigger lead distributor (match scraped leads to customers)
+// POST /api/distribute â€” trigger lead distributor (match scraped leads to customers)
 app.post('/api/distribute', async (req, res) => {
   try {
     const { product } = req.body || {};
@@ -2503,7 +3108,7 @@ app.post('/api/distribute', async (req, res) => {
   }
 });
 
-// GET /api/distribute/status — distribution summary
+// GET /api/distribute/status â€” distribution summary
 app.get('/api/distribute/status', (req, res) => {
   try {
     const db = getDb();
@@ -2700,7 +3305,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
-// POST /api/test/delivery — manually trigger delivery for one customer
+// POST /api/test/delivery â€” manually trigger delivery for one customer
 app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   // Reload DB from file to get latest state
   _dbData = null;
@@ -2773,7 +3378,7 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/admin/impersonate — generate login token for any customer (admin access)
+// POST /api/admin/impersonate â€” generate login token for any customer (admin access)
 app.post('/api/admin/impersonate', adminAuth, async (req, res) => {
   try {
     const { customer_id } = req.body;
@@ -2789,7 +3394,7 @@ app.post('/api/admin/impersonate', adminAuth, async (req, res) => {
   }
 });
 
-// POST /api/admin/run-scrapers — manually trigger all scrapers now
+// POST /api/admin/run-scrapers â€” manually trigger all scrapers now
 app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
   try {
     const https = require('https');
@@ -2814,7 +3419,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         fs.mkdirSync(DATA_DIR, { recursive: true });
         fs.writeFileSync(customerFile, JSON.stringify(existing, null, 2));
 
-        // Generate leads — use free APIs where available, else demo data
+        // Generate leads â€” use free APIs where available, else demo data
         var leads;
         if (product === 'newbusiness') {
           try {
@@ -2881,7 +3486,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               req.setTimeout(30000, function() { req.destroy(); resolve([]); });
               req.end();
             });
-            if (!leads || leads.length === 0) { console.log('[SCRAPER] Contracts Finder returned 0 results — no leads generated for tenders'); leads = []; }
+            if (!leads || leads.length === 0) { console.log('[SCRAPER] Contracts Finder returned 0 results â€” no leads generated for tenders'); leads = []; }
           } catch(e) { console.log('[SCRAPER] Contracts Finder error: ' + e.message); leads = []; }
         } else if (product === 'planning') {
           try {
@@ -2957,7 +3562,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-// POST /api/admin/test-ch — test Companies House API from Render
+// POST /api/admin/test-ch â€” test Companies House API from Render
 app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
   try {
     var key = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
@@ -2995,7 +3600,7 @@ app.post('/api/admin/cleanup', adminAuth, (req, res) => {
   }
 });
 
-// GET /api/admin/export — export customers for marketing
+// GET /api/admin/export â€” export customers for marketing
 app.get('/api/admin/export', adminAuth, (req, res) => {
   const customers = db.prepare(`
     SELECT email, company, contact_name, phone, product, lead_type, business_type, 
@@ -3017,6 +3622,24 @@ app.get('/api/admin/export', adminAuth, (req, res) => {
 
 // ===== WEBSITE ANALYTICS =====
 const analytics = { visits: [], pages: {} };
+// 1x1 transparent GIF pixel (43 bytes base64)
+const PIXEL_GIF = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+
+app.get('/api/track', (req, res) => {
+  const page = req.query.p || '/';
+  const referrer = req.query.r || '';
+  const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+  const visit = { page, referrer, ip, time: Date.now(), ua: req.headers['user-agent'] || '' };
+  analytics.visits.push(visit);
+  if (analytics.visits.length > 10000) analytics.visits.splice(0, 5000);
+  if (!analytics.pages[page]) analytics.pages[page] = 0;
+  analytics.pages[page]++;
+  res.setHeader('Content-Type', 'image/gif');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.status(200).send(PIXEL_GIF);
+});
 
 app.post('/api/track', (req, res) => {
   const { page, referrer } = req.body;
@@ -3114,6 +3737,14 @@ app.use(function(err, req, res, next) {
   console.error('[ERROR] Unhandled error:', err.message || err);
   res.status(500).json({ error: 'Internal server error' });
 });
+
+// ===== KEEP-ALIVE: prevent Render cold starts =====
+const KEEP_ALIVE_URL = process.env.RENDER_EXTERNAL_URL || 'https://nineamleads-api.onrender.com';
+cron.schedule('*/5 * * * *', () => {
+  const h = require('https');
+  h.get(KEEP_ALIVE_URL + '/api/health', (res) => { let d=''; res.on('data',c=>d+=c); res.on('end',()=>{}); }).on('error', (e) => console.log('[KeepAlive]', e.message));
+});
+console.log('[KeepAlive] Pinging self every 5 minutes');
 
 // ===== TEST SCHEDULE: PAUSED =====
 // cron.schedule('0 4 * * *', async () => {
@@ -3213,3 +3844,4 @@ app.get('/api/admin/brevo-templates', adminAuth, async function(req, res) {
     res.json(r);
   } catch(e) { res.json({ error: e.message }); }
 });
+
