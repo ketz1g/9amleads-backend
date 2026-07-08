@@ -301,13 +301,21 @@ function _run(sql, params) {
       let idField = 'id';
       if (whereMatch) {
         const whereStr = whereMatch[1].trim();
-        const eqIdx = whereStr.indexOf('=');
-        idField = whereStr.substring(0, eqIdx).trim();
-        let whereVal = whereStr.substring(eqIdx + 1).trim();
-        if (whereVal === '?') {
-          idVal = params[paramIdx++];
-        } else {
-          idVal = whereVal.replace(/^'(.*)'$/, '$1');
+        // Handle AND conditions - find first = ? pair
+        const conditions = whereStr.split(/\s+AND\s+/i);
+        for (var _wci = 0; _wci < conditions.length; _wci++) {
+          var cond = conditions[_wci].trim();
+          var eqIdx2 = cond.indexOf('=');
+          if (eqIdx2 === -1) continue;
+          var field = cond.substring(0, eqIdx2).trim();
+          var rawVal = cond.substring(eqIdx2 + 1).trim();
+          if (_wci === 0) { idField = field; }
+          if (rawVal === '?') {
+            if (_wci === 0) idVal = params[paramIdx];
+            paramIdx++;
+          } else {
+            if (_wci === 0) idVal = rawVal.replace(/^'(.*)'$/, '$1');
+          }
         }
       }
       if (idVal === null || idVal === undefined) idVal = params[params.length - 1];
