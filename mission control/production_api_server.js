@@ -8765,6 +8765,105 @@ app.post('/api/admin/seasonal/campaigns', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== CAMPAIGN ANALYTICS =====
+// GET /api/direct-mail/analytics — Customer campaign analytics
+app.get('/api/direct-mail/analytics', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var custId = req.user.id;
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(custId);
+    var campaigns = (db2.direct_mail_campaigns || []).filter(function(c) { return c.customer_id === custId; });
+    var sentCampaigns = campaigns.filter(function(c) { return c.status === 'sent' || c.status === 'queued' || c.status === 'completed' || c.status === 'dispatched'; });
+    var completedCampaigns = campaigns.filter(function(c) { return c.status === 'completed' || c.status === 'dispatched'; });
+    var failedCampaigns = campaigns.filter(function(c) { return c.status === 'failed'; });
+    var totalSpend = 0; var totalLetters = 0;
+    var templateCounts = {}; var packCounts = {};
+    campaigns.forEach(function(c) {
+      var s = c.sent_count || c.target_count || 0;
+      totalSpend += Number(c.budget || 0);
+      totalLetters += s;
+      if (c.template_id) templateCounts[c.template_id] = (templateCounts[c.template_id] || 0) + 1;
+    });
+    // Get template names
+    var mostUsedTemplateId = Object.keys(templateCounts).sort(function(a, b) { return templateCounts[b] - templateCounts[a]; })[0] || '';
+    // Settings
+    var settings = (db2.direct_mail_automation_settings || []).find(function(s) { return s.customer_id === custId; });
+    var autoSendEnabled = settings && settings.enable_auto_send ? true : false;
+    // Monthly activity
+    var thisMonth = new Date().toISOString().substring(0, 7);
+    var monthlyCampaigns = campaigns.filter(function(c) { return c.created_at && c.created_at.indexOf(thisMonth) === 0; });
+    var monthlySpend = 0;
+    monthlyCampaigns.forEach(function(c) { monthlySpend += Number(c.budget || 0); });
+    var avgCost = sentCampaigns.length > 0 ? totalSpend / sentCampaigns.length : 0;
+    res.json({
+      success: true,
+      total_campaigns: campaigns.length,
+      campaigns_sent: sentCampaigns.length,
+      completed_campaigns: completedCampaigns.length,
+      failed_campaigns: failedCampaigns.length,
+      letters_sent: totalLetters,
+      total_spend: Math.round(totalSpend * 100) / 100,
+      average_campaign_cost: Math.round(avgCost * 100) / 100,
+      most_used_template: mostUsedTemplateId,
+      auto_send_enabled: autoSendEnabled,
+      monthly_campaigns: monthlyCampaigns.length,
+      monthly_spend: Math.round(monthlySpend * 100) / 100,
+      conversion_rate: campaigns.length > 0 ? Math.round(completedCampaigns.length / campaigns.length * 100) : 0
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/direct-mail/analytics — Admin platform-wide analytics
+app.get('/api/admin/direct-mail/analytics', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var campaigns = db2.direct_mail_campaigns || [];
+    var settings = db2.direct_mail_automation_settings || [];
+    var customers = db2.customers || [];
+    var today = new Date().toISOString().split('T')[0];
+    var thisMonth = today.substring(0, 7);
+    // Unique customers with campaigns
+    var campaignCustomers = {};
+    var sentCampaigns = campaigns.filter(function(c) { return c.status === 'sent' || c.status === 'queued' || c.status === 'completed' || c.status === 'dispatched'; });
+    var completed = campaigns.filter(function(c) { return c.status === 'completed' || c.status === 'dispatched'; });
+    var failed = campaigns.filter(function(c) { return c.status === 'failed'; });
+    var todayCampaigns = campaigns.filter(function(c) { return c.created_at && c.created_at.indexOf(today) === 0; });
+    var monthlyCampaigns = campaigns.filter(function(c) { return c.created_at && c.created_at.indexOf(thisMonth) === 0; });
+    campaigns.forEach(function(c) { campaignCustomers[c.customer_id] = true; });
+    var totalSpend = 0; var totalLetters = 0; var todaySpend = 0; var monthSpend = 0;
+    campaigns.forEach(function(c) {
+      var s = c.sent_count || c.target_count || 0; var b = Number(c.budget || 0);
+      totalSpend += b; totalLetters += s;
+      if (c.created_at && c.created_at.indexOf(today) === 0) todaySpend += b;
+      if (c.created_at && c.created_at.indexOf(thisMonth) === 0) monthSpend += b;
+    });
+    var providerCost = totalSpend * 0.6;
+    var stripeFee = totalSpend * 0.029 + 0.30 * campaigns.length;
+    var profit = totalSpend - providerCost - stripeFee;
+    var margin = totalSpend > 0 ? Math.round(profit / totalSpend * 100) : 0;
+    var autoSendActive = settings.filter(function(s) { return s.enable_auto_send && s.consent_given; }).length;
+    res.json({
+      success: true,
+      dm_customers: Object.keys(campaignCustomers).length,
+      total_campaigns: campaigns.length,
+      campaigns_sent: sentCampaigns.length,
+      completed_campaigns: completed.length,
+      failed_campaigns: failed.length,
+      letters_flyers_sent: totalLetters,
+      total_spend: Math.round(totalSpend * 100) / 100,
+      revenue_today: Math.round(todaySpend * 100) / 100,
+      revenue_month: Math.round(monthSpend * 100) / 100,
+      provider_cost: Math.round(providerCost * 100) / 100,
+      stripe_fee_estimate: Math.round(stripeFee * 100) / 100,
+      profit: Math.round(profit * 100) / 100,
+      margin_pct: margin,
+      auto_send_active: autoSendActive,
+      today_campaigns: todayCampaigns.length,
+      monthly_campaigns: monthlyCampaigns.length
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== CAMPAIGN CALENDAR =====
 // GET /api/direct-mail/calendar — Get all campaign events for calendar view
 app.get('/api/direct-mail/calendar', authMiddleware, (req, res) => {

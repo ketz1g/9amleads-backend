@@ -1273,9 +1273,9 @@ function showStatus(id, msg, color) {
   setTimeout(function() { el.style.display = 'none'; }, 4000);
 }
 
-var DM_TABS = ['overview','create','calendar','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments'];
-var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', calendar:'Campaign Calendar', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
-var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', calendar:'fa-calendar', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
+var DM_TABS = ['overview','create','analytics','calendar','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments'];
+var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', analytics:'Analytics', calendar:'Campaign Calendar', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
+var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', analytics:'fa-chart-bar', calendar:'fa-calendar', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
 
 function showDirectMailCentre(tab) {
   tab = tab || localStorage.getItem('dmTab') || 'overview';
@@ -1294,7 +1294,7 @@ function showDirectMailCentre(tab) {
 
   var el = document.getElementById('dm-content');
   // Check feature access first
-  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, calendar: null, sequences: null, settings: 'auto_send', proof: 'proof_tracking' };
+  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, analytics: null, calendar: null, sequences: null, settings: 'auto_send', proof: 'proof_tracking' };
   apiFetch('/api/direct-mail/features').then(function(fr) {
     var plan = fr && fr.plan ? fr.plan : 'free_trial';
     var features = fr && fr.features ? fr.features : {};
@@ -1316,6 +1316,7 @@ function showDirectMailCentre(tab) {
     else if (tab === 'packs') { showDMPacks(el); }
     else if (tab === 'marketplace') { showDMMarketplace(el); }
     else if (tab === 'seasonal') { showDMSeasonal(el); }
+    else if (tab === 'analytics') { showDMAnalytics(el); }
     else if (tab === 'calendar') { showDMCalendar(el); }
     else if (tab === 'sequences') { showDMSequences(el); }
     else if (tab === 'templates') { showDMTemplates(el); }
@@ -2799,6 +2800,30 @@ function dmScheduleSeasonal(headline, offer) {
 }
 
 var DM_CALENDAR_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function showDMAnalytics(el) {
+  el.innerHTML = '<div style="animation:slideUp .3s ease"><div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-chart-bar" style="color:var(--primary)"></i> Campaign Analytics</div></div>' +
+    '<div id="dm-analytics-content"><div style="text-align:center;padding:30px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i> Loading analytics...</div></div></div></div>';
+  apiFetch('/api/direct-mail/analytics').then(function(a) {
+    if (!a || !a.success) { document.getElementById('dm-analytics-content').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2)">Could not load analytics</div>'; return; }
+    var html = '<div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))">' +
+      '<div class="kpi-card" style="border-left:3px solid #0ea5e9"><div class="kpi-num" style="color:#0ea5e9;font-size:20px">' + a.total_campaigns + '</div><div class="kpi-label">Campaigns Created</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #22c55e"><div class="kpi-num" style="color:#22c55e;font-size:20px">' + a.campaigns_sent + '</div><div class="kpi-label">Campaigns Sent</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #10b981"><div class="kpi-num" style="color:#10b981;font-size:20px">' + a.letters_sent + '</div><div class="kpi-label">Letters/Flyers Sent</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #f59e0b"><div class="kpi-num" style="color:#f59e0b;font-size:20px">&pound;' + a.total_spend.toFixed(2) + '</div><div class="kpi-label">Total Spend</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #6366f1"><div class="kpi-num" style="color:#6366f1;font-size:20px">&pound;' + a.average_campaign_cost.toFixed(2) + '</div><div class="kpi-label">Avg Campaign Cost</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #22c55e"><div class="kpi-num" style="color:#22c55e;font-size:20px">' + a.completed_campaigns + '</div><div class="kpi-label">Completed</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #ef4444"><div class="kpi-num" style="color:#ef4444;font-size:20px">' + a.failed_campaigns + '</div><div class="kpi-label">Failed</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #ec4899"><div class="kpi-num" style="color:#ec4899;font-size:14px">' + (a.auto_send_enabled ? 'On' : 'Off') + '</div><div class="kpi-label">Auto Send</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #0ea5e9"><div class="kpi-num" style="color:#0ea5e9;font-size:20px">' + a.monthly_campaigns + '</div><div class="kpi-label">This Month</div></div>' +
+      '<div class="kpi-card" style="border-left:3px solid #14b8a6"><div class="kpi-num" style="color:#14b8a6;font-size:20px">' + a.conversion_rate + '%</div><div class="kpi-label">Completion Rate</div></div>' +
+      '</div>' +
+      '<div style="margin-top:12px;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--muted2);line-height:1.5">' +
+      '<strong style="color:var(--text)">Monthly Activity:</strong> ' + a.monthly_campaigns + ' campaigns · £' + a.monthly_spend.toFixed(2) + ' spend this month' +
+      '</div>';
+    document.getElementById('dm-analytics-content').innerHTML = html;
+  });
+}
 
 function showDMCalendar(el) {
   var now = new Date();
