@@ -1273,9 +1273,9 @@ function showStatus(id, msg, color) {
   setTimeout(function() { el.style.display = 'none'; }, 4000);
 }
 
-var DM_TABS = ['overview','create','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments'];
-var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
-var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
+var DM_TABS = ['overview','create','sequences','packs','marketplace','seasonal','ai-builder','upload','templates','settings','history','proof','payments'];
+var DM_TAB_NAMES = { overview:'Overview', create:'Create Campaign', sequences:'Multi-Touch Sequences', packs:'Campaign Packs', marketplace:'Template Marketplace', seasonal:'Seasonal Campaigns', 'ai-builder':'AI Marketing Builder', upload:'Upload Materials', templates:'Saved Templates', settings:'Auto Send Settings', history:'Campaign History', proof:'Proof of Sending', payments:'Payments & Invoices' };
+var DM_TAB_ICONS = { overview:'fa-chart-pie', create:'fa-plus-circle', sequences:'fa-layer-group', packs:'fa-box', marketplace:'fa-store', seasonal:'fa-calendar-alt', 'ai-builder':'fa-magic', upload:'fa-upload', templates:'fa-folder-open', settings:'fa-cog', history:'fa-clock', proof:'fa-check-circle', payments:'fa-file-invoice-dollar' };
 
 function showDirectMailCentre(tab) {
   tab = tab || localStorage.getItem('dmTab') || 'overview';
@@ -1294,7 +1294,7 @@ function showDirectMailCentre(tab) {
 
   var el = document.getElementById('dm-content');
   // Check feature access first
-  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, settings: 'auto_send', proof: 'proof_tracking' };
+  var featureChecks = { 'ai-builder': 'ai_letter', upload: null, templates: 'saved_templates', packs: null, marketplace: null, seasonal: null, sequences: null, settings: 'auto_send', proof: 'proof_tracking' };
   apiFetch('/api/direct-mail/features').then(function(fr) {
     var plan = fr && fr.plan ? fr.plan : 'free_trial';
     var features = fr && fr.features ? fr.features : {};
@@ -1316,6 +1316,7 @@ function showDirectMailCentre(tab) {
     else if (tab === 'packs') { showDMPacks(el); }
     else if (tab === 'marketplace') { showDMMarketplace(el); }
     else if (tab === 'seasonal') { showDMSeasonal(el); }
+    else if (tab === 'sequences') { showDMSequences(el); }
     else if (tab === 'templates') { showDMTemplates(el); }
     else if (tab === 'settings') { showDMSettings(el, canUse('auto_send')); }
     else if (tab === 'history') { showDMHistory(el); }
@@ -2626,6 +2627,129 @@ function dmScheduleSeasonal(headline, offer) {
   headline = decodeURIComponent(headline); offer = decodeURIComponent(offer);
   showModal('Schedule Campaign', '<div style="text-align:center;padding:10px 0"><p style="font-size:13px;color:var(--muted2);margin-bottom:12px">Scheduling will be available once Auto Send is configured. Go to Auto Send Settings to set up your schedule.</p>' +
     '<button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove();showDirectMailCentre(\'settings\')">Go to Auto Send Settings</button></div>', '400px');
+}
+
+function showDMSequences(el) {
+  el.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="dmCreateSequence()"><i class="fas fa-plus"></i> New Sequence</button><button class="btn btn-outline btn-sm" onclick="dmLoadSequences()"><i class="fas fa-sync"></i> Refresh</button></div>' +
+    '<div id="dm-seq-list" style="min-height:100px"><div style="text-align:center;padding:30px;color:var(--muted2)"><i class="fas fa-spinner fa-spin"></i></div></div>';
+  dmLoadSequences();
+}
+
+function dmLoadSequences() {
+  apiFetch('/api/direct-mail/sequences').then(function(r) {
+    var el = document.getElementById('dm-seq-list');
+    if (!el) return;
+    var seqs = r && r.sequences ? r.sequences : [];
+    if (seqs.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:40px 20px"><i class="fas fa-layer-group" style="font-size:40px;color:var(--muted2);display:block;margin-bottom:12px"></i><h3 style="font-size:16px;font-weight:700;margin-bottom:6px">No Sequences Yet</h3><p style="font-size:12px;color:var(--muted2);margin-bottom:16px">Create a multi-touch postal sequence to automatically follow up with leads over time.</p><button class="btn btn-primary btn-sm" onclick="dmCreateSequence()"><i class="fas fa-plus"></i> Create Sequence</button></div>';
+      return;
+    }
+    var html = '<div style="display:grid;gap:8px">' + seqs.map(function(s) {
+      var statusBadge = s.status === 'active' ? 'badge-green' : s.status === 'paused' ? 'badge-orange' : s.status === 'completed' ? 'badge-blue' : 'badge-red';
+      return '<div style="padding:12px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">' +
+        '<div><div style="font-size:13px;font-weight:700;color:var(--text)">' + s.name + '</div>' +
+        '<div style="font-size:10px;color:var(--muted2)">' + (s.lead_type || 'All leads') + ' · ' + s.steps_completed + '/' + s.total_steps + ' steps completed · Spent: £' + (s.total_spent || 0).toFixed(2) + '</div></div>' +
+        '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">' +
+        '<span class="badge ' + statusBadge + '" style="font-size:9px">' + s.status + '</span>' +
+        (s.next_scheduled ? '<span style="font-size:9px;color:var(--muted2)">Next: ' + new Date(s.next_scheduled).toLocaleDateString() + '</span>' : '') +
+        '</div></div>' +
+        '<div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">' +
+        '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto" onclick="dmViewSequence(\'' + s.id + '\')"><i class="fas fa-eye"></i> View</button>' +
+        (s.status === 'active' ? '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto" onclick="dmPauseSequence(\'' + s.id + '\')"><i class="fas fa-pause"></i> Pause</button>' : '') +
+        (s.status === 'paused' ? '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto" onclick="dmResumeSequence(\'' + s.id + '\')"><i class="fas fa-play"></i> Resume</button>' : '') +
+        (s.status !== 'completed' && s.status !== 'cancelled' ? '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto;color:var(--danger)" onclick="dmCancelSequence(\'' + s.id + '\')"><i class="fas fa-times"></i> Cancel</button>' : '') +
+        (s.status === 'completed' || s.status === 'cancelled' ? '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto;color:var(--danger)" onclick="dmDeleteSequence(\'' + s.id + '\')"><i class="fas fa-trash"></i></button>' : '') +
+        (s.status === 'active' ? '<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:10px;min-height:auto;color:var(--success)" onclick="dmProcessSequenceStep(\'' + s.id + '\')"><i class="fas fa-play"></i> Process Next Step</button>' : '') +
+        '</div></div>';
+    }).join('') + '</div>';
+    el.innerHTML = html;
+  });
+}
+
+function dmCreateSequence() {
+  showModal('Create Multi-Touch Sequence', '<div style="display:grid;gap:10px"><div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Sequence Name</label><input type="text" id="seq-name" placeholder="e.g. New Lead Follow-Up" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Lead Type</label><select id="seq-lead-type" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"><option value="">All Types</option><option value="moving">Moving</option><option value="probate">Probate</option><option value="newbusiness">New Business</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select></div>' +
+    '<div><label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Spend Limit (£)</label><input type="number" id="seq-spend" value="100" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
+    '<div style="padding:10px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.1);border-radius:6px;font-size:11px;color:var(--muted2)">You\'ll add steps after creating the sequence.</div>' +
+    '<button class="btn btn-primary btn-sm" onclick="dmCreateSequenceSubmit()">Create Sequence</button></div>', '440px');
+}
+
+function dmCreateSequenceSubmit() {
+  var name = document.getElementById('seq-name')?.value.trim();
+  if (!name) { alert('Sequence name is required'); return; }
+  // Create with 4 default steps
+  var steps = [
+    { material: 'Introduction Letter', delay_days: 1, headline: 'Introduction', cta: 'Learn More' },
+    { material: 'Flyer', delay_days: 14, headline: 'Our Services', cta: 'Get a Quote' },
+    { material: 'Discount Postcard', delay_days: 30, headline: 'Special Offer', cta: 'Claim Offer' },
+    { material: 'Reminder Letter', delay_days: 60, headline: 'Final Reminder', cta: 'Get in Touch' }
+  ];
+  apiFetch('/api/direct-mail/sequences', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    name: name, lead_type: document.getElementById('seq-lead-type')?.value || '',
+    spend_limit: parseFloat(document.getElementById('seq-spend')?.value) || 0,
+    steps: steps
+  })}).then(function(r) {
+    if (r && r.success) { document.getElementById('modal-overlay')?.remove(); showStatus('dm-content','Sequence created!','var(--success)'); dmLoadSequences(); }
+    else { alert(r?.error || 'Failed to create'); }
+  });
+}
+
+function dmViewSequence(id) {
+  apiFetch('/api/direct-mail/sequences/' + id).then(function(r) {
+    if (!r || !r.sequence) return;
+    var s = r.sequence;
+    var steps = r.steps || [];
+    var statusBadge = s.status === 'active' ? 'badge-green' : s.status === 'paused' ? 'badge-orange' : s.status === 'completed' ? 'badge-blue' : 'badge-red';
+    var stepsHtml = steps.map(function(st) {
+      var stBadge = st.status === 'sent' ? 'badge-green' : st.status === 'failed' ? 'badge-red' : st.status === 'scheduled' ? 'badge-blue' : st.status === 'paused' ? 'badge-orange' : 'badge-orange';
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:4px">' +
+        '<div style="width:28px;height:28px;border-radius:50%;background:' + (st.status === 'sent' ? 'var(--success)' : 'var(--card2)') + ';border:2px solid ' + (st.status === 'sent' ? 'var(--success)' : 'var(--border)') + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">' + st.step_number + '</div>' +
+        '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--text)">' + (st.material || 'Step ' + st.step_number) + '</div>' +
+        '<div style="font-size:10px;color:var(--muted2)">Delay: ' + st.delay_days + ' days · ' + (st.headline || '') + '</div></div>' +
+        '<span class="badge ' + stBadge + '" style="font-size:9px">' + st.status + '</span>' +
+        (st.scheduled_for && st.status === 'scheduled' ? '<div style="font-size:9px;color:var(--muted2)">' + new Date(st.scheduled_for).toLocaleDateString() + '</div>' : '') +
+        '</div>';
+    }).join('');
+    showModal('Sequence: ' + s.name,
+      '<div style="display:grid;gap:8px;font-size:12px"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><span><strong>Status:</strong> <span class="badge ' + statusBadge + '" style="font-size:10px">' + s.status + '</span></span>' +
+      '<span><strong>Lead Type:</strong> ' + (s.lead_type || 'All') + '</span>' +
+      '<span><strong>Spent:</strong> £' + (s.total_spent || 0).toFixed(2) + ' / £' + (s.spend_limit || 0).toFixed(2) + '</span></div>' +
+      '<div style="margin-top:4px">' + stepsHtml + '</div></div>', '520px');
+  });
+}
+
+function dmPauseSequence(id) {
+  apiFetch('/api/direct-mail/sequences/' + id, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ status: 'paused' }) }).then(function(r) {
+    if (r && r.success) { showStatus('dm-content','Sequence paused','var(--warning)'); dmLoadSequences(); }
+  });
+}
+
+function dmResumeSequence(id) {
+  apiFetch('/api/direct-mail/sequences/' + id, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ status: 'active' }) }).then(function(r) {
+    if (r && r.success) { showStatus('dm-content','Sequence resumed','var(--success)'); dmLoadSequences(); }
+  });
+}
+
+function dmCancelSequence(id) {
+  if (!confirm('Cancel this sequence?')) return;
+  apiFetch('/api/direct-mail/sequences/' + id, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ status: 'cancelled' }) }).then(function(r) {
+    if (r && r.success) { showStatus('dm-content','Sequence cancelled','var(--danger)'); dmLoadSequences(); }
+  });
+}
+
+function dmDeleteSequence(id) {
+  if (!confirm('Delete this sequence?')) return;
+  apiFetch('/api/direct-mail/sequences/' + id, { method:'DELETE' }).then(function(r) {
+    if (r && r.success) { showStatus('dm-content','Sequence deleted','var(--success)'); dmLoadSequences(); }
+  });
+}
+
+function dmProcessSequenceStep(id) {
+  apiFetch('/api/direct-mail/sequences/' + id + '/process-step', { method:'POST' }).then(function(r) {
+    if (r && r.success) { showStatus('dm-content','Step ' + r.step_sent + ' sent! Next: Step ' + (r.next_step || 'Complete'),'var(--success)'); dmLoadSequences(); }
+    else { showStatus('dm-content', r?.error || 'Failed to process step','var(--danger)'); }
+  });
 }
 
 function showDMHistory(el) {

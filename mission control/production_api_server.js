@@ -209,7 +209,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 // ===== JSON DATABASE (drop-in replacement for better-sqlite3) =====
 let _dbData = null;
 let _dbLock = Promise.resolve();
-var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates','seasonal_campaigns'];
+var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs','direct_mail_suppression','campaign_packs','customer_campaign_packs','marketplace_templates','customer_marketplace_templates','seasonal_campaigns','postal_sequences','postal_sequence_steps'];
 
 // Direct Mail feature access by plan
 var DM_FEATURE_ACCESS = {
@@ -3893,6 +3893,43 @@ cron.schedule('36 2 * * *', async () => {
     try { await runAutoSend(); } catch(ase) { console.log('[02:36 UTC] Auto Send error:', ase.message); }
   } catch(e) { console.log('[02:36 UTC] Delivery error: ' + e.message); }
 });
+
+// Sequence processing every hour
+cron.schedule('0 * * * *', async () => {
+  try {
+    await processSequences();
+  } catch(e) { console.log('[SEQUENCE] Cron error:', e.message); }
+});
+
+async function processSequences() {
+  var db2 = getDb();
+  var sequences = (db2.postal_sequences || []).filter(function(s) { return s.status === 'active'; });
+  var processed = 0;
+  for (var si = 0; si < sequences.length; si++) {
+    var seq = sequences[si];
+    try {
+      // Check spend limit
+      if (seq.spend_limit > 0 && (seq.total_spent || 0) >= seq.spend_limit) { seq.status = 'paused'; continue; }
+      // Find next scheduled step that's due
+      var steps = (db2.postal_sequence_steps || []).filter(function(st) { return st.sequence_id === seq.id; });
+      var dueStep = steps.find(function(st) { return st.status === 'scheduled' && new Date(st.scheduled_for) <= new Date(); });
+      if (!dueStep) continue;
+      // Create campaign for this step
+      var provider = getDirectMailProvider();
+      var result = await provider.createCampaign({ name: seq.name + ' - Step ' + dueStep.step_number, recipient_count: seq.leads_count || 1 });
+      if (result && result.success) {
+        dueStep.status = 'sent'; dueStep.sent_at = new Date().toISOString();
+        seq.current_step = (seq.current_step || 0) + 1;
+        seq.total_spent = (seq.total_spent || 0) + 10;
+        var nextStep = steps.find(function(st) { return st.step_number === dueStep.step_number + 1; });
+        if (nextStep) { nextStep.status = 'scheduled'; nextStep.scheduled_for = new Date(Date.now() + (nextStep.delay_days || 14) * 86400000).toISOString(); }
+        if (!nextStep) seq.status = 'completed';
+        processed++;
+      } else { dueStep.status = 'failed'; }
+    } catch(e) { console.log('[SEQUENCE] Error:', seq.id, e.message); }
+  }
+  if (processed > 0) { saveDb(); console.log('[SEQUENCE] Processed', processed, 'steps'); }
+}
 
 // ===== AUTO SEND DAILY JOB =====
 async function runAutoSend() {
@@ -8607,6 +8644,165 @@ app.post('/api/admin/seasonal/campaigns', adminAuth, (req, res) => {
     else { data.id = uuidv4(); data.created_at = new Date().toISOString(); db2.seasonal_campaigns.push(data); }
     saveDb();
     res.json({ success: true, campaign: existingIdx !== -1 ? db2.seasonal_campaigns[existingIdx] : data });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== MULTI-TOUCH POSTAL SEQUENCES =====
+var SEQUENCE_STATUSES = ['active','paused','completed','cancelled'];
+
+// POST /api/direct-mail/sequences — Create a sequence
+app.post('/api/direct-mail/sequences', authMiddleware, (req, res) => {
+  try {
+    if (!req.body.name) return res.status(400).json({ error: 'Sequence name required' });
+    var steps = req.body.steps || [];
+    if (steps.length < 2) return res.status(400).json({ error: 'At least 2 steps required' });
+    var db2 = getDb();
+    if (!db2.postal_sequences) db2.postal_sequences = [];
+    var seq = {
+      id: uuidv4(), customer_id: req.user.id,
+      name: req.body.name, lead_type: req.body.lead_type || '',
+      status: 'active', current_step: 0, total_steps: steps.length,
+      spend_limit: parseFloat(req.body.spend_limit) || 0,
+      total_spent: 0, leads_count: 0,
+      created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+    };
+    db2.postal_sequences.push(seq);
+    // Create steps
+    if (!db2.postal_sequence_steps) db2.postal_sequence_steps = [];
+    steps.forEach(function(s, i) {
+      db2.postal_sequence_steps.push({
+        id: uuidv4(), sequence_id: seq.id, customer_id: req.user.id,
+        step_number: i + 1, material: s.material || 'letter',
+        template_id: s.template_id || '', delay_days: parseInt(s.delay_days) || 14,
+        headline: s.headline || '', cta: s.cta || '',
+        status: i === 0 ? 'pending' : 'scheduled',
+        scheduled_for: i === 0 ? new Date().toISOString() : new Date(Date.now() + (parseInt(s.delay_days) || 14) * 86400000).toISOString(),
+        sent_at: '', created_at: new Date().toISOString()
+      });
+    });
+    saveDb();
+    res.json({ success: true, sequence: seq, step_count: steps.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/sequences — List customer's sequences
+app.get('/api/direct-mail/sequences', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var sequences = (db2.postal_sequences || []).filter(function(s) { return s.customer_id === req.user.id; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    // Attach steps to each sequence
+    var expanded = sequences.map(function(s) {
+      var steps = (db2.postal_sequence_steps || []).filter(function(st) { return st.sequence_id === s.id && st.customer_id === req.user.id; }).sort(function(a, b) { return a.step_number - b.step_number; });
+      var completedSteps = steps.filter(function(st) { return st.status === 'sent' || st.status === 'completed'; }).length;
+      var failedSteps = steps.filter(function(st) { return st.status === 'failed'; }).length;
+      var nextStep = steps.find(function(st) { return st.status === 'scheduled' || st.status === 'pending'; });
+      return { id: s.id, name: s.name, lead_type: s.lead_type, status: s.status, current_step: s.current_step, total_steps: s.total_steps, steps_completed: completedSteps, steps_failed: failedSteps, next_scheduled: nextStep ? nextStep.scheduled_for : null, next_step_label: nextStep ? 'Step ' + nextStep.step_number + ': ' + nextStep.material : 'Complete', leads_count: s.leads_count || 0, total_spent: s.total_spent || 0, created_at: s.created_at, updated_at: s.updated_at };
+    });
+    res.json({ success: true, sequences: expanded, total: expanded.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/sequences/:id — Get sequence details with steps
+app.get('/api/direct-mail/sequences/:id', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var seq = (db2.postal_sequences || []).find(function(s) { return s.id === req.params.id && s.customer_id === req.user.id; });
+    if (!seq) return res.status(404).json({ error: 'Sequence not found' });
+    var steps = (db2.postal_sequence_steps || []).filter(function(st) { return st.sequence_id === seq.id && st.customer_id === req.user.id; }).sort(function(a, b) { return a.step_number - b.step_number; });
+    res.json({ success: true, sequence: seq, steps: steps });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/direct-mail/sequences/:id — Update sequence (name, spend limit, pause/resume)
+app.put('/api/direct-mail/sequences/:id', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var idx = (db2.postal_sequences || []).findIndex(function(s) { return s.id === req.params.id && s.customer_id === req.user.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Sequence not found' });
+    if (req.body.status && SEQUENCE_STATUSES.indexOf(req.body.status) === -1) return res.status(400).json({ error: 'Invalid status' });
+    if (req.body.status === 'cancelled' || req.body.status === 'paused') {
+      // Pause/cancel all pending steps
+      (db2.postal_sequence_steps || []).forEach(function(st) {
+        if (st.sequence_id === req.params.id && st.customer_id === req.user.id && (st.status === 'scheduled' || st.status === 'pending')) {
+          st.status = req.body.status === 'cancelled' ? 'cancelled' : 'paused';
+        }
+      });
+    }
+    if (req.body.status === 'active') {
+      // Resume: re-schedule pending steps
+      var steps = (db2.postal_sequence_steps || []).filter(function(st) { return st.sequence_id === req.params.id && st.customer_id === req.user.id; });
+      var lastSent = steps.filter(function(st) { return st.status === 'sent'; }).length;
+      steps.forEach(function(st) {
+        if (st.status === 'paused' || (st.step_number > lastSent && st.status !== 'sent')) {
+          st.status = 'scheduled';
+          st.scheduled_for = new Date(Date.now() + (st.delay_days || 14) * 86400000).toISOString();
+        }
+      });
+    }
+    Object.assign(db2.postal_sequences[idx], req.body, { updated_at: new Date().toISOString() });
+    saveDb();
+    res.json({ success: true, sequence: db2.postal_sequences[idx] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/sequences/:id/process-step — Process next scheduled step
+app.post('/api/direct-mail/sequences/:id/process-step', authMiddleware, async (req, res) => {
+  try {
+    var db2 = getDb();
+    var seq = (db2.postal_sequences || []).find(function(s) { return s.id === req.params.id && s.customer_id === req.user.id; });
+    if (!seq) return res.status(404).json({ error: 'Sequence not found' });
+    if (seq.status !== 'active') return res.status(400).json({ error: 'Sequence is not active' });
+    var steps = (db2.postal_sequence_steps || []).filter(function(st) { return st.sequence_id === seq.id && st.customer_id === req.user.id; }).sort(function(a, b) { return a.step_number - b.step_number; });
+    var pendingStep = steps.find(function(st) { return st.status === 'pending' || st.status === 'scheduled'; });
+    if (!pendingStep) return res.status(400).json({ error: 'No pending steps' });
+    // Check spend limit
+    if (seq.spend_limit > 0 && (seq.total_spent || 0) >= seq.spend_limit) {
+      seq.status = 'paused';
+      saveDb();
+      return res.status(400).json({ error: 'Spend limit reached. Sequence paused.' });
+    }
+    // Check Auto Send settings - skip if disabled
+    var settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
+    if (!settings || !settings.enable_auto_send) {
+      return res.status(400).json({ error: 'Auto Send is disabled. Enable it to process sequence steps.' });
+    }
+    // Create a campaign for this step
+    var campaign = { id: uuidv4(), customer_id: req.user.id, name: seq.name + ' - Step ' + pendingStep.step_number, description: 'Sequence step', status: 'approved', template_id: pendingStep.template_id || '', target_count: seq.leads_count || 1, sent_count: 0, budget: 10, provider: '', provider_campaign_id: '', provider_status: '', stripe_session_id: '', stripe_payment_id: 'sequence_mock', stripe_payment_status: 'paid', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(campaign.id, campaign.customer_id, campaign.name, campaign.description, 'approved', campaign.template_id, '', campaign.target_count, campaign.sent_count, '', campaign.budget, '', campaign.provider, campaign.provider_campaign_id, campaign.provider_status, campaign.stripe_session_id, campaign.stripe_payment_id, campaign.stripe_payment_status, campaign.created_at, campaign.updated_at);
+    // Send to mock provider
+    var provider = getDirectMailProvider();
+    var result = await provider.createCampaign({ name: campaign.name, recipient_count: campaign.target_count });
+    if (result && result.success) {
+      pendingStep.status = 'sent'; pendingStep.sent_at = new Date().toISOString();
+      seq.current_step = (seq.current_step || 0) + 1;
+      seq.total_spent = (seq.total_spent || 0) + 10;
+      // Schedule next step
+      var nextStep = steps.find(function(st) { return st.step_number === pendingStep.step_number + 1; });
+      if (nextStep) { nextStep.status = 'scheduled'; nextStep.scheduled_for = new Date(Date.now() + (nextStep.delay_days || 14) * 86400000).toISOString(); }
+      if (!nextStep) seq.status = 'completed';
+      saveDb();
+      db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, updated_at = ? WHERE id = ?').run('queued', provider.name, result.provider_campaign_id, new Date().toISOString(), campaign.id);
+      res.json({ success: true, step_sent: pendingStep.step_number, next_step: nextStep ? nextStep.step_number : null, sequence_status: seq.status });
+    } else {
+      pendingStep.status = 'failed';
+      saveDb();
+      res.status(500).json({ error: 'Provider failed' });
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/direct-mail/sequences/:id — Delete a sequence (only if cancelled/completed)
+app.delete('/api/direct-mail/sequences/:id', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var idx = (db2.postal_sequences || []).findIndex(function(s) { return s.id === req.params.id && s.customer_id === req.user.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Sequence not found' });
+    if (db2.postal_sequences[idx].status !== 'cancelled' && db2.postal_sequences[idx].status !== 'completed') return res.status(400).json({ error: 'Only completed or cancelled sequences can be deleted' });
+    // Remove steps
+    if (db2.postal_sequence_steps) db2.postal_sequence_steps = db2.postal_sequence_steps.filter(function(st) { return st.sequence_id !== req.params.id || st.customer_id !== req.user.id; });
+    db2.postal_sequences.splice(idx, 1);
+    saveDb();
+    res.json({ success: true, message: 'Sequence deleted' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
