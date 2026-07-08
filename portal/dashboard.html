@@ -1319,7 +1319,7 @@ function showSettingsPage() {
   var mainHtml = '<div style="max-width:900px;margin:0 auto">' +
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">' +
     '<div><h1 style="font-size:20px;font-weight:800;font-family:var(--ff-h)">Settings</h1><p style="font-size:12px;color:var(--muted2);margin-top:2px">Manage your account, plan, and preferences</p></div>' +
-    '<a href="/portal/dashboard.html" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>' +
+    '<a href="/portal/dashboard.html" onclick="event.preventDefault();window.location.href=\'/portal/dashboard.html\'" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>' +
     '</div>' +
     '<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:12px">' +
     tabs.map(function(t) { return '<a href="#" style="padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;color:' + (tab === t.id ? 'var(--primary)' : 'var(--text2)') + ';background:' + (tab === t.id ? 'rgba(14,165,233,.08)' : 'transparent') + ';border:' + (tab === t.id ? '1px solid rgba(14,165,233,.15)' : '1px solid transparent') + '" onclick="localStorage.setItem(\'settingsTab\',\'' + t.id + '\');showSettingsPage();return false"><i class="fas ' + t.icon + '" style="margin-right:6px"></i>' + t.label + '</a>'; }).join('') +
@@ -1437,7 +1437,7 @@ function showSettingsPage() {
   }
 }
 
-function hideSettings() { showPage('dashboard'); }
+function hideSettings() { window.location.href = '/portal/dashboard.html'; }
 function saveNotificationPrefs() {
   var daily = document.getElementById('notif-daily')?.checked;
   var marketing = document.getElementById('notif-marketing')?.checked;
