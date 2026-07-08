@@ -69,6 +69,20 @@ function api(path, opts) {
 function loadOverview() {
   api('/api/admin/direct-mail/dashboard').then(function(d) {
     if (!d.success) { document.getElementById('dm-admin-content').innerHTML = '<p style=color:#ef4444>Auth failed</p>'; return; }
+    // Load audit reports
+    api('/api/admin/audit/reports').then(function(a) {
+      var auditHtml = '';
+      if (a && a.latest) {
+        var l = a.latest;
+        var pctColor = l.critical > 0 ? '#ef4444' : l.warnings > 0 ? '#f59e0b' : '#22c55e';
+        auditHtml = '<div class="card" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">' +
+          '<span style="font-weight:700;font-size:13px;color:#dce2f0">&#128308; Latest Audit: ' + l.date + '</span>' +
+          '<div style="display:flex;gap:6px"><span style="font-size:10px;color:#10b981">' + l.passed + ' passed</span> <span style="font-size:10px;color:#f59e0b">' + l.warnings + ' warnings</span> <span style="font-size:10px;color:#ef4444">' + l.critical + ' critical</span></div></div>' +
+          '<div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">' +
+          (l.critical > 0 ? '<span style="color:#ef4444;font-size:10px">&#9888; ' + l.critical + ' critical issue(s) need attention</span>' : '<span style="color:#22c55e;font-size:10px">&#10003; No critical issues</span>') +
+          '</div></div>';
+      }
+    });
     var h = '<div class="kpi-grid">' +
       '<div class="kpi"><div class="num">' + d.total_campaigns + '</div><div class="label">Total Campaigns</div></div>' +
       '<div class="kpi"><div class="num">' + d.today_campaigns + '</div><div class="label">Today</div></div>' +
@@ -81,8 +95,24 @@ function loadOverview() {
       '<div class="kpi"><div class="num" style="color:' + (d.stripe_configured ? '#22c55e' : '#ef4444') + '">' + (d.stripe_configured ? 'OK' : 'NO') + '</div><div class="label">Stripe</div></div>' +
       '<div class="kpi"><div class="num">' + d.provider + '</div><div class="label">Provider</div></div>' +
       '</div>' +
-      '<button class="btn btn-primary btn-sm" onclick="runAutoSend()">Run Auto Send Now</button>';
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="runAutoSend()">Run Auto Send Now</button><button class="btn btn-outline btn-sm" onclick="runAudit()">Run Audit Now</button></div>' +
+      '<div id="dm-audit-section"></div>';
     document.getElementById('dm-admin-content').innerHTML = h;
+    // Load audits after content is set
+    api('/api/admin/audit/reports').then(function(a) {
+      var el = document.getElementById('dm-audit-section');
+      if (!el) return;
+      if (a && a.latest) {
+        var l = a.latest;
+        el.innerHTML = '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><span style="font-weight:700;font-size:13px;color:#dce2f0">&#128203; Latest Audit: ' + l.date + '</span>' +
+          '<div style="display:flex;gap:8px"><span style="font-size:11px;color:#10b981">' + l.passed + ' passed</span> <span style="font-size:11px;color:#f59e0b">' + l.warnings + ' warnings</span> <span style="font-size:11px;color:#ef4444">' + l.critical + ' critical</span></div></div>' +
+          (l.critical > 0 ? '<div style="margin-top:6px;color:#ef4444;font-size:11px">&#9888; Action needed: ' + l.critical + ' critical issue(s)</div>' : '<div style="margin-top:6px;color:#22c55e;font-size:11px">&#10003; No critical issues</div>') +
+          '</div>';
+      } else {
+        el.innerHTML = '<div style="padding:10px;color:#5a6280;font-size:11px">No audit reports yet. Run an audit or wait for tonight\'s automatic run.</div>';
+      }
+    });
+  });
   });
 }
 
@@ -90,6 +120,12 @@ function runAutoSend() {
   api('/api/admin/direct-mail/run-auto-send', { method: 'POST' }).then(function(d) {
     alert('Auto Send complete: ' + d.results.sent + ' sent, ' + d.results.failed + ' failed');
     loadOverview();
+  });
+}
+function runAudit() {
+  api('/api/admin/audit/run', { method: 'POST' }).then(function(d) {
+    if (d && d.success) { alert('Audit complete: ' + d.report.passed + ' passed, ' + d.report.warnings + ' warnings, ' + d.report.critical + ' critical'); loadOverview(); }
+    else { alert('Audit failed'); }
   });
 }
 

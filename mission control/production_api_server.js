@@ -4063,6 +4063,128 @@ async function processSequences() {
   if (processed > 0) { saveDb(); console.log('[SEQUENCE] Processed', processed, 'steps'); }
 }
 
+// ===== NIGHTLY SYSTEM AUDIT =====
+cron.schedule('0 0 * * *', async () => {
+  console.log('[AUDIT] Starting nightly system audit...');
+  try {
+    var db2 = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var report = { date: today, generated_at: new Date().toISOString(), results: {}, passed: 0, warnings: 0, critical: 0 };
+
+    // 1. Failed campaigns
+    var failedCampaigns = (db2.direct_mail_campaigns || []).filter(function(c) { return c.status === 'failed'; });
+    report.results.failed_campaigns = { count: failedCampaigns.length, items: failedCampaigns.slice(0, 10).map(function(c) { return { id: c.id, name: c.name, customer_id: c.customer_id }; }), status: failedCampaigns.length > 10 ? 'critical' : failedCampaigns.length > 0 ? 'warning' : 'passed' };
+
+    // 2. Failed payments
+    var failedPayments = (db2.direct_mail_campaigns || []).filter(function(c) { return c.stripe_payment_status === 'failed' || c.stripe_payment_status === 'requires_action'; });
+    report.results.failed_payments = { count: failedPayments.length, items: failedPayments.slice(0, 10).map(function(c) { return { id: c.id, name: c.name, customer_id: c.customer_id }; }), status: failedPayments.length > 5 ? 'critical' : failedPayments.length > 0 ? 'warning' : 'passed' };
+
+    // 3. Failed provider requests
+    var failedLogs = (db2.direct_mail_provider_logs || []).filter(function(l) { return !l.success && l.created_at && l.created_at.indexOf(today) === 0; });
+    report.results.failed_provider = { count: failedLogs.length, items: failedLogs.slice(0, 10).map(function(l) { return { endpoint: l.endpoint, error: l.error_message, campaign_id: l.campaign_id }; }), status: failedLogs.length > 10 ? 'critical' : failedLogs.length > 0 ? 'warning' : 'passed' };
+
+    // 4. Failed webhooks
+    var failedWebhooks = (db2.direct_mail_provider_logs || []).filter(function(l) { return l.endpoint && l.endpoint.indexOf('webhook') !== -1 && !l.success && l.created_at && l.created_at.indexOf(today) === 0; });
+    report.results.failed_webhooks = { count: failedWebhooks.length, items: failedWebhooks.slice(0, 5).map(function(l) { return { endpoint: l.endpoint, error: l.error_message }; }), status: failedWebhooks.length > 0 ? 'warning' : 'passed' };
+
+    // 5. Broken/stuck queues
+    var stuckSequences = (db2.postal_sequences || []).filter(function(s) { return s.status === 'active' && s.current_step === s.total_steps && s.status !== 'completed'; });
+    report.results.stuck_queues = { count: stuckSequences.length, items: stuckSequences.slice(0, 5).map(function(s) { return { id: s.id, name: s.name, step: s.current_step + '/' + s.total_steps }; }), status: stuckSequences.length > 0 ? 'warning' : 'passed' };
+
+    // 6. Stuck campaigns
+    var stuckCampaigns = (db2.direct_mail_campaigns || []).filter(function(c) { return c.status === 'queued' || c.status === 'printing'; });
+    var stuckForDays = stuckCampaigns.filter(function(c) { return c.updated_at && (Date.now() - new Date(c.updated_at).getTime()) > 86400000 * 2; });
+    report.results.stuck_campaigns = { count: stuckForDays.length, items: stuckForDays.slice(0, 10).map(function(c) { return { id: c.id, name: c.name, status: c.status, updated_at: c.updated_at }; }), status: stuckForDays.length > 5 ? 'critical' : stuckForDays.length > 0 ? 'warning' : 'passed' };
+
+    // 7. Storage usage
+    var dbFile = DB_FILE;
+    try {
+      var dbSize = require('fs').statSync(dbFile).size;
+      var sizeMB = (dbSize / 1024 / 1024).toFixed(1);
+      report.results.storage = { size_mb: parseFloat(sizeMB), status: sizeMB > 100 ? 'warning' : sizeMB > 500 ? 'critical' : 'passed' };
+    } catch(e) { report.results.storage = { error: e.message, status: 'warning' }; }
+
+    // 8. Database health (row counts)
+    try {
+      report.results.database = { customer_count: (db2.customers || []).length, campaign_count: (db2.direct_mail_campaigns || []).length, template_count: (db2.direct_mail_templates || []).length, status: 'passed' };
+    } catch(e) { report.results.database = { error: e.message, status: 'warning' }; }
+
+    // 9. Expiring API keys (check env vars)
+    var allKeys = process.env.STRIPE_SECRET_KEY ? 1 : 0;
+    allKeys += process.env.OPENAI_API_KEY ? 1 : 0;
+    allKeys += STANNP_API_KEY ? 1 : 0;
+    var configuredKeys = (process.env.STRIPE_SECRET_KEY ? 1 : 0) + (process.env.OPENAI_API_KEY ? 1 : 0) + (STANNP_API_KEY ? 1 : 0);
+    report.results.api_keys = { configured: configuredKeys, total_checked: 3, status: configuredKeys >= 2 ? 'passed' : 'warning' };
+
+    // Count statuses
+    for (var key in report.results) {
+      if (report.results[key].status === 'passed') report.passed++;
+      else if (report.results[key].status === 'warning') report.warnings++;
+      else if (report.results[key].status === 'critical') report.critical++;
+    }
+
+    // Store report
+    if (!db2.audit_reports) db2.audit_reports = [];
+    db2.audit_reports.push(report);
+    if (db2.audit_reports.length > 30) db2.audit_reports = db2.audit_reports.slice(-30);
+    saveDb();
+
+    // Email report to admin
+    try {
+      var adminEmail = 'hello@9amleads.com';
+      var reportHtml = '<div style="background:#07090f;padding:32px;font-family:Inter,sans-serif"><div style="max-width:600px;margin:0 auto;background:#0c0f1a;border-radius:16px;padding:24px;border:1px solid #151929">' +
+        '<h1 style="color:#dce2f0;font-size:20px;font-weight:800;font-family:Outfit,sans-serif">Nightly System Audit</h1>' +
+        '<p style="color:#5a6280;font-size:12px">' + report.date + '</p>' +
+        '<div style="display:flex;gap:10px;margin:16px 0">' +
+        '<div style="flex:1;text-align:center;padding:10px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.1);border-radius:8px"><div style="font-size:24px;font-weight:900;color:#10b981">' + report.passed + '</div><div style="font-size:11px;color:#5a6280">Passed</div></div>' +
+        '<div style="flex:1;text-align:center;padding:10px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.1);border-radius:8px"><div style="font-size:24px;font-weight:900;color:#f59e0b">' + report.warnings + '</div><div style="font-size:11px;color:#5a6280">Warnings</div></div>' +
+        '<div style="flex:1;text-align:center;padding:10px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.1);border-radius:8px"><div style="font-size:24px;font-weight:900;color:#ef4444">' + report.critical + '</div><div style="font-size:11px;color:#5a6280">Critical</div></div></div>';
+      for (var rk in report.results) {
+        var r = report.results[rk];
+        var color = r.status === 'passed' ? '#10b981' : r.status === 'warning' ? '#f59e0b' : '#ef4444';
+        reportHtml += '<div style="padding:8px;margin-bottom:4px;background:#080b14;border-radius:6px;font-size:12px;display:flex;justify-content:space-between"><span style="color:#dce2f0">' + rk.replace(/_/g,' ') + '</span><span style="color:' + color + ';font-weight:600">' + r.status.toUpperCase() + (r.count !== undefined ? ' (' + r.count + ')' : '') + '</span></div>';
+      }
+      reportHtml += '</div></div>';
+      await sendBrevoEmail({ email: adminEmail, name: '9amLeads Admin' }, 'Nightly System Audit - ' + report.date, reportHtml);
+      console.log('[AUDIT] Report emailed');
+    } catch(e) { console.log('[AUDIT] Email error:', e.message); }
+    console.log('[AUDIT] Complete:', report.passed + ' passed, ' + report.warnings + ' warnings, ' + report.critical + ' critical');
+  } catch(e) { console.log('[AUDIT] Error:', e.message); }
+});
+
+// GET /api/admin/audit/reports — Get audit reports
+app.get('/api/admin/audit/reports', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var reports = (db2.audit_reports || []).sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); });
+    res.json({ success: true, reports: reports, latest: reports[0] || null, total: reports.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/audit/run — Manually trigger audit
+app.post('/api/admin/audit/run', adminAuth, async (req, res) => {
+  try {
+    // Reuse audit logic by calling directly
+    var db2 = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var report = { date: today, generated_at: new Date().toISOString(), results: {}, passed: 0, warnings: 0, critical: 0 };
+    var failedCampaigns = (db2.direct_mail_campaigns || []).filter(function(c) { return c.status === 'failed'; });
+    report.results.failed_campaigns = { count: failedCampaigns.length, items: failedCampaigns.slice(0, 10).map(function(c) { return { id: c.id, name: c.name }; }), status: failedCampaigns.length > 10 ? 'critical' : failedCampaigns.length > 0 ? 'warning' : 'passed' };
+    var failedPayments = (db2.direct_mail_campaigns || []).filter(function(c) { return c.stripe_payment_status === 'failed'; });
+    report.results.failed_payments = { count: failedPayments.length, items: failedPayments.slice(0, 10).map(function(c) { return { id: c.id, name: c.name }; }), status: failedPayments.length > 5 ? 'critical' : failedPayments.length > 0 ? 'warning' : 'passed' };
+    var stuckCampaigns = (db2.direct_mail_campaigns || []).filter(function(c) { return (c.status === 'queued' || c.status === 'printing') && c.updated_at && (Date.now() - new Date(c.updated_at).getTime()) > 86400000 * 2; });
+    report.results.stuck_campaigns = { count: stuckCampaigns.length, items: stuckCampaigns.slice(0, 10).map(function(c) { return { id: c.id, name: c.name, status: c.status }; }), status: stuckCampaigns.length > 5 ? 'critical' : stuckCampaigns.length > 0 ? 'warning' : 'passed' };
+    var dbSize = require('fs').statSync(DB_FILE).size;
+    report.results.storage = { size_mb: parseFloat((dbSize / 1024 / 1024).toFixed(1)), status: dbSize > 104857600 ? 'warning' : 'passed' };
+    for (var k in report.results) { if (report.results[k].status === 'passed') report.passed++; else if (report.results[k].status === 'warning') report.warnings++; else if (report.results[k].status === 'critical') report.critical++; }
+    if (!db2.audit_reports) db2.audit_reports = [];
+    db2.audit_reports.push(report);
+    if (db2.audit_reports.length > 30) db2.audit_reports = db2.audit_reports.slice(-30);
+    saveDb();
+    res.json({ success: true, report: report });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== AUTO SEND DAILY JOB =====
 async function runAutoSend() {
   console.log('[AUTO-SEND] Starting...');
