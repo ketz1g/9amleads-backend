@@ -4425,22 +4425,65 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
 });
 
 // ===== DIRECT MAIL PAYMENTS =====
-var DM_PRICE_CONFIG = { min_fee: 15, platform_fee: 2, markup_pct: 25, ai_gen_fee: 5, auto_send_monthly_fee: 10, vat_pct: 0 };
+var DM_PRICE_CONFIG = {
+  platform_fee: 29, // Manual campaign platform fee (£)
+  min_fee: 99, // Minimum campaign order (£)
+  markup_pct: 40, // Provider cost markup percentage
+  per_recipient_margin: 0.50, // Per-recipient margin (£)
+  ai_letter_fee: 19, // AI letter generation fee (£)
+  ai_flyer_fee: 19, // AI flyer generation fee (£)
+  ai_pack_fee: 29, // Flyer + letter pack fee (£)
+  auto_send_monthly_fee: 49, // Auto Send monthly add-on fee (£)
+  vat_pct: 0, // VAT percentage (0 = disabled)
+  provider_cost_per_unit: 0.75, // Per-unit provider cost (£)
+  discount_codes: '' // Optional discount codes (JSON)
+};
 try {
   var dmPricingFile = path.join(DATA_DIR, 'dm-pricing.json');
-  if (fs.existsSync(dmPricingFile)) DM_PRICE_CONFIG = JSON.parse(fs.readFileSync(dmPricingFile, 'utf-8'));
+  if (fs.existsSync(dmPricingFile)) {
+    var loaded = JSON.parse(fs.readFileSync(dmPricingFile, 'utf-8'));
+    for (var _dmpk in DM_PRICE_CONFIG) { if (loaded[_dmpk] !== undefined) DM_PRICE_CONFIG[_dmpk] = loaded[_dmpk]; }
+  }
 } catch(e) { console.log('[DM-PRICE] Config error:', e.message); }
 
-function calcDmPrice(recipientCount, providerCostPerUnit) {
-  var pCost = providerCostPerUnit || 0.75;
+function calcDmPrice(recipientCount, opts) {
+  opts = opts || {};
+  var pCost = opts.provider_cost_per_unit || DM_PRICE_CONFIG.provider_cost_per_unit || 0.75;
   var providerCost = recipientCount * pCost;
-  var subTotal = providerCost + DM_PRICE_CONFIG.platform_fee;
-  var markup = subTotal * (DM_PRICE_CONFIG.markup_pct / 100);
-  var beforeVat = subTotal + markup;
-  if (beforeVat < DM_PRICE_CONFIG.min_fee) beforeVat = DM_PRICE_CONFIG.min_fee;
-  var vat = beforeVat * (DM_PRICE_CONFIG.vat_pct / 100);
-  var total = Math.round((beforeVat + vat) * 100) / 100;
-  return { provider_cost: providerCost, platform_fee: DM_PRICE_CONFIG.platform_fee, markup_pct: DM_PRICE_CONFIG.markup_pct, markup_amount: Math.round(markup * 100) / 100, vat_pct: DM_PRICE_CONFIG.vat_pct, vat_amount: Math.round(vat * 100) / 100, subtotal: Math.round(subTotal * 100) / 100, total: total, min_fee_applied: beforeVat > (subTotal + markup) };
+  var marginAmount = recipientCount * (opts.per_recipient_margin || DM_PRICE_CONFIG.per_recipient_margin || 0);
+  var fee = opts.platform_fee || DM_PRICE_CONFIG.platform_fee || 0;
+  var aiFee = (opts.ai_fee || 0);
+  var subTotal = providerCost + fee + marginAmount + aiFee;
+  var markup = subTotal * ((opts.markup_pct || DM_PRICE_CONFIG.markup_pct || 0) / 100);
+  var beforeMin = subTotal + markup;
+  var minOrder = opts.min_fee || DM_PRICE_CONFIG.min_fee || 0;
+  var orderTotal = beforeMin < minOrder ? minOrder : beforeMin;
+  var vatPct = opts.vat_pct !== undefined ? opts.vat_pct : DM_PRICE_CONFIG.vat_pct || 0;
+  var vat = orderTotal * (vatPct / 100);
+  var total = Math.round((orderTotal + vat) * 100) / 100;
+  var stripeFeeEstimate = Math.round(total * 0.029 * 100 + 30) / 100; // 2.9% + 30p
+  var profit = Math.round((total - providerCost - stripeFeeEstimate - marginAmount - fee) * 100) / 100;
+  var marginPct = total > 0 ? Math.round((profit / total) * 10000) / 100 : 0;
+  return {
+    recipient_count: recipientCount,
+    provider_cost: Math.round(providerCost * 100) / 100,
+    per_recipient_margin: Math.round(marginAmount * 100) / 100,
+    platform_fee: fee,
+    ai_fee: aiFee,
+    markup_pct: opts.markup_pct || DM_PRICE_CONFIG.markup_pct || 0,
+    markup_amount: Math.round(markup * 100) / 100,
+    subtotal: Math.round(subTotal * 100) / 100,
+    min_fee_applied: beforeMin < minOrder,
+    min_order: minOrder,
+    order_total: Math.round(orderTotal * 100) / 100,
+    vat_pct: vatPct,
+    vat_amount: Math.round(vat * 100) / 100,
+    total: total,
+    stripe_fee_estimate: stripeFeeEstimate,
+    profit: profit,
+    margin_pct: marginPct,
+    vat_enabled: vatPct > 0
+  };
 }
 
 // POST /api/direct-mail/campaigns/:id/pricing — Calculate campaign price
@@ -7083,20 +7126,29 @@ app.get('/api/admin/direct-mail/pricing', adminAuth, (req, res) => {
   res.json({ success: true, pricing: DM_PRICE_CONFIG });
 });
 
+// POST /api/direct-mail/price-calc — Calculate price (for admin detailed view)
+app.post('/api/direct-mail/price-calc', authMiddleware, (req, res) => {
+  try {
+    var count = parseInt(req.body.recipient_count) || 1;
+    var pricing = calcDmPrice(count, req.body);
+    res.json({ success: true, pricing: pricing });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/direct-mail/pricing — Update pricing config
 app.post('/api/admin/direct-mail/pricing', adminAuth, (req, res) => {
   try {
-    var newPricing = {
-      min_fee: parseFloat(req.body.min_fee) || DM_PRICE_CONFIG.min_fee,
-      platform_fee: parseFloat(req.body.platform_fee) || DM_PRICE_CONFIG.platform_fee,
-      markup_pct: parseFloat(req.body.markup_pct) || DM_PRICE_CONFIG.markup_pct,
-      ai_gen_fee: parseFloat(req.body.ai_gen_fee) || DM_PRICE_CONFIG.ai_gen_fee,
-      auto_send_monthly_fee: parseFloat(req.body.auto_send_monthly_fee) || DM_PRICE_CONFIG.auto_send_monthly_fee,
-      vat_pct: parseFloat(req.body.vat_pct) || DM_PRICE_CONFIG.vat_pct
-    };
+    var fields = ['platform_fee','min_fee','markup_pct','per_recipient_margin','ai_letter_fee','ai_flyer_fee','ai_pack_fee','auto_send_monthly_fee','vat_pct','provider_cost_per_unit','discount_codes'];
+    var newPricing = {};
+    for (var _fi = 0; _fi < fields.length; _fi++) {
+      var f = fields[_fi];
+      var v = req.body[f];
+      if (v !== undefined && v !== null && v !== '') { newPricing[f] = isNaN(Number(v)) ? v : Number(v); }
+      else { newPricing[f] = DM_PRICE_CONFIG[f] || 0; }
+    }
     var fs2 = require('fs');
     fs2.writeFileSync(path.join(DATA_DIR, 'dm-pricing.json'), JSON.stringify(newPricing, null, 2));
-    DM_PRICE_CONFIG = newPricing;
+    Object.assign(DM_PRICE_CONFIG, newPricing);
     res.json({ success: true, pricing: newPricing });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

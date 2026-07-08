@@ -127,14 +127,26 @@ function loadPricing() {
   api('/api/admin/direct-mail/pricing').then(function(d) {
     var p = d.pricing;
     var h = '<div style="font-size:13px;font-weight:700;color:#dce2f0;margin-bottom:10px">Pricing Configuration</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">' +
-      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Min Fee (&pound;)</div><input type="number" id="pf-min" value="' + p.min_fee + '" style="width:100%"></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px">' +
       '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Platform Fee (&pound;)</div><input type="number" id="pf-platform" value="' + p.platform_fee + '" style="width:100%"></div>' +
-      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Markup (%)</div><input type="number" id="pf-markup" value="' + p.markup_pct + '" style="width:100%"></div>' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Min Campaign Order (&pound;)</div><input type="number" id="pf-min" value="' + p.min_fee + '" style="width:100%"></div>' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Provider Markup (%)</div><input type="number" id="pf-markup" value="' + p.markup_pct + '" style="width:100%"></div>' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Per-Recipient Margin (&pound;)</div><input type="number" id="pf-margin" value="' + (p.per_recipient_margin || 0) + '" step="0.01" style="width:100%"></div>' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Provider Cost/Unit (&pound;)</div><input type="number" id="pf-pcost" value="' + (p.provider_cost_per_unit || 0.75) + '" step="0.01" style="width:100%"></div>' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">AI Letter Fee (&pound;)</div><input type="number" id="pf-ai-letter" value="' + (p.ai_letter_fee || 0) + '" style="width:100%"></div>' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">AI Flyer Fee (&pound;)</div><input type="number" id="pf-ai-flyer" value="' + (p.ai_flyer_fee || 0) + '" style="width:100%"></div>' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">AI Flyer+Letter Pack (&pound;)</div><input type="number" id="pf-ai-pack" value="' + (p.ai_pack_fee || 0) + '" style="width:100%"></div>' +
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Auto Send Add-on (&pound;/mo)</div><input type="number" id="pf-auto" value="' + (p.auto_send_monthly_fee || 0) + '" style="width:100%"></div>' +
       '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">VAT (%)</div><input type="number" id="pf-vat" value="' + p.vat_pct + '" style="width:100%"></div>' +
-      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">AI Gen Fee (&pound;)</div><input type="number" id="pf-ai" value="' + p.ai_gen_fee + '" style="width:100%"></div>' +
-      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Auto Send Monthly (&pound;)</div><input type="number" id="pf-auto" value="' + p.auto_send_monthly_fee + '" style="width:100%"></div>' +
-      '</div><button class="btn btn-primary" onclick="savePricing()">Save Pricing</button>';
+      '<div class="card"><div style="font-size:11px;color:#5a6280;margin-bottom:4px">Discount Codes (JSON)</div><textarea id="pf-discount" rows="2" style="width:100%;background:#080b14;border:1px solid #151929;border-radius:6px;color:#dce2f0;font-size:10px;font-family:monospace;padding:4px">' + (p.discount_codes || '') + '</textarea></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px"><button class="btn btn-primary" onclick="savePricing()">Save Pricing</button></div>' +
+      '<div class="card"><div style="font-size:13px;font-weight:700;color:#dce2f0;margin-bottom:8px">Profit Calculator</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:10px">' +
+      '<div><label style="font-size:10px;color:#5a6280;display:block;margin-bottom:2px">Recipients</label><input type="number" id="pc-count" value="50" style="width:80px"></div>' +
+      '<div><label style="font-size:10px;color:#5a6280;display:block;margin-bottom:2px">AI Fee (&pound;)</label><input type="number" id="pc-ai" value="0" style="width:80px"></div>' +
+      '<div><button class="btn btn-sm btn-primary" onclick="calcProfit()">Calculate</button></div></div>' +
+      '<div id="pc-result"></div></div>';
     document.getElementById('dm-admin-content').innerHTML = h;
   });
 }
@@ -144,14 +156,47 @@ function savePricing() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      min_fee: document.getElementById('pf-min')?.value,
       platform_fee: document.getElementById('pf-platform')?.value,
+      min_fee: document.getElementById('pf-min')?.value,
       markup_pct: document.getElementById('pf-markup')?.value,
+      per_recipient_margin: document.getElementById('pf-margin')?.value,
+      provider_cost_per_unit: document.getElementById('pf-pcost')?.value,
+      ai_letter_fee: document.getElementById('pf-ai-letter')?.value,
+      ai_flyer_fee: document.getElementById('pf-ai-flyer')?.value,
+      ai_pack_fee: document.getElementById('pf-ai-pack')?.value,
+      auto_send_monthly_fee: document.getElementById('pf-auto')?.value,
       vat_pct: document.getElementById('pf-vat')?.value,
-      ai_gen_fee: document.getElementById('pf-ai')?.value,
-      auto_send_monthly_fee: document.getElementById('pf-auto')?.value
+      discount_codes: document.getElementById('pf-discount')?.value || ''
     })
   }).then(function(d) { alert(d.success ? 'Saved!' : d.error); });
+}
+
+function calcProfit() {
+  var count = parseInt(document.getElementById('pc-count')?.value) || 1;
+  var aiFee = parseFloat(document.getElementById('pc-ai')?.value) || 0;
+  api('/api/direct-mail/price-calc', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recipient_count: count, ai_fee: aiFee })
+  }).then(function(d) {
+    if (!d.success) { document.getElementById('pc-result').innerHTML = '<span style="color:#ef4444">' + d.error + '</span>'; return; }
+    var p = d.pricing;
+    var h = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">' +
+      '<div style="padding:8px;background:#0c0f1a;border:1px solid #151929;border-radius:6px;text-align:center"><div style="font-size:18px;font-weight:900;color:#0ea5e9">&pound;' + p.total.toFixed(2) + '</div><div style="font-size:9px;color:#5a6280">Customer Paid</div></div>' +
+      '<div style="padding:8px;background:#0c0f1a;border:1px solid #151929;border-radius:6px;text-align:center"><div style="font-size:18px;font-weight:900;color:#ef4444">&pound;' + p.provider_cost.toFixed(2) + '</div><div style="font-size:9px;color:#5a6280">Provider Cost</div></div>' +
+      '<div style="padding:8px;background:#0c0f1a;border:1px solid #151929;border-radius:6px;text-align:center"><div style="font-size:18px;font-weight:900;color:#f59e0b">&pound;' + p.stripe_fee_estimate.toFixed(2) + '</div><div style="font-size:9px;color:#5a6280">Stripe Fee Est.</div></div>' +
+      '<div style="padding:8px;background:#0c0f1a;border:1px solid #151929;border-radius:6px;text-align:center"><div style="font-size:18px;font-weight:900;color:#6366f1">&pound;' + p.platform_fee.toFixed(2) + '</div><div style="font-size:9px;color:#5a6280">Platform Fee</div></div>' +
+      '<div style="padding:8px;background:#0c0f1a;border:1px solid #151929;border-radius:6px;text-align:center"><div style="font-size:18px;font-weight:900;color:#22c55e">&pound;' + p.profit.toFixed(2) + '</div><div style="font-size:9px;color:#5a6280">Profit</div></div>' +
+      '<div style="padding:8px;background:#0c0f1a;border:1px solid #151929;border-radius:6px;text-align:center"><div style="font-size:18px;font-weight:900;color:#22c55e">' + p.margin_pct + '%</div><div style="font-size:9px;color:#5a6280">Margin</div></div>' +
+      '</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;margin-top:8px;font-size:10px;color:#5a6280">' +
+      (p.min_fee_applied ? '<div style="color:#f59e0b">&#9888; Minimum order applied (&pound;' + p.min_order.toFixed(2) + ')</div>' : '') +
+      (p.vat_enabled ? '<div>VAT: &pound;' + p.vat_amount.toFixed(2) + ' (' + p.vat_pct + '%)</div>' : '') +
+      '<div>Markup: ' + p.markup_pct + '% (&pound;' + p.markup_amount.toFixed(2) + ')</div>' +
+      '<div>Per-recipient margin: &pound;' + p.per_recipient_margin.toFixed(2) + '</div>' +
+      '<div>Recipients: ' + p.recipient_count + '</div>' +
+      '</div>';
+    document.getElementById('pc-result').innerHTML = h;
+  });
 }
 
 function retryCampaign(id) {

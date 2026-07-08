@@ -1702,13 +1702,9 @@ function showDMCreate(el) {
       apiFetch('/api/direct-mail/campaigns/' + dmCampId + '/pricing', { method:'POST' }).then(function(p) {
         if (p && p.success) {
           var pr = p.pricing;
-          var html = '<div style="display:grid;gap:8px;padding:8px 0">' +
+          var html =             '<div style="display:grid;gap:6px;padding:4px 0">' +
             '<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:12px"><span style="color:var(--text2)">Recipients</span><span style="font-weight:600">' + pr.recipient_count + '</span></div>' +
-            '<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:12px"><span style="color:var(--text2)">Provider Cost</span><span>&pound;' + pr.provider_cost.toFixed(2) + '</span></div>' +
-            '<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:12px"><span style="color:var(--text2)">Platform Fee</span><span>&pound;' + pr.platform_fee.toFixed(2) + '</span></div>' +
-            '<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:12px"><span style="color:var(--text2)">Markup (' + pr.markup_pct + '%)</span><span>&pound;' + pr.markup_amount.toFixed(2) + '</span></div>' +
-            (pr.vat_amount > 0 ? '<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:12px"><span style="color:var(--text2)">VAT</span><span>&pound;' + pr.vat_amount.toFixed(2) + '</span></div>' : '') +
-            '<div style="display:flex;justify-content:space-between;padding:8px 10px;font-size:14px;font-weight:800;border-top:1px solid var(--border)"><span>Total</span><span>&pound;' + pr.total.toFixed(2) + '</span></div>' +
+            '<div style="display:flex;justify-content:space-between;padding:10px 10px;font-size:14px;font-weight:800;border-top:1px solid var(--border)"><span>Campaign Total</span><span>&pound;' + pr.total.toFixed(2) + '</span></div>' +
             '</div>' +
             '<div style="padding:10px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.1);border-radius:8px;font-size:11px;color:var(--muted2);text-align:center">' +
             '<i class="fas fa-lock" style="color:var(--primary);margin-right:4px"></i>Secured by Stripe · Test Mode — No real payment will be taken' +
