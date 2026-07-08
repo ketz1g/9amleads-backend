@@ -717,6 +717,79 @@ function getDirectMailProvider() {
   return new MockDirectMailProvider();
 }
 
+// ===== DIRECT MAIL NOTIFICATIONS =====
+var DM_NOTIFIED = {}; // In-memory dedup cache
+
+function dmEmailHTML(title, body, ctaText, ctaUrl) {
+  var accent = '#0ea5e9';
+  return '<div style="background:#07090f;padding:32px 20px;font-family:Inter,Helvetica,Arial,sans-serif"><div style="max-width:520px;margin:0 auto;background:#0c0f1a;border-radius:16px;border:1px solid #151929;overflow:hidden"><div style="padding:20px 24px;background:linear-gradient(135deg,rgba(14,165,233,.08),transparent);border-bottom:1px solid #151929"><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,' + accent + ',#2563eb);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:900;font-family:Outfit,sans-serif">9</div><span style="font-size:15px;font-weight:800;color:#dce2f0;font-family:Outfit,sans-serif">am<span style="color:' + accent + '">Leads</span></span></div></div><div style="padding:24px"><h2 style="font-size:18px;font-weight:800;color:#dce2f0;margin:0 0 8px;font-family:Outfit,sans-serif">' + title + '</h2><div style="font-size:13px;color:#8890b0;line-height:1.7">' + body + '</div>' +
+    (ctaText && ctaUrl ? '<div style="margin-top:20px;text-align:center"><a href="' + ctaUrl + '" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,' + accent + ', #2563eb);color:#fff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:700">' + ctaText + '</a></div>' : '') +
+    '<div style="margin-top:24px;padding-top:16px;border-top:1px solid #151929;font-size:11px;color:#5a6280;text-align:center">9amLeads · <a href="https://9amleads.com" style="color:' + accent + ';text-decoration:none">9amleads.com</a></div></div></div></div>';
+}
+
+function dmDashboardNotify(customerId, type, title, message, link) {
+  try {
+    var db2 = getDb();
+    if (!db2.dm_notifications) db2.dm_notifications = [];
+    var dedupKey = customerId + '_' + type + '_' + new Date().toISOString().split('T')[0];
+    if (DM_NOTIFIED[dedupKey]) return; // Dedup same type per customer per day
+    DM_NOTIFIED[dedupKey] = true;
+    db2.dm_notifications.push({ id: uuidv4(), customer_id: customerId, type: type, title: title, message: message, link: link || '', read: 0, created_at: new Date().toISOString() });
+    saveDb();
+  } catch(e) { console.log('[DM-NOTIF] Dashboard notify error:', e.message); }
+}
+
+async function sendDMNotification(customerId, type, subject, title, body, ctaText, ctaUrl) {
+  try {
+    var db2 = getDb();
+    var cust = db2.customers ? db2.customers.find(function(c) { return c.id === customerId; }) : null;
+    if (!cust || !cust.email) return;
+    // Dedup: same type per customer per day
+    var dedupKey = customerId + '_email_' + type + '_' + new Date().toISOString().split('T')[0];
+    if (DM_NOTIFIED[dedupKey]) { console.log('[DM-NOTIF] Duplicate email blocked:', type, cust.email); return; }
+    DM_NOTIFIED[dedupKey] = true;
+    // Add to dashboard
+    dmDashboardNotify(customerId, type, title, body, ctaUrl);
+    // Send email
+    var html = dmEmailHTML(title, body, ctaText, ctaUrl);
+    await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, subject, html);
+    console.log('[DM-NOTIF] Email sent:', type, cust.email);
+  } catch(e) { console.log('[DM-NOTIF] Email error:', type, e.message); }
+}
+
+async function sendDMAdminAlert(type, title, message) {
+  try {
+    var adminEmail = 'hello@9amleads.com';
+    var dedupKey = 'admin_' + type + '_' + new Date().toISOString().split('T')[0];
+    if (DM_NOTIFIED[dedupKey]) return;
+    DM_NOTIFIED[dedupKey] = true;
+    var html = dmEmailHTML('⚠️ ' + title, '<p style="color:#ef4444;font-weight:600">' + type + '</p><p>' + message + '</p>', 'View Admin', 'https://9amleads.com/admin/direct-mail');
+    await sendBrevoEmail({ email: adminEmail, name: '9amLeads Admin' }, '[DM Alert] ' + title, html);
+    console.log('[DM-NOTIF] Admin alert sent:', type, title);
+  } catch(e) { console.log('[DM-NOTIF] Admin alert error:', e.message); }
+}
+
+// GET /api/direct-mail/notifications — Get customer dashboard notifications
+app.get('/api/direct-mail/notifications', authMiddleware, (req, res) => {
+  try {
+    var db2 = getDb();
+    var notifs = (db2.dm_notifications || []).filter(function(n) { return n.customer_id === req.user.id; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); }).slice(0, 50);
+    res.json({ success: true, notifications: notifs, unread: notifs.filter(function(n) { return !n.read; }).length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/notifications/read — Mark notification as read
+app.post('/api/direct-mail/notifications/read', authMiddleware, (req, res) => {
+  try {
+    var notifId = req.body.notification_id;
+    if (!notifId) return res.status(400).json({ error: 'Notification ID required' });
+    var db2 = getDb();
+    var idx = (db2.dm_notifications || []).findIndex(function(n) { return n.id === notifId && n.customer_id === req.user.id; });
+    if (idx !== -1) { db2.dm_notifications[idx].read = 1; saveDb(); }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== HELPERS =====
 function generateToken(customer) {
   return jwt.sign(
@@ -3963,6 +4036,7 @@ async function runAutoSend() {
               db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(chargeResult.id, 'paid', new Date().toISOString(), campaign.id, cust.id);
               db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'paid', 'system', 'Payment succeeded: ' + chargeResult.id, new Date().toISOString());
               console.log('[AUTO-SEND] Payment success:', cust.email, '£' + totalCost.toFixed(2), chargeResult.id);
+              if (cust && cust.id) { dmDashboardNotify(cust.id, 'auto_send_payment_success', '✅ Auto Send Payment Successful', 'Auto Send payment of £' + totalCost.toFixed(2) + ' succeeded.', ''); }
             } else if (chargeResult && chargeResult.status === 'requires_action') {
               // 3D Secure needed - cannot process automatically
               db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(chargeResult.id, 'requires_action', new Date().toISOString(), campaign.id, cust.id);
@@ -3980,6 +4054,10 @@ async function runAutoSend() {
               if (settings.pause_on_payment_fail) {
                 db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(1, cust.id);
                 console.log('[AUTO-SEND] Auto Send paused for:', cust.email);
+                if (cust && cust.id) {
+                  dmDashboardNotify(cust.id, 'auto_send_paused', '⏸️ Auto Send Paused', 'Auto Send has been paused due to a failed payment. Update your payment method to resume.', '');
+                  sendDMAdminAlert('payment_failure', 'Auto Send Payment Failed', 'Customer: ' + (cust.email || cust.id) + ' — Amount: £' + totalCost.toFixed(2) + ' — Error: ' + (chargeResult?.last_payment_error?.message || 'Unknown'));
+                }
               }
               results.failed++;
             }
@@ -4010,10 +4088,17 @@ async function runAutoSend() {
             results.sent++;
             results.total_spend += totalCost;
             console.log('[AUTO-SEND] Sent:', cust.email, validAddressCount, 'leads, cost: £' + totalCost.toFixed(2));
+            if (cust && cust.id) {
+              dmDashboardNotify(cust.id, 'auto_send_campaign_sent', '📬 Auto Send Campaign Sent', 'Auto Send sent ' + validAddressCount + ' letters for ' + totalCost.toFixed(2), '');
+            }
           } else {
             db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, cust.id);
             results.failed++;
             console.log('[AUTO-SEND] Failed:', cust.email, createResult?.error || 'provider error');
+            if (cust && cust.id) {
+              dmDashboardNotify(cust.id, 'auto_send_failed', '❌ Auto Send Failed', 'Auto Send campaign failed: ' + (createResult?.error || 'Provider error'), '');
+              sendDMAdminAlert('auto_send_error', 'Auto Send Provider Error', 'Customer: ' + (cust.email || cust.id) + ' — Campaign: ' + campaign.name + ' — Error: ' + (createResult?.error || 'Unknown'));
+            }
           }
         }
       }
@@ -6277,6 +6362,15 @@ app.put('/api/direct-mail/campaigns/:id/status', authMiddleware, (req, res) => {
     const fromStatus = campaign.status;
     db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(status, new Date().toISOString(), req.params.id, req.user.id);
     db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, req.params.id, fromStatus, status, 'customer', notes || 'Status updated to ' + status, new Date().toISOString());
+    // Send notification on status change
+    var notifTypes = { approved: { subj: 'Campaign Approved', title: '✅ Campaign Approved', body: 'Your campaign "' + campaign.name + '" has been approved and is ready for payment.' },
+      awaiting_approval: { subj: 'Campaign Awaiting Approval', title: '📋 Campaign Ready for Review', body: 'Your campaign "' + campaign.name + '" is ready for you to review and approve.' },
+      completed: { subj: 'Campaign Completed!', title: '✅ Campaign Completed', body: 'Your campaign "' + campaign.name + '" has been completed successfully.' },
+      failed: { subj: 'Campaign Failed', title: '❌ Campaign Failed', body: 'Your campaign "' + campaign.name + '" has failed. Please check the details and retry.' },
+      cancelled: { subj: 'Campaign Cancelled', title: '🚫 Campaign Cancelled', body: 'Your campaign "' + campaign.name + '" has been cancelled.' }
+    };
+    var nt = notifTypes[status];
+    if (nt) { sendDMNotification(req.user.id, 'campaign_' + status, nt.subj, nt.title, '<p>' + nt.body + '</p><p style="font-size:12px;color:#5a6280">Recipients: ' + (campaign.target_count || 0) + ' · Budget: £' + (campaign.budget || 0) + '</p>', 'View Campaign', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail'); }
     res.json({ success: true, from_status: fromStatus, to_status: status });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -6376,6 +6470,14 @@ app.post('/api/direct-mail/campaigns/:id/send', authMiddleware, async (req, res)
           invalidCount++;
         }
       });
+    }
+
+    // Send notifications
+    sendDMNotification(req.user.id, 'campaign_sent', '📬 Campaign Sent to Print', 'Campaign Sent to Provider',
+      '<p>Your campaign "' + campaign.name + '" has been sent to ' + provider.name + ' for printing.</p><p style="font-size:12px;color:#5a6280">Provider ID: ' + providerCampaignId + ' · Recipients: ' + recipientCount + ' · Estimated cost: £' + (campaignResult.estimated_cost || 0) + '</p>',
+      'Track Campaign', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail');
+    if (invalidCount > 0) {
+      dmDashboardNotify(req.user.id, 'invalid_addresses', '⚠️ Invalid Addresses', invalidCount + ' addresses were invalid and skipped. Update your lead data to improve delivery.', '');
     }
 
     res.json({
