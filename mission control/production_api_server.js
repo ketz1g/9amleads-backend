@@ -8968,6 +8968,116 @@ app.get('/api/direct-mail/outcomes', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== PLATFORM HEALTH =====
+var HEALTH_CHECK_INTERVAL = null;
+var HEALTH_CACHE = null;
+
+// GET /api/admin/platform-health — Full platform health check
+app.get('/api/admin/platform-health', adminAuth, async (req, res) => {
+  try {
+    var results = {};
+    var now = Date.now();
+
+    // 1. Database check
+    try {
+      var dbTest = getDb();
+      results.database = { status: dbTest ? 'healthy' : 'offline', last_ok: new Date().toISOString(), error: null };
+    } catch(e) { results.database = { status: 'offline', last_ok: null, error: e.message }; }
+
+    // 2. Stripe check
+    try {
+      if (STRIPE_SECRET_KEY) {
+        var stripeCheck = await stripeApiRequest('GET', 'balance', {});
+        results.stripe = { status: stripeCheck && !stripeCheck.error ? 'healthy' : 'warning', last_ok: new Date().toISOString(), error: stripeCheck && stripeCheck.error ? stripeCheck.error.message || stripeCheck.error : null };
+      } else {
+        results.stripe = { status: 'warning', last_ok: null, error: 'Not configured' };
+      }
+    } catch(e) { results.stripe = { status: 'offline', last_ok: null, error: e.message }; }
+
+    // 3. OpenAI check
+    try {
+      var openaiKey = process.env.OPENAI_API_KEY;
+      if (openaiKey) {
+        var openaiCheck = await new Promise(function(resolve) {
+          var https = require('https');
+          var req = https.request({ hostname: 'api.openai.com', path: '/v1/models', method: 'GET', headers: { 'Authorization': 'Bearer ' + openaiKey } }, function(r) { var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: 'Parse error' }); } }); });
+          req.on('error', function(e) { resolve({ error: e.message }); }); req.end();
+        });
+        results.openai = { status: openaiCheck && openaiCheck.data ? 'healthy' : 'warning', last_ok: new Date().toISOString(), error: openaiCheck && openaiCheck.error ? (typeof openaiCheck.error === 'string' ? openaiCheck.error : openaiCheck.error.message || 'Unknown') : null };
+      } else { results.openai = { status: 'warning', last_ok: null, error: 'Not configured' }; }
+    } catch(e) { results.openai = { status: 'offline', last_ok: null, error: e.message }; }
+
+    // 4. Stannp check
+    try {
+      if (STANNP_API_KEY) {
+        results.stannp = { status: 'healthy', last_ok: new Date().toISOString(), error: null, provider: 'stannp' };
+      } else { results.stannp = { status: 'warning', last_ok: null, error: 'Not configured' }; }
+    } catch(e) { results.stannp = { status: 'offline', last_ok: null, error: e.message }; }
+
+    // 5. Background Jobs (check cron ran recently)
+    try {
+      var recentLogs = (getDb().activity_timeline || []).slice(-10);
+      var lastJob = recentLogs.length > 0 ? recentLogs[recentLogs.length - 1].created_at : null;
+      results.background_jobs = { status: lastJob ? 'healthy' : 'warning', last_ok: lastJob || null, error: lastJob ? null : 'No recent activity' };
+    } catch(e) { results.background_jobs = { status: 'offline', last_ok: null, error: e.message }; }
+
+    // 6. Storage (disk space check)
+    try {
+      var dbFile = DB_FILE;
+      var dbExists = require('fs').existsSync(dbFile);
+      var dbSize = dbExists ? require('fs').statSync(dbFile).size : 0;
+      results.storage = { status: dbExists ? 'healthy' : 'offline', last_ok: new Date().toISOString(), error: dbExists ? null : 'Database file missing', db_size: (dbSize / 1024 / 1024).toFixed(1) + ' MB' };
+    } catch(e) { results.storage = { status: 'offline', last_ok: null, error: e.message }; }
+
+    // 7. Queue (check for pending jobs)
+    try {
+      var pendingSequences = (getDb().postal_sequences || []).filter(function(s) { return s.status === 'active'; }).length;
+      results.queue = { status: 'healthy', last_ok: new Date().toISOString(), error: null, pending: pendingSequences };
+    } catch(e) { results.queue = { status: 'warning', last_ok: null, error: e.message }; }
+
+    // 8. Emails (check last send)
+    try {
+      var lastEmailLog = (getDb().dm_notifications || []).slice(-1)[0];
+      results.emails = { status: lastEmailLog ? 'healthy' : 'warning', last_ok: lastEmailLog ? lastEmailLog.created_at : null, error: lastEmailLog ? null : 'No emails sent yet' };
+    } catch(e) { results.emails = { status: 'offline', last_ok: null, error: e.message }; }
+
+    // 9. Website (check main URL)
+    try {
+      var websiteCheck = await new Promise(function(resolve) {
+        var http = require('http');
+        var req = http.get(process.env.PUBLIC_URL || 'http://localhost:' + PORT, function(r) { resolve({ statusCode: r.statusCode }); });
+        req.on('error', function(e) { resolve({ error: e.message }); }); req.setTimeout(5000, function() { req.destroy(); resolve({ error: 'Timeout' }); });
+      });
+      results.website = { status: websiteCheck && websiteCheck.statusCode ? 'healthy' : 'warning', last_ok: new Date().toISOString(), error: websiteCheck && websiteCheck.error ? websiteCheck.error : null };
+    } catch(e) { results.website = { status: 'offline', last_ok: null, error: e.message }; }
+
+    // Calculate overall status
+    var allHealthy = Object.values(results).every(function(r) { return r.status === 'healthy'; });
+    var anyOffline = Object.values(results).some(function(r) { return r.status === 'offline'; });
+    var overallStatus = allHealthy ? 'healthy' : anyOffline ? 'degraded' : 'warning';
+
+    HEALTH_CACHE = { results: results, overall: overallStatus, checked_at: new Date().toISOString() };
+    res.json({ success: true, overall: overallStatus, checked_at: new Date().toISOString(), services: results });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Static health dashboard page
+app.get('/admin/health', (req, res) => {
+  var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Platform Health - 9am Leads</title><style>body{font-family:Inter,sans-serif;background:#07090f;color:#dce2f0;margin:0;padding:24px}h1{font-size:22px;font-weight:800;font-family:Outfit,sans-serif}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:20px}.card{background:#0c0f1a;border:1px solid #151929;border-radius:12px;padding:16px 18px}.card h3{font-size:13px;font-weight:700;margin:0 0 6px;color:#dce2f0}.status{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;font-size:10px;font-weight:700}.healthy{background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.2)}.warning{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.2)}.offline,.degraded{background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.2)}.detail{font-size:10px;color:#5a6280;margin-top:4px;line-height:1.5}.error{color:#ef4444;font-size:10px;margin-top:4px;word-break:break-all}a{color:#0ea5e9;text-decoration:none}.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 24px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;border:none;font-family:inherit;color:#fff;background:linear-gradient(135deg,#0ea5e9,#2563eb)}.btn:hover{opacity:.9}.overall{font-size:28px;font-weight:900;margin-bottom:4px}@media(max-width:600px){.grid{grid-template-columns:1fr}}</style></head><body><div style="max-width:1000px;margin:0 auto"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px"><h1><span style="color:#0ea5e9">&#9724;</span> Platform Health</h1><div style="display:flex;gap:8px"><button class="btn" onclick="loadHealth()"><i class="fas fa-sync"></i> Refresh</button><a href="/admin/" style="font-size:12px;color:#5a6280;line-height:42px">&larr; Back</a></div></div>' +
+    '<div id="health-content"><div style="text-align:center;padding:40px;color:#5a6280">Loading...</div></div></div>' +
+    '<script>var TOKEN=prompt("Admin password:")||"";function loadHealth(){fetch("/api/admin/platform-health",{headers:{Authorization:"Bearer "+TOKEN}}).then(function(r){return r.json()}).then(function(d){if(!d.success){document.getElementById("health-content").innerHTML="<p style=color:#ef4444>Auth failed</p>";return}' +
+    'var overallColor=d.overall==="healthy"?"#22c55e":d.overall==="degraded"?"#ef4444":"#f59e0b";' +
+    'var h="<div style=text-align:center;margin-bottom:20px><span class=overall style=color:'+overallColor+'>"+d.overall.toUpperCase()+"</span><br><span style=font-size:12px;color:#5a6280>Last checked: "+new Date(d.checked_at).toLocaleString()+"</span></div><div class=grid>"'+
+    '+Object.keys(d.services).map(function(k){var s=d.services[k];var cls=s.status;var statusLabel=s.status.charAt(0).toUpperCase()+s.status.slice(1);'+
+    'return "<div class=card><div style=display:flex;justify-content:space-between;align-items:center;margin-bottom:4px><h3>"+k.replace(/_/g," ").replace(/\\b\\w/g,function(l){return l.toUpperCase()})+"</h3><span class=\\"status "+cls+"\\">"+statusLabel+"</span></div>"'+
+    '+(s.last_ok?"<div class=detail>Last OK: "+new Date(s.last_ok).toLocaleString()+"</div>":"")+'+
+    '+(s.db_size?"<div class=detail>Size: "+s.db_size+"</div>":"")+'+
+    '+(s.pending!==undefined?"<div class=detail>Pending: "+s.pending+"</div>":"")+'+
+    '+(s.error?"<div class=error>&#9888; "+s.error+"</div>":"")+"</div>"'+
+    '}).join("")+"</div>";document.getElementById("health-content").innerHTML=h}).catch(function(){document.getElementById("health-content").innerHTML="<p style=color:#ef4444>Could not load health data</p>"})}loadHealth();</script></body></html>';
+  res.send(html);
+});
+
 // ===== ADMIN IMPERSONATION =====
 // POST /api/admin/impersonate — Generate a token to login as a customer
 app.post('/api/admin/impersonate', adminAuth, (req, res) => {
