@@ -1958,6 +1958,103 @@ app.post('/api/ai/generate-image', async (req, res) => {
   }
 });
 
+// POST /api/ai/generate-letter — Generate introduction letter via 9am Leads AI Marketing Builder
+app.post('/api/ai/generate-letter', authMiddleware, async (req, res) => {
+  try {
+    const OPENAI_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_KEY) return res.status(400).json({ error: 'AI Marketing Builder is not configured yet. Please contact support.' });
+
+    // Use business profile data if not explicitly provided
+    var businessData = req.body;
+    if (!businessData.company_name || !businessData.business_type) {
+      var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+      if (!profile) return res.status(400).json({ error: 'Please complete your Business Profile first. Go to Dashboard → Business Profile to set up your details.' });
+      businessData = {
+        company_name: profile.company_name || 'Your Company',
+        business_type: profile.business_type || 'Business',
+        services: profile.services_offered || '',
+        service_area: profile.service_areas || 'your local area',
+        special_offer: profile.special_offer || '',
+        tone: profile.brand_tone || 'professional',
+        phone: profile.phone || '',
+        website: profile.website || '',
+        email: profile.email || '',
+        call_to_action: profile.call_to_action || 'Get in touch today'
+      };
+    }
+
+    var toneDesc = businessData.tone === 'friendly' ? 'warm and approachable' :
+                   businessData.tone === 'premium' ? 'high-end and sophisticated' :
+                   businessData.tone === 'bold' ? 'confident and direct' :
+                   businessData.tone === 'warm' ? 'kind and personal' :
+                   'professional and trustworthy';
+
+    var promptBase = 'You are a professional marketing copywriter. Generate a business introduction letter for a company with these details:\n' +
+      'Company: ' + businessData.company_name + '\n' +
+      'Industry: ' + businessData.business_type + '\n' +
+      'Services: ' + (businessData.services || 'Not specified') + '\n' +
+      'Service Area: ' + (businessData.service_area || 'Local area') + '\n' +
+      'Special Offer: ' + (businessData.special_offer || 'Not specified') + '\n' +
+      'Tone: ' + toneDesc + '\n' +
+      'Phone: ' + (businessData.phone || 'Not specified') + '\n' +
+      'Website: ' + (businessData.website || 'Not specified') + '\n' +
+      'Email: ' + (businessData.email || 'Not specified') + '\n' +
+      'Call to Action: ' + (businessData.call_to_action || 'Get in touch') + '\n\n' +
+      'Generate FOUR versions of the letter. Label each clearly:\n' +
+      '=== PROFESSIONAL ===\n(Full formal introduction letter)\n' +
+      '=== SHORT ===\n(Brief, concise version)\n' +
+      '=== FRIENDLY ===\n(Warm, approachable version)\n' +
+      '=== CALL TO ACTION ===\n(Strong call-to-action focused version)\n\n' +
+      'Each version should include the company name, services offered, tone-appropriate messaging, and contact details naturally integrated. Format as plain text with clear section separators.';
+
+    var promptShort = 'Generate a SHORT version (2-3 paragraphs) of a business introduction letter for ' + businessData.company_name + ' in the ' + businessData.business_type + ' industry. Tone: ' + toneDesc + '. Include their services, area, and contact details naturally.';
+
+    var promptFriendly = 'Generate a FRIENDLY, warm version of a business introduction letter for ' + businessData.company_name + ' in the ' + businessData.business_type + ' industry. Make it feel personal and approachable.';
+
+    var promptPremium = 'Generate a PREMIUM, high-end business introduction letter for ' + businessData.company_name + ' in the ' + businessData.business_type + ' industry. Use sophisticated language and an elegant tone.';
+
+    var promptCta = 'Generate a STRONG CALL-TO-ACTION focused business introduction letter for ' + businessData.company_name + ' in the ' + businessData.business_type + ' industry. The primary goal is to get the reader to take action: ' + (businessData.call_to_action || 'Get in touch');
+
+    var prompts = [promptBase, promptShort, promptFriendly, promptPremium, promptCta];
+    var letters = [];
+
+    for (var pi = 0; pi < prompts.length; pi++) {
+      var requestBody = JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompts[pi] }],
+        max_tokens: 1000,
+        temperature: 0.7
+      });
+      var result = await new Promise(function(resolve) {
+        const https = require('https');
+        var req = https.request({
+          hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(requestBody) }
+        }, function(r) { var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: { message: 'Failed to parse response' } }); } }); });
+        req.on('error', function(e) { resolve({ error: { message: e.message } }); });
+        req.write(requestBody); req.end();
+      });
+      if (result && result.choices && result.choices[0] && result.choices[0].message) {
+        letters.push(result.choices[0].message.content);
+      } else {
+        letters.push(''); // Fallback empty on error for individual variant
+      }
+    }
+
+    res.json({
+      success: true,
+      professional: letters[0] || letters[0] === '' ? letters[0] : '',
+      short: letters[1] || '',
+      friendly: letters[2] || '',
+      premium: letters[3] || '',
+      call_to_action: letters[4] || '',
+      input: businessData
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Sorry, the AI Marketing Builder encountered an error. Please try again.' });
+  }
+});
+
 // ===== ADMIN ENDPOINTS =====
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '9amAdmin2024!';
