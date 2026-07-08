@@ -1289,9 +1289,9 @@ app.get('/api/health-score', authMiddleware, (req, res) => {
 // POST /api/onboarding/call â€” book onboarding call
 app.post('/api/onboarding/call', authMiddleware, async (req, res) => {
   try {
-    const db = getDb();
-    if (!db.support_requests) db.support_requests = [];
-    db.support_requests.push({ id: uuidv4(), customer_id: req.user.id, type: 'onboarding_call', subject: 'Book onboarding call', message: req.body.message || 'Customer requested onboarding call', created_at: new Date().toISOString(), resolved: false });
+    var db2 = getDb();
+    if (!db2.support_requests) db2.support_requests = [];
+    db2.support_requests.push({ id: uuidv4(), customer_id: req.user.id, type: 'onboarding_call', subject: 'Book onboarding call', message: req.body.message || 'Customer requested onboarding call', created_at: new Date().toISOString(), resolved: false });
     db.prepare('UPDATE customers SET onboarding_call_booked = 1 WHERE id = ?').run(req.user.id);
     saveDb();
     res.json({ success: true, message: 'Onboarding call request sent. We\'ll contact you within 24 hours.' });
