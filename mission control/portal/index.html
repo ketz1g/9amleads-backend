@@ -713,7 +713,7 @@ function doSignup() {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:d.customer?.plan || 'free_trial', email:email, product:product, products:products }));
       success.style.display = 'block'; button.innerHTML = '<i class="fas fa-check"></i> Redirecting...';
-      setTimeout(function() { window.location.href = '/portal/dashboard.html'; }, 1000);
+      setTimeout(function() { window.location.href = '/portal/dashboard.html?onboard=1'; }, 1000);
     } else {
       error.textContent = d.error || 'Signup failed. Please try again.'; error.style.display = 'block';
       button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false;
@@ -738,7 +738,7 @@ function doLogin() {
       if (d.token) {
         var custProducts = d.customer?.products || (d.customer?.biz_field3 ? (function(){ try { return JSON.parse(d.customer.biz_field3); } catch(e){ return [d.customer.product]; } })() : [d.customer?.product || 'moving']);
         localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || email, plan:d.customer?.plan || 'free_trial', email:email, product:d.customer?.product || 'moving', products:custProducts }));
-        window.location.href = '/portal/dashboard.html';
+        window.location.href = '/portal/dashboard.html?onboard=1';
       } else { error.style.display = 'block'; }
     }).catch(function() { error.style.display = 'block'; });
 }

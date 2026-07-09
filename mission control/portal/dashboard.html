@@ -541,6 +541,11 @@ async function loadDashboard() {
 
   const session = getSession(); if (!session) return;
 
+  // Onboarding wizard on first signup
+  if (window.location.search.indexOf('onboard=1') !== -1 && !session.onboarding_done) {
+    setTimeout(function() { checkOnboarding(); }, 500);
+  }
+
   // Admin impersonation mode
   if (session.admin_impersonating) {
     var banner = document.getElementById('admin-mode-banner');
