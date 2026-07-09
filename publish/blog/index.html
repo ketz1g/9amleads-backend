@@ -144,83 +144,8 @@ footer a:hover{color:var(--primary)}
 <div class="container" style="position:relative;z-index:2">
 <h2 class="section-title">Latest <span class="gradient">Articles</span></h2>
 <p class="section-sub">Practical advice for UK businesses using lead generation to scale their revenue.</p>
-<div class="blog-grid">
-
-<div class="blog-card" data-reveal>
-<div class="card-body">
-<span class="cat-tag cat-probate"><i class="fas fa-scale-balanced"></i> Probate</span>
-<h3>How to Win More Probate Instructions: A Solicitor's Guide</h3>
-<div class="meta">
-<div class="author-avatar" style="background:linear-gradient(135deg,#a855f7,#7c3aed)">SW</div>
-<span>Sarah Williams</span>
-<span>·</span>
-<span>15 Jun 2026</span>
-</div>
-<p class="excerpt">Discover proven strategies for converting probate leads into instructions. From first-contact timing to executor communication, learn how leading solicitors win estate work consistently.</p>
-<a href="/blog/win-probate-instructions.html" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
-</div>
-</div>
-
-<div class="blog-card" data-reveal>
-<div class="card-body">
-<span class="cat-tag cat-moving"><i class="fas fa-truck"></i> Moving</span>
-<h3>5 Reasons Why SSTC Property Leads Are Gold for Removal Companies</h3>
-<div class="meta">
-<div class="author-avatar" style="background:linear-gradient(135deg,#ff6b35,#f97316)">JD</div>
-<span>John Davis</span>
-<span>·</span>
-<span>10 Jun 2026</span>
-</div>
-<p class="excerpt">SSTC (Sold Subject to Contract) property leads are the single most valuable lead type for removal businesses. Here is why they convert at 3x the rate of any other lead source.</p>
-<a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
-</div>
-</div>
-
-<div class="blog-card" data-reveal>
-<div class="card-body">
-<span class="cat-tag cat-new-biz"><i class="fas fa-building"></i> New Business</span>
-<h3>New Business Formation Trends 2026: What B2B Companies Need to Know</h3>
-<div class="meta">
-<div class="author-avatar" style="background:linear-gradient(135deg,#06b6d4,#0ea5e9)">9L</div>
-<span>9amLeads Team</span>
-<span>·</span>
-<span>5 Jun 2026</span>
-</div>
-<p class="excerpt">Company formations in the UK are at an all-time high. We break down the sectors, regions, and trends that matter most for B2B sales teams targeting new businesses.</p>
-<a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
-</div>
-</div>
-
-<div class="blog-card" data-reveal>
-<div class="card-body">
-<span class="cat-tag cat-planning"><i class="fas fa-draw-polygon"></i> Planning</span>
-<h3>Planning Permission Applications Are Up 23% — Here's How Trades Can Capitalise</h3>
-<div class="meta">
-<div class="author-avatar" style="background:linear-gradient(135deg,#10b981,#059669)">9L</div>
-<span>9amLeads Team</span>
-<span>·</span>
-<span>1 Jun 2026</span>
-</div>
-<p class="excerpt">Planning applications across the UK have surged 23% year-on-year. For builders, electricians, plumbers, and other trades, this represents a massive pipeline opportunity.</p>
-<a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
-</div>
-</div>
-
-<div class="blog-card" data-reveal>
-<div class="card-body">
-<span class="cat-tag cat-tenders"><i class="fas fa-gavel"></i> Tenders</span>
-<h3>How to Win Government Tenders as a Small Business</h3>
-<div class="meta">
-<div class="author-avatar" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">9L</div>
-<span>9amLeads Team</span>
-<span>·</span>
-<span>28 May 2026</span>
-</div>
-<p class="excerpt">Winning government contracts is not just for large corporations. Learn the step-by-step process small businesses use to win public sector tenders worth £10k to £1m+.</p>
-<a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
-</div>
-</div>
-
+    <div class="blog-grid" id="blogGrid">
+<div class="loading" style="text-align:center;padding:40px;color:var(--muted);font-size:14px;grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i> Loading articles...</div>
 </div>
 </div>
 </section>
@@ -245,7 +170,31 @@ function toggleMobile() {
   document.getElementById('mobileOverlay').classList.toggle('show');
   document.getElementById('hamBtn').classList.toggle('active');
 }
-document.addEventListener('DOMContentLoaded',function(){var r=new IntersectionObserver(function(e){e.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');r.unobserve(e.target)}})},{threshold:0.1});document.querySelectorAll('[data-reveal]').forEach(function(e){r.observe(e)})});
+var API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : 'https://www.9amleads.com';
+var catColors = { moving: 'cat-moving', probate: 'cat-probate', newbusiness: 'cat-new-biz', planning: 'cat-planning', tenders: 'cat-tenders', general: '' };
+var catLabels = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Tenders', general: 'General' };
+var catIcons = { moving: 'truck', probate: 'scale-balanced', newbusiness: 'building', planning: 'draw-polygon', tenders: 'gavel', general: 'newspaper' };
+async function loadBlogPosts() {
+  try {
+    var r = await fetch(API + '/api/blog/posts');
+    var d = await r.json();
+    var grid = document.getElementById('blogGrid');
+    if (!d.posts || d.posts.length === 0) {
+      grid.innerHTML = '<div class="empty" style="text-align:center;padding:40px;color:var(--muted);font-size:14px;grid-column:1/-1">No articles yet. Check back soon.</div>';
+      return;
+    }
+    grid.innerHTML = d.posts.map(function(p) {
+      var catClass = catColors[p.category] || '';
+      var catLabel = catLabels[p.category] || 'General';
+      var catIcon = catIcons[p.category] || 'newspaper';
+      var dateStr = p.created_at ? new Date(p.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
+      return '<div class="blog-card" data-reveal><div class="card-body"><span class="cat-tag ' + catClass + '"><i class="fas fa-' + catIcon + '"></i> ' + catLabel + '</span><h3>' + p.title + '</h3><div class="meta"><div class="author-avatar" style="background:linear-gradient(135deg,#0ea5e9,#0284c7)">9L</div><span>9amLeads Team</span><span>\u00b7</span><span>' + dateStr + '</span></div><p class="excerpt">' + p.description + '</p><a href="/blog/' + p.slug + '" class="read-more">Read More <i class="fas fa-arrow-right"></i></a></div></div>';
+    }).join('');
+    new IntersectionObserver(function(e) { e.forEach(function(ev) { if (ev.isIntersecting) { ev.target.classList.add('visible'); this.unobserve(ev.target); } }); }, { threshold: 0.1 }).observe = function() {};
+    document.querySelectorAll('[data-reveal]').forEach(function(el) { var obs = new IntersectionObserver(function(e) { e.forEach(function(ev) { if (ev.isIntersecting) { ev.target.classList.add('visible'); obs.unobserve(ev.target); } }); }, { threshold: 0.1 }); obs.observe(el); });
+  } catch(e) { document.getElementById('blogGrid').innerHTML = '<div class="empty" style="text-align:center;padding:40px;color:var(--muted);font-size:14px;grid-column:1/-1">Unable to load articles.</div>'; }
+}
+loadBlogPosts();
 </script>
 <script src="/chat.js"></script>
 <script src="/enhancements.js"></script>
