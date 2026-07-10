@@ -1785,7 +1785,7 @@ app.get('/api/areas/performance', authMiddleware, (req, res) => {
       const areaLeads = leads.filter(l => {
         try {
           var d = typeof l.data === 'string' ? JSON.parse(l.data) : (l.data || {});
-          return (d.postcode || d.address || '').toUpperCase().startsWith(area);
+          return extractPostcodeArea(d.postcode || d.address || '') === area.toUpperCase();
         } catch(e) { return false; }
       });
       result[area] = {
@@ -4253,8 +4253,8 @@ async function runAutoSend() {
         if (areas.length > 0) {
           todaysLeads = todaysLeads.filter(function(l) {
             var parsed = {}; try { parsed = JSON.parse(l.data || '{}'); } catch(e) {}
-            var pc = (parsed.postcode || '').toUpperCase().substring(0, 2);
-            return areas.some(function(a) { return pc.startsWith(a); });
+            var pc = extractPostcodeArea(parsed.postcode || '');
+            return areas.some(function(a) { return pc === a.toUpperCase(); });
           });
         }
       }
@@ -4619,70 +4619,100 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       }
       var thisWeekStart2 = new Date(); thisWeekStart2.setDate(thisWeekStart2.getDate() - (thisWeekStart2.getDay() || 7) + 1);
       var weekStart2 = thisWeekStart2.toISOString().split('T')[0];
-      // Round 1: pick 1 lead from EACH product (guarantees every product gets at least 1)
-      for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
-        var prod = products[pi];
-        // Check weekly model limits
-        var prodRule2 = getLeadTypeRule(prod);
-        if (prodRule2.model === 'weekly') {
-          var weekDel = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at >= weekStart2 && l.product === prod; }).length;
-          var weekLim = prodRule2.weekly_est ? (prodRule2.weekly_est[cust.plan] || prodRule2.weekly_est.starter || 999) : 999;
-          if (weekDel >= weekLim) continue;
-          var dayMax2 = Math.max(1, Math.ceil(weekLim / 5));
-          var todayDeliveredInDb = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today) && l.product === prod; }).length;
-          var todayDeliveredInBatch = custLeads.filter(function(l) { return l.product === prod; }).length;
-          if (todayDeliveredInDb + todayDeliveredInBatch >= dayMax2) continue;
-        }
-        var allProdLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
-        if (allProdLeads.length === 0) continue;
-        var pickedIds = custLeads.map(function(cl) { return cl.id; });
-        var prodLeads = allProdLeads.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
-        if (prodLeads.length === 0) continue;
-        custLeads.push(prodLeads[0]);
+      // Helper: count leads per area in current batch
+      function areaCounts(leadsArr, areasArr) {
+        var counts = {};
+        areasArr.forEach(function(a) { counts[a] = 0; });
+        leadsArr.forEach(function(l) {
+          try {
+            var ld = JSON.parse(l.data || '{}');
+            var la = extractPostcodeArea(ld.postcode || '');
+            if (counts[la] !== undefined) counts[la]++;
+          } catch(e) {}
+        });
+        return counts;
       }
-      // Round 2: fill remaining slots with round-robin across products + areas
-      if (custLeads.length < totalDailyLimit) {
-        var maxRounds2 = Math.min(50, Math.ceil(totalDailyLimit / Math.max(1, products.length)));
-        for (var ri2 = 0; ri2 < maxRounds2 && custLeads.length < totalDailyLimit; ri2++) {
-          for (var pi2 = 0; pi2 < products.length && custLeads.length < totalDailyLimit; pi2++) {
-            var prod2 = products[pi2];
-            // Check weekly model limits in Round 2 as well
-            var prodRule2b = getLeadTypeRule(prod2);
-            if (prodRule2b.model === 'weekly') {
-              var weekDel2 = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at >= weekStart2 && l.product === prod2; }).length;
-              var weekLim2 = prodRule2b.weekly_est ? (prodRule2b.weekly_est[cust.plan] || prodRule2b.weekly_est.starter || 999) : 999;
-              if (weekDel2 >= weekLim2) continue;
-              var dayMax2b = Math.max(1, Math.ceil(weekLim2 / 5));
-              var todayDelDb2 = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today) && l.product === prod2; }).length;
-              var todayDelBatch2 = custLeads.filter(function(l) { return l.product === prod2; }).length;
-              if (todayDelDb2 + todayDelBatch2 >= dayMax2b) continue;
+      // Helper: find lead for given product + area, returns null if none
+      function findLeadForProductAndArea(prod, area, allLeads, excludeIds) {
+        for (var fi = 0; fi < allLeads.length; fi++) {
+          if (excludeIds.indexOf(allLeads[fi].id) !== -1) continue;
+          if (allLeads[fi].product !== prod) continue;
+          try {
+            var fd = JSON.parse(allLeads[fi].data || '{}');
+            if (extractPostcodeArea(fd.postcode || '') === area) return allLeads[fi];
+          } catch(e) {}
+        }
+        return null;
+      }
+      // Check if product has room for more leads today
+      function canTakeProduct(prod, plan, weekStart, today, custLeads) {
+        var pRule = getLeadTypeRule(prod);
+        if (pRule.model === 'weekly') {
+          var wDel = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at >= weekStart && l.product === prod; }).length;
+          var wLim = pRule.weekly_est ? (pRule.weekly_est[plan] || pRule.weekly_est.starter || 999) : 999;
+          if (wDel >= wLim) return false;
+          var dMax = Math.max(1, Math.ceil(wLim / 5));
+          var tDelDb = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today) && l.product === prod; }).length;
+          var tDelBatch = custLeads.filter(function(l) { return l.product === prod; }).length;
+          if (tDelDb + tDelBatch >= dMax) return false;
+        }
+        return true;
+      }
+      // Available undelivered leads per product
+      var availByProd = {};
+      products.forEach(function(p) { availByProd[p] = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === p; }); });
+      var pickedIds = [];
+      var totalNeeded = totalDailyLimit;
+      // Round 1: try to give EVERY product at least 1 lead from a different area
+      var usedAreas = {};
+      custAreas.forEach(function(a) { usedAreas[a] = {}; });
+      var areaCycle = 0;
+      for (var r1p = 0; r1p < products.length && custLeads.length < totalDailyLimit; r1p++) {
+        var r1prod = products[r1p];
+        if (!canTakeProduct(r1prod, cust.plan, weekStart2, today, custLeads)) continue;
+        var r1pool = (availByProd[r1prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+        if (r1pool.length === 0) continue;
+        // Try least-represented area first
+        if (cust.coverage === 'postcode' && custAreas.length > 0) {
+          var counts = areaCounts(custLeads, custAreas);
+          var sortedAreas = custAreas.slice().sort(function(a, b) { return (counts[a] || 0) - (counts[b] || 0); });
+          var found = false;
+          for (var sa = 0; sa < sortedAreas.length; sa++) {
+            var areaLead = findLeadForProductAndArea(r1prod, sortedAreas[sa], r1pool, pickedIds);
+            if (areaLead) {
+              custLeads.push(areaLead); pickedIds.push(areaLead.id);
+              found = true; break;
             }
-            var allProdLeads2 = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod2; });
-            var pickedIds2 = custLeads.map(function(cl) { return cl.id; });
-            var prodLeads2 = allProdLeads2.filter(function(l) { return pickedIds2.indexOf(l.id) === -1; });
-            if (prodLeads2.length === 0) continue;
-            // Pick a lead from a different area than already picked (only for postcode coverage)
-            var picked2 = prodLeads2[0];
+          }
+          if (!found) { custLeads.push(r1pool[0]); pickedIds.push(r1pool[0].id); }
+        } else {
+          custLeads.push(r1pool[0]); pickedIds.push(r1pool[0].id);
+        }
+      }
+      // Round 2: fill remaining slots — cycle through (product × area) round-robin
+      if (custLeads.length < totalNeeded) {
+        var maxRounds = Math.min(50, Math.ceil(totalNeeded * 2));
+        for (var r2 = 0; r2 < maxRounds && custLeads.length < totalNeeded; r2++) {
+          for (var r2p = 0; r2p < products.length && custLeads.length < totalNeeded; r2p++) {
+            var r2prod = products[r2p];
+            if (!canTakeProduct(r2prod, cust.plan, weekStart2, today, custLeads)) continue;
+            var r2pool = (availByProd[r2prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+            if (r2pool.length === 0) continue;
             if (cust.coverage === 'postcode' && custAreas.length > 0) {
-              for (var ac = 0; ac < custAreas.length; ac++) {
-                var hasArea = false;
-                for (var pch = 0; pch < custLeads.length; pch++) {
-                  try {
-                    var pchData = JSON.parse(custLeads[pch].data || '{}');
-                    if ((pchData.postcode || '').toUpperCase().startsWith(custAreas[ac].toUpperCase())) { hasArea = true; break; }
-                  } catch(e) {}
-                }
-                if (!hasArea) {
-                  for (var lx = 0; lx < prodLeads2.length; lx++) {
-                    try {
-                      var lxData = JSON.parse(prodLeads2[lx].data || '{}');
-                      if ((lxData.postcode || '').toUpperCase().startsWith(custAreas[ac].toUpperCase())) { picked2 = prodLeads2[lx]; ac = custAreas.length; break; }
-                    } catch(e) {}
-                  }
+              var counts2 = areaCounts(custLeads, custAreas);
+              var sortedAreas2 = custAreas.slice().sort(function(a, b) { return (counts2[a] || 0) - (counts2[b] || 0); });
+              var found2 = false;
+              for (var sa2 = 0; sa2 < sortedAreas2.length; sa2++) {
+                var areaLead2 = findLeadForProductAndArea(r2prod, sortedAreas2[sa2], r2pool, pickedIds);
+                if (areaLead2) {
+                  custLeads.push(areaLead2); pickedIds.push(areaLead2.id);
+                  found2 = true; break;
                 }
               }
+              if (!found2) { custLeads.push(r2pool[0]); pickedIds.push(r2pool[0].id); }
+            } else {
+              custLeads.push(r2pool[0]); pickedIds.push(r2pool[0].id);
             }
-            custLeads.push(picked2);
           }
         }
       }
@@ -7094,8 +7124,8 @@ app.get('/api/direct-mail/leads', authMiddleware, (req, res) => {
       try { parsed = JSON.parse(l.data || '{}'); } catch(e) {}
       if (leadType && l.product !== leadType) return false;
       if (postcodeArea) {
-        var lc = (parsed.postcode || '').toUpperCase();
-        if (lc.indexOf(postcodeArea.toUpperCase()) !== 0) return false;
+        var lc = extractPostcodeArea(parsed.postcode || '');
+        if (lc !== postcodeArea.toUpperCase()) return false;
       }
       if (dateFrom && l.created_at && l.created_at < dateFrom) return false;
       if (dateTo && l.created_at && l.created_at > dateTo) return false;
