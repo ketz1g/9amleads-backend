@@ -299,6 +299,21 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 </div>
 <div id="sub-msg" style="margin-top:10px;font-size:12px;color:var(--success);display:none"></div>
 <div style="margin-top:10px;padding:8px 12px;background:rgba(251,191,36,0.04);border:1px solid rgba(251,191,36,0.1);border-radius:8px;font-size:10px;color:var(--muted2);line-height:1.5;display:none" id="supply-notice">Your leads are based on live market opportunities. Specialist categories such as planning, probate and contracts may vary day by day.</div>
+<div id="upgrade-banner" style="margin-top:10px;padding:12px 14px;background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(14,165,233,0.04));border:1px solid rgba(99,102,241,0.15);border-radius:10px;font-size:11px;line-height:1.6;display:none">
+  <div style="font-weight:700;font-size:13px;color:var(--text);margin-bottom:4px"><i class="fas fa-gem" style="color:#6366f1;margin-right:4px"></i> Unlock more with a paid plan</div>
+  <div style="color:var(--muted2);margin-bottom:10px">Upgrade to Pro or Enterprise to get:</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+    <div style="display:flex;align-items:center;gap:4px;padding:3px 6px;background:rgba(34,197,94,0.04);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> <span style="font-size:10px">15–40 leads/day</span></div>
+    <div style="display:flex;align-items:center;gap:4px;padding:3px 6px;background:rgba(34,197,94,0.04);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> <span style="font-size:10px">All UK coverage</span></div>
+    <div style="display:flex;align-items:center;gap:4px;padding:3px 6px;background:rgba(34,197,94,0.04);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> <span style="font-size:10px">AI letter generator</span></div>
+    <div style="display:flex;align-items:center;gap:4px;padding:3px 6px;background:rgba(34,197,94,0.04);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> <span style="font-size:10px">Saved templates</span></div>
+    <div style="display:flex;align-items:center;gap:4px;padding:3px 6px;background:rgba(34,197,94,0.04);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> <span style="font-size:10px">Auto Send daily</span></div>
+    <div style="display:flex;align-items:center;gap:4px;padding:3px 6px;background:rgba(34,197,94,0.04);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> <span style="font-size:10px">Success Centre</span></div>
+  </div>
+  <div style="margin-top:8px;text-align:center">
+    <button class="btn btn-primary btn-sm" onclick="showPlans()" style="padding:6px 20px;font-size:11px"><i class="fas fa-arrow-up"></i> See Plans &amp; Pricing</button>
+  </div>
+</div>
 </div>
 <div class="card" id="onboarding-card" style="background:linear-gradient(135deg,rgba(14,165,233,0.08),rgba(99,102,241,0.04));border:1px solid rgba(14,165,233,0.2);display:none">
 <div class="card-header"><div class="card-title"><i class="fas fa-rocket" style="color:var(--primary)"></i> Set Up Your Account</div></div>
@@ -1011,8 +1026,14 @@ function getOnboardingStep(step, canSkip) {
 
 function getStepBody(step) {
   if (step === 1) {
+    var ses = getSession() || {};
+    var userProducts = ses.products || [ses.product || 'moving'];
+    var prodNames = { moving:'Moving Leads', probate:'Probate Leads', newbusiness:'New Business', planning:'Planning Permissions', tenders:'Public Tenders' };
+    var userLeadTypes = userProducts.map(function(p) { return prodNames[p] || p; }).join(', ');
+    var userAreas = ses.target_areas && ses.target_areas.length > 0 ? ses.target_areas.join(', ') : 'your selected areas';
     return '<div style="text-align:center;padding:4px 0"><div style="font-size:48px;margin-bottom:8px">&#127881;</div><div style="font-size:20px;font-weight:800;margin-bottom:6px;font-family:Outfit,sans-serif">Welcome to 9am Leads!</div><div style="font-size:12px;color:var(--muted2);line-height:1.7;margin-bottom:16px;text-align:left">' +
-      'Here\'s how the platform works:<br><br> <strong>Daily Leads</strong> — New sales opportunities delivered to your dashboard every morning at 9am.<br><br> <strong>Direct Mail Centre</strong> — Create and send professional flyers and letters by post from your dashboard.<br><br> <strong>AI Marketing Builder</strong> — Generate flyers, letters, and offers using AI.<br><br> <strong>Auto Send</strong> — Automatically mail your new leads every day.<br><br> <strong>Dashboard</strong> — Track everything in one place: leads, campaigns, analytics, and outcomes.</div>' +
+      'Your account is set up for <strong>' + userLeadTypes + '</strong> in <strong>' + userAreas + '</strong>.<br><br>' +
+      'Here\'s how the platform works:<br><br> <strong>Daily Leads</strong> — New <strong>' + userLeadTypes + '</strong> opportunities delivered to your dashboard every morning at 9am.<br><br> <strong>Direct Mail Centre</strong> — Create and send professional flyers and letters by post to your leads from your dashboard.<br><br> <strong>AI Marketing Builder</strong> — Generate flyers, letters, and offers using AI, tailored to your business.<br><br> <strong>Auto Send</strong> — Automatically mail your new leads every day — available on Pro and Enterprise plans.<br><br> <strong>Dashboard</strong> — Track everything in one place: leads, campaigns, analytics, and outcomes.</div>' +
       '<button class="btn btn-primary" onclick="nextOnboardingStep(1)" style="width:100%;padding:14px"><i class="fas fa-arrow-right"></i> Start Setup</button></div>';
   } else if (step === 2) {
     return '<div style="text-align:center;padding:4px 0"><div style="font-size:40px;margin-bottom:8px">&#127970;</div><div style="font-size:18px;font-weight:700;margin-bottom:6px">Business Profile</div><div style="font-size:11px;color:var(--muted2);margin-bottom:10px">Complete your business details. This is used for AI flyers, letters, and campaigns.</div>' +
@@ -1583,7 +1604,16 @@ function showDirectMailCentre(tab) {
     var lockedFeature = featureChecks[tab];
     if (lockedFeature && !canUse(lockedFeature)) {
       var label = features[lockedFeature] ? features[lockedFeature].label : 'This feature';
-      el.innerHTML = '<div style="text-align:center;padding:60px 20px"><i class="fas fa-lock" style="font-size:40px;color:var(--muted2);display:block;margin-bottom:16px"></i><h2 style="font-size:18px;font-weight:700;margin-bottom:8px">Upgrade to Access</h2><p style="font-size:12px;color:var(--muted2);max-width:400px;margin:0 auto 20px">' + label + ' is available on the <strong>Pro</strong> plan and above. Upgrade to unlock all Direct Mail features.</p><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="showPlans()"><i class="fas fa-arrow-up"></i> View Plans</button><button class="btn btn-outline btn-sm" onclick="showDirectMailCentre(\'overview\')"><i class="fas fa-arrow-left"></i> Back to Overview</button></div></div>';
+      el.innerHTML = '<div style="text-align:center;padding:50px 20px"><i class="fas fa-lock" style="font-size:32px;color:var(--muted2);display:block;margin-bottom:12px"></i><h2 style="font-size:16px;font-weight:700;margin-bottom:4px">Upgrade to Pro</h2><p style="font-size:11px;color:var(--muted2);max-width:350px;margin:0 auto 16px">' + label + ' is available on <strong>Pro</strong> and <strong>Enterprise</strong> plans.</p>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;max-width:320px;margin:0 auto 16px;text-align:left">' +
+        '<div style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> 15–40 leads/day</div>' +
+        '<div style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> All UK coverage</div>' +
+        '<div style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> AI Marketing Builder</div>' +
+        '<div style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> Auto Send daily</div>' +
+        '<div style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> Saved templates</div>' +
+        '<div style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> Success Centre</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="showPlans()" style="font-size:12px"><i class="fas fa-arrow-up"></i> View Plans &amp; Upgrade</button><button class="btn btn-outline btn-sm" onclick="showDirectMailCentre(\'overview\')" style="font-size:11px"><i class="fas fa-arrow-left"></i> Back</button></div></div>';
       return;
     }
 
@@ -2351,7 +2381,7 @@ function showDMSettings(el, canAutoSend) {
         '<label style="display:flex;align-items:center;gap:14px;padding:6px 0;cursor:' + (canAutoSend ? 'pointer' : 'not-allowed') + '">' +
         '<input type="checkbox" id="dm-enable" ' + checked('enable_auto_send') + ' style="accent-color:var(--success);width:20px;height:20px"' + (canAutoSend ? ' onchange="dmToggleAutoSend()"' : ' disabled') + '>' +
         '<div><div style="font-weight:700;font-size:15px;color:var(--text)">Automatically mail my new leads every day</div>' +
-        (canAutoSend ? '<div style="font-size:11px;color:var(--muted2);margin-top:2px">Review your leads each morning and we\'ll mail them for you</div>' : '<div style="font-size:11px;color:var(--warning);margin-top:2px">Available on the Premium plan. <a href="#" onclick="showPlans();return false" style="color:var(--primary)">Upgrade now</a></div>') +
+        (canAutoSend ? '<div style="font-size:11px;color:var(--muted2);margin-top:2px">Review your leads each morning and we\'ll mail them for you</div>' : '<div style="font-size:11px;color:var(--warning);margin-top:2px">Available on <strong>Pro</strong> and <strong>Enterprise</strong> plans. <a href="#" onclick="showPlans();return false" style="color:var(--primary);font-weight:600">Upgrade now &rarr;</a></div>') +
         '</div></label></div>' +
 
         // Settings panel (shown only when enabled)
@@ -3668,7 +3698,14 @@ async function loadSuccessCentreData() {
   try {
     var t = await apiFetch('/api/success-centre/templates');
     if (t && t.restricted) {
-      document.getElementById('sc-content').innerHTML = '<div style="text-align:center;padding:30px;background:var(--card2);border:1px solid var(--border);border-radius:10px"><i class="fas fa-lock" style="font-size:28px;color:var(--muted);display:block;margin-bottom:10px"></i><h3 style="font-size:15px;font-weight:700;color:var(--text)">Upgrade to Pro or Enterprise</h3><p style="font-size:12px;color:var(--muted2);margin:6px 0 14px;max-width:320px;margin-left:auto;margin-right:auto">The Success Centre with industry playbooks, outreach templates, AI generator and conversion tools is available on Pro and Enterprise plans.</p><button class="btn btn-primary btn-sm" onclick="showPlans()">View Plans &amp; Upgrade</button></div>';
+      document.getElementById('sc-content').innerHTML = '<div style="text-align:center;padding:30px;background:var(--card2);border:1px solid var(--border);border-radius:10px"><i class="fas fa-lock" style="font-size:28px;color:var(--muted);display:block;margin-bottom:10px"></i><h3 style="font-size:15px;font-weight:700;color:var(--text)">Upgrade to Pro or Enterprise</h3><p style="font-size:12px;color:var(--muted2);margin:6px 0 14px;max-width:320px;margin-left:auto;margin-right:auto">The Success Centre with industry playbooks, outreach templates, AI generator and conversion tools is available on Pro and Enterprise plans.</p>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;max-width:280px;margin:0 auto 16px;text-align:left">' +
+      '<div style="display:flex;align-items:center;gap:4px;padding:4px 6px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> Industry playbooks</div>' +
+      '<div style="display:flex;align-items:center;gap:4px;padding:4px 6px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> Outreach templates</div>' +
+      '<div style="display:flex;align-items:center;gap:4px;padding:4px 6px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> AI letter generator</div>' +
+      '<div style="display:flex;align-items:center;gap:4px;padding:4px 6px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> Conversion tools</div>' +
+      '</div>' +
+      '<button class="btn btn-primary btn-sm" onclick="showPlans()"><i class="fas fa-arrow-up"></i> View Plans &amp; Upgrade</button></div>';
       return;
     }
     if (t && t.templates) scTemplates = t.templates;
@@ -4333,6 +4370,11 @@ function updateSubscriptionDisplay(sub) {
   var noticeEl = document.getElementById('supply-notice');
   if (noticeEl) {
     noticeEl.style.display = (sub.product === 'planning' || sub.product === 'probate' || sub.product === 'tenders') ? 'block' : 'none';
+  }
+  // Show paid plan upgrade banner for free trial users
+  var upgradeBanner = document.getElementById('upgrade-banner');
+  if (upgradeBanner) {
+    upgradeBanner.style.display = sub.plan === 'free_trial' ? 'block' : 'none';
   }
 }
 
