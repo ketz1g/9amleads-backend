@@ -125,6 +125,12 @@ function isFullDistrict(code, districts) {
   return !!districts[code.toUpperCase()];
 }
 
+
+
+function extractPostcodeArea(postcode) {
+  return (postcode || '').toUpperCase().replace(/[^A-Z].*$/, '');
+}
+
 function getMatchingArea(code, areas) {
   const upper = code.toUpperCase().replace(/[^A-Z]/g, '');
   if (areas[upper]) return upper;
