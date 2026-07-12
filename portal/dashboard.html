@@ -826,7 +826,7 @@ setTimeout(function() {
   var els = document.querySelectorAll('#pipeline-content, #delivery-content, #roi-content, #kpiGrid');
   for (var ei = 0; ei < els.length; ei++) {
     if (els[ei] && (els[ei].textContent || '').includes('Loading')) {
-      els[ei].innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2);font-size:12px">Server warming up... <a href="javascript:location.reload()" style="color:var(--primary);text-decoration:underline">Refresh</a> if this persists.</div>';
+      els[ei].innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2);font-size:12px">Server warming up... <a href="javascript:closeModals();showPage('settings')" style="color:var(--primary);text-decoration:underline">Refresh</a> if this persists.</div>';
     }
   }
 }, 25000);
@@ -1434,7 +1434,7 @@ function removeCrmWebhook() {
 function showBillingPage() {
   showModal('Billing & Subscription', '<div id="billing-content"><div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-spinner fa-spin" style="font-size:20px;display:block;margin-bottom:8px"></i>Loading billing data...</div></div>');
   apiFetch('/api/subscription').then(function(sub) {
-    if (!sub || !sub.plan) { document.getElementById('billing-content').innerHTML = '<div style="text-align:center;padding:30px 20px;color:var(--muted2)"><i class="fas fa-credit-card" style="font-size:32px;display:block;margin-bottom:10px;color:var(--muted)"></i><p style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Billing information unavailable</p><p style="font-size:12px;line-height:1.6;margin-bottom:12px">This sometimes happens after a fresh signup. Your account and data are safe.</p><a href="javascript:location.reload()" style="display:inline-block;padding:8px 20px;background:var(--primary);color:#fff;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600">Refresh Page</a></div>'; return; }
+    if (!sub || !sub.plan) { document.getElementById('billing-content').innerHTML = '<div style="text-align:center;padding:30px 20px;color:var(--muted2)"><i class="fas fa-credit-card" style="font-size:32px;display:block;margin-bottom:10px;color:var(--muted)"></i><p style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Billing information unavailable</p><p style="font-size:12px;line-height:1.6;margin-bottom:12px">This sometimes happens after a fresh signup. Your account and data are safe.</p><a href="javascript:closeModals();showPage('settings')" style="display:inline-block;padding:8px 20px;background:var(--primary);color:#fff;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600">Refresh Page</a></div>'; return; }
     var planLabel = sub.plan === 'free_trial' ? 'Free Trial' : sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1);
     var trialInfo = sub.trial_ends ? '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)"><i class="fas fa-clock" style="color:#f59e0b;margin-right:4px"></i>Trial ends ' + new Date(sub.trial_ends).toLocaleDateString('en-GB') + ' (' + Math.ceil((new Date(sub.trial_ends)-new Date())/86400000) + ' days)</div>' : '';
     var subInfo = sub.subscription ? '<div style="padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:11px"><strong>Stripe Status:</strong> ' + (sub.subscription.status || 'N/A') + '<br><strong>Next billing:</strong> ' + (sub.subscription.next_billing ? new Date(sub.subscription.next_billing).toLocaleDateString('en-GB') : 'N/A') + '<br><strong>Days until billing:</strong> ' + (sub.subscription.next_billing ? Math.ceil((new Date(sub.subscription.next_billing)-new Date())/86400000) : 'N/A') + '</div>' : '';
@@ -1517,7 +1517,7 @@ function showBusinessProfile() {
       '</div></div>' +
       '<button class="btn btn-primary" onclick="saveBusinessProfile()" style="padding:12px 32px"><i class="fas fa-save"></i> Save Profile</button></div>';
     document.getElementById('bp-content').innerHTML = html;
-  }).catch(function() { document.getElementById('bp-content').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted2)"><i class="fas fa-exclamation-circle" style="font-size:28px;display:block;margin-bottom:10px"></i>Could not load profile.<br><a href="javascript:location.reload()" style="color:var(--primary)">Refresh page</a></div>'; });
+  }).catch(function() { document.getElementById('bp-content').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted2)"><i class="fas fa-exclamation-circle" style="font-size:28px;display:block;margin-bottom:10px"></i>Could not load profile.<br><a href="javascript:closeModals();showPage('settings')" style="color:var(--primary)">Refresh page</a></div>'; });
 }
 function previewBusinessLogo(e) {
   var file = e.target.files[0];
@@ -4408,7 +4408,7 @@ function showPlans() {
   if (!planData) {
     apiFetch('/api/subscription').then(function(sub) {
       if (sub && sub.plan) { liveSubscription = sub; showPlans(); }
-      else { showModal('Plans', '<p style="color:var(--muted2);text-align:center;padding:20px">Unable to load your plan data. <a href="javascript:location.reload()" style="color:var(--primary);text-decoration:underline">Refresh</a> or <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">contact support</a>.</p>'); }
+      else { showModal('Plans', '<p style="color:var(--muted2);text-align:center;padding:20px">Unable to load your plan data. <a href="javascript:closeModals();showPage('settings')" style="color:var(--primary);text-decoration:underline">Refresh</a> or <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">contact support</a>.</p>'); }
     });
     showModal('Plans', '<p style="color:#8890a8;text-align:center;padding:20px"><i class="fas fa-spinner fa-spin" style="font-size:18px;display:block;margin-bottom:8px"></i>Loading plans...</p>', '520px');
     return;
@@ -4426,7 +4426,7 @@ function showPlans() {
     '<span style="font-size:11px">Lead types: <strong>' + (planData.lead_type || 'N/A') + '</strong></span><br>' +
     '<span style="font-size:11px">Coverage: <strong>' + (planData.coverage_label || 'N/A') + '</strong> (' + areasDisplay + ')</span><br>' +
     '<span style="font-size:11px">Daily limit: <strong>' + (planData.up_to ? 'Up to ' : '') + planData.leads_per_day + '</strong></span>' +
-    '<div style="margin-top:8px"><a href="javascript:location.reload()" style="font-size:10px;color:var(--primary);text-decoration:underline">Change your lead types and areas from the dashboard, then come back to upgrade.</a></div>' +
+    '<div style="margin-top:8px"><a href="javascript:closeModals();showPage('settings')" style="font-size:10px;color:var(--primary);text-decoration:underline">Change your lead types and areas in Settings</a><br><span style="font-size:10px;color:var(--muted2)">Your current selections will be used for the upgrade.</span></div>' +
     '</div>' +
     '<div style="display:grid;gap:8px">' +
     ['starter','pro','enterprise'].map(function(k) {
