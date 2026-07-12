@@ -70,7 +70,7 @@ try {
   // Copy default data files from source if not present on persistent disk
   var sourceDataDir = path.join(__dirname, '..', 'mission control', 'data');
   if (!fs.existsSync(sourceDataDir)) sourceDataDir = path.join(__dirname, 'data');
-  ['uk-postcode-areas.json', 'uk-postcode-districts.json', 'postcode-assignments.json'].forEach(function(fn) {
+  ['uk-postcode-areas.json', 'uk-postcode-districts.json', 'postcode-assignments.json', 'stripe-config.json'].forEach(function(fn) {
     var targetPath = path.join(DATA_DIR, fn);
     if (!fs.existsSync(targetPath)) {
       var sourcePath = path.join(sourceDataDir, fn);
