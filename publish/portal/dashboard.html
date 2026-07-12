@@ -4401,6 +4401,7 @@ function updateSubscriptionDisplay(sub) {
   }
 }
 
+function closeModals() { document.querySelectorAll('body > div').forEach(function(e) { if (e.style.position === 'fixed') e.remove(); }); }
 function showPlans() {
   const session = getSession();
   if (!session) return;
