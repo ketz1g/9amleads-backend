@@ -7918,7 +7918,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             leads = [];
             if (apifyK) {
               leads = await new Promise(function(r) {
-                var b = JSON.stringify({ search: 'active', maxItems: 500, includeOfficers: false });
+                var b = JSON.stringify({ search: 'active', maxItems: 200, includeOfficers: false });
                 var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyK + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
                     try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
