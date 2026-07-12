@@ -356,7 +356,7 @@ function renderSignupFilters() {
         html += '</select></div>';
       } else if (d.type === 'checkboxes') {
         html += '<div style="margin-bottom:4px"><label style="font-size:10px;color:#8890a8;display:block;margin-bottom:3px">' + d.label + '</label><div style="display:flex;flex-wrap:wrap;gap:3px">';
-        for (var oi = 0; oi < d.opts.length; oi++) { html += '<label style="display:flex;align-items:center;gap:3px;font-size:10px;color:#374151;cursor:pointer;padding:2px 6px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px"><input type="checkbox" class="sf-field" data-product="' + p + '" data-id="' + d.id + '" value="' + d.opts[oi] + '" checked style="accent-color:' + filterColors[p] + ';width:11px;height:11px"> ' + d.opts[oi] + '</label>'; }
+        for (var oi = 0; oi < d.opts.length; oi++) { html += '<label style="display:flex;align-items:center;gap:3px;font-size:10px;color:#374151;cursor:pointer;padding:2px 6px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px"><input type="checkbox" class="sf-field" data-product="' + p + '" data-id="' + d.id + '" value="' + d.opts[oi] + '" style="accent-color:' + filterColors[p] + ';width:11px;height:11px"> ' + d.opts[oi] + '</label>'; }
         html += '</div></div>';
       } else if (d.type === 'text') {
         html += '<div style="margin-bottom:4px"><label style="font-size:10px;color:#8890a8;display:block;margin-bottom:2px">' + d.label + '</label><input type="text" class="sf-field" data-product="' + p + '" data-id="' + d.id + '" placeholder="' + (d.placeholder||'') + '" style="width:100%;padding:6px 8px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:11px;color:#111827;font-family:inherit;outline:none"></div>';
