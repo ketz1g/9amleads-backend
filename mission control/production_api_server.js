@@ -7928,6 +7928,34 @@ function syncCustomers(product) {
             leads = await streamCollector.collectFreshLeads(chKeyStream, 48);
             console.log('[SCRAPER] Companies House Stream returned ' + leads.length + ' leads');
           } catch(e) { console.log('[SCRAPER] Stream error: ' + e.message); leads = []; }
+          if (!leads || leads.length < 3) {
+            try {
+              var apifyK3 = process.env.APIFY_API_KEY;
+              if (apifyK3) {
+                leads = await new Promise(function(r) {
+                  var b = JSON.stringify({ search: 'limited', maxItems: 500, includeOfficers: false });
+                  var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyK3 + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
+                    var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
+                      try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
+                        r(items.filter(function(c) {
+                          if (!c.title || !c.company_number || c.company_status === 'dissolved') return false;
+                          var incDate = c.date_of_creation || '';
+                          var thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+                          if (incDate && incDate < thirtyDaysAgo) return false;
+                          var addr = (c.address_snippet || '').toLowerCase();
+                          var blacklist = ['corner chambers','c/o ','care of','po box','p.o. box','suite','flat ','unit ','office ','business centre','business park','registered office','virtual office','formation agent','company formation','the company','company registered','no fixed address'];
+                          for (var bi = 0; bi < blacklist.length; bi++) { if (addr.includes(blacklist[bi])) return false; }
+                          return true;
+                        }).map(function(c) { var a = c.address || {}; return { id: 'APIFY_NB_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.title || '', address: c.address_snippet || '', postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', source: 'Apify CH Fallback', scrapedAt: new Date().toISOString() }; })); } catch(e) { r([]); }
+                    });
+                  });
+                  req.on('error', function() { r([]); }); req.setTimeout(150000, function() { req.destroy(); r([]); });
+                  req.write(b); req.end();
+                });
+                console.log('[SCRAPER] Apify CH fallback returned ' + leads.length + ' leads');
+              }
+            } catch(e) { console.log('[SCRAPER] Apify CH fallback error: ' + e.message); }
+          }
         } else if (product === 'planning') {
           leads = [];
           try {
@@ -7935,6 +7963,26 @@ function syncCustomers(product) {
             leads = await planningCollector.collectFreshPlanning(48);
             console.log('[SCRAPER] Planning collector returned ' + leads.length + ' applications');
           } catch(e) { console.log('[SCRAPER] Planning error: ' + e.message); leads = []; }
+          if (!leads || leads.length < 3) {
+            try {
+              var chKeyPlan2 = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+              leads = await new Promise(function(resolve) {
+                var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=builders&size=200', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyPlan2 + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+                  var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
+                    try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){
+                      if (!c.title || !c.company_number || c.company_status === 'dissolved') return false;
+                      var addr = (c.address_snippet || '').toLowerCase();
+                      var blacklist = ['corner chambers','c/o ','care of','po box','p.o. box','suite','flat ','unit ','office ','business centre','business park','registered office','virtual office','formation agent','company formation','the company','company registered','no fixed address'];
+                      for (var bi = 0; bi < blacklist.length; bi++) { if (addr.includes(blacklist[bi])) return false; }
+                      return true;
+                    }).map(function(c) { var a = c.address || {}; return { id: 'CH_BLD_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', address: c.address_snippet || '', postcode: a.postal_code || '', city: a.locality || '', source: 'CH Builders Fallback', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                  });
+                });
+                req.on('error', function() { resolve([]); }); req.setTimeout(30000, function() { req.destroy(); resolve([]); }); req.end();
+              });
+              console.log('[SCRAPER] CH Builders fallback returned ' + leads.length + ' leads');
+            } catch(e) { console.log('[SCRAPER] Planning fallback error: ' + e.message); }
+          }
         } else if (product === 'tenders') {
           var tendKey = process.env.APIFY_API_KEY;
           var tendActor = process.env.APIFY_TENDERS_ACTOR || '';
