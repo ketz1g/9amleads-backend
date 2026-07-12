@@ -10240,6 +10240,13 @@ app.listen(PORT, () => {
   console.log('========================================\n');
   console.log('Endpoints:');
   console.log('  POST /api/auth/signup   - Create account');
+// Start CH Streaming background worker
+try {
+  var chKeyStream = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+  var streamWorker = require('./streaming_worker');
+  streamWorker.start(chKeyStream);
+  console.log('[BOOT] Stream: Companies House live stream worker started');
+} catch(se) { console.log('[BOOT] Stream worker error: ' + se.message); }
   console.log('  GET  /api/auth/verify-email - Verify email address');
   console.log('  POST /api/auth/login    - Sign in');
   console.log('  GET  /api/auth/me       - Get profile');
