@@ -65,7 +65,7 @@ async function collectFreshLeads(apiKey, freshnessHours = 48) {
 
   return new Promise((resolve, reject) => {
     var streamUrl = '/companies?timepoint=' + timepoint;
-    var req = https.get({ hostname: 'stream.companieshouse.gov.uk', path: streamUrl, headers: { 'Authorization': 'Basic ' + Buffer.from(apiKey + ':').toString('base64') }, timeout: 300000 }, (res) => {
+    var req = https.get({ hostname: 'stream.companieshouse.gov.uk', path: streamUrl, headers: { 'Authorization': 'Basic ' + Buffer.from(apiKey + ':').toString('base64') }, timeout: 600000 }, (res) => {
       if (res.statusCode !== 200) {
         console.log('[STREAM] Connection failed with status ' + res.statusCode);
         resolve(leads);
@@ -178,7 +178,7 @@ async function collectFreshLeads(apiKey, freshnessHours = 48) {
       saveTimepoint(timepoint);
       resolve([]);
     });
-    req.setTimeout(310000, () => {
+    req.setTimeout(610000, () => {
       console.log('[STREAM] Timeout — closing');
       req.destroy();
       saveTimepoint(timepoint);
