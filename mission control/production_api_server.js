@@ -7961,7 +7961,7 @@ function syncCustomers(product) {
           } catch(e) { console.log('[SCRAPER] Planning error: ' + e.message); leads = []; }
           if (!leads || leads.length < 3) {
             try {
-              var chKeyPlan2 = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+              var chKeyPlan2 = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || 'b67556b9-fedd-41dc-b8c1-dc34aed2b1ba';
               leads = await new Promise(function(resolve) {
                 var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=builders&size=200', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyPlan2 + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
@@ -8031,7 +8031,7 @@ function syncCustomers(product) {
           }
         } else if (product === 'planning') {
           try {
-            var chKeyPlan = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+            var chKeyPlan = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || 'b67556b9-fedd-41dc-b8c1-dc34aed2b1ba';
             leads = await new Promise(function(resolve) {
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=builders&size=200', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyPlan + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
@@ -8089,7 +8089,7 @@ function syncCustomers(product) {
           if (probLeads && probLeads.length > 0) { leads = filterFresh(probLeads, 'scrapedAt', 48); console.log('[SCRAPER] Probate returned ' + leads.length + ' after freshness filter'); }
           else {
             console.log('[SCRAPER] Probate Apify 0, fallback CH');
-            var chKeyProb = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+            var chKeyProb = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || 'b67556b9-fedd-41dc-b8c1-dc34aed2b1ba';
             var lastYearProb = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
             leads = await new Promise(function(resolve) {
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&incorporation_date_from=' + lastYearProb + '&size=100&q=probate', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyProb + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
@@ -8150,7 +8150,7 @@ app.post('/api/admin/stream-queue', adminAuth, function(req, res) {
 });
 app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
   try {
-    var key = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+    var key = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || 'b67556b9-fedd-41dc-b8c1-dc34aed2b1ba';
     // Also test PCS tender API
     var tenderResult = await new Promise(function(resolve) {
       var req3 = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=2', method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res3) {
@@ -10242,7 +10242,7 @@ app.listen(PORT, () => {
   console.log('  POST /api/auth/signup   - Create account');
 // Start CH Streaming background worker
 try {
-  var chKeyStream = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+  var chKeyStream = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || 'b67556b9-fedd-41dc-b8c1-dc34aed2b1ba';
   var streamWorker = require('./streaming_worker');
   streamWorker.start(chKeyStream);
   console.log('[BOOT] Stream: Companies House live stream worker started');
