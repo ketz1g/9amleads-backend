@@ -7877,7 +7877,16 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
     function wasScrapedToday(product) { return lastScrape[product] === todayStr; }
     function markScrapedToday(product) { lastScrape[product] = todayStr; fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape)); }
 
-    function syncCustomers(product) {
+        // Freshness filter: only keep leads from last freshnessHours
+    function filterFresh(leads, dateField, freshnessHours) {
+      if (!leads || !Array.isArray(leads)) return [];
+      var cutoff = new Date(Date.now() - freshnessHours * 3600000).toISOString();
+      return leads.filter(function(l) {
+        var dateVal = l[dateField] || l.scrapedAt || '';
+        return dateVal >= cutoff;
+      });
+    }
+function syncCustomers(product) {
       const allCustomers = getDb().customers || [];
       const productCustomers = allCustomers.filter(c => c.product === product && c.trial_ends && new Date(c.trial_ends) > new Date());
       const customerFile = path.join(DATA_DIR, product + '-customers.json');
@@ -7961,7 +7970,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
                 });
                 req.on('error', function() { resolve([]); }); req.setTimeout(30000, function() { req.destroy(); resolve([]); }); req.end();
               });
-              if (leads && leads.length > 0) console.log('[SCRAPER] Tenders fallback PCS returned ' + leads.length);
+              if (leads && leads.length > 0) { leads = filterFresh(leads, 'publishedDate', 72); console.log('[SCRAPER] Tenders PCS returned ' + leads.length + ' after freshness filter'); }
               else {
                 leads = await new Promise(function(resolve) {
                   var req2 = require('https').request({ hostname: 'data.gov.uk', path: '/api/3/action/package_search?q=tenders&rows=30', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res2) {
@@ -8011,7 +8020,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               req.on('error', function() { r([]); }); req.setTimeout(150000, function() { req.destroy(); r([]); });
               req.write(b); req.end();
             });
-            if (leads && leads.length > 0) console.log('[SCRAPER] Rightmove returned ' + leads.length);
+            if (leads && leads.length > 0) { leads = filterFresh(leads, 'firstVisibleDate', 48); console.log('[SCRAPER] Rightmove returned ' + leads.length + ' after freshness filter'); }
             else { console.log('[SCRAPER] Rightmove 0'); leads = []; }
           } } catch(e) { console.log('[SCRAPER] Moving error:', e.message); leads = []; }
         } else if (product === 'probate') {
@@ -8033,7 +8042,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               });
             } catch(e) { console.log('[SCRAPER] Probate Apify error:', e.message); }
           }
-          if (probLeads && probLeads.length > 0) { leads = probLeads; console.log('[SCRAPER] Probate returned ' + probLeads.length + ' real cases'); }
+          if (probLeads && probLeads.length > 0) { leads = filterFresh(probLeads, 'scrapedAt', 72); console.log('[SCRAPER] Probate returned ' + leads.length + ' after freshness filter'); }
           else {
             console.log('[SCRAPER] Probate Apify 0, fallback CH');
             var chKeyProb = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
