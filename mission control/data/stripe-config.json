@@ -26,7 +26,19 @@
       "tend-power": "price_1TsOWCADspDnFpfBHWhNa4Ij"
     },
     "pro": {
-      "pro-plan": "price_1Tm6PcADspDnFpfB74ilpeT6"
+      "pro-plan": "price_1TsOe0ADspDnFpfBnAvu51e1"
+    },
+    "builder-package": {
+      "bld-package": "price_1TsOe1ADspDnFpfBU8vScLsH"
+    },
+    "marketing-package": {
+      "mkt-package": "price_1TsOe1ADspDnFpfBdyYT23n5"
+    },
+    "property-package": {
+      "prp-package": "price_1TsOe2ADspDnFpfBy4dOaC9w"
+    },
+    "moving-package": {
+      "mov-package": "price_1TsOe2ADspDnFpfBMkCtyt8E"
     }
   },
   "setupComplete": true
