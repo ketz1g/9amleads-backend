@@ -7913,32 +7913,33 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         // Generate leads — use free APIs where available, else demo data
         var leads;
         if (product === 'newbusiness') {
+          leads = [];
           try {
-            var chKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
-            leads = [];
-            try {
-              leads = await new Promise(function(resolve) {
-                var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=' + encodeURIComponent('a') + '&size=50', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
-                  var body = ''; res.on('data', function(c) { body += c; });
-                  res.on('end', function() {
-                    try { var data = JSON.parse(body); var items = data.items || []; var thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]; resolve(items.filter(function(c){
-                      if (!c.title || !c.company_number || c.company_status === 'dissolved') return false;
-                      var incDate = c.date_of_creation || '';
-                      if (incDate && incDate < thirtyDaysAgo) return false;
-                      var addr = (c.address_snippet || '').toLowerCase();
-                      var blacklist = ['corner chambers','c/o ','care of','po box','p.o. box','suite','flat ','unit ','office ','business centre','business park','registered office','virtual office','formation agent','company formation','the company','company registered','no fixed address'];
-                      for (var bi = 0; bi < blacklist.length; bi++) { if (addr.includes(blacklist[bi])) return false; }
-                      return true;
-                    }).map(function(c) { var a = c.address || {}; return { id: 'CH_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.title || '', address: c.address_snippet || '', postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
-                    });
+            var apifyK2 = process.env.APIFY_API_KEY;
+            if (apifyK2) {
+              leads = await new Promise(function(r) {
+                var b = JSON.stringify({ search: 'limited', maxItems: 200, includeOfficers: false });
+                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyK2 + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
+                  var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
+                    try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
+                      var thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+                      r(items.filter(function(c) {
+                        if (!c.title || !c.company_number || c.company_status === 'dissolved') return false;
+                        var incDate = c.date_of_creation || '';
+                        if (incDate && incDate < thirtyDaysAgo) return false;
+                        var addr = (c.address_snippet || '').toLowerCase();
+                        var blacklist = ['corner chambers','c/o ','care of','po box','p.o. box','suite','flat ','unit ','office ','business centre','business park','registered office','virtual office','formation agent','company formation','the company','company registered','no fixed address'];
+                        for (var bi = 0; bi < blacklist.length; bi++) { if (addr.includes(blacklist[bi])) return false; }
+                        return true;
+                      }).map(function(c) { var a = c.address || {}; return { id: 'APIFY_NB_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.title || '', address: c.address_snippet || '', postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', source: 'Apify Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { r([]); }
+                  });
                 });
-                req.on('error', function() { resolve([]); });
-                req.setTimeout(30000, function() { req.destroy(); resolve([]); });
-                req.end();
+                req.on('error', function() { r([]); }); req.setTimeout(150000, function() { req.destroy(); r([]); });
+                req.write(b); req.end();
               });
-              console.log('[SCRAPER] Companies House returned ' + leads.length + ' leads');
-            } catch(e) { console.log('[SCRAPER] Newbusiness error: ' + e.message); leads = []; }
-          } catch(e) { console.log('[SCRAPER] Newbusiness outer error: ' + e.message); leads = []; }
+              console.log('[SCRAPER] Apify Companies House returned ' + leads.length + ' leads');
+            }
+          } catch(e) { console.log('[SCRAPER] Newbusiness error: ' + e.message); leads = []; }
         } else if (product === 'tenders') {
           var tendKey = process.env.APIFY_API_KEY;
           var tendActor = process.env.APIFY_TENDERS_ACTOR || 'jakubjanda~uk-contracts-finder-scraper';
