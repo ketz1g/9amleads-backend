@@ -7837,6 +7837,19 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
 });
 
 
+app.get('/api/admin/check-stripe', adminAuth, (req, res) => {
+  var hasKey = !!STRIPE_SECRET_KEY;
+  var keyPrefix = STRIPE_SECRET_KEY ? STRIPE_SECRET_KEY.substring(0, 10) + '...' : '';
+  var priceIdsCount = Object.keys(STRIPE_PRICE_IDS).length;
+  var newbusinessPrices = STRIPE_PRICE_IDS['newbusiness'] || {};
+  res.json({
+    hasSecretKey: hasKey,
+    keyPrefix: keyPrefix,
+    priceIdProducts: Object.keys(STRIPE_PRICE_IDS),
+    newbusinessPrices: newbusinessPrices,
+    configFileExists: fs.existsSync(path.join(DATA_DIR, 'stripe-config.json'))
+  });
+});
 app.post('/api/admin/clear-leads', adminAuth, (req, res) => {
   try {
     var db = getDb();
