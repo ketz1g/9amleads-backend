@@ -79,12 +79,11 @@ try {
   if (!fs.existsSync(sourceDataDir)) sourceDataDir = path.join(__dirname, '..', 'mission control', 'data');
   ['uk-postcode-areas.json', 'uk-postcode-districts.json', 'postcode-assignments.json', 'stripe-config.json'].forEach(function(fn) {
     var targetPath = path.join(DATA_DIR, fn);
-    if (!fs.existsSync(targetPath)) {
-      var sourcePath = path.join(sourceDataDir, fn);
-      if (fs.existsSync(sourcePath)) {
-        fs.copyFileSync(sourcePath, targetPath);
-        console.log('[BOOT] Copied ' + fn + ' to persistent disk');
-      }
+    var sourcePath = path.join(sourceDataDir, fn);
+    if (fs.existsSync(sourcePath) && (!fs.existsSync(targetPath) || fn === 'stripe-config.json')) {
+      fs.copyFileSync(sourcePath, targetPath);
+      if (fn === 'stripe-config.json') console.log('[BOOT] Updated stripe-config.json');
+      else console.log('[BOOT] Copied ' + fn + ' to persistent disk');
     }
   });
 } catch(e) { console.log('[BOOT] Data file setup:', e.message); }
