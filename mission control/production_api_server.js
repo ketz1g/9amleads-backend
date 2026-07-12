@@ -8021,7 +8021,7 @@ if ((!leads || leads.length < 3) && (!require('./streaming_worker').getStatus().
                 });
                 req.on('error', function() { resolve([]); }); req.setTimeout(30000, function() { req.destroy(); resolve([]); }); req.end();
               });
-              if (leads && leads.length > 0) { var ft = filterFresh(leads, \x27publishedDate\x27); leads = ft.fresh.length > 0 ? ft.fresh : ft.fallback; console.log('[SCRAPER] Tenders PCS returned ' + leads.length + ' after freshness filter'); }
+              if (leads && leads.length > 0) { var ft = filterFresh(leads, 'publishedDate'); leads = ft.fresh.length > 0 ? ft.fresh : ft.fallback; console.log('[SCRAPER] Tenders: ' + ft.fresh.length + ' fresh, ' + ft.fallback.length + ' fallback'); }
               else {
                 leads = await new Promise(function(resolve) {
                   var req2 = require('https').request({ hostname: 'data.gov.uk', path: '/api/3/action/package_search?q=tenders&rows=30', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res2) {
@@ -8071,7 +8071,7 @@ if ((!leads || leads.length < 3) && (!require('./streaming_worker').getStatus().
               req.on('error', function() { r([]); }); req.setTimeout(150000, function() { req.destroy(); r([]); });
               req.write(b); req.end();
             });
-            if (leads && leads.length > 0) { var fm = filterFresh(leads, 'firstVisibleDate'); leads = fm.fresh.length > 0 ? fm.fresh : fm.fallback; console.log('[SCRAPER] Rightmove: ' + fm.fresh.length + ' fresh (0-24h), ' + fm.fallback.length + ' fallback (24-48h), used: ' + leads.length); }
+            if (leads && leads.length > 0) { var fm = filterFresh(leads, 'firstVisibleDate'); leads = fm.fresh.length > 0 ? fm.fresh : fm.fallback; console.log('[SCRAPER] Rightmove: ' + fm.fresh.length + ' fresh, ' + fm.fallback.length + ' fallback'); }
             else { console.log('[SCRAPER] Rightmove 0'); leads = []; }
           } } catch(e) { console.log('[SCRAPER] Moving error:', e.message); leads = []; }
         } else if (product === 'probate') {
@@ -8093,7 +8093,7 @@ if ((!leads || leads.length < 3) && (!require('./streaming_worker').getStatus().
               });
             } catch(e) { console.log('[SCRAPER] Probate Apify error:', e.message); }
           }
-          if (probLeads && probLeads.length > 0) { var fp = filterFresh(probLeads, \x27notificationDate\x27); probLeads = fp.fresh.length > 0 ? fp.fresh : fp.fallback; leads = probLeads; console.log('[SCRAPER] Probate returned ' + leads.length + ' after freshness filter'); }
+          if (probLeads && probLeads.length > 0) { var fp = filterFresh(probLeads, 'notificationDate'); probLeads = fp.fresh.length > 0 ? fp.fresh : fp.fallback; leads = probLeads; console.log('[SCRAPER] Probate: ' + fp.fresh.length + ' fresh, ' + fp.fallback.length + ' fallback'); }
           else {
             console.log('[SCRAPER] Probate Apify 0, fallback CH');
             var chKeyProb = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || 'b67556b9-fedd-41dc-b8c1-dc34aed2b1ba';
