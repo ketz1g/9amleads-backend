@@ -4882,7 +4882,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     // If customer is on free trial with remaining trial days, apply trial period to subscription
     var trialEnds = customer.trial_ends ? new Date(customer.trial_ends) : null;
     var hasTrialRemaining = trialEnds && trialEnds > new Date();
-    var trialDays = hasTrialRemaining ? Math.ceil((trialEnds - new Date()) / 86400000) : 0;
+    var trialDays = 0;
 
     var sessionBody = {
       mode: 'subscription',
