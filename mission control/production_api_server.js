@@ -7996,10 +7996,8 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             leads = await new Promise(function(resolve) {
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=builders&size=200', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyPlan + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
-                  try { var data = JSON.parse(body); var items = data.items || []; var thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]; resolve(items.filter(function(c){
+                  try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){
                     if (!c.title || !c.company_number || c.company_status === 'dissolved') return false;
-                    var cd = c.date_of_creation || '';
-                    if (cd && cd < thirtyDaysAgo) return false;
                     var addr = (c.address_snippet || '').toLowerCase();
                     var blacklist = ['corner chambers','c/o ','care of','po box','p.o. box','suite','flat ','unit ','office ','business centre','business park','registered office','virtual office','formation agent','company formation','the company','company registered','no fixed address'];
                     for (var bi = 0; bi < blacklist.length; bi++) { if (addr.includes(blacklist[bi])) return false; }
