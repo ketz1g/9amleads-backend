@@ -23,7 +23,14 @@ require('dotenv').config();
 const PORT = process.env.PORT || process.env.API_PORT || 8012;
 const JWT_SECRET = process.env.JWT_SECRET || '9amLeads-Production-JWT-Secret-2026!';
 if (!process.env.JWT_SECRET) console.log('[CONFIG] JWT_SECRET not set. Using hardcoded fallback.');
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = (function() {
+  var d = path.join(__dirname, 'data');
+  if (!fs.existsSync(d)) {
+    var alt = path.join(__dirname, '..', 'mission control', 'data');
+    if (fs.existsSync(alt)) d = alt;
+  }
+  return d;
+})();
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.9amleads.com';
 
@@ -68,8 +75,8 @@ function loadAssignments() {
 try {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   // Copy default data files from source if not present on persistent disk
-  var sourceDataDir = path.join(__dirname, '..', 'mission control', 'data');
-  if (!fs.existsSync(sourceDataDir)) sourceDataDir = path.join(__dirname, 'data');
+  var sourceDataDir = path.join(__dirname, 'data');
+  if (!fs.existsSync(sourceDataDir)) sourceDataDir = path.join(__dirname, '..', 'mission control', 'data');
   ['uk-postcode-areas.json', 'uk-postcode-districts.json', 'postcode-assignments.json', 'stripe-config.json'].forEach(function(fn) {
     var targetPath = path.join(DATA_DIR, fn);
     if (!fs.existsSync(targetPath)) {
