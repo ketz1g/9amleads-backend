@@ -88,4 +88,4 @@ async function collectFreshPlanning(freshnessHours = 48) {
   return [];
 }
 
-module.exports = { collectFreshPlanning, loadCouncilRegistry, categoriseTrade };
+module.exports = { collectFreshPlanning, categoriseTrade };
