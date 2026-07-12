@@ -7918,15 +7918,15 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             var apifyK2 = process.env.APIFY_API_KEY;
             if (apifyK2) {
               leads = await new Promise(function(r) {
-                var b = JSON.stringify({ search: 'limited', maxItems: 200, includeOfficers: false });
+                var b = JSON.stringify({ search: 'limited', maxItems: 500, includeOfficers: false });
                 var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyK2 + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
                     try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
-                      var thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+                      var sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
                       r(items.filter(function(c) {
                         if (!c.title || !c.company_number || c.company_status === 'dissolved') return false;
                         var incDate = c.date_of_creation || '';
-                        if (incDate && incDate < thirtyDaysAgo) return false;
+                        if (incDate && incDate < sevenDaysAgo) return false;
                         var addr = (c.address_snippet || '').toLowerCase();
                         var blacklist = ['corner chambers','c/o ','care of','po box','p.o. box','suite','flat ','unit ','office ','business centre','business park','registered office','virtual office','formation agent','company formation','the company','company registered','no fixed address'];
                         for (var bi = 0; bi < blacklist.length; bi++) { if (addr.includes(blacklist[bi])) return false; }
