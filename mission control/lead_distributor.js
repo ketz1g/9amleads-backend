@@ -62,7 +62,7 @@ function getExclusiveClaimant(lead, product) {
     if (assignment.product !== product) continue;
     const codeNorm = normalisePostcode(code);
     if (!codeNorm) continue;
-    if (leadNorm.startsWith(codeNorm) && codeNorm.length > bestLength) {
+    if (extractPostcodeArea(lead.postcode || lead.address || '') === extractPostcodeArea(assignment.postcode || '')) {
       bestMatch = assignment.customer_id;
       bestLength = codeNorm.length;
     }
@@ -98,6 +98,10 @@ function normalisePostcode(pc) {
   if (!pc) return '';
   return pc.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
+function extractPostcodeArea(pc) {
+  if (!pc) return '';
+  return pc.toUpperCase().replace(/[^A-Z].*$/, '');
+}
 
 // Extract district from postcode: "SW1A 1AA" → "sw1"
 function normaliseDistrict(pc) {
@@ -130,8 +134,8 @@ function leadMatchesTarget(lead, customer, product) {
     for (const area of targets) {
       const areaNorm = normalisePostcode(area);
       if (!areaNorm) continue;
-      if (leadNorm.startsWith(areaNorm) || areaNorm.startsWith(leadNorm)) { areaMatch = true; break; }
-      if ((lead.postcode || '').toLowerCase().startsWith(areaNorm)) { areaMatch = true; break; }
+      if (extractPostcodeArea(leadLocation) === extractPostcodeArea(area)) { areaMatch = true; break; }
+      if (extractPostcodeArea(lead.postcode || '') === extractPostcodeArea(area)) { areaMatch = true; break; }
       if ((lead.city || '').toLowerCase() === area.toLowerCase()) { areaMatch = true; break; }
     }
     if (!areaMatch) return { match: false, tier: 0 };
@@ -187,16 +191,7 @@ function leadMatchesTarget(lead, customer, product) {
         // Probate: only postcode territory filtering (no additional filters from Companies House data)
       }
       if (filters.product === 'newbusiness') {
-        const sicCodes = filters.sicCodes || [];
-        const leadSic = (lead.sicCode || lead.sic_codes || '').toString().toLowerCase();
-        if (sicCodes.length > 0) {
-          const matched = sicCodes.some(code => {
-            const sicMappings = { tech_software: ['62','63','58','61','95'], construction: ['41','42','43','71'], retail: ['47','46','45'], hospitality: ['55','56','93'], healthcare: ['86','87','88'], professional_services: ['69','70','73','74','78','80','82'], financial: ['64','65','66'], creative: ['59','60','90','91'] };
-            const codes = sicMappings[code] || [];
-            return codes.some(c => leadSic.includes(c));
-          });
-          if (!matched) tier = 2;
-        }
+        // New Business: show ALL newly registered companies regardless of industry
       }
       if (filters.product === 'planning') {
         const appType = (lead.applicationType || lead.app_type || '').toLowerCase();
