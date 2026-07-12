@@ -7918,7 +7918,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             leads = [];
             try {
               leads = await new Promise(function(resolve) {
-                var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=' + encodeURIComponent('limited') + '&size=200', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+                var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=' + encodeURIComponent('a') + '&size=50', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; });
                   res.on('end', function() {
                     try { var data = JSON.parse(body); var items = data.items || []; var thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]; resolve(items.filter(function(c){
