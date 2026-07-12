@@ -152,7 +152,7 @@ function connect(apiKey) {
           if (!event.resource_kind || !event.resource_id) continue;
 
           var companyNumber = event.resource_id;
-          var tp = event.timepoint;
+          var tp = event.event ? event.event.timepoint : null;
           if (tp) saveTimepoint(tp);
 
           // Only process incorporated events
@@ -196,7 +196,7 @@ function connect(apiKey) {
               source: 'Companies House Stream',
               enrichment: 'address only',
               streamTimepoint: tp,
-              streamTimestamp: event.event_timepoint || event.event?.timepoint || '',
+              streamTimestamp: event.event ? event.event.timepoint : '',
               ingestedAt: new Date().toISOString(),
               firstSeenAt: new Date().toISOString(),
               lastUpdatedAt: new Date().toISOString()
