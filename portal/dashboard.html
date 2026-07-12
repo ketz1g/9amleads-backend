@@ -4420,14 +4420,14 @@ function showPlans() {
       if (sub && sub.plan) { liveSubscription = sub; showPlans(); }
       else { console.log('[UPGRADE] Subscription response:', sub); showModal('Plans', '<p style="color:var(--muted2);text-align:center;padding:20px">Unable to load your plan data. <a href="javascript:location.reload()" style="color:var(--primary);text-decoration:underline">Refresh</a> or <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">contact support</a>.</p>'); }
     });
-    showModal('Plans', '<p style="color:#8890a8;text-align:center;padding:20px"><i class="fas fa-spinner fa-spin" style="font-size:18px;display:block;margin-bottom:8px"></i>Loading plans...</p>', '520px');
+    showModal('Plans', '<p style="color:#8890a8;text-align:center;padding:20px"><i class="fas fa-spinner fa-spin" style="font-size:18px;display:block;margin-bottom:8px"></i>Loading plans...</p>', '600px');
     return;
   }
   var areasDisplay = (planData.coverage_areas && planData.coverage_areas.length > 0) ? planData.coverage_areas.join(', ') : (planData.coverage_label || 'None set');
   var overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px';
   var modal = document.createElement('div');
-  modal.style.cssText = 'background:#11131f;border:1px solid #1e2030;border-radius:16px;padding:32px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto';
+  modal.style.cssText = 'background:#11131f;border:1px solid #1e2030;border-radius:16px;padding:32px;max-width:620px;width:100%;max-height:90vh;overflow-y:auto';
   modal.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">' +
     '<h3 style="font-size:18px;font-weight:700">Upgrade Your Plan</h3>' +
     '<button onclick="this.parentElement.parentElement.parentElement.remove()" style="background:none;border:none;color:#8890a8;font-size:20px;cursor:pointer">\u2715</button></div>' +
@@ -4438,18 +4438,28 @@ function showPlans() {
     '<span style="font-size:11px">Daily limit: <strong>' + (planData.up_to ? 'Up to ' : '') + planData.leads_per_day + '</strong></span>' +
     '<div style="margin-top:8px"><span style="font-size:10px;color:var(--muted2)">No need to change anything. <a href="javascript:void(0)" onclick="openSettingsFromUpgrade()" style="color:var(--primary);text-decoration:underline">Adjust lead types or areas in Settings</a> if needed, then come back. Your current selections will be used.</span></div>' +
     '</div>' +
-    '<div style="display:grid;gap:8px">' +
+    '<div class="upgrade-plans" style="display:grid;gap:8px;margin-top:4px">' +
     ['starter','pro','enterprise'].map(function(k) {
       var isCurrent = planData.plan === k;
-      var label = k.charAt(0).toUpperCase() + k.slice(1);
+      var label = k === 'starter' ? 'Starter' : k === 'pro' ? 'Pro' : 'Enterprise';
       var price = k === 'starter' ? 25 : k === 'pro' ? 49 : 99;
-      return '<label style="display:flex;align-items:center;gap:10px;padding:14px;background:' + (isCurrent ? 'rgba(14,165,233,0.06)' : 'var(--card2)') + ';border:1px solid ' + (isCurrent ? 'rgba(14,165,233,0.2)' : 'var(--border)') + ';border-radius:8px;cursor:pointer">' +
-        '<input type="radio" name="upgrade-plan" value="' + k + '" ' + (isCurrent ? 'checked' : (k === 'starter' && planData.plan !== 'pro' && planData.plan !== 'enterprise' ? 'checked' : '')) + ' style="accent-color:var(--primary);width:16px;height:16px">' +
-        '<div style="flex:1"><strong style="color:var(--text)">' + label + '</strong><br><span style="font-size:11px;color:var(--muted2)">' + (k === 'starter' ? '3 areas' : k === 'pro' ? 'All UK areas' : 'All UK areas + priority') + '</span></div>' +
-        '<div style="text-align:right;font-size:18px;font-weight:800;color:var(--text)">&pound;' + price + '<span style="font-size:11px;color:var(--muted2)">/wk</span>' +
-        (isCurrent ? '<br><span style="font-size:9px;color:var(--success)">Current</span>' : '') + '</div></label>';
+      var badge = k === 'starter' ? '' : k === 'pro' ? '<div style="position:absolute;top:-8px;right:8px;padding:2px 10px;background:linear-gradient(135deg,#6366f1,#0ea5e9);color:#fff;border-radius:10px;font-size:9px;font-weight:700">MOST POPULAR</div>' : '';
+      var features = k === 'starter' ?
+        ['5 leads/day','Up to 25 leads/week','Choose any 1 lead type','Daily delivery at 9am','Exclusive no competition','Weekly payments','7 day free trial'] :
+        k === 'pro' ?
+        ['Up to 75 leads/week','Up to 300 leads/month','All 5 lead types','Daily delivery at 9am','Exclusive no competition','Weekly payments','Priority support','CRM-ready exports'] :
+        ['Up to 125 leads/week','Up to 500 leads/month','All 5 lead types','Daily delivery at 9am','Exclusive no competition','Weekly payments','Priority support','All UK postcodes','CRM integration'];
+      var featHtml = features.map(function(f) { return '<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2);padding:2px 0"><i class="fas fa-check-circle" style="color:#22c55e;font-size:9px;flex-shrink:0"></i>' + f + '</div>'; }).join('');
+      return '<label style="position:relative;display:block;padding:14px;background:' + (isCurrent ? 'rgba(14,165,233,0.06)' : 'var(--card2)') + ';border:2px solid ' + (isCurrent ? 'rgba(14,165,233,0.3)' : 'var(--border)') + ';border-radius:12px;cursor:pointer;' + (k === 'pro' ? 'border-color:rgba(99,102,241,0.3)' : '') + '">' + badge +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">' +
+        '<div><input type="radio" name="upgrade-plan" value="' + k + '" ' + (isCurrent ? 'checked' : (k === 'starter' && planData.plan !== 'pro' && planData.plan !== 'enterprise' ? 'checked' : '')) + ' style="accent-color:var(--primary);width:15px;height:15px;vertical-align:middle;margin-right:6px">' +
+        '<strong style="color:var(--text);font-size:15px">' + label + '</strong>' + (isCurrent ? ' <span style="font-size:9px;color:var(--success)">(Current)</span>' : '') + '</div>' +
+        '<div style="text-align:right"><span style="font-size:20px;font-weight:800;color:var(--text)">&pound;' + price + '</span><span style="font-size:11px;color:var(--muted2)">/wk</span></div></div>' +
+        featHtml +
+        '</label>';
     }).join('') +
     '</div>' +
+    '<div id="upgrade-msg" style="font-size:11px;color:var(--warning);text-align:center;margin-bottom:8px;display:none"></div>' +
     '<button id="upgrade-continue-btn" onclick="var r=document.querySelector(\'input[name=upgrade-plan]:checked\');if(r)checkout(r.value)" style="margin-top:16px;width:100%;padding:12px;background:linear-gradient(135deg,var(--primary),#2563eb);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer">Continue to Payment</button>' +
     '<p style="margin-top:10px;font-size:10px;color:var(--muted2);text-align:center">Your lead types, areas and filters stay saved. <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">Need help?</a></p>';
   overlay.appendChild(modal);
