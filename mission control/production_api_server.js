@@ -7920,10 +7920,10 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&size=500&start_index=0', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
-                  try { var data = JSON.parse(body); var items = data.items || []; var today2 = new Date().toISOString().split('T')[0]; var sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]; resolve(items.filter(function(c){
+                  try { var data = JSON.parse(body); var items = data.items || []; var today2 = new Date().toISOString().split('T')[0]; var thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]; resolve(items.filter(function(c){
                     if (!c.company_name || !c.company_number || c.company_status === 'dissolved') return false;
                     var incDate = c.date_of_creation || c.incorporation_date || '';
-                    if (incDate && incDate < sevenDaysAgo) return false;
+                    if (incDate && incDate < thirtyDaysAgo) return false;
                     var a = c.registered_office_address || {};
                     if (!a.postal_code || !a.address_line_1) return false;
                     var addr = (a.address_line_1 || '') + ' ' + (a.address_line_2 || '');
