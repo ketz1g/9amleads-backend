@@ -1,41 +1,29 @@
 {
   "priceIds": {
     "moving": {
-      "mov-starter": "price_1Tm6PMADspDnFpfBJtsUWi6v",
-      "mov-growth": "price_1Tm6PNADspDnFpfB847Dubdf",
-      "mov-power": "price_1Tm6POADspDnFpfBkf0gfqXs"
+      "mov-starter": "price_1TsOW7ADspDnFpfBbiqbOOnb",
+      "mov-growth": "price_1TsOW7ADspDnFpfBFi8xRpFG",
+      "mov-power": "price_1TsOW8ADspDnFpfBtcjoVRvJ"
     },
     "probate": {
-      "prob-starter": "price_1Tm6PPADspDnFpfBkewa97Bv",
-      "prob-growth": "price_1Tm6PPADspDnFpfB3q61i5FP",
-      "prob-power": "price_1Tm6PQADspDnFpfBazgz1UD7"
+      "prob-starter": "price_1TsOW8ADspDnFpfB72jEnBFX",
+      "prob-growth": "price_1TsOW9ADspDnFpfBAFxbNBDt",
+      "prob-power": "price_1TsOW9ADspDnFpfB3HSDoQ6U"
     },
     "newbusiness": {
-      "nb-starter": "price_1Tm6PRADspDnFpfBx80lgJ84",
-      "nb-growth": "price_1Tm6PSADspDnFpfBXakzcGEL",
-      "nb-power": "price_1Tm6PSADspDnFpfBGRGc5zQ9"
+      "nb-starter": "price_1TsOVjADspDnFpfBGm2vNEjh",
+      "nb-growth": "price_1TsOVkADspDnFpfBfPdXdQjZ",
+      "nb-power": "price_1TsOVkADspDnFpfBJK8lqbol"
     },
     "planning": {
-      "plan-starter": "price_1TmEKSADspDnFpfBrCHXJBFu",
-      "plan-growth": "price_1TmEKTADspDnFpfBVdi1APEq",
-      "plan-power": "price_1TmEKTADspDnFpfBxFjHeoP9"
+      "plan-starter": "price_1TsOWAADspDnFpfBFF9WA0gR",
+      "plan-growth": "price_1TsOWAADspDnFpfBIyA0TSDP",
+      "plan-power": "price_1TsOWBADspDnFpfBuoZcCYrn"
     },
     "tenders": {
-      "tend-starter": "price_1TmEKTADspDnFpfBsi6jjA6B",
-      "tend-growth": "price_1TmEKUADspDnFpfBqnyKzJxM",
-      "tend-power": "price_1TmEKUADspDnFpfBugGOoqhD"
-    },
-    "builder-package": {
-      "bld-package": "price_1Tm6PYADspDnFpfB1PoCynL3"
-    },
-    "marketing-package": {
-      "mkt-package": "price_1Tm6PZADspDnFpfBuTg9lDWp"
-    },
-    "property-package": {
-      "prp-package": "price_1Tm6PaADspDnFpfBtGP40kRG"
-    },
-    "moving-package": {
-      "mov-package": "price_1Tm6PbADspDnFpfBladxbVXe"
+      "tend-starter": "price_1TsOWBADspDnFpfBaf9IsPed",
+      "tend-growth": "price_1TsOWCADspDnFpfBSjYEqpFq",
+      "tend-power": "price_1TsOWCADspDnFpfBHWhNa4Ij"
     },
     "pro": {
       "pro-plan": "price_1Tm6PcADspDnFpfB74ilpeT6"
