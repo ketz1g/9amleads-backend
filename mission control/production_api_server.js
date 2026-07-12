@@ -4935,6 +4935,31 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
 });
 
 // ===== DIRECT MAIL PAYMENTS =====
+// POST /api/stripe/webhook — handle Stripe checkout completed events
+app.post('/api/stripe/webhook', async (req, res) => {
+  try {
+    var event = req.body;
+    if (event.type === 'checkout.session.completed') {
+      var session = event.data.object;
+      var customerEmail = session.customer_email || (session.customer_details && session.customer_details.email);
+      var plan = session.metadata && session.metadata.plan;
+      var product = session.metadata && session.metadata.product;
+      if (customerEmail && plan) {
+        var customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(customerEmail);
+        if (customer) {
+          var dailyLimits = { starter: 5, growth: 15, power: 40, pro: 15, enterprise: 40 };
+          var leadsPerDay = dailyLimits[plan] || 15;
+          db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = NULL WHERE id = ?').run(plan, leadsPerDay, customer.id);
+          if (product) db.prepare('UPDATE customers SET product = ? WHERE id = ?').run(product, customer.id);
+          saveDb();
+          console.log('[STRIPE] Upgraded ' + customerEmail + ' to ' + plan);
+        }
+      }
+    }
+    res.json({ received: true });
+  } catch(e) { console.error('[STRIPE] Webhook error:', e.message); res.status(500).json({ error: e.message }); }
+});
+
 var DM_PRICE_CONFIG = {
   platform_fee: 29, // Manual campaign platform fee (Â£)
   min_fee: 99, // Minimum campaign order (Â£)
