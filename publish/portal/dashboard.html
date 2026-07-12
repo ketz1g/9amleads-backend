@@ -4416,7 +4416,7 @@ function showPlans() {
   if (!planData) {
     apiFetch('/api/subscription').then(function(sub) {
       if (sub && sub.plan) { liveSubscription = sub; showPlans(); }
-      else { showModal('Plans', '<p style="color:var(--muted2);text-align:center;padding:20px">Unable to load your plan data. <a href="javascript:closeModals();showPage('settings')" style="color:var(--primary);text-decoration:underline">Refresh</a> or <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">contact support</a>.</p>'); }
+      else { showModal('Plans', '<p style="color:var(--muted2);text-align:center;padding:20px">Unable to load your plan data. <a href="javascript:location.reload()" style="color:var(--primary);text-decoration:underline">Refresh</a> or <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">contact support</a>.</p>'); }
     });
     showModal('Plans', '<p style="color:#8890a8;text-align:center;padding:20px"><i class="fas fa-spinner fa-spin" style="font-size:18px;display:block;margin-bottom:8px"></i>Loading plans...</p>', '520px');
     return;
@@ -4434,7 +4434,7 @@ function showPlans() {
     '<span style="font-size:11px">Lead types: <strong>' + (planData.lead_type || 'N/A') + '</strong></span><br>' +
     '<span style="font-size:11px">Coverage: <strong>' + (planData.coverage_label || 'N/A') + '</strong> (' + areasDisplay + ')</span><br>' +
     '<span style="font-size:11px">Daily limit: <strong>' + (planData.up_to ? 'Up to ' : '') + planData.leads_per_day + '</strong></span>' +
-    '<div style="margin-top:8px"><a href="javascript:closeModals();showPage('settings')" style="font-size:10px;color:var(--primary);text-decoration:underline">Change your lead types and areas in Settings</a><br><span style="font-size:10px;color:var(--muted2)">Your current selections will be used for the upgrade.</span></div>' +
+    '<div style="margin-top:8px"><span style="font-size:10px;color:var(--muted2)">Change your lead types and areas in <a href="javascript:void(0)" onclick="closeModals();showPage('+"'settings'"+')" style="color:var(--primary);text-decoration:underline">Settings</a>. Your current selections will be used for the upgrade.</span></div>' +
     '</div>' +
     '<div style="display:grid;gap:8px">' +
     ['starter','pro','enterprise'].map(function(k) {
