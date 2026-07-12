@@ -7891,7 +7891,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         if (product === 'newbusiness') {
           try {
             var chKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
-            var yesterday2 = new Date(Date.now() - 48 * 86400000).toISOString().split('T')[0];
+            var yesterday2 = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
             leads = await new Promise(function(resolve) {
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&incorporation_date_from=' + yesterday2 + '&size=100', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
@@ -8032,7 +8032,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           else {
             console.log('[SCRAPER] Probate Apify 0, fallback CH');
             var chKeyProb = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
-            var lastYearProb = new Date(Date.now() - 365 * 86400000).toISOString().split('T')[0];
+            var lastYearProb = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
             leads = await new Promise(function(resolve) {
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&incorporation_date_from=' + lastYearProb + '&size=100&q=probate', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyProb + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
