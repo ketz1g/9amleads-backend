@@ -7922,11 +7922,11 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
                 var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyK2 + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
                     try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
-                      var sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+                      var thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
                       r(items.filter(function(c) {
                         if (!c.title || !c.company_number || c.company_status === 'dissolved') return false;
                         var incDate = c.date_of_creation || '';
-                        if (incDate && incDate < sevenDaysAgo) return false;
+                        if (incDate && incDate < thirtyDaysAgo) return false;
                         var addr = (c.address_snippet || '').toLowerCase();
                         var blacklist = ['corner chambers','c/o ','care of','po box','p.o. box','suite','flat ','unit ','office ','business centre','business park','registered office','virtual office','formation agent','company formation','the company','company registered','no fixed address'];
                         for (var bi = 0; bi < blacklist.length; bi++) { if (addr.includes(blacklist[bi])) return false; }
@@ -7991,42 +7991,28 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             } catch(e) { console.log('[SCRAPER] Tenders fallback error:', e.message); leads = []; }
           }
         } else if (product === 'planning') {
-          var planKey = process.env.APIFY_API_KEY;
-          var planActor = process.env.APIFY_PLANNING_ACTOR || 'matej~uk-planning-applications';
-          leads = [];
-          if (planKey && planActor) {
-            try {
-              leads = await new Promise(function(r) {
-                var b = JSON.stringify({ location: 'UK', maxResults: 500 });
-                var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/' + encodeURIComponent(planActor) + '/run-sync-get-dataset-items?token=' + planKey + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
-                  var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
-                    try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
-                      r(items.map(function(p) { return { id: 'PLAN_' + (p.id || p.application_id || Date.now()), title: p.title || p.description || p.address || '', description: (p.description || '').substring(0, 300), address: p.address || '', postcode: p.postcode || '', applicant: p.applicant_name || '', applicationType: p.application_type || '', url: p.url || '', source: 'Apify Planning', scrapedAt: new Date().toISOString() }; }));
-                    } catch(e) { r([]); }
-                  });
+          try {
+            var chKeyPlan = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+            leads = await new Promise(function(resolve) {
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=builders&size=200', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyPlan + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+                var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
+                  try { var data = JSON.parse(body); var items = data.items || []; var thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]; resolve(items.filter(function(c){
+                    if (!c.title || !c.company_number || c.company_status === 'dissolved') return false;
+                    var cd = c.date_of_creation || '';
+                    if (cd && cd < thirtyDaysAgo) return false;
+                    var addr = (c.address_snippet || '').toLowerCase();
+                    var blacklist = ['corner chambers','c/o ','care of','po box','p.o. box','suite','flat ','unit ','office ','business centre','business park','registered office','virtual office','formation agent','company formation','the company','company registered','no fixed address'];
+                    for (var bi = 0; bi < blacklist.length; bi++) { if (addr.includes(blacklist[bi])) return false; }
+                    return true;
+                  }).map(function(c) { var a = c.address || {}; return { id: 'CH_BLD_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', address: c.address_snippet || '', postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House Builders', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
                 });
-                req.on('error', function() { r([]); }); req.setTimeout(150000, function() { req.destroy(); r([]); });
-                req.write(b); req.end();
               });
-              if (leads && leads.length > 0) console.log('[SCRAPER] Apify Planning returned ' + leads.length + ' applications');
-            } catch(e) { console.log('[SCRAPER] Apify Planning error:', e.message); }
-          }
-          if (!leads || leads.length < 3) {
-            try {
-              var chKeyPlan = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
-              leads = await new Promise(function(resolve) {
-                var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=builders&size=100', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyPlan + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
-                  var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
-                    try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){var cd=c.date_of_creation||c.incorporation_date||'';var twoAgo=new Date(Date.now()-14*86400000).toISOString().split('T')[0];return c.title && c.company_number && c.company_status !== 'dissolved' && (!cd||cd>=twoAgo);}).map(function(c) { var a = c.address || {}; return { id: 'CH_BLD_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House Builders', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
-                  });
-                });
-                req.on('error', function() { resolve([]); });
-                req.setTimeout(60000, function() { req.destroy(); resolve([]); });
-                req.end();
-              });
-              console.log('[SCRAPER] CH Planning fallback returned ' + leads.length + ' leads');
-            } catch(e) { console.log('[SCRAPER] Planning fallback error:', e.message); leads = []; }
-          }
+              req.on('error', function() { resolve([]); });
+              req.setTimeout(30000, function() { req.destroy(); resolve([]); });
+              req.end();
+            });
+            console.log('[SCRAPER] CH Planning returned ' + leads.length + ' builders (30d)');
+          } catch(e) { console.log('[SCRAPER] Planning error:', e.message); leads = []; }
         } else if (product === 'moving') {
           try { var k = process.env.APIFY_API_KEY; leads = []; if (k) {
             leads = await new Promise(function(r) {
