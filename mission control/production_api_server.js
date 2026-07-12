@@ -2072,13 +2072,14 @@ app.post('/api/postcodes/extra', authMiddleware, async (req, res) => {
 
 // PUT /api/settings
 app.put('/api/settings', authMiddleware, (req, res) => {
-  const { company, name, phone, target_areas, notifications } = req.body;
+  const { company, name, phone, target_areas, notifications, password } = req.body;
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
 
   if (company) db.prepare('UPDATE customers SET company = ? WHERE id = ?').run(company, req.user.id);
   if (name) db.prepare('UPDATE customers SET contact_name = ? WHERE id = ?').run(name, req.user.id);
   if (phone) db.prepare('UPDATE customers SET phone = ? WHERE id = ?').run(phone, req.user.id);
+  if (password && password.length >= 8) { var pwHash = require('bcryptjs').hashSync(password, 10); db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?').run(pwHash, req.user.id); }
   if (target_areas) {
     const validation = validatePostcodes(target_areas, customer.plan, customer.product, req.user.id);
     if (!validation.valid) {

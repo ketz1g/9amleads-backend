@@ -4008,11 +4008,18 @@ function saveSettingsCrmWebhook() {
 function saveSettings() {
   var company = document.getElementById('settings-company')?.value;
   var password = document.getElementById('settings-password')?.value;
-  if (company) { var s = getSession(); if (s) s.company = company; localStorage.setItem('mld_portal_session', JSON.stringify(s)); }
-  var msg = 'Settings saved.';
-  if (password && password.length >= 8) msg += ' Password updated in session.';
-  else if (password) msg += ' Password not changed (min 8 chars).';
-  showModal('Settings', '<p style="text-align:center;padding:12px;color:var(--success)"><i class="fas fa-check-circle" style="font-size:24px;display:block;margin-bottom:6px"></i>' + msg + '</p>');
+  var body = { company, name: '', phone: '' };
+  if (password && password.length >= 8) body.password = password;
+  apiFetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function(r) {
+    if (r && r.success !== false) {
+      if (company) { var s = getSession(); if (s) s.company = company; localStorage.setItem('mld_portal_session', JSON.stringify(s)); }
+      var msg = 'Settings saved.';
+      if (password && password.length >= 8) msg += ' Password updated.';
+      showModal('Settings', '<p style="text-align:center;padding:12px;color:var(--success)"><i class="fas fa-check-circle" style="font-size:24px;display:block;margin-bottom:6px"></i>' + msg + '</p>');
+    } else {
+      showModal('Settings', '<p style="text-align:center;padding:12px;color:var(--danger)"><i class="fas fa-exclamation-circle" style="font-size:24px;display:block;margin-bottom:6px"></i>Failed to save settings. Please try again.</p>');
+    }
+  });
 }
 
 // ===== RETENTION FLOW =====
