@@ -7942,7 +7942,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
           } catch(e) { console.log('[SCRAPER] Newbusiness error: ' + e.message); leads = []; }
         } else if (product === 'tenders') {
           var tendKey = process.env.APIFY_API_KEY;
-          var tendActor = process.env.APIFY_TENDERS_ACTOR || 'jakubjanda~uk-contracts-finder-scraper';
+          var tendActor = process.env.APIFY_TENDERS_ACTOR || '';
           leads = [];
           if (tendKey && tendActor) {
             try {
