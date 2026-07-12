@@ -7938,14 +7938,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               });
               console.log('[SCRAPER] Companies House returned ' + leads.length + ' leads');
             } catch(e) { console.log('[SCRAPER] Newbusiness error: ' + e.message); leads = []; }
-          } catch(e) { console.log('[SCRAPER] Newbusiness error: ' + e.message); leads = []; }
-              });
-              req.on('error', function() { resolve([]); });
-              req.setTimeout(60000, function() { req.destroy(); resolve([]); });
-              req.end();
-            });
-            console.log('[SCRAPER] Companies House advanced search returned ' + leads.length + ' newly incorporated companies (active, last 48h)');
-          } catch(e) { console.log('[SCRAPER] Newbusiness error: ' + e.message); leads = []; }
+          } catch(e) { console.log('[SCRAPER] Newbusiness outer error: ' + e.message); leads = []; }
         } else if (product === 'tenders') {
           var tendKey = process.env.APIFY_API_KEY;
           var tendActor = process.env.APIFY_TENDERS_ACTOR || 'jakubjanda~uk-contracts-finder-scraper';
