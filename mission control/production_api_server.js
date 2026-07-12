@@ -4845,6 +4845,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     if (!customer) return res.status(404).json({ error: 'User not found' });
 
     // Verify availability before checkout
+    var packageKeys = { 'builder-package': 'bld-package', 'marketing-package': 'mkt-package', 'property-package': 'prp-package', 'moving-package': 'mov-package', 'pro': 'pro-plan' };
     if (!packageKeys[plan]) {
       const availRule = getLeadTypeRule(customer.product);
       if (!availRule.enabled) {
@@ -4857,7 +4858,6 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
 
     // Handle packages and pro plan directly
     var priceId;
-    var packageKeys = { 'builder-package': 'bld-package', 'marketing-package': 'mkt-package', 'property-package': 'prp-package', 'moving-package': 'mov-package', 'pro': 'pro-plan' };
     var packageMap = { 'builder-package': 'builder-package', 'marketing-package': 'marketing-package', 'property-package': 'property-package', 'moving-package': 'moving-package', 'pro': 'pro' };
     if (packageKeys[plan]) {
       var priceIdMap = STRIPE_PRICE_IDS[packageMap[plan]] || {};
