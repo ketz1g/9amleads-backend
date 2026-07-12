@@ -4434,7 +4434,7 @@ function showPlans() {
       var label = k.charAt(0).toUpperCase() + k.slice(1);
       var price = k === 'starter' ? 25 : k === 'pro' ? 49 : 99;
       return '<label style="display:flex;align-items:center;gap:10px;padding:14px;background:' + (isCurrent ? 'rgba(14,165,233,0.06)' : 'var(--card2)') + ';border:1px solid ' + (isCurrent ? 'rgba(14,165,233,0.2)' : 'var(--border)') + ';border-radius:8px;cursor:pointer">' +
-        '<input type="radio" name="upgrade-plan" value="' + k + '" ' + (isCurrent ? 'checked' : '') + ' style="accent-color:var(--primary);width:16px;height:16px">' +
+        '<input type="radio" name="upgrade-plan" value="' + k + '" ' + (isCurrent ? 'checked' : (k === 'starter' && planData.plan !== 'pro' && planData.plan !== 'enterprise' ? 'checked' : '')) + ' style="accent-color:var(--primary);width:16px;height:16px">' +
         '<div style="flex:1"><strong style="color:var(--text)">' + label + '</strong><br><span style="font-size:11px;color:var(--muted2)">' + (k === 'starter' ? '3 areas' : k === 'pro' ? 'All UK areas' : 'All UK areas + priority') + '</span></div>' +
         '<div style="text-align:right;font-size:18px;font-weight:800;color:var(--text)">&pound;' + price + '<span style="font-size:11px;color:var(--muted2)">/wk</span>' +
         (isCurrent ? '<br><span style="font-size:9px;color:var(--success)">Current</span>' : '') + '</div></label>';
