@@ -7814,7 +7814,7 @@ app.get('/admin/direct-mail', (req, res) => {
 });
 
 // POST /api/admin/run-scrapers — manually trigger all scrapers now
-app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
+app.post(\x27/api/admin/clear-leads\x27, adminAuth, (req, res) => { try { var db = getDb(); var email = req.body.email; var count = 0; if (email) { db.leads = (db.leads || []).filter(function(l) { if (l.customer_id && (db.customers || []).some(function(c) { return c.id === l.customer_id && c.email === email; })) { count++; return false; } return true; }); } else { count = (db.leads || []).length; db.leads = []; } saveDb(); res.json({ success: true, removed: count }); } catch(e) { res.status(500).json({ error: e.message }); } }); app.post(\x27/api/admin/run-scrapers\x27, adminAuth, async (req, res) => {
   try {
     const startTime = new Date().toISOString();
     const https = require('https');
