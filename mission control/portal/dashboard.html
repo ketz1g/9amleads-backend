@@ -2496,7 +2496,7 @@ function dmAddCard() {
         var script = document.createElement('script');
         script.src = 'https://js.stripe.com/v3/';
         script.onload = function() {
-          var stripe = Stripe('pk_live_placeholder'); // Will be replaced with actual publishable key
+          var stripe = Stripe('pk_live_51TU3yrADspDnFpfBivn1ex8gHGvOCNqxNaB66UWWNSTY4Sxf5tEAs7FBwHn6FDgkF5tJANqipox8h0nQ5s5yVq3j00KblDrNmC'); // Will be replaced with actual publishable key
           var elements = stripe.elements();
           var cardElement = elements.create('card', { style: { base: { fontSize: '14px', color: '#fff', fontFamily: 'Inter, sans-serif' } } });
           cardElement.mount('#stripe-card-element');
