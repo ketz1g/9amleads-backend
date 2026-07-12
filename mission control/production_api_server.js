@@ -4749,16 +4749,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
 
 // ===== STRIPE PAYMENTS =====
 const STRIPE_PRICE_IDS = {
-  moving: { 'mov-starter': 'price_1TsOW7ADspDnFpfBbiqbOOnb', 'mov-growth': 'price_1TsOW7ADspDnFpfBFi8xRpFG', 'mov-power': 'price_1TsOW8ADspDnFpfBtcjoVRvJ' },
-  probate: { 'prob-starter': 'price_1TsOW8ADspDnFpfB72jEnBFX', 'prob-growth': 'price_1TsOW9ADspDnFpfBAFxbNBDt', 'prob-power': 'price_1TsOW9ADspDnFpfB3HSDoQ6U' },
-  newbusiness: { 'nb-starter': 'price_1TsOVjADspDnFpfBGm2vNEjh', 'nb-growth': 'price_1TsOVkADspDnFpfBfPdXdQjZ', 'nb-power': 'price_1TsOVkADspDnFpfBJK8lqbol' },
-  planning: { 'plan-starter': 'price_1TsOWAADspDnFpfBFF9WA0gR', 'plan-growth': 'price_1TsOWAADspDnFpfBIyA0TSDP', 'plan-power': 'price_1TsOWBADspDnFpfBuoZcCYrn' },
-  tenders: { 'tend-starter': 'price_1TsOWBADspDnFpfBaf9IsPed', 'tend-growth': 'price_1TsOWCADspDnFpfBSjYEqpFq', 'tend-power': 'price_1TsOWCADspDnFpfBHWhNa4Ij' },
-  'builder-package': { 'bld-package': 'price_1TsOe1ADspDnFpfBU8vScLsH' },
-  'marketing-package': { 'mkt-package': 'price_1TsOe1ADspDnFpfBdyYT23n5' },
-  'property-package': { 'prp-package': 'price_1TsOe2ADspDnFpfBy4dOaC9w' },
-  'moving-package': { 'mov-package': 'price_1TsOe2ADspDnFpfBMkCtyt8E' },
-  pro: { 'pro-plan': 'price_1TsOe0ADspDnFpfBnAvu51e1' }
+  moving: { 'mov-starter': 'price_1TsP8WADspDnFpfBIArkE211', 'mov-growth': 'price_1TsP8XADspDnFpfBPkVgBe9C', 'mov-power': 'price_1TsP8YADspDnFpfBmxcyHiSr' },
+  probate: { 'prob-starter': 'price_1TsP8YADspDnFpfBs6uXH5le', 'prob-growth': 'price_1TsP8ZADspDnFpfBpL232Umt', 'prob-power': 'price_1TsP8ZADspDnFpfBcWlvS46Q' },
+  newbusiness: { 'nb-starter': 'price_1TsP8UADspDnFpfBqO9aVzkT', 'nb-growth': 'price_1TsP8VADspDnFpfBMkLk1S7l', 'nb-power': 'price_1TsP8WADspDnFpfBAZdVoTrU' },
+  planning: { 'plan-starter': 'price_1TsP8aADspDnFpfB4sra69sf', 'plan-growth': 'price_1TsP8aADspDnFpfBSOuMS7Jg', 'plan-power': 'price_1TsP8bADspDnFpfBRoq8Ly0d' },
+  tenders: { 'tend-starter': 'price_1TsP8bADspDnFpfBia3h5tSf', 'tend-growth': 'price_1TsP8cADspDnFpfBwGJ9ReVn', 'tend-power': 'price_1TsP8cADspDnFpfBcayMIQ2S' },
+  pro: { 'pro-plan': 'price_1TsP8dADspDnFpfBXiJgOinU' }
 };
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
@@ -4947,8 +4943,9 @@ app.post('/api/stripe/webhook', async (req, res) => {
       if (customerEmail && plan) {
         var customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(customerEmail);
         if (customer) {
-          var dailyLimits = { starter: 5, growth: 15, power: 40, pro: 15, enterprise: 40 };
-          var leadsPerDay = dailyLimits[plan] || 15;
+          var weeklyLimits = { starter: 25, growth: 75, power: 125, pro: 75, enterprise: 125 };
+          var weeklyMax = weeklyLimits[plan] || 25;
+          var leadsPerDay = Math.ceil(weeklyMax / 5);
           db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = NULL WHERE id = ?').run(plan, leadsPerDay, customer.id);
           if (product) db.prepare('UPDATE customers SET product = ? WHERE id = ?').run(product, customer.id);
           saveDb();
