@@ -4754,7 +4754,19 @@ const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 // Load Stripe config from file (supports both env var and config file)
 let STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 try {
-  const stripeConfig = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'stripe-config.json'), 'utf-8'));
+  var configPath = path.join(DATA_DIR, 'stripe-config.json');
+  // Try alternate locations if config not found at DATA_DIR
+  if (!fs.existsSync(configPath)) {
+    var altPaths = [
+      path.join(__dirname, 'data', 'stripe-config.json'),
+      path.join(process.cwd(), 'mission control', 'data', 'stripe-config.json'),
+      path.join(process.cwd(), 'data', 'stripe-config.json')
+    ];
+    for (var api = 0; api < altPaths.length; api++) {
+      if (fs.existsSync(altPaths[api])) { configPath = altPaths[api]; break; }
+    }
+  }
+  const stripeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
   if (!STRIPE_SECRET_KEY && stripeConfig.apiKey) {
     STRIPE_SECRET_KEY = stripeConfig.apiKey;
   }
