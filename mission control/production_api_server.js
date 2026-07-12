@@ -4782,7 +4782,15 @@ try {
     STRIPE_SECRET_KEY = stripeConfig.apiKey;
   }
   if (stripeConfig.priceIds) {
-    Object.assign(STRIPE_PRICE_IDS, stripeConfig.priceIds);
+    // Merge file prices UNDER embedded defaults (keep overrides)
+    for (var prodKey in stripeConfig.priceIds) {
+      if (!STRIPE_PRICE_IDS[prodKey]) STRIPE_PRICE_IDS[prodKey] = {};
+      for (var planKey in stripeConfig.priceIds[prodKey]) {
+        if (!STRIPE_PRICE_IDS[prodKey][planKey]) {
+          STRIPE_PRICE_IDS[prodKey][planKey] = stripeConfig.priceIds[prodKey][planKey];
+        }
+      }
+    }
   }
   if (stripeConfig.webhookSecret) {
     STRIPE_WEBHOOK_SECRET ||= stripeConfig.webhookSecret;
