@@ -7923,10 +7923,9 @@ function syncCustomers(product) {
         if (product === 'newbusiness') {
           leads = [];
           try {
-            var chKeyStream = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
-            var streamCollector = require('./streaming_collector');
-            leads = await streamCollector.collectFreshLeads(chKeyStream, 48);
-            console.log('[SCRAPER] Companies House Stream returned ' + leads.length + ' leads');
+            var streamWorker = require('./streaming_worker');
+            leads = streamWorker.getRecentCompanies();
+            console.log('[SCRAPER] Stream worker returned ' + leads.length + ' queued companies');
           } catch(e) { console.log('[SCRAPER] Stream error: ' + e.message); leads = []; }
           if (!leads || leads.length < 3) {
             try {
@@ -8133,6 +8132,22 @@ function syncCustomers(product) {
   }
 });
 // POST /api/admin/test-ch — test Companies House API from Render
+// Stream worker status
+app.get('/api/admin/stream-status', adminAuth, function(req, res) {
+  try {
+    var sw = require('./streaming_worker');
+    res.json(sw.getStatus());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get queued stream companies
+app.post('/api/admin/stream-queue', adminAuth, function(req, res) {
+  try {
+    var sw = require('./streaming_worker');
+    var companies = sw.getRecentCompanies();
+    res.json({ count: companies.length, companies: companies });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
   try {
     var key = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
