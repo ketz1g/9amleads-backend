@@ -6023,8 +6023,8 @@ function generateLeadEmailHTML(customer, leads) {
       title = d.deceasedName || 'Probate Estate';
       subtitle = d.estateValue ? '\u00a3' + Number(d.estateValue).toLocaleString() + ' estate' : '';
     } else if (leadProduct === 'newbusiness') {
-      title = d.company || d.name || d.businessName || (d.address && d.address.split(',')[0]) || 'New Company Registration';
-      subtitle = d.sicCode ? 'SIC: ' + d.sicCode : (d.address ? d.address.substring(0, 50) : '');
+      title = d.companyName || d.name || 'New Company Registration';
+      subtitle = d.city || d.incorporationDate ? 'Incorporated ' + new Date(d.incorporationDate).toLocaleDateString() : '';
     } else if (leadProduct === 'planning') {
       title = address.split(',')[0].trim() || d.description || (d.council ? d.council + ' Application' : 'Planning Application');
       subtitle = d.council ? d.council : (d.description ? d.description.substring(0, 60) : '');
@@ -6068,9 +6068,6 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.dateOfDeath) chips.push({ icon: '\uD83D\uDCC5', text: 'Died ' + new Date(d.dateOfDeath).toLocaleDateString() });
       if (d.solicitor) chips.push({ icon: '\uD83D\uDC64', text: 'Solicitor: ' + d.solicitor });
     } else if (leadProduct === 'newbusiness') {
-      var bizName = d.company || d.businessName || d.name || d.address;
-      if (bizName) chips.push({ icon: '\uD83C\uDFE2', text: bizName.substring(0, 40) });
-      if (d.industryTags) chips.push({ icon: '\uD83C\uDF1F', text: d.industryTags });
       if (d.sicCode) chips.push({ icon: '\uD83D\uDCCA', text: 'SIC: ' + d.sicCode });
       if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Incorporated ' + new Date(d.incorporationDate).toLocaleDateString() });
       if (d.companyNumber && !d.generated) chips.push({ icon: '\uD83D\uDCB3', text: 'No: ' + d.companyNumber });
@@ -7922,8 +7919,15 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&incorporation_date_from=' + yesterday2 + '&size=100', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
-                  try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.company_name && c.company_number && c.company_status !== 'dissolved'}).map(function(c) { var a = c.registered_office_address || {}; return { id: 'CH_' + (c.company_number || Date.now()), name: (c.company_name || '').trim(), companyNumber: c.company_number || '', companyName: c.company_name || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', dateOfCreation: c.incorporation_date || c.date_of_creation || '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
-                });
+                  try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){
+                    if (!c.company_name || !c.company_number || c.company_status === 'dissolved') return false;
+                    var addr = ((c.registered_office_address || {}).address_line_1 || '') + ' ' + ((c.registered_office_address || {}).address_line_2 || '');
+                    var name = (c.company_name || '').toLowerCase();
+                    var blacklist = ['corner chambers','c/o ','care of','po box','p.o. box','suite','flat ','unit ','office ','business centre','business park','registered office','virtual office','formation agent','company formation','the company','company registered','no fixed address'];
+                    for (var bi = 0; bi < blacklist.length; bi++) { if (addr.toLowerCase().includes(blacklist[bi]) || name.includes(blacklist[bi])) return false; }
+                    return true;
+                  }).map(function(c) { var a = c.registered_office_address || {}; return { id: 'CH_' + (c.company_number || Date.now()), name: (c.company_name || '').trim(), companyNumber: c.company_number || '', companyName: c.company_name || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', dateOfCreation: c.incorporation_date || c.date_of_creation || '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                  });
               });
               req.on('error', function() { resolve([]); });
               req.setTimeout(15000, function() { req.destroy(); resolve([]); });
