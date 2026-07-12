@@ -4267,19 +4267,19 @@ function exportRange(format) {
 }
 
 async function checkout(plan) {
-  const msg = document.getElementById('sub-msg'); msg.style.display = 'none';
+  const msg = document.getElementById('upgrade-msg');
+  if (msg) msg.style.display = 'none';
   const data = await apiFetch('/api/create-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan }) });
   if (data && data.url) { window.location.href = data.url; }
   else {
     const errMsg = data?.error || '';
-    if (errMsg.includes('not configured')) {
-      msg.style.color = 'var(--warning)';
-      msg.innerHTML = 'Payments are being set up. For now, please email <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">hello@9amleads.com</a> to upgrade your plan.';
-    } else {
-      msg.style.color = 'var(--danger)';
-      msg.textContent = 'Error: ' + errMsg + ' G·· Contact hello@9amleads.com for help.';
+    if (msg) {
+      msg.style.color = errMsg.includes('not configured') ? 'var(--success)' : 'var(--warning)';
+      msg.innerHTML = errMsg.includes('not configured') ? 
+        'To upgrade, email us at <a href="mailto:hello@9amleads.com?subject=Upgrade to ' + plan + '" style="color:var(--primary);text-decoration:underline">hello@9amleads.com</a> with your preferred plan.' :
+        'Error: ' + errMsg + ' <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">Contact support</a>';
+      msg.style.display = 'block';
     }
-    msg.style.display = 'block';
   }
 }
 
