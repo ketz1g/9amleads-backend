@@ -4867,7 +4867,10 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
       }
     } else {
       const productKey = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' }[customer.product] || customer.product;
-      const planKey = productKey + '-' + plan;
+      // Map modal plan names to Stripe price name format
+      var planMap = { starter: 'starter', pro: 'growth', enterprise: 'power' };
+      var mappedPlan = planMap[plan] || plan;
+      const planKey = productKey + '-' + mappedPlan;
       const priceIdMap = STRIPE_PRICE_IDS[customer.product] || {};
       priceId = priceIdMap[planKey];
       if (!priceId) {
