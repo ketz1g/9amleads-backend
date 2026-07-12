@@ -263,10 +263,11 @@ function normaliseLead(rawLead, product, customerId) {
 
   // New Business specific fields
   if (product === 'newbusiness') {
-    base.company = rawLead.name || rawLead.company || '';
+    base.company = rawLead.companyName || rawLead.name || rawLead.company || '';
     base.companyNumber = rawLead.companyNumber || '';
     base.address = rawLead.address || '';
     base.sicCode = rawLead.sicCode || rawLead.sic_description || '';
+    base.incorporationDate = rawLead.incorporationDate || rawLead.dateOfCreation || '';
     base.ownerEmail = rawLead.ownerEmail || '';
     base.website = rawLead.website || '';
   }
@@ -380,6 +381,16 @@ async function distributeProduct(product) {
   } else {
     console.log('  No scraped leads — will generate Phase 4 targeted leads');
   }
+
+  // Deduplicate within the current batch (same company number or address)
+  var seenKeys = new Set();
+  allScrapedLeads = allScrapedLeads.filter(function(l) {
+    var key = (l.companyNumber || l.id || l.address || '').toLowerCase().trim();
+    if (!key || seenKeys.has(key)) return false;
+    seenKeys.add(key);
+    return true;
+  });
+  console.log('  After intra-batch dedup: ' + allScrapedLeads.length + ' unique leads');
 
   // Get leads already in DB to avoid duplicates (same product only)
   const existingLeads = db.leads || [];

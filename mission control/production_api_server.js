@@ -6023,8 +6023,9 @@ function generateLeadEmailHTML(customer, leads) {
       title = d.deceasedName || 'Probate Estate';
       subtitle = d.estateValue ? '\u00a3' + Number(d.estateValue).toLocaleString() + ' estate' : '';
     } else if (leadProduct === 'newbusiness') {
-      title = d.companyName || d.name || 'New Company Registration';
-      subtitle = d.city || d.incorporationDate ? 'Incorporated ' + new Date(d.incorporationDate).toLocaleDateString() : '';
+      title = d.company || d.name || 'New Company Registration';
+      var incDate = d.incorporationDate || d.dateOfCreation;
+      subtitle = incDate ? (d.city ? d.city + ' · ' : '') + 'Incorporated ' + new Date(incDate).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : (d.city || '');
     } else if (leadProduct === 'planning') {
       title = address.split(',')[0].trim() || d.description || (d.council ? d.council + ' Application' : 'Planning Application');
       subtitle = d.council ? d.council : (d.description ? d.description.substring(0, 60) : '');
