@@ -4820,6 +4820,7 @@ app.post('/api/admin/upgrade', adminAuth, (req, res) => {
     if (lead_type) db.prepare('UPDATE customers SET lead_type = ? WHERE id = ?').run(lead_type, customer.id);
     if (biz_field3) db.prepare('UPDATE customers SET biz_field3 = ? WHERE id = ?').run(biz_field3, customer.id);
     if (req.body.product_config) db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(req.body.product_config, customer.id);
+    if (req.body.password) { var pwHash = require('bcryptjs').hashSync(req.body.password, 10); db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?').run(pwHash, customer.id); }
     saveDb();
     res.json({ success: true, message: customer.company + ' upgraded to ' + plan });
   } catch (e) { res.status(500).json({ error: e.message }); }
