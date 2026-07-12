@@ -4414,13 +4414,15 @@ function showPlans() {
   const session = getSession();
   if (!session) return;
   var planData = liveSubscription;
-  if (!planData) {
+  if (!planData || !planData.plan) {
+    if (planData && !planData.plan) { console.log('[UPGRADE] liveSubscription has no plan:', planData); liveSubscription = null; }
     apiFetch('/api/subscription').then(function(sub) {
       if (sub && sub.plan) { liveSubscription = sub; showPlans(); }
-      else { showModal('Plans', '<p style="color:var(--muted2);text-align:center;padding:20px">Unable to load your plan data. <a href="javascript:location.reload()" style="color:var(--primary);text-decoration:underline">Refresh</a> or <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">contact support</a>.</p>'); }
+      else { console.log('[UPGRADE] Subscription response:', sub); showModal('Plans', '<p style="color:var(--muted2);text-align:center;padding:20px">Unable to load your plan data. <a href="javascript:location.reload()" style="color:var(--primary);text-decoration:underline">Refresh</a> or <a href="mailto:hello@9amleads.com" style="color:var(--primary);text-decoration:underline">contact support</a>.</p>'); }
     });
     showModal('Plans', '<p style="color:#8890a8;text-align:center;padding:20px"><i class="fas fa-spinner fa-spin" style="font-size:18px;display:block;margin-bottom:8px"></i>Loading plans...</p>', '520px');
     return;
+  }
   }
   var areasDisplay = (planData.coverage_areas && planData.coverage_areas.length > 0) ? planData.coverage_areas.join(', ') : (planData.coverage_label || 'None set');
   var overlay = document.createElement('div');
