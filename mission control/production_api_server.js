@@ -7917,7 +7917,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             var chKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
             var yesterday2 = new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0];
             leads = await new Promise(function(resolve) {
-              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&size=500&start_index=0', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&size=500', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try { var data = JSON.parse(body); var items = data.items || []; var today2 = new Date().toISOString().split('T')[0]; var thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]; resolve(items.filter(function(c){
@@ -7925,7 +7925,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
                     var incDate = c.date_of_creation || c.incorporation_date || '';
                     if (incDate && incDate < thirtyDaysAgo) return false;
                     var a = c.registered_office_address || {};
-                    if (!a.postal_code || !a.address_line_1) return false;
+                    if (!a.postal_code && !a.address_line_1 && !a.address_line_2) return false;
                     var addr = (a.address_line_1 || '') + ' ' + (a.address_line_2 || '');
                     var name = (c.company_name || '').toLowerCase();
                     var blacklist = ['corner chambers','c/o ','care of','po box','p.o. box','suite','flat ','unit ','office ','business centre','business park','registered office','virtual office','formation agent','company formation','the company','company registered','no fixed address'];
