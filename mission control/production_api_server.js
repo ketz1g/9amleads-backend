@@ -4856,10 +4856,9 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     }
 
     // Handle packages and pro plan directly
+    var priceId;
     var packageKeys = { 'builder-package': 'bld-package', 'marketing-package': 'mkt-package', 'property-package': 'prp-package', 'moving-package': 'mov-package', 'pro': 'pro-plan' };
     var packageMap = { 'builder-package': 'builder-package', 'marketing-package': 'marketing-package', 'property-package': 'property-package', 'moving-package': 'moving-package', 'pro': 'pro' };
-    
-    var priceId;
     if (packageKeys[plan]) {
       var priceIdMap = STRIPE_PRICE_IDS[packageMap[plan]] || {};
       priceId = priceIdMap[packageKeys[plan]];
