@@ -7920,10 +7920,10 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&size=500&start_index=0', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
-                  try { var data = JSON.parse(body); var items = data.items || []; var today2 = new Date().toISOString().split('T')[0]; var twoDaysAgo = new Date(Date.now() - 48 * 86400000).toISOString().split('T')[0]; resolve(items.filter(function(c){
+                  try { var data = JSON.parse(body); var items = data.items || []; var today2 = new Date().toISOString().split('T')[0]; var sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]; resolve(items.filter(function(c){
                     if (!c.company_name || !c.company_number || c.company_status === 'dissolved') return false;
                     var incDate = c.date_of_creation || c.incorporation_date || '';
-                    if (incDate && incDate < twoDaysAgo) return false;
+                    if (incDate && incDate < sevenDaysAgo) return false;
                     var a = c.registered_office_address || {};
                     if (!a.postal_code || !a.address_line_1) return false;
                     var addr = (a.address_line_1 || '') + ' ' + (a.address_line_2 || '');
@@ -8017,7 +8017,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
               leads = await new Promise(function(resolve) {
                 var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=builders&size=100', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyPlan + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
-                    try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){var cd=c.date_of_creation||c.incorporation_date||'';var twoAgo=new Date(Date.now()-48*86400000).toISOString().split('T')[0];return c.title && c.company_number && c.company_status !== 'dissolved' && (!cd||cd>=twoAgo);}).map(function(c) { var a = c.address || {}; return { id: 'CH_BLD_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House Builders', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                    try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){var cd=c.date_of_creation||c.incorporation_date||'';var twoAgo=new Date(Date.now()-14*86400000).toISOString().split('T')[0];return c.title && c.company_number && c.company_status !== 'dissolved' && (!cd||cd>=twoAgo);}).map(function(c) { var a = c.address || {}; return { id: 'CH_BLD_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', source: 'Companies House Builders', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
                   });
                 });
                 req.on('error', function() { resolve([]); });
