@@ -4409,6 +4409,7 @@ function updateSubscriptionDisplay(sub) {
 }
 
 function closeModals() { document.querySelectorAll('body > div').forEach(function(e) { if (e.style.position === 'fixed') e.remove(); }); }
+function openSettingsFromUpgrade() { closeModals(); showPage('settings'); }
 function showPlans() {
   const session = getSession();
   if (!session) return;
@@ -4434,7 +4435,7 @@ function showPlans() {
     '<span style="font-size:11px">Lead types: <strong>' + (planData.lead_type || 'N/A') + '</strong></span><br>' +
     '<span style="font-size:11px">Coverage: <strong>' + (planData.coverage_label || 'N/A') + '</strong> (' + areasDisplay + ')</span><br>' +
     '<span style="font-size:11px">Daily limit: <strong>' + (planData.up_to ? 'Up to ' : '') + planData.leads_per_day + '</strong></span>' +
-    '<div style="margin-top:8px"><span style="font-size:10px;color:var(--muted2)">Change your lead types and areas in <a href="javascript:void(0)" onclick="closeModals();showPage('+"'settings'"+')" style="color:var(--primary);text-decoration:underline">Settings</a>. Your current selections will be used for the upgrade.</span></div>' +
+    '<div style="margin-top:8px"><span style="font-size:10px;color:var(--muted2)">Set up your lead types and areas in <a href="javascript:void(0)" onclick="openSettingsFromUpgrade()" style="color:var(--primary);text-decoration:underline">Settings</a>. Your current selections will be used for the upgrade.</span></div>' +
     '</div>' +
     '<div style="display:grid;gap:8px">' +
     ['starter','pro','enterprise'].map(function(k) {
