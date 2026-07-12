@@ -7970,7 +7970,7 @@ function syncCustomers(product) {
                 });
                 req.on('error', function() { resolve([]); }); req.setTimeout(30000, function() { req.destroy(); resolve([]); }); req.end();
               });
-              if (leads && leads.length > 0) { leads = filterFresh(leads, 'publishedDate', 72); console.log('[SCRAPER] Tenders PCS returned ' + leads.length + ' after freshness filter'); }
+              if (leads && leads.length > 0) { leads = filterFresh(leads, 'publishedDate', 48); console.log('[SCRAPER] Tenders PCS returned ' + leads.length + ' after freshness filter'); }
               else {
                 leads = await new Promise(function(resolve) {
                   var req2 = require('https').request({ hostname: 'data.gov.uk', path: '/api/3/action/package_search?q=tenders&rows=30', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res2) {
@@ -8042,7 +8042,7 @@ function syncCustomers(product) {
               });
             } catch(e) { console.log('[SCRAPER] Probate Apify error:', e.message); }
           }
-          if (probLeads && probLeads.length > 0) { leads = filterFresh(probLeads, 'scrapedAt', 72); console.log('[SCRAPER] Probate returned ' + leads.length + ' after freshness filter'); }
+          if (probLeads && probLeads.length > 0) { leads = filterFresh(probLeads, 'scrapedAt', 48); console.log('[SCRAPER] Probate returned ' + leads.length + ' after freshness filter'); }
           else {
             console.log('[SCRAPER] Probate Apify 0, fallback CH');
             var chKeyProb = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
