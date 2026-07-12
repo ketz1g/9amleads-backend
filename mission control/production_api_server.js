@@ -7877,14 +7877,20 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
     function wasScrapedToday(product) { return lastScrape[product] === todayStr; }
     function markScrapedToday(product) { lastScrape[product] = todayStr; fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape)); }
 
-        // Freshness filter: only keep leads from last freshnessHours
-    function filterFresh(leads, dateField, freshnessHours) {
-      if (!leads || !Array.isArray(leads)) return [];
-      var cutoff = new Date(Date.now() - freshnessHours * 3600000).toISOString();
-      return leads.filter(function(l) {
+        // Tiered freshness filter: 0-24h primary, 24-48h fallback
+    function filterFresh(leads, dateField) {
+      if (!leads || !Array.isArray(leads)) return { fresh: [], fallback: [], rejected: 0 };
+      var now = new Date();
+      var cutoff24h = new Date(now - 24 * 3600000).toISOString();
+      var cutoff48h = new Date(now - 48 * 3600000).toISOString();
+      var result = { fresh: [], fallback: [], rejected: 0 };
+      leads.forEach(function(l) {
         var dateVal = l[dateField] || l.scrapedAt || '';
-        return dateVal >= cutoff;
+        if (dateVal >= cutoff24h) result.fresh.push(l);
+        else if (dateVal >= cutoff48h) result.fallback.push(l);
+        else result.rejected++;
       });
+      return result;
     }
 function syncCustomers(product) {
       const allCustomers = getDb().customers || [];
@@ -7927,10 +7933,11 @@ function syncCustomers(product) {
             leads = streamWorker.getRecentCompanies();
             console.log('[SCRAPER] Stream worker returned ' + leads.length + ' queued companies');
           } catch(e) { console.log('[SCRAPER] Stream error: ' + e.message); leads = []; }
-          if (!leads || leads.length < 3) {
-            try {
-              var apifyK3 = process.env.APIFY_API_KEY;
-              if (apifyK3) {
+          // Only fallback to Apify if stream is disconnected
+if ((!leads || leads.length < 3) && (!require('./streaming_worker').getStatus().connected)) {
+  try {
+    var apifyK3 = process.env.APIFY_API_KEY;
+    if (apifyK3) {
                 leads = await new Promise(function(r) {
                   var b = JSON.stringify({ search: 'limited', maxItems: 1000, includeOfficers: false });
                   var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyK3 + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
