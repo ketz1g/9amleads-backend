@@ -7868,39 +7868,21 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
         var leads;
         if (product === 'newbusiness') {
           try {
-            var apifyKey = process.env.APIFY_API_KEY;
+            var chKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+            var yesterday2 = new Date(Date.now() - 48 * 86400000).toISOString().split('T')[0];
             leads = await new Promise(function(resolve) {
-              var bodyData = JSON.stringify({ search: 'Consulting|Accounting|Design', maxItems: 100000, includeOfficers: false });
-              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyData), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&incorporation_date_from=' + yesterday2 + '&size=100', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
-                  try { var items = JSON.parse(body); if (!Array.isArray(items)) { resolve([]); return; }
-                    resolve(items.filter(function(c){return c.title && c.company_number}).map(function(c) { var a = c.address || {}; var prem = a.premises ? a.premises + ' ' : ''; return { id: 'APIFY_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.title || '', address: (prem + (a.address_line_1 || '') + (a.address_line_2 ? ', ' + a.address_line_2 : '') + ', ' + (a.locality || '') + (a.postal_code ? ' ' + a.postal_code : '')).trim(), postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', source: 'Apify Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                  try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.company_name && c.company_number && c.company_status !== 'dissolved'}).map(function(c) { var a = c.registered_office_address || {}; return { id: 'CH_' + (c.company_number || Date.now()), name: (c.company_name || '').trim(), companyNumber: c.company_number || '', companyName: c.company_name || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', dateOfCreation: c.incorporation_date || c.date_of_creation || '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
                 });
               });
               req.on('error', function() { resolve([]); });
-              req.setTimeout(90000, function() { req.destroy(); resolve([]); });
-              req.write(bodyData);
+              req.setTimeout(15000, function() { req.destroy(); resolve([]); });
               req.end();
             });
-            if (!leads || leads.length < 3) {
-              console.log('[SCRAPER] Apify returned ' + (leads ? leads.length : 0) + ' companies, fallback to Companies House advanced search');
-              var chKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
-              var yesterday2 = new Date(Date.now() - 48 * 86400000).toISOString().split('T')[0];
-              leads = await new Promise(function(resolve) {
-                var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&incorporation_date_from=' + yesterday2 + '&size=100', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
-                  var body = ''; res.on('data', function(c) { body += c; });
-                  res.on('end', function() {
-                    try { var data = JSON.parse(body); var items = data.items || []; resolve(items.filter(function(c){return c.company_name && c.company_number && c.company_status !== 'dissolved'}).map(function(c) { var a = c.registered_office_address || {}; return { id: 'CH_' + (c.company_number || Date.now()), name: (c.company_name || '').trim(), companyNumber: c.company_number || '', companyName: c.company_name || '', address: [a.address_line_1 || '', a.address_line_2 || '', a.locality || '', a.postal_code || ''].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', dateOfCreation: c.incorporation_date || c.date_of_creation || '', source: 'Companies House', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
-                    });
-                });
-                req.on('error', function() { resolve([]); });
-                req.setTimeout(15000, function() { req.destroy(); resolve([]); });
-                req.end();
-              });
-              console.log('[SCRAPER] Companies House advanced search returned ' + leads.length + ' newly incorporated companies (active, last 48h)');
-            }
-          } catch(e) { console.log('[SCRAPER] Apify error: ' + e.message); leads = []; }
+            console.log('[SCRAPER] Companies House advanced search returned ' + leads.length + ' newly incorporated companies (active, last 48h)');
+          } catch(e) { console.log('[SCRAPER] Newbusiness error: ' + e.message); leads = []; }
         } else if (product === 'tenders') {
           var tendKey = process.env.APIFY_API_KEY;
           var tendActor = process.env.APIFY_TENDERS_ACTOR || 'jakubjanda~uk-contracts-finder-scraper';
