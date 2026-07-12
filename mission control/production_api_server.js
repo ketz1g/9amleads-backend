@@ -7917,7 +7917,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
             var chKey = process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
             var yesterday2 = new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0];
             leads = await new Promise(function(resolve) {
-              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&size=500&incorporation_date_from=' + yesterday2, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&size=100&incorporation_date_from=' + yesterday2, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKey + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try { var data = JSON.parse(body); var items = data.items || []; var today2 = new Date().toISOString().split('T')[0]; var thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]; resolve(items.filter(function(c){
