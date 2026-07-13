@@ -182,105 +182,26 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 
 <div id="local-area-selector">
 <div class="form-group">
-<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Target Areas <span style="color:#8890a8;font-weight:400;font-size:11px">(<span id="s-postcode-limit-label">pick up to 3</span> &middot; enter postcode area codes like <strong>EN</strong>, <strong>B</strong>, <strong>N</strong> or select a region below)</span></label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Enter UK postcode area codes (1 or 2 letters) like EN (Enfield), B (Birmingham), HA (Harrow), N (North London). Free Trial and Starter can pick up to 3 areas. Pro and Enterprise can add unlimited areas.</span></div>
+<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Where do you work? <span style="color:#8890a8;font-weight:400;font-size:11px">(<span id="s-postcode-limit-label">pick up to 3</span> &middot; enter postcode area codes like <strong>B</strong>, <strong>N</strong>, <strong>EN</strong>)</span></label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Enter UK postcode area codes (1 or 2 letters) like EN (Enfield), B (Birmingham), N (North London). Free Trial and Starter can pick 3. Pro and Enterprise get unlimited.</span></div>
 <div id="s-postcode-wrapper" style="position:relative;margin-top:4px">
 <div id="s-postcode-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px"></div>
-<select id="s-postcode-select" onchange="addSignupPostcode()" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);margin-bottom:4px">
-<option value="">Select a region...</option>
-<option value="All UK">All UK</option>
-<option value="LONDON">London (N,NW,E,SE,SW,W,WC,EC)</option>
-<option value="B">Birmingham</option>
-<option value="M">Manchester</option>
-<option value="L">Liverpool</option>
-<option value="LS">Leeds</option>
-<option value="S">Sheffield</option>
-<option value="BS">Bristol</option>
-<option value="NG">Nottingham</option>
-<option value="LE">Leicester</option>
-<option value="NE">Newcastle</option>
-<option value="CF">Cardiff</option>
-<option value="G">Glasgow</option>
-<option value="EH">Edinburgh</option>
-<option value="BT">Belfast</option>
-<option value="SO">Southampton</option>
-<option value="PO">Portsmouth</option>
-<option value="BH">Bournemouth</option>
-<option value="EX">Exeter</option>
-<option value="PL">Plymouth</option>
-<option value="BN">Brighton</option>
-<option value="CT">Canterbury / Kent</option>
-<option value="ME">Medway / Kent</option>
-<option value="TN">Tunbridge Wells / Kent</option>
-<option value="CM">Chelmsford / Essex</option>
-<option value="SS">Southend / Essex</option>
-<option value="IG">Ilford / Essex</option>
-<option value="RM">Romford / Essex</option>
-<option value="EN">Enfield</option>
-<option value="HA">Harrow</option>
-<option value="WD">Watford</option>
-<option value="AL">St Albans / Hertfordshire</option>
-<option value="SG">Stevenage / Hertfordshire</option>
-<option value="UB">Uxbridge</option>
-<option value="KT">Kingston / Surrey</option>
-<option value="CR">Croydon / Surrey</option>
-<option value="SM">Sutton / Surrey</option>
-<option value="RH">Redhill / Surrey</option>
-<option value="GU">Guildford / Surrey</option>
-<option value="OX">Oxford</option>
-<option value="RG">Reading</option>
-<option value="MK">Milton Keynes</option>
-<option value="NN">Northampton</option>
-<option value="CB">Cambridge</option>
-<option value="IP">Ipswich / Suffolk</option>
-<option value="NR">Norwich / Norfolk</option>
-<option value="PE">Peterborough</option>
-<option value="LN">Lincoln</option>
-<option value="DE">Derby</option>
-<option value="ST">Stoke-on-Trent</option>
-<option value="CV">Coventry</option>
-<option value="WR">Worcester</option>
-<option value="GL">Gloucester</option>
-<option value="SN">Swindon</option>
-<option value="BA">Bath</option>
-<option value="DT">Dorchester</option>
-<option value="TA">Taunton</option>
-<option value="TR">Truro / Cornwall</option>
-<option value="NP">Newport / South Wales</option>
-<option value="SA">Swansea / West Wales</option>
-<option value="HR">Hereford</option>
-<option value="TF">Telford</option>
-<option value="SY">Shrewsbury</option>
-<option value="WV">Wolverhampton</option>
-<option value="DY">Dudley</option>
-<option value="WS">Walsall</option>
-<option value="BD">Bradford</option>
-<option value="HD">Huddersfield</option>
-<option value="HX">Halifax</option>
-<option value="WF">Wakefield</option>
-<option value="DN">Doncaster</option>
-<option value="YO">York</option>
-<option value="HU">Hull</option>
-<option value="PR">Preston</option>
-<option value="FY">Blackpool</option>
-<option value="BL">Bolton</option>
-<option value="WN">Wigan</option>
-<option value="WA">Warrington</option>
-<option value="CH">Chester</option>
-<option value="CW">Crewe</option>
-<option value="SK">Stockport</option>
-<option value="OL">Oldham</option>
-<option value="SR">Sunderland</option>
-<option value="DH">Durham</option>
-<option value="DL">Darlington</option>
-<option value="TS">Teesside</option>
-<option value="CA">Carlisle</option>
-<option value="LA">Lancaster</option>
-<option value="LD">Llandrindod Wells</option>
-</select>
-<input type="text" id="s-postcode-input" placeholder="Or type your own area code e.g. B, N, EN, CM" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);outline:none" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
-<button type="button" onclick="addSignupPostcode()" style="margin-top:4px;font-size:11px;padding:5px 12px;background:rgba(14,165,233,0.12);border:1px solid var(--primary);border-radius:6px;color:var(--primary);cursor:pointer;font-weight:600"><i class="fas fa-plus"></i> Add Area</button>
-<span id="s-postcode-count" style="font-size:10px;color:var(--muted2);margin-left:8px"></span>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<button type="button" onclick="addQuickCode('N')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">N London</button>
+<button type="button" onclick="addQuickCode('NW')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">NW London</button>
+<button type="button" onclick="addQuickCode('EN')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">Enfield</button>
+<button type="button" onclick="addQuickCode('HA')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">Harrow</button>
+<button type="button" onclick="addQuickCode('B')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">Birmingham</button>
+<button type="button" onclick="addQuickCode('M')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">Manchester</button>
+<button type="button" onclick="addQuickCode('LS')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">Leeds</button>
+<button type="button" onclick="addQuickCode('BS')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">Bristol</button>
+</div>
+<input type="text" id="s-postcode-input" placeholder="Or type your own e.g. B, N, EN, CM, HA" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);outline:none;margin-top:4px" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
+<div style="display:flex;gap:6px;margin-top:4px">
+<button type="button" onclick="addSignupPostcode()" style="flex:1;padding:8px;background:var(--primary);border:none;border-radius:6px;color:#fff;cursor:pointer;font-weight:600;font-size:12px"><i class="fas fa-plus"></i> Add Area</button>
+<button type="button" onclick="setAllUK()" style="padding:8px 14px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:6px;color:#22c55e;cursor:pointer;font-weight:600;font-size:12px">All UK</button>
+</div>
+<div style="margin-top:4px"><span id="s-postcode-count" style="font-size:10px;color:var(--muted2)"></span></div>
 </div>
 <div id="s-postcode-error" style="font-size:10px;color:#ef4444;margin-top:4px;display:none"></div>
 </div>
@@ -403,27 +324,26 @@ var API = window.location.hostname === 'localhost' || window.location.hostname =
 var signupPostcodes = [];
 var VALID_POSTCODE_AREAS = ['AB','AL','B','BA','BB','BD','BH','BL','BN','BR','BS','BT','CA','CB','CF','CH','CM','CO','CR','CT','CV','CW','DA','DD','DE','DG','DH','DL','DN','DT','DY','E','EC','EH','EN','EX','FK','FY','G','GL','GU','GY','HA','HD','HG','HP','HR','HS','HU','HX','IG','IM','IP','IV','JE','KA','KT','KW','KY','L','LA','LD','LE','LL','LN','LS','LU','M','ME','MK','ML','MN','MS','N','NE','NG','NL','NN','NP','NR','NW','OL','OX','PA','PE','PH','PL','PO','PR','RG','RH','RM','S','SA','SE','SG','SK','SL','SM','SN','SO','SP','SR','SS','ST','SW','SY','TA','TD','TF','TN','TQ','TR','TS','TW','UB','W','WA','WC','WD','WF','WN','WR','WS','WV','YO','ZE'];
 function isValidPostcodeArea(code) { return VALID_POSTCODE_AREAS.includes(code); }
+function addQuickCode(code) { var inp = document.getElementById('s-postcode-input'); if (inp) inp.value = code; addSignupPostcode(); }
+function setAllUK() { signupPostcodes = ['All UK']; renderSignupPostcodes(); }
+
 async function addSignupPostcode() {
-  var sel = document.getElementById('s-postcode-select');
-  var defVal = sel?.value || '';
   var input = document.getElementById('s-postcode-input');
-  var code = defVal && defVal !== 'All UK' ? defVal : input.value.trim().toUpperCase().replace(/[0-9].*$/, '');
+  var code = (input?.value || '').trim().toUpperCase().replace(/[0-9].*$/, '');
   var err = document.getElementById('s-postcode-error');
   err.style.display = 'none';
-  if (defVal === 'All UK') { signupPostcodes = ['All UK']; renderSignupPostcodes(); sel.value = ''; return; }
   if (!code) return;
   var maxAreas = document.querySelector('input[name="plan"]:checked')?.value === 'pro' || document.querySelector('input[name="plan"]:checked')?.value === 'enterprise' ? 999 : 3;
   if (signupPostcodes.length >= maxAreas) { err.textContent = maxAreas === 999 ? 'Unlimited areas — you\'re on Pro!' : 'Maximum 3 areas allowed (upgrade to Pro for unlimited)'; err.style.display = 'block'; return; }
   if (signupPostcodes.includes(code)) { err.textContent = '"' + code + '" already added'; err.style.display = 'block'; return; }
-  if (!isValidPostcodeArea(code) && !sel.value) { err.textContent = '"' + code + '" is not a valid UK postcode area (use 1 or 2-letter code like B, N, EN, SG, CM)'; err.style.display = 'block'; return; }
+  if (!isValidPostcodeArea(code)) { err.textContent = '"' + code + '" is not a valid UK postcode area (use 1 or 2-letter code like B, N, EN, SG, CM)'; err.style.display = 'block'; return; }
   try {
     var r = await fetch(API + '/api/postcodes/check?code=' + encodeURIComponent(code));
     var data = await r.json();
-    if (data.valid === false) { err.textContent = data.error || '"' + code + '" is not valid'; err.style.display = 'block'; if (sel) sel.value = ''; return; }
+    if (data.valid === false) { err.textContent = data.error || '"' + code + '" is not valid'; err.style.display = 'block'; return; }
   } catch(e) { }
   signupPostcodes.push(code);
   input.value = '';
-  if (sel) sel.value = '';
   renderSignupPostcodes();
   input.focus();
 }
