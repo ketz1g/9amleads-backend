@@ -79,6 +79,43 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .footer-text a{color:#0ea5e9;text-decoration:none}
 @media(min-width:768px){.card{padding:40px 44px}}
 @media(max-width:600px){.form-row{grid-template-columns:1fr}.card{padding:24px 18px}.filter-grid{grid-template-columns:1fr}.sic-grid{grid-template-columns:1fr}}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.prod-cb{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s}
+.prod-cb:hover{border-color:#2a2d42}.prod-cb input{accent-color:#0ea5e9;width:14px;height:14px}
+.plan-opt{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:10px;cursor:pointer;font-size:12px;transition:.15s}
+.plan-opt:hover{border-color:#2a2d42}
+.plan-sel{border-color:rgba(14,165,233,0.3)!important;background:rgba(14,165,233,0.06)!important}
+.plan-opt input{accent-color:#0ea5e9;width:15px;height:15px}
+.plan-i{flex:1}.plan-n{font-weight:700;color:#f1f5f9;font-size:13px}
+.plan-d{font-size:10px;color:#8890a8;margin-top:2px}
+.plan-p{font-size:20px;font-weight:800;color:#f1f5f9}
+.pw{font-size:11px;color:#8890a8;font-weight:400}
+.ml{font-size:10px;color:#8890a8;font-weight:400}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.quick-areas{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+.qa{padding:4px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:#b0b8cc;cursor:pointer;font-weight:500}
+.qa:hover{background:rgba(14,165,233,0.12);color:#f1f5f9}
+.ar{display:flex;gap:6px;margin-top:4px}
+.ar .sf{flex:1;padding:9px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:6px;font-size:12px;color:#f1f5f9;outline:none}
+.ar .sf:focus{border-color:#0ea5e9}
+.btn-s{padding:9px 16px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:6px;color:#0ea5e9;cursor:pointer;font-size:12px;font-weight:600}
+.btn-s:hover{background:rgba(14,165,233,0.2)}
+.btn-o{padding:9px 16px;background:transparent;border:1px solid #1e2030;border-radius:6px;color:#8890a8;cursor:pointer;font-size:12px}
+.btn-o:hover{border-color:#2a2d42;color:#b0b8cc}
+.err{font-size:10px;color:#ef4444;margin-top:4px;display:none}
+.crm-b{margin-top:8px;padding:10px 12px;background:rgba(14,165,233,0.02);border:1px solid rgba(14,165,233,0.06);border-radius:8px}
+.crm-t{font-size:11px;font-weight:600;color:#e8ebf2;margin-bottom:3px}
+.crm-d{font-size:9px;color:#6b7280;margin-bottom:6px;line-height:1.3}
+.tag-g{display:inline;padding:1px 6px;background:rgba(34,197,94,0.1);border-radius:3px;font-size:8px;color:#22c55e;font-weight:700}
+.faq-s{margin-top:8px;padding:10px;background:rgba(255,255,255,0.015);border:1px solid #1e2030;border-radius:8px}
+.faq-q{font-size:9px;color:#6b7280;line-height:1.5;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.03)}
+.faq-q:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.faq-q strong{color:#b0b8cc}
+.consent{display:flex;align-items:flex-start;gap:8px;font-size:10px;color:#8890a8;margin-top:8px;cursor:pointer;line-height:1.4}
+.consent input{accent-color:#0ea5e9;width:13px;height:13px;margin-top:1px}
+.consent a{color:#5c6480;text-decoration:underline}
+.btn-p{width:100%;padding:14px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:.3s;margin-top:8px}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(14,165,233,0.25)}
 </style>
 </head>
 <body>
@@ -110,181 +147,96 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 
 <!-- SIGNUP FORM -->
 <div id="signup-form" style="display:none">
+
 <div class="form-row">
 <div class="form-group">
-<label><i class="fas fa-user" style="width:13px;color:#5c6480;margin-right:2px"></i> Full Name</label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">We keep your details secure and never share them with third parties. Your account is protected by encrypted storage.</span></div>
-<input type="text" id="s-name" placeholder="Your name" required></div>
-<div class="form-group"><label><i class="fas fa-building" style="width:13px;color:#5c6480;margin-right:2px"></i> Company Name</label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Enter your business or company name. This helps us tailor your lead types and territory recommendations.</span></div>
-<input type="text" id="s-company" placeholder="Your company" required></div>
+<label>Full Name</label>
+<input type="text" id="s-name" placeholder="Your full name" class="sf">
 </div>
+<div class="form-group">
+<label>Company Name</label>
+<input type="text" id="s-company" placeholder="Your business name" class="sf">
+</div>
+</div>
+
 <div class="form-row">
-<div class="form-group"><label><i class="fas fa-envelope" style="width:13px;color:#5c6480;margin-right:2px"></i> Email Address</label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Your daily leads, reports, and account notifications will be sent here. We never spam or share your email.</span></div>
-<input type="email" id="s-email" placeholder="you@company.co.uk" required></div>
-<div class="form-group"><label><i class="fas fa-lock" style="width:13px;color:#5c6480;margin-right:2px"></i> Create Password</label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Use at least 8 characters. Your password is encrypted and never stored in plain text. We recommend a mix of letters, numbers and symbols.</span></div>
-<div style="position:relative"><input type="password" id="s-password" placeholder="Min 8 characters" minlength="8" required style="width:100%;padding:9px 36px 9px 12px;background:#1e2030;border:1px solid #2a2d42;border-radius:6px;color:#e2e8f0;font-size:12px;font-family:inherit;outline:none"><button type="button" onclick="var p=document.getElementById('s-password');var e=this.querySelector('i');if(p.type==='password'){p.type='text';e.className='fas fa-eye-slash'}else{p.type='password';e.className='fas fa-eye'}" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#8890a8;padding:4px;font-size:14px" tabindex="-1"><i class="fas fa-eye"></i></button></div></div>
-</div>
-<div class="form-group"><label><i class="fas fa-tag" style="width:13px;color:#5c6480;margin-right:2px"></i> Lead Types <span style="color:#8890a8;font-weight:400;font-size:11px">(select one or more)</span></label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Choose the types of UK business opportunities you want to receive daily at 9am. Select multiple to get leads from different sources. Each lead type sources from different official UK data registers. You can change this later.</span></div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px" id="s-products-container">
-<label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="checkbox" value="moving" checked onchange="onLeadTypeChange()" style="accent-color:#0ea5e9;width:14px;height:14px"> 🚚 Moving Leads</label>
-<label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="checkbox" value="probate" onchange="onLeadTypeChange()" style="accent-color:#0ea5e9;width:14px;height:14px"> <i class="fas fa-scale-balanced" style="font-size:18px;color:var(--primary)"></i> Probate Leads</label>
-<label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="checkbox" value="newbusiness" onchange="onLeadTypeChange()" style="accent-color:#0ea5e9;width:14px;height:14px"> 🏢 New Business Alerts</label>
-<label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="checkbox" value="planning" onchange="onLeadTypeChange()" style="accent-color:#0ea5e9;width:14px;height:14px"> <i class="fas fa-hammer" style="font-size:18px;color:var(--primary)"></i> Planning Permission</label>
-<label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#f1f5f9;transition:.15s" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="checkbox" value="tenders" onchange="onLeadTypeChange()" style="accent-color:#0ea5e9;width:14px;height:14px"> <i class="fas fa-clipboard-list" style="font-size:18px;color:var(--primary)"></i> Public Tenders</label>
-</div>
-<!-- LEAD TYPES REFERENCE -->
-<div style="margin-top:8px;background:rgba(14,165,233,0.03);border:1px solid rgba(14,165,233,0.08);border-radius:8px;padding:10px 12px">
-<div style="font-size:10px;font-weight:700;color:#b0b8cc;margin-bottom:5px">Which Lead Type Is Right For You?</div>
-<div style="font-size:9px;color:#8890a8;line-height:1.7">
-<div><strong style="color:#ff6b35">Moving</strong> <span style="color:#6b7280">Removal companies, estate agents, letting agents, property managers, van &amp; man with van hire, self-storage, packing services, relocation consultants, house clearance, shipping &amp; freight</span></div>
-<div><strong style="color:#06b6d4">New Business</strong> <span style="color:#6b7280">Accountants, bookkeepers, financial advisers, insurance brokers, solicitors, marketing agencies, web designers, digital agencies, PR, IT services, SaaS, recruitment, HR, business coaches, consultants, commercial cleaners, office supplies, printing, telecoms</span></div>
-<div><strong style="color:#10b981">Planning</strong> <span style="color:#6b7280">Builders, architects, architectural designers, structural engineers, planning consultants, extension/loft specialists, kitchen/bathroom fitters, solar installers, heat pump installers, roofers, window/door installers, electricians, plumbers, landscape gardeners, driveway/paving specialists, groundworkers, property developers, damp proofing</span></div>
-<div><strong style="color:#a855f7">Probate</strong> <span style="color:#6b7280">Solicitors, will writers, probate practitioners, estate administration, conveyancers, IHT advisers, trust &amp; estate planners, financial advisers (inheritance), genealogists, estate agents (probate valuations), auctioneers, house clearance, property guardianship</span></div>
-<div><strong style="color:#6366f1">Tenders</strong> <span style="color:#6b7280">Construction contractors, subcontractors, building maintenance, electrical, plumbing/heating, cleaning, security, facilities management, waste management, catering, transport/logistics, landscaping, IT/telecoms (public sector), training, consultancy, healthcare, social care, public sector recruitment</span></div>
-<div style="margin-top:4px;color:#6b7280"><strong style="color:#6b7280"><i class="fas fa-lightbulb" style="font-size:18px;color:var(--primary)"></i> Can I use more than one?</strong> Yes. Many businesses combine lead types — e.g. a removal company adds New Business to sell packing/storage. All from one account.</div>
-</div></div>
-</div>
-
-<!-- PLAN SELECTION (before areas so limit is known) -->
 <div class="form-group">
-<label style="display:block;font-size:12px;font-weight:600;color:#f1f5f9;margin-bottom:6px"><i class="fas fa-crown" style="color:#f59e0b;width:14px"></i> Choose Your Plan</label>
-<div style="display:grid;gap:6px" id="s-plan-container">
-<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(14,165,233,0.06);border:2px solid rgba(14,165,233,0.3);border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-free_trial" onmouseover="this.style.borderColor='rgba(14,165,233,0.5)'" onmouseout="this.style.borderColor='rgba(14,165,233,0.3)'">
-<input type="radio" name="plan" value="free_trial" checked style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
-<div style="flex:1"><strong style="color:#f1f5f9">Free Trial</strong><br><span style="font-size:10px;color:#8890a8">7 days free · 5 leads/day · 3 areas</span></div>
-<div style="font-size:14px;font-weight:800;color:#22c55e">Free</div>
-</label>
-<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-starter" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="radio" name="plan" value="starter" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
-<div style="flex:1"><strong style="color:#f1f5f9">Starter</strong><br><span style="font-size:10px;color:#8890a8">5 leads/day · 3 postcode areas</span></div>
-<div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;25<span style="font-size:10px;color:#8890a8">/wk</span></div>
-</label>
-<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-pro" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="radio" name="plan" value="pro" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
-<div style="flex:1"><strong style="color:#f1f5f9">Pro</strong><br><span style="font-size:10px;color:#8890a8">15 leads/day · All UK unlimited · No free trial</span></div>
-<div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;49<span style="font-size:10px;color:#8890a8">/wk</span></div>
-</label>
-<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-enterprise" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="radio" name="plan" value="enterprise" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
-<div style="flex:1"><strong style="color:#f1f5f9">Enterprise</strong><br><span style="font-size:10px;color:#8890a8">40 leads/day · All UK unlimited · No free trial</span></div>
-<div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;99<span style="font-size:10px;color:#8890a8">/wk</span></div>
-</label>
+<label>Email Address</label>
+<input type="email" id="s-email" placeholder="you@company.co.uk" class="sf">
 </div>
-</div>
-
-<div id="local-area-selector">
 <div class="form-group">
-<label><i class="fas fa-city" style="width:13px;color:#5c6480;margin-right:2px"></i> Where do you work? <span style="color:#8890a8;font-weight:400;font-size:11px">(<span id="s-postcode-limit-label">pick up to 3 areas</span> &middot; type your city, county or region)</span></label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Type the cities, counties or regions where you want leads. Examples: Birmingham, Essex, North London, Kent, Manchester, Glasgow. Free Trial and Starter can pick 3. Pro and Enterprise get unlimited.</span></div>
-<div id="s-postcode-wrapper" style="position:relative;margin-top:4px">
-<div id="s-postcode-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px"></div>
-<div style="display:flex;gap:6px;flex-wrap:wrap">
-<button type="button" onclick="addQuickArea('Birmingham')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">Birmingham</button>
-<button type="button" onclick="addQuickArea('Manchester')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">Manchester</button>
-<button type="button" onclick="addQuickArea('London')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">London</button>
-<button type="button" onclick="addQuickArea('Essex')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">Essex</button>
-<button type="button" onclick="addQuickArea('Kent')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">Kent</button>
-<button type="button" onclick="addQuickArea('Surrey')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">Surrey</button>
-<button type="button" onclick="addQuickArea('Leeds')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">Leeds</button>
-<button type="button" onclick="addQuickArea('Bristol')" style="padding:5px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-weight:600">Bristol</button>
-</div>
-<input type="text" id="s-postcode-input" placeholder="e.g. Birmingham, Essex, North London, Kent, Glasgow" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);outline:none;margin-top:4px" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
-<div style="display:flex;gap:6px;margin-top:4px">
-<button type="button" onclick="addSignupPostcode()" style="flex:1;padding:8px;background:var(--primary);border:none;border-radius:6px;color:#fff;cursor:pointer;font-weight:600;font-size:12px"><i class="fas fa-plus"></i> Add Area</button>
-<button type="button" onclick="setAllUK()" style="padding:8px 14px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:6px;color:#22c55e;cursor:pointer;font-weight:600;font-size:12px">All UK</button>
-</div>
-<div style="margin-top:4px"><span id="s-postcode-count" style="font-size:10px;color:var(--muted2)"></span></div>
-</div>
-<div id="s-postcode-error" style="font-size:10px;color:#ef4444;margin-top:4px;display:none"></div>
+<label>Password</label>
+<input type="password" id="s-password" placeholder="Min 8 characters" minlength="8" class="sf">
 </div>
 </div>
-<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Greater London</span></div>
-<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Birmingham &amp; West Midlands</span></div>
-<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Manchester &amp; North West</span></div>
-<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Liverpool &amp; Merseyside</span></div>
-<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Leeds &amp; Yorkshire</span></div>
-<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Sheffield &amp; South Yorkshire</span></div>
-<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Bristol &amp; South West</span></div>
-<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Nottingham &amp; East Midlands</span></div>
-<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Newcastle &amp; North East</span></div>
-<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Cardiff &amp; South Wales</span></div>
-<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Glasgow &amp; Scotland</span></div>
-<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Edinburgh &amp; Lothian</span></div>
-<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Belfast &amp; Northern Ireland</span></div>
-</div>
-<span id="s-postcode-count" style="font-size:10px;color:#8890a8;margin-left:8px"></span>
-</div>
-<div id="s-postcode-error" style="font-size:10px;color:#ef4444;margin-top:4px;display:none"></div>
-</div>
-</div>
-<div id="specialist-area-selector" style="display:none">
+
 <div class="form-group">
-<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Coverage Areas <span style="color:#8890a8;font-weight:400;font-size:11px">(choose up to 3 counties or All UK &middot; for planning, probate &amp; tenders)</span></label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Planning, probate and tenders require wider coverage. Free Trial and Starter can pick up to 3 counties. Pro and Enterprise can select All UK for maximum volume.</span></div>
-<div style="margin-top:6px;display:grid;gap:6px">
-<label id="sc-county" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSpecialistArea('county')">
-<input type="radio" name="spec-area" value="county" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong>County</strong><br><span style="font-size:10px;color:#6b7280">Pick up to 3 counties (e.g. Hertfordshire, Essex, Kent)</span></div>
-</label>
-<label id="sc-ukwide" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;color:#111827" onclick="selectSpecialistArea('ukwide')">
-<input type="radio" name="spec-area" value="ukwide" style="accent-color:#0ea5e9;width:15px;height:15px">
-<div style="flex:1"><strong>UK-wide</strong><br><span style="font-size:10px;color:#6b7280">All UK — maximum coverage (Pro &amp; Enterprise)</span></div>
-</label>
-</div>
-<div id="spec-area-picker" style="margin-top:8px;display:none"></div>
-<div style="margin-top:4px;font-size:10px;color:#6b7280">Free Trial &amp; Starter: up to 3 counties. Pro &amp; Enterprise: All UK unlimited.</div>
+<label>Lead Types <span class="ml">(select one or more)</span></label>
+<div class="grid-2" id="s-products-container">
+<label class="prod-cb"><input type="checkbox" value="moving" checked onchange="onLeadTypeChange()"> <span>🚚 Moving</span></label>
+<label class="prod-cb"><input type="checkbox" value="probate" onchange="onLeadTypeChange()"> <span>⚖️ Probate</span></label>
+<label class="prod-cb"><input type="checkbox" value="newbusiness" onchange="onLeadTypeChange()"> <span>🏢 New Business</span></label>
+<label class="prod-cb"><input type="checkbox" value="planning" onchange="onLeadTypeChange()"> <span>🔨 Planning</span></label>
+<label class="prod-cb"><input type="checkbox" value="tenders" onchange="onLeadTypeChange()"> <span>📋 Tenders</span></label>
 </div>
 </div>
 
-<!-- LEAD FILTERS -->
-<div id="s-filters-container" style="margin-top:6px"></div>
-<div style="margin-top:4px;padding:6px 10px;background:rgba(14,165,233,0.03);border:1px solid rgba(14,165,233,0.06);border-radius:6px;font-size:9px;color:#6b7280;line-height:1.4">
-Filters are optional. Adjust them anytime from your dashboard after signing up.
+<div class="form-group">
+<label>Your Plan</label>
+<div class="grid-2" id="s-plan-container">
+<label class="plan-opt plan-sel" id="plan-free_trial"><input type="radio" name="plan" value="free_trial" checked onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Free Trial</div><div class="plan-d">5 leads/day · 7 days free</div></div><div class="plan-p">Free</div></label>
+<label class="plan-opt" id="plan-starter"><input type="radio" name="plan" value="starter" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Starter</div><div class="plan-d">5 leads/day · up to 3 areas</div></div><div class="plan-p">£25<span class="pw">/wk</span></div></label>
+<label class="plan-opt" id="plan-pro"><input type="radio" name="plan" value="pro" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Pro</div><div class="plan-d">15 leads/day · unlimited areas</div></div><div class="plan-p">£49<span class="pw">/wk</span></div></label>
+<label class="plan-opt" id="plan-enterprise"><input type="radio" name="plan" value="enterprise" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Enterprise</div><div class="plan-d">40 leads/day · unlimited areas</div></div><div class="plan-p">£99<span class="pw">/wk</span></div></label>
+</div>
 </div>
 
-<!-- CRM BOX -->
-<div style="margin-top:8px;padding:10px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:8px">
-<div style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:#e8ebf2;margin-bottom:6px">
-<span style="font-size:12px">🔌</span> Auto-Send Leads to Your CRM
-<span style="padding:2px 6px;background:rgba(16,185,129,0.1);border-radius:3px;font-size:8px;color:#22c55e;font-weight:700">FREE</span>
+<div class="form-group">
+<label>Where do you work? <span class="ml">(type a city, county or region)</span></label>
+<div id="s-postcode-tags" class="tags"></div>
+<div id="s-postcode-wrapper">
+<div class="quick-areas">
+<button type="button" class="qa" onclick="addQuickArea('Birmingham')">Birmingham</button>
+<button type="button" class="qa" onclick="addQuickArea('Manchester')">Manchester</button>
+<button type="button" class="qa" onclick="addQuickArea('London')">London</button>
+<button type="button" class="qa" onclick="addQuickArea('Essex')">Essex</button>
+<button type="button" class="qa" onclick="addQuickArea('Kent')">Kent</button>
+<button type="button" class="qa" onclick="addQuickArea('Surrey')">Surrey</button>
+<button type="button" class="qa" onclick="addQuickArea('Leeds')">Leeds</button>
+<button type="button" class="qa" onclick="addQuickArea('Bristol')">Bristol</button>
 </div>
-<p style="font-size:9px;color:#6b7280;margin:0 0 6px;line-height:1.4">Paste a webhook URL — leads arrive in your CRM at 9am. Works with Zapier, Make, HubSpot, Salesforce.</p>
-<div style="display:flex;gap:4px"><input type="url" id="s-crm" placeholder="Webhook URL (optional)" style="flex:1;padding:6px 10px;background:#1e2030;border:1px solid #2a2d42;border-radius:4px;font-size:10px;color:#e2e8f0;font-family:inherit"><button type="button" onclick="testCrm()" id="crm-btn" style="padding:6px 12px;background:rgba(14,165,233,0.1);border:1px solid #0ea5e9;border-radius:4px;cursor:pointer;font-size:10px;color:#0ea5e9">Test</button></div>
-<div id="crm-status" style="font-size:9px;color:#6b7280;margin-top:4px"></div>
+<div class="ar"><input type="text" id="s-postcode-input" placeholder="e.g. Birmingham, Essex, North London, Kent" class="sf" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
+<button type="button" class="btn-s" onclick="addSignupPostcode()">Add</button>
+<button type="button" class="btn-o" onclick="setAllUK()">All UK</button></div>
+<span id="s-postcode-count" class="ml"></span>
+</div>
+<div id="s-postcode-error" class="err"></div>
 </div>
 
-<!-- FAQ SECTION -->
-<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,0.04);padding-top:10px">
-<div style="font-size:10px;font-weight:600;color:#e8ebf2;margin-bottom:6px">Frequently Asked Questions</div>
-<div style="font-size:9px;color:#8890a8;line-height:1.5">
-<div style="margin-bottom:4px"><strong style="color:#2a2d42">How many leads will I get?</strong><br>Lead volume depends on your plan and selected areas. Moving 5-30/day, New Business 10-50/day. Planning, Probate and Tenders use weekly allowances delivered daily.</div>
-<div style="margin-bottom:4px"><strong style="color:#2a2d42">Can I change my areas later?</strong><br>Yes. Update your areas and filters anytime from your dashboard settings.</div>
-<div style="margin-bottom:4px"><strong style="color:#2a2d42">What happens when my trial ends?</strong><br>Upgrade from your dashboard to continue. Your settings, areas and filters carry over automatically.</div>
-<div style="margin-bottom:4px"><strong style="color:#2a2d42">Can I cancel anytime?</strong><br>Yes. No long-term contracts. Cancel from your dashboard.</div>
-</div></div>
+<div id="s-filters-container"></div>
 
-<div class="form-group" style="margin-top:10px">
-<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-weight:400;font-size:11px;color:#8890a8;line-height:1.5">
-<input type="checkbox" id="s-consent" checked style="width:13px;height:13px;margin-top:2px;accent-color:#0ea5e9">
-<span>I agree to receive daily lead emails and occasional updates. <a href="/privacy.html" style="color:#5c6480;text-decoration:underline">Privacy Policy</a></span>
-</label></div>
+<div class="crm-b">
+<div class="crm-t">🔌 CRM Integration <span class="tag-g">Free</span></div>
+<div class="crm-d">Paste a webhook URL and leads arrive in your CRM at 9am.</div>
+<div class="ar"><input type="url" id="s-crm" placeholder="Webhook URL (optional)" class="sf"><button type="button" class="btn-o" onclick="testCrm()">Test</button></div>
+<div id="crm-status" class="ml"></div>
+</div>
+
+<div class="faq-s">
+<div class="faq-q"><strong>How many leads will I get?</strong> Depends on your plan and areas. Moving 5-30/day, New Business 10-50/day.</div>
+<div class="faq-q"><strong>Can I change my areas?</strong> Yes. Update anytime from your dashboard settings.</div>
+<div class="faq-q"><strong>What if my trial ends?</strong> Upgrade from your dashboard. Your settings carry over.</div>
+</div>
+
+<label class="consent"><input type="checkbox" id="s-consent" checked> I agree to receive daily lead emails. <a href="/privacy.html">Privacy Policy</a></label>
 
 <div class="status" id="signup-error"></div>
 <div class="success" id="signup-success">Account created! Redirecting...</div>
-<button class="btn" onclick="doSignup()" id="signup-btn"><i class="fas fa-rocket"></i> Start Free Trial</button>
-<button class="btn btn-secondary" onclick="showLogin()">Already have an account? Sign In</button>
-</div>
 
-<!-- LOGIN FORM -->
+<button class="btn-p" onclick="doSignup()" id="signup-btn"><i class="fas fa-rocket"></i> Start Free Trial</button>
+<button class="btn-s" onclick="showLogin()">Already have an account? Sign In</button>
+
+</div><!-- LOGIN FORM -->
 <div id="login-form">
 <div class="form-group"><label>Email Address</label><input type="email" id="l-email" placeholder="you@company.co.uk"></div>
 <div class="form-group"><label>Password</label><input type="password" id="l-pass" placeholder="Enter your password"></div>
