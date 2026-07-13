@@ -361,11 +361,11 @@ function renderSignupPostcodes() {
   var html = '';
   var plan = document.querySelector('input[name="plan"]:checked')?.value;
   var isUnlimited = plan === 'pro' || plan === 'enterprise';
-  for (var i = 0; i < signupCities.length; i++) {
+  for (var i = 0; i < signupCities_removed.length; i++) {
     html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:5px;font-size:11px;font-weight:600;color:#0ea5e9">' + signupPostcodes[i] + ' <span style="cursor:pointer;opacity:0.6" onclick="removeSignupPostcode(\'' + signupPostcodes[i] + '\')">&times;</span></span>';
   }
   tags.innerHTML = html;
-  document.getElementById('s-postcode-count').textContent = signupCities.length > 0 ? (signupCities.length + (isUnlimited ? ' areas selected' : ' of 3 areas selected')) : '';
+  document.getElementById('s-postcode-count').textContent = signupCities_removed.length > 0 ? (signupCities_removed.length + (isUnlimited ? ' areas selected' : ' of 3 areas selected')) : '';
 }
 
 // ===== FILTER SYSTEM =====
@@ -500,7 +500,7 @@ function onLeadTypeChange() {
       specSel.style.display = 'none';
       selectSpecialistArea('ukwide');
     } else {
-      specSel.style.display = hasSpecialist ? 'block' : 'none';
+      specSel.style.display = 'none';
     }
   }
   if (localSel) localSel.style.display = (hasLocal || !hasSpecialist) ? 'block' : 'none';
@@ -667,7 +667,7 @@ async function checkAvailability() {
   contBtn.style.display = 'none';
   var primary = getPrimaryLeadType();
   try {
-    var resp = await fetch(API + '/api/check-availability', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ product:primary, plan:document.querySelector('#s-plan-container input[type=radio]:checked')?.value || 'free_trial', coverage:signupCities.indexOf('All UK (unlimited)') !== -1 ? 'ukwide' : signupCities.length > 0 ? 'county' : selectedCoverage, postcodes:signupPostcodes }) });
+    var resp = await fetch(API + '/api/check-availability', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ product:primary, plan:document.querySelector('#s-plan-container input[type=radio]:checked')?.value || 'free_trial', coverage:signupCities_removed.indexOf('All UK (unlimited)') !== -1 ? 'ukwide' : signupCities_removed.length > 0 ? 'county' : selectedCoverage, postcodes:signupPostcodes }) });
     var data = await resp.json();
     loadingDiv.style.display = 'none';
     resultDiv.style.display = 'block';
@@ -760,7 +760,7 @@ function doSignup() {
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
   fetch(API + '/api/auth/signup', {
     method:'POST', headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:signupCities.indexOf('All UK (unlimited)') !== -1 ? 'ukwide' : signupCities.length > 0 ? 'county' : selectedCoverage, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
+    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:signupCities_removed.indexOf('All UK (unlimited)') !== -1 ? 'ukwide' : signupCities_removed.length > 0 ? 'county' : selectedCoverage, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:plan, email:email, product:product, products:products }));
