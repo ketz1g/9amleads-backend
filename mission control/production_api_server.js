@@ -4613,6 +4613,20 @@ cron.schedule('0 0 * * *', async () => {
 });
 // Removed duplicate deliver endpoint - using newer version below
 
+app.post('/api/admin/brevo-test', adminAuth, async (req, res) => {
+  var db = getDb();
+  var cust = (db.customers || []).find(function(c) { return c.email === req.body.email; });
+  if (!cust) return res.json({ error: 'Customer not found' });
+  var testLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0; }).slice(0, 2);
+  var html = '<html><body><h1>Brevo Test</h1><p>If you can read this, Brevo is working.</p></body></html>';
+  try {
+    await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, 'Brevo API Test - ' + new Date().toISOString(), html);
+    res.json({ success: true, message: 'Test email sent to ' + cust.email });
+  } catch(e) {
+    res.json({ success: false, error: e.message });
+  }
+});
+
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   try {
     _dbData = null;
