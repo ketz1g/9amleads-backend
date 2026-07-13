@@ -4705,8 +4705,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         if (!canTakeProduct(r1prod, cust.plan, weekStart2, today, custLeads)) continue;
         var r1pool = (availByProd[r1prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
         if (r1pool.length === 0) continue;
-        // Try least-represented area first
-        if (cust.coverage === 'postcode' && custAreas.length > 0) {
+        // Try least-represented area first (works for any coverage type with specific areas)
+        if (custAreas.length > 0) {
           var counts = areaCounts(custLeads, custAreas);
           var sortedAreas = custAreas.slice().sort(function(a, b) { return (counts[a] || 0) - (counts[b] || 0); });
           var found = false;
@@ -4731,8 +4731,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             if (!canTakeProduct(r2prod, cust.plan, weekStart2, today, custLeads)) continue;
             var r2pool = (availByProd[r2prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
             if (r2pool.length === 0) continue;
-            if (cust.coverage === 'postcode' && custAreas.length > 0) {
-              var counts2 = areaCounts(custLeads, custAreas);
+          if (custAreas.length > 0) {
+            var counts2 = areaCounts(custLeads, custAreas);
               var sortedAreas2 = custAreas.slice().sort(function(a, b) { return (counts2[a] || 0) - (counts2[b] || 0); });
               var found2 = false;
               for (var sa2 = 0; sa2 < sortedAreas2.length; sa2++) {
@@ -6144,7 +6144,7 @@ function generateLeadEmailHTML(customer, leads) {
 
     if (leadProduct === 'moving') {
       if (d.bedrooms) chips.push({ icon: '\uD83C\uDFE0', text: d.bedrooms + ' bedrooms' });
-      if (d.price) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.price).toLocaleString() });
+      if (d.price && d.price > 0) chips.push({ icon: '\u00A3', text: Number(d.price).toLocaleString() });
       if (d.listingStatus || d.status === 'SSTC' || d.status === 'Under Offer' || d.status === 'Available') {
         var s = d.listingStatus || d.status;
         chips.push({ icon: '\uD83D\uDD34', text: s });

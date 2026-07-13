@@ -127,7 +127,7 @@ function leadMatchesTarget(lead, customer, product) {
   const coverage = pc.coverage;
   // Area match
   let areaMatch = false;
-  if (targets.length > 0 && coverage === 'postcode') {
+  if (targets.length > 0) {
     // Postcode-area matching (2-letter codes like EN, SW, CM)
     const leadLocation = lead.address || lead.location || lead.name || lead.postcode || '';
     const leadNorm = normalisePostcode(leadLocation);
