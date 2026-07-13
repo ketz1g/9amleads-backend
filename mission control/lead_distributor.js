@@ -128,20 +128,15 @@ function leadMatchesTarget(lead, customer, product) {
   // Area match
   let areaMatch = false;
   if (targets.length > 0) {
-    // Postcode-area matching (2-letter codes like EN, SW, CM)
+    // Postcode-area matching (extracts leading alpha chars for exact comparison)
     const leadLocation = lead.address || lead.location || lead.name || lead.postcode || '';
     const leadNorm = normalisePostcode(leadLocation);
-    // Map common postcode areas to city names for broader matching
-    var areaCityMap = { b:'birmingham', n:'london', e:'london', w:'london', s:'london', ec:'london', wc:'london', se:'london', sw:'london', nw:'london', ha:'harrow', en:'enfield', ig:'ilford', rm:'romford', da:'dartford', br:'bromley', cr:'croydon', sm:'sutton', tw:'twickenham', ub:'uxbridge', wd:'watford', al:'st albans', cm:'chelmsford', ss:'southend', me:'medway', tn:'tunbridge wells', rh:'redhill', gu:'guildford', sl:'slough', lu:'luton', hp:'hemel hempstead', sg:'stevenage', cb:'cambridge', pe:'peterborough', nr:'norwich', ip:'ipswich', co:'colchester', so:'southampton', po:'portsmouth', bh:'bournemouth', ba:'bath', bs:'bristol', ta:'taunton', ex:'exeter', pl:'plymouth', tr:'truro', dt:'dorchester', sp:'salisbury', sn:'swindon', ox:'oxford', cv:'coventry', le:'leicester', ng:'nottingham', de:'derby', st:'stoke', sy:'shrewsbury', tf:'telford', wr:'worcester', gl:'gloucester', np:'newport', cf:'cardiff', sa:'swansea', ld:'llandrindod', hr:'hereford', wv:'wolverhampton', ws:'walsall', dy:'dudley', bd:'bradford', hd:'huddersfield', hx:'halifax', ls:'leeds', wf:'wakefield', dn:'doncaster', s:'sheffield', yo:'york', hu:'hull', ln:'lincoln', nn:'northampton', mk:'milton keynes', rg:'reading', kt:'kingston', tn:'tunbridge wells', ct:'canterbury', ne:'newcastle', sr:'sunderland', dh:'durham', ts:'teesside', dl:'darlington', ca:'carlisle', la:'lancaster', pr:'preston', fy:'blackpool', bl:'bolton', wn:'wigan', l:'liverpool', ch:'chester', wa:'warrington', m:'manchester', ol:'oldham', sk:'stockport', cw:'crewe', st:'stoke-on-trent' };
     for (const area of targets) {
       const areaNorm = normalisePostcode(area);
       if (!areaNorm) continue;
       if (extractPostcodeArea(leadLocation) === extractPostcodeArea(area)) { areaMatch = true; break; }
       if (extractPostcodeArea(lead.postcode || '') === extractPostcodeArea(area)) { areaMatch = true; break; }
       if ((lead.city || '').toLowerCase() === area.toLowerCase()) { areaMatch = true; break; }
-      // City fallback: map area code to city name and check against lead's city/locality
-      var cityFallback = areaCityMap[area.toLowerCase()];
-      if (cityFallback && (lead.city || lead.address || '').toLowerCase().includes(cityFallback)) { areaMatch = true; break; }
     }
     if (!areaMatch) return { match: false, tier: 0 };
   } else {
