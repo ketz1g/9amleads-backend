@@ -6200,7 +6200,7 @@ function generateLeadEmailHTML(customer, leads) {
       body += '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;margin-top:8px">';
       if (hasEmail) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\u2709\uFE0F <a href="mailto:' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email) + '" style="color:#38bdf8;text-decoration:none">' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email) + '</a></div>';
       if (hasPhone) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone || d.mobile) + '</div>';
-      if (hasWebsite) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\uD83C\uDF10 <a href="http://' + d.website.replace(/^https?:\/\//, '') + '" style="color:#38bdf8;text-decoration:none" target="_blank">' + d.website + '</a></div>';
+      if (hasWebsite) { var w = d.website || d.url || ''; body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\uD83C\uDF10 <a href="http://' + w.replace(/^https?:\/\//, '') + '" style="color:#38bdf8;text-decoration:none" target="_blank">' + w + '</a></div>'; }
       body += '</div>';
     }
 
