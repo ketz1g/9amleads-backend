@@ -155,8 +155,8 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 
 <div id="local-area-selector">
 <div class="form-group">
-<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Postcode Areas <span style="color:#8890a8;font-weight:400;font-size:11px">(pick up to 3 &middot; e.g. <strong>EN</strong>, <strong>SW</strong>, <strong>CM</strong> &middot; for moving &amp; new business)</span></label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Enter UK postcode area codes (1 or 2 letters) like EN (Enfield), B (Birmingham), N (North London), CM (Chelmsford). Pick up to 3 areas. Each area covers all districts within it. Need more? Upgrade to Pro for All UK.</span></div>
+<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Postcode Areas <span style="color:#8890a8;font-weight:400;font-size:11px">(<span id="s-postcode-limit-label">pick up to 3</span> &middot; e.g. <strong>EN</strong>, <strong>SW</strong>, <strong>CM</strong> &middot; for moving &amp; new business)</span></label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Enter UK postcode area codes (1 or 2 letters) like EN (Enfield), B (Birmingham), N (North London), CM (Chelmsford). Free Trial and Starter can pick up to 3 areas. Pro and Enterprise can add unlimited areas.</span></div>
 <div id="s-postcode-wrapper" style="position:relative;margin-top:4px">
 <div id="s-postcode-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px"></div>
 <input type="text" id="s-postcode-input" placeholder="Type area code e.g. B, N, EN, CM" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
@@ -193,22 +193,22 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <label style="display:block;font-size:12px;font-weight:600;color:#f1f5f9;margin-bottom:6px"><i class="fas fa-crown" style="color:#f59e0b;width:14px"></i> Choose Your Plan</label>
 <div style="display:grid;gap:6px" id="s-plan-container">
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(14,165,233,0.06);border:2px solid rgba(14,165,233,0.3);border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-free_trial" onmouseover="this.style.borderColor='rgba(14,165,233,0.5)'" onmouseout="this.style.borderColor='rgba(14,165,233,0.3)'">
-<input type="radio" name="plan" value="free_trial" checked style="accent-color:#0ea5e9;width:15px;height:15px">
+<input type="radio" name="plan" value="free_trial" checked style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
 <div style="flex:1"><strong style="color:#f1f5f9">Free Trial</strong><br><span style="font-size:10px;color:#8890a8">7 days free &middot; 5 leads/day &middot; 3 areas</span></div>
 <div style="font-size:14px;font-weight:800;color:#22c55e">Free</div>
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-starter" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="radio" name="plan" value="starter" style="accent-color:#0ea5e9;width:15px;height:15px">
+<input type="radio" name="plan" value="starter" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
 <div style="flex:1"><strong style="color:#f1f5f9">Starter</strong><br><span style="font-size:10px;color:#8890a8">5 leads/day &middot; 3 postcode areas</span></div>
 <div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;25<span style="font-size:10px;color:#8890a8">/wk</span></div>
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-pro" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="radio" name="plan" value="pro" style="accent-color:#0ea5e9;width:15px;height:15px">
+<input type="radio" name="plan" value="pro" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
 <div style="flex:1"><strong style="color:#f1f5f9">Pro</strong><br><span style="font-size:10px;color:#8890a8">15 leads/day &middot; All UK</span></div>
 <div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;49<span style="font-size:10px;color:#8890a8">/wk</span></div>
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-enterprise" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="radio" name="plan" value="enterprise" style="accent-color:#0ea5e9;width:15px;height:15px">
+<input type="radio" name="plan" value="enterprise" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
 <div style="flex:1"><strong style="color:#f1f5f9">Enterprise</strong><br><span style="font-size:10px;color:#8890a8">40 leads/day &middot; All UK</span></div>
 <div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;99<span style="font-size:10px;color:#8890a8">/wk</span></div>
 </label>
@@ -298,7 +298,8 @@ async function addSignupPostcode() {
   var err = document.getElementById('s-postcode-error');
   err.style.display = 'none';
   if (!code) return;
-  if (signupPostcodes.length >= 3) { err.textContent = 'Maximum 3 areas allowed'; err.style.display = 'block'; return; }
+  var maxAreas = document.querySelector('input[name="plan"]:checked')?.value === 'pro' || document.querySelector('input[name="plan"]:checked')?.value === 'enterprise' ? 999 : 3;
+  if (signupPostcodes.length >= maxAreas) { err.textContent = maxAreas === 999 ? 'Unlimited areas — you\'re on Pro!' : 'Maximum 3 areas allowed (upgrade to Pro for unlimited)'; err.style.display = 'block'; return; }
   if (signupPostcodes.includes(code)) { err.textContent = '"' + code + '" already added'; err.style.display = 'block'; return; }
   if (!isValidPostcodeArea(code)) { err.textContent = '"' + code + '" is not a valid UK postcode area (use 1 or 2-letter code like B, N, EN, SG, CM)'; err.style.display = 'block'; return; }
   // Server verification (optional — area is validated client-side already)
@@ -316,14 +317,24 @@ function removeSignupPostcode(code) {
   signupPostcodes = signupPostcodes.filter(function(c) { return c !== code; });
   renderSignupPostcodes();
 }
+function updatePostcodeLimit() {
+  var plan = document.querySelector('input[name="plan"]:checked')?.value;
+  var isUnlimited = plan === 'pro' || plan === 'enterprise';
+  var label = document.getElementById('s-postcode-limit-label');
+  if (label) label.textContent = isUnlimited ? 'unlimited' : 'pick up to 3';
+  renderSignupPostcodes();
+}
+
 function renderSignupPostcodes() {
   var tags = document.getElementById('s-postcode-tags');
   var html = '';
+  var plan = document.querySelector('input[name="plan"]:checked')?.value;
+  var isUnlimited = plan === 'pro' || plan === 'enterprise';
   for (var i = 0; i < signupPostcodes.length; i++) {
     html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:5px;font-size:11px;font-weight:600;color:#0ea5e9">' + signupPostcodes[i] + ' <span style="cursor:pointer;opacity:0.6" onclick="removeSignupPostcode(\'' + signupPostcodes[i] + '\')">&times;</span></span>';
   }
   tags.innerHTML = html;
-  document.getElementById('s-postcode-count').textContent = signupPostcodes.length > 0 ? signupPostcodes.length + ' of 3 areas selected' : '';
+  document.getElementById('s-postcode-count').textContent = signupPostcodes.length > 0 ? (signupPostcodes.length + (isUnlimited ? ' areas selected' : ' of 3 areas selected')) : '';
 }
 
 // ===== FILTER SYSTEM =====
