@@ -4908,8 +4908,7 @@ function renderFilterSummary(filters, product) {
       if (pf.maxBedrooms) pl.push('Max ' + pf.maxBedrooms + ' beds');
       if (pf.propertyType) pl.push(pf.propertyType);
       if (pf.maxPrice) pl.push('Max \u00a3' + Number(pf.maxPrice).toLocaleString());
-      var st = []; if (pf.statusSSTC !== false) st.push('SSTC'); if (pf.statusOffer !== false) st.push('Under Offer');
-      if (st.length) pl.push(st.join(', '));
+      // SSTC/Under Offer status filters are defaults — not shown as active filters
     } else if (p === 'probate') {
       pl.push('Territory only');
     } else if (p === 'newbusiness') {
