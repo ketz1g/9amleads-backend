@@ -153,6 +153,33 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </div></div>
 </div>
 
+<!-- PLAN SELECTION (before areas so limit is known) -->
+<div class="form-group">
+<label style="display:block;font-size:12px;font-weight:600;color:#f1f5f9;margin-bottom:6px"><i class="fas fa-crown" style="color:#f59e0b;width:14px"></i> Choose Your Plan</label>
+<div style="display:grid;gap:6px" id="s-plan-container">
+<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(14,165,233,0.06);border:2px solid rgba(14,165,233,0.3);border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-free_trial" onmouseover="this.style.borderColor='rgba(14,165,233,0.5)'" onmouseout="this.style.borderColor='rgba(14,165,233,0.3)'">
+<input type="radio" name="plan" value="free_trial" checked style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
+<div style="flex:1"><strong style="color:#f1f5f9">Free Trial</strong><br><span style="font-size:10px;color:#8890a8">7 days free · 5 leads/day · 3 areas</span></div>
+<div style="font-size:14px;font-weight:800;color:#22c55e">Free</div>
+</label>
+<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-starter" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
+<input type="radio" name="plan" value="starter" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
+<div style="flex:1"><strong style="color:#f1f5f9">Starter</strong><br><span style="font-size:10px;color:#8890a8">5 leads/day · 3 postcode areas</span></div>
+<div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;25<span style="font-size:10px;color:#8890a8">/wk</span></div>
+</label>
+<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-pro" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
+<input type="radio" name="plan" value="pro" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
+<div style="flex:1"><strong style="color:#f1f5f9">Pro</strong><br><span style="font-size:10px;color:#8890a8">15 leads/day · All UK unlimited areas</span></div>
+<div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;49<span style="font-size:10px;color:#8890a8">/wk</span></div>
+</label>
+<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-enterprise" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
+<input type="radio" name="plan" value="enterprise" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
+<div style="flex:1"><strong style="color:#f1f5f9">Enterprise</strong><br><span style="font-size:10px;color:#8890a8">40 leads/day · All UK unlimited areas</span></div>
+<div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;99<span style="font-size:10px;color:#8890a8">/wk</span></div>
+</label>
+</div>
+</div>
+
 <div id="local-area-selector">
 <div class="form-group">
 <label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Postcode Areas <span style="color:#8890a8;font-weight:400;font-size:11px">(<span id="s-postcode-limit-label">pick up to 3</span> &middot; e.g. <strong>EN</strong>, <strong>SW</strong>, <strong>CM</strong> &middot; for moving &amp; new business)</span></label>
@@ -187,33 +214,6 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 
 <!-- LEAD FILTERS -->
 <div id="s-filters-container" style="margin-top:8px"></div>
-
-<!-- PLAN SELECTION -->
-<div class="form-group" style="margin-top:12px">
-<label style="display:block;font-size:12px;font-weight:600;color:#f1f5f9;margin-bottom:6px"><i class="fas fa-crown" style="color:#f59e0b;width:14px"></i> Choose Your Plan</label>
-<div style="display:grid;gap:6px" id="s-plan-container">
-<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(14,165,233,0.06);border:2px solid rgba(14,165,233,0.3);border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-free_trial" onmouseover="this.style.borderColor='rgba(14,165,233,0.5)'" onmouseout="this.style.borderColor='rgba(14,165,233,0.3)'">
-<input type="radio" name="plan" value="free_trial" checked style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
-<div style="flex:1"><strong style="color:#f1f5f9">Free Trial</strong><br><span style="font-size:10px;color:#8890a8">7 days free &middot; 5 leads/day &middot; 3 areas</span></div>
-<div style="font-size:14px;font-weight:800;color:#22c55e">Free</div>
-</label>
-<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-starter" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="radio" name="plan" value="starter" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
-<div style="flex:1"><strong style="color:#f1f5f9">Starter</strong><br><span style="font-size:10px;color:#8890a8">5 leads/day &middot; 3 postcode areas</span></div>
-<div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;25<span style="font-size:10px;color:#8890a8">/wk</span></div>
-</label>
-<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-pro" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="radio" name="plan" value="pro" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
-<div style="flex:1"><strong style="color:#f1f5f9">Pro</strong><br><span style="font-size:10px;color:#8890a8">15 leads/day &middot; All UK</span></div>
-<div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;49<span style="font-size:10px;color:#8890a8">/wk</span></div>
-</label>
-<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-enterprise" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
-<input type="radio" name="plan" value="enterprise" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
-<div style="flex:1"><strong style="color:#f1f5f9">Enterprise</strong><br><span style="font-size:10px;color:#8890a8">40 leads/day &middot; All UK</span></div>
-<div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;99<span style="font-size:10px;color:#8890a8">/wk</span></div>
-</label>
-</div>
-</div>
 
 <!-- FILTERS NOTE (below plan selection, before fields) -->
 <div style="margin-top:6px;padding:8px 12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.08);border-radius:8px;font-size:10px;color:#8890a8;line-height:1.5">
