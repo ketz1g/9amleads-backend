@@ -673,8 +673,13 @@ function doSignup() {
   var selectedPlan = document.querySelector('#s-plan-container input[type=radio]:checked');
   var planVal = selectedPlan ? selectedPlan.value : 'free_trial';
   var maxProducts = planVal === 'free_trial' ? 1 : planVal === 'starter' ? 2 : 99;
+  var minProducts = planVal === 'pro' || planVal === 'enterprise' ? 5 : 1;
   if (products.length > maxProducts) {
     document.getElementById('signup-error').textContent = (planVal === 'free_trial' ? 'Free Trial' : planVal.charAt(0).toUpperCase() + planVal.slice(1)) + ' allows up to ' + maxProducts + ' lead type' + (maxProducts > 1 ? 's' : '') + '. ' + (maxProducts < 99 ? 'Upgrade to ' + (planVal === 'free_trial' ? 'Starter' : 'Pro') + ' for more.' : '');
+    document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
+  }
+  if (products.length < minProducts) {
+    document.getElementById('signup-error').textContent = (planVal === 'pro' ? 'Pro' : 'Enterprise') + ' requires all 5 lead types (Moving, New Business, Planning, Probate, Tenders) to deliver ' + (planVal === 'pro' ? '75' : '125') + ' leads/week. Select all 5 or choose a different plan.';
     document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
   }
   var product = products[0];
