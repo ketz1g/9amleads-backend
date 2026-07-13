@@ -136,7 +136,10 @@ function leadMatchesTarget(lead, customer, product) {
       if (!areaNorm) continue;
       if (extractPostcodeArea(leadLocation) === extractPostcodeArea(area)) { areaMatch = true; break; }
       if (extractPostcodeArea(lead.postcode || '') === extractPostcodeArea(area)) { areaMatch = true; break; }
-      if ((lead.city || '').toLowerCase() === area.toLowerCase()) { areaMatch = true; break; }
+      // City fallback for unique areas only (not generic cities like London that cover many areas)
+      var uniqueAreaCities = { b:'birmingham', ha:'harrow', en:'enfield', ig:'ilford', rm:'romford', da:'dartford', br:'bromley', cr:'croydon', sm:'sutton', tw:'twickenham', ub:'uxbridge', wd:'watford', al:'st albans', cm:'chelmsford', me:'medway', tn:'tunbridge', rh:'redhill', gu:'guildford', sl:'slough', lu:'luton', hp:'hemel', sg:'stevenage', cb:'cambridge', pe:'peterborough', nr:'norwich', ip:'ipswich', co:'colchester', so:'southampton', po:'portsmouth', bh:'bournemouth', ba:'bath', bs:'bristol', ta:'taunton', ex:'exeter', pl:'plymouth', tr:'truro', dt:'dorchester', sp:'salisbury', sn:'swindon', ox:'oxford', cv:'coventry', le:'leicester', ng:'nottingham', de:'derby', st:'stoke', sy:'shrewsbury', tf:'telford', wr:'worcester', gl:'gloucester', np:'newport', cf:'cardiff', sa:'swansea', hr:'hereford', wv:'wolverhampton', ws:'walsall', dy:'dudley', bd:'bradford', hd:'huddersfield', hx:'halifax', ls:'leeds', wf:'wakefield', dn:'doncaster', s:'sheffield', yo:'york', hu:'hull', ln:'lincoln', nn:'northampton', mk:'milton keynes', rg:'reading', kt:'kingston', ne:'newcastle', sr:'sunderland', dh:'durham', dl:'darlington', ca:'carlisle', la:'lancaster', pr:'preston', fy:'blackpool', bl:'bolton', wn:'wigan', l:'liverpool', ch:'chester', wa:'warrington', m:'manchester', ol:'oldham', sk:'stockport', cw:'crewe', gl:'gloucester' };
+      var cityMatch = uniqueAreaCities[area.toLowerCase()];
+      if (cityMatch && (lead.city || lead.address || '').toLowerCase().includes(cityMatch)) { areaMatch = true; break; }
     }
     if (!areaMatch) return { match: false, tier: 0 };
   } else {
