@@ -740,7 +740,7 @@ function doSignup() {
         fetch(API + '/api/create-checkout', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + d.token }, body:JSON.stringify({ plan:plan }) })
         .then(function(r) { return r.json(); })
         .then(function(cd) { if (cd.url) window.location.href = cd.url; else window.location.href = '/portal/dashboard.html?onboard=1'; })
-        .catch(function() { window.location.href = '/portal/dashboard.html?onboard=1'; });
+        .catch(function() { window.location.href = '/portal/dashboard.html?onboard=1'; sessionStorage.setItem('login_token', d.token); });
       } else {
         setTimeout(function() { window.location.href = '/portal/dashboard.html?onboard=1'; }, 1000);
       }
