@@ -2003,7 +2003,11 @@ app.get('/api/postcodes/mine', authMiddleware, (req, res) => {
   const withDetails = currentAreas.map(code => {
     const upper = code.toUpperCase();
     const areaInfo = areas[upper];
-    return { code: upper, name: areaInfo ? areaInfo.name : upper, region: areaInfo ? areaInfo.region : '' };
+    if (areaInfo) {
+      return { code: upper, name: areaInfo.name, region: areaInfo.region || '' };
+    }
+    // City/region name (not a standard postcode area)
+    return { code: upper, name: upper, region: '', isCity: true };
   });
 
   res.json({

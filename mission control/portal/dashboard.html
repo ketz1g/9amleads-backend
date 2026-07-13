@@ -4567,11 +4567,12 @@ async function loadTerritories() {
   const tags = document.getElementById('territory-tags');
   const stats = document.getElementById('territory-stats');
 
-  tags.innerHTML = data.areas.map(p =>
-    '<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.15);border-radius:6px;font-size:12px;color:var(--success);font-weight:600">' +
-    p.code + ' ' + p.name +
-    '<span style="font-weight:400;color:var(--muted2)">' + (p.region || '') + '</span></span>'
-  ).join('');
+  tags.innerHTML = data.areas.map(p => {
+    var label = p.isCity ? p.name : (p.code && p.code !== p.name ? p.code + ' ' + p.name : (p.name || p.code || ''));
+    return '<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.15);border-radius:6px;font-size:12px;color:var(--success);font-weight:600">' +
+    label +
+    '<span style="font-weight:400;color:var(--muted2)">' + (p.region ? ' ' + p.region : '') + '</span></span>';
+  }).join('');
 
   const remaining = data.max_limit - data.count;
   const limitLabel = data.limit_label || String(data.max_limit);
@@ -4739,11 +4740,6 @@ function addCustomSector() {
   input.value = '';
   renderTerritoryFull();
   updateTerritorySaveBtn();
-  const tags = document.getElementById('territory-tags');
-  const span = document.createElement('span');
-  span.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:6px;font-size:12px;color:var(--primary);font-weight:600';
-  span.innerHTML = sector + ' <span style="cursor:pointer;opacity:0.6" onclick="removeTerritoryPc(\'' + sector + '\')">&times;</span>';
-  tags.appendChild(span);
 }
 
 function removeTerritoryPc(code) {
