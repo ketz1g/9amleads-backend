@@ -4613,6 +4613,32 @@ cron.schedule('0 0 * * *', async () => {
 });
 // Removed duplicate deliver endpoint - using newer version below
 
+app.post('/api/admin/deliver', adminAuth, async (req, res) => {
+  try {
+    _dbData = null;
+    var db = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var customers = (db.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
+    var sent = 0, errors = 0;
+    for (var ci = 0; ci < customers.length; ci++) {
+      var cust = customers[ci];
+      var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
+      if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
+      var custLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0; }).slice(0, 5);
+      if (custLeads.length === 0) continue;
+      var html = generateLeadEmailHTML(cust, custLeads);
+      var subject = 'Your 9am Opportunities for ' + (cust.target_areas ? JSON.parse(cust.target_areas).join(', ') : 'your area') + ' \u2014 ' + new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+      try {
+        await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, subject, html);
+        var now = new Date().toISOString();
+        custLeads.forEach(function(l) { l.delivered = 1; l.delivered_at = now; });
+        sent++;
+      } catch(e) { errors++; }
+    }
+    saveDb();
+    res.json({ success: true, customers_processed: customers.length, leads_delivered: sent, errors: errors });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
   try {
     const startTime = new Date().toISOString();
