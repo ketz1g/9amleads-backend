@@ -446,6 +446,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
     <button class="btn btn-outline btn-sm" id="edit-filters-btn" onclick="toggleFilterEditor()"><i class="fas fa-pen"></i> Edit Filters</button>
   </div>
 </div>
+<div id="dashboard-bottom-section" style="display:none">
 <div class="card" id="crmSection">
 <div class="card-header"><div class="card-title"><i class="fas fa-plug"></i> CRM Integration</div></div>
 <p style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6">Connect your CRM via webhook. Your daily leads will be pushed here automatically at 9am. Works with Zapier, Make, n8n, HubSpot, Salesforce, and any system that accepts webhooks.</p>
@@ -494,6 +495,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 </select>
 </div>
 <div id="leadGroups"><div class="empty-state"><div class="icon"><i class="fas fa-clipboard-list" style="font-size:18px;color:var(--primary)"></i></div>Loading your leads...</div></div>
+</div>
 </div>
 </div>
 <footer>
@@ -848,17 +850,18 @@ var retryInterval = setInterval(function() {
 // ===== NEW DASHBOARD FUNCTIONS =====
 function showPage(page) {
   // Page navigation - scroll to relevant section or navigate
+  function showDashboardSection(show) { var el = document.getElementById('dashboard-bottom-section'); if (el) el.style.display = show ? 'block' : 'none'; }
   var sections = {
-    dashboard: function() { window.scrollTo({top:0,behavior:'smooth'}); },
+    dashboard: function() { window.scrollTo({top:0,behavior:'smooth'}); showDashboardSection(true); },
     leads: function() { document.getElementById('leads-section')?.scrollIntoView({behavior:'smooth'}); },
     pipeline: function() { document.getElementById('pipeline-section')?.scrollIntoView({behavior:'smooth'}); },
     billing: function() { document.getElementById('sub-section')?.scrollIntoView({behavior:'smooth'}); },
     settings: function() { document.getElementById('lead-filters-section')?.scrollIntoView({behavior:'smooth'}); },
-    support: function() { showSupport(); },
-    reports: function() { showReportsPage(); },
-    campaigns: function() { loadCampaigns(); },
-    'business-profile': function() { showBusinessProfile(); },
-    'direct-mail': function() { showDirectMailCentre(); }
+    support: function() { showDashboardSection(false); showSupport(); },
+    reports: function() { showDashboardSection(false); showReportsPage(); },
+    campaigns: function() { showDashboardSection(false); loadCampaigns(); },
+    'business-profile': function() { showDashboardSection(false); showBusinessProfile(); },
+    'direct-mail': function() { showDashboardSection(false); showDirectMailCentre(); }
   };
   (sections[page] || sections.dashboard)();
 }
