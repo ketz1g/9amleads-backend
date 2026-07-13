@@ -292,6 +292,10 @@ async function addSignupPostcode() {
   renderSignupPostcodes();
   input.focus();
 }
+function removeSignupPostcode(code) {
+  signupPostcodes = signupPostcodes.filter(function(c) { return c !== code; });
+  renderSignupPostcodes();
+}
 function updatePostcodeLimit() {
   var plan = document.querySelector('input[name="plan"]:checked')?.value;
   var isUnlimited = plan === 'pro' || plan === 'enterprise';
@@ -306,11 +310,11 @@ function renderSignupPostcodes() {
   var html = '';
   var plan = document.querySelector('input[name="plan"]:checked')?.value;
   var isUnlimited = plan === 'pro' || plan === 'enterprise';
-  for (var i = 0; i < signupCities_removed.length; i++) {
-    html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:5px;font-size:11px;font-weight:600;color:#0ea5e9">' + signupPostcodes[i] + ' <span style="cursor:pointer;opacity:0.6" onclick="removeSignupPostcode(\'' + signupPostcodes[i] + '\')">&times;</span></span>';
+  for (var i = 0; i < signupPostcodes.length; i++) {
+    html += '<span class="tag" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:5px;font-size:11px;font-weight:600;color:#0ea5e9">' + signupPostcodes[i] + ' <span style="cursor:pointer;opacity:0.7;margin-left:2px" onclick="removeSignupPostcode(\'' + signupPostcodes[i] + '\')">&times;</span></span>';
   }
   tags.innerHTML = html;
-  document.getElementById('s-postcode-count').textContent = signupCities_removed.length > 0 ? (signupCities_removed.length + (isUnlimited ? ' areas selected' : ' of 3 areas selected')) : '';
+  document.getElementById('s-postcode-count').textContent = signupPostcodes.length > 0 ? (signupPostcodes.length + (isUnlimited ? ' areas selected' : ' of 3 selected')) : '';
 }
 
 // ===== FILTER SYSTEM =====
