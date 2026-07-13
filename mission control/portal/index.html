@@ -323,6 +323,7 @@ function updatePostcodeLimit() {
   var label = document.getElementById('s-postcode-limit-label');
   if (label) label.textContent = isUnlimited ? 'unlimited' : 'pick up to 3';
   renderSignupPostcodes();
+  onLeadTypeChange();
 }
 
 function renderSignupPostcodes() {
@@ -461,8 +462,18 @@ function onLeadTypeChange() {
   }
   var localSel = document.getElementById('local-area-selector');
   var specSel = document.getElementById('specialist-area-selector');
+  var plan = document.querySelector('input[name="plan"]:checked')?.value;
+  var isUnlimited = plan === 'pro' || plan === 'enterprise';
+  // For Pro/Enterprise, auto-set specialist to UK-wide and hide the selector
+  if (specSel) {
+    if (hasSpecialist && isUnlimited) {
+      specSel.style.display = 'none';
+      selectSpecialistArea('ukwide');
+    } else {
+      specSel.style.display = hasSpecialist ? 'block' : 'none';
+    }
+  }
   if (localSel) localSel.style.display = (hasLocal || !hasSpecialist) ? 'block' : 'none';
-  if (specSel) specSel.style.display = hasSpecialist ? 'block' : 'none';
 }
 
 function selectSpecialistArea(type) {
