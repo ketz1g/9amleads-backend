@@ -169,12 +169,12 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-pro" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
 <input type="radio" name="plan" value="pro" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
-<div style="flex:1"><strong style="color:#f1f5f9">Pro</strong><br><span style="font-size:10px;color:#8890a8">15 leads/day · All UK unlimited areas</span></div>
+<div style="flex:1"><strong style="color:#f1f5f9">Pro</strong><br><span style="font-size:10px;color:#8890a8">15 leads/day · All UK unlimited · No free trial</span></div>
 <div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;49<span style="font-size:10px;color:#8890a8">/wk</span></div>
 </label>
 <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;font-size:12px;transition:.15s" id="plan-enterprise" onmouseover="this.style.borderColor='#2a2d42'" onmouseout="this.style.borderColor='#1e2030'">
 <input type="radio" name="plan" value="enterprise" style="accent-color:#0ea5e9;width:15px;height:15px" onchange="updatePostcodeLimit()">
-<div style="flex:1"><strong style="color:#f1f5f9">Enterprise</strong><br><span style="font-size:10px;color:#8890a8">40 leads/day · All UK unlimited areas</span></div>
+<div style="flex:1"><strong style="color:#f1f5f9">Enterprise</strong><br><span style="font-size:10px;color:#8890a8">40 leads/day · All UK unlimited · No free trial</span></div>
 <div style="font-size:14px;font-weight:800;color:#f1f5f9">&pound;99<span style="font-size:10px;color:#8890a8">/wk</span></div>
 </label>
 </div>
@@ -250,7 +250,7 @@ Filters set here apply to each lead type. You can adjust them anytime from your 
 
 <div class="status" id="signup-error"></div>
 <div class="success" id="signup-success">Account created! Redirecting...</div>
-<button class="btn" onclick="doSignup()" id="signup-btn"><i class="fas fa-rocket"></i> Create Free Account</button>
+<button class="btn" onclick="doSignup()" id="signup-btn"><i class="fas fa-rocket"></i> Start Free Trial</button>
 <button class="btn btn-secondary" onclick="showLogin()">Already have an account? Sign In</button>
 </div>
 
@@ -733,9 +733,17 @@ function doSignup() {
     body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.token) {
-      localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:d.customer?.plan || 'free_trial', email:email, product:product, products:products }));
+      localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:plan, email:email, product:product, products:products }));
       success.style.display = 'block'; button.innerHTML = '<i class="fas fa-check"></i> Redirecting...';
-      setTimeout(function() { window.location.href = '/portal/dashboard.html?onboard=1'; }, 1000);
+      // For paid plans, redirect to Stripe checkout immediately
+      if (plan === 'pro' || plan === 'enterprise') {
+        fetch(API + '/api/create-checkout', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + d.token }, body:JSON.stringify({ plan:plan }) })
+        .then(function(r) { return r.json(); })
+        .then(function(cd) { if (cd.url) window.location.href = cd.url; else window.location.href = '/portal/dashboard.html?onboard=1'; })
+        .catch(function() { window.location.href = '/portal/dashboard.html?onboard=1'; });
+      } else {
+        setTimeout(function() { window.location.href = '/portal/dashboard.html?onboard=1'; }, 1000);
+      }
     } else {
       error.textContent = d.error || 'Signup failed. Please try again.'; error.style.display = 'block';
       button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false;
