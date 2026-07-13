@@ -4633,7 +4633,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         var now = new Date().toISOString();
         custLeads.forEach(function(l) { l.delivered = 1; l.delivered_at = now; });
         sent++;
-      } catch(e) { errors++; }
+      } catch(e) { console.log('[DELIVER] Error:', e.message); errors++; }
     }
     saveDb();
     res.json({ success: true, customers_processed: customers.length, leads_delivered: sent, errors: errors });
