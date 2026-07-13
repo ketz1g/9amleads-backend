@@ -231,7 +231,7 @@ var DM_FEATURE_ACCESS = {
   ai_flyer: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'AI Flyer Generator', desc: 'Generate flyer content with AI' },
   saved_templates: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'Saved Templates', desc: 'Save and reuse templates' },
   campaign_history: { free_trial: true, starter: true, pro: true, enterprise: true, label: 'Campaign History', desc: 'View past campaign history' },
-  auto_send: { free_trial: false, starter: false, pro: false, enterprise: true, label: 'Auto Send', desc: 'Automated daily mail campaigns' },
+  auto_send: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'Auto Send', desc: 'Automated daily mail campaigns' },
   saved_payment: { free_trial: false, starter: false, pro: false, enterprise: true, label: 'Saved Payment Method', desc: 'Store a card for automatic payments' },
   daily_summaries: { free_trial: false, starter: false, pro: false, enterprise: true, label: 'Daily Summaries', desc: 'Daily campaign summary emails' },
   proof_tracking: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'Proof Tracking', desc: 'Track proof of posting' },
