@@ -2748,9 +2748,9 @@ function dmApproveAndSend() {
       // Wait for all recipients to be added, then update status to approved and send
       Promise.all(addPromises).then(function() {
         apiFetch('/api/direct-mail/campaigns/' + dmSendingCampaignId + '/status', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ status: 'approved' }) }).then(function() {
-          // Move to step 5 to trigger send
-          localStorage.setItem('dmStep', '5');
-          showDirectMailCentre('create');
+          localStorage.setItem('dmStep', '1');
+          showDirectMailCentre('overview');
+          showModal('Campaign Sent!', '<div style="text-align:center;padding:14px"><div style="font-size:48px;margin-bottom:8px">&#128231;</div><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--success)">Your campaign is being processed!</div><p style="font-size:12px;color:var(--muted2);margin-bottom:10px">Your materials will be printed and posted by Stannp. Typically delivered in 1-3 working days. Check the History tab for proof of sending.</p><button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-overlay\')?.remove()"><i class="fas fa-check"></i> Done</button></div>');
         });
       });
     } else { alert('Failed to create campaign: ' + (r?.error || 'Unknown error')); }
