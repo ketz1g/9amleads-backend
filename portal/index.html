@@ -245,33 +245,30 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </div>
 
 <!-- LEAD FILTERS -->
-<div id="s-filters-container" style="margin-top:8px"></div>
-
-<!-- FILTERS NOTE (below plan selection, before fields) -->
-<div style="margin-top:6px;padding:8px 12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.08);border-radius:8px;font-size:10px;color:#8890a8;line-height:1.5">
-Filters set here apply to each lead type. You can adjust them anytime from your dashboard after signing up.
+<div id="s-filters-container" style="margin-top:6px"></div>
+<div style="margin-top:4px;padding:6px 10px;background:rgba(14,165,233,0.03);border:1px solid rgba(14,165,233,0.06);border-radius:6px;font-size:9px;color:#6b7280;line-height:1.4">
+Filters are optional. Adjust them anytime from your dashboard after signing up.
 </div>
 
 <!-- CRM BOX -->
-<div class="crm-box">
-<div class="title"><div class="dot">🔌</div><span>Auto-Send Leads to Your CRM</span><span class="badge">Free</span>
-<div class="tooltip" style="margin-left:auto"><i class="fas fa-question-circle"></i><span class="tip">Connect your CRM via webhook and your daily leads arrive automatically at 9am. Works with HubSpot, Salesforce, Pipedrive, and thousands more via Zapier, Make, or n8n. Not required — leads also arrive by email.</span></div></div>
-<p>Paste a webhook URL and your daily leads arrive in your CRM automatically at 9am. Works with Zapier, Make, n8n.</p>
-<div class="row"><input type="url" id="s-crm" placeholder="https://hooks.zapier.com/hooks/catch/..."><button type="button" onclick="testCrm()" id="crm-btn">Test</button></div>
-<div class="status" id="crm-status"></div>
-<div class="hint">Set up later in your dashboard. <a href="#" style="color:#5c6480;text-decoration:underline;text-decoration-style:dotted" onclick="document.getElementById('s-crm').value='https://hooks.zapier.com/hooks/catch/...';return false">Learn more</a></div>
+<div style="margin-top:8px;padding:10px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:8px">
+<div style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:#e8ebf2;margin-bottom:6px">
+<span style="font-size:12px">🔌</span> Auto-Send Leads to Your CRM
+<span style="padding:2px 6px;background:rgba(16,185,129,0.1);border-radius:3px;font-size:8px;color:#22c55e;font-weight:700">FREE</span>
+</div>
+<p style="font-size:9px;color:#6b7280;margin:0 0 6px;line-height:1.4">Paste a webhook URL — leads arrive in your CRM at 9am. Works with Zapier, Make, HubSpot, Salesforce.</p>
+<div style="display:flex;gap:4px"><input type="url" id="s-crm" placeholder="Webhook URL (optional)" style="flex:1;padding:6px 10px;background:#ffffff;border:1px solid #d1d5db;border-radius:4px;font-size:10px;color:#111827;font-family:inherit"><button type="button" onclick="testCrm()" id="crm-btn" style="padding:6px 12px;background:rgba(14,165,233,0.1);border:1px solid #0ea5e9;border-radius:4px;cursor:pointer;font-size:10px;color:#0ea5e9">Test</button></div>
+<div id="crm-status" style="font-size:9px;color:#6b7280;margin-top:4px"></div>
 </div>
 
 <!-- FAQ SECTION -->
-<div style="margin-top:12px;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px">
-<div style="font-size:11px;font-weight:700;color:#e8ebf2;margin-bottom:8px">Frequently Asked Questions</div>
-<div style="font-size:10px;color:#b0b8cc;line-height:1.6">
-<div style="margin-bottom:6px"><strong style="color:#f1f5f9">What's the difference between Postcode Areas and Coverage Areas?</strong><br>Moving and New Business use postcode areas (2-letter codes like EN, SW, CM). Planning, Probate and Tenders need wider county or UK-wide coverage for consistent daily delivery.</div>
-<div style="margin-bottom:6px"><strong style="color:#f1f5f9">How many leads will I get?</strong><br>Lead volume depends on your plan and selected area. Moving gets 5-30/day, New Business gets 10-50/day. Planning, Probate and Tenders use weekly allowances delivered daily. Wider coverage = more leads.</div>
-<div style="margin-bottom:6px"><strong style="color:#f1f5f9">What happens when my trial ends?</strong><br>Your settings are saved. Upgrade from your dashboard to continue receiving daily opportunities. Your lead types, areas and filters carry over automatically.</div>
-<div style="margin-bottom:6px"><strong style="color:#f1f5f9">Can I change my lead types or areas later?</strong><br>Yes. You can update your lead filters and areas from your dashboard after signing up.</div>
-<div style="margin-bottom:6px"><strong style="color:#f1f5f9">Can I cancel anytime?</strong><br>Yes. No long-term contracts. Cancel from your dashboard with one click.</div>
-<div style="font-size:10px;color:#b0b8cc;text-align:center;margin-top:8px">Need more help? <a href="mailto:hello@9amleads.com" style="color:#0ea5e9;text-decoration:underline">hello@9amleads.com</a> &middot; <a href="tel:08006893639" style="color:#0ea5e9">0800 689 3639</a> &middot; <a href="tel:08006893639" style="color:#0ea5e9;text-decoration:underline">0800 689 3639</a></div>
+<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,0.04);padding-top:10px">
+<div style="font-size:10px;font-weight:600;color:#e8ebf2;margin-bottom:6px">Frequently Asked Questions</div>
+<div style="font-size:9px;color:#8890a8;line-height:1.5">
+<div style="margin-bottom:4px"><strong style="color:#d1d5db">How many leads will I get?</strong><br>Lead volume depends on your plan and selected areas. Moving 5-30/day, New Business 10-50/day. Planning, Probate and Tenders use weekly allowances delivered daily.</div>
+<div style="margin-bottom:4px"><strong style="color:#d1d5db">Can I change my areas later?</strong><br>Yes. Update your areas and filters anytime from your dashboard settings.</div>
+<div style="margin-bottom:4px"><strong style="color:#d1d5db">What happens when my trial ends?</strong><br>Upgrade from your dashboard to continue. Your settings, areas and filters carry over automatically.</div>
+<div style="margin-bottom:4px"><strong style="color:#d1d5db">Can I cancel anytime?</strong><br>Yes. No long-term contracts. Cancel from your dashboard.</div>
 </div></div>
 
 <div class="form-group" style="margin-top:10px">
@@ -487,7 +484,7 @@ function onLeadTypeChange() {
     if (v === 'moving' || v === 'newbusiness') hasLocal = true;
   }
   var localSel = document.getElementById('local-area-selector');
-  var specSel = document.getElementById('specialist-area-selector');
+  
   var plan = document.querySelector('input[name="plan"]:checked')?.value;
   var isUnlimited = plan === 'pro' || plan === 'enterprise';
   // For Pro/Enterprise, auto-set specialist to UK-wide and hide the selector
