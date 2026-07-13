@@ -185,9 +185,9 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <label>Your Plan</label>
 <div class="grid-2" id="s-plan-container">
 <label class="plan-opt plan-sel" id="plan-free_trial"><input type="radio" name="plan" value="free_trial" checked onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Free Trial</div><div class="plan-d">Up to 25/week · 7-day trial · 3 areas · any 1 type</div></div><div class="plan-p">Free</div></label>
-<label class="plan-opt" id="plan-starter"><input type="radio" name="plan" value="starter" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Starter</div><div class="plan-d">Up to 25 leads/week · 3 areas · any 1 lead type</div></div><div class="plan-p">£25<span class="pw">/wk</span></div></label>
-<label class="plan-opt" id="plan-pro"><input type="radio" name="plan" value="pro" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Pro</div><div class="plan-d">Up to 75 leads/week · all areas · all 5 lead types</div></div><div class="plan-p">£49<span class="pw">/wk</span></div></label>
-<label class="plan-opt" id="plan-enterprise"><input type="radio" name="plan" value="enterprise" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Enterprise</div><div class="plan-d">Up to 125 leads/week · All UK · all 5 lead types required</div></div><div class="plan-p">£99<span class="pw">/wk</span></div></label>
+<label class="plan-opt" id="plan-starter"><input type="radio" name="plan" value="starter" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Starter</div><div class="plan-d">Up to 25/week · any 1 lead type · 3 areas</div></div><div class="plan-p">£25<span class="pw">/wk</span></div></label>
+<label class="plan-opt" id="plan-pro"><input type="radio" name="plan" value="pro" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Pro</div><div class="plan-d">Up to 75/week · any types · unlimited areas</div></div><div class="plan-p">£49<span class="pw">/wk</span></div></label>
+<label class="plan-opt" id="plan-enterprise"><input type="radio" name="plan" value="enterprise" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Enterprise</div><div class="plan-d">Up to 125/week · any types · All UK unlimited</div></div><div class="plan-p">£99<span class="pw">/wk</span></div></label>
 </div>
 </div>
 
@@ -673,15 +673,12 @@ function doSignup() {
   var selectedPlan = document.querySelector('#s-plan-container input[type=radio]:checked');
   var planVal = selectedPlan ? selectedPlan.value : 'free_trial';
   var maxProducts = planVal === 'free_trial' ? 1 : planVal === 'starter' ? 2 : 99;
-  var minProducts = planVal === 'pro' || planVal === 'enterprise' ? 5 : 1;
+  var minProducts = 1;
   if (products.length > maxProducts) {
     document.getElementById('signup-error').textContent = (planVal === 'free_trial' ? 'Free Trial' : planVal.charAt(0).toUpperCase() + planVal.slice(1)) + ' allows up to ' + maxProducts + ' lead type' + (maxProducts > 1 ? 's' : '') + '. ' + (maxProducts < 99 ? 'Upgrade to ' + (planVal === 'free_trial' ? 'Starter' : 'Pro') + ' for more.' : '');
     document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
   }
-  if (products.length < minProducts) {
-    document.getElementById('signup-error').textContent = (planVal === 'pro' ? 'Pro' : 'Enterprise') + ' requires all 5 lead types (Moving, New Business, Planning, Probate, Tenders) to deliver ' + (planVal === 'pro' ? '75' : '125') + ' leads/week. Select all 5 or choose a different plan.';
-    document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
-  }
+
   var product = products[0];
   var targetAreas = signupPostcodes;
   // For county/region coverage, get the selected county/region instead of postcodes
