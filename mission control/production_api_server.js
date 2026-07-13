@@ -932,9 +932,34 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
 
+    // Block disposable/temporary email domains
+    var disposableDomains = ['mailinator.com','guerrillamail.com','10minutemail.com','tempmail.com','throwaway.email','yopmail.com','trashmail.com','sharklasers.com','temp-mail.org','fakeinbox.com','maildrop.cc','getnada.com','hmail.us','spambox.us','tempmail.net','dispostable.com','mailmetrash.com','mailexpire.com','spamgourmet.com','spamfree24.org','spam.la','thankyou2010.com','trash2009.com','wegwerfmail.de','wh4f.org','whyspam.me','nospamfor.us','maileater.com','emailias.com','sneakemail.com','mytrashmail.com','meltmail.com','guerrillamail.net','guerrillamail.org','guerrillamail.biz','pokemail.net','spam4.me','dsgvb.com','klzlk.com','s0ny.net','hkftu.com','feaeth.com','vdrmm.com','mailhet.com','biyag.com','inboxbear.com','moakt.com','33mail.com','spamdecoy.net','spam.la','spamherelots.com','spamspot.com','thisisnotmyrealemail.com','spamcube.com','spamfree24.com','spamfree24.de','spamfree24.eu','spamfree24.info','spamfree24.net','spamfree24.org','spamgoes.in','spamgourmet.com','spamgourmet.net','spamgourmet.org','spamgourmet.info','spamgourmet.org.uk','spamgourmet.com.au','spamgourmet.co.nz','spamgourmet.co.za','spamgourmet.de','spamgourmet.fr','spamgourmet.it','spamgourmet.es','spamgourmet.pt','spamgourmet.se','spamgourmet.no','spamgourmet.dk','spamgourmet.fi','spamgourmet.ie','spamgourmet.ch','spamgourmet.at','spamgourmet.be','spamgourmet.nl','spamgourmet.lu','spamgourmet.pl','spamgourmet.cz','spamgourmet.sk','spamgourmet.hu','spamgourmet.ro','spamgourmet.bg','spamgourmet.gr','spamgourmet.tr','spamgourmet.ru','spamgourmet.cn','spamgourmet.jp','spamgourmet.kr','spamgourmet.in','spamgourmet.com.br','spamgourmet.com.mx','spamgourmet.com.ar','spamgourmet.com.co','spamgourmet.com.pe','spamgourmet.com.ve','spamgourmet.com.eg','spamgourmet.com.ng','spamgourmet.com.za','mailnator.com','maileater.net','mailexpire.com','mailcatch.com','mailsac.com','mailinator2.com','mailinator.net','mailinator.org','mailinator.info','mailinator.biz','mailinator.co.uk','mailinator.de','mailinator.fr','mailinator.it','mailinator.es','mailinator.pt','mailinator.se','mailinator.no','mailinator.dk','mailinator.fi','mailinator.ie','mailinator.ch','mailinator.at','mailinator.be','mailinator.nl','mailinator.lu','mailinator.pl','mailinator.cz'];
+    var emailDomain = email.split('@')[1]?.toLowerCase();
+    if (emailDomain && disposableDomains.indexOf(emailDomain) !== -1) {
+      return res.status(400).json({ error: 'Please use a permanent email address. Temporary email domains are not allowed.' });
+    }
+
     const existing = db.prepare('SELECT id FROM customers WHERE email = ?').get(email);
     if (existing) {
       return res.status(409).json({ error: 'An account with this email already exists' });
+    }
+
+    // Block multiple free trials from same IP (max 3 per day)
+    var ip = req.ip || req.connection?.remoteAddress || '';
+    if (ip) {
+      var recentFromIP = db.prepare("SELECT COUNT(*) as cnt FROM customers WHERE signup_ip = ? AND created_at > datetime('now', '-1 day')").get(ip);
+      if (recentFromIP && recentFromIP.cnt >= 3) {
+        return res.status(429).json({ error: 'Too many accounts created from this location. Please contact support.' });
+      }
+    }
+
+    // Block duplicate free trials with similar business name + postcode
+    if (targetAreas && targetAreas.length > 0 && planName !== 'pro' && planName !== 'enterprise') {
+      var areaMatch = targetAreas.slice(0, 1).join(',');
+      var similarBiz = db.prepare("SELECT id FROM customers WHERE company = ? AND target_areas LIKE ? AND plan = 'free_trial'").get(company, '%' + areaMatch + '%');
+      if (similarBiz) {
+        return res.status(409).json({ error: 'A free trial for this business already exists. Please log in or contact support.' });
+      }
     }
 
     const id = uuidv4();
@@ -969,13 +994,14 @@ app.post('/api/auth/signup', async (req, res) => {
       }
     }
 
-    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, coverage, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url, campaign_sent)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    var signupIp = req.ip || req.connection?.remoteAddress || '';
+    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, coverage, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url, campaign_sent, signup_ip)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, email.toLowerCase(), company, name || '', phone || '', password_hash,
       product, productInfo.lead_type, productInfo.business_type,
       JSON.stringify(targetAreas || []), coverage || 'postcode', leadFilters || bizField2 || '', bizField3 || JSON.stringify(products && Array.isArray(products) ? products : [product]),
       source || 'direct', plan || 'free_trial', plan === 'free_trial' ? trial_ends : null, marketingConsent ? 1 : 0,
-      new Date().toISOString(), '0', crmWebhookUrl || '', '[]'
+      new Date().toISOString(), '0', crmWebhookUrl || '', '[]', signupIp
     );
 
     // Claim postcode areas only when coverage type is postcode
