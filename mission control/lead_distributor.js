@@ -125,21 +125,26 @@ function leadMatchesTarget(lead, customer, product) {
   var pc = getProductConfig(customer, product);
   const targets = pc.targets;
   const coverage = pc.coverage;
-  // Area match
+  // Area match — match by city/county/region name
   let areaMatch = false;
   if (targets.length > 0) {
-    // Postcode-area matching (extracts leading alpha chars for exact comparison)
-    const leadLocation = lead.address || lead.location || lead.name || lead.postcode || '';
-    const leadNorm = normalisePostcode(leadLocation);
-    for (const area of targets) {
-      const areaNorm = normalisePostcode(area);
-      if (!areaNorm) continue;
-      if (extractPostcodeArea(leadLocation) === extractPostcodeArea(area)) { areaMatch = true; break; }
-      if (extractPostcodeArea(lead.postcode || '') === extractPostcodeArea(area)) { areaMatch = true; break; }
-      // City fallback for unique areas only (not generic cities like London that cover many areas)
-      var uniqueAreaCities = { b:'birmingham', ha:'harrow', en:'enfield', ig:'ilford', rm:'romford', da:'dartford', br:'bromley', cr:'croydon', sm:'sutton', tw:'twickenham', ub:'uxbridge', wd:'watford', al:'st albans', cm:'chelmsford', me:'medway', tn:'tunbridge', rh:'redhill', gu:'guildford', sl:'slough', lu:'luton', hp:'hemel', sg:'stevenage', cb:'cambridge', pe:'peterborough', nr:'norwich', ip:'ipswich', co:'colchester', so:'southampton', po:'portsmouth', bh:'bournemouth', ba:'bath', bs:'bristol', ta:'taunton', ex:'exeter', pl:'plymouth', tr:'truro', dt:'dorchester', sp:'salisbury', sn:'swindon', ox:'oxford', cv:'coventry', le:'leicester', ng:'nottingham', de:'derby', st:'stoke', sy:'shrewsbury', tf:'telford', wr:'worcester', gl:'gloucester', np:'newport', cf:'cardiff', sa:'swansea', hr:'hereford', wv:'wolverhampton', ws:'walsall', dy:'dudley', bd:'bradford', hd:'huddersfield', hx:'halifax', ls:'leeds', wf:'wakefield', dn:'doncaster', s:'sheffield', yo:'york', hu:'hull', ln:'lincoln', nn:'northampton', mk:'milton keynes', rg:'reading', kt:'kingston', ne:'newcastle', sr:'sunderland', dh:'durham', dl:'darlington', ca:'carlisle', la:'lancaster', pr:'preston', fy:'blackpool', bl:'bolton', wn:'wigan', l:'liverpool', ch:'chester', wa:'warrington', m:'manchester', ol:'oldham', sk:'stockport', cw:'crewe', gl:'gloucester' };
-      var cityMatch = uniqueAreaCities[area.toLowerCase()];
-      if (cityMatch && (lead.city || lead.address || '').toLowerCase().includes(cityMatch)) { areaMatch = true; break; }
+    // Check if targets are postcode area codes (1-2 letters) or city names
+    var isPostcodeArea = targets.every(function(a) { return /^[A-Z]{1,3}$/i.test(a); });
+    if (isPostcodeArea) {
+      // Postcode-area matching (for existing customers with postcode codes)
+      const leadLocation = lead.address || lead.location || lead.name || lead.postcode || '';
+      for (const area of targets) {
+        if (extractPostcodeArea(leadLocation) === extractPostcodeArea(area)) { areaMatch = true; break; }
+        if (extractPostcodeArea(lead.postcode || '') === extractPostcodeArea(area)) { areaMatch = true; break; }
+      }
+    } else {
+      // City/region matching — check if lead's address or city contains any of the target area names
+      var leadText = ((lead.city || '') + ' ' + (lead.address || '') + ' ' + (lead.name || '') + ' ' + (lead.postcode || '')).toLowerCase();
+      for (const area of targets) {
+        var areaLower = (area || '').toLowerCase().trim();
+        if (!areaLower || areaLower === 'all uk') { areaMatch = true; break; }
+        if (leadText.includes(areaLower)) { areaMatch = true; break; }
+      }
     }
     if (!areaMatch) return { match: false, tier: 0 };
   } else {
