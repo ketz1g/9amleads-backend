@@ -36,7 +36,10 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(14,165,233,0.25)}
 .btn-secondary{background:transparent;border:1px solid #1e2030;color:#8890a8;margin-top:8px}
 .btn-secondary:hover{background:rgba(255,255,255,0.03);border-color:#2a2d42;color:#b0b8cc}
-.filters-box{margin-top:8px;margin-bottom:8px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid #1e2030;border-radius:10px;text-align:left;transition:border-color .3s}
+.filters-box{margin-top:8px;margin-bottom:8px;padding:12px;background:rgba(255,255,255,0.03);border:1px solid #1e2030;border-radius:8px;text-align:left;transition:border-color .3s}
+.filters-box select,.filters-box input[type=text],.filters-box input[type=number]{background:#0f111a!important;border:1px solid #1e2030!important;color:#e2e8f0!important;border-radius:5px!important;padding:5px 8px!important;font-size:10px!important;width:100%!important}
+.filters-box label.chip{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;background:#1a1b2e;border:1px solid #252840;border-radius:4px;font-size:9px;color:#8890a8;cursor:pointer}
+.filters-box label.chip input{accent-color:#0ea5e9;width:10px;height:10px}
 .filters-box.highlight{border-color:#0ea5e9}
 .crm-box{background:linear-gradient(135deg,rgba(14,165,233,0.06),rgba(37,99,235,0.03));border:1px solid rgba(14,165,233,0.12);border-radius:10px;padding:14px;margin-bottom:8px;text-align:left}
 .crm-box .title{display:flex;align-items:center;gap:8px;margin-bottom:6px}
@@ -386,15 +389,15 @@ function renderSignupFilters() {
       var d = defs[fi];
       var fieldId = d.id + '-' + p;
       if (d.type === 'select') {
-        html += '<div style="margin-bottom:4px"><label style="font-size:10px;color:#8890a8;display:block;margin-bottom:2px">' + d.label + '</label><select class="sf-field" data-product="' + p + '" data-id="' + d.id + '" style="width:100%;padding:6px 8px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:11px;color:#111827;font-family:inherit;outline:none">';
+        html += '<div style="margin-bottom:4px"><label style="font-size:9px;color:#8890a8;display:block;margin-bottom:1px">' + d.label + '</label><select class="sf-field" data-product="' + p + '" data-id="' + d.id + '">';
         for (var oi = 0; oi < d.opts.length; oi++) { html += '<option value="' + d.opts[oi] + '">' + d.opts[oi] + '</option>'; }
         html += '</select></div>';
       } else if (d.type === 'checkboxes') {
         html += '<div style="margin-bottom:4px"><label style="font-size:10px;color:#8890a8;display:block;margin-bottom:3px">' + d.label + '</label><div style="display:flex;flex-wrap:wrap;gap:3px">';
-        for (var oi = 0; oi < d.opts.length; oi++) { html += '<label style="display:flex;align-items:center;gap:3px;font-size:10px;color:#374151;cursor:pointer;padding:2px 6px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px"><input type="checkbox" class="sf-field" data-product="' + p + '" data-id="' + d.id + '" value="' + d.opts[oi] + '" style="accent-color:' + filterColors[p] + ';width:11px;height:11px"> ' + d.opts[oi] + '</label>'; }
+        for (var oi = 0; oi < d.opts.length; oi++) { html += '<label class="chip"><input type="checkbox" class="sf-field" data-product="' + p + '" data-id="' + d.id + '" value="' + d.opts[oi] + '" style="accent-color:' + filterColors[p] + ';width:10px;height:10px"> ' + d.opts[oi] + '</label>'; }
         html += '</div></div>';
       } else if (d.type === 'text') {
-        html += '<div style="margin-bottom:4px"><label style="font-size:10px;color:#8890a8;display:block;margin-bottom:2px">' + d.label + '</label><input type="text" class="sf-field" data-product="' + p + '" data-id="' + d.id + '" placeholder="' + (d.placeholder||'') + '" style="width:100%;padding:6px 8px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;font-size:11px;color:#111827;font-family:inherit;outline:none"></div>';
+        html += '<div style="margin-bottom:4px"><label style="font-size:9px;color:#8890a8;display:block;margin-bottom:1px">' + d.label + '</label><input type="text" class="sf-field" data-product="' + p + '" data-id="' + d.id + '" placeholder="' + (d.placeholder||'') + '"></div>';
       }
     }
     html += '</div>';
