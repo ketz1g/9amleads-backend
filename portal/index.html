@@ -74,13 +74,11 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .sic-grid input{accent-color:#06b6d4}
 .status{color:#ef4444;font-size:12px;margin-top:8px;display:none;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.1);border-radius:8px;padding:10px 14px;text-align:left}
 .success{color:#22c55e;font-size:12px;margin-top:8px;display:none;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.1);border-radius:8px;padding:10px 14px;text-align:left}
-.features{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:12px;text-align:left}
-.features div{display:flex;align-items:center;gap:6px;font-size:11px;color:#8890a8;padding:4px 0}
-.features i{color:#22c55e;font-size:9px}
+
 .footer-text{text-align:center;margin-top:16px;font-size:11px;color:#5c6480}
 .footer-text a{color:#0ea5e9;text-decoration:none}
 @media(min-width:768px){.card{padding:40px 44px}}
-@media(max-width:600px){.form-row{grid-template-columns:1fr}.card{padding:24px 18px}.filter-grid{grid-template-columns:1fr}.sic-grid{grid-template-columns:1fr}.features{grid-template-columns:1fr}}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}.card{padding:24px 18px}.filter-grid{grid-template-columns:1fr}.sic-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -296,17 +294,16 @@ Filters are optional. Adjust them anytime from your dashboard after signing up.
 <button class="btn btn-secondary" onclick="showSignup()">Don't have an account? Sign Up</button>
 </div>
 
-<div class="features">
-<div><i class="fas fa-check-circle"></i> 7 days free</div>
-<div><i class="fas fa-check-circle"></i> No card required</div>
-<div><i class="fas fa-check-circle"></i> Cancel anytime</div>
-<div><i class="fas fa-check-circle"></i> Exclusive leads</div>
+<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+<span style="font-size:9px;color:#6b7280;padding:3px 8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:8px;margin-right:2px"></i> 7 days free</span>
+<span style="font-size:9px;color:#6b7280;padding:3px 8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:8px;margin-right:2px"></i> No card required</span>
+<span style="font-size:9px;color:#6b7280;padding:3px 8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:8px;margin-right:2px"></i> Cancel anytime</span>
+<span style="font-size:9px;color:#6b7280;padding:3px 8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:8px;margin-right:2px"></i> Exclusive leads</span>
 </div>
 
-<div style="margin-top:14px;padding:12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.1);border-radius:8px;text-align:center">
-<p style="font-size:11px;color:#8890a8;line-height:1.6;margin:0">
-<strong style="color:#e8ebf2">Why choose 9amLeads?</strong><br>
-Fresh UK business opportunities delivered daily at 9am. Sourced from official public registers including Rightmove, Companies House, Gov.uk, and 350+ council portals. Every lead analysed with AI-drafted outreach messages.
+<div style="margin-top:10px;padding:8px 10px;background:rgba(14,165,233,0.02);border:1px solid rgba(14,165,233,0.06);border-radius:6px;text-align:center">
+<p style="font-size:9px;color:#6b7280;line-height:1.5;margin:0">
+Fresh UK business opportunities delivered daily at 9am from Rightmove, Companies House, Gov.uk, and 350+ council portals.
 </p>
 </div>
 </div>
