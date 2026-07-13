@@ -6108,7 +6108,7 @@ function generateLeadEmailHTML(customer, leads) {
 
     if (leadProduct === 'moving') {
       title = address.split(',')[0].trim() || address || 'Property';
-      subtitle = postcode || '';
+      subtitle = (postcode || '') + (d.city ? ' · ' + d.city : '') + (d.bedrooms ? ' · ' + d.bedrooms + ' bed' : '');
     } else if (leadProduct === 'probate') {
       title = d.deceasedName || 'Probate Estate';
       subtitle = d.estateValue ? '\u00a3' + Number(d.estateValue).toLocaleString() + ' estate' : '';
@@ -6143,14 +6143,20 @@ function generateLeadEmailHTML(customer, leads) {
     if (d.city) chips.push({ icon: '\uD83C\uDFD9\uFE0F', text: d.city });
 
     if (leadProduct === 'moving') {
+      var listingDate = d.firstVisibleDate || d.addedOrReduced || d.lastAddedOrReducedDate || '';
+      var today = new Date().toISOString().split('T')[0];
+      var yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      var freshness = '';
+      if (listingDate >= today) freshness = 'Added today';
+      else if (listingDate >= yesterday) freshness = 'Added yesterday';
+      else if (listingDate) freshness = 'Listed ' + new Date(listingDate).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+      if (freshness) chips.push({ icon: '\uD83D\uDFE2', text: freshness });
       if (d.bedrooms) chips.push({ icon: '\uD83C\uDFE0', text: d.bedrooms + ' bedrooms' });
-      if (d.price && d.price > 0) chips.push({ icon: '\u00A3', text: Number(d.price).toLocaleString() });
+      if (d.propertyType) chips.push({ icon: '\uD83C\uDFE2', text: d.propertyType });
       if (d.listingStatus || d.status === 'SSTC' || d.status === 'Under Offer' || d.status === 'Available') {
         var s = d.listingStatus || d.status;
         chips.push({ icon: '\uD83D\uDD34', text: s });
       }
-      if (d.estimatedMoveWindow) chips.push({ icon: '\uD83D\uDCC5', text: d.estimatedMoveWindow });
-      if (d.propertyType) chips.push({ icon: '\uD83C\uDFE2', text: d.propertyType });
       if (d.agent) chips.push({ icon: '\uD83D\uDC64', text: d.agent });
     } else if (leadProduct === 'probate') {
       if (d.estateValue || d.estimatedValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.estateValue || d.estimatedValue).toLocaleString() + ' estate' });
