@@ -87,21 +87,15 @@ async function collectFresh(freshnessHours) {
   // Fetch applications from Plota across multiple categories
   // We search all categories and filter server-side
   var allApps = [];
-  var categories = ['extensions','new-homes','change-of-use','commercial-and-major-works','listed-buildings','solar-and-renewables','demolition'];
-
-  for (var ci = 0; ci < categories.length; ci++) {
-    var path = '/v1/applications?date_from=' + dateFrom + '&category=' + categories[ci] + '&limit=100';
-    var result = await apiRequest(path);
-    if (result.data && result.data.length > 0) {
-      allApps = allApps.concat(result.data);
-      console.log('[PLOTA] Category "' + categories[ci] + '": ' + result.data.length + ' apps');
-    }
-  }
-
-  if (allApps.length === 0) {
-    // Fallback: search by date only (no category filter)
-    var result2 = await apiRequest('/v1/applications?date_from=' + dateFrom + '&limit=100');
-    if (result2.data) allApps = allApps.concat(result2.data);
+  // Reduced categories to avoid rate limiting (demo key: 20 req/h)
+  // Combined categories for broader results with fewer requests
+  var data1 = await apiRequest('/v1/applications?date_from=' + dateFrom + '&limit=100');
+  if (data1 && data1.data) allApps = allApps.concat(data1.data);
+  // Fetch one more page for more results if available
+  if (allApps.length < 50) {
+    await new Promise(function(r) { setTimeout(r, 1000); });
+    var data2 = await apiRequest('/v1/applications?date_from=' + dateFrom + '&limit=100&offset=100');
+    if (data2 && data2.data) allApps = allApps.concat(data2.data);
   }
 
   // Dedup by reference + council
