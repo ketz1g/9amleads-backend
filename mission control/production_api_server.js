@@ -4043,6 +4043,12 @@ cron.schedule('36 2 * * *', async () => {
           // Remove leads already picked in custLeads
           var pickedIds = custLeads.map(function(cl) { return cl.id; });
           var prodLeads = allProdLeads.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+          // Intra-batch dedup by address (same property should not appear twice)
+          var seenDedup = new Set();
+          prodLeads = prodLeads.filter(function(l) {
+            var k = (l.address || l.name || '').toLowerCase().trim();
+            return k && !seenDedup.has(k) ? (seenDedup.add(k), true) : false;
+          });
           prodLeads.sort(function(a, b) {
             var aD = (a.created_at || a.scrapedAt || '').substring(0, 10);
             var bD = (b.created_at || b.scrapedAt || '').substring(0, 10);
@@ -6155,7 +6161,7 @@ function generateLeadEmailHTML(customer, leads) {
       else if (listingDate >= yesterday) freshness = 'Added yesterday';
       else if (listingDate) freshness = 'Listed ' + new Date(listingDate).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
       if (freshness) chips.push({ icon: '\uD83D\uDFE2', text: freshness });
-      if (d.bedrooms) chips.push({ icon: '\uD83C\uDFE0', text: d.bedrooms + ' bedrooms' });
+      if (d.bedrooms && parseInt(d.bedrooms) > 0) chips.push({ icon: '\uD83C\uDFE0', text: d.bedrooms + ' bedrooms' });
       if (d.propertyType) chips.push({ icon: '\uD83C\uDFE2', text: d.propertyType });
       if (d.listingStatus || d.status === 'SSTC' || d.status === 'Under Offer' || d.status === 'Available') {
         var s = d.listingStatus || d.status;
