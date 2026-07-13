@@ -182,12 +182,26 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 
 <div id="local-area-selector">
 <div class="form-group">
-<label><i class="fas fa-map-marker-alt" style="width:13px;color:#5c6480;margin-right:2px"></i> Postcode Areas <span style="color:#8890a8;font-weight:400;font-size:11px">(<span id="s-postcode-limit-label">pick up to 3</span> &middot; e.g. <strong>EN</strong>, <strong>SW</strong>, <strong>CM</strong> &middot; for moving &amp; new business)</span></label>
-<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Enter UK postcode area codes (1 or 2 letters) like EN (Enfield), B (Birmingham), N (North London), CM (Chelmsford). Free Trial and Starter can pick up to 3 areas. Pro and Enterprise can add unlimited areas.</span></div>
+<label><i class="fas fa-city" style="width:13px;color:#5c6480;margin-right:2px"></i> Coverage Areas <span style="color:#8890a8;font-weight:400;font-size:11px">(<span id="s-postcode-limit-label">pick up to 3</span> &middot; choose cities or counties for your leads)</span></label>
+<div class="tooltip"><i class="fas fa-question-circle"></i><span class="tip">Select the cities or counties where you want leads. Free Trial and Starter can pick up to 3 areas. Pro and Enterprise can add unlimited areas or choose All UK for full coverage.</span></div>
 <div id="s-postcode-wrapper" style="position:relative;margin-top:4px">
 <div id="s-postcode-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px"></div>
-<input type="text" id="s-postcode-input" placeholder="Type area code e.g. B, N, EN, CM" style="width:100%;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:12px;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
-<button type="button" onclick="addSignupPostcode()" style="margin-top:4px;font-size:11px;padding:5px 12px;background:rgba(14,165,233,0.12);border:1px solid #0ea5e9;border-radius:6px;color:#f1f5f9;cursor:pointer;font-weight:600"><i class="fas fa-plus" style="color:#0ea5e9"></i> Add Area</button>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;max-height:180px;overflow-y:auto;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px">
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>All UK (unlimited)</span></div>
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Greater London</span></div>
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Birmingham &amp; West Midlands</span></div>
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Manchester &amp; North West</span></div>
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Liverpool &amp; Merseyside</span></div>
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Leeds &amp; Yorkshire</span></div>
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Sheffield &amp; South Yorkshire</span></div>
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Bristol &amp; South West</span></div>
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Nottingham &amp; East Midlands</span></div>
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Newcastle &amp; North East</span></div>
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Cardiff &amp; South Wales</span></div>
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Glasgow &amp; Scotland</span></div>
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Edinburgh &amp; Lothian</span></div>
+<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;cursor:pointer" onclick="toggleSignupCity(this)"><input type="checkbox" class="s-city-cb" style="accent-color:#0ea5e9;width:14px;height:14px"><span>Belfast &amp; Northern Ireland</span></div>
+</div>
 <span id="s-postcode-count" style="font-size:10px;color:#8890a8;margin-left:8px"></span>
 </div>
 <div id="s-postcode-error" style="font-size:10px;color:#ef4444;margin-top:4px;display:none"></div>
@@ -299,7 +313,7 @@ async function addSignupPostcode() {
   err.style.display = 'none';
   if (!code) return;
   var maxAreas = document.querySelector('input[name="plan"]:checked')?.value === 'pro' || document.querySelector('input[name="plan"]:checked')?.value === 'enterprise' ? 999 : 3;
-  if (signupPostcodes.length >= maxAreas) { err.textContent = maxAreas === 999 ? 'Unlimited areas — you\'re on Pro!' : 'Maximum 3 areas allowed (upgrade to Pro for unlimited)'; err.style.display = 'block'; return; }
+  if (signupCities.length >= maxAreas) { err.textContent = maxAreas === 999 ? 'Unlimited areas — you\'re on Pro!' : 'Maximum 3 areas allowed (upgrade to Pro for unlimited)'; err.style.display = 'block'; return; }
   if (signupPostcodes.includes(code)) { err.textContent = '"' + code + '" already added'; err.style.display = 'block'; return; }
   if (!isValidPostcodeArea(code)) { err.textContent = '"' + code + '" is not a valid UK postcode area (use 1 or 2-letter code like B, N, EN, SG, CM)'; err.style.display = 'block'; return; }
   // Server verification (optional — area is validated client-side already)
@@ -331,11 +345,11 @@ function renderSignupPostcodes() {
   var html = '';
   var plan = document.querySelector('input[name="plan"]:checked')?.value;
   var isUnlimited = plan === 'pro' || plan === 'enterprise';
-  for (var i = 0; i < signupPostcodes.length; i++) {
+  for (var i = 0; i < signupCities.length; i++) {
     html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:5px;font-size:11px;font-weight:600;color:#0ea5e9">' + signupPostcodes[i] + ' <span style="cursor:pointer;opacity:0.6" onclick="removeSignupPostcode(\'' + signupPostcodes[i] + '\')">&times;</span></span>';
   }
   tags.innerHTML = html;
-  document.getElementById('s-postcode-count').textContent = signupPostcodes.length > 0 ? (signupPostcodes.length + (isUnlimited ? ' areas selected' : ' of 3 areas selected')) : '';
+  document.getElementById('s-postcode-count').textContent = signupCities.length > 0 ? (signupCities.length + (isUnlimited ? ' areas selected' : ' of 3 areas selected')) : '';
 }
 
 // ===== FILTER SYSTEM =====
@@ -637,7 +651,7 @@ async function checkAvailability() {
   contBtn.style.display = 'none';
   var primary = getPrimaryLeadType();
   try {
-    var resp = await fetch(API + '/api/check-availability', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ product:primary, plan:document.querySelector('#s-plan-container input[type=radio]:checked')?.value || 'free_trial', coverage:selectedCoverage, postcodes:signupPostcodes }) });
+    var resp = await fetch(API + '/api/check-availability', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ product:primary, plan:document.querySelector('#s-plan-container input[type=radio]:checked')?.value || 'free_trial', coverage:signupCities.indexOf('All UK (unlimited)') !== -1 ? 'ukwide' : signupCities.length > 0 ? 'county' : selectedCoverage, postcodes:signupPostcodes }) });
     var data = await resp.json();
     loadingDiv.style.display = 'none';
     resultDiv.style.display = 'block';
@@ -730,7 +744,7 @@ function doSignup() {
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
   fetch(API + '/api/auth/signup', {
     method:'POST', headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
+    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:signupCities.indexOf('All UK (unlimited)') !== -1 ? 'ukwide' : signupCities.length > 0 ? 'county' : selectedCoverage, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:plan, email:email, product:product, products:products }));
