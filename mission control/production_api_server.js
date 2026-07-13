@@ -2810,7 +2810,7 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
 });
 
 // ===== BREVO EMAIL INTEGRATION =====
-const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
+const BREVO_API_KEY = process.env.BREVO_API_KEY || ''; // Set via Render env var - do not hardcode
 
 async function addBrevoContact(customer) {
   if (!BREVO_API_KEY) return;
@@ -4613,7 +4613,7 @@ cron.schedule('0 0 * * *', async () => {
 });
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   try {
-    var delivered = 0, errors = 0;
+    var delivered = 0, errors = 0, lastErr = '';
     _dbData = null;
     var db = getDb();
     var today = new Date().toISOString().split('T')[0];
@@ -4767,9 +4767,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
         delivered += custLeads.length;
-      } catch(e) { errors++; }
+      } catch(ex) { errors++; console.log('[DELIVER] Error: ' + ex?.message); lastErr = ex?.message; }
     }
-    res.json({ success: true, customers_processed: customers.length, leads_delivered: delivered, errors: errors });
+    saveDb();
+    res.json({ success: true, customers_processed: customers.length, leads_delivered: delivered, errors: errors, lastError: lastErr });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
