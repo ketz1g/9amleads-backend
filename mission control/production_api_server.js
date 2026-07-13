@@ -8181,7 +8181,7 @@ if ((!leads || leads.length < 3) && (!require('./streaming_worker').getStatus().
               var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/d1i6SpbgzkWCic0cV/run-sync-get-dataset-items?token=' + k + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
                   try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
-                    r(items.map(function(p) { return { id: 'RM_' + (p.id || Date.now()), title: p.title || p.address || '', address: p.displayAddress || p.address || '', price: (p.price && p.price.amount) || p.price || 0, bedrooms: p.bedrooms || 0, propertyType: p.propertyType || '', listingStatus: p.status || (p.soldDate ? 'SSTC' : 'Available'), url: p.url || '', source: 'Rightmove', scrapedAt: new Date().toISOString() }; }));
+                    r(items.map(function(p) { return { id: 'RM_' + (p.id || Date.now()), title: p.title || p.address || '', address: p.displayAddress || p.address || '', price: (p.price && p.price.amount) || p.price || 0, bedrooms: p.bedrooms || 0, propertyType: p.propertyType || '', listingStatus: p.status || (p.soldDate ? 'SSTC' : 'Available'), firstVisibleDate: p.firstVisibleDate || p.addedOrReduced || '', url: p.url || '', source: 'Rightmove', scrapedAt: new Date().toISOString() }; }));
                   } catch(e) { r([]); }
                 });
               });
