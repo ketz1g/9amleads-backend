@@ -709,7 +709,7 @@ function doSignup() {
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
   fetch(API + '/api/auth/signup', {
     method:'POST', headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:signupCities_removed.indexOf('All UK (unlimited)') !== -1 ? 'ukwide' : signupCities_removed.length > 0 ? 'county' : selectedCoverage, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
+    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:signupPostcodes.indexOf('All UK') !== -1 ? 'ukwide' : signupPostcodes.length > 0 ? 'county' : selectedCoverage, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:plan, email:email, product:product, products:products }));
