@@ -8059,7 +8059,7 @@ function syncCustomers(product) {
             var chKeySimple = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
             var nbResults = await new Promise(function(resolve) {
               var url = '/search/companies?q=services&size=200&start_index=0';
-              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeySimple + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeySimple + ':').toString('base64'), 'Accept': 'application/json', 'User-Agent': '9amLeads/1.0' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
                   try { var d = JSON.parse(body); resolve(d.items || []); } catch(e) { resolve([]); }
