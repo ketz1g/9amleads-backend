@@ -8134,33 +8134,52 @@ if ((!leads || leads.length < 3) && (!require('./streaming_worker').getStatus().
               if (leads && leads.length > 0) console.log('[SCRAPER] Apify Tenders returned ' + leads.length);
             } catch(e) { console.log('[SCRAPER] Apify Tenders error:', e.message); leads = []; }
           }
-          if (!leads || leads.length < 3) {
+            if (!leads || leads.length < 3) {
             try {
-              leads = await new Promise(function(resolve) {
-                var req = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=30', method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 30000 }, function(res) {
-                  var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
-                    try { var data = JSON.parse(body); var releases = data.releases || []; resolve(releases.slice(0, 30).map(function(r) {
-                      var t = r.tender || {}; var b = r.buyer || {}; var bName = b.name || (b.identifier && b.identifier.legalName) || '';
-                      var docUrl = t.documents && t.documents[0] ? 'https://www.publiccontractsscotland.gov.uk/search/show/search_view.aspx?ID=' + t.documents[0].id : '';
-                      return { id: r.id || r.ocid || 'PCS_' + Date.now(), title: t.title || r.description || '', buyer: bName, contractValue: t.value ? (t.value.amount || t.value) : 0, description: (t.description || r.description || '').substring(0, 500), closingDate: t.tenderPeriod ? t.tenderPeriod.endDate : '', publishedDate: r.date || '', tenderNoticeId: r.id || r.ocid || '', url: docUrl, source: 'Public Contracts Scotland', scrapedAt: new Date().toISOString() };
-                    })); } catch(e) { resolve([]); }
-                  });
-                });
-                req.on('error', function() { resolve([]); }); req.setTimeout(30000, function() { req.destroy(); resolve([]); }); req.end();
-              });
-              if (leads && leads.length > 0) { var ft = filterFresh(leads, 'publishedDate'); leads = ft.fresh.length > 0 ? ft.fresh : ft.fallback; console.log('[SCRAPER] Tenders: ' + ft.fresh.length + ' fresh, ' + ft.fallback.length + ' fallback'); }
-              else {
-                leads = await new Promise(function(resolve) {
-                  var req2 = require('https').request({ hostname: 'data.gov.uk', path: '/api/3/action/package_search?q=tenders&rows=30', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res2) {
-                    var b2 = ''; res2.on('data', function(c) { b2 += c; }); res2.on('end', function() {
-                      try { var d2 = JSON.parse(b2); var r2 = d2.result && d2.result.results ? d2.result.results : []; resolve(r2.slice(0, 30).map(function(n) { return { id: 'DG_' + (n.id || Date.now()), title: n.title || n.name || '', description: (n.notes || n.description || '').substring(0, 300), buyer: n.organization && n.organization.title || '', source: 'data.gov.uk', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+              async function fetchPCS() {
+                return new Promise(function(resolve) {
+                  var req = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=30', method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 20000 }, function(res) {
+                    var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
+                      try { var data = JSON.parse(body); var releases = data.releases || []; resolve(releases.slice(0, 30).map(function(r) {
+                        var t = r.tender || {}; var b = r.buyer || {}; var bName = b.name || (b.identifier && b.identifier.legalName) || '';
+                        var docUrl = t.documents && t.documents[0] ? 'https://www.publiccontractsscotland.gov.uk/search/show/search_view.aspx?ID=' + t.documents[0].id : '';
+                        return { id: r.id || r.ocid || 'PCS_' + Date.now(), title: t.title || r.description || '', buyer: bName, contractValue: t.value ? (t.value.amount || t.value) : 0, description: (t.description || r.description || '').substring(0, 500), closingDate: t.tenderPeriod ? t.tenderPeriod.endDate : '', publishedDate: r.date || '', tenderNoticeId: r.id || r.ocid || '', url: docUrl, source: 'Public Contracts Scotland', scrapedAt: new Date().toISOString() };
+                      })); } catch(e) { resolve([]); }
                     });
                   });
-                  req2.on('error', function() { resolve([]); }); req2.setTimeout(15000, function() { req2.destroy(); resolve([]); }); req2.end();
+                  req.on('error', function() { resolve([]); }); req.setTimeout(20000, function() { req.destroy(); resolve([]); }); req.end();
                 });
-                if (leads && leads.length > 0) console.log('[SCRAPER] Tenders fallback data.gov.uk returned ' + leads.length);
-                else { console.log('[SCRAPER] No tender leads today'); leads = []; }
               }
+              async function fetchDataGovUK(q) {
+                return new Promise(function(resolve) {
+                  var req = require('https').request({ hostname: 'data.gov.uk', path: '/api/3/action/package_search?q=' + encodeURIComponent(q) + '&rows=20', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res) {
+                    var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
+                      try { var d = JSON.parse(body); var items = d.result && d.result.results ? d.result.results : []; resolve(items.map(function(n) { return { id: 'DG_' + (n.id || Date.now()), title: n.title || n.name || '', description: (n.notes || n.description || '').substring(0, 300), buyer: n.organization && n.organization.title || '', publishedDate: n.metadata_created || '', source: 'data.gov.uk', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                    });
+                  });
+                  req.on('error', function() { resolve([]); }); req.setTimeout(15000, function() { req.destroy(); resolve([]); }); req.end();
+                });
+              }
+              // Fetch from multiple sources in parallel
+              var pcsPromise = fetchPCS();
+              var dguPromises = ['tenders','construction','contracts','procurement'].map(function(q) { return fetchDataGovUK(q); });
+              var allResults = await Promise.all([pcsPromise, Promise.all(dguPromises)]);
+              leads = allResults[0];
+              var dgResults = allResults[1];
+              for (var dgi = 0; dgi < dgResults.length; dgi++) {
+                if (dgResults[dgi] && dgResults[dgi].length > 0) leads = leads.concat(dgResults[dgi]);
+              }
+              // Deduplicate by title
+              if (leads.length > 0) {
+                var seenTitles = new Set();
+                leads = leads.filter(function(l) {
+                  var key = (l.title || '').toLowerCase().trim();
+                  return key && !seenTitles.has(key) ? (seenTitles.add(key), true) : false;
+                });
+                var ft = filterFresh(leads, 'publishedDate');
+                leads = ft.fresh.length > 0 ? ft.fresh : ft.fallback;
+                console.log('[SCRAPER] Tenders: ' + ft.fresh.length + ' fresh, ' + ft.fallback.length + ' fallback, total: ' + leads.length);
+              } else { console.log('[SCRAPER] No tender leads today'); leads = []; }
             } catch(e) { console.log('[SCRAPER] Tenders fallback error:', e.message); leads = []; }
           }
         } else if (product === 'planning') {
