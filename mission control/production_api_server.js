@@ -8082,7 +8082,6 @@ function syncCustomers(product) {
                   req.on('error', function() { r([]); }); req.setTimeout(150000, function() { req.destroy(); r([]); });
                   req.write(b); req.end();
                 });
-                if (!leads || leads.length === 0) { leads = generateDemoLeads('newbusiness', 20); }
                 console.log('[SCRAPER] Apify CH fallback returned ' + (leads ? leads.length : 0) + ' leads');
           if (!leads || leads.length < 3) {
             try {
