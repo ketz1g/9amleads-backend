@@ -8088,17 +8088,19 @@ function syncCustomers(product) {
               console.log('[SCRAPER] Trying Companies House REST API...');
               var chKeyNB = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
               if (chKeyNB) {
-                var last3Days = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+                var last30Days = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
                 var sectors = ['construction', 'building', 'property', 'removals', 'cleaning', 'plumbing'];
                 var allCompanies = [];
                 for (var si = 0; si < sectors.length; si++) {
                   try {
                     var chData2 = await new Promise(function(resolve) {
-                      var url = '/advanced-search/companies?company_status=active&incorporation_date_from=' + last3Days + '&size=50&q=' + encodeURIComponent(sectors[si]);
+                      var url = '/search/companies?q=' + encodeURIComponent(sectors[si]) + '&size=200';
                       var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyNB + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                         var body = ''; res.on('data', function(c) { body += c; });
                         res.on('end', function() {
-                          try { var d = JSON.parse(body); resolve(d.items || []); } catch(e) { resolve([]); }
+                          try { var d = JSON.parse(body); var items = d.items || []; 
+                            var recent = items.filter(function(i) { return i.date_of_creation && i.date_of_creation >= '2026-01-01' && i.company_status === 'active'; });
+                            resolve(recent); } catch(e) { resolve([]); }
                         });
                       });
                       req.on('error', function() { resolve([]); });
