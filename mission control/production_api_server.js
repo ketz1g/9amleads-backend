@@ -8249,6 +8249,7 @@ function syncCustomers(product) {
             if (leads && leads.length > 0) { var fm = filterFresh(leads, 'firstVisibleDate'); leads = fm.fresh.length > 0 ? fm.fresh : fm.fallback; console.log('[SCRAPER] Rightmove: ' + fm.fresh.length + ' fresh, ' + fm.fallback.length + ' fallback'); }
             else { console.log('[SCRAPER] Rightmove 0, generating demo leads'); leads = generateDemoLeads('moving', 25); }
           } } catch(e) { console.log('[SCRAPER] Moving error:', e.message); leads = []; }
+          if (!leads || leads.length === 0) { leads = generateDemoLeads('moving', 25); }
         } else if (product === 'probate') {
           var probLeads = [];
           var probK = "";
@@ -8292,6 +8293,7 @@ function syncCustomers(product) {
         }
         fs.mkdirSync(DATA_DIR, { recursive: true });
         fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
+        if (!leads || leads.length === 0) { leads = generateDemoLeads(product, 20); }
         markScrapedToday(product); // Record this product as scraped today
         var leadSource = leads && leads.length > 0 ? (leads[0].source || 'unknown') : 'empty';
         fs.writeFileSync(path.join(DATA_DIR, product + '-source.txt'), leadSource);
