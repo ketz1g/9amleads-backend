@@ -8079,16 +8079,12 @@ function syncCustomers(product) {
               } catch(e) {}
               await new Promise(function(r) { setTimeout(r, 100); });
             }
-            // Filter recent + active + dedup
+            // Filter dedup + active only
             var seen2 = {};
             leads = allCompanies.filter(function(c) {
               if (!c.company_name || !c.company_number || seen2[c.company_number]) return false;
               seen2[c.company_number] = true;
-              if (c.company_status !== 'active') return false;
-              // Only include companies incorporated within the last 6 months
-              var sixMonthsAgo = new Date(Date.now() - 180 * 86400000).toISOString().split('T')[0];
-              if (!c.date_of_creation || c.date_of_creation < sixMonthsAgo) return false;
-              return true;
+              return c.company_status === 'active';
             }).map(function(c) {
               return { id: 'CH_NB_' + (c.company_number || Date.now()), name: (c.company_name || '').trim(), companyNumber: c.company_number || '', companyName: c.company_name || '', address: c.address_snippet || c.address || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
             });
