@@ -8088,8 +8088,8 @@ function syncCustomers(product) {
               console.log('[SCRAPER] Trying Companies House REST API...');
               var chKeyNB = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
               if (chKeyNB) {
-                var last3Days = new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0];
-                var sectors = ['construction', 'building', 'property', 'removals', 'cleaning', 'plumbing', 'electrical', 'roofing', 'landscape', 'estate', 'catering', 'consulting', 'transport', 'logistics', 'security', 'healthcare', 'solar', 'insulation', 'windows', 'driveway'];
+                var last3Days = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+                var sectors = ['construction', 'building', 'property', 'removals', 'cleaning', 'plumbing'];
                 var allCompanies = [];
                 for (var si = 0; si < sectors.length; si++) {
                   try {
