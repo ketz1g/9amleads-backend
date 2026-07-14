@@ -8803,6 +8803,55 @@ app.get('/api/admin/metrics', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/setup-intent - create Stripe SetupIntent for card collection
+app.post('/api/setup-intent', authMiddleware, async (req, res) => {
+  try {
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    var stripeCustomerId = customer.stripe_customer_id;
+    if (!stripeCustomerId) {
+      var custResult = await stripeApiRequest('POST', 'customers', {
+        email: customer.email, name: customer.company || customer.contact_name || '', description: '9amLeads - ' + (customer.product || 'customer')
+      });
+      if (!custResult || !custResult.id) return res.status(500).json({ error: 'Failed to create Stripe customer' });
+      stripeCustomerId = custResult.id;
+      db.prepare('UPDATE customers SET stripe_customer_id = ? WHERE id = ?').run(stripeCustomerId, customer.id);
+      saveDb();
+    }
+    var intent = await stripeApiRequest('POST', 'setup_intents', { customer: stripeCustomerId, 'payment_method_types[]': 'card' });
+    res.json({ client_secret: intent.client_secret });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/save-payment-method - save collected card
+app.post('/api/save-payment-method', authMiddleware, async (req, res) => {
+  try {
+    var pm = req.body.payment_method_id;
+    if (!pm) return res.status(400).json({ error: 'Payment method ID required' });
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    await stripeApiRequest('POST', 'payment_methods/' + pm + '/attach', { customer: customer.stripe_customer_id });
+    await stripeApiRequest('POST', 'customers/' + customer.stripe_customer_id, { 'invoice_settings[default_payment_method]': pm });
+    db.prepare('UPDATE customers SET stripe_payment_method_id = ? WHERE id = ?').run(pm, customer.id);
+    saveDb();
+    res.json({ success: true, message: 'Card saved. No charge until trial ends.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/cancel-trial - cancel trial, no charge
+app.post('/api/cancel-trial', authMiddleware, async (req, res) => {
+  try {
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    db.prepare('UPDATE customers SET trial_cancelled = 1, plan = ? WHERE id = ?').run('cancelled', customer.id);
+    saveDb();
+    if (customer.stripe_customer_id) { try { await stripeApiRequest('DELETE', 'customers/' + customer.stripe_customer_id, {}); } catch(e) {} }
+    res.json({ success: true, message: 'Trial cancelled. No charge. Dashboard accessible.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+
 // Global error handler
 app.use(function(err, req, res, next) {
   console.error('[ERROR] Unhandled error:', err.message || err);
