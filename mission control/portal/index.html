@@ -171,15 +171,42 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </div>
 
 <div class="form-group">
-<label>Lead Types <span class="ml">(select one or more)</span></label>
-<div class="grid-2" id="s-products-container">
-<label class="prod-cb"><input type="checkbox" value="moving" checked onchange="onLeadTypeChange()"> <span>🚚 Moving</span></label>
-<label class="prod-cb"><input type="checkbox" value="probate" onchange="onLeadTypeChange()"> <span>⚖️ Probate</span></label>
-<label class="prod-cb"><input type="checkbox" value="newbusiness" onchange="onLeadTypeChange()"> <span>🏢 New Business</span></label>
-<label class="prod-cb"><input type="checkbox" value="planning" onchange="onLeadTypeChange()"> <span>🔨 Planning</span></label>
-<label class="prod-cb"><input type="checkbox" value="tenders" onchange="onLeadTypeChange()"> <span>📋 Tenders</span></label>
+<label>Lead Types <span class="ml">(prices shown per week)</span></label>
+<div class="grid-2" id="s-products-container" style="margin-bottom:6px">
+<label class="prod-cb"><input type="checkbox" value="moving" checked onchange="onLeadTypeChange()"> <span style="flex:1">🚚 Moving</span> <span class="plan-p" style="font-size:14px">£25–£99</span></label>
+<label class="prod-cb"><input type="checkbox" value="planning" onchange="onLeadTypeChange()"> <span style="flex:1">🔨 Planning</span> <span class="plan-p" style="font-size:14px">£25–£99</span></label>
+<label class="prod-cb"><input type="checkbox" value="newbusiness" onchange="onLeadTypeChange()"> <span style="flex:1">🏢 New Business</span> <span class="plan-p" style="font-size:14px">£25/wk</span></label>
+<label class="prod-cb"><input type="checkbox" value="probate" onchange="onLeadTypeChange()"> <span style="flex:1">⚖️ Probate</span> <span class="plan-p" style="font-size:14px">£15/wk</span></label>
+<label class="prod-cb"><input type="checkbox" value="tenders" onchange="onLeadTypeChange()"> <span style="flex:1">📋 Tenders</span> <span class="plan-p" style="font-size:14px">£15/wk</span></label>
 </div>
+<div id="s-plan-details" style="font-size:10px;color:#8890a8;padding:6px 8px;background:rgba(14,165,233,0.03);border:1px solid rgba(14,165,233,0.06);border-radius:6px;margin-bottom:8px;display:none"></div>
 </div>
+
+<script>
+function updatePlanDetails() {
+  var els = document.querySelectorAll('#s-products-container input:checked');
+  var details = document.getElementById('s-plan-details');
+  var hasMoving = false, hasPlanning = false, hasProbate = false, hasTenders = false, hasNB = false;
+  els.forEach(function(el) { 
+    if (el.value === 'moving') hasMoving = true;
+    if (el.value === 'planning') hasPlanning = true;
+    if (el.value === 'probate') hasProbate = true;
+    if (el.value === 'tenders') hasTenders = true;
+    if (el.value === 'newbusiness') hasNB = true;
+  });
+  var parts = [];
+  if (hasMoving) parts.push('Moving Starter £25 / Pro £49 / Enterprise £99');
+  if (hasPlanning) parts.push('Planning Starter £25 / Pro £49 / Enterprise £99');
+  if (hasProbate) parts.push('Probate £15/wk');
+  if (hasTenders) parts.push('Tenders £15/wk');
+  if (hasNB) parts.push('New Business £25/wk');
+  if (parts.length > 0) {
+    details.innerHTML = '<i class="fas fa-info-circle" style="margin-right:4px"></i> Pricing: ' + parts.join(' · ');
+    details.style.display = 'block';
+  } else { details.style.display = 'none'; }
+}
+onLeadTypeChange = function() { updatePlanDetails(); };
+</script>
 
 <div class="form-group">
 <label>Your Plan</label>
