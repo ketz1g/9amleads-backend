@@ -8056,81 +8056,44 @@ function syncCustomers(product) {
         if (product === 'newbusiness') {
           leads = [];
           try {
-            var streamWorker = require('./streaming_worker');
-            leads = streamWorker.getRecentCompanies();
-            console.log('[SCRAPER] Stream worker returned ' + leads.length + ' queued companies');
-          } catch(e) { console.log('[SCRAPER] Stream error: ' + e.message); leads = []; }
-          // Fallback: if stream returns 0, use Apify CH search as backup
-          if (!leads || leads.length < 3) {
-  try {
-    var apifyK3 = "";
-    if (apifyK3) {
-                leads = await new Promise(function(r) {
-                  var b = JSON.stringify({ search: 'limited', maxItems: 500, includeOfficers: false });
-                  var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyK3 + '&memory=128&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
-                    var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
-                      try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
-                        r(items.filter(function(c) {
-                          if (!c.title || !c.company_number || c.company_status === 'dissolved') return false;
-                          var addr = (c.address_snippet || '').toLowerCase();
-                          var blacklist = ['corner chambers','c/o ','care of','po box','p.o. box','suite','flat ','unit ','office ','business centre','business park','registered office','virtual office','formation agent','company formation','the company','company registered','no fixed address'];
-                          for (var bi = 0; bi < blacklist.length; bi++) { if (addr.includes(blacklist[bi])) return false; }
-                          return true;
-                        }).map(function(c) { var a = c.address || {}; return { id: 'APIFY_NB_' + (c.company_number || Date.now()), name: (c.title || '').trim(), companyNumber: c.company_number || '', companyName: c.title || '', address: c.address_snippet || '', postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', source: 'Apify CH Fallback', scrapedAt: new Date().toISOString() }; })); } catch(e) { r([]); }
+            // Primary source: Companies House REST API search
+            console.log('[SCRAPER] Fetching new businesses from Companies House API...');
+            var chKeyNB2 = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+            var sectors = ['construction', 'building', 'property', 'removals', 'cleaning', 'plumbing', 'electrical', 'roofing', 'landscape', 'estate', 'catering', 'consulting', 'transport', 'logistics'];
+            var allCompanies = [];
+            for (var si2 = 0; si2 < sectors.length; si2++) {
+              try {
+                var chData3 = await new Promise(function(resolve) {
+                  var url = '/search/companies?q=' + encodeURIComponent(sectors[si2]) + '&size=200';
+                  var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyNB2 + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+                    var body = ''; res.on('data', function(c) { body += c; });
+                    res.on('end', function() {
+                      try { var d = JSON.parse(body); resolve(d.items || []); } catch(e) { resolve([]); }
                     });
                   });
-                  req.on('error', function() { r([]); }); req.setTimeout(150000, function() { req.destroy(); r([]); });
-                  req.write(b); req.end();
+                  req.on('error', function() { resolve([]); });
+                  req.setTimeout(15000, function() { req.destroy(); resolve([]); });
+                  req.end();
                 });
-                console.log('[SCRAPER] Apify CH fallback returned ' + (leads ? leads.length : 0) + ' leads');
-          if (!leads || leads.length < 3) {
-            try {
-              console.log('[SCRAPER] Trying Companies House REST API...');
-              var chKeyNB = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
-              if (chKeyNB) {
-                var last30Days = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
-                var sectors = ['construction', 'building', 'property', 'removals', 'cleaning', 'plumbing'];
-                var allCompanies = [];
-                for (var si = 0; si < sectors.length; si++) {
-                  try {
-                    var chData2 = await new Promise(function(resolve) {
-                      var url = '/search/companies?q=' + encodeURIComponent(sectors[si]) + '&size=200';
-                      var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyNB + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
-                        var body = ''; res.on('data', function(c) { body += c; });
-                        res.on('end', function() {
-                          try { var d = JSON.parse(body); var items = d.items || []; 
-                            var recent = items.filter(function(i) { return i.date_of_creation && i.date_of_creation >= '2025-06-01' && i.company_status === 'active'; });
-                            resolve(recent); } catch(e) { resolve([]); }
-                        });
-                      });
-                      req.on('error', function() { resolve([]); });
-                      req.setTimeout(15000, function() { req.destroy(); resolve([]); });
-                      req.end();
-                    });
-                    allCompanies.push.apply(allCompanies, chData2);
-                  } catch(e) {}
-                  await new Promise(function(r) { setTimeout(r, 200); });
-                }
-                var seen = {};
-                leads = allCompanies.filter(function(c) {
-                  if (!c.company_name || !c.company_number || seen[c.company_number]) return false;
-                  seen[c.company_number] = true;
-                  var a = c.registered_office_address || {};
-                  var addrStr = [a.address_line_1, a.address_line_2, a.locality, a.postal_code].filter(Boolean).join(', ');
-                  var blacklist = ['corner chambers','c/o ','care of','po box','p.o. box','suite','flat ','unit ','office ','business centre','business park','registered office','virtual office','formation agent','company formation','the company','company registered','no fixed address'];
-                  var isBad = blacklist.some(function(b) { return addrStr.toLowerCase().includes(b); });
-                  return !isBad;
-                }).map(function(c) {
-                  var a = c.registered_office_address || {};
-                  return { id: 'CH_NB_' + (c.company_number || Date.now()), name: (c.company_name || '').trim(), companyNumber: c.company_number || '', companyName: c.company_name || '', address: [a.address_line_1, a.address_line_2, a.locality, a.postal_code].filter(Boolean).join(', '), postcode: a.postal_code || '', city: a.locality || '', incorporationDate: c.date_of_creation || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
-                });
-                console.log('[SCRAPER] CH REST API returned ' + leads.length + ' companies');
-              }
-            } catch(e) { console.log('[SCRAPER] CH REST API error:', e.message); }
-          }
-              }
-            } catch(e) { console.log('[SCRAPER] Apify CH fallback error: ' + e.message); }
-          }
+                allCompanies.push.apply(allCompanies, chData3);
+              } catch(e) {}
+              await new Promise(function(r) { setTimeout(r, 100); });
+            }
+            // Filter recent + active + dedup
+            var seen2 = {};
+            leads = allCompanies.filter(function(c) {
+              if (!c.company_name || !c.company_number || seen2[c.company_number]) return false;
+              seen2[c.company_number] = true;
+              if (c.company_status !== 'active') return false;
+              // Only include companies incorporated within the last 6 months
+              var sixMonthsAgo = new Date(Date.now() - 180 * 86400000).toISOString().split('T')[0];
+              if (!c.date_of_creation || c.date_of_creation < sixMonthsAgo) return false;
+              return true;
+            }).map(function(c) {
+              return { id: 'CH_NB_' + (c.company_number || Date.now()), name: (c.company_name || '').trim(), companyNumber: c.company_number || '', companyName: c.company_name || '', address: c.address_snippet || c.address || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
+            });
+            console.log('[SCRAPER] CH API returned ' + leads.length + ' new businesses');
+          } catch(e) { console.log('[SCRAPER] NB API error:', e.message); leads = []; }
         } else if (product === 'planning') {
           leads = [];
           try {
