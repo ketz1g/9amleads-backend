@@ -8072,11 +8072,11 @@ function syncCustomers(product) {
             if (nbResults && nbResults.length > 0) {
               var nbSeen = {};
               leads = nbResults.filter(function(c) {
-                if (!c.company_name || !c.company_number || nbSeen[c.company_number]) return false;
+                if (!c.title || !c.company_number || nbSeen[c.company_number]) return false;
                 nbSeen[c.company_number] = true;
                 return c.company_status === 'active' && c.date_of_creation && c.date_of_creation >= '2025-01-01';
               }).map(function(c) {
-                return { id: 'CH_NB_' + c.company_number, name: c.company_name.trim(), companyNumber: c.company_number, companyName: c.company_name.trim(), address: c.address_snippet || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
+                return { id: 'CH_NB_' + c.company_number, name: c.title.trim(), companyNumber: c.company_number, companyName: c.title.trim(), address: c.address_snippet || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
               });
             }
             console.log('[SCRAPER] NB: ' + (nbResults ? nbResults.length : 0) + ' raw, ' + leads.length + ' filtered');
