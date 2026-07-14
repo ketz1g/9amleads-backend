@@ -7386,8 +7386,8 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
       var freshLeads = [];
       if (prod === 'moving' && apifyK) {
         var lm = await new Promise(function(resolve) {
-          var bd = JSON.stringify({ location: 'London', maxResults: 5 });
-          var rq = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyK + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd) }, timeout: 150000 }, function(s) {
+          var bd = JSON.stringify({ location: 'London', maxResults: 3 });
+          var rq = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyK + '&memory=128&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd) }, timeout: 150000 }, function(s) {
             var t = ''; s.on('data', function(c) { t += c; }); s.on('end', function() {
               try { var j = JSON.parse(t); if (Array.isArray(j)) resolve(j); else resolve([]); } catch(e) { resolve([]); }
             });
@@ -8066,8 +8066,8 @@ if ((!leads || leads.length < 3) && (!require('./streaming_worker').getStatus().
     var apifyK3 = process.env.APIFY_API_KEY;
     if (apifyK3) {
                 leads = await new Promise(function(r) {
-                  var b = JSON.stringify({ search: 'limited', maxItems: 1000, includeOfficers: false });
-                  var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyK3 + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
+                  var b = JSON.stringify({ search: 'limited', maxItems: 500, includeOfficers: false });
+                  var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/parseforge~uk-companies-house-scraper/run-sync-get-dataset-items?token=' + apifyK3 + '&memory=128&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
                     var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
                       try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
                         r(items.filter(function(c) {
@@ -8206,8 +8206,8 @@ if ((!leads || leads.length < 3) && (!require('./streaming_worker').getStatus().
         } else if (product === 'moving') {
           try { var k = process.env.APIFY_API_KEY; leads = []; if (k) {
             leads = await new Promise(function(r) {
-              var b = JSON.stringify({ location: 'London', maxResults: 1000 });
-              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/d1i6SpbgzkWCic0cV/run-sync-get-dataset-items?token=' + k + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
+              var b = JSON.stringify({ location: 'London', maxResults: 200 });
+              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/d1i6SpbgzkWCic0cV/run-sync-get-dataset-items?token=' + k + '&memory=128&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
                   try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
                     r(items.map(function(p) { 
