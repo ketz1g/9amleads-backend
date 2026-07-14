@@ -8056,40 +8056,31 @@ function syncCustomers(product) {
         if (product === 'newbusiness') {
           leads = [];
           try {
-            // Primary source: Companies House REST API search
-            console.log('[SCRAPER] Fetching new businesses from Companies House API...');
-            var chKeyNB2 = '8e6cae34-073b-4451-b4c8-e0b463ca4b21' || process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY;
-            var sectors = ['construction', 'building', 'property', 'removals', 'cleaning', 'plumbing', 'electrical', 'roofing', 'landscape', 'estate', 'catering', 'consulting', 'transport', 'logistics'];
-            var allCompanies = [];
-            for (var si2 = 0; si2 < sectors.length; si2++) {
-              try {
-                var chData3 = await new Promise(function(resolve) {
-                  var url = '/search/companies?q=' + encodeURIComponent(sectors[si2]) + '&size=200';
-                  var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyNB2 + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
-                    var body = ''; res.on('data', function(c) { body += c; });
-                    res.on('end', function() {
-                      try { var d = JSON.parse(body); resolve(d.items || []); } catch(e) { resolve([]); }
-                    });
-                  });
-                  req.on('error', function() { resolve([]); });
-                  req.setTimeout(15000, function() { req.destroy(); resolve([]); });
-                  req.end();
+            var chKeySimple = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+            var nbResults = await new Promise(function(resolve) {
+              var url = '/search/companies?q=services&size=200&start_index=0';
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeySimple + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
+                var body = ''; res.on('data', function(c) { body += c; });
+                res.on('end', function() {
+                  try { var d = JSON.parse(body); resolve(d.items || []); } catch(e) { resolve([]); }
                 });
-                allCompanies.push.apply(allCompanies, chData3);
-              } catch(e) {}
-              await new Promise(function(r) { setTimeout(r, 100); });
-            }
-            // Filter dedup + active only
-            var seen2 = {};
-            leads = allCompanies.filter(function(c) {
-              if (!c.company_name || !c.company_number || seen2[c.company_number]) return false;
-              seen2[c.company_number] = true;
-              return c.company_status === 'active';
-            }).map(function(c) {
-              return { id: 'CH_NB_' + (c.company_number || Date.now()), name: (c.company_name || '').trim(), companyNumber: c.company_number || '', companyName: c.company_name || '', address: c.address_snippet || c.address || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
+              });
+              req.on('error', function(e) { resolve([]); });
+              req.setTimeout(15000, function() { resolve([]); });
+              req.end();
             });
-            console.log('[SCRAPER] CH API returned ' + leads.length + ' new businesses');
-          } catch(e) { console.log('[SCRAPER] NB API error:', e.message); leads = []; }
+            if (nbResults && nbResults.length > 0) {
+              var nbSeen = {};
+              leads = nbResults.filter(function(c) {
+                if (!c.company_name || !c.company_number || nbSeen[c.company_number]) return false;
+                nbSeen[c.company_number] = true;
+                return c.company_status === 'active' && c.date_of_creation && c.date_of_creation >= '2025-01-01';
+              }).map(function(c) {
+                return { id: 'CH_NB_' + c.company_number, name: c.company_name.trim(), companyNumber: c.company_number, companyName: c.company_name.trim(), address: c.address_snippet || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
+              });
+            }
+            console.log('[SCRAPER] NB: ' + (nbResults ? nbResults.length : 0) + ' raw, ' + leads.length + ' filtered');
+          } catch(e) { console.log('[SCRAPER] NB error:', e.message); leads = []; }
         } else if (product === 'planning') {
           leads = [];
           try {
