@@ -112,7 +112,7 @@ function getPostcodeLimit(plan, extraPostcodes, product) {
     var rule = getLeadTypeRule(product);
     if (rule && rule.area_limit) {
       var limit = rule.area_limit[plan] || rule.area_limit.starter || 3;
-      var extra2 = parseInt(extraPostcodes) || 0;
+      var extra = parseInt(extraPostcodes) || 0;
       return Math.min(limit + extra2, 999);
     }
   }
@@ -121,7 +121,7 @@ function getPostcodeLimit(plan, extraPostcodes, product) {
   return base + extra2;
 }
 
-const EXTRAS_PRICE = 5000; // £50 one-time per extra postcode area
+const EXTRAS_PRICE = 5000; // Â£50 one-time per extra postcode area
 
 function normalisePostcodeForMatch(pc) {
   return pc.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -736,7 +736,7 @@ function dmEmailHTML(title, body, ctaText, ctaUrl) {
   var accent = '#0ea5e9';
   return '<div style="background:#07090f;padding:32px 20px;font-family:Inter,Helvetica,Arial,sans-serif"><div style="max-width:520px;margin:0 auto;background:#0c0f1a;border-radius:16px;border:1px solid #151929;overflow:hidden"><div style="padding:20px 24px;background:linear-gradient(135deg,rgba(14,165,233,.08),transparent);border-bottom:1px solid #151929"><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,' + accent + ',#2563eb);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:900;font-family:Outfit,sans-serif">9</div><span style="font-size:15px;font-weight:800;color:#dce2f0;font-family:Outfit,sans-serif">am<span style="color:' + accent + '">Leads</span></span></div></div><div style="padding:24px"><h2 style="font-size:18px;font-weight:800;color:#dce2f0;margin:0 0 8px;font-family:Outfit,sans-serif">' + title + '</h2><div style="font-size:13px;color:#8890b0;line-height:1.7">' + body + '</div>' +
     (ctaText && ctaUrl ? '<div style="margin-top:20px;text-align:center"><a href="' + ctaUrl + '" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,' + accent + ', #2563eb);color:#fff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:700">' + ctaText + '</a></div>' : '') +
-    '<div style="margin-top:24px;padding-top:16px;border-top:1px solid #151929;font-size:11px;color:#5a6280;text-align:center">9amLeads · <a href="https://9amleads.com" style="color:' + accent + ';text-decoration:none">9amleads.com</a></div></div></div></div>';
+    '<div style="margin-top:24px;padding-top:16px;border-top:1px solid #151929;font-size:11px;color:#5a6280;text-align:center">9amLeads Â· <a href="https://9amleads.com" style="color:' + accent + ';text-decoration:none">9amleads.com</a></div></div></div></div>';
 }
 
 function dmDashboardNotify(customerId, type, title, message, link) {
@@ -775,7 +775,7 @@ async function sendDMAdminAlert(type, title, message) {
     var dedupKey = 'admin_' + type + '_' + new Date().toISOString().split('T')[0];
     if (DM_NOTIFIED[dedupKey]) return;
     DM_NOTIFIED[dedupKey] = true;
-    var html = dmEmailHTML('⚠️ ' + title, '<p style="color:#ef4444;font-weight:600">' + type + '</p><p>' + message + '</p>', 'View Admin', 'https://9amleads.com/admin/direct-mail');
+    var html = dmEmailHTML('âš ï¸ ' + title, '<p style="color:#ef4444;font-weight:600">' + type + '</p><p>' + message + '</p>', 'View Admin', 'https://9amleads.com/admin/direct-mail');
     await sendBrevoEmail({ email: adminEmail, name: '9amLeads Admin' }, '[DM Alert] ' + title, html);
     console.log('[DM-NOTIF] Admin alert sent:', type, title);
   } catch(e) { console.log('[DM-NOTIF] Admin alert error:', e.message); }
@@ -854,8 +854,6 @@ function validateEmail(email) {
 // ===== APP =====
 const app = express();
 app.use(cors({ origin: ['https://www.9amleads.com', 'https://9amleads.com', 'http://localhost:8012'], credentials: true }));
-// Raw body for Stripe webhook (must be BEFORE express.json() so raw body is captured)
-app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
 // Rate limiting
@@ -955,7 +953,6 @@ app.post('/api/auth/signup', async (req, res) => {
       }
     }
 
-    var planName = plan || 'free_trial';
     // Block duplicate free trials with similar business name + postcode
     if (targetAreas && targetAreas.length > 0 && planName !== 'pro' && planName !== 'enterprise') {
       var areaMatch = targetAreas.slice(0, 1).join(',');
@@ -983,7 +980,8 @@ app.post('/api/auth/signup', async (req, res) => {
     // Validate product count by plan
     var productsList = req.body.products || [product];
     if (!Array.isArray(productsList)) productsList = [product];
-    var maxTypes = planName === 'free_trial' ? 2 : planName === 'starter' ? 2 : 99;
+    var planName = plan || 'free_trial';
+    var maxTypes = planName === 'free_trial' ? 1 : planName === 'starter' ? 2 : 99;
     if (productsList.length > maxTypes) {
       return res.status(400).json({ error: (planName === 'free_trial' ? 'Free Trial' : planName.charAt(0).toUpperCase() + planName.slice(1)) + ' allows up to ' + maxTypes + ' lead type' + (maxTypes > 1 ? 's' : '') + '. Upgrade for more.' });
     }
@@ -1013,7 +1011,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(id);
     customer.verification_token = verification_token;
-    customer.email_verified = BREVO_API_KEY ? 0 : 1;
+    customer.email_verified = 1;
     // Store daily limit based on lead type, plan and coverage
     const dailyLimit = getPlanLimit(product, plan || 'free_trial', coverage || 'postcode');
     db.prepare('UPDATE customers SET leads_per_day = ?, coverage = ? WHERE id = ?').run(dailyLimit, coverage || 'postcode', id);
@@ -1084,8 +1082,7 @@ app.post('/api/auth/signup', async (req, res) => {
         trial_ends: customer.trial_ends,
         target_areas: JSON.parse(customer.target_areas || '[]'),
         crm_webhook_url: customer.crm_webhook_url || '',
-        biz_field3: customer.biz_field3 || '',
-        email_verified: customer.email_verified
+        email_verified: 0
       }
     });
   } catch (e) {
@@ -1153,7 +1150,6 @@ app.post('/api/auth/login', async (req, res) => {
         plan: customer.plan,
         trial_ends: customer.trial_ends,
         target_areas: JSON.parse(customer.target_areas || '[]'),
-        biz_field3: customer.biz_field3 || '',
         email_verified: customer.email_verified || 0
       }
     });
@@ -1165,7 +1161,6 @@ app.post('/api/auth/login', async (req, res) => {
 
 // GET /api/auth/me
 app.get('/api/auth/me', authMiddleware, (req, res) => {
-  try {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
 
@@ -1192,7 +1187,6 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
     last_login: customer.last_login,
     crm_webhook_url: customer.crm_webhook_url || ''
   });
-  } catch(e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // ===== PASSWORD RESET =====
@@ -1268,7 +1262,7 @@ app.get('/api/onboarding', authMiddleware, (req, res) => {
     const hasContacted = leads.some(l => l.lead_status === 'contacted' || l.lead_status === 'interested' || l.lead_status === 'quoted' || l.lead_status === 'won');
     const hasPipeline = leads.some(l => l.lead_status && l.lead_status !== 'new' && l.lead_status !== 'lost');
     const hasWon = leads.some(l => l.lead_status === 'won');
-    const hasCrm = !!(customer.crm_webhook_url || ((db.crm_webhooks || []).find ? db.crm_webhooks.find(w => w.customer_id === req.user.id) : false));
+    const hasCrm = !!(customer.crm_webhook_url || (db.crm_webhooks || []).find(w => w.customer_id === req.user.id));
     const hasProfile = !!(customer.company && customer.contact_name);
     const hasAreas = (customer.target_areas && JSON.parse(customer.target_areas).length > 0);
     const hasFilters = !!(customer.biz_field2);
@@ -1312,7 +1306,7 @@ app.get('/api/health-score', authMiddleware, (req, res) => {
     const wonLeads = leads.filter(l => l.lead_status === 'won');
     const contactedRate = delivered.length > 0 ? Math.round((contacted.length / delivered.length) * 100) : 0;
     const hasRecentLogin = customer.last_login_at && (Date.now() - new Date(customer.last_login_at).getTime()) < 7 * 86400000;
-    const hasCrm = !!(customer.crm_webhook_url || ((db.crm_webhooks || []).find ? db.crm_webhooks.find(w => w.customer_id === req.user.id) : false));
+    const hasCrm = !!(customer.crm_webhook_url || (db.crm_webhooks || []).find(w => w.customer_id === req.user.id));
     const hasLowSupply = db.scraper_logs && db.scraper_logs.length > 0;
     const failedPayment = parseInt(customer.fail_count) > 0;
 
@@ -1501,7 +1495,7 @@ app.get('/api/prompts', authMiddleware, (req, res) => {
     // Check if customer has won deals
     const wonRevenue = leads.filter(l => l.lead_status === 'won').reduce((s, l) => s + (parseInt(l.actual_revenue) || parseInt(l.deal_value) || 0), 0);
     if (wonRevenue > 1000) {
-      prompts.push({ type: 'roi', priority: 'low', message: 'You generated £' + wonRevenue.toLocaleString() + ' from 9am Leads. Upgrade to access more opportunities.', action: 'View Plans', page: 'billing' });
+      prompts.push({ type: 'roi', priority: 'low', message: 'You generated Â£' + wonRevenue.toLocaleString() + ' from 9am Leads. Upgrade to access more opportunities.', action: 'View Plans', page: 'billing' });
     }
 
     res.json({ prompts });
@@ -1570,14 +1564,12 @@ const BUILTIN_TEMPLATES = [
 
 // GET /api/success-centre/templates — return all templates (Pro+ only)
 app.get('/api/success-centre/templates', authMiddleware, (req, res) => {
-  try {
   const cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   var plan = cust?.plan || 'free_trial';
   if (plan === 'free_trial' || plan === 'starter') {
     return res.json({ restricted: true, templates: [], message: 'Success Centre is available on Pro and Enterprise plans. <a href="#" onclick="showPlans();return false" style="color:#0ea5e9;text-decoration:underline">Upgrade now</a> to access industry playbooks, outreach templates, AI generator and more.' });
   }
   res.json({ templates: BUILTIN_TEMPLATES });
-  } catch(e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 function checkProAccess(req) {
@@ -1588,10 +1580,8 @@ function checkProAccess(req) {
 
 // GET /api/success-centre/playbooks — return playbooks (Pro+ only)
 app.get('/api/success-centre/playbooks', authMiddleware, (req, res) => {
-  try {
   if (!checkProAccess(req)) return res.json({ restricted: true, playbooks: {} });
   res.json({ playbooks: PLAYBOOKS });
-  } catch(e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // POST /api/success-centre/save — save a template (Pro+ only)
@@ -1887,7 +1877,6 @@ app.post('/api/support', authMiddleware, async (req, res) => {
 
 // GET /api/leads
 app.get('/api/leads', authMiddleware, (req, res) => {
-  try {
   const leads = db.prepare(
     'SELECT * FROM leads WHERE customer_id = ? ORDER BY created_at DESC LIMIT 50'
   ).all(req.user.id);
@@ -1899,12 +1888,10 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
     return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
   }));
-  } catch(e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // GET /api/leads/today
 app.get('/api/leads/today', authMiddleware, (req, res) => {
-  try {
   const today = new Date().toISOString().split('T')[0];
   const leads = db.prepare(
     'SELECT * FROM leads WHERE customer_id = ? AND date(created_at) = ? ORDER BY created_at DESC'
@@ -1917,12 +1904,10 @@ app.get('/api/leads/today', authMiddleware, (req, res) => {
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
     return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
   }));
-  } catch(e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // PATCH /api/leads/:id/status
 app.patch('/api/leads/:id/status', authMiddleware, (req, res) => {
-  try {
   const { status } = req.body;
   const valid = ['new', 'contacted', 'booked', 'closed', 'lost'];
   if (!valid.includes(status)) {
@@ -1934,14 +1919,12 @@ app.patch('/api/leads/:id/status', authMiddleware, (req, res) => {
 
   db.prepare('UPDATE leads SET status = ? WHERE id = ?').run(status, req.params.id);
   res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // ===== STATS ENDPOINT =====
 
 // GET /api/stats
 app.get('/api/stats', authMiddleware, (req, res) => {
-  try {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
 
@@ -1972,14 +1955,12 @@ app.get('/api/stats', authMiddleware, (req, res) => {
     campaign_stage: customer.plan === 'free_trial' && daysLeft <= 0 ? 'trial_ended' : (customer.plan === 'free_trial' ? 'active_trial' : 'paid'),
     leads_per_day: customer.leads_per_day,
   });
-  } catch(e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // ===== POSTCODE ENDPOINTS =====
 
 // GET /api/postcodes — List all UK postcode districts grouped by area with availability
 app.get('/api/postcodes', (req, res) => {
-  try {
   const districts = loadPostcodeDistricts();
   const areas = loadPostcodeAreas();
   const assignments = loadAssignments();
@@ -2007,12 +1988,10 @@ app.get('/api/postcodes', (req, res) => {
   const regions = [...new Set(Object.values(districts).map(d => d.region))];
 
   res.json({ areas: result, total_areas: result.length, regions });
-  } catch(e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // GET /api/postcodes/mine — Get current customer's assigned postcode areas with limits
 app.get('/api/postcodes/mine', authMiddleware, (req, res) => {
-  try {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
 
@@ -2042,7 +2021,6 @@ app.get('/api/postcodes/mine', authMiddleware, (req, res) => {
     extra_postcodes: extraPostcodes,
     can_extra: customer.plan !== 'free_trial' && customer.plan !== 'cancelled'
   });
-  } catch(e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // GET /api/postcodes/check — Check if a postcode area is valid
@@ -2058,7 +2036,6 @@ app.get('/api/postcodes/check', async (req, res) => {
 
 // PUT /api/postcodes/update — Update the customer's selected postcode areas
 app.put('/api/postcodes/update', authMiddleware, (req, res) => {
-  try {
   const { postcodes } = req.body;
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
@@ -2076,10 +2053,9 @@ app.put('/api/postcodes/update', authMiddleware, (req, res) => {
   saveDb();
 
   res.json({ success: true, areas: postcodes, count: postcodes.length, max_limit: getPostcodeLimit(customer.plan) });
-  } catch(e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
-// POST /api/postcodes/extra — purchase 1 extra postcode area (£50 one-time via Stripe)
+// POST /api/postcodes/extra — purchase 1 extra postcode area (Â£50 one-time via Stripe)
 app.post('/api/postcodes/extra', authMiddleware, async (req, res) => {
   try {
     if (!STRIPE_SECRET_KEY) {
@@ -2314,7 +2290,7 @@ app.post('/api/ai/generate-letter', authMiddleware, async (req, res) => {
     var businessData = req.body;
     if (!businessData.company_name || !businessData.business_type) {
       var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
-      if (!profile) return res.status(400).json({ error: 'Please complete your Business Profile first. Go to Dashboard → Business Profile to set up your details.' });
+      if (!profile) return res.status(400).json({ error: 'Please complete your Business Profile first. Go to Dashboard â†’ Business Profile to set up your details.' });
       businessData = {
         company_name: profile.company_name || 'Your Company',
         business_type: profile.business_type || 'Business',
@@ -2410,7 +2386,7 @@ app.post('/api/ai/generate-flyer', authMiddleware, async (req, res) => {
     var businessData = req.body;
     if (!businessData.company_name || !businessData.business_type) {
       var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
-      if (!profile) return res.status(400).json({ error: 'Please complete your Business Profile first. Go to Dashboard → Business Profile to set up your details.' });
+      if (!profile) return res.status(400).json({ error: 'Please complete your Business Profile first. Go to Dashboard â†’ Business Profile to set up your details.' });
       businessData = {
         company_name: profile.company_name || 'Your Company',
         business_type: profile.business_type || 'Business',
@@ -2702,10 +2678,10 @@ app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
             var contactY = pageH - safeBottom - 50;
             doc.rect(safeLeft, contactY, pageW - safeLeft - safeRight, 50).fillColor('#1e293b').fill();
             doc.fontSize(9).font('Helvetica').fillColor('#ffffff');
-            var contactText = (data.phone ? '✅ ' + data.phone + '  ' : '') + (data.website ? '🌐 ' + data.website : '');
+            var contactText = (data.phone ? '✅ ' + data.phone + '  ' : '') + (data.website ? 'ðŸŒ ' + data.website : '');
             doc.text(contactText, safeLeft + 10, contactY + 10, { width: pageW - safeLeft - safeRight - 20, align: 'center' });
             doc.fontSize(10).font('Helvetica-Bold').fillColor(c.primary);
-            doc.text((data.call_to_action || 'Get in Touch') + ' →', safeLeft + 10, contactY + 28, { width: pageW - safeLeft - safeRight - 20, align: 'center' });
+            doc.text((data.call_to_action || 'Get in Touch') + ' â†’', safeLeft + 10, contactY + 28, { width: pageW - safeLeft - safeRight - 20, align: 'center' });
           } else {
             // BACK PAGE
             doc.fontSize(16).font('Helvetica-Bold').fillColor(c.primary);
@@ -2775,8 +2751,8 @@ app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
 
 // ===== ADMIN ENDPOINTS =====
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-if (!ADMIN_PASSWORD) { console.error('[FATAL] ADMIN_PASSWORD environment variable not set'); process.exit(1); }
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '9amAdmin2024!';
+if (!process.env.ADMIN_PASSWORD) console.warn('[WARN] ADMIN_PASSWORD not set. Using default. Set ADMIN_PASSWORD env var for security.');
 
 function adminAuth(req, res, next) {
   const auth = req.headers.authorization;
@@ -2911,7 +2887,7 @@ async function sendBrevoEmail(to, subject, htmlContent) {
       path: '/v3/smtp/email',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Type': 'application/json',
         'api-key': BREVO_API_KEY,
         'Content-Length': Buffer.byteLength(data)
       }
@@ -3029,7 +3005,6 @@ app.get('/api/admin/availability', adminAuth, (req, res) => {
 
 // GET /api/lead-types — return lead type rules for frontend
 app.get('/api/lead-types', (req, res) => {
-  try {
   const summary = {};
   for (const [key, rule] of Object.entries(LEAD_TYPE_RULES)) {
     summary[key] = {
@@ -3047,7 +3022,6 @@ app.get('/api/lead-types', (req, res) => {
     };
   }
   res.json({ lead_types: summary });
-  } catch(e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 const LEAD_TYPE_RULES = {
@@ -3279,18 +3253,18 @@ function getCampaignEmailHTML(customer, template) {
     tenders: 'Follow up fast. Tenders close on a deadline and the buyer needs capability statements. Submit online and follow up with a printed pack.' }[prod] || 'Follow up fast.';
   
   const templates = {
-    trial_day1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Is Active</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Your daily <strong style="color:#fff">' + productName + '</strong> land at <strong style="color:' + accent + '">9am tomorrow</strong>.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to 9amLeads. Over the next 7 days you\'ll receive exclusive <strong>' + productName + '</strong> delivered to your inbox every morning at 9am. Here\'s how to get the most out of your trial:</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:2;margin:0">✅ <strong style="color:#fff">9:00am</strong> : Lead sheet arrives in your inbox<br>✅ <strong style="color:#fff">9:15am</strong> : ' + outreachPrep + '<br>🚶 <strong style="color:#fff">10:00am</strong> : ' + outreachVisit + '<br>📬 <strong style="color:#fff">Afternoon</strong> : ' + outreachPost + '</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">What makes these leads exclusive?</strong> Unlike lead generation sites where your quote is one of dozens, every lead we send is sent to <strong>you alone</strong>. No competitors. No bidding wars. You are the first and only person to contact them.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">💡 Pro tip:</strong> ' + outreachTip + ' Use the AI-drafted flyers, introduction letters, and visit in person templates in your dashboard for every lead. Set your alarm for 9am and start your lead hour.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">To get the most from your trial, <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">log into your dashboard</a> and set up your CRM webhook so leads flow straight into your system. If you don\'t use a CRM, no problem : leads arrive by email too.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">🚀 NEW: Direct Mail Marketing Automation — automatically send professional letters and flyers to your leads by post. Set it up from your dashboard.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
-    trial_day3: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">How Are Your First Leads Looking?</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">3 days in : time for a quick check-in.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">You\'re three days into your 9amLeads trial. By now you should have received a few days\' worth of <strong>' + productName + '</strong>. We wanted to check in and see how things are going.</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ Are the leads relevant to your <strong>specific business</strong>?<br>✅ Is the volume what you <strong>expected</strong>?<br>✅ Have you managed to <strong>follow up yet</strong>?<br>✅ Are the postcode areas <strong>working for you</strong>?</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If the answer to any of these is &ldquo;no&rdquo; : don\'t worry. You can <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">adjust your territory settings in the dashboard</a> to refine which opportunities you receive. Every lead includes AI-drafted flyers, introduction letters, and visit in person templates ready to use. Narrow it down, expand it out, or target specific cities.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">💡 Tip of the day:</strong> Follow up within 30 minutes. We know we keep saying it, but it\'s because it works. Your lead is a real person who needs help <em>right now</em>. Every minute you wait, someone else reaches them first.</p><p style="color:#94a3b8;font-size:13px;margin:0 0 16px">Not loving it? Reply to this email and tell us what\'s off. We can tweak your settings or switch you to a different lead type.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
-    trial_day5: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Tips to Convert More Leads</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">You\'ve got 2 days left in your trial. Let\'s make them count.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">By now you\'ve had a few days of <strong>' + productName + '</strong> landing in your inbox. Whether you\'ve closed deals yet or not, here are three tips that will dramatically improve your conversion rate:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;margin:0 0 16px"><div style="margin-bottom:16px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">1</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Follow up within 30 minutes</strong><br><span style="color:#94a3b8;font-size:13px">Speed is your superpower. When a lead goes SSTC, registers a company, or a probate grant is issued : they are actively looking for help. Our data shows that following up within 30 minutes triples your conversion rate compared to waiting 2 hours. Set your alarm, drop everything, and start preparing.</span></div></div><div style="margin-bottom:16px;clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">2</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Personalise your pitch</strong><br><span style="color:#94a3b8;font-size:13px">Don\'t read from a script. Reference their specific situation : the property address, the company they just registered, the probate value. &ldquo;I see you\'ve just listed [property] on Rightmove : congratulations. I specialise in helping sellers in [area] get a fast, fair price.&rdquo; Personalised pitches close at 2x the rate of generic ones.</span></div></div><div style="clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">3</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Follow up : the money is in the 2nd follow-up</strong><br><span style="color:#94a3b8;font-size:13px">Most sales don\'t happen on the first contact. People are busy, they need to check with a partner, or they\'re comparing options. Follow up on day 2 with an email, contact again on day 4. Exclusive leads mean no one else is contacting them : take your time and build the relationship.</span></div></div></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Your free trial ends in <strong style="color:' + accent + '">2 days</strong>. After that, your leads will pause. Upgrade now to keep them flowing without interruption.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Upgrade & Keep Your Leads →</a></td></tr></table>',
-    trial_day7: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Ends Tomorrow</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Action needed : your daily leads will pause after today.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">This is your 7-day reminder. Tomorrow your free trial ends, and your daily <strong>' + productName + '</strong> delivery will pause. Here\'s what you\'ll lose:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ <strong style="color:#fff">Daily exclusive leads</strong> at 9am every morning<br>✅ <strong style="color:#fff">No competition</strong> : you\'re the only person who gets them<br>✅ <strong style="color:#fff">Full dashboard access</strong> with lead history & analytics<br>✅ <strong style="color:#fff">CRM integration</strong> : push leads to your system<br>✅ <strong style="color:#fff">Priority support</strong> when you need it</p></div><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><em>&ldquo;I got 12 leads in my first week using 9amLeads. Converted 3. Made <strong style="color:' + accent + '">£3,600</strong> in additional revenue. Best £49 I\'ve ever spent.&rdquo;</em><br><span style="color:#94a3b8;font-size:11px">: Mark S., Southampton</span></p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Plans start from just <strong style="color:#fff">£49/month</strong>. No long-term contract. Cancel anytime. Upgrade now and your leads keep flowing tomorrow at 9am as if nothing happened.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">🚀 NEW: Direct Mail Marketing Automation — automatically send professional letters and flyers to your leads by post. Set it up from your dashboard.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Now : Keep Your Leads</a></td></tr></table>',
-    trial_day9: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Daily Leads Have Paused</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Your 7-day trial has ended. Here\'s how to restart.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">As expected, your free trial has ended and your daily <strong>' + productName + '</strong> delivery has been paused. Don\'t worry : your lead history is still intact, and you can restart in 3 simple steps:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">To restart your leads:</strong><br>1. <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">Log into your dashboard</a><br>2. Choose your plan<br>3. Leads restart at <strong style="color:' + accent + '">9am tomorrow</strong></p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'re not sure whether 9amLeads is right for you, reply to this email and tell us what\'s holding you back. We\'re a small UK team and we personally read every reply. We\'ll help you decide : no pushy sales pitch, just honest advice.</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><em>&ldquo;I was sceptical at first but decided to give it a month. We picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month : already covered our annual subscription 10x over.&rdquo;</em><br><span style="color:#94a3b8;font-size:11px">: Sarah L., Manchester</span></p></div><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px">Restart My Leads →</a></td></tr></table>',
+    trial_day1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Is Active</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Your daily <strong style="color:#fff">' + productName + '</strong> land at <strong style="color:' + accent + '">9am tomorrow</strong>.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to 9amLeads. Over the next 7 days you\'ll receive exclusive <strong>' + productName + '</strong> delivered to your inbox every morning at 9am. Here\'s how to get the most out of your trial:</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:2;margin:0">✅ <strong style="color:#fff">9:00am</strong> : Lead sheet arrives in your inbox<br>âœ‰ï¸ <strong style="color:#fff">9:15am</strong> : ' + outreachPrep + '<br>ðŸš¶ <strong style="color:#fff">10:00am</strong> : ' + outreachVisit + '<br>ðŸ“¬ <strong style="color:#fff">Afternoon</strong> : ' + outreachPost + '</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">What makes these leads exclusive?</strong> Unlike lead generation sites where your quote is one of dozens, every lead we send is sent to <strong>you alone</strong>. No competitors. No bidding wars. You are the first and only person to contact them.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">ðŸ’¡ Pro tip:</strong> ' + outreachTip + ' Use the AI-drafted flyers, introduction letters, and visit in person templates in your dashboard for every lead. Set your alarm for 9am and start your lead hour.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">To get the most from your trial, <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">log into your dashboard</a> and set up your CRM webhook so leads flow straight into your system. If you don\'t use a CRM, no problem : leads arrive by email too.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">ðŸš€ NEW: Direct Mail Marketing Automation — automatically send professional letters and flyers to your leads by post. Set it up from your dashboard.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
+    trial_day3: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">How Are Your First Leads Looking?</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">3 days in : time for a quick check-in.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">You\'re three days into your 9amLeads trial. By now you should have received a few days\' worth of <strong>' + productName + '</strong>. We wanted to check in and see how things are going.</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ Are the leads relevant to your <strong>specific business</strong>?<br>✅ Is the volume what you <strong>expected</strong>?<br>✅ Have you managed to <strong>follow up yet</strong>?<br>✅ Are the postcode areas <strong>working for you</strong>?</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If the answer to any of these is &ldquo;no&rdquo; : don\'t worry. You can <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">adjust your territory settings in the dashboard</a> to refine which opportunities you receive. Every lead includes AI-drafted flyers, introduction letters, and visit in person templates ready to use. Narrow it down, expand it out, or target specific cities.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">ðŸ’¡ Tip of the day:</strong> Follow up within 30 minutes. We know we keep saying it, but it\'s because it works. Your lead is a real person who needs help <em>right now</em>. Every minute you wait, someone else reaches them first.</p><p style="color:#94a3b8;font-size:13px;margin:0 0 16px">Not loving it? Reply to this email and tell us what\'s off. We can tweak your settings or switch you to a different lead type.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
+    trial_day5: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Tips to Convert More Leads</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">You\'ve got 2 days left in your trial. Let\'s make them count.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">By now you\'ve had a few days of <strong>' + productName + '</strong> landing in your inbox. Whether you\'ve closed deals yet or not, here are three tips that will dramatically improve your conversion rate:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;margin:0 0 16px"><div style="margin-bottom:16px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">1</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Follow up within 30 minutes</strong><br><span style="color:#94a3b8;font-size:13px">Speed is your superpower. When a lead goes SSTC, registers a company, or a probate grant is issued : they are actively looking for help. Our data shows that following up within 30 minutes triples your conversion rate compared to waiting 2 hours. Set your alarm, drop everything, and start preparing.</span></div></div><div style="margin-bottom:16px;clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">2</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Personalise your pitch</strong><br><span style="color:#94a3b8;font-size:13px">Don\'t read from a script. Reference their specific situation : the property address, the company they just registered, the probate value. &ldquo;I see you\'ve just listed [property] on Rightmove : congratulations. I specialise in helping sellers in [area] get a fast, fair price.&rdquo; Personalised pitches close at 2x the rate of generic ones.</span></div></div><div style="clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">3</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Follow up : the money is in the 2nd follow-up</strong><br><span style="color:#94a3b8;font-size:13px">Most sales don\'t happen on the first contact. People are busy, they need to check with a partner, or they\'re comparing options. Follow up on day 2 with an email, contact again on day 4. Exclusive leads mean no one else is contacting them : take your time and build the relationship.</span></div></div></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Your free trial ends in <strong style="color:' + accent + '">2 days</strong>. After that, your leads will pause. Upgrade now to keep them flowing without interruption.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Upgrade & Keep Your Leads â†’</a></td></tr></table>',
+    trial_day7: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Ends Tomorrow</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Action needed : your daily leads will pause after today.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">This is your 7-day reminder. Tomorrow your free trial ends, and your daily <strong>' + productName + '</strong> delivery will pause. Here\'s what you\'ll lose:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ <strong style="color:#fff">Daily exclusive leads</strong> at 9am every morning<br>✅ <strong style="color:#fff">No competition</strong> : you\'re the only person who gets them<br>✅ <strong style="color:#fff">Full dashboard access</strong> with lead history & analytics<br>✅ <strong style="color:#fff">CRM integration</strong> : push leads to your system<br>✅ <strong style="color:#fff">Priority support</strong> when you need it</p></div><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><em>&ldquo;I got 12 leads in my first week using 9amLeads. Converted 3. Made <strong style="color:' + accent + '">Â£3,600</strong> in additional revenue. Best Â£49 I\'ve ever spent.&rdquo;</em><br><span style="color:#94a3b8;font-size:11px">: Mark S., Southampton</span></p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Plans start from just <strong style="color:#fff">Â£49/month</strong>. No long-term contract. Cancel anytime. Upgrade now and your leads keep flowing tomorrow at 9am as if nothing happened.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">ðŸš€ NEW: Direct Mail Marketing Automation — automatically send professional letters and flyers to your leads by post. Set it up from your dashboard.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Now : Keep Your Leads</a></td></tr></table>',
+    trial_day9: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Daily Leads Have Paused</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Your 7-day trial has ended. Here\'s how to restart.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">As expected, your free trial has ended and your daily <strong>' + productName + '</strong> delivery has been paused. Don\'t worry : your lead history is still intact, and you can restart in 3 simple steps:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">To restart your leads:</strong><br>1. <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">Log into your dashboard</a><br>2. Choose your plan<br>3. Leads restart at <strong style="color:' + accent + '">9am tomorrow</strong></p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'re not sure whether 9amLeads is right for you, reply to this email and tell us what\'s holding you back. We\'re a small UK team and we personally read every reply. We\'ll help you decide : no pushy sales pitch, just honest advice.</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><em>&ldquo;I was sceptical at first but decided to give it a month. We picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month : already covered our annual subscription 10x over.&rdquo;</em><br><span style="color:#94a3b8;font-size:11px">: Sarah L., Manchester</span></p></div><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px">Restart My Leads â†’</a></td></tr></table>',
     trial_day12: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Still Not Sure? Let\'s Talk</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">We understand. Let\'s figure this out together.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">We know that choosing a lead generation service is a big decision. Maybe the leads weren\'t quite right for your ' + bizType + '. Maybe the timing wasn\'t perfect. Maybe you just need more information before committing.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Whatever it is : <strong style="color:#fff">we want to help</strong>. Reply to this email and tell us what\'s holding you back. Are the postcodes not quite right? Wrong lead type? Budget concerns? Not enough time to follow up? We\'ll help you find a solution.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">To sweeten the deal, here\'s a <strong style="color:#fff">30% discount</strong> on your first month when you\'re ready to give it another go:</p><div style="background:rgba(14,165,233,0.06);border:2px dashed ' + accent + ';border-radius:12px;padding:16px;text-align:center;margin:0 0 16px"><p style="color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 4px;color:#94a3b8">Discount Code</p><p style="font-family:Outfit,sans-serif;font-size:28px;font-weight:800;color:' + accent + ';margin:0;letter-spacing:3px">WELCOME30</p><p style="color:#94a3b8;font-size:11px;margin:4px 0 0">30% off your first month</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">See if 9amLeads is right for your business by visiting our <a href="' + PUBLIC_URL + '/who-we-serve" style="color:' + accent + '">who we serve page</a> : we work with estate agents, probate practitioners, accountants, solicitors, and more.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/who-we-serve" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Who We Serve</a></td></tr></table>',
-    trial_day16: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Businesses That Transformed Their Pipeline</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Real results from real 9amLeads customers.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Still on the fence? Here are three stories from businesses just like yours who use 9amLeads to fill their pipeline every single day:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Estate Agent : Southampton</strong><br>&ldquo;Got 12 moving leads in my first week using 9amLeads. Contacted every one within 30 minutes. Converted 3 instructions and made <strong style="color:' + accent + '">£3,600</strong> in additional revenue. My monthly subscription paid for itself on the first lead.&rdquo;<br><span style="color:#94a3b8;font-size:11px">: Mark S., Independent Estate Agent</span></p></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Probate Practitioner : Manchester</strong><br>&ldquo;We\'ve picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month using 9amLeads probate leads. Already covered our annual subscription 10x over. The exclusivity is the game-changer : no one else is following up with these families.&rdquo;<br><span style="color:#94a3b8;font-size:11px">: Sarah L., Probate Services Ltd</span></p></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Construction Company : Bristol</strong><br>&ldquo;Won 2 contracts worth <strong style="color:' + accent + '">£1.4M</strong> in our first quarter using 9amLeads tenders. We went from scrambling for work to having a consistent pipeline. Best business decision we\'ve made in 10 years.&rdquo;<br><span style="color:#94a3b8;font-size:11px">: James R., Bristol Construction Co</span></p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Your success story could be next. Your account is still waiting, and your <strong style="color:' + accent + '">WELCOME30</strong> discount code is ready for you. Upgrade now and your leads restart at 9am tomorrow.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Restart With 30% Off →</a></td></tr></table>',
-    trial_day21: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Come Back : 30% Off Your First Month</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">We\'d love to have you back. Here\'s a little incentive.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">It\'s been a few weeks since your trial ended. Since then, hundreds of new exclusive <strong>' + productName + '</strong> have been delivered to our customers every single morning. Here\'s what you\'ve been missing:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ <strong style="color:#fff">Daily leads</strong> arriving at 9am every morning<br>✅ <strong style="color:#fff">Zero competition</strong> : exclusive to you<br>⚡ <strong style="color:#fff">First to contact</strong> : every single time<br>✅ <strong style="color:#fff">Dashboard & CRM</strong> : manage everything in one place</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Come back and try again with <strong style="color:#fff">30% off your first month</strong>. Use the code below at checkout:</p><div style="background:rgba(14,165,233,0.06);border:2px dashed ' + accent + ';border-radius:12px;padding:16px;text-align:center;margin:0 0 16px"><p style="color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 4px;color:#94a3b8">Discount Code</p><p style="font-family:Outfit,sans-serif;font-size:28px;font-weight:800;color:' + accent + ';margin:0;letter-spacing:3px">WELCOME30</p><p style="color:#94a3b8;font-size:11px;margin:4px 0 0">Expires soon : use it before it\'s gone</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">No commitment. No long-term contract. Cancel anytime. Your leads restart at 9am tomorrow.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Claim 30% Off Now</a></td></tr></table>',
+    trial_day16: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Businesses That Transformed Their Pipeline</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Real results from real 9amLeads customers.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Still on the fence? Here are three stories from businesses just like yours who use 9amLeads to fill their pipeline every single day:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Estate Agent : Southampton</strong><br>&ldquo;Got 12 moving leads in my first week using 9amLeads. Contacted every one within 30 minutes. Converted 3 instructions and made <strong style="color:' + accent + '">Â£3,600</strong> in additional revenue. My monthly subscription paid for itself on the first lead.&rdquo;<br><span style="color:#94a3b8;font-size:11px">: Mark S., Independent Estate Agent</span></p></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Probate Practitioner : Manchester</strong><br>&ldquo;We\'ve picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month using 9amLeads probate leads. Already covered our annual subscription 10x over. The exclusivity is the game-changer : no one else is following up with these families.&rdquo;<br><span style="color:#94a3b8;font-size:11px">: Sarah L., Probate Services Ltd</span></p></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Construction Company : Bristol</strong><br>&ldquo;Won 2 contracts worth <strong style="color:' + accent + '">Â£1.4M</strong> in our first quarter using 9amLeads tenders. We went from scrambling for work to having a consistent pipeline. Best business decision we\'ve made in 10 years.&rdquo;<br><span style="color:#94a3b8;font-size:11px">: James R., Bristol Construction Co</span></p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Your success story could be next. Your account is still waiting, and your <strong style="color:' + accent + '">WELCOME30</strong> discount code is ready for you. Upgrade now and your leads restart at 9am tomorrow.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Restart With 30% Off â†’</a></td></tr></table>',
+    trial_day21: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Come Back : 30% Off Your First Month</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">We\'d love to have you back. Here\'s a little incentive.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">It\'s been a few weeks since your trial ended. Since then, hundreds of new exclusive <strong>' + productName + '</strong> have been delivered to our customers every single morning. Here\'s what you\'ve been missing:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ <strong style="color:#fff">Daily leads</strong> arriving at 9am every morning<br>✅ <strong style="color:#fff">Zero competition</strong> : exclusive to you<br>âš¡ <strong style="color:#fff">First to contact</strong> : every single time<br>✅ <strong style="color:#fff">Dashboard & CRM</strong> : manage everything in one place</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Come back and try again with <strong style="color:#fff">30% off your first month</strong>. Use the code below at checkout:</p><div style="background:rgba(14,165,233,0.06);border:2px dashed ' + accent + ';border-radius:12px;padding:16px;text-align:center;margin:0 0 16px"><p style="color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 4px;color:#94a3b8">Discount Code</p><p style="font-family:Outfit,sans-serif;font-size:28px;font-weight:800;color:' + accent + ';margin:0;letter-spacing:3px">WELCOME30</p><p style="color:#94a3b8;font-size:11px;margin:4px 0 0">Expires soon : use it before it\'s gone</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">No commitment. No long-term contract. Cancel anytime. Your leads restart at 9am tomorrow.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Claim 30% Off Now</a></td></tr></table>',
     trial_day30: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Account Is Still Waiting</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">No pressure. Your account is safe and ready when you are.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">It\'s been 30 days since your trial ended, and we wanted to let you know that your 9amLeads account is <strong style="color:#fff">still here</strong>. Nothing has been deleted. All your lead history, settings, postcode preferences, and dashboard access are preserved exactly as you left them.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Whenever you\'re ready, upgrading takes 30 seconds. Your leads will restart at <strong style="color:' + accent + '">9am the next morning</strong> as if you never paused. No setup required. No waiting period.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'d like to have a chat with our team about whether 9amLeads is right for your ' + bizType + ', just reply to this email. We\'re here to help.</p><p style="color:#94a3b8;font-size:13px;margin:0 0 20px">No pressure. Just wanted to remind you that your account is waiting.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Visit Dashboard</a></td></tr></table>',
-    trial_day60: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Last Chance : Account Will Be Archived</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Final notice : your account will be archived in 30 days.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">This is your final notice. Your 9amLeads account has been inactive for 60 days. In <strong style="color:' + accent + '">30 days</strong>, your account will be archived to free up resources.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">What does archiving mean?</strong> Your lead history and account data will be preserved and stored securely. You won\'t lose anything. However, you\'ll need to <a href="mailto:hello@9amleads.com" style="color:' + accent + '">contact our support team</a> to reactivate your account : it won\'t be available for instant self-service upgrade.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If you upgrade in the next 30 days, everything stays active. Your postcode areas, your settings, your lead history : all of it. Leads restart at 9am tomorrow morning.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px"><strong style="color:#fff">This is your last chance</strong> to keep your account active without needing to contact us. Don\'t let your leads slip away.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Before Archive →</a></td></tr></table>',
-    paid_welcome: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Welcome to 9amLeads Premium</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">You\'re now a paid subscriber. Let\'s make this work for you.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Thank you for upgrading to 9amLeads Premium. Your daily <strong>' + productName + '</strong> will keep arriving at your inbox every morning at 9am <strong style="color:#fff">without interruption</strong>. Here\'s everything you now have access to:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">Your Premium Benefits:</strong><br>✅ <strong style="color:#fff">Daily leads</strong> at 9am every morning : consistently<br>✅ <strong style="color:#fff">Exclusive access</strong> : no one else receives these leads<br>✅ <strong style="color:#fff">Dashboard</strong> : full lead history, analytics, and management<br>✅ <strong style="color:#fff">CRM integration</strong> : leads pushed straight to your CRM<br>✅ <strong style="color:#fff">Priority support</strong> : reply anytime and we\'ll help</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Over the coming weeks we\'ll send you weekly tips and strategies : everything from letter and visit in person templates to follow-up sequences : to help you convert as many leads as possible.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">First step: <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">log into your dashboard</a> and make sure your CRM webhook is configured (or just check your leads are landing in your inbox). If you need help setting anything up, reply to this email and we\'ll walk you through it.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">🚀 NEW: Direct Mail Marketing Automation — automatically send professional letters and flyers to your leads by post. Set it up from your dashboard.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Go to Dashboard</a></td></tr></table>',
-    paid_tip1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">The 30-Minute Rule</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Why speed wins : and how to make it your habit.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to your first weekly tip. This one is the most important, so we\'re leading with it: <strong style="color:' + accent + '">follow-up within 30 minutes</strong>.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Why does speed matter so much? Because your lead is a real person who has just taken a specific action : their house went SSTC on Rightmove, they registered a new company at Companies House, or a probate grant was issued. They are <strong style="color:#fff">actively looking for help right now</strong>. Every minute you wait, a competitor reaches them first, booking with someone else, or losing interest.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">Here\'s your 3-part system:</strong></p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">1</div><div><strong style="color:#fff;font-size:14px">Set your alarm for 9:00am</strong><br><span style="color:#94a3b8;font-size:13px">When the lead email arrives, drop everything and start preparing your outreach. Block 9-10am as your dedicated lead hour every morning.</span></div></div></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">2</div><div><strong style="color:#fff;font-size:14px">Keep your script ready</strong><br><span style="color:#94a3b8;font-size:13px">You only need 3-5 talking points. Have them printed or pinned to your monitor so you\'re ready before the lead arrives.</span></div></div></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">3</div><div><strong style="color:#fff;font-size:14px">Track your response time</strong><br><span style="color:#94a3b8;font-size:13px">Note what time you contacted each lead. If you\'re calling outside 30 minutes, set an earlier alarm or use push notifications.</span></div></div></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Our data shows that those who reach leads within 30 minutes convert at <strong style="color:' + accent + '">3x the rate</strong> of those who wait 2+ hours. Speed isn\'t just a nice-to-have : it\'s your biggest competitive advantage. Learn more about <a href="' + PUBLIC_URL + '/how-it-works" style="color:' + accent + '">how it works</a>.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/how-it-works" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Learn More →</a></td></tr></table>',
+    trial_day60: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Last Chance : Account Will Be Archived</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Final notice : your account will be archived in 30 days.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">This is your final notice. Your 9amLeads account has been inactive for 60 days. In <strong style="color:' + accent + '">30 days</strong>, your account will be archived to free up resources.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">What does archiving mean?</strong> Your lead history and account data will be preserved and stored securely. You won\'t lose anything. However, you\'ll need to <a href="mailto:hello@9amleads.com" style="color:' + accent + '">contact our support team</a> to reactivate your account : it won\'t be available for instant self-service upgrade.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If you upgrade in the next 30 days, everything stays active. Your postcode areas, your settings, your lead history : all of it. Leads restart at 9am tomorrow morning.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px"><strong style="color:#fff">This is your last chance</strong> to keep your account active without needing to contact us. Don\'t let your leads slip away.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Before Archive â†’</a></td></tr></table>',
+    paid_welcome: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Welcome to 9amLeads Premium</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">You\'re now a paid subscriber. Let\'s make this work for you.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Thank you for upgrading to 9amLeads Premium. Your daily <strong>' + productName + '</strong> will keep arriving at your inbox every morning at 9am <strong style="color:#fff">without interruption</strong>. Here\'s everything you now have access to:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">Your Premium Benefits:</strong><br>✅ <strong style="color:#fff">Daily leads</strong> at 9am every morning : consistently<br>✅ <strong style="color:#fff">Exclusive access</strong> : no one else receives these leads<br>✅ <strong style="color:#fff">Dashboard</strong> : full lead history, analytics, and management<br>✅ <strong style="color:#fff">CRM integration</strong> : leads pushed straight to your CRM<br>✅ <strong style="color:#fff">Priority support</strong> : reply anytime and we\'ll help</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Over the coming weeks we\'ll send you weekly tips and strategies : everything from letter and visit in person templates to follow-up sequences : to help you convert as many leads as possible.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">First step: <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">log into your dashboard</a> and make sure your CRM webhook is configured (or just check your leads are landing in your inbox). If you need help setting anything up, reply to this email and we\'ll walk you through it.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">ðŸš€ NEW: Direct Mail Marketing Automation — automatically send professional letters and flyers to your leads by post. Set it up from your dashboard.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Go to Dashboard</a></td></tr></table>',
+    paid_tip1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">The 30-Minute Rule</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Why speed wins : and how to make it your habit.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to your first weekly tip. This one is the most important, so we\'re leading with it: <strong style="color:' + accent + '">follow-up within 30 minutes</strong>.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Why does speed matter so much? Because your lead is a real person who has just taken a specific action : their house went SSTC on Rightmove, they registered a new company at Companies House, or a probate grant was issued. They are <strong style="color:#fff">actively looking for help right now</strong>. Every minute you wait, a competitor reaches them first, booking with someone else, or losing interest.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">Here\'s your 3-part system:</strong></p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">1</div><div><strong style="color:#fff;font-size:14px">Set your alarm for 9:00am</strong><br><span style="color:#94a3b8;font-size:13px">When the lead email arrives, drop everything and start preparing your outreach. Block 9-10am as your dedicated lead hour every morning.</span></div></div></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">2</div><div><strong style="color:#fff;font-size:14px">Keep your script ready</strong><br><span style="color:#94a3b8;font-size:13px">You only need 3-5 talking points. Have them printed or pinned to your monitor so you\'re ready before the lead arrives.</span></div></div></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">3</div><div><strong style="color:#fff;font-size:14px">Track your response time</strong><br><span style="color:#94a3b8;font-size:13px">Note what time you contacted each lead. If you\'re calling outside 30 minutes, set an earlier alarm or use push notifications.</span></div></div></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Our data shows that those who reach leads within 30 minutes convert at <strong style="color:' + accent + '">3x the rate</strong> of those who wait 2+ hours. Speed isn\'t just a nice-to-have : it\'s your biggest competitive advantage. Learn more about <a href="' + PUBLIC_URL + '/how-it-works" style="color:' + accent + '">how it works</a>.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/how-it-works" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Learn More â†’</a></td></tr></table>',
     paid_tip2: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Outreach Kit : Letters &amp; Visit Them in Person</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">How to follow up with every lead in person.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Following up within 30 minutes is step one. But knowing <strong style="color:#fff">how to present your business</strong> is what separates the pros from the amateurs. Here\'s a simple 3-step outreach system that works across every lead type : moving, probate, new business, planning, and tenders.</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#e2e8f0;font-size:13px;line-height:1.7;margin:0"><strong style="color:' + accent + '">1. Send a Personal Introduction Letter</strong><br>Print a professional letter on your company letterhead. Introduce yourself, explain how you help [business type] like theirs, and include your business card. Mention you saw their [listing / registration / application] and wanted to be the first to offer your services. &ldquo;I help sellers in [area] achieve a fast, fair price &mdash; and I do it with zero hassle for you.&rdquo;</p></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#e2e8f0;font-size:13px;line-height:1.7;margin:0"><strong style="color:' + accent + '">2. Drop a Letter &amp; Business Card</strong><br>Print a colour flyer showcasing your services, past results, and a special offer. Hand-deliver it to their address along with 2-3 business cards. Leave it in a weatherproof envelope if posted. A physical flyer left at their door gets seen &mdash; emails get deleted.</p></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.7;margin:0"><strong style="color:' + accent + '">3. Visit in Person (If Local)</strong><br>If their address is within your area, knock on the door. Be polite, brief, and leave a card if they don\'t answer. &ldquo;Hi [name], I\'m [your name] from [company]. I saw your [listing / registration] and thought I\'d pop by to introduce myself. Here\'s my card and a flyer &mdash; no pressure at all.&rdquo; Most people appreciate the personal touch.</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">Why this works:</strong> Physical outreach stands out. A letter and flyer on the kitchen table gets read. A doorstep visit shows you care enough to show up. Combined with an email follow-up, you\'ll be remembered long after your competitors are forgotten.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Adapt this for your industry. If you\'re in probate, include a compassionate intro and reference the estate executor. If you\'re in new business, mention their SIC code and offer a free consultation. The more personal, the better.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Go to Dashboard</a></td></tr></table>',
     paid_tip3: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Track Everything to Improve</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Three metrics that will transform your conversion rate.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">The most successful 9amLeads customers do one thing differently: they <strong style="color:#fff">track their numbers</strong>. Not because they love spreadsheets : because what gets measured gets improved. Here are the three metrics you should be tracking:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0"><strong style="color:' + accent + '">✅ Flyers &amp; Letters Sent</strong><br>how many do you actually send a flyer or letter to? Aim for <strong style="color:#fff">100%</strong>. Every lead you skip is money left on the table.<br><br><strong style="color:' + accent + '">✅ Conversations Had</strong><br>How many local leads do you visit in person? Aim for <strong style="color:#fff">80%+</strong>. If you\'re below this, plan a route and batch your visits by day.<br><br><strong style="color:' + accent + '">💰 Conversions Closed</strong><br>How many conversations turn into paying customers? Industry average with exclusive leads is <strong style="color:#fff">20-30%</strong>. If you\'re below this, improve your flyer design and follow-up process.</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'re following up on 100% of leads, having conversations with 60%+, and closing 25%+ : you\'re performing at an elite level. If not, focus on the weakest link and improve it.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Your dashboard shows your full lead history. Use it to identify which postcode areas and lead types perform best, then <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">double down on what works</a>.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">View Lead History</a></td></tr></table>',
     paid_tip4: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Follow Up : The Money Is In The Follow-Up</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Why most conversions happen after multiple touchpoints.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Here\'s a truth that most lead buyers ignore: <strong style="color:#fff">most people don\'t respond on the first approach</strong>. They\'re busy. They need time. They want to compare options. They\'re overwhelmed by the process.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">The money is made on the second, third, and fourth touchpoints. Here\'s a proven follow-up sequence using physical outreach:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0"><strong style="color:' + accent + '">Day 1 : Personal Letter + Flyer</strong><br>Print a letter on your company paper with your business card clipped to it. Hand-deliver or post with a flyer showcasing your services. First impressions matter &mdash; make it professional.<br><br><strong style="color:' + accent + '">Day 3 : Visit in Person</strong><br>If local, knock on their door. Be brief, introduce yourself, and leave another card if they don\'t answer. Most people appreciate the personal effort.<br><br><strong style="color:' + accent + '">Day 7 : Email Follow-Up</strong><br>Send a short email: &ldquo;Hi [name], I popped by last week and left some information about how I help [business type] in [area]. If you\'d like a free, no-obligation chat, just reply to this email. No pressure at all. Best, [your name]&rdquo;<br><br><strong style="color:' + accent + '">Day 14 : Final Flyer Drop</strong><br>One last flyer drop with a handwritten note: &ldquo;Just checking in one last time. If the timing\'s not right, no problem. My details are inside &mdash; feel free to reach out whenever you\'re ready.&rdquo;</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">Why physical outreach wins with exclusive leads:</strong> Because you\'re the only person following up with them, you have time to do it properly. A letter on the kitchen table gets read every day. A flyer pinned to their notice board keeps your name in front of them. Your competitors are sending emails that get deleted &mdash; you\'re leaving something they can hold.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Most of our top-performing customers close deals 1-2 weeks after the lead first arrives. Patience + physical presence = profit.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Go to Dashboard</a></td></tr></table>',
@@ -3883,7 +3857,7 @@ function attachOpportunityScore(data, product) {
     if (projVal > 100000) { score += 3; reasons.push('High value project'); }
   } else if (product === 'tenders') {
     var contractVal = parseInt(data.contractValue || data.value) || 0;
-    if (contractVal > 500000) { score += 15; reasons.push('Major contract (£' + (contractVal/1000).toFixed(0) + 'k)'); }
+    if (contractVal > 500000) { score += 15; reasons.push('Major contract (Â£' + (contractVal/1000).toFixed(0) + 'k)'); }
     else if (contractVal > 100000) { score += 12; reasons.push('Substantial contract'); }
     else if (contractVal > 0) { score += 8; reasons.push('Contract opportunity'); }
     else { score += 5; }
@@ -4002,7 +3976,7 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===== DAILY SCHEDULE: 02:30 UTC (03:30 BST) scraper → 02:33/03:33 distributor → 02:36/03:36 delivery =====
+// ===== DAILY SCHEDULE: 02:30 UTC (03:30 BST) scraper â†’ 02:33/03:33 distributor â†’ 02:36/03:36 delivery =====
 cron.schedule('30 2 * * *', async () => {
   console.log('[02:30 UTC] Running scraper...');
   try {
@@ -4026,7 +4000,7 @@ cron.schedule('33 2 * * *', async () => {
   } catch(e) { console.log('[02:33 UTC] Distributor error:', e.message); }
 });
 // ===== DELIVERY CRON: Runs directly (not via HTTP) to avoid timing issues =====
-// Pipeline: 02:30 UTC scraper → 02:33 UTC distributor → 02:36 UTC delivery
+// Pipeline: 02:30 UTC scraper â†’ 02:33 UTC distributor â†’ 02:36 UTC delivery
 cron.schedule('36 2 * * *', async () => {
   console.log('[02:36 UTC] Running delivery...');
   try {
@@ -4427,8 +4401,8 @@ async function runAutoSend() {
               paymentIntentId = chargeResult.id;
               db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(chargeResult.id, 'paid', new Date().toISOString(), campaign.id, cust.id);
               db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'paid', 'system', 'Payment succeeded: ' + chargeResult.id, new Date().toISOString());
-              console.log('[AUTO-SEND] Payment success:', cust.email, '£' + totalCost.toFixed(2), chargeResult.id);
-              if (cust && cust.id) { dmDashboardNotify(cust.id, 'auto_send_payment_success', '✅ Auto Send Payment Successful', 'Auto Send payment of £' + totalCost.toFixed(2) + ' succeeded.', ''); }
+              console.log('[AUTO-SEND] Payment success:', cust.email, 'Â£' + totalCost.toFixed(2), chargeResult.id);
+              if (cust && cust.id) { dmDashboardNotify(cust.id, 'auto_send_payment_success', '✅ Auto Send Payment Successful', 'Auto Send payment of Â£' + totalCost.toFixed(2) + ' succeeded.', ''); }
             } else if (chargeResult && chargeResult.status === 'requires_action') {
               // 3D Secure needed - cannot process automatically
               db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(chargeResult.id, 'requires_action', new Date().toISOString(), campaign.id, cust.id);
@@ -4447,8 +4421,8 @@ async function runAutoSend() {
                 db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(1, cust.id);
                 console.log('[AUTO-SEND] Auto Send paused for:', cust.email);
                 if (cust && cust.id) {
-                  dmDashboardNotify(cust.id, 'auto_send_paused', '⏸️ Auto Send Paused', 'Auto Send has been paused due to a failed payment. Update your payment method to resume.', '');
-                  sendDMAdminAlert('payment_failure', 'Auto Send Payment Failed', 'Customer: ' + (cust.email || cust.id) + ' — Amount: £' + totalCost.toFixed(2) + ' — Error: ' + (chargeResult?.last_payment_error?.message || 'Unknown'));
+                  dmDashboardNotify(cust.id, 'auto_send_paused', 'â¸ï¸ Auto Send Paused', 'Auto Send has been paused due to a failed payment. Update your payment method to resume.', '');
+                  sendDMAdminAlert('payment_failure', 'Auto Send Payment Failed', 'Customer: ' + (cust.email || cust.id) + ' — Amount: Â£' + totalCost.toFixed(2) + ' — Error: ' + (chargeResult?.last_payment_error?.message || 'Unknown'));
                 }
               }
               results.failed++;
@@ -4479,16 +4453,16 @@ async function runAutoSend() {
             db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, provider.name, 'createCampaign', JSON.stringify({ name: campaign.name, recipient_count: validAddressCount }), JSON.stringify(createResult), 200, 1, '', new Date().toISOString());
             results.sent++;
             results.total_spend += totalCost;
-            console.log('[AUTO-SEND] Sent:', cust.email, validAddressCount, 'leads, cost: £' + totalCost.toFixed(2));
+            console.log('[AUTO-SEND] Sent:', cust.email, validAddressCount, 'leads, cost: Â£' + totalCost.toFixed(2));
             if (cust && cust.id) {
-              dmDashboardNotify(cust.id, 'auto_send_campaign_sent', '📬 Auto Send Campaign Sent', 'Auto Send sent ' + validAddressCount + ' letters for ' + totalCost.toFixed(2), '');
+              dmDashboardNotify(cust.id, 'auto_send_campaign_sent', 'ðŸ“¬ Auto Send Campaign Sent', 'Auto Send sent ' + validAddressCount + ' letters for ' + totalCost.toFixed(2), '');
             }
           } else {
             db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, cust.id);
             results.failed++;
             console.log('[AUTO-SEND] Failed:', cust.email, createResult?.error || 'provider error');
             if (cust && cust.id) {
-              dmDashboardNotify(cust.id, 'auto_send_failed', '❌ Auto Send Failed', 'Auto Send campaign failed: ' + (createResult?.error || 'Provider error'), '');
+              dmDashboardNotify(cust.id, 'auto_send_failed', 'âŒ Auto Send Failed', 'Auto Send campaign failed: ' + (createResult?.error || 'Provider error'), '');
               sendDMAdminAlert('auto_send_error', 'Auto Send Provider Error', 'Customer: ' + (cust.email || cust.id) + ' — Campaign: ' + campaign.name + ' — Error: ' + (createResult?.error || 'Unknown'));
             }
           }
@@ -4675,6 +4649,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var primCfg = pcfg[cust.product] || {};
       var primCoverage = primCfg.coverage || cust.coverage || 'postcode';
       try {
+        if (primCfg.target_areas) { custAreas = JSON.parse(primCfg.target_areas); }
+        else { custAreas = JSON.parse(cust.target_areas || '[]'); }
+      } catch(e) { custAreas = []; }
+      var totalDailyLimit = getPlanLimit(cust.product, cust.plan, primCoverage) || 5;
       // Ensure customer's primary product always has at least 1 lead
       if (cust.product) {
         var primaryLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === cust.product; });
@@ -4684,28 +4662,15 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       }
       var thisWeekStart2 = new Date(); thisWeekStart2.setDate(thisWeekStart2.getDate() - (thisWeekStart2.getDay() || 7) + 1);
       var weekStart2 = thisWeekStart2.toISOString().split('T')[0];
-      // Helper: check if lead matches area (postcode code or city/region name)
-      function leadMatchesArea(leadData, area) {
-        var text = (leadData.postcode || '') + ' ' + (leadData.address || '') + ' ' + (leadData.city || '') + ' ' + (leadData.name || '');
-        var areaLower = area.toLowerCase().trim();
-        if (areaLower === 'all uk') return true;
-        // Try postcode area match first (1-3 letter code)
-        if (/^[A-Z]{1,3}$/i.test(areaLower)) {
-          var leadArea = extractPostcodeArea(leadData.postcode || '');
-          return leadArea.toLowerCase() === areaLower;
-        }
-        // City/region name matching (substring)
-        return text.toLowerCase().includes(areaLower);
-      }
+      // Helper: count leads per area in current batch
       function areaCounts(leadsArr, areasArr) {
         var counts = {};
         areasArr.forEach(function(a) { counts[a] = 0; });
         leadsArr.forEach(function(l) {
           try {
             var ld = JSON.parse(l.data || '{}');
-            areasArr.forEach(function(a) {
-              if (leadMatchesArea(ld, a)) counts[a] = (counts[a] || 0) + 1;
-            });
+            var la = extractPostcodeArea(ld.postcode || '');
+            if (counts[la] !== undefined) counts[la]++;
           } catch(e) {}
         });
         return counts;
@@ -4717,7 +4682,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           if (allLeads[fi].product !== prod) continue;
           try {
             var fd = JSON.parse(allLeads[fi].data || '{}');
-            if (leadMatchesArea(fd, area)) return allLeads[fi];
+            if (extractPostcodeArea(fd.postcode || '') === area) return allLeads[fi];
           } catch(e) {}
         }
         return null;
@@ -4800,7 +4765,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         var htmlContent = generateLeadEmailHTML(cust, custLeads);
         var covName3 = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
         var subject = 'Your 9am Opportunities for ' + covName3 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        try { await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, htmlContent); } catch(e) { console.error('Email send failed:', e.message); }
+        await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, htmlContent);
         // Send to CRM webhook if configured
         if (cust.crm_webhook_url) {
           try {
@@ -4824,8 +4789,8 @@ const STRIPE_PRICE_IDS = {
   moving: { 'mov-starter': 'price_1TswriADspDnFpfBKv3Pfy0V', 'mov-pro': 'price_1Tsws0ADspDnFpfBb1tVUbR7', 'mov-enterprise': 'price_1Tsws1ADspDnFpfBAGCw6JqD' },
   planning: { 'plan-starter': 'price_1TswrkADspDnFpfBOkRU4Qli', 'plan-pro': 'price_1TswrkADspDnFpfBMTrEDoZ9', 'plan-enterprise': 'price_1TswrkADspDnFpfBPe8qstPs' },
   newbusiness: { 'nb-starter': 'price_1TswrmADspDnFpfBi8Woj0oR' },
-  probate: { 'prob-single': 'price_1Tsws2ADspDnFpfBJm1Xzt7J', 'prob-starter': 'price_1Tsws2ADspDnFpfBJm1Xzt7J', 'prob-growth': 'price_1Tsws2ADspDnFpfBJm1Xzt7J', 'prob-power': 'price_1Tsws2ADspDnFpfBJm1Xzt7J' },
-  tenders: { 'tend-single': 'price_1Tsws2ADspDnFpfBd4HY6sXH', 'tend-starter': 'price_1Tsws2ADspDnFpfBd4HY6sXH', 'tend-growth': 'price_1Tsws2ADspDnFpfBd4HY6sXH', 'tend-power': 'price_1Tsws2ADspDnFpfBd4HY6sXH' }
+  probate: { 'prob-single': 'price_1Tsws2ADspDnFpfBJm1Xzt7J' },
+  tenders: { 'tend-single': 'price_1Tsws2ADspDnFpfBd4HY6sXH' }
 };
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
@@ -4916,7 +4881,7 @@ app.post('/api/admin/upgrade', adminAuth, (req, res) => {
 app.post('/api/create-checkout', authMiddleware, async (req, res) => {
   try {
     if (!STRIPE_SECRET_KEY) {
-      return res.status(500).json({ error: 'Stripe not configured. Add keys in Settings → Stripe Payments.' });
+      return res.status(500).json({ error: 'Stripe not configured. Add keys in Settings â†’ Stripe Payments.' });
     }
 
     const { plan } = req.body;
@@ -4952,7 +4917,9 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
       }
     } else {
       const productKey = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' }[customer.product] || customer.product;
-      var mappedPlan = plan;
+      // Map modal plan names to Stripe price name format
+      var planMap = { starter: 'starter', pro: 'growth', enterprise: 'power' };
+      var mappedPlan = planMap[plan] || plan;
       const planKey = productKey + '-' + mappedPlan;
       const priceIdMap = STRIPE_PRICE_IDS[customer.product] || {};
       priceId = priceIdMap[planKey];
@@ -4968,7 +4935,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     // If customer is on free trial with remaining trial days, apply trial period to subscription
     var trialEnds = customer.trial_ends ? new Date(customer.trial_ends) : null;
     var hasTrialRemaining = trialEnds && trialEnds > new Date();
-    var trialDays = hasTrialRemaining ? Math.ceil((trialEnds - new Date()) / 86400000) : 0;
+    var trialDays = 0;
 
     var sessionBody = {
       mode: 'subscription',
@@ -4999,18 +4966,44 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
   }
 });
 
+// ===== DIRECT MAIL PAYMENTS =====
+// POST /api/stripe/webhook — handle Stripe checkout completed events
+app.post('/api/stripe/webhook', async (req, res) => {
+  try {
+    var event = req.body;
+    if (event.type === 'checkout.session.completed') {
+      var session = event.data.object;
+      var customerEmail = session.customer_email || (session.customer_details && session.customer_details.email);
+      var plan = session.metadata && session.metadata.plan;
+      var product = session.metadata && session.metadata.product;
+      if (customerEmail && plan) {
+        var customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(customerEmail);
+        if (customer) {
+          var weeklyLimits = { starter: 25, growth: 75, power: 125, pro: 75, enterprise: 125 };
+          var weeklyMax = weeklyLimits[plan] || 25;
+          var leadsPerDay = Math.ceil(weeklyMax / 5);
+          db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = NULL WHERE id = ?').run(plan, leadsPerDay, customer.id);
+          if (product) db.prepare('UPDATE customers SET product = ? WHERE id = ?').run(product, customer.id);
+          saveDb();
+          console.log('[STRIPE] Upgraded ' + customerEmail + ' to ' + plan);
+        }
+      }
+    }
+    res.json({ received: true });
+  } catch(e) { console.error('[STRIPE] Webhook error:', e.message); res.status(500).json({ error: e.message }); }
+});
 
 var DM_PRICE_CONFIG = {
-  platform_fee: 29, // Manual campaign platform fee (£)
-  min_fee: 99, // Minimum campaign order (£)
+  platform_fee: 29, // Manual campaign platform fee (Â£)
+  min_fee: 99, // Minimum campaign order (Â£)
   markup_pct: 40, // Provider cost markup percentage
-  per_recipient_margin: 0.50, // Per-recipient margin (£)
-  ai_letter_fee: 19, // AI letter generation fee (£)
-  ai_flyer_fee: 19, // AI flyer generation fee (£)
-  ai_pack_fee: 29, // Flyer + letter pack fee (£)
-  auto_send_monthly_fee: 49, // Auto Send monthly add-on fee (£)
+  per_recipient_margin: 0.50, // Per-recipient margin (Â£)
+  ai_letter_fee: 19, // AI letter generation fee (Â£)
+  ai_flyer_fee: 19, // AI flyer generation fee (Â£)
+  ai_pack_fee: 29, // Flyer + letter pack fee (Â£)
+  auto_send_monthly_fee: 49, // Auto Send monthly add-on fee (Â£)
   vat_pct: 0, // VAT percentage (0 = disabled)
-  provider_cost_per_unit: 0.75, // Per-unit provider cost (£)
+  provider_cost_per_unit: 0.75, // Per-unit provider cost (Â£)
   discount_codes: '' // Optional discount codes (JSON)
 };
 try {
@@ -5097,7 +5090,7 @@ app.post('/api/direct-mail/campaigns/:id/checkout', authMiddleware, async (req, 
       customer_email: customer.email,
       'line_items[0][price_data][currency]': 'gbp',
       'line_items[0][price_data][product_data][name]': 'Direct Mail Campaign: ' + campaign.name,
-      'line_items[0][price_data][product_data][description]': count + ' recipients · Provider cost £' + pricing.provider_cost.toFixed(2) + ' · Platform fee £' + pricing.platform_fee.toFixed(2),
+      'line_items[0][price_data][product_data][description]': count + ' recipients Â· Provider cost Â£' + pricing.provider_cost.toFixed(2) + ' Â· Platform fee Â£' + pricing.platform_fee.toFixed(2),
       'line_items[0][price_data][unit_amount]': String(amountPence),
       'line_items[0][quantity]': '1',
       success_url: baseUrl + '/portal/dashboard.html?dm_payment=success&campaign_id=' + campaign.id,
@@ -5130,7 +5123,7 @@ app.get('/api/direct-mail/campaigns/:id/payment', authMiddleware, (req, res) => 
 
 // Stripe webhook — receives checkout.session.completed events
 // IMPORTANT: This route uses raw body parser for Stripe signature verification
-app.post('/api/stripe/webhook', async (req, res) => {
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
     let event;
     if (STRIPE_WEBHOOK_SECRET) {
@@ -5201,7 +5194,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
         return res.json({ received: true });
       }
 
-      const validPlans = ['starter', 'pro', 'enterprise', 'builder-package', 'marketing-package', 'property-package', 'moving-package'];
+      const validPlans = ['starter', 'pro', 'enterprise'];
       if (!validPlans.includes(plan)) {
         console.log('[WEBHOOK] Invalid plan:', plan);
         return res.json({ received: true });
@@ -5233,7 +5226,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
           .run(uuidv4(), customerId, subscriptionId || '', plan, now, monthEnd, now);
       }
 
-      console.log('[WEBHOOK] Payment confirmed:', customer.email, '→', plan, '(product:', product + ')');
+      console.log('[WEBHOOK] Payment confirmed:', customer.email, 'â†’', plan, '(product:', product + ')');
     }
 
     // Handle subscription updates (upgrades, downgrades, cancellation at period end)
@@ -5258,7 +5251,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
             db.prepare('UPDATE customers SET leads_per_day = 0 WHERE id = ?').run(existingSub.customer_id);
           }
         }
-        console.log('[WEBHOOK] Subscription updated:', subId, '→', status);
+        console.log('[WEBHOOK] Subscription updated:', subId, 'â†’', status);
       }
     }
 
@@ -5282,13 +5275,12 @@ app.post('/api/stripe/webhook', async (req, res) => {
         const invSub = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(invSubId);
         if (invSub) {
           const periodEnd = invoice.period_end ? new Date(invoice.period_end * 1000).toISOString() : new Date(Date.now() + 30 * 86400000).toISOString();
-          const amount = invoice.total ? '£' + (invoice.total / 100).toFixed(2) : 'unknown';
+          const amount = invoice.total ? 'Â£' + (invoice.total / 100).toFixed(2) : 'unknown';
           // Reset fail_count on successful payment
           db.prepare('UPDATE subscriptions SET current_period_end = ?, status = \'active\', fail_count = 0, updated_at = datetime(\'now\') WHERE stripe_id = ?').run(periodEnd, invSubId);
           // Reactivate customer if they were in cancelled state
-          var invCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(invSub.customer_id);
           db.prepare('UPDATE customers SET plan = ?, leads_per_day = ? WHERE id = ? AND plan = \'cancelled\'')
-            .run(invSub.plan, getPlanLimit(invCust ? invCust.product : 'moving', invSub.plan), invSub.customer_id);
+            .run(invSub.plan, getPlanLimit(invSub.product || 'moving', invSub.plan), invSub.customer_id);
           console.log('[WEBHOOK] Payment succeeded:', invSub.customer_id, '-', invSub.plan, '-', amount);
         }
       }
@@ -5301,7 +5293,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
       var refundCamp = db.prepare('SELECT * FROM direct_mail_campaigns WHERE stripe_payment_id = ?').get(refundPaymentId);
       if (refundCamp) {
         var prevStatus = refundCamp.status;
-        var refundAmount = refundCharge.amount_refunded ? '£' + (refundCharge.amount_refunded / 100).toFixed(2) : 'unknown';
+        var refundAmount = refundCharge.amount_refunded ? 'Â£' + (refundCharge.amount_refunded / 100).toFixed(2) : 'unknown';
         db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run('refunded', 'cancelled', new Date().toISOString(), refundCamp.id);
         db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), refundCamp.customer_id, refundCamp.id, prevStatus, 'cancelled', 'system', 'Payment refunded: ' + refundAmount, new Date().toISOString());
         console.log('[WEBHOOK] Campaign refunded:', refundCamp.name, refundAmount);
@@ -5331,7 +5323,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
     res.json({ received: true });
   } catch (e) {
     console.error('[WEBHOOK] Error:', e.message);
-    res.status(500).json({ error: e.message });
+    res.status(200).json({ received: true });
   }
 });
 
@@ -5392,7 +5384,7 @@ app.post('/api/stannp/webhook', express.raw({ type: 'application/json' }), async
     db.prepare('UPDATE direct_mail_campaigns SET provider_status = ?, status = ?, sent_count = ?, delivery_date = ?, updated_at = ? WHERE id = ?').run(providerStatus, newStatus, sentCount, dispatchDate.split('T')[0] || '', new Date().toISOString(), campaign.id);
 
     // Log status history
-    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), campaign.customer_id, campaign.id, campaign.status, newStatus, 'provider', 'Stannp status: ' + providerStatus + (dispatchDate ? ' · Dispatched: ' + dispatchDate : ''), new Date().toISOString());
+    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), campaign.customer_id, campaign.id, campaign.status, newStatus, 'provider', 'Stannp status: ' + providerStatus + (dispatchDate ? ' Â· Dispatched: ' + dispatchDate : ''), new Date().toISOString());
 
     // Log provider interaction
     db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), campaign.customer_id, campaign.id, 'stannp', 'webhook:' + eventType, JSON.stringify(payload), JSON.stringify({ new_status: newStatus, dispatch_date: dispatchDate, sent_count: sentCount, proof_url: proofUrl }), 200, 1, '', new Date().toISOString());
@@ -5405,7 +5397,7 @@ app.post('/api/stannp/webhook', express.raw({ type: 'application/json' }), async
       });
     }
 
-    console.log('[STANNP-WEBHOOK] Campaign', campaign.id, '→', providerStatus, '(' + newStatus + ')', dispatchDate ? '· dispatched: ' + dispatchDate : '');
+    console.log('[STANNP-WEBHOOK] Campaign', campaign.id, 'â†’', providerStatus, '(' + newStatus + ')', dispatchDate ? 'Â· dispatched: ' + dispatchDate : '');
     res.json({ received: true });
   } catch (e) {
     console.error('[STANNP-WEBHOOK] Error:', e.message);
@@ -5589,12 +5581,10 @@ app.post('/api/subscription/update', authMiddleware, async (req, res) => {
     if (!customer) return res.status(404).json({ error: 'User not found' });
 
     // Create Stripe checkout for the new plan (Stripe handles proration)
-    var productKeyMap = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' };
-    var prodKey = productKeyMap[customer.product] || 'mov';
     const result = await stripeApiRequest('POST', 'checkout/sessions', {
       mode: 'subscription',
       customer_email: customer.email,
-      'line_items[0][price]': (STRIPE_PRICE_IDS[customer.product] || {})[prodKey + '-' + plan] || '',
+      'line_items[0][price]': STRIPE_PRICE_IDS[customer.product]?.[customer.product + '-' + plan] || '',
       'line_items[0][quantity]': '1',
       success_url: PUBLIC_URL + '/portal/dashboard.html?checkout=success',
       cancel_url: PUBLIC_URL + '/portal/dashboard.html?checkout=cancel',
@@ -5987,7 +5977,7 @@ app.post('/api/scrape-generate', async (req, res) => {
 
 // ===== LEAD DISTRIBUTION ENDPOINTS =====
 // POST /api/distribute — trigger lead distributor (match scraped leads to customers)
-app.post('/api/distribute', adminAuth, async (req, res) => {
+app.post('/api/distribute', async (req, res) => {
   try {
     const { product } = req.body || {};
 
@@ -6264,11 +6254,11 @@ function generateLeadEmailHTML(customer, leads) {
 
   // Product insight card — consistent with campaign emails
   var insightCards2 = {
-    moving: { emoji: '\uD83D\uDE9A', tip: 'Moving leads convert fastest when you\'re the first to contact the seller. Your brochure and letter should arrive the same day the property goes SSTC.', metric: 'Avg. move value: £1,000-£3,000' },
-    planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Planning applicants are actively choosing builders. Your flyer arriving the same week positions you ahead of every competitor.', metric: 'Avg. project value: £20,000-£100,000' },
-    probate: { emoji: '\u2696\uFE0F', tip: 'Probate requires a compassionate approach. Families remember who reached out with sensitivity, not who pushed the hardest.', metric: 'Avg. estate value: £150,000+' },
+    moving: { emoji: '\uD83D\uDE9A', tip: 'Moving leads convert fastest when you\'re the first to contact the seller. Your brochure and letter should arrive the same day the property goes SSTC.', metric: 'Avg. move value: Â£1,000-Â£3,000' },
+    planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Planning applicants are actively choosing builders. Your flyer arriving the same week positions you ahead of every competitor.', metric: 'Avg. project value: Â£20,000-Â£100,000' },
+    probate: { emoji: '\u2696\uFE0F', tip: 'Probate requires a compassionate approach. Families remember who reached out with sensitivity, not who pushed the hardest.', metric: 'Avg. estate value: Â£150,000+' },
     newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often don\'t have a website yet. Check Companies House weekly and be ready when their details go live.', metric: 'Avg. client LTV: 2-5 years' },
-    tenders: { emoji: '\uD83D\uDCCB', tip: 'Tenders close on deadlines. Submit your capability statement early and follow up with a printed pack to stand out.', metric: 'Avg. contract value: £50,000-£500,000' }
+    tenders: { emoji: '\uD83D\uDCCB', tip: 'Tenders close on deadlines. Submit your capability statement early and follow up with a printed pack to stand out.', metric: 'Avg. contract value: Â£50,000-Â£500,000' }
   };
   var insight2 = insightCards2[customer.product] || { emoji: '\uD83D\uDCA1', tip: 'Follow up within 30 minutes to maximise your conversion rate.', metric: '' };
   body += '<tr><td style="background:#12141e;padding:0 28px 16px"><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px">';
@@ -6306,7 +6296,7 @@ var CAMPAIGN_KITS = {
     icon: '\uD83C\uDFD7\uFE0F',
     color: '#10b981',
     summary: '16-email campaign \u00b7 5 letter templates \u00b7 3 flyer inserts \u00b7 4 follow-up sequences',
-    header: 'Here\'s exactly how successful builders and trades convert planning leads. ⚠️ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
+    header: 'Here\'s exactly how successful builders and trades convert planning leads. âš ï¸ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
     sections: [
       {
         title: 'Email Templates (16-Campaign)',
@@ -6379,7 +6369,7 @@ var CAMPAIGN_KITS = {
     icon: '\uD83D\uDE9A',
     color: '#ff6b35',
     summary: '12-email campaign \u00b7 4 letter templates \u00b7 3 flyer inserts \u00b7 4 follow-up sequences',
-    header: 'Here\'s exactly how successful agents and removal companies convert moving leads. ⚠️ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
+    header: 'Here\'s exactly how successful agents and removal companies convert moving leads. âš ï¸ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
     sections: []
   },
   probate: {
@@ -6387,7 +6377,7 @@ var CAMPAIGN_KITS = {
     icon: '\u2696\uFE0F',
     color: '#a855f7',
     summary: '14-email campaign \u00b7 4 letter templates \u00b7 3 flyer inserts \u00b7 4 follow-up sequences', 
-    header: 'Here\'s exactly how successful probate practitioners convert probate leads. ⚠️ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
+    header: 'Here\'s exactly how successful probate practitioners convert probate leads. âš ï¸ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
     sections: []
   },
   newbusiness: {
@@ -6395,7 +6385,7 @@ var CAMPAIGN_KITS = {
     icon: '\uD83C\uDFE2',
     color: '#06b6d4',
     summary: '10-email campaign \u00b7 3 letter templates \u00b7 2 flyer inserts \u00b7 3 follow-up sequences',
-    header: 'Here\'s exactly how successful agencies and consultants convert new business leads. ⚠️ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
+    header: 'Here\'s exactly how successful agencies and consultants convert new business leads. âš ï¸ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
     sections: []
   },
   tenders: {
@@ -6403,7 +6393,7 @@ var CAMPAIGN_KITS = {
     icon: '\uD83D\uDCCB',
     color: '#6366f1',
     summary: '8-email campaign \u00b7 3 letter templates \u00b7 2 flyer inserts \u00b7 4 follow-up sequences',
-    header: 'Here\'s exactly how successful contractors convert tender opportunities. ⚠️ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
+    header: 'Here\'s exactly how successful contractors convert tender opportunities. âš ï¸ We provide addresses only — no emails or phone numbers. Post a flyer + letter in person or via Royal Mail. In-person works best with a sign-written vehicle, uniform, and quality materials.',
     sections: []
   }
 };
@@ -6540,7 +6530,7 @@ CAMPAIGN_KITS.tenders.sections = [
   { title: 'Flyer Insert Templates', icon: '\uD83D\uDCE0', items: [
     { subject: 'Capability Statement (A4 Professional Document)', body: 'Header: Company logo, name, and contact details.\nSection 1: Company overview — who you are, what you do, key differentiators.\nSection 2: Relevant experience — 3-4 case studies with client names, contract values, outcomes.\nSection 3: Accreditations, certifications, insurance details.\nSection 4: Testimonials and client references.\nTip: Keep to 2-4 pages maximum. Procurement managers read quickly.' },
     { subject: 'Services Overview Flyer', body: 'Front: "Trusted [service] provider for the public sector"\nInside: Services offered, geographic coverage, contract value range, key clients.\nBack: Contact details, website, company registration number, certifications.\nTip: Print in full colour on quality paper. This doubles as a leave-behind after meetings.' },
-    { subject: 'Case Study Flyer', body: 'Headline: "How we delivered [project] for [client] — \u00a3[X] under budget"\nBody: Problem → Solution → Results format with measurable outcomes and client quote.\nBottom: "Ready to discuss your next tender? Contact us."\nTip: Specific, measurable results are what procurement teams want to see.' }
+    { subject: 'Case Study Flyer', body: 'Headline: "How we delivered [project] for [client] — \u00a3[X] under budget"\nBody: Problem â†’ Solution â†’ Results format with measurable outcomes and client quote.\nBottom: "Ready to discuss your next tender? Contact us."\nTip: Specific, measurable results are what procurement teams want to see.' }
   ]},
   { title: 'Follow-Up Sequences', icon: '\uD83D\uDD04', items: [
     { subject: 'Week 1: Initial Outreach', body: 'Day 1: Submit tender application / post capability statement\nDay 2: Email follow-up\nDay 3: Phone call to procurement contact\nDay 5: Post company brochure to buying organisation' },
@@ -6833,12 +6823,12 @@ app.put('/api/direct-mail/campaigns/:id/status', authMiddleware, (req, res) => {
     var notifTypes = { approved: { subj: 'Campaign Approved', title: '✅ Campaign Approved', body: 'Your campaign "' + campaign.name + '" has been approved and is ready for payment.' },
       awaiting_approval: { subj: 'Campaign Awaiting Approval', title: '✔️ Campaign Ready for Review', body: 'Your campaign "' + campaign.name + '" is ready for you to review and approve.' },
       completed: { subj: 'Campaign Completed!', title: '✅ Campaign Completed', body: 'Your campaign "' + campaign.name + '" has been completed successfully.' },
-      failed: { subj: 'Campaign Failed', title: '❌ Campaign Failed', body: 'Your campaign "' + campaign.name + '" has failed. Please check the details and retry.' },
-      cancelled: { subj: 'Campaign Cancelled', title: '🚫 Campaign Cancelled', body: 'Your campaign "' + campaign.name + '" has been cancelled.' }
+      failed: { subj: 'Campaign Failed', title: 'âŒ Campaign Failed', body: 'Your campaign "' + campaign.name + '" has failed. Please check the details and retry.' },
+      cancelled: { subj: 'Campaign Cancelled', title: 'ðŸš« Campaign Cancelled', body: 'Your campaign "' + campaign.name + '" has been cancelled.' }
     };
     var nt = notifTypes[status];
-    if (nt) { sendDMNotification(req.user.id, 'campaign_' + status, nt.subj, nt.title, '<p>' + nt.body + '</p><p style="font-size:12px;color:#5a6280">Recipients: ' + (campaign.target_count || 0) + ' · Budget: £' + (campaign.budget || 0) + '</p>', 'View Campaign', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail'); }
-    addTimelineEntry(req.user.id, 'Campaign ' + status.charAt(0).toUpperCase() + status.slice(1), campaign.name + ' (' + fromStatus + ' → ' + status + ')', campaign.id);
+    if (nt) { sendDMNotification(req.user.id, 'campaign_' + status, nt.subj, nt.title, '<p>' + nt.body + '</p><p style="font-size:12px;color:#5a6280">Recipients: ' + (campaign.target_count || 0) + ' Â· Budget: Â£' + (campaign.budget || 0) + '</p>', 'View Campaign', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail'); }
+    addTimelineEntry(req.user.id, 'Campaign ' + status.charAt(0).toUpperCase() + status.slice(1), campaign.name + ' (' + fromStatus + ' â†’ ' + status + ')', campaign.id);
     res.json({ success: true, from_status: fromStatus, to_status: status });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -6941,11 +6931,11 @@ app.post('/api/direct-mail/campaigns/:id/send', authMiddleware, async (req, res)
     }
 
     // Send notifications
-    sendDMNotification(req.user.id, 'campaign_sent', '📬 Campaign Sent to Print', 'Campaign Sent to Provider',
-      '<p>Your campaign "' + campaign.name + '" has been sent to ' + provider.name + ' for printing.</p><p style="font-size:12px;color:#5a6280">Provider ID: ' + providerCampaignId + ' · Recipients: ' + recipientCount + ' · Estimated cost: £' + (campaignResult.estimated_cost || 0) + '</p>',
+    sendDMNotification(req.user.id, 'campaign_sent', 'ðŸ“¬ Campaign Sent to Print', 'Campaign Sent to Provider',
+      '<p>Your campaign "' + campaign.name + '" has been sent to ' + provider.name + ' for printing.</p><p style="font-size:12px;color:#5a6280">Provider ID: ' + providerCampaignId + ' Â· Recipients: ' + recipientCount + ' Â· Estimated cost: Â£' + (campaignResult.estimated_cost || 0) + '</p>',
       'Track Campaign', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail');
     if (invalidCount > 0) {
-      dmDashboardNotify(req.user.id, 'invalid_addresses', '⚠️ Invalid Addresses', invalidCount + ' addresses were invalid and skipped. Update your lead data to improve delivery.', '');
+      dmDashboardNotify(req.user.id, 'invalid_addresses', 'âš ï¸ Invalid Addresses', invalidCount + ' addresses were invalid and skipped. Update your lead data to improve delivery.', '');
     }
 
     res.json({
@@ -7025,7 +7015,7 @@ app.post('/api/direct-mail/automation', authMiddleware, (req, res) => {
     var enabled = req.body.enable_auto_send ? 1 : 0;
     if (enabled) {
       if (!req.body.default_template_id) return res.status(400).json({ error: 'Please select a saved template before enabling Auto Send.' });
-      if (!req.body.max_daily_spend || parseInt(req.body.max_daily_spend) < 10) return res.status(400).json({ error: 'Please set a minimum daily spend of at least £10.' });
+      if (!req.body.max_daily_spend || parseInt(req.body.max_daily_spend) < 10) return res.status(400).json({ error: 'Please set a minimum daily spend of at least Â£10.' });
       if (req.body.consent_given !== true && req.body.consent_given !== 1) return res.status(400).json({ error: 'You must approve the consent to enable Auto Send.' });
     }
     var existing = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
@@ -7925,6 +7915,32 @@ app.get('/admin/direct-mail', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'publish', 'admin', 'direct-mail.html'));
 });
 
+// POST /api/admin/run-scrapers — manually trigger all scrapers now
+app.post('/api/admin/deliver', adminAuth, async (req, res) => {
+  try {
+    _dbData = null;
+    var db = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var customers = (db.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
+    var sent = 0;
+    for (var ci = 0; ci < customers.length; ci++) {
+      var cust = customers[ci];
+      var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
+      if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
+      var custLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0; }).slice(0, 5);
+      if (custLeads.length === 0) continue;
+      var html = generateLeadEmailHTML(cust, custLeads);
+      var subject = 'Your 9am Opportunities for ' + (cust.target_areas ? JSON.parse(cust.target_areas).join(', ') : 'your area') + ' \u2014 ' + new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+      await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, subject, html);
+      var now = new Date().toISOString();
+      custLeads.forEach(function(l) { l.delivered = 1; l.delivered_at = now; });
+      sent++;
+    }
+    saveDb();
+    res.json({ success: true, sent: sent });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 
 app.get('/api/admin/check-stripe', adminAuth, (req, res) => {
   var hasKey = !!STRIPE_SECRET_KEY;
@@ -8004,7 +8020,7 @@ app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
     }
 function syncCustomers(product) {
       const allCustomers = getDb().customers || [];
-      const productCustomers = allCustomers.filter(c => c.product === product && c.plan && c.plan !== 'cancelled');
+      const productCustomers = allCustomers.filter(c => c.product === product && c.trial_ends && new Date(c.trial_ends) > new Date());
       const customerFile = path.join(DATA_DIR, product + '-customers.json');
       const existing = (() => { try { return JSON.parse(fs.readFileSync(customerFile, 'utf-8')); } catch { return {}; } })();
       for (const c of productCustomers) {
@@ -8078,7 +8094,7 @@ function syncCustomers(product) {
           } catch(e) { console.log('[SCRAPER] Planning error: ' + e.message); leads = []; }
           if (!leads || leads.length < 3) {
             try {
-              var chKeyPlan2 = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY;
+              var chKeyPlan2 = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || 'b67556b9-fedd-41dc-b8c1-dc34aed2b1ba';
               leads = await new Promise(function(resolve) {
                 var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=builders&size=200', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyPlan2 + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
@@ -8167,7 +8183,7 @@ function syncCustomers(product) {
           }
         } else if (product === 'planning') {
           try {
-            var chKeyPlan = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY ;
+            var chKeyPlan = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || 'b67556b9-fedd-41dc-b8c1-dc34aed2b1ba';
             leads = await new Promise(function(resolve) {
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/search/companies?q=builders&size=200', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyPlan + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
@@ -8250,7 +8266,7 @@ function syncCustomers(product) {
           if (probLeads && probLeads.length > 0) { var fp = filterFresh(probLeads, 'notificationDate'); probLeads = fp.fresh.length > 0 ? fp.fresh : fp.fallback; leads = probLeads; console.log('[SCRAPER] Probate: ' + fp.fresh.length + ' fresh, ' + fp.fallback.length + ' fallback'); }
           else {
             console.log('[SCRAPER] Probate Apify 0, fallback CH');
-            var chKeyProb = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY ;
+            var chKeyProb = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || 'b67556b9-fedd-41dc-b8c1-dc34aed2b1ba';
             var lastYearProb = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
             leads = await new Promise(function(resolve) {
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: '/advanced-search/companies?company_status=active&incorporation_date_from=' + lastYearProb + '&size=100&q=probate', method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeyProb + ':').toString('base64'), 'Accept': 'application/json' } }, function(res) {
@@ -8311,7 +8327,7 @@ app.post('/api/admin/stream-queue', adminAuth, function(req, res) {
 });
 app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
   try {
-    var key = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY ;
+    var key = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || 'b67556b9-fedd-41dc-b8c1-dc34aed2b1ba';
     // Also test PCS tender API
     var tenderResult = await new Promise(function(resolve) {
       var req3 = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=2', method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res3) {
@@ -8500,7 +8516,7 @@ app.post('/api/send-enquiry', async (req, res) => {
 app.post('/api/admin/reset', async (req, res) => {
   try {
     const auth = req.headers.authorization;
-    if (!auth || auth !== 'Bearer ' + ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
+    if (!auth || auth !== 'Bearer 9amAdmin2024!') return res.status(401).json({ error: 'Unauthorized' });
     const dbData = getDb();
     dbData.customers = [];
     dbData.leads = [];
@@ -8787,31 +8803,6 @@ app.get('/api/admin/metrics', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-
-// TEMP: Delete customer by email 
-app.post('/api/delete-account', async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email required' });
-    var db = getDb();
-    var customer = db.prepare('SELECT id FROM customers WHERE email = ?').get(email);
-    if (!customer) return res.status(404).json({ error: 'Not found' });
-    db.prepare('DELETE FROM customers WHERE email = ?').run(email);
-    saveDb();
-    res.json({ success: true, id: customer.id });
-    console.log('[TEMP] Deleted: ' + email);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// 404 handler for unknown API routes
-app.use(function(req, res) {
-  if (req.path.startsWith('/api/')) {
-    res.status(404).json({ error: 'Route not found', path: req.path });
-  } else {
-    res.status(404).send('Not found');
-  }
-});
-
 // Global error handler
 app.use(function(err, req, res, next) {
   console.error('[ERROR] Unhandled error:', err.message || err);
@@ -8828,7 +8819,7 @@ function seedDefaultCampaignPacks() {
     // Only seed if no packs exist
     if (db2.campaign_packs && db2.campaign_packs.length > 0) return;
     var defaults = [
-      { name:'Emergency Plumbing Offer', business_type:'Plumbing', objective:'Generate emergency plumbing calls', headline:'Burst Pipe? Same-Day Emergency Plumbing', suggested_offer:'£50 off any emergency repair', cta:'Call Now for Immediate Help', color_style:'#dc2626', qr_setting:'url', audience:'Homeowners with recent water issues' },
+      { name:'Emergency Plumbing Offer', business_type:'Plumbing', objective:'Generate emergency plumbing calls', headline:'Burst Pipe? Same-Day Emergency Plumbing', suggested_offer:'Â£50 off any emergency repair', cta:'Call Now for Immediate Help', color_style:'#dc2626', qr_setting:'url', audience:'Homeowners with recent water issues' },
       { name:'Roof Inspection & Repair', business_type:'Roofing', objective:'Get roof inspection bookings', headline:'Free Roof Inspection — No Obligation', suggested_offer:'Free no-obligation roof inspection', cta:'Book Your Free Survey Today', color_style:'#ea580c', qr_setting:'phone', audience:'Homeowners in target postcode areas' },
       { name:'Professional Moving Services', business_type:'Removals', objective:'Win moving contracts', headline:'Moving Soon? Get a Free Quote Today', suggested_offer:'Free no-obligation moving quote', cta:'Get Your Free Quote', color_style:'#0ea5e9', qr_setting:'url', audience:'Homeowners who have listed their property' },
       { name:'Deep Clean Special Offer', business_type:'Cleaning', objective:'Book cleaning appointments', headline:'Professional Deep Clean — 20% Off First Booking', suggested_offer:'20% off first deep clean', cta:'Book Your Clean Now', color_style:'#10b981', qr_setting:'phone', audience:'New homeowners and tenants' },
@@ -8836,16 +8827,16 @@ function seedDefaultCampaignPacks() {
       { name:'Sell Your Property Faster', business_type:'Estate Agents', objective:'Win property listings', headline:'Sold in 30 Days or We\'ll Market for Free', suggested_offer:'Free property valuation', cta:'Book Your Free Valuation', color_style:'#6366f1', qr_setting:'url', audience:'Homeowners planning to sell' },
       { name:'Mortgage Pre-Approval', business_type:'Mortgage Brokers', objective:'Generate mortgage enquiries', headline:'Secure Your Mortgage Before You House Hunt', suggested_offer:'Free mortgage pre-approval check', cta:'Check Your Eligibility Free', color_style:'#7c3aed', qr_setting:'url', audience:'First-time buyers and movers' },
       { name:'Solar Panel Installation', business_type:'Solar', objective:'Get solar panel enquiries', headline:'Slash Your Energy Bills with Solar Panels', suggested_offer:'Free solar feasibility survey', cta:'Get Your Free Solar Quote', color_style:'#f59e0b', qr_setting:'url', audience:'Homeowners with suitable roof space' },
-      { name:'Pest Control Emergency Service', business_type:'Pest Control', objective:'Generate pest control calls', headline:'Pests in Your Home? Fast Same-Day Service', suggested_offer:'£25 off first treatment', cta:'Call Us Now', color_style:'#92400e', qr_setting:'phone', audience:'Homeowners in target postcode areas' },
-      { name:'24/7 Emergency Locksmith', business_type:'Locksmith', objective:'Generate emergency lockout calls', headline:'Locked Out? We\'re Here in 30 Minutes', suggested_offer:'£10 off for new customers', cta:'Call for Immediate Help', color_style:'#1e293b', qr_setting:'phone', audience:'Homeowners and landlords' },
-      { name:'Electrical Safety Check', business_type:'Electrician', objective:'Get electrical inspection bookings', headline:'Full Electrical Safety Check — Just £99', suggested_offer:'Electrical safety check for £99', cta:'Book Your Safety Check', color_style:'#2563eb', qr_setting:'url', audience:'Homeowners in target postcode areas' },
+      { name:'Pest Control Emergency Service', business_type:'Pest Control', objective:'Generate pest control calls', headline:'Pests in Your Home? Fast Same-Day Service', suggested_offer:'Â£25 off first treatment', cta:'Call Us Now', color_style:'#92400e', qr_setting:'phone', audience:'Homeowners in target postcode areas' },
+      { name:'24/7 Emergency Locksmith', business_type:'Locksmith', objective:'Generate emergency lockout calls', headline:'Locked Out? We\'re Here in 30 Minutes', suggested_offer:'Â£10 off for new customers', cta:'Call for Immediate Help', color_style:'#1e293b', qr_setting:'phone', audience:'Homeowners and landlords' },
+      { name:'Electrical Safety Check', business_type:'Electrician', objective:'Get electrical inspection bookings', headline:'Full Electrical Safety Check — Just Â£99', suggested_offer:'Electrical safety check for Â£99', cta:'Book Your Safety Check', color_style:'#2563eb', qr_setting:'url', audience:'Homeowners in target postcode areas' },
       { name:'Building & Renovation Services', business_type:'Builder', objective:'Win building project enquiries', headline:'Planning a Home Renovation? Let\'s Talk', suggested_offer:'Free consultation and written quote', cta:'Get Your Free Quote', color_style:'#475569', qr_setting:'url', audience:'Homeowners with planning permission' },
       { name:'Professional Decorating Services', business_type:'Decorator', objective:'Get decorating job bookings', headline:'Transform Your Home with Expert Decorating', suggested_offer:'Free colour consultation with quote', cta:'Book Your Free Quote', color_style:'#db2777', qr_setting:'url', audience:'Homeowners who recently moved' },
-      { name:'Carpet & Upholstery Cleaning', business_type:'Carpet Cleaning', objective:'Book carpet cleaning jobs', headline:'Professional Carpet Cleaning — 3 Rooms for £99', suggested_offer:'3 rooms cleaned for just £99', cta:'Book Your Clean Now', color_style:'#0891b2', qr_setting:'phone', audience:'Homeowners and landlords' },
+      { name:'Carpet & Upholstery Cleaning', business_type:'Carpet Cleaning', objective:'Book carpet cleaning jobs', headline:'Professional Carpet Cleaning — 3 Rooms for Â£99', suggested_offer:'3 rooms cleaned for just Â£99', cta:'Book Your Clean Now', color_style:'#0891b2', qr_setting:'phone', audience:'Homeowners and landlords' },
       { name:'Driveway & Patio Installations', business_type:'Driveways', objective:'Get driveway installation leads', headline:'Transform Your Driveway — Free Quote', suggested_offer:'Free design consultation and quote', cta:'Get Your Free Driveway Quote', color_style:'#4f46e5', qr_setting:'url', audience:'Homeowners in target postcode areas' },
       { name:'Windows & Doors Installation', business_type:'Windows and Doors', objective:'Generate window replacement enquiries', headline:'New Windows & Doors — Up to 40% Off', suggested_offer:'Free survey and quote', cta:'Book Your Free Survey', color_style:'#0d9488', qr_setting:'url', audience:'Homeowners with older properties' },
       { name:'Kitchen Design & Installation', business_type:'Kitchens', objective:'Get kitchen project enquiries', headline:'Your Dream Kitchen Awaits — Free Design Visit', suggested_offer:'Free kitchen design consultation', cta:'Book Your Free Design Visit', color_style:'#be123c', qr_setting:'url', audience:'Homeowners planning renovations' },
-      { name:'Bathroom Renovation Services', business_type:'Bathrooms', objective:'Get bathroom project bookings', headline:'Luxury Bathroom Renovation — From £3,999', suggested_offer:'Free design and quote', cta:'Get Your Free Bathroom Quote', color_style:'#0284c7', qr_setting:'url', audience:'Homeowners in target postcode areas' },
+      { name:'Bathroom Renovation Services', business_type:'Bathrooms', objective:'Get bathroom project bookings', headline:'Luxury Bathroom Renovation — From Â£3,999', suggested_offer:'Free design and quote', cta:'Get Your Free Bathroom Quote', color_style:'#0284c7', qr_setting:'url', audience:'Homeowners in target postcode areas' },
       { name:'Reliable Trade Services', business_type:'General Trades', objective:'Generate multi-trade enquiries', headline:'Your Trusted Local Tradesperson — Free Quotes', suggested_offer:'Free no-obligation quote for any job', cta:'Get Your Free Quote', color_style:'#6b7280', qr_setting:'url', audience:'Homeowners and property managers' },
       { name:'Professional Services', business_type:'Other', objective:'Generate service enquiries', headline:'Professional Service — Free Consultation', suggested_offer:'Free initial consultation', cta:'Book Your Free Consultation', color_style:'#0ea5e9', qr_setting:'url', audience:'Targeted local homeowners' }
     ];
@@ -9193,24 +9184,24 @@ function seedSeasonalCampaigns() {
     if (!db2.seasonal_campaigns) db2.seasonal_campaigns = [];
     var data = [
       { month:1, season:'Winter', headline:'New Year, Fresh Start — Book Your Home Improvement', offer:'10% off January bookings', cta:'Start Your Project', business_types:'Builder,Kitchens,Bathrooms,Decorator,General Trades', objective:'Home improvement' },
-      { month:1, season:'Winter', headline:'New Year Deep Clean — Start the Year Fresh', offer:'£20 off full home deep clean', cta:'Book Your Clean', business_types:'Cleaning,Carpet Cleaning', objective:'New Year cleaning' },
+      { month:1, season:'Winter', headline:'New Year Deep Clean — Start the Year Fresh', offer:'Â£20 off full home deep clean', cta:'Book Your Clean', business_types:'Cleaning,Carpet Cleaning', objective:'New Year cleaning' },
       { month:1, season:'Winter', headline:'January Sale — 15% Off All Services', offer:'15% off first booking of 2025', cta:'Claim Your Discount', business_types:'All', objective:'New Year promotion' },
       { month:2, season:'Winter', headline:'Beat the Winter Chills — Heating & Insulation Check', offer:'Free heating system check', cta:'Book Your Check', business_types:'Plumbing,Electrician,Builder', objective:'Winter maintenance' },
-      { month:3, season:'Spring', headline:'Spring Cleaning Special —£50 Off Full Clean', offer:'£50 off full spring clean', cta:'Book Spring Clean', business_types:'Cleaning,Carpet Cleaning', objective:'Spring cleaning' },
+      { month:3, season:'Spring', headline:'Spring Cleaning Special —Â£50 Off Full Clean', offer:'Â£50 off full spring clean', cta:'Book Spring Clean', business_types:'Cleaning,Carpet Cleaning', objective:'Spring cleaning' },
       { month:3, season:'Spring', headline:'Get Your Garden Ready for Spring', offer:'Free garden consultation', cta:'Book Your Garden Service', business_types:'Gardening', objective:'Spring garden prep' },
       { month:3, season:'Spring', headline:'Spring Roof Check — Free Inspection', offer:'Free roof inspection', cta:'Book Roof Check', business_types:'Roofing', objective:'Spring roof check' },
       { month:3, season:'Spring', headline:'Exterior Spring Clean — Pressure Washing', offer:'20% off exterior cleaning', cta:'Book Exterior Clean', business_types:'Cleaning,Windows and Doors', objective:'Exterior spring clean' },
       { month:4, season:'Spring', headline:'Easter Special — Book Before [Date] for 10% Off', offer:'10% off if booked before Easter', cta:'Claim Easter Offer', business_types:'All', objective:'Easter promotion' },
       { month:4, season:'Spring', headline:'Spring Driveway & Patio Refresh', offer:'Free design consultation', cta:'Get Your Driveway Quote', business_types:'Driveways', objective:'Spring driveway' },
-      { month:5, season:'Spring', headline:'Moving Season — Book Your Removals Early', offer:'£50 off any removal booking', cta:'Get Moving Quote', business_types:'Removals,Estate Agents', objective:'Moving season' },
+      { month:5, season:'Spring', headline:'Moving Season — Book Your Removals Early', offer:'Â£50 off any removal booking', cta:'Get Moving Quote', business_types:'Removals,Estate Agents', objective:'Moving season' },
       { month:6, season:'Summer', headline:'Summer Sale — 20% Off All Services', offer:'20% off summer bookings', cta:'Book Summer Service', business_types:'All', objective:'Summer promotion' },
       { month:6, season:'Summer', headline:'Solar Ready for Summer — Save on Bills', offer:'Free solar viability survey', cta:'Get Solar Quote', business_types:'Solar', objective:'Summer solar' },
-      { month:7, season:'Summer', headline:'Summer Pest Control — Protect Your Home', offer:'£25 off pest control treatment', cta:'Call Pest Control', business_types:'Pest Control', objective:'Summer pest control' },
+      { month:7, season:'Summer', headline:'Summer Pest Control — Protect Your Home', offer:'Â£25 off pest control treatment', cta:'Call Pest Control', business_types:'Pest Control', objective:'Summer pest control' },
       { month:7, season:'Summer', headline:'Summer Home Improvements — No VAT', offer:'No VAT on projects booked this month', cta:'Start Your Project', business_types:'Builder,Kitchens,Bathrooms', objective:'Summer improvements' },
       { month:8, season:'Summer', headline:'Back to School — Organise Your Home', offer:'Free home organisation consultation', cta:'Book Now', business_types:'Cleaning,Removals', objective:'Back to school' },
-      { month:9, season:'Autumn', headline:'Autumn Boiler Service — Stay Warm This Winter', offer:'£79 boiler service — normally £120', cta:'Book Boiler Service', business_types:'Plumbing', objective:'Boiler service' },
+      { month:9, season:'Autumn', headline:'Autumn Boiler Service — Stay Warm This Winter', offer:'Â£79 boiler service — normally Â£120', cta:'Book Boiler Service', business_types:'Plumbing', objective:'Boiler service' },
       { month:9, season:'Autumn', headline:'Winter-Proof Your Home — Free Survey', offer:'Free winter readiness survey', cta:'Book Winter Check', business_types:'Roofing,Builder,Electrician', objective:'Winter prep' },
-      { month:9, season:'Autumn', headline:'Gutter Clearance for Autumn — £60', offer:'Full gutter clearance for £60', cta:'Book Gutter Clearance', business_types:'Roofing,Cleaning,Gardening', objective:'Autumn gutter clearance' },
+      { month:9, season:'Autumn', headline:'Gutter Clearance for Autumn — Â£60', offer:'Full gutter clearance for Â£60', cta:'Book Gutter Clearance', business_types:'Roofing,Cleaning,Gardening', objective:'Autumn gutter clearance' },
       { month:10, season:'Autumn', headline:'October Fall Sale — Save Big', offer:'25% off all services this month', cta:'Claim Offer', business_types:'All', objective:'Autumn promotion' },
       { month:10, season:'Autumn', headline:'Pre-Winter Roof Inspection', offer:'Free inspection + discounted repairs', cta:'Book Roof Check', business_types:'Roofing', objective:'Pre-winter roof check' },
       { month:10, season:'Autumn', headline:'Autumn Garden Clearance — Leaf Removal', offer:'Free quote for garden clearance', cta:'Book Garden Clearance', business_types:'Gardening', objective:'Autumn garden' },
@@ -9707,7 +9698,7 @@ app.get('/api/demo/data', (req, res) => {
     proof: { proof_url:'https://demo.9amleads.com/proof/demo-001.pdf', postage_date:new Date(Date.now()-10*86400000).toISOString().split('T')[0], estimated_delivery:new Date(Date.now()-7*86400000).toISOString().split('T')[0] },
     notifications: [
       { id:'demo_n1', type:'campaign_completed', title:'✅ Campaign Completed', message:'Your Summer Promo Flyer campaign was completed successfully.' },
-      { id:'demo_n2', type:'tips', title:'💡 Quick Tip', message:'Hand-delivered flyers convert 5x better than posted letters.' }
+      { id:'demo_n2', type:'tips', title:'ðŸ’¡ Quick Tip', message:'Hand-delivered flyers convert 5x better than posted letters.' }
     ]
   });
 });
@@ -9799,7 +9790,7 @@ function seedKnowledgeArticles() {
       { category:'Getting Started', title:'Welcome to 9am Leads', content:'9am Leads delivers fresh sales opportunities to your dashboard every morning at 9am. You can view, export, and take action on your leads immediately. Plus, our Direct Mail Centre lets you automatically send professional flyers and letters to your leads by post.', video_url:'', order:1 },
       { category:'Getting Started', title:'Setting Up Your Business Profile', content:'Your Business Profile is used across the platform — for AI-generated flyers and letters, campaign packs, and direct mail campaigns. Complete your business name, type, services, area, logo, and contact details.', video_url:'', order:2 },
       { category:'Lead Generation', title:'How Daily Leads Work', content:'New leads are delivered to your dashboard every morning at 9am. Each lead includes name, address, and details based on your selected lead type and postcode areas. You can filter, search, and export your leads.', video_url:'', order:1 },
-      { category:'Direct Mail', title:'Creating Your First Campaign', content:'Go to Direct Mail Centre → Create Campaign. Choose your leads, select or generate your materials, review and approve, then send. Your campaign will be printed and posted by our partner.', video_url:'', order:1 },
+      { category:'Direct Mail', title:'Creating Your First Campaign', content:'Go to Direct Mail Centre â†’ Create Campaign. Choose your leads, select or generate your materials, review and approve, then send. Your campaign will be printed and posted by our partner.', video_url:'', order:1 },
       { category:'Direct Mail', title:'Campaign Packs', content:'Campaign Packs are pre-built industry templates. Select a pack for your business type, apply your Business Profile details, and save it as a template. Available for 20+ industries.', video_url:'', order:2 },
       { category:'AI Marketing Builder', title:'AI Letter Generator', content:'The AI Letter Generator creates professional introduction letters based on your Business Profile. Choose from Professional, Short, Friendly, Premium, or Call-to-Action versions. Edit, save as template, or use in campaign.', video_url:'', order:1 },
       { category:'AI Marketing Builder', title:'AI Flyer Content Generator', content:'Generate flyer content with AI including headline, subheadline, services, offer, trust section, CTA, back page, QR text, and slogan. Choose from 6 style options.', video_url:'', order:2 },
@@ -9909,31 +9900,31 @@ app.get('/api/direct-mail/health-score', authMiddleware, (req, res) => {
     // 1. Business Profile completed (10 pts)
     if (profile) { score += 10; factors.push({ name:'Business Profile', met: true, pts:10 }); } else { factors.push({ name:'Business Profile', met: false, pts:0 }); recommendations.push({ text:'Complete your Business Profile', action:'business-profile', emoji:'✔️' }); }
     // 2. Logo uploaded (5 pts)
-    if (profile && profile.logo_url) { score += 5; factors.push({ name:'Logo', met: true, pts:5 }); } else { factors.push({ name:'Logo', met: false, pts:0 }); recommendations.push({ text:'Upload your logo', action:'business-profile', emoji:'🖼️' }); }
+    if (profile && profile.logo_url) { score += 5; factors.push({ name:'Logo', met: true, pts:5 }); } else { factors.push({ name:'Logo', met: false, pts:0 }); recommendations.push({ text:'Upload your logo', action:'business-profile', emoji:'ðŸ–¼ï¸' }); }
     // 3. Phone number (5 pts)
     if (profile && profile.phone) { score += 5; factors.push({ name:'Phone', met: true, pts:5 }); } else { factors.push({ name:'Phone', met: false, pts:0 }); recommendations.push({ text:'Add your phone number', action:'business-profile', emoji:'✅' }); }
     // 4. Website (5 pts)
-    if (profile && profile.website) { score += 5; factors.push({ name:'Website', met: true, pts:5 }); } else { factors.push({ name:'Website', met: false, pts:0 }); recommendations.push({ text:'Add your website', action:'business-profile', emoji:'🌐' }); }
+    if (profile && profile.website) { score += 5; factors.push({ name:'Website', met: true, pts:5 }); } else { factors.push({ name:'Website', met: false, pts:0 }); recommendations.push({ text:'Add your website', action:'business-profile', emoji:'ðŸŒ' }); }
     // 5. Services added (10 pts)
-    if (profile && profile.services_offered) { score += 10; factors.push({ name:'Services', met: true, pts:10 }); } else { factors.push({ name:'Services', met: false, pts:0 }); recommendations.push({ text:'Add your services', action:'business-profile', emoji:'🔧' }); }
+    if (profile && profile.services_offered) { score += 10; factors.push({ name:'Services', met: true, pts:10 }); } else { factors.push({ name:'Services', met: false, pts:0 }); recommendations.push({ text:'Add your services', action:'business-profile', emoji:'ðŸ”§' }); }
     // 6. Offer added (10 pts)
-    if (profile && (profile.special_offer || profile.call_to_action)) { score += 10; factors.push({ name:'Offer/CTA', met: true, pts:10 }); } else { factors.push({ name:'Offer/CTA', met: false, pts:0 }); recommendations.push({ text:'Add a special offer', action:'business-profile', emoji:'🎁' }); }
+    if (profile && (profile.special_offer || profile.call_to_action)) { score += 10; factors.push({ name:'Offer/CTA', met: true, pts:10 }); } else { factors.push({ name:'Offer/CTA', met: false, pts:0 }); recommendations.push({ text:'Add a special offer', action:'business-profile', emoji:'ðŸŽ' }); }
     // 7. Template created (10 pts)
     var tplCount = templates ? (templates.count || 0) : 0;
     if (tplCount > 0) { score += 10; factors.push({ name:'Saved Templates', met: true, pts:10 }); } else { factors.push({ name:'Saved Templates', met: false, pts:0 }); recommendations.push({ text:'Create your first flyer template', action:'templates', emoji:'✔️' }); }
     // 8. Campaign Pack selected (10 pts)
-    if (packs.length > 0) { score += 10; factors.push({ name:'Campaign Pack', met: true, pts:10 }); } else { factors.push({ name:'Campaign Pack', met: false, pts:0 }); recommendations.push({ text:'Select a Campaign Pack', action:'packs', emoji:'📦' }); }
+    if (packs.length > 0) { score += 10; factors.push({ name:'Campaign Pack', met: true, pts:10 }); } else { factors.push({ name:'Campaign Pack', met: false, pts:0 }); recommendations.push({ text:'Select a Campaign Pack', action:'packs', emoji:'ðŸ“¦' }); }
     // 9. Auto Send enabled (10 pts)
     var autoSend = settings && settings.enable_auto_send;
-    if (autoSend) { score += 10; factors.push({ name:'Auto Send', met: true, pts:10 }); } else { factors.push({ name:'Auto Send', met: false, pts:0 }); recommendations.push({ text:'Enable Auto Send', action:'settings', emoji:'🤖' }); }
+    if (autoSend) { score += 10; factors.push({ name:'Auto Send', met: true, pts:10 }); } else { factors.push({ name:'Auto Send', met: false, pts:0 }); recommendations.push({ text:'Enable Auto Send', action:'settings', emoji:'ðŸ¤–' }); }
     // 10. Spend limits set (10 pts)
     var hasLimits = settings && (parseInt(settings.max_daily_spend) > 0 || parseInt(settings.max_monthly_spend) > 0);
     if (hasLimits) { score += 10; factors.push({ name:'Spend Limits', met: true, pts:10 }); } else { factors.push({ name:'Spend Limits', met: false, pts:0 }); recommendations.push({ text:'Set daily/monthly spend limits', action:'settings', emoji:'💰' }); }
     // 11. First campaign sent (10 pts)
     var sent = sentCampaigns ? sentCampaigns.count || 0 : 0;
-    if (sent > 0) { score += 10; factors.push({ name:'Campaign Sent', met: true, pts:10 }); } else { factors.push({ name:'Campaign Sent', met: false, pts:0 }); recommendations.push({ text:'Send your first campaign', action:'create', emoji:'📬' }); }
+    if (sent > 0) { score += 10; factors.push({ name:'Campaign Sent', met: true, pts:10 }); } else { factors.push({ name:'Campaign Sent', met: false, pts:0 }); recommendations.push({ text:'Send your first campaign', action:'create', emoji:'ðŸ“¬' }); }
     // 12. Sent more than 1 campaign (10 pts)
-    if (sent > 1) { score += 10; factors.push({ name:'Repeat Sending', met: true, pts:10 }); } else { factors.push({ name:'Repeat Sending', met: false, pts:0 }); recommendations.push({ text:'Send another campaign to build momentum', action:'create', emoji:'🚀' }); }
+    if (sent > 1) { score += 10; factors.push({ name:'Repeat Sending', met: true, pts:10 }); } else { factors.push({ name:'Repeat Sending', met: false, pts:0 }); recommendations.push({ text:'Send another campaign to build momentum', action:'create', emoji:'ðŸš€' }); }
     var level = score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : score >= 40 ? 'Needs Work' : 'Getting Started';
     res.json({ success: true, score: score, level: level, factors: factors, recommendations: recommendations.slice(0, 5), completed: factors.filter(function(f) { return f.met; }).length, total: factors.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -10333,7 +10324,7 @@ app.post('/api/direct-mail/sequences/:id/process-step', authMiddleware, async (r
     // Check if step cost + total spent would exceed spend limit
     if (seq.spend_limit > 0 && (seq.total_spent || 0) + stepCost > seq.spend_limit) {
       seq.status = 'paused'; saveDb();
-      return res.status(400).json({ error: 'Step cost of £' + stepCost.toFixed(2) + ' would exceed spend limit of £' + seq.spend_limit.toFixed(2) + '. Sequence paused.' });
+      return res.status(400).json({ error: 'Step cost of Â£' + stepCost.toFixed(2) + ' would exceed spend limit of Â£' + seq.spend_limit.toFixed(2) + '. Sequence paused.' });
     }
 
     // Try to charge saved payment method
@@ -10428,7 +10419,7 @@ app.listen(PORT, () => {
   console.log('  POST /api/auth/signup   - Create account');
 // Start CH Streaming background worker
 try {
-  var chKeyStream = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY ;
+  var chKeyStream = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || 'b67556b9-fedd-41dc-b8c1-dc34aed2b1ba';
   var streamWorker = require('./streaming_worker');
   streamWorker.start(chKeyStream);
   console.log('[BOOT] Stream: Companies House live stream worker started');
@@ -10537,7 +10528,7 @@ function getEditedCampaignSubject(template, originalSubject) {
 }
 
 // ===== OUTBOUND PROSPECTING CAMPAIGNS (Brevo) =====
-// 5 campaigns × 16 emails = 80 total
+// 5 campaigns ï¿½ 16 emails = 80 total
 // Naming: 9AM-PROD-WKX-EX where PROD = MOV/PLAN/PROB/NBZ/TEN
 
 var OUTBOUND_CAMPAIGNS = {
@@ -10548,7 +10539,7 @@ I was speaking with a removal business owner in Birmingham last week who told me
 
 He said: "I don't mind the quiet weeks. What kills me is knowing there are people moving right now, in my area, and they're hiring someone else because they never found me."
 
-That's the harsh reality of the removal industry in 2025. The demand is there—over 400,000 households move each month in the UK. The problem isn't a lack of moves. It's a lack of visibility at the exact moment someone decides to move.
+That's the harsh reality of the removal industry in 2025. The demand is thereï¿½over 400,000 households move each month in the UK. The problem isn't a lack of moves. It's a lack of visibility at the exact moment someone decides to move.
 
 Traditional advertising catches people who might move someday. Directory listings show you to people who are browsing, not necessarily buying. Referrals are great but unpredictable.
 
@@ -10573,11 +10564,11 @@ How many of those did you quote for?
 
 If the answer is fewer than 50, there's a gap. And that gap represents real revenue that's funding someone else's business instead of yours.
 
-Here's what we've learned from working with removal companies across the UK: the average removal job is worth between £1,000 and £3,000. For a man-and-van operator, it might be £400-800. For a full-service removal company with packing, storage, and insurance, it can be £5,000 or more.
+Here's what we've learned from working with removal companies across the UK: the average removal job is worth between ï¿½1,000 and ï¿½3,000. For a man-and-van operator, it might be ï¿½400-800. For a full-service removal company with packing, storage, and insurance, it can be ï¿½5,000 or more.
 
 But here's the part that really matters: you only need ONE extra removal job per month to cover the cost of a lead generation system. Everything after that is pure upside.
 
-If you're currently running at 60% capacity and could fill that to 85%, the difference to your annual revenue is transformational. It's not about working harder—it's about making sure the opportunities that exist in your area actually reach your inbox.
+If you're currently running at 60% capacity and could fill that to 85%, the difference to your annual revenue is transformational. It's not about working harderï¿½it's about making sure the opportunities that exist in your area actually reach your inbox.
 
 The technology exists now to see every person who is actively preparing to move in your area, scored by how likely they are to convert and what the job is worth. It arrives in your email at 9am, before your first cup of tea.
 
@@ -10590,15 +10581,15 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply and I\x27ll send you this week\x
 
 Here's something most removal companies don't realise: the UK property market follows predictable cycles, and those cycles create predictable removal demand.
 
-Spring and autumn are the obvious peaks—conveyancing completes, keys are handed over, and someone needs a van. But there are deeper patterns that matter more for your business.
+Spring and autumn are the obvious peaksï¿½conveyancing completes, keys are handed over, and someone needs a van. But there are deeper patterns that matter more for your business.
 
 When interest rates change, the market shifts within weeks. When stamp duty thresholds change, completion dates cluster. When a new housing development opens, everyone moves in within a 4-8 week window. When a corporate relocation contract lands with an estate agent, every employee needs moving in a specific timeframe.
 
 The data exists to see all of these patterns in real time. It's not guesswork. It's lead intelligence.
 
-Most removal companies operate reactively—they wait for the phone to ring. The best operators we work with operate prospectively. They know what's coming, they prepare quotes in advance, and they're the first company a potential customer speaks to.
+Most removal companies operate reactivelyï¿½they wait for the phone to ring. The best operators we work with operate prospectively. They know what's coming, they prepare quotes in advance, and they're the first company a potential customer speaks to.
 
-That first-contact advantage is enormous. When you're the first removal company to respond, you're not competing on price—you're solving a problem before the customer even knows all their options.
+That first-contact advantage is enormous. When you're the first removal company to respond, you're not competing on priceï¿½you're solving a problem before the customer even knows all their options.
 
 The 9amLeads platform delivers this intelligence daily. It scans thousands of data points to find people who are actively preparing to move, scores them by likelihood and value, and delivers actionable opportunities to your inbox.
 
@@ -10611,18 +10602,18 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to discuss how market intelligen
 
 Let's talk about return on investment, because I know that every pound you spend on marketing needs to come back with friends.
 
-The average removal job in the UK generates £1,000-3,000 in revenue. Some are smaller—local man-with-a-van moves at £350. Some are much larger—full service, packing, storage, international, corporate relocations at £10,000 or more.
+The average removal job in the UK generates ï¿½1,000-3,000 in revenue. Some are smallerï¿½local man-with-a-van moves at ï¿½350. Some are much largerï¿½full service, packing, storage, international, corporate relocations at ï¿½10,000 or more.
 
-Here's the simple maths: if you win ONE extra removal job per month from our system, that's £12,000-36,000 in additional annual revenue. The cost of the system is a fraction of that first job's value.
+Here's the simple maths: if you win ONE extra removal job per month from our system, that's ï¿½12,000-36,000 in additional annual revenue. The cost of the system is a fraction of that first job's value.
 
 But let's be more realistic. Removal companies using 9amLeads typically see:
 
-• 3-8 qualified leads delivered per week (depending on area)
-• 40-60% quote conversion rate (because you're responding first)
-• Average job value of £1,800 across all move types
-• 5-12 additional jobs secured per quarter
+ï¿½ 3-8 qualified leads delivered per week (depending on area)
+ï¿½ 40-60% quote conversion rate (because you're responding first)
+ï¿½ Average job value of ï¿½1,800 across all move types
+ï¿½ 5-12 additional jobs secured per quarter
 
-One customer in Manchester told us: "I was sceptical about another lead source, but the quality was different. These are people who are actually moving—not tyre-kickers. I booked two full house moves in my first week."
+One customer in Manchester told us: "I was sceptical about another lead source, but the quality was different. These are people who are actually movingï¿½not tyre-kickers. I booked two full house moves in my first week."
 
 The difference isn't the number of leads. It's that these leads are actively looking right now. They're not "maybe next year" leads. They're "I need a quote this week" leads.
 
@@ -10635,13 +10626,13 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply for a personalised ROI calculati
 
 I want to share a real story from a removal company we work with in South London.
 
-They're a family-run business with three crews. Before using 9amLeads, they relied on repeat customers and Google Ads. Their calendar was unpredictable—some weeks fully booked, others worryingly quiet.
+They're a family-run business with three crews. Before using 9amLeads, they relied on repeat customers and Google Ads. Their calendar was unpredictableï¿½some weeks fully booked, others worryingly quiet.
 
-After their first week with our platform, they received 6 qualified leads—all people actively moving within the next 2-4 weeks. They quoted all 6 and secured 4. That's £7,200 in booked revenue from one week of leads.
+After their first week with our platform, they received 6 qualified leadsï¿½all people actively moving within the next 2-4 weeks. They quoted all 6 and secured 4. That's ï¿½7,200 in booked revenue from one week of leads.
 
 By the end of their first month, they'd booked 12 moves directly attributed to our leads. Their utilisation rate went from roughly 55% to over 80%. The system paid for itself on day one.
 
-What made the difference? Speed. They were the first removal company to respond to every single lead. When you're first, you're not competing on price—you're building trust by being helpful immediately.
+What made the difference? Speed. They were the first removal company to respond to every single lead. When you're first, you're not competing on priceï¿½you're building trust by being helpful immediately.
 
 The owner told me: "The biggest change isn't just the extra revenue. It's the peace of mind. I know I'm going to get leads every morning. I can plan my crews, my routes, my admin. The business feels stable for the first time in years."
 
@@ -10660,13 +10651,13 @@ And I understand why you'd say that. When your teams are on the road and your di
 
 But here's what those same owners discover when they look deeper:
 
-First, "busy" doesn't always mean "profitable." If you're running at full capacity but your margins are thin, it's because you're competing on price. The best jobs—the full-service, high-value moves—aren't going to the busiest companies. They're going to the companies that respond first.
+First, "busy" doesn't always mean "profitable." If you're running at full capacity but your margins are thin, it's because you're competing on price. The best jobsï¿½the full-service, high-value movesï¿½aren't going to the busiest companies. They're going to the companies that respond first.
 
-Second, relying on one lead source is risky. If your website drops in rankings, if Google Ads costs double next quarter, if your key referrer retires—what happens to your pipeline? Multiple lead sources create resilience.
+Second, relying on one lead source is risky. If your website drops in rankings, if Google Ads costs double next quarter, if your key referrer retiresï¿½what happens to your pipeline? Multiple lead sources create resilience.
 
 Third, not all leads are equal. The leads we deliver are people who have demonstrated intent to move in the next 2-6 weeks. They're not browsing. They're buying. The difference between a warm lead and a cold lead is often weeks of unnecessary follow-up.
 
-The removal companies that grow consistently are the ones that build multiple channels. They treat lead generation like a diversified investment portfolio—not a single bet.
+The removal companies that grow consistently are the ones that build multiple channels. They treat lead generation like a diversified investment portfolioï¿½not a single bet.
 
 I'm not suggesting you replace your current sources. I'm suggesting you add another one that fills the gaps your current sources miss.
 
@@ -10687,11 +10678,11 @@ The businesses that perform best during peak seasons are the ones that built the
 
 Here's what we've observed: removal companies that start using 9amLeads in the quieter periods see the biggest spike when the market picks up. Because they've already built the habit of responding to leads quickly. They've already refined their quoting process. They've already secured the early-mover advantage.
 
-The platform delivers opportunities daily, so you're building a pipeline consistently—not scrambling when things get busy.
+The platform delivers opportunities daily, so you're building a pipeline consistentlyï¿½not scrambling when things get busy.
 
 If you wait until you're quiet to look for leads, you're always reacting. If you build a consistent lead pipeline now, you'll have a full calendar when everyone else is scrambling.
 
-There's never a wrong time to build a better pipeline. But there's definitely a right time—and that's before you need it.
+There's never a wrong time to build a better pipeline. But there's definitely a right timeï¿½and that's before you need it.
 
 Would you like to see what's currently available in your area?
 
@@ -10714,7 +10705,7 @@ Being first matters in the removal industry. First response gets the first conve
 
 The 9amLeads platform gives you that first-mover advantage every single day. While others are waiting for the phone to ring, you're already reviewing opportunities and sending quotes.
 
-The question isn't whether daily lead delivery works—it's whether you can afford to let your competitors have it to themselves.
+The question isn't whether daily lead delivery worksï¿½it's whether you can afford to let your competitors have it to themselves.
 
 Would you like to be one of the first removal companies in your area to access daily qualified leads?
 
@@ -10835,11 +10826,11 @@ What's the total value of removal opportunities in your area each month?
 
 We've done this calculation for hundreds of postcodes across the UK. Here's what the numbers typically look like.
 
-In a typical UK city with a population of 250,000, approximately 2,000 households move each month. At an average removal job value of £1,500, that's £3,000,000 in total removal spend every month.
+In a typical UK city with a population of 250,000, approximately 2,000 households move each month. At an average removal job value of Â£1,500, that's Â£3,000,000 in total removal spend every month.
 
-Even if half of those moves are DIY, that's still £1,500,000 in addressable professional removal revenue.
+Even if half of those moves are DIY, that's still Â£1,500,000 in addressable professional removal revenue.
 
-How much of that are you capturing? If you're doing 20 moves per month at £1,500 average, that's £30,000-or 2% of the available market.
+How much of that are you capturing? If you're doing 20 moves per month at Â£1,500 average, that's Â£30,000-or 2% of the available market.
 
 Now, I'm not suggesting you can capture 100%. But moving from 2% to 5% would triple your revenue. Moving from 2% to 10% would 5x your business.
 
@@ -10847,7 +10838,7 @@ The difference between 2% and 5% isn't better service or lower prices. It's bett
 
 The 9amLeads platform helps you capture a larger share of your local market by ensuring you see every available opportunity. You still have to win the job on your merits. But at least you're in the conversation.
 
-If you knew that £1.5m in removal revenue was available in your area every month, wouldn't you want to capture more of it?
+If you knew that Â£1.5m in removal revenue was available in your area every month, wouldn't you want to capture more of it?
 
 Reply and I'll calculate the specific market potential for your postcode area.
 
@@ -10932,7 +10923,7 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to speak with Ketz directly' },
 
 I was talking to a builder in Bristol last month who summed up his frustration perfectly: "I know there are people in my area who want extensions, new kitchens, driveways, and roofs. But by the time they find me, they've already spoken to three other traders. I'm always the fourth or fifth quote."
 
-That's the reality of the home improvement industry in 2025. The demand is enormous—millions of UK homeowners are planning projects worth £20,000 to £100,000 or more. But most tradespeople are competing for the same small pool of leads that have been passed around by comparison sites.
+That's the reality of the home improvement industry in 2025. The demand is enormousï¿½millions of UK homeowners are planning projects worth ï¿½20,000 to ï¿½100,000 or more. But most tradespeople are competing for the same small pool of leads that have been passed around by comparison sites.
 
 The problem isn't a lack of projects. It's that you're finding out about them too late.
 
@@ -10947,23 +10938,23 @@ If you'd like to see what projects are currently being planned in your area, I'd
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see live projects in your area' },
 
-    { id: '9AM-PLAN-WK1-E2', week: 1, emailNum: 2, subject: 'The £50,000 project you didn\x27t quote for', subjectB: 'The real cost of missing one extension or loft conversion', preview: 'What a single missed project costs your business in real terms', body: `Hi {{NAME}},
+    { id: '9AM-PLAN-WK1-E2', week: 1, emailNum: 2, subject: 'The ï¿½50,000 project you didn\x27t quote for', subjectB: 'The real cost of missing one extension or loft conversion', preview: 'What a single missed project costs your business in real terms', body: `Hi {{NAME}},
 
 Let me ask you a straightforward question.
 
-How many homeowners in your area are planning a major renovation or construction project right now? Not "thinking about it someday"—actively planning, measuring, saving, and preparing to hire.
+How many homeowners in your area are planning a major renovation or construction project right now? Not "thinking about it someday"ï¿½actively planning, measuring, saving, and preparing to hire.
 
 If you're like most tradespeople, you're getting a fraction of those projects. Not because you're not good at what you do, but because you're not appearing in front of those homeowners at the right time.
 
-Here's what we've learned from working with builders, roofers, kitchen fitters, and landscapers across the UK: the average project value in our system ranges from £5,000 for a small landscaping job to over £100,000 for a full extension or loft conversion.
+Here's what we've learned from working with builders, roofers, kitchen fitters, and landscapers across the UK: the average project value in our system ranges from ï¿½5,000 for a small landscaping job to over ï¿½100,000 for a full extension or loft conversion.
 
-The average is around £25,000.
+The average is around ï¿½25,000.
 
-Here's the simple maths: one extra project per quarter at £25,000 adds £100,000 to your annual revenue. One extra project per month adds £300,000.
+Here's the simple maths: one extra project per quarter at ï¿½25,000 adds ï¿½100,000 to your annual revenue. One extra project per month adds ï¿½300,000.
 
 You don't need a hundred new customers. You need one or two good projects that you would have missed otherwise.
 
-The 9amLeads platform finds those projects for you—homeowners who've started the process, applied for planning permission, ordered surveys, or taken other concrete steps. We score them by likelihood and value, and deliver them to your inbox at 9am.
+The 9amLeads platform finds those projects for youï¿½homeowners who've started the process, applied for planning permission, ordered surveys, or taken other concrete steps. We score them by likelihood and value, and deliver them to your inbox at 9am.
 
 You only need to win one to make the system pay for itself many times over.
 
@@ -10976,7 +10967,7 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see this week\x27s projects i
 
 Here's something most tradespeople don't realise: by the time a homeowner is asking for quotes, they've been planning their project for weeks or months.
 
-The question is—what happened during those weeks and months?
+The question isï¿½what happened during those weeks and months?
 
 When someone decides to build an extension, they typically start by researching online. They look at designs. They check planning permission rules. They measure their space. They talk to neighbours who've had work done. They visit showrooms. They search for builders.
 
@@ -10988,7 +10979,7 @@ What if you could see those signals as they happen? What if you knew which homeo
 
 That's the intelligence 9amLeads provides. We aggregate dozens of data signals to identify homeowners who are actively moving toward a construction decision. We score them by how close they are to buying and how much the project is likely to be worth.
 
-By the time they're asking for quotes, you've already been on their radar for weeks—because you reached out when they started planning, not when they started shopping.
+By the time they're asking for quotes, you've already been on their radar for weeksï¿½because you reached out when they started planning, not when they started shopping.
 
 Would you like to see the intelligence available for your area?
 
@@ -10999,22 +10990,22 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see your area\x27s opportunit
 
 Let's talk about numbers, because in construction, everything comes down to maths.
 
-The average extension project in the UK costs between £45,000 and £75,000. A loft conversion averages £40,000-60,000. A new kitchen is £15,000-30,000. Landscaping projects range from £5,000-25,000.
+The average extension project in the UK costs between ï¿½45,000 and ï¿½75,000. A loft conversion averages ï¿½40,000-60,000. A new kitchen is ï¿½15,000-30,000. Landscaping projects range from ï¿½5,000-25,000.
 
 These aren't council tax band A numbers. These are significant investments that homeowners don't make lightly.
 
 Here's the return on investment calculation that matters:
 
-If you win ONE extension project from our system, at even a conservative £40,000 contract value, your gross profit at 20% margin is £8,000. The cost of 9amLeads for a full year is a fraction of that.
+If you win ONE extension project from our system, at even a conservative ï¿½40,000 contract value, your gross profit at 20% margin is ï¿½8,000. The cost of 9amLeads for a full year is a fraction of that.
 
 One project covers years of subscription. Everything else you win is additional.
 
 Here's what our customers in the construction space are actually seeing:
 
-£2-5 qualified project leads per week (varies by area and trade)
-— Project values averaging £15,000-65,000
-— Response time advantage: 40-60% close rate when first to quote
-— Average 3-6 additional projects secured per quarter
+ï¿½ 2-5 qualified project leads per week (varies by area and trade)
+ï¿½ Project values averaging ï¿½15,000-65,000
+ï¿½ Response time advantage: 40-60% close rate when first to quote
+ï¿½ Average 3-6 additional projects secured per quarter
 
 One builder in Essex told us: "I got a lead on a Tuesday, quoted on Wednesday, and was measuring up on Friday. The customer said I was the only one who responded within 48 hours. I got the job without even competing on price."
 
@@ -11025,19 +11016,19 @@ Reply and I'll calculate the potential ROI for your specific trade and area.
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply for a personalised ROI projection' },
 
-    { id: '9AM-PLAN-WK1-E5', week: 1, emailNum: 5, subject: 'How a Yorkshire builder secured £180k in projects from one platform', subjectB: 'Case study: From feast-or-famine to a full pipeline', preview: 'A builder\x27s journey from unpredictable workflow to consistent project pipeline', body: `Hi {{NAME}},
+    { id: '9AM-PLAN-WK1-E5', week: 1, emailNum: 5, subject: 'How a Yorkshire builder secured ï¿½180k in projects from one platform', subjectB: 'Case study: From feast-or-famine to a full pipeline', preview: 'A builder\x27s journey from unpredictable workflow to consistent project pipeline', body: `Hi {{NAME}},
 
 Let me share a story that illustrates what's possible.
 
-A builder in Yorkshire—let's call him Mark—specialises in extensions and loft conversions. Before using 9amLeads, his workflow was unpredictable. He'd have busy months where he'd turn down work, then quiet months where he'd worry about covering his overheads.
+A builder in Yorkshireï¿½let's call him Markï¿½specialises in extensions and loft conversions. Before using 9amLeads, his workflow was unpredictable. He'd have busy months where he'd turn down work, then quiet months where he'd worry about covering his overheads.
 
 He signed up sceptical. "I've tried every lead generation service out there," he told me. "They all promise the world and deliver tyre-kickers."
 
-In his first week, he received 3 project leads. One was a loft conversion in his exact area, valued at approximately £45,000. He quoted within 4 hours of receiving the lead. The homeowner told him he was the first to respond out of five builders contacted.
+In his first week, he received 3 project leads. One was a loft conversion in his exact area, valued at approximately ï¿½45,000. He quoted within 4 hours of receiving the lead. The homeowner told him he was the first to respond out of five builders contacted.
 
 He got the job.
 
-Over the next three months, Mark received 28 qualified project leads. He quoted 22. He secured 12 projects with a combined value of approximately £180,000.
+Over the next three months, Mark received 28 qualified project leads. He quoted 22. He secured 12 projects with a combined value of approximately ï¿½180,000.
 
 The total cost of the system over that period? Less than the profit from the smallest project he won.
 
@@ -11060,7 +11051,7 @@ But here's what I'd gently challenge: is your recommendation pipeline reliable e
 
 Recommendations are unpredictable. They come in waves. You might have a great month followed by two quiet ones. You can't control when someone's friend decides to build an extension.
 
-Beyond unpredictability, there's another issue: recommendations tend to produce similar projects. Your existing customers know you for what you've already done. They won't refer you for the £100,000 extension project if they hired you for a £5,000 driveway.
+Beyond unpredictability, there's another issue: recommendations tend to produce similar projects. Your existing customers know you for what you've already done. They won't refer you for the ï¿½100,000 extension project if they hired you for a ï¿½5,000 driveway.
 
 The 9amLeads platform doesn't replace your recommendation pipeline. It complements it. It fills the gaps when recommendations are quiet. It surfaces different types of projects that your existing network might not generate.
 
@@ -11102,7 +11093,7 @@ They respond faster because they've practised. They quote more accurately becaus
 
 And most importantly, they're building relationships with homeowners weeks before their competitors even know those homeowners exist.
 
-Consider this: if you start today, within a month you'll have a pipeline of projects at various stages—some quoting, some negotiating, some confirmed. Within three months, you'll have a steady flow of work that you can predict and plan around.
+Consider this: if you start today, within a month you'll have a pipeline of projects at various stagesï¿½some quoting, some negotiating, some confirmed. Within three months, you'll have a steady flow of work that you can predict and plan around.
 
 If you start in six months, you'll be six months behind every business that started today. And in the construction industry, being six months behind on relationships and pipeline is very hard to recover from.
 
@@ -11225,11 +11216,11 @@ What's the total value of construction and renovation projects in your area each
 
 We've done this calculation for hundreds of postcodes across the UK. Here's what the numbers typically look like.
 
-In a typical UK town with 50,000 households, approximately 2-3% will undertake a major renovation or extension project each year. That's 1,000-1,500 projects with an average value of £25,000-45,000.
+In a typical UK town with 50,000 households, approximately 2-3% will undertake a major renovation or extension project each year. That's 1,000-1,500 projects with an average value of Â£25,000-45,000.
 
-That's £25,000,000-67,500,000 in total project value annually.
+That's Â£25,000,000-67,500,000 in total project value annually.
 
-How much of that are you capturing? If you're doing 10 projects per year at £30,000 average, that's £300,000-or roughly 1% of the available market.
+How much of that are you capturing? If you're doing 10 projects per year at Â£30,000 average, that's Â£300,000-or roughly 1% of the available market.
 
 Now, I'm not suggesting you can capture 100%. But moving from 1% to 3% would triple your revenue.
 
@@ -11328,7 +11319,7 @@ Every year in the UK, approximately 270,000 estates go through probate. That's 2
 
 The problem is that most of these opportunities never reach the right people at the right time.
 
-Estate agents find out about probate properties when a solicitor instructs them—often months after the grant of probate. Removal companies hear about house clearances when a family is already stressed and rushing. Property investors discover probate sales when they're already on the open market.
+Estate agents find out about probate properties when a solicitor instructs themï¿½often months after the grant of probate. Removal companies hear about house clearances when a family is already stressed and rushing. Property investors discover probate sales when they're already on the open market.
 
 By the time most professionals hear about a probate opportunity, the best windows have passed.
 
@@ -11341,21 +11332,21 @@ If you'd like to see what probate opportunities are currently active in your are
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see probate opportunities in your area' },
 
-    { id: '9AM-PROB-WK1-E2', week: 1, emailNum: 2, subject: 'The £50,000 probate instruction you didn\x27t know existed', subjectB: 'Calculating the lifetime value of one probate relationship', preview: 'The compound revenue from a single probate instruction across multiple services', body: `Hi {{NAME}},
+    { id: '9AM-PROB-WK1-E2', week: 1, emailNum: 2, subject: 'The ï¿½50,000 probate instruction you didn\x27t know existed', subjectB: 'Calculating the lifetime value of one probate relationship', preview: 'The compound revenue from a single probate instruction across multiple services', body: `Hi {{NAME}},
 
 Let me put a number on what you might be missing.
 
 A single probate instruction isn't worth one transaction. It's worth a relationship that generates revenue across multiple services, often over several years.
 
-For an estate agent, a probate sale is worth £5,000-15,000 in commission on a typical property.
+For an estate agent, a probate sale is worth ï¿½5,000-15,000 in commission on a typical property.
 
-For a removal or house clearance company, a probate clearance is worth £1,000-5,000 depending on property size.
+For a removal or house clearance company, a probate clearance is worth ï¿½1,000-5,000 depending on property size.
 
-For a storage company, probate contents need storing for months—£500-2,000 in recurring revenue.
+For a storage company, probate contents need storing for monthsï¿½ï¿½500-2,000 in recurring revenue.
 
-For a solicitor, the probate application and estate administration can generate £3,000-15,000 in fees.
+For a solicitor, the probate application and estate administration can generate ï¿½3,000-15,000 in fees.
 
-For a property investor, a probate sale below market value can yield £20,000-50,000 in profit.
+For a property investor, a probate sale below market value can yield ï¿½20,000-50,000 in profit.
 
 And here's the crucial point: the professional who makes contact first often gets the entire relationship. The executors don't want to manage multiple vendors. They want one trusted professional who coordinates everything.
 
@@ -11376,9 +11367,9 @@ Phase one: Pre-grant. This is the period immediately after someone passes away w
 
 Phase two: Grant of probate. The legal authority to administer the estate is granted. This is when executors start making decisions about the property. Do they sell it? Move into it? Clear it? Rent it out? This is the critical decision window.
 
-Phase three: Post-grant administration. The property is sold, cleared, or transferred. This is when most professionals get involved—but by now, decisions have been made and relationships have been formed.
+Phase three: Post-grant administration. The property is sold, cleared, or transferred. This is when most professionals get involvedï¿½but by now, decisions have been made and relationships have been formed.
 
-The key insight is that the professional who engages during phase one or early phase two has a massive advantage. They're not competing for the instruction—they're helping shape the decision.
+The key insight is that the professional who engages during phase one or early phase two has a massive advantage. They're not competing for the instructionï¿½they're helping shape the decision.
 
 Most professionals wait for phase three. They wait for the property to hit the market. They wait for the clearance to be advertised. By then, they're one of many competing for a decision that's already been made.
 
@@ -11399,7 +11390,7 @@ Take the example of an estate agent who identifies a probate property early. Her
 
 They contact the executor with helpful information about the probate sale process, valuation requirements, and timeline. The executor appreciates the guidance and instructs them to sell.
 
-The property sells for £350,000 at 2% commission: £7,000.
+The property sells for ï¿½350,000 at 2% commission: ï¿½7,000.
 
 The executor also needs the property cleared: they recommend a removal company and potentially earn a referral fee or strengthen their relationship with a local partner.
 
@@ -11407,9 +11398,9 @@ The executor needs storage for some items: another referral opportunity.
 
 The executor's friends and family hear about the positive experience and remember the agent's name for their own future moves.
 
-Total revenue from one instruction: £7,000 direct, plus uncounted referral value.
+Total revenue from one instruction: ï¿½7,000 direct, plus uncounted referral value.
 
-For a probate solicitor, one instruction might be worth £5,000-15,000 in legal fees. For a removal company, a probate clearance might generate £1,500-4,000.
+For a probate solicitor, one instruction might be worth ï¿½5,000-15,000 in legal fees. For a removal company, a probate clearance might generate ï¿½1,500-4,000.
 
 But here's what our customers tell us: the first probate instruction they win from our system typically covers their subscription for several years. Everything after that is additional.
 
@@ -11420,11 +11411,11 @@ Reply and I'll show you the specific probate opportunities available in your are
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see your probate opportunity pipeline' },
 
-    { id: '9AM-PROB-WK1-E5', week: 1, emailNum: 5, subject: 'How a Southampton estate agent generated £28k from probate in 90 days', subjectB: 'Case study: The probate specialist who transformed their business', preview: 'Real results from a professional who made probate their focus', body: `Hi {{NAME}},
+    { id: '9AM-PROB-WK1-E5', week: 1, emailNum: 5, subject: 'How a Southampton estate agent generated ï¿½28k from probate in 90 days', subjectB: 'Case study: The probate specialist who transformed their business', preview: 'Real results from a professional who made probate their focus', body: `Hi {{NAME}},
 
 I want to share a story that demonstrates the power of probate-focused lead generation.
 
-An estate agent in Southampton—let's call her Sarah—had always handled probate properties when they came through referrals, but she'd never actively sought them out. She estimated she was getting maybe one or two probate instructions per year.
+An estate agent in Southamptonï¿½let's call her Sarahï¿½had always handled probate properties when they came through referrals, but she'd never actively sought them out. She estimated she was getting maybe one or two probate instructions per year.
 
 After joining 9amLeads, she started receiving daily notifications of probate estates in her area. In the first week, she identified three properties where the grant of probate had just been issued.
 
@@ -11432,9 +11423,9 @@ She contacted the executors not with a sales pitch, but with a helpful guide to 
 
 Two of the three executors instructed her within a week. The third called her back a month later when they were ready to proceed.
 
-Over the next 90 days, Sarah identified and secured instructions on five probate properties. Total commission: approximately £28,000.
+Over the next 90 days, Sarah identified and secured instructions on five probate properties. Total commission: approximately ï¿½28,000.
 
-She told us: "I can't believe I wasn't doing this before. These are the easiest sales I've ever made because the executors need help—they're not being sold to. I'm solving a real problem for people at a difficult time."
+She told us: "I can't believe I wasn't doing this before. These are the easiest sales I've ever made because the executors need helpï¿½they're not being sold to. I'm solving a real problem for people at a difficult time."
 
 The key to her success was timing. She contacted executors when they were making decisions, not after decisions had been made.
 
@@ -11451,13 +11442,13 @@ Solicitor referrals are valuable. They're a sign that you've built trust with pr
 
 But here's what we've learned from working with hundreds of professionals across the probate ecosystem: solicitor referrals typically capture only a fraction of the available opportunity.
 
-Most solicitors work with a small number of trusted agents and providers. They refer to the same 2-3 people they've always worked with. If you're one of them, great. But you're still only seeing the estates that solicitor handles—which might be 10-20 per year.
+Most solicitors work with a small number of trusted agents and providers. They refer to the same 2-3 people they've always worked with. If you're one of them, great. But you're still only seeing the estates that solicitor handlesï¿½which might be 10-20 per year.
 
 What about the other 200+ estates going through probate in your area each year? Who's serving those executors?
 
 Furthermore, solicitor referrals often come late in the process. By the time a solicitor recommends you, the executor may have already spoken to other professionals, received advice, or even made arrangements.
 
-Direct outreach to executors—at the right time, with the right message—captures opportunities that never reach the solicitor referral pipeline.
+Direct outreach to executorsï¿½at the right time, with the right messageï¿½captures opportunities that never reach the solicitor referral pipeline.
 
 The 9amLeads platform doesn't replace your existing referral sources. It complements them by surfacing opportunities your current network doesn't reach.
 
@@ -11497,7 +11488,7 @@ In area after area, we see the same pattern. A few forward-thinking professional
 
 Within months, they've established themselves as the go-to probate professionals in their area. Executors recommend them to other executors. Solicitors start referring to them because they see them everywhere.
 
-The professionals who didn't act early find themselves competing for the leftovers—the estates that the early adopters didn't pursue.
+The professionals who didn't act early find themselves competing for the leftoversï¿½the estates that the early adopters didn't pursue.
 
 This isn't theory. This is what we observe happening across the country right now.
 
@@ -11620,11 +11611,11 @@ What's the total value of estates going through probate in your area each year?
 
 We've done this calculation for hundreds of regions across the UK. Here's what the numbers typically look like.
 
-In a typical UK county with a population of 500,000, approximately 2,500-3,000 estates go through probate each year. The average property value in these estates is £250,000-400,000.
+In a typical UK county with a population of 500,000, approximately 2,500-3,000 estates go through probate each year. The average property value in these estates is Â£250,000-400,000.
 
-That's £625,000,000-1,200,000,000 in total estate value annually.
+That's Â£625,000,000-1,200,000,000 in total estate value annually.
 
-Even focusing only on the top 10% of estates by value, that's £62,000,000-120,000,000 in addressable opportunity.
+Even focusing only on the top 10% of estates by value, that's Â£62,000,000-120,000,000 in addressable opportunity.
 
 How much of that are you capturing?
 
@@ -11722,7 +11713,7 @@ But they don't always know they need you. Or they know they need help, but they 
 
 The firms that grow fastest are the ones that find those businesses first, reach out with genuine insight, and build relationships before a formal procurement process begins.
 
-That's what 9amLeads helps you do. We identify businesses in your area or sector that are showing signs of needing your services—new incorporations, funding rounds, leadership changes, expansion plans, regulatory triggers—and deliver those opportunities to your inbox every morning at 9am.
+That's what 9amLeads helps you do. We identify businesses in your area or sector that are showing signs of needing your servicesï¿½new incorporations, funding rounds, leadership changes, expansion plans, regulatory triggersï¿½and deliver those opportunities to your inbox every morning at 9am.
 
 You're not cold calling. You're reaching out at the exact moment a business is most likely to need what you offer.
 
@@ -11731,7 +11722,7 @@ If you'd like to see what opportunities exist in your market right now, I'd be h
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see live opportunities in your sector' },
 
-    { id: '9AM-NBZ-WK1-E2', week: 1, emailNum: 2, subject: 'The £50,000 account you didn\x27t pitch for', subjectB: 'The lifetime value of one new business client you never knew existed', preview: 'Calculating what missed new business opportunities cost your firm', body: `Hi {{NAME}},
+    { id: '9AM-NBZ-WK1-E2', week: 1, emailNum: 2, subject: 'The ï¿½50,000 account you didn\x27t pitch for', subjectB: 'The lifetime value of one new business client you never knew existed', preview: 'Calculating what missed new business opportunities cost your firm', body: `Hi {{NAME}},
 
 Let me ask you something. How many businesses in your area or sector started looking for your service last month?
 
@@ -11739,13 +11730,13 @@ If you're relying on referrals, recommendations, and incoming enquiries, you're 
 
 Here's what we've learned from working with professional service firms: the lifetime value of a new business client varies by sector, but it's almost always substantial.
 
-For an accountant, a new SME client is worth £2,000-10,000 per year in recurring fees. If they stay for 5 years, that's £10,000-50,000 in lifetime value.
+For an accountant, a new SME client is worth ï¿½2,000-10,000 per year in recurring fees. If they stay for 5 years, that's ï¿½10,000-50,000 in lifetime value.
 
-For a marketing agency, a retainer client is worth £3,000-15,000 per month. A single client retained for two years is worth £72,000-360,000.
+For a marketing agency, a retainer client is worth ï¿½3,000-15,000 per month. A single client retained for two years is worth ï¿½72,000-360,000.
 
-For an insurance broker, a commercial client generates £1,000-5,000 in commission annually. Over a decade, that's £10,000-50,000.
+For an insurance broker, a commercial client generates ï¿½1,000-5,000 in commission annually. Over a decade, that's ï¿½10,000-50,000.
 
-For a recruitment agency, a single placed candidate generates £5,000-25,000 in fees. One client with multiple hires can be worth £50,000+ per year.
+For a recruitment agency, a single placed candidate generates ï¿½5,000-25,000 in fees. One client with multiple hires can be worth ï¿½50,000+ per year.
 
 The common thread? You only need to win a handful of new clients per year from our system to generate a transformational return. Every client after that is pure growth.
 
@@ -11764,19 +11755,19 @@ Businesses don't wake up one day and decide to hire an accountant or a marketing
 
 Here are the signals we track:
 
-A company incorporates a new subsidiary—they'll need accounting, insurance, and probably IT support within weeks.
+A company incorporates a new subsidiaryï¿½they'll need accounting, insurance, and probably IT support within weeks.
 
-A business raises funding or takes on investment—they'll need financial structuring, marketing support, and recruitment almost immediately.
+A business raises funding or takes on investmentï¿½they'll need financial structuring, marketing support, and recruitment almost immediately.
 
-A key executive is hired or leaves—this often triggers a review of existing service providers.
+A key executive is hired or leavesï¿½this often triggers a review of existing service providers.
 
-A company expands into new premises or locations—they need new insurance, IT setup, and potentially recruitment.
+A company expands into new premises or locationsï¿½they need new insurance, IT setup, and potentially recruitment.
 
 Regulatory changes in their industry create compliance needs.
 
 Each of these signals creates a window of opportunity. And each window closes quickly once the business has chosen their provider.
 
-The firms that win the most new business are the ones that see these signals early and reach out with relevant insight—not a sales pitch, but genuine understanding of what the business is going through.
+The firms that win the most new business are the ones that see these signals early and reach out with relevant insightï¿½not a sales pitch, but genuine understanding of what the business is going through.
 
 9amLeads monitors these signals across thousands of businesses, aggregates them, and delivers actionable opportunities to your inbox daily. You see who needs you before they know they need you.
 
@@ -11789,24 +11780,24 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see your market\x27s buying s
 
 Let me show you the return on investment from the perspective of different professional services.
 
-Accountant: A new SME client generates £3,000-8,000 in annual fees. Average retention is 5+ years. Lifetime value: £15,000-40,000. One client acquired through our system covers your subscription for many years.
+Accountant: A new SME client generates ï¿½3,000-8,000 in annual fees. Average retention is 5+ years. Lifetime value: ï¿½15,000-40,000. One client acquired through our system covers your subscription for many years.
 
-Marketing agency: A new retainer client at £5,000 per month. Minimum 12-month engagement. Lifetime value: £60,000+. One client is transformational.
+Marketing agency: A new retainer client at ï¿½5,000 per month. Minimum 12-month engagement. Lifetime value: ï¿½60,000+. One client is transformational.
 
-Insurance broker: A commercial client with £2,500 annual commission. Retention averages 7+ years. Lifetime value: £17,500. Not bad for responding to one email.
+Insurance broker: A commercial client with ï¿½2,500 annual commission. Retention averages 7+ years. Lifetime value: ï¿½17,500. Not bad for responding to one email.
 
-IT consultancy: A new client engagement at £10,000-50,000. Plus ongoing support and project work. One project can fund years of lead generation.
+IT consultancy: A new client engagement at ï¿½10,000-50,000. Plus ongoing support and project work. One project can fund years of lead generation.
 
-Recruiter: A single placement at £15,000 fee. One placement covers years of subscription. Multiple placements from the same client are pure profit.
+Recruiter: A single placement at ï¿½15,000 fee. One placement covers years of subscription. Multiple placements from the same client are pure profit.
 
 Here's what our customers are actually seeing:
 
-£3-10 qualified opportunities per week (varies by sector and geography)
-— Response time advantage: significantly higher conversion when first to engage
-— Average deal values ranging from £5,000-£50,000+
-— Pipeline visibility that enables better business planning
+ï¿½ 3-10 qualified opportunities per week (varies by sector and geography)
+ï¿½ Response time advantage: significantly higher conversion when first to engage
+ï¿½ Average deal values ranging from ï¿½5,000-ï¿½50,000+
+ï¿½ Pipeline visibility that enables better business planning
 
-One accounting firm partner told us: "I was sceptical. But the first week I used it, I identified a company that had just raised £2m in funding and needed a new accountant. I was speaking to the FD within hours of the signal appearing. We won the account."
+One accounting firm partner told us: "I was sceptical. But the first week I used it, I identified a company that had just raised ï¿½2m in funding and needed a new accountant. I was speaking to the FD within hours of the signal appearing. We won the account."
 
 The ROI maths is simple. One win covers everything. Everything after that compounds.
 
@@ -11823,15 +11814,15 @@ A recruitment agency specialising in technology roles had a solid reputation but
 
 Their director told me: "Our problem isn't placing candidates. It's getting clients who trust us enough to give us their vacancies."
 
-After joining 9amLeads, they started receiving daily notifications about businesses showing signs of hiring activity—companies that had received funding, expanded leadership teams, or posted related roles internally.
+After joining 9amLeads, they started receiving daily notifications about businesses showing signs of hiring activityï¿½companies that had received funding, expanded leadership teams, or posted related roles internally.
 
 They reached out to these businesses with market insights about talent availability, salary benchmarks, and hiring timelines. No hard sell. Just genuine expertise.
 
-In the first 60 days, they identified 14 businesses with active or imminent hiring needs. They secured mandates with 8. Total fee value: approximately £95,000.
+In the first 60 days, they identified 14 businesses with active or imminent hiring needs. They secured mandates with 8. Total fee value: approximately ï¿½95,000.
 
 The director said: "The biggest change isn't just the revenue. It's that I know every morning exactly which businesses I should be talking to. I'm not guessing anymore."
 
-A marketing agency using our platform had a similar experience. They identified a company that had just completed a Series A funding round, reached out with a strategic marketing assessment, and secured a £12,000 per month retainer within two weeks.
+A marketing agency using our platform had a similar experience. They identified a company that had just completed a Series A funding round, reached out with a strategic marketing assessment, and secured a ï¿½12,000 per month retainer within two weeks.
 
 The common thread: they saw the opportunity before their competitors, reached out with value, and built relationships before any formal pitch process.
 
@@ -11852,7 +11843,7 @@ First, complacency is the biggest risk to any professional services firm. Market
 
 Second, the best time to build a pipeline is when you don't need it. When you're busy, you can be selective. You can choose the best clients. You can negotiate better terms. You can turn down work that isn't profitable.
 
-When you're quiet and desperate, you'll take anything—and that rarely ends well.
+When you're quiet and desperate, you'll take anythingï¿½and that rarely ends well.
 
 Third, a daily intelligence feed of opportunities gives you market awareness that you simply don't get from your existing client base. You see what's happening in your sector, who's growing, who's changing, and where the market is heading.
 
@@ -11881,7 +11872,7 @@ The firms that wait until they're quiet to start looking for new business are al
 
 The firms that prospect consistently are always in control. They choose their clients. They protect their margins. They grow predictably.
 
-Here's what consistent opportunity intelligence looks like in practice: every morning at 9am, you receive a brief of the most relevant opportunities in your market. Some are immediate—businesses actively looking right now. Others are emerging—signals that a need will develop in the coming weeks.
+Here's what consistent opportunity intelligence looks like in practice: every morning at 9am, you receive a brief of the most relevant opportunities in your market. Some are immediateï¿½businesses actively looking right now. Others are emergingï¿½signals that a need will develop in the coming weeks.
 
 You spend 15 minutes reviewing, prioritising, and taking action. Over a month, that's five hours of focused business development that builds a visible, predictable pipeline.
 
@@ -12019,11 +12010,11 @@ What's the total value of addressable new business in your target market each ye
 
 We've done this calculation for hundreds of firms across different sectors. Here's what the numbers typically look like.
 
-For an accounting firm targeting SMEs in a major UK city, there are approximately 10,000-25,000 businesses that need accounting services. At an average fee of £3,000-8,000 per year, that's £30,000,000-200,000,000 in total addressable market annually.
+For an accounting firm targeting SMEs in a major UK city, there are approximately 10,000-25,000 businesses that need accounting services. At an average fee of Â£3,000-8,000 per year, that's Â£30,000,000-200,000,000 in total addressable market annually.
 
-For a marketing agency targeting funded startups, there might be 200-500 businesses raising capital each year in their region. At an average retainer of £5,000-15,000 per month, that's £12,000,000-90,000,000 in potential revenue.
+For a marketing agency targeting funded startups, there might be 200-500 businesses raising capital each year in their region. At an average retainer of Â£5,000-15,000 per month, that's Â£12,000,000-90,000,000 in potential revenue.
 
-For a recruitment agency, each business that hires represents £10,000-50,000 in potential fees. With hundreds of businesses hiring each month, the total addressable market runs into millions.
+For a recruitment agency, each business that hires represents Â£10,000-50,000 in potential fees. With hundreds of businesses hiring each month, the total addressable market runs into millions.
 
 How much of this are you capturing?
 
@@ -12113,7 +12104,7 @@ I want to talk about a market that's worth hundreds of billions of pounds in the
 
 The public and private sector tender market.
 
-Every day, thousands of contracts are advertised and awarded across cleaning, security, construction, facilities management, catering, maintenance, training, and IT. These aren't small projects—they're transformative contracts worth tens of thousands to millions of pounds.
+Every day, thousands of contracts are advertised and awarded across cleaning, security, construction, facilities management, catering, maintenance, training, and IT. These aren't small projectsï¿½they're transformative contracts worth tens of thousands to millions of pounds.
 
 The problem is that most businesses don't know these opportunities exist until it's too late.
 
@@ -12128,21 +12119,21 @@ If you'd like to see what tender opportunities are currently available in your s
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see current tender opportunities in your sector' },
 
-    { id: '9AM-TEN-WK1-E2', week: 1, emailNum: 2, subject: 'The £500,000 contract you didn\x27t bid for', subjectB: 'What one missed tender really costs your business', preview: 'The transformative value of winning a single contract in your sector', body: `Hi {{NAME}},
+    { id: '9AM-TEN-WK1-E2', week: 1, emailNum: 2, subject: 'The ï¿½500,000 contract you didn\x27t bid for', subjectB: 'What one missed tender really costs your business', preview: 'The transformative value of winning a single contract in your sector', body: `Hi {{NAME}},
 
 Let me put a number on what you might be missing.
 
 In the tenders and contracts space, a single win can transform your business.
 
-For a cleaning company, a school or hospital contract is worth £50,000-500,000 per year, often with 3-5 year terms.
+For a cleaning company, a school or hospital contract is worth ï¿½50,000-500,000 per year, often with 3-5 year terms.
 
-For a security firm, a public sector guarding contract averages £100,000-1,000,000 annually.
+For a security firm, a public sector guarding contract averages ï¿½100,000-1,000,000 annually.
 
-For a construction company, a framework placement can deliver £500,000-5,000,000 in work over its lifetime.
+For a construction company, a framework placement can deliver ï¿½500,000-5,000,000 in work over its lifetime.
 
-For a facilities management provider, a single large site contract can generate £200,000-2,000,000 per year.
+For a facilities management provider, a single large site contract can generate ï¿½200,000-2,000,000 per year.
 
-For a catering company, an education or healthcare contract is worth £100,000-1,000,000 annually.
+For a catering company, an education or healthcare contract is worth ï¿½100,000-1,000,000 annually.
 
 For a training provider, a framework agreement can deliver consistent revenue for years.
 
@@ -12167,13 +12158,13 @@ Most businesses think tendering starts when the ITT (Invitation to Tender) is pu
 
 Here's the actual procurement timeline:
 
-Phase one—Market engagement: 3-6 months before the ITT. Procurement teams research the market, identify potential suppliers, and attend industry events. This is when relationships are formed.
+Phase oneï¿½Market engagement: 3-6 months before the ITT. Procurement teams research the market, identify potential suppliers, and attend industry events. This is when relationships are formed.
 
-Phase two—Pre-qualification: 2-4 months before the ITT. Suppliers are invited to express interest and complete SQ (Selection Questionnaire) documents. This filters the field.
+Phase twoï¿½Pre-qualification: 2-4 months before the ITT. Suppliers are invited to express interest and complete SQ (Selection Questionnaire) documents. This filters the field.
 
-Phase three—ITT publication: The formal tender is published. You typically have 3-6 weeks to respond. If you haven't been involved in phases one and two, you're at a massive disadvantage.
+Phase threeï¿½ITT publication: The formal tender is published. You typically have 3-6 weeks to respond. If you haven't been involved in phases one and two, you're at a massive disadvantage.
 
-Phase four—Evaluation: Scoring typically weights 60-70% on quality and 30-40% on price. The highest-scoring bidder wins.
+Phase fourï¿½Evaluation: Scoring typically weights 60-70% on quality and 30-40% on price. The highest-scoring bidder wins.
 
 The winning suppliers are the ones who engage in phases one and two. They know the contract is coming before it's published. They've shaped their services to match the buyer's needs. They've built relationships with the procurement team.
 
@@ -12200,18 +12191,18 @@ For an IT services provider, a spot on a G-Cloud framework makes selling to gove
 
 Here's the ROI maths:
 
-A single framework placement costs time and effort to secure—typically 40-80 hours of bid writing. But the lifetime value can run into millions.
+A single framework placement costs time and effort to secureï¿½typically 40-80 hours of bid writing. But the lifetime value can run into millions.
 
 Even outside frameworks, a single contract win in most sectors covers your bid costs many times over.
 
-A cleaning company winning one £200,000 school contract covers years of subscription to a tender intelligence service. A security firm winning one £500,000 guarding contract covers a decade or more.
+A cleaning company winning one ï¿½200,000 school contract covers years of subscription to a tender intelligence service. A security firm winning one ï¿½500,000 guarding contract covers a decade or more.
 
 Our customers in the tenders space report:
 
-£5-15 relevant tender opportunities identified per week
-— Win rates of 20-40% on opportunities they pursue
-— Average contract values ranging from £50,000 to £2,000,000+
-— Framework placement rates significantly improved with early intelligence
+ï¿½ 5-15 relevant tender opportunities identified per week
+ï¿½ Win rates of 20-40% on opportunities they pursue
+ï¿½ Average contract values ranging from ï¿½50,000 to ï¿½2,000,000+
+ï¿½ Framework placement rates significantly improved with early intelligence
 
 The ROI isn't marginal. It's transformational. One win changes everything.
 
@@ -12220,23 +12211,23 @@ Reply and I'll calculate what the tender opportunity looks like for your specifi
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply for a tender opportunity assessment' },
 
-    { id: '9AM-TEN-WK1-E5', week: 1, emailNum: 5, subject: 'How a North West cleaning company won £1.2m in contracts in 6 months', subjectB: 'Case study: From ad hoc tendering to a systematic contract pipeline', preview: 'Real results from a business that transformed their approach to tenders', body: `Hi {{NAME}},
+    { id: '9AM-TEN-WK1-E5', week: 1, emailNum: 5, subject: 'How a North West cleaning company won ï¿½1.2m in contracts in 6 months', subjectB: 'Case study: From ad hoc tendering to a systematic contract pipeline', preview: 'Real results from a business that transformed their approach to tenders', body: `Hi {{NAME}},
 
 Let me share a story that illustrates the power of systematic tender intelligence.
 
-A cleaning company in the North West—family-run, 50 employees—had historically won contracts through local relationships. They'd occasionally bid on public sector tenders, but without a consistent approach.
+A cleaning company in the North Westï¿½family-run, 50 employeesï¿½had historically won contracts through local relationships. They'd occasionally bid on public sector tenders, but without a consistent approach.
 
 Their director told me: "We knew there were contracts out there, but we never seemed to hear about them in time. By the time we found them, other bidders had a head start."
 
-After joining 9amLeads, they started receiving daily notifications of cleaning tenders matched to their capabilities and location. In the first week, they identified a school cleaning contract worth £180,000 per year that they would have completely missed.
+After joining 9amLeads, they started receiving daily notifications of cleaning tenders matched to their capabilities and location. In the first week, they identified a school cleaning contract worth ï¿½180,000 per year that they would have completely missed.
 
 They bid and won.
 
-Over the next six months, they identified and bid on 22 relevant tender opportunities. They won 7 contracts with a combined annual value of approximately £1.2 million. Their bid team grew from one person to four.
+Over the next six months, they identified and bid on 22 relevant tender opportunities. They won 7 contracts with a combined annual value of approximately ï¿½1.2 million. Their bid team grew from one person to four.
 
 The director said: "The single biggest change is that we now know what's coming. We can prepare, we can resource, we can build relationships with procurement teams before the tender drops. We're not scrambling anymore. We're planning."
 
-A security company in the Midlands had a similar experience. They secured a place on a police force guarding framework worth an estimated £3 million over four years—a contract they found through our platform in the pre-market engagement phase.
+A security company in the Midlands had a similar experience. They secured a place on a police force guarding framework worth an estimated ï¿½3 million over four yearsï¿½a contract they found through our platform in the pre-market engagement phase.
 
 If you'd like to see case studies specific to your sector, just reply.
 
@@ -12255,7 +12246,7 @@ If you're too busy to bid for new contracts, it might mean you're working on the
 
 The most successful tender-driven businesses we work with are selective. They use intelligence to identify the contracts that offer the best strategic fit, the highest margins, and the longest terms. They turn down the rest.
 
-The 9amLeads platform doesn't force you to bid on everything. It gives you the intelligence to choose which opportunities are worth pursuing. You might see 15 opportunities per week but only bid on 2. That's fine—if those 2 are the right ones.
+The 9amLeads platform doesn't force you to bid on everything. It gives you the intelligence to choose which opportunities are worth pursuing. You might see 15 opportunities per week but only bid on 2. That's fineï¿½if those 2 are the right ones.
 
 Some of our most successful customers bid on fewer than 10% of the opportunities we surface. But the ones they pursue, they win at high rates because they're selective and focused.
 
@@ -12426,13 +12417,13 @@ What's the total value of contracts being awarded in your sector each year?
 
 We've done this calculation for multiple sectors across the UK. Here's what the numbers typically look like.
 
-For a cleaning company, the UK public sector spends approximately £4-6 billion annually on cleaning and janitorial services. Even focusing on your region, there are tens of millions in contract value awarded each year.
+For a cleaning company, the UK public sector spends approximately Â£4-6 billion annually on cleaning and janitorial services. Even focusing on your region, there are tens of millions in contract value awarded each year.
 
-For a security company, the UK public sector spends approximately £8-10 billion annually on security services. Frameworks alone can be worth hundreds of millions over their lifetime.
+For a security company, the UK public sector spends approximately Â£8-10 billion annually on security services. Frameworks alone can be worth hundreds of millions over their lifetime.
 
-For a construction company, public sector construction spend exceeds £50 billion annually. Even a small fraction of this represents a significant addressable market.
+For a construction company, public sector construction spend exceeds Â£50 billion annually. Even a small fraction of this represents a significant addressable market.
 
-For an IT services company, the UK government spends over £20 billion annually on technology. G-Cloud alone has facilitated billions in contracts.
+For an IT services company, the UK government spends over Â£20 billion annually on technology. G-Cloud alone has facilitated billions in contracts.
 
 How much of this are you currently winning?
 
