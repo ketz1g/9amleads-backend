@@ -174,6 +174,13 @@ function leadMatchesTarget(lead, customer, product) {
     }
 
     if (filters && filters.product) {
+      // Map legacy frontend filter keys to distributor expected keys
+      var keyMap = { 'f-bed-min':'minBedrooms', 'f-bed-max':'maxBedrooms', 'f-max-price':'maxPrice', 'f-prop-type':'propertyType', 'f-status':'statusSSTC', 'f-min-val':'minValue', 'f-industries':'industries', 'f-keywords':'keywords' };
+      for (var oldKey in keyMap) {
+        if (filters[oldKey] !== undefined && filters[keyMap[oldKey]] === undefined) {
+          filters[keyMap[oldKey]] = filters[oldKey];
+        }
+      }
       if (filters.product === 'moving') {
         const beds = parseInt(lead.bedrooms) || 0;
         const minBeds = parseInt(filters.minBedrooms) || 0;
