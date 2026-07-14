@@ -8056,7 +8056,7 @@ function syncCustomers(product) {
         if (product === 'newbusiness') {
           leads = [];
           try {
-            var chKeySimple = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+            var chKeySimple = '8e6cae34-073b-4451-b4c8-e0b463ca4b21' || process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY;
             var nbResults = await new Promise(function(resolve) {
               var url = '/search/companies?q=services&size=200&start_index=0';
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeySimple + ':').toString('base64'), 'Accept': 'application/json', 'User-Agent': '9amLeads/1.0' } }, function(res) {
