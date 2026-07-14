@@ -7383,7 +7383,7 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
       var prod = customer.product || 'moving';
       var apifyK = process.env.APIFY_API_KEY;
       var freshLeads = [];
-      if (prod === 'moving' && apifyK) {
+      if (prod === 'moving') {
         var lm = await new Promise(function(resolve) {
           var bd = JSON.stringify({ location: 'London', maxResults: 3 });
           var rq = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyK + '&memory=128&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd) }, timeout: 150000 }, function(s) {
@@ -8203,10 +8203,10 @@ function syncCustomers(product) {
             console.log('[SCRAPER] CH Planning returned ' + leads.length + ' builders (30d)');
           } catch(e) { console.log('[SCRAPER] Planning error:', e.message); leads = []; }
         } else if (product === 'moving') {
-          try { var k = process.env.APIFY_API_KEY; leads = []; if (k) {
+          try { var k = process.env.APIFY_API_KEY; leads = []; if (true) {
             leads = await new Promise(function(r) {
               var b = JSON.stringify({ location: 'London', maxResults: 200 });
-              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/d1i6SpbgzkWCic0cV/run-sync-get-dataset-items?token=' + k + '&memory=128&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
+              setTimeout(function() { r([]); }, 100); // Apify disabled
                 var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
                   try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
                     r(items.map(function(p) { 
