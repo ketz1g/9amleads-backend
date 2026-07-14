@@ -8099,7 +8099,7 @@ function syncCustomers(product) {
                         var body = ''; res.on('data', function(c) { body += c; });
                         res.on('end', function() {
                           try { var d = JSON.parse(body); var items = d.items || []; 
-                            var recent = items.filter(function(i) { return i.date_of_creation && i.date_of_creation >= '2026-01-01' && i.company_status === 'active'; });
+                            var recent = items.filter(function(i) { return i.date_of_creation && i.date_of_creation >= '2025-06-01' && i.company_status === 'active'; });
                             resolve(recent); } catch(e) { resolve([]); }
                         });
                       });
