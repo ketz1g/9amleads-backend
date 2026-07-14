@@ -3726,7 +3726,8 @@ function generateDemoLeads(product, count) {
         incorporationDate: new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString(), source: 'Sample Data', scrapedAt: now
       });
     }
-  } else if (product === 'planning') {
+            if (!leads || leads.length === 0) { leads = generateDemoLeads('newbusiness', 20); console.log('[SCRAPER] NB: using demo leads'); }
+        } else if (product === 'planning') {
     const councils = ['Westminster City Council', 'Camden Council', 'Manchester City Council', 'Birmingham City Council', 'Leeds City Council', 'Bristol City Council'];
     const appTypes = ['Full Planning', 'Householder', 'Listed Building', 'Change of Use', 'Outline Planning'];
     for (let i = 0; i < count; i++) {
