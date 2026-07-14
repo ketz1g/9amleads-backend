@@ -8058,7 +8058,7 @@ function syncCustomers(product) {
           try {
             // Primary source: Companies House REST API search
             console.log('[SCRAPER] Fetching new businesses from Companies House API...');
-            var chKeyNB2 = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || '8e6cae34-073b-4451-b4c8-e0b463ca4b21';
+            var chKeyNB2 = '8e6cae34-073b-4451-b4c8-e0b463ca4b21' || process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY;
             var sectors = ['construction', 'building', 'property', 'removals', 'cleaning', 'plumbing', 'electrical', 'roofing', 'landscape', 'estate', 'catering', 'consulting', 'transport', 'logistics'];
             var allCompanies = [];
             for (var si2 = 0; si2 < sectors.length; si2++) {
