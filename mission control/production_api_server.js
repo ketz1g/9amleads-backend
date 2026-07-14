@@ -8251,7 +8251,7 @@ function syncCustomers(product) {
           if (probK) {
             try {
               probLeads = await new Promise(function(r) {
-                var b = JSON.stringify({ sp_intended_usage: 'personal', sp_improvement_suggestions: 'testing', maxResults: 5 });
+                var b = JSON.stringify({ sp_intended_usage: 'personal', sp_improvement_suggestions: 'testing', maxResults: 50 });
                 var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/rcfzPm2dJk9vig8hp/run-sync-get-dataset-items?token=' + probK + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
                     try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
