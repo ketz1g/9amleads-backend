@@ -1854,7 +1854,7 @@ app.post('/api/support', authMiddleware, async (req, res) => {
     if (!db.support_requests) db.support_requests = [];
     db.support_requests.push({
       id: uuidv4(), customer_id: req.user.id, type: req.body.type || 'general',
-      subject: req.body.subject || '', message: req.body.message || '',
+      name: req.body.name || '', email: req.body.email || '', subject: req.body.subject || '', message: req.body.message || '',
       created_at: new Date().toISOString(), resolved: false
     });
     saveDb();
