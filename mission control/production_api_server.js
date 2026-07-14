@@ -8060,8 +8060,8 @@ function syncCustomers(product) {
             leads = streamWorker.getRecentCompanies();
             console.log('[SCRAPER] Stream worker returned ' + leads.length + ' queued companies');
           } catch(e) { console.log('[SCRAPER] Stream error: ' + e.message); leads = []; }
-          // Only fallback to Apify if stream is disconnected
-if ((!leads || leads.length < 3) && (!require('./streaming_worker').getStatus().connected)) {
+          // Fallback: if stream returns 0, use Apify CH search as backup
+          if (!leads || leads.length < 3) {
   try {
     var apifyK3 = process.env.APIFY_API_KEY;
     if (apifyK3) {
