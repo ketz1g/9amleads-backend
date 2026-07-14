@@ -8179,7 +8179,9 @@ function syncCustomers(product) {
                 });
                 var ft = filterFresh(leads, 'publishedDate');
                 leads = ft.fresh.length > 0 ? ft.fresh : ft.fallback;
-                if (!leads || leads.length === 0) { leads = generateDemoLeads('tenders', 10); } else { console.log('[SCRAPER] Tenders: ' + ft.fresh.length + ' fresh, ' + ft.fallback.length + ' fallback, total: ' + leads.length); }
+                if (!leads || leads.length === 0) { leads = generateDemoLeads('tenders', 10); } else {
+          console.log('[SCRAPER] Tenders: ' + ft.fresh.length + ' fresh, ' + ft.fallback.length + ' fallback, total: ' + leads.length);
+        }
               } else { console.log('[SCRAPER] No tender leads today'); leads = []; }
             } catch(e) { console.log('[SCRAPER] Tenders fallback error:', e.message); leads = []; }
           }
@@ -8265,7 +8267,7 @@ function syncCustomers(product) {
               });
             } catch(e) { console.log('[SCRAPER] Probate Apify error:', e.message); }
           }
-          if (probLeads && probLeads.length > 0) { var fp = filterFresh(probLeads, 'notificationDate'); probLeads = fp.fresh.length > 0 ? fp.fresh : fp.fallback; leads = probLeads; console.log('[SCRAPER] Probate: ' + fp.fresh.length + ' fresh, ' + fp.fallback.length + ' fallback'); } else { leads = generateDemoLeads('probate', 10); console.log('[SCRAPER] Probate: using demo leads (0 from source)'); }
+          if (probLeads && probLeads.length > 0) { var fp = filterFresh(probLeads, 'notificationDate'); probLeads = fp.fresh.length > 0 ? fp.fresh : fp.fallback; leads = probLeads; console.log('[SCRAPER] Probate: ' + fp.fresh.length + ' fresh, ' + fp.fallback.length + ' fallback'); }
           else {
             console.log('[SCRAPER] Probate Apify 0, fallback CH');
             var chKeyProb = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || 'b67556b9-fedd-41dc-b8c1-dc34aed2b1ba';
@@ -8283,6 +8285,7 @@ function syncCustomers(product) {
             });
             console.log('[SCRAPER] CH Probate fallback returned ' + leads.length + ' leads');
           }
+          if (!probLeads || probLeads.length === 0) { leads = generateDemoLeads('probate', 10); console.log('[SCRAPER] Probate: using demo leads'); }
         } else {
           leads = [];
         }
