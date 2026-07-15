@@ -144,6 +144,21 @@ function leadMatchesTarget(lead, customer, product) {
         var areaLower = (area || '').toLowerCase().trim();
         if (!areaLower || areaLower === 'all uk') { areaMatch = true; break; }
         if (leadText.includes(areaLower)) { areaMatch = true; break; }
+        // County-to-postcode matching: check if the lead's postcode area matches the target county
+        if (!areaMatch && lead.postcode) {
+          var pcCode = extractPostcodeArea(lead.postcode);
+          var countyPostcodes = {
+            'essex': ['CM','CO','SS','IG'],'hertfordshire':['AL','EN','HP','SG','WD'],'kent':['CT','DA','ME','TN'],
+            'surrey':['CR','GU','KT','RH','SM','TW'],'sussex':['BN','RH','TN'],'hampshire':['GU','PO','SO','SP','RG'],
+            'berkshire':['RG','SL'],'buckinghamshire':['HP','MK','SL'],'oxfordshire':['OX'],'bedfordshire':['LU','MK'],
+            'cambridgeshire':['CB','PE'],'norfolk':['IP','NR','PE'],'suffolk':['CO','IP','NR'],
+            'london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
+            'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
+            'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
+            'glasgow':['G'],'belfast':['BT']
+          };
+          if (countyPostcodes[areaLower] && countyPostcodes[areaLower].indexOf(pcCode) >= 0) { areaMatch = true; break; }
+        }
       }
     }
     if (!areaMatch) return { match: false, tier: 0 };
