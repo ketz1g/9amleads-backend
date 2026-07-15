@@ -8057,27 +8057,37 @@ function syncCustomers(product) {
           leads = [];
           try {
             var chKeySimple = '8e6cae34-073b-4451-b4c8-e0b463ca4b21' || process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY;
-            var nbResults = await new Promise(function(resolve) {
-              var url = '/search/companies?q=services&size=200&start_index=0';
-              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeySimple + ':').toString('base64'), 'Accept': 'application/json', 'User-Agent': '9amLeads/1.0' } }, function(res) {
-                var body = ''; res.on('data', function(c) { body += c; });
-                res.on('end', function() {
-                  try { var d = JSON.parse(body); resolve(d.items || []); } catch(e) { resolve([]); }
+            var allSectors = ['services','construction','building','property','removals','cleaning','plumbing','electrical','roofing','landscape','estate','consulting','transport','logistics','security','healthcare','catering','solar','insulation','windows','digital','marketing','recruitment','hospitality','engineering','manufacturing','retail','wholesale','agriculture','education','entertainment','fashion','finance','insurance','legal','real+estate','travel'];
+            var nbResults = [];
+            for (var si = 0; si < allSectors.length; si++) {
+              try {
+                var nbData = await new Promise(function(resolve) {
+                  var url = '/search/companies?q=' + encodeURIComponent(allSectors[si]) + '&size=200';
+                  var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeySimple + ':').toString('base64'), 'Accept': 'application/json', 'User-Agent': '9amLeads/1.0' } }, function(res) {
+                    var body = ''; res.on('data', function(c) { body += c; });
+                    res.on('end', function() {
+                      try { var d = JSON.parse(body); resolve(d.items || []); } catch(e) { resolve([]); }
+                    });
+                  });
+                  req.on('error', function() { resolve([]); });
+                  req.setTimeout(15000, function() { resolve([]); });
+                  req.end();
                 });
-              });
-              req.on('error', function(e) { resolve([]); });
-              req.setTimeout(15000, function() { resolve([]); });
-              req.end();
-            });
-            if (nbResults && nbResults.length > 0) {
+                if (nbData && nbData.length > 0) nbResults.push.apply(nbResults, nbData);
+              } catch(e) {}
+            }
+            // Deduplicate and filter
+            var nbSeen = {};
+            if (nbResults.length > 0) {
               leads = nbResults.filter(function(c) {
-                return c.title && c.company_number && c.company_status === 'active';
-              }).slice(0, 50).map(function(c) {
+                if (!c.title || !c.company_number || nbSeen[c.company_number]) return false;
+                nbSeen[c.company_number] = true;
+                return c.company_status === 'active';
+              }).slice(0, 500).map(function(c) {
                 return { id: 'CH_NB_' + c.company_number, name: c.title.trim(), companyNumber: c.company_number, companyName: c.title.trim(), address: c.address_snippet || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
               });
             }
-            var nbDemo2 = generateDemoLeads('newbusiness', 200); if (nbDemo2) { leads = leads ? leads.concat(nbDemo2) : nbDemo2; }
-            console.log('[SCRAPER] NB: ' + (nbResults ? nbResults.length : 0) + ' raw, ' + leads.length + ' filtered');
+            console.log('[SCRAPER] NB: ' + nbResults.length + ' raw, ' + (leads ? leads.length : 0) + ' filtered');
           } catch(e) { console.log('[SCRAPER] NB error:', e.message); leads = []; }
         } else if (product === 'planning') {
           leads = [];
@@ -8133,9 +8143,9 @@ function syncCustomers(product) {
             try {
               async function fetchPCS() {
                 return new Promise(function(resolve) {
-                  var req = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=30', method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 20000 }, function(res) {
+                  var req = require('https').request({ hostname: 'api.publiccontractsscotland.gov.uk', path: '/v1/notices?pageSize=100', method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 20000 }, function(res) {
                     var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
-                      try { var data = JSON.parse(body); var releases = data.releases || []; resolve(releases.slice(0, 30).map(function(r) {
+                      try { var data = JSON.parse(body); var releases = data.releases || []; resolve(releases.slice(0, 100).map(function(r) {
                         var t = r.tender || {}; var b = r.buyer || {}; var bName = b.name || (b.identifier && b.identifier.legalName) || '';
                         var docUrl = t.documents && t.documents[0] ? 'https://www.publiccontractsscotland.gov.uk/search/show/search_view.aspx?ID=' + t.documents[0].id : '';
                         return { id: r.id || r.ocid || 'PCS_' + Date.now(), title: t.title || r.description || '', buyer: bName, contractValue: t.value ? (t.value.amount || t.value) : 0, description: (t.description || r.description || '').substring(0, 500), closingDate: t.tenderPeriod ? t.tenderPeriod.endDate : '', publishedDate: r.date || '', tenderNoticeId: r.id || r.ocid || '', url: docUrl, source: 'Public Contracts Scotland', scrapedAt: new Date().toISOString() };
@@ -8157,7 +8167,7 @@ function syncCustomers(product) {
               }
               // Fetch from multiple sources in parallel
               var pcsPromise = fetchPCS();
-              var dguPromises = ['tenders','construction','contracts','procurement'].map(function(q) { return fetchDataGovUK(q); });
+              var dguPromises = ['tenders','construction','contracts','procurement','building','cleaning','security','consulting','maintenance','furniture','healthcare','transport','IT+services','training','catering','logistics','waste','solar','painting','design'].map(function(q) { return fetchDataGovUK(q); });
               var allResults = await Promise.all([pcsPromise, Promise.all(dguPromises)]);
               leads = allResults[0];
               var dgResults = allResults[1];
