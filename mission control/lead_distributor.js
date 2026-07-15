@@ -483,8 +483,6 @@ async function distributeProduct(product) {
 
   function assignLead(leadData, rawLeadData, addrKeyData, tierFilter) {
     const { lead: rl, normalised: nl, addrKey: ak, customers } = leadData;
-    // Skip if this source lead is already claimed by another customer
-    if (rl.id && claimedLeadIds.has(rl.id)) return false;
     // Filter customers by tier, then sort by usage
     const eligible = customers.filter(mc => mc.tier <= tierFilter);
     eligible.sort((a, b) => customerUsage[a.customer.id] - customerUsage[b.customer.id]);
@@ -492,6 +490,9 @@ async function distributeProduct(product) {
     for (const mc of eligible) {
       const c = mc.customer;
       if (customerUsage[c.id] >= customerLimits[c.id]) continue;
+      // Check if this lead is already in this customer's batch (dedup by address)
+      var alreadyAssigned = db.leads.some(function(l) { return l.customer_id === c.id && l.data && l.data.includes(ak); });
+      if (alreadyAssigned) continue;
       const leadRecord = {
         id: uuidv4(),
         customer_id: c.id,
@@ -509,8 +510,6 @@ async function distributeProduct(product) {
       // Track lead count on customer record
       var ldCust = db.customers.find(function(x) { return x.id === c.id; });
       if (ldCust) ldCust.lead_count = (ldCust.lead_count || 0) + 1;
-      // Mark source lead as claimed (exclusive)
-      if (rl.id) claimedLeadIds.add(rl.id);
       return true;
     }
     return false;
@@ -519,7 +518,6 @@ async function distributeProduct(product) {
   // Pass 1: Only Tier 1 (perfect filter matches)
   const unassigned = [];
   for (const assignment of leadAssignments) {
-    if (assignment.lead.id && claimedLeadIds.has(assignment.lead.id)) continue;
     const assigned = assignLead(assignment, null, null, 1);
     if (!assigned) unassigned.push(assignment);
   }
