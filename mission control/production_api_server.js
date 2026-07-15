@@ -8083,7 +8083,7 @@ function syncCustomers(product) {
           try {
             var planningCollector = require('./planning_collector');
             leads = await planningCollector.collectFreshPlanning(48);
-            if (!leads || leads.length === 0) { leads = generateDemoLeads('planning', 100); }
+            if (!leads || leads.length === 0) { leads = generateDemoLeads('planning', 200); }
             console.log('[SCRAPER] Planning collector returned ' + (leads ? leads.length : 0) + ' applications');
           } catch(e) { console.log('[SCRAPER] Planning error: ' + e.message); leads = []; }
           if (!leads || leads.length < 3) {
@@ -8171,7 +8171,7 @@ function syncCustomers(product) {
                 });
                 var ft = filterFresh(leads, 'publishedDate');
                 leads = ft.fresh.length > 0 ? ft.fresh : ft.fallback;
-                if (!leads || leads.length === 0) { leads = generateDemoLeads('tenders', 10); } else {
+                if (!leads || leads.length === 0) { leads = generateDemoLeads('tenders', 50); } else {
           console.log('[SCRAPER] Tenders: ' + ft.fresh.length + ' fresh, ' + ft.fallback.length + ' fallback, total: ' + leads.length);
         }
               } else { console.log('[SCRAPER] No tender leads today'); leads = []; }
@@ -8238,9 +8238,9 @@ function syncCustomers(product) {
               req.write(b); req.end();
             });
             if (leads && leads.length > 0) { var fm = filterFresh(leads, 'firstVisibleDate'); leads = fm.fresh.length > 0 ? fm.fresh : fm.fallback; console.log('[SCRAPER] Rightmove: ' + fm.fresh.length + ' fresh, ' + fm.fallback.length + ' fallback'); }
-            else { console.log('[SCRAPER] Rightmove 0, generating demo leads'); leads = generateDemoLeads('moving', 200); }
+            else { console.log('[SCRAPER] Rightmove 0, generating demo leads'); leads = generateDemoLeads('moving', 300); }
           } } catch(e) { console.log('[SCRAPER] Moving error:', e.message); leads = []; }
-          if (!leads || leads.length === 0) { leads = generateDemoLeads('moving', 25); }
+          if (!leads || leads.length === 0) { leads = generateDemoLeads('moving', 200); }
         } else if (product === 'probate') {
           var probLeads = [];
           var probK = "";
@@ -8278,13 +8278,13 @@ function syncCustomers(product) {
             });
             console.log('[SCRAPER] CH Probate fallback returned ' + leads.length + ' leads');
           }
-          if (!probLeads || probLeads.length === 0) { leads = generateDemoLeads('probate', 10); console.log('[SCRAPER] Probate: using demo leads'); }
+          if (!probLeads || probLeads.length === 0) { leads = generateDemoLeads('probate', 50); console.log('[SCRAPER] Probate: using demo leads'); }
         } else {
           leads = [];
         }
         fs.mkdirSync(DATA_DIR, { recursive: true });
         fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
-        if (!leads || leads.length === 0) { leads = generateDemoLeads(product, 100); }
+        if (!leads || leads.length === 0) { leads = generateDemoLeads(product, 200); }
         markScrapedToday(product); // Record this product as scraped today
         var leadSource = leads && leads.length > 0 ? (leads[0].source || 'unknown') : 'empty';
         fs.writeFileSync(path.join(DATA_DIR, product + '-source.txt'), leadSource);
