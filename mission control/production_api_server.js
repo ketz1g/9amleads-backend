@@ -8212,48 +8212,12 @@ function syncCustomers(product) {
             console.log('[SCRAPER] CH Planning returned ' + leads.length + ' builders (30d)');
           } catch(e) { console.log('[SCRAPER] Planning error:', e.message); leads = []; }
         } else if (product === 'moving') {
-          try { var k = ""; leads = []; if (k) {
-            leads = await new Promise(function(r) {
-              var b = JSON.stringify({ location: 'London', maxResults: 200 });
-              var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/d1i6SpbgzkWCic0cV/run-sync-get-dataset-items?token=' + k + '&memory=128&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
-                var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
-                  try { var items = JSON.parse(body); if (!Array.isArray(items)) { r([]); return; }
-                    r(items.map(function(p) { 
-                      var price = 0;
-                      if (p.price && typeof p.price === 'object' && p.price.amount) price = p.price.amount;
-                      else if (typeof p.price === 'number') price = p.price;
-                      var statusText = 'Available';
-                      if (p.listingUpdate && p.listingUpdate.listingUpdateReason) {
-                        if (p.listingUpdate.listingUpdateReason.includes('sold') || p.listingUpdate.listingUpdateReason.includes('sstc')) statusText = 'SSTC';
-                        else if (p.listingUpdate.listingUpdateReason.includes('reduced')) statusText = 'Reduced';
-                      }
-                      if (p.displayStatus) statusText = p.displayStatus;
-                      var firstVisible = p.firstVisibleDate || p.listingUpdate?.listingUpdateDate || '';
-                      return { 
-                        id: 'RM_' + (p.id || Date.now()), 
-                        title: p.displayAddress || '', 
-                        address: p.displayAddress || '', 
-                        price: price, 
-                        bedrooms: p.bedrooms || 0, 
-                        propertyType: p.propertySubType || '', 
-                        listingStatus: statusText, 
-                        firstVisibleDate: firstVisible, 
-                        url: p.propertyUrl || '', 
-                        agent: p.customer?.branchDisplayName || p.customer?.branchName || '',
-                        source: 'Rightmove', 
-                        scrapedAt: new Date().toISOString() 
-                      };
-                    }));
-                  } catch(e) { r([]); }
-                });
-              });
-              req.on('error', function() { r([]); }); req.setTimeout(150000, function() { req.destroy(); r([]); });
-              req.write(b); req.end();
-            });
-            if (leads && leads.length > 0) { var fm = filterFresh(leads, 'firstVisibleDate'); leads = fm.fresh.length > 0 ? fm.fresh : fm.fallback; console.log('[SCRAPER] Rightmove: ' + fm.fresh.length + ' fresh, ' + fm.fallback.length + ' fallback'); }
-            else { console.log('[SCRAPER] Rightmove 0, generating demo leads'); leads = generateDemoLeads('moving', 300); }
-          } } catch(e) { console.log('[SCRAPER] Moving error:', e.message); leads = []; }
-          if (!leads || leads.length === 0) { leads = generateDemoLeads('moving', 200); }
+          try {
+            var rmScraper = require('./rightmove_scraper_v2');
+            leads = await rmScraper.collectMovingLeads();
+            if (!leads || leads.length === 0) { leads = generateDemoLeads('moving', 200); console.log('[SCRAPER] Rightmove: using demo leads (0 from scraper)'); }
+            else { console.log('[SCRAPER] Rightmove: ' + leads.length + ' real properties'); }
+          } catch(e) { console.log('[SCRAPER] Rightmove error:', e.message); leads = []; }
         } else if (product === 'probate') {
           var probLeads = [];
           var probK = "";
