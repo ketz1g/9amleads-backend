@@ -8222,9 +8222,9 @@ function syncCustomers(product) {
             leads = await rmScraper.collectMovingLeads();
             if (leads && leads.length > 0) {
               var rmFreshness = filterFresh(leads, 'firstVisibleDate');
-              if (rmFreshness.fresh.length >= 10) leads = rmFreshness.fresh;
+              if (rmFreshness.fresh.length >= 3) leads = rmFreshness.fresh;
               else if (rmFreshness.fallback.length >= 10) leads = rmFreshness.fallback;
-              else leads = rmFreshness.fresh.concat(rmFreshness.fallback).slice(0, 100);
+              else leads = rmFreshness.fresh.concat(rmFreshness.fallback).slice(0, 200);
               console.log('[SCRAPER] Rightmove: ' + rmFreshness.fresh.length + ' fresh, ' + rmFreshness.fallback.length + ' fallback, using ' + leads.length);
             }
             if (!leads || leads.length === 0) { leads = generateDemoLeads('moving', 200); console.log('[SCRAPER] Rightmove: using demo leads (0 from scraper)'); }
