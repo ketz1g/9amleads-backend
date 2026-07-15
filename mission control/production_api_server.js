@@ -8845,6 +8845,20 @@ app.post('/api/cancel-trial', authMiddleware, async (req, res) => {
 });
 
 
+
+// POST /api/admin/update-areas - update customer target areas to postcode codes
+app.post('/api/admin/update-areas', adminAuth, (req, res) => {
+  try {
+    var { email, areas } = req.body;
+    if (!email || !areas) return res.status(400).json({ error: 'Email and areas required' });
+    var customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    db.prepare('UPDATE customers SET target_areas = ? WHERE email = ?').run(JSON.stringify(areas), email);
+    saveDb();
+    res.json({ success: true, areas: areas });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Global error handler
 app.use(function(err, req, res, next) {
   console.error('[ERROR] Unhandled error:', err.message || err);
