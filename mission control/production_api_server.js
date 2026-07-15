@@ -8221,7 +8221,7 @@ function syncCustomers(product) {
             var rmScraper = require('./rightmove_scraper_v2');
             leads = await rmScraper.collectMovingLeads();
             if (leads && leads.length > 0) {
-              var rmFreshness = filterFresh(leads, 'firstVisibleDate');
+              var rmFreshness = filterFresh(leads, 'updateDate');
               if (rmFreshness.fresh.length >= 3) leads = rmFreshness.fresh;
               else if (rmFreshness.fallback.length >= 10) leads = rmFreshness.fallback;
               else leads = rmFreshness.fresh.concat(rmFreshness.fallback).slice(0, 200);
