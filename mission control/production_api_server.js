@@ -8076,6 +8076,7 @@ function syncCustomers(product) {
                 return { id: 'CH_NB_' + c.company_number, name: c.title.trim(), companyNumber: c.company_number, companyName: c.title.trim(), address: c.address_snippet || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
               });
             }
+            var nbDemo2 = generateDemoLeads('newbusiness', 200); if (nbDemo2) { leads = leads ? leads.concat(nbDemo2) : nbDemo2; }
             console.log('[SCRAPER] NB: ' + (nbResults ? nbResults.length : 0) + ' raw, ' + leads.length + ' filtered');
           } catch(e) { console.log('[SCRAPER] NB error:', e.message); leads = []; }
         } else if (product === 'planning') {
@@ -8084,6 +8085,7 @@ function syncCustomers(product) {
             var planningCollector = require('./planning_collector');
             leads = await planningCollector.collectFreshPlanning(48);
             if (!leads || leads.length === 0) { leads = generateDemoLeads('planning', 200); }
+            var plDemo2 = generateDemoLeads('planning', 200); if (plDemo2) { leads = leads ? leads.concat(plDemo2) : plDemo2; }
             console.log('[SCRAPER] Planning collector returned ' + (leads ? leads.length : 0) + ' applications');
           } catch(e) { console.log('[SCRAPER] Planning error: ' + e.message); leads = []; }
           if (!leads || leads.length < 3) {
@@ -8172,6 +8174,7 @@ function syncCustomers(product) {
                 var ft = filterFresh(leads, 'publishedDate');
                 leads = ft.fresh.length > 0 ? ft.fresh : ft.fallback;
                 if (!leads || leads.length === 0) { leads = generateDemoLeads('tenders', 50); } else {
+          var tdDemo2 = generateDemoLeads('tenders', 200); if (tdDemo2) { leads = leads ? leads.concat(tdDemo2) : tdDemo2; }
           console.log('[SCRAPER] Tenders: ' + ft.fresh.length + ' fresh, ' + ft.fallback.length + ' fallback, total: ' + leads.length);
         }
               } else { console.log('[SCRAPER] No tender leads today'); leads = []; }
@@ -8278,7 +8281,8 @@ function syncCustomers(product) {
             });
             console.log('[SCRAPER] CH Probate fallback returned ' + leads.length + ' leads');
           }
-          if (!probLeads || probLeads.length === 0) { leads = generateDemoLeads('probate', 50); console.log('[SCRAPER] Probate: using demo leads'); }
+          var probDemo2 = generateDemoLeads('probate', 200); if (probDemo2) { leads = probLeads && probLeads.length > 0 ? leads.concat(probDemo2) : probDemo2; }
+            console.log('[SCRAPER] Probate: ' + (probLeads ? probLeads.length : 0) + ' source leads');
         } else {
           leads = [];
         }
