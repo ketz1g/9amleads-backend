@@ -8087,7 +8087,7 @@ function syncCustomers(product) {
                 return { id: 'CH_NB_' + c.company_number, name: c.title.trim(), companyNumber: c.company_number, companyName: c.title.trim(), address: c.address_snippet || '', incorporationDate: c.date_of_creation || c.scrapedAt || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
               });
               // Prioritize companies incorporated within 24h, fallback 48h, then all
-              var nbFreshness = filterFresh(nbFiltered, 'incorporationDate');
+              var nbFreshness = filterFresh(nbFiltered, 'scrapedAt');
               if (nbFreshness.fresh.length >= 20) leads = nbFreshness.fresh;
               else if (nbFreshness.fallback.length >= 20) leads = nbFreshness.fallback;
               else leads = nbFreshness.fresh.concat(nbFreshness.fallback).slice(0, 500);
