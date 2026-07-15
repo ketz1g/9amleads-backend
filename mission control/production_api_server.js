@@ -8079,13 +8079,16 @@ function syncCustomers(product) {
             // Deduplicate and filter
             var nbSeen = {};
             if (nbResults.length > 0) {
-              leads = nbResults.filter(function(c) {
+              var nbFiltered = nbResults.filter(function(c) {
                 if (!c.title || !c.company_number || nbSeen[c.company_number]) return false;
                 nbSeen[c.company_number] = true;
                 return c.company_status === 'active';
-              }).slice(0, 500).map(function(c) {
-                return { id: 'CH_NB_' + c.company_number, name: c.title.trim(), companyNumber: c.company_number, companyName: c.title.trim(), address: c.address_snippet || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
+              }).map(function(c) {
+                return { id: 'CH_NB_' + c.company_number, name: c.title.trim(), companyNumber: c.company_number, companyName: c.title.trim(), address: c.address_snippet || '', incorporationDate: c.date_of_creation || c.scrapedAt || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
               });
+              // Prioritize companies incorporated within 24h, fallback 48h
+              var nbFreshness = filterFresh(nbFiltered, 'incorporationDate');
+              leads = nbFreshness.fresh.length > 0 ? nbFreshness.fresh : (nbFreshness.fallback.length > 0 ? nbFreshness.fallback : nbFiltered.slice(0, 500));
             }
             console.log('[SCRAPER] NB: ' + nbResults.length + ' raw, ' + (leads ? leads.length : 0) + ' filtered');
           } catch(e) { console.log('[SCRAPER] NB error:', e.message); leads = []; }
@@ -8215,8 +8218,12 @@ function syncCustomers(product) {
           try {
             var rmScraper = require('./rightmove_scraper_v2');
             leads = await rmScraper.collectMovingLeads();
+            if (leads && leads.length > 0) {
+              var rmFreshness = filterFresh(leads, 'firstVisibleDate');
+              leads = rmFreshness.fresh.length > 0 ? rmFreshness.fresh : (rmFreshness.fallback.length > 0 ? rmFreshness.fallback : leads);
+              console.log('[SCRAPER] Rightmove: ' + rmFreshness.fresh.length + ' fresh, ' + rmFreshness.fallback.length + ' fallback, ' + leads.length + ' total');
+            }
             if (!leads || leads.length === 0) { leads = generateDemoLeads('moving', 200); console.log('[SCRAPER] Rightmove: using demo leads (0 from scraper)'); }
-            else { console.log('[SCRAPER] Rightmove: ' + leads.length + ' real properties'); }
           } catch(e) { console.log('[SCRAPER] Rightmove error:', e.message); leads = []; }
         } else if (product === 'probate') {
           var probLeads = [];
