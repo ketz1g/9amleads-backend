@@ -17,7 +17,7 @@ const LOCATIONS = [
   { id: 'REGION%5E87466', name: 'Thames Valley' },
 ];
 
-function fetchRightmovePage(locationId, pageIndex) {
+function fetchRightmovePage(locationId, locationName, pageIndex) {
   return new Promise((resolve) => {
     const path = '/property-for-sale/find.html?locationIdentifier=' + locationId + '&index=' + pageIndex + '&includeSSTC=true&propertyTypes=&mustHave=&dontShow=&furnishTypes=&keywords=';
     const opts = {
@@ -83,7 +83,8 @@ function fetchRightmovePage(locationId, pageIndex) {
               agent: p.customer ? (p.customer.branchDisplayName || p.customer.branchName || '') : '',
               source: 'Rightmove',
               scrapedAt: new Date().toISOString(),
-              city: searchResults.location || ''
+              city: typeof searchResults.location === 'object' ? (searchResults.location.name || locationName) : (searchResults.location || locationName),
+              postcode: (p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2}/i) ? (p.displayAddress.match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2}/i)[0]) : ''
             };
           });
           resolve(properties);
@@ -107,13 +108,13 @@ async function collectMovingLeads(config) {
   for (const loc of locations) {
     try {
       // Get first page (index=0)
-      const page1 = await fetchRightmovePage(loc.id, 0);
+      const page1 = await fetchRightmovePage(loc.id, loc.name, 0);
       console.log('[RIGHTMOVE] ' + loc.name + ': ' + page1.length + ' properties from page 1');
       allProperties.push.apply(allProperties, page1);
 
       // Get second page if first page had results (index=24)
       if (page1.length >= 24) {
-        const page2 = await fetchRightmovePage(loc.id, 24);
+        const page2 = await fetchRightmovePage(loc.id, loc.name, 24);
         console.log('[RIGHTMOVE] ' + loc.name + ': ' + page2.length + ' properties from page 2');
         allProperties.push.apply(allProperties, page2);
       }
