@@ -3642,7 +3642,7 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   '<p style="font-size:12px;color:#cbd5e1;line-height:1.6;margin:0 0 6px">' + insight.tip + '</p>' +
   (insight.metric ? '<p style="font-size:11px;color:#38bdf8;margin:0 0 8px"><strong>' + insight.metric + '</strong></p>' : '') +
   '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">' +
-'<p style="font-size:10px;color:#94a3b8;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="tel:08006893639" style="color:#38bdf8;text-decoration:underline">0800 689 3639</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
+'<p style="font-size:10px;color:#94a3b8;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="tel:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
    '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">ig</a></div>' +
    '</div></div></td></tr>' +
   // Footer
@@ -6325,7 +6325,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<p style="font-size:12px;color:#cbd5e1;line-height:1.6;margin:0 0 6px">' + insight2.tip + '</p>';
   body += (insight2.metric ? '<p style="font-size:11px;color:#38bdf8;margin:0 0 8px"><strong>' + insight2.metric + '</strong></p>' : '');
   body += '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">';
-  body += '<p style="font-size:10px;color:#94a3b8;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="tel:08006893639" style="color:#38bdf8;text-decoration:underline">0800 689 3639</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>';
+  body += '<p style="font-size:10px;color:#94a3b8;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="tel:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>';
   body += '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">ig</a></div>';
   body += '</div></div></td></tr>';
 
@@ -6343,8 +6343,8 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<td style="padding:0 5px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">tt</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">ig</span></a></td>';
   body += '<p style="color:#e2e8f0;font-size:10px;margin:0 0 4px;letter-spacing:.4px">9am Leads Ltd</p>';
-  body += '<p style="color:#e2e8f0;font-size:9px;margin:0 0 12px;letter-spacing:.3px"><a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="tel:08006893639" style="color:#38bdf8;text-decoration:underline">0800 689 3639</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a></p>';
-  body += '<p style="color:#94a3b8;font-size:8px;margin:0;letter-spacing:.4px">Fresh exclusive opportunities delivered at 9am every morning &bull; Not sure? Call 0800 689 3639 &bull; 9amLeads.com</p>';
+  body += '<p style="color:#e2e8f0;font-size:9px;margin:0 0 12px;letter-spacing:.3px"><a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="tel:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a></p>';
+  body += '<p style="color:#94a3b8;font-size:8px;margin:0;letter-spacing:.4px">Fresh exclusive opportunities delivered at 9am every morning &bull; Not sure? Call hello@9amleads.com &bull; 9amLeads.com</p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
@@ -9787,7 +9787,7 @@ app.get('/api/demo/data', (req, res) => {
   if (!DEMO_MODE_ENABLED) return res.json({ success: false, error: 'Demo mode disabled' });
   res.json({
     success: true, demo: true,
-    profile: { company_name: 'Your Demo Company', business_type: 'Removals', phone: '0800 689 3639', email: 'demo@9amleads.com', website: 'https://demo.9amleads.com', services_offered: 'House removals, office moves, packing, storage', service_areas: 'London, Surrey, Kent', logo_url: '' },
+    profile: { company_name: 'Your Demo Company', business_type: 'Removals', phone: 'hello@9amleads.com', email: 'demo@9amleads.com', website: 'https://demo.9amleads.com', services_offered: 'House removals, office moves, packing, storage', service_areas: 'London, Surrey, Kent', logo_url: '' },
     leads: [
       { id:'demo_1', name:'John Smith', address:'123 High Street', town:'London', postcode:'SW1A 1AA', type:'moving', status:'new', delivered_at:new Date().toISOString() },
       { id:'demo_2', name:'Sarah Jones', address:'45 Oak Avenue', town:'Croydon', postcode:'CR0 2AB', type:'moving', status:'new', delivered_at:new Date().toISOString() },
