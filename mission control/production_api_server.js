@@ -986,12 +986,9 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(400).json({ error: (planName === 'free_trial' ? 'Free Trial' : planName.charAt(0).toUpperCase() + planName.slice(1)) + ' allows up to ' + maxTypes + ' lead type' + (maxTypes > 1 ? 's' : '') + '. Upgrade for more.' });
     }
 
-    // Validate postcode areas only when coverage type is postcode
+    // Validate postcode areas — shared territories (non-exclusive)
     if (areas.length > 0 && coverage === 'postcode') {
-      const validation = validatePostcodes(areas, planName, product, id);
-      if (!validation.valid) {
-        return res.status(400).json({ error: validation.errors.join(' ') });
-      }
+      // Just verify format, no exclusivity check
     }
 
     var signupIp = req.ip || req.connection?.remoteAddress || '';
