@@ -4483,6 +4483,59 @@ app.post('/api/direct-mail/run-auto-send', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+cron.schedule('0 8 * * *', async () => {
+  console.log('[TRIAL AUTO-CHARGE] Checking expired trials...');
+  try {
+    var db = getDb();
+    var customers = db.customers || [];
+    var charged = 0;
+    for (var tc = 0; tc < customers.length; tc++) {
+      var cust = customers[tc];
+      if (cust.plan !== 'free_trial') continue;
+      if (cust.trial_cancelled) continue;
+      if (!cust.trial_ends || new Date(cust.trial_ends) > new Date()) continue;
+      if (!cust.stripe_payment_method_id || !cust.stripe_customer_id) continue;
+      // Trial expired and they have a saved card — charge £25
+      try {
+        var prodKeyMap2 = { moving: 'mov', planning: 'plan', probate: 'prob', newbusiness: 'nb', tenders: 'tend' };
+        var pKey2 = prodKeyMap2[cust.product] || 'mov';
+        var priceId2 = (STRIPE_PRICE_IDS[cust.product] || {})[pKey2 + '-starter'];
+        if (!priceId2) continue;
+        var subResult = await stripeApiRequest('POST', 'subscriptions', {
+          customer: cust.stripe_customer_id,
+          'items[0][price]': priceId2,
+          'default_payment_method': cust.stripe_payment_method_id,
+          'metadata[customer_id]': cust.id,
+          'metadata[product]': cust.product,
+          'metadata[plan]': 'starter',
+          off_session: 'true',
+          'payment_behavior': 'default_incomplete'
+        });
+        if (subResult && subResult.id) {
+          db.prepare('UPDATE customers SET plan = ?, stripe_subscription_id = ?, trial_ends = NULL WHERE id = ?').run('starter', subResult.id, cust.id);
+          console.log('[TRIAL AUTO-CHARGE] Charged £25 for ' + cust.email + ', upgraded to starter');
+          charged++;
+        }
+      } catch(chargeErr) {
+        console.log('[TRIAL AUTO-CHARGE] Failed to charge ' + cust.email + ': ' + (chargeErr.message || chargeErr));
+      }
+    }
+    saveDb();
+    console.log('[TRIAL AUTO-CHARGE] Complete: ' + charged + ' customers charged');
+  } catch(e) { console.log('[TRIAL AUTO-CHARGE] Error:', e.message); }
+});
+
+// POST /api/cancel-trial — cancel trial, no charge
+app.post('/api/cancel-trial', authMiddleware, async (req, res) => {
+  try {
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    db.prepare('UPDATE customers SET trial_cancelled = 1, plan = ? WHERE id = ?').run('cancelled', customer.id);
+    saveDb();
+    res.json({ success: true, message: 'Trial cancelled. No charge made. Your dashboard is still accessible.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 cron.schedule('0 10 * * *', async () => {
   console.log('[CAMPAIGN] Starting campaign email check...');
   var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && c.marketing_consent === 1; });
