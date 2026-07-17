@@ -73,6 +73,7 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
               id: 'RM_' + p.id,
               title: p.displayAddress || '',
               address: p.displayAddress || '',
+              address: p.displayAddress || '',
               price: p.price ? (p.price.amount || 0) : 0,
               bedrooms: p.bedrooms || 0,
               propertyType: p.propertySubType || '',
