@@ -15,11 +15,44 @@ const LOCATIONS = [
   { id: 'REGION%5E87473', name: 'Sussex' },
   { id: 'REGION%5E87480', name: 'Hampshire' },
   { id: 'REGION%5E87466', name: 'Thames Valley' },
+  // Postcode-area specific searches using Rightmove location names
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E1' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E2' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E3' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E4' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E5' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E6' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E7' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E8' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E9' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E10' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E11' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E12' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E14' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E15' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E16' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'E17' },
+  { id: 'REGION%5E87490', name: 'E London', keyword: 'NW1' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW2' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW3' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW5' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW6' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW7' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW8' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW9' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW10' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW11' },
+  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN1' },
+  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN2' },
+  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN3' },
+  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN4' },
+  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN5' },
 ];
 
-function fetchRightmovePage(locationId, locationName, pageIndex) {
+function fetchRightmovePage(locationId, locationName, pageIndex, keyword) {
   return new Promise((resolve) => {
-    const path = '/property-for-sale/find.html?locationIdentifier=' + locationId + '&index=' + pageIndex + '&includeSSTC=true&propertyTypes=&mustHave=&dontShow=&furnishTypes=&keywords=';
+    var path = '/property-for-sale/find.html?locationIdentifier=' + locationId + '&index=' + pageIndex + '&includeSSTC=true&propertyTypes=&mustHave=&dontShow=&furnishTypes=&keywords=';
+    if (keyword) path += '&keywords=' + encodeURIComponent(keyword);
     const opts = {
       hostname: 'www.rightmove.co.uk',
       path: path,
@@ -109,13 +142,13 @@ async function collectMovingLeads(config) {
   for (const loc of locations) {
     try {
       // Get first page (index=0)
-      const page1 = await fetchRightmovePage(loc.id, loc.name, 0);
-      console.log('[RIGHTMOVE] ' + loc.name + ': ' + page1.length + ' properties from page 1');
+      const page1 = await fetchRightmovePage(loc.id, loc.name, 0, loc.keyword);
+      console.log('[RIGHTMOVE] ' + loc.name + (loc.keyword ? ' (' + loc.keyword + ')' : '') + ': ' + page1.length + ' properties');
       allProperties.push.apply(allProperties, page1);
 
       if (page1.length >= 24) {
-        const page2 = await fetchRightmovePage(loc.id, loc.name, 24);
-        console.log('[RIGHTMOVE] ' + loc.name + ': ' + page2.length + ' properties from page 2');
+        const page2 = await fetchRightmovePage(loc.id, loc.name, 24, loc.keyword);
+        console.log('[RIGHTMOVE] ' + loc.name + (loc.keyword ? ' (' + loc.keyword + ')' : '') + ': +' + page2.length + ' more');
         allProperties.push.apply(allProperties, page2);
       }
 
