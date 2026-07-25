@@ -19,7 +19,7 @@ const LOCATIONS = [
 
 function fetchRightmovePage(locationId, locationName, pageIndex) {
   return new Promise((resolve) => {
-    const path = '/property-for-sale/find.html?locationIdentifier=' + locationId + '&index=' + pageIndex + '&includeSSTC=true&propertyTypes=&mustHave=&dontShow=&furnishTypes=&keywords=';
+    const path = '/property-for-sale/find.html?locationIdentifier=' + locationId + '&index=' + pageIndex + '&includeSSTC=true&sortType=6&propertyTypes=&mustHave=&dontShow=&furnishTypes=&keywords=';
     const opts = {
       hostname: 'www.rightmove.co.uk',
       path: path,
@@ -114,10 +114,14 @@ async function collectMovingLeads(config) {
       console.log('[RIGHTMOVE] ' + loc.name + ': ' + page1.length + ' properties');
       allProperties.push.apply(allProperties, page1);
 
-      if (page1.length >= 24) {
-        const page2 = await fetchRightmovePage(loc.id, loc.name, 24);
-        console.log('[RIGHTMOVE] ' + loc.name + ': +' + page2.length + ' more');
-        allProperties.push.apply(allProperties, page2);
+      // Get up to 4 pages of London (100 properties) to cover more postcode areas
+      var maxPages = loc.name === 'London' ? 4 : 2;
+      for (var pi = 24; pi < 24 * maxPages && page1.length >= 24; pi += 24) {
+        var extra = await fetchRightmovePage(loc.id, loc.name, pi);
+        if (extra.length === 0) break;
+        console.log('[RIGHTMOVE] ' + loc.name + ' page ' + (pi/24+1) + ': +' + extra.length);
+        allProperties.push.apply(allProperties, extra);
+        if (extra.length < 24) break;
       }
 
       // Rate limiting between locations
