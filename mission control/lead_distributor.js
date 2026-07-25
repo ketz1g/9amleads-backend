@@ -188,28 +188,28 @@ function leadMatchesTarget(lead, customer, product) {
       }
     }
 
-    if (filters && filters.product) {
-      // Map legacy frontend filter keys to distributor expected keys
-      var keyMap = { 'f-bed-min':'minBedrooms', 'f-bed-max':'maxBedrooms', 'f-max-price':'maxPrice', 'f-prop-type':'propertyType', 'f-status':'statusSSTC', 'f-min-val':'minValue', 'f-industries':'industries', 'f-keywords':'keywords', 'f-app-type':'applicationType', 'appTypes':'applicationType' };
-      for (var oldKey in keyMap) {
-        if (filters[oldKey] !== undefined && filters[keyMap[oldKey]] === undefined) {
-          filters[keyMap[oldKey]] = filters[oldKey];
+      if (filters && filters.product) {
+        // Map legacy frontend filter keys to distributor expected keys
+        var keyMap = { 'f-bed-min':'minBedrooms', 'f-bed-max':'maxBedrooms', 'f-max-price':'maxPrice', 'f-prop-type':'propertyType', 'f-status':'statusSSTC', 'f-min-val':'minValue', 'f-industries':'industries', 'f-keywords':'keywords', 'f-app-type':'applicationType', 'appTypes':'applicationType' };
+        for (var oldKey in keyMap) {
+          if (filters[oldKey] !== undefined && filters[keyMap[oldKey]] === undefined) {
+            filters[keyMap[oldKey]] = filters[oldKey];
+          }
         }
-      }
-      if (filters.product === 'moving') {
-        const beds = parseInt(lead.bedrooms) || 0;
-        const minBeds = parseInt(filters.minBedrooms) || 0;
-        const maxBeds = parseInt(filters.maxBedrooms) || 99;
-        if (minBeds > 0 && beds < minBeds) tier = 2;
-        if (maxBeds < 99 && beds > maxBeds) tier = 2;
-        const price = parseInt(lead.price) || 0;
-        const maxPrice = parseInt(filters.maxPrice) || 0;
-        if (maxPrice > 0 && price > maxPrice) tier = 2;
-        if (filters.propertyType) {
-          const pt = (lead.propertyType || '').toLowerCase();
-          const ft = filters.propertyType.toLowerCase();
-          if (pt !== ft && !pt.includes(ft)) tier = 2;
-        }
+        if (filters.product === 'moving') {
+          const beds = parseInt(lead.bedrooms) || 0;
+          const minBeds = parseInt(filters.minBedrooms) || 0;
+          const maxBeds = parseInt(filters.maxBedrooms) || 99;
+          if (minBeds > 0 && beds < minBeds) return { match: false };
+          if (maxBeds < 99 && beds > maxBeds) return { match: false };
+          const price = parseInt(lead.price) || 0;
+          const maxPrice = parseInt(filters.maxPrice) || 0;
+          if (maxPrice > 0 && price > maxPrice) return { match: false };
+          if (filters.propertyType) {
+            const pt = (lead.propertyType || '').toLowerCase();
+            const ft = filters.propertyType.toLowerCase();
+            if (pt !== ft && !pt.includes(ft)) return { match: false };
+          }
         const status = (lead.status || '').toLowerCase();
         const sstcEnabled = filters.statusSSTC !== false;
         const offerEnabled = filters.statusOffer !== false;
@@ -231,7 +231,7 @@ function leadMatchesTarget(lead, customer, product) {
         if (Array.isArray(filterTypes) && filterTypes.length > 0) {
           filterTypes = filterTypes.map(function(t) { return t.toLowerCase(); });
           appTypeMatched = filterTypes.some(function(t) { return appType.includes(t); });
-          if (!appTypeMatched) tier = 2;
+          if (!appTypeMatched) return { match: false };
         }
         // Keyword matching — if set, further narrows results but doesn't block if none match
         if (filters.keywords) {
