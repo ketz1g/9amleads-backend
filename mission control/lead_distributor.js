@@ -552,8 +552,9 @@ async function distributeProduct(product) {
   }
 
   // === Phase 4: Supplement per-customer demo leads ===
-  for (var pi = 0; pi < productsToDistribute.length; pi++) {
-    var prod = productsToDistribute[pi];
+  var generated = 0;
+  for (var pi = 0; pi < Object.keys(PRODUCT_LEAD_FILES).length; pi++) {
+    var prod = Object.keys(PRODUCT_LEAD_FILES)[pi];
     var prodConfig = productConfigs[prod];
     if (!prodConfig) continue;
     var custs = activeCustomers.filter(function(c) {
