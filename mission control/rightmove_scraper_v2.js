@@ -15,11 +15,16 @@ const LOCATIONS = [
   { id: 'REGION%5E87473', name: 'Sussex' },
   { id: 'REGION%5E87480', name: 'Hampshire' },
   { id: 'REGION%5E87466', name: 'Thames Valley' },
+  // Targeted area searches within London for specific postcode coverage
+  { id: 'REGION%5E87490', name: 'East London', keyword: 'E' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW' },
+  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN' },
 ];
 
-function fetchRightmovePage(locationId, locationName, pageIndex) {
+function fetchRightmovePage(locationId, locationName, pageIndex, keyword) {
   return new Promise((resolve) => {
-    const path = '/property-for-sale/find.html?locationIdentifier=' + locationId + '&index=' + pageIndex + '&includeSSTC=true&sortType=6&propertyTypes=&mustHave=&dontShow=&furnishTypes=&keywords=';
+    var path = '/property-for-sale/find.html?locationIdentifier=' + locationId + '&index=' + pageIndex + '&includeSSTC=true&sortType=6&propertyTypes=&mustHave=&dontShow=&furnishTypes=&keywords=';
+    if (keyword) path = path.replace('keywords=', 'keywords=' + encodeURIComponent(keyword + ' '));
     const opts = {
       hostname: 'www.rightmove.co.uk',
       path: path,
@@ -115,13 +120,12 @@ async function collectMovingLeads(config) {
       allProperties.push.apply(allProperties, page1);
 
       // Get up to 8 pages of London (200 properties) to cover postcode areas
-      var maxPages = loc.name === 'London' ? 8 : 2;
-      for (var pi = 24; pi < 24 * maxPages && page1.length >= 24; pi += 24) {
-        var extra = await fetchRightmovePage(loc.id, loc.name, pi);
-        if (extra.length === 0) break;
-        console.log('[RIGHTMOVE] ' + loc.name + ' page ' + (pi/24+1) + ': +' + extra.length);
-        allProperties.push.apply(allProperties, extra);
-        if (extra.length < 24) break;
+      var maxPages = loc.keyword ? 2 : (loc.name === 'London' ? 8 : 2);
+      for (var pi = 0; pi < maxPages; pi++) {
+        var pg = await fetchRightmovePage(loc.id, loc.name, pi * 24, loc.keyword);
+        if (pg.length === 0) break;
+        console.log('[RIGHTMOVE] ' + loc.name + (loc.keyword ? ' (' + loc.keyword + ')' : '') + ' page ' + (pi+1) + ': ' + pg.length);
+        allProperties.push.apply(allProperties, pg);
       }
 
       // Rate limiting between locations
