@@ -555,7 +555,7 @@ async function distributeProduct(product) {
   var generated = 0;
   saveJSON(DB_FILE, db);
 
-  const totalMatchedlMatched = Object.values(customerUsage).reduce((a, b) => a + b, 0);
+  var totalMatched = Object.values(customerUsage).reduce((a, b) => a + b, 0);
   for (const [cid, count] of Object.entries(customerUsage)) {
     if (count > 0) console.log(`    ${customerLabels[cid] || cid}: ${count} leads`);
   }
