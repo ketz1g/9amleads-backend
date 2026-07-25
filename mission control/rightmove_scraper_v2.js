@@ -15,10 +15,26 @@ const LOCATIONS = [
   { id: 'REGION%5E87473', name: 'Sussex' },
   { id: 'REGION%5E87480', name: 'Hampshire' },
   { id: 'REGION%5E87466', name: 'Thames Valley' },
-  // Targeted area searches within London for specific postcode coverage
-  { id: 'REGION%5E87490', name: 'East London', keyword: 'E' },
-  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW' },
-  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN' },
+  // Targeted postcode district searches for East London
+  { id: 'REGION%5E87490', name: 'East London', keyword: 'E1' },
+  { id: 'REGION%5E87490', name: 'East London', keyword: 'E3' },
+  { id: 'REGION%5E87490', name: 'East London', keyword: 'E14' },
+  { id: 'REGION%5E87490', name: 'East London', keyword: 'E15' },
+  { id: 'REGION%5E87490', name: 'East London', keyword: 'E16' },
+  { id: 'REGION%5E87490', name: 'East London', keyword: 'E17' },
+  // Targeted postcode district searches for NW London
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW1' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW3' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW5' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW6' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW8' },
+  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW11' },
+  // Targeted postcode district searches for Enfield
+  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN1' },
+  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN2' },
+  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN3' },
+  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN4' },
+  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN5' },
 ];
 
 function fetchRightmovePage(locationId, locationName, pageIndex, keyword) {
