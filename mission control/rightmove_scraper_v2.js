@@ -114,14 +114,18 @@ async function collectMovingLeads(config) {
   for (const loc of locations) {
     try {
       // Get first page (index=0)
+      // Get first page (index=0)
       const page1 = await fetchRightmovePage(loc.id, loc.name, 0, loc.keyword);
       console.log('[RIGHTMOVE] ' + loc.name + (loc.keyword ? ' (' + loc.keyword + ')' : '') + ': ' + page1.length + ' properties');
       allProperties.push.apply(allProperties, page1);
 
-      if (page1.length >= 24) {
-        const page2 = await fetchRightmovePage(loc.id, loc.name, 24, loc.keyword);
-        console.log('[RIGHTMOVE] ' + loc.name + (loc.keyword ? ' (' + loc.keyword + ')' : '') + ': +' + page2.length + ' more');
-        allProperties.push.apply(allProperties, page2);
+      // For main regions, get more pages to find properties in specific postcode areas
+      var maxPages = loc.keyword ? 1 : 4; // More pages for broad region searches
+      for (var pi = 24; pi < 24 * maxPages && page1.length >= 24; pi += 24) {
+        var extraPage = await fetchRightmovePage(loc.id, loc.name, pi, loc.keyword);
+        if (extraPage.length === 0) break;
+        console.log('[RIGHTMOVE] ' + loc.name + ' page ' + (pi/24+1) + ': +' + extraPage.length);
+        allProperties.push.apply(allProperties, extraPage);
       }
 
       // Rate limiting between locations
