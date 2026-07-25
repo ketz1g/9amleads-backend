@@ -6282,7 +6282,7 @@ function generateLeadEmailHTML(customer, leads) {
       actionLinks.push({ url: 'https://www.google.com/search?q=' + encodeURIComponent(searchQ), label: 'Search Planning Portal' });
       if (d.estimatedValue) actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'moving') {
-      if (d.url) actionLinks.push({ url: d.url, label: 'View Property' });
+      if (d.url) actionLinks.push({ url: d.url, label: 'Check Out This Property' });
       else actionLinks.push({ url: 'https://www.rightmove.co.uk/property-for-sale/search.html?searchLocation=' + encodeURIComponent(d.postcode || d.city || ''), label: 'Search Similar' });
       actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'newbusiness') {
