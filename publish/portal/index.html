@@ -92,7 +92,7 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .pw{font-size:11px;color:#8890a8;font-weight:400}
 .ml{font-size:10px;color:#8890a8;font-weight:400}
 .tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
-.quick-areas{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+.quick-areas{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:2px;margin-bottom:6px;max-height:100px;overflow-y:auto}.quick-areas::-webkit-scrollbar{width:3px}.quick-areas::-webkit-scrollbar-thumb{background:#2a2d42;border-radius:2px}
 .qa{padding:4px 10px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.12);border-radius:5px;font-size:10px;color:#b0b8cc;cursor:pointer;font-weight:500}
 .qa:hover{background:rgba(14,165,233,0.12);color:#f1f5f9}
 .ar{display:flex;gap:6px;margin-top:4px}
@@ -218,20 +218,117 @@ function calcTotal() {
 </div>
 
 <div class="form-group">
-<label>Where do you work? <span class="ml">(type a city, county or region)</span></label>
+<label>Where do you work? <span class="ml">(click postcode areas below or type)</span></label>
 <div id="s-postcode-tags" class="tags"></div>
 <div id="s-postcode-wrapper">
 <div class="quick-areas">
-<button type="button" class="qa" onclick="addQuickArea('Birmingham')">Birmingham</button>
-<button type="button" class="qa" onclick="addQuickArea('Manchester')">Manchester</button>
-<button type="button" class="qa" onclick="addQuickArea('London')">London</button>
-<button type="button" class="qa" onclick="addQuickArea('Essex')">Essex</button>
-<button type="button" class="qa" onclick="addQuickArea('Kent')">Kent</button>
-<button type="button" class="qa" onclick="addQuickArea('Surrey')">Surrey</button>
-<button type="button" class="qa" onclick="addQuickArea('Leeds')">Leeds</button>
-<button type="button" class="qa" onclick="addQuickArea('Bristol')">Bristol</button>
+<button type="button" class="qa" onclick="addQuickArea('E')">E</button>
+<button type="button" class="qa" onclick="addQuickArea('EC')">EC</button>
+<button type="button" class="qa" onclick="addQuickArea('N')">N</button>
+<button type="button" class="qa" onclick="addQuickArea('NW')">NW</button>
+<button type="button" class="qa" onclick="addQuickArea('SE')">SE</button>
+<button type="button" class="qa" onclick="addQuickArea('SW')">SW</button>
+<button type="button" class="qa" onclick="addQuickArea('W')">W</button>
+<button type="button" class="qa" onclick="addQuickArea('WC')">WC</button>
+<button type="button" class="qa" onclick="addQuickArea('EN')">EN</button>
+<button type="button" class="qa" onclick="addQuickArea('CM')">CM</button>
+<button type="button" class="qa" onclick="addQuickArea('SG')">SG</button>
+<button type="button" class="qa" onclick="addQuickArea('B')">B</button>
+<button type="button" class="qa" onclick="addQuickArea('M')">M</button>
+<button type="button" class="qa" onclick="addQuickArea('BS')">BS</button>
+<button type="button" class="qa" onclick="addQuickArea('AL')">AL</button>
+<button type="button" class="qa" onclick="addQuickArea('HP')">HP</button>
+<button type="button" class="qa" onclick="addQuickArea('KT')">KT</button>
+<button type="button" class="qa" onclick="addQuickArea('BR')">BR</button>
+<button type="button" class="qa" onclick="addQuickArea('CR')">CR</button>
+<button type="button" class="qa" onclick="addQuickArea('DA')">DA</button>
+<button type="button" class="qa" onclick="addQuickArea('IG')">IG</button>
+<button type="button" class="qa" onclick="addQuickArea('RM')">RM</button>
+<button type="button" class="qa" onclick="addQuickArea('TN')">TN</button>
+<button type="button" class="qa" onclick="addQuickArea('TW')">TW</button>
+<button type="button" class="qa" onclick="addQuickArea('UB')">UB</button>
+<button type="button" class="qa" onclick="addQuickArea('HA')">HA</button>
+<button type="button" class="qa" onclick="addQuickArea('SM')">SM</button>
+<button type="button" class="qa" onclick="addQuickArea('CO')">CO</button>
+<button type="button" class="qa" onclick="addQuickArea('SS')">SS</button>
+<button type="button" class="qa" onclick="addQuickArea('GU')">GU</button>
+<button type="button" class="qa" onclick="addQuickArea('RG')">RG</button>
+<button type="button" class="qa" onclick="addQuickArea('SL')">SL</button>
+<button type="button" class="qa" onclick="addQuickArea('OX')">OX</button>
+<button type="button" class="qa" onclick="addQuickArea('MK')">MK</button>
+<button type="button" class="qa" onclick="addQuickArea('LU')">LU</button>
+<button type="button" class="qa" onclick="addQuickArea('CB')">CB</button>
+<button type="button" class="qa" onclick="addQuickArea('IP')">IP</button>
+<button type="button" class="qa" onclick="addQuickArea('NR')">NR</button>
+<button type="button" class="qa" onclick="addQuickArea('PE')">PE</button>
+<button type="button" class="qa" onclick="addQuickArea('SO')">SO</button>
+<button type="button" class="qa" onclick="addQuickArea('PO')">PO</button>
+<button type="button" class="qa" onclick="addQuickArea('BN')">BN</button>
+<button type="button" class="qa" onclick="addQuickArea('RH')">RH</button>
+<button type="button" class="qa" onclick="addQuickArea('ME')">ME</button>
+<button type="button" class="qa" onclick="addQuickArea('CT')">CT</button>
+<button type="button" class="qa" onclick="addQuickArea('CV')">CV</button>
+<button type="button" class="qa" onclick="addQuickArea('DY')">DY</button>
+<button type="button" class="qa" onclick="addQuickArea('WS')">WS</button>
+<button type="button" class="qa" onclick="addQuickArea('WV')">WV</button>
+<button type="button" class="qa" onclick="addQuickArea('WR')">WR</button>
+<button type="button" class="qa" onclick="addQuickArea('LE')">LE</button>
+<button type="button" class="qa" onclick="addQuickArea('NG')">NG</button>
+<button type="button" class="qa" onclick="addQuickArea('NN')">NN</button>
+<button type="button" class="qa" onclick="addQuickArea('DE')">DE</button>
+<button type="button" class="qa" onclick="addQuickArea('DN')">DN</button>
+<button type="button" class="qa" onclick="addQuickArea('S')">S</button>
+<button type="button" class="qa" onclick="addQuickArea('LS')">LS</button>
+<button type="button" class="qa" onclick="addQuickArea('BD')">BD</button>
+<button type="button" class="qa" onclick="addQuickArea('HD')">HD</button>
+<button type="button" class="qa" onclick="addQuickArea('HG')">HG</button>
+<button type="button" class="qa" onclick="addQuickArea('YO')">YO</button>
+<button type="button" class="qa" onclick="addQuickArea('L')">L</button>
+<button type="button" class="qa" onclick="addQuickArea('WA')">WA</button>
+<button type="button" class="qa" onclick="addQuickArea('WN')">WN</button>
+<button type="button" class="qa" onclick="addQuickArea('OL')">OL</button>
+<button type="button" class="qa" onclick="addQuickArea('SK')">SK</button>
+<button type="button" class="qa" onclick="addQuickArea('CH')">CH</button>
+<button type="button" class="qa" onclick="addQuickArea('FY')">FY</button>
+<button type="button" class="qa" onclick="addQuickArea('PR')">PR</button>
+<button type="button" class="qa" onclick="addQuickArea('BB')">BB</button>
+<button type="button" class="qa" onclick="addQuickArea('BL')">BL</button>
+<button type="button" class="qa" onclick="addQuickArea('NE')">NE</button>
+<button type="button" class="qa" onclick="addQuickArea('SR')">SR</button>
+<button type="button" class="qa" onclick="addQuickArea('TS')">TS</button>
+<button type="button" class="qa" onclick="addQuickArea('DH')">DH</button>
+<button type="button" class="qa" onclick="addQuickArea('DL')">DL</button>
+<button type="button" class="qa" onclick="addQuickArea('EH')">EH</button>
+<button type="button" class="qa" onclick="addQuickArea('G')">G</button>
+<button type="button" class="qa" onclick="addQuickArea('AB')">AB</button>
+<button type="button" class="qa" onclick="addQuickArea('DD')">DD</button>
+<button type="button" class="qa" onclick="addQuickArea('KY')">KY</button>
+<button type="button" class="qa" onclick="addQuickArea('FK')">FK</button>
+<button type="button" class="qa" onclick="addQuickArea('PA')">PA</button>
+<button type="button" class="qa" onclick="addQuickArea('KA')">KA</button>
+<button type="button" class="qa" onclick="addQuickArea('ML')">ML</button>
+<button type="button" class="qa" onclick="addQuickArea('IV')">IV</button>
+<button type="button" class="qa" onclick="addQuickArea('KW')">KW</button>
+<button type="button" class="qa" onclick="addQuickArea('PH')">PH</button>
+<button type="button" class="qa" onclick="addQuickArea('CF')">CF</button>
+<button type="button" class="qa" onclick="addQuickArea('NP')">NP</button>
+<button type="button" class="qa" onclick="addQuickArea('SA')">SA</button>
+<button type="button" class="qa" onclick="addQuickArea('LL')">LL</button>
+<button type="button" class="qa" onclick="addQuickArea('LD')">LD</button>
+<button type="button" class="qa" onclick="addQuickArea('SY')">SY</button>
+<button type="button" class="qa" onclick="addQuickArea('BT')">BT</button>
+<button type="button" class="qa" onclick="addQuickArea('GL')">GL</button>
+<button type="button" class="qa" onclick="addQuickArea('BA')">BA</button>
+<button type="button" class="qa" onclick="addQuickArea('SP')">SP</button>
+<button type="button" class="qa" onclick="addQuickArea('DT')">DT</button>
+<button type="button" class="qa" onclick="addQuickArea('TQ')">TQ</button>
+<button type="button" class="qa" onclick="addQuickArea('PL')">PL</button>
+<button type="button" class="qa" onclick="addQuickArea('TR')">TR</button>
+<button type="button" class="qa" onclick="addQuickArea('EX')">EX</button>
+<button type="button" class="qa" onclick="addQuickArea('TA')">TA</button>
+<button type="button" class="qa" onclick="addQuickArea('SN')">SN</button>
 </div>
-<div class="ar"><input type="text" id="s-postcode-input" placeholder="e.g. Birmingham, Essex, North London, Kent" class="sf" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
+<div class="ar"><input type="text" id="s-postcode-input" placeholder="Add your postcode e.g. NW, CM, N, SW" class="sf" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
 <button type="button" class="btn-s" onclick="addSignupPostcode()">Add</button>
 <button type="button" class="btn-o" onclick="setAllUK()">All UK</button></div>
 <span id="s-postcode-count" class="ml"></span>
@@ -293,7 +390,19 @@ Free 7 day trial · No card required · <a href="/terms.html">Terms</a> · <a hr
 <script>
 var API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:8012'
-  : 'https://9amleads.com';
+  : '';
+
+var TIMEOUT = 15000;
+
+function fetchWithTimeout(url, opts) {
+  return new Promise(function(resolve, reject) {
+    var controller = new AbortController();
+    var timer = setTimeout(function() { controller.abort(); reject(new Error('Timeout')); }, TIMEOUT);
+    fetch(url, { ...opts, signal: controller.signal })
+      .then(function(r) { clearTimeout(timer); resolve(r); })
+      .catch(function(e) { clearTimeout(timer); reject(e); });
+  });
+}
 
 // ===== SIGNUP POSTCODE AREA SELECTOR =====
 var signupPostcodes = [];
@@ -307,7 +416,7 @@ async function addSignupPostcode() {
   var area = (input?.value || '').trim();
   var err = document.getElementById('s-postcode-error');
   err.style.display = 'none';
-  if (!area || area.length < 2) { err.textContent = 'Please enter a city, county or region name'; err.style.display = 'block'; return; }
+  if (!area || area.length < 1 || !/^[A-Z]+$/i.test(area)) { err.textContent = 'Enter a valid postcode area code (e.g. NW, CM, N, SW)'; err.style.display = 'block'; return; }
   var plan = document.querySelector('input[name="plan"]:checked')?.value;
   var isUnlimited = plan === 'pro' || plan === 'enterprise';
   var maxAreas = isUnlimited ? 999 : 3;
@@ -693,77 +802,94 @@ function doSignup() {
   var company = document.getElementById('s-company').value.trim();
   var email = document.getElementById('s-email').value.trim().toLowerCase();
   var password = document.getElementById('s-password').value;
-  var productCheckboxes = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
-  var products = Array.from(productCheckboxes).map(function(cb) { return cb.value; });
-  if (products.length === 0) { document.getElementById('signup-error').textContent = 'Please select at least one lead type'; document.getElementById('signup-error').style.display = 'block'; return; }
-  var selectedPlan = document.querySelector('#s-plan-container input[type=radio]:checked');
-  var planVal = selectedPlan ? selectedPlan.value : 'free_trial';
-  var maxProducts = planVal === 'free_trial' ? 1 : planVal === 'starter' ? 2 : 99;
-  var minProducts = 1;
-  if (products.length > maxProducts) {
-    document.getElementById('signup-error').textContent = (planVal === 'free_trial' ? 'Free Trial' : planVal.charAt(0).toUpperCase() + planVal.slice(1)) + ' allows up to ' + maxProducts + ' lead type' + (maxProducts > 1 ? 's' : '') + '. ' + (maxProducts < 99 ? 'Upgrade to ' + (planVal === 'free_trial' ? 'Starter' : 'Pro') + ' for more.' : '');
-    document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
-  }
-
+  var cbs = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
+  var products = Array.from(cbs).map(function(cb) { return cb.value; });
+  var errEl = document.getElementById('signup-error');
+  var btn = document.getElementById('signup-btn');
+  errEl.style.display = 'none';
+  
+  if (products.length === 0) { errEl.textContent = 'Please select at least one lead type'; errEl.style.display = 'block'; return; }
+  if (!name || !company || !email || !password) { errEl.textContent = 'Please fill in all fields'; errEl.style.display = 'block'; return; }
+  if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters'; errEl.style.display = 'block'; return; }
+  
   var product = products[0];
   var targetAreas = signupPostcodes;
-  // For county/region coverage, get the selected county/region instead of postcodes
-  if (selectedCoverage === 'county') {
-    var countyVal = document.getElementById('county-select')?.value;
-    if (countyVal && countyVal !== 'all-uk') { targetAreas = [countyVal]; }
-  } else if (selectedCoverage === 'region') {
-    var regionVal = document.getElementById('region-select')?.value;
-    if (regionVal && regionVal !== 'all-uk') { targetAreas = [regionVal]; }
-  }
-  if (targetAreas.length === 0 && selectedCoverage !== 'ukwide') {
-    document.getElementById('signup-error').textContent = 'Please add at least one postcode area or select a county/region';
-    document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
-  }
-  var planRadio = document.querySelector('#s-plan-container input[type=radio]:checked');
-  var plan = planRadio ? planRadio.value : 'free_trial';
-  // Show upgrade recommendation if multiple products on free trial
-  if (plan === 'free_trial' && products.length > 1) {
-    if (!confirm('You selected ' + products.length + ' lead types but the Free Trial only gives you 5 leads/day total (about 1-2 per type). Upgrade to Pro for 15 leads/day or Enterprise for 40 leads/day to get more from each lead type. Click Cancel to upgrade, OK to continue with Free Trial.')) {
-      document.querySelector('#s-plan-container input[value="pro"]')?.click();
-      plan = 'pro';
-    }
-  }
-  var button = document.getElementById('signup-btn');
-  var error = document.getElementById('signup-error');
-  var success = document.getElementById('signup-success');
-  error.style.display = 'none'; success.style.display = 'none';
-  if (!name || !company || !email || !password) { error.textContent = 'Please fill in all fields'; error.style.display = 'block'; return; }
-  if (password.length < 8) { error.textContent = 'Password must be at least 8 characters'; error.style.display = 'block'; return; }
-  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
-  fetch(API + '/api/auth/signup', {
-    method:'POST', headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:signupPostcodes.indexOf('All UK') !== -1 ? 'ukwide' : signupPostcodes.length > 0 ? 'county' : selectedCoverage, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
-  }).then(function(r) { return r.json(); }).then(function(d) {
-    if (d.token) {
-      localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:plan, email:email, product:product, products:products }));
-      success.style.display = 'block'; button.innerHTML = '<i class="fas fa-check"></i> Redirecting...';
-      // For paid plans, redirect to Stripe checkout immediately
-      if (plan === 'pro' || plan === 'enterprise') {
-        fetch(API + '/api/create-checkout', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + d.token }, body:JSON.stringify({ plan:plan }) })
-        .then(function(r) { return r.json(); })
-        .then(function(cd) { if (cd.url) window.location.href = cd.url; else window.location.href = '/portal/dashboard.html?onboard=1'; })
-        .catch(function() { window.location.href = '/portal/dashboard.html?onboard=1'; sessionStorage.setItem('login_token', d.token); });
+  if (targetAreas.length === 0) { errEl.textContent = 'Please add at least one postcode area'; errEl.style.display = 'block'; return; }
+  
+  var plan = 'free_trial';
+  var coverage = signupPostcodes.indexOf('All UK') !== -1 ? 'ukwide' : 'postcode';
+  
+  btn.innerHTML = 'Creating account...';
+  btn.disabled = true;
+  
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/auth/signup', true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.timeout = 30000;
+  
+  xhr.onload = function() {
+    try {
+      var response = JSON.parse(xhr.responseText);
+      if (xhr.status === 201 && response.token) {
+        localStorage.setItem('mld_portal_session', JSON.stringify({
+          token: response.token,
+          clientId: (response.customer && response.customer.id) || email,
+          name: (response.customer && response.customer.name) || name,
+          plan: plan,
+          email: email,
+          product: product,
+          products: products
+        }));
+        btn.innerHTML = 'Success! Redirecting...';
+        window.location.href = '/portal/dashboard.html?onboard=1';
+      } else if (xhr.status === 400) {
+        errEl.textContent = response.error || 'Invalid information. Please check your details.';
+        errEl.style.display = 'block';
+        btn.innerHTML = 'Start Free Trial';
+        btn.disabled = false;
+      } else if (xhr.status === 409) {
+        errEl.textContent = 'An account with this email already exists. Please sign in instead.';
+        errEl.style.display = 'block';
+        btn.innerHTML = 'Start Free Trial';
+        btn.disabled = false;
       } else {
-        setTimeout(function() { window.location.href = '/portal/dashboard.html?onboard=1'; }, 1000);
+        errEl.textContent = 'Server error. Please try again in a moment.';
+        errEl.style.display = 'block';
+        btn.innerHTML = 'Start Free Trial';
+        btn.disabled = false;
       }
-    } else {
-      error.textContent = d.error || 'Signup failed. Please try again.'; error.style.display = 'block';
-      button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false;
+    } catch(e) {
+      errEl.textContent = 'Server error. Please try again.';
+      errEl.style.display = 'block';
+      btn.innerHTML = 'Start Free Trial';
+      btn.disabled = false;
     }
-  }).catch(function(e) {
-    error.textContent = 'Server is starting up. Please wait 10 seconds and try again. If the issue persists, contact hello@9amleads.com.';
-    error.style.display = 'block';
-    button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false;
-    setTimeout(function() { error.style.display = 'none'; }, 10000);
+  };
+  
+  xhr.onerror = function() {
+    errEl.textContent = 'Could not connect. Please check your internet and try again.';
+    errEl.style.display = 'block';
+    btn.innerHTML = 'Start Free Trial';
+    btn.disabled = false;
+  };
+  
+  xhr.ontimeout = function() {
+    errEl.textContent = 'Server is taking too long. Please try again.';
+    errEl.style.display = 'block';
+    btn.innerHTML = 'Start Free Trial';
+    btn.disabled = false;
+  };
+  
+  var body = JSON.stringify({
+    company: company, name: name, email: email, phone: '', password: password,
+    product: product, products: products, plan: plan, coverage: coverage,
+    targetAreas: targetAreas, source: 'web',
+    marketingConsent: document.getElementById('s-consent') ? document.getElementById('s-consent').checked : true,
+    leadFilters: '{}'
   });
-}
-
-// ===== LOGIN =====
+  
+  xhr.send(body);
+}// ===== LOGIN =====
 function doLogin() {
   var email = document.getElementById('l-email').value.trim().toLowerCase();
   var pass = document.getElementById('l-pass').value;
