@@ -8296,8 +8296,14 @@ function syncCustomers(product) {
               try {
                 console.log('[SCRAPER] Rightmove: free scraper gave ' + (leads ? leads.length : 0) + ', trying Apify supplement...');
                 var apifyLeads = await new Promise(function(r) {
-                  var bd = JSON.stringify({ location: 'United Kingdom', maxResults: 50, sortType: 'newest' });
-                  var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=128&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
+                  var bd = JSON.stringify({
+                    listUrls: [{ url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=REGION%5E87490&includeSSTC=true&sortType=6' }],
+                    propertyUrls: [], monitoringMode: false, fullPropertyDetails: true,
+                    includePriceHistory: false, includeNearestSchools: false,
+                    enableDelistingTracker: false, addEmptyTrackerRecord: false,
+                    maxProperties: 50, proxy: { useApifyProxy: true, apifyProxyGroups: ['BUYPROXIES94952'] }
+                  });
+                  var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=512&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
                     var bt = ''; res.on('data', function(c) { bt += c; }); res.on('end', function() {
                       try { var j = JSON.parse(bt); if (Array.isArray(j)) r(j); else r([]); } catch(e) { r([]); }
                     });
@@ -8307,22 +8313,28 @@ function syncCustomers(product) {
                 });
                 if (apifyLeads && apifyLeads.length > 0) {
                   var mappedApify = apifyLeads.map(function(p) {
+                    var pStatus = 'Available';
+                    var pReason = (p.listingUpdate && p.listingUpdate.listingUpdateReason || '').toLowerCase();
+                    if (pReason.includes('sold') || pReason.includes('sstc') || pReason.includes('under offer')) pStatus = 'SSTC';
+                    else if (pReason.includes('reduced')) pStatus = 'Reduced';
+                    else if (pReason === 'new') pStatus = 'New';
+                    if (p.displayStatus) pStatus = p.displayStatus;
                     return {
-                      id: 'APIFY_' + (p.id || p.listingId || Date.now() + Math.random()),
-                      title: p.address || p.displayAddress || '',
-                      address: p.address || p.displayAddress || '',
-                      price: p.price || (p.pricing && p.pricing.amount) || 0,
+                      id: 'APIFY_' + p.id,
+                      title: p.displayAddress || '',
+                      address: p.displayAddress || '',
+                      price: p.price ? (p.price.amount || 0) : 0,
                       bedrooms: p.bedrooms || 0,
-                      propertyType: p.propertyType || p.propertySubType || '',
-                      listingStatus: (p.status || '').includes('SSTC') || (p.status || '').includes('Sold') || (p.status || '').includes('Under Offer') ? 'SSTC' : 'Available',
-                      firstVisibleDate: p.firstVisibleDate || p.listedAt || '',
-                      updateDate: p.updatedAt || p.lastUpdated || '',
-                      url: p.url || p.listingUrl || 'https://www.rightmove.co.uk' + (p.propertyUrl || ''),
-                      agent: p.agent || (p.branch && p.branch.displayName) || p.branchName || '',
+                      propertyType: p.propertySubType || '',
+                      listingStatus: pStatus,
+                      firstVisibleDate: p.firstVisibleDate || '',
+                      updateDate: p.updateDate || '',
+                      url: 'https://www.rightmove.co.uk' + (p.propertyUrl || ''),
+                      agent: p.customer ? (p.customer.branchDisplayName || p.customer.branchName || '') : '',
                       source: 'Apify Rightmove',
                       scrapedAt: new Date().toISOString(),
-                      city: p.city || p.location || '',
-                      postcode: (p.address || p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i) ? (p.address || p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i)[0] : ''
+                      city: p.city || p.displayAddress || '',
+                      postcode: (p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i) ? (p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i)[0] : ''
                     };
                   });
                   leads = leads || [];
