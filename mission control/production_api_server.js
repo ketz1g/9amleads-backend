@@ -8276,15 +8276,19 @@ function syncCustomers(product) {
             var rmScraper = require('./rightmove_scraper_v2');
             leads = await rmScraper.collectMovingLeads();
             if (leads && leads.length > 0) {
+              // Filter by freshness: prefer new listings (<24h), fallback to recent updates (<48h)
               var rmFresh24 = filterFresh(leads, 'firstVisibleDate');
               var rmFreshUpdate = filterFresh(leads, 'updateDate');
-              // Use newly listed properties (<24h), fallback to recently updated (<48h)
               if (rmFresh24.fresh.length >= 3) leads = rmFresh24.fresh;
               else if (rmFresh24.fallback.length >= 5) leads = rmFresh24.fallback;
               else if (rmFreshUpdate.fresh.length >= 3) leads = rmFreshUpdate.fresh;
               else if (rmFreshUpdate.fallback.length >= 5) leads = rmFreshUpdate.fallback;
-              else leads = rmFresh24.fresh.concat(rmFresh24.fallback).concat(rmFreshUpdate.fresh).concat(rmFreshUpdate.fallback).slice(0, 200);
-              console.log('[SCRAPER] Rightmove: new=' + rmFresh24.fresh.length + ' 24h=' + rmFresh24.fallback.length + ' updated=' + rmFreshUpdate.fresh.length + ' used=' + leads.length);
+              else {
+                // Not enough fresh leads — use all available, preferring newest
+                leads.sort(function(a, b) { return (b.updateDate || '').localeCompare(a.updateDate || ''); });
+                leads = leads.slice(0, 100);
+              }
+              console.log('[SCRAPER] Rightmove: new=' + rmFresh24.fresh.length + ' listed=' + rmFresh24.fallback.length + ' updated=' + rmFreshUpdate.fresh.length + ' used=' + leads.length);
             }
             if (!leads || leads.length === 0) { leads = generateDemoLeads('moving', 5); console.log('[SCRAPER] Rightmove: using demo leads (0 from scraper)'); }
             // If fewer than 5 leads after freshness filter, supplement with demos to ensure quota
