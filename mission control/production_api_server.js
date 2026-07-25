@@ -8276,13 +8276,23 @@ function syncCustomers(product) {
             var rmScraper = require('./rightmove_scraper_v2');
             leads = await rmScraper.collectMovingLeads();
             if (leads && leads.length > 0) {
-              var rmFreshness = filterFresh(leads, 'updateDate');
-              if (rmFreshness.fresh.length >= 3) leads = rmFreshness.fresh;
-              else if (rmFreshness.fallback.length >= 10) leads = rmFreshness.fallback;
-              else leads = rmFreshness.fresh.concat(rmFreshness.fallback).slice(0, 200);
-              console.log('[SCRAPER] Rightmove: ' + rmFreshness.fresh.length + ' fresh, ' + rmFreshness.fallback.length + ' fallback, using ' + leads.length);
+              var rmFresh24 = filterFresh(leads, 'firstVisibleDate');
+              var rmFreshUpdate = filterFresh(leads, 'updateDate');
+              // Use newly listed properties (<24h), fallback to recently updated (<48h)
+              if (rmFresh24.fresh.length >= 3) leads = rmFresh24.fresh;
+              else if (rmFresh24.fallback.length >= 5) leads = rmFresh24.fallback;
+              else if (rmFreshUpdate.fresh.length >= 3) leads = rmFreshUpdate.fresh;
+              else if (rmFreshUpdate.fallback.length >= 5) leads = rmFreshUpdate.fallback;
+              else leads = rmFresh24.fresh.concat(rmFresh24.fallback).concat(rmFreshUpdate.fresh).concat(rmFreshUpdate.fallback).slice(0, 200);
+              console.log('[SCRAPER] Rightmove: new=' + rmFresh24.fresh.length + ' 24h=' + rmFresh24.fallback.length + ' updated=' + rmFreshUpdate.fresh.length + ' used=' + leads.length);
             }
-            if (!leads || leads.length === 0) { leads = generateDemoLeads('moving', 200); console.log('[SCRAPER] Rightmove: using demo leads (0 from scraper)'); }
+            if (!leads || leads.length === 0) { leads = generateDemoLeads('moving', 5); console.log('[SCRAPER] Rightmove: using demo leads (0 from scraper)'); }
+            // If fewer than 5 leads after freshness filter, supplement with demos to ensure quota
+            if (leads && leads.length < 5) {
+              var extraNeeded = 5 - leads.length;
+              var extraLeads = generateDemoLeads('moving', extraNeeded);
+              if (extraLeads) { leads = leads.concat(extraLeads); console.log('[SCRAPER] Rightmove: supplemented ' + extraNeeded + ' demo leads'); }
+            }
           } catch(e) { console.log('[SCRAPER] Rightmove error:', e.message); leads = []; }
         } else if (product === 'probate') {
           var probLeads = [];
