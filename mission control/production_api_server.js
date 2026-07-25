@@ -8349,7 +8349,7 @@ function syncCustomers(product) {
           else if (genFresh.fallback.length >= 5) leads = genFresh.fallback;
           else leads = genFresh.fresh.concat(genFresh.fallback).concat(genFresh.rejected).slice(0, 200);
         }
-        if (!leads || leads.length === 0) { leads = generateDemoLeads(product, 200); }
+        if (!leads || leads.length === 0) { leads = []; }
         markScrapedToday(product); // Record this product as scraped today
         var leadSource = leads && leads.length > 0 ? (leads[0].source || 'unknown') : 'empty';
         fs.writeFileSync(path.join(DATA_DIR, product + '-source.txt'), leadSource);

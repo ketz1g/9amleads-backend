@@ -551,58 +551,11 @@ async function distributeProduct(product) {
     assignLead(assignment, null, null, 2);
   }
 
-  // === Phase 4: Supplement per-customer demo leads ===
+    // Phase 4: No demo supplement — only real scraped data used
   var generated = 0;
-  for (var pi = 0; pi < Object.keys(PRODUCT_LEAD_FILES).length; pi++) {
-    var prod = Object.keys(PRODUCT_LEAD_FILES)[pi];
-    var prodConfig = PRODUCT_LEAD_FILES[prod];
-    if (!prodConfig) continue;
-    var custs = activeCustomers.filter(function(c) {
-      return (c.product === prod || (c.biz_field3 && JSON.parse(c.biz_field3).indexOf(prod) >= 0));
-    });
-    for (var ci = 0; ci < custs.length; ci++) {
-      var c = custs[ci];
-      var usage = customerUsage[c.id] || 0;
-      var limit = customerLimits[c.id] || 5;
-      var needed = limit - usage;
-      if (needed <= 0) continue;
-      // Generate demo leads for this customer with their target postcode areas
-      var custAreas = [];
-      try { custAreas = JSON.parse(c.target_areas || '[]'); } catch(e) {}
-      for (var di = 0; di < needed; di++) {
-        var area = custAreas.length > 0 ? custAreas[di % custAreas.length] : 'ALL';
-        var demoLead = {
-          id: 'DEMO_' + prod + '_' + di + '_' + Date.now(),
-          title: 'Sample ' + prod + ' opportunity',
-          address: 'Demo ' + prod + ' in ' + area,
-          postcode: area !== 'ALL' ? area + '1 1AA' : 'SW1A 1AA',
-          price: Math.floor(Math.random() * 500000) + 100000,
-          bedrooms: Math.floor(Math.random() * 4) + 2,
-          propertyType: ['House', 'Flat', 'Bungalow'][Math.floor(Math.random() * 3)],
-          listingStatus: 'Available',
-          source: '9amLeads Demo',
-          scrapedAt: new Date().toISOString()
-        };
-        var leadRec = {
-          id: require('uuid').v4 ? uuidv4() : 'LD_' + Date.now() + '_' + Math.random().toString(36).substr(2),
-          customer_id: c.id,
-          product: prod,
-          data: JSON.stringify(normaliseLead(demoLead, prod, c.id)),
-          status: 'new',
-          delivered: 0,
-          created_at: new Date().toISOString(),
-          delivered_at: null
-        };
-        db.leads.push(leadRec);
-        customerUsage[c.id] = (customerUsage[c.id] || 0) + 1;
-        customerUsage[prod] = (customerUsage[prod] || 0) + 1;
-        generated++;
-      }
-    }
-  }
   saveJSON(DB_FILE, db);
 
-  const totalMatched = Object.values(customerUsage).reduce((a, b) => a + b, 0);
+  const totalMatchedlMatched = Object.values(customerUsage).reduce((a, b) => a + b, 0);
   for (const [cid, count] of Object.entries(customerUsage)) {
     if (count > 0) console.log(`    ${customerLabels[cid] || cid}: ${count} leads`);
   }
