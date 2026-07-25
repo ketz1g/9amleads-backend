@@ -114,8 +114,8 @@ async function collectMovingLeads(config) {
       console.log('[RIGHTMOVE] ' + loc.name + ': ' + page1.length + ' properties');
       allProperties.push.apply(allProperties, page1);
 
-      // Get up to 4 pages of London (100 properties) to cover more postcode areas
-      var maxPages = loc.name === 'London' ? 4 : 2;
+      // Get up to 8 pages of London (200 properties) to cover postcode areas
+      var maxPages = loc.name === 'London' ? 8 : 2;
       for (var pi = 24; pi < 24 * maxPages && page1.length >= 24; pi += 24) {
         var extra = await fetchRightmovePage(loc.id, loc.name, pi);
         if (extra.length === 0) break;
