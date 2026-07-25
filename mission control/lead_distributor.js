@@ -555,7 +555,7 @@ async function distributeProduct(product) {
   var generated = 0;
   for (var pi = 0; pi < Object.keys(PRODUCT_LEAD_FILES).length; pi++) {
     var prod = Object.keys(PRODUCT_LEAD_FILES)[pi];
-    var prodConfig = productConfigs[prod];
+    var prodConfig = PRODUCT_LEAD_FILES[prod];
     if (!prodConfig) continue;
     var custs = activeCustomers.filter(function(c) {
       return (c.product === prod || (c.biz_field3 && JSON.parse(c.biz_field3).indexOf(prod) >= 0));
