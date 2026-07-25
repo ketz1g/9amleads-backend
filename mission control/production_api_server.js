@@ -8274,6 +8274,7 @@ function syncCustomers(product) {
         } else if (product === 'moving') {
           try {
             var rmScraper = require('./rightmove_scraper_v2');
+            var apifyKey = process.env.APIFY_API_KEY || '';
             leads = await rmScraper.collectMovingLeads();
             if (leads && leads.length > 0) {
               // Filter by freshness: prefer new listings (<24h), fallback to recent updates (<48h)
@@ -8290,8 +8291,48 @@ function syncCustomers(product) {
               }
               console.log('[SCRAPER] Rightmove: new=' + rmFresh24.fresh.length + ' listed=' + rmFresh24.fallback.length + ' updated=' + rmFreshUpdate.fresh.length + ' used=' + leads.length);
             }
+            // If still too few real leads, try Apify supplement (only if API key available)
+            if ((!leads || leads.length < 5) && apifyKey) {
+              try {
+                console.log('[SCRAPER] Rightmove: free scraper gave ' + (leads ? leads.length : 0) + ', trying Apify supplement...');
+                var apifyLeads = await new Promise(function(r) {
+                  var bd = JSON.stringify({ location: 'United Kingdom', maxResults: 50, sortType: 'newest' });
+                  var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=128&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
+                    var bt = ''; res.on('data', function(c) { bt += c; }); res.on('end', function() {
+                      try { var j = JSON.parse(bt); if (Array.isArray(j)) r(j); else r([]); } catch(e) { r([]); }
+                    });
+                  });
+                  req.on('error', function() { r([]); });
+                  req.write(bd); req.end();
+                });
+                if (apifyLeads && apifyLeads.length > 0) {
+                  var mappedApify = apifyLeads.map(function(p) {
+                    return {
+                      id: 'APIFY_' + (p.id || p.listingId || Date.now() + Math.random()),
+                      title: p.address || p.displayAddress || '',
+                      address: p.address || p.displayAddress || '',
+                      price: p.price || (p.pricing && p.pricing.amount) || 0,
+                      bedrooms: p.bedrooms || 0,
+                      propertyType: p.propertyType || p.propertySubType || '',
+                      listingStatus: (p.status || '').includes('SSTC') || (p.status || '').includes('Sold') || (p.status || '').includes('Under Offer') ? 'SSTC' : 'Available',
+                      firstVisibleDate: p.firstVisibleDate || p.listedAt || '',
+                      updateDate: p.updatedAt || p.lastUpdated || '',
+                      url: p.url || p.listingUrl || 'https://www.rightmove.co.uk' + (p.propertyUrl || ''),
+                      agent: p.agent || (p.branch && p.branch.displayName) || p.branchName || '',
+                      source: 'Apify Rightmove',
+                      scrapedAt: new Date().toISOString(),
+                      city: p.city || p.location || '',
+                      postcode: (p.address || p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i) ? (p.address || p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i)[0] : ''
+                    };
+                  });
+                  leads = leads || [];
+                  leads = leads.concat(mappedApify);
+                  console.log('[SCRAPER] Rightmove: Apify added ' + mappedApify.length + ', total=' + leads.length);
+                }
+              } catch(apifyErr) { console.log('[SCRAPER] Rightmove Apify error:', apifyErr.message); }
+            }
             if (!leads || leads.length === 0) { leads = generateDemoLeads('moving', 5); console.log('[SCRAPER] Rightmove: using demo leads (0 from scraper)'); }
-            // If fewer than 5 leads after freshness filter, supplement with demos to ensure quota
+            // If fewer than 5 leads after all attempts, supplement with demos to ensure quota
             if (leads && leads.length < 5) {
               var extraNeeded = 5 - leads.length;
               var extraLeads = generateDemoLeads('moving', extraNeeded);
