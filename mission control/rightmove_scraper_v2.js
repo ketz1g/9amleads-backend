@@ -15,14 +15,55 @@ const LOCATIONS = [
   { id: 'REGION%5E87473', name: 'Sussex' },
   { id: 'REGION%5E87480', name: 'Hampshire' },
   { id: 'REGION%5E87466', name: 'Thames Valley' },
+  // Postcode-specific searches for wider London coverage
+  { id: 'REGION%5E87490', name: 'London', search: 'E1' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E2' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E3' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E4' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E5' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E6' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E7' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E8' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E9' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E10' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E11' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E12' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E14' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E15' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E16' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E17' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E18' },
+  { id: 'REGION%5E87490', name: 'London', search: 'E20' },
+  { id: 'REGION%5E87490', name: 'London', search: 'NW1' },
+  { id: 'REGION%5E87490', name: 'London', search: 'NW2' },
+  { id: 'REGION%5E87490', name: 'London', search: 'NW3' },
+  { id: 'REGION%5E87490', name: 'London', search: 'NW5' },
+  { id: 'REGION%5E87490', name: 'London', search: 'NW6' },
+  { id: 'REGION%5E87490', name: 'London', search: 'NW7' },
+  { id: 'REGION%5E87490', name: 'London', search: 'NW8' },
+  { id: 'REGION%5E87490', name: 'London', search: 'NW9' },
+  { id: 'REGION%5E87490', name: 'London', search: 'NW10' },
+  { id: 'REGION%5E87490', name: 'London', search: 'NW11' },
+  { id: 'REGION%5E87490', name: 'London', search: 'EN1' },
+  { id: 'REGION%5E87490', name: 'London', search: 'EN2' },
+  { id: 'REGION%5E87490', name: 'London', search: 'EN3' },
+  { id: 'REGION%5E87490', name: 'London', search: 'EN4' },
+  { id: 'REGION%5E87490', name: 'London', search: 'EN5' },
+  { id: 'REGION%5E87490', name: 'London', search: 'EN6' },
+  { id: 'REGION%5E87490', name: 'London', search: 'EN7' },
+  { id: 'REGION%5E87490', name: 'London', search: 'EN8' },
+  { id: 'REGION%5E87490', name: 'London', search: 'EN9' },
+  { id: 'REGION%5E87490', name: 'London', search: 'EN10' },
+  { id: 'REGION%5E87490', name: 'London', search: 'EN11' },
 ];
 
-function fetchRightmovePage(locationId, locationName, pageIndex) {
+function fetchRightmovePage(locationId, locationName, pageIndex, searchKeyword) {
   return new Promise((resolve) => {
-    const path = '/property-for-sale/find.html?locationIdentifier=' + locationId + '&index=' + pageIndex + '&includeSSTC=true&propertyTypes=&mustHave=&dontShow=&furnishTypes=&keywords=';
+    var searchPath = '/property-for-sale/find.html?locationIdentifier=' + locationId + '&index=' + pageIndex + '&includeSSTC=true';
+    if (searchKeyword) searchPath += '&keywords=' + encodeURIComponent(searchKeyword);
     const opts = {
       hostname: 'www.rightmove.co.uk',
-      path: path,
+      path: searchPath,
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
@@ -109,14 +150,14 @@ async function collectMovingLeads(config) {
   for (const loc of locations) {
     try {
       // Get first page (index=0)
-      const page1 = await fetchRightmovePage(loc.id, loc.name, 0);
-      console.log('[RIGHTMOVE] ' + loc.name + ': ' + page1.length + ' properties from page 1');
+      const page1 = await fetchRightmovePage(loc.id, loc.name, 0, loc.search);
+      console.log('[RIGHTMOVE] ' + loc.name + (loc.search ? ' (' + loc.search + ')' : '') + ': ' + page1.length + ' properties');
       allProperties.push.apply(allProperties, page1);
 
       // Get second page if first page had results (index=24)
       if (page1.length >= 24) {
-        const page2 = await fetchRightmovePage(loc.id, loc.name, 24);
-        console.log('[RIGHTMOVE] ' + loc.name + ': ' + page2.length + ' properties from page 2');
+        const page2 = await fetchRightmovePage(loc.id, loc.name, 24, loc.search);
+        console.log('[RIGHTMOVE] ' + loc.name + (loc.search ? ' (' + loc.search + ')' : '') + ': ' + page2.length + ' properties from page 2');
         allProperties.push.apply(allProperties, page2);
       }
 
