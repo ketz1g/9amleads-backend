@@ -5,7 +5,7 @@
 const https = require('https');
 
 const LOCATIONS = [
-  { id: 'REGION%5E87490', name: 'London' },
+  { id: 'REGION%5E87490', name: 'London', pages: 16 },
   { id: 'REGION%5E87464', name: 'Manchester' },
   { id: 'REGION%5E87463', name: 'Birmingham' },
   { id: 'REGION%5E87479', name: 'Essex' },
@@ -15,32 +15,11 @@ const LOCATIONS = [
   { id: 'REGION%5E87473', name: 'Sussex' },
   { id: 'REGION%5E87480', name: 'Hampshire' },
   { id: 'REGION%5E87466', name: 'Thames Valley' },
-  // Targeted postcode district searches for East London
-  { id: 'REGION%5E87490', name: 'East London', keyword: 'E1' },
-  { id: 'REGION%5E87490', name: 'East London', keyword: 'E3' },
-  { id: 'REGION%5E87490', name: 'East London', keyword: 'E14' },
-  { id: 'REGION%5E87490', name: 'East London', keyword: 'E15' },
-  { id: 'REGION%5E87490', name: 'East London', keyword: 'E16' },
-  { id: 'REGION%5E87490', name: 'East London', keyword: 'E17' },
-  // Targeted postcode district searches for NW London
-  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW1' },
-  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW3' },
-  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW5' },
-  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW6' },
-  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW8' },
-  { id: 'REGION%5E87490', name: 'NW London', keyword: 'NW11' },
-  // Targeted postcode district searches for Enfield
-  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN1' },
-  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN2' },
-  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN3' },
-  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN4' },
-  { id: 'REGION%5E87490', name: 'Enfield', keyword: 'EN5' },
 ];
 
-function fetchRightmovePage(locationId, locationName, pageIndex, keyword) {
+function fetchRightmovePage(locationId, locationName, pageIndex) {
   return new Promise((resolve) => {
     var path = '/property-for-sale/find.html?locationIdentifier=' + locationId + '&index=' + pageIndex + '&includeSSTC=true&sortType=6&propertyTypes=&mustHave=&dontShow=&furnishTypes=&keywords=';
-    if (keyword) path = path.replace('keywords=', 'keywords=' + encodeURIComponent(keyword + ' '));
     const opts = {
       hostname: 'www.rightmove.co.uk',
       path: path,
@@ -94,7 +73,6 @@ function fetchRightmovePage(locationId, locationName, pageIndex, keyword) {
               id: 'RM_' + p.id,
               title: p.displayAddress || '',
               address: p.displayAddress || '',
-              address: p.displayAddress || '',
               price: p.price ? (p.price.amount || 0) : 0,
               bedrooms: p.bedrooms || 0,
               propertyType: p.propertySubType || '',
@@ -129,31 +107,23 @@ async function collectMovingLeads(config) {
 
   for (const loc of locations) {
     try {
-      // Get first page (index=0)
-      // Get first page (index=0)
-      const page1 = await fetchRightmovePage(loc.id, loc.name, 0);
-      console.log('[RIGHTMOVE] ' + loc.name + ': ' + page1.length + ' properties');
-      allProperties.push.apply(allProperties, page1);
-
-      // Get up to 8 pages of London (200 properties) to cover postcode areas
-      var maxPages = loc.keyword ? 2 : (loc.name === 'London' ? 8 : 2);
+      var maxPages = loc.pages || 2;
       for (var pi = 0; pi < maxPages; pi++) {
-        var pg = await fetchRightmovePage(loc.id, loc.name, pi * 24, loc.keyword);
+        var pg = await fetchRightmovePage(loc.id, loc.name, pi * 24);
         if (pg.length === 0) break;
-        console.log('[RIGHTMOVE] ' + loc.name + (loc.keyword ? ' (' + loc.keyword + ')' : '') + ' page ' + (pi+1) + ': ' + pg.length);
+        console.log('[RIGHTMOVE] ' + loc.name + ' page ' + (pi + 1) + ': ' + pg.length);
         allProperties.push.apply(allProperties, pg);
+        if (pg.length < 24) break;
       }
 
-      // Rate limiting between locations
       if (loc !== locations[locations.length - 1]) {
-        await new Promise(function(r) { setTimeout(r, 1500); });
+        await new Promise(function(r) { setTimeout(r, 300); });
       }
     } catch (e) {
       console.log('[RIGHTMOVE] Error scraping ' + loc.name + ':', e.message);
     }
   }
 
-  // Deduplicate by property ID
   var seenIds = {};
   var deduped = allProperties.filter(function(p) {
     if (seenIds[p.id]) return false;
