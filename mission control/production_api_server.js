@@ -8301,9 +8301,9 @@ function syncCustomers(product) {
                     propertyUrls: [], monitoringMode: false, fullPropertyDetails: true,
                     includePriceHistory: false, includeNearestSchools: false,
                     enableDelistingTracker: false, addEmptyTrackerRecord: false,
-                    maxProperties: 50, proxy: { useApifyProxy: true, apifyProxyGroups: ['BUYPROXIES94952'] }
+                    maxProperties: 20
                   });
-                  var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=512&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
+                  var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=256&timeout=60', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd), 'Accept': 'application/json' }, timeout: 90000 }, function(res) {
                     var bt = ''; res.on('data', function(c) { bt += c; }); res.on('end', function() {
                       try { var j = JSON.parse(bt); if (Array.isArray(j)) r(j); else r([]); } catch(e) { r([]); }
                     });
