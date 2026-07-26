@@ -5019,22 +5019,39 @@ loadDashboard();
 #chatSuccess div{color:var(--text2)!important}
 #chatSuccess #chatSentEmail{color:var(--primary)!important}
 </style>
-<script>// ===== FALLBACK TOOL FUNCTIONS (defined here in case script 1 fails) =====
-if (typeof scrollToLeads !== 'function') {
-  window.scrollToLeads = function() { try { document.getElementById('leads-section').scrollIntoView({behavior:'smooth'}); } catch(e) {} };
-  window.showPlans = function() { try { document.getElementById('sub-section')?.scrollIntoView({behavior:'smooth'}); } catch(e) {} };
-  window.showPage = function(page) { try { if(page==='settings')document.getElementById('lead-filters-section')?.scrollIntoView({behavior:'smooth'});
-    else if(page==='leads')document.getElementById('leads-section')?.scrollIntoView({behavior:'smooth'});
-    else if(page==='support'){showModal('Support','<p style="color:var(--muted2)">Contact us at <a href="mailto:hello@9amleads.com">hello@9amleads.com</a></p>');}
-    else if(page==='campaigns'){showModal('Marketing Materials','<p style="color:var(--muted2)">Marketing materials are available on paid plans.</p>');}
-    else { document.getElementById('dashboard-bottom-section')?.scrollIntoView({behavior:'smooth'}); }
-  } catch(e) {} };
+<script>// ===== UNCONDITIONAL FALLBACK FUNCTIONS =====
+if (typeof scrollToLeads !== "function") {
+  window.scrollToLeads = function() { try { var el = document.getElementById("leads-section"); if(el) el.scrollIntoView({behavior:"smooth"}); } catch(e) {} };
+}
+if (typeof showPlans !== "function") {
+  window.showPlans = function() { try { var el = document.getElementById("sub-section"); if(el) el.scrollIntoView({behavior:"smooth"}); } catch(e) {} };
+}
+if (typeof showPage !== "function") {
+  window.showPage = function(page) {
+    try {
+      if(page==="settings") document.getElementById("lead-filters-section")?.scrollIntoView({behavior:"smooth"});
+      else if(page==="leads") document.getElementById("leads-section")?.scrollIntoView({behavior:"smooth"});
+      else if(page==="support") showModal("Support",'<p style="color:var(--muted2);text-align:center;padding:20px">Contact us at <a href="mailto:hello@9amleads.com">hello@9amleads.com</a></p>');
+      else if(page==="campaigns") showModal("Marketing Materials",'<p style="color:var(--muted2);text-align:center;padding:20px">Marketing materials are available on paid plans. <a href="#" onclick="closeModal();showPlans()" style="color:var(--primary)">View Plans</a></p>');
+      else if(page==="business-profile") showModal("Business Profile",'<p style="color:var(--muted2);text-align:center;padding:20px">Set up your business profile from the paid dashboard.</p>');
+      else if(page==="direct-mail") showModal("Direct Mail",'<p style="color:var(--muted2);text-align:center;padding:20px">Direct Mail is available on Pro and above.</p>');
+      else document.getElementById("dashboard-bottom-section")?.scrollIntoView({behavior:"smooth"});
+    } catch(e) {}
+  };
+}
+if (typeof exportRange !== "function") {
   window.exportRange = function(format) {
-    try { if (typeof leads !== 'undefined' && leads.length > 0) {
-      var csv = 'Address,Type,Price,Bedrooms,Status,Date\n';
-      leads.forEach(function(l){csv+=(l.title||'')+','+(l.propertyType||'')+','+(l.price||0)+','+(l.bedrooms||0)+','+(l.status||'')+','+(l.created_at||'').split('T')[0]+'\n';});
-      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = 'leads.csv'; a.click();
-    } else alert('No leads to export'); } catch(e) {} };
+    try {
+      if (typeof leads !== "undefined" && leads && leads.length > 0) {
+        var csv = "Address,Type,Price,Bedrooms,Status,Date\n";
+        for (var ei = 0; ei < leads.length; ei++) {
+          var l = leads[ei];
+          csv += (l.title||"") + "," + (l.propertyType||"") + "," + (l.price||0) + "," + (l.bedrooms||0) + "," + (l.status||"") + "," + ((l.created_at||"").split("T")[0]||"") + "\n";
+        }
+        var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download = "leads.csv"; a.click();
+      } else alert("No leads to export");
+    } catch(e) {}
+  };
 }
 
 
