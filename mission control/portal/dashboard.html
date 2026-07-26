@@ -577,6 +577,13 @@ async function loadDashboard() {
     setTimeout(function() { checkOnboarding(); }, 500);
   }
 
+  // Card setup prompt for new signups
+  if (window.location.search.indexOf('card=1') !== -1 && !localStorage.getItem('payment_setup_done')) {
+    setTimeout(function() {
+      showPaymentSetupPrompt();
+    }, 1000);
+  }
+
   // Admin impersonation mode
   if (session.admin_impersonating) {
     var banner = document.getElementById('admin-mode-banner');
@@ -683,6 +690,82 @@ function stripePortal() {
     if (r && r.url) window.open(r.url, '_blank');
     else alert('Stripe portal is available once you have an active paid subscription. Contact support for billing changes.');
   }).catch(function() { alert('Could not open billing portal.'); });
+}
+
+// ===== PAYMENT SETUP ONBOARDING =====
+function showPaymentSetupPrompt() {
+  var exists = document.getElementById('payment-setup-prompt');
+  if (exists) return;
+  var div = document.createElement('div');
+  div.id = 'payment-setup-prompt';
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)';
+  div.onclick = function(e) { if (e.target === div) {} };
+  div.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:420px;width:100%;text-align:center">' +
+    '<div style="font-size:32px;margin-bottom:8px">🔒</div>' +
+    '<h3 style="font-size:16px;font-weight:700;margin-bottom:6px">Set Up Payment</h3>' +
+    '<p style="font-size:12px;color:var(--muted2);line-height:1.6;margin-bottom:12px">Add a card to continue after your free trial. <strong>You won\'t be charged today.</strong> After 7 days, you\'ll automatically continue on the Starter plan at <strong>£25/week</strong>.</p>' +
+    '<div id="onboarding-card-element" style="padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;margin-bottom:12px"></div>' +
+    '<div id="payment-setup-error" style="color:#ef4444;font-size:11px;margin-bottom:8px;display:none"></div>' +
+    '<button class="btn btn-primary" id="save-onboarding-card-btn" onclick="saveOnboardingCard()" style="width:100%"><i class="fas fa-lock"></i> Save Card</button>' +
+    '<div style="margin-top:8px"><a href="#" onclick="dismissPaymentSetup();return false" style="font-size:11px;color:var(--muted2)">Skip — I\'ll do this later</a></div>' +
+    '</div>';
+  document.body.appendChild(div);
+  loadStripeForOnboarding();
+}
+
+function loadStripeForOnboarding() {
+  if (window._onboardingStripe) return;
+  var script = document.createElement('script');
+  script.src = 'https://js.stripe.com/v3/';
+  script.onload = function() {
+    window._onboardingStripe = Stripe('pk_live_51TU3yrADspDnFpfBivn1ex8gHGvOCNqxNaB66UWWNSTY4Sxf5tEAs7FBwHn6FDgkF5tJANqipox8h0nQ5s5yVq3j00KblDrNmC');
+    var elements = window._onboardingStripe.elements();
+    window._onboardingCard = elements.create('card', { style: { base: { fontSize: '14px', color: '#fff', fontFamily: 'Inter, sans-serif', '::placeholder': { color: '#5c6480' } } } });
+    window._onboardingCard.mount('#onboarding-card-element');
+    window._onboardingCard.on('change', function(e) {
+      document.getElementById('payment-setup-error').style.display = e.error ? 'block' : 'none';
+      if (e.error) document.getElementById('payment-setup-error').textContent = e.error.message;
+    });
+    // Fetch setup intent
+    apiFetch('/api/setup-intent', { method:'POST' }).then(function(si) {
+      if (si && si.client_secret) window._onboardingSetupSecret = si.client_secret;
+      else document.getElementById('payment-setup-error').textContent = si.error || 'Failed to initialise payment';
+    });
+  };
+  document.body.appendChild(script);
+}
+
+function saveOnboardingCard() {
+  var btn = document.getElementById('save-onboarding-card-btn');
+  var err = document.getElementById('payment-setup-error');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; btn.disabled = true; err.style.display = 'none';
+  if (!window._onboardingStripe || !window._onboardingCard) {
+    err.textContent = 'Stripe not loaded yet. Please wait.'; err.style.display = 'block';
+    btn.innerHTML = '<i class="fas fa-lock"></i> Save Card'; btn.disabled = false; return;
+  }
+  window._onboardingStripe.confirmCardSetup(window._onboardingSetupSecret, { payment_method: { card: window._onboardingCard } })
+  .then(function(result) {
+    if (result.error) {
+      err.textContent = result.error.message; err.style.display = 'block';
+      btn.innerHTML = '<i class="fas fa-lock"></i> Save Card'; btn.disabled = false; return;
+    }
+    apiFetch('/api/save-payment-method', { method:'POST', body: JSON.stringify({ payment_method_id: result.setupIntent.payment_method }), headers:{'Content-Type':'application/json'} })
+    .then(function(sp) {
+      btn.innerHTML = '<i class="fas fa-check"></i> Card Saved!';
+      localStorage.setItem('payment_setup_done', '1');
+      setTimeout(function() {
+        var el = document.getElementById('payment-setup-prompt');
+        if (el) el.remove();
+      }, 1000);
+    })
+    .catch(function() { dismissPaymentSetup(); });
+  });
+}
+
+function dismissPaymentSetup() {
+  localStorage.setItem('payment_setup_done', '1');
+  var el = document.getElementById('payment-setup-prompt');
+  if (el) el.remove();
 }
 
 // ===== ONBOARDING CHECKLIST =====
