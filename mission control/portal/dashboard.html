@@ -1739,7 +1739,7 @@ var DM_HELP = {
   packs: '<i class="fas fa-box" style="color:var(--primary)"></i> <strong>Pre-made templates</strong> for your industry ,  plus Seasonal campaigns and the Marketplace. Pick one, apply your details, and send.',
   'ai-builder': '<i class="fas fa-wand-magic-sparkles" style="color:var(--primary)"></i> <strong>Create flyers and letters with AI.</strong> Generate, edit, and save as templates. Also includes the Offer Generator.',
   templates: '<i class="fas fa-folder-open" style="color:var(--success)"></i> <strong>Your saved templates.</strong> Create, edit, duplicate, and approve. Use them in manual campaigns or Print &amp; Post.',
-  settings: '<i class="fas fa-gear" style="color:var(--primary)"></i> <strong>Print &amp; Post.</strong> Automatically mail new leads every day. Set spend limits and choose your template.',
+  settings: '<i class="fas fa-gear" style="color:var(--primary)"></i> <strong>Print &amp; Post.</strong> Automatically print and post marketing materials to your new leads every morning. Set your budget, pick a template, and we handle the printing, folding, and posting. You get proof of sending for every campaign.',
   history: '<i class="fas fa-clock-rotate-left" style="color:var(--primary)"></i> <strong>Past campaigns, calendar, timeline &amp; analytics.</strong> View everything in one place.',
   proof: '<i class="fas fa-check-circle" style="color:var(--success)"></i> <strong>Proof of posting.</strong> Documents showing what was sent and when.'
 };
@@ -2551,8 +2551,8 @@ function showDMSettings(el, canAutoSend) {
         '<div class="card" style="' + (s.enable_auto_send ? 'border:2px solid var(--success)' : '') + '">' +
         '<label style="display:flex;align-items:center;gap:14px;padding:6px 0;cursor:' + (canAutoSend ? 'pointer' : 'not-allowed') + '">' +
         '<input type="checkbox" id="dm-enable" ' + checked('enable_auto_send') + ' style="accent-color:var(--success);width:20px;height:20px"' + (canAutoSend ? ' onchange="dmToggleAutoSend()"' : ' disabled') + '>' +
-        '<div><div style="font-weight:700;font-size:15px;color:var(--text)">Automatically mail my new leads every day</div>' +
-        (canAutoSend ? '<div style="font-size:11px;color:var(--muted2);margin-top:2px">Review your leads each morning and we\'ll mail them for you</div>' : '<div style="font-size:11px;color:var(--warning);margin-top:2px">Available on <strong>Pro</strong> and <strong>Enterprise</strong> plans. <a href="#" onclick="showPlans();return false" style="color:var(--primary);font-weight:600">Upgrade now &rarr;</a></div>') +
+        '<div><div style="font-weight:700;font-size:15px;color:var(--text)">Automatically print and post to my new leads every day</div>' +
+        (canAutoSend ? '<div style="font-size:11px;color:var(--muted2);margin-top:2px">Each morning, we print your chosen template and post it to every new lead. You get proof of sending in your dashboard.</div>' : '<div style="font-size:11px;color:var(--warning);margin-top:2px">Available on <strong>Pro</strong> and <strong>Enterprise</strong> plans. <a href="#" onclick="showPlans();return false" style="color:var(--primary);font-weight:600">Upgrade now &rarr;</a></div>') +
         '</div></label></div>' +
 
         // Settings panel (shown only when enabled)
