@@ -872,6 +872,7 @@ function doSignup() {
         .catch(function() { window.location.href = '/portal/dashboard.html?onboard=1'; sessionStorage.setItem('login_token', d.token); });
       } else {
         // Redirect to dashboard onboarding - card setup happens there
+        localStorage.removeItem('payment_setup_done');
         window.location.href = '/portal/dashboard.html?onboard=1&card=1';
       }
     } else {
