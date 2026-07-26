@@ -577,7 +577,7 @@ async function loadDashboard() {
     setTimeout(function() { checkOnboarding(); }, 500);
   }
 
-  // Card setup prompt for new signups
+  // Card setup prompt for new signups — REQUIRED, no skip
   if (window.location.search.indexOf('card=1') !== -1 && !localStorage.getItem('payment_setup_done')) {
     setTimeout(function() {
       showPaymentSetupPrompt();
@@ -707,7 +707,7 @@ function showPaymentSetupPrompt() {
     '<div id="onboarding-card-element" style="padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;margin-bottom:12px"></div>' +
     '<div id="payment-setup-error" style="color:#ef4444;font-size:11px;margin-bottom:8px;display:none"></div>' +
     '<button class="btn btn-primary" id="save-onboarding-card-btn" onclick="saveOnboardingCard()" style="width:100%"><i class="fas fa-lock"></i> Save Card</button>' +
-    '<div style="margin-top:8px"><a href="#" onclick="dismissPaymentSetup();return false" style="font-size:11px;color:var(--muted2)">Skip — I\'ll do this later</a></div>' +
+    '<div style="margin-top:8px"></div>' +
     '</div>';
   document.body.appendChild(div);
   loadStripeForOnboarding();
@@ -758,14 +758,8 @@ function saveOnboardingCard() {
         if (el) el.remove();
       }, 1000);
     })
-    .catch(function() { dismissPaymentSetup(); });
+    .catch(function() { /* Card save failed, user must retry */ });
   });
-}
-
-function dismissPaymentSetup() {
-  localStorage.setItem('payment_setup_done', '1');
-  var el = document.getElementById('payment-setup-prompt');
-  if (el) el.remove();
 }
 
 // ===== ONBOARDING CHECKLIST =====
