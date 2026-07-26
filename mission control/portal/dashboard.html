@@ -4647,27 +4647,62 @@ function showLowLeadsTip(postcodeCount, leadsThisWeek) {
 }
 
 async function cancelSubscription() {
+  var showRetention = function() {
+    showModal('You\'re Staying!', '<div style="text-align:center;padding:10px 0">' +
+      '<div style="font-size:48px;margin-bottom:12px">\ud83c\udf89</div>' +
+      '<h3 style="font-size:18px;font-weight:800;margin-bottom:8px">Don\'t Go! Special Offer Just For You</h3>' +
+      '<p style="font-size:13px;color:var(--muted2);line-height:1.6;margin-bottom:16px">We\'d hate to see you leave. Stay with 9amLeads and get <strong style="color:var(--text)">50% off</strong> your subscription for the next <strong style="color:var(--text)">2 months</strong>. Your leads continue as normal, nothing changes except the price.</p>' +
+      '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
+      '<button class="btn btn-primary" onclick="acceptRetention()" style="font-size:14px;padding:14px 32px"><i class=\"fas fa-heart\"></i> Yes, Keep My Leads</button>' +
+      '<button class="btn btn-outline" onclick="rejectRetention()" style="font-size:12px">No, Cancel My Account</button></div></div>');
+  };
+
   var planName = document.getElementById('sub-plan-name')?.textContent || '';
   var isTrial = planName === 'Free Trial';
+
   if (isTrial) {
-    if (!confirm('Cancel your free trial? Your card will not be charged. You can restart anytime.')) return;
-    const data = await apiFetch('/api/cancel-trial', { method: 'POST' });
-    if (data && data.success) {
-      alert(data.message || 'Trial cancelled. No charge made.');
-      location.reload();
-    } else {
-      alert('Failed to cancel. Please email hello@9amleads.com for assistance.');
-    }
+    apiFetch('/api/cancel-trial', { method: 'POST' }).then(function(data) {
+      if (data && data.offer) {
+        showRetention();
+      } else if (data && data.success) {
+        alert(data.message || 'Trial cancelled. No charge made.');
+        location.reload();
+      } else {
+        alert('Failed to cancel. Please email hello@9amleads.com for assistance.');
+      }
+    }).catch(function() {
+      alert('Error processing cancellation. Please email hello@9amleads.com.');
+    });
   } else {
-    if (!confirm('Are you sure you want to cancel your subscription?\n\nYour access will continue until the end of the current billing period, then your account will be disabled.')) return;
-    const data = await apiFetch('/api/subscription/cancel', { method: 'POST' });
+    if (!confirm('Are you sure you want to cancel your subscription? Your access will continue until the end of the current billing period, then your account will be disabled.')) return;
+    apiFetch('/api/subscription/cancel', { method: 'POST' }).then(function(data) {
+      if (data && data.success) { alert(data.message); location.reload(); }
+      else { alert('Failed to cancel. Please email hello@9amleads.com for assistance.'); }
+    }).catch(function() { alert('Error. Please email hello@9amleads.com.'); });
+  }
+}
+
+function acceptRetention() {
+  apiFetch('/api/cancel-trial', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ accept: true }) })
+  .then(function(data) {
     if (data && data.success) {
-      alert(data.message);
+      closeModal();
+      alert('You\'re Staying! 50% discount applied for the next 2 months. Your leads continue as normal.');
       location.reload();
     } else {
-      alert('Failed to cancel. Please email hello@9amleads.com for assistance.');
+      alert('Failed to apply discount. Please email hello@9amleads.com.');
     }
-  }
+  }).catch(function() { alert('Error.'); });
+}
+
+function rejectRetention() {
+  closeModal();
+  if (!confirm('Are you sure? Your free trial will end and no charge will be made.')) return;
+  apiFetch('/api/cancel-trial', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ accept: false }) })
+  .then(function(data) {
+    if (data && data.success) { alert(data.message); location.reload(); }
+  });
+}  }
 }
 
 // ===== TERRITORY MANAGEMENT =====
