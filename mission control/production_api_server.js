@@ -3097,16 +3097,16 @@ const LEAD_TYPE_RULES = {
     area_limit: { free_trial: 3, starter: 3, pro: 999, enterprise: 999 },
     plans: {
       free_trial: { default: 0, county: 0, region: 1, ukwide: 2 },
-      starter:  { default: 0,  county: 0,  region: 1,  ukwide: 3 },
-      pro:      { default: 2,  county: 2,  region: 3,  ukwide: 8 },
-      enterprise: { default: 5, county: 3, region: 8, ukwide: 15 },
+      starter:  { default: 1,  county: 1,  region: 2,  ukwide: 5 },
+      pro:      { default: 3,  county: 3,  region: 5,  ukwide: 15 },
+      enterprise: { default: 8, county: 5, region: 10, ukwide: 30 },
     },
     min_area: 'county', up_to: true, enabled: true,
-    price_starter: 'price_1Tm6PPADspDnFpfBkewa97Bv',
+    price_starter: 'price_1TxQqKADspDnFpfBccT0Lh2w',
     price_growth: 'price_1Tm6PPADspDnFpfB3q61i5FP',
     price_power: 'price_1Tm6PQADspDnFpfBazgz1UD7',
-    weekly_est: { starter: 3, pro: 8, enterprise: 15 },
-    monthly_est: { starter: 12, pro: 32, enterprise: 60 }
+    weekly_est: { starter: 5, pro: 15, enterprise: 30 },
+    monthly_est: { starter: 20, pro: 60, enterprise: 120 }
   },
   tenders: {
     name: 'Public Tenders', key: 'tenders', local: false, model: 'weekly',
@@ -4753,8 +4753,8 @@ const STRIPE_PRICE_IDS = {
   moving: { 'mov-starter': 'price_1TswriADspDnFpfBKv3Pfy0V', 'mov-pro': 'price_1Tsws0ADspDnFpfBb1tVUbR7', 'mov-enterprise': 'price_1Tsws1ADspDnFpfBAGCw6JqD' },
   planning: { 'plan-starter': 'price_1TswrkADspDnFpfBOkRU4Qli', 'plan-pro': 'price_1TswrkADspDnFpfBMTrEDoZ9', 'plan-enterprise': 'price_1TswrkADspDnFpfBPe8qstPs' },
   newbusiness: { 'nb-starter': 'price_1TswrmADspDnFpfBi8Woj0oR' },
-  probate: { 'prob-single': 'price_1Tsws2ADspDnFpfBJm1Xzt7J' },
-  tenders: { 'tend-single': 'price_1Tsws2ADspDnFpfBd4HY6sXH' }
+  probate: { 'prob-starter': 'price_1TxQqKADspDnFpfBccT0Lh2w' },
+  tenders: { 'tend-starter': 'price_1TxQqKADspDnFpfBpzGp4qVv' }
 };
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
