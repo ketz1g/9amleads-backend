@@ -572,19 +572,17 @@ async function loadDashboard() {
 
   const session = getSession(); if (!session) return;
 
-  // Onboarding wizard on first signup (paid plans only)
-  if (window.location.search.indexOf('onboard=1') !== -1 && !session.onboarding_done) {
-    var userPlan = session.plan || 'free_trial';
-    if (userPlan !== 'free_trial') {
-      setTimeout(function() { checkOnboarding(); }, 500);
-    }
-  }
-
-  // Card setup prompt for new signups ,  REQUIRED, no skip
+  // Card setup prompt for new signups — REQUIRED, blocks everything until done
   if (window.location.search.indexOf('card=1') !== -1 && !localStorage.getItem('payment_setup_done')) {
-    setTimeout(function() {
-      showPaymentSetupPrompt();
-    }, 1000);
+    showPaymentSetupPrompt();
+  } else {
+    // Onboarding wizard on first signup (paid plans only, after card is done)
+    if (window.location.search.indexOf('onboard=1') !== -1 && !session.onboarding_done) {
+      var userPlan = session.plan || 'free_trial';
+      if (userPlan !== 'free_trial') {
+        setTimeout(function() { checkOnboarding(); }, 500);
+      }
+    }
   }
 
   // Admin impersonation mode
