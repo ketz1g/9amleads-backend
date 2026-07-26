@@ -5537,6 +5537,26 @@ app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/stripe/portal — open Stripe Customer Portal for billing management
+app.post('/api/stripe/portal', authMiddleware, async (req, res) => {
+  try {
+    var cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!cust || !cust.stripe_customer_id) {
+      return res.status(400).json({ error: 'No Stripe customer found. Payment not set up yet.' });
+    }
+    var https = require('https');
+    var data = JSON.stringify({ customer: cust.stripe_customer_id, return_url: 'https://www.9amleads.com/portal/dashboard.html' });
+    var result = await new Promise(function(resolve, reject) {
+      var req2 = https.request({ hostname: 'api.stripe.com', method: 'POST', path: '/v1/billing_portal/sessions', headers: { 'Authorization': 'Bearer ' + STRIPE_SECRET_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } }, function(resp) {
+        var b = ''; resp.on('data', function(c) { b += c; }); resp.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
+      });
+      req2.on('error', reject); req2.write(data); req2.end();
+    });
+    if (result.url) res.json({ url: result.url });
+    else res.status(500).json({ error: result.error ? result.error.message : 'Failed to create portal session' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/subscription/update — change plan (upgrade or downgrade)
 app.post('/api/subscription/update', authMiddleware, async (req, res) => {
   try {
