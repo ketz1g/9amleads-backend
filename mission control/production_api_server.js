@@ -5923,7 +5923,7 @@ app.post('/api/scrape-save', async (req, res) => {
 
 // ===== LEAD DISTRIBUTION ENDPOINTS =====
 // POST /api/distribute — trigger lead distributor (match scraped leads to customers)
-app.post('/api/distribute', async (req, res) => {
+app.post('/api/distribute', adminAuth, async (req, res) => {
   try {
     const { product } = req.body || {};
 
