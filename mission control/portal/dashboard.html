@@ -572,9 +572,12 @@ async function loadDashboard() {
 
   const session = getSession(); if (!session) return;
 
-  // Onboarding wizard on first signup
+  // Onboarding wizard on first signup (paid plans only)
   if (window.location.search.indexOf('onboard=1') !== -1 && !session.onboarding_done) {
-    setTimeout(function() { checkOnboarding(); }, 500);
+    var userPlan = session.plan || 'free_trial';
+    if (userPlan !== 'free_trial') {
+      setTimeout(function() { checkOnboarding(); }, 500);
+    }
   }
 
   // Card setup prompt for new signups — REQUIRED, no skip
