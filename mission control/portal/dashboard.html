@@ -1025,8 +1025,8 @@ async function loadCampaigns() {
     if (!r || !r.success) { showModal('Campaigns', '<p style="color:var(--muted)">Could not load campaigns. Please try again.</p>'); return; }
     var campaigns = r.campaigns;
     var listHtml = '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">' +
-      '<button class="btn btn-primary btn-sm" onclick="closeModal();showPage(\'business-profile\')" style="flex:1;min-width:140px"><i class="fas fa-building"></i> Business Profile</button>' +
-      '<button class="btn btn-primary btn-sm" onclick="closeModal();showPage(\'direct-mail\');setTimeout(function(){showDirectMailCentre(\'ai-builder\')},300)" style="flex:1;min-width:140px"><i class="fas fa-file-alt"></i> Letter Builder</button>' +
+      '<button class="btn btn-primary btn-sm" onclick="closeModals();showPage(\'business-profile\')" style="flex:1;min-width:140px"><i class="fas fa-building"></i> Business Profile</button>' +
+      '<button class="btn btn-primary btn-sm" onclick="closeModals();showPage(\'direct-mail\');setTimeout(function(){showDirectMailCentre(\'ai-builder\')},300)" style="flex:1;min-width:140px"><i class="fas fa-file-alt"></i> Letter Builder</button>' +
       '</div>' +
       '<div style="font-size:12px;color:var(--muted2);margin-bottom:16px;line-height:1.6">Each lead type includes a complete conversion kit with email templates, letter templates, flyer inserts, follow-up sequences, objection handling, best practices and recommended timing.</div><div class="lt-grid" style="grid-template-columns:1fr 1fr;gap:10px">';
     var prods = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Tenders' };
