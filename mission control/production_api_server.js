@@ -4438,27 +4438,12 @@ cron.schedule('0 8 * * *', async () => {
 // POST /api/cancel-trial — cancel trial, no charge
 app.post('/api/cancel-trial', authMiddleware, async (req, res) => {
   try {
-    var cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
-    if (!cust) return res.status(404).json({ error: 'Customer not found' });
-    if (cust.plan !== 'free_trial') return res.status(400).json({ error: 'Not on free trial' });
-    var accept = req.body.accept === true;
-    if (!accept && req.body.accept === undefined) {
-      // First cancel attempt: offer retention discount
-      return res.json({ success: true, offer: true, message: 'We\'d love to keep you! Save 50% for the next 2 months.', discount: 50, months: 2 });
-    }
-    if (accept) {
-      // Apply retention discount: 50% off for 2 months
-      var discountEnd = new Date();
-      discountEnd.setMonth(discountEnd.getMonth() + 2);
-      db.prepare('UPDATE customers SET plan = \'starter\', discount = 50, discount_until = ?, trial_ends = NULL WHERE id = ?').run(discountEnd.toISOString(), req.user.id);
-      releasePostcodes(req.user.id);
-      return res.json({ success: true, message: 'You\'re Staying! 50% discount applied for the next 2 months. Your leads continue as normal.', discount: 50 });
-    } else {
-      // Force cancel
-      db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0 WHERE id = ?').run(req.user.id);
-      releasePostcodes(req.user.id);
-      return res.json({ success: true, message: 'Your free trial has been cancelled.' });
-    }
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    if (customer.plan !== 'free_trial') return res.status(400).json({ error: 'Not on free trial' });
+    db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0 WHERE id = ?').run(req.user.id);
+    releasePostcodes(req.user.id);
+    res.json({ success: true, message: 'Your free trial has been cancelled.' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -5514,7 +5499,7 @@ app.get('/api/subscription', authMiddleware, (req, res) => {
   });
 });
 
-// POST /api/subscription/cancel — cancel subscription at period end
+// POST /api/subscription/cancel — cancel subscription with retention offer for paid plans
 app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
   try {
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -5523,6 +5508,22 @@ app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
       db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0 WHERE id = ?').run(req.user.id);
       releasePostcodes(req.user.id);
       return res.json({ success: true, message: 'Your free trial has been cancelled.' });
+    }
+
+    // Check if this is an accept/reject for retention offer
+    var accept = req.body.accept;
+    if (accept === true) {
+      // Apply retention discount: 50% off for 2 months
+      var discountEnd = new Date();
+      discountEnd.setMonth(discountEnd.getMonth() + 2);
+      db.prepare('UPDATE customers SET discount = 50, discount_until = ? WHERE id = ?').run(discountEnd.toISOString(), req.user.id);
+      return res.json({ success: true, message: 'You\'re Staying! 50% discount applied for the next 2 months. Your leads continue as normal.', discount: 50 });
+    }
+    if (accept === false) {
+      // Force cancel - proceed to cancellation
+    } else {
+      // First cancel attempt: offer retention discount for paid plans
+      return res.json({ success: true, offer: true, message: 'We\'d love to keep you! Save 50% for the next 2 months.', discount: 50, months: 2 });
     }
 
     const sub = db.prepare('SELECT * FROM subscriptions WHERE customer_id = ? AND status = \'active\'').get(req.user.id);
