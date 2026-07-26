@@ -572,7 +572,7 @@ async function loadDashboard() {
 
   const session = getSession(); if (!session) return;
 
-  // Card setup prompt for new signups — REQUIRED, blocks everything until done
+  // Card setup prompt for new signups , REQUIRED, blocks everything until done
   if (window.location.search.indexOf('card=1') !== -1 && !localStorage.getItem('payment_setup_done')) {
     showPaymentSetupPrompt();
   } else {

@@ -1074,7 +1074,10 @@ app.post('/api/auth/signup', async (req, res) => {
         var db2 = getDb();
         var now2 = new Date().toISOString();
         var saved = 0;
-        for (var li = 0; li < Math.min(movingLeads.length, customer.leads_per_day || 20); li++) {
+        var dailyLimits = { free_trial: 5, starter: 5, pro: 15, enterprise: 40 };
+        var custPlan = customer.plan || 'free_trial';
+        var maxLeads = dailyLimits[custPlan] || 5;
+        for (var li = 0; li < Math.min(movingLeads.length, maxLeads); li++) {
           var p = movingLeads[li];
           db2.leads.push({ id: require('uuid').v4(), customer_id: customer.id, product: 'moving', data: JSON.stringify(p), status: 'new', delivered: 0, created_at: now2, delivered_at: null });
           saved++;
