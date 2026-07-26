@@ -639,7 +639,7 @@ async function loadDashboard() {
   loadOnboarding();
   loadPrompts();
   loadTips();
-  // Tool card click handlers (delegation to fix onclick issues)
+  try {
   document.querySelector('.tools-grid')?.addEventListener('click', function(ev) {
     var card = ev.target.closest('.tool-card');
     if (!card) return;
@@ -651,6 +651,7 @@ async function loadDashboard() {
     else if (tool === 'support') { showPage('support'); }
     else if (tool === 'upgrade') { showPlans(); }
   });
+} catch(e) { console.log('Tool init error:', e); }
 
   if (!session.onboarding_done && window.location.search.indexOf('onboard=1') !== -1) {
     var up = session.plan || 'free_trial';
