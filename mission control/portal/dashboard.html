@@ -236,12 +236,12 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="card">
 <div class="card-title" style="font-size:15px"><i class="fas fa-rocket" style="color:var(--primary)"></i> Your Tools</div>
 <div class="tools-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-<div class="tool-card" data-tool="scrollToLeads" onclick="scrollToLeads()" style="background:linear-gradient(135deg,rgba(14,165,233,.06),transparent);border:1px solid rgba(14,165,233,.15)"><div class="icon"><i class="fas fa-clipboard-list" style="font-size:18px;color:var(--primary)"></i></div><h3>View Leads</h3><p>Browse &amp; manage by day</p></div>
-<div class="tool-card" data-tool="exportRange" onclick="exportRange('csv')" style="background:linear-gradient(135deg,rgba(99,102,241,.06),transparent);border:1px solid rgba(99,102,241,.15)"><div class="icon"><i class="fas fa-chart-bar" style="font-size:18px;color:var(--primary)"></i></div><h3>Export Data</h3><p>CSV or JSON download</p></div>
-<div class="tool-card" data-tool="settings" onclick="showPage('settings')" style="background:linear-gradient(135deg,rgba(34,197,94,.06),transparent);border:1px solid rgba(34,197,94,.15)"><div class="icon">⚙️</div><h3>Settings</h3><p>Plan, billing &amp; profile</p></div>
-<div class="tool-card" data-tool="campaigns" onclick="showPage('campaigns')" style="background:linear-gradient(135deg,rgba(245,158,11,.06),transparent);border:1px solid rgba(245,158,11,.15)"><div class="icon"><i class="fas fa-box" style="font-size:18px;color:var(--primary)"></i></div><h3>Marketing Materials</h3><p>Outreach templates</p></div>
-<div class="tool-card" data-tool="support" onclick="showPage('support')" style="background:linear-gradient(135deg,rgba(168,85,247,.06),transparent);border:1px solid rgba(168,85,247,.15)"><div class="icon">💬</div><h3>Help &amp; FAQ</h3><p>Support &amp; quick answers</p></div>
-<div class="tool-card" data-tool="upgrade" onclick="showPlans()" style="background:linear-gradient(135deg,rgba(239,68,68,.06),transparent);border:1px solid rgba(239,68,68,.15)"><div class="icon"><i class="fas fa-chart-line" style="font-size:18px;color:var(--primary)"></i></div><h3>Upgrade Plan</h3><p>More leads per day</p></div>
+<div class="tool-card" data-tool="scrollToLeads" style="background:linear-gradient(135deg,rgba(14,165,233,.06),transparent);border:1px solid rgba(14,165,233,.15)"><div class="icon"><i class="fas fa-clipboard-list" style="font-size:18px;color:var(--primary)"></i></div><h3>View Leads</h3><p>Browse &amp; manage by day</p></div>
+<div class="tool-card" data-tool="exportRange" style="background:linear-gradient(135deg,rgba(99,102,241,.06),transparent);border:1px solid rgba(99,102,241,.15)"><div class="icon"><i class="fas fa-chart-bar" style="font-size:18px;color:var(--primary)"></i></div><h3>Export Data</h3><p>CSV or JSON download</p></div>
+<div class="tool-card" data-tool="settings" style="background:linear-gradient(135deg,rgba(34,197,94,.06),transparent);border:1px solid rgba(34,197,94,.15)"><div class="icon">⚙️</div><h3>Settings</h3><p>Plan, billing &amp; profile</p></div>
+<div class="tool-card" data-tool="campaigns" style="background:linear-gradient(135deg,rgba(245,158,11,.06),transparent);border:1px solid rgba(245,158,11,.15)"><div class="icon"><i class="fas fa-box" style="font-size:18px;color:var(--primary)"></i></div><h3>Marketing Materials</h3><p>Outreach templates</p></div>
+<div class="tool-card" data-tool="support" style="background:linear-gradient(135deg,rgba(168,85,247,.06),transparent);border:1px solid rgba(168,85,247,.15)"><div class="icon">💬</div><h3>Help &amp; FAQ</h3><p>Support &amp; quick answers</p></div>
+<div class="tool-card" data-tool="upgrade" style="background:linear-gradient(135deg,rgba(239,68,68,.06),transparent);border:1px solid rgba(239,68,68,.15)"><div class="icon"><i class="fas fa-chart-line" style="font-size:18px;color:var(--primary)"></i></div><h3>Upgrade Plan</h3><p>More leads per day</p></div>
 </div>
 </div>
 
@@ -5251,6 +5251,18 @@ function toggleTheme() {
 document.addEventListener('DOMContentLoaded', function() {
   var isDark = document.documentElement.classList.contains('dark');
   document.getElementById('themeToggle').innerHTML = isDark ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+});
+// Tool card handlers - delegate from tools-grid parent
+document.addEventListener('click', function(e) {
+  var card = e.target.closest('.tool-card[data-tool]');
+  if (!card) return;
+  var tool = card.getAttribute('data-tool');
+  if (tool === 'scrollToLeads') scrollToLeads();
+  else if (tool === 'exportRange') exportRange('csv');
+  else if (tool === 'settings') showPage('settings');
+  else if (tool === 'campaigns') showPage('campaigns');
+  else if (tool === 'support') showPage('support');
+  else if (tool === 'upgrade') showPlans();
 });
 </script>
 </body></html>
