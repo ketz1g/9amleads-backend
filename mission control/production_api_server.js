@@ -8398,25 +8398,25 @@ app.post('/api/admin/cleanup', adminAuth, (req, res) => {
   }
 });
 
-// POST /api/admin/delete-customer — remove a customer by email (SQLite + JSON) for fresh signup
+// POST /api/admin/delete-customer — remove a customer by email for fresh signup
 app.post('/api/admin/delete-customer', adminAuth, (req, res) => {
   try {
     const email = req.body.email;
     if (!email) return res.status(400).json({ error: 'email required' });
-    var db = getDb();
-    var cust = (db.customers || []).filter(function(c) { return c.email === email; })[0];
+    var jsonDb = getDb();
+    var cust = (jsonDb.customers || []).filter(function(c) { return c.email === email; })[0];
     if (cust) {
-      db.customers = (db.customers || []).filter(function(c) { return c.email !== email; });
-      db.leads = (db.leads || []).filter(function(l) { return cust.id && l.customer_id !== cust.id; });
+      jsonDb.customers = (jsonDb.customers || []).filter(function(c) { return c.email !== email; });
+      jsonDb.leads = (jsonDb.leads || []).filter(function(l) { return cust.id && l.customer_id !== cust.id; });
     }
     saveDb();
-    // Delete from SQLite
+    // Delete from SQLite-shim via db.prepare
     var existing = db.prepare('SELECT id FROM customers WHERE email = ?').get(email);
     if (existing) {
       db.prepare('DELETE FROM leads WHERE customer_id = ?').run(existing.id);
       db.prepare('DELETE FROM customers WHERE id = ?').run(existing.id);
     }
-    console.log('[ADMIN] Deleted customer ' + email + (existing ? ' (SQLite)' : '') + (cust ? ' (JSON)' : ''));
+    console.log('[ADMIN] Deleted customer ' + email + (existing ? ' (found)' : ' (not in SQLite)') + (cust ? ' (JSON)' : ''));
     res.json({ success: true, message: 'Customer deleted: ' + email });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
