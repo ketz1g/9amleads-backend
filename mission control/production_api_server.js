@@ -3913,9 +3913,9 @@ cron.schedule('33 2 * * *', async () => {
 });
 // ===== DELIVERY CRON: Runs directly (not via HTTP) to avoid timing issues =====
 // Pipeline: 02:30 UTC scraper → 02:33 UTC distributor → 08:00 UTC delivery
-// Delivery runs Mon-Fri at 08:00 UTC (09:00 BST). Weekend scrapes accumulate for Monday.
-cron.schedule('0 8 * * 1-5', async () => {
-  console.log('[08:00 UTC] Running delivery...');
+// Delivery runs Mon-Fri at 09:00 UK time (handles BST/GMT automatically via timezone).
+cron.schedule('0 9 * * 1-5', async () => {
+  console.log('[09:00 UK] Running delivery...');
   try {
     _dbData = null;
     var db = getDb();
@@ -4002,6 +4002,8 @@ cron.schedule('0 8 * * 1-5', async () => {
     // Run Auto Send after delivery
     try { await runAutoSend(); } catch(ase) { console.log('[08:00 UTC] Auto Send error:', ase.message); }
   } catch(e) { console.log('[08:00 UTC] Delivery error: ' + (e && e.message || '')); }
+}, {
+  timezone: 'Europe/London'
 });
 
 // Sequence processing every hour
