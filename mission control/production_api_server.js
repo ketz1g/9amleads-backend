@@ -6561,6 +6561,32 @@ app.get('/api/campaigns', authMiddleware, (req, res) => {
   res.json({ success: true, campaigns: summaries });
 });
 
+
+
+// ===== PRINT & POST PRICING =====
+// Your markup is added on top of Stannp's print+post costs
+var PRINT_POST_PRICES = {
+  // Per-item prices charged to customer (GBP)
+  flyer_a5: { label: 'A5 Flyer', customer: 1.50, stannp: 0.55 },
+  letter_a4: { label: 'A4 Letter', customer: 2.00, stannp: 0.85 },
+  flyer_plus_letter: { label: 'A5 Flyer + A4 Letter', customer: 3.00, stannp: 1.20 },
+  // Postage included in above prices
+  markup_percent: function(item) { return Math.round((this[item].customer - this[item].stannp) / this[item].stannp * 100); }
+};
+
+// GET /api/direct-mail/pricing — return Print & Post prices
+app.get('/api/direct-mail/pricing', (req, res) => {
+  res.json({
+    success: true,
+    prices: [
+      { id: 'flyer_a5', label: 'A5 Flyer (printed & posted)', price: 1.50, unit: 'per item' },
+      { id: 'letter_a4', label: 'A4 Letter (printed & posted)', price: 2.00, unit: 'per item' },
+      { id: 'flyer_plus_letter', label: 'A5 Flyer + A4 Letter (printed & posted)', price: 3.00, unit: 'per item' }
+    ],
+    info: 'Prices include full colour printing, folding, and First Class postage. No hidden fees. You only pay for what gets sent — cancelled leads cost nothing.'
+  });
+});
+
 // ===== DIRECT MAIL MARKETING AUTOMATION =====
 var DIRECT_MAIL_STATUSES = ['draft','awaiting_approval','approved','awaiting_payment','paid','queued','sent_to_provider','printing','dispatched','completed','failed','cancelled'];
 
