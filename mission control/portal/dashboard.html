@@ -5233,27 +5233,10 @@ async function saveLeadFilters() {
 
 loadLeadFilters();
 document.addEventListener('click', function(e) {
-  const cal = document.getElementById('calPopup');
-  if (!e.target.closest('.cal-popup') && !e.target.closest('[onclick*="toggleCal"]') && !e.target.closest('[onclick*="buildCal"]')) cal.classList.remove('show');
-  const td = document.getElementById('territory-dropdown');
+  var cal = document.getElementById('calPopup');
+  if (cal && !e.target.closest('.cal-popup') && !e.target.closest('[onclick*="toggleCal"]') && !e.target.closest('[onclick*="buildCal"]')) cal.classList.remove('show');
+  var td = document.getElementById('territory-dropdown');
   if (td && !e.target.closest('#territory-manager')) td.style.display = 'none';
-});
-// Theme toggle
-var savedTheme = localStorage.getItem('dashboard_theme');
-if(savedTheme === 'dark') { document.documentElement.classList.add('dark'); }
-function toggleTheme() {
-  var root = document.documentElement;
-  root.classList.toggle('dark');
-  var isDark = root.classList.contains('dark');
-  localStorage.setItem('dashboard_theme', isDark ? 'dark' : 'light');
-  document.getElementById('themeToggle').innerHTML = isDark ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
-}
-document.addEventListener('DOMContentLoaded', function() {
-  var isDark = document.documentElement.classList.contains('dark');
-  document.getElementById('themeToggle').innerHTML = isDark ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
-});
-// Tool card handlers - delegate from tools-grid parent
-document.addEventListener('click', function(e) {
   var card = e.target.closest('.tool-card[data-tool]');
   if (!card) return;
   var tool = card.getAttribute('data-tool');
@@ -5264,5 +5247,6 @@ document.addEventListener('click', function(e) {
   else if (tool === 'support') showPage('support');
   else if (tool === 'upgrade') showPlans();
 });
+
 </script>
 </body></html>
