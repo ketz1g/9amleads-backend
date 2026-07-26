@@ -3912,9 +3912,10 @@ cron.schedule('33 2 * * *', async () => {
   } catch(e) { console.log('[02:33 UTC] Distributor error:', e.message); }
 });
 // ===== DELIVERY CRON: Runs directly (not via HTTP) to avoid timing issues =====
-// Pipeline: 02:30 UTC scraper â†’ 02:33 UTC distributor â†’ 02:36 UTC delivery
-cron.schedule('36 2 * * *', async () => {
-  console.log('[02:36 UTC] Running delivery...');
+// Pipeline: 02:30 UTC scraper → 02:33 UTC distributor → 08:00 UTC delivery
+// Delivery runs Mon-Fri at 08:00 UTC (09:00 BST). Weekend scrapes accumulate for Monday.
+cron.schedule('0 8 * * 1-5', async () => {
+  console.log('[08:00 UTC] Running delivery...');
   try {
     _dbData = null;
     var db = getDb();
@@ -3973,16 +3974,9 @@ cron.schedule('36 2 * * *', async () => {
           }
         }
       }
-      // Send low-supply message if no leads available
+      // Skip quietly if no leads available (no email = no disappointment)
       if (custLeads.length === 0) {
-        var lowSupplyMsg = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:28px 24px 20px;background:#12141e;border-radius:16px;border:1px solid rgba(255,255,255,0.06)"><div style="text-align:center;margin-bottom:14px"><span style="display:inline-block;width:34px;height:34px;border-radius:9px;text-align:center;line-height:34px;font-size:15px;background:linear-gradient(135deg,#0ea5e9,#6366f1);margin-right:5px;vertical-align:middle;color:#fff;font-weight:900">9</span><span style="vertical-align:middle;font-size:20px;font-weight:900;color:#f1f5f9">am Leads</span></div><h2 style="font-size:18px;font-weight:800;color:#f1f5f9;margin:0 0 4px;text-align:center">Your Daily Opportunities</h2><p style="color:#e2e8f0;font-size:13px;text-align:center;margin:0 0 18px">' + (cust.product ? getLeadTypeRule(cust.product).name : 'Opportunities') + ' for ' + (cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area') + '</p><div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:18px 20px;text-align:center;margin-bottom:18px"><p style="color:#fbbf24;font-size:14px;font-weight:700;margin:0 0 6px">Limited Availability Today</p><p style="color:#f1f5f9;font-size:13px;line-height:1.6;margin:0">Today\'s available opportunities are below your normal allowance because this category is based on live market activity. This is normal for specialist categories such as planning, probate and tenders, which may vary day by day. Additional matching leads will be added as soon as they appear.</p></div><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + (process.env.PUBLIC_URL || 'https://9amleads.com') + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;text-decoration:none;border-radius:50px;font-size:13px;font-weight:700">View Dashboard</a></td></tr></table></div>';
-        if (cust.email) {
-          try {
-            var ltName = cust.product ? (getLeadTypeRule(cust.product).name || cust.product) : 'Opportunities';
-            var covName = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
-            await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, 'Your 9am ' + ltName + ' for ' + covName + ' — ' + today, lowSupplyMsg);
-          } catch(emErr) { console.log('[DELIVERY] Low supply email failed:', cust.email, emErr.message); }
-        }
+        console.log('[08:00 UTC] No leads for ' + cust.email + ', skipping delivery');
         continue;
       }
       try {
@@ -4001,13 +3995,13 @@ cron.schedule('36 2 * * *', async () => {
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
         delivered += custLeads.length;
-        console.log('[02:36 UTC] Delivered ' + custLeads.length + ' to ' + cust.email);
-      } catch(e) { console.log('[02:36 UTC] Error for ' + cust.email + ': ' + e.message); }
+        console.log('[08:00 UTC] Delivered ' + custLeads.length + ' to ' + cust.email);
+      } catch(e) { console.log('[08:00 UTC] Error for ' + cust.email + ': ' + e.message); }
     }
-    console.log('[02:36 UTC] Delivery complete: ' + delivered + ' leads');
+    console.log('[08:00 UTC] Delivery complete: ' + delivered + ' leads');
     // Run Auto Send after delivery
-    try { await runAutoSend(); } catch(ase) { console.log('[02:36 UTC] Auto Send error:', ase.message); }
-  } catch(e) { console.log('[02:36 UTC] Delivery error: ' + e.message); }
+    try { await runAutoSend(); } catch(ase) { console.log('[08:00 UTC] Auto Send error:', ase.message); }
+  } catch(e) { console.log('[08:00 UTC] Delivery error: ' + e.message); }
 });
 
 // Sequence processing every hour
