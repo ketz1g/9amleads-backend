@@ -231,7 +231,7 @@ var DM_FEATURE_ACCESS = {
   ai_flyer: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'AI Flyer Generator', desc: 'Generate flyer content with AI' },
   saved_templates: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'Saved Templates', desc: 'Save and reuse templates' },
   campaign_history: { free_trial: true, starter: true, pro: true, enterprise: true, label: 'Campaign History', desc: 'View past campaign history' },
-  auto_send: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'Auto Send', desc: 'Automated daily mail campaigns' },
+  auto_send: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'Print & Post', desc: 'Automated daily mail campaigns' },
   saved_payment: { free_trial: false, starter: false, pro: false, enterprise: true, label: 'Saved Payment Method', desc: 'Store a card for automatic payments' },
   daily_summaries: { free_trial: false, starter: false, pro: false, enterprise: true, label: 'Daily Summaries', desc: 'Daily campaign summary emails' },
   proof_tracking: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'Proof Tracking', desc: 'Track proof of posting' },
@@ -4002,8 +4002,8 @@ cron.schedule('0 9 * * 1-5', async () => {
       } catch(e) { console.log('[08:00 UTC] Error for ' + cust.email + ': ' + (e && e.message || '')); }
     }
     console.log('[08:00 UTC] Delivery complete: ' + delivered + ' leads');
-    // Run Auto Send after delivery
-    try { await runAutoSend(); } catch(ase) { console.log('[08:00 UTC] Auto Send error:', ase.message); }
+    // Run Print & Post after delivery
+    try { await runAutoSend(); } catch(ase) { console.log('[08:00 UTC] Print & Post error:', ase.message); }
   } catch(e) { console.log('[08:00 UTC] Delivery error: ' + (e && e.message || '')); }
 }, {
   timezone: 'Europe/London'
@@ -4259,17 +4259,17 @@ async function runAutoSend() {
 
       // 11. Create campaign automatically
       var campaign = {
-        id: uuidv4(), customer_id: cust.id, name: 'Auto Send - ' + today,
+        id: uuidv4(), customer_id: cust.id, name: 'Print & Post - ' + today,
         description: 'Automatically generated campaign from daily leads', status: 'draft',
         template_id: settings.default_template_id, material_id: '',
         target_count: todaysLeads.length, sent_count: 0,
-        delivery_date: today, budget: totalCost, notes: 'Auto Send',
+        delivery_date: today, budget: totalCost, notes: 'Print & Post',
         provider: '', provider_campaign_id: '', provider_status: '',
         stripe_session_id: '', stripe_payment_id: 'auto_send_mock', stripe_payment_status: 'paid',
         created_at: new Date().toISOString(), updated_at: new Date().toISOString()
       };
       db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(campaign.id, campaign.customer_id, campaign.name, campaign.description, 'approved', campaign.template_id, campaign.material_id, campaign.target_count, campaign.sent_count, campaign.delivery_date, campaign.budget, campaign.notes, campaign.provider, campaign.provider_campaign_id, campaign.provider_status, campaign.stripe_session_id, campaign.stripe_payment_id, campaign.stripe_payment_status, campaign.created_at, campaign.updated_at);
-      db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, '', 'approved', 'system', 'Auto Send campaign created', new Date().toISOString());
+      db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, '', 'approved', 'system', 'Print & Post campaign created', new Date().toISOString());
 
       // 12. Add leads as recipients
       var validAddressCount = 0;
@@ -4305,7 +4305,7 @@ async function runAutoSend() {
               'metadata[campaign_id]': campaign.id,
               'metadata[customer_id]': cust.id,
               'metadata[type]': 'auto_send',
-              description: 'Auto Send: ' + campaign.name
+              description: 'Print & Post: ' + campaign.name
             });
             if (chargeResult && chargeResult.status === 'succeeded') {
               paymentSuccess = true;
@@ -4313,13 +4313,13 @@ async function runAutoSend() {
               db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(chargeResult.id, 'paid', new Date().toISOString(), campaign.id, cust.id);
               db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'paid', 'system', 'Payment succeeded: ' + chargeResult.id, new Date().toISOString());
               console.log('[AUTO-SEND] Payment success:', cust.email, '£' + totalCost.toFixed(2), chargeResult.id);
-              if (cust && cust.id) { dmDashboardNotify(cust.id, 'auto_send_payment_success', '✅ Auto Send Payment Successful', 'Auto Send payment of £' + totalCost.toFixed(2) + ' succeeded.', ''); }
+              if (cust && cust.id) { dmDashboardNotify(cust.id, 'auto_send_payment_success', '✅ Print & Post Payment Successful', 'Print & Post payment of £' + totalCost.toFixed(2) + ' succeeded.', ''); }
             } else if (chargeResult && chargeResult.status === 'requires_action') {
               // 3D Secure needed - cannot process automatically
               db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(chargeResult.id, 'requires_action', new Date().toISOString(), campaign.id, cust.id);
               db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'failed', 'system', 'Payment requires 3D Secure - cannot auto-charge', new Date().toISOString());
               console.log('[AUTO-SEND] Payment needs 3DS:', cust.email);
-              // Pause Auto Send
+              // Pause Print & Post
               db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(1, cust.id);
               results.failed++;
             } else {
@@ -4327,13 +4327,13 @@ async function runAutoSend() {
               db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(chargeResult && chargeResult.id ? chargeResult.id : '', 'failed', new Date().toISOString(), campaign.id, cust.id);
               db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'failed', 'system', 'Payment failed: ' + ((chargeResult && chargeResult.last_payment_error && chargeResult.last_payment_error.message) || 'Unknown error'), new Date().toISOString());
               console.log('[AUTO-SEND] Payment failed:', cust.email, chargeResult?.last_payment_error?.message || 'unknown');
-              // Pause Auto Send if setting enabled
+              // Pause Print & Post if setting enabled
               if (settings.pause_on_payment_fail) {
                 db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(1, cust.id);
-                console.log('[AUTO-SEND] Auto Send paused for:', cust.email);
+                console.log('[AUTO-SEND] Print & Post paused for:', cust.email);
                 if (cust && cust.id) {
-                  dmDashboardNotify(cust.id, 'auto_send_paused', 'â¸ï¸ Auto Send Paused', 'Auto Send has been paused due to a failed payment. Update your payment method to resume.', '');
-                  sendDMAdminAlert('payment_failure', 'Auto Send Payment Failed', 'Customer: ' + (cust.email || cust.id) + ' — Amount: £' + totalCost.toFixed(2) + ' — Error: ' + (chargeResult?.last_payment_error?.message || 'Unknown'));
+                  dmDashboardNotify(cust.id, 'auto_send_paused', 'â¸ï¸ Print & Post Paused', 'Print & Post has been paused due to a failed payment. Update your payment method to resume.', '');
+                  sendDMAdminAlert('payment_failure', 'Print & Post Payment Failed', 'Customer: ' + (cust.email || cust.id) + ' — Amount: £' + totalCost.toFixed(2) + ' — Error: ' + (chargeResult?.last_payment_error?.message || 'Unknown'));
                 }
               }
               results.failed++;
@@ -4366,15 +4366,15 @@ async function runAutoSend() {
             results.total_spend += totalCost;
             console.log('[AUTO-SEND] Sent:', cust.email, validAddressCount, 'leads, cost: £' + totalCost.toFixed(2));
             if (cust && cust.id) {
-              dmDashboardNotify(cust.id, 'auto_send_campaign_sent', 'ðŸ“¬ Auto Send Campaign Sent', 'Auto Send sent ' + validAddressCount + ' letters for ' + totalCost.toFixed(2), '');
+              dmDashboardNotify(cust.id, 'auto_send_campaign_sent', 'ðŸ“¬ Print & Post Campaign Sent', 'Print & Post sent ' + validAddressCount + ' letters for ' + totalCost.toFixed(2), '');
             }
           } else {
             db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, cust.id);
             results.failed++;
             console.log('[AUTO-SEND] Failed:', cust.email, createResult?.error || 'provider error');
             if (cust && cust.id) {
-              dmDashboardNotify(cust.id, 'auto_send_failed', 'âŒ Auto Send Failed', 'Auto Send campaign failed: ' + (createResult?.error || 'Provider error'), '');
-              sendDMAdminAlert('auto_send_error', 'Auto Send Provider Error', 'Customer: ' + (cust.email || cust.id) + ' — Campaign: ' + campaign.name + ' — Error: ' + (createResult?.error || 'Unknown'));
+              dmDashboardNotify(cust.id, 'auto_send_failed', 'âŒ Print & Post Failed', 'Print & Post campaign failed: ' + (createResult?.error || 'Provider error'), '');
+              sendDMAdminAlert('auto_send_error', 'Print & Post Provider Error', 'Customer: ' + (cust.email || cust.id) + ' — Campaign: ' + campaign.name + ' — Error: ' + (createResult?.error || 'Unknown'));
             }
           }
         }
@@ -4385,7 +4385,7 @@ async function runAutoSend() {
   return results;
 }
 
-// Auto Send can also be triggered via API
+// Print & Post can also be triggered via API
 app.post('/api/direct-mail/run-auto-send', async (req, res) => {
   try {
     var results = await runAutoSend();
@@ -4971,7 +4971,7 @@ var DM_PRICE_CONFIG = {
   ai_letter_fee: 19, // AI letter generation fee (£)
   ai_flyer_fee: 19, // AI flyer generation fee (£)
   ai_pack_fee: 29, // Flyer + letter pack fee (£)
-  auto_send_monthly_fee: 49, // Auto Send monthly add-on fee (£)
+  auto_send_monthly_fee: 49, // Print & Post monthly add-on fee (£)
   vat_pct: 0, // VAT percentage (0 = disabled)
   provider_cost_per_unit: 0.75, // Per-unit provider cost (£)
   discount_codes: '' // Optional discount codes (JSON)
@@ -7006,9 +7006,9 @@ app.post('/api/direct-mail/automation', authMiddleware, (req, res) => {
   try {
     var enabled = req.body.enable_auto_send ? 1 : 0;
     if (enabled) {
-      if (!req.body.default_template_id) return res.status(400).json({ error: 'Please select a saved template before enabling Auto Send.' });
+      if (!req.body.default_template_id) return res.status(400).json({ error: 'Please select a saved template before enabling Print & Post.' });
       if (!req.body.max_daily_spend || parseInt(req.body.max_daily_spend) < 10) return res.status(400).json({ error: 'Please set a minimum daily spend of at least £10.' });
-      if (req.body.consent_given !== true && req.body.consent_given !== 1) return res.status(400).json({ error: 'You must approve the consent to enable Auto Send.' });
+      if (req.body.consent_given !== true && req.body.consent_given !== 1) return res.status(400).json({ error: 'You must approve the consent to enable Print & Post.' });
     }
     var existing = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
     var settings = {
@@ -7045,7 +7045,7 @@ app.post('/api/direct-mail/automation', authMiddleware, (req, res) => {
     } else {
       db.prepare('INSERT INTO direct_mail_automation_settings (id,customer_id,enable_auto_send,lead_types,postcode_areas,default_template_id,mail_type,max_daily_spend,max_monthly_spend,max_letters_per_day,min_leads_before_send,send_timing,pause_on_payment_fail,pause_on_provider_fail,pause_on_spend_limit,avoid_duplicate_mailing,repeat_mailing_days,consent_given,consent_date,consent_ip,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(settings.id, settings.customer_id, settings.enable_auto_send, settings.lead_types, settings.postcode_areas, settings.default_template_id, settings.mail_type, settings.max_daily_spend, settings.max_monthly_spend, settings.max_letters_per_day, settings.min_leads_before_send, settings.send_timing, settings.pause_on_payment_fail, settings.pause_on_provider_fail, settings.pause_on_spend_limit, settings.avoid_duplicate_mailing, settings.repeat_mailing_days, settings.consent_given, settings.consent_date, settings.consent_ip, settings.created_at, settings.updated_at);
     }
-    res.json({ success: true, settings: settings, message: enabled ? 'Auto Send enabled' : 'Auto Send disabled' });
+    res.json({ success: true, settings: settings, message: enabled ? 'Print & Post enabled' : 'Print & Post disabled' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -7799,11 +7799,11 @@ app.post('/api/admin/direct-mail/campaigns/:id/sync', adminAuth, async (req, res
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/customers/:id/suspend-auto-send — Suspend customer Auto Send
+// POST /api/admin/direct-mail/customers/:id/suspend-auto-send — Suspend customer Print & Post
 app.post('/api/admin/direct-mail/customers/:id/suspend-auto-send', adminAuth, (req, res) => {
   try {
     db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(req.body.paused !== false ? 1 : 0, req.params.id);
-    res.json({ success: true, message: 'Auto Send ' + (req.body.paused !== false ? 'suspended' : 'resumed') });
+    res.json({ success: true, message: 'Print & Post ' + (req.body.paused !== false ? 'suspended' : 'resumed') });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -7852,7 +7852,7 @@ app.post('/api/admin/direct-mail/pricing', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/run-auto-send — Trigger Auto Send
+// POST /api/admin/direct-mail/run-auto-send — Trigger Print & Post
 app.post('/api/admin/direct-mail/run-auto-send', adminAuth, async (req, res) => {
   try {
     var results = await runAutoSend();
@@ -9695,7 +9695,7 @@ app.get('/api/direct-mail/success', authMiddleware, (req, res) => {
       { id:'first_campaign', label:'First campaign created', met: campaigns.length > 0, icon:'fa-bullhorn', action:'create' },
       { id:'first_sent', label:'First campaign sent', met: campaigns.some(function(c) { return c.status === 'sent' || c.status === 'completed' || c.status === 'dispatched' || c.status === 'queued'; }), icon:'fa-paper-plane', action:'history' },
       { id:'first_completed', label:'First campaign completed', met: campaigns.some(function(c) { return c.status === 'completed' || c.status === 'dispatched'; }), icon:'fa-check-circle', action:'history' },
-      { id:'auto_send', label:'Auto Send enabled', met: settings && settings.enable_auto_send, icon:'fa-clock', action:'settings' },
+      { id:'auto_send', label:'Print & Post enabled', met: settings && settings.enable_auto_send, icon:'fa-clock', action:'settings' },
       { id:'payment_method', label:'Payment method added', met: customer && customer.stripe_payment_method_id ? true : false, icon:'fa-credit-card', action:'settings' },
       { id:'spend_limits', label:'Spend limits set', met: settings && (parseInt(settings.max_daily_spend) > 0 || parseInt(settings.max_monthly_spend) > 0), icon:'fa-pound-sign', action:'settings' }
     ];
@@ -9875,7 +9875,7 @@ app.get('/api/admin/onboarding', adminAuth, (req, res) => {
 });
 
 // ===== KNOWLEDGE CENTRE =====
-var KNOWLEDGE_CATEGORIES = ['Getting Started','Lead Generation','Direct Mail','AI Marketing Builder','Campaign Packs','Auto Send','Templates','FAQs','Video Tutorials'];
+var KNOWLEDGE_CATEGORIES = ['Getting Started','Lead Generation','Direct Mail','AI Marketing Builder','Campaign Packs','Print & Post','Templates','FAQs','Video Tutorials'];
 
 // Seed default articles
 function seedKnowledgeArticles() {
@@ -9893,11 +9893,11 @@ function seedKnowledgeArticles() {
       { category:'AI Marketing Builder', title:'AI Flyer Content Generator', content:'Generate flyer content with AI including headline, subheadline, services, offer, trust section, CTA, back page, QR text, and slogan. Choose from 6 style options.', video_url:'', order:2 },
       { category:'AI Marketing Builder', title:'AI Flyer PDF Generator', content:'Turn your AI-generated flyer content into a print-ready A5 PDF. Includes your logo, business name, headline, services, offer, contact details, and CTA. Choose from 4 layout styles.', video_url:'', order:3 },
       { category:'Campaign Packs', title:'Using Campaign Packs', content:'Browse 20 pre-built campaign packs by industry. Preview the headline, offer, and CTA. Apply your Business Profile to merge your details. Save as a template or use directly in a campaign.', video_url:'', order:1 },
-      { category:'Auto Send', title:'Setting Up Auto Send', content:'Auto Send automatically mails your new leads every day. Select a template, set your spend limits, add a payment method, and enable. You control the daily and monthly budget.', video_url:'', order:1 },
-      { category:'Auto Send', title:'Auto Send Safety Features', content:'Auto Send respects your suppression list, duplicate mailing rules, spend limits, and payment method. Failed payments pause Auto Send automatically. You can pause or cancel anytime.', video_url:'', order:2 },
-      { category:'Templates', title:'Saving and Managing Templates', content:'Save your AI-generated content as reusable templates. Templates include your business details, content, and style choices. Use templates in manual campaigns or Auto Send.', video_url:'', order:1 },
+      { category:'Print & Post', title:'Setting Up Print & Post', content:'Print & Post automatically mails your new leads every day. Select a template, set your spend limits, add a payment method, and enable. You control the daily and monthly budget.', video_url:'', order:1 },
+      { category:'Print & Post', title:'Print & Post Safety Features', content:'Print & Post respects your suppression list, duplicate mailing rules, spend limits, and payment method. Failed payments pause Print & Post automatically. You can pause or cancel anytime.', video_url:'', order:2 },
+      { category:'Templates', title:'Saving and Managing Templates', content:'Save your AI-generated content as reusable templates. Templates include your business details, content, and style choices. Use templates in manual campaigns or Print & Post.', video_url:'', order:1 },
       { category:'FAQs', title:'How do I get more leads?', content:'Add more postcode areas in your dashboard settings. You can also upgrade your plan for more leads per day. Make sure your target areas match where your ideal customers are located.', video_url:'', order:1 },
-      { category:'FAQs', title:'Can I cancel anytime?', content:'Yes. You can cancel your subscription at any time from Settings. Auto Send can be paused or cancelled from the Auto Send Settings page. There are no long-term contracts.', video_url:'', order:2 },
+      { category:'FAQs', title:'Can I cancel anytime?', content:'Yes. You can cancel your subscription at any time from Settings. Print & Post can be paused or cancelled from the Print & Post Settings page. There are no long-term contracts.', video_url:'', order:2 },
       { category:'Video Tutorials', title:'Dashboard Overview', content:'A quick tour of your 9am Leads dashboard — leads, campaigns, Direct Mail Centre, AI Marketing Builder, and analytics.', video_url:'https://www.youtube.com/embed/dQw4w9WgXcQ', order:1 },
       { category:'Video Tutorials', title:'Creating a Direct Mail Campaign', content:'Step-by-step guide to creating your first direct mail campaign from lead selection to sending.', video_url:'https://www.youtube.com/embed/dQw4w9WgXcQ', order:2 },
       { category:'Video Tutorials', title:'Using the AI Marketing Builder', content:'How to generate professional flyers and letters using AI, edit them, save as templates, and use in campaigns.', video_url:'https://www.youtube.com/embed/dQw4w9WgXcQ', order:3 }
@@ -10011,9 +10011,9 @@ app.get('/api/direct-mail/health-score', authMiddleware, (req, res) => {
     if (tplCount > 0) { score += 10; factors.push({ name:'Saved Templates', met: true, pts:10 }); } else { factors.push({ name:'Saved Templates', met: false, pts:0 }); recommendations.push({ text:'Create your first flyer template', action:'templates', emoji:'✔️' }); }
     // 8. Campaign Pack selected (10 pts)
     if (packs.length > 0) { score += 10; factors.push({ name:'Campaign Pack', met: true, pts:10 }); } else { factors.push({ name:'Campaign Pack', met: false, pts:0 }); recommendations.push({ text:'Select a Campaign Pack', action:'packs', emoji:'ðŸ“¦' }); }
-    // 9. Auto Send enabled (10 pts)
+    // 9. Print & Post enabled (10 pts)
     var autoSend = settings && settings.enable_auto_send;
-    if (autoSend) { score += 10; factors.push({ name:'Auto Send', met: true, pts:10 }); } else { factors.push({ name:'Auto Send', met: false, pts:0 }); recommendations.push({ text:'Enable Auto Send', action:'settings', emoji:'ðŸ¤–' }); }
+    if (autoSend) { score += 10; factors.push({ name:'Print & Post', met: true, pts:10 }); } else { factors.push({ name:'Print & Post', met: false, pts:0 }); recommendations.push({ text:'Enable Print & Post', action:'settings', emoji:'ðŸ¤–' }); }
     // 10. Spend limits set (10 pts)
     var hasLimits = settings && (parseInt(settings.max_daily_spend) > 0 || parseInt(settings.max_monthly_spend) > 0);
     if (hasLimits) { score += 10; factors.push({ name:'Spend Limits', met: true, pts:10 }); } else { factors.push({ name:'Spend Limits', met: false, pts:0 }); recommendations.push({ text:'Set daily/monthly spend limits', action:'settings', emoji:'💰' }); }
@@ -10244,8 +10244,8 @@ app.get('/api/direct-mail/calendar', authMiddleware, (req, res) => {
       }
     });
 
-    // 3. Auto Send campaigns (from the same data)
-    var autoSend = campaigns.filter(function(c) { return c.notes === 'Auto Send'; });
+    // 3. Print & Post campaigns (from the same data)
+    var autoSend = campaigns.filter(function(c) { return c.notes === 'Print & Post'; });
     autoSend.forEach(function(c) {
       if (c.delivery_date && c.delivery_date >= startDate.substring(0, 10) && c.delivery_date <= endDate.substring(0, 10)) {
         events.push({
@@ -10409,10 +10409,10 @@ app.post('/api/direct-mail/sequences/:id/process-step', authMiddleware, async (r
       saveDb();
       return res.status(400).json({ error: 'Spend limit reached. Sequence paused.' });
     }
-    // Check Auto Send settings - skip if disabled
+    // Check Print & Post settings - skip if disabled
     var settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
     if (!settings || !settings.enable_auto_send) {
-      return res.status(400).json({ error: 'Auto Send is disabled. Enable it to process sequence steps.' });
+      return res.status(400).json({ error: 'Print & Post is disabled. Enable it to process sequence steps.' });
     }
     // Calculate step cost
     var pricing = calcDmPrice(seq.leads_count || 1);
