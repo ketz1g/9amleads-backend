@@ -2528,6 +2528,14 @@ function dmDeleteTemplate(id) {
 }
 
 function showDMSettings(el, canAutoSend) {
+  if (!canAutoSend) {
+    el.innerHTML = '<div style="text-align:center;padding:40px 20px">' +
+      '<div style="font-size:48px;margin-bottom:12px">\ud83d\udd12</div>' +
+      '<h3 style="font-size:16px;font-weight:700;margin-bottom:8px">Upgrade to Unlock Auto Send</h3>' +
+      '<p style="font-size:12px;color:var(--muted2);line-height:1.6;margin-bottom:16px;max-width:320px;margin-left:auto;margin-right:auto">Automatically send marketing materials to your leads every day. Available on <strong>Pro</strong> and <strong>Enterprise</strong> plans.</p>' +
+      '<button class="btn btn-primary" onclick="closeModals();showPlans()" style="font-size:13px;padding:12px 28px"><i class="fas fa-arrow-up"></i> View Plans &amp; Upgrade</button></div>';
+    return;
+  }
   apiFetch('/api/direct-mail/automation').then(function(r) {
     var s = r && r.settings ? r.settings : {};
     var checked = function(field) { return s[field] ? 'checked' : ''; };
