@@ -572,3 +572,12 @@ async function main() {
 }
 
 main().catch(e => console.error('Error:', e.message));
+
+async function collectProbateLeads() {
+  console.log('[PROBATE] Fetching from Gov.uk probate registry...');
+  var results = await fetchProbateRegistry();
+  console.log('[PROBATE] Got ' + results.length + ' probate records');
+  return results;
+}
+
+module.exports = { fetchProbateRegistry, collectProbateLeads };
