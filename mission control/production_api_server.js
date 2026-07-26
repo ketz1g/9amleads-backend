@@ -619,7 +619,7 @@ class StannpProvider extends DirectMailProvider {
           } catch(e) { resolve({ success: false, error: 'Failed to parse Stannp response: ' + b.substring(0, 200) }); }
         });
       });
-      req.on('error', function(e) { reject(new Error('Stannp request failed: ' + e.message)); });
+      req.on('error', function(e) { reject(new Error('Stannp request failed: ' + (e && e.message || ''))); });
       req.write(encoded);
       req.end();
     });
@@ -3532,7 +3532,7 @@ app.post('/api/admin/email-templates/sync-brevo', adminAuth, async (req, res) =>
             req.end();
           });
           results.templates++;
-        } catch(e) { results.errors.push(id + ': ' + e.message); }
+        } catch(e) { results.errors.push(id + ': ' + (e && e.message || '')); }
       }
     }
 
@@ -3559,7 +3559,7 @@ app.post('/api/admin/email-templates/sync-brevo', adminAuth, async (req, res) =>
               req.end();
             });
             results.templates++;
-          } catch(e) { results.errors.push(e.id + ': ' + e.message); }
+          } catch(e) { results.errors.push(e.id + ': ' + (e && e.message || '')); }
         }
       }
     }
@@ -3594,7 +3594,7 @@ app.get('/api/admin/brevo/upload', adminAuth, async (req, res) => {
           req.end();
         });
         results.lists.push({ campaign: ck, name: camp.listName, id: listResult.id || listResult.listId || 'created' });
-      } catch(e) { results.errors.push('List ' + camp.listName + ': ' + e.message); }
+      } catch(e) { results.errors.push('List ' + camp.listName + ': ' + (e && e.message || '')); }
 
       // Step 2: Create template for each email
       for (var ei = 0; ei < camp.emails.length; ei++) {
@@ -3621,7 +3621,7 @@ app.get('/api/admin/brevo/upload', adminAuth, async (req, res) => {
             req.end();
           });
           results.templates.push({ id: email.id, templateId: tplResult.id || 'created', status: 'ok' });
-        } catch(e) { results.errors.push(email.id + ': ' + e.message); }
+        } catch(e) { results.errors.push(email.id + ': ' + (e && e.message || '')); }
       }
     }
 
@@ -3894,7 +3894,7 @@ cron.schedule('30 2 * * *', async () => {
   try {
     const https = require('https');
     var body = JSON.stringify({});
-    var req = https.request({ hostname: 'nineamleads-backend.onrender.com', port: 443, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+    var req = https.request({ hostname: 'localhost', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
       var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[02:30 UTC] Scraper done:', b.substring(0, 100)); });
     });
     req.write(body); req.end();
@@ -3905,7 +3905,7 @@ cron.schedule('33 2 * * *', async () => {
   try {
     const https = require('https');
     var body2 = JSON.stringify({});
-    var req2 = https.request({ hostname: 'nineamleads-backend.onrender.com', port: 443, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body2) } }, function(res) {
+    var req2 = https.request({ hostname: 'localhost', port: PORT, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body2) } }, function(res) {
       var b2 = ''; res.on('data', function(c) { b2 += c; }); res.on('end', function() { console.log('[02:33 UTC] Distributor done:', b2.substring(0, 100)); });
     });
     req2.write(body2); req2.end();
@@ -3996,12 +3996,12 @@ cron.schedule('0 8 * * 1-5', async () => {
         saveDb();
         delivered += custLeads.length;
         console.log('[08:00 UTC] Delivered ' + custLeads.length + ' to ' + cust.email);
-      } catch(e) { console.log('[08:00 UTC] Error for ' + cust.email + ': ' + e.message); }
+      } catch(e) { console.log('[08:00 UTC] Error for ' + cust.email + ': ' + (e && e.message || '')); }
     }
     console.log('[08:00 UTC] Delivery complete: ' + delivered + ' leads');
     // Run Auto Send after delivery
     try { await runAutoSend(); } catch(ase) { console.log('[08:00 UTC] Auto Send error:', ase.message); }
-  } catch(e) { console.log('[08:00 UTC] Delivery error: ' + e.message); }
+  } catch(e) { console.log('[08:00 UTC] Delivery error: ' + (e && e.message || '')); }
 });
 
 // Sequence processing every hour
@@ -4522,7 +4522,7 @@ cron.schedule('0 0 * * *', async () => {
       fixes.push('Removed ' + orphanLeads.length + ' orphan leads');
     }
     console.log('[HEALTH] DB: ' + custCount + ' customers, ' + leadCount + ' leads');
-  } catch(e) { issues.push('Database: ' + e.message); }
+  } catch(e) { issues.push('Database: ' + (e && e.message || '')); }
   
   // 2. Check scraper data files exist
   for (var p in PRODUCT_LEAD_FILES) {
@@ -4538,7 +4538,7 @@ cron.schedule('0 0 * * *', async () => {
           fixes.push('Fixed corrupted ' + p + ' leads file');
         }
       }
-    } catch(e) { issues.push(p + ' file: ' + e.message); }
+    } catch(e) { issues.push(p + ' file: ' + (e && e.message || '')); }
   }
   
   // 3. Check last-scrape cache is valid
@@ -5412,7 +5412,7 @@ app.post('/api/subscribe', authMiddleware, async (req, res) => {
         return res.status(402).json({ error: 'Payment not completed. Status: ' + session.payment_status });
       }
     } catch (e) {
-      return res.status(500).json({ error: 'Could not verify payment: ' + e.message });
+      return res.status(500).json({ error: 'Could not verify payment: ' + (e && e.message || '') });
     }
   } else {
     // Fallback: check if there's already an active subscription in DB
@@ -5961,7 +5961,7 @@ app.get('/api/debug/last-email', adminAuth, async (req, res) => {
     var html = generateLeadEmailHTML(cust, custLeads);
     res.set('Content-Type', 'text/html');
     res.send(html);
-  } catch(e) { res.status(500).send('<p>Error: ' + e.message + '</p>'); }
+  } catch(e) { res.status(500).send('<p>Error: ' + (e && e.message || '') + '</p>'); }
 });
 
 // GET /api/distribute/status — distribution summary
@@ -8046,7 +8046,7 @@ function syncCustomers(product) {
             leads = await planningCollector.collectFreshPlanning(48);
             if (!leads || leads.length === 0) {  console.log('[SCRAPER] Planning collector returned 0 applications'); }
             console.log('[SCRAPER] Planning collector returned ' + (leads ? leads.length : 0) + ' applications');
-          } catch(e) { console.log('[SCRAPER] Planning error: ' + e.message); leads = []; }
+          } catch(e) { console.log('[SCRAPER] Planning error: ' + (e && e.message || '')); leads = []; }
           if (!leads || leads.length < 3) {
             try {
               var chKeyPlan2 = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || 'b67556b9-fedd-41dc-b8c1-dc34aed2b1ba';
@@ -8065,7 +8065,7 @@ function syncCustomers(product) {
                 req.on('error', function() { resolve([]); }); req.setTimeout(30000, function() { req.destroy(); resolve([]); }); req.end();
               });
               console.log('[SCRAPER] CH Builders fallback returned ' + leads.length + ' leads');
-            } catch(e) { console.log('[SCRAPER] Planning fallback error: ' + e.message); }
+            } catch(e) { console.log('[SCRAPER] Planning fallback error: ' + (e && e.message || '')); }
           }
         } else if (product === 'tenders') {
           var tendKey = process.env.APIFY_API_KEY;
@@ -9728,7 +9728,7 @@ try { if (fs.existsSync(DEMO_MODE_FILE)) DEMO_MODE_ENABLED = JSON.parse(fs.readF
 app.get('/api/demo/data', (req, res) => {
   if (!DEMO_MODE_ENABLED) return res.json({ success: false, error: 'Demo mode disabled' });
   res.json({
-    success: true, demo: true,
+    success: true,
     profile: { company_name: 'Your Demo Company', business_type: 'Removals', phone: 'hello@9amleads.com', email: 'demo@9amleads.com', website: 'https://demo.9amleads.com', services_offered: 'House removals, office moves, packing, storage', service_areas: 'London, Surrey, Kent', logo_url: '' },
     leads: [
       { id:'demo_1', name:'John Smith', address:'123 High Street', town:'London', postcode:'SW1A 1AA', type:'moving', status:'new', delivered_at:new Date().toISOString() },
