@@ -239,7 +239,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="tool-card" onclick="scrollToLeads()" style="background:linear-gradient(135deg,rgba(14,165,233,.06),transparent);border:1px solid rgba(14,165,233,.15)"><div class="icon"><i class="fas fa-clipboard-list" style="font-size:18px;color:var(--primary)"></i></div><h3>View Leads</h3><p>Browse &amp; manage by day</p></div>
 <div class="tool-card" onclick="exportRange('csv')" style="background:linear-gradient(135deg,rgba(99,102,241,.06),transparent);border:1px solid rgba(99,102,241,.15)"><div class="icon"><i class="fas fa-chart-bar" style="font-size:18px;color:var(--primary)"></i></div><h3>Export Data</h3><p>CSV or JSON download</p></div>
 <div class="tool-card" onclick="showPage('settings')" style="background:linear-gradient(135deg,rgba(34,197,94,.06),transparent);border:1px solid rgba(34,197,94,.15)"><div class="icon">⚙️</div><h3>Settings</h3><p>Plan, billing &amp; profile</p></div>
-<div class="tool-card" onclick="showPage('campaigns')" style="background:linear-gradient(135deg,rgba(245,158,11,.06),transparent);border:1px solid rgba(245,158,11,.15)"><div class="icon"><i class="fas fa-box" style="font-size:18px;color:var(--primary)"></i></div><h3>Success Kits</h3><p>Outreach templates</p></div>
+<div class="tool-card" onclick="showPage('campaigns')" style="background:linear-gradient(135deg,rgba(245,158,11,.06),transparent);border:1px solid rgba(245,158,11,.15)"><div class="icon"><i class="fas fa-box" style="font-size:18px;color:var(--primary)"></i></div><h3>Marketing Materials</h3><p>Outreach templates</p></div>
 <div class="tool-card" onclick="showPage('support')" style="background:linear-gradient(135deg,rgba(168,85,247,.06),transparent);border:1px solid rgba(168,85,247,.15)"><div class="icon">💬</div><h3>Help &amp; FAQ</h3><p>Support &amp; quick answers</p></div>
 <div class="tool-card" onclick="showPlans()" style="background:linear-gradient(135deg,rgba(239,68,68,.06),transparent);border:1px solid rgba(239,68,68,.15)"><div class="icon"><i class="fas fa-chart-line" style="font-size:18px;color:var(--primary)"></i></div><h3>Upgrade Plan</h3><p>More leads per day</p></div>
 </div>
@@ -272,13 +272,13 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div id="grow-biz-content">
 <div id="grow-biz-upgrade" style="padding:14px;background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(14,165,233,0.04));border:1px solid rgba(99,102,241,0.15);border-radius:10px;text-align:center">
 <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px"><i class="fas fa-crown" style="color:#f59e0b"></i> Upgrade to unlock Pro features</div>
-<div style="font-size:11px;color:var(--muted2);margin-bottom:10px;line-height:1.5">Success Kits, AI Marketing Builder, Auto Send, and Saved Templates are available on <strong>Pro</strong> and <strong>Enterprise</strong> plans. Upgrade before your trial ends to keep your leads flowing and unlock everything.</div>
+<div style="font-size:11px;color:var(--muted2);margin-bottom:10px;line-height:1.5">Marketing Materials, AI Marketing Builder, Auto Send, and Saved Templates are available on <strong>Pro</strong> and <strong>Enterprise</strong> plans. Upgrade before your trial ends to keep your leads flowing and unlock everything.</div>
 <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
 <button class="btn btn-primary btn-sm" onclick="showPlans()" style="font-size:12px;padding:8px 20px"><i class="fas fa-arrow-up"></i> See Plans &amp; Upgrade</button>
 <button class="btn btn-outline btn-sm" onclick="document.getElementById('grow-biz-upgrade').style.display='none'" style="font-size:10px">Dismiss</button>
 </div>
 <div style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;text-align:left">
-<div style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> Success Kits &amp; playbooks</div>
+<div style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> Marketing Materials &amp; playbooks</div>
 <div style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> AI letter generator &amp; upload your own flyer</div>
 <div style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> Auto Send daily mailing</div>
 <div style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(34,197,94,0.04);border-radius:4px;font-size:10px;color:var(--text2)"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> Saved templates &amp; history</div>
@@ -287,7 +287,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 </div>
 </div>
 <div id="grow-biz-links" style="display:none;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
-<div class="tool-card" onclick="showPage('campaigns')"><div class="icon"><i class="fas fa-box" style="font-size:18px;color:var(--primary)"></i></div><h3>Success Kits</h3><p>Campaigns in your dashboard</p></div>
+<div class="tool-card" onclick="showPage('campaigns')"><div class="icon"><i class="fas fa-box" style="font-size:18px;color:var(--primary)"></i></div><h3>Marketing Materials</h3><p>Campaigns in your dashboard</p></div>
 <div class="tool-card" onclick="showPage('direct-mail')"><div class="icon"><i class="fas fa-magic" style="font-size:18px;color:var(--primary)"></i></div><h3>AI Marketing</h3><p>Letters, flyers, campaigns</p></div>
 <div class="tool-card" onclick="showPage('direct-mail')"><div class="icon"><i class="fas fa-clock" style="font-size:18px;color:var(--primary)"></i></div><h3>Auto Send</h3><p>Daily automated mailing</p></div>
 </div>
@@ -866,7 +866,7 @@ var TIPS = [
   '📓 <strong>Keep a lead journal.</strong> Who did you speak to? What did they say? When to follow up? Notes turn cold leads into future closers.',
   '🔁 <strong>No response?</strong> Try again in 2 weeks with a different angle ,  a new flyer, a special offer, or a helpful update. Silence isn\'t a no.',
   '🎨 <strong>Need a professional look?</strong> We can help with your business branding ,  logos, flyers, letterheads, and social media graphics. You focus on selling, we\'ll make you look the part.',
-  '📱 <strong>Social media too much?</strong> Use the Success Kit templates to create posts. We can also handle your social media ,  content, scheduling, engagement. Let us help you grow your presence.',
+  '📱 <strong>Social media too much?</strong> Use the Marketing Material templates to create posts. We can also handle your social media ,  content, scheduling, engagement. Let us help you grow your presence.',
   '🖼️ <strong>First impressions matter.</strong> A polished logo, professional flyer, and consistent branding build trust before you even speak. We can design it all for you.',
   '📸 <strong>Show off your work.</strong> Use our flyer templates to create before/after posts, customer testimonials, and case studies. Great content wins more leads.',
   'Follow up within <strong>30 minutes</strong> of receiving a lead ,  speed triples your conversion rate.',
