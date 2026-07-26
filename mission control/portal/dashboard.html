@@ -639,7 +639,10 @@ async function loadDashboard() {
   loadOnboarding();
   loadPrompts();
   loadTips();
-  checkOnboarding();
+  if (!session.onboarding_done && window.location.search.indexOf('onboard=1') !== -1) {
+    var up = session.plan || 'free_trial';
+    if (up !== 'free_trial') checkOnboarding();
+  }
   loadNotifCount();
   // Auto-refresh every 60 seconds
   if (window._refreshTimer) clearInterval(window._refreshTimer);
