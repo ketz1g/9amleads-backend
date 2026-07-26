@@ -198,14 +198,14 @@ function leadMatchesTarget(lead, customer, product) {
         }
         if (filters.product === 'moving') {
           const beds = parseInt(lead.bedrooms) || 0;
-          const minBeds = parseInt(filters.minBedrooms) || 0;
-          const maxBeds = parseInt(filters.maxBedrooms) || 99;
+          const minBeds = parseInt((filters.minBedrooms || '').toString().replace(/[^0-9]/g, '')) || 0;
+          const maxBeds = parseInt((filters.maxBedrooms || '').toString().replace(/[^0-9]/g, '')) || 99;
           if (minBeds > 0 && beds < minBeds) return { match: false };
           if (maxBeds < 99 && beds > maxBeds) return { match: false };
           const price = parseInt(lead.price) || 0;
           const maxPrice = parseInt(filters.maxPrice) || 0;
           if (maxPrice > 0 && price > maxPrice) return { match: false };
-          if (filters.propertyType) {
+          if (filters.propertyType && filters.propertyType !== 'Any' && filters.propertyType !== 'any') {
             const pt = (lead.propertyType || '').toLowerCase();
             const ft = filters.propertyType.toLowerCase();
             if (pt !== ft && !pt.includes(ft)) return { match: false };
@@ -248,7 +248,7 @@ function leadMatchesTarget(lead, customer, product) {
       }
       if (filters.product === 'tenders') {
         const val = parseInt(lead.contractValue) || 0;
-        const minVal = parseInt(filters.minValue) || 0;
+        const minVal = parseInt((filters.minValue || '').toString().replace(/[^0-9]/g, '')) || 0;
         if (minVal > 0 && val < minVal) tier = 2;
         if (filters.keywords) {
           const keywords = filters.keywords.toLowerCase().split(',').map(k => k.trim()).filter(k => k);
