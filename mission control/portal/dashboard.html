@@ -1034,7 +1034,16 @@ async function loadCampaigns() {
       return;
     }
     var r = await apiFetch('/api/campaigns');
-    if (!r || !r.success) { showModal('Campaigns', '<p style="color:var(--muted)">Could not load campaigns. Please try again.</p>'); return; }
+    if (!r || !r.success || r.locked) {
+      showModal('Marketing Campaigns',
+        '<div style="text-align:center;padding:30px 10px">' +
+        '<div style="font-size:48px;margin-bottom:12px">\ud83d\udd12</div>' +
+        '<h3 style="font-size:18px;font-weight:800;margin-bottom:8px">Upgrade to Access Marketing Materials</h3>' +
+        '<p style="font-size:13px;color:var(--muted2);line-height:1.6;margin-bottom:20px;max-width:360px;margin-left:auto;margin-right:auto">Business profile, AI letter builder, and conversion kits are available on <strong>Starter</strong> plans and above.</p>' +
+        '<button class="btn btn-primary" onclick="closeModals();showPlans()" style="font-size:14px;padding:14px 32px"><i class="fas fa-arrow-up"></i> View Plans &amp; Upgrade</button>' +
+        '</div>');
+      return;
+    }
     var campaigns = r.campaigns;
     var listHtml = '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">' +
       '<button class="btn btn-primary btn-sm" onclick="closeModals();showPage(\'business-profile\')" style="flex:1;min-width:140px"><i class="fas fa-building"></i> Business Profile</button>' +

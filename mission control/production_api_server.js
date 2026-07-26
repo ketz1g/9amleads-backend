@@ -6549,8 +6549,12 @@ app.get('/api/campaigns/:product', (req, res) => {
   res.json({ success: true, kit: kit });
 });
 
-app.get('/api/campaigns', (req, res) => {
+app.get('/api/campaigns', authMiddleware, (req, res) => {
   var summaries = {};
+  var cust = db.prepare('SELECT plan FROM customers WHERE id = ?').get(req.user.id);
+  if (cust && cust.plan === 'free_trial') {
+    return res.json({ success: true, locked: true, campaigns: {} });
+  }
   for (var p in CAMPAIGN_KITS) {
     summaries[p] = { name: CAMPAIGN_KITS[p].name, icon: CAMPAIGN_KITS[p].icon, color: CAMPAIGN_KITS[p].color, summary: CAMPAIGN_KITS[p].summary, header: CAMPAIGN_KITS[p].header };
   }
