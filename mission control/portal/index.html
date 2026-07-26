@@ -913,6 +913,7 @@ function showSignup() { document.getElementById('signup-form').style.display='bl
 (function() {
   function showFormByHash() {
     if (window.location.hash === '#signup') showSignup();
+    if (window.location.hash === '#login') showLogin();
   }
   showFormByHash();
   window.addEventListener('hashchange', showFormByHash);
