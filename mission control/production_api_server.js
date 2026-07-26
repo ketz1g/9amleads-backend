@@ -1064,6 +1064,26 @@ app.post('/api/auth/signup', async (req, res) => {
 
     const token = generateToken(customer);
 
+    // Generate leads immediately for the new customer (fire and forget)
+    (async function() {
+      try {
+        console.log('[SIGNUP] Generating leads for new customer ' + customer.id);
+        var rmScraperFast = require('./rightmove_scraper_v2');
+        var movingLeads = await rmScraperFast.collectMovingLeads();
+        if (!movingLeads || movingLeads.length === 0) { console.log('[SIGNUP] No leads generated at signup'); return; }
+        var db2 = getDb();
+        var now2 = new Date().toISOString();
+        var saved = 0;
+        for (var li = 0; li < Math.min(movingLeads.length, customer.leads_per_day || 20); li++) {
+          var p = movingLeads[li];
+          db2.leads.push({ id: require('uuid').v4(), customer_id: customer.id, product: 'moving', data: JSON.stringify(p), status: 'new', delivered: 0, created_at: now2, delivered_at: null });
+          saved++;
+        }
+        saveDb();
+        if (saved > 0) console.log('[SIGNUP] Stored ' + saved + ' leads for new customer');
+      } catch(e) { console.log('[SIGNUP] Lead generation error:', e.message); }
+    })();
+
     res.status(201).json({
       token,
       customer: {
@@ -3250,7 +3270,7 @@ function getCampaignEmailHTML(customer, template) {
     tenders: 'Follow up fast. Tenders close on a deadline and the buyer needs capability statements. Submit online and follow up with a printed pack.' }[prod] || 'Follow up fast.';
   
   const templates = {
-    trial_day1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Is Active</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Your daily <strong style="color:#fff">' + productName + '</strong> land at <strong style="color:' + accent + '">9am tomorrow</strong>.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to 9amLeads. Over the next 7 days you\'ll receive exclusive <strong>' + productName + '</strong> delivered to your inbox every morning at 9am. Here\'s how to get the most out of your trial:</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:2;margin:0">✅ <strong style="color:#fff">9:00am</strong> : Lead sheet arrives in your inbox<br>âœ‰ï¸ <strong style="color:#fff">9:15am</strong> : ' + outreachPrep + '<br>ðŸš¶ <strong style="color:#fff">10:00am</strong> : ' + outreachVisit + '<br>ðŸ“¬ <strong style="color:#fff">Afternoon</strong> : ' + outreachPost + '</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">What makes these leads exclusive?</strong> Unlike lead generation sites where your quote is one of dozens, every lead we send is sent to <strong>you alone</strong>. No competitors. No bidding wars. You are the first and only person to contact them.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">ðŸ’¡ Pro tip:</strong> ' + outreachTip + ' Use the AI-drafted flyers, introduction letters, and visit in person templates in your dashboard for every lead. Set your alarm for 9am and start your lead hour.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">To get the most from your trial, <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">log into your dashboard</a> and set up your CRM webhook so leads flow straight into your system. If you don\'t use a CRM, no problem : leads arrive by email too.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">ðŸš€ NEW: Direct Mail Marketing Automation — automatically send professional letters and flyers to your leads by post. Set it up from your dashboard.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
+    trial_day1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Is Active</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Your daily <strong style="color:#fff">' + productName + '</strong> <strong style="color:' + accent + '">are ready now</strong>.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to 9amLeads. Over the next 7 days you\'ll receive exclusive <strong>' + productName + '</strong> delivered to your inbox every morning at 9am. Here\'s how to get the most out of your trial:</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:2;margin:0">✅ <strong style="color:#fff">9:00am</strong> : Lead sheet arrives in your inbox<br>âœ‰ï¸ <strong style="color:#fff">9:15am</strong> : ' + outreachPrep + '<br>ðŸš¶ <strong style="color:#fff">10:00am</strong> : ' + outreachVisit + '<br>ðŸ“¬ <strong style="color:#fff">Afternoon</strong> : ' + outreachPost + '</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">What makes these leads exclusive?</strong> Unlike lead generation sites where your quote is one of dozens, every lead we send is sent to <strong>you alone</strong>. No competitors. No bidding wars. You are the first and only person to contact them.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">ðŸ’¡ Pro tip:</strong> ' + outreachTip + ' Use the AI-drafted flyers, introduction letters, and visit in person templates in your dashboard for every lead. Set your alarm for 9am and start your lead hour.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">To get the most from your trial, <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">log into your dashboard</a> and set up your CRM webhook so leads flow straight into your system. If you don\'t use a CRM, no problem : leads arrive by email too.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">ðŸš€ NEW: Direct Mail Marketing Automation — automatically send professional letters and flyers to your leads by post. Set it up from your dashboard.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
     trial_day3: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">How Are Your First Leads Looking?</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">3 days in : time for a quick check-in.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">You\'re three days into your 9amLeads trial. By now you should have received a few days\' worth of <strong>' + productName + '</strong>. We wanted to check in and see how things are going.</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ Are the leads relevant to your <strong>specific business</strong>?<br>✅ Is the volume what you <strong>expected</strong>?<br>✅ Have you managed to <strong>follow up yet</strong>?<br>✅ Are the postcode areas <strong>working for you</strong>?</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If the answer to any of these is &ldquo;no&rdquo; : don\'t worry. You can <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">adjust your territory settings in the dashboard</a> to refine which opportunities you receive. Every lead includes AI-drafted flyers, introduction letters, and visit in person templates ready to use. Narrow it down, expand it out, or target specific cities.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">ðŸ’¡ Tip of the day:</strong> Follow up within 30 minutes. We know we keep saying it, but it\'s because it works. Your lead is a real person who needs help <em>right now</em>. Every minute you wait, someone else reaches them first.</p><p style="color:#94a3b8;font-size:13px;margin:0 0 16px">Not loving it? Reply to this email and tell us what\'s off. We can tweak your settings or switch you to a different lead type.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
     trial_day5: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Tips to Convert More Leads</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">You\'ve got 2 days left in your trial. Let\'s make them count.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">By now you\'ve had a few days of <strong>' + productName + '</strong> landing in your inbox. Whether you\'ve closed deals yet or not, here are three tips that will dramatically improve your conversion rate:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;margin:0 0 16px"><div style="margin-bottom:16px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">1</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Follow up within 30 minutes</strong><br><span style="color:#94a3b8;font-size:13px">Speed is your superpower. When a lead goes SSTC, registers a company, or a probate grant is issued : they are actively looking for help. Our data shows that following up within 30 minutes triples your conversion rate compared to waiting 2 hours. Set your alarm, drop everything, and start preparing.</span></div></div><div style="margin-bottom:16px;clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">2</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Personalise your pitch</strong><br><span style="color:#94a3b8;font-size:13px">Don\'t read from a script. Reference their specific situation : the property address, the company they just registered, the probate value. &ldquo;I see you\'ve just listed [property] on Rightmove : congratulations. I specialise in helping sellers in [area] get a fast, fair price.&rdquo; Personalised pitches close at 2x the rate of generic ones.</span></div></div><div style="clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">3</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Follow up : the money is in the 2nd follow-up</strong><br><span style="color:#94a3b8;font-size:13px">Most sales don\'t happen on the first contact. People are busy, they need to check with a partner, or they\'re comparing options. Follow up on day 2 with an email, contact again on day 4. Exclusive leads mean no one else is contacting them : take your time and build the relationship.</span></div></div></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Your free trial ends in <strong style="color:' + accent + '">2 days</strong>. After that, your leads will pause. Upgrade now to keep them flowing without interruption.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Upgrade & Keep Your Leads â†’</a></td></tr></table>',
     trial_day7: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Ends Tomorrow</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Action needed : your daily leads will pause after today.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">This is your 7-day reminder. Tomorrow your free trial ends, and your daily <strong>' + productName + '</strong> delivery will pause. Here\'s what you\'ll lose:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ <strong style="color:#fff">Daily exclusive leads</strong> at 9am every morning<br>✅ <strong style="color:#fff">No competition</strong> : you\'re the only person who gets them<br>✅ <strong style="color:#fff">Full dashboard access</strong> with lead history & analytics<br>✅ <strong style="color:#fff">CRM integration</strong> : push leads to your system<br>✅ <strong style="color:#fff">Priority support</strong> when you need it</p></div><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><em>&ldquo;I got 12 leads in my first week using 9amLeads. Converted 3. Made <strong style="color:' + accent + '">£3,600</strong> in additional revenue. Best £49 I\'ve ever spent.&rdquo;</em><br><span style="color:#94a3b8;font-size:11px">: Mark S., Southampton</span></p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Plans start from just <strong style="color:#fff">£49/month</strong>. No long-term contract. Cancel anytime. Upgrade now and your leads keep flowing tomorrow at 9am as if nothing happened.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">ðŸš€ NEW: Direct Mail Marketing Automation — automatically send professional letters and flyers to your leads by post. Set it up from your dashboard.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Now : Keep Your Leads</a></td></tr></table>',
@@ -3655,113 +3675,7 @@ cron.schedule('30 5 * * *', async () => {
 
 // Generate realistic-looking demo leads for any product
 function generateDemoLeads(product, count) {
-  const now = new Date().toISOString();
-  const leads = [];
-  const fullPC = (area) => area.pc + ' ' + (Math.floor(Math.random() * 9) + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24));
-  const areas = [
-    { city: 'London', pc: 'SW1A', pcPrefix: 'SW' },
-    { city: 'London', pc: 'SW3', pcPrefix: 'SW' },
-    { city: 'London', pc: 'W8', pcPrefix: 'W' },
-    { city: 'London', pc: 'N1', pcPrefix: 'N' },
-    { city: 'London', pc: 'SE1', pcPrefix: 'SE' },
-    { city: 'London', pc: 'EC2', pcPrefix: 'EC' },
-    { city: 'Manchester', pc: 'M1', pcPrefix: 'M' },
-    { city: 'Birmingham', pc: 'B1', pcPrefix: 'B' },
-    { city: 'Leeds', pc: 'LS1', pcPrefix: 'LS' },
-    { city: 'Bristol', pc: 'BS1', pcPrefix: 'BS' },
-    { city: 'Glasgow', pc: 'G1', pcPrefix: 'G' },
-    { city: 'Cardiff', pc: 'CF1', pcPrefix: 'CF' },
-  ];
-  const streets = ['High Street', 'Station Road', 'London Road', 'Park Lane', 'Church Road', 'Victoria Street', 'Green Lane', 'Market Street', 'Oak Avenue', 'The Crescent', 'Manor Road', 'Queen Street', 'King Street', 'Mill Lane', 'New Road'];
-
-  if (product === 'moving') {
-    const types = ['House', 'Flat', 'Maisonette', 'Bungalow', 'Townhouse'];
-    const agents = ['Savills', 'Foxtons', 'Knight Frank', 'Hamptons', 'Dexters'];
-    const statuses = ['SSTC', 'Under Offer', 'Sold STC'];
-    for (let i = 0; i < count; i++) {
-      const area = areas[i % areas.length];
-      const beds = Math.floor(Math.random() * 4) + 1;
-      const price = beds <= 2 ? Math.floor(Math.random() * 200000) + 250000 : Math.floor(Math.random() * 500000) + 500000;
-      const leadPC = fullPC(area);
-      leads.push({
-        id: 'ML_' + Date.now() + '_' + i, address: Math.floor(Math.random() * 200) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + leadPC,
-        postcode: leadPC, city: area.city, bedrooms: beds, propertyType: types[i % types.length],
-        price: price, status: statuses[i % statuses.length], agent: agents[i % agents.length],
-        listedDate: new Date(Date.now() - Math.floor(Math.random() * 14) * 86400000).toISOString().split('T')[0],
-        estimatedMoveWindow: (Math.floor(Math.random() * 8) + 4) + ' weeks', source: 'Rightmove', scrapedAt: now
-      });
-    }
-  } else if (product === 'probate') {
-    const surnames = ['Smith', 'Jones', 'Williams', 'Taylor', 'Brown', 'Davies', 'Wilson', 'Evans', 'Thomas', 'Roberts'];
-    const registries = ['Birmingham', 'Manchester', 'Leeds', 'London', 'Cardiff', 'Edinburgh', 'Bristol', 'Liverpool'];
-    for (let i = 0; i < count; i++) {
-      const value = Math.floor(Math.random() * 900000) + 100000;
-      const surname = surnames[i % surnames.length];
-      const area = areas[i % areas.length];
-      const leadPC = fullPC(area);
-      leads.push({
-        id: 'PR_' + Date.now() + '_' + i, name: 'Estate of ' + surname,
-        deceasedName: surname, estateValue: value, estateValueLabel: '\u00a3' + value.toLocaleString(),
-        registry: registries[i % registries.length],
-        address: Math.floor(Math.random() * 100) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + leadPC,
-        postcode: leadPC, city: area.city,
-        legalAdvisor: surname + ' & Co Solicitors', source: 'Gov.uk Probate Register', scrapedAt: now
-      });
-    }
-  } else if (product === 'newbusiness') {
-    const bizNames = ['Premier', 'Elite', 'First Choice', 'Advanced', 'Apex', 'Meridian', 'Pinnacle', 'Signature', 'Prestige', 'Horizon'];
-    const bizSuffix = ['Consulting', 'Services', 'Solutions', 'Partners', 'Group', 'Associates', 'Management', 'Holdings', 'Ventures', 'Enterprises'];
-    for (let i = 0; i < count; i++) {
-      const area = areas[i % areas.length];
-      const leadPC = fullPC(area);
-      leads.push({
-        id: 'NB_' + Date.now() + '_' + i, name: bizNames[i % bizNames.length] + ' ' + bizSuffix[i % bizSuffix.length] + ' Ltd',
-        companyNumber: 'NI' + (Math.floor(Math.random() * 900000) + 100000),
-        address: Math.floor(Math.random() * 50) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + leadPC,
-        postcode: leadPC, city: area.city,
-        sicCode: (Math.floor(Math.random() * 90000) + 10000).toString(),
-        incorporationDate: new Date(Date.now() - Math.floor(Math.random() * 365) * 86400000).toISOString(), source: 'Sample Data', scrapedAt: now
-      });
-    }
-            if (!leads || leads.length === 0) { leads = generateDemoLeads('newbusiness', 20); console.log('[SCRAPER] NB: using demo leads'); }
-        } else if (product === 'planning') {
-    const councils = ['Westminster City Council', 'Camden Council', 'Manchester City Council', 'Birmingham City Council', 'Leeds City Council', 'Bristol City Council'];
-    const appTypes = ['Full Planning', 'Householder', 'Listed Building', 'Change of Use', 'Outline Planning'];
-    for (let i = 0; i < count; i++) {
-      const area = areas[i % areas.length];
-      const leadPC = fullPC(area);
-      leads.push({
-        id: 'PL_' + Date.now() + '_' + i, address: Math.floor(Math.random() * 200) + 1 + ' ' + streets[i % streets.length] + ', ' + area.city + ' ' + leadPC,
-        postcode: leadPC, city: area.city, applicationType: appTypes[i % appTypes.length],
-        description: 'Proposed ' + (['residential', 'commercial', 'mixed-use', 'retail', 'office'][i % 5]) + ' development',
-        applicant: 'Applicant at ' + streets[i % streets.length], council: councils[i % councils.length],
-        applicationRef: 'APP/' + new Date().getFullYear() + '/' + (Math.floor(Math.random() * 90000) + 10000),
-        planningKeyVal: String.fromCharCode(65 + Math.floor(Math.random() * 24)) + String.fromCharCode(65 + Math.floor(Math.random() * 24)) + Math.floor(Math.random() * 90000 + 10000),
-        targetDecisionDate: new Date(Date.now() + Math.floor(Math.random() * 60) * 86400000).toISOString().split('T')[0],
-        source: 'Planning Portal', scrapedAt: now
-      });
-    }
-  } else if (product === 'tenders') {
-    const authorities = ['NHS England', 'Ministry of Justice', 'Surrey County Council', 'Transport for London', 'Home Office', 'Environment Agency', 'Manchester City Council'];
-    const categories = ['IT Services', 'Construction', 'Consulting', 'Facilities Management', 'Professional Services'];
-    for (let i = 0; i < count; i++) {
-      const val = Math.floor(Math.random() * 5000000) + 25000;
-      const daysLeft = Math.floor(Math.random() * 30) + 5;
-      leads.push({
-        id: 'TD_' + Date.now() + '_' + i, title: categories[i % categories.length] + ' Contract - ' + authorities[i % authorities.length],
-        buyer: authorities[i % authorities.length], contractValue: val,
-        contractValueLabel: '\u00a3' + val.toLocaleString(),
-        description: 'Opportunity for ' + categories[i % categories.length].toLowerCase() + ' services',
-        publishedDate: new Date().toISOString().split('T')[0],
-        closingDate: new Date(Date.now() + daysLeft * 86400000).toISOString().split('T')[0],
-        deadlineDaysRemaining: daysLeft, cpvCode: String(Math.floor(Math.random() * 900000) + 100000),
-        tenderNoticeId: 'CF-' + (Math.floor(Math.random() * 90000000) + 10000000),
-        source: 'Contracts Finder', scrapedAt: now
-      });
-    }
-  }
-
-  return leads;
+  return [];
 }
 
 // ===== CRM HELPER: Format lead for CRM webhook =====
@@ -6013,24 +5927,6 @@ app.post('/api/scrape-save', async (req, res) => {
   }
 });
 
-// POST /api/scrape-generate — force generate demo leads for all products
-app.post('/api/scrape-generate', async (req, res) => {
-  try {
-    let total = 0;
-    for (const [product, config] of Object.entries(PRODUCT_LEAD_FILES)) {
-      const count = req.body.count || 30;
-      const leads = generateDemoLeads(product, count);
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-      fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
-      total += leads.length;
-      console.log('[GENERATE] ' + product + ': ' + leads.length + ' demo leads saved');
-    }
-    res.json({ success: true, total_leads: total, message: 'Demo leads generated for all products' });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
 // ===== LEAD DISTRIBUTION ENDPOINTS =====
 // POST /api/distribute — trigger lead distributor (match scraped leads to customers)
 app.post('/api/distribute', async (req, res) => {
@@ -8154,8 +8050,7 @@ function syncCustomers(product) {
           try {
             var planningCollector = require('./planning_collector');
             leads = await planningCollector.collectFreshPlanning(48);
-            if (!leads || leads.length === 0) { leads = generateDemoLeads('planning', 200); }
-            var plDemo2 = generateDemoLeads('planning', 200); if (plDemo2) { leads = leads ? leads.concat(plDemo2) : plDemo2; }
+            if (!leads || leads.length === 0) {  console.log('[SCRAPER] Planning collector returned 0 applications'); }
             console.log('[SCRAPER] Planning collector returned ' + (leads ? leads.length : 0) + ' applications');
           } catch(e) { console.log('[SCRAPER] Planning error: ' + e.message); leads = []; }
           if (!leads || leads.length < 3) {
@@ -8243,9 +8138,8 @@ function syncCustomers(product) {
                 });
                 var ft = filterFresh(leads, 'publishedDate');
                 leads = ft.fresh.length > 0 ? ft.fresh : ft.fallback;
-                if (!leads || leads.length === 0) { leads = generateDemoLeads('tenders', 50); } else {
-          var tdDemo2 = generateDemoLeads('tenders', 200); if (tdDemo2) { leads = leads ? leads.concat(tdDemo2) : tdDemo2; }
-          console.log('[SCRAPER] Tenders: ' + ft.fresh.length + ' fresh, ' + ft.fallback.length + ' fallback, total: ' + leads.length);
+                if (!leads || leads.length === 0) {  console.log('[SCRAPER] No fresh tender leads today'); } else {
+                console.log('[SCRAPER] Tenders: ' + ft.fresh.length + ' fresh, ' + ft.fallback.length + ' fallback, total: ' + leads.length);
         }
               } else { console.log('[SCRAPER] No tender leads today'); leads = []; }
             } catch(e) { console.log('[SCRAPER] Tenders fallback error:', e.message); leads = []; }
@@ -8343,13 +8237,7 @@ function syncCustomers(product) {
                 }
               } catch(apifyErr) { console.log('[SCRAPER] Rightmove Apify error:', apifyErr.message); }
             }
-            if (!leads || leads.length === 0) { leads = generateDemoLeads('moving', 5); console.log('[SCRAPER] Rightmove: using demo leads (0 from scraper)'); }
-            // If fewer than 5 leads after all attempts, supplement with demos to ensure quota
-            if (leads && leads.length < 5) {
-              var extraNeeded = 5 - leads.length;
-              var extraLeads = generateDemoLeads('moving', extraNeeded);
-              if (extraLeads) { leads = leads.concat(extraLeads); console.log('[SCRAPER] Rightmove: supplemented ' + extraNeeded + ' demo leads'); }
-            }
+            if (!leads || leads.length === 0) {  console.log('[SCRAPER] Rightmove: 0 real leads today'); }
           } catch(e) { console.log('[SCRAPER] Rightmove error:', e.message); leads = []; }
         } else if (product === 'probate') {
           var probLeads = [];
@@ -8388,7 +8276,6 @@ function syncCustomers(product) {
             });
             console.log('[SCRAPER] CH Probate fallback returned ' + leads.length + ' leads');
           }
-          var probDemo2 = generateDemoLeads('probate', 200); if (probDemo2) { leads = probLeads && probLeads.length > 0 ? leads.concat(probDemo2) : probDemo2; }
             console.log('[SCRAPER] Probate: ' + (probLeads ? probLeads.length : 0) + ' source leads');
         } else {
           leads = [];
