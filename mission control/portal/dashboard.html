@@ -152,7 +152,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 </div>
 </div>
 <div id="admin-mode-banner" style="display:none;background:linear-gradient(135deg,#dc2626,#991b1b);padding:8px 16px;text-align:center;font-size:12px;font-weight:600;color:#fff;position:sticky;top:0;z-index:300">
-  <i class="fas fa-shield-alt"></i> Admin Mode — You are viewing this customer's dashboard. <a href="/admin/" style="color:#fff;text-decoration:underline;margin-left:8px;font-weight:700">Return to Admin</a>
+  <i class="fas fa-shield-alt"></i> Admin Mode ,  You are viewing this customer's dashboard. <a href="/admin/" style="color:#fff;text-decoration:underline;margin-left:8px;font-weight:700">Return to Admin</a>
 </div>
 <div class="main-content">
 <!-- Company Header Bar -->
@@ -295,7 +295,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="card" style="background:rgba(245,158,11,0.02);border-color:rgba(245,158,11,0.1);padding:12px 16px">
 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between">
 <div style="display:flex;align-items:center;gap:8px"><i class="fas fa-comment-dots" style="color:var(--warning);font-size:18px"></i>
-<span style="font-size:12px;color:var(--text2);line-height:1.5">Missing a feature or found a bug? <a href="/portal/feedback.html" style="color:var(--primary);text-decoration:underline">Send feedback</a> — the founder reads every message.</span></div>
+<span style="font-size:12px;color:var(--text2);line-height:1.5">Missing a feature or found a bug? <a href="/portal/feedback.html" style="color:var(--primary);text-decoration:underline">Send feedback</a> ,  the founder reads every message.</span></div>
 </div>
 </div>
 <div class="card" id="sub-section" style="background:linear-gradient(135deg,var(--card),rgba(14,165,233,.02));border:1px solid rgba(14,165,233,.1)">
@@ -538,7 +538,7 @@ async function showDemoDashboard(demo) {
   var d = demo;
   document.querySelector('.main-content').innerHTML =
     '<div style="max-width:900px;margin:0 auto;padding:32px 24px">' +
-    '<div style="margin-bottom:24px"><div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--warning)"><i class="fas fa-eye" style="font-size:16px"></i> <strong>Demo Mode</strong> — This is a preview. No real data is shown. <a href="/portal/" style="color:var(--primary);margin-left:auto">Sign up free</a></div></div>' +
+    '<div style="margin-bottom:24px"><div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--warning)"><i class="fas fa-eye" style="font-size:16px"></i> <strong>Demo Mode</strong> ,  This is a preview. No real data is shown. <a href="/portal/" style="color:var(--primary);margin-left:auto">Sign up free</a></div></div>' +
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px">' +
     '<div class="kpi-card" style="border-left:3px solid #0ea5e9"><div class="kpi-num" style="color:#0ea5e9">' + d.stats.total_campaigns + '</div><div class="kpi-label">Campaigns</div></div>' +
     '<div class="kpi-card" style="border-left:3px solid #22c55e"><div class="kpi-num" style="color:#22c55e">' + d.stats.campaigns_sent + '</div><div class="kpi-label">Sent</div></div>' +
@@ -580,7 +580,7 @@ async function loadDashboard() {
     }
   }
 
-  // Card setup prompt for new signups — REQUIRED, no skip
+  // Card setup prompt for new signups ,  REQUIRED, no skip
   if (window.location.search.indexOf('card=1') !== -1 && !localStorage.getItem('payment_setup_done')) {
     setTimeout(function() {
       showPaymentSetupPrompt();
@@ -590,10 +590,10 @@ async function loadDashboard() {
   // Admin impersonation mode
   if (session.admin_impersonating) {
     var banner = document.getElementById('admin-mode-banner');
-    if (banner) { banner.style.display = 'block'; banner.innerHTML = '<i class="fas fa-shield-alt"></i> Admin Mode — Viewing <strong>' + (session.email || 'this customer') + '</strong>\'s dashboard. Impersonated by <strong>' + (session.impersonated_by || 'Admin') + '</strong>. <a href="/admin/" style="color:#fff;text-decoration:underline;margin-left:8px;font-weight:700">Return to Admin</a>'; }
+    if (banner) { banner.style.display = 'block'; banner.innerHTML = '<i class="fas fa-shield-alt"></i> Admin Mode ,  Viewing <strong>' + (session.email || 'this customer') + '</strong>\'s dashboard. Impersonated by <strong>' + (session.impersonated_by || 'Admin') + '</strong>. <a href="/admin/" style="color:#fff;text-decoration:underline;margin-left:8px;font-weight:700">Return to Admin</a>'; }
   }
 
-  // Demo mode — show sample data, no live actions
+  // Demo mode ,  show sample data, no live actions
   var isDemo = window.location.search.indexOf('demo=1') !== -1;
   if (isDemo) {
     apiFetch('/api/demo/data').then(function(demo) {
@@ -848,7 +848,7 @@ var TIPS = [
   '<i class="fas fa-coins" style="font-size:18px;color:var(--primary)"></i> <strong>That lead in your inbox?</strong> It could be a £5k probate case, a £10k extension project, or a £50k tender win. Don\'t leave money on the table.',
   '💪 <strong>Consistency wins.</strong> Show up every day, follow up every lead, and the results will compound. Your future self will thank you.',
   '<i class="fas fa-clipboard-list" style="font-size:18px;color:var(--primary)"></i> <strong>Get those flyers out!</strong> Print a batch today and drop them door-to-door in your target areas. Physical presence builds trust fast.',
-  '🏃 <strong>First mover wins.</strong> The person who follows up first gets the business. Don\'t wait — grab those leads and start dialling or knocking.',
+  '🏃 <strong>First mover wins.</strong> The person who follows up first gets the business. Don\'t wait ,  grab those leads and start dialling or knocking.',
   '😃 <strong>Smile on your face, flyer in hand.</strong> A friendly face with a professional brochure is unstoppable. Go visit your leads in person today!',
   '<i class="fas fa-bolt" style="font-size:18px;color:var(--primary)"></i> <strong>Energy is contagious.</strong> When you\'re excited about what you offer, your customers will feel it. Bring the energy today!',
   '<i class="fas fa-chart-line" style="font-size:18px;color:var(--primary)"></i> <strong>Small actions, big results.</strong> One flyer drop. One phone call. One follow-up. Do it consistently and watch your pipeline grow.',
@@ -857,31 +857,31 @@ var TIPS = [
   '🎤 <strong>You\'re the expert.</strong> Own it. Walk in with confidence, hand over your brochure, and show them why you\'re the best choice in town.',
   '<i class="fas fa-clock" style="font-size:18px;color:var(--primary)"></i> <strong>Right now, someone is comparing quotes.</strong> Be the first name they see. Be the first person they speak to. Speed wins. Move now!',
   '☕ <strong>Grab a coffee, then hit the road.</strong> Your leads aren\'t going to convert themselves. Get out there and make it happen today!',
-  '<i class="fas fa-feather-alt" style="font-size:18px;color:var(--primary)"></i> <strong>Didn\'t convert today?</strong> Keep notes on every lead — name, email, phone, what they said. Follow up in 2 weeks. Timing is everything.',
+  '<i class="fas fa-feather-alt" style="font-size:18px;color:var(--primary)"></i> <strong>Didn\'t convert today?</strong> Keep notes on every lead ,  name, email, phone, what they said. Follow up in 2 weeks. Timing is everything.',
   '<i class="fas fa-phone" style="font-size:18px;color:var(--primary)"></i> <strong>Don\'t have their number yet?</strong> Every interaction is a chance to get their email or phone. Build your contact list one lead at a time.',
   '🗓️ <strong>Not ready to buy?</strong> Add them to your follow-up list. Send a text in 30 days. Drop another flyer in 60 days. Persistence pays off.',
   '📇 <strong>Get their details first.</strong> Before you leave, ask for their email and phone. Even if they don\'t buy now, you\'ve got a warm lead for later.',
   '🔄 <strong>Follow up, don\'t give up.</strong> Most sales happen after the 3rd contact. Keep showing up, keep adding value, keep building the relationship.',
   '📓 <strong>Keep a lead journal.</strong> Who did you speak to? What did they say? When to follow up? Notes turn cold leads into future closers.',
-  '🔁 <strong>No response?</strong> Try again in 2 weeks with a different angle — a new flyer, a special offer, or a helpful update. Silence isn\'t a no.',
-  '🎨 <strong>Need a professional look?</strong> We can help with your business branding — logos, flyers, letterheads, and social media graphics. You focus on selling, we\'ll make you look the part.',
-  '📱 <strong>Social media too much?</strong> Use the Success Kit templates to create posts. We can also handle your social media — content, scheduling, engagement. Let us help you grow your presence.',
+  '🔁 <strong>No response?</strong> Try again in 2 weeks with a different angle ,  a new flyer, a special offer, or a helpful update. Silence isn\'t a no.',
+  '🎨 <strong>Need a professional look?</strong> We can help with your business branding ,  logos, flyers, letterheads, and social media graphics. You focus on selling, we\'ll make you look the part.',
+  '📱 <strong>Social media too much?</strong> Use the Success Kit templates to create posts. We can also handle your social media ,  content, scheduling, engagement. Let us help you grow your presence.',
   '🖼️ <strong>First impressions matter.</strong> A polished logo, professional flyer, and consistent branding build trust before you even speak. We can design it all for you.',
   '📸 <strong>Show off your work.</strong> Use our flyer templates to create before/after posts, customer testimonials, and case studies. Great content wins more leads.',
-  'Follow up within <strong>30 minutes</strong> of receiving a lead — speed triples your conversion rate.',
+  'Follow up within <strong>30 minutes</strong> of receiving a lead ,  speed triples your conversion rate.',
   'Hand-delivered flyers convert <strong>5x better</strong> than posted letters. A personal touch builds trust.',
   'Add <strong>more postcode areas</strong> in Settings to increase your daily lead volume at no extra cost.',
-  'Track your <strong>conversion rate</strong> in the Pipeline section — aim for 20%+ from contacted to won.',
+  'Track your <strong>conversion rate</strong> in the Pipeline section ,  aim for 20%+ from contacted to won.',
   'New leads land at <strong>9am every morning</strong>. Make it a habit to review them first thing.',
-  'Personalise every outreach — reference the <strong>specific address, company, or project</strong> in your first message.',
+  'Personalise every outreach ,  reference the <strong>specific address, company, or project</strong> in your first message.',
   'Most customers don\'t respond on first contact. Plan a <strong>3-touch sequence</strong> over 2 weeks.',
   'Use the <strong>CRM integration</strong> to automatically push leads into your existing workflow.',
-  'Probate leads convert best with a <strong>compassionate approach</strong> — educate, don\'t sell.',
+  'Probate leads convert best with a <strong>compassionate approach</strong> ,  educate, don\'t sell.',
   'For moving leads, <strong>same-day delivery</strong> of your flyer gives you first-mover advantage.',
   'New business leads are most responsive within <strong>48 hours</strong> of company registration.',
   'Planning leads: visit the property in person <strong>after 4pm</strong> when homeowners are home.',
   'Tender bids submitted <strong>24-48 hours early</strong> have a higher success rate.',
-  'Consistency beats intensity — small daily efforts compound into <strong>big results</strong> over time.',
+  'Consistency beats intensity ,  small daily efforts compound into <strong>big results</strong> over time.',
   'Review your <strong>weekly stats</strong> every Monday to spot trends and adjust your approach.',
   'The businesses that succeed with leads are the ones that <strong>act fast and follow up</strong>. Be first, be persistent.'
 ];
@@ -923,7 +923,7 @@ async function loadNotifications() {
     } catch(e) { console.log('Notifications error:', e); }
 }
 
-// Loading timeout — show message if dashboard takes too long
+// Loading timeout ,  show message if dashboard takes too long
 setTimeout(function() {
   var els = document.querySelectorAll('#pipeline-content, #delivery-content, #roi-content, #kpiGrid');
   for (var ei = 0; ei < els.length; ei++) {
@@ -977,7 +977,7 @@ function showSupport() {
     { q:'What happens when my free trial ends?', a:'Your leads pause but your account stays active with all your data intact. Upgrade anytime to restart delivery at 9am the next morning.' },
     { q:'Can I invite team members?', a:'Currently each account is single-user. Contact support if you need multi-user access and we\'ll help set it up.' },
     { q:'How do I connect my CRM?', a:'Go to Settings > CRM tab or use the CRM section on the dashboard. Enter your webhook URL and we\'ll push leads there daily at 9am.' },
-    { q:'Is Google Search Console set up?', a:'Yes — https://9amleads.com is verified and our sitemap is submitted. Blog content is being indexed automatically.' }
+    { q:'Is Google Search Console set up?', a:'Yes ,  https://9amleads.com is verified and our sitemap is submitted. Blog content is being indexed automatically.' }
   ];
   var faqHtml = faq.map(function(f, i) { return '<div style="margin-bottom:6px;background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow:hidden">' +
     '<div style="padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--text)" onclick="var p=this.nextElementSibling;p.style.display=p.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.faq-arrow\').style.transform=p.style.display===\'block\'?\'rotate(180deg)\':\'rotate(0)\'">' +
@@ -1152,7 +1152,7 @@ function getStepBody(step) {
     var areaStr = userAreas && userAreas.length > 0 ? userAreas.join(', ') : ses.target_areas || 'your selected areas';
     return '<div style="text-align:center;padding:4px 0"><div style="font-size:48px;margin-bottom:8px">&#127881;</div><div style="font-size:20px;font-weight:800;margin-bottom:6px;font-family:Outfit,sans-serif">Welcome to 9am Leads!</div><div style="font-size:12px;color:var(--muted2);line-height:1.7;margin-bottom:16px;text-align:left">' +
       'Your account is set up for <strong>' + userLeadTypes + '</strong> in <strong>' + areaStr + '</strong>.<br><br>' +
-      'Here\'s what happens next:<br><br> <strong>Daily Leads</strong> — New <strong>' + userLeadTypes + '</strong> opportunities delivered to your dashboard every morning at 9am.<br><br> <strong>Direct Mail Centre</strong> — Upload your own flyer design and we\'ll print and post it to your leads, or use the AI Introduction Letter generator.<br><br> <strong>Auto Send</strong> — Automatically mail your new leads every day — available on Pro and Enterprise plans.<br><br> <strong>Dashboard</strong> — Track everything: leads, sent mail, and outcomes.</div>' +
+      'Here\'s what happens next:<br><br> <strong>Daily Leads</strong> ,  New <strong>' + userLeadTypes + '</strong> opportunities delivered to your dashboard every morning at 9am.<br><br> <strong>Direct Mail Centre</strong> ,  Upload your own flyer design and we\'ll print and post it to your leads, or use the AI Introduction Letter generator.<br><br> <strong>Auto Send</strong> ,  Automatically mail your new leads every day ,  available on Pro and Enterprise plans.<br><br> <strong>Dashboard</strong> ,  Track everything: leads, sent mail, and outcomes.</div>' +
       '<button class="btn btn-primary" onclick="nextOnboardingStep(1)" style="width:100%;padding:14px"><i class="fas fa-arrow-right"></i> Start Setup</button></div>';
   } else if (step === 2) {
     var ses = getSession() || {};
@@ -1710,7 +1710,7 @@ var DM_TAB_ICONS = { overview:'fa-chart-simple', create:'fa-plus-circle', packs:
 var DM_HELP = {
   overview: '<i class="fas fa-trophy" style="color:var(--warning)"></i> <strong>Your success dashboard.</strong> See your milestones, health score, and recent campaign activity.',
   create: '<i class="fas fa-rocket" style="color:var(--primary)"></i> <strong>Send a campaign in 5 steps:</strong> Choose leads → Pick materials → Preview → Approve → Send.',
-  packs: '<i class="fas fa-box" style="color:var(--primary)"></i> <strong>Pre-made templates</strong> for your industry — plus Seasonal campaigns and the Marketplace. Pick one, apply your details, and send.',
+  packs: '<i class="fas fa-box" style="color:var(--primary)"></i> <strong>Pre-made templates</strong> for your industry ,  plus Seasonal campaigns and the Marketplace. Pick one, apply your details, and send.',
   'ai-builder': '<i class="fas fa-wand-magic-sparkles" style="color:var(--primary)"></i> <strong>Create flyers and letters with AI.</strong> Generate, edit, and save as templates. Also includes the Offer Generator.',
   templates: '<i class="fas fa-folder-open" style="color:var(--success)"></i> <strong>Your saved templates.</strong> Create, edit, duplicate, and approve. Use them in manual campaigns or Auto Send.',
   settings: '<i class="fas fa-gear" style="color:var(--primary)"></i> <strong>Auto Send.</strong> Automatically mail new leads every day. Set spend limits and choose your template.',
@@ -1723,7 +1723,7 @@ function showDirectMailCentre(tab) {
   localStorage.setItem('dmTab', tab);
   var main = document.querySelector('.main-content');
 
-  // Simple tab bar — just 8 core tabs
+  // Simple tab bar ,  just 8 core tabs
   var tabsHtml = DM_TABS.map(function(t) {
     var active = tab === t;
     return '<button onclick="showDirectMailCentre(\'' + t + '\')" style="padding:6px 12px;font-size:11px;font-weight:' + (active ? '700' : '500') + ';color:' + (active ? '#fff' : 'var(--text2)') + ';background:' + (active ? 'var(--primary)' : 'transparent') + ';border:none;border-radius:6px;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s;margin:0 1px" onmouseover="this.style.background=\'' + (active ? 'var(--primary)' : 'rgba(14,165,233,.06)') + '\'" onmouseout="this.style.background=\'' + (active ? 'var(--primary)' : 'transparent') + '\'"><i class="fas ' + DM_TAB_ICONS[t] + '" style="margin-right:5px;font-size:10px"></i>' + DM_TAB_NAMES[t] + '</button>';
@@ -2117,7 +2117,7 @@ function dmReviewContent() {
         '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'ai-review-section\').innerHTML=\'\'" style="font-size:10px;padding:5px 12px"><i class="fas fa-times"></i> Dismiss</button></div></div>';
       el.innerHTML = html;
     } else {
-      el.innerHTML = '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)">Review unavailable — content may be too short. Generate more content first.</div>';
+      el.innerHTML = '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)">Review unavailable ,  content may be too short. Generate more content first.</div>';
     }
   }).catch(function() { el.innerHTML = '<div style="padding:8px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.1);border-radius:6px;font-size:11px;color:var(--danger)">Review error. Please try again.</div>'; });
 }
@@ -2145,16 +2145,16 @@ function dmGenerateFlyerImage() {
         '<button class="btn btn-outline btn-sm" onclick="dmGenerateFlyerImage()" style="font-size:10px;padding:4px 10px"><i class="fas fa-sync"></i> Regenerate</button>' +
         '<button class="btn btn-outline btn-sm" onclick="dmRemoveFlyerImage()" style="font-size:10px;padding:4px 10px;color:var(--danger)"><i class="fas fa-times"></i> Remove</button></div></div>';
     } else {
-      if (section) section.innerHTML = '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2);text-align:center">Visual concept unavailable — continue with standard layout.</div>';
+      if (section) section.innerHTML = '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2);text-align:center">Visual concept unavailable ,  continue with standard layout.</div>';
     }
   }).catch(function() {
-    if (section) section.innerHTML = '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2);text-align:center">Visual concept unavailable — continue with standard layout.</div>';
+    if (section) section.innerHTML = '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2);text-align:center">Visual concept unavailable ,  continue with standard layout.</div>';
   });
 }
 
 function dmAcceptFlyerImage() {
   var section = document.getElementById('ai-image-section');
-  if (section) section.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:8px;font-size:11px;color:var(--success)"><i class="fas fa-check-circle"></i> Image accepted — will be used in PDF as background.</div>';
+  if (section) section.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:8px;font-size:11px;color:var(--success)"><i class="fas fa-check-circle"></i> Image accepted ,  will be used in PDF as background.</div>';
 }
 
 function dmRemoveFlyerImage() {
@@ -2293,13 +2293,13 @@ function showDMCreate(el) {
       '</div></div>';
   } else if (step === 2) {
     contentHtml = '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-file-alt" style="color:var(--primary)"></i> Step 2: Choose Material</div></div>' +
-      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Upload your flyer design (front &amp; back) and we\'ll print and post it to your leads — from as little as <strong>£1.80 printed &amp; delivered</strong>. Amazing value for professional direct mail.</p>' +
+      '<p style="font-size:12px;color:var(--muted2);margin-bottom:12px">Upload your flyer design (front &amp; back) and we\'ll print and post it to your leads ,  from as little as <strong>£1.80 printed &amp; delivered</strong>. Amazing value for professional direct mail.</p>' +
       '<div style="display:grid;gap:10px">' +
       '<div class="dm-mat" onclick="dmSelectMaterial(\'letter\')" id="dm-mat-letter" style="padding:14px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:var(--card2);transition:.2s;display:flex;align-items:center;gap:12px">' +
       '<div style="font-size:32px">📄</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">AI Introduction Letter</div><div style="font-size:10px;color:var(--muted2)">Professional letter generated from your business profile. Personalised for each lead. You can edit it before sending.</div></div>' +
       '</div>' +
       '<div class="dm-mat" onclick="dmSelectMaterial(\'upload\')" id="dm-mat-upload" style="padding:14px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:var(--card2);transition:.2s;display:flex;align-items:center;gap:12px">' +
-      '<div style="font-size:32px">📎</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">Upload My Own Design</div><div style="font-size:10px;color:var(--muted2)">Upload your flyer design (PDF, PNG, JPEG) — front and back. We print and post to your leads from just <strong>£1.80</strong> printed &amp; delivered. Amazing value!</div></div>' +
+      '<div style="font-size:32px">📎</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">Upload My Own Design</div><div style="font-size:10px;color:var(--muted2)">Upload your flyer design (PDF, PNG, JPEG) ,  front and back. We print and post to your leads from just <strong>£1.80</strong> printed &amp; delivered. Amazing value!</div></div>' +
       '</div>' +
       '</div></div>';
   } else if (step === 3) {
@@ -2319,7 +2319,7 @@ function showDMCreate(el) {
       '<div style="padding:14px;background:var(--card2);border:2px dashed var(--border);border-radius:10px;text-align:center;min-height:150px;cursor:pointer" onclick="document.getElementById(\'dm-back-upload\').click()">' +
       '<div id="dm-back-preview"><i class="fas fa-image" style="font-size:28px;color:var(--muted2);display:block;margin-bottom:4px"></i><div style="font-size:11px;font-weight:600;color:var(--text2)">Back Design</div><div style="font-size:10px;color:var(--muted2)">Optional</div></div>' +
       '<input type="file" id="dm-back-upload" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="dmPreviewUpload(this, \'dm-back-preview\')"></div></div>' +
-      '<div style="margin-top:10px;padding:10px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)"><i class="fas fa-info-circle" style="color:#f59e0b;margin-right:4px"></i>By sending, you confirm you have the right to market to these recipients. Upload your flyers front and back — we print and post them to your customers right away. From as little as <strong>£1.80</strong> printed &amp; delivered. Amazing value!</div>' +
+      '<div style="margin-top:10px;padding:10px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)"><i class="fas fa-info-circle" style="color:#f59e0b;margin-right:4px"></i>By sending, you confirm you have the right to market to these recipients. Upload your flyers front and back ,  we print and post them to your customers right away. From as little as <strong>£1.80</strong> printed &amp; delivered. Amazing value!</div>' +
       '<div style="margin-top:10px"><button class="btn btn-primary" onclick="dmApproveAndSend()" style="width:100%;padding:12px;font-size:14px"><i class="fas fa-paper-plane"></i> Send Campaign</button></div></div>';
   } else if (step === 4) {
     // Get stored campaign info
@@ -2334,7 +2334,7 @@ function showDMCreate(el) {
       '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Recipients</span><span id="dm-review-recipients" style="font-weight:600;color:var(--text)">' + dmLeadCount + ' leads selected</span></div>' +
       '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px"><span style="color:var(--text2)">Test Mode</span><span style="font-weight:600;color:var(--warning)"><i class="fas fa-flask"></i> Mock Provider</span></div>' +
       '</div>' +
-      '<div style="margin-top:12px;padding:10px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)"><i class="fas fa-info-circle" style="color:#f59e0b;margin-right:4px"></i>By approving, you confirm the content is accurate. <strong>Test Mode — No real mail will be sent.</strong></div>' +
+      '<div style="margin-top:12px;padding:10px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2)"><i class="fas fa-info-circle" style="color:#f59e0b;margin-right:4px"></i>By approving, you confirm the content is accurate. <strong>Test Mode ,  No real mail will be sent.</strong></div>' +
       '<label style="display:flex;align-items:flex-start;gap:8px;margin-top:10px;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:11px;line-height:1.5;cursor:pointer">' +
       '<input type="checkbox" id="dm-terms" style="accent-color:var(--primary);width:16px;height:16px;margin-top:2px;flex-shrink:0">' +
       '<span>I confirm that I have the right to market to these recipients and that my marketing materials comply with UK GDPR and direct marketing regulations. I understand that 9am Leads acts as a service provider only.</span></label>' +
@@ -2353,7 +2353,7 @@ function showDMCreate(el) {
             '<div style="display:flex;justify-content:space-between;padding:10px 10px;font-size:14px;font-weight:800;border-top:1px solid var(--border)"><span>Campaign Total</span><span>&pound;' + pr.total.toFixed(2) + '</span></div>' +
             '</div>' +
             '<div style="padding:10px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.1);border-radius:8px;font-size:11px;color:var(--muted2);text-align:center">' +
-            '<i class="fas fa-lock" style="color:var(--primary);margin-right:4px"></i>Secured by Stripe · Test Mode — No real payment will be taken' +
+            '<i class="fas fa-lock" style="color:var(--primary);margin-right:4px"></i>Secured by Stripe · Test Mode ,  No real payment will be taken' +
             '</div>' +
             '<button class="btn btn-primary" onclick="dmStripeCheckout()" style="width:100%;padding:12px"><i class="fas fa-credit-card"></i> Pay with Card</button>';
           document.getElementById('dm-payment-info').innerHTML = html;
@@ -2364,7 +2364,7 @@ function showDMCreate(el) {
         document.getElementById('dm-payment-info').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2)"><i class="fas fa-exclamation-circle"></i> Error loading pricing</div>';
       });
     } else {
-      document.getElementById('dm-payment-info').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted2)">Campaign ready. <strong>Test Mode — No real payment will be taken.</strong></div>' +
+      document.getElementById('dm-payment-info').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted2)">Campaign ready. <strong>Test Mode ,  No real payment will be taken.</strong></div>' +
         '<button class="btn btn-primary" onclick="dmSkipPayment()" style="width:100%;padding:12px"><i class="fas fa-paper-plane"></i> Send Test Campaign (Free)</button>';
     }
   }
@@ -2795,7 +2795,7 @@ function dmCheckAddressQuality() {
     (r.details || []).forEach(function(d) {
       if (d.valid) return;
       html += '<div style="padding:6px 8px;background:var(--card2);border:1px solid var(--border);border-radius:4px;margin-bottom:3px;font-size:10px">' +
-        (d.name ? '<strong>' + d.name + '</strong> — ' : '') + (d.address_line1 || '') + (d.city ? ', ' + d.city : '') + (d.postcode ? ' · ' + d.postcode : '') +
+        (d.name ? '<strong>' + d.name + '</strong> ,  ' : '') + (d.address_line1 || '') + (d.city ? ', ' + d.city : '') + (d.postcode ? ' · ' + d.postcode : '') +
         '<div style="color:var(--danger);font-size:9px;margin-top:2px">' + d.issues.join(', ') + '</div></div>';
     });
     html += '</div></div>';
@@ -2878,7 +2878,7 @@ function dmExecuteSend() {
         '<div style="font-size:40px;margin-bottom:8px"><i class="fas fa-envelope-open-text" style="font-size:18px;color:var(--primary)"></i></div>' +
         '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Test Campaign Sent Successfully</div>' +
         '<div style="font-size:11px;color:var(--muted2);margin-bottom:12px;line-height:1.6">Provider: <strong>' + r.provider + '</strong><br>Provider ID: <strong>' + r.provider_campaign_id + '</strong><br>Recipients: <strong>' + r.total_valid + '</strong><br>Invalid Addresses: <strong>' + (r.invalid_addresses || 0) + '</strong></div>' +
-        '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2);margin-bottom:12px"><i class="fas fa-flask" style="color:#f59e0b;margin-right:4px"></i>Test Mode — No real mail was sent. Status updates are simulated.</div>' +
+        '<div style="padding:8px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:6px;font-size:11px;color:var(--muted2);margin-bottom:12px"><i class="fas fa-flask" style="color:#f59e0b;margin-right:4px"></i>Test Mode ,  No real mail was sent. Status updates are simulated.</div>' +
         '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
         '<button class="btn btn-primary btn-sm" onclick="showDirectMailCentre(\'overview\')"><i class="fas fa-chart-pie"></i> View Overview</button>' +
         '<button class="btn btn-outline btn-sm" onclick="showDirectMailCentre(\'history\')"><i class="fas fa-clock"></i> Campaign History</button>' +
@@ -2927,7 +2927,7 @@ function showDMUpload(el) {
     '<div><label style="font-size:10px;color:var(--muted2);display:block;margin-bottom:3px">Description (optional)</label><input type="text" id="dm-up-desc" placeholder="e.g. Summer promo flyer v2" style="width:100%;padding:8px 10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></div>' +
     '<div style="padding:16px;border:2px dashed var(--border);border-radius:8px;text-align:center;background:var(--card2);cursor:pointer" onclick="document.getElementById(\'dm-file-input\').click()">' +
     '<i class="fas fa-file-upload" style="font-size:22px;color:var(--muted2);display:block;margin-bottom:6px"></i>' +
-    '<div style="font-size:11px;color:var(--muted2)" id="dm-file-label">Click to select file (PDF, PNG, JPG — max 10MB)</div>' +
+    '<div style="font-size:11px;color:var(--muted2)" id="dm-file-label">Click to select file (PDF, PNG, JPG ,  max 10MB)</div>' +
     '<input type="file" id="dm-file-input" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="dmFileSelected(event)">' +
     '</div>' +
     '<div id="dm-file-info" style="display:none;padding:8px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.1);border-radius:6px;font-size:11px;color:var(--text2)"></div>' +
@@ -3254,7 +3254,7 @@ function showDMSeasonal(el) {
     var container = document.getElementById('seasonal-content');
     if (!r || !r.campaigns) { if (container) container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted2)">Could not load recommendations</div>'; return; }
     var html = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:12px">' +
-      '<span style="font-weight:600">' + r.current_month + '</span> <span style="color:var(--muted2)">—</span> ' +
+      '<span style="font-weight:600">' + r.current_month + '</span> <span style="color:var(--muted2)">, </span> ' +
       '<span style="color:var(--muted2)">' + r.current_season + '</span> <span style="color:var(--muted2)">·</span> ' +
       '<span style="color:var(--muted2)">Your business:</span> <span class="badge badge-blue">' + (r.business_type || 'General') + '</span>' +
       '<span style="margin-left:auto;font-weight:600">' + r.total + ' recommendations</span></div>';
@@ -3423,7 +3423,7 @@ function showDMAnalytics(el) {
       var html = '<div class="card" style="background:linear-gradient(135deg,var(--card),rgba(14,165,233,.02));border:1px solid rgba(14,165,233,.1)"><div class="card-header"><div class="card-title" style="font-size:16px"><i class="fas fa-heartbeat" style="color:var(--primary)"></i> Marketing Health Score</div></div>' +
         '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">' +
         '<div style="width:80px;height:80px;border-radius:50%;background:conic-gradient(' + color + ' ' + h.score + '%, var(--card2) ' + h.score + '%);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:22px;font-weight:900;color:' + color + '">' + h.score + '</span></div>' +
-        '<div style="flex:1;min-width:150px"><div style="font-size:16px;font-weight:700;color:var(--text)">' + h.score + '/100 — ' + h.level + '</div>' +
+        '<div style="flex:1;min-width:150px"><div style="font-size:16px;font-weight:700;color:var(--text)">' + h.score + '/100 ,  ' + h.level + '</div>' +
         '<div style="font-size:11px;color:var(--muted2);margin-top:2px">' + h.completed + ' of ' + h.total + ' factors complete</div>';
       if (h.recommendations && h.recommendations.length > 0) {
         html += '<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">' +
@@ -4179,19 +4179,19 @@ function showRetentionOffers(plan) {
     '<div style="display:grid;gap:10px">' +
     '<div onclick="acceptRetention(\'areas\')" style="cursor:pointer;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;gap:12px;transition:all .2s" onmouseover="this.style.borderColor=\'var(--primary)\'" onmouseout="this.style.borderColor=\'\'">' +
     '<div style="width:40px;height:40px;border-radius:10px;background:rgba(14,165,233,.1);display:flex;align-items:center;justify-content:center;font-size:18px">🌍</div>' +
-    '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:13px">Expand Your Coverage</div><div style="font-size:11px;color:var(--muted2)">Add more postcode areas at no extra cost — get more leads daily</div></div>' +
+    '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:13px">Expand Your Coverage</div><div style="font-size:11px;color:var(--muted2)">Add more postcode areas at no extra cost ,  get more leads daily</div></div>' +
     '<span style="font-size:11px;color:var(--primary);font-weight:600;white-space:nowrap">Free upgrade →</span></div>' +
     '<div onclick="acceptRetention(\'all-uk\')" style="cursor:pointer;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;gap:12px;transition:all .2s" onmouseover="this.style.borderColor=\'var(--primary)\'" onmouseout="this.style.borderColor=\'\'">' +
     '<div style="width:40px;height:40px;border-radius:10px;background:rgba(99,102,241,.1);display:flex;align-items:center;justify-content:center;font-size:18px">🇬🇧</div>' +
-    '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:13px">All-UK Access</div><div style="font-size:11px;color:var(--muted2)">Unlock nationwide coverage for the same price — unlimited potential</div></div>' +
+    '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:13px">All-UK Access</div><div style="font-size:11px;color:var(--muted2)">Unlock nationwide coverage for the same price ,  unlimited potential</div></div>' +
     '<span style="font-size:11px;color:var(--primary);font-weight:600;white-space:nowrap">Free upgrade →</span></div>' +
     '<div onclick="acceptRetention(\'discount\')" style="cursor:pointer;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;gap:12px;transition:all .2s" onmouseover="this.style.borderColor=\'var(--primary)\'" onmouseout="this.style.borderColor=\'\'">' +
     '<div style="width:40px;height:40px;border-radius:10px;background:rgba(34,197,94,.1);display:flex;align-items:center;justify-content:center;font-size:18px"><i class="fas fa-coins" style="font-size:18px;color:var(--primary)"></i></div>' +
-    '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:13px">50% Off Next 2 Months</div><div style="font-size:11px;color:var(--muted2)">Half price for 2 months — keep your leads coming while you evaluate</div></div>' +
+    '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:13px">50% Off Next 2 Months</div><div style="font-size:11px;color:var(--muted2)">Half price for 2 months ,  keep your leads coming while you evaluate</div></div>' +
     '<span style="font-size:11px;color:var(--primary);font-weight:600;white-space:nowrap">Claim offer →</span></div>' +
     '<div onclick="acceptRetention(\'pause\')" style="cursor:pointer;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;gap:12px;transition:all .2s" onmouseover="this.style.borderColor=\'var(--primary)\'" onmouseout="this.style.borderColor=\'\'">' +
     '<div style="width:40px;height:40px;border-radius:10px;background:rgba(245,158,11,.1);display:flex;align-items:center;justify-content:center;font-size:18px">⏸️</div>' +
-    '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:13px">Pause Subscription</div><div style="font-size:11px;color:var(--muted2)">Pause up to 3 months — keep your data and settings, restart anytime</div></div>' +
+    '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:13px">Pause Subscription</div><div style="font-size:11px;color:var(--muted2)">Pause up to 3 months ,  keep your data and settings, restart anytime</div></div>' +
     '<span style="font-size:11px;color:var(--primary);font-weight:600;white-space:nowrap">Pause instead →</span></div>' +
     '</div>' +
     '<div style="text-align:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">' +
@@ -5021,7 +5021,7 @@ function renderFilterSummary(filters, product) {
       if (pf.maxBedrooms) pl.push('Max ' + pf.maxBedrooms + ' beds');
       if (pf.propertyType) pl.push(pf.propertyType);
       if (pf.maxPrice) pl.push('Max \u00a3' + Number(pf.maxPrice).toLocaleString());
-      // SSTC/Under Offer status filters are defaults — not shown as active filters
+      // SSTC/Under Offer status filters are defaults ,  not shown as active filters
     } else if (p === 'probate') {
       pl.push('Territory only');
     } else if (p === 'newbusiness') {
