@@ -429,7 +429,7 @@ async function addSignupPostcode() {
   var area = (input?.value || '').trim();
   var err = document.getElementById('s-postcode-error');
   err.style.display = 'none';
-  if (!area || area.length < 2) { err.textContent = 'Please enter a city, county or region name'; err.style.display = 'block'; return; }
+  if (!area || area.length < 1) { err.textContent = 'Please select or type a postcode area'; err.style.display = 'block'; return; }
   var plan = document.querySelector('input[name="plan"]:checked')?.value;
   var isUnlimited = plan === 'pro' || plan === 'enterprise';
   var maxAreas = isUnlimited ? 999 : 3;
