@@ -5248,5 +5248,29 @@ document.addEventListener('click', function(e) {
   else if (tool === 'upgrade') showPlans();
 });
 
+
+
+// ===== TOOL BUTTON FIX - DIRECT WIRING =====
+setTimeout(function() {
+  var cards = document.querySelectorAll('.tool-card[data-tool]');
+  for (var ti = 0; ti < cards.length; ti++) {
+    (function(card) {
+      var tool = card.getAttribute('data-tool');
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        console.log('Tool clicked: ' + tool);
+        if (tool === 'scrollToLeads') { scrollToLeads(); }
+        else if (tool === 'exportRange') { exportRange('csv'); }
+        else if (tool === 'settings') { showPage('settings'); }
+        else if (tool === 'campaigns') { showPage('campaigns'); }
+        else if (tool === 'support') { showPage('support'); }
+        else if (tool === 'upgrade') { showPlans(); }
+      });
+    })(cards[ti]);
+  }
+  console.log('Tool buttons wired: ' + cards.length);
+}, 500);
 </script>
 </body></html>
