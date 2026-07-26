@@ -703,7 +703,7 @@ function showPaymentSetupPrompt() {
   div.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:420px;width:100%;text-align:center">' +
     '<div style="font-size:32px;margin-bottom:8px">🔒</div>' +
     '<h3 style="font-size:16px;font-weight:700;margin-bottom:6px">Set Up Payment</h3>' +
-    '<p style="font-size:12px;color:var(--muted2);line-height:1.6;margin-bottom:12px">Add a card to continue after your free trial. <strong>You won\'t be charged today.</strong> After 7 days, you\'ll automatically continue on the Starter plan at <strong>£25/week</strong>.</p>' +
+    '<p style="font-size:12px;color:var(--muted2);line-height:1.6;margin-bottom:12px">Add a card to continue your free trial. <strong>No money is taken today.</strong> Your card will only be charged <strong>£25</strong> after your 7-day trial ends — and only if you haven\'t cancelled. <strong>Cancel anytime</strong> from your dashboard with one click — no questions asked.</p>' +
     '<div id="onboarding-card-element" style="padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;margin-bottom:12px"></div>' +
     '<div id="payment-setup-error" style="color:#ef4444;font-size:11px;margin-bottom:8px;display:none"></div>' +
     '<button class="btn btn-primary" id="save-onboarding-card-btn" onclick="saveOnboardingCard()" style="width:100%"><i class="fas fa-lock"></i> Save Card</button>' +
@@ -718,7 +718,7 @@ function loadStripeForOnboarding() {
   var script = document.createElement('script');
   script.src = 'https://js.stripe.com/v3/';
   script.onload = function() {
-    window._onboardingStripe = Stripe('pk_live_51TU3yrADspDnFpfBivn1ex8gHGvOCNqxNaB66UWWNSTY4Sxf5tEAs7FBwHn6FDgkF5tJANqipox8h0nQ5s5yVq3j00KblDrNmC');
+    window._onboardingStripe = Stripe('pk_live_51TU3yrADspDnFpfBQsDgZnG7xWuvIVGbsTaI64lndyWG2XESKGg59kXSAPlTBPk1XenmqXGvpRNpwbIXja7X3b3I00XH6kzmIi');
     var elements = window._onboardingStripe.elements();
     window._onboardingCard = elements.create('card', { style: { base: { fontSize: '14px', color: '#fff', fontFamily: 'Inter, sans-serif', '::placeholder': { color: '#5c6480' } } } });
     window._onboardingCard.mount('#onboarding-card-element');
@@ -2596,7 +2596,7 @@ function dmAddCard() {
         var script = document.createElement('script');
         script.src = 'https://js.stripe.com/v3/';
         script.onload = function() {
-          var stripe = Stripe('pk_live_51TU3yrADspDnFpfBivn1ex8gHGvOCNqxNaB66UWWNSTY4Sxf5tEAs7FBwHn6FDgkF5tJANqipox8h0nQ5s5yVq3j00KblDrNmC'); // Will be replaced with actual publishable key
+          var stripe = Stripe('pk_live_51TU3yrADspDnFpfBQsDgZnG7xWuvIVGbsTaI64lndyWG2XESKGg59kXSAPlTBPk1XenmqXGvpRNpwbIXja7X3b3I00XH6kzmIi'); // Will be replaced with actual publishable key
           var elements = stripe.elements();
           var cardElement = elements.create('card', { style: { base: { fontSize: '14px', color: '#fff', fontFamily: 'Inter, sans-serif' } } });
           cardElement.mount('#stripe-card-element');
@@ -4623,13 +4623,26 @@ function showLowLeadsTip(postcodeCount, leadsThisWeek) {
 }
 
 async function cancelSubscription() {
-  if (!confirm('Are you sure you want to cancel your subscription?\n\nYour access will continue until the end of the current billing period, then your account will be disabled.')) return;
-  const data = await apiFetch('/api/subscription/cancel', { method: 'POST' });
-  if (data && data.success) {
-    alert(data.message);
-    location.reload();
+  var planName = document.getElementById('sub-plan-name')?.textContent || '';
+  var isTrial = planName === 'Free Trial';
+  if (isTrial) {
+    if (!confirm('Cancel your free trial? Your card will not be charged. You can restart anytime.')) return;
+    const data = await apiFetch('/api/cancel-trial', { method: 'POST' });
+    if (data && data.success) {
+      alert(data.message || 'Trial cancelled. No charge made.');
+      location.reload();
+    } else {
+      alert('Failed to cancel. Please email hello@9amleads.com for assistance.');
+    }
   } else {
-    alert('Failed to cancel. Please email hello@9amleads.com for assistance.');
+    if (!confirm('Are you sure you want to cancel your subscription?\n\nYour access will continue until the end of the current billing period, then your account will be disabled.')) return;
+    const data = await apiFetch('/api/subscription/cancel', { method: 'POST' });
+    if (data && data.success) {
+      alert(data.message);
+      location.reload();
+    } else {
+      alert('Failed to cancel. Please email hello@9amleads.com for assistance.');
+    }
   }
 }
 
