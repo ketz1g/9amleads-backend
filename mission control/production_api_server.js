@@ -1064,8 +1064,28 @@ app.post('/api/auth/signup', async (req, res) => {
 
     const token = generateToken(customer);
 
-    // Leads are delivered at 09:00 UK time Mon-Fri via the delivery cron.
-    // No immediate generation - ensures all customers get leads at the same scheduled time.
+    // Generate leads immediately so they're ready for the next 09:00 UK delivery
+    (async function() {
+      try {
+        console.log('[SIGNUP] Pre-generating leads for ' + customer.id);
+        var rmScraperFast = require('./rightmove_scraper_v2');
+        var movingLeads = await rmScraperFast.collectMovingLeads();
+        if (!movingLeads || movingLeads.length === 0) { console.log('[SIGNUP] No leads available yet'); return; }
+        var db2 = getDb();
+        var now2 = new Date().toISOString();
+        var saved = 0;
+        var dailyLimits = { free_trial: 5, starter: 5, pro: 15, enterprise: 40 };
+        var custPlan = customer.plan || 'free_trial';
+        var maxLeads = dailyLimits[custPlan] || 5;
+        for (var li = 0; li < Math.min(movingLeads.length, maxLeads); li++) {
+          var p = movingLeads[li];
+          db2.leads.push({ id: require('uuid').v4(), customer_id: customer.id, product: 'moving', data: JSON.stringify(p), status: 'new', delivered: 0, created_at: now2, delivered_at: null });
+          saved++;
+        }
+        saveDb();
+        if (saved > 0) console.log('[SIGNUP] Pre-stored ' + saved + ' leads for 09:00 UK delivery');
+      } catch(e) { console.log('[SIGNUP] Lead generation error:', e.message); }
+    })();
 
     res.status(201).json({
       token,
@@ -4400,7 +4420,9 @@ cron.schedule('0 8 * * *', async () => {
           'metadata[plan]': 'starter',
           off_session: 'true',
           'payment_behavior': 'default_incomplete'
-        });
+        , {
+    timezone: 'Europe/London'
+  }});
         if (subResult && subResult.id) {
           db.prepare('UPDATE customers SET plan = ?, stripe_subscription_id = ?, trial_ends = NULL WHERE id = ?').run('starter', subResult.id, cust.id);
           console.log('[TRIAL AUTO-CHARGE] Charged £25 for ' + cust.email + ', upgraded to starter');
@@ -4429,7 +4451,9 @@ app.post('/api/cancel-trial', authMiddleware, async (req, res) => {
 
 cron.schedule('0 10 * * *', async () => {
   console.log('[CAMPAIGN] Starting campaign email check...');
-  var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && c.marketing_consent === 1; });
+  var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && c.marketing_consent === 1; , {
+    timezone: 'Europe/London'
+  }});
   var sent = 0;
   for (var ci = 0; ci < customers.length; ci++) {
     var cust = customers[ci];
