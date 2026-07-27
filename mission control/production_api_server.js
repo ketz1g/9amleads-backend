@@ -4420,9 +4420,7 @@ cron.schedule('0 8 * * *', async () => {
           'metadata[plan]': 'starter',
           off_session: 'true',
           'payment_behavior': 'default_incomplete'
-        , {
-    timezone: 'Europe/London'
-  }});
+        });
         if (subResult && subResult.id) {
           db.prepare('UPDATE customers SET plan = ?, stripe_subscription_id = ?, trial_ends = NULL WHERE id = ?').run('starter', subResult.id, cust.id);
           console.log('[TRIAL AUTO-CHARGE] Charged £25 for ' + cust.email + ', upgraded to starter');
@@ -4451,9 +4449,7 @@ app.post('/api/cancel-trial', authMiddleware, async (req, res) => {
 
 cron.schedule('0 10 * * *', async () => {
   console.log('[CAMPAIGN] Starting campaign email check...');
-  var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && c.marketing_consent === 1; , {
-    timezone: 'Europe/London'
-  }});
+  var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && c.marketing_consent === 1; });
   var sent = 0;
   for (var ci = 0; ci < customers.length; ci++) {
     var cust = customers[ci];
