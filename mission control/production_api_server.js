@@ -1064,28 +1064,8 @@ app.post('/api/auth/signup', async (req, res) => {
 
     const token = generateToken(customer);
 
-    // Generate leads immediately for the new customer (fire and forget)
-    (async function() {
-      try {
-        console.log('[SIGNUP] Generating leads for new customer ' + customer.id);
-        var rmScraperFast = require('./rightmove_scraper_v2');
-        var movingLeads = await rmScraperFast.collectMovingLeads();
-        if (!movingLeads || movingLeads.length === 0) { console.log('[SIGNUP] No leads generated at signup'); return; }
-        var db2 = getDb();
-        var now2 = new Date().toISOString();
-        var saved = 0;
-        var dailyLimits = { free_trial: 5, starter: 5, pro: 15, enterprise: 40 };
-        var custPlan = customer.plan || 'free_trial';
-        var maxLeads = dailyLimits[custPlan] || 5;
-        for (var li = 0; li < Math.min(movingLeads.length, maxLeads); li++) {
-          var p = movingLeads[li];
-          db2.leads.push({ id: require('uuid').v4(), customer_id: customer.id, product: 'moving', data: JSON.stringify(p), status: 'new', delivered: 0, created_at: now2, delivered_at: null });
-          saved++;
-        }
-        saveDb();
-        if (saved > 0) console.log('[SIGNUP] Stored ' + saved + ' leads for new customer');
-      } catch(e) { console.log('[SIGNUP] Lead generation error:', e.message); }
-    })();
+    // Leads are delivered at 09:00 UK time Mon-Fri via the delivery cron.
+    // No immediate generation - ensures all customers get leads at the same scheduled time.
 
     res.status(201).json({
       token,
