@@ -1,73 +1,63 @@
-// Dashboard fixes loaded externally to bypass script 1 errors
+// Dashboard fixes - loaded externally to bypass main script errors
 setTimeout(function(){
   try {
-    // Define tool functions on window
-    window.scrollToLeads = function() {
-      var el = document.getElementById('leads-section');
-      if (el) el.scrollIntoView({behavior:'smooth'});
-    };
-    window.showPlans = function() {
-      var el = document.getElementById('sub-section');
-      if (el) el.scrollIntoView({behavior:'smooth'});
-    };
-    window.exportRange = function(fmt) {
-      var s = localStorage.getItem('mld_portal_session');
-      if (!s) return;
-      var sess = JSON.parse(s);
-      fetch('/api/leads', {headers:{'Authorization':'Bearer '+sess.token}})
-      .then(function(r){return r.json();})
-      .then(function(leads){
-        if (!Array.isArray(leads) || leads.length === 0) { alert('No leads to export'); return; }
-        var csv = 'Address,Type,Price,Bedrooms,Status,Date\n';
-        leads.forEach(function(l){
-          csv += (l.title||'')+','+(l.propertyType||'')+','+(l.price||0)+','+(l.bedrooms||0)+','+(l.status||'')+','+((l.created_at||'').split('T')[0]||'')+'\n';
-        });
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-        a.download = 'leads.csv';
-        a.click();
-      });
-    };
-    window.showPage = function(page) {
-      if (page === 'settings') { var el = document.getElementById('lead-filters-section'); if (el) el.scrollIntoView({behavior:'smooth'}); }
-      else if (page === 'leads') { var el = document.getElementById('leads-section'); if (el) el.scrollIntoView({behavior:'smooth'}); }
-      else if (page === 'support') { alert('Contact us at hello@9amleads.com'); }
-      else if (page === 'campaigns') { alert('Marketing materials available on paid plans'); }
-    };
-
-    // Clean up duplicate tool cards
-    var toolGrid = document.querySelector('.tools-grid');
-    if (toolGrid) {
-      var cards = toolGrid.querySelectorAll('.tool-card');
-      var seen = {};
-      for (var i = cards.length - 1; i >= 0; i--) {
-        var tool = cards[i].getAttribute('data-tool') || '';
-        if (seen[tool]) { cards[i].remove(); }
-        else { seen[tool] = true; }
-      }
-    }
-
-    // Update KPIs
     var s = localStorage.getItem('mld_portal_session');
-    if (s) {
-      var sess = JSON.parse(s);
-      var greetEl = document.getElementById('greeting-name');
-      if (greetEl && sess.name) greetEl.textContent = sess.name;
-      fetch('/api/leads', {headers:{'Authorization':'Bearer '+sess.token}})
-      .then(function(r){return r.json();})
-      .then(function(leads){
-        if (!Array.isArray(leads)) return;
-        var today = new Date().toISOString().split('T')[0];
-        var todayLeads = leads.filter(function(l){return (l.created_at||'').startsWith(today);});
-        var kpiToday = document.getElementById('kpi-today');
-        if (kpiToday) kpiToday.textContent = todayLeads.length;
-        var kpiWeek = document.getElementById('kpi-week');
-        if (kpiWeek) kpiWeek.textContent = leads.length;
-        var kpiMonth = document.getElementById('kpi-month');
-        if (kpiMonth) kpiMonth.textContent = leads.length;
-        var els = document.querySelectorAll('#delivery-loading, [class*=loading]');
-        for (var ei = 0; ei < els.length; ei++) { if (els[ei]) els[ei].style.display = 'none'; }
-      });
-    }
-  } catch(e) {}
-}, 100);
+    if (!s) return;
+    var sess = JSON.parse(s);
+    var token = sess ? sess.token : null;
+    if (!token) return;
+
+    // Update greeting
+    var greetEl = document.getElementById('greeting-name');
+    if (greetEl && sess.name) greetEl.textContent = sess.name;
+
+    // Fetch leads
+    fetch('/api/leads', {headers:{'Authorization':'Bearer '+token}})
+    .then(function(r){return r.json();})
+    .then(function(leads){
+      if (!Array.isArray(leads)) return;
+      var today = new Date().toISOString().split('T')[0];
+      var todayLeads = leads.filter(function(l){return (l.created_at||'').startsWith(today);});
+
+      // Update KPIs
+      var kpiToday = document.getElementById('kpi-today');
+      if (kpiToday) kpiToday.textContent = todayLeads.length;
+      var kpiWeek = document.getElementById('kpi-week');
+      if (kpiWeek) kpiWeek.textContent = leads.length;
+      var kpiMonth = document.getElementById('kpi-month');
+      if (kpiMonth) kpiMonth.textContent = leads.length;
+
+      // Hide loading spinners
+      var els = document.querySelectorAll('#delivery-loading, [class*=loading]');
+      for (var ei = 0; ei < els.length; ei++) { if (els[ei]) els[ei].style.display = 'none'; }
+
+      // Render lead list in the leads section
+      var leadSection = document.getElementById('leads-section');
+      if (!leadSection) return;
+      var leadList = leadSection.querySelector('.lead-list, #lead-list, [class*=lead]');
+      if (!leadList) {
+        // Create lead list if not present
+        var lr = todayLeads.map(function(l, i){
+          var data = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
+          var addr = data.address || data.title || 'Property ' + (i+1);
+          var price = data.price ? '£' + (data.price).toLocaleString() : '';
+          var beds = data.bedrooms ? data.bedrooms + ' bed' : '';
+          var type = data.propertyType || '';
+          var status = data.listingStatus || 'SSTC';
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px">' +
+            '<div><strong>' + addr + '</strong><br><span style="color:var(--muted2);font-size:10px">' + [beds, type, price].filter(Boolean).join(' · ') + '</span></div>' +
+            '<span class="badge badge-green" style="font-size:9px">' + status + '</span></div>';
+        }).join('');
+        if (leadSection.querySelector('.card')) {
+          var card = leadSection.querySelector('.card');
+          if (card) {
+            var listDiv = document.createElement('div');
+            listDiv.style.cssText = 'max-height:300px;overflow-y:auto';
+            listDiv.innerHTML = lr || '<div style="text-align:center;padding:14px;color:var(--muted2)">No leads today</div>';
+            card.appendChild(listDiv);
+          }
+        }
+      }
+    }).catch(function(){});
+  } catch(e){}
+}, 200);
