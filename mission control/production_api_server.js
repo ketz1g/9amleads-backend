@@ -8249,11 +8249,27 @@ function syncCustomers(product) {
                 console.log('[SCRAPER] Rightmove: free scraper gave ' + (leads ? leads.length : 0) + ', trying Apify supplement...');
                 var apifyLeads = await new Promise(function(r) {
                   var bd = JSON.stringify({
-                    listUrls: [{ url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=REGION%5E87490&includeSSTC=true&sortType=6' }],
+                    listUrls: [
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5EE1&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5EE14&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5EE15&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5EE16&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5EE17&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5ENW1&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5ENW3&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5ENW5&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5ENW6&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5ENW8&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5EEN1&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5EEN2&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5EEN3&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5EEN4&includeSSTC=true&sortType=6' },
+                      { url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5EEN5&includeSSTC=true&sortType=6' }
+                    ],
                     propertyUrls: [], monitoringMode: false, fullPropertyDetails: true,
                     includePriceHistory: false, includeNearestSchools: false,
                     enableDelistingTracker: false, addEmptyTrackerRecord: false,
-                    maxProperties: 30,
+                    maxProperties: 100,
                     proxy: { useApifyProxy: true, apifyProxyGroups: ['RESIDENTIAL'] }
                   });
                   var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=1024&timeout=300', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd), 'Accept': 'application/json' }, timeout: 360000 }, function(res) {
