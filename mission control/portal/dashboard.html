@@ -5445,4 +5445,31 @@ initPaymentOnLoad();
     }).catch(function(){});
   }catch(e){}
 })();
+
+// ===== TOOL BUTTON FUNCTIONS =====
+window.scrollToLeads = function() { try { var el=document.getElementById("leads-section");if(el)el.scrollIntoView({behavior:"smooth"}); } catch(e){} };
+window.showPlans = function() { try { var el=document.getElementById("sub-section");if(el)el.scrollIntoView({behavior:"smooth"}); } catch(e){} };
+window.exportRange = function(fmt) {
+  try {
+    fetch("/api/leads",{headers:{"Authorization":"Bearer "+(JSON.parse(localStorage.getItem("mld_portal_session")||"{}").token||"")}})
+    .then(function(r){return r.json();})
+    .then(function(leads){
+      if(!Array.isArray(leads)||leads.length===0){alert("No leads to export");return;}
+      var csv="Address,Type,Price,Bedrooms,Status,Date\n";
+      leads.forEach(function(l){csv+=(l.title||"")+","+(l.propertyType||"")+","+(l.price||0)+","+(l.bedrooms||0)+","+(l.status||"")+","+((l.created_at||"").split("T")[0]||"")+"\n";});
+      var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="leads.csv";a.click();
+    }).catch(function(){alert("Could not export");});
+  } catch(e){}
+};
+window.showPage = function(page) {
+  try {
+    if(page==="settings"){var el=document.getElementById("lead-filters-section");if(el)el.scrollIntoView({behavior:"smooth"});}
+    else if(page==="leads"){var el=document.getElementById("leads-section");if(el)el.scrollIntoView({behavior:"smooth"});}
+    else if(page==="support"){alert("Contact us at hello@9amleads.com");}
+    else if(page==="campaigns"){alert("Marketing materials available on paid plans");}
+    else if(page==="direct-mail"){alert("Print & Post available on Pro plans");}
+    else if(page==="business-profile"){alert("Business profile available on paid plans");}
+    else{var el=document.getElementById("dashboard-bottom-section");if(el)el.scrollIntoView({behavior:"smooth"});}
+  } catch(e){}
+};
 </script>
