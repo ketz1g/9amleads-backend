@@ -5028,16 +5028,16 @@ if (typeof showPlans !== "function") {
 }
 if (typeof showPage !== "function") {
   window.showPage = function(page) {
-    try {
-      if(page==="settings") document.getElementById("lead-filters-section")?.scrollIntoView({behavior:"smooth"});
-      else if(page==="leads") document.getElementById("leads-section")?.scrollIntoView({behavior:"smooth"});
-      else if(page==="support") showModal("Support",'<p style="color:var(--muted2);text-align:center;padding:20px">Contact us at <a href="mailto:hello@9amleads.com">hello@9amleads.com</a></p>');
-      else if(page==="campaigns") showModal("Marketing Materials",'<p style="color:var(--muted2);text-align:center;padding:20px">Marketing materials are available on paid plans. <a href="#" onclick="closeModal();showPlans()" style="color:var(--primary)">View Plans</a></p>');
-      else if(page==="business-profile") showModal("Business Profile",'<p style="color:var(--muted2);text-align:center;padding:20px">Set up your business profile from the paid dashboard.</p>');
-      else if(page==="direct-mail") showModal("Direct Mail",'<p style="color:var(--muted2);text-align:center;padding:20px">Direct Mail is available on Pro and above.</p>');
-      else document.getElementById("dashboard-bottom-section")?.scrollIntoView({behavior:"smooth"});
-    } catch(e) {}
-  };
+  try {
+    if(page==="settings") document.getElementById("lead-filters-section")?.scrollIntoView({behavior:"smooth"});
+    else if(page==="leads") document.getElementById("leads-section")?.scrollIntoView({behavior:"smooth"});
+    else if(page==="support") alert("Contact us at hello@9amleads.com");
+    else if(page==="campaigns") alert("Marketing materials are available on paid plans. Upgrade to access.");
+    else if(page==="business-profile") alert("Business profile is available on paid plans.");
+    else if(page==="direct-mail") alert("Print & Post is available on Pro plans.");
+    else document.getElementById("dashboard-bottom-section")?.scrollIntoView({behavior:"smooth"});
+  } catch(e){}
+};
 }
 if (typeof exportRange !== "function") {
   window.exportRange = function(format) {
@@ -5474,4 +5474,6 @@ window.showPage = function(page) {
 };
 
 document.addEventListener("click",function(e){var card=e.target.closest(".tool-card[data-tool]");if(!card)return;var tool=card.getAttribute("data-tool");if(tool==="scrollToLeads"&&window.scrollToLeads)window.scrollToLeads();else if(tool==="exportRange"&&window.exportRange)window.exportRange("csv");else if(tool==="settings"&&window.showPage)window.showPage("settings");else if(tool==="campaigns"&&window.showPage)window.showPage("campaigns");else if(tool==="support"&&window.showPage)window.showPage("support");else if(tool==="upgrade"&&window.showPlans)window.showPlans();},true);
+
+if(typeof showModal!=="function"){window.showModal=function(t,c){alert(t+": "+c.replace(/<[^>]+>/g,""))};}
 </script>
