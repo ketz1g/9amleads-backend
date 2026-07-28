@@ -5472,4 +5472,6 @@ window.showPage = function(page) {
     else{var el=document.getElementById("dashboard-bottom-section");if(el)el.scrollIntoView({behavior:"smooth"});}
   } catch(e){}
 };
+
+document.addEventListener("click",function(e){var card=e.target.closest(".tool-card[data-tool]");if(!card)return;var tool=card.getAttribute("data-tool");if(tool==="scrollToLeads"&&window.scrollToLeads)window.scrollToLeads();else if(tool==="exportRange"&&window.exportRange)window.exportRange("csv");else if(tool==="settings"&&window.showPage)window.showPage("settings");else if(tool==="campaigns"&&window.showPage)window.showPage("campaigns");else if(tool==="support"&&window.showPage)window.showPage("support");else if(tool==="upgrade"&&window.showPlans)window.showPlans();},true);
 </script>
