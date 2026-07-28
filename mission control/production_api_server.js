@@ -8261,7 +8261,7 @@ function syncCustomers(product) {
                     includePriceHistory: false, includeNearestSchools: false,
                     enableDelistingTracker: false, addEmptyTrackerRecord: false,
                     maxProperties: 60,
-                    proxy: { useApifyProxy: true, apifyProxyGroups: ['RESIDENTIAL'] }
+                    proxy: { useApifyProxy: true, apifyProxyGroups: ['BUYPROXIES94952'] }
                   });
                   var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=1024&timeout=300', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd), 'Accept': 'application/json' }, timeout: 360000 }, function(res) {
                     var bt = ''; res.on('data', function(c) { bt += c; }); res.on('end', function() {
