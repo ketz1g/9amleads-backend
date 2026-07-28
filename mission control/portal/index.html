@@ -873,7 +873,7 @@ function doSignup() {
       } else {
         // Redirect to dashboard onboarding - card setup happens there
         localStorage.removeItem('payment_setup_done');
-        window.location.href = '/portal/dashboard.html?onboard=1&card=1';
+        window.location.href = '/portal/dashboard.html?onboard=1';
       }
     } else {
       error.textContent = d.error || 'Signup failed. Please try again.'; error.style.display = 'block';
