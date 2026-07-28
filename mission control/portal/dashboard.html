@@ -5416,4 +5416,33 @@ if (typeof loadDashboard !== 'function') {
 initPaymentOnLoad();
 
 </script>
-</body></html>
+</body></html>\n<!-- TEST -->\n
+<script>
+(function(){
+  try{
+    var s=localStorage.getItem("mld_portal_session");
+    if(!s)return;
+    var sess=JSON.parse(s);
+    if(!sess||!sess.token)return;
+    var greetEl=document.getElementById("greeting-name");
+    if(greetEl&&sess.name)greetEl.textContent=sess.name;
+    fetch("/api/leads",{headers:{"Authorization":"Bearer "+sess.token}})
+    .then(function(r){return r.json();})
+    .then(function(leads){
+      if(!Array.isArray(leads))return;
+      var today=new Date().toISOString().split("T")[0];
+      var todayLeads=leads.filter(function(l){
+        var c=l.created_at||"";return c.startsWith(today);
+      });
+      var kpiToday=document.getElementById("kpi-today");
+      if(kpiToday)kpiToday.textContent=todayLeads.length;
+      var kpiWeek=document.getElementById("kpi-week");
+      if(kpiWeek)kpiWeek.textContent=leads.length;
+      var kpiMonth=document.getElementById("kpi-month");
+      if(kpiMonth)kpiMonth.textContent=leads.length;
+      var els=document.querySelectorAll(".loading-indicator,#delivery-loading,[class*=loading]");
+      for(var ei=0;ei<els.length;ei++){if(els[ei])els[ei].style.display="none";}
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
