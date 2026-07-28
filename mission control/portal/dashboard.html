@@ -251,18 +251,12 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="card">
 <div class="card-title" style="font-size:15px"><i class="fas fa-rocket" style="color:var(--primary)"></i> Your Tools</div>
 <div class="tools-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-<a href="javascript:scrollToLeads()" class="tool-card" data-tool="scrollToLeads" style="display:flex;flex-direction:column;align-items:center;padding:18px 12px;border-radius:10px;cursor:pointer;text-decoration:none;background:linear-gradient(135deg,rgba(14,165,233,.06),transparent);border:1px solid rgba(14,165,233,.15);color:inherit"><div class="icon"><i class="fas fa-clipboard-list" style="font-size:18px;color:var(--primary)"></i></div><h3>View Leads</h3><p style="font-size:10px;color:var(--muted2)">Browse &amp; manage by day</p></a>
-<a href="javascript:exportRange('csv')" class="tool-card" data-tool="exportRange" style="display:flex;flex-direction:column;align-items:center;padding:18px 12px;border-radius:10px;cursor:pointer;text-decoration:none;background:linear-gradient(135deg,rgba(99,102,241,.06),transparent);border:1px solid rgba(99,102,241,.15);color:inherit"><div class="icon"><i class="fas fa-chart-bar" style="font-size:18px;color:var(--primary)"></i></div><h3>Export Data</h3><p style="font-size:10px;color:var(--muted2)">CSV or JSON download</p></a>
-<a href="javascript:showPage('settings')" class="tool-card" data-tool="settings" style="display:flex;flex-direction:column;align-items:center;padding:18px 12px;border-radius:10px;cursor:pointer;text-decoration:none;background:linear-gradient(135deg,rgba(34,197,94,.06),transparent);border:1px solid rgba(34,197,94,.15);color:inherit"><div class="icon">⚙️</div><h3>Settings</h3><p style="font-size:10px;color:var(--muted2)">Plan, billing &amp; profile</p></a>
-<a href="javascript:showPage('campaigns')" class="tool-card" data-tool="campaigns" style="display:flex;flex-direction:column;align-items:center;padding:18px 12px;border-radius:10px;cursor:pointer;text-decoration:none;background:linear-gradient(135deg,rgba(245,158,11,.06),transparent);border:1px solid rgba(245,158,11,.15);color:inherit"><div class="icon"><i class="fas fa-box" style="font-size:18px;color:var(--primary)"></i></div><h3>Marketing Materials</h3><p style="font-size:10px;color:var(--muted2)">Outreach templates</p></a>
-<a href="javascript:showPage('support')" class="tool-card" data-tool="support" style="display:flex;flex-direction:column;align-items:center;padding:18px 12px;border-radius:10px;cursor:pointer;text-decoration:none;background:linear-gradient(135deg,rgba(168,85,247,.06),transparent);border:1px solid rgba(168,85,247,.15);color:inherit"><div class="icon">💬</div><h3>Help &amp; FAQ</h3><p style="font-size:10px;color:var(--muted2)">Support &amp; quick answers</p></a>
-<a href="javascript:showPlans()" class="tool-card" data-tool="upgrade" style="display:flex;flex-direction:column;align-items:center;padding:18px 12px;border-radius:10px;cursor:pointer;text-decoration:none;background:linear-gradient(135deg,rgba(239,68,68,.06),transparent);border:1px solid rgba(239,68,68,.15);color:inherit"><div class="icon"><i class="fas fa-chart-line" style="font-size:18px;color:var(--primary)"></i></div><h3>Upgrade Plan</h3><p style="font-size:10px;color:var(--muted2)">More leads per day</p></a>
-<h3>View Leads</h3><p>Browse &amp; manage by day</p></div>
-<div class="tool-card" data-tool="exportRange" onclick="if(window.exportRange)window.exportRange('csv')" style="background:linear-gradient(135deg,rgba(99,102,241,.06),transparent);border:1px solid rgba(99,102,241,.15)"><div class="icon"><i class="fas fa-chart-bar" style="font-size:18px;color:var(--primary)"></i></div><h3>Export Data</h3><p>CSV or JSON download</p></div>
-<div class="tool-card" data-tool="settings" onclick="if(window.showPage)window.showPage('settings')" style="background:linear-gradient(135deg,rgba(34,197,94,.06),transparent);border:1px solid rgba(34,197,94,.15)"><div class="icon">⚙️</div><h3>Settings</h3><p>Plan, billing &amp; profile</p></div>
-<div class="tool-card" data-tool="campaigns" onclick="if(window.showPage)window.showPage('campaigns')" style="background:linear-gradient(135deg,rgba(245,158,11,.06),transparent);border:1px solid rgba(245,158,11,.15)"><div class="icon"><i class="fas fa-box" style="font-size:18px;color:var(--primary)"></i></div><h3>Marketing Materials</h3><p>Outreach templates</p></div>
-<div class="tool-card" data-tool="support" onclick="if(window.showPage)window.showPage('support')" style="background:linear-gradient(135deg,rgba(168,85,247,.06),transparent);border:1px solid rgba(168,85,247,.15)"><div class="icon">💬</div><h3>Help &amp; FAQ</h3><p>Support &amp; quick answers</p></div>
-<div class="tool-card" data-tool="upgrade" onclick="if(window.showPlans)window.showPlans()" style="background:linear-gradient(135deg,rgba(239,68,68,.06),transparent);border:1px solid rgba(239,68,68,.15)"><div class="icon"><i class="fas fa-chart-line" style="font-size:18px;color:var(--primary)"></i></div><h3>Upgrade Plan</h3><p>More leads per day</p></div>
+<div class="tool-card" data-tool="scrollToLeads" style="background:linear-gradient(135deg,rgba(14,165,233,.06),transparent);border:1px solid rgba(14,165,233,.15)"><div class="icon"><i class="fas fa-clipboard-list" style="font-size:18px;color:var(--primary)"></i></div><h3>View Leads</h3><p>Browse &amp; manage by day</p></div>
+<div class="tool-card" data-tool="exportRange" style="background:linear-gradient(135deg,rgba(99,102,241,.06),transparent);border:1px solid rgba(99,102,241,.15)"><div class="icon"><i class="fas fa-chart-bar" style="font-size:18px;color:var(--primary)"></i></div><h3>Export Data</h3><p>CSV or JSON download</p></div>
+<div class="tool-card" data-tool="settings" style="background:linear-gradient(135deg,rgba(34,197,94,.06),transparent);border:1px solid rgba(34,197,94,.15)"><div class="icon">⚙️</div><h3>Settings</h3><p>Plan, billing &amp; profile</p></div>
+<div class="tool-card" data-tool="campaigns" style="background:linear-gradient(135deg,rgba(245,158,11,.06),transparent);border:1px solid rgba(245,158,11,.15)"><div class="icon"><i class="fas fa-box" style="font-size:18px;color:var(--primary)"></i></div><h3>Marketing Materials</h3><p>Outreach templates</p></div>
+<div class="tool-card" data-tool="support" style="background:linear-gradient(135deg,rgba(168,85,247,.06),transparent);border:1px solid rgba(168,85,247,.15)"><div class="icon">💬</div><h3>Help &amp; FAQ</h3><p>Support &amp; quick answers</p></div>
+<div class="tool-card" data-tool="upgrade" style="background:linear-gradient(135deg,rgba(239,68,68,.06),transparent);border:1px solid rgba(239,68,68,.15)"><div class="icon"><i class="fas fa-chart-line" style="font-size:18px;color:var(--primary)"></i></div><h3>Upgrade Plan</h3><p>More leads per day</p></div>
 </div>
 </div>
 <div class="tool-card" data-tool="settings" style="background:linear-gradient(135deg,rgba(34,197,94,.06),transparent);border:1px solid rgba(34,197,94,.15)"><div class="icon">⚙️</div><h3>Settings</h3><p>Plan, billing &amp; profile</p></div>
@@ -2592,8 +2586,7 @@ function showDMSettings(el, canAutoSend) {
         '<div class="card" style="' + (s.enable_auto_send ? 'border:2px solid var(--success)' : '') + '">' +
         '<label style="display:flex;align-items:center;gap:14px;padding:6px 0;cursor:' + (canAutoSend ? 'pointer' : 'not-allowed') + '">' +
         '<input type="checkbox" id="dm-enable" ' + checked('enable_auto_send') + ' style="accent-color:var(--success);width:20px;height:20px"' + (canAutoSend ? ' onchange="dmToggleAutoSend()"' : ' disabled') + '>' +
-        '<div><div style="font-weight:700;font-size:15px;color:var(--text)">Automatically print and post to my new leads eve
-        <div class="card"><div class="card-title"><i class="fas fa-tag" style="color:var(--primary)"></i> Print &amp; Post Pricing</div><p style="font-size:12px;color:var(--muted2);margin-bottom:10px;line-height:1.5">You only pay when we print and post. No monthly fees, no minimum spend. Prices include full colour printing, folding, and First Class postage.</p><div id="dm-pricing" style="display:grid;gap:6px"><div style="text-align:center;color:var(--muted2);font-size:12px"><i class="fas fa-spinner fa-spin"></i> Loading prices...</div></div><p style="font-size:10px;color:var(--muted2);margin-top:6px">Cancelled leads cost nothing. You only pay for what gets sent.</p></div>ry day</div>' +
+        '<div><div style="font-weight:700;font-size:15px;color:var(--text)">Automatically print and post to my new leads every morning. Set your budget, pick a template, and we handle the printing, folding, and posting. You get proof of sending for every campaign.', '<div class="card"><div class="card-title"><i class="fas fa-tag" style="color:var(--primary)"></i> Print &amp; Post Pricing</div><p style="font-size:12px;color:var(--muted2);margin-bottom:10px;line-height:1.5">You only pay when we print and post. No monthly fees, no minimum spend. Prices include full colour printing, folding, and First Class postage.</p><div id="dm-pricing" style="display:grid;gap:6px"><div style="text-align:center;color:var(--muted2);font-size:12px"><i class="fas fa-spinner fa-spin"></i> Loading prices...</div></div><p style="font-size:10px;color:var(--muted2);margin-top:6px">Cancelled leads cost nothing. You only pay for what gets sent.</p></div>' +
         (canAutoSend ? '<div style="font-size:11px;color:var(--muted2);margin-top:2px">Each morning, we print your chosen template and post it to every new lead. You get proof of sending in your dashboard.</div>' : '<div style="font-size:11px;color:var(--warning);margin-top:2px">Available on <strong>Pro</strong> and <strong>Enterprise</strong> plans. <a href="#" onclick="showPlans();return false" style="color:var(--primary);font-weight:600">Upgrade now &rarr;</a></div>') +
         '</div></label></div>' +
 
@@ -5034,16 +5027,16 @@ if (typeof showPlans !== "function") {
 }
 if (typeof showPage !== "function") {
   window.showPage = function(page) {
-  try {
-    if(page==="settings") document.getElementById("lead-filters-section")?.scrollIntoView({behavior:"smooth"});
-    else if(page==="leads") document.getElementById("leads-section")?.scrollIntoView({behavior:"smooth"});
-    else if(page==="support") alert("Contact us at hello@9amleads.com");
-    else if(page==="campaigns") alert("Marketing materials are available on paid plans. Upgrade to access.");
-    else if(page==="business-profile") alert("Business profile is available on paid plans.");
-    else if(page==="direct-mail") alert("Print & Post is available on Pro plans.");
-    else document.getElementById("dashboard-bottom-section")?.scrollIntoView({behavior:"smooth"});
-  } catch(e){}
-};
+    try {
+      if(page==="settings") document.getElementById("lead-filters-section")?.scrollIntoView({behavior:"smooth"});
+      else if(page==="leads") document.getElementById("leads-section")?.scrollIntoView({behavior:"smooth"});
+      else if(page==="support") showModal("Support",'<p style="color:var(--muted2);text-align:center;padding:20px">Contact us at <a href="mailto:hello@9amleads.com">hello@9amleads.com</a></p>');
+      else if(page==="campaigns") showModal("Marketing Materials",'<p style="color:var(--muted2);text-align:center;padding:20px">Marketing materials are available on paid plans. <a href="#" onclick="closeModal();showPlans()" style="color:var(--primary)">View Plans</a></p>');
+      else if(page==="business-profile") showModal("Business Profile",'<p style="color:var(--muted2);text-align:center;padding:20px">Set up your business profile from the paid dashboard.</p>');
+      else if(page==="direct-mail") showModal("Direct Mail",'<p style="color:var(--muted2);text-align:center;padding:20px">Direct Mail is available on Pro and above.</p>');
+      else document.getElementById("dashboard-bottom-section")?.scrollIntoView({behavior:"smooth"});
+    } catch(e) {}
+  };
 }
 if (typeof exportRange !== "function") {
   window.exportRange = function(format) {
@@ -5422,65 +5415,4 @@ if (typeof loadDashboard !== 'function') {
 initPaymentOnLoad();
 
 </script>
-<script src="/portal/dashboard-fix.js"></script>
-</body></html>\n<!-- TEST -->\n
-<script>
-(function(){
-  try{
-    var s=localStorage.getItem("mld_portal_session");
-    if(!s)return;
-    var sess=JSON.parse(s);
-    if(!sess||!sess.token)return;
-    var greetEl=document.getElementById("greeting-name");
-    if(greetEl&&sess.name)greetEl.textContent=sess.name;
-    fetch("/api/leads",{headers:{"Authorization":"Bearer "+sess.token}})
-    .then(function(r){return r.json();})
-    .then(function(leads){
-      if(!Array.isArray(leads))return;
-      var today=new Date().toISOString().split("T")[0];
-      var todayLeads=leads.filter(function(l){
-        var c=l.created_at||"";return c.startsWith(today);
-      });
-      var kpiToday=document.getElementById("kpi-today");
-      if(kpiToday)kpiToday.textContent=todayLeads.length;
-      var kpiWeek=document.getElementById("kpi-week");
-      if(kpiWeek)kpiWeek.textContent=leads.length;
-      var kpiMonth=document.getElementById("kpi-month");
-      if(kpiMonth)kpiMonth.textContent=leads.length;
-      var els=document.querySelectorAll(".loading-indicator,#delivery-loading,[class*=loading]");
-      for(var ei=0;ei<els.length;ei++){if(els[ei])els[ei].style.display="none";}
-    }).catch(function(){});
-  }catch(e){}
-})();
-
-// ===== TOOL BUTTON FUNCTIONS =====
-window.scrollToLeads = function() { try { var el=document.getElementById("leads-section");if(el)el.scrollIntoView({behavior:"smooth"}); } catch(e){} };
-window.showPlans = function() { try { var el=document.getElementById("sub-section");if(el)el.scrollIntoView({behavior:"smooth"}); } catch(e){} };
-window.exportRange = function(fmt) {
-  try {
-    fetch("/api/leads",{headers:{"Authorization":"Bearer "+(JSON.parse(localStorage.getItem("mld_portal_session")||"{}").token||"")}})
-    .then(function(r){return r.json();})
-    .then(function(leads){
-      if(!Array.isArray(leads)||leads.length===0){alert("No leads to export");return;}
-      var csv="Address,Type,Price,Bedrooms,Status,Date\n";
-      leads.forEach(function(l){csv+=(l.title||"")+","+(l.propertyType||"")+","+(l.price||0)+","+(l.bedrooms||0)+","+(l.status||"")+","+((l.created_at||"").split("T")[0]||"")+"\n";});
-      var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="leads.csv";a.click();
-    }).catch(function(){alert("Could not export");});
-  } catch(e){}
-};
-window.showPage = function(page) {
-  try {
-    if(page==="settings"){var el=document.getElementById("lead-filters-section");if(el)el.scrollIntoView({behavior:"smooth"});}
-    else if(page==="leads"){var el=document.getElementById("leads-section");if(el)el.scrollIntoView({behavior:"smooth"});}
-    else if(page==="support"){alert("Contact us at hello@9amleads.com");}
-    else if(page==="campaigns"){alert("Marketing materials available on paid plans");}
-    else if(page==="direct-mail"){alert("Print & Post available on Pro plans");}
-    else if(page==="business-profile"){alert("Business profile available on paid plans");}
-    else{var el=document.getElementById("dashboard-bottom-section");if(el)el.scrollIntoView({behavior:"smooth"});}
-  } catch(e){}
-};
-
-document.addEventListener("click",function(e){var card=e.target.closest(".tool-card[data-tool]");if(!card)return;var tool=card.getAttribute("data-tool");if(tool==="scrollToLeads"&&window.scrollToLeads)window.scrollToLeads();else if(tool==="exportRange"&&window.exportRange)window.exportRange("csv");else if(tool==="settings"&&window.showPage)window.showPage("settings");else if(tool==="campaigns"&&window.showPage)window.showPage("campaigns");else if(tool==="support"&&window.showPage)window.showPage("support");else if(tool==="upgrade"&&window.showPlans)window.showPlans();},true);
-
-if(typeof showModal!=="function"){window.showModal=function(t,c){alert(t+": "+c.replace(/<[^>]+>/g,""))};}
-</script>
+</body></html>
