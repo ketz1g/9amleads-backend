@@ -1,11 +1,43 @@
 // Dashboard fixes - loaded externally to bypass main script errors
-setTimeout(function(){
+(function(){
   try {
     var s = localStorage.getItem('mld_portal_session');
     if (!s) return;
     var sess = JSON.parse(s);
     var token = sess ? sess.token : null;
     if (!token) return;
+
+    // Define tool button functions globally
+    window.scrollToLeads = function() {
+      var el = document.getElementById('leads-section');
+      if (el) el.scrollIntoView({behavior:'smooth'});
+    };
+    window.showPage = function(page) {
+      if (page === 'settings') { var el = document.getElementById('lead-filters-section'); if (el) el.scrollIntoView({behavior:'smooth'}); }
+      else if (page === 'leads') { var el = document.getElementById('leads-section'); if (el) el.scrollIntoView({behavior:'smooth'}); }
+      else if (page === 'support') { alert('Contact us at hello@9amleads.com'); }
+      else if (page === 'campaigns') { alert('Marketing materials available on paid plans'); }
+    };
+    window.showPlans = function() {
+      var el = document.getElementById('sub-section');
+      if (el) el.scrollIntoView({behavior:'smooth'});
+    };
+    window.exportRange = function(fmt) {
+      fetch('/api/leads', {headers:{'Authorization':'Bearer '+token}})
+      .then(function(r){return r.json();})
+      .then(function(leads){
+        if (!Array.isArray(leads) || leads.length === 0) { alert('No leads to export'); return; }
+        var csv = 'Address,Type,Price,Bedrooms,Status,Date\n';
+        leads.forEach(function(l){
+          var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
+          csv += (d.address||'')+','+(d.propertyType||'')+','+(d.price||0)+','+(d.bedrooms||0)+','+(l.status||'')+','+((l.created_at||'').split('T')[0]||'')+'\n';
+        });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+        a.download = 'leads.csv';
+        a.click();
+      }).catch(function(){alert('Could not export');});
+    };
 
     // Update greeting
     var greetEl = document.getElementById('greeting-name');
@@ -60,4 +92,4 @@ setTimeout(function(){
       }
     }).catch(function(){});
   } catch(e){}
-}, 200);
+})();
