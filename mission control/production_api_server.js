@@ -8243,8 +8243,8 @@ function syncCustomers(product) {
               }
               console.log('[SCRAPER] Rightmove: new=' + rmFresh24.fresh.length + ' listed=' + rmFresh24.fallback.length + ' updated=' + rmFreshUpdate.fresh.length + ' used=' + leads.length);
             }
-            // Try Apify supplement alongside free scraper for maximum coverage
-            if (apifyKey) {
+            // Apify supplement disabled - actor was blocked. Free scraper expanded to 13 regions x 4-20 pages.
+            if (false && apifyKey) {
               try {
                 console.log('[SCRAPER] Rightmove: free scraper gave ' + (leads ? leads.length : 0) + ', trying Apify supplement...');
                 var apifyLeads = await new Promise(function(r) {

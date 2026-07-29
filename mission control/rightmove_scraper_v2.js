@@ -5,16 +5,19 @@
 const https = require('https');
 
 const LOCATIONS = [
-  { id: 'REGION%5E87490', name: 'London', pages: 16 },
-  { id: 'REGION%5E87464', name: 'Manchester' },
-  { id: 'REGION%5E87463', name: 'Birmingham' },
-  { id: 'REGION%5E87479', name: 'Essex' },
-  { id: 'REGION%5E87475', name: 'Hertfordshire' },
-  { id: 'REGION%5E87477', name: 'Kent' },
-  { id: 'REGION%5E87465', name: 'Surrey' },
-  { id: 'REGION%5E87473', name: 'Sussex' },
-  { id: 'REGION%5E87480', name: 'Hampshire' },
-  { id: 'REGION%5E87466', name: 'Thames Valley' },
+  { id: 'REGION%5E87490', name: 'London', pages: 20 },
+  { id: 'REGION%5E87464', name: 'Manchester', pages: 4 },
+  { id: 'REGION%5E87463', name: 'Birmingham', pages: 4 },
+  { id: 'REGION%5E87479', name: 'Essex', pages: 4 },
+  { id: 'REGION%5E87475', name: 'Hertfordshire', pages: 4 },
+  { id: 'REGION%5E87477', name: 'Kent', pages: 4 },
+  { id: 'REGION%5E87465', name: 'Surrey', pages: 4 },
+  { id: 'REGION%5E87473', name: 'Sussex', pages: 4 },
+  { id: 'REGION%5E87480', name: 'Hampshire', pages: 4 },
+  { id: 'REGION%5E87466', name: 'Thames Valley', pages: 4 },
+  { id: 'REGION%5E87474', name: 'Yorkshire', pages: 4 },
+  { id: 'REGION%5E87493', name: 'Scotland', pages: 4 },
+  { id: 'REGION%5E87494', name: 'Wales', pages: 4 },
 ];
 
 function fetchRightmovePage(locationId, locationName, pageIndex) {
