@@ -1,0 +1,134 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Leads · 9amLeads</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{--accent:#0ea5e9;--bg:#050505;--card:#0a0a0a;--card2:#0f111a;--border:#1a1a1a;--text:#f5f5f5;--text2:#94a3b8;--muted:#64748b;--success:#22c55e;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--ff-b);color:var(--text);background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased}
+.container{max-width:960px;margin:0 auto;padding:20px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:10px}
+.top h1{font-family:var(--ff-h);font-size:22px;font-weight:800}.top .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;text-decoration:none;font-family:var(--ff-b);transition:.2s}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#0284c7);color:#fff}.btn-primary:hover{opacity:.9}
+.btn-outline{background:var(--card);border:1px solid var(--border);color:var(--text2)}.btn-outline:hover{border-color:var(--accent);color:var(--text)}
+.badge{padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(34,197,94,0.1);color:var(--success);white-space:nowrap}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .num{font-size:26px;font-weight:900;color:var(--accent);font-family:var(--ff-h)}
+.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filters select,.filters input{padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:var(--ff-b)}
+.filters input{flex:1;min-width:150px}
+.lead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;transition:.2s}
+.lead:hover{border-color:var(--accent)}
+.lead .addr{font-weight:600;font-size:13px}
+.lead .meta{font-size:11px;color:var(--text2);margin-top:2px}
+.lead .price{font-weight:700;font-size:14px;color:var(--text)}
+.empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px}
+.empty i{font-size:40px;display:block;margin-bottom:12px;color:var(--border)}
+.loading{text-align:center;padding:60px;color:var(--muted);font-size:13px}
+@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}.top{flex-direction:column;align-items:stretch}}
+</style></head><body>
+<div class="container">
+<div class="top">
+<div><h1><i class="fas fa-list" style="color:var(--accent);margin-right:6px"></i> My Leads</h1><div class="sub" id="date-range">Today</div></div>
+<div style="display:flex;gap:6px">
+<a class="btn btn-outline" href="/portal/dashboard.html"><i class="fas fa-arrow-left"></i> Dashboard</a>
+<a class="btn btn-primary" href="#" onclick="exportLeads();return false"><i class="fas fa-download"></i> Export</a>
+</div></div>
+
+<div class="stat-grid" id="stats">
+<div class="stat"><div class="num" id="stat-today">0</div><div class="lbl">Today</div></div>
+<div class="stat"><div class="num" id="stat-week">0</div><div class="lbl">This Week</div></div>
+<div class="stat"><div class="num" id="stat-month">0</div><div class="lbl">This Month</div></div>
+<div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">All Time</div></div>
+</div>
+
+<div class="loading" id="leads-loading"><i class="fas fa-spinner fa-spin"></i>&nbsp; Loading leads...</div>
+<div id="leads-container"></div>
+<div class="empty" id="no-leads" style="display:none">
+<i class="fas fa-inbox"></i>
+<h3 style="font-size:16px;font-weight:700;margin-bottom:6px">No leads yet</h3>
+<p style="font-size:12px;color:var(--text2)">Your leads will appear here after the 9am daily delivery.</p>
+</div>
+</div>
+
+<script>
+(function(){
+  var s = localStorage.getItem('mld_portal_session');
+  if (!s) { window.location.href = '/portal/'; return; }
+  var sess = JSON.parse(s);
+  var token = sess ? sess.token : null;
+  if (!token) { window.location.href = '/portal/'; return; }
+
+  window.exportLeads = function() {
+    var x = new XMLHttpRequest();
+    x.open('GET', '/api/leads', true);
+    x.setRequestHeader('Authorization', 'Bearer ' + token);
+    x.onload = function() {
+      try {
+        var leads = JSON.parse(x.responseText);
+        if (!Array.isArray(leads) || !leads.length) { alert('No leads to export'); return; }
+        var csv = 'Address,Type,Price,Bedrooms,Status,Date\n';
+        leads.forEach(function(l){
+          var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
+          csv += (d.address||'')+','+(d.propertyType||'')+','+(d.price||0)+','+(d.bedrooms||0)+','+(l.status||'')+','+((l.created_at||'').split('T')[0]||'')+'\n';
+        });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+        a.download = 'leads.csv'; a.click();
+      } catch(e) { alert('Export error'); }
+    };
+    x.send();
+  };
+
+  var x = new XMLHttpRequest();
+  x.open('GET', '/api/leads', true);
+  x.setRequestHeader('Authorization', 'Bearer ' + token);
+  x.onload = function() {
+    try {
+      var leads = JSON.parse(x.responseText);
+      if (!Array.isArray(leads)) return;
+      
+      document.getElementById('leads-loading').style.display = 'none';
+      
+      var today = new Date().toISOString().split('T')[0];
+      var weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      var monthStart = today.substring(0, 7);
+      
+      var tl = leads.filter(function(l){return (l.created_at||'').startsWith(today);});
+      var wl = leads.filter(function(l){return (l.created_at||'') >= weekStart.toISOString().split('T')[0];});
+      var ml = leads.filter(function(l){return (l.created_at||'').startsWith(monthStart);});
+      
+      document.getElementById('stat-today').textContent = tl.length;
+      document.getElementById('stat-week').textContent = wl.length;
+      document.getElementById('stat-month').textContent = ml.length;
+      document.getElementById('stat-total').textContent = leads.length;
+      
+      if (leads.length === 0) {
+        document.getElementById('no-leads').style.display = 'block';
+        return;
+      }
+      
+      // Show leads sorted by date (newest first)
+      leads.sort(function(a,b){return(b.created_at||'').localeCompare(a.created_at||'');});
+      
+      var html = '';
+      for (var i = 0; i < leads.length; i++) {
+        var l = leads[i];
+        var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
+        var dateStr = l.created_at ? new Date(l.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
+        html += '<div class="lead"><div><div class="addr">' + (d.address||d.title||'Property') + '</div>' +
+          '<div class="meta">' + [(d.bedrooms ? d.bedrooms+' bed' : ''), d.propertyType||'', dateStr].filter(Boolean).join(' \u00b7 ') + '</div></div>' +
+          '<div style="text-align:right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div>' +
+          '<span class="badge">' + (d.listingStatus||'New') + '</span></div></div>';
+      }
+      document.getElementById('leads-container').innerHTML = html;
+    } catch(e) { document.getElementById('leads-loading').textContent = 'Error loading leads'; }
+  };
+  x.send();
+})();
+</script>
+</body></html>
