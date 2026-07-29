@@ -1,0 +1,134 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard · 9amLeads</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#050505;color:#f5f5f5;min-height:100vh;padding:20px;max-width:960px;margin:0 auto}
+h1{font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;margin-bottom:4px}
+.sub{font-size:12px;color:#94a3b8;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.card{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;padding:16px;text-align:center}
+.num{font-size:28px;font-weight:900;color:#0ea5e9;font-family:'Outfit',sans-serif}
+.lbl{font-size:11px;color:#64748b;margin-top:2px}
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px}
+.btn{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;padding:18px 14px;text-align:center;cursor:pointer;color:#f5f5f9;text-decoration:none;font-size:12px;font-weight:600;transition:.2s;display:block}
+.btn:hover{border-color:#0ea5e9;transform:translateY(-2px)}
+.btn .icon{font-size:22px;margin-bottom:6px}
+.lead{padding:10px 0;border-bottom:1px solid #1a1a1a;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.lead .addr{font-weight:600}.lead .meta{font-size:11px;color:#94a3b8}
+.badge{padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(34,197,94,0.1);color:#22c55e}
+.loading{text-align:center;padding:40px;color:#64748b;font-size:13px}
+.section{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;padding:20px;margin-bottom:16px}
+.section h2{font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.top .btn{display:inline-flex;padding:8px 16px;font-size:12px;gap:4px}
+</style></head><body>
+<div class="top">
+<div><h1 id="greeting">Good morning</h1><div class="sub" id="status">Loading your dashboard...</div></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<a class="btn" href="/portal/" style="padding:8px 16px;font-size:11px"><i class="fas fa-cog"></i> Settings</a>
+<a class="btn" href="/portal/" style="padding:8px 16px;font-size:11px"><i class="fas fa-arrow-up"></i> Upgrade</a>
+</div></div>
+
+<div class="loading" id="main-loading"><i class="fas fa-spinner fa-spin"></i>&nbsp; Loading your data...</div>
+<div class="grid" id="kpi-grid" style="display:none">
+<div class="card"><div class="num" id="kpi-today">0</div><div class="lbl">Today</div></div>
+<div class="card"><div class="num" id="kpi-week">0</div><div class="lbl">This Week</div></div>
+<div class="card"><div class="num" id="kpi-month">0</div><div class="lbl">This Month</div></div>
+<div class="card"><div class="num" id="kpi-contact">0</div><div class="lbl">Contacted</div></div>
+</div>
+
+<div class="section">
+<h2><i class="fas fa-rocket" style="color:#0ea5e9;font-size:13px"></i> Your Tools</h2>
+<div class="tools">
+<a class="btn" href="#" onclick="scrollToLeads();return false"><div class="icon">📋</div>View Leads</a>
+<a class="btn" href="#" onclick="exportLeads();return false"><div class="icon">📊</div>Export Data</a>
+<a class="btn" href="/portal/"><div class="icon">⚙️</div>Settings</a>
+<a class="btn" href="mailto:hello@9amleads.com"><div class="icon">💬</div>Help</a>
+<a class="btn" href="/portal/"><div class="icon">📈</div>Upgrade</a>
+</div></div>
+
+<div class="section">
+<h2><i class="fas fa-list" style="color:#0ea5e9;font-size:13px"></i> Today's Leads</h2>
+<div class="loading" id="leads-loading"><i class="fas fa-spinner fa-spin"></i>&nbsp; Loading leads...</div>
+<div id="lead-list"></div>
+<div id="no-leads" style="display:none;text-align:center;padding:20px;color:#64748b;font-size:13px">No leads today.</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+<script>
+(function(){
+  var s = localStorage.getItem('mld_portal_session');
+  if (!s) { window.location.href = '/portal/'; return; }
+  var sess = JSON.parse(s);
+  var token = sess ? sess.token : null;
+  if (!token) { window.location.href = '/portal/'; return; }
+  
+  var greet = document.getElementById('greeting');
+  if (sess.name) greet.textContent = 'Good morning, ' + sess.name;
+  document.getElementById('status').textContent = 'Last updated: just now';
+  
+  window.scrollToLeads = function() {
+    document.getElementById('lead-list').scrollIntoView({behavior:'smooth'});
+  };
+  window.exportLeads = function() {
+    var x = new XMLHttpRequest();
+    x.open('GET', '/api/leads', true);
+    x.setRequestHeader('Authorization', 'Bearer ' + token);
+    x.onload = function() {
+      try {
+        var leads = JSON.parse(x.responseText);
+        if (!Array.isArray(leads) || !leads.length) { alert('No leads to export'); return; }
+        var csv = 'Address,Type,Price,Bedrooms,Status,Date\n';
+        leads.forEach(function(l){
+          var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
+          csv += (d.address||'')+','+(d.propertyType||'')+','+(d.price||0)+','+(d.bedrooms||0)+','+(l.status||'')+','+((l.created_at||'').split('T')[0]||'')+'\n';
+        });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+        a.download = 'leads.csv'; a.click();
+      } catch(e) { alert('Export error'); }
+    };
+    x.send();
+  };
+  
+  var x = new XMLHttpRequest();
+  x.open('GET', '/api/leads', true);
+  x.setRequestHeader('Authorization', 'Bearer ' + token);
+  x.onload = function() {
+    try {
+      var leads = JSON.parse(x.responseText);
+      if (!Array.isArray(leads)) return;
+      
+      document.getElementById('main-loading').style.display = 'none';
+      document.getElementById('kpi-grid').style.display = 'grid';
+      document.getElementById('leads-loading').style.display = 'none';
+      
+      var today = new Date().toISOString().split('T')[0];
+      var tl = leads.filter(function(l){return (l.created_at||'').startsWith(today);});
+      
+      document.getElementById('kpi-today').textContent = tl.length;
+      document.getElementById('kpi-week').textContent = leads.length;
+      document.getElementById('kpi-month').textContent = leads.length;
+      
+      if (tl.length > 0) {
+        document.getElementById('no-leads').style.display = 'none';
+        var html = '';
+        for (var i = 0; i < tl.length; i++) {
+          var l = tl[i];
+          var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
+          html += '<div class="lead"><div><div class="addr">' + (d.address||d.title||'Property') + '</div><div class="meta">' + 
+            [(d.bedrooms ? d.bedrooms+' bed' : ''), d.propertyType||'', d.price ? '\u00a3'+Number(d.price).toLocaleString() : ''].filter(Boolean).join(' \u00b7 ') + '</div></div>' +
+            '<span class="badge">' + (d.listingStatus||'New') + '</span></div>';
+        }
+        document.getElementById('lead-list').innerHTML = html;
+      } else {
+        document.getElementById('no-leads').style.display = 'block';
+      }
+    } catch(e) {}
+  };
+  x.send();
+})();
+</script>
+</body></html>
