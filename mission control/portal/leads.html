@@ -4,86 +4,128 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-:root{--accent:#0ea5e9;--bg:#050505;--card:#0a0a0a;--card2:#0f111a;--border:#1a1a1a;--text:#f5f5f5;--text2:#94a3b8;--muted:#64748b;--success:#22c55e;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
+:root{--accent:#0ea5e9;--bg:#f8fafc;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--text2:#64748b;--muted:#94a3b8;--success:#22c55e;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:var(--ff-b);color:var(--text);background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased}
-.container{max-width:960px;margin:0 auto;padding:20px}
-.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:10px}
-.top h1{font-family:var(--ff-h);font-size:22px;font-weight:800}.top .sub{font-size:11px;color:var(--muted);margin-top:2px}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;text-decoration:none;font-family:var(--ff-b);transition:.2s}
-.btn-primary{background:linear-gradient(135deg,var(--accent),#0284c7);color:#fff}.btn-primary:hover{opacity:.9}
-.btn-outline{background:var(--card);border:1px solid var(--border);color:var(--text2)}.btn-outline:hover{border-color:var(--accent);color:var(--text)}
-.badge{padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(34,197,94,0.1);color:var(--success);white-space:nowrap}
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
-.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
-.stat .num{font-size:26px;font-weight:900;color:var(--accent);font-family:var(--ff-h)}
-.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
-.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.filters select,.filters input{padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);font-family:var(--ff-b)}
-.filters input{flex:1;min-width:150px}
-.lead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;transition:.2s}
-.lead:hover{border-color:var(--accent)}
-.lead .addr{font-weight:600;font-size:13px}
+body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.5}
+.top{background:#fff;border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.top .logo{font-family:var(--ff-h);font-size:20px;font-weight:900;color:var(--text)}.top .logo span{color:var(--accent)}
+.top .nav{display:flex;gap:4px}.top .nav a{padding:8px 16px;font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;border-radius:6px;transition:.2s}.top .nav a:hover{color:var(--text);background:#f1f5f9}.top .nav a.active{color:var(--accent);background:#eff6ff}
+.container{max-width:1100px;margin:0 auto;padding:28px 24px}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.page-header h1{font-family:var(--ff-h);font-size:22px;font-weight:800}
+.page-header .sub{font-size:13px;color:var(--text2);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;text-decoration:none;font-family:var(--ff-b);transition:.2s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-outline{background:#fff;color:var(--text2);border:1px solid var(--border)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 14px;text-align:center}
+.stat .num{font-family:var(--ff-h);font-size:26px;font-weight:900;color:var(--accent)}
+.stat .lbl{font-size:11px;color:var(--text2);margin-top:2px}
+.search-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.search-bar input{flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--ff-b);outline:none;transition:.2s}
+.search-bar input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(14,165,233,.08)}
+.search-bar select{padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--ff-b);background:#fff;outline:none;cursor:pointer}
+.lead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;transition:.15s}
+.lead:hover{border-color:var(--accent);background:#fafbff}
+.lead .addr{font-weight:600;font-size:13px;color:var(--text)}
 .lead .meta{font-size:11px;color:var(--text2);margin-top:2px}
 .lead .price{font-weight:700;font-size:14px;color:var(--text)}
-.empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px}
-.empty i{font-size:40px;display:block;margin-bottom:12px;color:var(--border)}
-.loading{text-align:center;padding:60px;color:var(--muted);font-size:13px}
-@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}.top{flex-direction:column;align-items:stretch}}
+.lead .right{text-align:right}
+.badge{padding:3px 10px;border-radius:5px;font-size:9px;font-weight:700;background:rgba(34,197,94,.08);color:var(--success);white-space:nowrap}
+.badge-sstc{background:rgba(245,158,11,.08);color:#d97706}
+.empty{text-align:center;padding:60px 20px;color:var(--text2)}
+.empty i{font-size:40px;color:var(--border);display:block;margin-bottom:10px}
+.loading{text-align:center;padding:60px;color:var(--text2);font-size:13px}
+footer{text-align:center;padding:24px 0 0;border-top:1px solid var(--border);margin-top:28px;font-size:12px;color:var(--muted)}
+footer a{color:var(--accent);text-decoration:underline}
+@media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.container{padding:20px 16px}.page-header{flex-direction:column;align-items:stretch;text-align:center}}
 </style></head><body>
-<div class="container">
 <div class="top">
-<div><h1><i class="fas fa-list" style="color:var(--accent);margin-right:6px"></i> My Leads</h1><div class="sub" id="date-range">Today</div></div>
-<div style="display:flex;gap:6px">
-<a class="btn btn-outline" href="/portal/dashboard.html"><i class="fas fa-arrow-left"></i> Dashboard</a>
-<a class="btn btn-primary" href="#" onclick="exportLeads();return false"><i class="fas fa-download"></i> Export</a>
-</div></div>
+<div class="logo">9am<span>Leads</span></div>
+<div class="nav"><a href="/portal/dashboard.html">Dashboard</a><a href="#" class="active">My Leads</a><a href="/portal/">Account</a></div>
+</div>
+<div class="container">
+<div class="page-header">
+<div><h1><i class="fas fa-list" style="color:var(--accent);margin-right:6px"></i> My Leads</h1><div class="sub" id="date-label">All time</div></div>
+<div style="display:flex;gap:8px">
+<a href="/portal/dashboard.html" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Dashboard</a>
+<button class="btn btn-primary" onclick="exportLeads()"><i class="fas fa-download"></i> Export</button>
+</div>
+</div>
 
-<div class="stat-grid" id="stats">
+<div class="stats">
 <div class="stat"><div class="num" id="stat-today">0</div><div class="lbl">Today</div></div>
 <div class="stat"><div class="num" id="stat-week">0</div><div class="lbl">This Week</div></div>
 <div class="stat"><div class="num" id="stat-month">0</div><div class="lbl">This Month</div></div>
 <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">All Time</div></div>
 </div>
 
-<div class="loading" id="leads-loading"><i class="fas fa-spinner fa-spin"></i>&nbsp; Loading leads...</div>
+<div class="search-bar">
+<input type="text" id="search-input" placeholder="Search by address, postcode or area..." onkeyup="filterLeads()">
+<select id="status-filter" onchange="filterLeads()">
+<option value="">All statuses</option><option value="SSTC">SSTC</option><option value="New">New</option><option value="Reduced">Reduced</option><option value="Available">Available</option>
+</select>
+<select id="date-filter" onchange="filterLeads()">
+<option value="all">All time</option><option value="today">Today</option><option value="week">This week</option><option value="month">This month</option>
+</select>
+</div>
+
+<div class="loading" id="leads-loading"><i class="fas fa-spinner fa-spin"></i>&nbsp; Loading your leads...</div>
 <div id="leads-container"></div>
-<div class="empty" id="no-leads" style="display:none">
-<i class="fas fa-inbox"></i>
-<h3 style="font-size:16px;font-weight:700;margin-bottom:6px">No leads yet</h3>
-<p style="font-size:12px;color:var(--text2)">Your leads will appear here after the 9am daily delivery.</p>
+<div class="empty" id="no-leads" style="display:none"><i class="fas fa-inbox"></i><h3 style="font-size:16px;font-weight:700;margin-bottom:4px">No leads yet</h3><p style="font-size:13px">Your first leads will arrive at 9am tomorrow.</p></div>
 </div>
-</div>
+
+<footer><p>&copy; 2026 9amLeads &middot; <a href="/privacy.html">Privacy</a> &middot; <a href="/terms.html">Terms</a></p></footer>
 
 <script>
+var allLeads = [];
+function exportLeads() {
+  if (!allLeads.length) { alert('No leads to export'); return; }
+  var csv = 'Address,Type,Price,Bedrooms,Status,Date\n';
+  allLeads.forEach(function(l){
+    var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
+    csv += (d.address||'')+','+(d.propertyType||'')+','+(d.price||0)+','+(d.bedrooms||0)+','+(l.status||'')+','+((l.created_at||'').split('T')[0]||'')+'\n';
+  });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = 'leads.csv'; a.click();
+}
+function renderLeads(leads) {
+  var container = document.getElementById('leads-container');
+  if (!leads.length) { container.innerHTML = ''; document.getElementById('no-leads').style.display = 'block'; return; }
+  document.getElementById('no-leads').style.display = 'none';
+  var html = '';
+  for (var i = 0; i < leads.length; i++) {
+    var l = leads[i];
+    var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
+    var dateStr = l.created_at ? new Date(l.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
+    var status = d.listingStatus || 'New';
+    html += '<div class="lead"><div><div class="addr">' + (d.address||d.title||'Property') + '</div><div class="meta">' + [(d.bedrooms ? d.bedrooms+' bed' : ''), d.propertyType||'', dateStr].filter(Boolean).join(' \u00b7 ') + '</div></div>' +
+      '<div class="right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div><span class="badge ' + (status === 'SSTC' ? 'badge-sstc' : '') + '">' + status + '</span></div></div>';
+  }
+  container.innerHTML = html;
+}
+function filterLeads() {
+  var q = document.getElementById('search-input').value.toLowerCase();
+  var status = document.getElementById('status-filter').value.toLowerCase();
+  var date = document.getElementById('date-filter').value;
+  var filtered = allLeads.filter(function(l){
+    var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
+    var addr = (d.address||d.title||'').toLowerCase();
+    var ls = (d.listingStatus||'').toLowerCase();
+    if (q && !addr.includes(q)) return false;
+    if (status && ls !== status) return false;
+    if (date === 'today') { var t = new Date().toISOString().split('T')[0]; if (!(l.created_at||'').startsWith(t)) return false; }
+    if (date === 'week') { var w = new Date(); w.setDate(w.getDate()-w.getDay()); var ws = w.toISOString().split('T')[0]; if ((l.created_at||'') < ws) return false; }
+    if (date === 'month') { var m = new Date().toISOString().split('T')[0].substring(0,7); if (!(l.created_at||'').startsWith(m)) return false; }
+    return true;
+  });
+  renderLeads(filtered);
+}
 (function(){
-  var s = localStorage.getItem('mld_portal_session');
-  if (!s) { window.location.href = '/portal/'; return; }
-  var sess = JSON.parse(s);
+  var sd = localStorage.getItem('mld_portal_session');
+  if (!sd) { window.location.href = '/portal/'; return; }
+  var sess = JSON.parse(sd);
   var token = sess ? sess.token : null;
   if (!token) { window.location.href = '/portal/'; return; }
-
-  window.exportLeads = function() {
-    var x = new XMLHttpRequest();
-    x.open('GET', '/api/leads', true);
-    x.setRequestHeader('Authorization', 'Bearer ' + token);
-    x.onload = function() {
-      try {
-        var leads = JSON.parse(x.responseText);
-        if (!Array.isArray(leads) || !leads.length) { alert('No leads to export'); return; }
-        var csv = 'Address,Type,Price,Bedrooms,Status,Date\n';
-        leads.forEach(function(l){
-          var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
-          csv += (d.address||'')+','+(d.propertyType||'')+','+(d.price||0)+','+(d.bedrooms||0)+','+(l.status||'')+','+((l.created_at||'').split('T')[0]||'')+'\n';
-        });
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-        a.download = 'leads.csv'; a.click();
-      } catch(e) { alert('Export error'); }
-    };
-    x.send();
-  };
-
   var x = new XMLHttpRequest();
   x.open('GET', '/api/leads', true);
   x.setRequestHeader('Authorization', 'Bearer ' + token);
@@ -91,42 +133,17 @@ body{font-family:var(--ff-b);color:var(--text);background:var(--bg);min-height:1
     try {
       var leads = JSON.parse(x.responseText);
       if (!Array.isArray(leads)) return;
-      
       document.getElementById('leads-loading').style.display = 'none';
-      
+      allLeads = leads.sort(function(a,b){return(b.created_at||'').localeCompare(a.created_at||'');});
       var today = new Date().toISOString().split('T')[0];
-      var weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-      var monthStart = today.substring(0, 7);
-      
-      var tl = leads.filter(function(l){return (l.created_at||'').startsWith(today);});
-      var wl = leads.filter(function(l){return (l.created_at||'') >= weekStart.toISOString().split('T')[0];});
-      var ml = leads.filter(function(l){return (l.created_at||'').startsWith(monthStart);});
-      
+      var tl = allLeads.filter(function(l){return (l.created_at||'').startsWith(today);});
+      var ml = allLeads.filter(function(l){return (l.created_at||'').startsWith(today.substring(0,7));});
       document.getElementById('stat-today').textContent = tl.length;
-      document.getElementById('stat-week').textContent = wl.length;
+      document.getElementById('stat-week').textContent = allLeads.length;
       document.getElementById('stat-month').textContent = ml.length;
-      document.getElementById('stat-total').textContent = leads.length;
-      
-      if (leads.length === 0) {
-        document.getElementById('no-leads').style.display = 'block';
-        return;
-      }
-      
-      // Show leads sorted by date (newest first)
-      leads.sort(function(a,b){return(b.created_at||'').localeCompare(a.created_at||'');});
-      
-      var html = '';
-      for (var i = 0; i < leads.length; i++) {
-        var l = leads[i];
-        var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
-        var dateStr = l.created_at ? new Date(l.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
-        html += '<div class="lead"><div><div class="addr">' + (d.address||d.title||'Property') + '</div>' +
-          '<div class="meta">' + [(d.bedrooms ? d.bedrooms+' bed' : ''), d.propertyType||'', dateStr].filter(Boolean).join(' \u00b7 ') + '</div></div>' +
-          '<div style="text-align:right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div>' +
-          '<span class="badge">' + (d.listingStatus||'New') + '</span></div></div>';
-      }
-      document.getElementById('leads-container').innerHTML = html;
-    } catch(e) { document.getElementById('leads-loading').textContent = 'Error loading leads'; }
+      document.getElementById('stat-total').textContent = allLeads.length;
+      renderLeads(allLeads);
+    } catch(e) {}
   };
   x.send();
 })();
