@@ -4945,6 +4945,7 @@ app.post('/api/setup-checkout', authMiddleware, async (req, res) => {
     const baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
     const session = await stripeApiRequest('POST', 'checkout/sessions', {
       mode: 'setup',
+      currency: 'gbp',
       customer_email: customer.email,
       success_url: baseUrl + '/portal/dashboard.html?setup=success',
       cancel_url: baseUrl + '/portal/dashboard.html?setup=cancel',
