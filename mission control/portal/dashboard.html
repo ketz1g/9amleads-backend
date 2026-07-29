@@ -4,46 +4,56 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-:root{--accent:#0ea5e9;--bg:#f8fafc;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--text2:#64748b;--muted:#94a3b8;--success:#22c55e;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
+:root{--accent:#0ea5e9;--bg:#f8fafc;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--text2:#64748b;--muted:#94a3b8;--success:#22c55e;--warning:#f59e0b;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:var(--ff-b);color:var(--text);background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.5}
 .top{background:#fff;border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .top .logo{font-family:var(--ff-h);font-size:20px;font-weight:900;color:var(--text)}.top .logo span{color:var(--accent)}
 .top .nav{display:flex;gap:4px}.top .nav a{padding:8px 16px;font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;border-radius:6px;transition:.2s}.top .nav a:hover{color:var(--text);background:#f1f5f9}.top .nav a.active{color:var(--accent);background:#eff6ff}
-.container{max-width:1100px;margin:0 auto;padding:32px}
-.hero{background:linear-gradient(135deg,#eff6ff,#faf5ff);border:1px solid #e0e7ff;border-radius:16px;padding:36px 32px;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
-.hero-text h1{font-family:var(--ff-h);font-size:24px;font-weight:800;color:var(--text);margin-bottom:4px}
-.hero-text p{color:var(--text2);font-size:14px;line-height:1.6;max-width:400px}
-.hero-actions{display:flex;gap:8px}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;text-decoration:none;font-family:var(--ff-b);transition:.2s}
+.container{max-width:1100px;margin:0 auto;padding:28px 24px}
+.hero{background:linear-gradient(135deg,#eff6ff,#faf5ff);border:1px solid #e0e7ff;border-radius:16px;padding:32px 28px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.hero-text h1{font-family:var(--ff-h);font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px}
+.hero-text p{color:var(--text2);font-size:13px;line-height:1.6;max-width:380px}
+.hero-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;text-decoration:none;font-family:var(--ff-b);transition:.2s}
 .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
 .btn-outline{background:#fff;color:var(--text2);border:1px solid var(--border)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
-.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;transition:.2s}
-.card:hover{box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.card-sm{padding:16px;margin-bottom:0}
-.stat{text-align:center;padding:24px 16px}
-.stat .icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 10px}
-.stat .num{font-family:var(--ff-h);font-size:30px;font-weight:900;color:var(--text)}
-.stat .lbl{font-size:12px;color:var(--text2);margin-top:2px}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px}
+.btn-success{background:var(--success);color:#fff}.btn-success:hover{opacity:.9}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}
+.stat{text-align:center;padding:22px 14px}
+.stat .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 8px}
+.stat .num{font-family:var(--ff-h);font-size:28px;font-weight:900;color:var(--text)}
+.stat .lbl{font-size:12px;color:var(--text2)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .sect-title{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--text)}
 .sect-title i{color:var(--accent);font-size:13px}
-.area-tags{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+.area-tags{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .area-tags span{padding:4px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;font-size:11px;color:#16a34a;font-weight:600}
-.plan-name{font-size:20px;font-weight:800;font-family:var(--ff-h);margin-bottom:2px}
+.plan-name{font-size:18px;font-weight:800;font-family:var(--ff-h)}
 .plan-badge{display:inline-block;padding:3px 10px;background:#fffbeb;border:1px solid #fde68a;border-radius:20px;font-size:10px;font-weight:700;color:#d97706;text-transform:uppercase;letter-spacing:.5px}
-.stat-line{display:flex;gap:20px;flex-wrap:wrap;margin:10px 0}
-.stat-line div{font-size:13px;color:var(--text2)}.stat-line div strong{font-weight:600;color:var(--text)}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.stat-line{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0;font-size:13px;color:var(--text2)}
+.stat-line strong{font-weight:600;color:var(--text)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.link-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
 .link-card{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:8px;border:1px solid var(--border);text-decoration:none;transition:.15s;background:#fff}
 .link-card:hover{border-color:var(--accent);background:#f8faff}
-.link-card .icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.link-card .lc-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .link-card .lc-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:1px}
 .link-card .lc-sub{font-size:11px;color:var(--text2)}
-footer{text-align:center;padding:24px 0 0;border-top:1px solid var(--border);margin-top:28px;font-size:12px;color:var(--muted)}
+.tip-card{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:20px;margin-bottom:16px;display:flex;align-items:flex-start;gap:14px}
+.tip-card .tip-icon{font-size:28px;flex-shrink:0;line-height:1}
+.tip-card h4{font-size:14px;font-weight:700;color:#92400e;margin-bottom:4px}
+.tip-card p{font-size:12px;color:#a16207;line-height:1.6}
+.features{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin:12px 0}
+.features div{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid var(--border)}
+.features i{color:var(--success);font-size:11px}
+.feedback{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#fefce8;border:1px solid #fef08a;border-radius:10px;margin-top:12px}
+.feedback span{font-size:12px;color:#92400e;line-height:1.5}
+.feedback a{color:var(--accent);font-weight:600;text-decoration:underline}
+footer{text-align:center;padding:20px 0 0;border-top:1px solid var(--border);margin-top:24px;font-size:12px;color:var(--muted)}
 footer a{color:var(--accent);text-decoration:underline}
-@media(max-width:768px){.grid-3,.two-col{grid-template-columns:1fr}.container{padding:20px 16px}.hero{flex-direction:column;text-align:center;padding:28px 20px}}
+@media(max-width:768px){.grid-3,.two-col{grid-template-columns:1fr}.container{padding:20px 16px}.hero{flex-direction:column;text-align:center;padding:24px 20px}.hero-actions{justify-content:center}}
 </style></head><body>
 <div class="top">
 <div class="logo">9am<span>Leads</span></div>
@@ -52,7 +62,7 @@ footer a{color:var(--accent);text-decoration:underline}
 <div class="container">
 <div class="hero">
 <div class="hero-text">
-<h1>Good morning</h1>
+<h1 id="greeting">Good morning</h1>
 <p>Your daily leads dashboard. Fresh opportunities delivered every morning at 9am.</p>
 </div>
 <div class="hero-actions">
@@ -67,44 +77,70 @@ footer a{color:var(--accent);text-decoration:underline}
 <div class="card stat"><div class="icon" style="background:#faf5ff;color:#8b5cf6">📈</div><div class="num" id="kpi-month">0</div><div class="lbl">This Month</div></div>
 </div>
 
+<div class="tip-card">
+<div class="tip-icon">🔥</div>
+<div><h4>You're on fire! Keep going.</h4>
+<p>Every lead you contact today is a potential new client. The early bird catches the worm — your 9am leads are waiting. Pick up the phone, knock on doors, and turn those opportunities into instructions.</p></div>
+</div>
+
 <div class="two-col">
 <div class="card">
-<div class="sect-title"><i class="fas fa-user-circle"></i> Your Plan</div>
-<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<div class="sect-title"><i class="fas fa-crown"></i> Your Plan</div>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
 <div><div class="plan-name">Free Trial</div><div style="font-size:12px;color:var(--text2)">Moving leads</div></div>
-<span class="plan-badge">Active</span>
+<span class="plan-badge">7 days left</span>
 </div>
 <div class="stat-line">
 <div><strong>5</strong> leads/day</div>
-<div><strong>E, NW, EN</strong> areas</div>
-<div><strong>7 days</strong> remaining</div>
+<div><strong>E, NW, EN</strong></div>
 </div>
 <div class="actions">
-<a href="/portal/" class="btn btn-primary" style="padding:9px 20px;font-size:12px"><i class="fas fa-arrow-up"></i> Upgrade</a>
-<a href="/portal/" class="btn btn-outline" style="padding:9px 20px;font-size:12px"><i class="fas fa-cog"></i> Settings</a>
+<a href="/portal/" class="btn btn-primary" style="padding:9px 18px;font-size:12px"><i class="fas fa-arrow-up"></i> Upgrade Plan</a>
+<a href="/portal/" class="btn btn-outline" style="padding:9px 18px;font-size:12px"><i class="fas fa-cog"></i> Settings</a>
 </div>
 </div>
 <div class="card">
 <div class="sect-title"><i class="fas fa-map-marker-alt"></i> Coverage Areas</div>
 <div class="area-tags"><span>E</span><span>EN</span><span>NW</span></div>
-<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:8px 0">Leads are matched to these postcode areas. Add more to increase volume.</p>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:8px 0">Leads matched to these areas. Add more to increase your daily volume.</p>
 <a href="/portal/" class="btn btn-outline" style="padding:8px 16px;font-size:11px"><i class="fas fa-plus-circle"></i> Add Area</a>
 </div>
 </div>
 
 <div class="card">
 <div class="sect-title"><i class="fas fa-rocket"></i> Quick Actions</div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">
-<a href="/portal/leads.html" class="link-card"><div class="icon" style="background:#eff6ff;color:var(--accent)">📋</div><div><div class="lc-title">View Leads</div><div class="lc-sub">Browse all your opportunities</div></div></a>
-<a href="/portal/leads.html" class="link-card"><div class="icon" style="background:#f0fdf4;color:var(--success)">📊</div><div><div class="lc-title">Export Data</div><div class="lc-sub">Download as CSV or JSON</div></div></a>
-<a href="/portal/" class="link-card"><div class="icon" style="background:#fffbeb;color:#d97706">⚙️</div><div><div class="lc-title">Settings</div><div class="lc-sub">Filters, areas &amp; profile</div></div></a>
-<a href="mailto:hello@9amleads.com" class="link-card"><div class="icon" style="background:#faf5ff;color:#8b5cf6">💬</div><div><div class="lc-title">Help &amp; Support</div><div class="lc-sub">Contact our team</div></div></a>
+<div class="link-grid">
+<a href="/portal/leads.html" class="link-card"><div class="lc-icon" style="background:#eff6ff;color:var(--accent)">📋</div><div><div class="lc-title">View Leads</div><div class="lc-sub">Browse your opportunities</div></div></a>
+<a href="/portal/leads.html" class="link-card"><div class="lc-icon" style="background:#f0fdf4;color:var(--success)">📊</div><div><div class="lc-title">Export Data</div><div class="lc-sub">Download CSV or JSON</div></div></a>
+<a href="/portal/" class="link-card"><div class="lc-icon" style="background:#fffbeb;color:#d97706">⚙️</div><div><div class="lc-title">Settings</div><div class="lc-sub">Filters &amp; profile</div></div></a>
+<a href="mailto:hello@9amleads.com" class="link-card"><div class="lc-icon" style="background:#faf5ff;color:#8b5cf6">💬</div><div><div class="lc-title">Help &amp; Support</div><div class="lc-sub">We're here to help</div></div></a>
 </div>
+</div>
+
+<div class="card">
+<div class="sect-title"><i class="fas fa-gem"></i> Unlock More with Pro</div>
+<p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px">Upgrade to Pro or Enterprise to get access to marketing tools, AI outreach, and more.</p>
+<div class="features">
+<div><i class="fas fa-check-circle"></i> Up to 25 leads/day</div>
+<div><i class="fas fa-check-circle"></i> All UK postcode areas</div>
+<div><i class="fas fa-check-circle"></i> AI letter generator</div>
+<div><i class="fas fa-check-circle"></i> Print &amp; Post daily</div>
+<div><i class="fas fa-check-circle"></i> Marketing materials</div>
+<div><i class="fas fa-check-circle"></i> Saved templates</div>
+<div><i class="fas fa-check-circle"></i> CRM integration</div>
+<div><i class="fas fa-check-circle"></i> Priority support</div>
+</div>
+<div class="actions"><a href="/portal/" class="btn btn-primary"><i class="fas fa-arrow-up"></i> See Plans &amp; Pricing</a></div>
+</div>
+
+<div class="feedback">
+<i class="fas fa-comment-dots" style="font-size:18px;color:#d97706;flex-shrink:0"></i>
+<span>Missing a feature or found a bug? <a href="mailto:hello@9amleads.com">Send feedback</a> — the founder reads every message.</span>
 </div>
 
 <footer>
 <p>Need help? <a href="mailto:hello@9amleads.com">hello@9amleads.com</a> &middot; <a href="/privacy.html">Privacy</a> &middot; <a href="/terms.html">Terms</a></p>
-<p style="margin-top:4px">&copy; 2026 9amLeads</p>
+<p style="margin-top:4px;color:var(--muted)">&copy; 2026 9amLeads · Leads delivered daily at 9am</p>
 </footer>
 </div>
 
@@ -116,11 +152,9 @@ footer a{color:var(--accent);text-decoration:underline}
   var token = sess ? sess.token : null;
   if (!token) { window.location.href = '/portal/'; return; }
   
-  // Greeting
-  var greet = document.querySelector('.hero h1');
+  var greet = document.getElementById('greeting');
   if (sess.name) greet.textContent = 'Good morning, ' + sess.name;
   
-  // Fetch leads
   var x = new XMLHttpRequest();
   x.open('GET', '/api/leads', true);
   x.setRequestHeader('Authorization', 'Bearer ' + token);
