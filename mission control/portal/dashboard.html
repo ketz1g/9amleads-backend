@@ -128,7 +128,7 @@ var ci=Math.floor(Math.random()*tips.length);
 <!-- Postcode Areas -->
 <div class="card">
 <div class="sect-title"><i class="fas fa-map-marker-alt"></i> My Postcode Areas</div>
-<div class="tag-list" id="area-tags"><span class="tag">E <button class="remove" onclick="removeArea('E')">&times;</button></span><span class="tag">EN <button class="remove" onclick="removeArea('EN')">&times;</button></span><span class="tag">NW <button class="remove" onclick="removeArea('NW')">&times;</button></span></div>
+<div class="tag-list" id="area-tags"></div>
 <div class="tag-input"><input type="text" class="input" id="area-input" placeholder="Type postcode code e.g. SG" onkeydown="if(event.key==='Enter')addArea()"><button class="btn btn-outline btn-sm" onclick="addArea()">Add</button></div>
 <p style="font-size:11px;color:var(--muted);margin-top:4px">Leads matched to these postcode codes. Add more to increase volume.</p>
 </div>
@@ -213,22 +213,13 @@ var ci=Math.floor(Math.random()*tips.length);
 <!-- Settings Modal -->
 <div class="modal" id="settings-modal">
 <div class="modal-content">
-<h3><i class="fas fa-cog"></i> Settings</h3>
-<div style="margin-bottom:16px">
-<label class="label">Company Name</label>
-<input type="text" class="input" id="settings-company" placeholder="Your company name">
-</div>
-<div style="margin-bottom:16px">
-<label class="label">Phone Number</label>
-<input type="text" class="input" id="settings-phone" placeholder="Phone number">
-</div>
-<div style="margin-bottom:16px">
-<label class="label">Email Notifications</label>
-<div style="display:flex;align-items:center;gap:8px;margin-top:4px">
-<input type="checkbox" id="settings-emails" checked style="accent-color:var(--accent);width:16px;height:16px">
-<label for="settings-emails" style="font-size:13px;color:var(--text2)">Receive daily lead emails at 9am</label>
-</div>
-</div>
+<h3><i class="fas fa-cog"></i> Account Settings</h3>
+<div style="margin-bottom:14px"><label class="label">Company Name</label><input type="text" class="input" id="settings-company" placeholder="e.g. Your Removal Company Ltd"></div>
+<div style="margin-bottom:14px"><label class="label">Contact Name</label><input type="text" class="input" id="settings-name" placeholder="Your full name"></div>
+<div style="margin-bottom:14px"><label class="label">Phone Number</label><input type="text" class="input" id="settings-phone" placeholder="e.g. 020 1234 5678"></div>
+<div style="margin-bottom:14px"><label class="label">Change Password</label><input type="password" class="input" id="settings-password" placeholder="Leave blank to keep current"></div>
+<div style="margin-bottom:14px"><label class="label">Postcode Areas</label><input type="text" class="input" id="settings-areas" placeholder="e.g. E, NW, EN"></div>
+<div style="margin-bottom:14px"><label class="label">Notifications</label><div style="display:flex;align-items:center;gap:8px;margin-top:4px"><input type="checkbox" id="settings-emails" checked style="accent-color:var(--accent);width:16px;height:16px"><label for="settings-emails" style="font-size:13px;color:var(--text2)">Receive daily lead emails at 9am</label></div></div>
 <div id="settings-status" style="font-size:12px;color:var(--text2);margin-bottom:12px"></div>
 <div style="display:flex;gap:8px;justify-content:flex-end">
 <button class="btn btn-outline" onclick="closeModal('settings-modal')">Close</button>
@@ -284,6 +275,7 @@ function saveAreas() {
   apiCall('PUT', '/api/postcodes/update', { postcodes: codes }, function(err, d) {
     if (err || !d.success) { alert('Failed to save postcode areas'); return; }
     document.getElementById('plan-areas').textContent = (codes.length ? codes.join(', ') : 'None set');
+    document.getElementById('settings-areas').value = codes.join(', ');
   });
 }
 function getAreas() {
@@ -321,24 +313,45 @@ function showModal(id) { document.getElementById(id).classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
 // ===== SETTINGS =====
-function loadSettings() {
-  apiCall('GET', '/api/settings', {}, function(err, d) {
-    if (d) {
-      if (d.company) document.getElementById('settings-company').value = d.company;
-      if (d.phone) document.getElementById('settings-phone').value = d.phone;
-    }
-  });
+function loadSettings(data) {
+  if (!data) return;
+  if (data.company) document.getElementById('settings-company').value = data.company;
+  if (data.name) document.getElementById('settings-name').value = data.name;
+  if (data.phone) document.getElementById('settings-phone').value = data.phone;
+  if (data.target_areas) document.getElementById('settings-areas').value = data.target_areas.join(', ');
 }
 function saveSettings() {
   var company = document.getElementById('settings-company').value.trim();
+  var name = document.getElementById('settings-name').value.trim();
   var phone = document.getElementById('settings-phone').value.trim();
+  var password = document.getElementById('settings-password').value;
+  var areasStr = document.getElementById('settings-areas').value.trim();
   var status = document.getElementById('settings-status');
-  apiCall('PUT', '/api/settings', { company: company, phone: phone }, function(err, d) {
+  var body = { company: company, name: name, phone: phone };
+  if (password.length >= 8) body.password = password;
+  if (areasStr) body.target_areas = areasStr.split(',').map(function(s){return s.trim().toUpperCase();}).filter(function(s){return s;});
+  apiCall('PUT', '/api/settings', body, function(err, d) {
     if (err || !d.success) { status.textContent = 'Failed to save'; status.style.color = '#dc2626'; return; }
     status.textContent = 'Settings saved!';
     status.style.color = 'var(--success)';
-    setTimeout(function(){ closeModal('settings-modal'); }, 1000);
+    setTimeout(function(){ reloadPostcodes(); closeModal('settings-modal'); }, 1000);
   });
+}
+function reloadPostcodes() {
+  apiCall('GET', '/api/postcodes/mine', {}, function(err, d) {
+    if (d && d.areas) renderPostcodes(d.areas);
+  });
+}
+function renderPostcodes(areas) {
+  var tags = document.getElementById('area-tags');
+  tags.innerHTML = '';
+  (areas || []).forEach(function(code){
+    var tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.innerHTML = code + ' <button class="remove" onclick="this.parentElement.remove();saveAreas()">&times;</button>';
+    tags.appendChild(tag);
+  });
+  document.getElementById('plan-areas').textContent = (areas && areas.length ? areas.join(', ') : 'None set');
 }
 
 // ===== CRM =====
@@ -401,7 +414,23 @@ document.querySelectorAll('.modal').forEach(function(m){
   };
   x.send();
 
-  loadSettings();
+  // Load customer profile
+  apiCall('GET', '/api/auth/me', null, function(err, data) {
+    if (data) {
+      loadSettings(data);
+      if (data.target_areas) renderPostcodes(data.target_areas);
+      if (data.plan) document.getElementById('plan-name').textContent = data.plan === 'free_trial' ? 'Free Trial' : data.plan.charAt(0).toUpperCase() + data.plan.slice(1);
+      if (data.leads_per_day) document.getElementById('plan-leads').textContent = data.leads_per_day;
+      if (data.trial_ends) {
+        var days = Math.ceil((new Date(data.trial_ends) - new Date()) / 86400000);
+        document.getElementById('plan-remaining').textContent = (days > 0 ? days + ' days' : 'Expired') + ' remaining';
+      }
+    }
+  });
+  // Load postcodes from API
+  apiCall('GET', '/api/postcodes/mine', null, function(err, d) {
+    if (d && d.areas) renderPostcodes(d.areas);
+  });
   loadCrm();
 })();
 </script>
