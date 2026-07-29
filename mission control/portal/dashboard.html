@@ -224,13 +224,13 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 </div>
 
 <!-- KPI Dashboard Cards (live data - top priority) -->
-<div class="card" style="margin-bottom:20px;text-align:center;padding:32px">
-<div style="font-size:48px;margin-bottom:12px">📋</div>
-<h2 style="font-family:var(--ff-h);font-size:20px;font-weight:800;margin-bottom:6px">Your Leads</h2>
-<p style="font-size:13px;color:var(--muted2);line-height:1.6;margin-bottom:16px;max-width:400px;margin-left:auto;margin-right:auto">View all your leads with full details, addresses, prices, and export options.</p>
-<a href="/portal/leads.html" style="display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;border-radius:50px;font-weight:700;font-size:14px;text-decoration:none;transition:.2s" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'"><i class="fas fa-arrow-right"></i> View My Leads</a>
+<div class="card" style="text-align:center;padding:28px 20px;margin-bottom:20px">
+<div style="font-size:36px;margin-bottom:8px">📋</div>
+<h2 style="font-family:var(--ff-h);font-size:20px;font-weight:800;margin-bottom:4px">Your Leads Dashboard</h2>
+<p style="font-size:13px;color:var(--muted2);margin-bottom:16px">View, export, and manage all your leads in one place.</p>
+<a href="/portal/leads.html" style="display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;border-radius:50px;font-weight:700;font-size:13px;text-decoration:none;transition:.2s"><i class="fas fa-arrow-right"></i> View My Leads</a>
 </div>
-<div style="display:none">
+<!-- Old Stats Section Removed --><div style="display:none">
 <div class="kpi-card" style="background:linear-gradient(135deg,rgba(14,165,233,.08),rgba(99,102,241,.04));border-left:3px solid #0ea5e9"><div class="kpi-num" id="kpi-today" style="color:#0ea5e9">0</div><div class="kpi-label">Today's Opportunities</div><div class="kpi-desc">Delivered at 9am</div><div class="kpi-icon"><i class="fas fa-sun" style="color:#0ea5e9"></i></div></div>
 <div class="kpi-card" style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(139,92,246,.04));border-left:3px solid #6366f1"><div class="kpi-num" id="kpi-week" style="color:#6366f1">0</div><div class="kpi-label">This Week</div><div class="kpi-desc">Last 7 days</div><div class="kpi-icon"><i class="fas fa-calendar-week" style="color:#6366f1"></i></div></div>
 <div class="kpi-card" style="background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(34,197,94,.04));border-left:3px solid #10b981"><div class="kpi-num" id="kpi-month" style="color:#10b981">0</div><div class="kpi-label">This Month</div><div class="kpi-desc">Est. value: &pound;0</div><div class="kpi-icon"><i class="fas fa-calendar-alt" style="color:#10b981"></i></div></div>
@@ -256,7 +256,7 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
 <div class="card">
 <div class="card-title" style="font-size:15px"><i class="fas fa-rocket" style="color:var(--primary)"></i> Your Tools</div>
 <div class="tools-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-<div class="tool-card" data-tool="scrollToLeads" onclick="window.location.href='/portal/leads.html'" style="background:linear-gradient(135deg,rgba(14,165,233,.06),transparent);border:1px solid rgba(14,165,233,.15)"><div class="icon"><i class="fas fa-clipboard-list" style="font-size:18px;color:var(--primary)"></i></div><h3>View Leads</h3><p>Browse &amp; manage by day</p></div>
+<a href="/portal/leads.html" class="tool-card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:18px 14px;background:linear-gradient(135deg,rgba(14,165,233,.06),transparent);border:1px solid rgba(14,165,233,.15);border-radius:10px;text-decoration:none;color:inherit;cursor:pointer"><div class="icon"><i class="fas fa-clipboard-list" style="font-size:18px;color:var(--primary)"></i></div><h3 style="font-weight:700;font-size:12px;margin:0">View Leads</h3><p style="font-size:10px;color:var(--muted);margin:0">Browse &amp; manage by day</p></a>
 <div class="tool-card" data-tool="exportRange" style="background:linear-gradient(135deg,rgba(99,102,241,.06),transparent);border:1px solid rgba(99,102,241,.15)"><div class="icon"><i class="fas fa-chart-bar" style="font-size:18px;color:var(--primary)"></i></div><h3>Export Data</h3><p>CSV or JSON download</p></div>
 <div class="tool-card" data-tool="settings" style="background:linear-gradient(135deg,rgba(34,197,94,.06),transparent);border:1px solid rgba(34,197,94,.15)"><div class="icon">⚙️</div><h3>Settings</h3><p>Plan, billing &amp; profile</p></div>
 <div class="tool-card" data-tool="campaigns" style="background:linear-gradient(135deg,rgba(245,158,11,.06),transparent);border:1px solid rgba(245,158,11,.15)"><div class="icon"><i class="fas fa-box" style="font-size:18px;color:var(--primary)"></i></div><h3>Marketing Materials</h3><p>Outreach templates</p></div>
