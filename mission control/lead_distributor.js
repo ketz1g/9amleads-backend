@@ -206,9 +206,7 @@ function leadMatchesTarget(lead, customer, product) {
           const maxPrice = parseInt(filters.maxPrice) || 0;
           if (maxPrice > 0 && price > maxPrice) return { match: false };
           if (filters.propertyType && filters.propertyType !== 'Any' && filters.propertyType !== 'any') {
-            const pt = (lead.propertyType || '').toLowerCase();
-            const ft = filters.propertyType.toLowerCase();
-            if (pt !== ft && !pt.includes(ft)) return { match: false };
+            // Property type filter removed - no longer filtering by type
           }
         const status = (lead.status || '').toLowerCase();
         const sstcEnabled = filters.statusSSTC !== false;
