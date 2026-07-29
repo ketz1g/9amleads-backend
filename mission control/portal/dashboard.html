@@ -65,7 +65,7 @@ footer a{color:var(--accent);text-decoration:underline}
 .modal-content{background:#fff;border-radius:16px;padding:28px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto}
 .modal-content h3{font-family:var(--ff-h);font-size:17px;font-weight:800;margin-bottom:12px}
 .modal-content p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px}
-@media(max-width:768px){.grid-3,.grid-2{grid-template-columns:1fr}.container{padding:20px 16px}.hero{flex-direction:column;text-align:center;padding:24px 20px}.hero-actions{justify-content:center}}
+.tab-btn{padding:8px 16px;font-size:12px;font-weight:600;background:none;border:none;color:var(--text2);cursor:pointer;border-radius:6px;font-family:var(--ff-b);transition:.2s}.tab-btn:hover{color:var(--text);background:#f1f5f9}.tab-btn.active{color:var(--accent);background:#eff6ff}@media(max-width:768px){.grid-3,.grid-2{grid-template-columns:1fr}.container{padding:20px 16px}.hero{flex-direction:column;text-align:center;padding:24px 20px}.hero-actions{justify-content:center}}
 </style></head><body>
 <div class="top">
 <div class="logo">9am<span>Leads</span></div>
@@ -213,13 +213,53 @@ var ci=Math.floor(Math.random()*tips.length);
 <!-- Settings Modal -->
 <div class="modal" id="settings-modal">
 <div class="modal-content">
-<h3><i class="fas fa-cog"></i> Account Settings</h3>
-<div style="margin-bottom:14px"><label class="label">Company Name</label><input type="text" class="input" id="settings-company" placeholder="e.g. Your Removal Company Ltd"></div>
-<div style="margin-bottom:14px"><label class="label">Contact Name</label><input type="text" class="input" id="settings-name" placeholder="Your full name"></div>
-<div style="margin-bottom:14px"><label class="label">Phone Number</label><input type="text" class="input" id="settings-phone" placeholder="e.g. 020 1234 5678"></div>
-<div style="margin-bottom:14px"><label class="label">Change Password</label><input type="password" class="input" id="settings-password" placeholder="Leave blank to keep current"></div>
-<div style="margin-bottom:14px"><label class="label">Postcode Areas</label><input type="text" class="input" id="settings-areas" placeholder="e.g. E, NW, EN"></div>
-<div style="margin-bottom:14px"><label class="label">Notifications</label><div style="display:flex;align-items:center;gap:8px;margin-top:4px"><input type="checkbox" id="settings-emails" checked style="accent-color:var(--accent);width:16px;height:16px"><label for="settings-emails" style="font-size:13px;color:var(--text2)">Receive daily lead emails at 9am</label></div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+<h3 style="font-family:var(--ff-h);font-size:17px;font-weight:800"><i class="fas fa-cog" style="color:var(--accent)"></i> Settings</h3>
+<button onclick="closeModal('settings-modal')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">&times;</button>
+</div>
+<div style="display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:8px">
+<button class="tab-btn active" data-tab="profile" onclick="switchTab('profile')">Profile</button>
+<button class="tab-btn" data-tab="areas" onclick="switchTab('areas')">Areas</button>
+<button class="tab-btn" data-tab="notifications" onclick="switchTab('notifications')">Notifications</button>
+<button class="tab-btn" data-tab="subscription" onclick="switchTab('subscription')">Subscription</button>
+</div>
+
+<div id="tab-profile">
+<div style="margin-bottom:12px"><label class="label">Company Name</label><input type="text" class="input" id="settings-company" placeholder="e.g. Your Removal Company Ltd"></div>
+<div style="margin-bottom:12px"><label class="label">Contact Name</label><input type="text" class="input" id="settings-name" placeholder="Your full name"></div>
+<div style="margin-bottom:12px"><label class="label">Email</label><input type="text" class="input" id="settings-email" disabled style="background:#f8fafc;color:var(--muted)"></div>
+<div style="margin-bottom:12px"><label class="label">Phone Number</label><input type="text" class="input" id="settings-phone" placeholder="e.g. 020 1234 5678"></div>
+<div style="margin-bottom:12px"><label class="label">Change Password</label><input type="password" class="input" id="settings-password" placeholder="Leave blank to keep current"></div>
+</div>
+
+<div id="tab-areas" style="display:none">
+<p style="font-size:12px;color:var(--text2);margin-bottom:10px">Enter UK postcode area codes separated by commas (e.g. E, NW, EN, SG, CM). These determine which leads you receive.</p>
+<input type="text" class="input" id="settings-areas" placeholder="e.g. E, NW, EN, SG, CM">
+<div style="margin-top:8px;font-size:11px;color:var(--muted)" id="settings-areas-count"></div>
+</div>
+
+<div id="tab-notifications" style="display:none">
+<div style="margin-bottom:14px"><label class="label">Email Notifications</label><div style="display:flex;align-items:center;gap:8px;margin-top:4px"><input type="checkbox" id="settings-emails" checked style="accent-color:var(--accent);width:16px;height:16px"><label for="settings-emails" style="font-size:13px;color:var(--text2)">Receive daily lead emails at 9am</label></div></div>
+<div style="margin-bottom:14px"><label class="label">Marketing Consent</label><div style="display:flex;align-items:center;gap:8px;margin-top:4px"><input type="checkbox" id="settings-marketing" style="accent-color:var(--accent);width:16px;height:16px"><label for="settings-marketing" style="font-size:13px;color:var(--text2)">Receive occasional product updates and tips</label></div></div>
+</div>
+
+<div id="tab-subscription" style="display:none">
+<div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+<span style="font-size:13px;font-weight:700" id="sub-plan-name">Free Trial</span>
+<span class="plan-badge" id="sub-plan-status">Active</span>
+</div>
+<div style="font-size:12px;color:var(--text2);line-height:1.8">
+<div><strong>Leads/day:</strong> <span id="sub-leads">5</span></div>
+<div><strong>Postcode areas:</strong> <span id="sub-areas-count">0</span>/<span id="sub-max-areas">3</span></div>
+<div><strong>Trial ends:</strong> <span id="sub-trial-end">-</span></div>
+<div id="sub-billing-row" style="display:none"><strong>Next billing:</strong> <span id="sub-next-billing">-</span></div>
+</div>
+</div>
+<button class="btn btn-danger btn-sm" onclick="showCancelConfirm()" style="width:100%"><i class="fas fa-times-circle"></i> Cancel Subscription</button>
+<p style="font-size:11px;color:var(--muted);margin-top:8px">After cancellation, you keep dashboard access but lead delivery stops. You can restart anytime.</p>
+</div>
+
 <div id="settings-status" style="font-size:12px;color:var(--text2);margin-bottom:12px"></div>
 <div style="display:flex;gap:8px;justify-content:flex-end">
 <button class="btn btn-outline" onclick="closeModal('settings-modal')">Close</button>
@@ -312,13 +352,45 @@ function doCancel() {
 function showModal(id) { document.getElementById(id).classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
+// ===== SETTINGS TABS =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.querySelector('.tab-btn[data-tab="'+tab+'"]').classList.add('active');
+  ['profile','areas','notifications','subscription'].forEach(function(t){
+    document.getElementById('tab-'+t).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
 // ===== SETTINGS =====
 function loadSettings(data) {
   if (!data) return;
   if (data.company) document.getElementById('settings-company').value = data.company;
   if (data.name) document.getElementById('settings-name').value = data.name;
+  if (data.email) document.getElementById('settings-email').value = data.email;
   if (data.phone) document.getElementById('settings-phone').value = data.phone;
-  if (data.target_areas) document.getElementById('settings-areas').value = data.target_areas.join(', ');
+  if (data.target_areas) {
+    document.getElementById('settings-areas').value = data.target_areas.join(', ');
+    document.getElementById('settings-areas-count').textContent = data.target_areas.length + ' area(s) selected';
+  }
+  if (data.marketing_consent) document.getElementById('settings-marketing').checked = data.marketing_consent;
+}
+function loadSubscription() {
+  apiCall('GET', '/api/subscription', null, function(err, d) {
+    if (!d) return;
+    document.getElementById('sub-plan-name').textContent = d.plan === 'free_trial' ? 'Free Trial' : d.plan.charAt(0).toUpperCase() + d.plan.slice(1);
+    document.getElementById('sub-plan-status').textContent = d.subscription ? d.subscription.status : 'Active';
+    document.getElementById('sub-leads').textContent = d.leads_per_day || 0;
+    document.getElementById('sub-areas-count').textContent = (d.coverage_areas || []).length;
+    document.getElementById('sub-max-areas').textContent = d.plan === 'free_trial' ? '3' : 'Unlimited';
+    if (d.trial_ends) {
+      var days = Math.ceil((new Date(d.trial_ends) - new Date()) / 86400000);
+      document.getElementById('sub-trial-end').textContent = (days > 0 ? days + ' days left' : 'Expired');
+    }
+    if (d.subscription && d.subscription.next_billing) {
+      document.getElementById('sub-billing-row').style.display = 'block';
+      document.getElementById('sub-next-billing').textContent = new Date(d.subscription.next_billing).toLocaleDateString();
+    }
+  });
 }
 function saveSettings() {
   var company = document.getElementById('settings-company').value.trim();
@@ -326,14 +398,18 @@ function saveSettings() {
   var phone = document.getElementById('settings-phone').value.trim();
   var password = document.getElementById('settings-password').value;
   var areasStr = document.getElementById('settings-areas').value.trim();
+  var emails = document.getElementById('settings-emails').checked;
+  var marketing = document.getElementById('settings-marketing').checked;
   var status = document.getElementById('settings-status');
   var body = { company: company, name: name, phone: phone };
   if (password.length >= 8) body.password = password;
   if (areasStr) body.target_areas = areasStr.split(',').map(function(s){return s.trim().toUpperCase();}).filter(function(s){return s;});
+  body.notifications = emails ? '1' : '0';
   apiCall('PUT', '/api/settings', body, function(err, d) {
     if (err || !d.success) { status.textContent = 'Failed to save'; status.style.color = '#dc2626'; return; }
     status.textContent = 'Settings saved!';
     status.style.color = 'var(--success)';
+    loadSubscription();
     setTimeout(function(){ reloadPostcodes(); closeModal('settings-modal'); }, 1000);
   });
 }
@@ -414,7 +490,6 @@ document.querySelectorAll('.modal').forEach(function(m){
   };
   x.send();
 
-  // Load customer profile
   apiCall('GET', '/api/auth/me', null, function(err, data) {
     if (data) {
       loadSettings(data);
@@ -427,10 +502,10 @@ document.querySelectorAll('.modal').forEach(function(m){
       }
     }
   });
-  // Load postcodes from API
   apiCall('GET', '/api/postcodes/mine', null, function(err, d) {
     if (d && d.areas) renderPostcodes(d.areas);
   });
+  loadSubscription();
   loadCrm();
 })();
 </script>
