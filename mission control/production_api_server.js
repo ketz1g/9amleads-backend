@@ -227,16 +227,16 @@ var DIRECT_MAIL_TABLES = ['customer_business_profiles','direct_mail_templates','
 var DM_FEATURE_ACCESS = {
   manual_send: { free_trial: true, starter: true, pro: true, enterprise: true, label: 'Manual Campaign Sending', desc: 'Send direct mail campaigns manually' },
   upload_materials: { free_trial: true, starter: true, pro: true, enterprise: true, label: 'Upload Materials', desc: 'Upload your own flyers and letters' },
-  ai_letter: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'AI Letter Generator', desc: 'Generate introduction letters with AI' },
-  ai_flyer: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'AI Flyer Generator', desc: 'Generate flyer content with AI' },
-  saved_templates: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'Saved Templates', desc: 'Save and reuse templates' },
+  ai_letter: { free_trial: false, starter: true, pro: true, enterprise: true, label: 'AI Letter Generator', desc: 'Generate introduction letters with AI' },
+  ai_flyer: { free_trial: false, starter: true, pro: true, enterprise: true, label: 'AI Flyer Generator', desc: 'Generate flyer content with AI' },
+  saved_templates: { free_trial: false, starter: true, pro: true, enterprise: true, label: 'Saved Templates', desc: 'Save and reuse templates' },
   campaign_history: { free_trial: true, starter: true, pro: true, enterprise: true, label: 'Campaign History', desc: 'View past campaign history' },
-  auto_send: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'Print & Post', desc: 'Automated daily mail campaigns' },
-  saved_payment: { free_trial: false, starter: false, pro: false, enterprise: true, label: 'Saved Payment Method', desc: 'Store a card for automatic payments' },
-  daily_summaries: { free_trial: false, starter: false, pro: false, enterprise: true, label: 'Daily Summaries', desc: 'Daily campaign summary emails' },
-  proof_tracking: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'Proof Tracking', desc: 'Track proof of posting' },
+  auto_send: { free_trial: false, starter: true, pro: true, enterprise: true, label: 'Print & Post', desc: 'Automated daily mail campaigns' },
+  saved_payment: { free_trial: false, starter: true, pro: true, enterprise: true, label: 'Saved Payment Method', desc: 'Store a card for automatic payments' },
+  daily_summaries: { free_trial: false, starter: true, pro: true, enterprise: true, label: 'Daily Summaries', desc: 'Daily campaign summary emails' },
+  proof_tracking: { free_trial: false, starter: true, pro: true, enterprise: true, label: 'Proof Tracking', desc: 'Track proof of posting' },
   multi_templates: { free_trial: false, starter: false, pro: false, enterprise: true, label: 'Multiple Templates', desc: 'Multiple templates by lead type' },
-  ai_pdf_generator: { free_trial: false, starter: false, pro: true, enterprise: true, label: 'AI Flyer PDF Generator', desc: 'Generate print-ready flyer PDFs' }
+  ai_pdf_generator: { free_trial: false, starter: true, pro: true, enterprise: true, label: 'AI Flyer PDF Generator', desc: 'Generate print-ready flyer PDFs' }
 };
 
 // Load DM feature access from file (admin-configurable)
@@ -4936,6 +4936,31 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/setup-checkout — Stripe Checkout in setup mode (save card, no charge)
+app.post('/api/setup-checkout', authMiddleware, async (req, res) => {
+  try {
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured.' });
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    const baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    const session = await stripeApiRequest('POST', 'checkout/sessions', {
+      mode: 'setup',
+      customer_email: customer.email,
+      success_url: baseUrl + '/portal/dashboard.html?setup=success',
+      cancel_url: baseUrl + '/portal/dashboard.html?setup=cancel',
+      'metadata[customer_id]': customer.id,
+      'metadata[type]': 'trial_card_setup'
+    });
+    if (session.url) {
+      res.json({ url: session.url, session_id: session.id });
+    } else {
+      res.status(400).json({ error: session.error?.message || 'Setup session creation failed' });
+    }
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Handle setup成功的 webhook in the stripe webhook handler (setup_intent.succeeded saves payment method)
+
 // ===== DIRECT MAIL PAYMENTS =====
 // POST /api/stripe/webhook — handle Stripe checkout completed events
 app.post('/api/stripe/webhook', async (req, res) => {
@@ -4946,6 +4971,21 @@ app.post('/api/stripe/webhook', async (req, res) => {
       var customerEmail = session.customer_email || (session.customer_details && session.customer_details.email);
       var plan = session.metadata && session.metadata.plan;
       var product = session.metadata && session.metadata.product;
+      var metaType = session.metadata && session.metadata.type;
+
+      // Handle setup mode (trial card save)
+      if (session.mode === 'setup' || metaType === 'trial_card_setup') {
+        var customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(customerEmail);
+        if (customer && session.setup_intent) {
+          var si = await stripeApiRequest('GET', 'setup_intents/' + session.setup_intent, {});
+          if (si && si.payment_method) {
+            db.prepare('UPDATE customers SET stripe_payment_method_id = ?, stripe_customer_id = ? WHERE id = ?')
+              .run(si.payment_method, si.customer || customer.stripe_customer_id, customer.id);
+            console.log('[STRIPE] Saved card for ' + customerEmail + ' (trial auto-charge ready)');
+          }
+        }
+      }
+
       if (customerEmail && plan) {
         var customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(customerEmail);
         if (customer) {
