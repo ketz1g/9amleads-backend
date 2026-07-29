@@ -299,4 +299,16 @@ document.querySelectorAll('.modal').forEach(function(m){
   x.send();
 })();
 </script>
+
+<div class="tip-card" id="tip-card" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:20px;margin-bottom:16px;display:flex;align-items:flex-start;gap:14px">
+<div style="font-size:28px;flex-shrink:0;line-height:1" id="tip-icon">🔥</div>
+<div><h4 style="font-size:14px;font-weight:700;color:#92400e;margin-bottom:4px" id="tip-title">You're on fire! Keep going.</h4>
+<p style="font-size:12px;color:#a16207;line-height:1.6" id="tip-text">Every lead you contact today is a potential new client. Your 9am leads are waiting. Review your opportunities and take action.</p></div>
+</div>
+<script>
+var tips=[{icon:"🔥",title:"You're on fire! Keep going.",text:"Every lead you contact today is a potential new client. Your 9am leads are waiting. Review your opportunities and take action."},{icon:"💡",title:"Pro Tip: Follow up fast.",text:"Most conversions happen after the third contact. A structured follow-up over 7-10 days dramatically increases your success rate."},{icon:"🎯",title:"Quality over quantity.",text:"A well-researched, personalised approach beats mass outreach every time. Take 5 minutes to review each lead before contacting."},{icon:"📈",title:"Track your progress.",text:"Use the leads page to track your conversions. Measuring your success rate helps you improve over time."},{icon:"⏰",title:"Early bird advantage.",text:"Leads arrive at 9am. Contacting within the first hour gives you a significant advantage over competitors."},{icon:"🤝",title:"Build relationships.",text:"Treat every lead as the start of a long-term relationship. Today's lead could be tomorrow's referral."}];
+var ci=Math.floor(Math.random()*tips.length);
+function showTip(){var t=tips[ci];document.getElementById('tip-icon').textContent=t.icon;document.getElementById('tip-title').textContent=t.title;document.getElementById('tip-text').textContent=t.text;ci=(ci+1)%tips.length;}
+setInterval(showTip,8000);showTip();
+</script>
 </body></html>
