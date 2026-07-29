@@ -5414,7 +5414,17 @@ if (typeof loadDashboard !== 'function') {
 }
 initPaymentOnLoad();
 
-// Loading timeout fix
-setTimeout(function(){var ds=document.getElementById('delivery-status');if(ds&&ds.textContent.includes('Loading'))ds.textContent='Last updated: just now';var ls=document.querySelectorAll('[class*=loading],[id*=loading]');for(var i=0;i<ls.length;i++){if(ls[i])ls[i].style.display='none';}},6000);
+// Loading fix
+setTimeout(function(){
+  var ds=document.getElementById('delivery-status');
+  if(ds&&ds.textContent.includes('Loading'))ds.textContent='Last updated: just now';
+  // Hide ALL elements containing "Loading" text
+  var all=document.querySelectorAll('div,span,small,p');
+  for(var i=0;i<all.length;i++){
+    if(all[i]&&all[i].textContent&&all[i].textContent.includes('Loading')&&all[i].children.length<2){
+      if(all[i].id!=='delivery-status')all[i].style.display='none';
+    }
+  }
+},6000);
 </script>
 </body></html>
