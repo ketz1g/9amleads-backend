@@ -75,7 +75,7 @@ footer a{color:var(--accent);text-decoration:underline}
 <a href="/portal/leads.html">Export</a>
 <a href="/pricing/">Pricing</a>
 <a href="mailto:hello@9amleads.com">Support</a>
-<a href="mailto:hello@9amleads.com" style="color:var(--text2);font-size:12px"><i class="fas fa-cog"></i></a>
+<a href="#" onclick="showModal('settings-modal');return false" style="color:var(--text2);font-size:12px"><i class="fas fa-cog"></i></a>
 </div>
 </div>
 <div class="container">
@@ -185,7 +185,7 @@ var ci=Math.floor(Math.random()*tips.length);
 <a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" style="width:40px;height:40px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;text-decoration:none;color:#333;transition:.2s" onmouseover="this.style.background='#1877f2';this.style.color='#fff'" onmouseout="this.style.background='#f0f0f0';this.style.color='#333'"><i class="fab fa-facebook-f"></i></a>
 <a href="https://www.tiktok.com/@9amleads.com" target="_blank" style="width:40px;height:40px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;text-decoration:none;color:#333;transition:.2s" onmouseover="this.style.background='#000';this.style.color='#fff'" onmouseout="this.style.background='#f0f0f0';this.style.color='#333'"><i class="fab fa-tiktok"></i></a>
 <a href="https://www.instagram.com/9amleads/" target="_blank" style="width:40px;height:40px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;text-decoration:none;color:#333;transition:.2s" onmouseover="this.style.background='#e4405f';this.style.color='#fff'" onmouseout="this.style.background='#f0f0f0';this.style.color='#333'"><i class="fab fa-instagram"></i></a>
-<a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" style="width:40px;height:40px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;text-decoration:none;color:#333;transition:.2s" onmouseover="this.style.background='#333';this.style.color='#fff'" onmouseout="this.style.background='#f0f0f0';this.style.color='#333'"><i class="fas fa-globe"></i></a>
+<a href="https://9amleads.com" target="_blank" style="width:40px;height:40px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;text-decoration:none;color:#333;transition:.2s" onmouseover="this.style.background='#333';this.style.color='#fff'" onmouseout="this.style.background='#f0f0f0';this.style.color='#333'"><i class="fas fa-globe"></i></a>
 <a href="mailto:hello@9amleads.com" style="width:40px;height:40px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;text-decoration:none;color:#333;transition:.2s" onmouseover="this.style.background='var(--success)';this.style.color='#fff'" onmouseout="this.style.background='#f0f0f0';this.style.color='#333'"><i class="fas fa-envelope"></i></a>
 </div>
 <p style="font-size:11px;color:var(--muted);margin-top:10px">Email: <a href="mailto:hello@9amleads.com" style="color:var(--accent);text-decoration:underline">hello@9amleads.com</a></p>
@@ -207,16 +207,63 @@ var ci=Math.floor(Math.random()*tips.length);
 <button class="btn btn-outline" onclick="closeModal('cancel-modal')">Keep My Plan</button>
 <button class="btn btn-danger" onclick="doCancel()">Yes, Cancel</button>
 </div>
+<div id="cancel-status" style="font-size:12px;color:var(--text2);margin-top:10px"></div>
+</div></div>
+
+<!-- Settings Modal -->
+<div class="modal" id="settings-modal">
+<div class="modal-content">
+<h3><i class="fas fa-cog"></i> Settings</h3>
+<div style="margin-bottom:16px">
+<label class="label">Company Name</label>
+<input type="text" class="input" id="settings-company" placeholder="Your company name">
+</div>
+<div style="margin-bottom:16px">
+<label class="label">Phone Number</label>
+<input type="text" class="input" id="settings-phone" placeholder="Phone number">
+</div>
+<div style="margin-bottom:16px">
+<label class="label">Email Notifications</label>
+<div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+<input type="checkbox" id="settings-emails" checked style="accent-color:var(--accent);width:16px;height:16px">
+<label for="settings-emails" style="font-size:13px;color:var(--text2)">Receive daily lead emails at 9am</label>
+</div>
+</div>
+<div id="settings-status" style="font-size:12px;color:var(--text2);margin-bottom:12px"></div>
+<div style="display:flex;gap:8px;justify-content:flex-end">
+<button class="btn btn-outline" onclick="closeModal('settings-modal')">Close</button>
+<button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+</div>
 </div></div>
 
 <script>
+var _token = '';
+
+// ===== AUTH HEADERS =====
+function authHeaders() {
+  return { 'Authorization': 'Bearer ' + _token, 'Content-Type': 'application/json' };
+}
+function apiCall(method, path, body, cb) {
+  var x = new XMLHttpRequest();
+  x.open(method, path, true);
+  x.setRequestHeader('Authorization', 'Bearer ' + _token);
+  if (body) x.setRequestHeader('Content-Type', 'application/json');
+  x.onload = function() {
+    try { cb(null, JSON.parse(x.responseText)); } catch(e) { cb(null, x.responseText); }
+  };
+  x.onerror = function() { cb('Network error'); };
+  x.send(body ? JSON.stringify(body) : null);
+}
+
 // ===== POSTCODE AREAS =====
 function addArea() {
   var input = document.getElementById('area-input');
   var code = input.value.trim().toUpperCase();
   if (!code) return;
-  // Add to UI
   var tags = document.getElementById('area-tags');
+  if (code.length > 2 || code.length < 1 || !/^[A-Z]+$/.test(code)) {
+    alert('Enter a valid UK postcode area code (1-2 letters, e.g. E, NW, EN)'); return;
+  }
   var tag = document.createElement('span');
   tag.className = 'tag';
   tag.innerHTML = code + ' <button class="remove" onclick="this.parentElement.remove();saveAreas()">&times;</button>';
@@ -233,10 +280,11 @@ function removeArea(code) {
   saveAreas();
 }
 function saveAreas() {
-  var tags = document.getElementById('area-tags');
-  var codes = [];
-  tags.querySelectorAll('.tag').forEach(function(t){codes.push(t.textContent.trim().split(' ')[0]);});
-  document.getElementById('plan-areas').textContent = codes.join(', ') || 'None set';
+  var codes = getAreas();
+  apiCall('PUT', '/api/postcodes/update', { postcodes: codes }, function(err, d) {
+    if (err || !d.success) { alert('Failed to save postcode areas'); return; }
+    document.getElementById('plan-areas').textContent = (codes.length ? codes.join(', ') : 'None set');
+  });
 }
 function getAreas() {
   var tags = document.getElementById('area-tags');
@@ -247,40 +295,77 @@ function getAreas() {
 
 // ===== LEAD FILTERS =====
 function saveFilters() {
-  var f = {
+  var f = JSON.stringify({
     minBedrooms: document.getElementById('f-minbeds').value,
     maxBedrooms: document.getElementById('f-maxbeds').value,
     propertyType: document.getElementById('f-proptype').value,
     maxPrice: document.getElementById('f-maxprice').value
-  };
-  console.log('Filters saved:', f);
+  });
+  apiCall('PUT', '/api/settings/lead-filters', { leadFilters: f }, function(err, d) {
+    if (err) console.log('Failed to save filters');
+  });
 }
 
 // ===== CANCEL =====
 function showCancelConfirm() { showModal('cancel-modal'); }
 function doCancel() {
-  closeModal('cancel-modal');
-  if (confirm('Are you sure? Your free trial will end and no charge will be made.')) {
-    alert('Trial cancelled. No charge made. Your dashboard is still accessible.');
-  }
+  var status = document.getElementById('cancel-status');
+  status.textContent = 'Processing...';
+  apiCall('POST', '/api/subscription/cancel', {}, function(err, d) {
+    if (err || !d.success) { status.textContent = 'Failed to cancel. Please email hello@9amleads.com.'; return; }
+    closeModal('cancel-modal');
+    alert(d.message || 'Trial cancelled. No charge made. Your dashboard is still accessible.');
+  });
 }
 function showModal(id) { document.getElementById(id).classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
+// ===== SETTINGS =====
+function loadSettings() {
+  apiCall('GET', '/api/settings', {}, function(err, d) {
+    if (d) {
+      if (d.company) document.getElementById('settings-company').value = d.company;
+      if (d.phone) document.getElementById('settings-phone').value = d.phone;
+    }
+  });
+}
+function saveSettings() {
+  var company = document.getElementById('settings-company').value.trim();
+  var phone = document.getElementById('settings-phone').value.trim();
+  var status = document.getElementById('settings-status');
+  apiCall('PUT', '/api/settings', { company: company, phone: phone }, function(err, d) {
+    if (err || !d.success) { status.textContent = 'Failed to save'; status.style.color = '#dc2626'; return; }
+    status.textContent = 'Settings saved!';
+    status.style.color = 'var(--success)';
+    setTimeout(function(){ closeModal('settings-modal'); }, 1000);
+  });
+}
+
 // ===== CRM =====
+function loadCrm() {
+  apiCall('GET', '/api/settings/crm', {}, function(err, d) {
+    if (d && d.crm_webhook_url) document.getElementById('crm-url').value = d.crm_webhook_url;
+  });
+}
 function saveCrm() {
   var url = document.getElementById('crm-url').value.trim();
   var status = document.getElementById('crm-status');
   if (!url) { status.textContent = 'Please enter a webhook URL'; status.style.color = '#dc2626'; return; }
-  status.textContent = 'CRM webhook saved! Leads will be pushed at 9am daily.';
-  status.style.color = 'var(--success)';
+  apiCall('PUT', '/api/settings/crm', { crm_webhook_url: url }, function(err, d) {
+    if (err || !d.success) { status.textContent = 'Failed to save CRM webhook'; status.style.color = '#dc2626'; return; }
+    status.textContent = 'CRM webhook saved! Leads will be pushed at 9am daily.';
+    status.style.color = 'var(--success)';
+  });
 }
 function testCrm() {
   var url = document.getElementById('crm-url').value.trim();
   var status = document.getElementById('crm-status');
   if (!url) { status.textContent = 'Enter a URL first'; status.style.color = '#dc2626'; return; }
-  status.textContent = 'Test sent! Check your CRM for a test payload.';
-  status.style.color = 'var(--success)';
+  apiCall('POST', '/api/crm/test', { url: url }, function(err, d) {
+    if (err || !d.success) { status.textContent = 'Test failed: ' + (d?.error || 'Network error'); status.style.color = '#dc2626'; return; }
+    status.textContent = 'Test sent! Check your CRM for a test payload.';
+    status.style.color = 'var(--success)';
+  });
 }
 
 // ===== MODAL CLOSE ON OUTSIDE CLICK =====
@@ -293,15 +378,15 @@ document.querySelectorAll('.modal').forEach(function(m){
   var sd = localStorage.getItem('mld_portal_session');
   if (!sd) { window.location.href = '/portal/'; return; }
   var sess = JSON.parse(sd);
-  var token = sess ? sess.token : null;
-  if (!token) { window.location.href = '/portal/'; return; }
+  _token = sess ? sess.token : null;
+  if (!_token) { window.location.href = '/portal/'; return; }
   
   var greet = document.getElementById('greeting');
   if (sess.name) greet.textContent = 'Good morning, ' + sess.name;
   
   var x = new XMLHttpRequest();
   x.open('GET', '/api/leads', true);
-  x.setRequestHeader('Authorization', 'Bearer ' + token);
+  x.setRequestHeader('Authorization', 'Bearer ' + _token);
   x.onload = function() {
     try {
       var leads = JSON.parse(x.responseText);
@@ -315,6 +400,9 @@ document.querySelectorAll('.modal').forEach(function(m){
     } catch(e) {}
   };
   x.send();
+
+  loadSettings();
+  loadCrm();
 })();
 </script>
 
