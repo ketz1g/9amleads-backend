@@ -1061,6 +1061,13 @@ app.post('/api/auth/signup', async (req, res) => {
         var rmScraperFast = require('./rightmove_scraper_v2');
         var movingLeads = await rmScraperFast.collectMovingLeads();
         if (!movingLeads || movingLeads.length === 0) { console.log('[SIGNUP] No leads available yet'); return; }
+        // Enrich leads with full addresses + postcodes (street number/name + full postcode)
+        try {
+          var maxPick = Math.min(movingLeads.length, 5);
+          var pick = movingLeads.slice(0, maxPick);
+          var enrichedPick = await rmScraperFast.enrichMovingLeads(pick, 1);
+          movingLeads.splice.apply(movingLeads, [0, maxPick].concat(enrichedPick));
+        } catch(ee) { console.log('[SIGNUP] Enrich error:', ee.message); }
         var db2 = getDb();
         var now2 = new Date().toISOString();
         var saved = 0;
