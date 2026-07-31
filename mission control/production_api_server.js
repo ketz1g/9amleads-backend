@@ -8601,6 +8601,26 @@ app.post('/api/send-enquiry', async (req, res) => {
   }
 });
 
+// POST /api/admin/release-postcodes — release specific or all postcode claims (admin only)
+app.post('/api/admin/release-postcodes', async (req, res) => {
+  try {
+    const auth = req.headers.authorization;
+    if (!auth || auth !== 'Bearer 9amAdmin2024!') return res.status(401).json({ error: 'Unauthorized' });
+    const { codes } = req.body || {};
+    const assignmentsData = loadAssignments();
+    const map = assignmentsData.assignments || {};
+    let released = 0;
+    if (Array.isArray(codes) && codes.length) {
+      codes.forEach(function(c) { if (map[c]) { delete map[c]; released++; } });
+    } else {
+      Object.keys(map).forEach(function(k) { delete map[k]; });
+      released = Object.keys(map).length;
+    }
+    saveAssignments(assignmentsData);
+    res.json({ success: true, released: released, remaining: Object.keys(map).length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== ADMIN RESET (TEMPORARY - for fresh test) =====
 app.post('/api/admin/reset', async (req, res) => {
   try {
