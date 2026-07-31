@@ -39,11 +39,11 @@ const POSTCODE_DISTRICTS_FILE = path.join(DATA_DIR, 'uk-postcode-districts.json'
 const POSTCODE_AREAS_FILE = path.join(DATA_DIR, 'uk-postcode-areas.json');
 const POSTCODE_ASSIGNMENTS_FILE = path.join(DATA_DIR, 'postcode-assignments.json');
 
-// Postcode district limits per plan (districts are granular, so higher limits)
+// Postcode district limits per plan — unlimited for all (any customer can add any postcode)
 const POSTCODE_LIMITS = {
-  free_trial: 3,
-  essential: 3,
-  starter: 3,
+  free_trial: 999,
+  essential: 999,
+  starter: 999,
   pro: 999,
   enterprise: 999
 };
