@@ -143,20 +143,9 @@ function leadMatchesTarget(lead, customer, product) {
         // Map known city/town names to postcode area codes so they still match.
         if (!areaMatch && leadFull) {
           var cityToArea = {
-            'B': ['BIRMINGHAM','SOLIHULL','WALSALL','WOLVERHAMPTON','WEST BROMWICH','SUTTON COLDFIELD','COVENTRY'],
-            'EN': ['ENFIELD','POTTERS BAR','HERTFORD','HODDESDON','BROXBOURNE','WALTHAM CROSS','CHESHUNT'],
-            'NW': ['WILLESDEN','CRICKLEWOOD','KILBURN','QUEENS PARK','BRONDESBURY','WEMBLEY','HENDON','EDGWARE','WEST HAMPSTEAD','SOUTH HAMPSTEAD','SWISS COTTAGE','ST JOHN\'S WOOD'],
-            'B1': ['BIRMINGHAM'],'B2': ['BIRMINGHAM'],'B3': ['BIRMINGHAM'],'B4': ['BIRMINGHAM'],'B5': ['BIRMINGHAM'],'B6': ['BIRMINGHAM'],'B7': ['BIRMINGHAM'],'B8': ['BIRMINGHAM'],'B9': ['BIRMINGHAM'],'B10': ['BIRMINGHAM'],'B11': ['BIRMINGHAM'],'B12': ['BIRMINGHAM'],'B13': ['BIRMINGHAM'],'B14': ['BIRMINGHAM'],'B15': ['BIRMINGHAM'],'B16': ['BIRMINGHAM'],'B17': ['BIRMINGHAM'],'B18': ['BIRMINGHAM'],'B19': ['BIRMINGHAM'],'B20': ['BIRMINGHAM'],
-            'M': ['MANCHESTER','SALFORD','BOLTON','ROCHDALE','STOCKPORT','OLDHAM','BURY','TRAFFORD','WYTHENSHAWE'],
-            'L': ['LIVERPOOL','WIRRAL','BOOTLE','BIRKENHEAD','WALLASEY'],
-            'LS': ['LEEDS'],'S': ['SHEFFIELD'],'BS': ['BRISTOL'],'NG': ['NOTTINGHAM'],'LE': ['LEICESTER'],
-            'CF': ['CARDIFF'],'EH': ['EDINBURGH'],'G': ['GLASGOW'],'BT': ['BELFAST'],
-            'CM': ['CHELMSFORD','COLCHESTER','BASILDON','BRENTWOOD','ROMFORD','SOUTHEND'],'CO': ['COLCHESTER','CHELMSFORD'],
-            'SS': ['SOUTHEND','BASILDON'],'IG': ['ILFORD','LONDON'],'AL': ['ST ALBANS','HATFIELD','WELWYN'],'HP': ['HEMEL HEMPSTEAD','AYLESBURY'],
-            'SG': ['STEVENAGE','LETCHWORTH','HITCHIN'],'WD': ['WATFORD','BUSHEY','RICKMANSWORTH'],
-            'SE': ['LONDON','GREENWICH','LEWISHAM','BROMLEY','DEPTFORD','CATFORD'],'SW': ['LONDON','BATTERSEA','PUTNEY','CLAPHAM','WIMBLEDON','BRIXTON'],
-            'W': ['LONDON','MAIDA VALE','NOTTING HILL','PADDINGTON','FULHAM'],'WC': ['LONDON','HOLBORN','COVENT GARDEN'],'E': ['LONDON','HACKNEY','WALTHAMSTOW','STRATFORD','DOCKLANDS'],
-            'EC': ['LONDON','CITY OF LONDON','SHOREDITCH'],'N': ['LONDON','HACKNEY','ISLINGTON','FINSBURY PARK'],'NW': ['LONDON','CAMDEN','HAMPSTEAD']
+            'B': ['BIRMINGHAM','SOLIHULL','WALSALL','WOLVERHAMPTON','WEST BROMWICH','SUTTON COLDFIELD','COVENTRY','SMETHWICK','ACOCKS GREEN','HARBORNE','MOSELEY'],
+            'EN': ['ENFIELD','POTTERS BAR','HERTFORD','HODDESDON','BROXBOURNE','WALTHAM CROSS','CHESHUNT','EDMONTON','PALMERS GREEN','SOUTHGATE','BARNET','HADLEY WOOD'],
+            'NW': ['WILLESDEN','CRICKLEWOOD','KILBURN','QUEENS PARK','BRONDESBURY','WEMBLEY','HENDON','EDGWARE','WEST HAMPSTEAD','SOUTH HAMPSTEAD','SWISS COTTAGE','ST JOHN\'S WOOD','FINCHLEY','GOLDERS GREEN','MILL HILL','HAMPSTEAD','KENTISH TOWN','CAMDEN','CHALK FARM','KILBURN HIGH ROAD']
           };
           var cityList = cityToArea[areaCode];
           if (cityList) {
@@ -164,7 +153,6 @@ function leadMatchesTarget(lead, customer, product) {
               if (leadFull.indexOf(cityList[ci]) !== -1) { areaMatch = true; break; }
             }
           }
-          if (!areaMatch && areaCode.length === 1 && leadFull.indexOf('LONDON') !== -1 && ['E','N','NW','SE','SW','W','WC','EC','EN','HA','IG','RM','UB'].indexOf(areaCode) !== -1) { areaMatch = true; break; }
         }
       }
     } else {
