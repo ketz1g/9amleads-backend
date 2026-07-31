@@ -178,6 +178,96 @@ function formatApifyTenders(items, locationFilter) {
   }));
 }
 
+// ===== CONTRACTS FINDER HTML SEARCH (working free source) =====
+// The old /api/rest/2.0/notices JSON API was retired. The HTML search
+// results page (www.contractsfinder.service.gov.uk/search/results) still
+// returns real, current notices and is parseable without a key.
+function fetchTendersFromHTML(keywords, location, maxCount) {
+  return new Promise((resolve) => {
+    const searchTerm = Array.isArray(keywords) ? keywords.join(' ') : (keywords || 'construction');
+    const searchPath = '/search/results?keywords=' + encodeURIComponent(searchTerm);
+    const options = {
+      hostname: 'www.contractsfinder.service.gov.uk',
+      path: searchPath,
+      method: 'GET',
+      headers: {
+        'Accept': 'text/html',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-GB,en;q=0.9'
+      },
+      timeout: 30000
+    };
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) { resolve([]); return; }
+        const leads = [];
+        const blocks = body.split('<div class="search-result">');
+        for (let i = 1; i < blocks.length; i++) {
+          const b = blocks[i];
+          const titleMatch = b.match(/<h2[^>]*id=([a-f0-9-]+)><a[^>]*>([\s\S]*?)<\/a>/);
+          if (!titleMatch) continue;
+          const noticeId = titleMatch[1];
+          const title = titleMatch[2].replace(/<[^>]+>/g, '').trim();
+          const clean = (s) => (s || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+          const text = clean(b);
+          let buyer = '';
+          const buyerMatch = text.match(/(?:by|for|authority|org)(?:,?\s)+([A-Z][A-Za-z0-9 &]+?)(?:\s+Procurement|\s+Notice|\s+Closing|\s+&nbsp;|$)/);
+          if (buyerMatch) buyer = buyerMatch[1].trim();
+          // Extract buyer from title block (2nd line of text)
+          if (!buyer) {
+            const lines = text.split(/\s{2,}|&nbsp;/).filter(Boolean);
+            if (lines.length > 1 && lines[1].length > 3 && lines[1].length < 80) buyer = lines[1];
+          }
+          const closingMatch = text.match(/Closing\s+([0-9]{1,2} [A-Za-z]+ [0-9]{4}[^,]*)/);
+          const valueMatch = text.match(/Contract value\s+([^P][A-Za-z0-9£,.&\s-]{3,60})/);
+          const locMatch = text.match(/Contract location\s+([A-Za-z0-9 ,-]{2,50})/);
+          const pubMatch = text.match(/Publication date\s+([0-9]{1,2} [A-Za-z]+ [0-9]{4})/);
+          const stageMatch = text.match(/Procurement stage\s+([A-Za-z ]+?)\s+Notice/);
+          const locText = locMatch ? locMatch[1].trim() : '';
+          if (location) {
+            const loc = (locText + ' ' + text).toLowerCase();
+            if (!loc.includes(location.toLowerCase())) continue;
+          }
+          leads.push({
+            id: noticeId || 'CF_' + Date.now() + '_' + i,
+            title: title,
+            contractingAuthority: buyer,
+            contractValue: 0,
+            contractValueLabel: valueMatch ? valueMatch[1].trim().replace(/\u00a3/g, '£') : '',
+            deadlineDate: closingMatch ? closingMatch[1].trim() : '',
+            cpvCode: '',
+            description: text.length > 100 ? text.substring(0, 300) : text,
+            location: locText,
+            publishedDate: pubMatch ? pubMatch[1].trim() : '',
+            procurementType: stageMatch ? stageMatch[1].trim() : 'Open',
+            status: 'Open',
+            source: 'Contracts Finder',
+            scrapedAt: new Date().toISOString()
+          });
+          if (maxCount && leads.length >= maxCount) break;
+        }
+        console.log('    Contracts Finder (HTML) returned ' + leads.length + ' notices');
+        resolve(leads);
+      });
+    });
+    req.on('error', (e) => { console.log('    Contracts Finder (HTML) error: ' + e.message); resolve([]); });
+    req.setTimeout(30000, () => { req.destroy(); resolve([]); });
+    req.end();
+  });
+}
+
+// Collect fresh tenders for the distributor (exported for production server)
+async function collectTendersLeads(config) {
+  config = config || {};
+  const keywords = config.keywords || 'construction';
+  const location = config.location || '';
+  const maxCount = config.maxCount || 100;
+  let leads = await fetchTendersFromHTML(keywords, location, maxCount);
+  return leads;
+}
+
 // ===== SAMPLE DATA GENERATOR =====
 function generateSampleTenders(keywords, location, count) {
   const tenderDescriptions = [
@@ -592,4 +682,8 @@ async function main() {
   }
 }
 
-main().catch(e => console.error('Error:', e.message));
+module.exports = { collectTendersLeads, fetchTendersFromHTML };
+
+if (require.main === module) {
+  main().catch(e => console.error('Error:', e.message));
+}
