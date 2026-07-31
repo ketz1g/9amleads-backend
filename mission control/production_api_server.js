@@ -172,16 +172,6 @@ function validatePostcodes(postcodes, customerPlan, customerProduct, customerId,
       errors.push('"' + pc + '" is not a valid UK postcode area code (use 1 or 2 letters like B, N, EN, SG, CM).');
       continue;
     }
-
-    // Check area exclusivity: only one customer per area per product
-    for (const [claimedCode, assignment] of Object.entries(assignments.assignments || {})) {
-      if (assignment.status !== 'active') continue;
-      if (assignment.customer_id === customerId) continue;
-      if (claimedCode === upper) {
-        errors.push('"' + upper + '" is already taken by another customer for ' + (assignment.product || 'this product') + '.');
-        break;
-      }
-    }
   }
 
   return { valid: errors.length === 0, errors };
@@ -1978,14 +1968,13 @@ app.get('/api/postcodes', (req, res) => {
   for (const [code, info] of Object.entries(districts)) {
     const areaCode = info.area;
     if (!areaMap[areaCode]) {
-      const areaAssignment = assignments.assignments ? assignments.assignments[areaCode] : null;
       areaMap[areaCode] = {
         code: areaCode,
         name: (areas[areaCode] || {}).name || areaCode,
         region: info.region,
         district_count: 0,
-        available: !areaAssignment,
-        taken_by: areaAssignment ? areaAssignment.customer_id : null
+        available: true,
+        taken_by: null
       };
     }
     areaMap[areaCode].district_count++;
