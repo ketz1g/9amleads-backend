@@ -477,13 +477,17 @@ async function distributeProduct(product) {
     leadAssignments.push({ lead: rawLead, normalised, addrKey, customers: matchedCustomers });
   }
 
-  // Phase 2: Exclusive tiered round-robin distribution (3 passes)
-  // Each source lead goes to at most ONE customer (exclusive)
+  // Phase 2: Tiered round-robin distribution (3 passes).
+  // Leads are spread evenly across the customer's postcode areas so that,
+  // for example, a customer with 5 postcodes and a 5-lead quota gets 1 lead
+  // from each postcode. Same behaviour for all paid packages.
   const customerUsage = {};
+  const customerPostcodeUsage = {};
   const customerLabels = {};
   const customerLimits = {};
   activeCustomers.forEach(c => {
     customerUsage[c.id] = 0;
+    customerPostcodeUsage[c.id] = {};
     customerLabels[c.id] = c.company || c.email;
     customerLimits[c.id] = c.leads_per_day || 5;
   });
@@ -494,11 +498,45 @@ async function distributeProduct(product) {
   // Sort leads with fewest matching customers first (scarcer leads go first)
   leadAssignments.sort((a, b) => a.customers.length - b.customers.length);
 
+  // Interleave by postcode area so a customer's quota is spread across all
+  // their requested postcodes (e.g. 5 postcodes + 5 leads = 1 lead per postcode)
+  const areaBucket = {};
+  leadAssignments.forEach(function(assignment) {
+    var area = getLeadPostcodeArea(assignment) || '_';
+    if (!areaBucket[area]) areaBucket[area] = [];
+    areaBucket[area].push(assignment);
+  });
+  var areasOrder = Object.keys(areaBucket).sort();
+  var interleaved = [];
+  var areaIdx = 0;
+  var still = true;
+  while (still) {
+    still = false;
+    for (var bi = 0; bi < areasOrder.length; bi++) {
+      var bucket = areaBucket[areasOrder[bi]];
+      if (bucket && bucket.length) { interleaved.push(bucket.shift()); still = true; }
+    }
+    areaIdx++;
+  }
+  leadAssignments = interleaved;
+
+  function getLeadPostcodeArea(leadData) {
+    var pc = leadData.lead.postcode || leadData.lead.address || leadData.lead.location || '';
+    return extractPostcodeArea(pc);
+  }
+
   function assignLead(leadData, rawLeadData, addrKeyData, tierFilter) {
     const { lead: rl, normalised: nl, addrKey: ak, customers } = leadData;
-    // Filter customers by tier, then sort by usage
+    const leadArea = getLeadPostcodeArea(leadData);
+    // Filter customers by tier, then sort by per-postcode usage (fewest first)
+    // to spread leads evenly across postcodes, then by total usage.
     const eligible = customers.filter(mc => mc.tier <= tierFilter);
-    eligible.sort((a, b) => customerUsage[a.customer.id] - customerUsage[b.customer.id]);
+    eligible.sort((a, b) => {
+      var au = customerPostcodeUsage[a.customer.id][leadArea] || 0;
+      var bu = customerPostcodeUsage[b.customer.id][leadArea] || 0;
+      if (au !== bu) return au - bu;
+      return customerUsage[a.customer.id] - customerUsage[b.customer.id];
+    });
 
     for (const mc of eligible) {
       const c = mc.customer;
@@ -519,6 +557,7 @@ async function distributeProduct(product) {
       db.leads.push(leadRecord);
       existingAddresses.add(ak);
       customerUsage[c.id]++;
+      if (leadArea) customerPostcodeUsage[c.id][leadArea] = (customerPostcodeUsage[c.id][leadArea] || 0) + 1;
       inserted++;
       // Track lead count on customer record
       var ldCust = db.customers.find(function(x) { return x.id === c.id; });
