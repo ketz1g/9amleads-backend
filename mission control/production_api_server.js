@@ -3949,7 +3949,23 @@ cron.schedule('0 9 * * 1-5', async () => {
             return 0;
           });
           if (prodLeads.length > 0) {
-            custLeads.push(prodLeads[0]); // Take 1 lead per product per round
+            // Spread across postcode areas: prefer a lead whose postcode area
+            // hasn't been picked yet for this customer today (e.g. 5 postcodes
+            // + 5 leads = 1 lead per postcode). Same for all paid packages.
+            var chosen = null;
+            for (var pli = 0; pli < prodLeads.length; pli++) {
+              var pl = prodLeads[pli];
+              var plData = null;
+              try { plData = typeof pl.data === 'string' ? JSON.parse(pl.data) : (pl.data || {}); } catch(e) { plData = {}; }
+              var plArea = extractPostcodeArea(plData.postcode || plData.address || '');
+              var alreadyPicked = custLeads.some(function(cl) {
+                var cd = null;
+                try { cd = typeof cl.data === 'string' ? JSON.parse(cl.data) : (cl.data || {}); } catch(e2) { cd = {}; }
+                return plArea && extractPostcodeArea(cd.postcode || cd.address || '') === plArea;
+              });
+              if (!alreadyPicked) { chosen = pl; break; }
+            }
+            custLeads.push(chosen || prodLeads[0]); // Take 1 lead per product per round, spread by postcode
           }
         }
       }
