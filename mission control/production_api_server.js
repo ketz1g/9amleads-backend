@@ -4629,10 +4629,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       } catch(e) { custAreas = []; }
       var totalDailyLimit = getPlanLimit(cust.product, cust.plan, primCoverage) || 5;
       // Ensure customer's primary product always has at least 1 lead
+      var primaryPickedId = null;
       if (cust.product) {
         var primaryLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === cust.product; });
         if (primaryLeads.length > 0) {
           custLeads.push(primaryLeads[0]);
+          primaryPickedId = primaryLeads[0].id;
         }
       }
       var thisWeekStart2 = new Date(); thisWeekStart2.setDate(thisWeekStart2.getDate() - (thisWeekStart2.getDay() || 7) + 1);
@@ -4680,6 +4682,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var availByProd = {};
       products.forEach(function(p) { availByProd[p] = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === p; }); });
       var pickedIds = [];
+      if (primaryPickedId) pickedIds.push(primaryPickedId);
       var totalNeeded = totalDailyLimit;
       // Round 1: try to give EVERY product at least 1 lead from a different area
       var usedAreas = {};
