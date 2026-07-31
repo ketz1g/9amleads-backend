@@ -588,6 +588,35 @@ async function distributeProduct(product) {
     assignLead(assignment, null, null, 2);
   }
 
+  // Phase 3b: Enrich newly inserted leads with full addresses + postcodes
+  // by fetching each property's detail page. This guarantees delivered leads
+  // carry street number, street name, and full postcode.
+  try {
+    if (inserted > 0 && product === 'moving') {
+      const rmScraper = require('./rightmove_scraper_v2.js');
+      var insertedLeads = db.leads.filter(function(l) { return l.customer_id && l.product === product && l.delivered === 0 && (l.created_at || '').startsWith(now.substring(0, 10)); });
+      var enriched = 0;
+      for (var ei = 0; ei < insertedLeads.length; ei++) {
+        var rec = insertedLeads[ei];
+        var ld = null;
+        try { ld = JSON.parse(rec.data); } catch(e) {}
+        if (!ld) continue;
+        if (ld.postcode && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(ld.postcode.trim())) continue; // already full
+        if (!ld.url) continue;
+        var detail = await rmScraper.fetchPropertyDetail(ld.url);
+        if (detail) {
+          ld.address = detail.fullAddress || ld.address;
+          ld.postcode = detail.postcode || ld.postcode || '';
+          ld.fullAddress = detail.fullAddress || ld.address;
+          rec.data = JSON.stringify(ld);
+          enriched++;
+        }
+        if (ei % 5 === 0 && ei > 0) { await new Promise(function(r) { setTimeout(r, 300); }); }
+      }
+      if (enriched > 0) console.log('  [ENRICH] Added full addresses/postcodes to ' + enriched + ' leads');
+    }
+  } catch(e) { console.log('  [ENRICH] Error: ' + e.message); }
+
     // Phase 4: No demo supplement — only real scraped data used
   var generated = 0;
   saveJSON(DB_FILE, db);
