@@ -8351,6 +8351,19 @@ function syncCustomers(product) {
               leads = [];
             }
           } catch(e) { console.log('[SCRAPER] Probate error:', e.message); leads = []; }
+        } else if (product === 'tenders') {
+          try {
+            var tendersScraper = require('./tenders_scraper');
+            leads = await tendersScraper.collectTendersLeads({ keywords: 'construction,cleaning,catering,IT,security,maintenance', maxCount: 100 });
+            if (leads && leads.length > 0) {
+              var ftp = filterFresh(leads, 'scrapedAt');
+              leads = ftp.fresh.length > 0 ? ftp.fresh : ftp.fallback;
+              console.log('[SCRAPER] Tenders: ' + ftp.fresh.length + ' fresh, ' + ftp.fallback.length + ' fallback, total=' + leads.length);
+            } else {
+              console.log('[SCRAPER] Tenders: 0 from scraper');
+              leads = [];
+            }
+          } catch(e) { console.log('[SCRAPER] Tenders error:', e.message); leads = []; }
         } else {
           leads = [];
         }
