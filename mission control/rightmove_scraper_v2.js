@@ -107,6 +107,69 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
   });
 }
 
+// Look up the full address (house number + street + postcode) via Postcoder
+// (licensed Royal Mail PAF data). Given the street name and full postcode from
+// the Rightmove detail page, Postcoder returns the numbered addresses so we can
+// append the correct house number.
+function lookupPostcoderAddress(postcode, streetHint) {
+  return new Promise((resolve) => {
+    const key = process.env.POSTCODER_API_KEY;
+    if (!key) return resolve(null);
+    const cleanPc = (postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!cleanPc) return resolve(null);
+    const opts = {
+      hostname: 'ws.postcoder.com',
+      path: '/pcw/' + key + '/address/uk/' + cleanPc + '?format=json&lines=3&page=0',
+      method: 'GET',
+      headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      timeout: 20000
+    };
+    const req = https.get(opts, (res) => {
+      let body = '';
+      res.on('data', (c) => body += c);
+      res.on('end', () => {
+        if (res.statusCode !== 200) { resolve(null); return; }
+        try {
+          const addresses = JSON.parse(body);
+          if (!Array.isArray(addresses) || addresses.length === 0) { resolve(null); return; }
+          // Normalise the Rightmove street hint for matching
+          const hint = (streetHint || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (hint) {
+            // Prefer the address whose street matches the hint
+            const match = addresses.find(function(a) {
+              const st = (a.street || a.addressline1 || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+              return hint && st && st.indexOf(hint) !== -1;
+            });
+            if (match) return resolve({
+              fullAddress: match.summaryline || match.addressline1 || '',
+              address1: match.addressline1 || '',
+              street: match.street || '',
+              buildingNumber: match.number || match.premise || '',
+              town: match.posttown || match.county || '',
+              postcode: match.postcode || cleanPc,
+              udprn: match.udprn || ''
+            });
+          }
+          // Fallback: first address in the list
+          const a = addresses[0];
+          resolve({
+            fullAddress: a.summaryline || a.addressline1 || '',
+            address1: a.addressline1 || '',
+            street: a.street || '',
+            buildingNumber: a.number || a.premise || '',
+            town: a.posttown || a.county || '',
+            postcode: a.postcode || cleanPc,
+            udprn: a.udprn || ''
+          });
+        } catch(e) { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.setTimeout(20000, () => { req.destroy(); resolve(null); });
+    req.end();
+  });
+}
+
 // Fetch a property's detail page to extract the full address and postcode
 // (Rightmove list view hides street numbers and full postcodes).
 function fetchPropertyDetail(propertyUrl) {
@@ -171,6 +234,20 @@ async function enrichMovingLeads(leads, concurrency) {
       lead.postcode = detail.postcode || lead.postcode || '';
       lead.fullAddress = detail.fullAddress || lead.address;
     }
+    // Enrich with the exact house number via Postcoder (licensed Royal Mail PAF).
+    // Rightmove never publishes house numbers, so this is the accurate source.
+    if (lead.postcode) {
+      const streetHint = (detail && detail.fullAddress) || lead.address || '';
+      const fullAddr = await lookupPostcoderAddress(lead.postcode, streetHint);
+      if (fullAddr) {
+        lead.address = fullAddr.address1 || fullAddr.fullAddress || lead.address;
+        lead.fullAddress = fullAddr.fullAddress || lead.address;
+        lead.street = fullAddr.street || lead.street || '';
+        lead.buildingNumber = fullAddr.buildingNumber || '';
+        lead.postcode = fullAddr.postcode || lead.postcode;
+        lead.udprn = fullAddr.udprn || '';
+      }
+    }
     enriched.push(lead);
     if (i % concurrency === 0 && i > 0) {
       await new Promise(function(r) { setTimeout(r, 400); });
@@ -214,7 +291,7 @@ async function collectMovingLeads(config) {
   return deduped;
 }
 
-module.exports = { collectMovingLeads, enrichMovingLeads, fetchPropertyDetail };
+module.exports = { collectMovingLeads, enrichMovingLeads, fetchPropertyDetail, lookupPostcoderAddress };
 
 if (require.main === module) {
   collectMovingLeads().then(function(l) {
