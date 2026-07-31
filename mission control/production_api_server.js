@@ -1061,6 +1061,17 @@ app.post('/api/auth/signup', async (req, res) => {
         var rmScraperFast = require('./rightmove_scraper_v2');
         var movingLeads = await rmScraperFast.collectMovingLeads();
         if (!movingLeads || movingLeads.length === 0) { console.log('[SIGNUP] No leads available yet'); return; }
+        // Filter leads to the customer's requested postcode areas (e.g. B, EN, NW)
+        var targetAreas = [];
+        try { targetAreas = JSON.parse(customer.target_areas || '[]'); } catch(e) {}
+        function extractArea(pc) { return (pc || '').toUpperCase().replace(/[^A-Z].*$/, ''); }
+        if (targetAreas.length > 0) {
+          movingLeads = movingLeads.filter(function(l) {
+            var a = extractArea(l.postcode || l.address || l.location || '');
+            return targetAreas.some(function(t) { return extractArea(t) === a; });
+          });
+        }
+        if (movingLeads.length === 0) { console.log('[SIGNUP] No leads in requested areas yet'); return; }
         // Enrich leads with full addresses + postcodes (street number/name + full postcode)
         try {
           var maxPick = Math.min(movingLeads.length, 5);
