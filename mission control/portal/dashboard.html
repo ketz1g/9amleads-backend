@@ -450,13 +450,14 @@ function reloadPostcodes() {
 function renderPostcodes(areas) {
   var tags = document.getElementById('area-tags');
   tags.innerHTML = '';
-  (areas || []).forEach(function(code){
+  var codes = (areas || []).map(function(a){ return (typeof a === 'string') ? a : a.code; });
+  codes.forEach(function(code){
     var tag = document.createElement('span');
     tag.className = 'tag';
     tag.innerHTML = code + ' <button class="remove" onclick="this.parentElement.remove();saveAreas()">&times;</button>';
     tags.appendChild(tag);
   });
-  document.getElementById('plan-areas').textContent = (areas && areas.length ? areas.join(', ') : 'None set');
+  document.getElementById('plan-areas').textContent = (codes.length ? codes.join(', ') : 'None set');
 }
 
 // ===== CRM =====
