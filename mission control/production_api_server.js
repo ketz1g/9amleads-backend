@@ -6031,6 +6031,9 @@ app.post('/api/distribute', adminAuth, async (req, res) => {
     } else {
       result = await distributor.distributeAll(true);
     }
+    // Reload DB cache so subsequent reads reflect the distributor's writes
+    _dbData = null;
+    getDb();
     res.json({ success: true, result });
   } catch (e) {
     console.error('[DISTRIBUTE] Error:', e.message);
