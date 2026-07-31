@@ -571,13 +571,26 @@ async function main() {
   }
 }
 
-main().catch(e => console.error('Error:', e.message));
+if (require.main === module) {
+  main().catch(e => console.error('Error:', e.message));
+}
 
-async function collectProbateLeads() {
+async function collectProbateLeads(config) {
+  config = config || {};
   console.log('[PROBATE] Fetching from Gov.uk probate registry...');
   var results = await fetchProbateRegistry();
+  if (results.length === 0 && APIFY_API_KEY) {
+    console.log('[PROBATE] Direct fetch empty, trying Apify Playwright scraper...');
+    try {
+      var apifyResults = await fetchProbateApify(config.counties || []);
+      if (apifyResults && apifyResults.length > 0) {
+        results = apifyResults;
+        console.log('[PROBATE] Apify returned ' + results.length + ' probate records');
+      }
+    } catch(e) { console.log('[PROBATE] Apify error:', e.message); }
+  }
   console.log('[PROBATE] Got ' + results.length + ' probate records');
   return results;
 }
 
-module.exports = { fetchProbateRegistry, collectProbateLeads };
+module.exports = { fetchProbateRegistry, fetchProbateApify, collectProbateLeads };
