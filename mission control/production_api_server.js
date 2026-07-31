@@ -7992,6 +7992,14 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var html = generateLeadEmailHTML(cust, custLeads);
       var subject = 'Your 9am Opportunities for ' + (cust.target_areas ? JSON.parse(cust.target_areas).join(', ') : 'your area') + ' \u2014 ' + new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
       await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, subject, html);
+      // Send to CRM webhook if configured (same time as email)
+      if (cust.crm_webhook_url) {
+        try {
+          var crmPayload = JSON.stringify({ customer: cust.email, company: cust.company, leads: custLeads, delivered_at: new Date().toISOString() });
+          var crmReq = require('https').request(cust.crm_webhook_url, { method:'POST', headers:{ 'Content-Type':'application/json', 'Content-Length':Buffer.byteLength(crmPayload) } });
+          crmReq.write(crmPayload); crmReq.end();
+        } catch(ce) { console.log('[DELIVERY] CRM webhook failed:', cust.email); }
+      }
       var now = new Date().toISOString();
       custLeads.forEach(function(l) { l.delivered = 1; l.delivered_at = now; });
       sent++;
