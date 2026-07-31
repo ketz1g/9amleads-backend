@@ -8248,6 +8248,21 @@ function syncCustomers(product) {
                 console.log('[SCRAPER] Tenders: ' + ft.fresh.length + ' fresh, ' + ft.fallback.length + ' fallback, total: ' + leads.length);
         }
               } else { console.log('[SCRAPER] No tender leads today'); leads = []; }
+              // Supplemental source: Contracts Finder HTML search (free, no key)
+              if (leads.length < 5) {
+                try {
+                  var tendersScraper = require('./tenders_scraper');
+                  var cfLeads = await tendersScraper.fetchTendersFromHTML('construction', '', 50);
+                  if (cfLeads && cfLeads.length > 0) {
+                    var seenCf = new Set();
+                    cfLeads.forEach(function(l) { var k = (l.title || '').toLowerCase().trim(); if (!seenCf.has(k)) seenCf.add(k); });
+                    leads.forEach(function(l) { var k = (l.title || '').toLowerCase().trim(); if (seenCf.has(k)) seenCf.delete(k); });
+                    cfLeads = cfLeads.filter(function(l) { var k = (l.title || '').toLowerCase().trim(); return seenCf.has(k); });
+                    leads = leads.concat(cfLeads);
+                    console.log('[SCRAPER] Contracts Finder supplement added ' + cfLeads.length + ' leads');
+                  }
+                } catch(cfErr) { console.log('[SCRAPER] Contracts Finder supplement error:', cfErr.message); }
+              }
             } catch(e) { console.log('[SCRAPER] Tenders fallback error:', e.message); leads = []; }
           }
         } else if (product === 'planning') {
@@ -8351,19 +8366,6 @@ function syncCustomers(product) {
               leads = [];
             }
           } catch(e) { console.log('[SCRAPER] Probate error:', e.message); leads = []; }
-        } else if (product === 'tenders') {
-          try {
-            var tendersScraper = require('./tenders_scraper');
-            leads = await tendersScraper.collectTendersLeads({ keywords: 'construction,cleaning,catering,IT,security,maintenance', maxCount: 100 });
-            if (leads && leads.length > 0) {
-              var ftp = filterFresh(leads, 'scrapedAt');
-              leads = ftp.fresh.length > 0 ? ftp.fresh : ftp.fallback;
-              console.log('[SCRAPER] Tenders: ' + ftp.fresh.length + ' fresh, ' + ftp.fallback.length + ' fallback, total=' + leads.length);
-            } else {
-              console.log('[SCRAPER] Tenders: 0 from scraper');
-              leads = [];
-            }
-          } catch(e) { console.log('[SCRAPER] Tenders error:', e.message); leads = []; }
         } else {
           leads = [];
         }
