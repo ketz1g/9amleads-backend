@@ -98,7 +98,8 @@ function renderLeads(leads) {
     var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
     var dateStr = l.created_at ? new Date(l.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
     var status = d.listingStatus || 'New';
-    html += '<div class="lead"><div><div class="addr">' + (d.address||d.title||'Property') + '</div><div class="meta">' + [(d.bedrooms ? d.bedrooms+' bed' : ''), d.propertyType||'', dateStr].filter(Boolean).join(' \u00b7 ') + '</div></div>' +
+    var pc = d.postcode || '';
+    html += '<div class="lead"><div><div class="addr">' + (d.address||d.title||'Property') + '</div><div class="meta">' + [(d.bedrooms ? d.bedrooms+' bed' : ''), d.propertyType||'', pc, dateStr].filter(Boolean).join(' \u00b7 ') + '</div></div>' +
       '<div class="right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div><span class="badge ' + (status === 'SSTC' ? 'badge-sstc' : '') + '">' + status + '</span></div></div>';
   }
   container.innerHTML = html;
