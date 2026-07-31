@@ -518,7 +518,7 @@ async function distributeProduct(product) {
     }
     areaIdx++;
   }
-  leadAssignments = interleaved;
+  leadAssignments.splice(0, leadAssignments.length, ...interleaved);
 
   function getLeadPostcodeArea(leadData) {
     var pc = leadData.lead.postcode || leadData.lead.address || leadData.lead.location || '';
