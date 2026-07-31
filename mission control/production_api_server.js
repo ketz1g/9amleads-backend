@@ -1286,7 +1286,6 @@ app.get('/api/onboarding', authMiddleware, (req, res) => {
     const hasProfile = !!(customer.company && customer.contact_name);
     const hasAreas = (customer.target_areas && JSON.parse(customer.target_areas).length > 0);
     const hasFilters = !!(customer.biz_field2);
-    const hasOnboardingCall = (customer.onboarding_call_booked || false);
 
     const checklist = [
       { id: 'profile', label: 'Complete business profile', done: hasProfile },
@@ -1296,8 +1295,7 @@ app.get('/api/onboarding', authMiddleware, (req, res) => {
       { id: 'first_delivery', label: 'View first 9am delivery', done: hasLeads },
       { id: 'first_contact', label: 'Contact first lead', done: hasContacted },
       { id: 'pipeline', label: 'Move first lead to pipeline', done: hasPipeline },
-      { id: 'win', label: 'Mark lead outcome (won/lost)', done: hasWon },
-      { id: 'onboarding_call', label: 'Book onboarding call', done: hasOnboardingCall }
+      { id: 'win', label: 'Mark lead outcome (won/lost)', done: hasWon }
     ];
     const total = checklist.length;
     const completed = checklist.filter(i => i.done).length;
@@ -1344,17 +1342,6 @@ app.get('/api/health-score', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/onboarding/call — book onboarding call
-app.post('/api/onboarding/call', authMiddleware, async (req, res) => {
-  try {
-    var db2 = getDb();
-    if (!db2.support_requests) db2.support_requests = [];
-    db2.support_requests.push({ id: uuidv4(), customer_id: req.user.id, type: 'onboarding_call', subject: 'Book onboarding call', message: req.body.message || 'Customer requested onboarding call', created_at: new Date().toISOString(), resolved: false });
-    db.prepare('UPDATE customers SET onboarding_call_booked = 1 WHERE id = ?').run(req.user.id);
-    saveDb();
-    res.json({ success: true, message: 'Onboarding call request sent. We\'ll contact you within 24 hours.' });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
 
 // GET /api/admin/founder-dashboard — founder analytics (admin only)
 app.get('/api/admin/founder-dashboard', adminAuth, (req, res) => {
