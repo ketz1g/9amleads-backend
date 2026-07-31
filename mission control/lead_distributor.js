@@ -614,9 +614,9 @@ async function distributeProduct(product) {
     assignLead(assignment, null, null, 2);
   }
 
-  // Phase 3b: Enrich newly inserted leads with full addresses + postcodes
-  // by fetching each property's detail page. This guarantees delivered leads
-  // carry street number, street name, and full postcode.
+  // Phase 3b: Enrich newly inserted leads with full addresses + postcodes.
+  // Fetches each property's detail page for the postcode, then uses Postcoder
+  // (licensed Royal Mail PAF) to add the exact house number.
   try {
     if (inserted > 0 && product === 'moving') {
       const rmScraper = require('./rightmove_scraper_v2.js');
@@ -627,19 +627,30 @@ async function distributeProduct(product) {
         var ld = null;
         try { ld = JSON.parse(rec.data); } catch(e) {}
         if (!ld) continue;
-        if (ld.postcode && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(ld.postcode.trim())) continue; // already full
-        if (!ld.url) continue;
-        var detail = await rmScraper.fetchPropertyDetail(ld.url);
-        if (detail) {
+        var detail = ld.url ? await rmScraper.fetchPropertyDetail(ld.url) : null;
+        if (detail && detail.postcode) {
           ld.address = detail.fullAddress || ld.address;
           ld.postcode = detail.postcode || ld.postcode || '';
           ld.fullAddress = detail.fullAddress || ld.address;
-          rec.data = JSON.stringify(ld);
-          enriched++;
         }
-        if (ei % 5 === 0 && ei > 0) { await new Promise(function(r) { setTimeout(r, 300); }); }
+        // Postcoder adds the exact house number from licensed Royal Mail PAF data
+        if (ld.postcode) {
+          var streetHint = (detail && detail.fullAddress) || ld.address || '';
+          var fullAddr = await rmScraper.lookupPostcoderAddress(ld.postcode, streetHint);
+          if (fullAddr) {
+            ld.address = fullAddr.address1 || fullAddr.fullAddress || ld.address;
+            ld.fullAddress = fullAddr.fullAddress || ld.address;
+            ld.street = fullAddr.street || ld.street || '';
+            ld.buildingNumber = fullAddr.buildingNumber || '';
+            ld.postcode = fullAddr.postcode || ld.postcode;
+            ld.udprn = fullAddr.udprn || '';
+          }
+        }
+        rec.data = JSON.stringify(ld);
+        enriched++;
+        if (ei % 3 === 0 && ei > 0) { await new Promise(function(r) { setTimeout(r, 250); }); }
       }
-      if (enriched > 0) console.log('  [ENRICH] Added full addresses/postcodes to ' + enriched + ' leads');
+      if (enriched > 0) console.log('  [ENRICH] Added full addresses/house numbers to ' + enriched + ' leads');
     }
   } catch(e) { console.log('  [ENRICH] Error: ' + e.message); }
 
