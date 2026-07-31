@@ -235,7 +235,7 @@ var DM_FEATURE_ACCESS = {
   saved_payment: { free_trial: false, starter: true, pro: true, enterprise: true, label: 'Saved Payment Method', desc: 'Store a card for automatic payments' },
   daily_summaries: { free_trial: false, starter: true, pro: true, enterprise: true, label: 'Daily Summaries', desc: 'Daily campaign summary emails' },
   proof_tracking: { free_trial: false, starter: true, pro: true, enterprise: true, label: 'Proof Tracking', desc: 'Track proof of posting' },
-  multi_templates: { free_trial: false, starter: false, pro: false, enterprise: true, label: 'Multiple Templates', desc: 'Multiple templates by lead type' },
+  multi_templates: { free_trial: false, starter: true, pro: true, enterprise: true, label: 'Multiple Templates', desc: 'Multiple templates by lead type' },
   ai_pdf_generator: { free_trial: false, starter: true, pro: true, enterprise: true, label: 'AI Flyer PDF Generator', desc: 'Generate print-ready flyer PDFs' }
 };
 
