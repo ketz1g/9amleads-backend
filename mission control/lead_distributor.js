@@ -303,12 +303,20 @@ function normaliseLead(rawLead, product, customerId) {
   // Probate specific fields
   if (product === 'probate') {
     base.deceasedName = rawLead.name || '';
+    base.deceasedAddress = rawLead.deceasedAddress || '';
+    base.address = base.address || rawLead.deceasedAddress || '';
+    base.dateOfDeath = rawLead.dateOfDeath || '';
+    base.claimExpiry = rawLead.claimExpiry || '';
     base.estateValue = rawLead.estateValue || '';
     base.estateValueLabel = rawLead.estateValueLabel || '';
     base.registry = rawLead.registry || '';
     base.legalAdvisor = rawLead.legalAdvisor || '';
     base.legalAdvisorEmail = rawLead.legalAdvisorEmail || '';
     base.legalAdvisorPhone = rawLead.legalAdvisorPhone || '';
+    if (!base.postcode) {
+      var gazPc = (rawLead.deceasedAddress || '').match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i);
+      base.postcode = gazPc ? gazPc[0].toUpperCase() : '';
+    }
   }
 
   // Planning specific fields
