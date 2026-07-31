@@ -122,6 +122,68 @@ function fetchProbateRegistry() {
   });
 }
 
+// ===== UK GAZETTE PROBATE NOTICES (via Apify actor) =====
+// Real statutory probate notices from The Gazette (London/Edinburgh/Belfast).
+// Output includes decedent/executor names, full address + postcode, date of
+// death, and creditor claim expiry. PAY_PER_EVENT (~$0.10/run + per record).
+function fetchGazetteProbate(maxItems) {
+  return new Promise((resolve) => {
+    if (!APIFY_API_KEY) { resolve([]); return; }
+    const input = JSON.stringify({
+      sp_intended_usage: 'other',
+      sp_improvement_suggestions: 'testing',
+      maxItems: maxItems || 100
+    });
+    const options = {
+      hostname: 'api.apify.com',
+      path: '/v2/acts/rcfzPm2dJk9vig8hp/run-sync-get-dataset-items?token=' + APIFY_API_KEY + '&timeout=120',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(input), 'Accept': 'application/json' },
+      timeout: 180000
+    };
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          const items = JSON.parse(body);
+          if (Array.isArray(items) && items.length > 0) {
+            console.log('    Gazette returned ' + items.length + ' probate notices');
+            resolve(items.map(function(p) {
+              return {
+                id: 'GAZ_' + (p.notice_id || Date.now() + '_' + Math.random().toString(36).slice(2,6)),
+                name: p.decedent_name || '',
+                deceasedAddress: p.decedent_address || '',
+                dateOfDeath: p.decedent_dod || '',
+                grantDate: p.publish_date || '',
+                claimExpiry: p.claim_expiry_date || '',
+                estateValue: p.estate_value_indicator || 0,
+                estateValueLabel: p.estate_value_indicator ? p.estate_value_indicator : '',
+                solicitor: p.executor_solicitor || p.executor_name || '',
+                executorName: p.executor_name || '',
+                executorAddress: p.executor_address || '',
+                solicitorAddress: p.solicitor_address || '',
+                noticeUrl: p.notice_url || '',
+                occupation: p.decedent_occupation || '',
+                grantType: p.notice_type || 'Deceased Estates',
+                source: 'The Gazette',
+                scrapedAt: new Date().toISOString()
+              };
+            }));
+          } else {
+            console.log('    Gazette returned no records');
+            resolve([]);
+          }
+        } catch(e) { console.log('    Gazette parse error: ' + e.message); resolve([]); }
+      });
+    });
+    req.on('error', (e) => { console.log('    Gazette error: ' + e.message); resolve([]); });
+    req.setTimeout(180000, () => { req.destroy(); resolve([]); });
+    req.write(input);
+    req.end();
+  });
+}
+
 // ===== APIFY PROBATE SCRAPER (PRODUCTION) =====
 // Uses apify/playwright-scraper to scrape the gov.uk probate registry
 // Falls back to sample data if Apify fails
@@ -577,10 +639,14 @@ if (require.main === module) {
 
 async function collectProbateLeads(config) {
   config = config || {};
-  console.log('[PROBATE] Fetching from Gov.uk probate registry...');
-  var results = await fetchProbateRegistry();
+  // Primary: UK Gazette probate notices via Apify actor (real statutory data)
+  var results = await fetchGazetteProbate(config.maxItems || 100);
+  if (results.length === 0) {
+    console.log('[PROBATE] Gazette empty, trying Gov.uk registry...');
+    results = await fetchProbateRegistry();
+  }
   if (results.length === 0 && APIFY_API_KEY) {
-    console.log('[PROBATE] Direct fetch empty, trying Apify Playwright scraper...');
+    console.log('[PROBATE] Registry empty, trying Apify Playwright scraper...');
     try {
       var apifyResults = await fetchProbateApify(config.counties || []);
       if (apifyResults && apifyResults.length > 0) {
@@ -593,4 +659,4 @@ async function collectProbateLeads(config) {
   return results;
 }
 
-module.exports = { fetchProbateRegistry, fetchProbateApify, collectProbateLeads };
+module.exports = { fetchProbateRegistry, fetchProbateApify, fetchGazetteProbate, collectProbateLeads };
