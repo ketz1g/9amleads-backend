@@ -107,6 +107,78 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
   });
 }
 
+// Fetch a property's detail page to extract the full address and postcode
+// (Rightmove list view hides street numbers and full postcodes).
+function fetchPropertyDetail(propertyUrl) {
+  return new Promise((resolve) => {
+    if (!propertyUrl) return resolve(null);
+    const opts = {
+      hostname: 'www.rightmove.co.uk',
+      path: propertyUrl.split('#')[0],
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-GB,en;q=0.9',
+        'Referer': 'https://www.rightmove.co.uk/',
+      },
+      rejectUnauthorized: false
+    };
+    const req = https.get(opts, (res) => {
+      let body = '';
+      res.on('data', (c) => body += c);
+      res.on('end', () => {
+        if (res.statusCode !== 200) return resolve(null);
+        const result = {};
+        // Full street address from the h1 (includes building name/number + street)
+        const street = body.match(/itemProp="streetAddress">([^<]+)<\/h1>/);
+        if (street) result.fullAddress = street[1].trim();
+        // Full postcode: the last 7-char postcode near the property id in the JSON blob
+        const idMatch = propertyUrl.match(/(\d+)/);
+        if (idMatch) {
+          const id = idMatch[1];
+          const idPos = body.indexOf(',' + id);
+          if (idPos > -1) {
+            const before = body.substring(Math.max(0, idPos - 200), idPos);
+            const pc = before.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s[0-9][A-Z]{2}/g);
+            if (pc && pc.length) result.postcode = pc[pc.length - 1];
+          }
+        }
+        // Fallback: any full postcode in the page if the above failed
+        if (!result.postcode) {
+          const pcAll = body.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s[0-9][A-Z]{2}/g);
+          if (pcAll && pcAll.length) result.postcode = pcAll[pcAll.length - 1];
+        }
+        resolve(Object.keys(result).length ? result : null);
+      });
+    });
+    req.on('error', function() { resolve(null); });
+    req.setTimeout(20000, function() { req.destroy(); resolve(null); });
+    req.end();
+  });
+}
+
+// Enrich a batch of list-view leads with full addresses and postcodes
+// by fetching their detail pages. Runs with a small delay between requests.
+async function enrichMovingLeads(leads, concurrency) {
+  concurrency = concurrency || 3;
+  const enriched = [];
+  for (let i = 0; i < leads.length; i++) {
+    const lead = leads[i];
+    const detail = await fetchPropertyDetail(lead.url);
+    if (detail) {
+      lead.address = detail.fullAddress || lead.address;
+      lead.postcode = detail.postcode || lead.postcode || '';
+      lead.fullAddress = detail.fullAddress || lead.address;
+    }
+    enriched.push(lead);
+    if (i % concurrency === 0 && i > 0) {
+      await new Promise(function(r) { setTimeout(r, 400); });
+    }
+  }
+  return enriched;
+}
+
 async function collectMovingLeads(config) {
   config = config || {};
   const locations = config.locations || LOCATIONS;
@@ -142,7 +214,7 @@ async function collectMovingLeads(config) {
   return deduped;
 }
 
-module.exports = { collectMovingLeads };
+module.exports = { collectMovingLeads, enrichMovingLeads, fetchPropertyDetail };
 
 if (require.main === module) {
   collectMovingLeads().then(function(l) {
