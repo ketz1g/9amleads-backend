@@ -606,6 +606,7 @@ async function distributeProduct(product) {
     if (inserted > 0 && product === 'moving') {
       const rmScraper = require('./rightmove_scraper_v2.js');
       var insertedLeads = db.leads.filter(function(l) { return l.customer_id && l.product === product && l.delivered === 0 && (l.created_at || '').startsWith(now.substring(0, 10)); });
+      console.log('  [ENRICH] Found ' + insertedLeads.length + ' leads to enrich (inserted=' + inserted + ')');
       var enriched = 0;
       for (var ei = 0; ei < insertedLeads.length; ei++) {
         var rec = insertedLeads[ei];
