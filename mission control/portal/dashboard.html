@@ -145,16 +145,8 @@ var ci=Math.floor(Math.random()*tips.length);
 <!-- Lead Filters -->
 <div class="card">
 <div class="sect-title"><i class="fas fa-sliders-h"></i> Lead Filters</div>
-<div class="filter-group">
-<div class="filter-row">
-<div><label class="label">Min Bedrooms</label><select class="select" id="f-minbeds" onchange="saveFilters()"><option value="">Any</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5+</option></select></div>
-<div><label class="label">Max Bedrooms</label><select class="select" id="f-maxbeds" onchange="saveFilters()"><option value="">Any</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-</div>
-<div class="filter-row">
-<div><label class="label">Property Type</label><select class="select" id="f-proptype" onchange="saveFilters()"><option value="">Any</option><option value="House">House</option><option value="Flat">Flat</option><option value="Bungalow">Bungalow</option><option value="Maisonette">Maisonette</option></select></div>
-<div><label class="label">Max Price</label><select class="select" id="f-maxprice" onchange="saveFilters()"><option value="">Any</option><option value="200000">£200k</option><option value="350000">£350k</option><option value="500000">£500k</option><option value="750000">£750k</option><option value="1000000">£1M</option><option value="2000000">£2M</option></select></div>
-</div>
-<p style="font-size:11px;color:var(--muted);margin-top:6px">Filters apply to all new leads. Changes take effect on next delivery.</p>
+<div class="filter-group" id="filter-fields">
+<p style="font-size:11px;color:var(--muted)">Loading filters...</p>
 </div>
 
 <!-- Marketing Tools -->
@@ -299,6 +291,7 @@ var ci=Math.floor(Math.random()*tips.length);
 
 <script>
 var _token = '';
+var _sessionProduct = 'moving';
 
 // ===== AUTH HEADERS =====
 function authHeaders() {
@@ -356,14 +349,87 @@ function getAreas() {
 }
 
 // ===== LEAD FILTERS =====
-function saveFilters() {
-  var f = JSON.stringify({
-    minBedrooms: document.getElementById('f-minbeds').value,
-    maxBedrooms: document.getElementById('f-maxbeds').value,
-    propertyType: document.getElementById('f-proptype').value,
-    maxPrice: document.getElementById('f-maxprice').value
+function renderFilters(product) {
+  var container = document.getElementById('filter-fields');
+  if (!container) return;
+  var opts = {
+    moving: [
+      { id:'f-minbeds', label:'Min Bedrooms', type:'select', opts:['','1','2','3','4','5'], labels:['Any','1+','2+','3+','4+','5+'] },
+      { id:'f-maxbeds', label:'Max Bedrooms', type:'select', opts:['','1','2','3','4','5'], labels:['Any','1','2','3','4','5'] },
+      { id:'f-proptype', label:'Property Type', type:'select', opts:['','House','Flat','Bungalow','Maisonette'], labels:['Any','House','Flat','Bungalow','Maisonette'] },
+      { id:'f-maxprice', label:'Max Price', type:'select', opts:['','200000','350000','500000','750000','1000000','2000000'], labels:['Any','£200k','£350k','£500k','£750k','£1M','£2M'] }
+    ],
+    planning: [
+      { id:'f-app-type', label:'Application Types', type:'multicheck', opts:['Householder','Full Planning','Outline Planning','Listed Building','Change of Use','Lawful Development','Permitted Development','Prior Approval'] }
+    ],
+    tenders: [
+      { id:'f-min-val', label:'Min Contract Value', type:'select', opts:['','10000','50000','100000','250000','500000','1000000'], labels:['Any','£10k','£50k','£100k','£250k','£500k','£1M'] },
+      { id:'f-keywords', label:'Keywords', type:'text', placeholder:'construction, IT, healthcare...' }
+    ],
+    newbusiness: [
+      { id:'f-keywords', label:'Sector / Keywords', type:'text', placeholder:'construction, cleaning, tech...' }
+    ],
+    probate: [
+      { id:'f-keywords', label:'Solicitor / Keywords', type:'text', placeholder:'solicitor name, estate type...' }
+    ]
+  };
+  var fields = opts[product] || opts.moving;
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+  fields.forEach(function(f){
+    if (f.type === 'select') {
+      html += '<div><label class="label">' + f.label + '</label><select class="select" id="' + f.id + '" onchange="saveFilters()">';
+      for (var i=0;i<f.opts.length;i++) html += '<option value="' + f.opts[i] + '">' + (f.labels[i] || f.opts[i]) + '</option>';
+      html += '</select></div>';
+    } else if (f.type === 'text') {
+      html += '<div style="grid-column:1/-1"><label class="label">' + f.label + '</label><input class="input" id="' + f.id + '" placeholder="' + (f.placeholder||'') + '" onchange="saveFilters()" onkeyup="saveFilters()"></div>';
+    } else if (f.type === 'multicheck') {
+      html += '<div style="grid-column:1/-1"><label class="label">' + f.label + '</label><div style="display:flex;flex-wrap:wrap;gap:6px">';
+      f.opts.forEach(function(o){ html += '<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" value="' + o + '" class="f-app-type-cb" onchange="saveFilters()"> ' + o + '</label>'; });
+      html += '</div></div>';
+    }
   });
-  apiCall('PUT', '/api/settings/lead-filters', { leadFilters: f }, function(err, d) {
+  html += '</div>';
+  html += '<p style="font-size:11px;color:var(--muted);margin-top:6px">Filters apply to all new leads. Changes take effect on next delivery.</p>';
+  container.innerHTML = html;
+  // Load saved values
+  apiCall('GET', '/api/settings/lead-filters', null, function(err, d) {
+    if (!d || !d.leadFilters) return;
+    var saved = {};
+    try { saved = JSON.parse(d.leadFilters); } catch(e) {}
+    fields.forEach(function(f){
+      var el = document.getElementById(f.id);
+      if (!el) return;
+      if (f.type === 'multicheck') {
+        var chosen = saved[f.id] || saved['f-app-type'] || saved.applicationType || [];
+        if (typeof chosen === 'string') chosen = [chosen];
+        document.querySelectorAll('.' + f.id + '-cb').forEach(function(cb){
+          if (chosen.indexOf(cb.value) > -1) cb.checked = true;
+        });
+      } else if (f.type === 'text') {
+        if (saved[f.id]) el.value = saved[f.id];
+      } else {
+        if (saved[f.id] !== undefined) el.value = String(saved[f.id]);
+      }
+    });
+  });
+}
+
+function saveFilters() {
+  var product = _sessionProduct || 'moving';
+  var container = document.getElementById('filter-fields');
+  if (!container) return;
+  var f = {};
+  container.querySelectorAll('input, select').forEach(function(el){
+    if (el.type === 'checkbox') {
+      if (el.checked) {
+        f[el.className.replace('-cb','')] = f[el.className.replace('-cb','')] || [];
+        f[el.className.replace('-cb','')].push(el.value);
+      }
+    } else if (el.id) {
+      f[el.id] = el.value;
+    }
+  });
+  apiCall('PUT', '/api/settings/lead-filters', { leadFilters: JSON.stringify(f) }, function(err, d) {
     if (err) console.log('Failed to save filters');
   });
 }
@@ -572,6 +638,7 @@ document.querySelectorAll('.modal').forEach(function(m){
       var prodNames = { moving:'Moving leads', newbusiness:'New Business leads', probate:'Probate leads', tenders:'Tenders', planning:'Planning leads' };
       var psEl = document.getElementById('plan-sub');
       if (psEl && data.product) psEl.textContent = prodNames[data.product] || (data.product + ' leads');
+      if (data.product) { _sessionProduct = data.product; renderFilters(data.product); }
       if (data.leads_per_day) document.getElementById('plan-leads').textContent = data.leads_per_day;
       if (data.trial_ends) {
         var days = Math.ceil((new Date(data.trial_ends) - new Date()) / 86400000);
