@@ -186,6 +186,60 @@ function fetchGazetteHTML(maxItems) {
   });
 }
 
+// Fetch a single Gazette notice detail page and extract the deceased's
+// structured address (street, locality, postcode, region). Free, reliable.
+function fetchGazetteDetail(noticeId) {
+  return new Promise((resolve) => {
+    const req = https.request({ hostname: 'www.thegazette.co.uk', path: '/notice/' + noticeId, method: 'GET', headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36', 'Accept-Language': 'en-GB,en;q=0.9' }, timeout: 25000 }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) { resolve(null); return; }
+        const street = (body.match(/property="vcard:street-address"[^>]*>([^<]+)</) || [])[1];
+        const locality = (body.match(/property="vcard:locality"[^>]*>([^<]+)</) || [])[1];
+        const postcode = (body.match(/property="vcard:postal-code"[^>]*>([^<]+)</) || [])[1];
+        const region = (body.match(/property="vcard:region"[^>]*>([^<]+)</) || [])[1];
+        const fullName = (body.match(/property="vcard:fn"[^>]*>([^<]+)</) || [])[1];
+        const deceased = (body.match(/property="vcard:title"[^>]*>([^<]+)</) || [])[1];
+        const fullAddress = [street, locality].filter(Boolean).join(', ');
+        resolve({
+          deceasedAddress: fullAddress,
+          locality: locality || '',
+          postcode: postcode || '',
+          region: region || '',
+          deceasedName: fullName || deceased || ''
+        });
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.setTimeout(25000, () => { req.destroy(); resolve(null); });
+    req.end();
+  });
+}
+
+// Enrich a list of Gazette notices with their full addresses by fetching each
+// notice detail page. Free (no Apify), runs with a small delay between requests.
+async function enrichGazetteLeads(leads) {
+  const enriched = [];
+  for (let i = 0; i < leads.length; i++) {
+    const lead = leads[i];
+    const noticeId = lead.id.replace('GAZ_', '');
+    const detail = await fetchGazetteDetail(noticeId);
+    if (detail) {
+      if (detail.deceasedAddress) lead.deceasedAddress = detail.deceasedAddress;
+      if (detail.postcode) lead.postcode = detail.postcode;
+      if (detail.deceasedName) lead.name = detail.deceasedName;
+      lead.locality = detail.locality || '';
+      lead.region = detail.region || '';
+      lead.fullAddress = (detail.deceasedAddress + ', ' + detail.postcode).trim();
+    }
+    enriched.push(lead);
+    await new Promise(function(r) { setTimeout(r, 300); });
+  }
+  console.log('    Enriched ' + enriched.length + ' Gazette notices with addresses');
+  return enriched;
+}
+
 // ===== UK GAZETTE PROBATE NOTICES (via Apify actor) =====
 // Real statutory probate notices from The Gazette (London/Edinburgh/Belfast).
 // Output includes decedent/executor names, full address + postcode, date of
@@ -706,6 +760,13 @@ async function collectProbateLeads(config) {
   // Primary: FREE Gazette HTML search (no Apify cost, fast, reliable). Returns
   // real deceased-estates notices with names + publication dates + URLs.
   var results = await fetchGazetteHTML(config.maxItems || 100);
+  // Enrich the free HTML notices with full addresses (street + locality + postcode)
+  // by fetching each notice's detail page. Free, no Apify cost.
+  if (results.length > 0 && config.skipEnrich !== true) {
+    try {
+      results = await enrichGazetteLeads(results);
+    } catch(e) { console.log('[PROBATE] Enrich error: ' + e.message); }
+  }
   if (results.length === 0) {
     // Fallback: Gazette via Apify actor (accurate details but PAY_PER_EVENT and
     // can time out). Retry once.
