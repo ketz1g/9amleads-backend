@@ -8153,42 +8153,54 @@ function syncCustomers(product) {
           leads = [];
           try {
             var chKeySimple = '8e6cae34-073b-4451-b4c8-e0b463ca4b21' || process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY;
-            var allSectors = ['services','construction','building','property','removals','cleaning','plumbing','electrical','roofing','landscape','estate','consulting','transport','logistics','security','healthcare','catering','solar','insulation','windows','digital','marketing','recruitment','hospitality','engineering','manufacturing','retail','wholesale','agriculture','education','entertainment','fashion','finance','insurance','legal','real+estate','travel'];
-            var nbResults = [];
-            for (var si = 0; si < allSectors.length; si++) {
-              try {
-                var nbData = await new Promise(function(resolve) {
-                  var url = '/search/companies?q=' + encodeURIComponent(allSectors[si]) + '&size=200';
-                  var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeySimple + ':').toString('base64'), 'Accept': 'application/json', 'User-Agent': '9amLeads/1.0' } }, function(res) {
-                    var body = ''; res.on('data', function(c) { body += c; });
-                    res.on('end', function() {
-                      try { var d = JSON.parse(body); resolve(d.items || []); } catch(e) { resolve([]); }
-                    });
-                  });
-                  req.on('error', function() { resolve([]); });
-                  req.setTimeout(15000, function() { resolve([]); });
-                  req.end();
+            // Use Companies House ADVANCED SEARCH filtered by incorporation date so we
+            // only get companies actually formed within 24h (fallback 48h).
+            var nowMs = Date.now();
+            var cutoff24hMs = nowMs - 24 * 3600000;
+            var cutoff48hMs = nowMs - 48 * 3600000;
+            function chParseDate(ds) { if (!ds) return 0; var t = Date.parse(ds); return isNaN(t) ? 0 : t; }
+            function chDateStr(ms) { return new Date(ms).toISOString().split('T')[0]; }
+            function chFetchAdvanced(fromDate, cb) {
+              var url = '/advanced-search/companies?incorporated_from=' + fromDate + '&size=100&start_index=0&company_status=active';
+              var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeySimple + ':').toString('base64'), 'Accept': 'application/json', 'User-Agent': '9amLeads/1.0' } }, function(res) {
+                var body = ''; res.on('data', function(c) { body += c; });
+                res.on('end', function() {
+                  try { var d = JSON.parse(body); cb(d.items || []); } catch(e) { cb([]); }
                 });
-                if (nbData && nbData.length > 0) nbResults.push.apply(nbResults, nbData);
-              } catch(e) {}
-            }
-            // Deduplicate and filter
-            var nbSeen = {};
-            if (nbResults.length > 0) {
-              var nbFiltered = nbResults.filter(function(c) {
-                if (!c.title || !c.company_number || nbSeen[c.company_number]) return false;
-                nbSeen[c.company_number] = true;
-                return c.company_status === 'active';
-              }).map(function(c) {
-                return { id: 'CH_NB_' + c.company_number, name: c.title.trim(), companyNumber: c.company_number, companyName: c.title.trim(), address: c.address_snippet || '', incorporationDate: c.date_of_creation || c.scrapedAt || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
               });
-              // Prioritize companies incorporated within 24h, fallback 48h, then all
-              var nbFreshness = filterFresh(nbFiltered, 'scrapedAt');
-              if (nbFreshness.fresh.length >= 20) leads = nbFreshness.fresh;
-              else if (nbFreshness.fallback.length >= 20) leads = nbFreshness.fallback;
-              else leads = nbFreshness.fresh.concat(nbFreshness.fallback).slice(0, 500);
+              req.on('error', function() { cb([]); });
+              req.setTimeout(15000, function() { req.destroy(); cb([]); });
+              req.end();
             }
-            console.log('[SCRAPER] NB: ' + nbResults.length + ' raw, ' + (leads ? leads.length : 0) + ' filtered');
+            // Fetch companies incorporated since 24h ago; if too few, widen to 48h
+            var nbResults = await new Promise(function(resolve) { chFetchAdvanced(chDateStr(cutoff24hMs), resolve); });
+            var nbAll = nbResults.slice();
+            if (nbResults.length < 5) {
+              var nb48extra = await new Promise(function(resolve) { chFetchAdvanced(chDateStr(cutoff48hMs), resolve); });
+              nbAll = nbAll.concat(nb48extra);
+            }
+            // Deduplicate and map to standard format
+            var nbSeen = {};
+            var nbFiltered = nbAll.filter(function(c) {
+              if (!c.company_name || !c.company_number || nbSeen[c.company_number]) return false;
+              nbSeen[c.company_number] = true;
+              return c.company_status === 'active';
+            }).map(function(c) {
+              return { id: 'CH_NB_' + c.company_number, name: c.company_name.trim(), companyNumber: c.company_number, companyName: c.company_name.trim(), address: c.address_snippet || (c.registered_office_address ? [c.registered_office_address.address_line_1, c.registered_office_address.address_line_2, c.registered_office_address.locality, c.registered_office_address.region, c.registered_office_address.postal_code].filter(Boolean).join(', ') : ''), incorporationDate: c.date_of_creation || '', sicCode: (c.sic_codes || []).join(', ') || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
+            });
+            // Strict: keep only those incorporated within 24h, else fallback to 48h
+            var nb24 = nbFiltered.filter(function(l){ var t = chParseDate(l.incorporationDate); return t >= cutoff24hMs; });
+            var nb48 = nbFiltered.filter(function(l){ var t = chParseDate(l.incorporationDate); return t >= cutoff48hMs && t < cutoff24hMs; });
+            if (nb24.length >= 5) leads = nb24;
+            else if (nb48.length >= 5) leads = nb48;
+            else leads = nb24.concat(nb48).slice(0, 100);
+            // Mark freshness for display
+            leads = leads.map(function(l){
+              var t = chParseDate(l.incorporationDate);
+              l.freshnessBadge = t >= cutoff24hMs ? 'Incorporated today' : 'Incorporated within 48h';
+              return l;
+            });
+            console.log('[SCRAPER] NB: ' + nbResults.length + ' raw, ' + (leads ? leads.length : 0) + ' newly-incorporated');
           } catch(e) { console.log('[SCRAPER] NB error:', e.message); leads = []; }
         } else if (product === 'planning') {
           leads = [];
