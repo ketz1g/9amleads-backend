@@ -2909,12 +2909,11 @@ async function sendBrevoEmail(to, subject, htmlContent) {
   if (!BREVO_API_KEY) return;
   const https = require('https');
   // TEMP: send from Brevo's verified domain while 9amleads.com authenticates
-  // (auth can take up to 48h). Switch back to hello@9amleads.com once verified.
-  var senderFrom = process.env.BREVO_SENDER_EMAIL || 'hello@9amleads.com';
-  var senderName = process.env.BREVO_SENDER_NAME || '9amLeads';
-  if (senderFrom === 'hello@9amleads.com' && (process.env.BREVO_DOMAIN_AUTH_PENDING === '1')) {
-    senderFrom = 'hello@11167515.brevosend.com';
-  }
+  // (auth can take up to 48h). Switch BACK to hello@9amleads.com once the
+  // domain shows authenticated in Brevo. Until then, this verified sender is
+  // the only one that reliably reaches inboxes.
+  var senderFrom = 'hello@11167515.brevosend.com';
+  var senderName = '9amLeads';
   const data = JSON.stringify({
     sender: { name: senderName, email: senderFrom },
     to: [{ email: to.email, name: to.name }],
