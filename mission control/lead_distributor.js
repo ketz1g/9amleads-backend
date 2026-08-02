@@ -213,6 +213,7 @@ function leadMatchesTarget(lead, customer, product) {
   // Filter matching — support both legacy single-product and per-product format
   const filterStr = customer.biz_field2 || '';
   let tier = 1;
+  let planningCategory = '';
   try {
     const rawFilters = JSON.parse(filterStr);
     if (!rawFilters || Object.keys(rawFilters).length === 0) { /* no filters */ }
@@ -269,9 +270,17 @@ function leadMatchesTarget(lead, customer, product) {
         var filterTypes = filters['f-app-type'] || filters.applicationType || filters.appTypes || [];
         if (typeof filterTypes === 'string') filterTypes = [filterTypes];
         var appTypeMatched = true;
+        // Derive a category slug for even-distribution tracking across app types
+        planningCategory = 'other';
+        if (appType.indexOf('ext') !== -1 || appType.indexOf('householder') !== -1 || appType.indexOf('lawful') !== -1 || appType.indexOf('permitted') !== -1 || appType.indexOf('prior') !== -1) planningCategory = 'extensions';
+        else if (appType.indexOf('change of use') !== -1) planningCategory = 'change-of-use';
+        else if (appType.indexOf('listed') !== -1) planningCategory = 'listed-buildings';
+        else if (appType.indexOf('outline') !== -1 || appType.indexOf('new home') !== -1) planningCategory = 'new-homes';
+        else if (appType.indexOf('trees') !== -1 || appType.indexOf('landscaping') !== -1) planningCategory = 'trees-and-landscaping';
+        else if (appType.indexOf('commercial') !== -1 || appType.indexOf('major') !== -1) planningCategory = 'commercial-and-major-works';
         if (Array.isArray(filterTypes) && filterTypes.length > 0) {
           filterTypes = filterTypes.map(function(t) { return t.toLowerCase(); });
-          appTypeMatched = filterTypes.some(function(t) { return appType.includes(t); });
+          appTypeMatched = filterTypes.some(function(t) { return appType.includes(t) || planningCategory.includes(t) || t.includes(planningCategory); });
           // App type not matched: don't hard-reject — lower priority (tier 2) so
           // real planning applications still reach the customer when the type
           // doesn't exactly match the filter list.
@@ -308,7 +317,7 @@ function leadMatchesTarget(lead, customer, product) {
     }
   } catch (e) {}
 
-  return { match: true, tier: tier };
+  return { match: true, tier: tier, appCategory: planningCategory };
 }
 
 // Extract lead data in a standardised format from any scraper output
@@ -555,7 +564,9 @@ async function distributeProduct(product) {
     }
 
     if (matchedCustomers.length === 0) { noMatch++; continue; }
-    leadAssignments.push({ lead: rawLead, normalised, addrKey, customers: matchedCustomers });
+    // Capture the lead's planning category (for even distribution across app types)
+    var leadCat = matchedCustomers.length > 0 && matchedCustomers[0].appCategory ? matchedCustomers[0].appCategory : '';
+    leadAssignments.push({ lead: rawLead, normalised, addrKey, customers: matchedCustomers, category: leadCat });
   }
 
   // Phase 2: Tiered round-robin distribution (3 passes).
@@ -607,12 +618,19 @@ async function distributeProduct(product) {
   }
 
   function assignLead(leadData, rawLeadData, addrKeyData, tierFilter) {
-    const { lead: rl, normalised: nl, addrKey: ak, customers } = leadData;
+    const { lead: rl, normalised: nl, addrKey: ak, customers, category } = leadData;
     const leadArea = getLeadPostcodeArea(leadData);
-    // Filter customers by tier, then sort by per-postcode usage (fewest first)
-    // to spread leads evenly across postcodes, then by total usage.
+    const cat = category || '';
+    // Filter customers by tier, then sort by per-category usage (fewest first)
+    // so planning leads spread evenly across application types (not all trees),
+    // then by per-postcode usage, then total usage.
     const eligible = customers.filter(mc => mc.tier <= tierFilter);
     eligible.sort((a, b) => {
+      if (cat) {
+        var auCat = customerPostcodeUsage[a.customer.id]['cat_' + cat] || 0;
+        var buCat = customerPostcodeUsage[b.customer.id]['cat_' + cat] || 0;
+        if (auCat !== buCat) return auCat - buCat;
+      }
       var au = customerPostcodeUsage[a.customer.id][leadArea] || 0;
       var bu = customerPostcodeUsage[b.customer.id][leadArea] || 0;
       if (au !== bu) return au - bu;
@@ -639,6 +657,7 @@ async function distributeProduct(product) {
       existingAddresses.add(ak);
       customerUsage[c.id]++;
       if (leadArea) customerPostcodeUsage[c.id][leadArea] = (customerPostcodeUsage[c.id][leadArea] || 0) + 1;
+      if (cat) customerPostcodeUsage[c.id]['cat_' + cat] = (customerPostcodeUsage[c.id]['cat_' + cat] || 0) + 1;
       inserted++;
       // Track lead count on customer record
       var ldCust = db.customers.find(function(x) { return x.id === c.id; });
