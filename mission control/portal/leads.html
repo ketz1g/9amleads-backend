@@ -96,19 +96,68 @@ function renderLeads(leads) {
   for (var i = 0; i < leads.length; i++) {
     var l = leads[i];
     var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
+    var product = l.product || d.product || 'moving';
     var dateStr = l.created_at ? new Date(l.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
-    var status = d.listingStatus || 'New';
+    var status = d.listingStatus || d.status || 'New';
     var pc = d.postcode || '';
-    var addr = d.address || d.title || 'Property';
-    var town = d.town || d.city || '';
-    var fullAddr = addr;
-    // Strip trailing partial postcode (e.g. "EN1") so it isn't repeated with the full postcode
-    var addrNoPartial = addr.replace(/[, ]*[A-Z]{1,2}[0-9][A-Z0-9]?[\s,]*$/i, '').replace(/[\s,]+$/, '');
-    if (addrNoPartial && pc && addrNoPartial !== addr) fullAddr = addrNoPartial;
-    if (town && fullAddr.toLowerCase().indexOf(town.toLowerCase()) === -1) fullAddr += ', ' + town;
-    if (pc && fullAddr.toLowerCase().indexOf(pc.toLowerCase()) === -1) fullAddr += ', ' + pc;
-    html += '<div class="lead"><div><div class="addr">' + fullAddr + '</div><div class="meta">' + [(d.bedrooms ? d.bedrooms+' bed' : ''), d.propertyType||'', pc, dateStr].filter(Boolean).join(' \u00b7 ') + '</div></div>' +
-      '<div class="right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div><span class="badge ' + (status === 'SSTC' ? 'badge-sstc' : '') + '">' + status + '</span></div></div>';
+    var badge = product === 'moving' ? 'MOVING' : product === 'probate' ? 'PROBATE' : product === 'newbusiness' ? 'NEW BIZ' : product === 'planning' ? 'PLANNING' : 'TENDER';
+    var badgeColor = product === 'moving' ? '#0ea5e9' : product === 'probate' ? '#a855f7' : product === 'newbusiness' ? '#22c55e' : product === 'planning' ? '#f59e0b' : '#6366f1';
+
+    if (product === 'newbusiness') {
+      // Match email: business name first, then address, SIC, companies house link
+      var biz = d.company || d.companyName || d.name || 'New Company';
+      var incDate = d.incorporationDate || d.dateOfCreation || '';
+      var incStr = incDate ? 'Incorporated ' + new Date(incDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
+      var metaParts = [incStr, d.sicCode ? 'SIC: ' + d.sicCode : ''].filter(Boolean);
+      var chLink = d.companyNumber ? '<a href="https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View on Companies House</a>' : '';
+      html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
+        '<div class="addr">' + biz + '</div>' +
+        '<div class="meta">' + (d.address||'') + '</div>' +
+        '<div class="meta">' + metaParts.join(' \u00b7 ') + (chLink ? ' \u00b7 ' + chLink : '') + '</div></div>' +
+        '<div class="right"><span class="badge">' + status + '</span></div></div>';
+    } else if (product === 'probate') {
+      var pName = d.deceasedName || d.name || 'Probate Estate';
+      var pAddr = d.deceasedAddress || d.address || '';
+      var pMeta = [pAddr, d.dateOfDeath ? 'Died ' + new Date(d.dateOfDeath).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.claimExpiry ? 'Claims by ' + new Date(d.claimExpiry).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : ''].filter(Boolean);
+      var gazLink = d.noticeUrl ? '<a href="' + d.noticeUrl + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View notice</a>' : '';
+      html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
+        '<div class="addr">' + pName + '</div>' +
+        '<div class="meta">' + pMeta.join(' \u00b7 ') + (gazLink ? ' \u00b7 ' + gazLink : '') + '</div></div>' +
+        '<div class="right"><span class="badge">' + status + '</span></div></div>';
+    } else if (product === 'planning') {
+      var planTitle = d.address || (d.description||'').substring(0,40) || 'Planning Application';
+      var planMeta = [d.council, d.applicationType, d.reference ? 'Ref: ' + d.reference : '', d.status, d.dateSubmitted ? 'Submitted ' + new Date(d.dateSubmitted).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : ''].filter(Boolean);
+      var planLink = d.url ? '<a href="' + d.url + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View application</a>' : '';
+      var planDesc = d.description ? '<div class="meta" style="margin-top:2px">' + d.description.substring(0,120) + '</div>' : '';
+      html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
+        '<div class="addr">' + planTitle + '</div>' +
+        '<div class="meta">' + planMeta.join(' \u00b7 ') + (planLink ? ' \u00b7 ' + planLink : '') + '</div>' + planDesc + '</div>' +
+        '<div class="right"><span class="badge">' + status + '</span></div></div>';
+    } else if (product === 'tenders') {
+      var tendTitle = d.tenderTitle || d.title || 'Opportunity';
+      var tendMeta = [d.buyer || d.contractingAuthority, d.contractValueLabel && d.contractValueLabel !== '&pound' ? d.contractValueLabel : '', d.closingDate ? 'Deadline ' + new Date(d.closingDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.publishedDate ? 'Published ' + d.publishedDate : '', d.postcode].filter(Boolean);
+      var tendLink = d.url ? '<a href="' + d.url + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View tender</a>' : '';
+      var tendDesc = d.description ? '<div class="meta" style="margin-top:2px">' + d.description.substring(0,120) + '</div>' : '';
+      html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
+        '<div class="addr">' + tendTitle + '</div>' +
+        '<div class="meta">' + tendMeta.join(' \u00b7 ') + (tendLink ? ' \u00b7 ' + tendLink : '') + '</div>' + tendDesc + '</div>' +
+        '<div class="right"><span class="badge">' + status + '</span></div></div>';
+    } else {
+      // moving / default
+      var addr = d.address || d.title || 'Property';
+      var town = d.town || d.city || '';
+      var fullAddr = addr;
+      var addrNoPartial = addr.replace(/[, ]*[A-Z]{1,2}[0-9][A-Z0-9]?[\s,]*$/i, '').replace(/[\s,]+$/, '');
+      if (addrNoPartial && pc && addrNoPartial !== addr) fullAddr = addrNoPartial;
+      if (town && fullAddr.toLowerCase().indexOf(town.toLowerCase()) === -1) fullAddr += ', ' + town;
+      if (pc && fullAddr.toLowerCase().indexOf(pc.toLowerCase()) === -1) fullAddr += ', ' + pc;
+      var rmLink = d.url ? '<a href="' + d.url + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View on Rightmove</a>' : '';
+      var moveMeta = [(d.bedrooms ? d.bedrooms+' bed' : ''), d.propertyType||'', d.agent||'', rmLink].filter(Boolean);
+      html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
+        '<div class="addr">' + fullAddr + '</div>' +
+        '<div class="meta">' + moveMeta.join(' \u00b7 ') + '</div></div>' +
+        '<div class="right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div><span class="badge ' + (status === 'SSTC' ? 'badge-sstc' : '') + '">' + status + '</span></div></div>';
+    }
   }
   container.innerHTML = html;
 }
