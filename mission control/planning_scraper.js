@@ -234,6 +234,61 @@ function extractPostcode(str) {
   return m ? m[0].toUpperCase() : '';
 }
 
+// ===== PLOTA PLANNING APPLICATIONS API =====
+// Real planning applications with full site addresses + postcodes + status.
+// Query by postcode area, authority, or free-text. Auth via Bearer token.
+function fetchPlotaPlanning(postcode, maxItems) {
+  return new Promise((resolve) => {
+    const key = process.env.PLOTA_API_KEY || '';
+    if (!key) { console.log('    No PLOTA_API_KEY configured'); resolve([]); return; }
+    const cleanPc = (postcode || '').replace(/[^A-Z0-9]/gi, '').toUpperCase();
+    const q = cleanPc ? '?postcode=' + encodeURIComponent(cleanPc) : '?q=' + encodeURIComponent(postcode || 'London');
+    const path = '/v1/applications' + q + '&limit=' + (maxItems || 30);
+    const options = {
+      hostname: 'api.plota.co.uk',
+      path: path,
+      method: 'GET',
+      headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + key, 'User-Agent': '9amLeads/1.0 (planning lead generator)' },
+      timeout: 30000
+    };
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) { console.log('    Plota HTTP ' + res.statusCode); resolve([]); return; }
+        try {
+          const j = JSON.parse(body);
+          const items = j.data || [];
+          if (!items.length) { console.log('    Plota returned no applications'); resolve([]); return; }
+          const leads = items.map(p => ({
+            id: 'PLOTA_' + (p.id || p.reference || Date.now()),
+            address: (p.address || '').trim(),
+            postcode: p.postcode || extractPostcode(p.address || ''),
+            description: p.description || '',
+            applicantName: p.agent_name || p.applicant_name || '',
+            applicationType: (p.category && p.category.label) || 'Planning Application',
+            status: p.status || 'Pending',
+            council: (p.authority && p.authority.name) || p.authority || '',
+            reference: p.reference || '',
+            estimatedValue: 0,
+            valueLabel: '',
+            url: (p.links && p.links.plota) || (p.links && p.links.council) || '',
+            dateSubmitted: p.date_received || p.date_validated || '',
+            locationPoint: p.location ? (p.location.lat + ',' + p.location.lng) : '',
+            source: 'Plota (Planning API)',
+            scrapedAt: new Date().toISOString()
+          }));
+          console.log('    Plota returned ' + leads.length + ' planning applications');
+          resolve(leads);
+        } catch(e) { console.log('    Plota parse error: ' + e.message); resolve([]); }
+      });
+    });
+    req.on('error', (e) => { console.log('    Plota error: ' + e.message); resolve([]); });
+    req.setTimeout(30000, () => { req.destroy(); resolve([]); });
+    req.end();
+  });
+}
+
 // ===== SAMPLE DATA GENERATOR =====
 // Generates realistic UK planning application sample data
 function generateSampleLeads(postcodes, count) {
@@ -674,21 +729,19 @@ async function main() {
 async function collectPlanningLeads(config) {
   config = config || {};
   let results = [];
-  // Primary — Apify planning actor (devon_gtme, PAY_PER_EVENT but produces proper
-  // planning applications with full site addresses). Uses the customer's areas.
+  // Primary — PLOTA planning API (real applications with full addresses + postcodes).
+  // Query by the customer's postcode areas for accurate area matching.
   const areas = config.postcodeAreas || ['SW1', 'N1', 'B1', 'M1', 'NW1', 'CR0', 'WD1'];
-  if (APIFY_API_KEY) {
-    for (let i = 0; i < areas.length && results.length < (config.maxItems || 20); i++) {
-      try {
-        const batch = await fetchPlanningApify(areas[i]);
-        if (batch && batch.length > 0) results.push.apply(results, batch);
-      } catch(e) { console.log('    Planning area error: ' + e.message); }
-    }
-    console.log('    Planning Apify returned ' + results.length + ' applications');
+  for (let i = 0; i < areas.length && results.length < (config.maxItems || 30); i++) {
+    try {
+      const batch = await fetchPlotaPlanning(areas[i], 10);
+      if (batch && batch.length > 0) results.push.apply(results, batch);
+    } catch(e) { console.log('    Planning area error: ' + e.message); }
   }
+  console.log('    Planning PLOTA returned ' + results.length + ' applications');
   // Fallback — free official UK planning data (brownfield sites, sparse addresses)
   if (results.length < 5) {
-    console.log('    Planning Apify low/empty, using free planning.data.gov.uk...');
+    console.log('    Planning PLOTA low/empty, using free planning.data.gov.uk...');
     try {
       const free = await fetchFreePlanningData(config.maxItems || 50);
       if (free && free.length > 0) results = results.concat(free);
@@ -697,7 +750,7 @@ async function collectPlanningLeads(config) {
   return results;
 }
 
-module.exports = { collectPlanningLeads, fetchPlanningApify, fetchFreePlanningData };
+module.exports = { collectPlanningLeads, fetchPlanningApify, fetchFreePlanningData, fetchPlotaPlanning };
 
 if (require.main === module) {
   main().catch(e => console.error('Error:', e.message));
