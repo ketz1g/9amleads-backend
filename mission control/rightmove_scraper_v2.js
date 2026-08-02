@@ -240,7 +240,7 @@ async function enrichMovingLeads(leads, concurrency) {
       const streetHint = (detail && detail.fullAddress) || lead.address || '';
       const fullAddr = await lookupPostcoderAddress(lead.postcode, streetHint);
       if (fullAddr) {
-        lead.address = fullAddr.address1 || fullAddr.fullAddress || lead.address;
+        lead.address = fullAddr.fullAddress || fullAddr.address1 || lead.address;
         lead.fullAddress = fullAddr.fullAddress || lead.address;
         lead.street = fullAddr.street || lead.street || '';
         lead.buildingNumber = fullAddr.buildingNumber || '';
