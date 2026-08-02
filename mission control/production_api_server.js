@@ -6273,8 +6273,8 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.applicationType) chips.push({ icon: '\uD83C\uDFD7\uFE0F', text: d.applicationType });
       if (d.status) chips.push({ icon: '\uD83D\uDD34', text: d.status });
       if (d.receivedDate || d.dateSubmitted) chips.push({ icon: '\uD83D\uDCC5', text: 'Received ' + new Date(d.receivedDate || d.dateSubmitted).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
-      if (d.url || d.plotaUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + (d.url || d.plotaUrl) + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View application</a>' });
-      if (d.sourceUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.sourceUrl + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View on council portal</a>' });
+      if (d.applicant) chips.push({ icon: '\uD83D\uDC64', text: 'Applicant: ' + d.applicant });
+      // No external links — planning source is white-labelled.
     } else {
       if (d.buyer) chips.push({ icon: '\uD83C\uDFED', text: d.buyer });
       if (d.contractValueLabel && d.contractValueLabel !== '&pound') chips.push({ icon: '\u00A3', text: d.contractValueLabel });
