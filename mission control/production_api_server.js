@@ -8271,7 +8271,7 @@ function syncCustomers(product) {
                 return new Promise(function(resolve) {
                   var req = require('https').request({ hostname: 'data.gov.uk', path: '/api/3/action/package_search?q=' + encodeURIComponent(q) + '&rows=20', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 }, function(res) {
                     var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
-                      try { var d = JSON.parse(body); var items = d.result && d.result.results ? d.result.results : []; resolve(items.map(function(n) { return { id: 'DG_' + (n.id || Date.now()), title: n.title || n.name || '', description: (n.notes || n.description || '').substring(0, 300), buyer: n.organization && n.organization.title || '', publishedDate: n.metadata_created || '', source: 'data.gov.uk', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
+                      try { var d = JSON.parse(body); var items = d.result && d.result.results ? d.result.results : []; resolve(items.map(function(n) { return { id: 'DG_' + (n.id || Date.now()), title: n.title || n.name || '', description: (n.notes || n.description || '').substring(0, 300), buyer: n.organization && n.organization.title || '', publishedDate: n.metadata_created || '', url: 'https://data.gov.uk/dataset/' + (n.id || '') + (n.name ? '/' + n.name : ''), source: 'data.gov.uk', scrapedAt: new Date().toISOString() }; })); } catch(e) { resolve([]); }
                     });
                   });
                   req.on('error', function() { resolve([]); }); req.setTimeout(15000, function() { req.destroy(); resolve([]); }); req.end();
