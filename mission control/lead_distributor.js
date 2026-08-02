@@ -130,10 +130,9 @@ function leadMatchesTarget(lead, customer, product) {
   if (targets.length > 0) {
     // Check if targets are postcode area codes (1-2 letters) or city names
     var isPostcodeArea = targets.every(function(a) { return /^[A-Z]{1,3}$/i.test(a); });
-    if (isPostcodeArea) {
-      // STRICT postcode-area matching: only match leads whose postcode area is
-      // exactly one of the customer's requested areas (e.g. B, EN, NW).
-      // No city-name fallback, no neighbouring-area filling.
+    if (isPostcodeArea && product === 'moving') {
+      // STRICT postcode-area matching for moving leads: only match leads whose
+      // postcode area is exactly one of the customer's requested areas (e.g. B, EN, NW).
       const leadPC = (lead.postcode || '').toUpperCase();
       const leadArea = extractPostcodeArea(leadPC);
       for (const area of targets) {
@@ -141,12 +140,37 @@ function leadMatchesTarget(lead, customer, product) {
         if (leadArea && leadArea === areaCode) { areaMatch = true; break; }
       }
     } else {
-      // City/region matching — check if lead's address or city contains any of the target area names
-      var leadText = ((lead.city || '') + ' ' + (lead.address || '') + ' ' + (lead.name || '') + ' ' + (lead.postcode || '')).toLowerCase();
+      // City/region matching for all other products (probate, planning, tenders,
+      // newbusiness). These leads often carry the address/town text rather than a
+      // clean postcode area, so match on location text + county mapping.
+      const isPostcodeAreaAny = targets.every(function(a) { return /^[A-Z]{1,3}$/i.test(a); });
+      var leadText = ((lead.city || '') + ' ' + (lead.address || '') + ' ' + (lead.name || '') + ' ' + (lead.postcode || '') + ' ' + (lead.location || '')).toLowerCase();
       for (const area of targets) {
         var areaLower = (area || '').toLowerCase().trim();
         if (!areaLower || areaLower === 'all uk') { areaMatch = true; break; }
+        // Direct text match (town/city/address)
         if (leadText.includes(areaLower)) { areaMatch = true; break; }
+        // Postcode-area targets (e.g. B, EN, NW): match if the lead's postcode or
+        // address contains a postcode starting with that area code, OR a known
+        // town/region maps to it.
+        if (isPostcodeAreaAny) {
+          var areaCodeUpper = (area || '').toUpperCase();
+          var leadAll = leadText + ' ' + (lead.postcode || '');
+          var pcRe = new RegExp('\\b' + areaCodeUpper.replace(/[A-Z]/g, '[A-Z]') + '\\s?[0-9]', 'i');
+          if (pcRe.test(leadAll)) { areaMatch = true; break; }
+          var areaTownMap = {
+            'B': 'birmingham', 'EN': 'enfield', 'NW': 'london', 'SW': 'london', 'SE': 'london',
+            'M': 'manchester', 'L': 'liverpool', 'LS': 'leeds', 'S': 'sheffield', 'BS': 'bristol',
+            'NG': 'nottingham', 'LE': 'leicester', 'CF': 'cardiff', 'EH': 'edinburgh',
+            'G': 'glasgow', 'BT': 'belfast', 'CM': 'essex', 'CO': 'essex', 'SS': 'essex',
+            'AL': 'hertfordshire', 'HP': 'hertfordshire', 'SG': 'hertfordshire', 'WD': 'hertfordshire',
+            'CT': 'kent', 'DA': 'kent', 'ME': 'kent', 'TN': 'kent', 'GU': 'surrey', 'KT': 'surrey',
+            'RH': 'surrey', 'SM': 'surrey', 'TW': 'surrey', 'CR': 'surrey', 'IG': 'essex', 'UB': 'london',
+            'HA': 'london', 'BR': 'london', 'RM': 'london', 'W': 'london', 'E': 'london', 'N': 'london',
+            'EC': 'london', 'WC': 'london'
+          };
+          if (areaTownMap[areaCodeUpper] && leadText.includes(areaTownMap[areaCodeUpper])) { areaMatch = true; break; }
+        }
         // County-to-postcode matching: check if the lead's postcode area matches the target county
         if (!areaMatch && lead.postcode) {
           var pcCode = extractPostcodeArea(lead.postcode);
