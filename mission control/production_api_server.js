@@ -6201,16 +6201,19 @@ function generateLeadEmailHTML(customer, leads) {
       title = fullAddr || 'Property';
       subtitle = (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.price ? ' · \u00a3' + Number(d.price).toLocaleString() : '');
     } else if (leadProduct === 'probate') {
-      // Deceased/company name as title, full address on one line as subtitle
+      // Deceased/company name as title, full address on one line as subtitle.
+      // Publication/grant date shown first as a freshness indicator.
       title = d.deceasedName || 'Probate Estate';
       var pAddr = d.deceasedAddress || d.address || '';
       var pLoc = d.locality || d.city || '';
       var pPc = d.postcode || '';
       var pFull = [pAddr, pLoc].filter(Boolean).join(', ');
       if (pPc && pFull.toLowerCase().indexOf(pPc.toLowerCase()) === -1) pFull += (pFull ? ', ' : '') + pPc;
+      var pPub = (d.grantDate || d.publishedDate || d.scrapedAt || '');
+      var pPubStr = pPub ? 'Published ' + new Date(pPub).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
       var pDod = d.dateOfDeath ? 'Died ' + new Date(d.dateOfDeath).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
       var pClaims = d.claimExpiry ? 'Claims by ' + new Date(d.claimExpiry).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
-      subtitle = [pFull, pDod, pClaims].filter(Boolean).join(' \u00b7 ');
+      subtitle = [pPubStr, pFull, pDod, pClaims].filter(Boolean).join(' \u00b7 ');
     } else if (leadProduct === 'newbusiness') {
       title = d.companyName || d.name || d.company || 'New Company Registration';
       var incDate = d.incorporationDate || d.dateOfCreation;
