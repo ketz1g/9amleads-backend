@@ -639,8 +639,17 @@ if (require.main === module) {
 
 async function collectProbateLeads(config) {
   config = config || {};
-  // Primary: UK Gazette probate notices via Apify actor (real statutory data)
-  var results = await fetchGazetteProbate(config.maxItems || 100);
+  // Primary: UK Gazette probate notices via Apify actor (real statutory data).
+  // The actor is PAY_PER_EVENT and occasionally returns empty on a run — retry once.
+  var results = [];
+  var gazAttempts = config.retries === 0 ? 1 : 2;
+  for (var gz = 0; gz < gazAttempts && results.length === 0; gz++) {
+    results = await fetchGazetteProbate(config.maxItems || 100);
+    if (results.length === 0 && gz === 0) {
+      console.log('[PROBATE] Gazette empty on attempt ' + (gz+1) + ', retrying...');
+      await new Promise(function(r) { setTimeout(r, 15000); });
+    }
+  }
   if (results.length === 0) {
     console.log('[PROBATE] Gazette empty, trying Gov.uk registry...');
     results = await fetchProbateRegistry();
