@@ -6269,12 +6269,12 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.freshnessBadge) chips.push({ icon: '\uD83D\uDFE2', text: d.freshnessBadge });
       if (d.council) chips.push({ icon: '\uD83C\uDFDB\uFE0F', text: d.council });
       if (d.reference) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.reference });
-      if (d.description) chips.push({ icon: '\uD83D\uDCDD', text: d.description.substring(0, 120) });
+      if (d.proposal || d.description) chips.push({ icon: '\uD83D\uDCDD', text: (d.proposal || d.description).substring(0, 120) });
       if (d.applicationType) chips.push({ icon: '\uD83C\uDFD7\uFE0F', text: d.applicationType });
       if (d.status) chips.push({ icon: '\uD83D\uDD34', text: d.status });
-      if (d.dateSubmitted) chips.push({ icon: '\uD83D\uDCC5', text: 'Submitted ' + new Date(d.dateSubmitted).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
-      if (d.url) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.url + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View application</a>' });
-      if (d.sourceUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.sourceUrl + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View on planning portal</a>' });
+      if (d.receivedDate || d.dateSubmitted) chips.push({ icon: '\uD83D\uDCC5', text: 'Received ' + new Date(d.receivedDate || d.dateSubmitted).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
+      if (d.url || d.plotaUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + (d.url || d.plotaUrl) + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View application</a>' });
+      if (d.sourceUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.sourceUrl + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View on council portal</a>' });
     } else {
       if (d.buyer) chips.push({ icon: '\uD83C\uDFED', text: d.buyer });
       if (d.contractValueLabel && d.contractValueLabel !== '&pound') chips.push({ icon: '\u00A3', text: d.contractValueLabel });
