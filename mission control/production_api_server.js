@@ -2908,11 +2908,10 @@ async function addBrevoContact(customer) {
 async function sendBrevoEmail(to, subject, htmlContent) {
   if (!BREVO_API_KEY) return;
   const https = require('https');
-  // TEMP: send from Brevo's verified domain while 9amleads.com authenticates
-  // (auth can take up to 48h). Switch BACK to hello@9amleads.com once the
-  // domain shows authenticated in Brevo. Until then, this verified sender is
-  // the only one that reliably reaches inboxes.
-  var senderFrom = 'hello@11167515.brevosend.com';
+  // Sender: hello@9amleads.com is the only registered Brevo sender.
+  // Domain authentication is in progress (can take up to 48h); once verified,
+  // emails will reliably reach inboxes. Until then delivery may be filtered.
+  var senderFrom = 'hello@9amleads.com';
   var senderName = '9amLeads';
   const data = JSON.stringify({
     sender: { name: senderName, email: senderFrom },
