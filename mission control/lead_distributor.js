@@ -403,9 +403,15 @@ function normaliseLead(rawLead, product, customerId) {
     if (!base.url) {
       if (rawLead.links && rawLead.links.plota) base.url = rawLead.links.plota;
       else if (rawLead.links && rawLead.links.council) base.url = rawLead.links.council;
+      else if (rawLead.plotaUrl) base.url = rawLead.plotaUrl;
+      else if (rawLead.sourceUrl) base.url = rawLead.sourceUrl;
       else if (rawLead.url) base.url = rawLead.url;
       else if (rawLead.reference) base.url = 'https://plota.co.uk/planning-applications/?q=' + encodeURIComponent(rawLead.reference);
     }
+    base.plotaUrl = rawLead.plotaUrl || base.url;
+    base.sourceUrl = rawLead.sourceUrl || '';
+    base.trades = rawLead.trades || [];
+    base.freshnessBadge = rawLead.freshnessBadge || '';
   }
 
   // Tenders specific fields
