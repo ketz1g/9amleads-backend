@@ -6201,8 +6201,16 @@ function generateLeadEmailHTML(customer, leads) {
       title = fullAddr || 'Property';
       subtitle = (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.price ? ' · \u00a3' + Number(d.price).toLocaleString() : '');
     } else if (leadProduct === 'probate') {
+      // Deceased/company name as title, full address on one line as subtitle
       title = d.deceasedName || 'Probate Estate';
-      subtitle = d.estateValue ? '\u00a3' + Number(d.estateValue).toLocaleString() + ' estate' : '';
+      var pAddr = d.deceasedAddress || d.address || '';
+      var pLoc = d.locality || d.city || '';
+      var pPc = d.postcode || '';
+      var pFull = [pAddr, pLoc].filter(Boolean).join(', ');
+      if (pPc && pFull.toLowerCase().indexOf(pPc.toLowerCase()) === -1) pFull += (pFull ? ', ' : '') + pPc;
+      var pDod = d.dateOfDeath ? 'Died ' + new Date(d.dateOfDeath).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
+      var pClaims = d.claimExpiry ? 'Claims by ' + new Date(d.claimExpiry).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
+      subtitle = [pFull, pDod, pClaims].filter(Boolean).join(' \u00b7 ');
     } else if (leadProduct === 'newbusiness') {
       title = d.companyName || d.name || d.company || 'New Company Registration';
       var incDate = d.incorporationDate || d.dateOfCreation;
@@ -6252,13 +6260,15 @@ function generateLeadEmailHTML(customer, leads) {
       }
       if (d.agent) chips.push({ icon: '\uD83D\uDC64', text: d.agent });
     } else if (leadProduct === 'probate') {
-      if (d.deceasedAddress) chips.push({ icon: '\uD83C\uDFE2', text: d.deceasedAddress.substring(0, 55) });
-      if (d.deceasedName) chips.push({ icon: '\uD83D\uDC68\u200D\u2696\uFE0F', text: d.deceasedName });
-      if (d.dateOfDeath) chips.push({ icon: '\uD83D\uDCC5', text: 'Died ' + new Date(d.dateOfDeath).toLocaleDateString() });
-      if (d.claimExpiry) chips.push({ icon: '\u23F0', text: 'Claims by ' + new Date(d.claimExpiry).toLocaleDateString() });
+      // Address + name are already in title/subtitle — chips show the extra details
+      if (d.grantDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Grant date: ' + new Date(d.grantDate).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
+      if (d.dateOfDeath) chips.push({ icon: '\uD83D\uDCC5', text: 'Died ' + new Date(d.dateOfDeath).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
+      if (d.claimExpiry) chips.push({ icon: '\u23F0', text: 'Claims by ' + new Date(d.claimExpiry).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
       if (d.estateValue || d.estimatedValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.estateValue || d.estimatedValue).toLocaleString() + ' estate' });
       if (d.solicitor) chips.push({ icon: '\uD83D\uDC64', text: 'Solicitor: ' + d.solicitor });
+      if (d.executorName) chips.push({ icon: '\uD83E\uDDD1', text: 'Executor: ' + d.executorName });
       if (d.probateRegistry || d.registry) chips.push({ icon: '\uD83C\uDFE2', text: d.probateRegistry || d.registry });
+      if (d.occupation) chips.push({ icon: '\uD83D\uDC68\u200D\uD83D\uDCBC', text: d.occupation });
     } else if (leadProduct === 'newbusiness') {
       if (d.sicCode) chips.push({ icon: '\uD83D\uDCCA', text: d.sicCode.length > 40 ? 'SIC: ' + d.sicCode.substring(0, 40) : d.sicCode });
       if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Incorporated ' + new Date(d.incorporationDate).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
