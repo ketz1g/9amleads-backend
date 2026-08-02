@@ -938,15 +938,16 @@ app.post('/api/auth/signup', async (req, res) => {
     var ip = req.ip || req.connection?.remoteAddress || '';
     if (ip) {
       var recentFromIP = db.prepare("SELECT COUNT(*) as cnt FROM customers WHERE signup_ip = ? AND created_at > datetime('now', '-1 day')").get(ip);
-      if (recentFromIP && recentFromIP.cnt >= 3) {
+      if (recentFromIP && recentFromIP.cnt >= 10) {
         return res.status(429).json({ error: 'Too many accounts created from this location. Please contact support.' });
       }
     }
 
     // Block duplicate free trials with similar business name + postcode
+    // (skipped for different products so customers can trial multiple lead types)
     if (targetAreas && targetAreas.length > 0 && planName !== 'pro' && planName !== 'enterprise') {
       var areaMatch = targetAreas.slice(0, 1).join(',');
-      var similarBiz = db.prepare("SELECT id FROM customers WHERE company = ? AND target_areas LIKE ? AND plan = 'free_trial'").get(company, '%' + areaMatch + '%');
+      var similarBiz = db.prepare("SELECT id FROM customers WHERE company = ? AND target_areas LIKE ? AND product = ? AND plan = 'free_trial'").get(company, '%' + areaMatch + '%', product);
       if (similarBiz) {
         return res.status(409).json({ error: 'A free trial for this business already exists. Please log in or contact support.' });
       }
