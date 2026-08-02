@@ -3090,8 +3090,8 @@ const LEAD_TYPE_RULES = {
     price_starter: 'price_1Tm6PMADspDnFpfBJtsUWi6v',
     price_growth: 'price_1Tm6PNADspDnFpfB847Dubdf',
     price_power: 'price_1Tm6POADspDnFpfBkf0gfqXs',
-    weekly_est: { starter: 25, pro: 75, enterprise: 150 },
-    monthly_est: { starter: 100, pro: 300, enterprise: 600 }
+    weekly_est: { starter: 25, pro: 75, enterprise: 200 },
+    monthly_est: { starter: 100, pro: 300, enterprise: 800 }
   },
   newbusiness: {
     name: 'New Business Alerts', key: 'newbusiness', local: true, model: 'daily',
@@ -3123,8 +3123,8 @@ const LEAD_TYPE_RULES = {
     price_starter: 'price_1TmEKSADspDnFpfBrCHXJBFu',
     price_growth: 'price_1TmEKTADspDnFpfBVdi1APEq',
     price_power: 'price_1TmEKTADspDnFpfBxFjHeoP9',
-    weekly_est: { starter: 5, pro: 10, enterprise: 25 },
-    monthly_est: { starter: 20, pro: 40, enterprise: 100 }
+    weekly_est: { starter: 25, pro: 50, enterprise: 125 },
+    monthly_est: { starter: 100, pro: 200, enterprise: 500 }
   },
   probate: {
     name: 'Probate Leads', key: 'probate', local: false, model: 'weekly',
@@ -3140,8 +3140,8 @@ const LEAD_TYPE_RULES = {
     price_starter: 'price_1TxQqKADspDnFpfBccT0Lh2w',
     price_growth: 'price_1Tm6PPADspDnFpfB3q61i5FP',
     price_power: 'price_1Tm6PQADspDnFpfBazgz1UD7',
-    weekly_est: { starter: 5, pro: 15, enterprise: 30 },
-    monthly_est: { starter: 20, pro: 60, enterprise: 120 }
+    weekly_est: { starter: 25, pro: 75, enterprise: 150 },
+    monthly_est: { starter: 100, pro: 300, enterprise: 600 }
   },
   tenders: {
     name: 'Public Tenders', key: 'tenders', local: false, model: 'weekly',
@@ -3157,8 +3157,8 @@ const LEAD_TYPE_RULES = {
     price_starter: 'price_1TmEKTADspDnFpfBsi6jjA6B',
     price_growth: 'price_1TmEKUADspDnFpfBqnyKzJxM',
     price_power: 'price_1TmEKUADspDnFpfBugGOoqhD',
-    weekly_est: { starter: 5, pro: 25, enterprise: 50 },
-    monthly_est: { starter: 20, pro: 100, enterprise: 200 }
+    weekly_est: { starter: 25, pro: 50, enterprise: 125 },
+    monthly_est: { starter: 100, pro: 200, enterprise: 500 }
   },
   property: {
     name: 'Property Leads', key: 'property', local: true,
