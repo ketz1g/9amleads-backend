@@ -6161,8 +6161,12 @@ function generateLeadEmailHTML(customer, leads) {
     var postcode = d.postcode || '';
 
     if (leadProduct === 'moving') {
-      title = address.split(',')[0].trim() || address || 'Property';
-      subtitle = (postcode || '') + (d.city ? ' · ' + d.city : '') + (d.bedrooms ? ' · ' + d.bedrooms + ' bed' : '');
+      // Full address in the title: street number + name + town + postcode
+      var fullAddr = address || '';
+      if (d.town && fullAddr.toLowerCase().indexOf((d.town || '').toLowerCase()) === -1) fullAddr += ', ' + d.town;
+      if (postcode && fullAddr.toLowerCase().indexOf(postcode.toLowerCase()) === -1) fullAddr += ', ' + postcode;
+      title = fullAddr || 'Property';
+      subtitle = (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.price ? ' · \u00a3' + Number(d.price).toLocaleString() : '');
     } else if (leadProduct === 'probate') {
       title = d.deceasedName || 'Probate Estate';
       subtitle = d.estateValue ? '\u00a3' + Number(d.estateValue).toLocaleString() + ' estate' : '';
@@ -6193,8 +6197,8 @@ function generateLeadEmailHTML(customer, leads) {
     // Details as badge chips
     var chips = [];
     if (postcode) chips.push({ icon: '\uD83D\uDCCD', text: postcode });
-    if (address && address.length > 10) chips.push({ icon: '\uD83C\uDFE2', text: address.substring(0, 55) });
-    if (d.city) chips.push({ icon: '\uD83C\uDFD9\uFE0F', text: d.city });
+    if (address && address.length > 10 && leadProduct !== 'moving') chips.push({ icon: '\uD83C\uDFE2', text: address.substring(0, 55) });
+    if (d.city && leadProduct !== 'moving') chips.push({ icon: '\uD83C\uDFD9\uFE0F', text: d.city });
 
     if (leadProduct === 'moving') {
       var listingDate = d.firstVisibleDate || d.addedOrReduced || d.lastAddedOrReducedDate || '';
