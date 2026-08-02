@@ -147,7 +147,7 @@ function leadMatchesTarget(lead, customer, product) {
       var leadText = ((lead.city || '') + ' ' + (lead.address || '') + ' ' + (lead.name || '') + ' ' + (lead.postcode || '') + ' ' + (lead.location || '')).toLowerCase();
       for (const area of targets) {
         var areaLower = (area || '').toLowerCase().trim();
-        if (!areaLower || areaLower === 'all uk') { areaMatch = true; break; }
+        if (!areaLower || areaLower === 'all uk' || areaLower === 'all-uk' || areaLower === 'ukwide' || areaLower === 'united kingdom' || areaLower === 'uk' || coverage === 'ukwide') { areaMatch = true; break; }
         // Direct text match (town/city/address)
         if (leadText.includes(areaLower)) { areaMatch = true; break; }
         // Postcode-area targets (e.g. B, EN, NW): match if the lead's postcode or
