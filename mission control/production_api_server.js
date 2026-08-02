@@ -8000,41 +8000,6 @@ app.get('/admin/direct-mail', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'publish', 'admin', 'direct-mail.html'));
 });
 
-// POST /api/admin/run-scrapers — manually trigger all scrapers now
-app.post('/api/admin/deliver', adminAuth, async (req, res) => {
-  try {
-    _dbData = null;
-    var db = getDb();
-    var today = new Date().toISOString().split('T')[0];
-    var customers = (db.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
-    var sent = 0;
-    for (var ci = 0; ci < customers.length; ci++) {
-      var cust = customers[ci];
-      var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
-      if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
-      var custLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0; }).slice(0, 5);
-      if (custLeads.length === 0) continue;
-      var html = generateLeadEmailHTML(cust, custLeads);
-      var subject = 'Your 9am Opportunities for ' + (cust.target_areas ? JSON.parse(cust.target_areas).join(', ') : 'your area') + ' \u2014 ' + new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
-      await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, subject, html);
-      // Send to CRM webhook if configured (same time as email)
-      if (cust.crm_webhook_url) {
-        try {
-          var crmPayload = JSON.stringify({ customer: cust.email, company: cust.company, leads: custLeads, delivered_at: new Date().toISOString() });
-          var crmReq = require('https').request(cust.crm_webhook_url, { method:'POST', headers:{ 'Content-Type':'application/json', 'Content-Length':Buffer.byteLength(crmPayload) } });
-          crmReq.write(crmPayload); crmReq.end();
-        } catch(ce) { console.log('[DELIVERY] CRM webhook failed:', cust.email); }
-      }
-      var now = new Date().toISOString();
-      custLeads.forEach(function(l) { l.delivered = 1; l.delivered_at = now; });
-      sent++;
-    }
-    saveDb();
-    res.json({ success: true, sent: sent });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-
 app.get('/api/admin/check-stripe', adminAuth, (req, res) => {
   var hasKey = !!STRIPE_SECRET_KEY;
   var keyPrefix = STRIPE_SECRET_KEY ? STRIPE_SECRET_KEY.substring(0, 10) + '...' : '';
@@ -9023,19 +8988,6 @@ app.post('/api/save-payment-method', authMiddleware, async (req, res) => {
 });
 
 // POST /api/cancel-trial - cancel trial, no charge
-app.post('/api/cancel-trial', authMiddleware, async (req, res) => {
-  try {
-    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
-    if (!customer) return res.status(404).json({ error: 'User not found' });
-    db.prepare('UPDATE customers SET trial_cancelled = 1, plan = ? WHERE id = ?').run('cancelled', customer.id);
-    saveDb();
-    if (customer.stripe_customer_id) { try { await stripeApiRequest('DELETE', 'customers/' + customer.stripe_customer_id, {}); } catch(e) {} }
-    res.json({ success: true, message: 'Trial cancelled. No charge. Dashboard accessible.' });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-
-
 // POST /api/admin/update-areas - update customer target areas to postcode codes
 app.post('/api/admin/update-areas', adminAuth, (req, res) => {
   try {
