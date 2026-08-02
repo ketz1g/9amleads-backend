@@ -398,8 +398,10 @@ function normaliseLead(rawLead, product, customerId) {
     base.council = rawLead.council || rawLead.authority || '';
     base.applicationRef = rawLead.applicationRef || '';
     base.planningKeyVal = rawLead.planningKeyVal || '';
-    base.dateSubmitted = rawLead.dateSubmitted || rawLead.date_received || '';
+    base.dateSubmitted = rawLead.dateSubmitted || rawLead.date_received || rawLead.receivedDate || '';
     base.locationPoint = rawLead.locationPoint || '';
+    if (!base.description && rawLead.proposal) base.description = rawLead.proposal;
+    base.proposal = rawLead.proposal || rawLead.description || '';
     if (!base.url) {
       if (rawLead.links && rawLead.links.plota) base.url = rawLead.links.plota;
       else if (rawLead.links && rawLead.links.council) base.url = rawLead.links.council;
