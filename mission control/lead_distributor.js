@@ -268,11 +268,14 @@ function leadMatchesTarget(lead, customer, product) {
         const appType = (lead.applicationType || lead.app_type || '').toLowerCase();
         var filterTypes = filters['f-app-type'] || filters.applicationType || filters.appTypes || [];
         if (typeof filterTypes === 'string') filterTypes = [filterTypes];
-        var appTypeMatched = false;
+        var appTypeMatched = true;
         if (Array.isArray(filterTypes) && filterTypes.length > 0) {
           filterTypes = filterTypes.map(function(t) { return t.toLowerCase(); });
           appTypeMatched = filterTypes.some(function(t) { return appType.includes(t); });
-          if (!appTypeMatched) return { match: false };
+          // App type not matched: don't hard-reject — lower priority (tier 2) so
+          // real planning applications still reach the customer when the type
+          // doesn't exactly match the filter list.
+          if (!appTypeMatched) tier = 2;
         }
         // Keyword matching — if set, further narrows results but doesn't block if none match
         if (filters.keywords) {
