@@ -236,14 +236,16 @@ function extractPostcode(str) {
 
 // ===== PLOTA PLANNING APPLICATIONS API =====
 // Real planning applications with full site addresses + postcodes + status.
-// Query by postcode area, authority, or free-text. Auth via Bearer token.
-function fetchPlotaPlanning(postcode, maxItems) {
+// Query by postcode area, authority, or free-text. Optional category filter for
+// even distribution across the customer's selected application types.
+function fetchPlotaPlanning(postcode, maxItems, category) {
   return new Promise((resolve) => {
     const key = process.env.PLOTA_API_KEY || '';
     if (!key) { console.log('    No PLOTA_API_KEY configured'); resolve([]); return; }
     const cleanPc = (postcode || '').replace(/[^A-Z0-9]/gi, '').toUpperCase();
     const q = cleanPc ? '?postcode=' + encodeURIComponent(cleanPc) : '?q=' + encodeURIComponent(postcode || 'London');
-    const path = '/v1/applications' + q + '&limit=' + (maxItems || 30);
+    const cat = category ? '&category=' + encodeURIComponent(category) : '';
+    const path = '/v1/applications' + q + cat + '&limit=' + (maxItems || 30);
     const options = {
       hostname: 'api.plota.co.uk',
       path: path,
@@ -724,21 +726,71 @@ async function main() {
   }
 }
 
+// Map signup application-type filters to PLOTA category slugs so the scraper
+// pulls applications that match what the customer selected.
+const PLOTA_CATEGORY_MAP = {
+  'householder': 'extensions',
+  'full planning': 'commercial-and-major-works',
+  'full-planning': 'commercial-and-major-works',
+  'outline planning': 'new-homes',
+  'outline': 'new-homes',
+  'listed building': 'listed-buildings',
+  'listed-building': 'listed-buildings',
+  'change of use': 'change-of-use',
+  'change-of-use': 'change-of-use',
+  'lawful development': 'extensions',
+  'lawful-development': 'extensions',
+  'permitted development': 'extensions',
+  'permitted-development': 'extensions',
+  'prior approval': 'extensions',
+  'prior-approval': 'extensions',
+  'demolition': 'demolition',
+  'solar': 'solar-and-renewables',
+  'new homes': 'new-homes',
+  'commercial': 'commercial-and-major-works',
+  'trees': 'trees-and-landscaping',
+  'community': 'community',
+  'agricultural': 'agricultural',
+  'signs': 'signs-and-adverts',
+  'shopfronts': 'shopfronts'
+};
+
 // Exported function for the production server's run-scrapers flow.
-// Primary: free planning.data.gov.uk (no cost). Fallback: Apify actor (cheap, backup only).
+// Queries PLOTA per selected application type + area, then distributes evenly
+// across the filter types so no single type dominates (e.g. not all trees).
 async function collectPlanningLeads(config) {
   config = config || {};
   let results = [];
-  // Primary — PLOTA planning API (real applications with full addresses + postcodes).
-  // Query by the customer's postcode areas for accurate area matching.
   const areas = config.postcodeAreas || ['SW1', 'N1', 'B1', 'M1', 'NW1', 'CR0', 'WD1'];
-  for (let i = 0; i < areas.length && results.length < (config.maxItems || 30); i++) {
-    try {
-      const batch = await fetchPlotaPlanning(areas[i], 10);
-      if (batch && batch.length > 0) results.push.apply(results, batch);
-    } catch(e) { console.log('    Planning area error: ' + e.message); }
+  // Resolve selected application-type filters to PLOTA category slugs.
+  // If none provided, use the main categories for variety.
+  let catSlugs = [];
+  const rawTypes = config.appTypes || config.filters || [];
+  if (Array.isArray(rawTypes) && rawTypes.length > 0) {
+    const seen = {};
+    rawTypes.forEach(function(t) {
+      const key = String(t).toLowerCase().trim();
+      const slug = PLOTA_CATEGORY_MAP[key];
+      if (slug && !seen[slug]) { seen[slug] = 1; catSlugs.push(slug); }
+    });
   }
-  console.log('    Planning PLOTA returned ' + results.length + ' applications');
+  if (catSlugs.length === 0) {
+    catSlugs = ['extensions', 'change-of-use', 'new-homes', 'listed-buildings', 'commercial-and-major-works'];
+  }
+  // Query each category across the areas for EVEN distribution across filter types
+  const perCat = Math.max(2, Math.ceil((config.maxItems || 20) / catSlugs.length));
+  for (let c = 0; c < catSlugs.length; c++) {
+    for (let a = 0; a < areas.length && results.length < (config.maxItems || 30); a++) {
+      try {
+        const batch = await fetchPlotaPlanning(areas[a], perCat, catSlugs[c]);
+        if (batch && batch.length > 0) {
+          results.push.apply(results, batch.map(function(l){ l.selectedCategory = catSlugs[c]; return l; }));
+          break; // got leads for this category in this area
+        }
+      } catch(e) { console.log('    Planning area/category error: ' + e.message); }
+    }
+  }
+  console.log('    Planning PLOTA returned ' + results.length + ' applications across ' + catSlugs.length + ' categories');
   // Fallback — free official UK planning data (brownfield sites, sparse addresses)
   if (results.length < 5) {
     console.log('    Planning PLOTA low/empty, using free planning.data.gov.uk...');
