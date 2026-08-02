@@ -3951,20 +3951,22 @@ cron.schedule('33 2 * * *', async () => {
 // Delivery runs Mon-Fri at 09:00 UK time (handles BST/GMT automatically via timezone).
 var __deliveryFireCount = 0;
 var __lastDeliveryFire = '';
-cron.schedule('*/5 * * * *', async () => {
+// ===== DELIVERY CRON: Mon-Fri 09:00 UK ===== (timezone: Europe/London)
+cron.schedule('0 9 * * 1-5', async () => {
   __deliveryFireCount++;
   __lastDeliveryFire = new Date().toISOString();
-  console.log('[TEST] Running delivery (via self-HTTP)...');
+  console.log('[09:00 UK] Running delivery...');
   try {
     const https = require('https');
     var body = JSON.stringify({});
     var req = https.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
-      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[TEST] Delivery done:', b.substring(0, 200)); });
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[09:00 UK] Delivery done:', b.substring(0, 200)); });
     });
+    req.on('error', function(e) { console.log('[09:00 UK] Delivery request error:', e.message); });
     req.write(body); req.end();
     // Run Print & Post after delivery
-    try { await runAutoSend(); } catch(ase) { console.log('[TEST] Print & Post error:', ase.message); }
-  } catch(e) { console.log('[TEST] Delivery error:', e.message); }
+    try { await runAutoSend(); } catch(ase) { console.log('[09:00 UK] Print & Post error:', ase.message); }
+  } catch(e) { console.log('[09:00 UK] Delivery error:', e.message); }
 }, {
   timezone: 'Europe/London'
 });
@@ -4565,6 +4567,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // Get all products for this customer (round-robin)
       var products = [cust.product];
       try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
+      var debugUndelivered = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0; }).length;
+      console.log('[DELIVER-DEBUG] ' + cust.email + ' products=' + products.join(',') + ' limit=' + totalDailyLimit + ' undelivered=' + debugUndelivered);
       
       var custLeads = [];
       var custAreas = [];
