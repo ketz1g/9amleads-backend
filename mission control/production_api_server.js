@@ -2912,7 +2912,11 @@ async function sendBrevoEmail(to, subject, htmlContent) {
     sender: { name: '9amLeads', email: 'hello@9amleads.com' },
     to: [{ email: to.email, name: to.name }],
     subject,
-    htmlContent
+    htmlContent,
+    headers: {
+      'X-Mailgun-Tag': '9amleads',
+      'List-Unsubscribe': '<mailto:hello@9amleads.com?subject=unsubscribe>'
+    }
   });
 
   return new Promise((resolve, reject) => {
@@ -3366,7 +3370,7 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
     '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:20px 30px 16px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">' +
     '<p style="color:#64748b;font-size:10px;margin:0 0 6px">9am Leads Ltd</p>' +
     '<p style="color:#64748b;font-size:9px;margin:0 0 8px"><a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a>' +
-    ' &bull; <a href="{{UNSUBSCRIBE}}" style="color:#38bdf8;text-decoration:underline">Unsubscribe</a></p>' +
+     ' &bull; <a href="https://www.9amleads.com/privacy.html#unsubscribe" style="color:#38bdf8;text-decoration:underline">Unsubscribe</a></p>' +
     '<p style="color:#475569;font-size:8px;margin:0;letter-spacing:.4px">Fresh exclusive opportunities at 9am every morning &bull; 9amLeads.com</p>' +
     '</td></tr></table></td></tr></table></body></html>';
 }
