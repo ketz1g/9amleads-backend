@@ -202,12 +202,23 @@ function fetchGazetteDetail(noticeId) {
         const fullName = (body.match(/property="vcard:fn"[^>]*>([^<]+)</) || [])[1];
         const deceased = (body.match(/property="vcard:title"[^>]*>([^<]+)</) || [])[1];
         const fullAddress = [street, locality].filter(Boolean).join(', ');
+        // Extract extra details: date of death, solicitor, executor
+        const dod = (body.match(/property="schema:dateOfDeath"[^>]*>([^<]+)</) || body.match(/(?:died|date of death)[^<]{0,40}?([0-9]{1,2} (?:January|February|March|April|May|June|July|August|September|October|November|December) [0-9]{4})/i) || [])[1];
+        // Find the notice text for solicitor/executor mentions
+        const cleanText = body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+        const solicitorMatch = cleanText.match(/(?:solicitor[s]?[:\s]+|solicitors?\s+(?:for|of)\s+)([A-Z][A-Za-z'& ]{3,60})/) || cleanText.match(/It is contacted by ([A-Z][A-Za-z'& ]{3,60})/) || [];
+        const executorMatch = cleanText.match(/(?:executor[s]?|personal representatives?|administrator[s]?)[:\s]+([A-Z][A-Za-z'& .]{3,60})/) || cleanText.match(/The executor[s]?[:\s]+([A-Z][A-Za-z'& .]{3,60})/) || [];
+        const claimantMatch = cleanText.match(/(?:address:|to the Personal Representatives of)[\s]+([A-Z][A-Za-z0-9'& .]{5,80})/) || [];
         resolve({
           deceasedAddress: fullAddress,
           locality: locality || '',
           postcode: postcode || '',
           region: region || '',
-          deceasedName: fullName || deceased || ''
+          deceasedName: fullName || deceased || '',
+          dateOfDeath: (dod || '').trim() || '',
+          solicitor: (solicitorMatch || [])[1] ? (solicitorMatch)[1].trim() : '',
+          executorName: (executorMatch || [])[1] ? (executorMatch)[1].trim() : (claimantMatch || [])[1] ? (claimantMatch)[1].trim() : '',
+          noticeText: cleanText.substring(0, 400)
         });
       });
     });
@@ -229,6 +240,10 @@ async function enrichGazetteLeads(leads) {
       if (detail.deceasedAddress) lead.deceasedAddress = detail.deceasedAddress;
       if (detail.postcode) lead.postcode = detail.postcode;
       if (detail.deceasedName) lead.name = detail.deceasedName;
+      if (detail.dateOfDeath) lead.dateOfDeath = detail.dateOfDeath;
+      if (detail.solicitor) lead.solicitor = detail.solicitor;
+      if (detail.executorName) lead.executorName = detail.executorName;
+      if (detail.noticeText) lead.description = detail.noticeText;
       lead.locality = detail.locality || '';
       lead.region = detail.region || '';
       lead.fullAddress = (detail.deceasedAddress + ', ' + detail.postcode).trim();
