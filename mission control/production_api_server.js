@@ -3954,111 +3954,17 @@ var __lastDeliveryFire = '';
 cron.schedule('*/5 * * * *', async () => {
   __deliveryFireCount++;
   __lastDeliveryFire = new Date().toISOString();
-  console.log('[TEST] Running delivery...');
+  console.log('[TEST] Running delivery (via self-HTTP)...');
   try {
-    _dbData = null;
-    var db = getDb();
-    var today = new Date().toISOString().split('T')[0];
-    var customers = (db.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
-    var delivered = 0;
-    for (var ci = 0; ci < customers.length; ci++) {
-      var cust = customers[ci];
-      var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
-      if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
-      // Use per-product limits based on lead type and coverage area
-      var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 40 };
-      var totalDailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || dailyLimitByPlan[cust.plan] || 5;
-      var products = [cust.product];
-      try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
-      // Calculate this week start for weekly-model products
-      var thisWeek = new Date(); thisWeek.setDate(thisWeek.getDate() - (thisWeek.getDay() || 7) + 1);
-      var weekStartStr = thisWeek.toISOString().split('T')[0];
-      var custLeads = [];
-      // Round-robin across all products: pick 1 lead per product, repeat until limit reached
-      var maxRound = Math.ceil(totalDailyLimit / products.length);
-      for (var ri = 0; ri < maxRound && custLeads.length < totalDailyLimit; ri++) {
-        for (var pi = 0; pi < products.length && custLeads.length < totalDailyLimit; pi++) {
-          var prod = products[pi];
-          // Check weekly limit + daily max for specialist products
-          var prodRule = getLeadTypeRule(prod);
-          if (prodRule.model === 'weekly') {
-            var weeklyDelivered = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at >= weekStartStr && l.product === prod; }).length;
-            var weeklyLimit = prodRule.weekly_est ? (prodRule.weekly_est[cust.plan] || prodRule.weekly_est.starter || 999) : 999;
-            if (weeklyDelivered >= weeklyLimit) continue; // Weekly limit reached, skip this product
-            // Also enforce daily max (weekly/5) so the weekly cap isn't dumped in one day
-            var dailyMax = Math.max(1, Math.ceil(weeklyLimit / 5));
-            var todayDelivered = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today) && l.product === prod; }).length;
-            if (todayDelivered >= dailyMax) continue; // Daily max reached for this product
-          }
-          // Get ALL undelivered leads for this product (not already picked)
-          var allProdLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
-          console.log('[DELIVERY-DEBUG]   ' + cust.email + ' product=' + prod + ' rawUndelivered=' + allProdLeads.length);
-          // Remove leads already picked in custLeads
-          var pickedIds = custLeads.map(function(cl) { return cl.id; });
-          var prodLeads = allProdLeads.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
-          // Intra-batch dedup by address (same property should not appear twice)
-          var seenDedup = new Set();
-          prodLeads = prodLeads.filter(function(l) {
-            var k = (l.address || l.name || '').toLowerCase().trim();
-            return k && !seenDedup.has(k) ? (seenDedup.add(k), true) : false;
-          });
-          prodLeads.sort(function(a, b) {
-            var aD = (a.created_at || a.scrapedAt || '').substring(0, 10);
-            var bD = (b.created_at || b.scrapedAt || '').substring(0, 10);
-            if (aD === today && bD !== today) return -1;
-            if (bD === today && aD !== today) return 1;
-            return 0;
-          });
-          if (prodLeads.length > 0) {
-            // Spread across postcode areas: prefer a lead whose postcode area
-            // hasn't been picked yet for this customer today (e.g. 5 postcodes
-            // + 5 leads = 1 lead per postcode). Same for all paid packages.
-            var chosen = null;
-            for (var pli = 0; pli < prodLeads.length; pli++) {
-              var pl = prodLeads[pli];
-              var plData = null;
-              try { plData = typeof pl.data === 'string' ? JSON.parse(pl.data) : (pl.data || {}); } catch(e) { plData = {}; }
-              var plArea = extractPostcodeArea(plData.postcode || plData.address || '');
-              var alreadyPicked = custLeads.some(function(cl) {
-                var cd = null;
-                try { cd = typeof cl.data === 'string' ? JSON.parse(cl.data) : (cl.data || {}); } catch(e2) { cd = {}; }
-                return plArea && extractPostcodeArea(cd.postcode || cd.address || '') === plArea;
-              });
-              if (!alreadyPicked) { chosen = pl; break; }
-            }
-            custLeads.push(chosen || prodLeads[0]); // Take 1 lead per product per round, spread by postcode
-          }
-        }
-      }
-      // Skip quietly if no leads available (no email = no disappointment)
-      console.log('[DELIVERY-DEBUG] ' + cust.email + ' limit=' + totalDailyLimit + ' products=' + products.join(',') + ' available=' + (custLeads.length));
-      if (custLeads.length === 0) {
-        console.log('[08:00 UTC] No leads for ' + cust.email + ', skipping delivery');
-        continue;
-      }
-      try {
-        var html = generateLeadEmailHTML(cust, custLeads);
-        var covName2 = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
-        var subject = 'Your 9am Opportunities for ' + covName2 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, subject, html);
-        // Send to CRM webhook if configured
-        if (cust.crm_webhook_url) {
-          try {
-            var crmPayload = JSON.stringify({ customer: cust.email, company: cust.company, leads: custLeads, delivered_at: new Date().toISOString() });
-            var crmReq = require('https').request(cust.crm_webhook_url, { method:'POST', headers:{ 'Content-Type':'application/json', 'Content-Length':Buffer.byteLength(crmPayload) } });
-            crmReq.write(crmPayload); crmReq.end();
-          } catch(ce) { console.log('[DELIVERY] CRM webhook failed:', cust.email); }
-        }
-        for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
-        saveDb();
-        delivered += custLeads.length;
-        console.log('[08:00 UTC] Delivered ' + custLeads.length + ' to ' + cust.email);
-      } catch(e) { console.log('[08:00 UTC] Error for ' + cust.email + ': ' + (e && e.message || '')); }
-    }
-    console.log('[08:00 UTC] Delivery complete: ' + delivered + ' leads');
+    const https = require('https');
+    var body = JSON.stringify({});
+    var req = https.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[TEST] Delivery done:', b.substring(0, 200)); });
+    });
+    req.write(body); req.end();
     // Run Print & Post after delivery
-    try { await runAutoSend(); } catch(ase) { console.log('[08:00 UTC] Print & Post error:', ase.message); }
-  } catch(e) { console.log('[08:00 UTC] Delivery error: ' + (e && e.message || '')); }
+    try { await runAutoSend(); } catch(ase) { console.log('[TEST] Print & Post error:', ase.message); }
+  } catch(e) { console.log('[TEST] Delivery error:', e.message); }
 }, {
   timezone: 'Europe/London'
 });
