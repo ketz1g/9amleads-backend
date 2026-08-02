@@ -569,6 +569,9 @@ document.querySelectorAll('.modal').forEach(function(m){
       loadSettings(data);
       if (data.target_areas) renderPostcodes(data.target_areas);
       if (data.plan) document.getElementById('plan-name').textContent = data.plan === 'free_trial' ? 'Free Trial' : data.plan.charAt(0).toUpperCase() + data.plan.slice(1);
+      var prodNames = { moving:'Moving leads', newbusiness:'New Business leads', probate:'Probate leads', tenders:'Tenders', planning:'Planning leads' };
+      var psEl = document.getElementById('plan-sub');
+      if (psEl && data.product) psEl.textContent = prodNames[data.product] || (data.product + ' leads');
       if (data.leads_per_day) document.getElementById('plan-leads').textContent = data.leads_per_day;
       if (data.trial_ends) {
         var days = Math.ceil((new Date(data.trial_ends) - new Date()) / 86400000);
