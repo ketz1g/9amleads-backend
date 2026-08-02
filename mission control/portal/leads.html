@@ -128,7 +128,7 @@ function renderLeads(leads) {
       var planTitle = d.address || (d.description||'').substring(0,40) || 'Planning Application';
       var planDate = d.dateSubmitted || d.receivedDate || d.date_received || l.created_at || '';
       var planDateStr = planDate ? new Date(planDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
-      var planMeta = [d.applicationType, d.status, planDateStr ? 'Received ' + planDateStr : '', d.council, d.reference ? 'Ref: ' + d.reference : ''].filter(Boolean);
+      var planMeta = [d.applicationType, d.status, planDateStr ? 'Planning application date: ' + planDateStr : '', d.council, d.reference ? 'Ref: ' + d.reference : ''].filter(Boolean);
       var planDesc = (d.proposal || d.description) ? '<div class="meta" style="margin-top:2px">' + (d.proposal || d.description).substring(0,150) + '</div>' : '';
       var planApplicant = d.applicant ? '<div class="meta" style="margin-top:2px">Applicant: ' + d.applicant + '</div>' : '';
       html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
