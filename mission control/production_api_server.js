@@ -8471,6 +8471,15 @@ app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
     res.json({ success: true, result: 'Companies House OK', tenders: tenderResult });
   } catch(e) { res.json({ error: e.message }); }
 });
+// POST /api/admin/test-email — send a test email and return the Brevo response/error
+app.post('/api/admin/test-email', adminAuth, async (req, res) => {
+  try {
+    const toEmail = req.body.email || 'hello@9amleads.com';
+    const result = await sendBrevoEmail({ email: toEmail, name: 'Test' }, '9amLeads test email', '<p>Test from 9amLeads server</p>');
+    res.json({ success: true, result });
+  } catch(e) { res.status(500).json({ error: e.message, body: String(e.message).substring(0, 500) }); }
+});
+
 // POST /api/admin/send-welcome — send the welcome (trial_day1) email to all
 // free-trial customers who haven't received it yet
 app.post('/api/admin/send-welcome', adminAuth, async (req, res) => {
