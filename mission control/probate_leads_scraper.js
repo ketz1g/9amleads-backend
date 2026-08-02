@@ -775,12 +775,13 @@ async function collectProbateLeads(config) {
   config = config || {};
   // Primary: FREE Gazette HTML search (no Apify cost, fast, reliable). Returns
   // real deceased-estates notices with names + publication dates + URLs.
-  var results = await fetchGazetteHTML(config.maxItems || 100);
+  var maxItems = config.maxItems || 30;
+  var results = await fetchGazetteHTML(maxItems);
   // Enrich the free HTML notices with full addresses (street + locality + postcode)
   // by fetching each notice's detail page. Free, no Apify cost.
   if (results.length > 0 && config.skipEnrich !== true) {
     try {
-      results = await enrichGazetteLeads(results);
+      results = await enrichGazetteLeads(results, maxItems);
     } catch(e) { console.log('[PROBATE] Enrich error: ' + e.message); }
   }
   if (results.length === 0) {
