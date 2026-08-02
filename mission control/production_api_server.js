@@ -3992,6 +3992,7 @@ cron.schedule('*/5 * * * *', async () => {
           }
           // Get ALL undelivered leads for this product (not already picked)
           var allProdLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === prod; });
+          console.log('[DELIVERY-DEBUG]   ' + cust.email + ' product=' + prod + ' rawUndelivered=' + allProdLeads.length);
           // Remove leads already picked in custLeads
           var pickedIds = custLeads.map(function(cl) { return cl.id; });
           var prodLeads = allProdLeads.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
@@ -4030,6 +4031,7 @@ cron.schedule('*/5 * * * *', async () => {
         }
       }
       // Skip quietly if no leads available (no email = no disappointment)
+      console.log('[DELIVERY-DEBUG] ' + cust.email + ' limit=' + totalDailyLimit + ' products=' + products.join(',') + ' available=' + (custLeads.length));
       if (custLeads.length === 0) {
         console.log('[08:00 UTC] No leads for ' + cust.email + ', skipping delivery');
         continue;
