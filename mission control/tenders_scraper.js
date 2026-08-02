@@ -227,17 +227,21 @@ function fetchTendersFromHTML(keywords, location, maxCount) {
           const stageMatch = text.match(/Procurement stage\s+([A-Za-z ]+?)\s+Notice/);
           const locText = locMatch ? locMatch[1].trim() : '';
           // Extract a clean postcode from the location text (e.g. "N22 7TY")
-          const locPc = (locText.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0];
+          const locPc = (locMatch ? (locMatch[1].match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0] : '') || (text.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0];
+          // Extract buyer email if present
+          const emailMatch = (b.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/) || [])[0];
           if (location) {
             const loc = (locText + ' ' + text).toLowerCase();
             if (!loc.includes(location.toLowerCase())) continue;
           }
+          // Build a clean contract value label
+          const cleanValue = valueMatch ? valueMatch[1].trim().replace(/\u00a3/g, '£').replace(/&pound;/gi, '£') : '';
           leads.push({
             id: noticeId || 'CF_' + Date.now() + '_' + i,
             title: title,
             contractingAuthority: buyer,
             contractValue: 0,
-            contractValueLabel: valueMatch ? valueMatch[1].trim().replace(/\u00a3/g, '£') : '',
+            contractValueLabel: cleanValue,
             deadlineDate: closingMatch ? closingMatch[1].trim() : '',
             cpvCode: '',
             description: text.length > 100 ? text.substring(0, 300) : text,
@@ -246,6 +250,8 @@ function fetchTendersFromHTML(keywords, location, maxCount) {
             publishedDate: pubMatch ? pubMatch[1].trim() : '',
             procurementType: stageMatch ? stageMatch[1].trim() : 'Open',
             status: 'Open',
+            buyerEmail: emailMatch || '',
+            url: 'https://www.contractsfinder.service.gov.uk/notice/' + noticeId,
             source: 'Contracts Finder',
             scrapedAt: new Date().toISOString()
           });
