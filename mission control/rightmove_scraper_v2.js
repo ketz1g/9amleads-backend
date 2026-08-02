@@ -128,6 +128,11 @@ function lookupPostcoderAddress(postcode, streetHint) {
       let body = '';
       res.on('data', (c) => body += c);
       res.on('end', () => {
+        // 429 = rate-limited; 401 = key issue. Report the status so callers can retry.
+        if (res.statusCode === 429 || res.statusCode === 403) {
+          resolve({ rateLimited: true });
+          return;
+        }
         if (res.statusCode !== 200) { resolve(null); return; }
         try {
           const addresses = JSON.parse(body);
@@ -238,8 +243,12 @@ async function enrichMovingLeads(leads, concurrency) {
     // Rightmove never publishes house numbers, so this is the accurate source.
     if (lead.postcode) {
       const streetHint = (detail && detail.fullAddress) || lead.address || '';
-      const fullAddr = await lookupPostcoderAddress(lead.postcode, streetHint);
-      if (fullAddr) {
+      let fullAddr = await lookupPostcoderAddress(lead.postcode, streetHint);
+      if (fullAddr && fullAddr.rateLimited) {
+        await new Promise(function(r) { setTimeout(r, 30000); });
+        fullAddr = await lookupPostcoderAddress(lead.postcode, streetHint);
+      }
+      if (fullAddr && !fullAddr.rateLimited) {
         lead.address = fullAddr.fullAddress || fullAddr.address1 || lead.address;
         lead.fullAddress = fullAddr.fullAddress || lead.address;
         lead.street = fullAddr.street || lead.street || '';
