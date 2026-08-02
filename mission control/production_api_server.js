@@ -2200,6 +2200,15 @@ app.put('/api/settings/lead-filters', authMiddleware, (req, res) => {
   res.json({ success: true, biz_field2: leadFilters || '' });
 });
 
+// GET /api/settings/lead-filters — Return the customer's saved lead filters
+app.get('/api/settings/lead-filters', authMiddleware, (req, res) => {
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  if (!customer) return res.status(404).json({ error: 'User not found' });
+  let filters = {};
+  try { filters = JSON.parse(customer.biz_field2 || '{}'); } catch(e) {}
+  res.json({ success: true, leadFilters: filters });
+});
+
 // ===== CRM WEBHOOK ENDPOINTS =====
 
 // GET /api/settings/crm - Get CRM webhook URL
