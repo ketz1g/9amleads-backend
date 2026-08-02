@@ -176,6 +176,64 @@ function fetchPlanningApify(postcodeArea) {
   });
 }
 
+// ===== FREE PLANNING DATA (planning.data.gov.uk) =====
+// Official UK government planning data — Open Government Licence v3.0, free, no key.
+// Brownfield land register (37k+ sites with planning permission status) is the
+// most complete planning dataset currently available. Queryable via /entity.json.
+function fetchFreePlanningData(maxItems) {
+  return new Promise((resolve) => {
+    const query = 'dataset=brownfield-land&limit=' + (maxItems || 50) +
+      '&field=name&field=reference&field=point&field=deliverable&field=planning-permission-status&field=planning-permission-date&field=notes&field=entry-date';
+    const options = {
+      hostname: 'www.planning.data.gov.uk',
+      path: '/entity.json?' + query,
+      method: 'GET',
+      headers: { 'Accept': 'application/json', 'User-Agent': '9amLeads/1.0 (planning lead generator)' },
+      timeout: 30000
+    };
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) { console.log('    Planning.data.gov.uk HTTP ' + res.statusCode); resolve([]); return; }
+        try {
+          const j = JSON.parse(body);
+          const items = j.entities || [];
+          if (!items.length) { console.log('    Planning.data.gov.uk returned no entities'); resolve([]); return; }
+          const leads = items.map(p => ({
+            id: 'PLAN_' + (p.entity || p.reference || Date.now()),
+            address: (p['site-address'] || p.name || '').trim() || 'Brownfield site',
+            postcode: extractPostcode(p.name + ' ' + (p['site-address'] || '')),
+            description: p.notes || ('Brownfield land site ' + (p.reference || '') + ' — ' + (p['planning-permission-status'] || 'available for development')),
+            applicantName: p['agent-name'] || '',
+            applicationType: (p['planning-permission-type'] || 'Full Planning Permission'),
+            status: (p['planning-permission-status'] || 'available').replace(/-/g, ' '),
+            council: p.organisation || '',
+            reference: p.reference || '',
+            estimatedValue: 0,
+            valueLabel: '',
+            url: '',
+            dateSubmitted: p['planning-permission-date'] || p['entry-date'] || '',
+            locationPoint: p.point || '',
+            source: 'planning.data.gov.uk (OGL v3)',
+            scrapedAt: new Date().toISOString()
+          }));
+          console.log('    planning.data.gov.uk returned ' + leads.length + ' brownfield sites');
+          resolve(leads);
+        } catch(e) { console.log('    planning.data.gov.uk parse error: ' + e.message); resolve([]); }
+      });
+    });
+    req.on('error', (e) => { console.log('    planning.data.gov.uk error: ' + e.message); resolve([]); });
+    req.setTimeout(30000, () => { req.destroy(); resolve([]); });
+    req.end();
+  });
+}
+
+function extractPostcode(str) {
+  const m = (str || '').match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i);
+  return m ? m[0].toUpperCase() : '';
+}
+
 // ===== SAMPLE DATA GENERATOR =====
 // Generates realistic UK planning application sample data
 function generateSampleLeads(postcodes, count) {
@@ -612,20 +670,29 @@ async function main() {
 }
 
 // Exported function for the production server's run-scrapers flow.
+// Primary: free planning.data.gov.uk (no cost). Fallback: Apify actor (cheap, backup only).
 async function collectPlanningLeads(config) {
   config = config || {};
-  const areas = config.postcodeAreas || ['SW1', 'N1', 'B1', 'M1'];
-  const results = [];
-  for (let i = 0; i < areas.length; i++) {
-    try {
-      const batch = await fetchPlanningApify(areas[i]);
-      if (batch && batch.length > 0) results.push.apply(results, batch);
-    } catch(e) { console.log('    Planning area error: ' + e.message); }
+  let results = [];
+  // Primary — free official UK planning data
+  try {
+    results = await fetchFreePlanningData(config.maxItems || 50);
+  } catch(e) { console.log('    Planning free source error: ' + e.message); }
+  // Fallback — Apify actor (backup if free source returns nothing)
+  if (!results.length) {
+    console.log('    Planning free source empty, using Apify backup...');
+    const areas = config.postcodeAreas || ['SW1', 'N1', 'B1', 'M1'];
+    for (let i = 0; i < areas.length && results.length < 20; i++) {
+      try {
+        const batch = await fetchPlanningApify(areas[i]);
+        if (batch && batch.length > 0) results.push.apply(results, batch);
+      } catch(e) { console.log('    Planning area error: ' + e.message); }
+    }
   }
   return results;
 }
 
-module.exports = { collectPlanningLeads, fetchPlanningApify };
+module.exports = { collectPlanningLeads, fetchPlanningApify, fetchFreePlanningData };
 
 if (require.main === module) {
   main().catch(e => console.error('Error:', e.message));
