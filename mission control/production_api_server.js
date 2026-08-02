@@ -6208,8 +6208,10 @@ function generateLeadEmailHTML(customer, leads) {
       var incDate = d.incorporationDate || d.dateOfCreation;
       subtitle = incDate ? (d.city ? d.city + ' · ' : '') + 'Incorporated ' + new Date(incDate).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : (d.city || '');
     } else if (leadProduct === 'planning') {
-      title = d.address ? d.address.split(',')[0].trim() : (d.proposal ? d.proposal.substring(0, 40) : 'Planning Application');
-      subtitle = d.council ? d.council + (d.freshnessBadge ? ' · ' + d.freshnessBadge : '') : (d.freshnessBadge || '');
+      // Full site address in the title (number + street + town + postcode)
+      title = address || d.address || (d.proposal ? d.proposal.substring(0, 40) : 'Planning Application');
+      var appType = d.applicationType || 'Planning Application';
+      subtitle = (d.council ? d.council + ' · ' : '') + appType + (d.status ? ' · ' + d.status : '');
     } else {
       title = d.tenderTitle || d.description || 'Opportunity';
       subtitle = d.buyer || '';
@@ -6267,18 +6269,22 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.freshnessBadge) chips.push({ icon: '\uD83D\uDFE2', text: d.freshnessBadge });
       if (d.council) chips.push({ icon: '\uD83C\uDFDB\uFE0F', text: d.council });
       if (d.reference) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.reference });
-      if (d.proposal) chips.push({ icon: '\uD83D\uDCCB', text: d.proposal.substring(0, 100) });
+      if (d.description) chips.push({ icon: '\uD83D\uDCDD', text: d.description.substring(0, 120) });
       if (d.applicationType) chips.push({ icon: '\uD83C\uDFD7\uFE0F', text: d.applicationType });
-      if (d.trades && d.trades.length > 0) chips.push({ icon: '\uD83D\uDD28', text: d.trades.join(', ') });
+      if (d.status) chips.push({ icon: '\uD83D\uDD34', text: d.status });
+      if (d.dateSubmitted) chips.push({ icon: '\uD83D\uDCC5', text: 'Submitted ' + new Date(d.dateSubmitted).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
+      if (d.url) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.url + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View application</a>' });
       if (d.sourceUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.sourceUrl + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View on planning portal</a>' });
     } else {
       if (d.buyer) chips.push({ icon: '\uD83C\uDFED', text: d.buyer });
-      if (d.contractValue || d.estimatedValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.contractValue || d.estimatedValue).toLocaleString() });
+      if (d.contractValueLabel && d.contractValueLabel !== '&pound') chips.push({ icon: '\u00A3', text: d.contractValueLabel });
+      else if (d.contractValue || d.estimatedValue) chips.push({ icon: '\u00A3', text: '\u00a3' + Number(d.contractValue || d.estimatedValue).toLocaleString() });
       if (d.tenderNoticeId) chips.push({ icon: '\uD83D\uDCCB', text: 'Ref: ' + d.tenderNoticeId });
       if (d.closingDate) { var days = Math.max(0, Math.floor((new Date(d.closingDate) - new Date()) / 86400000)); chips.push({ icon: '\u23F3', text: 'Deadline: ' + days + ' days' }); }
       if (d.publishedDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Published: ' + new Date(d.publishedDate).toLocaleDateString() });
-      if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 100) });
-      if (d.title) chips.push({ icon: '\uD83D\uDCCB', text: d.title.substring(0, 60) });
+      if (d.description) chips.push({ icon: '\uD83D\uDCCB', text: d.description.substring(0, 120) });
+      if (d.buyerEmail) chips.push({ icon: '\u2709\uFE0F', text: d.buyerEmail });
+      if (d.url) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.url + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View tender</a>' });
       if (d.tenderUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.tenderUrl + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View tender</a>' });
       if (d.portalUrl) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="' + d.portalUrl + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View on portal</a>' });
     }
