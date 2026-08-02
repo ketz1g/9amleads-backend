@@ -3949,7 +3949,11 @@ cron.schedule('33 2 * * *', async () => {
 // ===== DELIVERY CRON: Runs directly (not via HTTP) to avoid timing issues =====
 // Pipeline: 02:30 UTC scraper → 02:33 UTC distributor → 08:00 UTC delivery
 // Delivery runs Mon-Fri at 09:00 UK time (handles BST/GMT automatically via timezone).
+var __deliveryFireCount = 0;
+var __lastDeliveryFire = '';
 cron.schedule('*/5 * * * *', async () => {
+  __deliveryFireCount++;
+  __lastDeliveryFire = new Date().toISOString();
   console.log('[TEST] Running delivery...');
   try {
     _dbData = null;
@@ -8553,6 +8557,16 @@ app.post('/api/admin/send-welcome', adminAuth, async (req, res) => {
     }
     res.json({ success: true, sent: sent });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/cron-status — report delivery cron fire count and server time
+app.get('/api/admin/cron-status', adminAuth, (req, res) => {
+  res.json({
+    server_time: new Date().toISOString(),
+    delivery_fire_count: __deliveryFireCount || 0,
+    last_delivery_fire: __lastDeliveryFire || 'never',
+    process_uptime_ms: process.uptime() * 1000
+  });
 });
 
 // GET /api/admin/product-file?product=tenders — inspect a product lead file
