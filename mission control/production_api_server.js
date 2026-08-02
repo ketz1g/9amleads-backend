@@ -8097,8 +8097,12 @@ function syncCustomers(product) {
     // Sync customers for ALL products first (quick)
     for (const product of Object.keys(PRODUCT_LEAD_FILES)) syncCustomers(product);
 
+    // Optional single-product filter (speeds up targeted scrapes/testing)
+    const onlyProduct = req.body && req.body.product;
+
     for (const [product, config] of Object.entries(PRODUCT_LEAD_FILES)) {
       try {
+        if (onlyProduct && product !== onlyProduct) continue;
         // Skip if already scraped today (cost saving - Apify runs once daily)
         if (wasScrapedToday(product) && !forceScrape) {
           var existingFile = path.join(DATA_DIR, config.file);
