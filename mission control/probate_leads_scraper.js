@@ -122,6 +122,70 @@ function fetchProbateRegistry() {
   });
 }
 
+// ===== UK GAZETTE WILLS & PROBATE NOTICES (free HTML search) =====
+// The Gazette publishes official Deceased Estates / Wills & Probate notices.
+// The search page (HTML) is free to fetch and includes notice IDs, deceased
+// names, publication dates. Detail pages add the full address and estate info.
+// OGL v3 licence (personal data requires care, but these are public notices).
+function fetchGazetteHTML(maxItems) {
+  return new Promise((resolve) => {
+    const searchPath = '/all-notices/notice?notice-type=deceased-estates&results-page-size=' + (maxItems || 50) + '&sort-by=latest-date';
+    const req = https.request({ hostname: 'www.thegazette.co.uk', path: searchPath, method: 'GET', headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36', 'Accept-Language': 'en-GB,en;q=0.9' }, timeout: 30000 }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) { console.log('    Gazette HTML HTTP ' + res.statusCode); resolve([]); return; }
+        const articles = body.split('<article id="item-');
+        const leads = [];
+        for (let i = 1; i < articles.length; i++) {
+          const a = articles[i];
+          const idMatch = a.match(/notice\/(\d+)/);
+          const titleMatch = a.match(/<h3>([\s\S]*?)<\/h3>/);
+          const dateMatch = a.match(/<dd>([0-9]{1,2} [A-Za-z]+ [0-9]{4})<\/dd>/);
+          if (!idMatch || !titleMatch) continue;
+          const name = titleMatch[1].replace(/<[^>]+>/g, '').trim();
+          const noticeId = idMatch[1];
+          const pubDate = dateMatch ? dateMatch[1] : '';
+          // Parse name into surname-first format (Gazette lists "SURNAME, First Name")
+          let deceasedName = name;
+          let surname = '', firstNames = name;
+          if (name.indexOf(',') > -1) {
+            var parts = name.split(',').map(function(s){ return s.trim(); });
+            surname = parts[0];
+            firstNames = parts.slice(1).join(' ').trim();
+            deceasedName = (firstNames + ' ' + surname).trim();
+          }
+          leads.push({
+            id: 'GAZ_' + noticeId,
+            name: deceasedName,
+            surname: surname,
+            deceasedAddress: '',
+            dateOfDeath: '',
+            grantDate: pubDate,
+            claimExpiry: '',
+            estateValue: 0,
+            estateValueLabel: '',
+            solicitor: '',
+            executorName: '',
+            executorAddress: '',
+            solicitorAddress: '',
+            noticeUrl: 'https://www.thegazette.co.uk/notice/' + noticeId,
+            occupation: '',
+            grantType: 'Deceased Estates',
+            source: 'The Gazette (HTML)',
+            scrapedAt: new Date().toISOString()
+          });
+        }
+        console.log('    Gazette (HTML) returned ' + leads.length + ' deceased estate notices');
+        resolve(leads);
+      });
+    });
+    req.on('error', (e) => { console.log('    Gazette HTML error: ' + e.message); resolve([]); });
+    req.setTimeout(30000, () => { req.destroy(); resolve([]); });
+    req.end();
+  });
+}
+
 // ===== UK GAZETTE PROBATE NOTICES (via Apify actor) =====
 // Real statutory probate notices from The Gazette (London/Edinburgh/Belfast).
 // Output includes decedent/executor names, full address + postcode, date of
@@ -136,10 +200,10 @@ function fetchGazetteProbate(maxItems) {
     });
     const options = {
       hostname: 'api.apify.com',
-      path: '/v2/acts/rcfzPm2dJk9vig8hp/run-sync-get-dataset-items?token=' + APIFY_API_KEY + '&timeout=120',
+      path: '/v2/acts/rcfzPm2dJk9vig8hp/run-sync-get-dataset-items?token=' + APIFY_API_KEY + '&timeout=300',
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(input), 'Accept': 'application/json' },
-      timeout: 180000
+      timeout: 360000
     };
     const req = https.request(options, (res) => {
       let body = '';
@@ -639,16 +703,22 @@ if (require.main === module) {
 
 async function collectProbateLeads(config) {
   config = config || {};
-  // Primary: UK Gazette probate notices via Apify actor (real statutory data).
-  // The actor is PAY_PER_EVENT and occasionally returns empty on a run — retry once.
+  // Primary: Gazette via Apify actor (accurate — real probate notices with
+  // deceased name, address, DOB, claim expiry). Actor can time out, so retry once.
   var results = [];
   var gazAttempts = config.retries === 0 ? 1 : 2;
   for (var gz = 0; gz < gazAttempts && results.length === 0; gz++) {
     results = await fetchGazetteProbate(config.maxItems || 100);
     if (results.length === 0 && gz === 0) {
-      console.log('[PROBATE] Gazette empty on attempt ' + (gz+1) + ', retrying...');
+      console.log('[PROBATE] Gazette actor empty on attempt ' + (gz+1) + ', retrying...');
       await new Promise(function(r) { setTimeout(r, 15000); });
     }
+  }
+  if (results.length === 0) {
+    // Fallback: FREE Gazette HTML search (no cost). Returns deceased-estates
+    // notices with names + publication dates + URLs (may include some bankruptcy).
+    console.log('[PROBATE] Gazette actor empty, trying free HTML search...');
+    results = await fetchGazetteHTML(config.maxItems || 100);
   }
   if (results.length === 0) {
     console.log('[PROBATE] Gazette empty, trying Gov.uk registry...');
@@ -668,4 +738,4 @@ async function collectProbateLeads(config) {
   return results;
 }
 
-module.exports = { fetchProbateRegistry, fetchProbateApify, fetchGazetteProbate, collectProbateLeads };
+module.exports = { fetchProbateRegistry, fetchProbateApify, fetchGazetteProbate, fetchGazetteHTML, collectProbateLeads };
