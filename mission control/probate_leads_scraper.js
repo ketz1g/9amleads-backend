@@ -813,4 +813,4 @@ async function collectProbateLeads(config) {
   return results;
 }
 
-module.exports = { fetchProbateRegistry, fetchProbateApify, fetchGazetteProbate, fetchGazetteHTML, collectProbateLeads };
+module.exports = { fetchProbateRegistry, fetchProbateApify, fetchGazetteProbate, fetchGazetteHTML, fetchGazetteDetail, enrichGazetteLeads, collectProbateLeads };
