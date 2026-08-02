@@ -8274,9 +8274,9 @@ function syncCustomers(product) {
             var planScraper = require('./planning_scraper');
             leads = await planScraper.collectPlanningLeads();
             if (leads && leads.length > 0) {
-              var fp2 = filterFresh(leads, 'scrapedAt');
-              leads = fp2.fresh.length > 0 ? fp2.fresh : fp2.fallback;
-              console.log('[SCRAPER] Planning: ' + fp2.fresh.length + ' fresh, ' + fp2.fallback.length + ' fallback, total=' + leads.length);
+              // Planning leads are freshly scraped — no additional freshness filter
+              // (brownfield/application data is current at scrape time).
+              console.log('[SCRAPER] Planning: ' + leads.length + ' leads');
             } else {
               console.log('[SCRAPER] Planning: 0 from scraper');
               leads = [];
