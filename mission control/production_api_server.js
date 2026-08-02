@@ -8471,6 +8471,31 @@ app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
     res.json({ success: true, result: 'Companies House OK', tenders: tenderResult });
   } catch(e) { res.json({ error: e.message }); }
 });
+// POST /api/admin/send-welcome — send the welcome (trial_day1) email to all
+// free-trial customers who haven't received it yet
+app.post('/api/admin/send-welcome', adminAuth, async (req, res) => {
+  try {
+    var customers = (getDb().customers || []).filter(function(c) { return c.plan === 'free_trial'; });
+    var sent = 0;
+    for (var ci = 0; ci < customers.length; ci++) {
+      var cust = customers[ci];
+      try {
+        var campaignSent = [];
+        try { campaignSent = JSON.parse(cust.campaign_sent || '[]'); } catch(e) {}
+        if (campaignSent.includes('trial_day1')) continue;
+        var html = getCampaignEmailHTMLWithEdits(cust, 'trial_day1');
+        var subject = getEditedCampaignSubject('trial_day1', 'Your Free Trial Is Active \u2014 Your ' + (cust.lead_type || 'opportunities') + ' start now');
+        await sendBrevoEmail({ email: cust.email, name: cust.company || cust.contact_name || 'Customer' }, subject, html);
+        campaignSent.push('trial_day1');
+        db.prepare('UPDATE customers SET campaign_sent = ? WHERE id = ?').run(JSON.stringify(campaignSent), cust.id);
+        saveDb();
+        sent++;
+      } catch(ce) { console.log('[SEND-WELCOME] Failed for ' + cust.email + ': ' + ce.message); }
+    }
+    res.json({ success: true, sent: sent });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/product-file?product=tenders — inspect a product lead file
 app.get('/api/admin/product-file', adminAuth, (req, res) => {
   try {
