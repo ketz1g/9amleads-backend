@@ -171,7 +171,8 @@ function leadMatchesTarget(lead, customer, product) {
           };
           if (areaTownMap[areaCodeUpper] && leadText.includes(areaTownMap[areaCodeUpper])) { areaMatch = true; break; }
         }
-        // County-to-postcode matching: check if the lead's postcode area matches the target county
+        // County/region-to-postcode matching: check if the lead's postcode area
+        // falls within the target county or region.
         if (!areaMatch && lead.postcode) {
           var pcCode = extractPostcodeArea(lead.postcode);
           var countyPostcodes = {
@@ -180,11 +181,26 @@ function leadMatchesTarget(lead, customer, product) {
             'berkshire':['RG','SL'],'buckinghamshire':['HP','MK','SL'],'oxfordshire':['OX'],'bedfordshire':['LU','MK'],
             'cambridgeshire':['CB','PE'],'norfolk':['IP','NR','PE'],'suffolk':['CO','IP','NR'],
             'london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
+            'greater-london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
             'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
             'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
-            'glasgow':['G'],'belfast':['BT']
+            'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
+            'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
+            'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
+            'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
+            'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
+            'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
           };
+          // Try exact, then match any key that CONTAINS the area name
+          var countyKeys = Object.keys(countyPostcodes);
           if (countyPostcodes[areaLower] && countyPostcodes[areaLower].indexOf(pcCode) >= 0) { areaMatch = true; break; }
+          if (!areaMatch) {
+            for (var ck = 0; ck < countyKeys.length; ck++) {
+              if (areaLower.indexOf(countyKeys[ck]) !== -1 || countyKeys[ck].indexOf(areaLower) !== -1) {
+                if (countyPostcodes[countyKeys[ck]].indexOf(pcCode) >= 0) { areaMatch = true; break; }
+              }
+            }
+          }
         }
       }
     }
