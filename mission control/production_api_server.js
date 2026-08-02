@@ -8451,6 +8451,24 @@ app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
     res.json({ success: true, result: 'Companies House OK', tenders: tenderResult });
   } catch(e) { res.json({ error: e.message }); }
 });
+// POST /api/admin/test-probate — run the probate scraper and return result/error
+app.post('/api/admin/test-probate', adminAuth, async (req, res) => {
+  try {
+    var probateScraper = require('./probate_leads_scraper');
+    var result = await probateScraper.collectProbateLeads({ maxItems: 5 });
+    res.json({ success: true, count: result ? result.length : 0, sample: result && result[0] ? result[0] : null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/test-planning — run the planning scraper and return result/error
+app.post('/api/admin/test-planning', adminAuth, async (req, res) => {
+  try {
+    var planScraper = require('./planning_scraper');
+    var result = await planScraper.collectPlanningLeads({ maxItems: 5 });
+    res.json({ success: true, count: result ? result.length : 0, sample: result && result[0] ? result[0] : null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/reset-weekly', adminAuth, (req, res) => {
   try {
     const email = req.body.email;
