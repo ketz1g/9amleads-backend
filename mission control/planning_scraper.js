@@ -611,4 +611,22 @@ async function main() {
   }
 }
 
-main().catch(e => console.error('Error:', e.message));
+// Exported function for the production server's run-scrapers flow.
+async function collectPlanningLeads(config) {
+  config = config || {};
+  const areas = config.postcodeAreas || ['SW1', 'N1', 'B1', 'M1'];
+  const results = [];
+  for (let i = 0; i < areas.length; i++) {
+    try {
+      const batch = await fetchPlanningApify(areas[i]);
+      if (batch && batch.length > 0) results.push.apply(results, batch);
+    } catch(e) { console.log('    Planning area error: ' + e.message); }
+  }
+  return results;
+}
+
+module.exports = { collectPlanningLeads, fetchPlanningApify };
+
+if (require.main === module) {
+  main().catch(e => console.error('Error:', e.message));
+}
