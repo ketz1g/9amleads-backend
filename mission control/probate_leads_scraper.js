@@ -190,7 +190,7 @@ function fetchGazetteHTML(maxItems) {
 // structured address (street, locality, postcode, region). Free, reliable.
 function fetchGazetteDetail(noticeId) {
   return new Promise((resolve) => {
-    const req = https.request({ hostname: 'www.thegazette.co.uk', path: '/notice/' + noticeId, method: 'GET', headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36', 'Accept-Language': 'en-GB,en;q=0.9' }, timeout: 25000 }, (res) => {
+    const req = https.request({ hostname: 'www.thegazette.co.uk', path: '/notice/' + noticeId, method: 'GET', headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36', 'Accept-Language': 'en-GB,en;q=0.9' }, timeout: 15000 }, (res) => {
       let body = '';
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
@@ -223,16 +223,17 @@ function fetchGazetteDetail(noticeId) {
       });
     });
     req.on('error', () => resolve(null));
-    req.setTimeout(25000, () => { req.destroy(); resolve(null); });
+    req.setTimeout(15000, () => { req.destroy(); resolve(null); });
     req.end();
   });
 }
 
 // Enrich a list of Gazette notices with their full addresses by fetching each
 // notice detail page. Free (no Apify), runs with a small delay between requests.
-async function enrichGazetteLeads(leads) {
+async function enrichGazetteLeads(leads, limit) {
   const enriched = [];
-  for (let i = 0; i < leads.length; i++) {
+  const max = limit || Math.min(leads.length, 30);
+  for (let i = 0; i < max; i++) {
     const lead = leads[i];
     const noticeId = lead.id.replace('GAZ_', '');
     const detail = await fetchGazetteDetail(noticeId);
