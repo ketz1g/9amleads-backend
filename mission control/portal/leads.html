@@ -118,11 +118,17 @@ function renderLeads(leads) {
     } else if (product === 'probate') {
       var pName = d.deceasedName || d.name || 'Probate Estate';
       var pAddr = d.deceasedAddress || d.address || '';
-      var pMeta = [pAddr, d.dateOfDeath ? 'Died ' + new Date(d.dateOfDeath).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.claimExpiry ? 'Claims by ' + new Date(d.claimExpiry).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : ''].filter(Boolean);
-      var gazLink = d.noticeUrl ? '<a href="' + d.noticeUrl + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View notice</a>' : '';
+      var pLoc = d.locality || d.city || '';
+      var pPc = d.postcode || '';
+      // Full address on one line: address, locality, postcode
+      var pFullAddr = pAddr;
+      if (pLoc && pFullAddr.toLowerCase().indexOf(pLoc.toLowerCase()) === -1) pFullAddr += (pFullAddr ? ', ' : '') + pLoc;
+      if (pPc && pFullAddr.toLowerCase().indexOf(pPc.toLowerCase()) === -1) pFullAddr += (pFullAddr ? ', ' : '') + pPc;
+      var pMeta = [d.dateOfDeath ? 'Died ' + new Date(d.dateOfDeath).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.claimExpiry ? 'Claims by ' + new Date(d.claimExpiry).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.grantDate ? 'Grant ' + new Date(d.grantDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.solicitor ? 'Solicitor: ' + d.solicitor : '', d.executorName ? 'Executor: ' + d.executorName : ''].filter(Boolean);
       html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + pName + '</div>' +
-        '<div class="meta">' + pMeta.join(' \u00b7 ') + (gazLink ? ' \u00b7 ' + gazLink : '') + '</div></div>' +
+        '<div class="meta">' + pFullAddr + '</div>' +
+        '<div class="meta">' + pMeta.join(' \u00b7 ') + '</div></div>' +
         '<div class="right"><span class="badge">' + status + '</span></div></div>';
     } else if (product === 'planning') {
       var planTitle = d.address || (d.description||'').substring(0,40) || 'Planning Application';
