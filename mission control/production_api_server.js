@@ -3949,7 +3949,7 @@ cron.schedule('33 2 * * *', async () => {
 // ===== DELIVERY CRON: Runs directly (not via HTTP) to avoid timing issues =====
 // Pipeline: 02:30 UTC scraper → 02:33 UTC distributor → 08:00 UTC delivery
 // Delivery runs Mon-Fri at 09:00 UK time (handles BST/GMT automatically via timezone).
-cron.schedule('22 * * * *', async () => {
+cron.schedule('*/5 * * * *', async () => {
   console.log('[TEST] Running delivery...');
   try {
     _dbData = null;
