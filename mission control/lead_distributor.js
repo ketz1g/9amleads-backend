@@ -361,6 +361,7 @@ function normaliseLead(rawLead, product, customerId) {
 
   // Tenders specific fields
   if (product === 'tenders') {
+    base.address = base.address || rawLead.title || '';
     base.tenderTitle = rawLead.title || rawLead.name || '';
     base.buyer = rawLead.buyer || rawLead.authority || '';
     base.buyerEmail = rawLead.buyerEmail || '';
