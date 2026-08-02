@@ -642,8 +642,8 @@ async function distributeProduct(product) {
         }
         rec.data = JSON.stringify(ld);
         enriched++;
-        // Respect Postcoder free-tier rate limit: at least 65s between lookups
-        await new Promise(function(r) { setTimeout(r, 65000); });
+        // Small delay between lookups to stay within the account rate limit (50/5min)
+        await new Promise(function(r) { setTimeout(r, 800); });
       }
       // Postcoder note: if the account is rate-limited the enrichment falls back to
       // the detail-page address (street + postcode) — still real data, just no number.
