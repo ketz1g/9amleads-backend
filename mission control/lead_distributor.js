@@ -344,6 +344,14 @@ function normaliseLead(rawLead, product, customerId) {
     base.incorporationDate = rawLead.incorporationDate || rawLead.dateOfCreation || '';
     base.ownerEmail = rawLead.ownerEmail || '';
     base.website = rawLead.website || '';
+    if (!base.postcode) {
+      var nbPc = (rawLead.address || '').match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i);
+      base.postcode = nbPc ? nbPc[0].toUpperCase() : '';
+    }
+    if (!base.city) {
+      var nbCity = (rawLead.address || '').match(/,\s*([A-Za-z ]+?),\s*(?:[A-Z]{1,2}[0-9]|England|Scotland|Wales)/i);
+      base.city = nbCity ? nbCity[1].trim() : '';
+    }
   }
 
   // Probate specific fields
