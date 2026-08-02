@@ -102,6 +102,9 @@ function renderLeads(leads) {
     var addr = d.address || d.title || 'Property';
     var town = d.town || d.city || '';
     var fullAddr = addr;
+    // Strip trailing partial postcode (e.g. "EN1") so it isn't repeated with the full postcode
+    var addrNoPartial = addr.replace(/[, ]*[A-Z]{1,2}[0-9][A-Z0-9]?[\s,]*$/i, '').replace(/[\s,]+$/, '');
+    if (addrNoPartial && pc && addrNoPartial !== addr) fullAddr = addrNoPartial;
     if (town && fullAddr.toLowerCase().indexOf(town.toLowerCase()) === -1) fullAddr += ', ' + town;
     if (pc && fullAddr.toLowerCase().indexOf(pc.toLowerCase()) === -1) fullAddr += ', ' + pc;
     html += '<div class="lead"><div><div class="addr">' + fullAddr + '</div><div class="meta">' + [(d.bedrooms ? d.bedrooms+' bed' : ''), d.propertyType||'', pc, dateStr].filter(Boolean).join(' \u00b7 ') + '</div></div>' +
