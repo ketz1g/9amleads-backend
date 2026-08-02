@@ -623,7 +623,9 @@ async function distributeProduct(product) {
           var streetHint = (detail && detail.fullAddress) || ld.address || '';
           var fullAddr = await rmScraper.lookupPostcoderAddress(ld.postcode, streetHint);
           if (fullAddr) {
-            ld.address = fullAddr.address1 || fullAddr.fullAddress || ld.address;
+            // Use the complete summary line (e.g. "Flat 1, Clarence Gate Gardens, Glentworth Street,
+            // London, Greater London, NW1 6AY") — never the truncated address1 which may be just "Flat 1".
+            ld.address = fullAddr.fullAddress || fullAddr.address1 || ld.address;
             ld.fullAddress = fullAddr.fullAddress || ld.address;
             ld.street = fullAddr.street || ld.street || '';
             ld.buildingNumber = fullAddr.buildingNumber || '';
