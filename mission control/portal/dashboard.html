@@ -76,6 +76,7 @@ footer a{color:var(--accent);text-decoration:underline}
 <a href="/pricing/">Pricing</a>
 <a href="mailto:hello@9amleads.com">Support</a>
 <a href="#" onclick="showModal('settings-modal');return false" style="color:var(--text2);font-size:12px"><i class="fas fa-cog"></i></a>
+<a href="#" onclick="doLogout();return false" style="color:#dc2626;font-weight:700;margin-left:4px"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </div>
 </div>
 <div class="container">
@@ -380,6 +381,15 @@ function doCancel() {
 }
 function showModal(id) { document.getElementById(id).classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ===== LOGOUT =====
+function doLogout() {
+  if (confirm('Log out of your dashboard?')) {
+    try { localStorage.removeItem('mld_portal_session'); } catch(e) {}
+    try { sessionStorage.clear(); } catch(e) {}
+    window.location.href = '/portal/';
+  }
+}
 
 // ===== SETTINGS TABS =====
 function switchTab(tab) {
