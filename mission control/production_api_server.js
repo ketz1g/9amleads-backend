@@ -8451,6 +8451,23 @@ app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
     res.json({ success: true, result: 'Companies House OK', tenders: tenderResult });
   } catch(e) { res.json({ error: e.message }); }
 });
+// GET /api/admin/product-file?product=tenders — inspect a product lead file
+app.get('/api/admin/product-file', adminAuth, (req, res) => {
+  try {
+    const product = req.query.product || 'tenders';
+    const file = path.join(DATA_DIR, product + '-leads.json');
+    let data = [];
+    try { data = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) { data = []; }
+    const arr = Array.isArray(data) ? data : [];
+    res.json({
+      product, count: arr.length,
+      sample: arr[0] || null,
+      sampleScrapedAt: arr[0] ? arr[0].scrapedAt : null,
+      today: new Date().toISOString()
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/test-probate — run the probate scraper, save leads to the product file, return result
 app.post('/api/admin/test-probate', adminAuth, async (req, res) => {
   try {
