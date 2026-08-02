@@ -402,6 +402,19 @@ function normaliseLead(rawLead, product, customerId) {
     base.tenderNoticeId = rawLead.tenderNoticeId || '';
     base.contractValue = rawLead.contractValue || '';
     base.contractValueLabel = rawLead.contractValueLabel || '';
+    // Ensure every tender has a viewable link (Contracts Finder, PCS, or data.gov.uk)
+    if (!base.url) {
+      var nid = rawLead.tenderNoticeId || rawLead.id || rawLead.noticeIdentifier || '';
+      if (rawLead.source === 'Public Contracts Scotland' || rawLead.source === 'PCS') {
+        base.url = 'https://www.publiccontractsscotland.gov.uk/search/show/search_view.aspx?ID=' + nid;
+      } else if (rawLead.source === 'data.gov.uk' && rawLead.name) {
+        base.url = 'https://data.gov.uk/dataset/' + nid + '/' + rawLead.name;
+      } else if (nid && /^[a-f0-9-]{20,}$/i.test(nid)) {
+        base.url = 'https://www.contractsfinder.service.gov.uk/notice/' + nid;
+      } else if (nid && /^\d+$/.test(nid)) {
+        base.url = 'https://www.contractsfinder.service.gov.uk/notice/' + nid;
+      }
+    }
   }
 
   return base;
