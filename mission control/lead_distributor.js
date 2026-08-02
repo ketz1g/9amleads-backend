@@ -402,16 +402,11 @@ function normaliseLead(rawLead, product, customerId) {
     base.locationPoint = rawLead.locationPoint || '';
     if (!base.description && rawLead.proposal) base.description = rawLead.proposal;
     base.proposal = rawLead.proposal || rawLead.description || '';
-    if (!base.url) {
-      if (rawLead.links && rawLead.links.plota) base.url = rawLead.links.plota;
-      else if (rawLead.links && rawLead.links.council) base.url = rawLead.links.council;
-      else if (rawLead.plotaUrl) base.url = rawLead.plotaUrl;
-      else if (rawLead.sourceUrl) base.url = rawLead.sourceUrl;
-      else if (rawLead.url) base.url = rawLead.url;
-      else if (rawLead.reference) base.url = 'https://plota.co.uk/planning-applications/?q=' + encodeURIComponent(rawLead.reference);
-    }
-    base.plotaUrl = rawLead.plotaUrl || base.url;
-    base.sourceUrl = rawLead.sourceUrl || '';
+    // White-label: do NOT carry external source URLs (plota/council links) to the
+    // customer. The planning source must not be revealed.
+    base.plotaUrl = '';
+    base.sourceUrl = '';
+    base.links = {};
     base.trades = rawLead.trades || [];
     base.freshnessBadge = rawLead.freshnessBadge || '';
   }
