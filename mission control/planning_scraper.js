@@ -674,20 +674,25 @@ async function main() {
 async function collectPlanningLeads(config) {
   config = config || {};
   let results = [];
-  // Primary — free official UK planning data
-  try {
-    results = await fetchFreePlanningData(config.maxItems || 50);
-  } catch(e) { console.log('    Planning free source error: ' + e.message); }
-  // Fallback — Apify actor (backup if free source returns nothing)
-  if (!results.length) {
-    console.log('    Planning free source empty, using Apify backup...');
-    const areas = config.postcodeAreas || ['SW1', 'N1', 'B1', 'M1'];
-    for (let i = 0; i < areas.length && results.length < 20; i++) {
+  // Primary — Apify planning actor (devon_gtme, PAY_PER_EVENT but produces proper
+  // planning applications with full site addresses). Uses the customer's areas.
+  const areas = config.postcodeAreas || ['SW1', 'N1', 'B1', 'M1', 'NW1', 'CR0', 'WD1'];
+  if (APIFY_API_KEY) {
+    for (let i = 0; i < areas.length && results.length < (config.maxItems || 20); i++) {
       try {
         const batch = await fetchPlanningApify(areas[i]);
         if (batch && batch.length > 0) results.push.apply(results, batch);
       } catch(e) { console.log('    Planning area error: ' + e.message); }
     }
+    console.log('    Planning Apify returned ' + results.length + ' applications');
+  }
+  // Fallback — free official UK planning data (brownfield sites, sparse addresses)
+  if (results.length < 5) {
+    console.log('    Planning Apify low/empty, using free planning.data.gov.uk...');
+    try {
+      const free = await fetchFreePlanningData(config.maxItems || 50);
+      if (free && free.length > 0) results = results.concat(free);
+    } catch(e) { console.log('    Planning free source error: ' + e.message); }
   }
   return results;
 }
