@@ -368,6 +368,8 @@ function normaliseLead(rawLead, product, customerId) {
     base.deceasedName = rawLead.name || '';
     base.deceasedAddress = rawLead.deceasedAddress || '';
     base.address = base.address || rawLead.deceasedAddress || '';
+    base.grantDate = rawLead.grantDate || rawLead.publishedDate || rawLead.date_received || '';
+    base.publishedDate = rawLead.grantDate || rawLead.publishedDate || rawLead.date_received || '';
     base.dateOfDeath = rawLead.dateOfDeath || '';
     base.claimExpiry = rawLead.claimExpiry || '';
     base.estateValue = rawLead.estateValue || '';
