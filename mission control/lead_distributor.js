@@ -398,6 +398,14 @@ function normaliseLead(rawLead, product, customerId) {
     base.council = rawLead.council || rawLead.authority || '';
     base.applicationRef = rawLead.applicationRef || '';
     base.planningKeyVal = rawLead.planningKeyVal || '';
+    base.dateSubmitted = rawLead.dateSubmitted || rawLead.date_received || '';
+    base.locationPoint = rawLead.locationPoint || '';
+    if (!base.url) {
+      if (rawLead.links && rawLead.links.plota) base.url = rawLead.links.plota;
+      else if (rawLead.links && rawLead.links.council) base.url = rawLead.links.council;
+      else if (rawLead.url) base.url = rawLead.url;
+      else if (rawLead.reference) base.url = 'https://plota.co.uk/planning-applications/?q=' + encodeURIComponent(rawLead.reference);
+    }
   }
 
   // Tenders specific fields
