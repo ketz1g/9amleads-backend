@@ -619,7 +619,8 @@ async function distributeProduct(product) {
           ld.postcode = detail.postcode || ld.postcode || '';
           ld.fullAddress = detail.fullAddress || ld.address;
         }
-        // Postcoder adds the exact house number from licensed Royal Mail PAF data
+        // Postcoder adds the exact house number from licensed Royal Mail PAF data.
+        // Throttled to respect the free tier's "5 lookups / 5 min" security limit.
         if (ld.postcode) {
           var streetHint = (detail && detail.fullAddress) || ld.address || '';
           var fullAddr = await rmScraper.lookupPostcoderAddress(ld.postcode, streetHint);
@@ -636,8 +637,11 @@ async function distributeProduct(product) {
         }
         rec.data = JSON.stringify(ld);
         enriched++;
-        if (ei % 3 === 0 && ei > 0) { await new Promise(function(r) { setTimeout(r, 250); }); }
+        // Respect Postcoder free-tier rate limit: at least 65s between lookups
+        await new Promise(function(r) { setTimeout(r, 65000); });
       }
+      // Postcoder note: if the account is rate-limited the enrichment falls back to
+      // the detail-page address (street + postcode) — still real data, just no number.
       if (enriched > 0) console.log('  [ENRICH] Added full addresses/house numbers to ' + enriched + ' leads');
     }
   } catch(e) { console.log('  [ENRICH] Error: ' + e.message); }
