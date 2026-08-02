@@ -6272,7 +6272,7 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.proposal || d.description) chips.push({ icon: '\uD83D\uDCDD', text: (d.proposal || d.description).substring(0, 120) });
       if (d.applicationType) chips.push({ icon: '\uD83C\uDFD7\uFE0F', text: d.applicationType });
       if (d.status) chips.push({ icon: '\uD83D\uDD34', text: d.status });
-      if (d.receivedDate || d.dateSubmitted) chips.push({ icon: '\uD83D\uDCC5', text: 'Received ' + new Date(d.receivedDate || d.dateSubmitted).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
+      if (d.receivedDate || d.dateSubmitted) chips.push({ icon: '\uD83D\uDCC5', text: 'Planning application date: ' + new Date(d.receivedDate || d.dateSubmitted).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
       if (d.applicant) chips.push({ icon: '\uD83D\uDC64', text: 'Applicant: ' + d.applicant });
       // No external links — planning source is white-labelled.
     } else {
