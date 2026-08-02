@@ -8315,19 +8315,13 @@ function syncCustomers(product) {
             var apifyKey = process.env.APIFY_API_KEY || '';
             leads = await rmScraper.collectMovingLeads();
             if (leads && leads.length > 0) {
-              // Filter by freshness: prefer new listings (<24h), fallback to recent updates (<48h)
+              // Keep ALL real live listings (they are all current on-market properties).
+              // Prioritise newest but never discard older listings, so customers' postcode
+              // areas are all represented (e.g. B, EN, NW) rather than only today's fresh ones.
               var rmFresh24 = filterFresh(leads, 'firstVisibleDate');
               var rmFreshUpdate = filterFresh(leads, 'updateDate');
-              if (rmFresh24.fresh.length >= 3) leads = rmFresh24.fresh;
-              else if (rmFresh24.fallback.length >= 5) leads = rmFresh24.fallback;
-              else if (rmFreshUpdate.fresh.length >= 3) leads = rmFreshUpdate.fresh;
-              else if (rmFreshUpdate.fallback.length >= 5) leads = rmFreshUpdate.fallback;
-              else {
-                // Not enough fresh leads — use all available, preferring newest
-                leads.sort(function(a, b) { return (b.updateDate || '').localeCompare(a.updateDate || ''); });
-                leads = leads.slice(0, 100);
-              }
-              console.log('[SCRAPER] Rightmove: new=' + rmFresh24.fresh.length + ' listed=' + rmFresh24.fallback.length + ' updated=' + rmFreshUpdate.fresh.length + ' used=' + leads.length);
+              leads.sort(function(a, b) { return (b.updateDate || b.firstVisibleDate || '').localeCompare(a.updateDate || a.firstVisibleDate || ''); });
+              console.log('[SCRAPER] Rightmove: ' + rmFresh24.fresh.length + ' new<24h, ' + rmFresh24.fallback.length + ' 24-48h, ' + (leads.length - rmFresh24.fresh.length - rmFresh24.fallback.length) + ' older, using all ' + leads.length);
             }
             // Apify supplement disabled - actor was blocked. Free scraper expanded to 13 regions x 4-20 pages.
             if (false && apifyKey) {
