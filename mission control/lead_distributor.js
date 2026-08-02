@@ -131,29 +131,14 @@ function leadMatchesTarget(lead, customer, product) {
     // Check if targets are postcode area codes (1-2 letters) or city names
     var isPostcodeArea = targets.every(function(a) { return /^[A-Z]{1,3}$/i.test(a); });
     if (isPostcodeArea) {
-      // Postcode-area matching (for existing customers with postcode codes)
-      const leadLocation = lead.address || lead.location || lead.name || lead.postcode || '';
-      const leadPC = lead.postcode || '';
-      const leadFull = (leadLocation + ' ' + leadPC + ' ' + (lead.city || '')).toUpperCase();
+      // STRICT postcode-area matching: only match leads whose postcode area is
+      // exactly one of the customer's requested areas (e.g. B, EN, NW).
+      // No city-name fallback, no neighbouring-area filling.
+      const leadPC = (lead.postcode || '').toUpperCase();
+      const leadArea = extractPostcodeArea(leadPC);
       for (const area of targets) {
         const areaCode = extractPostcodeArea(area);
-        if (extractPostcodeArea(leadLocation) === areaCode) { areaMatch = true; break; }
-        if (extractPostcodeArea(leadPC) === areaCode) { areaMatch = true; break; }
-        // Address fallback: some list-view leads have no postcode (e.g. Birmingham).
-        // Map known city/town names to postcode area codes so they still match.
-        if (!areaMatch && leadFull) {
-          var cityToArea = {
-            'B': ['BIRMINGHAM','SOLIHULL','WALSALL','WOLVERHAMPTON','WEST BROMWICH','SUTTON COLDFIELD','COVENTRY','SMETHWICK','ACOCKS GREEN','HARBORNE','MOSELEY'],
-            'EN': ['ENFIELD','POTTERS BAR','HERTFORD','HODDESDON','BROXBOURNE','WALTHAM CROSS','CHESHUNT','EDMONTON','PALMERS GREEN','SOUTHGATE','BARNET','HADLEY WOOD'],
-            'NW': ['WILLESDEN','CRICKLEWOOD','KILBURN','QUEENS PARK','BRONDESBURY','WEMBLEY','HENDON','EDGWARE','WEST HAMPSTEAD','SOUTH HAMPSTEAD','SWISS COTTAGE','ST JOHN\'S WOOD','FINCHLEY','GOLDERS GREEN','MILL HILL','HAMPSTEAD','KENTISH TOWN','CAMDEN','CHALK FARM','KILBURN HIGH ROAD']
-          };
-          var cityList = cityToArea[areaCode];
-          if (cityList) {
-            for (var ci = 0; ci < cityList.length; ci++) {
-              if (leadFull.indexOf(cityList[ci]) !== -1) { areaMatch = true; break; }
-            }
-          }
-        }
+        if (leadArea && leadArea === areaCode) { areaMatch = true; break; }
       }
     } else {
       // City/region matching — check if lead's address or city contains any of the target area names
