@@ -367,6 +367,11 @@ function normaliseLead(rawLead, product, customerId) {
     base.legalAdvisor = rawLead.legalAdvisor || '';
     base.legalAdvisorEmail = rawLead.legalAdvisorEmail || '';
     base.legalAdvisorPhone = rawLead.legalAdvisorPhone || '';
+    base.solicitor = rawLead.solicitor || '';
+    base.executorName = rawLead.executorName || '';
+    base.executorAddress = rawLead.executorAddress || '';
+    base.solicitorAddress = rawLead.solicitorAddress || '';
+    base.noticeUrl = rawLead.noticeUrl || rawLead.url || '';
     if (!base.postcode) {
       var gazPc = (rawLead.deceasedAddress || '').match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i);
       base.postcode = gazPc ? gazPc[0].toUpperCase() : '';
