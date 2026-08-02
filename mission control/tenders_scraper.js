@@ -226,6 +226,8 @@ function fetchTendersFromHTML(keywords, location, maxCount) {
           const pubMatch = text.match(/Publication date\s+([0-9]{1,2} [A-Za-z]+ [0-9]{4})/);
           const stageMatch = text.match(/Procurement stage\s+([A-Za-z ]+?)\s+Notice/);
           const locText = locMatch ? locMatch[1].trim() : '';
+          // Extract a clean postcode from the location text (e.g. "N22 7TY")
+          const locPc = (locText.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0];
           if (location) {
             const loc = (locText + ' ' + text).toLowerCase();
             if (!loc.includes(location.toLowerCase())) continue;
@@ -240,6 +242,7 @@ function fetchTendersFromHTML(keywords, location, maxCount) {
             cpvCode: '',
             description: text.length > 100 ? text.substring(0, 300) : text,
             location: locText,
+            postcode: locPc || '',
             publishedDate: pubMatch ? pubMatch[1].trim() : '',
             procurementType: stageMatch ? stageMatch[1].trim() : 'Open',
             status: 'Open',
