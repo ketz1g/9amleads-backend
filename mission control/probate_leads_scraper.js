@@ -230,6 +230,36 @@ function fetchGazetteDetail(noticeId) {
 
 // Enrich a list of Gazette notices with their full addresses by fetching each
 // notice detail page. Free (no Apify), runs with a small delay between requests.
+// Resolve a full postcode for a deceased address via Postcoder (Royal Mail PAF),
+// matching by the street/town text so probate leads get area-matchable postcodes.
+function resolveProbatePostcode(addressText) {
+  return new Promise((resolve) => {
+    const key = process.env.POSTCODER_API_KEY;
+    const addr = (addressText || '').trim();
+    if (!key || !addr) { resolve(''); return; }
+    // Extract any inline postcode first
+    const inline = (addr.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0];
+    if (inline) { resolve(inline.toUpperCase()); return; }
+    // Otherwise search via Postcoder autocomplete using the street + town
+    const searchTerm = encodeURIComponent(addr.substring(0, 80));
+    const path = '/pcw/' + key + '/address/uk/' + searchTerm + '?format=json&lines=1&page=0';
+    const req = https.request({ hostname: 'ws.postcoder.com', path: path, method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': '9amLeads/1.0' }, timeout: 15000 }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          const arr = JSON.parse(body);
+          if (Array.isArray(arr) && arr[0] && arr[0].postcode) { resolve(arr[0].postcode); return; }
+        } catch(e) {}
+        resolve('');
+      });
+    });
+    req.on('error', () => resolve(''));
+    req.setTimeout(15000, () => { req.destroy(); resolve(''); });
+    req.end();
+  });
+}
+
 async function enrichGazetteLeads(leads, limit) {
   const enriched = [];
   const max = limit || Math.min(leads.length, 30);
@@ -249,10 +279,24 @@ async function enrichGazetteLeads(leads, limit) {
       lead.region = detail.region || '';
       lead.fullAddress = (detail.deceasedAddress + ', ' + detail.postcode).trim();
     }
+    // Ensure a full postcode exists (needed for area matching + display).
+    // Prefer the Gazette detail postcode, else extract from address, else Postcoder.
+    if (!lead.postcode && lead.deceasedAddress) {
+      const inlinePc = (lead.deceasedAddress.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0];
+      if (inlinePc) {
+        lead.postcode = inlinePc.toUpperCase();
+      } else {
+        const pc = await resolveProbatePostcode(lead.deceasedAddress);
+        if (pc) lead.postcode = pc;
+      }
+      if (lead.postcode && lead.fullAddress && lead.fullAddress.toLowerCase().indexOf(lead.postcode.toLowerCase()) === -1) {
+        lead.fullAddress = lead.fullAddress + ', ' + lead.postcode;
+      }
+    }
     enriched.push(lead);
     await new Promise(function(r) { setTimeout(r, 300); });
   }
-  console.log('    Enriched ' + enriched.length + ' Gazette notices with addresses');
+  console.log('    Enriched ' + enriched.length + ' Gazette notices with addresses + postcodes');
   return enriched;
 }
 
