@@ -6163,6 +6163,10 @@ function generateLeadEmailHTML(customer, leads) {
     if (leadProduct === 'moving') {
       // Full address in the title: street number + name + town + postcode
       var fullAddr = address || '';
+      // Strip a trailing partial postcode from the address (e.g. "EN1") so it
+      // isn't repeated next to the full postcode (e.g. "EN1, EN1 3HJ").
+      var addrNoPartialPc = fullAddr.replace(/[, ]*[A-Z]{1,2}[0-9][A-Z0-9]?[\s,]*$/i, '').replace(/[\s,]+$/, '');
+      if (addrNoPartialPc && postcode && addrNoPartialPc !== fullAddr) fullAddr = addrNoPartialPc;
       if (d.town && fullAddr.toLowerCase().indexOf((d.town || '').toLowerCase()) === -1) fullAddr += ', ' + d.town;
       if (postcode && fullAddr.toLowerCase().indexOf(postcode.toLowerCase()) === -1) fullAddr += ', ' + postcode;
       title = fullAddr || 'Property';
