@@ -8488,6 +8488,7 @@ app.post('/api/admin/test-email', adminAuth, async (req, res) => {
 // free-trial customers who haven't received it yet
 app.post('/api/admin/send-welcome', adminAuth, async (req, res) => {
   try {
+    var force = req.body && req.body.force;
     var customers = (getDb().customers || []).filter(function(c) { return c.plan === 'free_trial'; });
     var sent = 0;
     for (var ci = 0; ci < customers.length; ci++) {
@@ -8495,7 +8496,7 @@ app.post('/api/admin/send-welcome', adminAuth, async (req, res) => {
       try {
         var campaignSent = [];
         try { campaignSent = JSON.parse(cust.campaign_sent || '[]'); } catch(e) {}
-        if (campaignSent.includes('trial_day1')) continue;
+        if (!force && campaignSent.includes('trial_day1')) continue;
         var html = getCampaignEmailHTMLWithEdits(cust, 'trial_day1');
         var subject = getEditedCampaignSubject('trial_day1', 'Your Free Trial Is Active \u2014 Your ' + (cust.lead_type || 'opportunities') + ' start now');
         await sendBrevoEmail({ email: cust.email, name: cust.company || cust.contact_name || 'Customer' }, subject, html);
