@@ -703,22 +703,21 @@ if (require.main === module) {
 
 async function collectProbateLeads(config) {
   config = config || {};
-  // Primary: Gazette via Apify actor (accurate — real probate notices with
-  // deceased name, address, DOB, claim expiry). Actor can time out, so retry once.
-  var results = [];
-  var gazAttempts = config.retries === 0 ? 1 : 2;
-  for (var gz = 0; gz < gazAttempts && results.length === 0; gz++) {
-    results = await fetchGazetteProbate(config.maxItems || 100);
-    if (results.length === 0 && gz === 0) {
-      console.log('[PROBATE] Gazette actor empty on attempt ' + (gz+1) + ', retrying...');
-      await new Promise(function(r) { setTimeout(r, 15000); });
-    }
-  }
+  // Primary: FREE Gazette HTML search (no Apify cost, fast, reliable). Returns
+  // real deceased-estates notices with names + publication dates + URLs.
+  var results = await fetchGazetteHTML(config.maxItems || 100);
   if (results.length === 0) {
-    // Fallback: FREE Gazette HTML search (no cost). Returns deceased-estates
-    // notices with names + publication dates + URLs (may include some bankruptcy).
-    console.log('[PROBATE] Gazette actor empty, trying free HTML search...');
-    results = await fetchGazetteHTML(config.maxItems || 100);
+    // Fallback: Gazette via Apify actor (accurate details but PAY_PER_EVENT and
+    // can time out). Retry once.
+    console.log('[PROBATE] Gazette HTML empty, trying Apify Gazette actor...');
+    var gazAttempts = config.retries === 0 ? 1 : 2;
+    for (var gz = 0; gz < gazAttempts && results.length === 0; gz++) {
+      results = await fetchGazetteProbate(config.maxItems || 100);
+      if (results.length === 0 && gz === 0) {
+        console.log('[PROBATE] Gazette actor empty on attempt ' + (gz+1) + ', retrying...');
+        await new Promise(function(r) { setTimeout(r, 15000); });
+      }
+    }
   }
   if (results.length === 0) {
     console.log('[PROBATE] Gazette empty, trying Gov.uk registry...');
