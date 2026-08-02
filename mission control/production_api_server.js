@@ -8451,20 +8451,30 @@ app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
     res.json({ success: true, result: 'Companies House OK', tenders: tenderResult });
   } catch(e) { res.json({ error: e.message }); }
 });
-// POST /api/admin/test-probate — run the probate scraper and return result/error
+// POST /api/admin/test-probate — run the probate scraper, save leads to the product file, return result
 app.post('/api/admin/test-probate', adminAuth, async (req, res) => {
   try {
     var probateScraper = require('./probate_leads_scraper');
     var result = await probateScraper.collectProbateLeads({ maxItems: 5 });
+    if (result && result.length > 0) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.writeFileSync(path.join(DATA_DIR, 'probate-leads.json'), JSON.stringify(result, null, 2));
+      fs.writeFileSync(path.join(DATA_DIR, 'probate-source.txt'), result[0].source || 'probate');
+    }
     res.json({ success: true, count: result ? result.length : 0, sample: result && result[0] ? result[0] : null });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/test-planning — run the planning scraper and return result/error
+// POST /api/admin/test-planning — run the planning scraper, save leads to the product file, return result
 app.post('/api/admin/test-planning', adminAuth, async (req, res) => {
   try {
     var planScraper = require('./planning_scraper');
     var result = await planScraper.collectPlanningLeads({ maxItems: 5 });
+    if (result && result.length > 0) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.writeFileSync(path.join(DATA_DIR, 'planning-leads.json'), JSON.stringify(result, null, 2));
+      fs.writeFileSync(path.join(DATA_DIR, 'planning-source.txt'), result[0].source || 'planning');
+    }
     res.json({ success: true, count: result ? result.length : 0, sample: result && result[0] ? result[0] : null });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
