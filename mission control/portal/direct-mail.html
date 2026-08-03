@@ -129,20 +129,24 @@ function doLogout(){if(confirm('Log out?')){localStorage.removeItem('mld_portal_
 
 function saveProfile(){
   var body={
-    company:document.getElementById('p-company').value,
-    contact_name:document.getElementById('p-name').value,
+    company_name:document.getElementById('p-company').value,
+    business_type:document.getElementById('p-businesstype')?document.getElementById('p-businesstype').value:'Removal Company',
+    phone:document.getElementById('p-phone').value,
+    email:document.getElementById('p-email')?document.getElementById('p-email').value:'',
     address_line1:document.getElementById('p-addr1').value,
     city:document.getElementById('p-city').value,
     postcode:document.getElementById('p-postcode').value,
-    phone:document.getElementById('p-phone').value
+    services_offered:document.getElementById('p-services')?document.getElementById('p-services').value:'',
+    service_areas:document.getElementById('p-city').value,
+    call_to_action:'Get in touch today'
   };
-  api('POST','/api/direct-mail/profile',body,function(err,d){toast(d&&d.success?'Profile saved':'Profile error');if(d&&d.success)loadProfile();});
+  api('POST','/api/direct-mail/profile',body,function(err,d){toast(d&&d.success?'Profile saved':'Profile error: '+((d&&d.error)||'check fields'));if(d&&d.success)loadProfile();});
 }
 function loadProfile(){
   api('GET','/api/direct-mail/profile',null,function(err,d){
     if(d&&d.profile){
       var p=d.profile;
-      document.getElementById('p-company').value=p.company||'';
+      document.getElementById('p-company').value=p.company_name||'';
       document.getElementById('p-name').value=p.contact_name||'';
       document.getElementById('p-addr1').value=p.address_line1||'';
       document.getElementById('p-city').value=p.city||'';
