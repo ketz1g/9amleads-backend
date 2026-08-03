@@ -492,6 +492,7 @@ class DirectMailProvider {
   async validateAddresses(addresses) { throw new Error('validateAddresses not implemented'); }
   async createCampaign(campaignData) { throw new Error('createCampaign not implemented'); }
   async uploadArtwork(campaignId, files) { throw new Error('uploadArtwork not implemented'); }
+  async addRecipients(campaignId, recipients) { throw new Error('addRecipients not implemented'); }
   async sendCampaign(campaignId) { throw new Error('sendCampaign not implemented'); }
   async getCampaignStatus(providerCampaignId) { throw new Error('getCampaignStatus not implemented'); }
   async getProofOfPosting(providerCampaignId) { throw new Error('getProofOfPosting not implemented'); }
@@ -533,6 +534,10 @@ class MockDirectMailProvider extends DirectMailProvider {
   async uploadArtwork(campaignId, files) {
     var uploaded = (files || []).map(function(f) { return { name: f.name || 'file', status: 'uploaded', url: 'https://mock-provider.local/artwork/' + campaignId + '/' + encodeURIComponent(f.name || 'file') }; });
     return { success: true, files: uploaded.length, uploaded: uploaded };
+  }
+
+  async addRecipients(campaignId, recipients) {
+    return { success: true, added: (recipients || []).length, failed: 0, errors: [] };
   }
 
   async sendCampaign(providerCampaignId) {
@@ -662,6 +667,26 @@ class StannpProvider extends DirectMailProvider {
       return { success: true, provider_campaign_id: providerCampaignId, status: status, message: 'Campaign sent to Stannp for processing', raw: result };
     }
     return { success: false, error: result.error || 'Failed to send campaign via Stannp', raw: result };
+  }
+
+  async addRecipients(campaignId, recipients) {
+    if (!recipients || recipients.length === 0) return { success: true, added: 0 };
+    var added = 0, failed = 0, errors = [];
+    for (var i = 0; i < recipients.length; i++) {
+      var r = recipients[i];
+      var result = await this.stannpRequest('/campaigns/recipients/create', {
+        campaign_id: campaignId,
+        name: r.name || 'Homeowner',
+        company: r.company || '',
+        address1: r.address_line1 || '',
+        city: r.city || '',
+        postcode: r.postcode || '',
+        country: r.country || 'United Kingdom'
+      });
+      if (result.success) { added++; }
+      else { failed++; if (errors.length < 3) errors.push(result.error || 'Recipient failed'); }
+    }
+    return { success: failed === 0, added: added, failed: failed, errors: errors };
   }
 
   async getCampaignStatus(providerCampaignId) {
@@ -5159,6 +5184,19 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run(paymentId, 'paid', 'paid', new Date().toISOString(), campaignId);
         db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaignId, 'approved', 'paid', 'system', 'Payment received: ' + paymentId, new Date().toISOString());
         console.log('[WEBHOOK] Campaign payment received:', campaignRecord.name, 'ID:', paymentId);
+        // Auto-send to Stannp so the lead is printed + posted immediately
+        try {
+          var sendResult = await sendDmCampaign(campaignId, customerId);
+          if (sendResult.success) {
+            console.log('[WEBHOOK] One-click campaign sent to provider:', sendResult.provider_campaign_id);
+            dmDashboardNotify(customerId, 'dm_sent', '📬 Print & Post on its way', 'Your print & post item has been sent to ' + sendResult.provider + ' and will be dispatched shortly.', '');
+          } else {
+            console.log('[WEBHOOK] One-click send failed:', sendResult.error);
+            dmDashboardNotify(customerId, 'dm_send_failed', '⚠️ Print & Post send issue', 'Payment received but send failed: ' + sendResult.error + '. Our team is on it.', '');
+          }
+        } catch(sendErr) {
+          console.log('[WEBHOOK] One-click send error:', sendErr.message);
+        }
         return res.json({ received: true });
       }
 
@@ -6939,74 +6977,77 @@ app.get('/api/direct-mail/test/:campaignId', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/campaigns/:id/send — Send campaign to provider
+// FULL send-to-provider flow: create campaign + upload artwork + add recipients + send.
+// Used by both manual send and the Stripe webhook (one-click print & post).
+async function sendDmCampaign(campaignId, customerId) {
+  var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(campaignId, customerId);
+  if (!campaign) return { success: false, error: 'Campaign not found' };
+  if (campaign.status === 'completed' || campaign.status === 'dispatched') return { success: false, error: 'Campaign already sent' };
+
+  var recipients = db.prepare('SELECT * FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(campaign.id, customerId);
+  var provider = getDirectMailProvider();
+
+  // 1. Validate addresses
+  var addresses = recipients.map(function(r) { return { name: r.name, company: r.company, address_line1: r.address_line1, city: r.city, postcode: r.postcode, lead_id: r.lead_id }; });
+  var validationResult = await provider.validateAddresses(addresses);
+  var validAddresses = validationResult.details ? validationResult.details.filter(function(d) { return d.valid; }) : [];
+  var recipientCount = validAddresses.length;
+  if (recipientCount === 0) return { success: false, error: 'No valid postal addresses in this campaign.' };
+
+  // 2. Create campaign with provider
+  var campaignResult = await provider.createCampaign({ name: campaign.name, recipient_count: recipientCount, description: campaign.description });
+  if (!campaignResult || !campaignResult.success) {
+    return { success: false, error: (campaignResult && campaignResult.error) || 'Provider rejected campaign' };
+  }
+  var providerCampaignId = campaignResult.provider_campaign_id;
+
+  // 3. Upload artwork (flyer front/back/letter) from template materials if any
+  var template = null;
+  if (campaign.template_id) { template = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(campaign.template_id, customerId); }
+  var materialIds = [];
+  if (template) {
+    if (template.flyer_front_material_id) materialIds.push(template.flyer_front_material_id);
+    if (template.flyer_back_material_id) materialIds.push(template.flyer_back_material_id);
+    if (template.letter_material_id) materialIds.push(template.letter_material_id);
+  }
+  var files = [];
+  for (var mi = 0; mi < materialIds.length; mi++) {
+    var mat = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(materialIds[mi], customerId);
+    if (mat && mat.file_data) files.push({ name: mat.name || 'artwork.' + (mat.file_type === 'pdf' ? 'pdf' : 'png'), file_data: mat.file_data });
+  }
+  var artworkResult = await provider.uploadArtwork(providerCampaignId, files);
+
+  // 4. Add recipients to provider campaign
+  var addResult = await provider.addRecipients(providerCampaignId, validAddresses.map(function(d) { return d.original; }));
+
+  // 5. Send campaign
+  var sendResult = await provider.sendCampaign(providerCampaignId);
+
+  // 6. Update DB
+  var finalStatus = sendResult && sendResult.success ? 'sent_to_provider' : 'queued';
+  db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, provider_status = ?, sent_count = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(finalStatus, provider.name, providerCampaignId, sendResult && sendResult.success ? 'processing' : 'accepted', recipientCount, new Date().toISOString(), campaign.id, customerId);
+  db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaign.id, campaign.status, finalStatus, 'system', 'Sent to provider: ' + provider.name + ' (ID: ' + providerCampaignId + ') · Artwork: ' + artworkResult.files + ' · Recipients: ' + (addResult.added || 0), new Date().toISOString());
+  db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaign.id, provider.name, 'fullSend', JSON.stringify({ campaign: campaign.name, recipients: recipientCount, files: files.length }), JSON.stringify({ create: campaignResult, artwork: artworkResult, recipients: addResult, send: sendResult }), 200, sendResult && sendResult.success ? 1 : 0, sendResult && sendResult.success ? '' : 'Provider send failed', new Date().toISOString());
+
+  if (!sendResult || !sendResult.success) {
+    db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, customerId);
+    return { success: false, error: (sendResult && sendResult.error) || 'Campaign created but failed to send. Contact support.' };
+  }
+  return { success: true, provider: provider.name, provider_campaign_id: providerCampaignId, recipient_count: recipientCount, message: 'Campaign sent to ' + provider.name + ' for printing' };
+}
+
+// POST /api/direct-mail/campaigns/:id/send — Send campaign to provider (manual)
 app.post('/api/direct-mail/campaigns/:id/send', authMiddleware, async (req, res) => {
   try {
-    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
-    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
-    if (campaign.status !== 'approved' && campaign.status !== 'paid') return res.status(400).json({ error: 'Campaign must be approved or paid before sending. Current status: ' + campaign.status });
-
-    var recipients = db.prepare('SELECT * FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(campaign.id, req.user.id);
-    var provider = getDirectMailProvider();
-
-    // 1. Validate addresses via provider
-    var addresses = recipients.map(function(r) { return { name: r.name, company: r.company, address_line1: r.address_line1, city: r.city, postcode: r.postcode, lead_id: r.lead_id }; });
-    var validationResult = await provider.validateAddresses(addresses);
-    var validAddresses = validationResult.details ? validationResult.details.filter(function(d) { return d.valid; }) : [];
-
-    // 2. Create campaign with provider
-    var recipientCount = validAddresses.length;
-    var campaignResult = await provider.createCampaign({ name: campaign.name, recipient_count: recipientCount, description: campaign.description });
-    
-    // Log provider interaction (success or failure)
-    var logSuccess = campaignResult && campaignResult.success ? 1 : 0;
-    var logError = (!campaignResult || !campaignResult.success) ? (campaignResult && campaignResult.error ? campaignResult.error : 'Provider rejected campaign') : '';
-    db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, req.params.id, provider.name, 'createCampaign', JSON.stringify({ name: campaign.name, recipient_count: recipientCount }), JSON.stringify(campaignResult || {}), campaignResult && campaignResult.success ? 200 : 500, logSuccess, logError, new Date().toISOString());
-
-    if (!campaignResult || !campaignResult.success) {
-      // Mark campaign as failed
+    var result = await sendDmCampaign(req.params.id, req.user.id);
+    if (!result.success) {
       db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), req.params.id, req.user.id);
-      db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, req.params.id, campaign.status, 'failed', 'system', 'Provider error: ' + logError, new Date().toISOString());
-      return res.status(500).json({ success: false, error: 'We couldn\'t process your campaign right now. Our team has been notified and will help resolve this. Please try again later or contact support.', provider_error: logError });
+      return res.status(500).json({ success: false, error: result.error });
     }
-
-    var providerCampaignId = campaignResult.provider_campaign_id;
-
-    // 4. Update campaign with provider info
-    db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, provider_status = ?, sent_count = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('queued', provider.name, providerCampaignId, 'accepted', recipientCount, new Date().toISOString(), req.params.id, req.user.id);
-
-    // 5. Status history
-    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, req.params.id, campaign.status, 'queued', 'system', 'Sent to provider: ' + provider.name + ' (ID: ' + providerCampaignId + ')', new Date().toISOString());
-
-    // 6. Mark invalid addresses
-    var invalidCount = 0;
-    if (validationResult.details) {
-      validationResult.details.forEach(function(d) {
-        if (!d.valid && d.original && d.original.lead_id) {
-          db.prepare('UPDATE direct_mail_recipients SET status = ? WHERE id = ? AND campaign_id = ? AND customer_id = ?').run('failed', d.original.lead_id, req.params.id, req.user.id);
-          invalidCount++;
-        }
-      });
-    }
-
-    // Send notifications
     sendDMNotification(req.user.id, 'campaign_sent', '📬 Campaign Sent to Print', 'Campaign Sent to Provider',
-      '<p>Your campaign "' + campaign.name + '" has been sent to ' + provider.name + ' for printing.</p><p style="font-size:12px;color:#5a6280">Provider ID: ' + providerCampaignId + ' Â· Recipients: ' + recipientCount + ' Â· Estimated cost: £' + (campaignResult.estimated_cost || 0) + '</p>',
+      '<p>Your campaign "' + result.campaign_name + '" has been sent to ' + result.provider + ' for printing.</p><p style="font-size:12px;color:#5a6280">Provider ID: ' + result.provider_campaign_id + ' · Recipients: ' + result.recipient_count + '</p>',
       'Track Campaign', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail');
-    if (invalidCount > 0) {
-      dmDashboardNotify(req.user.id, 'invalid_addresses', 'âš ï¸ Invalid Addresses', invalidCount + ' addresses were invalid and skipped. Update your lead data to improve delivery.', '');
-    }
-
-    res.json({
-      success: true,
-      provider: provider.name,
-      provider_campaign_id: providerCampaignId,
-      recipient_count: recipientCount,
-      invalid_addresses: invalidCount,
-      total_valid: validAddresses.length,
-      message: campaignResult.message,
-      estimated_cost: campaignResult.estimated_cost || 0
-    });
+    res.json({ success: true, provider: result.provider, provider_campaign_id: result.provider_campaign_id, recipient_count: result.recipient_count, invalid_addresses: 0, total_valid: result.recipient_count, message: result.message });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
