@@ -69,16 +69,26 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <button class="btn btn-primary" onclick="saveProfile()" style="margin-top:12px"><i class="fas fa-save"></i> Save Profile</button>
 </div>
 
-<!-- Step 2: Template -->
+<!-- Step 2: Template / Cover Letter -->
 <div class="card">
-<div class="sect-title"><i class="fas fa-file-alt" style="color:var(--accent)"></i> Step 2 · Your Template</div>
+<div class="sect-title"><i class="fas fa-file-alt" style="color:var(--accent)"></i> Step 2 · Your Cover Letter</div>
+<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Write your own cover letter, paste one in, or generate it with AI. Use <b>[name]</b> and <b>[address]</b> placeholders which are filled with each lead's details.</p>
 <div class="grid-2">
 <div><label class="label">Template Name</label><input class="input" id="t-name" placeholder="e.g. My Introduction Letter"></div>
 <div><label class="label">Type</label><select class="input" id="t-type"><option value="letter">Letter</option><option value="flyer">Flyer (A5)</option><option value="postcard">Postcard</option></select></div>
 </div>
-<div style="margin-top:12px"><label class="label">Content (or use the AI tools to generate it)</label><textarea class="input" id="t-content" rows="6" placeholder="Dear [name],&#10;&#10;We are your local removal specialists...&#10;&#10;[Your Company]"></textarea></div>
-<div style="margin-top:8px;font-size:11px;color:var(--muted)">Tip: use [name] and [address] placeholders which are filled with each lead's details.</div>
-<button class="btn btn-primary" onclick="saveTemplate()" style="margin-top:12px"><i class="fas fa-save"></i> Save Template</button>
+<div style="margin-top:12px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+<label class="label" style="margin-bottom:0">Cover Letter Text</label>
+<div style="display:flex;gap:6px">
+<select class="input" id="t-version" style="width:auto;padding:6px 10px;font-size:11px"><option value="PROFESSIONAL">Professional</option><option value="SHORT">Short</option><option value="FRIENDLY">Friendly</option><option value="CALL TO ACTION">Call To Action</option><option value="PREMIUM">Premium</option></select>
+<button class="btn btn-outline" onclick="genLetterAI()" style="padding:6px 12px;font-size:11px"><i class="fas fa-magic"></i> Generate with AI</button>
+</div>
+</div>
+<textarea class="input" id="t-content" rows="10" placeholder="Dear [name],&#10;&#10;We are your local removal specialists...&#10;&#10;Kind regards,&#10;[Your Company]"></textarea>
+</div>
+<div style="margin-top:8px;font-size:11px;color:var(--muted)" id="t-ai-status"></div>
+<button class="btn btn-primary" onclick="saveTemplate()" style="margin-top:12px"><i class="fas fa-save"></i> Save Cover Letter</button>
 
 <!-- Upload Materials -->
 <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
@@ -86,7 +96,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div class="grid-3">
 <div><label class="label">Flyer Front</label><input type="file" class="input" id="up-flyer-front" accept=".pdf,.png,.jpg,.jpeg"></div>
 <div><label class="label">Flyer Back</label><input type="file" class="input" id="up-flyer-back" accept=".pdf,.png,.jpg,.jpeg"></div>
-<div><label class="label">Cover Letter</label><input type="file" class="input" id="up-letter" accept=".pdf,.png,.jpg,.jpeg"></div>
+<div><label class="label">Cover Letter PDF (optional)</label><input type="file" class="input" id="up-letter" accept=".pdf,.png,.jpg,.jpeg"></div>
 </div>
 <button class="btn btn-outline" onclick="uploadMaterials()" style="margin-top:10px"><i class="fas fa-upload"></i> Upload Files</button>
 <div id="materials-list" style="margin-top:12px"></div>
@@ -99,7 +109,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div class="sect-title"><i class="fas fa-users" style="color:var(--accent)"></i> Step 3 · Select Recipients</div>
 <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Choose the leads to send your mailing to.</p>
 <div class="grid-2">
-<div><label class="label">Template</label><select class="input" id="c-template"><option value="">Select a template...</option></select></div>
+<div><label class="label">Cover Letter</label><select class="input" id="c-template" onchange="loadTemplateContent(this)"><option value="">Select a saved cover letter...</option></select></div>
 <div><label class="label">Delivery Date</label><input type="date" class="input" id="c-date"></div>
 </div>
 <button class="btn btn-primary" onclick="loadLeads()" style="margin-top:12px"><i class="fas fa-search"></i> Load My Leads</button>
@@ -169,23 +179,80 @@ function loadProfile(){
 }
 
 function saveTemplate(){
-  var body={name:document.getElementById('t-name').value,type:document.getElementById('t-type').value,ai_generated_text:document.getElementById('t-content').value};
-  if(!body.name){toast('Template name required');return;}
-  api('POST','/api/direct-mail/templates',body,function(err,d){toast(d&&d.success?'Template saved':'Template error');if(d&&d.success)loadTemplates();});
+  var name=document.getElementById('t-name').value||('Cover Letter '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}));
+  var body={name:name,type:document.getElementById('t-type').value,ai_generated_text:document.getElementById('t-content').value};
+  if(!body.ai_generated_text){toast('Write or generate a cover letter first');return;}
+  api('POST','/api/direct-mail/templates',body,function(err,d){toast(d&&d.success?'Cover letter saved':'Template error');if(d&&d.success)loadTemplates();});
+}
+function genLetterAI(){
+  var statusEl=document.getElementById('t-ai-status');
+  var v=document.getElementById('t-version').value;
+  statusEl.innerHTML='<i class="fas fa-spinner fa-spin"></i> Generating your cover letter...';
+  statusEl.style.color='var(--accent)';
+  api('POST','/api/ai/generate-letter',{version:v},function(err,d){
+    if(d&&d.error){statusEl.textContent='Error: '+d.error;statusEl.style.color='#dc2626';return;}
+    if(d&&d.success){
+      var key=v==='PROFESSIONAL'?'professional':v==='SHORT'?'short':v==='FRIENDLY'?'friendly':v==='PREMIUM'?'premium':'call_to_action';
+      var text=d[key]||'';
+      if(!text){for(var k in d){if(typeof d[k]==='string'&&d[k].length>20&&k!=='input'){text=d[k];break;}}}
+      if(text){
+        // Keep placeholders readable
+        text=text.replace(/\[Your Name\]/g,'[name]').replace(/\[Name\]/g,'[name]').replace(/\[Your Company\]/g,'[Your Company]').replace(/\[Your Address\]/g,'[address]').replace(/\[Your Contact\]/g,'');
+        document.getElementById('t-content').value=text.trim();
+        statusEl.innerHTML='<i class="fas fa-check" style="color:var(--success)"></i> Cover letter generated — review, edit, then click Save Cover Letter.';
+        statusEl.style.color='var(--success)';
+      } else {
+        statusEl.textContent='AI returned no text. Please try again.';
+        statusEl.style.color='#dc2626';
+      }
+    } else {
+      statusEl.textContent='Could not generate. Please try again.';
+      statusEl.style.color='#dc2626';
+    }
+  });
 }
 function loadTemplates(){
-  api('GET','/api/direct-mail/templates',null,function(err,d){
+  api('GET','/api/direct-mail/templates?include_materials=1&include_content=1',null,function(err,d){
     var tpls=(d&&d.templates)||[];
+    _allTemplates=tpls;
     var sel=document.getElementById('c-template');
-    sel.innerHTML='<option value="">Select a template...</option>';
+    sel.innerHTML='<option value="">Select a saved cover letter...</option>';
     var list=document.getElementById('templates-list');
     var html='';
     tpls.forEach(function(t){
       sel.innerHTML+='<option value="'+t.id+'" data-type="'+(t.template_type||'letter')+'">'+t.name+'</option>';
-      html+='<div class="recipient"><div><div class="addr">'+t.name+'</div><div class="meta">'+t.template_type+'</div></div><span class="tag">Saved</span></div>';
+      html+='<div class="recipient" style="cursor:pointer" onclick="editTemplate(\''+t.id+'\')"><div><div class="addr">'+t.name+'</div><div class="meta">'+t.template_type+' · click to load into editor</div></div><span class="tag">Saved</span></div>';
     });
-    list.innerHTML=html||'<div class="empty"><i class="fas fa-file-alt"></i>No templates yet — create one above</div>';
+    list.innerHTML=html||'<div class="empty"><i class="fas fa-file-alt"></i>No cover letters yet — write one or generate with AI above</div>';
   });
+}
+var _allTemplates=[];
+function loadTemplateContent(sel){
+  var id=sel.value;
+  if(!id){return;}
+  for(var i=0;i<_allTemplates.length;i++){
+    if(_allTemplates[i].id===id){
+      var t=_allTemplates[i];
+      document.getElementById('t-name').value=t.name||'';
+      document.getElementById('t-type').value=t.template_type||'letter';
+      document.getElementById('t-content').value=t.ai_generated_text||'';
+      toast('Loaded: '+t.name+' (edit then Save to update)');
+      return;
+    }
+  }
+}
+function editTemplate(id){
+  for(var i=0;i<_allTemplates.length;i++){
+    if(_allTemplates[i].id===id){
+      var t=_allTemplates[i];
+      document.getElementById('t-name').value=t.name||'';
+      document.getElementById('t-type').value=t.template_type||'letter';
+      document.getElementById('t-content').value=t.ai_generated_text||'';
+      window.scrollTo({top:0,behavior:'smooth'});
+      toast('Cover letter loaded into editor');
+      return;
+    }
+  }
 }
 
 function readFileAsBase64(file, cb){
