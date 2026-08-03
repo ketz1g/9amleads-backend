@@ -819,7 +819,7 @@ async function collectProbateLeads(config) {
   config = config || {};
   // Primary: FREE Gazette HTML search (no Apify cost, fast, reliable). Returns
   // real deceased-estates notices with names + publication dates + URLs.
-  var maxItems = config.maxItems || 30;
+  var maxItems = config.maxItems || 12;
   var results = await fetchGazetteHTML(maxItems);
   // Enrich the free HTML notices with full addresses (street + locality + postcode)
   // by fetching each notice's detail page. Free, no Apify cost.
