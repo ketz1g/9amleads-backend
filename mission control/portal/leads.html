@@ -114,7 +114,7 @@ function renderLeads(leads) {
         '<div class="addr">' + biz + '</div>' +
         '<div class="meta">' + (d.address||'') + '</div>' +
         '<div class="meta">' + metaParts.join(' \u00b7 ') + (chLink ? ' \u00b7 ' + chLink : '') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span></div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + mailBtn(l.id) + '</div></div>';
     } else if (product === 'probate') {
       var pName = d.deceasedName || d.name || 'Probate Estate';
       var pAddr = d.deceasedAddress || d.address || '';
@@ -131,7 +131,7 @@ function renderLeads(leads) {
         '<div class="addr">' + pName + '</div>' +
         '<div class="meta">' + pFullAddr + '</div>' +
         '<div class="meta">' + pMeta.join(' \u00b7 ') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span></div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + mailBtn(l.id) + '</div></div>';
     } else if (product === 'planning') {
       var planTitle = d.address || (d.description||'').substring(0,40) || 'Planning Application';
       var planDate = d.dateSubmitted || d.receivedDate || d.date_received || l.created_at || '';
@@ -142,7 +142,7 @@ function renderLeads(leads) {
       html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + planTitle + '</div>' +
         '<div class="meta">' + planMeta.join(' \u00b7 ') + '</div>' + planDesc + planApplicant + '</div>' +
-        '<div class="right"><span class="badge">' + status + '</span></div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + mailBtn(l.id) + '</div></div>';
     } else if (product === 'tenders') {
       var tendTitle = d.tenderTitle || d.title || 'Opportunity';
       var tendMeta = [d.buyer || d.contractingAuthority, d.contractValueLabel && d.contractValueLabel !== '&pound' ? d.contractValueLabel : '', d.closingDate ? 'Deadline ' + new Date(d.closingDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.publishedDate ? 'Published ' + d.publishedDate : '', d.postcode].filter(Boolean);
@@ -166,10 +166,31 @@ function renderLeads(leads) {
       html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + fullAddr + '</div>' +
         '<div class="meta">' + moveMeta.join(' \u00b7 ') + '</div></div>' +
-        '<div class="right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div><span class="badge ' + (status === 'SSTC' ? 'badge-sstc' : '') + '">' + status + '</span></div></div>';
+        '<div class="right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div><span class="badge ' + (status === 'SSTC' ? 'badge-sstc' : '') + '">' + status + '</span>' +
+        mailBtn(l.id) + '</div></div>';
     }
   }
   container.innerHTML = html;
+}
+function mailBtn(leadId){
+  return '<button onclick="sendPrintPost(\''+leadId+'\')" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:6px 12px;border-radius:6px;background:#fff;border:1px solid var(--accent);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--ff-b);transition:.2s" onmouseover="this.style.background=var(--accent);this.style.color=\'#fff\';this.style.borderColor=var(--accent)" onmouseout="this.style.background=\'#fff\';this.style.color=var(--accent);this.style.borderColor=var(--accent)"><i class="fas fa-mail-bulk"></i> Print &amp; Post</button>';
+}
+function sendPrintPost(leadId){
+  if(!confirm('Send this lead a printed letter (99p) or flyer? You\'ll pay via secure checkout.'))return;
+  var type=prompt('Choose item: letter (99p), flyer (£1.50), or pack (£2.25). Type: letter / flyer / pack','letter');
+  var mailType=type==='flyer'?'flyer_a5':type==='pack'?'flyer_plus_letter':'letter_a4';
+  var btn=event.target.closest('button');if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>...';}
+  var x=new XMLHttpRequest();
+  x.open('POST','/api/direct-mail/send-lead',true);
+  x.setRequestHeader('Authorization','Bearer '+_token);
+  x.setRequestHeader('Content-Type','application/json');
+  x.onload=function(){
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-mail-bulk"></i> Print &amp; Post';}
+    var d=JSON.parse(x.responseText);
+    if(d&&d.checkout_url){window.location.href=d.checkout_url;}
+    else alert(d&&d.error||'Could not start print & post');
+  };
+  x.send(JSON.stringify({lead_id:leadId,mail_type:mailType}));
 }
 function filterLeads() {
   var q = document.getElementById('search-input').value.toLowerCase();
@@ -195,12 +216,14 @@ function doLogout() {
     window.location.href = '/portal/';
   }
 }
+var _token = '';
 (function(){
   var sd = localStorage.getItem('mld_portal_session');
   if (!sd) { window.location.href = '/portal/'; return; }
   var sess = JSON.parse(sd);
   var token = sess ? sess.token : null;
   if (!token) { window.location.href = '/portal/'; return; }
+  _token = token;
   var x = new XMLHttpRequest();
   x.open('GET', '/api/leads', true);
   x.setRequestHeader('Authorization', 'Bearer ' + token);
