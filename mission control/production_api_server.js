@@ -727,14 +727,18 @@ class StannpProvider extends DirectMailProvider {
       return { success: false, error: res.error || 'Failed to create letter', raw: res };
     }
 
-    // Flyer / postcard (A5 is the correct Stannp size for an A5 flyer)
+    // Flyer / postcard (A5 is the correct Stannp size for an A5 flyer).
+    // NOTE: Stannp requires a 'front' image or a 'template' for postcards —
+    // it cannot print a flyer from text alone.
     if (isFlyer || isBoth) {
       var front = (files || []).find(function(f) { return /flyer_front|front/i.test(f.name || ''); });
       var back = (files || []).find(function(f) { return /flyer_back|back/i.test(f.name || ''); });
+      if ((!front || !front.file_data) && !isBoth) {
+        return { success: false, error: 'A flyer needs an uploaded front design. Please upload your flyer front (Print & Post > Step 2) or choose the A4 letter instead.' };
+      }
       var postcardParams = Object.assign({}, rcpt, { size: 'A5', tags: '9amleads', padding: 0 });
       if (front && front.file_data) postcardParams.front = front.file_data;
       if (back && back.file_data) postcardParams.back = back.file_data;
-      if (!front && !back) postcardParams.message = '<p>We would love to help you!</p><p>[Your Company]</p>';
       var res2 = await this.stannpRequest('/postcards/create', postcardParams);
       if (res2.success && res2.data && res2.data.id) {
         return { success: true, provider_campaign_id: String(res2.data.id), cost: res2.data.cost, status: res2.data.status || 'processing', message: 'Postcard sent to Stannp', raw: res2 };
@@ -7526,6 +7530,7 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
     if (!lead) return res.status(404).json({ error: 'Lead not found' });
     var template = req.body.template_id || '';
     var mailType = req.body.mail_type || 'letter'; // letter | flyer | flyer_plus_letter
+    var nowIso = new Date().toISOString();
     var parsed = {};
     try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
     var addrLine1 = parsed.address_line1 || parsed.address || parsed.street || '';
@@ -7538,12 +7543,44 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
     var already = db.prepare('SELECT * FROM direct_mail_recipients WHERE customer_id = ? AND lead_id = ? AND created_at > datetime(\'now\', \'-7 days\')').get(req.user.id, lead.id);
     if (already) return res.status(409).json({ error: 'This lead was already sent in the last 7 days.' });
 
+    // Auto-select a template: use the requested one, else the auto-send default,
+    // else the customer's most recent template. This ensures the mailpiece has
+    // real content + artwork without the customer needing to set one up manually.
+    var useTemplateId = template;
+    if (!useTemplateId) {
+      var dmSettings = null;
+      try { dmSettings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id); } catch(e) {}
+      if (dmSettings && dmSettings.default_template_id) useTemplateId = dmSettings.default_template_id;
+    }
+    if (!useTemplateId) {
+      var anyTemplate = null;
+      try { anyTemplate = db.prepare('SELECT * FROM direct_mail_templates WHERE customer_id = ? ORDER BY created_at DESC LIMIT 1').get(req.user.id); } catch(e) {}
+      if (anyTemplate) useTemplateId = anyTemplate.id;
+    }
+    // If no template exists, build letter content from the customer's business profile
+    if (!useTemplateId && (mailType === 'letter_a4' || mailType === 'flyer_plus_letter')) {
+      var bizProfile = null;
+      try { bizProfile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id); } catch(e) {}
+      if (bizProfile && (bizProfile.company_name || bizProfile.business_type)) {
+        var bizName = bizProfile.company_name || 'Our Team';
+        var bizType = bizProfile.business_type || 'local business';
+        var bizOffer = bizProfile.special_offer || '';
+        var bizCta = bizProfile.call_to_action || 'get in touch today';
+        var generated = 'Dear [name],\n\nWe are ' + bizName + ', a ' + bizType + ' serving ' + (bizProfile.service_areas || 'your local area') + '. We noticed you may be moving soon and we would love the opportunity to help you.\n\n' +
+          (bizOffer ? 'As a special offer, ' + bizOffer + '.\n\n' : '') +
+          'We pride ourselves on reliable, professional service at a fair price.\n\nPlease ' + bizCta + '.\n\nKind regards,\n' + bizName;
+        var tmpId = uuidv4();
+        db.prepare('INSERT INTO direct_mail_templates (id,customer_id,name,description,template_type,business_type,flyer_front_material_id,flyer_back_material_id,letter_material_id,ai_generated_text,status,created_at,updated_at,last_used_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+          .run(tmpId, req.user.id, 'Auto letter for ' + bizName.substring(0, 20), 'Auto-generated from business profile', 'letter', bizType, '', '', '', generated, 'approved', nowIso, nowIso, '');
+        useTemplateId = tmpId;
+      }
+    }
+
     // Create campaign
     var campaignId = uuidv4();
     var price = PRINT_POST_PRICES[mailType] ? PRINT_POST_PRICES[mailType].customer : PRINT_POST_PRICES.letter_a4.customer;
-    var nowIso = new Date().toISOString();
     db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-      .run(campaignId, req.user.id, 'Print & Post: ' + name.substring(0,40), mailType, 'approved', template, '', 1, 0, new Date(Date.now()+86400000).toISOString().split('T')[0], price, 'One-click send from My Leads', '', '', '', '', '', '', nowIso, nowIso);
+      .run(campaignId, req.user.id, 'Print & Post: ' + name.substring(0,40), mailType, 'approved', useTemplateId, '', 1, 0, new Date(Date.now()+86400000).toISOString().split('T')[0], price, 'One-click send from My Leads', '', '', '', '', '', '', nowIso, nowIso);
     // Add recipient
     var recipientId = uuidv4();
     db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
