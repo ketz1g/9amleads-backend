@@ -8273,31 +8273,31 @@ function syncCustomers(product) {
             var apifyKey = process.env.APIFY_API_KEY || '';
             leads = await rmScraper.collectMovingLeads();
             if (leads && leads.length > 0) {
-              // Freshness: prefer New/For Sale listings listed within 24h, fall back to
-              // 24-48h. Exclude older listings and statuses like "Reduced" that aren't
-              // genuinely fresh — customers want new opportunities, not stale ones.
-              var rmFresh24 = filterFresh(leads, 'firstVisibleDate');
-              var rmFreshUpdate = filterFresh(leads, 'updateDate');
-              var freshPool = rmFresh24.fresh;
-              var fallbackPool = rmFresh24.fallback;
-              if (freshPool.length === 0 && fallbackPool.length === 0) {
-                freshPool = rmFreshUpdate.fresh;
-                fallbackPool = rmFreshUpdate.fallback;
-              }
-              // Prefer genuinely NEW / For Sale statuses within the window
+              // Keep ALL live on-market listings — they are all real, current
+              // properties. Prefer recently-updated first but do NOT discard
+              // older ones (that was causing too few leads). Customers want a
+              // full selection of genuine moving opportunities in their areas.
+              // Still prefer genuinely NEW statuses at the top.
               function isDesiredStatus(l) {
                 var s = (l.listingStatus || l.status || '').toLowerCase();
                 return s === 'new' || s === 'available' || s === 'for sale' || s === 'sstc' || s === 'sold' || s === '' || s.indexOf('new') !== -1 || s.indexOf('available') !== -1;
               }
-              freshPool = freshPool.filter(isDesiredStatus);
-              fallbackPool = fallbackPool.filter(isDesiredStatus);
-              var usedPool = freshPool;
-              if (usedPool.length === 0) usedPool = fallbackPool;
-              if (usedPool.length === 0) usedPool = freshPool.concat(fallbackPool);
-              // Sort newest first, cap to keep the pool representative but fresh
+              var rmFresh24 = filterFresh(leads, 'firstVisibleDate');
+              var rmFreshUpdate = filterFresh(leads, 'updateDate');
+              var desiredLeads = leads.filter(isDesiredStatus);
+              // Order: fresh-24h first, then 24-48h, then the rest (all kept)
+              var freshPool = rmFresh24.fresh.filter(isDesiredStatus);
+              var fallbackPool = rmFresh24.fallback.filter(isDesiredStatus);
+              var otherPool = desiredLeads.filter(function(l) {
+                var fd = l.firstVisibleDate || l.updateDate || '';
+                return freshPool.indexOf(l) === -1 && fallbackPool.indexOf(l) === -1;
+              });
+              var usedPool = freshPool.concat(fallbackPool, otherPool);
+              // Sort newest first for a sensible ordering
               usedPool.sort(function(a, b) { return (b.firstVisibleDate || b.updateDate || '').localeCompare(a.firstVisibleDate || a.updateDate || ''); });
-              leads = usedPool;
-              console.log('[SCRAPER] Rightmove: ' + rmFresh24.fresh.length + ' new<24h, ' + rmFresh24.fallback.length + ' 24-48h, ' + (leads.length - rmFresh24.fresh.length - rmFresh24.fallback.length) + ' older, using ' + leads.length + ' fresh/desired');
+              // Cap at a generous pool (all genuinely on-market properties)
+              leads = usedPool.slice(0, 2000);
+              console.log('[SCRAPER] Rightmove: ' + freshPool.length + ' new<24h, ' + fallbackPool.length + ' 24-48h, ' + otherPool.length + ' older, using ' + leads.length + ' live listings');
             }
             // Apify supplement disabled - actor was blocked. Free scraper expanded to 13 regions x 4-20 pages.
             if (false && apifyKey) {
