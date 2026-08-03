@@ -196,9 +196,27 @@ function genLetterAI(){
       var text=d[key]||'';
       if(!text){for(var k in d){if(typeof d[k]==='string'&&d[k].length>20&&k!=='input'){text=d[k];break;}}}
       if(text){
-        // Keep placeholders readable
-        text=text.replace(/\[Your Name\]/g,'[name]').replace(/\[Name\]/g,'[name]').replace(/\[Your Company\]/g,'[Your Company]').replace(/\[Your Address\]/g,'[address]').replace(/\[Your Contact\]/g,'');
-        document.getElementById('t-content').value=text.trim();
+        // Strip formal-letter scaffolding placeholders so the printed cover
+        // letter is clean. Keep only [name] and [address] which we auto-fill.
+        text=text
+          .replace(/^[=\-\s]*(PROFESSIONAL|PROFESSIONAL LETTER)\s*[=\-]*\s*$/gim,'')
+          .split('\n').filter(function(line){
+            var l=line.trim();
+            if(!l)return true;
+            if(/^\[(Your )?(Name|Position|Title|Address|Contact|Company|Phone|Email|Website|Date|Postcode)\]$/i.test(l))return false;
+            if(/^\[Recipient(?:'s)? (Name|Position|Title|Company|Address|Contact)\]$/i.test(l))return false;
+            if(/^\[Date\]$/i.test(l))return false;
+            return true;
+          }).join('\n')
+          .replace(/\[Your Company\]/g,'[Your Company]')
+          .replace(/\[Your Name\]/g,'[name]')
+          .replace(/\[Name\]/g,'[name]')
+          .replace(/\[Your Address\]/g,'[address]')
+          .replace(/\[Your Contact\]/g,'')
+          .replace(/\[Recipient's Name\]/g,'[name]')
+          .replace(/\n{3,}/g,'\n\n')
+          .trim();
+        document.getElementById('t-content').value=text;
         statusEl.innerHTML='<i class="fas fa-check" style="color:var(--success)"></i> Cover letter generated — review, edit, then click Save Cover Letter.';
         statusEl.style.color='var(--success)';
       } else {
