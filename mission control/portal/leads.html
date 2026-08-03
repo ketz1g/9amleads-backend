@@ -176,8 +176,8 @@ function mailBtn(leadId){
   return '<button onclick="sendPrintPost(\''+leadId+'\')" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:6px 12px;border-radius:6px;background:#fff;border:1px solid var(--accent);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--ff-b);transition:.2s" onmouseover="this.style.background=var(--accent);this.style.color=\'#fff\';this.style.borderColor=var(--accent)" onmouseout="this.style.background=\'#fff\';this.style.color=var(--accent);this.style.borderColor=var(--accent)"><i class="fas fa-mail-bulk"></i> Print &amp; Post</button>';
 }
 function sendPrintPost(leadId){
-  if(!confirm('Send this lead a printed letter (99p) or flyer? You\'ll pay via secure checkout.'))return;
-  var type=prompt('Choose item: letter (99p), flyer (£1.50), or pack (£2.25). Type: letter / flyer / pack','letter');
+  if(!confirm('Send this lead a printed letter (£1.49) or flyer (£1.99)? You\'ll pay via secure checkout.'))return;
+  var type=prompt('Choose item: letter (£1.49), flyer (£1.99), or pack (£2.99). Type: letter / flyer / pack','letter');
   var mailType=type==='flyer'?'flyer_a5':type==='pack'?'flyer_plus_letter':'letter_a4';
   var btn=event.target.closest('button');if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>...';}
   var x=new XMLHttpRequest();
