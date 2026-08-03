@@ -6918,6 +6918,7 @@ app.get('/api/direct-mail/templates', authMiddleware, (req, res) => {
     // Optionally include material previews
     var expanded = templates.map(function(t) {
       var result = { id: t.id, name: t.name, description: t.description, template_type: t.template_type, business_type: t.business_type, status: t.status, created_at: t.created_at, updated_at: t.updated_at, last_used_at: t.last_used_at };
+      if (req.query.include_content === '1') result.ai_generated_text = t.ai_generated_text || '';
       result.flyer_front = null; result.flyer_back = null; result.letter = null;
       if (req.query.include_materials === '1') {
         if (t.flyer_front_material_id) { var m = db.prepare('SELECT id,name,type,file_type,file_size,created_at FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(t.flyer_front_material_id, req.user.id); if (m) result.flyer_front = { id: m.id, name: m.name, file_type: m.file_type }; }
