@@ -587,23 +587,35 @@ class MockDirectMailProvider extends DirectMailProvider {
 
 // ===== STANNP PROVIDER =====
 var STANNP_API_KEY = process.env.STANNP_API_KEY || '';
-var STANNP_BASE_URL = process.env.STANNP_BASE_URL || 'https://api.stannp.com/v1';
+var STANNP_BASE_URL = process.env.STANNP_BASE_URL || 'https://api-eu1.stannp.com/v1';
 var STANNP_WEBHOOK_SECRET = process.env.STANNP_WEBHOOK_SECRET || '';
 
 class StannpProvider extends DirectMailProvider {
   constructor() { super(); this.name = 'stannp'; }
 
-  stannpRequest(endpoint, params) {
+  stannpRequest(endpoint, params, method) {
     return new Promise(function(resolve, reject) {
       if (!STANNP_API_KEY) return reject(new Error('STANNP_API_KEY not configured'));
       const https = require('https');
-      var bodyData = Object.assign({ api_key: STANNP_API_KEY }, params || {});
+      var bodyData = Object.assign({}, params || {});
       var encoded = Object.keys(bodyData).map(function(k) { return encodeURIComponent(k) + '=' + encodeURIComponent(bodyData[k]); }).join('&');
       var url = STANNP_BASE_URL.replace(/\/+$/, '') + '/' + endpoint.replace(/^\/+/, '');
       var parsed = new URL(url);
+      var httpMethod = method || 'POST';
+      var headers = {
+        'Authorization': 'Basic ' + Buffer.from(STANNP_API_KEY + ':').toString('base64'),
+        'Content-Type': 'application/x-www-form-urlencoded'
+      };
+      if (httpMethod === 'GET') {
+        // For GET requests with a query string, append to path
+        if (encoded) parsed.search = (parsed.search ? parsed.search + '&' : '?') + encoded;
+        headers['Content-Length'] = 0;
+      } else {
+        headers['Content-Length'] = Buffer.byteLength(encoded);
+      }
       var req = https.request({
-        hostname: parsed.hostname, path: parsed.pathname, method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(encoded) }
+        hostname: parsed.hostname, path: parsed.pathname + (parsed.search || ''), method: httpMethod,
+        headers: headers
       }, function(r) {
         var b = ''; r.on('data', function(c) { b += c; });
         r.on('end', function() {
@@ -615,7 +627,7 @@ class StannpProvider extends DirectMailProvider {
         });
       });
       req.on('error', function(e) { reject(new Error('Stannp request failed: ' + (e && e.message || ''))); });
-      req.write(encoded);
+      if (httpMethod !== 'GET') req.write(encoded);
       req.end();
     });
   }
@@ -637,13 +649,14 @@ class StannpProvider extends DirectMailProvider {
   }
 
   async createCampaign(campaignData) {
-    var params = { name: campaignData.name || 'Direct Mail Campaign', type: 'campaign' };
-    if (campaignData.description) params.description = campaignData.description;
-    var result = await this.stannpRequest('/campaigns/create', params);
-    if (result.success && result.data && result.data.id) {
-      return { success: true, provider_campaign_id: String(result.data.id), message: 'Campaign created with Stannp', status: 'accepted', raw: result };
+    // Stannp's new API sends single items directly via /letters/create or /postcards/create.
+    // We treat each recipient as its own mailpiece (simplest, matches one-click per-lead sends).
+    var params = { name: campaignData.name || 'Direct Mail Campaign' };
+    var result = await this.stannpRequest('/groups/new', params);
+    if (result.success && result.data) {
+      return { success: true, provider_campaign_id: String(result.data), message: 'Stannp group created', status: 'accepted', raw: result };
     }
-    return { success: false, error: result.error || 'Failed to create Stannp campaign', raw: result };
+    return { success: false, error: result.error || 'Failed to create Stannp group', raw: result };
   }
 
   async uploadArtwork(campaignId, files) {
@@ -652,21 +665,60 @@ class StannpProvider extends DirectMailProvider {
     for (var fi = 0; fi < files.length; fi++) {
       var f = files[fi];
       if (f.file_data) {
-        // Base64 file - send to Stannp
-        var result = await this.stannpRequest('/artwork/upload', { file: f.file_data, filename: f.name || 'artwork.pdf', campaign_id: campaignId });
-        results.push({ name: f.name, status: result.success ? 'uploaded' : 'failed', error: result.error || null });
+        var result = await this.stannpRequest('/files/upload', { file: f.file_data });
+        results.push({ name: f.name, status: result.success ? 'uploaded' : 'failed', error: result.error || null, id: result.data ? result.data.id : '' });
       }
     }
     return { success: true, files: results.length, uploaded: results };
   }
 
   async sendCampaign(providerCampaignId) {
-    var result = await this.stannpRequest('/campaigns/send', { campaign_id: providerCampaignId });
-    if (result.success) {
-      var status = result.data && result.data.status ? result.data.status : 'processing';
-      return { success: true, provider_campaign_id: providerCampaignId, status: status, message: 'Campaign sent to Stannp for processing', raw: result };
+    // For the new API, mailpieces are created via /letters/create or /postcards/create.
+    // We return success here; the actual send happens in sendMailpiece().
+    return { success: true, provider_campaign_id: providerCampaignId, status: 'processing', message: 'Campaign queued for Stannp' };
+  }
+
+  // Send a SINGLE mailpiece directly to Stannp (new API).
+  // mailType: 'letter' | 'flyer' | 'flyer_plus_letter'
+  // files: [{ name, file_data }] — artwork (flyer front/back / letter PDF)
+  // recipient: { name, company, address_line1, city, postcode, country }
+  async sendMailpiece(mailType, recipient, files) {
+    var rcpt = {
+      'recipient[firstname]': (recipient.name || '').split(' ')[0] || '',
+      'recipient[lastname]': (recipient.name || '').split(' ').slice(1).join(' ') || '',
+      'recipient[company]': recipient.company || '',
+      'recipient[address1]': recipient.address_line1 || '',
+      'recipient[address2]': recipient.address2 || '',
+      'recipient[city]': recipient.city || '',
+      'recipient[postcode]': recipient.postcode || '',
+      'recipient[country]': 'GB'
+    };
+    var addons = 'FIRST_CLASS';
+    if (mailType === 'letter' || mailType === 'letter_a4') {
+      var letterParams = Object.assign({}, rcpt, { tags: '9amleads', addons: addons });
+      // Attach letter PDF if provided
+      var letterFile = (files || []).find(function(f) { return /letter/i.test(f.name || ''); });
+      if (letterFile) letterParams.file = letterFile.file_data;
+      else letterParams.pages = (recipient.pages || 'Dear ' + (recipient.name || 'Homeowner') + ',<br><br>Thank you for your time. We would love to help you.<br><br>[Your Company]');
+      var res = await this.stannpRequest('/letters/create', letterParams);
+      if (res.success && res.data && res.data.id) {
+        return { success: true, provider_campaign_id: String(res.data.id), cost: res.data.cost, status: res.data.status || 'processing', message: 'Letter sent to Stannp', raw: res };
+      }
+      return { success: false, error: res.error || 'Failed to create letter', raw: res };
+    } else {
+      // Flyer / postcard
+      var front = (files || []).find(function(f) { return /flyer_front|front/i.test(f.name || ''); });
+      var back = (files || []).find(function(f) { return /flyer_back|back/i.test(f.name || ''); });
+      var postcardParams = Object.assign({}, rcpt, { size: 'A5', tags: '9amleads', addons: addons });
+      if (front) postcardParams.front = front.file_data;
+      if (back) postcardParams.back = back.file_data;
+      if (!front && !back) postcardParams.message = (recipient.pages || 'We would love to help you! [Your Company]');
+      var res2 = await this.stannpRequest('/postcards/create', postcardParams);
+      if (res2.success && res2.data && res2.data.id) {
+        return { success: true, provider_campaign_id: String(res2.data.id), cost: res2.data.cost, status: res2.data.status || 'processing', message: 'Postcard sent to Stannp', raw: res2 };
+      }
+      return { success: false, error: res2.error || 'Failed to create postcard', raw: res2 };
     }
-    return { success: false, error: result.error || 'Failed to send campaign via Stannp', raw: result };
   }
 
   async addRecipients(campaignId, recipients) {
@@ -674,15 +726,16 @@ class StannpProvider extends DirectMailProvider {
     var added = 0, failed = 0, errors = [];
     for (var i = 0; i < recipients.length; i++) {
       var r = recipients[i];
-      var result = await this.stannpRequest('/campaigns/recipients/create', {
-        campaign_id: campaignId,
-        name: r.name || 'Homeowner',
-        company: r.company || '',
-        address1: r.address_line1 || '',
-        city: r.city || '',
-        postcode: r.postcode || '',
-        country: r.country || 'United Kingdom'
-      });
+      var params = {
+        'recipient[firstname]': (r.name || '').split(' ')[0] || '',
+        'recipient[lastname]': (r.name || '').split(' ').slice(1).join(' ') || '',
+        'recipient[company]': r.company || '',
+        'recipient[address1]': r.address_line1 || '',
+        'recipient[city]': r.city || '',
+        'recipient[postcode]': r.postcode || '',
+        'recipient[country]': 'GB'
+      };
+      var result = await this.stannpRequest('/recipients/new', params);
       if (result.success) { added++; }
       else { failed++; if (errors.length < 3) errors.push(result.error || 'Recipient failed'); }
     }
@@ -6994,14 +7047,7 @@ async function sendDmCampaign(campaignId, customerId) {
   var recipientCount = validAddresses.length;
   if (recipientCount === 0) return { success: false, error: 'No valid postal addresses in this campaign.' };
 
-  // 2. Create campaign with provider
-  var campaignResult = await provider.createCampaign({ name: campaign.name, recipient_count: recipientCount, description: campaign.description });
-  if (!campaignResult || !campaignResult.success) {
-    return { success: false, error: (campaignResult && campaignResult.error) || 'Provider rejected campaign' };
-  }
-  var providerCampaignId = campaignResult.provider_campaign_id;
-
-  // 3. Upload artwork (flyer front/back/letter) from template materials if any
+  // Load artwork (flyer front/back/letter) from template materials if any
   var template = null;
   if (campaign.template_id) { template = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(campaign.template_id, customerId); }
   var materialIds = [];
@@ -7015,6 +7061,48 @@ async function sendDmCampaign(campaignId, customerId) {
     var mat = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(materialIds[mi], customerId);
     if (mat && mat.file_data) files.push({ name: mat.name || 'artwork.' + (mat.file_type === 'pdf' ? 'pdf' : 'png'), file_data: mat.file_data });
   }
+  var mailType = campaign.notes === 'One-click send from My Leads' ? 'letter' : 'letter';
+
+  // STANNP path: send each valid recipient as its own mailpiece via the new API.
+  if (provider.name === 'stannp') {
+    var sentIds = [];
+    var failedIds = [];
+    var errors = [];
+    for (var si = 0; si < validAddresses.length; si++) {
+      var rcpt = validAddresses[si].original;
+      var pieceFiles = files;
+      if (!pieceFiles.length) {
+        pieceFiles = [{ name: 'letter.pdf', file_data: '' }];
+      }
+      var pieceResult = await provider.sendMailpiece(mailType, rcpt, pieceFiles);
+      if (pieceResult && pieceResult.success) {
+        sentIds.push(pieceResult.provider_campaign_id);
+      } else {
+        failedIds.push(rcpt.lead_id);
+        if (errors.length < 3) errors.push((pieceResult && pieceResult.error) || 'Send failed');
+      }
+    }
+    var providerCampaignId = sentIds.length ? sentIds.join(',') : '';
+    if (sentIds.length === 0) {
+      db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, customerId);
+      db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaign.id, provider.name, 'sendMailpiece', JSON.stringify({ mailType: mailType, recipients: recipientCount }), JSON.stringify({ success: false, errors: errors }), 500, 0, errors.join(' | '), new Date().toISOString());
+      return { success: false, error: errors.join(' | ') || 'Stannp send failed' };
+    }
+    db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, provider_status = ?, sent_count = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('sent_to_provider', provider.name, providerCampaignId, 'processing', sentIds.length, new Date().toISOString(), campaign.id, customerId);
+    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaign.id, campaign.status, 'sent_to_provider', 'system', 'Sent to provider: ' + provider.name + ' (IDs: ' + providerCampaignId.substring(0, 60) + ') · Items: ' + sentIds.length, new Date().toISOString());
+    db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaign.id, provider.name, 'sendMailpiece', JSON.stringify({ mailType: mailType, recipients: recipientCount, files: files.length }), JSON.stringify({ success: true, ids: sentIds, failures: failedIds.length }), 200, 1, failedIds.length ? (failedIds.length + ' recipients failed') : '', new Date().toISOString());
+    return { success: true, provider: provider.name, provider_campaign_id: providerCampaignId, recipient_count: sentIds.length, message: 'Sent ' + sentIds.length + ' item(s) to Stannp for printing' };
+  }
+
+  // MOCK / legacy campaign path
+  // 2. Create campaign with provider
+  var campaignResult = await provider.createCampaign({ name: campaign.name, recipient_count: recipientCount, description: campaign.description });
+  if (!campaignResult || !campaignResult.success) {
+    return { success: false, error: (campaignResult && campaignResult.error) || 'Provider rejected campaign' };
+  }
+  var providerCampaignId = campaignResult.provider_campaign_id;
+
+  // 3. Upload artwork (flyer front/back/letter) from template materials if any
   var artworkResult = await provider.uploadArtwork(providerCampaignId, files);
 
   // 4. Add recipients to provider campaign
