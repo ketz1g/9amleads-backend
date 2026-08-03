@@ -3951,8 +3951,8 @@ cron.schedule('33 2 * * *', async () => {
 // Delivery runs Mon-Fri at 09:00 UK time (handles BST/GMT automatically via timezone).
 var __deliveryFireCount = 0;
 var __lastDeliveryFire = '';
-// ===== DELIVERY CRON: Mon-Fri 09:00 UK ===== (timezone: Europe/London)
-cron.schedule('0 9 * * 1-5', async () => {
+// ===== DELIVERY CRON: TEST 11:30 UK today ===== (timezone: Europe/London)
+cron.schedule('30 11 * * *', async () => {
   __deliveryFireCount++;
   __lastDeliveryFire = new Date().toISOString();
   console.log('[09:00 UK] Running delivery...');
