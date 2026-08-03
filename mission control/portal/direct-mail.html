@@ -76,9 +76,21 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div><label class="label">Template Name</label><input class="input" id="t-name" placeholder="e.g. My Introduction Letter"></div>
 <div><label class="label">Type</label><select class="input" id="t-type"><option value="letter">Letter</option><option value="flyer">Flyer (A5)</option><option value="postcard">Postcard</option></select></div>
 </div>
-<div style="margin-top:12px"><label class="label">Content</label><textarea class="input" id="t-content" rows="8" placeholder="Dear [name],&#10;&#10;We are your local removal specialists...&#10;&#10;[Your Company]"></textarea></div>
+<div style="margin-top:12px"><label class="label">Content (or use the AI tools to generate it)</label><textarea class="input" id="t-content" rows="6" placeholder="Dear [name],&#10;&#10;We are your local removal specialists...&#10;&#10;[Your Company]"></textarea></div>
 <div style="margin-top:8px;font-size:11px;color:var(--muted)">Tip: use [name] and [address] placeholders which are filled with each lead's details.</div>
 <button class="btn btn-primary" onclick="saveTemplate()" style="margin-top:12px"><i class="fas fa-save"></i> Save Template</button>
+
+<!-- Upload Materials -->
+<div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+<div class="sect-title"><i class="fas fa-upload" style="color:var(--accent)"></i> Upload Your Own Materials (PDF / PNG / JPG)</div>
+<div class="grid-3">
+<div><label class="label">Flyer Front</label><input type="file" class="input" id="up-flyer-front" accept=".pdf,.png,.jpg,.jpeg"></div>
+<div><label class="label">Flyer Back</label><input type="file" class="input" id="up-flyer-back" accept=".pdf,.png,.jpg,.jpeg"></div>
+<div><label class="label">Cover Letter</label><input type="file" class="input" id="up-letter" accept=".pdf,.png,.jpg,.jpeg"></div>
+</div>
+<button class="btn btn-outline" onclick="uploadMaterials()" style="margin-top:10px"><i class="fas fa-upload"></i> Upload Files</button>
+<div id="materials-list" style="margin-top:12px"></div>
+</div>
 <div id="templates-list" style="margin-top:14px"></div>
 </div>
 
@@ -176,6 +188,44 @@ function loadTemplates(){
   });
 }
 
+function readFileAsBase64(file, cb){
+  var reader=new FileReader();
+  reader.onload=function(e){cb(e.target.result.split(',')[1]||'');};
+  reader.readAsDataURL(file);
+}
+function uploadFile(inputId,type,next){
+  var input=document.getElementById(inputId);
+  if(!input.files||!input.files[0]){next();return;}
+  var file=input.files[0];
+  readFileAsBase64(file,function(data){
+    api('POST','/api/direct-mail/materials',{name:file.name,type:type,file_data:data},function(err,d){
+      toast(d&&d.success?(type+' uploaded'):('Upload '+type+' error'));
+      next();
+    });
+  });
+}
+function uploadMaterials(){
+  toast('Uploading materials...');
+  uploadFile('up-flyer-front','flyer_front',function(){
+    uploadFile('up-flyer-back','flyer_back',function(){
+      uploadFile('up-letter','letter',function(){
+        toast('Materials uploaded');
+        loadMaterials();
+      });
+    });
+  });
+}
+function loadMaterials(){
+  api('GET','/api/direct-mail/materials',null,function(err,d){
+    var mats=(d&&d.materials)||[];
+    var list=document.getElementById('materials-list');
+    var html='';
+    mats.forEach(function(m){
+      html+='<div class="recipient"><div><div class="addr">'+m.name+'</div><div class="meta">'+m.type+' · '+m.file_type+'</div></div><span class="tag">Uploaded</span></div>';
+    });
+    list.innerHTML=html||'<div class="empty" style="padding:15px"><i class="fas fa-upload"></i>No materials uploaded yet</div>';
+  });
+}
 function loadLeads(){
   api('GET','/api/leads',null,function(err,d){
     var leads=Array.isArray(d)?d:[];
