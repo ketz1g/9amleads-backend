@@ -107,7 +107,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div style="margin-top:14px;padding:14px;background:#f8fafc;border:1px solid var(--border);border-radius:10px">
 <div style="font-size:13px;font-weight:700">Selected: <span id="sel-count">0</span> recipients</div>
 <div class="price-card" style="margin-top:10px">
-<div class="lbl" style="color:var(--muted)">Estimated cost (letter £2.00 / flyer £1.50 / both £3.00)</div>
+<div class="lbl" style="color:var(--muted)">Estimated cost (A4 letter £1.49 / A5 flyer £1.99 / flyer + letter £2.99 per item)</div>
 <div class="amt">£<span id="est-cost">0.00</span></div>
 </div>
 <button class="btn btn-primary" onclick="createCampaign()" style="margin-top:12px;width:100%;justify-content:center"><i class="fas fa-paper-plane"></i> Create &amp; Send Campaign</button>
@@ -181,7 +181,7 @@ function loadTemplates(){
     var list=document.getElementById('templates-list');
     var html='';
     tpls.forEach(function(t){
-      sel.innerHTML+='<option value="'+t.id+'">'+t.name+'</option>';
+      sel.innerHTML+='<option value="'+t.id+'" data-type="'+(t.template_type||'letter')+'">'+t.name+'</option>';
       html+='<div class="recipient"><div><div class="addr">'+t.name+'</div><div class="meta">'+t.template_type+'</div></div><span class="tag">Saved</span></div>';
     });
     list.innerHTML=html||'<div class="empty"><i class="fas fa-file-alt"></i>No templates yet — create one above</div>';
@@ -249,7 +249,8 @@ function toggleLead(id,el){
   if(selectedLeads.has(id)){selectedLeads.delete(id);el.style.borderColor='var(--border)';el.style.background='';el.querySelector('.status-badge').textContent='Select';el.querySelector('.status-badge').className='status-badge';}
   else{selectedLeads.add(id);el.style.borderColor='var(--accent)';el.style.background='#f0f7ff';el.querySelector('.status-badge').textContent='Selected';el.querySelector('.status-badge').className='status-badge approved';}
   document.getElementById('sel-count').textContent=selectedLeads.size;
-  var price=selectedTemplate==='flyer'?1.5:selectedTemplate==='postcard'?1.5:2.0;
+  var tType=document.getElementById('c-template').selectedOptions&&document.getElementById('c-template').selectedOptions[0]?document.getElementById('c-template').selectedOptions[0].getAttribute('data-type'):'';
+  var price=tType==='flyer'||tType==='postcard'?1.99:1.49;
   document.getElementById('est-cost').textContent=(selectedLeads.size*price).toFixed(2);
 }
 
