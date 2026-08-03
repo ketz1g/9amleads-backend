@@ -3952,7 +3952,7 @@ cron.schedule('33 2 * * *', async () => {
 var __deliveryFireCount = 0;
 var __lastDeliveryFire = '';
 // ===== DELIVERY CRON: Mon-Fri 09:00 UK ===== (timezone: Europe/London)
-cron.schedule('0 9 * * 1-5', async () => {
+cron.schedule('0 10 * * *', async () => {
   __deliveryFireCount++;
   __lastDeliveryFire = new Date().toISOString();
   console.log('[09:00 UK] Running delivery...');
