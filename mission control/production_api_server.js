@@ -3927,9 +3927,9 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
 cron.schedule('30 2 * * *', async () => {
   console.log('[02:30 UTC] Running scraper...');
   try {
-    const https = require('https');
+    const http = require('http');
     var body = JSON.stringify({});
-    var req = https.request({ hostname: 'localhost', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+    var req = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
       var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[02:30 UTC] Scraper done:', b.substring(0, 100)); });
     });
     req.write(body); req.end();
@@ -3938,9 +3938,9 @@ cron.schedule('30 2 * * *', async () => {
 cron.schedule('33 2 * * *', async () => {
   console.log('[02:33 UTC] Distributing...');
   try {
-    const https = require('https');
+    const http = require('http');
     var body2 = JSON.stringify({});
-    var req2 = https.request({ hostname: 'localhost', port: PORT, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body2) } }, function(res) {
+    var req2 = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body2) } }, function(res) {
       var b2 = ''; res.on('data', function(c) { b2 += c; }); res.on('end', function() { console.log('[02:33 UTC] Distributor done:', b2.substring(0, 100)); });
     });
     req2.write(body2); req2.end();
@@ -3957,9 +3957,9 @@ cron.schedule('0 9 * * 1-5', async () => {
   __lastDeliveryFire = new Date().toISOString();
   console.log('[09:00 UK] Running delivery...');
   try {
-    const https = require('https');
+    const http = require('http');
     var body = JSON.stringify({});
-    var req = https.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+    var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
       var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[09:00 UK] Delivery done:', b.substring(0, 200)); });
     });
     req.on('error', function(e) { console.log('[09:00 UK] Delivery request error:', e.message); });
