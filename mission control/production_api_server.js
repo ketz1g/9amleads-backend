@@ -6606,10 +6606,11 @@ app.get('/api/campaigns', authMiddleware, (req, res) => {
 // ===== PRINT & POST PRICING =====
 // Your markup is added on top of Stannp's print+post costs
 var PRINT_POST_PRICES = {
-  // Per-item prices charged to customer (GBP)
+  // Per-item prices charged to customer (GBP). A letter is cheaper than a
+  // flyer — it's a simple A4 page, whereas a flyer is designed colour.
   flyer_a5: { label: 'A5 Flyer', customer: 1.50, stannp: 0.55 },
-  letter_a4: { label: 'A4 Letter', customer: 2.00, stannp: 0.85 },
-  flyer_plus_letter: { label: 'A5 Flyer + A4 Letter', customer: 3.00, stannp: 1.20 },
+  letter_a4: { label: 'A4 Letter', customer: 0.99, stannp: 0.45 },
+  flyer_plus_letter: { label: 'A5 Flyer + A4 Letter', customer: 2.25, stannp: 0.95 },
   // Postage included in above prices
   markup_percent: function(item) { return Math.round((this[item].customer - this[item].stannp) / this[item].stannp * 100); }
 };
@@ -6619,9 +6620,9 @@ app.get('/api/direct-mail/pricing', (req, res) => {
   res.json({
     success: true,
     prices: [
+      { id: 'letter_a4', label: 'A4 Letter (printed & posted)', price: 0.99, unit: 'per item' },
       { id: 'flyer_a5', label: 'A5 Flyer (printed & posted)', price: 1.50, unit: 'per item' },
-      { id: 'letter_a4', label: 'A4 Letter (printed & posted)', price: 2.00, unit: 'per item' },
-      { id: 'flyer_plus_letter', label: 'A5 Flyer + A4 Letter (printed & posted)', price: 3.00, unit: 'per item' }
+      { id: 'flyer_plus_letter', label: 'A5 Flyer + A4 Letter (printed & posted)', price: 2.25, unit: 'per item' }
     ],
     info: 'Prices include full colour printing, folding, and First Class postage. No hidden fees. You only pay for what gets sent — cancelled leads cost nothing.'
   });
@@ -7320,6 +7321,70 @@ app.get('/api/direct-mail/leads', authMiddleware, (req, res) => {
       invalid_address: invalidCount,
       already_mailed: alreadyInCampaign.length
     });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/send-lead — ONE-CLICK print & post a single lead.
+// Creates a campaign, adds the lead as recipient, and returns a Stripe checkout
+// URL so the customer can pay and have it printed + posted immediately.
+app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
+  try {
+    var lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(req.body.lead_id, req.user.id);
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    var template = req.body.template_id || '';
+    var mailType = req.body.mail_type || 'letter'; // letter | flyer | flyer_plus_letter
+    var parsed = {};
+    try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
+    var addrLine1 = parsed.address_line1 || parsed.address || parsed.street || '';
+    var city = parsed.city || parsed.town || '';
+    var postcode = parsed.postcode || '';
+    var name = parsed.company || parsed.name || parsed.address || 'Homeowner';
+    if (!addrLine1 || !postcode) return res.status(400).json({ error: 'This lead does not have a complete postal address yet.' });
+
+    // Check if this lead was already mailed recently
+    var already = db.prepare('SELECT * FROM direct_mail_recipients WHERE customer_id = ? AND lead_id = ? AND created_at > datetime(\'now\', \'-7 days\')').get(req.user.id, lead.id);
+    if (already) return res.status(409).json({ error: 'This lead was already sent in the last 7 days.' });
+
+    // Create campaign
+    var campaignId = uuidv4();
+    var price = PRINT_POST_PRICES[mailType] ? PRINT_POST_PRICES[mailType].customer : PRINT_POST_PRICES.letter_a4.customer;
+    var nowIso = new Date().toISOString();
+    db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+      .run(campaignId, req.user.id, 'Print & Post: ' + name.substring(0,40), mailType, 'approved', template, '', 1, 0, new Date(Date.now()+86400000).toISOString().split('T')[0], price, 'One-click send from My Leads', '', '', '', '', '', '', nowIso, nowIso);
+    // Add recipient
+    var recipientId = uuidv4();
+    db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
+      .run(recipientId, req.user.id, campaignId, name, parsed.company || '', addrLine1, parsed.address_line2 || '', city, postcode, 'United Kingdom', lead.id, 'pending', nowIso);
+    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, campaignId, '', 'approved', 'customer', 'One-click print & post created', nowIso);
+
+    // Create Stripe checkout for this campaign
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    var amountPence = Math.round(price * 100);
+    var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    var sessionBody = {
+      mode: 'payment',
+      customer_email: customer.email,
+      'line_items[0][price_data][currency]': 'gbp',
+      'line_items[0][price_data][product_data][name]': 'Print & Post: ' + (PRINT_POST_PRICES[mailType] ? PRINT_POST_PRICES[mailType].label : 'A4 Letter'),
+      'line_items[0][price_data][product_data][description]': name.substring(0, 60) + ' · ' + addrLine1.substring(0, 50) + ' · ' + postcode,
+      'line_items[0][price_data][unit_amount]': String(amountPence),
+      'line_items[0][quantity]': '1',
+      success_url: baseUrl + '/portal/dashboard.html?dm_payment=success&campaign_id=' + campaignId,
+      cancel_url: baseUrl + '/portal/dashboard.html?dm_payment=cancel&campaign_id=' + campaignId,
+      'metadata[customer_id]': customer.id,
+      'metadata[campaign_id]': campaignId,
+      'metadata[type]': 'direct_mail_campaign',
+      'metadata[recipient_count]': '1',
+      'metadata[total_amount]': String(amountPence)
+    };
+    var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
+    if (session.url) {
+      db.prepare('UPDATE direct_mail_campaigns SET stripe_session_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ?').run(session.id, 'pending', nowIso, campaignId);
+      res.json({ success: true, campaign_id: campaignId, checkout_url: session.url, price: price, mail_type: mailType });
+    } else {
+      res.status(400).json({ error: session.error?.message || 'Checkout creation failed' });
+    }
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
