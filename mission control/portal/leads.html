@@ -32,10 +32,27 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 .lead .price{font-weight:700;font-size:14px;color:var(--text)}
 .lead .right{text-align:right}
 .badge{padding:3px 10px;border-radius:5px;font-size:9px;font-weight:700;background:rgba(34,197,94,.08);color:var(--success);white-space:nowrap}
+.mail-btn{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:7px 14px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#2563eb);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--ff-b);transition:.2s;box-shadow:0 2px 8px rgba(14,165,233,.25)}
+.mail-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(14,165,233,.35)}
 .badge-sstc{background:rgba(245,158,11,.08);color:#d97706}
 .empty{text-align:center;padding:60px 20px;color:var(--text2)}
 .empty i{font-size:40px;color:var(--border);display:block;margin-bottom:10px}
 .loading{text-align:center;padding:60px;color:var(--text2);font-size:13px}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(7,9,15,.6);backdrop-filter:blur(3px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:460px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal h3{font-family:var(--ff-h);font-size:17px;font-weight:800;margin-bottom:4px}
+.modal .sub{font-size:12px;color:var(--text2);margin-bottom:16px}
+.mp-item{display:flex;align-items:center;justify-content:space-between;width:100%;padding:14px 16px;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;cursor:pointer;background:#fff;transition:.15s;text-align:left;font-family:var(--ff-b)}
+.mp-item:hover{border-color:var(--accent);background:#f0f7ff;transform:translateY(-1px)}
+.mp-item .mp-name{font-weight:700;font-size:13px;color:var(--text)}
+.mp-item .mp-desc{font-size:11px;color:var(--text2);margin-top:2px}
+.mp-item .mp-price{font-family:var(--ff-h);font-weight:900;font-size:18px;color:var(--accent);white-space:nowrap}
+.mp-addr{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--text2)}
+.mp-addr b{color:var(--text);font-weight:700}
+.mp-error{display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:10px 12px;font-size:12px;margin-top:12px}
+.mp-close{float:right;background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;line-height:1}
+.mp-foot{font-size:10px;color:var(--muted);margin-top:12px;text-align:center}
 footer{text-align:center;padding:24px 0 0;border-top:1px solid var(--border);margin-top:28px;font-size:12px;color:var(--muted)}
 footer a{color:var(--accent);text-decoration:underline}
 @media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.container{padding:20px 16px}.page-header{flex-direction:column;align-items:stretch;text-align:center}}
@@ -76,6 +93,19 @@ footer a{color:var(--accent);text-decoration:underline}
 </div>
 
 <footer><p>&copy; 2026 9amLeads &middot; <a href="/privacy.html">Privacy</a> &middot; <a href="/terms.html">Terms</a></p></footer>
+
+<!-- Print & Post Modal -->
+<div class="modal-overlay" id="mail-modal">
+<div class="modal">
+<button class="mp-close" onclick="closeMailModal()">&times;</button>
+<h3><i class="fas fa-mail-bulk" style="color:var(--accent);margin-right:6px"></i> Print &amp; Post This Lead</h3>
+<div class="sub">Choose what to send. It will be printed and delivered to:</div>
+<div class="mp-addr" id="mp-addr"></div>
+<div id="mp-items"></div>
+<div class="mp-error" id="mp-error"></div>
+<div class="mp-foot">Prices include colour printing + Royal Mail postage. You pay securely via Stripe only when sending.</div>
+</div>
+</div>
 
 <script>
 var allLeads = [];
@@ -173,25 +203,67 @@ function renderLeads(leads) {
   container.innerHTML = html;
 }
 function mailBtn(leadId){
-  return '<button onclick="sendPrintPost(\''+leadId+'\')" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:6px 12px;border-radius:6px;background:#fff;border:1px solid var(--accent);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--ff-b);transition:.2s" onmouseover="this.style.background=var(--accent);this.style.color=\'#fff\';this.style.borderColor=var(--accent)" onmouseout="this.style.background=\'#fff\';this.style.color=var(--accent);this.style.borderColor=var(--accent)"><i class="fas fa-mail-bulk"></i> Print &amp; Post</button>';
+  return '<button onclick="sendPrintPost(\''+leadId+'\')" title="Print &amp; post a letter or flyer to this lead" class="mail-btn"><i class="fas fa-mail-bulk"></i> Print &amp; Post</button>';
 }
+var _pendingLeadId='';
 function sendPrintPost(leadId){
-  if(!confirm('Send this lead a printed letter (£1.49) or flyer (£1.99)? You\'ll pay via secure checkout.'))return;
-  var type=prompt('Choose item: letter (£1.49), flyer (£1.99), or pack (£2.99). Type: letter / flyer / pack','letter');
-  var mailType=type==='flyer'?'flyer_a5':type==='pack'?'flyer_plus_letter':'letter_a4';
-  var btn=event.target.closest('button');if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>...';}
+  _pendingLeadId=leadId;
+  // Show address in the modal
+  var addr='';
+  for(var i=0;i<allLeads.length;i++){
+    if(allLeads[i].id===leadId){
+      var dd=typeof allLeads[i].data==='string'?JSON.parse(allLeads[i].data||'{}'):(allLeads[i].data||{});
+      addr=(dd.address_line1||dd.address||dd.street||dd.company||dd.deceasedAddress||'');
+      if(dd.city||dd.town)addr+=(addr?', ':'')+(dd.city||dd.town);
+      if(dd.postcode)addr+=(addr?', ':'')+dd.postcode;
+      break;
+    }
+  }
+  document.getElementById('mp-addr').innerHTML='<b>'+addr+'</b>';
+  document.getElementById('mp-error').style.display='none';
+  var items=[
+    {t:'letter_a4',n:'A4 Letter',d:'A personal introduction letter — ready to send',p:'£1.49',rec:true},
+    {t:'flyer_a5',n:'A5 Flyer',d:'Full-colour flyer (needs an uploaded design)',p:'£1.99'},
+    {t:'flyer_plus_letter',n:'Flyer + Letter',d:'Flyer with a letter inside',p:'£2.99'}
+  ];
+  var html='';
+  items.forEach(function(it){
+    html+='<button class="mp-item" onclick="doSendPrintPost(\''+it.t+'\',this)" '+(it.rec?'style="border-color:var(--accent);background:#f0f7ff"':'')+'>'+
+      '<div><div class="mp-name">'+it.n+(it.rec?' <span style="font-size:9px;font-weight:700;color:#fff;background:var(--accent);border-radius:4px;padding:1px 6px;vertical-align:middle">RECOMMENDED</span>':'')+'</div><div class="mp-desc">'+it.d+'</div></div>'+
+      '<div class="mp-price">'+it.p+'</div></button>';
+  });
+  document.getElementById('mp-items').innerHTML=html;
+  document.getElementById('mail-modal').className='modal-overlay show';
+}
+function closeMailModal(){document.getElementById('mail-modal').className='modal-overlay';_pendingLeadId='';}
+function doSendPrintPost(mailType,btn){
+  if(btn){btn.disabled=true;btn.style.opacity=.6;}
+  document.getElementById('mp-error').style.display='none';
   var x=new XMLHttpRequest();
   x.open('POST','/api/direct-mail/send-lead',true);
   x.setRequestHeader('Authorization','Bearer '+_token);
   x.setRequestHeader('Content-Type','application/json');
   x.onload=function(){
-    if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-mail-bulk"></i> Print &amp; Post';}
-    var d=JSON.parse(x.responseText);
-    if(d&&d.checkout_url){window.location.href=d.checkout_url;}
-    else alert(d&&d.error||'Could not start print & post');
+    var d={};try{d=JSON.parse(x.responseText);}catch(e){}
+    if(d&&d.checkout_url){
+      closeMailModal();
+      window.location.href=d.checkout_url;
+    } else {
+      if(btn){btn.disabled=false;btn.style.opacity=1;}
+      var errEl=document.getElementById('mp-error');
+      errEl.textContent=(d&&d.error)||'Could not start print & post. Please try again.';
+      errEl.style.display='block';
+    }
   };
-  x.send(JSON.stringify({lead_id:leadId,mail_type:mailType}));
+  x.onerror=function(){
+    if(btn){btn.disabled=false;btn.style.opacity=1;}
+    var errEl=document.getElementById('mp-error');
+    errEl.textContent='Network error. Please check your connection and try again.';
+    errEl.style.display='block';
+  };
+  x.send(JSON.stringify({lead_id:_pendingLeadId,mail_type:mailType}));
 }
+function closeOnEsc(e){if(e.key==='Escape')closeMailModal();}
 function filterLeads() {
   var q = document.getElementById('search-input').value.toLowerCase();
   var status = document.getElementById('status-filter').value.toLowerCase();
@@ -224,6 +296,7 @@ var _token = '';
   var token = sess ? sess.token : null;
   if (!token) { window.location.href = '/portal/'; return; }
   _token = token;
+  document.addEventListener('keydown', closeOnEsc);
   var x = new XMLHttpRequest();
   x.open('GET', '/api/leads', true);
   x.setRequestHeader('Authorization', 'Bearer ' + token);
