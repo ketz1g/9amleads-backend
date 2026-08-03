@@ -1,0 +1,269 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Print &amp; Post · 9amLeads</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{--accent:#0ea5e9;--bg:#f8fafc;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--text2:#64748b;--muted:#94a3b8;--success:#22c55e;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.5}
+.top{background:#fff;border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.top .logo{font-family:var(--ff-h);font-size:20px;font-weight:900;color:var(--text)}.top .logo span{color:var(--accent)}
+.top .nav{display:flex;gap:4px}.top .nav a{padding:8px 16px;font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;border-radius:6px;transition:.2s}.top .nav a:hover{color:var(--text);background:#f1f5f9}.top .nav a.active{color:var(--accent);background:#eff6ff}
+.container{max-width:1100px;margin:0 auto;padding:28px 24px}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.page-header h1{font-family:var(--ff-h);font-size:22px;font-weight:800}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;text-decoration:none;font-family:var(--ff-b);transition:.2s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-outline{background:#fff;color:var(--text2);border:1px solid var(--border)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:#dc2626;color:#fff}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.sect-title{font-family:var(--ff-h);font-size:15px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.label{font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px}
+.input,select.input,textarea.input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--ff-b);outline:none;transition:.2s;background:#fff}
+.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(14,165,233,.08)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.step{display:flex;align-items:center;gap:12px;padding:16px;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:12px}
+.step .num{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0}
+.step .num.done{background:var(--success)}
+.step.done{border-color:#bbf7d0;background:#f0fdf4}
+.price-card{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;text-align:center}
+.price-card .amt{font-family:var(--ff-h);font-size:24px;font-weight:900;color:#d97706}
+.recipient{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:6px}
+.recipient .addr{font-weight:600;font-size:13px}
+.recipient .meta{font-size:11px;color:var(--text2);margin-top:2px}
+.tag{display:inline-block;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(14,165,233,.08);color:var(--accent);margin-right:4px}
+.status-badge{padding:3px 10px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(245,158,11,.08);color:#d97706}
+.status-badge.approved{background:rgba(34,197,94,.08);color:var(--success)}
+.empty{text-align:center;padding:40px 20px;color:var(--text2)}
+.empty i{font-size:36px;color:var(--border);display:block;margin-bottom:10px}
+.hidden{display:none}
+#toast{position:fixed;bottom:24px;right:24px;background:#1e293b;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;z-index:999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+@media(max-width:768px){.grid-2,.grid-3{grid-template-columns:1fr}.container{padding:20px 16px}}
+</style></head><body>
+<div class="top">
+<div class="logo">9am<span>Leads</span></div>
+<div class="nav"><a href="/portal/dashboard.html">Dashboard</a><a href="/portal/leads.html">My Leads</a><a href="#" class="active">Print &amp; Post</a><a href="/portal/" onclick="doLogout();return false" style="color:#dc2626;font-weight:700"><i class="fas fa-sign-out-alt"></i> Logout</a></div>
+</div>
+<div class="container">
+<div class="page-header">
+<div><h1><i class="fas fa-mail-bulk" style="color:var(--accent);margin-right:6px"></i> Print &amp; Post</h1><div class="sub" style="font-size:13px;color:var(--text2);margin-top:2px">Send professionally printed letters and flyers to your leads</div></div>
+<button class="btn btn-primary" onclick="newCampaign()"><i class="fas fa-plus"></i> New Campaign</button>
+</div>
+
+<div id="toast"></div>
+
+<!-- Step 1: Business Profile -->
+<div class="card">
+<div class="sect-title"><i class="fas fa-building" style="color:var(--accent)"></i> Step 1 · Your Business Profile</div>
+<p style="font-size:12px;color:var(--text2);margin-bottom:12px">This is the sender address shown on your mailings.</p>
+<div class="grid-2">
+<div><label class="label">Company Name</label><input class="input" id="p-company" placeholder="Your company name"></div>
+<div><label class="label">Contact Name</label><input class="input" id="p-name" placeholder="Your name"></div>
+<div><label class="label">Address Line 1</label><input class="input" id="p-addr1" placeholder="Street address"></div>
+<div><label class="label">City / Town</label><input class="input" id="p-city" placeholder="City"></div>
+<div><label class="label">Postcode</label><input class="input" id="p-postcode" placeholder="e.g. NW1 7LX"></div>
+<div><label class="label">Phone</label><input class="input" id="p-phone" placeholder="Phone number"></div>
+</div>
+<button class="btn btn-primary" onclick="saveProfile()" style="margin-top:12px"><i class="fas fa-save"></i> Save Profile</button>
+</div>
+
+<!-- Step 2: Template -->
+<div class="card">
+<div class="sect-title"><i class="fas fa-file-alt" style="color:var(--accent)"></i> Step 2 · Your Template</div>
+<div class="grid-2">
+<div><label class="label">Template Name</label><input class="input" id="t-name" placeholder="e.g. My Introduction Letter"></div>
+<div><label class="label">Type</label><select class="input" id="t-type"><option value="letter">Letter</option><option value="flyer">Flyer (A5)</option><option value="postcard">Postcard</option></select></div>
+</div>
+<div style="margin-top:12px"><label class="label">Content</label><textarea class="input" id="t-content" rows="8" placeholder="Dear [name],&#10;&#10;We are your local removal specialists...&#10;&#10;[Your Company]"></textarea></div>
+<div style="margin-top:8px;font-size:11px;color:var(--muted)">Tip: use [name] and [address] placeholders which are filled with each lead's details.</div>
+<button class="btn btn-primary" onclick="saveTemplate()" style="margin-top:12px"><i class="fas fa-save"></i> Save Template</button>
+<div id="templates-list" style="margin-top:14px"></div>
+</div>
+
+<!-- Step 3: Select Recipients -->
+<div class="card">
+<div class="sect-title"><i class="fas fa-users" style="color:var(--accent)"></i> Step 3 · Select Recipients</div>
+<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Choose the leads to send your mailing to.</p>
+<div class="grid-2">
+<div><label class="label">Template</label><select class="input" id="c-template"><option value="">Select a template...</option></select></div>
+<div><label class="label">Delivery Date</label><input type="date" class="input" id="c-date"></div>
+</div>
+<button class="btn btn-primary" onclick="loadLeads()" style="margin-top:12px"><i class="fas fa-search"></i> Load My Leads</button>
+<div id="leads-list" style="margin-top:14px"></div>
+<div style="margin-top:14px;padding:14px;background:#f8fafc;border:1px solid var(--border);border-radius:10px">
+<div style="font-size:13px;font-weight:700">Selected: <span id="sel-count">0</span> recipients</div>
+<div class="price-card" style="margin-top:10px">
+<div class="lbl" style="color:var(--muted)">Estimated cost (letter £2.00 / flyer £1.50 / both £3.00)</div>
+<div class="amt">£<span id="est-cost">0.00</span></div>
+</div>
+<button class="btn btn-primary" onclick="createCampaign()" style="margin-top:12px;width:100%;justify-content:center"><i class="fas fa-paper-plane"></i> Create &amp; Send Campaign</button>
+</div>
+</div>
+
+<!-- Step 4: Campaigns -->
+<div class="card">
+<div class="sect-title"><i class="fas fa-history" style="color:var(--accent)"></i> Your Campaigns</div>
+<div id="campaigns-list"></div>
+</div>
+</div>
+
+<script>
+var _token='';
+var selectedLeads=new Set();
+var selectedTemplate='';
+var currentLeadType='moving';
+
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(function(){t.style.display='none';},3000);}
+function api(method,path,body,cb){
+  var x=new XMLHttpRequest();
+  x.open(method,path,true);
+  x.setRequestHeader('Authorization','Bearer '+_token);
+  if(body)x.setRequestHeader('Content-Type','application/json');
+  x.onload=function(){try{cb(null,JSON.parse(x.responseText));}catch(e){cb(null,x.responseText);}};
+  x.onerror=function(){cb('network');};
+  x.send(body?JSON.stringify(body):null);
+}
+function doLogout(){if(confirm('Log out?')){localStorage.removeItem('mld_portal_session');window.location.href='/portal/';}}
+
+function saveProfile(){
+  var body={
+    company:document.getElementById('p-company').value,
+    contact_name:document.getElementById('p-name').value,
+    address_line1:document.getElementById('p-addr1').value,
+    city:document.getElementById('p-city').value,
+    postcode:document.getElementById('p-postcode').value,
+    phone:document.getElementById('p-phone').value
+  };
+  api('POST','/api/direct-mail/profile',body,function(err,d){toast(d&&d.success?'Profile saved':'Profile error');if(d&&d.success)loadProfile();});
+}
+function loadProfile(){
+  api('GET','/api/direct-mail/profile',null,function(err,d){
+    if(d&&d.profile){
+      var p=d.profile;
+      document.getElementById('p-company').value=p.company||'';
+      document.getElementById('p-name').value=p.contact_name||'';
+      document.getElementById('p-addr1').value=p.address_line1||'';
+      document.getElementById('p-city').value=p.city||'';
+      document.getElementById('p-postcode').value=p.postcode||'';
+      document.getElementById('p-phone').value=p.phone||'';
+    }
+  });
+}
+
+function saveTemplate(){
+  var body={name:document.getElementById('t-name').value,type:document.getElementById('t-type').value,ai_generated_text:document.getElementById('t-content').value};
+  if(!body.name){toast('Template name required');return;}
+  api('POST','/api/direct-mail/templates',body,function(err,d){toast(d&&d.success?'Template saved':'Template error');if(d&&d.success)loadTemplates();});
+}
+function loadTemplates(){
+  api('GET','/api/direct-mail/templates',null,function(err,d){
+    var tpls=(d&&d.templates)||[];
+    var sel=document.getElementById('c-template');
+    sel.innerHTML='<option value="">Select a template...</option>';
+    var list=document.getElementById('templates-list');
+    var html='';
+    tpls.forEach(function(t){
+      sel.innerHTML+='<option value="'+t.id+'">'+t.name+'</option>';
+      html+='<div class="recipient"><div><div class="addr">'+t.name+'</div><div class="meta">'+t.template_type+'</div></div><span class="tag">Saved</span></div>';
+    });
+    list.innerHTML=html||'<div class="empty"><i class="fas fa-file-alt"></i>No templates yet — create one above</div>';
+  });
+}
+
+function loadLeads(){
+  api('GET','/api/leads',null,function(err,d){
+    var leads=Array.isArray(d)?d:[];
+    var list=document.getElementById('leads-list');
+    if(!leads.length){list.innerHTML='<div class="empty"><i class="fas fa-inbox"></i>No leads available yet</div>';return;}
+    var html='';
+    leads.forEach(function(l){
+      var dd=typeof l.data==='string'?JSON.parse(l.data||'{}'):(l.data||{});
+      var addr=dd.address||dd.company||dd.deceasedName||dd.tenderTitle||'Lead';
+      var pc=dd.postcode||dd.location||'';
+      var isSel=selectedLeads.has(l.id);
+      html+='<div class="recipient" style="cursor:pointer;'+(isSel?'border-color:var(--accent);background:#f0f7ff':'')+'" onclick="toggleLead(\''+l.id+'\',this)">'+
+        '<div><div class="addr">'+addr.substring(0,60)+'</div><div class="meta">'+(pc||'')+'</div></div>'+
+        '<span class="status-badge'+(isSel?' approved':'')+'">'+(isSel?'Selected':'Select')+'</span></div>';
+    });
+    list.innerHTML=html;
+    document.getElementById('sel-count').textContent=selectedLeads.size;
+  });
+}
+function toggleLead(id,el){
+  if(selectedLeads.has(id)){selectedLeads.delete(id);el.style.borderColor='var(--border)';el.style.background='';el.querySelector('.status-badge').textContent='Select';el.querySelector('.status-badge').className='status-badge';}
+  else{selectedLeads.add(id);el.style.borderColor='var(--accent)';el.style.background='#f0f7ff';el.querySelector('.status-badge').textContent='Selected';el.querySelector('.status-badge').className='status-badge approved';}
+  document.getElementById('sel-count').textContent=selectedLeads.size;
+  var price=selectedTemplate==='flyer'?1.5:selectedTemplate==='postcard'?1.5:2.0;
+  document.getElementById('est-cost').textContent=(selectedLeads.size*price).toFixed(2);
+}
+
+function newCampaign(){
+  loadLeads();
+  document.getElementById('est-cost').textContent='0.00';
+  toast('Select your leads below');
+}
+
+function createCampaign(){
+  var templateId=document.getElementById('c-template').value;
+  if(!templateId){toast('Select a template first');return;}
+  if(selectedLeads.size===0){toast('Select at least one recipient');return;}
+  var name='Campaign '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  api('POST','/api/direct-mail/campaigns',{name:name,template_id:templateId,target_count:selectedLeads.size,delivery_date:document.getElementById('c-date').value},function(err,d){
+    if(!d||!d.campaign){toast('Failed to create campaign');return;}
+    var campaignId=d.campaign.id;
+    // Add recipients
+    api('GET','/api/leads',null,function(err2,leads){
+      var leadsArr=Array.isArray(leads)?leads:[];
+      var added=0;
+      leadsArr.forEach(function(l){
+        if(!selectedLeads.has(l.id))return;
+        var dd=typeof l.data==='string'?JSON.parse(l.data||'{}'):(l.data||{});
+        var addrStr=dd.address||dd.company||dd.deceasedAddress||'';
+        // Parse address into lines for mailing
+        var lines=addrStr.split(',').map(function(s){return s.trim();}).filter(Boolean);
+        var recipient={
+          lead_id:l.id,
+          name:dd.company||dd.deceasedName||dd.name||'Lead',
+          company:dd.company||'',
+          address_line1:lines[0]||'',
+          address_line2:lines[1]||'',
+          city:lines.length>2?lines.slice(1,-1).join(', '):(dd.city||''),
+          postcode:dd.postcode||dd.location||(lines.length?lines[lines.length-1]:'')
+        };
+        api('POST','/api/direct-mail/campaigns/'+campaignId+'/recipients',recipient,function(er3){added++;});
+      });
+      toast('Campaign created with '+added+' recipients');
+      setTimeout(loadCampaigns,1000);
+      selectedLeads.clear();
+    });
+  });
+}
+
+function loadCampaigns(){
+  api('GET','/api/direct-mail/campaigns',null,function(err,d){
+    var cams=(d&&d.campaigns)||[];
+    var list=document.getElementById('campaigns-list');
+    if(!cams.length){list.innerHTML='<div class="empty"><i class="fas fa-history"></i>No campaigns yet</div>';return;}
+    var html='';
+    cams.forEach(function(c){
+      html+='<div class="recipient"><div><div class="addr">'+c.name+'</div>'+
+        '<div class="meta">'+c.target_count+' recipients · Created '+new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</div></div>'+
+        '<span class="status-badge'+(c.status==='queued'||c.status==='sent'||c.status==='paid'||c.status==='approved'?' approved':'')+'">'+c.status+'</span></div>';
+    });
+    list.innerHTML=html;
+  });
+}
+
+(function(){
+  var sd=localStorage.getItem('mld_portal_session');
+  if(!sd){window.location.href='/portal/';return;}
+  var sess=JSON.parse(sd);_token=sess.token;
+  if(!_token){window.location.href='/portal/';return;}
+  loadProfile();
+  loadTemplates();
+  loadCampaigns();
+})();
+</script>
+</body></html>
