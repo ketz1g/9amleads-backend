@@ -727,23 +727,28 @@ class StannpProvider extends DirectMailProvider {
       return { success: false, error: res.error || 'Failed to create letter', raw: res };
     }
 
-    // Flyer / postcard (A5 is the correct Stannp size for an A5 flyer).
+    // Leaflet / postcard (A5 is the correct Stannp size for an A5 leaflet).
     // NOTE: Stannp requires a 'front' image or a 'template' for postcards —
-    // it cannot print a flyer from text alone.
+    // it cannot print a leaflet from text alone.
     if (isFlyer || isBoth) {
       var front = (files || []).find(function(f) { return /flyer_front|front/i.test(f.name || ''); });
       var back = (files || []).find(function(f) { return /flyer_back|back/i.test(f.name || ''); });
       if ((!front || !front.file_data) && !isBoth) {
-        return { success: false, error: 'A flyer needs an uploaded front design. Please upload your flyer front (Print & Post > Step 2) or choose the A4 letter instead.' };
+        return { success: false, error: 'A leaflet needs an uploaded front design. Please upload your leaflet front (Print & Post > Step 2) or choose the A4 letter instead.' };
       }
-      var postcardParams = Object.assign({}, rcpt, { size: 'A5', tags: '9amleads', padding: 0 });
+      // clearzone=true tells Stannp to overlay a white address block on the
+      // leaflet front so the recipient's name + address are printed clearly and
+      // machine-readable. This is the space Royal Mail needs — customers don't
+      // need to manually leave a blank area, but their design should not place
+      // critical content in the bottom ~40mm of the front.
+      var postcardParams = Object.assign({}, rcpt, { size: 'A5', tags: '9amleads', padding: 0, clearzone: true });
       if (front && front.file_data) postcardParams.front = front.file_data;
       if (back && back.file_data) postcardParams.back = back.file_data;
       var res2 = await this.stannpRequest('/postcards/create', postcardParams);
       if (res2.success && res2.data && res2.data.id) {
-        return { success: true, provider_campaign_id: String(res2.data.id), cost: res2.data.cost, status: res2.data.status || 'processing', message: 'Postcard sent to Stannp', raw: res2 };
+        return { success: true, provider_campaign_id: String(res2.data.id), cost: res2.data.cost, status: res2.data.status || 'processing', message: 'Leaflet sent to Stannp', raw: res2 };
       }
-      return { success: false, error: res2.error || 'Failed to create postcard', raw: res2 };
+      return { success: false, error: res2.error || 'Failed to create leaflet', raw: res2 };
     }
 
     return { success: false, error: 'Unknown mail type: ' + mailType };
@@ -6744,11 +6749,11 @@ app.get('/api/campaigns', authMiddleware, (req, res) => {
 var PRINT_POST_PRICES = {
   // Per-item prices charged to customer (GBP), priced against Stannp's actual
   // Royal Mail Standard rates so we stay profitable. A letter is cheaper than a
-  // flyer — Stannp's own rates reflect this (A4 letter £1.02, A5 postcard £1.18).
-  // Margins: letter £0.47, flyer £0.81, pack £0.79 per item.
-  flyer_a5: { label: 'A5 Flyer', customer: 1.99, stannp: 1.18 },
+  // leaflet — Stannp's own rates reflect this (A4 letter £1.02, A5 postcard £1.18).
+  // Margins: letter £0.47, leaflet £0.81, pack £0.79 per item.
+  flyer_a5: { label: 'A5 Leaflet', customer: 1.99, stannp: 1.18 },
   letter_a4: { label: 'A4 Letter', customer: 1.49, stannp: 1.02 },
-  flyer_plus_letter: { label: 'A5 Flyer + A4 Letter', customer: 2.99, stannp: 2.20 },
+  flyer_plus_letter: { label: 'A5 Leaflet + A4 Letter', customer: 2.99, stannp: 2.20 },
   // Postage included in above prices (Royal Mail Standard)
   markup_percent: function(item) { return Math.round((this[item].customer - this[item].stannp) / this[item].stannp * 100); }
 };
@@ -6759,10 +6764,10 @@ app.get('/api/direct-mail/pricing', (req, res) => {
     success: true,
     prices: [
       { id: 'letter_a4', label: 'A4 Letter (printed & posted)', price: 1.49, unit: 'per item' },
-      { id: 'flyer_a5', label: 'A5 Flyer (printed & posted)', price: 1.99, unit: 'per item' },
-      { id: 'flyer_plus_letter', label: 'A5 Flyer + A4 Letter (printed & posted)', price: 2.99, unit: 'per item' }
+      { id: 'flyer_a5', label: 'A5 Leaflet (printed & posted)', price: 1.99, unit: 'per item' },
+      { id: 'flyer_plus_letter', label: 'A5 Leaflet + A4 Letter (printed & posted)', price: 2.99, unit: 'per item' }
     ],
-    info: 'Prices include full colour printing, folding, and Royal Mail postage. No hidden fees. You only pay for what gets sent — cancelled leads cost nothing.'
+    info: 'Prices include full colour printing, folding, and Royal Mail postage. The recipient name & address is printed in a clear zone on each leaflet. No hidden fees — you only pay for what gets sent.'
   });
 });
 
