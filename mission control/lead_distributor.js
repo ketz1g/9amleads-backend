@@ -722,8 +722,11 @@ async function distributeProduct(product) {
           ld.fullAddress = detail.fullAddress || ld.address;
         }
         // Postcoder adds the exact house number from licensed Royal Mail PAF data.
-        // Throttled to respect the free tier's "5 lookups / 5 min" security limit.
-        if (ld.postcode) {
+        // CREDIT-EFFICIENT: only spend a lookup when the lead genuinely lacks a house
+        // number. If the detail-page address already contains a number (e.g.
+        // "Lavey House 10 Belgrave Road" or "45 Albert Street"), skip Postcoder.
+        var detailAddrHasNumber = /(^|[\s,])\d{1,5}[A-Za-z]?(\s|,|$)/.test(ld.address || '');
+        if (ld.postcode && !detailAddrHasNumber) {
           var streetHint = (detail && detail.fullAddress) || ld.address || '';
           var fullAddr = await rmScraper.lookupPostcoderAddress(ld.postcode, streetHint);
           // Retry once after a pause if rate-limited (free tier trips the 5/5min guard)
@@ -741,6 +744,10 @@ async function distributeProduct(product) {
             ld.postcode = fullAddr.postcode || ld.postcode;
             ld.udprn = fullAddr.udprn || '';
           }
+        } else {
+          // Extract any number already present in the detail address (free, no credit)
+          var numMatch = (ld.address || '').match(/(^|[\s,])(\d{1,5}[A-Za-z]?)(\s|,|$)/);
+          if (numMatch && !ld.buildingNumber) ld.buildingNumber = numMatch[2];
         }
         rec.data = JSON.stringify(ld);
         enriched++;
