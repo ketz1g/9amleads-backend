@@ -494,6 +494,7 @@ class DirectMailProvider {
   async uploadArtwork(campaignId, files) { throw new Error('uploadArtwork not implemented'); }
   async addRecipients(campaignId, recipients) { throw new Error('addRecipients not implemented'); }
   async sendCampaign(campaignId) { throw new Error('sendCampaign not implemented'); }
+  async getBalance() { throw new Error('getBalance not implemented'); }
   async getCampaignStatus(providerCampaignId) { throw new Error('getCampaignStatus not implemented'); }
   async getProofOfPosting(providerCampaignId) { throw new Error('getProofOfPosting not implemented'); }
   async cancelCampaign(providerCampaignId) { throw new Error('cancelCampaign not implemented'); }
@@ -538,6 +539,10 @@ class MockDirectMailProvider extends DirectMailProvider {
 
   async addRecipients(campaignId, recipients) {
     return { success: true, added: (recipients || []).length, failed: 0, errors: [] };
+  }
+
+  async getBalance() {
+    return { success: true, balance: 999999, raw: {} };
   }
 
   async sendCampaign(providerCampaignId) {
@@ -740,6 +745,15 @@ class StannpProvider extends DirectMailProvider {
       else { failed++; if (errors.length < 3) errors.push(result.error || 'Recipient failed'); }
     }
     return { success: failed === 0, added: added, failed: failed, errors: errors };
+  }
+
+  async getBalance() {
+    var result = await this.stannpRequest('/accounts/balance', {}, 'GET');
+    if (result.success) {
+      var bal = parseFloat(result.data && result.data.balance);
+      return { success: true, balance: isNaN(bal) ? 0 : bal, raw: result };
+    }
+    return { success: false, error: result.error || 'Failed to get balance', raw: result };
   }
 
   async getCampaignStatus(providerCampaignId) {
@@ -7488,6 +7502,16 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
 
     // Create Stripe checkout for this campaign
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+
+    // Check provider balance so we don't charge the customer if we can't send
+    try {
+      var dmProvider = getDirectMailProvider();
+      var balCheck = await dmProvider.getBalance();
+      if (balCheck && balCheck.success && balCheck.balance < price) {
+        return res.status(400).json({ error: 'Print & Post is temporarily unavailable — our print partner is reloading credit. Please try again in a few minutes.' });
+      }
+    } catch(balErr) { console.log('[DM-SEND-LEAD] Balance check skipped:', balErr.message); }
+
     var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     var amountPence = Math.round(price * 100);
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
