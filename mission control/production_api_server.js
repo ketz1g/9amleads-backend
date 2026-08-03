@@ -686,44 +686,63 @@ class StannpProvider extends DirectMailProvider {
   // Send a SINGLE mailpiece directly to Stannp (new API).
   // mailType: 'letter' | 'flyer' | 'flyer_plus_letter'
   // files: [{ name, file_data }] — artwork (flyer front/back / letter PDF)
-  // recipient: { name, company, address_line1, city, postcode, country }
+  // recipient: { name, company, address_line1, city, postcode, country, pages }
+  //   pages = HTML letter body OR plain text (used when no letter PDF uploaded)
   async sendMailpiece(mailType, recipient, files) {
+    var nameParts = (recipient.name || '').split(' ').filter(Boolean);
     var rcpt = {
-      'recipient[firstname]': (recipient.name || '').split(' ')[0] || '',
-      'recipient[lastname]': (recipient.name || '').split(' ').slice(1).join(' ') || '',
+      'recipient[firstname]': nameParts[0] || '',
+      'recipient[lastname]': nameParts.slice(1).join(' ') || '',
       'recipient[company]': recipient.company || '',
       'recipient[address1]': recipient.address_line1 || '',
-      'recipient[address2]': recipient.address2 || '',
+      'recipient[address2]': recipient.address_line2 || recipient.address2 || '',
       'recipient[city]': recipient.city || '',
+      'recipient[town]': recipient.city || '',
+      'recipient[county]': recipient.county || recipient.county_name || '',
       'recipient[postcode]': recipient.postcode || '',
       'recipient[country]': 'GB'
     };
-    var addons = 'FIRST_CLASS';
-    if (mailType === 'letter' || mailType === 'letter_a4') {
-      var letterParams = Object.assign({}, rcpt, { tags: '9amleads', addons: addons });
-      // Attach letter PDF if provided
-      var letterFile = (files || []).find(function(f) { return /letter/i.test(f.name || ''); });
-      if (letterFile) letterParams.file = letterFile.file_data;
-      else letterParams.pages = (recipient.pages || 'Dear ' + (recipient.name || 'Homeowner') + ',<br><br>Thank you for your time. We would love to help you.<br><br>[Your Company]');
+    // Standard Royal Mail postage (included in our price). No FIRST_CLASS addon —
+    // Stannp charges £1.36 extra for it, which would wipe out our margin.
+
+    var isLetter = mailType === 'letter' || mailType === 'letter_a4';
+    var isFlyer = mailType === 'flyer' || mailType === 'flyer_a5';
+    var isBoth = mailType === 'flyer_plus_letter';
+
+    // Attach letter PDF if provided, otherwise use template content as HTML.
+    var letterFile = (files || []).find(function(f) { return /letter|cover/i.test(f.name || ''); });
+    var pageBody = recipient.pages || '<p>Dear ' + (recipient.name || 'Homeowner') + ',</p><p>Thank you for your time. We would love to help you.</p><p>[Your Company]</p>';
+
+    if (isLetter || isBoth) {
+      var letterParams = Object.assign({}, rcpt, { tags: '9amleads' });
+      if (letterFile && letterFile.file_data) {
+        letterParams.file = letterFile.file_data;
+      } else {
+        letterParams.pages = pageBody;
+      }
       var res = await this.stannpRequest('/letters/create', letterParams);
       if (res.success && res.data && res.data.id) {
         return { success: true, provider_campaign_id: String(res.data.id), cost: res.data.cost, status: res.data.status || 'processing', message: 'Letter sent to Stannp', raw: res };
       }
       return { success: false, error: res.error || 'Failed to create letter', raw: res };
-    } else {
-      // Flyer / postcard
+    }
+
+    // Flyer / postcard (A5 is the correct Stannp size for an A5 flyer)
+    if (isFlyer || isBoth) {
       var front = (files || []).find(function(f) { return /flyer_front|front/i.test(f.name || ''); });
       var back = (files || []).find(function(f) { return /flyer_back|back/i.test(f.name || ''); });
-      var postcardParams = Object.assign({}, rcpt, { size: 'A5', tags: '9amleads', addons: addons });
-      if (front) postcardParams.front = front.file_data;
-      if (back) postcardParams.back = back.file_data;
-      if (!front && !back) postcardParams.message = (recipient.pages || 'We would love to help you! [Your Company]');
+      var postcardParams = Object.assign({}, rcpt, { size: 'A5', tags: '9amleads', padding: 0 });
+      if (front && front.file_data) postcardParams.front = front.file_data;
+      if (back && back.file_data) postcardParams.back = back.file_data;
+      if (!front && !back) postcardParams.message = '<p>We would love to help you!</p><p>[Your Company]</p>';
       var res2 = await this.stannpRequest('/postcards/create', postcardParams);
       if (res2.success && res2.data && res2.data.id) {
         return { success: true, provider_campaign_id: String(res2.data.id), cost: res2.data.cost, status: res2.data.status || 'processing', message: 'Postcard sent to Stannp', raw: res2 };
       }
       return { success: false, error: res2.error || 'Failed to create postcard', raw: res2 };
     }
+
+    return { success: false, error: 'Unknown mail type: ' + mailType };
   }
 
   async addRecipients(campaignId, recipients) {
@@ -757,29 +776,37 @@ class StannpProvider extends DirectMailProvider {
   }
 
   async getCampaignStatus(providerCampaignId) {
-    var result = await this.stannpRequest('/campaigns/status', { campaign_id: providerCampaignId });
-    if (result.success) {
-      var status = (result.data && result.data.status) || 'unknown';
-      return { success: true, provider_campaign_id: providerCampaignId, status: status, raw: result };
+    // Stannp's new API: mailpieces are queried via /letters/get/:id or /postcards/get/:id.
+    // We try letters first, then postcards, since we don't know which type from the ID alone.
+    if (!providerCampaignId) return { success: false, error: 'No provider ID' };
+    var id = String(providerCampaignId).split(',')[0];
+    var result = await this.stannpRequest('/letters/get/' + id, {}, 'GET');
+    if (!result.success) result = await this.stannpRequest('/postcards/get/' + id, {}, 'GET');
+    if (result.success && result.data) {
+      var status = result.data.status || 'unknown';
+      return { success: true, provider_campaign_id: id, status: status, raw: result };
     }
-    return { success: false, error: result.error || 'Failed to get Stannp campaign status', raw: result };
+    return { success: false, error: result.error || 'Failed to get Stannp mailpiece status', raw: result };
   }
 
   async getProofOfPosting(providerCampaignId) {
-    var result = await this.stannpRequest('/campaigns/proof', { campaign_id: providerCampaignId });
+    if (!providerCampaignId) return { success: false, error: 'No provider ID' };
+    var id = String(providerCampaignId).split(',')[0];
+    var result = await this.stannpRequest('/letters/get/' + id, {}, 'GET');
+    if (!result.success) result = await this.stannpRequest('/postcards/get/' + id, {}, 'GET');
     if (result.success && result.data) {
+      var d = result.data;
       return {
-        success: true, provider_campaign_id: providerCampaignId,
-        proof_url: result.data.proof_url || result.data.url || '',
-        generated_at: new Date().toISOString(),
-        recipient_count: result.data.recipient_count || 0,
-        postage_date: result.data.postage_date || '',
-        estimated_delivery: result.data.estimated_delivery || '',
+        success: true, provider_campaign_id: id,
+        proof_url: d.pdf_file || d.pdf || '',
+        generated_at: d.updated || d.timestamp || new Date().toISOString(),
+        recipient_count: 1,
+        postage_date: d.dispatched ? String(d.dispatched).split(' ')[0] : '',
+        estimated_delivery: '',
         raw: result
       };
     }
-    // Fallback: return a basic proof object even if API fails
-    return { success: true, provider_campaign_id: providerCampaignId, proof_url: '', generated_at: new Date().toISOString(), recipient_count: 0, postage_date: '', estimated_delivery: '' };
+    return { success: true, provider_campaign_id: id, proof_url: '', generated_at: new Date().toISOString(), recipient_count: 1, postage_date: '', estimated_delivery: '' };
   }
 
   async cancelCampaign(providerCampaignId) {
@@ -6711,12 +6738,14 @@ app.get('/api/campaigns', authMiddleware, (req, res) => {
 // ===== PRINT & POST PRICING =====
 // Your markup is added on top of Stannp's print+post costs
 var PRINT_POST_PRICES = {
-  // Per-item prices charged to customer (GBP). A letter is cheaper than a
-  // flyer — it's a simple A4 page, whereas a flyer is designed colour.
-  flyer_a5: { label: 'A5 Flyer', customer: 1.50, stannp: 0.55 },
-  letter_a4: { label: 'A4 Letter', customer: 0.99, stannp: 0.45 },
-  flyer_plus_letter: { label: 'A5 Flyer + A4 Letter', customer: 2.25, stannp: 0.95 },
-  // Postage included in above prices
+  // Per-item prices charged to customer (GBP), priced against Stannp's actual
+  // Royal Mail Standard rates so we stay profitable. A letter is cheaper than a
+  // flyer — Stannp's own rates reflect this (A4 letter £1.02, A5 postcard £1.18).
+  // Margins: letter £0.47, flyer £0.81, pack £0.79 per item.
+  flyer_a5: { label: 'A5 Flyer', customer: 1.99, stannp: 1.18 },
+  letter_a4: { label: 'A4 Letter', customer: 1.49, stannp: 1.02 },
+  flyer_plus_letter: { label: 'A5 Flyer + A4 Letter', customer: 2.99, stannp: 2.20 },
+  // Postage included in above prices (Royal Mail Standard)
   markup_percent: function(item) { return Math.round((this[item].customer - this[item].stannp) / this[item].stannp * 100); }
 };
 
@@ -6725,11 +6754,11 @@ app.get('/api/direct-mail/pricing', (req, res) => {
   res.json({
     success: true,
     prices: [
-      { id: 'letter_a4', label: 'A4 Letter (printed & posted)', price: 0.99, unit: 'per item' },
-      { id: 'flyer_a5', label: 'A5 Flyer (printed & posted)', price: 1.50, unit: 'per item' },
-      { id: 'flyer_plus_letter', label: 'A5 Flyer + A4 Letter (printed & posted)', price: 2.25, unit: 'per item' }
+      { id: 'letter_a4', label: 'A4 Letter (printed & posted)', price: 1.49, unit: 'per item' },
+      { id: 'flyer_a5', label: 'A5 Flyer (printed & posted)', price: 1.99, unit: 'per item' },
+      { id: 'flyer_plus_letter', label: 'A5 Flyer + A4 Letter (printed & posted)', price: 2.99, unit: 'per item' }
     ],
-    info: 'Prices include full colour printing, folding, and First Class postage. No hidden fees. You only pay for what gets sent — cancelled leads cost nothing.'
+    info: 'Prices include full colour printing, folding, and Royal Mail postage. No hidden fees. You only pay for what gets sent — cancelled leads cost nothing.'
   });
 });
 
@@ -7075,7 +7104,20 @@ async function sendDmCampaign(campaignId, customerId) {
     var mat = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(materialIds[mi], customerId);
     if (mat && mat.file_data) files.push({ name: mat.name || 'artwork.' + (mat.file_type === 'pdf' ? 'pdf' : 'png'), file_data: mat.file_data });
   }
-  var mailType = campaign.notes === 'One-click send from My Leads' ? 'letter' : 'letter';
+  // Determine mail type: one-click campaigns store it in description; template-based
+  // campaigns default to the template type (letter or flyer).
+  var mailType = 'letter';
+  var mailTypeHint = campaign.description || campaign.notes || '';
+  if (mailTypeHint === 'flyer_a5' || mailTypeHint === 'flyer' || /flyer/i.test(mailTypeHint)) mailType = 'flyer';
+  else if (mailTypeHint === 'flyer_plus_letter' || /flyer.*letter/i.test(mailTypeHint)) mailType = 'flyer_plus_letter';
+
+  // Template content (HTML) used when no letter PDF is uploaded
+  var templateBody = '';
+  if (template && template.ai_generated_text) {
+    templateBody = template.ai_generated_text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+      .replace(/\r?\n/g, '<br>');
+  }
 
   // STANNP path: send each valid recipient as its own mailpiece via the new API.
   if (provider.name === 'stannp') {
@@ -7088,7 +7130,15 @@ async function sendDmCampaign(campaignId, customerId) {
       if (!pieceFiles.length) {
         pieceFiles = [{ name: 'letter.pdf', file_data: '' }];
       }
-      var pieceResult = await provider.sendMailpiece(mailType, rcpt, pieceFiles);
+      // Provide template body as the letter content (replacing placeholders per recipient)
+      var rcptWithPages = Object.assign({}, rcpt);
+      if (templateBody) {
+        rcptWithPages.pages = templateBody
+          .replace(/\[name\]/gi, rcpt.name || '')
+          .replace(/\[address\]/gi, (rcpt.address_line1 || '') + ' ' + (rcpt.city || ''))
+          .replace(/\[company\]/gi, rcpt.company || rcpt.name || '');
+      }
+      var pieceResult = await provider.sendMailpiece(mailType, rcptWithPages, pieceFiles);
       if (pieceResult && pieceResult.success) {
         sentIds.push(pieceResult.provider_campaign_id);
       } else {
