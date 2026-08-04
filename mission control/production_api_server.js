@@ -4781,9 +4781,26 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         }
         return true;
       }
-      // Available undelivered leads per product
+      // Available undelivered leads per product.
+      // MOVING freshness rule: only leads first-listed or updated within 48h are
+      // deliverable. Older listings are excluded so customers see recent moves.
+      function isMovingFresh(l) {
+        try {
+          var ld2 = JSON.parse(l.data || '{}');
+          var fv = ld2.firstVisibleDate || ld2.updateDate || '';
+          if (!fv) return true; // no date info -> keep (better than nothing)
+          var t48 = new Date(Date.now() - 48 * 3600000).toISOString();
+          return fv >= t48;
+        } catch(e) { return true; }
+      }
       var availByProd = {};
-      products.forEach(function(p) { availByProd[p] = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === p; }); });
+      products.forEach(function(p) {
+        availByProd[p] = (db.leads || []).filter(function(l) {
+          if (l.customer_id !== cust.id || l.delivered !== 0 || l.product !== p) return false;
+          if (p === 'moving' && !isMovingFresh(l)) return false;
+          return true;
+        });
+      });
       var pickedIds = [];
       if (primaryPickedId) pickedIds.push(primaryPickedId);
       var totalNeeded = totalDailyLimit;
@@ -8765,19 +8782,41 @@ function syncCustomers(product) {
               var rmFresh24 = filterFresh(leads, 'firstVisibleDate');
               var rmFreshUpdate = filterFresh(leads, 'updateDate');
               var desiredLeads = leads.filter(isDesiredStatus);
-              // Order: fresh-24h first, then 24-48h, then the rest (all kept)
-              var freshPool = rmFresh24.fresh.filter(isDesiredStatus);
-              var fallbackPool = rmFresh24.fallback.filter(isDesiredStatus);
-              var otherPool = desiredLeads.filter(function(l) {
-                var fd = l.firstVisibleDate || l.updateDate || '';
-                return freshPool.indexOf(l) === -1 && fallbackPool.indexOf(l) === -1;
+              // Freshness rule: a listing counts as NEW if it first appeared within
+              // 24h (primary) or within 24-48h (fallback). A listing with an update
+              // within 24-48h but an old firstVisibleDate is treated as fresh too
+              // (recently updated = active marketing = likely to move soon).
+              function leadFreshBucket(l) {
+                var fv = l.firstVisibleDate || '';
+                var up = l.updateDate || '';
+                var now = new Date();
+                var t24 = new Date(now - 24 * 3600000).toISOString();
+                var t48 = new Date(now - 48 * 3600000).toISOString();
+                if (fv && fv >= t24) return 'fresh24';
+                if (fv && fv >= t48) return 'fresh48';
+                if (up && up >= t24) return 'fresh24';
+                if (up && up >= t48) return 'fresh48';
+                return 'old';
+              }
+              var freshPool = [];
+              var fallbackPool = [];
+              var otherPool = [];
+              desiredLeads.forEach(function(l) {
+                var b = leadFreshBucket(l);
+                if (b === 'fresh24') freshPool.push(l);
+                else if (b === 'fresh48') fallbackPool.push(l);
+                else otherPool.push(l);
               });
-              var usedPool = freshPool.concat(fallbackPool, otherPool);
-              // Sort newest first for a sensible ordering
-              usedPool.sort(function(a, b) { return (b.firstVisibleDate || b.updateDate || '').localeCompare(a.firstVisibleDate || a.updateDate || ''); });
-              // Cap at a generous pool (all genuinely on-market properties)
-              leads = usedPool.slice(0, 2000);
-              console.log('[SCRAPER] Rightmove: ' + freshPool.length + ' new<24h, ' + fallbackPool.length + ' 24-48h, ' + otherPool.length + ' older, using ' + leads.length + ' live listings');
+              // KEEP ONLY FRESH: new<24h primary, 24-48h fallback. Older listings are
+              // dropped so customers only see genuinely recent moving opportunities.
+              var usedPool = freshPool.concat(fallbackPool);
+              usedPool.sort(function(a, b) {
+                var bv = (b.firstVisibleDate || b.updateDate || '');
+                var av = (a.firstVisibleDate || a.updateDate || '');
+                return bv.localeCompare(av);
+              });
+              leads = usedPool.slice(0, 500);
+              console.log('[SCRAPER] Rightmove: ' + freshPool.length + ' new<24h, ' + fallbackPool.length + ' 24-48h, ' + otherPool.length + ' OLD DROPPED, using ' + leads.length + ' fresh listings');
             }
             // Apify supplement disabled - actor was blocked. Free scraper expanded to 13 regions x 4-20 pages.
             if (false && apifyKey) {
