@@ -4163,6 +4163,16 @@ cron.schedule('0 9 * * 1-5', async () => {
   timezone: 'Europe/London'
 });
 
+// KEEP-ALIVE: self-ping every 10 minutes so Render never sleeps the service.
+// Critical — if the instance sleeps, the 06:00 scrape + 09:00 delivery crons
+// won't fire and customers miss their daily leads.
+cron.schedule('*/10 * * * *', async () => {
+  try {
+    const http = require('http');
+    http.get({ hostname: '127.0.0.1', port: PORT, path: '/api/health' }, function(res) { res.resume(); }).on('error', function() {});
+  } catch(e) {}
+});
+
 // Sequence processing every hour
 cron.schedule('0 * * * *', async () => {
   try {
@@ -4769,6 +4779,54 @@ cron.schedule('0 0 * * *', async () => {
   if (fixes.length > 0) console.log('[HEALTH] Auto-fixes applied: ' + fixes.join(', '));
   if (issues.length === 0 && fixes.length === 0) console.log('[HEALTH] All systems healthy');
   
+  // 7. Per-product supply check: each product pool must have leads for its customers
+  try {
+    var dbH = getDb();
+    var activeByProduct = {};
+    (dbH.customers || []).forEach(function(c) {
+      if (c.plan === 'cancelled') return;
+      var p = c.product || 'moving';
+      if (!activeByProduct[p]) activeByProduct[p] = 0;
+      activeByProduct[p]++;
+    });
+    for (var hp in PRODUCT_LEAD_FILES) {
+      try {
+        var hf = path.join(DATA_DIR, PRODUCT_LEAD_FILES[hp].file);
+        var hpool = [];
+        try { hpool = JSON.parse(fs.readFileSync(hf, 'utf-8')); if (!Array.isArray(hpool)) hpool = []; } catch(e) { hpool = []; }
+        if ((activeByProduct[hp] || 0) > 0 && hpool.length === 0) {
+          issues.push(hp + ': pool is EMPTY but has ' + activeByProduct[hp] + ' active customer(s)');
+          // Auto-fix: trigger a scrape for this product
+          try {
+            var httpMod = require('http');
+            var bodyH = JSON.stringify({ product: hp, force: true });
+            var hreq = httpMod.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyH) } }, function(hres) { hres.resume(); });
+            hreq.write(bodyH); hreq.end();
+            fixes.push('Triggered re-scrape for empty pool: ' + hp);
+          } catch(se) {}
+        }
+      } catch(e2) {}
+    }
+  } catch(e3) { issues.push('Supply check: ' + (e3 && e3.message || '')); }
+
+  // 8. Delivery verification: if it's after 09:30 UK and delivery hasn't fired
+  // (e.g. cron missed after a deploy), re-trigger it so customers still get leads.
+  try {
+    var ukHourH = parseInt(new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hour12: false }));
+    var ukMinH = parseInt(new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', minute: '2-digit' }));
+    var isWeekday = [1,2,3,4,5].indexOf(new Date().getDay()) !== -1;
+    if (isWeekday && (ukHourH > 9 || (ukHourH === 9 && ukMinH >= 30)) && (__deliveryFireCount === 0)) {
+      console.log('[HEALTH] Delivery did not fire today — re-triggering now (safety)');
+      try {
+        var httpD = require('http');
+        var bodyD = JSON.stringify({});
+        var dreq = httpD.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyD) } }, function(dres) { dres.resume(); });
+        dreq.write(bodyD); dreq.end();
+        fixes.push('Re-triggered missed delivery (09:30 safety)');
+      } catch(de) {}
+    }
+  } catch(e4) {}
+
   // Alert if issues found
   if (issues.length > 0) {
     try {
@@ -9936,6 +9994,90 @@ app.get('/api/admin/cron-status', adminAuth, (req, res) => {
   });
 });
 
+// GET /api/admin/system-status — FULL system readiness dashboard.
+// Shows every critical component's live state so we can confirm nothing is
+// broken before/after the daily delivery, and spot silent failures fast.
+app.get('/api/admin/system-status', adminAuth, (req, res) => {
+  try {
+    var dbSys = getDb();
+    var now = new Date().toISOString();
+    var today = now.split('T')[0];
+    var out = {
+      server_time: now,
+      uk_time: new Date(now).toLocaleString('en-GB', { timeZone: 'Europe/London' }),
+      uptime_s: Math.round(process.uptime()),
+      memory_mb: Math.round(process.memoryUsage().heapUsed / 1048576),
+      version: '1.0'
+    };
+
+    // Database
+    out.database = { customers: (dbSys.customers || []).length, leads: (dbSys.leads || []).length, ok: !!dbSys.customers };
+
+    // Products: pool size + whether scraped today + undelivered assigned
+    out.products = {};
+    var todayLeads = (dbSys.leads || []).filter(function(l) { return (l.created_at || '').startsWith(today); });
+    var undelivered = (dbSys.leads || []).filter(function(l) { return !l.delivered; });
+    var todayDelivered = (dbSys.leads || []).filter(function(l) { return l.delivered && l.delivered_at && l.delivered_at.startsWith(today); });
+    Object.keys(PRODUCT_LEAD_FILES).forEach(function(p) {
+      var f = path.join(DATA_DIR, PRODUCT_LEAD_FILES[p].file);
+      var pool = [];
+      try { pool = JSON.parse(fs.readFileSync(f, 'utf-8')); if (!Array.isArray(pool)) pool = []; } catch(e) { pool = []; }
+      var fileFresh = pool.filter(function(l) { return (l.scrapedAt || l.publishedDate || '').startsWith(today); }).length;
+      var custs = (dbSys.customers || []).filter(function(c) { return c.product === p; });
+      var prodLeads = (dbSys.leads || []).filter(function(l) { return l.product === p; });
+      out.products[p] = {
+        pool_size: pool.length,
+        pool_scraped_today: fileFresh,
+        active_customers: custs.length,
+        assigned_undelivered: prodLeads.filter(function(l){return !l.delivered;}).length,
+        delivered_today: prodLeads.filter(function(l){return l.delivered && l.delivered_at && l.delivered_at.startsWith(today);}).length,
+        pool_ok: pool.length > 0
+      };
+    });
+
+    // Delivery state
+    out.delivery = {
+      fire_count: __deliveryFireCount || 0,
+      last_fire: __lastDeliveryFire || 'never',
+      today_delivered_total: todayDelivered.length,
+      today_undelivered_total: undelivered.length,
+      delivery_due: (function() {
+        var ukNow = new Date();
+        var ukHour = parseInt(ukNow.toLocaleString('en-GB',{timeZone:'Europe/London',hour:'2-digit',hour12:false}));
+        return ukHour >= 9 && __deliveryFireCount === 0;
+      })()
+    };
+
+    // Integrations
+    out.integrations = {
+      stripe: !!STRIPE_SECRET_KEY,
+      brevo: !!BREVO_API_KEY,
+      apify: !!process.env.APIFY_API_KEY,
+      postcoder_enabled: process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1'
+    };
+
+    // Check for supply shortfalls (pool too small for active customers)
+    out.warnings = [];
+    Object.keys(out.products).forEach(function(p) {
+      var pr = out.products[p];
+      var need = pr.active_customers > 0 ? pr.active_customers * 5 : 0;
+      if (pr.active_customers > 0 && pr.pool_size === 0) out.warnings.push(p + ': pool EMPTY for ' + pr.active_customers + ' customer(s)');
+      else if (pr.active_customers > 0 && pr.pool_size < need) out.warnings.push(p + ': low pool (' + pr.pool_size + ' for ' + pr.active_customers + ' cust)');
+    });
+    out.warnings_ok = out.warnings.length === 0;
+
+    // Scraper log (last run)
+    out.last_scrape = {};
+    try {
+      var ls = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'last-scrape.json'), 'utf-8'));
+      out.last_scrape = ls;
+    } catch(e) {}
+
+    out.healthy = out.database.ok && out.integrations.stripe && out.integrations.brevo && out.warnings_ok;
+    res.json({ success: true, ...out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/product-file?product=tenders — inspect a product lead file
 app.get('/api/admin/product-file', adminAuth, (req, res) => {
   try {
@@ -12167,6 +12309,23 @@ app.delete('/api/direct-mail/sequences/:id', authMiddleware, (req, res) => {
 });
 
 // ===== START SERVER =====
+// ===== GLOBAL ERROR & CRASH HANDLERS =====
+// Prevents the whole process from dying on a single async rejection or
+// uncaught exception. Logs clearly, alerts the admin, and keeps serving.
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[CRASH-GUARD] Unhandled rejection:', reason && reason.message || reason);
+  try { require('fs').appendFileSync(path.join(DATA_DIR, 'errors.log'), new Date().toISOString() + ' UNHANDLED_REJECTION: ' + (reason && reason.stack || reason) + '\n'); } catch(e) {}
+});
+process.on('uncaughtException', (err) => {
+  console.error('[CRASH-GUARD] Uncaught exception:', err && err.message || err);
+  try { require('fs').appendFileSync(path.join(DATA_DIR, 'errors.log'), new Date().toISOString() + ' UNCAUGHT_EXCEPTION: ' + (err && err.stack || err) + '\n'); } catch(e) {}
+  // Alert admin but keep the process alive so crons continue
+  try {
+    var mailBody = '<div style="background:#1a1b2e;padding:20px;color:#e2e8f0"><h2>Server Exception</h2><pre style="white-space:pre-wrap;font-size:12px">' + String(err && err.stack || err).substring(0, 2000) + '</pre></div>';
+    sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Admin' }, '[SERVER] Exception caught', mailBody).catch(function(){});
+  } catch(me) {}
+});
+
 app.listen(PORT, () => {
   seedDefaultCampaignPacks();
   seedMarketplaceTemplates();
