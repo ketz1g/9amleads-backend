@@ -21,41 +21,41 @@ const PRICING = {
   newbusiness: {
     name: 'New Business Alerts',
     plans: [
-      { id: 'nb-starter',  name: 'Starter', price: 1900, interval: 'week', leadsMin: 1,  leadsMax: 5,  leadsLabel: '1–5 estimated leads/day', tier: 1 },
-      { id: 'nb-growth',   name: 'Growth',  price: 3900, interval: 'week', leadsMin: 5,  leadsMax: 15, leadsLabel: '5–15 estimated leads/day',  tier: 2 },
-      { id: 'nb-power',    name: 'Power',   price: 7900, interval: 'week', leadsMin: 15, leadsMax: 40, leadsLabel: '15–40 estimated leads/day', tier: 3 }
+      { id: 'nb-starter',  name: 'Starter', price: 1900, interval: 'week', leadsMin: 5,  leadsMax: 5,  leadsLabel: '5 leads/day', tier: 1 },
+      { id: 'nb-growth',   name: 'Growth',  price: 3900, interval: 'week', leadsMin: 15, leadsMax: 15, leadsLabel: '15 leads/day',  tier: 2 },
+      { id: 'nb-power',    name: 'Power',   price: 7900, interval: 'week', leadsMin: 40, leadsMax: 40, leadsLabel: '40 leads/day', tier: 3 }
     ]
   },
   planning: {
     name: 'Planning Permission Leads',
     plans: [
-      { id: 'plan-starter', name: 'Starter', price: 2900, interval: 'week', leadsMin: 1,  leadsMax: 3,  leadsLabel: '1–3 estimated leads/day',  tier: 1 },
-      { id: 'plan-growth',  name: 'Growth',  price: 5900, interval: 'week', leadsMin: 3,  leadsMax: 10, leadsLabel: '3–10 estimated leads/day',  tier: 2 },
-      { id: 'plan-power',   name: 'Power',   price: 9900, interval: 'week', leadsMin: 10, leadsMax: 25, leadsLabel: '10–25 estimated leads/day', tier: 3 }
+      { id: 'plan-starter', name: 'Starter', price: 2900, interval: 'week', leadsMin: 1,  leadsMax: 1,  leadsLabel: '1 lead/day',   tier: 1 },
+      { id: 'plan-growth',  name: 'Growth',  price: 5900, interval: 'week', leadsMin: 3,  leadsMax: 3,  leadsLabel: '3 leads/day',  tier: 2 },
+      { id: 'plan-power',   name: 'Power',   price: 9900, interval: 'week', leadsMin: 5,  leadsMax: 5,  leadsLabel: '5 leads/day',  tier: 3 }
     ]
   },
   probate: {
     name: 'Probate Leads',
     plans: [
-      { id: 'prob-starter', name: 'Starter', price: 3900, interval: 'week', leadsMin: 0, leadsMax: 2,  leadsLabel: '0–2 estimated leads/day',  tier: 1 },
-      { id: 'prob-growth',  name: 'Growth',  price: 7900, interval: 'week', leadsMin: 2, leadsMax: 6,  leadsLabel: '2–6 estimated leads/day',  tier: 2 },
-      { id: 'prob-power',   name: 'Power',   price: 14900, interval: 'week', leadsMin: 5, leadsMax: 15, leadsLabel: '5–15 estimated leads/day', tier: 3 }
+      { id: 'prob-starter', name: 'Starter', price: 3900, interval: 'week', leadsMin: 5, leadsMax: 5,  leadsLabel: '5 leads/day',  tier: 1 },
+      { id: 'prob-growth',  name: 'Growth',  price: 7900, interval: 'week', leadsMin: 15, leadsMax: 15, leadsLabel: '15 leads/day',  tier: 2 },
+      { id: 'prob-power',   name: 'Power',   price: 14900, interval: 'week', leadsMin: 30, leadsMax: 30, leadsLabel: '30 leads/day', tier: 3 }
     ]
   },
   moving: {
     name: 'Moving Leads',
     plans: [
-      { id: 'mov-starter', name: 'Starter', price: 2900, interval: 'week', leadsMin: 1,  leadsMax: 5,  leadsLabel: '1–5 estimated leads/day',  tier: 1 },
-      { id: 'mov-growth',  name: 'Growth',  price: 5900, interval: 'week', leadsMin: 5,  leadsMax: 15, leadsLabel: '5–15 estimated leads/day',  tier: 2 },
-      { id: 'mov-power',   name: 'Power',   price: 9900, interval: 'week', leadsMin: 15, leadsMax: 35, leadsLabel: '15–35 estimated leads/day', tier: 3 }
+      { id: 'mov-starter', name: 'Starter', price: 2900, interval: 'week', leadsMin: 5,  leadsMax: 5,  leadsLabel: '5 leads/day',  tier: 1 },
+      { id: 'mov-growth',  name: 'Growth',  price: 5900, interval: 'week', leadsMin: 15, leadsMax: 15, leadsLabel: '15 leads/day',  tier: 2 },
+      { id: 'mov-power',   name: 'Power',   price: 9900, interval: 'week', leadsMin: 40, leadsMax: 40, leadsLabel: '40 leads/day', tier: 3 }
     ]
   },
   tenders: {
     name: 'Public Sector Tender Leads',
     plans: [
-      { id: 'tend-starter', name: 'Starter', price: 2900, interval: 'week', leadsMin: 3,  leadsMax: 5,  leadsLabel: '3–5 estimated tenders/day',  tier: 1 },
-      { id: 'tend-growth',  name: 'Growth',  price: 5900, interval: 'week', leadsMin: 5,  leadsMax: 15, leadsLabel: '5–15 estimated tenders/day',  tier: 2 },
-      { id: 'tend-power',   name: 'Power',   price: 9900, interval: 'week', leadsMin: 15, leadsMax: 40, leadsLabel: '15–40 estimated tenders/day', tier: 3 }
+      { id: 'tend-starter', name: 'Starter', price: 2900, interval: 'week', leadsMin: 1,  leadsMax: 1,  leadsLabel: '1 tender/day',  tier: 1 },
+      { id: 'tend-growth',  name: 'Growth',  price: 5900, interval: 'week', leadsMin: 3,  leadsMax: 3,  leadsLabel: '3 tenders/day', tier: 2 },
+      { id: 'tend-power',   name: 'Power',   price: 9900, interval: 'week', leadsMin: 5,  leadsMax: 5,  leadsLabel: '5 tenders/day', tier: 3 }
     ]
   }
 };
