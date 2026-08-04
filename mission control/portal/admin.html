@@ -78,10 +78,15 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 <div class="card" id="healthCard" style="margin-bottom:16px;display:none">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
 <div style="display:flex;align-items:center;gap:8px"><span id="healthIcon" style="width:10px;height:10px;border-radius:50%;display:inline-block"></span><strong style="font-size:15px">System Health</strong><span id="healthSummary" style="font-size:12px;color:#8890a8"></span></div>
+<div style="display:flex;align-items:center;gap:10px">
 <span id="healthTimestamp" style="font-size:11px;color:#5c6480"></span>
+<button class="btn btn-sm btn-outline" onclick="loadHealth(true)"><i class="fas fa-sync"></i> Refresh</button>
+</div>
 </div>
 <div id="healthIssues"></div>
 <div id="healthSystem" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#8890a8"></div>
+<!-- Product supply grid -->
+<div id="healthProducts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:14px"></div>
 </div>
 
 <div class="card" id="blogSection">
@@ -383,11 +388,27 @@ async function loadHealth() {
     var sysHtml = '';
     sysHtml += '<span><i class="fas ' + (h.system.brevo_configured ? 'fa-check-circle" style="color:#22c55e"> Brevo' : 'fa-times-circle" style="color:#ef4444"> Brevo') + '</i></span>';
     sysHtml += '<span><i class="fas ' + (h.system.stripe_configured ? 'fa-check-circle" style="color:#22c55e"> Stripe' : 'fa-times-circle" style="color:#ef4444"> Stripe') + '</i></span>';
-    var scrapeStatus = h.system.scraper_stale ? 'stale' : 'fresh';
-    var scrapeColor = h.system.scraper_stale ? '#eab308' : '#22c55e';
-    sysHtml += '<span><i class="fas fa-database" style="color:' + scrapeColor + '"> Scrapers ' + scrapeStatus + '</i></span>';
-    if (h.system.last_scrape) sysHtml += '<span style="color:#5c6480">Last scrape: ' + new Date(h.system.last_scrape).toLocaleDateString() + '</span>';
+    sysHtml += '<span><i class="fas fa-users" style="color:#0ea5e9"> ' + (h.system.customers||0) + ' customers</i></span>';
+    sysHtml += '<span><i class="fas fa-envelope-open-text" style="color:#22c55e"> ' + (h.system.leads_today||0) + ' delivered today</i></span>';
     document.getElementById('healthSystem').innerHTML = sysHtml;
+    // Product supply grid
+    var prods = h.system.products || {};
+    var prodNames = {moving:'Moving',probate:'Probate',newbusiness:'New Business',planning:'Planning',tenders:'Tenders'};
+    var prodColors = {moving:'#ff6b35',probate:'#a855f7',newbusiness:'#06b6d4',planning:'#10b981',tenders:'#6366f1'};
+    var prodHtml = Object.keys(prods).map(function(p){
+      var pr = prods[p];
+      var okColor = pr.customers > 0 && pr.pool === 0 ? '#ef4444' : pr.customers > 0 && pr.pool < pr.customers ? '#eab308' : '#22c55e';
+      var okIcon = okColor === '#22c55e' ? 'fa-check-circle' : okColor === '#eab308' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle';
+      return '<div style="border:1px solid #1e2030;border-radius:10px;padding:12px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between">' +
+        '<span style="font-size:11px;font-weight:700;color:' + (prodColors[p]||'#fff') + '">' + (prodNames[p]||p) + '</span>' +
+        '<i class="fas ' + okIcon + '" style="color:' + okColor + ';font-size:11px"></i></div>' +
+        '<div style="font-size:20px;font-weight:900;font-family:\'Outfit\',sans-serif;color:#fff;margin-top:4px">' + pr.pool + '</div>' +
+        '<div style="font-size:10px;color:#5c6480">leads in pool' + (pr.customers ? ' · ' + pr.customers + ' cust' : '') + '</div>' +
+        '<div style="font-size:10px;color:' + (pr.fresh_today > 0 ? '#22c55e' : '#5c6480') + ';margin-top:2px">' + pr.fresh_today + ' fresh today</div>' +
+        '</div>';
+    }).join('');
+    document.getElementById('healthProducts').innerHTML = prodHtml;
   } catch(e) { /* health check non-critical */ }
 }
 
