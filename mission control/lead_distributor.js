@@ -702,6 +702,14 @@ async function distributeProduct(product) {
       var au = customerPostcodeUsage[a.customer.id][leadArea] || 0;
       var bu = customerPostcodeUsage[b.customer.id][leadArea] || 0;
       if (au !== bu) return au - bu;
+      // Postcode-area rotation: prefer customers whose LAST delivered area differs
+      // from this lead's area, so a customer gets a genuine MIX of their chosen
+      // postcodes over consecutive days (not the same area every day).
+      var aLast = a.customer.last_area || '';
+      var bLast = b.customer.last_area || '';
+      var aDiff = aLast && aLast !== leadArea ? 0 : 1;
+      var bDiff = bLast && bLast !== leadArea ? 0 : 1;
+      if (aDiff !== bDiff) return aDiff - bDiff;
       return customerUsage[a.customer.id] - customerUsage[b.customer.id];
     });
 
@@ -729,7 +737,11 @@ async function distributeProduct(product) {
       inserted++;
       // Track lead count on customer record
       var ldCust = db.customers.find(function(x) { return x.id === c.id; });
-      if (ldCust) ldCust.lead_count = (ldCust.lead_count || 0) + 1;
+      if (ldCust) {
+        ldCust.lead_count = (ldCust.lead_count || 0) + 1;
+        // Remember the last area we gave this customer so next day rotates areas
+        if (leadArea) ldCust.last_area = leadArea;
+      }
       return true;
     }
     return false;
@@ -754,6 +766,53 @@ async function distributeProduct(product) {
   for (const assignment of unassigned2) {
     if (assignment.lead.id && claimedLeadIds.has(assignment.lead.id)) continue;
     assignLead(assignment, null, null, 2);
+  }
+
+  // PASS 4 — QUOTA GUARANTEE: every customer must receive their FULL promised
+  // daily count, never less. If the normal matching passes left a customer short,
+  // top them up from the remaining pool (preferring their requested areas, then
+  // any remaining real lead) so we always deliver exactly what was sold.
+  var quotaShortfall = activeCustomers.filter(function(c) { return (customerUsage[c.id] || 0) < (customerLimits[c.id] || 0); });
+  if (quotaShortfall.length > 0) {
+    console.log('  [QUOTA-GUARANTEE] ' + quotaShortfall.length + ' customer(s) below quota, topping up...');
+    // Rebuild the pool of unused leads (all of today's scraped pool still available)
+    var quotaPool = leadAssignments.filter(function(a) { return !claimedLeadIds.has(a.lead.id); });
+    // Sort: customers furthest below quota first; within a customer, prefer their areas
+    quotaShortfall.sort(function(a, b) { return (customerUsage[a.id] - customerLimits[a.id]) - (customerUsage[b.id] - customerLimits[b.id]); });
+    var quotaDone = false;
+    var quotaGuard = 0;
+    while (!quotaDone && quotaGuard < 500) {
+      quotaGuard++;
+      quotaDone = true;
+      for (var qci = 0; qci < quotaShortfall.length; qci++) {
+        var qc = quotaShortfall[qci];
+        var shortBy = (customerLimits[qc.id] || 0) - (customerUsage[qc.id] || 0);
+        if (shortBy <= 0) continue;
+        quotaDone = false;
+        // Find an unused lead for this customer: prefer their areas first
+        var qPool = quotaPool.filter(function(a) { return !claimedLeadIds.has(a.lead.id); });
+        // Re-sort to prefer this customer's requested postcode areas
+        var qcAreas = [];
+        try { qcAreas = JSON.parse(qc.target_areas || '[]'); } catch(e) {}
+        var chosen = null;
+        if (qcAreas.length > 0) {
+          for (var qa = 0; qa < qcAreas.length && !chosen; qa++) {
+            chosen = qPool.find(function(a) { return extractPostcodeArea(a.lead.postcode || a.lead.address || a.lead.location || '') === qcAreas[qa]; });
+          }
+        }
+        if (!chosen) chosen = qPool[0];
+        if (!chosen) continue;
+        if (assignLead(chosen, null, null, 2)) {
+          claimedLeadIds.add(chosen.lead.id);
+          var qArea = getLeadPostcodeArea(chosen);
+          if (qArea) customerPostcodeUsage[qc.id][qArea] = (customerPostcodeUsage[qc.id][qArea] || 0) + 1;
+        }
+      }
+    }
+    var stillShort = activeCustomers.filter(function(c) { return (customerUsage[c.id] || 0) < (customerLimits[c.id] || 0); });
+    if (stillShort.length > 0) {
+      console.log('  [QUOTA-GUARANTEE] WARNING: supply exhausted — ' + stillShort.map(function(c) { return c.email || c.id; }).join(', ') + ' below promised quota');
+    }
   }
 
   // Phase 3b: Enrich newly inserted leads with full addresses + postcodes.
