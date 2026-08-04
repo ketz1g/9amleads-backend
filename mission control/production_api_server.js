@@ -6002,6 +6002,10 @@ app.get('/api/payments', authMiddleware, async (req, res) => {
     var totalSpendThisMonth = 0;
     var totalSpendAllTime = 0;
 
+    // Fallback: if no Stripe sub ID on the customer, check the subscriptions table
+    var dbSub = db.prepare('SELECT * FROM subscriptions WHERE customer_id = ?').get(req.user.id);
+    if (!stripeSubId && dbSub && dbSub.stripe_id) stripeSubId = dbSub.stripe_id;
+
     if (STRIPE_SECRET_KEY) {
       // 1. Subscription (from Stripe, source of truth)
       if (stripeSubId) {
