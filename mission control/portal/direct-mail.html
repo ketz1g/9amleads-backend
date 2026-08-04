@@ -99,19 +99,19 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div><label class="label">Cover Letter PDF (optional)</label><input type="file" class="input" id="up-letter" accept=".pdf,.png,.jpg,.jpeg"></div>
 </div>
 <div style="margin-top:8px;padding:10px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:11px;color:#0369a1">
-<i class="fas fa-info-circle" style="margin-right:4px"></i><b>Important — address space:</b> Stannp prints the recipient's name &amp; address automatically in a reserved clear zone on the <b>leaflet back</b>, and whites that area so Royal Mail can read it. Design specs: <b>3mm bleed</b> on all edges, keep important content <b>5mm inside</b> the trim, and keep the <b>top-left ~80×40mm of the back</b> fairly plain for the address. Use the official templates above to get this exactly right.
+<i class="fas fa-info-circle" style="margin-right:4px"></i><b>Important — address space:</b> The recipient's name &amp; address is printed automatically in a reserved clear zone on the <b>leaflet back</b>, and that area is kept white so Royal Mail can read it. Design specs: <b>3mm bleed</b> on all edges, keep important content <b>5mm inside</b> the trim, and keep the <b>top-left ~80×40mm of the back</b> fairly plain for the address. Use the templates above to get this exactly right.
 </div>
 
 <!-- Design Templates -->
 <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
-<div class="sect-title"><i class="fas fa-ruler-combined" style="color:var(--accent)"></i> Design Templates (Official Stannp Specs)</div>
-<p style="font-size:12px;color:var(--text2);margin-bottom:10px">Download Stannp's official blank templates with exact dimensions, bleed, safe zones and the address clear zone. Design on these and you can't go wrong.</p>
+<div class="sect-title"><i class="fas fa-ruler-combined" style="color:var(--accent)"></i> Design Templates (Print Specs)</div>
+<p style="font-size:12px;color:var(--text2);margin-bottom:10px">Download the official blank templates with exact dimensions, bleed, safe zones and the address clear zone. Design on these and you can't go wrong.</p>
 <div class="grid-3">
-<a class="btn btn-outline" href="https://www.stannp.com/assets/pdfs/design-guides/a5_postcard_template.pdf" target="_blank" style="justify-content:center;text-align:center"><i class="fas fa-file-pdf"></i> A5 Leaflet Template</a>
-<a class="btn btn-outline" href="https://www.stannp.com/assets/pdfs/design-guides/a5_portrait_postcard_template.pdf" target="_blank" style="justify-content:center;text-align:center"><i class="fas fa-file-pdf"></i> A5 Portrait Leaflet</a>
-<a class="btn btn-outline" href="https://www.stannp.com/assets/pdfs/design-guides/a4_letter_template.pdf" target="_blank" style="justify-content:center;text-align:center"><i class="fas fa-file-pdf"></i> A4 Letter Template</a>
+<a class="btn btn-outline" href="/portal/templates/a5-leaflet.pdf" target="_blank" style="justify-content:center;text-align:center"><i class="fas fa-file-pdf"></i> A5 Leaflet Template</a>
+<a class="btn btn-outline" href="/portal/templates/a5-leaflet-portrait.pdf" target="_blank" style="justify-content:center;text-align:center"><i class="fas fa-file-pdf"></i> A5 Portrait Leaflet</a>
+<a class="btn btn-outline" href="/portal/templates/a4-letter.pdf" target="_blank" style="justify-content:center;text-align:center"><i class="fas fa-file-pdf"></i> A4 Letter Template</a>
 </div>
-<div style="margin-top:8px;font-size:11px;color:var(--muted)">More formats (A6, DL, envelopes): <a href="https://stannp.com/uk/design-specs" target="_blank" style="color:var(--accent)">Stannp design specs</a></div>
+<div style="margin-top:8px;font-size:11px;color:var(--muted)">More formats (A6, DL, envelopes) available on request.</div>
 </div>
 <button class="btn btn-outline" onclick="uploadMaterials()" style="margin-top:10px"><i class="fas fa-upload"></i> Upload Files</button>
 <div id="materials-list" style="margin-top:12px"></div>
@@ -150,6 +150,29 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div class="sect-title"><i class="fas fa-redo-alt" style="color:var(--accent)"></i> Repeat Mailing Series <span style="margin-left:auto;font-size:11px;color:var(--text2)">automatic follow-ups</span></div>
 <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">When you send a lead with a repeat option, all follow-up mailings are listed here and dispatched automatically on their due date.</p>
 <div id="repeat-series-list"></div>
+</div>
+
+<!-- FAQ -->
+<div class="card">
+<div class="sect-title"><i class="fas fa-question-circle" style="color:var(--accent)"></i> Frequently Asked Questions</div>
+<div style="display:grid;gap:12px;margin-top:4px">
+<div>
+<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">How are my letters and leaflets sent?</div>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">Your items are printed, folded and posted by a trusted third-party mailing service, and delivered through Royal Mail. You don't need to do anything — once you pay, everything is handled for you.</p>
+</div>
+<div>
+<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">How do I know my items were actually sent?</div>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">Every mailing shows a live tracking timeline (Received → Review → Paid → Printing → Delivered). Once dispatched, you can open a <b>Proof of Posting</b> PDF from the mailing's tracking view, which confirms it was printed and handed to Royal Mail.</p>
+</div>
+<div>
+<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">How long does delivery take?</div>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">Items are usually printed and dispatched within 1-2 working days, then delivered by Royal Mail shortly after. The tracking timeline updates as your item moves through each stage.</p>
+</div>
+<div>
+<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Can I send to the same lead more than once?</div>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">Yes. Use the <b>Repeat mailing</b> option when sending to schedule automatic follow-ups (e.g. now, in 2 weeks, then a month). Each follow-up is tracked in your Repeat Mailing Series.</p>
+</div>
+</div>
 </div>
 </div>
 
