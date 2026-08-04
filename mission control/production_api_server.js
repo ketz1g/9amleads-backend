@@ -4979,12 +4979,20 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
 });
 
 // ===== STRIPE PAYMENTS =====
+// Correct weekly-recurring price IDs for EVERY product and plan tier.
+// Naming: -starter / -growth / -power (matches checkout planMap pro→growth, enterprise→power).
+// All are weekly subscriptions (interval=week, confirmed live on Stripe).
 const STRIPE_PRICE_IDS = {
-  moving: { 'mov-starter': 'price_1TswriADspDnFpfBKv3Pfy0V', 'mov-pro': 'price_1Tsws0ADspDnFpfBb1tVUbR7', 'mov-enterprise': 'price_1Tsws1ADspDnFpfBAGCw6JqD' },
-  planning: { 'plan-starter': 'price_1TswrkADspDnFpfBOkRU4Qli', 'plan-pro': 'price_1TswrkADspDnFpfBMTrEDoZ9', 'plan-enterprise': 'price_1TswrkADspDnFpfBPe8qstPs' },
-  newbusiness: { 'nb-starter': 'price_1TswrmADspDnFpfBi8Woj0oR' },
-  probate: { 'prob-starter': 'price_1TxQqKADspDnFpfBccT0Lh2w' },
-  tenders: { 'tend-starter': 'price_1TxQqKADspDnFpfBpzGp4qVv' }
+  moving: { 'mov-starter': 'price_1Tm6PMADspDnFpfBJtsUWi6v', 'mov-growth': 'price_1Tm6PNADspDnFpfB847Dubdf', 'mov-power': 'price_1Tm6POADspDnFpfBkf0gfqXs' },
+  planning: { 'plan-starter': 'price_1TmEKSADspDnFpfBrCHXJBFu', 'plan-growth': 'price_1TmEKTADspDnFpfBVdi1APEq', 'plan-power': 'price_1TmEKTADspDnFpfBxFjHeoP9' },
+  newbusiness: { 'nb-starter': 'price_1Tm6PRADspDnFpfBx80lgJ84', 'nb-growth': 'price_1Tm6PSADspDnFpfBXakzcGEL', 'nb-power': 'price_1Tm6PSADspDnFpfBGRGc5zQ9' },
+  probate: { 'prob-starter': 'price_1Tm6PPADspDnFpfBkewa97Bv', 'prob-growth': 'price_1Tm6PPADspDnFpfB3q61i5FP', 'prob-power': 'price_1Tm6PQADspDnFpfBazgz1UD7' },
+  tenders: { 'tend-starter': 'price_1TmEKTADspDnFpfBsi6jjA6B', 'tend-growth': 'price_1TmEKUADspDnFpfBqnyKzJxM', 'tend-power': 'price_1TmEKUADspDnFpfBugGOoqhD' },
+  'builder-package': { 'bld-package': 'price_1Tm6PYADspDnFpfB1PoCynL3' },
+  'marketing-package': { 'mkt-package': 'price_1Tm6PZADspDnFpfBuTg9lDWp' },
+  'property-package': { 'prp-package': 'price_1Tm6PaADspDnFpfBtGP40kRG' },
+  'moving-package': { 'mov-package': 'price_1Tm6PbADspDnFpfBladxbVXe' },
+  pro: { 'pro-plan': 'price_1Tm6PcADspDnFpfB74ilpeT6' }
 };
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
