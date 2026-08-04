@@ -9807,20 +9807,38 @@ function syncCustomers(product) {
         } else {
           leads = [];
         }
+        // RELIABILITY SAFETY NET: if today's scrape produced no leads (or too few),
+        // keep the previous pool instead of overwriting with empty. This guarantees
+        // every account still gets fresh-ish leads even when a source is down or
+        // flaky on a given day (e.g. Gazette blocking, PLOTA slow).
+        var poolPath = path.join(DATA_DIR, config.file);
+        var prevPool = [];
+        try { prevPool = JSON.parse(fs.readFileSync(poolPath, 'utf-8')); if (!Array.isArray(prevPool)) prevPool = []; } catch(e) { prevPool = []; }
         fs.mkdirSync(DATA_DIR, { recursive: true });
-        fs.writeFileSync(path.join(DATA_DIR, config.file), JSON.stringify(leads, null, 2));
-        // General freshness filter for all products: prefer 24h, fallback 48h
+        // General freshness filter for all products: prefer 24h, fallback 48h, then recent
         if (leads && leads.length > 0 && product !== 'moving') {
           var genFresh = filterFresh(leads, 'scrapedAt');
           if (genFresh.fresh.length >= 3) leads = genFresh.fresh;
           else if (genFresh.fallback.length >= 5) leads = genFresh.fallback;
           else leads = genFresh.fresh.concat(genFresh.fallback).concat(genFresh.rejected).slice(0, 200);
         }
+        var freshCount = leads && leads.length ? leads.length : 0;
+        // Merge: today's fresh leads + any previous pool leads NOT already included
+        // (keeps a healthy buffer so delivery always has supply for every account).
+        var seenIds = new Set();
+        var merged = [];
+        (leads || []).forEach(function(l) { var k = l.id || l.title || l.address || ''; if (k && !seenIds.has(k)) { seenIds.add(k); merged.push(l); } });
+        prevPool.forEach(function(l) {
+          var k = l.id || l.title || l.address || '';
+          if (k && !seenIds.has(k)) { seenIds.add(k); merged.push(l); }
+        });
+        leads = merged.slice(0, 300);
         if (!leads || leads.length === 0) { leads = []; }
+        fs.writeFileSync(poolPath, JSON.stringify(leads, null, 2));
         markScrapedToday(product); // Record this product as scraped today
         var leadSource = leads && leads.length > 0 ? (leads[0].source || 'unknown') : 'empty';
         fs.writeFileSync(path.join(DATA_DIR, product + '-source.txt'), leadSource);
-        results[product] = leadSource + '_' + (leads ? leads.length : 0);
+        results[product] = leadSource + '_' + (leads ? leads.length : 0) + '(fresh:' + freshCount + ',buffered:' + (leads ? leads.length - freshCount : 0) + ')';
       } catch (prodErr) {
         results[product] = 'error: ' + prodErr.message;
       }
