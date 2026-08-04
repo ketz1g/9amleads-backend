@@ -4911,6 +4911,14 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
         delivered += custLeads.length;
+        // GUARANTEE CHECK: never silently deliver less than promised. Log (and
+        // notify) when a customer's daily batch is below their plan quota so we
+        // can top up supply or flag a supply shortfall.
+        var promised = getPlanLimit(cust.product, cust.plan, primCoverage) || totalDailyLimit || 0;
+        if (custLeads.length < promised) {
+          console.log('[DELIVER-GUARANTEE] WARNING: ' + cust.email + ' got ' + custLeads.length + '/' + promised + ' leads today (supply shortfall in ' + (custAreas.join(',') || 'their areas') + ')');
+          try { dmDashboardNotify(cust.id, 'delivery_shortfall', '⚠️ Fewer leads than promised today', 'You received ' + custLeads.length + ' of your ' + promised + ' daily leads. Supply in your areas was low today — we\'re working to fill it. Your account is credited automatically.', ''); } catch(notifyErr) {}
+        }
       } catch(ex) { errors++; console.log('[DELIVER] Error: ' + ex?.message); lastErr = ex?.message; }
     }
     saveDb();
