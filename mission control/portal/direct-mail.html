@@ -410,9 +410,29 @@ function loadCampaigns(){
     if(!cams.length){list.innerHTML='<div class="empty"><i class="fas fa-history"></i>No campaigns yet</div>';return;}
     var html='';
     cams.forEach(function(c){
-      html+='<div class="recipient"><div><div class="addr">'+c.name+'</div>'+
-        '<div class="meta">'+c.target_count+' recipients · Created '+new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</div></div>'+
-        '<span class="status-badge'+(c.status==='queued'||c.status==='sent'||c.status==='paid'||c.status==='approved'?' approved':'')+'">'+c.status+'</span></div>';
+      var tr=c.tracking||{step:0,label:'Received'};
+      var steps=['Received','Review','Paid','Printing','Delivered'];
+      var stepHtml='';
+      steps.forEach(function(s,i2){
+        var done = tr.step > i2 || (tr.step===5 && i2<=4);
+        var active = tr.step===i2+1 && tr.step<5;
+        stepHtml+='<div style="flex:1;text-align:center;position:relative">'+
+          '<div style="width:18px;height:18px;border-radius:50%;margin:0 auto;'+(done?'background:var(--success);color:#fff':active?'background:var(--accent);color:#fff':'background:#e2e8f0;color:var(--muted)')+';display:flex;align-items:center;justify-content:center;font-size:8px">'+(done?'<i class="fas fa-check"></i>':(i2+1))+'</div>'+
+          '<div style="font-size:8px;color:'+(done?'var(--success)':active?'var(--accent)':'var(--muted)')+';font-weight:'+(done||active?'700':'400')+';margin-top:3px">'+s+'</div></div>';
+      });
+      var statusColor = c.status==='completed'||c.status==='dispatched' ? 'var(--success)' : c.status==='failed'||c.status==='cancelled' ? '#dc2626' : 'var(--accent)';
+      var proofBtn = c.proof_url || tr.proof_available ?
+        '<a href="/api/direct-mail/campaigns/'+c.id+'/proof" target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:7px 12px;border-radius:7px;background:#fff;border:1px solid var(--accent);color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;text-decoration:none"><i class="fas fa-file-pdf"></i> View Proof of Posting</a>'
+        : '';
+      var dispatchedLine = tr.dispatched ? '<div style="font-size:10px;color:var(--muted);margin-top:2px">Dispatched '+(c.delivery_date||'')+' · '+(c.sent_count||0)+' item'+(c.sent_count===1?'':'s')+'</div>' : '';
+      html+='<div style="border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">'+
+        '<div><div style="font-weight:700;font-size:13px">'+c.name+'</div>'+
+        '<div style="font-size:11px;color:var(--muted)">'+(c.target_count||0)+' recipients · Created '+new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</div>'+
+        dispatchedLine+'</div>'+
+        '<span style="font-size:11px;font-weight:700;color:'+statusColor+'">'+(tr.label||c.status)+'</span></div>'+
+        '<div style="display:flex;align-items:center;gap:4px;margin-top:12px">'+stepHtml+'</div>'+
+        proofBtn+'</div>';
     });
     list.innerHTML=html;
   });
