@@ -342,8 +342,19 @@ var ci=Math.floor(Math.random()*tips.length);
 <div><strong>Postcode areas:</strong> <span id="sub-areas-count">0</span>/<span id="sub-max-areas">3</span></div>
 <div><strong>Trial ends:</strong> <span id="sub-trial-end">-</span></div>
 <div id="sub-billing-row" style="display:none"><strong>Next billing:</strong> <span id="sub-next-billing">-</span></div>
+<div id="pay-weekly-row" style="display:none"><strong>Weekly plan:</strong> <span id="pay-weekly-amount">£0</span>/week</div>
+<div id="pay-next-invoice-row" style="display:none"><strong>Upcoming invoice:</strong> <span id="pay-next-invoice">-</span></div>
+<div id="pay-card-row" style="display:none"><strong>Card on file:</strong> <span id="pay-card">-</span></div>
+<div id="pay-spend-row" style="display:none"><strong>Paid this week:</strong> <span id="pay-spend-week">£0</span> · <strong>All time:</strong> <span id="pay-spend-total">£0</span></div>
 </div>
 </div>
+
+<!-- Payment history -->
+<div style="margin-top:10px" id="payments-history">
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px"><i class="fas fa-receipt" style="color:var(--accent);margin-right:4px"></i> Payment History</div>
+<div id="payments-list" style="font-size:12px"></div>
+</div>
+
 <button class="btn btn-danger btn-sm" onclick="showCancelConfirm()" style="width:100%"><i class="fas fa-times-circle"></i> Cancel Subscription</button>
 <p style="font-size:11px;color:var(--muted);margin-top:8px">After cancellation, you keep dashboard access but lead delivery stops. You can restart anytime.</p>
 </div>
@@ -560,6 +571,47 @@ function loadSubscription() {
     if (d.subscription && d.subscription.next_billing) {
       document.getElementById('sub-billing-row').style.display = 'block';
       document.getElementById('sub-next-billing').textContent = new Date(d.subscription.next_billing).toLocaleDateString();
+    }
+  });
+}
+function loadPayments() {
+  apiCall('GET', '/api/payments', null, function(err, d) {
+    if (!d) return;
+    var pay = d.payment_method;
+    if (d.price_per_week && d.price_per_week > 0 && d.plan !== 'free_trial' && d.plan !== 'cancelled') {
+      document.getElementById('pay-weekly-row').style.display = 'block';
+      document.getElementById('pay-weekly-amount').textContent = '£' + d.price_per_week;
+    }
+    if (d.upcoming_invoice && d.upcoming_invoice.amount > 0) {
+      document.getElementById('pay-next-invoice-row').style.display = 'block';
+      document.getElementById('pay-next-invoice').textContent = '£' + d.upcoming_invoice.amount.toFixed(2) + ' on ' + (d.upcoming_invoice.next_payment_attempt ? new Date(d.upcoming_invoice.next_payment_attempt).toLocaleDateString() : 'next week');
+    }
+    if (pay) {
+      document.getElementById('pay-card-row').style.display = 'block';
+      document.getElementById('pay-card').textContent = (pay.brand || 'Card').charAt(0).toUpperCase() + (pay.brand || 'card').slice(1) + ' ending ' + pay.last4 + (pay.exp_month ? ' (' + pay.exp_month + '/' + pay.exp_year + ')' : '');
+    }
+    if (d.total_spend_this_month > 0 || d.total_spend_all_time > 0) {
+      document.getElementById('pay-spend-row').style.display = 'block';
+      document.getElementById('pay-spend-week').textContent = '£' + d.total_spend_this_month.toFixed(2);
+      document.getElementById('pay-spend-total').textContent = '£' + d.total_spend_all_time.toFixed(2);
+    }
+    // Payment history list
+    var inv = (d.invoices || []).slice(0, 10);
+    var list = document.getElementById('payments-list');
+    if (!inv.length) {
+      list.innerHTML = '<span style="color:var(--muted)">No invoices yet.</span>';
+    } else {
+      var html = '';
+      inv.forEach(function(i) {
+        var statusColor = i.status === 'paid' ? 'var(--success)' : i.status === 'open' ? '#f59e0b' : '#dc2626';
+        var label = i.status === 'paid' ? 'Paid' : i.status === 'open' ? 'Due' : (i.status || '');
+        var when = i.created ? new Date(i.created).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
+        var link = i.invoice_pdf ? '<a href="' + i.invoice_pdf + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px;margin-left:6px">PDF</a>' : '';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap">' +
+          '<div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="color:' + statusColor + ';font-weight:700">' + label + '</span><span style="color:var(--text2);font-size:11px">' + when + '</span></div>' +
+          '<div style="display:flex;align-items:center;gap:6px"><strong>£' + i.amount.toFixed(2) + '</strong>' + link + '</div></div>';
+      });
+      list.innerHTML = html;
     }
   });
 }
@@ -902,6 +954,7 @@ document.querySelectorAll('.modal').forEach(function(m){
     if (d && d.areas) renderPostcodes(d.areas);
   });
   loadSubscription();
+  loadPayments();
   loadCrm();
   loadOnboarding();
   loadPrintPostSetup();
