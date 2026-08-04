@@ -4768,6 +4768,18 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         else { custAreas = JSON.parse(cust.target_areas || '[]'); }
       } catch(e) { custAreas = []; }
       var totalDailyLimit = getPlanLimit(cust.product, cust.plan, primCoverage) || 5;
+      // MULTI-PRODUCT: a customer subscribed to several lead types gets the full
+      // promised quota for EACH product (e.g. moving 15 + probate 15 = 30 total),
+      // not just the primary product's limit applied once.
+      if (products.length > 1) {
+        var sumLimits = 0;
+        products.forEach(function(p) {
+          var pCfg = pcfg[p] || {};
+          var pCov = pCfg.coverage || cust.coverage || 'postcode';
+          sumLimits += getPlanLimit(p, cust.plan, pCov) || dailyLimitByPlan[cust.plan] || 5;
+        });
+        totalDailyLimit = Math.max(totalDailyLimit, sumLimits);
+      }
       // Ensure customer's primary product always has at least 1 lead
       var primaryPickedId = null;
       if (cust.product) {
@@ -4842,12 +4854,28 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var pickedIds = [];
       if (primaryPickedId) pickedIds.push(primaryPickedId);
       var totalNeeded = totalDailyLimit;
+      // Per-product daily caps (multi-product customers): track how many leads of
+      // each product we've taken this batch and stop at each product's own limit.
+      var prodTaken = {};
+      products.forEach(function(p) { prodTaken[p] = 0; });
+      function prodDailyCap(p) {
+        var pCfg2 = pcfg[p] || {};
+        var pCov2 = pCfg2.coverage || cust.coverage || 'postcode';
+        var pLim = getPlanLimit(p, cust.plan, pCov2) || dailyLimitByPlan[cust.plan] || 5;
+        // Weekly-model products also cap per-day (ceil of weekly/5)
+        var pRule2 = getLeadTypeRule(p);
+        if (pRule2 && pRule2.model === 'weekly' && pRule2.weekly_est && pRule2.weekly_est[cust.plan]) {
+          pLim = Math.min(pLim, Math.max(1, Math.ceil(pRule2.weekly_est[cust.plan] / 5)));
+        }
+        return pLim;
+      }
       // Round 1: try to give EVERY product at least 1 lead from a different area
       var usedAreas = {};
       custAreas.forEach(function(a) { usedAreas[a] = {}; });
       var areaCycle = 0;
       for (var r1p = 0; r1p < products.length && custLeads.length < totalDailyLimit; r1p++) {
         var r1prod = products[r1p];
+        if (prodTaken[r1prod] >= prodDailyCap(r1prod)) continue;
         if (!canTakeProduct(r1prod, cust.plan, weekStart2, today, custLeads)) continue;
         var r1pool = (availByProd[r1prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
         if (r1pool.length === 0) continue;
@@ -4860,12 +4888,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             var areaLead = findLeadForProductAndArea(r1prod, sortedAreas[sa], r1pool, pickedIds);
             if (areaLead) {
               custLeads.push(areaLead); pickedIds.push(areaLead.id);
+              prodTaken[r1prod]++;
               found = true; break;
             }
           }
-          if (!found) { custLeads.push(r1pool[0]); pickedIds.push(r1pool[0].id); }
+          if (!found) { custLeads.push(r1pool[0]); pickedIds.push(r1pool[0].id); prodTaken[r1prod]++; }
         } else {
-          custLeads.push(r1pool[0]); pickedIds.push(r1pool[0].id);
+          custLeads.push(r1pool[0]); pickedIds.push(r1pool[0].id); prodTaken[r1prod]++;
         }
       }
       // Round 2: fill remaining slots — cycle through (product × area) round-robin
@@ -4874,6 +4903,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         for (var r2 = 0; r2 < maxRounds && custLeads.length < totalNeeded; r2++) {
           for (var r2p = 0; r2p < products.length && custLeads.length < totalNeeded; r2p++) {
             var r2prod = products[r2p];
+            if (prodTaken[r2prod] >= prodDailyCap(r2prod)) continue;
             if (!canTakeProduct(r2prod, cust.plan, weekStart2, today, custLeads)) continue;
             var r2pool = (availByProd[r2prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
             if (r2pool.length === 0) continue;
@@ -4885,12 +4915,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 var areaLead2 = findLeadForProductAndArea(r2prod, sortedAreas2[sa2], r2pool, pickedIds);
                 if (areaLead2) {
                   custLeads.push(areaLead2); pickedIds.push(areaLead2.id);
+                  prodTaken[r2prod]++;
                   found2 = true; break;
                 }
               }
-              if (!found2) { custLeads.push(r2pool[0]); pickedIds.push(r2pool[0].id); }
+              if (!found2) { custLeads.push(r2pool[0]); pickedIds.push(r2pool[0].id); prodTaken[r2prod]++; }
             } else {
-              custLeads.push(r2pool[0]); pickedIds.push(r2pool[0].id);
+              custLeads.push(r2pool[0]); pickedIds.push(r2pool[0].id); prodTaken[r2prod]++;
             }
           }
         }
@@ -4920,12 +4951,26 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         delivered += custLeads.length;
         // GUARANTEE CHECK: never silently deliver less than promised. Log (and
         // notify) when a customer's daily batch is below their plan quota so we
-        // can top up supply or flag a supply shortfall.
-        var promised = getPlanLimit(cust.product, cust.plan, primCoverage) || totalDailyLimit || 0;
-        if (custLeads.length < promised) {
-          console.log('[DELIVER-GUARANTEE] WARNING: ' + cust.email + ' got ' + custLeads.length + '/' + promised + ' leads today (supply shortfall in ' + (custAreas.join(',') || 'their areas') + ')');
-          try { dmDashboardNotify(cust.id, 'delivery_shortfall', '⚠️ Fewer leads than promised today', 'You received ' + custLeads.length + ' of your ' + promised + ' daily leads. Supply in your areas was low today — we\'re working to fill it. Your account is credited automatically.', ''); } catch(notifyErr) {}
-        }
+        // can top up supply or flag a supply shortfall. For multi-product
+        // customers, check EACH product's promised quota individually.
+        try {
+          var shortfallList = [];
+          products.forEach(function(pp) {
+            var ppCfg = pcfg[pp] || {};
+            var ppCov = ppCfg.coverage || cust.coverage || 'postcode';
+            var ppLim = getPlanLimit(pp, cust.plan, ppCov) || dailyLimitByPlan[cust.plan] || 5;
+            var ppRule = getLeadTypeRule(pp);
+            if (ppRule && ppRule.model === 'weekly' && ppRule.weekly_est && ppRule.weekly_est[cust.plan]) {
+              ppLim = Math.min(ppLim, Math.max(1, Math.ceil(ppRule.weekly_est[cust.plan] / 5)));
+            }
+            var ppCount = custLeads.filter(function(cl) { return cl.product === pp; }).length;
+            if (ppCount < ppLim) shortfallList.push(pp + ': ' + ppCount + '/' + ppLim);
+          });
+          if (shortfallList.length > 0) {
+            console.log('[DELIVER-GUARANTEE] WARNING: ' + cust.email + ' shortfall ' + shortfallList.join(', '));
+            try { dmDashboardNotify(cust.id, 'delivery_shortfall', '⚠️ Fewer leads than promised today', 'You received fewer than your promised daily leads (' + shortfallList.join(', ') + '). Supply was low in your areas today — we\'re working to fill it.', ''); } catch(notifyErr) {}
+          }
+        } catch(guaranteeErr) { console.log('[DELIVER-GUARANTEE] check error:', guaranteeErr.message); }
       } catch(ex) { errors++; console.log('[DELIVER] Error: ' + ex?.message); lastErr = ex?.message; }
     }
     saveDb();
