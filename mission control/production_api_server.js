@@ -10078,6 +10078,69 @@ app.get('/api/admin/system-status', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/health-report — friendly health summary (green/yellow/red)
+// built from the full system-status. Returns issues list for the admin UI.
+app.get('/api/admin/health-report', adminAuth, (req, res) => {
+  try {
+    var dbH = getDb();
+    var now = new Date().toISOString();
+    var today = now.split('T')[0];
+    var issues = [];
+    var fixes = [];
+
+    // Database
+    if (!dbH.customers) issues.push({ severity:'high', label:'Database not initialised', details:[], message:'Database not initialised' });
+
+    // Integrations
+    if (!STRIPE_SECRET_KEY) issues.push({ severity:'high', label:'Stripe not configured', details:[], message:'Stripe not configured' });
+    if (!BREVO_API_KEY) issues.push({ severity:'high', label:'Brevo (email) not configured', details:[], message:'Brevo (email) not configured' });
+    if (!process.env.APIFY_API_KEY) issues.push({ severity:'medium', label:'Apify not configured (Zoopla backup)', details:[], message:'Apify not configured' });
+
+    // Per-product supply
+    var productStatus = {};
+    Object.keys(PRODUCT_LEAD_FILES).forEach(function(p) {
+      var f = path.join(DATA_DIR, PRODUCT_LEAD_FILES[p].file);
+      var pool = [];
+      try { pool = JSON.parse(fs.readFileSync(f, 'utf-8')); if (!Array.isArray(pool)) pool = []; } catch(e) { pool = []; }
+      var custs = (dbH.customers || []).filter(function(c) { return c.product === p && c.plan !== 'cancelled'; });
+      var poolFresh = pool.filter(function(l) { return (l.scrapedAt || l.publishedDate || '').startsWith(today); }).length;
+      productStatus[p] = { pool: pool.length, fresh_today: poolFresh, customers: custs.length };
+      if (custs.length > 0 && pool.length === 0) issues.push({ severity:'high', label: p + ': pool EMPTY for ' + custs.length + ' customer(s)', details: [], message: p + ': pool empty' });
+      else if (custs.length > 0 && pool.length < custs.length) issues.push({ severity:'medium', label: p + ': low supply (' + pool.length + ' leads, ' + custs.length + ' customers)', details: [], message: p + ': low supply' });
+    });
+
+    // Delivery today
+    var todayDelivered = (dbH.leads || []).filter(function(l) { return l.delivered && l.delivered_at && l.delivered_at.startsWith(today); }).length;
+    var ukHour = parseInt(new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hour12: false }));
+    var ukMin = parseInt(new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', minute: '2-digit' }));
+    var isWeekday = [1,2,3,4,5].indexOf(new Date().getDay()) !== -1;
+    if (isWeekday && (ukHour > 9 || (ukHour === 9 && ukMin >= 30)) && (__deliveryFireCount === 0)) {
+      issues.push({ severity:'high', label:'Delivery has NOT fired today (past 09:30 UK)', details:[], message:'Delivery not fired' });
+    } else if (!isWeekday && todayDelivered > 0) {
+      issues.push({ severity:'low', label:'Delivered ' + todayDelivered + ' leads on weekend (unusual)', details:[], message:'Weekend delivery' });
+    }
+
+    var status = issues.some(function(i){return i.severity==='high';}) ? 'red' : issues.some(function(i){return i.severity==='medium';}) ? 'yellow' : 'green';
+    res.json({
+      status: status,
+      summary: { high_issues: issues.filter(function(i){return i.severity==='high';}).length, total_issues: issues.length },
+      issues: issues,
+      fixes: fixes,
+      checked_at: now,
+      system: {
+        leads_today: todayDelivered,
+        customers: (dbH.customers||[]).length,
+        stripe_configured: !!STRIPE_SECRET_KEY,
+        brevo_configured: !!BREVO_API_KEY,
+        apify_configured: !!process.env.APIFY_API_KEY,
+        scraper_stale: false,
+        last_scrape: now,
+        products: productStatus
+      }
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/product-file?product=tenders — inspect a product lead file
 app.get('/api/admin/product-file', adminAuth, (req, res) => {
   try {
