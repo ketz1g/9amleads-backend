@@ -7559,6 +7559,111 @@ app.post('/api/direct-mail/setup', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/direct-mail/auto-status — Simple auto print & post status for the toggle.
+// Returns whether the customer's setup is ready (template + profile) and current
+// auto-send state, plus what will happen when enabled.
+app.get('/api/direct-mail/auto-status', authMiddleware, (req, res) => {
+  try {
+    var dbA = getDb();
+    var customer = dbA.customers.find(function(c) { return c.id === req.user.id; });
+    var settings = dbA.direct_mail_automation_settings.find(function(s) { return s.customer_id === req.user.id; });
+    var profile = dbA.customer_business_profiles.find(function(p) { return p.customer_id === req.user.id; });
+    var template = null;
+    var tplId = '';
+    if (settings && settings.default_template_id) {
+      template = dbA.direct_mail_templates.find(function(t) { return t.id === settings.default_template_id && t.customer_id === req.user.id; });
+      tplId = settings.default_template_id;
+    }
+    if (!template) {
+      var anyTpl = dbA.direct_mail_templates.filter(function(t) { return t.customer_id === req.user.id; }).sort(function(a,b) { return (b.created_at||'').localeCompare(a.created_at||''); })[0];
+      if (anyTpl) { template = anyTpl; tplId = anyTpl.id; }
+    }
+    var ready = !!template && !!(profile && (profile.company_name || profile.business_type));
+    var hasCard = !!(customer && (customer.stripe_payment_method_id || customer.stripe_customer_id));
+    var isPro = customer && customer.plan && (customer.plan === 'pro' || customer.plan === 'enterprise');
+    var enabled = !!(settings && settings.enable_auto_send);
+    res.json({
+      success: true,
+      enabled: enabled,
+      ready: ready,
+      has_card: hasCard,
+      is_paid: isPro,
+      template_name: template ? (template.name || 'Your saved materials') : '',
+      mail_type: settings ? (settings.mail_type || 'letter') : 'letter',
+      max_daily_spend: settings ? (settings.max_daily_spend || 25) : 25,
+      last_status: settings && settings.enable_auto_send ? 'active' : 'off'
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/auto-toggle — ONE-CLICK auto print & post toggle.
+// When enabled, auto-configures automation settings from the customer's existing
+// Print & Post setup (default template, letter, sensible spend defaults, consent)
+// so every day's delivered leads are printed + posted automatically.
+app.post('/api/direct-mail/auto-toggle', authMiddleware, (req, res) => {
+  try {
+    var enable = req.body.enable === true || req.body.enable === 1 || req.body.enable === 'true' || req.body.enable === '1';
+    var nowIso = new Date().toISOString();
+    var dbA = getDb();
+    var customer = dbA.customers.find(function(c) { return c.id === req.user.id; });
+    var settings = dbA.direct_mail_automation_settings.find(function(s) { return s.customer_id === req.user.id; });
+
+    if (enable) {
+      // Auto-pick the customer's default/latest template
+      var tplId = settings && settings.default_template_id ? settings.default_template_id : '';
+      if (!tplId) {
+        var anyTpl = dbA.direct_mail_templates.filter(function(t) { return t.customer_id === req.user.id; }).sort(function(a,b) { return (b.created_at||'').localeCompare(a.created_at||''); })[0];
+        if (anyTpl) tplId = anyTpl.id;
+      }
+      if (!tplId) return res.status(400).json({ error: 'Save your Print & Post setup first (business info + cover letter). Then you can switch on Auto Print & Post.' });
+      var profile = dbA.customer_business_profiles.find(function(p) { return p.customer_id === req.user.id; });
+      if (!profile || !(profile.company_name || profile.business_type)) return res.status(400).json({ error: 'Please complete your business information in Print & Post setup before enabling Auto Print & Post.' });
+
+      // Sensible defaults: letter, £25/day cap, dedupe, consent recorded now
+      var defaults = {
+        enable_auto_send: 1,
+        lead_types: req.body.lead_types || settings && settings.lead_types || '',
+        postcode_areas: req.body.postcode_areas || (settings && settings.postcode_areas) || '',
+        default_template_id: tplId,
+        mail_type: req.body.mail_type || (settings && settings.mail_type) || 'letter',
+        max_daily_spend: parseInt(req.body.max_daily_spend) || (settings && settings.max_daily_spend) || 25,
+        max_monthly_spend: parseInt(req.body.max_monthly_spend) || (settings && settings.max_monthly_spend) || 500,
+        max_letters_per_day: parseInt(req.body.max_letters_per_day) || (settings && settings.max_letters_per_day) || 20,
+        min_leads_before_send: 1,
+        send_timing: 'after_9am',
+        pause_on_payment_fail: 1, pause_on_provider_fail: 1, pause_on_spend_limit: 1,
+        avoid_duplicate_mailing: 1,
+        repeat_mailing_days: 0,
+        consent_given: true, consent_date: nowIso,
+        consent_ip: (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '').split(',')[0].trim()
+      };
+      if (settings) {
+        dbA.direct_mail_automation_settings = dbA.direct_mail_automation_settings.map(function(s) {
+          if (s.customer_id !== req.user.id) return s;
+          return Object.assign({}, s, defaults);
+        });
+      } else {
+        var sId = uuidv4();
+        dbA.direct_mail_automation_settings.push(Object.assign({
+          id: sId, customer_id: req.user.id,
+          created_at: nowIso, updated_at: nowIso
+        }, defaults));
+      }
+      saveDb();
+      return res.json({ success: true, enabled: true, message: 'Auto Print & Post is ON. Every day at 9am, your new leads will be printed and posted automatically.' });
+    } else {
+      if (settings) {
+        dbA.direct_mail_automation_settings = dbA.direct_mail_automation_settings.map(function(s) {
+          if (s.customer_id !== req.user.id) return s;
+          return Object.assign({}, s, { enable_auto_send: 0, updated_at: nowIso });
+        });
+        saveDb();
+      }
+      return res.json({ success: true, enabled: false, message: 'Auto Print & Post is OFF.' });
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== GDPR / SUPPRESSION / PRIVACY =====
 // GET /api/direct-mail/suppression — Get customer's suppression list
 app.get('/api/direct-mail/suppression', authMiddleware, (req, res) => {
