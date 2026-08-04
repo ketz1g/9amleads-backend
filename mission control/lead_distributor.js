@@ -100,7 +100,14 @@ function normalisePostcode(pc) {
 }
 function extractPostcodeArea(pc) {
   if (!pc) return '';
-  return pc.toUpperCase().replace(/[^A-Z].*$/, '');
+  var s = String(pc).toUpperCase().trim();
+  // If the string contains a full postcode (possibly inside an address), extract it first
+  var m = s.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/);
+  if (m) s = m[0];
+  // Take the leading letters up to the first digit
+  var out = s.replace(/[^A-Z].*$/, '');
+  // Validate: postcode areas are 1-4 letters (e.g. B, BA, SW, NW, EC, DN, ...)
+  return out.length >= 1 && out.length <= 4 ? out : '';
 }
 
 // Extract district from postcode: "SW1A 1AA" → "sw1"
@@ -681,7 +688,15 @@ async function distributeProduct(product) {
   leadAssignments.splice(0, leadAssignments.length, ...interleaved);
 
   function getLeadPostcodeArea(leadData) {
-    var pc = leadData.lead.postcode || leadData.lead.address || leadData.lead.location || '';
+    var raw = leadData.lead;
+    var pc = raw.postcode || '';
+    if (!pc) {
+      // Extract the actual postcode from the full address (e.g. Companies House
+      // stores it inside address: "16 Brick House 1a Faringdon Avenue, Romford, RM3 8SH")
+      var m = (raw.address || '').match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i);
+      if (m) pc = m[0];
+    }
+    if (!pc) pc = raw.address || raw.location || '';
     return extractPostcodeArea(pc);
   }
 
