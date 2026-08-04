@@ -7866,6 +7866,144 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/direct-mail/send-bulk — Print & post MULTIPLE leads in one go.
+// Creates one campaign with all selected leads as recipients and returns a single
+// Stripe checkout for the combined total. Skips leads that already have full
+// addresses; reports any that can't be mailed.
+app.post('/api/direct-mail/send-bulk', authMiddleware, async (req, res) => {
+  try {
+    var leadIds = req.body.lead_ids || [];
+    var mailType = req.body.mail_type || 'letter'; // letter | flyer | flyer_plus_letter
+    if (!Array.isArray(leadIds) || leadIds.length === 0) return res.status(400).json({ error: 'No leads selected' });
+    if (leadIds.length > 100) return res.status(400).json({ error: 'Maximum 100 leads per batch. Please split your selection.' });
+    var template = req.body.template_id || '';
+    var nowIso = new Date().toISOString();
+
+    // Auto-select a template (same logic as single send)
+    var useTemplateId = template;
+    if (!useTemplateId) {
+      var dmSettings = null;
+      try { dmSettings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id); } catch(e) {}
+      if (dmSettings && dmSettings.default_template_id) useTemplateId = dmSettings.default_template_id;
+    }
+    if (!useTemplateId) {
+      var anyTemplate = null;
+      try { anyTemplate = db.prepare('SELECT * FROM direct_mail_templates WHERE customer_id = ? ORDER BY created_at DESC LIMIT 1').get(req.user.id); } catch(e) {}
+      if (anyTemplate) useTemplateId = anyTemplate.id;
+    }
+    if (!useTemplateId && (mailType === 'letter_a4' || mailType === 'flyer_plus_letter')) {
+      var bizProfile = null;
+      try { bizProfile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id); } catch(e) {}
+      if (bizProfile && (bizProfile.company_name || bizProfile.business_type)) {
+        var bizName = bizProfile.company_name || 'Our Team';
+        var bizType = bizProfile.business_type || 'local business';
+        var bizOffer = bizProfile.special_offer || '';
+        var bizCta = bizProfile.call_to_action || 'get in touch today';
+        var generated = 'Dear [name],\n\nWe are ' + bizName + ', a ' + bizType + ' serving ' + (bizProfile.service_areas || 'your local area') + '. We noticed you may be moving soon and we would love the opportunity to help you.\n\n' +
+          (bizOffer ? 'As a special offer, ' + bizOffer + '.\n\n' : '') +
+          'We pride ourselves on reliable, professional service at a fair price.\n\nPlease ' + bizCta + '.\n\nKind regards,\n' + bizName;
+        var tmpId = uuidv4();
+        db.prepare('INSERT INTO direct_mail_templates (id,customer_id,name,description,template_type,business_type,flyer_front_material_id,flyer_back_material_id,letter_material_id,ai_generated_text,status,created_at,updated_at,last_used_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+          .run(tmpId, req.user.id, 'Auto letter for ' + bizName.substring(0, 20), 'Auto-generated from business profile', 'letter', bizType, '', '', '', generated, 'approved', nowIso, nowIso, '');
+        useTemplateId = tmpId;
+      }
+    }
+
+    // Resolve leads and build recipients
+    var recipients = [];
+    var skippedNoAddress = [];
+    var skippedAlready = [];
+    for (var bi = 0; bi < leadIds.length; bi++) {
+      var lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(leadIds[bi], req.user.id);
+      if (!lead) continue;
+      var parsed = {};
+      try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
+      var addrLine1 = parsed.address_line1 || parsed.address || parsed.street || '';
+      var city = parsed.city || parsed.town || '';
+      var postcode = parsed.postcode || '';
+      if (!addrLine1 || !postcode) { skippedNoAddress.push(parsed.name || parsed.address || 'One lead'); continue; }
+      var already = db.prepare('SELECT * FROM direct_mail_recipients WHERE customer_id = ? AND lead_id = ? AND created_at > datetime(\'now\', \'-7 days\')').get(req.user.id, lead.id);
+      if (already) { skippedAlready.push(parsed.name || parsed.address || 'One lead'); continue; }
+      recipients.push({
+        lead_id: lead.id,
+        name: parsed.company || parsed.name || parsed.address || 'Homeowner',
+        company: parsed.company || '',
+        address_line1: addrLine1,
+        address_line2: parsed.address_line2 || '',
+        city: city,
+        postcode: postcode,
+        country: 'United Kingdom'
+      });
+    }
+    if (recipients.length === 0) {
+      return res.status(400).json({ error: 'None of the selected leads have a complete postal address (or they were already sent in the last 7 days).' });
+    }
+
+    var price = PRINT_POST_PRICES[mailType] ? PRINT_POST_PRICES[mailType].customer : PRINT_POST_PRICES.letter_a4.customer;
+    var total = Math.round(recipients.length * price * 100) / 100;
+    var campaignName = 'Print & Post: ' + recipients.length + ' leads';
+
+    // Create ONE campaign
+    var campaignId = uuidv4();
+    db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+      .run(campaignId, req.user.id, campaignName, mailType, 'approved', useTemplateId, '', recipients.length, 0, new Date(Date.now()+86400000).toISOString().split('T')[0], total, 'Bulk send from My Leads', '', '', '', '', '', '', nowIso, nowIso);
+    // Add all recipients
+    recipients.forEach(function(r) {
+      var recipientId = uuidv4();
+      db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
+        .run(recipientId, req.user.id, campaignId, r.name, r.company, r.address_line1, r.address_line2, r.city, r.postcode, r.country, r.lead_id, 'pending', nowIso);
+    });
+    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, campaignId, '', 'approved', 'customer', 'Bulk print & post (' + recipients.length + ' leads)', nowIso);
+
+    // Stripe checkout for the total
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    try {
+      var dmProvider = getDirectMailProvider();
+      var balCheck = await dmProvider.getBalance();
+      if (balCheck && balCheck.success && balCheck.balance < total) {
+        return res.status(400).json({ error: 'Print & Post is temporarily unavailable — our print partner is reloading credit. Please try again in a few minutes.' });
+      }
+    } catch(balErr) { console.log('[DM-SEND-BULK] Balance check skipped:', balErr.message); }
+
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    var amountPence = Math.round(total * 100);
+    var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    var sessionBody = {
+      mode: 'payment',
+      customer_email: customer.email,
+      'line_items[0][price_data][currency]': 'gbp',
+      'line_items[0][price_data][product_data][name]': 'Print & Post: ' + recipients.length + ' x ' + (PRINT_POST_PRICES[mailType] ? PRINT_POST_PRICES[mailType].label : 'A4 Letter'),
+      'line_items[0][price_data][product_data][description]': recipients.length + ' items at £' + price.toFixed(2) + ' each',
+      'line_items[0][price_data][unit_amount]': String(amountPence),
+      'line_items[0][quantity]': '1',
+      success_url: baseUrl + '/portal/dashboard.html?dm_payment=success&campaign_id=' + campaignId,
+      cancel_url: baseUrl + '/portal/dashboard.html?dm_payment=cancel&campaign_id=' + campaignId,
+      'metadata[customer_id]': customer.id,
+      'metadata[campaign_id]': campaignId,
+      'metadata[type]': 'direct_mail_campaign',
+      'metadata[recipient_count]': String(recipients.length),
+      'metadata[total_amount]': String(amountPence)
+    };
+    var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
+    if (session.url) {
+      db.prepare('UPDATE direct_mail_campaigns SET stripe_session_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ?').run(session.id, 'pending', nowIso, campaignId);
+      res.json({
+        success: true,
+        campaign_id: campaignId,
+        checkout_url: session.url,
+        recipient_count: recipients.length,
+        total: total,
+        price_per_item: price,
+        mail_type: mailType,
+        skipped_no_address: skippedNoAddress.length,
+        skipped_already_sent: skippedAlready.length
+      });
+    } else {
+      res.status(400).json({ error: session.error?.message || 'Checkout creation failed' });
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 var ALLOWED_FILE_TYPES = ['application/pdf','image/png','image/jpeg','image/jpg'];
 var ALLOWED_EXTENSIONS = ['.pdf','.png','.jpg','.jpeg'];
 var MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
