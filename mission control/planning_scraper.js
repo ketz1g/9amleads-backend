@@ -292,6 +292,59 @@ function fetchPlotaPlanning(postcode, maxItems, category) {
   });
 }
 
+// Query PLOTA by free text (e.g. "London", "Manchester") rather than a postcode.
+function fetchPlotaPlanningFreeText(query, maxItems, category) {
+  return new Promise((resolve) => {
+    const key = process.env.PLOTA_API_KEY || '';
+    if (!key) { resolve([]); return; }
+    const cat = category ? '&category=' + encodeURIComponent(category) : '';
+    const path = '/v1/applications?q=' + encodeURIComponent(query) + cat + '&limit=' + (maxItems || 30);
+    const options = {
+      hostname: 'api.plota.co.uk',
+      path: path,
+      method: 'GET',
+      headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + key, 'User-Agent': '9amLeads/1.0 (planning lead generator)' },
+      timeout: 30000
+    };
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) { console.log('    Plota(free) HTTP ' + res.statusCode); resolve([]); return; }
+        try {
+          const j = JSON.parse(body);
+          const items = j.data || [];
+          if (!items.length) { resolve([]); return; }
+          const leads = items.map(p => ({
+            id: 'PLOTA_' + (p.id || p.reference || Date.now()),
+            address: (p.address || '').trim(),
+            postcode: p.postcode || extractPostcode(p.address || ''),
+            proposal: p.description || '',
+            applicantName: p.agent_name || p.applicant_name || '',
+            applicationType: (p.category && p.category.label) || 'Planning Application',
+            status: p.status || 'Pending',
+            council: (p.authority && p.authority.name) || p.authority || '',
+            reference: p.reference || '',
+            estimatedValue: 0,
+            valueLabel: '',
+            url: (p.links && (p.links.plota || p.links.council)) || (p.url || '') || (p.id ? 'https://plota.co.uk/application/' + p.id : ''),
+            links: p.links || {},
+            dateSubmitted: p.date_received || p.date_validated || '',
+            locationPoint: p.location ? (p.location.lat + ',' + p.location.lng) : '',
+            source: 'Plota (Planning API)',
+            scrapedAt: new Date().toISOString()
+          }));
+          console.log('    Plota(free "' + query + '") returned ' + leads.length + ' applications');
+          resolve(leads);
+        } catch(e) { console.log('    Plota(free) parse error: ' + e.message); resolve([]); }
+      });
+    });
+    req.on('error', (e) => { console.log('    Plota(free) error: ' + e.message); resolve([]); });
+    req.setTimeout(30000, () => { req.destroy(); resolve([]); });
+    req.end();
+  });
+}
+
 // ===== SAMPLE DATA GENERATOR =====
 // Generates realistic UK planning application sample data
 function generateSampleLeads(postcodes, count) {
@@ -783,11 +836,36 @@ async function collectPlanningLeads(config) {
     'west-midlands-region': ['B1','CV1','DY1','ST1','WV1']
   };
   let rawAreas = config.postcodeAreas || ['SW1', 'N1', 'B1', 'M1', 'NW1', 'CR0', 'WD1'];
+  // Region names (e.g. "greater-london") are queried as free text on PLOTA —
+  // much lighter than expanding to hundreds of postcode areas (which rate-limits).
+  // Concrete postcode areas (e.g. "SW1", "NW3") are queried by postcode.
+  const REGION_QUERY_MAP = {
+    'greater-london': 'London', 'london': 'London',
+    'greater-manchester': 'Manchester', 'manchester': 'Manchester',
+    'west-midlands': 'Birmingham', 'west-midlands-region': 'Birmingham',
+    'birmingham': 'Birmingham', 'liverpool': 'Liverpool', 'leeds': 'Leeds',
+    'sheffield': 'Sheffield', 'bristol': 'Bristol', 'cardiff': 'Cardiff',
+    'edinburgh': 'Edinburgh', 'glasgow': 'Glasgow', 'yorkshire': 'Leeds',
+    'yorkshire-and-the-humber': 'Leeds', 'north-east': 'Newcastle',
+    'essex': 'Essex', 'kent': 'Kent', 'surrey': 'Surrey', 'sussex': 'Brighton',
+    'hampshire': 'Southampton', 'berkshire': 'Reading',
+    'buckinghamshire': 'Milton Keynes', 'oxfordshire': 'Oxford',
+    'hertfordshire': 'Watford', 'east-midlands': 'Nottingham',
+    'east-of-england': 'Cambridge', 'south-east': 'Brighton',
+    'south-west': 'Plymouth', 'wales': 'Cardiff', 'scotland': 'Glasgow'
+  };
   let areas = [];
   rawAreas.forEach(function(a) {
     const key = String(a).toLowerCase().trim().replace(/\s+/g, '-');
-    if (REGION_AREA_MAP[key]) { REGION_AREA_MAP[key].forEach(function(pc) { if (areas.indexOf(pc) === -1) areas.push(pc); }); }
-    else if (areas.indexOf(a) === -1) areas.push(a);
+    const query = REGION_QUERY_MAP[key];
+    if (query) {
+      if (areas.indexOf('q:' + query) === -1) areas.push('q:' + query);
+    } else if (REGION_AREA_MAP[key]) {
+      // Fallback: expand to postcodes only for regions not in REGION_QUERY_MAP
+      REGION_AREA_MAP[key].slice(0, 20).forEach(function(pc) { if (areas.indexOf(pc) === -1) areas.push(pc); });
+    } else if (areas.indexOf(a) === -1) {
+      areas.push(a);
+    }
   });
   if (areas.length === 0) areas = ['SW1', 'N1', 'B1', 'M1', 'NW1', 'CR0', 'WD1'];
   // Resolve selected application-type filters to PLOTA category slugs.
@@ -810,7 +888,13 @@ async function collectPlanningLeads(config) {
   for (let c = 0; c < catSlugs.length; c++) {
     for (let a = 0; a < areas.length && results.length < (config.maxItems || 30); a++) {
       try {
-        const batch = await fetchPlotaPlanning(areas[a], perCat, catSlugs[c]);
+        // "q:London" = free-text query; otherwise a postcode area query.
+        let batch;
+        if (String(areas[a]).indexOf('q:') === 0) {
+          batch = await fetchPlotaPlanningFreeText(String(areas[a]).substring(2), perCat, catSlugs[c]);
+        } else {
+          batch = await fetchPlotaPlanning(areas[a], perCat, catSlugs[c]);
+        }
         if (batch && batch.length > 0) {
           results.push.apply(results, batch.map(function(l){ l.selectedCategory = catSlugs[c]; return l; }));
           break; // got leads for this category in this area
