@@ -8868,8 +8868,23 @@ function syncCustomers(product) {
                 var av = (a.firstVisibleDate || a.updateDate || '');
                 return bv.localeCompare(av);
               });
-              leads = usedPool.slice(0, 500);
-              console.log('[SCRAPER] Rightmove: ' + freshPool.length + ' <24h, ' + fallbackPool.length + ' 24-48h, ' + weekPool.length + ' <7d, ' + otherPool.length + ' DROPPED, using ' + leads.length + ' listings');
+              // GUARANTEE area coverage: leads scraped from area-targeted regions
+              // (prepended with their area name) must not be cut by the global cap.
+              // Keep up to ~40 leads from each targeted area so quiet areas (B, HA)
+              // are always represented, then top up with the rest to the 500 cap.
+              var areaTagged = usedPool.filter(function(l) { return l.areaTargeted; });
+              var areaTaggedIds = {};
+              var perAreaCap = {};
+              areaTagged.forEach(function(l) {
+                var tag = l.areaTagged || '_';
+                if (!perAreaCap[tag]) perAreaCap[tag] = [];
+                if (perAreaCap[tag].length < 40) { perAreaCap[tag].push(l); areaTaggedIds[l.id] = true; }
+              });
+              var guaranteed = [];
+              Object.keys(perAreaCap).forEach(function(tag) { guaranteed.push.apply(guaranteed, perAreaCap[tag]); });
+              var rest = usedPool.filter(function(l) { return !areaTaggedIds[l.id]; });
+              leads = guaranteed.concat(rest).slice(0, 500);
+              console.log('[SCRAPER] Rightmove: ' + freshPool.length + ' <24h, ' + fallbackPool.length + ' 24-48h, ' + weekPool.length + ' <7d, ' + otherPool.length + ' DROPPED, ' + guaranteed.length + ' area-guaranteed, using ' + leads.length + ' listings');
             }
             // ENRICH fresh moving leads with real postcodes via the free detail page
             // (parallel, fast). Rightmove's list view hides postcodes, so without this
