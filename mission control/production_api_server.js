@@ -8783,7 +8783,8 @@ function syncCustomers(product) {
               // Supplemental source: Contracts Finder HTML search (free, no key).
               // Search per tender customer's requested area (e.g. "london") so the
               // pool actually contains opportunities in the places customers chose.
-              if (leads.length < 5) {
+              // Always run so area-relevant tenders are added regardless of PCS count.
+              {
                 try {
                   var tendersScraper = require('./tenders_scraper');
                   var tendCusts = (getDb().customers || []).filter(function(c) { return c.product === 'tenders' || ((c.biz_field3 || '').indexOf('tenders') !== -1); });
