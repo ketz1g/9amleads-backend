@@ -3009,10 +3009,21 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
   const bySource = db.prepare('SELECT source, COUNT(*) as count FROM customers GROUP BY source').all();
   const recentSignups = db.prepare('SELECT date(created_at) as day, COUNT(*) as count FROM customers GROUP BY date(created_at) ORDER BY day DESC LIMIT 7').all();
 
+  // JSON-level stats (expired trials, weekly signups, CRM connected)
+  var dbS = getDb();
+  var now = new Date().toISOString();
+  var weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  var expiredTrials = (dbS.customers || []).filter(function(c) { return c.plan === 'free_trial' && c.trial_ends && new Date(c.trial_ends) < now; }).length;
+  var weekSignups = (dbS.customers || []).filter(function(c) { return c.created_at && c.created_at >= weekAgo; }).length;
+  var crmConnected = (dbS.customers || []).filter(function(c) { return c.crm_webhook_url; }).length;
+
   res.json({
     total_customers: totalCustomers.count,
     free_trials: freeTrials.count,
     paid_customers: paidCustomers.count,
+    expired_trials: expiredTrials,
+    this_week_signups: weekSignups,
+    crm_connected: crmConnected,
     total_leads: totalLeads.count,
     today_leads: todayLeads.count,
     deliveries_today: deliveriesToday.count,
