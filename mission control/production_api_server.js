@@ -3293,17 +3293,17 @@ const LEAD_TYPE_RULES = {
     coverage: ['county', 'ukwide'],
     area_limit: { free_trial: 3, starter: 3, pro: 999, enterprise: 999 },
     plans: {
-      free_trial: { default: 5, county: 5, region: 5, ukwide: 5 },
-      starter:  { default: 5,  county: 5,  region: 5,  ukwide: 5 },
-      pro:      { default: 10, county: 10, region: 10, ukwide: 10 },
-      enterprise: { default: 25, county: 25, region: 25, ukwide: 25 },
+      free_trial: { default: 1, county: 1, region: 1, ukwide: 1 },
+      starter:  { default: 1,  county: 1,  region: 1,  ukwide: 1 },
+      pro:      { default: 3,  county: 3,  region: 3,  ukwide: 3 },
+      enterprise: { default: 5, county: 5, region: 5, ukwide: 5 },
     },
     min_area: 'county', up_to: true, enabled: true,
     price_starter: 'price_1TmEKSADspDnFpfBrCHXJBFu',
     price_growth: 'price_1TmEKTADspDnFpfBVdi1APEq',
     price_power: 'price_1TmEKTADspDnFpfBxFjHeoP9',
-    weekly_est: { starter: 25, pro: 50, enterprise: 125 },
-    monthly_est: { starter: 100, pro: 200, enterprise: 500 }
+    weekly_est: { starter: 5, pro: 15, enterprise: 25 },
+    monthly_est: { starter: 20, pro: 60, enterprise: 100 }
   },
   probate: {
     name: 'Probate Leads', key: 'probate', local: false, model: 'weekly',
@@ -3327,17 +3327,17 @@ const LEAD_TYPE_RULES = {
     coverage: ['county', 'region', 'ukwide'],
     area_limit: { free_trial: 3, starter: 3, pro: 999, enterprise: 999 },
     plans: {
-      free_trial: { default: 5, county: 5, region: 5, ukwide: 5 },
-      starter:  { default: 5,  county: 5,  region: 5,  ukwide: 5 },
-      pro:      { default: 10, county: 10, region: 10, ukwide: 10 },
-      enterprise: { default: 25, county: 25, region: 25, ukwide: 25 },
+      free_trial: { default: 1, county: 1, region: 1, ukwide: 1 },
+      starter:  { default: 1,  county: 1,  region: 1,  ukwide: 1 },
+      pro:      { default: 3,  county: 3,  region: 3,  ukwide: 3 },
+      enterprise: { default: 5, county: 5, region: 5, ukwide: 5 },
     },
     min_area: 'county', up_to: true, enabled: true,
     price_starter: 'price_1TmEKTADspDnFpfBsi6jjA6B',
     price_growth: 'price_1TmEKUADspDnFpfBqnyKzJxM',
     price_power: 'price_1TmEKUADspDnFpfBugGOoqhD',
-    weekly_est: { starter: 25, pro: 50, enterprise: 125 },
-    monthly_est: { starter: 100, pro: 200, enterprise: 500 }
+    weekly_est: { starter: 5, pro: 15, enterprise: 25 },
+    monthly_est: { starter: 20, pro: 60, enterprise: 100 }
   },
   property: {
     name: 'Property Leads', key: 'property', local: true,
