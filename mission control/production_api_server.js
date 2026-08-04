@@ -2217,6 +2217,36 @@ app.put('/api/postcodes/update', authMiddleware, (req, res) => {
   res.json({ success: true, areas: postcodes, count: postcodes.length, max_limit: getPostcodeLimit(customer.plan) });
 });
 
+// PUT /api/areas/update — Update the customer's coverage areas.
+// Used by tenders (and other county/region products) which select counties or
+// regions rather than postcode-area codes. Stores target_areas + coverage so the
+// distributor/delivery match on county/region names.
+const KNOWN_COUNTIES = ['bedfordshire','berkshire','bristol','buckinghamshire','cambridgeshire','cheshire','city-of-london','cornwall','cumbria','derbyshire','devon','dorset','durham','east-sussex','essex','gloucestershire','greater-london','greater-manchester','hampshire','herefordshire','hertfordshire','isle-of-wight','kent','lancashire','leicestershire','lincolnshire','merseyside','norfolk','north-yorkshire','northamptonshire','northumberland','nottinghamshire','oxfordshire','rutland','shropshire','somerset','south-yorkshire','staffordshire','suffolk','surrey','tyne-and-wear','warwickshire','west-midlands','west-sussex','west-yorkshire','wiltshire','worcestershire','east-midlands','east-of-england','london','north-east','north-west','south-east','south-west','west-midlands-region','yorkshire','yorkshire-and-the-humber','wales','scotland','all-uk','ukwide','all uk'];
+app.put('/api/areas/update', authMiddleware, (req, res) => {
+  try {
+    var { areas, coverage } = req.body;
+    if (!areas || !Array.isArray(areas)) return res.status(400).json({ error: 'Areas required' });
+    var cleanAreas = areas.map(function(a) { return String(a).toLowerCase().trim().replace(/\s+/g, '-'); }).filter(Boolean);
+    // Validate against known counties/regions when coverage is county/region
+    if (coverage === 'county' || coverage === 'region') {
+      var invalid = cleanAreas.filter(function(a) { return a === 'all-uk' ? false : KNOWN_COUNTIES.indexOf(a) === -1; });
+      if (invalid.length) return res.status(400).json({ error: 'Unknown area: ' + invalid.join(', ') });
+    }
+    var cov = coverage || 'county';
+    db.prepare('UPDATE customers SET target_areas = ?, coverage = ? WHERE id = ?').run(JSON.stringify(cleanAreas), cov, req.user.id);
+    saveDb();
+    res.json({ success: true, areas: cleanAreas, coverage: cov });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/areas — list the counties/regions a customer can pick for their product
+app.get('/api/areas', authMiddleware, (req, res) => {
+  var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  var counties = ['Bedfordshire','Berkshire','Bristol','Buckinghamshire','Cambridgeshire','Cheshire','Cornwall','Cumbria','Derbyshire','Devon','Dorset','Durham','East Sussex','Essex','Gloucestershire','Greater London','Greater Manchester','Hampshire','Herefordshire','Hertfordshire','Isle of Wight','Kent','Lancashire','Leicestershire','Lincolnshire','Merseyside','Norfolk','North Yorkshire','Northamptonshire','Northumberland','Nottinghamshire','Oxfordshire','Shropshire','Somerset','South Yorkshire','Staffordshire','Suffolk','Surrey','Tyne and Wear','Warwickshire','West Midlands','West Sussex','West Yorkshire','Wiltshire','Worcestershire'];
+  var regions = ['East Midlands','East of England','London','North East','North West','South East','South West','West Midlands','Yorkshire and the Humber'];
+  res.json({ success: true, counties: counties, regions: regions, current_areas: customer ? (customer.target_areas || '[]') : '[]', coverage: customer ? (customer.coverage || 'postcode') : 'postcode' });
+});
+
 // POST /api/postcodes/extra — purchase 1 extra postcode area (£50 one-time via Stripe)
 app.post('/api/postcodes/extra', authMiddleware, async (req, res) => {
   try {
@@ -3294,15 +3324,15 @@ const LEAD_TYPE_RULES = {
   },
   tenders: {
     name: 'Public Tenders', key: 'tenders', local: false, model: 'weekly',
-    coverage: ['region', 'ukwide'],
-    area_limit: { free_trial: 1, starter: 1, pro: 999, enterprise: 999 },
+    coverage: ['county', 'region', 'ukwide'],
+    area_limit: { free_trial: 3, starter: 3, pro: 999, enterprise: 999 },
     plans: {
-      free_trial: { default: 5, region: 5, ukwide: 5 },
-      starter:  { default: 5,  region: 5,  ukwide: 5 },
-      pro:      { default: 10, region: 10, ukwide: 10 },
-      enterprise: { default: 25, region: 25, ukwide: 25 },
+      free_trial: { default: 5, county: 5, region: 5, ukwide: 5 },
+      starter:  { default: 5,  county: 5,  region: 5,  ukwide: 5 },
+      pro:      { default: 10, county: 10, region: 10, ukwide: 10 },
+      enterprise: { default: 25, county: 25, region: 25, ukwide: 25 },
     },
-    min_area: 'region', up_to: true, enabled: true,
+    min_area: 'county', up_to: true, enabled: true,
     price_starter: 'price_1TmEKTADspDnFpfBsi6jjA6B',
     price_growth: 'price_1TmEKUADspDnFpfBqnyKzJxM',
     price_power: 'price_1TmEKUADspDnFpfBugGOoqhD',
