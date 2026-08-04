@@ -368,6 +368,17 @@ footer{text-align:center;padding:24px;color:var(--muted2);font-size:12px;border-
       <span style="font-size:10px;color:var(--muted2);margin-left:4px">Need more areas? <a href="#" onclick="buyExtraPostcodes();return false" style="color:#0ea5e9;text-decoration:underline">Purchase extras \u00a350 each</a></span>
     </div>
   </div>
+  <!-- County/Region selector (shown for tenders) -->
+  <div id="county-territory-manager" style="display:none">
+    <p style="font-size:12px;color:var(--text2);margin-bottom:8px">Tenders match by <b>county</b> or <b>region</b>. Pick the areas you cover.</p>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <select id="county-select-dash" style="flex:1;min-width:180px;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:13px;font-family:inherit;outline:none" onchange="addCountyArea(this.value)"><option value="">Choose a county...</option></select>
+      <select id="region-select-dash" style="flex:1;min-width:160px;padding:9px 12px;background:#ffffff;border:1px solid #d1d5db;border-radius:6px;color:#111827;font-size:13px;font-family:inherit;outline:none" onchange="addCountyArea(this.value)"><option value="">Choose a region...</option></select>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px" id="county-territory-tags"></div>
+    <div id="county-territory-msg" style="font-size:11px;display:none;margin-bottom:8px"></div>
+    <button class="btn btn-outline btn-sm" onclick="clearCountyAreas()"><i class="fas fa-times"></i> Clear areas</button>
+  </div>
 </div>
 <div class="card" id="lead-filters-section">
   <div class="card-header">
@@ -4562,6 +4573,13 @@ let editedTerritories = null;
 let territoryEditing = false;
 
 async function loadTerritories() {
+  var sess = getSession() || {};
+  var product = sess.product || 'moving';
+  // Tenders (and other county/region products) use the county selector.
+  if (product === 'tenders') {
+    loadCountyTerritories();
+    return;
+  }
   const data = await apiFetch('/api/postcodes/mine');
   if (!data) return;
   const tags = document.getElementById('territory-tags');
@@ -4585,6 +4603,76 @@ async function loadTerritories() {
 
   editedTerritories = data.areas.map(p => p.code);
   updateTerritorySaveBtn();
+}
+
+// ===== COUNTY/REGION SELECTOR (tenders) =====
+async function loadCountyTerritories() {
+  var data = await apiFetch('/api/areas');
+  if (!data) return;
+  var countySel = document.getElementById('county-select-dash');
+  var regionSel = document.getElementById('region-select-dash');
+  if (countySel) countySel.innerHTML = '<option value="">Choose a county...</option>' + (data.counties || []).map(function(c) { return '<option value="' + c.toLowerCase().replace(/\s+/g, '-') + '">' + c + '</option>'; }).join('');
+  if (regionSel) regionSel.innerHTML = '<option value="">Choose a region...</option>' + (data.regions || []).map(function(c) { return '<option value="' + c.toLowerCase().replace(/\s+/g, '-') + '">' + c + '</option>'; }).join('');
+  var tags = document.getElementById('county-territory-tags');
+  var current = [];
+  try { current = JSON.parse(data.current_areas || '[]'); } catch(e) {}
+  countyAreasGlobal = current;
+  renderCountyTags(current);
+  // Show county selector, hide postcode selector
+  var cm = document.getElementById('county-territory-manager');
+  var pm = document.getElementById('territory-manager');
+  var pBtn = document.getElementById('edit-territory-btn');
+  if (cm) cm.style.display = 'block';
+  if (pm) pm.style.display = 'none';
+  if (pBtn) pBtn.style.display = 'none';
+  var stats = document.getElementById('territory-stats');
+  if (stats) stats.textContent = current.length + ' area' + (current.length !== 1 ? 's' : '');
+}
+function renderCountyTags(areas) {
+  var tags = document.getElementById('county-territory-tags');
+  if (!tags) return;
+  var html = (areas || []).map(function(a) {
+    return '<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.15);border-radius:6px;font-size:12px;color:var(--success);font-weight:600">' +
+      a.split('-').map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ') +
+      '<span onclick="removeCountyArea(\'' + a + '\')" style="cursor:pointer;color:var(--muted2);margin-left:4px">&times;</span></span>';
+  }).join('');
+  tags.innerHTML = html || '<span style="font-size:11px;color:var(--muted2)">No counties selected yet.</span>';
+}
+var countyAreasGlobal = [];
+function addCountyArea(val) {
+  if (!val) { resetCountySelects(); return; }
+  if (val === 'all-uk' || val === 'ukwide') { countyAreasGlobal = ['all-uk']; }
+  else {
+    if (countyAreasGlobal.indexOf('all-uk') !== -1) countyAreasGlobal = [];
+    if (countyAreasGlobal.indexOf(val) === -1) countyAreasGlobal.push(val);
+  }
+  saveCountyAreas();
+  renderCountyTags(countyAreasGlobal);
+  resetCountySelects();
+}
+function removeCountyArea(val) {
+  countyAreasGlobal = countyAreasGlobal.filter(function(a) { return a !== val; });
+  saveCountyAreas();
+  renderCountyTags(countyAreasGlobal);
+}
+function clearCountyAreas() {
+  countyAreasGlobal = [];
+  saveCountyAreas();
+  renderCountyTags(countyAreasGlobal);
+}
+function resetCountySelects() {
+  var cs = document.getElementById('county-select-dash');
+  var rs = document.getElementById('region-select-dash');
+  if (cs) cs.value = '';
+  if (rs) rs.value = '';
+}
+function saveCountyAreas() {
+  var coverage = countyAreasGlobal.length === 1 && countyAreasGlobal[0] === 'all-uk' ? 'ukwide' : 'county';
+  apiFetch('/api/areas/update', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ areas: countyAreasGlobal, coverage: coverage }) }).then(function(d) {
+    var msg = document.getElementById('county-territory-msg');
+    if (msg) { msg.style.display = 'block'; msg.style.color = d && d.success ? '#22c55e' : '#ef4444'; msg.textContent = d && d.success ? 'Areas updated — affects tomorrow\'s 9am delivery.' : ((d && d.error) || 'Failed to save'); }
+    loadCountyTerritories();
+  }).catch(function() {});
 }
 
 let allTerritoryAreas = [];
