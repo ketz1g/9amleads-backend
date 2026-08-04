@@ -8960,58 +8960,32 @@ function syncCustomers(product) {
               var withRealPc = leads.filter(function(l) { return l.postcode && /[A-Z]{1,2}[0-9]/.test(l.postcode); }).length;
               console.log('[SCRAPER] Rightmove enriched ' + enrichedNow.length + ' leads; ' + withRealPc + '/' + leads.length + ' now have real postcodes');
             } catch(encErr) { console.log('[SCRAPER] Rightmove enrichment error:', encErr.message); }
-            // Apify supplement disabled - actor was blocked. Free scraper expanded to 13 regions x 4-20 pages.
-            if (false && apifyKey) {
+            // Zoopla supplement (Apify). Zoopla exposes FULL addresses WITH house
+            // numbers natively (unlike Rightmove). The flat $30/mo rental is far
+            // cheaper than Postcoder's per-lead cost at scale. Adds house numbers +
+            // a second portal of supply. Falls back silently if not rented (403).
+            if (apifyKey) {
               try {
-                console.log('[SCRAPER] Rightmove: free scraper gave ' + (leads ? leads.length : 0) + ', trying Apify supplement...');
-                var apifyLeads = await new Promise(function(r) {
-                  var bd = JSON.stringify({
-                    listUrls: [{ url: 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=REGION%5E87490&includeSSTC=true&sortType=6' }],
-                    propertyUrls: [], monitoringMode: false, fullPropertyDetails: true,
-                    includePriceHistory: false, includeNearestSchools: false,
-                    enableDelistingTracker: false, addEmptyTrackerRecord: false,
-                    maxProperties: 50,
-                    proxy: { useApifyProxy: true, apifyProxyGroups: ['BUYPROXIES94952'] }
-                  });
-                  var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + apifyKey + '&memory=1024&timeout=300', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bd), 'Accept': 'application/json' }, timeout: 300000 }, function(res) {
-                    var bt = ''; res.on('data', function(c) { bt += c; }); res.on('end', function() {
-                      try { var j = JSON.parse(bt); if (Array.isArray(j)) r(j); else r([]); } catch(e) { r([]); }
+                var mvAreasForZoopla = mvAreas.length ? mvAreas : (leads || []).map(function(l) { return extractPostcodeArea(l.postcode || ''); }).filter(Boolean);
+                if (mvAreasForZoopla.length > 0) {
+                  var zooplaLeads = await rmScraper.fetchZooplaApify(mvAreasForZoopla, 120);
+                  if (zooplaLeads && zooplaLeads.length > 0) {
+                    // Keep only fresh (<7d) to match the moving freshness policy
+                    var t7dZ = new Date(Date.now() - 7 * 86400000).toISOString();
+                    zooplaLeads = zooplaLeads.filter(function(l) { return (l.firstVisibleDate || l.updateDate || '') >= t7dZ; });
+                    var seenZ = {};
+                    (leads || []).forEach(function(l) { if (l.postcode && l.address) seenZ[(l.postcode + '|' + l.address).toLowerCase()] = 1; });
+                    var addedZ = 0;
+                    zooplaLeads.forEach(function(zl) {
+                      var k = ((zl.postcode || '') + '|' + (zl.address || '')).toLowerCase();
+                      if (k && !seenZ[k]) { seenZ[k] = 1; (leads || []).push(zl); addedZ++; }
                     });
-                  });
-                  req.on('error', function() { r([]); });
-                  req.write(bd); req.end();
-                });
-                if (apifyLeads && apifyLeads.length > 0) {
-                  var mappedApify = apifyLeads.map(function(p) {
-                    var pStatus = 'Available';
-                    var pReason = (p.listingUpdate && p.listingUpdate.listingUpdateReason || '').toLowerCase();
-                    if (pReason.includes('sold') || pReason.includes('sstc') || pReason.includes('under offer')) pStatus = 'SSTC';
-                    else if (pReason.includes('reduced')) pStatus = 'Reduced';
-                    else if (pReason === 'new') pStatus = 'New';
-                    if (p.displayStatus) pStatus = p.displayStatus;
-                    return {
-                      id: 'APIFY_' + p.id,
-                      title: p.displayAddress || '',
-                      address: p.displayAddress || '',
-                      price: p.price ? (p.price.amount || 0) : 0,
-                      bedrooms: p.bedrooms || 0,
-                      propertyType: p.propertySubType || '',
-                      listingStatus: pStatus,
-                      firstVisibleDate: p.firstVisibleDate || '',
-                      updateDate: p.updateDate || '',
-                      url: 'https://www.rightmove.co.uk' + (p.propertyUrl || ''),
-                      agent: p.customer ? (p.customer.branchDisplayName || p.customer.branchName || '') : '',
-                      source: 'Apify Rightmove',
-                      scrapedAt: new Date().toISOString(),
-                      city: p.city || p.displayAddress || '',
-                      postcode: (p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i) ? (p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i)[0] : ''
-                    };
-                  });
-                  leads = leads || [];
-                  leads = leads.concat(mappedApify);
-                  console.log('[SCRAPER] Rightmove: Apify added ' + mappedApify.length + ', total=' + leads.length);
+                    console.log('[SCRAPER] Zoopla added ' + addedZ + ' house-number leads, total=' + (leads ? leads.length : 0));
+                  } else {
+                    console.log('[SCRAPER] Zoopla: 0 leads (actor may need renting)');
+                  }
                 }
-              } catch(apifyErr) { console.log('[SCRAPER] Rightmove Apify error:', apifyErr.message); }
+              } catch(zooplaErr) { console.log('[SCRAPER] Zoopla error:', zooplaErr.message); }
             }
             if (!leads || leads.length === 0) {  console.log('[SCRAPER] Rightmove: 0 real leads today'); }
           } catch(e) { console.log('[SCRAPER] Rightmove error:', e.message); leads = []; }
