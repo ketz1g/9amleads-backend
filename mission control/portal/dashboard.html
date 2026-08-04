@@ -6,6 +6,8 @@
 <style>
 :root{--accent:#0ea5e9;--bg:#f8fafc;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--text2:#64748b;--muted:#94a3b8;--success:#22c55e;--warning:#f59e0b;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
+.switch input:checked + span{background:var(--success)}
+.switch input:checked + span + span{transform:translateX(26px)}
 body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.5}
 .top{background:#fff;border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .top .logo{font-family:var(--ff-h);font-size:20px;font-weight:900;color:var(--text)}.top .logo span{color:var(--accent)}
@@ -219,6 +221,24 @@ var ci=Math.floor(Math.random()*tips.length);
 
 <button class="btn btn-primary" onclick="ppSaveSetup()" style="margin-top:14px;width:100%;justify-content:center" id="pp-save-btn"><i class="fas fa-save"></i> Save My Print &amp; Post Setup</button>
 <div id="pp-save-status" style="font-size:12px;color:var(--success);margin-top:8px;text-align:center"></div>
+</div>
+
+<!-- Auto Print & Post Toggle -->
+<div class="card" id="auto-pp-card" style="border:1px solid var(--border)">
+<div class="sect-title"><i class="fas fa-robot" style="color:var(--success)"></i> Auto Print &amp; Post <span id="auto-pp-badge" style="margin-left:auto;font-size:10px;font-weight:700;color:var(--muted);background:#f1f5f9;padding:2px 10px;border-radius:20px">OFF</span></div>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">Turn this on and <b>every day at 9am your new leads will be printed &amp; posted automatically</b> — no need to do it yourself. Uses your saved materials and cover letter above. You only pay for what gets sent (up to your daily spend limit).</p>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<div style="flex:1;min-width:220px">
+<div style="font-size:13px;font-weight:700;color:var(--text)">Automatic daily mailing</div>
+<div style="font-size:11px;color:var(--muted)" id="auto-pp-detail">Set up your materials above, then switch this on.</div>
+</div>
+<label class="switch" style="position:relative;display:inline-block;width:58px;height:32px;flex-shrink:0">
+<input type="checkbox" id="auto-pp-toggle" onchange="autoPpToggle(this.checked)" style="opacity:0;width:0;height:0">
+<span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#cbd5e1;border-radius:32px;transition:.3s"></span>
+<span style="position:absolute;content:'';height:26px;width:26px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
+</label>
+</div>
+<div id="auto-pp-status" style="font-size:12px;color:var(--success);margin-top:8px"></div>
 </div>
 
 <!-- CRM Integration -->
@@ -672,6 +692,45 @@ function loadPrintPostSetup(){
     // Refresh the filter-fields container too (setup may affect materials availability)
   });
 }
+// ===== AUTO PRINT & POST (simple toggle) =====
+function autoPpLoad(){
+  apiCall('GET', '/api/direct-mail/auto-status', null, function(err, d){
+    if(!d||!d.success)return;
+    var toggle=document.getElementById('auto-pp-toggle');
+    var badge=document.getElementById('auto-pp-badge');
+    var detail=document.getElementById('auto-pp-detail');
+    var status=document.getElementById('auto-pp-status');
+    if(toggle) toggle.checked=!!d.enabled;
+    if(badge){
+      if(d.enabled){ badge.textContent='ON'; badge.style.color='#16a34a'; badge.style.background='#f0fdf4'; badge.style.border='1px solid #bbf7d0'; }
+      else { badge.textContent='OFF'; badge.style.color='var(--muted)'; badge.style.background='#f1f5f9'; badge.style.border='none'; }
+    }
+    if(detail){
+      if(d.enabled) detail.textContent='Using your saved "'+(d.template_name||'materials')+'" — '+d.mail_type+' up to £'+d.max_daily_spend+'/day. Dispatched after 9am daily.';
+      else if(!d.ready) detail.textContent='Save your materials above (business info + cover letter) to unlock Auto Print & Post.';
+      else detail.textContent='Ready to go — uses your saved "'+(d.template_name||'materials')+'". Switch on below.';
+    }
+    if(status) status.textContent='';
+    if(toggle&&!d.ready){ toggle.disabled=true; }
+  });
+}
+function autoPpToggle(enabled){
+  var status=document.getElementById('auto-pp-status');
+  var toggle=document.getElementById('auto-pp-toggle');
+  status.style.color='var(--accent)';
+  status.textContent='Saving...';
+  apiCall('POST', '/api/direct-mail/auto-toggle', {enable:enabled}, function(err, d){
+    if(d&&d.success){
+      status.style.color='var(--success)';
+      status.textContent=d.message;
+      autoPpLoad();
+    } else {
+      status.style.color='#dc2626';
+      status.textContent=(d&&d.error)||'Could not update. Please try again.';
+      if(toggle) toggle.checked=!enabled;
+    }
+  });
+}
 function ppGenLetter(){
   var statusEl=document.getElementById('pp-ai-status');
   var v=document.getElementById('pp-cversion').value;
@@ -846,6 +905,7 @@ document.querySelectorAll('.modal').forEach(function(m){
   loadCrm();
   loadOnboarding();
   loadPrintPostSetup();
+  autoPpLoad();
 })();
 </script>
 
