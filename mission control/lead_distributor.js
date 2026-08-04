@@ -144,10 +144,21 @@ function leadMatchesTarget(lead, customer, product) {
       // newbusiness). These leads often carry the address/town text rather than a
       // clean postcode area, so match on location text + county mapping.
       const isPostcodeAreaAny = targets.every(function(a) { return /^[A-Z]{1,3}$/i.test(a); });
+      // Normalise hyphens/spaces so county names match either way (e.g. the area
+      // "greater-london" matches lead text "Greater London"). Used for tenders and
+      // other county/region products.
+      function normCounty(s) { return String(s || '').toLowerCase().replace(/[\s-]+/g, ' ').trim(); }
       var leadText = ((lead.city || '') + ' ' + (lead.address || '') + ' ' + (lead.name || '') + ' ' + (lead.postcode || '') + ' ' + (lead.location || '')).toLowerCase();
+      var leadTextNorm = normCounty(leadText);
       for (const area of targets) {
         var areaLower = (area || '').toLowerCase().trim();
         if (!areaLower || areaLower === 'all uk' || areaLower === 'all-uk' || areaLower === 'ukwide' || areaLower === 'united kingdom' || areaLower === 'uk' || coverage === 'ukwide') { areaMatch = true; break; }
+        // County/region targets (e.g. "greater-london", "kent", "essex"): match the
+        // lead's location/buyer text against the county name (hyphen/space tolerant).
+        if (!isPostcodeAreaAny && areaLower.length >= 3) {
+          var areaNorm = normCounty(areaLower);
+          if (areaNorm.length >= 3 && leadTextNorm.indexOf(areaNorm) !== -1) { areaMatch = true; break; }
+        }
         // Postcode-area targets (e.g. B, EN, NW, G, BA): STRICT postcode matching.
         // Never do loose "includes()" text matching for these — a single-letter area
         // like "G" would match the letter 'g' inside any word (e.g. "building"),
