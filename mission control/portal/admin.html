@@ -118,13 +118,14 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 <th onclick="sortBy('email')">Email<span class="sort-icon"></span></th>
 <th>Products</th>
 <th onclick="sortBy('plan')">Plan<span class="sort-icon"></span></th>
+<th onclick="sortBy('trial_ends')">Trial End<span class="sort-icon"></span></th>
 <th>Areas</th>
 <th onclick="sortBy('lead_count')">Leads<span class="sort-icon"></span></th>
 <th onclick="sortBy('booked_count')">Booked<span class="sort-icon"></span></th>
 <th>CRM</th>
 <th onclick="sortBy('created_at')">Signup<span class="sort-icon"></span></th>
 <th></th>
-</tr></thead><tbody id="customerTable"><tr><td colspan="10" class="loading">Loading customers...</td></tr></tbody></table></div>
+</tr></thead><tbody id="customerTable"><tr><td colspan="11" class="loading">Loading customers...</td></tr></tbody></table></div>
 </div>
 
 <script>
@@ -178,12 +179,15 @@ async function loadData() {
   try {
     const stats = await (await fetch(API + '/api/admin/stats', { headers: adminHeaders() })).json();
     document.getElementById('statsGrid').innerHTML =
-      '<div class="stat-card"><div class="num">' + stats.total_customers + '</div><div class="label">Total Customers</div></div>' +
-      '<div class="stat-card"><div class="num">' + stats.free_trials + '</div><div class="label">Free Trials</div></div>' +
-      '<div class="stat-card"><div class="num">' + stats.paid_customers + '</div><div class="label">Paid Customers</div></div>' +
-      '<div class="stat-card"><div class="num">' + stats.total_leads + '</div><div class="label">Total Leads</div></div>' +
-      '<div class="stat-card"><div class="num">' + stats.today_leads + '</div><div class="label">Today\'s Leads</div></div>' +
-      '<div class="stat-card"><div class="num">' + stats.deliveries_today + '</div><div class="label">Deliveries Today</div></div>';
+      '<div class="stat-card"><div class="num">' + (stats.total_customers||0) + '</div><div class="label">Total Customers</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#0ea5e9">' + (stats.free_trials||0) + '</div><div class="label">Free Trials</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#22c55e">' + (stats.paid_customers||0) + '</div><div class="label">Paid Customers</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#ef4444">' + (stats.expired_trials||0) + '</div><div class="label">Expired Trials</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#06b6d4">' + (stats.this_week_signups||0) + '</div><div class="label">New Signups (7d)</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#a855f7">' + (stats.crm_connected||0) + '</div><div class="label">CRM Connected</div></div>' +
+      '<div class="stat-card"><div class="num">' + (stats.total_leads||0) + '</div><div class="label">Total Leads</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#22c55e">' + (stats.today_leads||0) + '</div><div class="label">Today\'s Leads</div></div>' +
+      '<div class="stat-card"><div class="num">' + (stats.deliveries_today||0) + '</div><div class="label">Deliveries Today</div></div>';
 
     const custResp = await fetch(API + '/api/admin/customers', { headers: adminHeaders() });
     const custData = custResp.ok ? await custResp.json() : { customers: [] };
@@ -199,9 +203,18 @@ async function loadData() {
 
 function renderCustomers(customers) {
   const tbody = document.getElementById('customerTable');
-  if (customers.length === 0) { tbody.innerHTML = '<tr><td colspan="10" class="empty">No customers found</td></tr>'; return; }
+  if (customers.length === 0) { tbody.innerHTML = '<tr><td colspan="11" class="empty">No customers found</td></tr>'; return; }
   tbody.innerHTML = customers.map(c => {
     const areas = c.target_areas ? JSON.parse(c.target_areas).slice(0, 3).join(', ') + (JSON.parse(c.target_areas).length > 3 ? '...' : '') : '';
+    // Trial end + days remaining
+    var trialHtml = '<span style="font-size:11px;color:#5c6480">-</span>';
+    if (c.trial_ends) {
+      var te = new Date(c.trial_ends);
+      var days = Math.ceil((te - Date.now()) / 86400000);
+      var teColor = days < 0 ? '#ef4444' : days <= 2 ? '#eab308' : '#5c6480';
+      var teLabel = days < 0 ? 'Expired' : days === 0 ? 'Today' : days + 'd';
+      trialHtml = '<span style="font-size:11px;color:' + teColor + ';font-weight:' + (days<=2?'700':'400') + '">' + teLabel + ' (' + te.toLocaleDateString() + ')</span>';
+    }
     const hasCrm = c.crm_webhook_url ? '<span style="color:#22c55e;font-size:11px">Connected</span>' : '<span style="color:#5c6480;font-size:11px">No</span>';
     const signupDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
     // Multi-product: parse biz_field3 to show all products
@@ -218,8 +231,9 @@ function renderCustomers(customers) {
       '<td style="font-size:12px;color:#8890a8">' + c.email + '</td>' +
       '<td style="white-space:nowrap">' + productsHtml + '</td>' +
       '<td><span class="badge ' + planBadge(c.plan) + '">' + (c.plan || 'free_trial') + '</span></td>' +
+      '<td>' + trialHtml + '</td>' +
       '<td style="font-size:11px;color:#5c6480;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + areas + '</td>' +
-      '<td>' + leadsVal + '</td>' +
+      '<td>' + leadsVal + ' <span style="color:#5c6480;font-size:10px">(' + (c.leads_per_day||0) + '/d)</span></td>' +
       '<td style="font-size:11px">' + bookedVal + ' <span style="color:#5c6480">(' + convPct + '%)</span></td>' +
       '<td>' + hasCrm + '</td>' +
       '<td style="font-size:11px;color:#5c6480">' + signupDate + '</td>' +
