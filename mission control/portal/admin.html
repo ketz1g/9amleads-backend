@@ -153,9 +153,9 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 </div>
 
 <script>
-// Call the backend DIRECTLY (not via the Netlify /api proxy) so auth always works
-// regardless of how the admin page is reached. CORS is configured on the backend.
-const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : 'https://nineamleads-backend.onrender.com';
+// Use SAME-ORIGIN relative paths: /api/* is proxied by Netlify to the backend.
+// No CORS/preflight — works reliably from 9amleads.com in any browser.
+const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
 let allCustomers = [];
 
 function saveAdminAuth() { sessionStorage.setItem('9amAdminAuth', 'true'); }
