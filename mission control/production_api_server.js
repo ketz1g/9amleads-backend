@@ -8750,18 +8750,35 @@ function syncCustomers(product) {
                 console.log('[SCRAPER] Tenders: ' + ft.fresh.length + ' fresh, ' + ft.fallback.length + ' fallback, total: ' + leads.length);
         }
               } else { console.log('[SCRAPER] No tender leads today'); leads = []; }
-              // Supplemental source: Contracts Finder HTML search (free, no key)
+              // Supplemental source: Contracts Finder HTML search (free, no key).
+              // Search per tender customer's requested area (e.g. "london") so the
+              // pool actually contains opportunities in the places customers chose.
               if (leads.length < 5) {
                 try {
                   var tendersScraper = require('./tenders_scraper');
-                  var cfLeads = await tendersScraper.fetchTendersFromHTML('construction', '', 50);
+                  var tendCusts = (getDb().customers || []).filter(function(c) { return c.product === 'tenders' || ((c.biz_field3 || '').indexOf('tenders') !== -1); });
+                  var tendAreas = [];
+                  tendCusts.forEach(function(c) {
+                    var cfg2 = {};
+                    try { cfg2 = JSON.parse(c.product_config || '{}'); } catch(e) {}
+                    var prim2 = cfg2[c.product] || {};
+                    var ca = [];
+                    try { ca = prim2.target_areas ? JSON.parse(prim2.target_areas) : JSON.parse(c.target_areas || '[]'); } catch(e) { ca = []; }
+                    ca.forEach(function(a) { if (a && tendAreas.indexOf(a) === -1) tendAreas.push(a); });
+                  });
+                  var cfLeads = [];
+                  var cfLocations = tendAreas.length ? tendAreas : [''];
+                  for (var cfi = 0; cfi < cfLocations.length && cfLeads.length < 60; cfi++) {
+                    var locBatch = await tendersScraper.fetchTendersFromHTML('construction', cfLocations[cfi], 30);
+                    if (locBatch && locBatch.length > 0) cfLeads = cfLeads.concat(locBatch);
+                  }
                   if (cfLeads && cfLeads.length > 0) {
                     var seenCf = new Set();
                     cfLeads.forEach(function(l) { var k = (l.title || '').toLowerCase().trim(); if (!seenCf.has(k)) seenCf.add(k); });
                     leads.forEach(function(l) { var k = (l.title || '').toLowerCase().trim(); if (seenCf.has(k)) seenCf.delete(k); });
                     cfLeads = cfLeads.filter(function(l) { var k = (l.title || '').toLowerCase().trim(); return seenCf.has(k); });
                     leads = leads.concat(cfLeads);
-                    console.log('[SCRAPER] Contracts Finder supplement added ' + cfLeads.length + ' leads');
+                    console.log('[SCRAPER] Contracts Finder supplement added ' + cfLeads.length + ' leads (areas: ' + cfLocations.join(',') + ')');
                   }
                 } catch(cfErr) { console.log('[SCRAPER] Contracts Finder supplement error:', cfErr.message); }
               }
