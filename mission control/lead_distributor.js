@@ -27,6 +27,25 @@ const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 const POSTCODE_ASSIGNMENTS_FILE = path.join(DATA_DIR, 'postcode-assignments.json');
 
+// Per-product daily plan limits (mirrors production getPlanLimit).
+// keyed [product][plan][coverage] with 'default' fallback.
+const PRODUCT_PLAN_LIMITS = {
+  moving:    { free_trial:{default:5,postcode:5,county:5,region:5,ukwide:5},   starter:{default:5,postcode:5,county:5,region:5},   pro:{default:15,postcode:15,county:15,region:15},   enterprise:{default:30,postcode:30,county:30,region:30} },
+  probate:   { free_trial:{default:5,county:5,region:5,ukwide:5},              starter:{default:5,county:5,region:5,ukwide:5},    pro:{default:15,county:15,region:15,ukwide:15},    enterprise:{default:30,county:30,region:30,ukwide:30} },
+  newbusiness:{ free_trial:{default:10,postcode:10,county:10,region:10},       starter:{default:10,postcode:10,county:10,region:10},pro:{default:25,postcode:25,county:25,region:25},   enterprise:{default:50,postcode:50,county:50,region:50} },
+  planning:  { free_trial:{default:1,county:1,region:1,ukwide:1},              starter:{default:1,county:1,region:1,ukwide:1},     pro:{default:3,county:3,region:3,ukwide:3},        enterprise:{default:5,county:5,region:5,ukwide:5} },
+  tenders:   { free_trial:{default:1,county:1,region:1,ukwide:1},              starter:{default:1,county:1,region:1,ukwide:1},     pro:{default:3,county:3,region:3,ukwide:3},        enterprise:{default:5,county:5,region:5,ukwide:5} }
+};
+// Per-product coverage that respects postcode areas (else county/region/ukwide)
+const PRODUCT_COVERAGE_DEFAULT = { moving:'postcode', newbusiness:'postcode', probate:'county', planning:'county', tenders:'county' };
+function distributorPlanLimit(product, plan, coverage) {
+  var rules = PRODUCT_PLAN_LIMITS[product] || PRODUCT_PLAN_LIMITS.moving;
+  var planKey = plan === 'essential' ? 'starter' : (plan || 'starter');
+  var covKey = coverage || PRODUCT_COVERAGE_DEFAULT[product] || 'default';
+  var planLimits = rules[planKey] || rules.starter;
+  return planLimits[covKey] !== undefined ? planLimits[covKey] : (planLimits.default !== undefined ? planLimits.default : 5);
+}
+
 function loadPostcodeAssignments() {
   try { return JSON.parse(fs.readFileSync(POSTCODE_ASSIGNMENTS_FILE, 'utf-8')); }
   catch { return { assignments: {} }; }
@@ -656,7 +675,11 @@ async function distributeProduct(product) {
     customerUsage[c.id] = 0;
     customerPostcodeUsage[c.id] = {};
     customerLabels[c.id] = c.company || c.email;
-    customerLimits[c.id] = c.leads_per_day || 5;
+    // Per-product limit: a customer subscribed to multiple lead types gets the
+    // full promised quota for EACH product (e.g. moving 15 + probate 15).
+    var cCov = '';
+    try { var cCfg = JSON.parse(c.product_config || '{}'); cCov = (cCfg[product] && cCfg[product].coverage) || c.coverage || ''; } catch(e) {}
+    customerLimits[c.id] = distributorPlanLimit(product, c.plan, cCov) || c.leads_per_day || 5;
   });
 
   // Track which source lead IDs have been claimed (exclusivity)
