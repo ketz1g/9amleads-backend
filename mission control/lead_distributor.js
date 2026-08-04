@@ -546,6 +546,19 @@ async function distributeProduct(product) {
     return true;
   });
   console.log('  After intra-batch dedup: ' + allScrapedLeads.length + ' unique leads');
+  // DIAGNOSTIC: print the postcode-area distribution of the pool so we can see
+  // whether B/HA/NW (and other customer areas) actually have leads to match.
+  if (allScrapedLeads.length > 0) {
+    var diagAreas = {};
+    allScrapedLeads.forEach(function(l) {
+      var pc = l.postcode || l.address || '';
+      var a = extractPostcodeArea(pc);
+      if (a) diagAreas[a] = (diagAreas[a] || 0) + 1;
+      else diagAreas['_noPc'] = (diagAreas['_noPc'] || 0) + 1;
+    });
+    var diagTop = Object.keys(diagAreas).sort(function(x, y) { return diagAreas[y] - diagAreas[x]; }).slice(0, 15).map(function(k) { return k + '=' + diagAreas[k]; }).join(' ');
+    console.log('  [DIAG] pool areas: ' + diagTop);
+  }
 
   // Get leads already in DB to avoid duplicates (same product only)
   const existingLeads = db.leads || [];
