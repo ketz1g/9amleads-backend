@@ -36,6 +36,17 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 .day-head .day-title{font-family:var(--ff-h);font-size:14px;font-weight:800;color:var(--text)}
 .day-head .day-sub{font-size:11px;color:var(--muted)}
 .day-head .day-count{font-size:11px;font-weight:700;color:var(--accent);background:#eff6ff;padding:3px 10px;border-radius:20px}
+.lead-check{width:20px;height:20px;flex-shrink:0;accent-color:var(--accent);cursor:pointer;margin-right:12px}
+.lead.sel{border-color:var(--accent);background:#f0f7ff;box-shadow:0 0 0 2px rgba(14,165,233,.15)}
+.bulk-bar{position:sticky;bottom:16px;z-index:90;display:none;align-items:center;gap:12px;background:#0f172a;color:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 12px 40px rgba(0,0,0,.35);max-width:1100px;margin:16px auto}
+.bulk-bar.show{display:flex}
+.bulk-bar .bulk-count{font-weight:800;font-size:15px;font-family:var(--ff-h)}
+.bulk-bar .bulk-sub{font-size:11px;color:#94a3b8}
+.bulk-bar .btn{border-radius:8px}
+.bulk-bar .btn-white{background:#fff;color:#0f172a;border:none;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--ff-b)}
+.bulk-bar .btn-white:hover{opacity:.9}
+.bulk-bar .btn-ghost{background:rgba(255,255,255,.12);color:#e2e8f0;border:none;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--ff-b);border-radius:8px}
+.bulk-bar .btn-ghost:hover{background:rgba(255,255,255,.2)}
 .lead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;transition:.15s}
 .lead:hover{border-color:var(--accent);background:#fafbff}
 .lead .addr{font-weight:600;font-size:13px;color:var(--text)}
@@ -107,6 +118,18 @@ footer a{color:var(--accent);text-decoration:underline}
 <div class="empty" id="no-leads" style="display:none"><i class="fas fa-inbox"></i><h3 style="font-size:16px;font-weight:700;margin-bottom:4px">No leads yet</h3><p style="font-size:13px">Your first leads will arrive at 9am tomorrow.</p></div>
 </div>
 
+<!-- Bulk Print & Post action bar -->
+<div class="bulk-bar" id="bulk-bar">
+<div>
+<div class="bulk-count"><span id="bulk-count-num">0</span> selected</div>
+<div class="bulk-sub" id="bulk-count-sub">Tick the box on each lead to add it</div>
+</div>
+<div style="flex:1"></div>
+<button class="btn-ghost" onclick="bulkSelectVisible()"><i class="fas fa-check-double"></i> Select all in view</button>
+<button class="btn-ghost" onclick="bulkClear()"><i class="fas fa-times"></i> Clear</button>
+<button class="btn-white" onclick="bulkOpenMail()"><i class="fas fa-mail-bulk"></i> Print &amp; Post Selected</button>
+</div>
+
 <footer><p>&copy; 2026 9amLeads &middot; <a href="/privacy.html">Privacy</a> &middot; <a href="/terms.html">Terms</a></p></footer>
 
 <!-- Print & Post Modal -->
@@ -168,6 +191,9 @@ function renderLeadList(dayLeads, noGroup) {
     var pc = d.postcode || '';
     var badge = product === 'moving' ? 'MOVING' : product === 'probate' ? 'PROBATE' : product === 'newbusiness' ? 'NEW BIZ' : product === 'planning' ? 'PLANNING' : 'TENDER';
     var badgeColor = product === 'moving' ? '#0ea5e9' : product === 'probate' ? '#a855f7' : product === 'newbusiness' ? '#22c55e' : product === 'planning' ? '#f59e0b' : '#6366f1';
+    var isSel = selectedLeads.indexOf(l.id) !== -1;
+    var selClass = isSel ? ' sel' : '';
+    var chk = '<input type="checkbox" class="lead-check" ' + (isSel?'checked':'') + ' onclick="toggleLeadSel(\''+l.id+'\',this.checked)" title="Select for Print &amp; Post">';
 
     if (product === 'newbusiness') {
       // Match email: business name first, then address, SIC, companies house link
@@ -176,7 +202,7 @@ function renderLeadList(dayLeads, noGroup) {
       var incStr = incDate ? 'Incorporated ' + new Date(incDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
       var metaParts = [incStr, d.sicCode ? 'SIC: ' + d.sicCode : ''].filter(Boolean);
       var chLink = d.companyNumber ? '<a href="https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View on Companies House</a>' : '';
-      html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
+      html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + biz + '</div>' +
         '<div class="meta">' + (d.address||'') + '</div>' +
         '<div class="meta">' + metaParts.join(' \u00b7 ') + (chLink ? ' \u00b7 ' + chLink : '') + '</div></div>' +
@@ -193,7 +219,7 @@ function renderLeadList(dayLeads, noGroup) {
       var pPubDate = d.grantDate || d.publishedDate || l.created_at || '';
       var pPubStr = pPubDate ? 'Published ' + new Date(pPubDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
       var pMeta = [pPubStr, d.dateOfDeath ? 'Died ' + new Date(d.dateOfDeath).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.claimExpiry ? 'Claims by ' + new Date(d.claimExpiry).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.solicitor ? 'Solicitor: ' + d.solicitor : '', d.executorName ? 'Executor: ' + d.executorName : ''].filter(Boolean);
-      html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
+      html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + pName + '</div>' +
         '<div class="meta">' + pFullAddr + '</div>' +
         '<div class="meta">' + pMeta.join(' \u00b7 ') + '</div></div>' +
@@ -205,7 +231,7 @@ function renderLeadList(dayLeads, noGroup) {
       var planMeta = [d.applicationType, d.status, planDateStr ? 'Planning application date: ' + planDateStr : '', d.council, d.reference ? 'Ref: ' + d.reference : ''].filter(Boolean);
       var planDesc = (d.proposal || d.description) ? '<div class="meta" style="margin-top:2px">' + (d.proposal || d.description).substring(0,150) + '</div>' : '';
       var planApplicant = d.applicant ? '<div class="meta" style="margin-top:2px">Applicant: ' + d.applicant + '</div>' : '';
-      html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
+      html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + planTitle + '</div>' +
         '<div class="meta">' + planMeta.join(' \u00b7 ') + '</div>' + planDesc + planApplicant + '</div>' +
         '<div class="right"><span class="badge">' + status + '</span>' + mailBtn(l.id) + '</div></div>';
@@ -214,7 +240,7 @@ function renderLeadList(dayLeads, noGroup) {
       var tendMeta = [d.buyer || d.contractingAuthority, d.contractValueLabel && d.contractValueLabel !== '&pound' ? d.contractValueLabel : '', d.closingDate ? 'Deadline ' + new Date(d.closingDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.publishedDate ? 'Published ' + d.publishedDate : '', d.postcode].filter(Boolean);
       var tendLink = d.url ? '<a href="' + d.url + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View tender</a>' : '';
       var tendDesc = d.description ? '<div class="meta" style="margin-top:2px">' + d.description.substring(0,120) + '</div>' : '';
-      html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
+      html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + tendTitle + '</div>' +
         '<div class="meta">' + tendMeta.join(' \u00b7 ') + (tendLink ? ' \u00b7 ' + tendLink : '') + '</div>' + tendDesc + '</div>' +
         '<div class="right"><span class="badge">' + status + '</span></div></div>';
@@ -229,7 +255,7 @@ function renderLeadList(dayLeads, noGroup) {
       if (pc && fullAddr.toLowerCase().indexOf(pc.toLowerCase()) === -1) fullAddr += ', ' + pc;
       var rmLink = d.url ? '<a href="' + d.url + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View on Rightmove</a>' : '';
       var moveMeta = [(d.bedrooms ? d.bedrooms+' bed' : ''), d.propertyType||'', d.agent||'', rmLink].filter(Boolean);
-      html += '<div class="lead"><div><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
+      html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + fullAddr + '</div>' +
         '<div class="meta">' + moveMeta.join(' \u00b7 ') + '</div></div>' +
         '<div class="right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div><span class="badge ' + (status === 'SSTC' ? 'badge-sstc' : '') + '">' + status + '</span>' +
@@ -241,7 +267,102 @@ function renderLeadList(dayLeads, noGroup) {
 function mailBtn(leadId){
   return '<button onclick="sendPrintPost(\''+leadId+'\')" title="Print &amp; post a letter or flyer to this lead" class="mail-btn"><i class="fas fa-mail-bulk"></i> Print &amp; Post</button>';
 }
-var _pendingLeadId='';
+var selectedLeads = [];
+function toggleLeadSel(leadId, checked) {
+  if (checked) { if (selectedLeads.indexOf(leadId) === -1) selectedLeads.push(leadId); }
+  else { selectedLeads = selectedLeads.filter(function(id){ return id !== leadId; }); }
+  updateBulkBar();
+}
+function bulkSelectVisible() {
+  // Select all leads currently shown in the filtered view (respecting range + search + status)
+  var q = document.getElementById('search-input').value.toLowerCase();
+  var status = document.getElementById('status-filter').value.toLowerCase();
+  var visible = allLeads.filter(function(l){
+    var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
+    var addr = ((d.address||'')+' '+(d.title||'')+' '+(d.postcode||'')+' '+(d.company||'')+' '+(d.tenderTitle||'')).toLowerCase();
+    var ls = (d.listingStatus||d.status||'').toLowerCase();
+    if (q && !addr.includes(q)) return false;
+    if (status && ls !== status) return false;
+    if (!inRange(l, currentRange)) return false;
+    return true;
+  });
+  visible.forEach(function(l){ if (selectedLeads.indexOf(l.id) === -1) selectedLeads.push(l.id); });
+  updateBulkBar();
+  renderLeads(currentFiltered());
+}
+function bulkClear() {
+  selectedLeads = [];
+  updateBulkBar();
+  renderLeads(currentFiltered());
+}
+function currentFiltered() {
+  var q = document.getElementById('search-input').value.toLowerCase();
+  var status = document.getElementById('status-filter').value.toLowerCase();
+  return allLeads.filter(function(l){
+    var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
+    var addr = ((d.address||'')+' '+(d.title||'')+' '+(d.postcode||'')+' '+(d.company||'')+' '+(d.tenderTitle||'')).toLowerCase();
+    var ls = (d.listingStatus||d.status||'').toLowerCase();
+    if (q && !addr.includes(q)) return false;
+    if (status && ls !== status) return false;
+    if (!inRange(l, currentRange)) return false;
+    return true;
+  });
+}
+function updateBulkBar() {
+  var bar = document.getElementById('bulk-bar');
+  var n = selectedLeads.length;
+  document.getElementById('bulk-count-num').textContent = n;
+  document.getElementById('bulk-count-sub').textContent = n ? (n===1 ? '1 lead ready to print & post' : n + ' leads ready to print & post') : 'Tick the box on each lead to add it';
+  if (bar) bar.className = 'bulk-bar' + (n ? ' show' : '');
+}
+function bulkOpenMail() {
+  if (!selectedLeads.length) { alert('Select at least one lead first'); return; }
+  _pendingLeadIds = selectedLeads.slice();
+  document.getElementById('mp-addr').innerHTML = '<b>' + selectedLeads.length + ' lead' + (selectedLeads.length!==1?'s':'') + '</b> selected for bulk print &amp; post.';
+  document.getElementById('mp-error').style.display = 'none';
+  var items = [
+    {t:'letter_a4',n:'A4 Letter',d:'A personal introduction letter',p:'£1.49 each'},
+    {t:'flyer_a5',n:'A5 Leaflet',d:'Full-colour leaflet (needs an uploaded design)',p:'£1.99 each'},
+    {t:'flyer_plus_letter',n:'Leaflet + Letter',d:'Leaflet with a letter inside',p:'£2.99 each'}
+  ];
+  var html = '';
+  items.forEach(function(it){
+    html += '<button class="mp-item" onclick="doSendBulkPrintPost(\''+it.t+'\',this)">' +
+      '<div><div class="mp-name">'+it.n+'</div><div class="mp-desc">'+it.d+'</div></div>' +
+      '<div class="mp-price">'+it.p+'</div></button>';
+  });
+  document.getElementById('mp-items').innerHTML = html;
+  document.getElementById('mail-modal').className = 'modal-overlay show';
+}
+function doSendBulkPrintPost(mailType, btn) {
+  if (btn) { btn.disabled = true; btn.style.opacity = .6; }
+  document.getElementById('mp-error').style.display = 'none';
+  var x = new XMLHttpRequest();
+  x.open('POST', '/api/direct-mail/send-bulk', true);
+  x.setRequestHeader('Authorization', 'Bearer ' + _token);
+  x.setRequestHeader('Content-Type', 'application/json');
+  x.onload = function() {
+    var d = {}; try { d = JSON.parse(x.responseText); } catch(e) {}
+    if (d && d.checkout_url) {
+      closeMailModal();
+      bulkClear();
+      window.location.href = d.checkout_url;
+    } else {
+      if (btn) { btn.disabled = false; btn.style.opacity = 1; }
+      var errEl = document.getElementById('mp-error');
+      errEl.textContent = (d && d.error) || 'Could not start print & post. Please try again.';
+      errEl.style.display = 'block';
+    }
+  };
+  x.onerror = function() {
+    if (btn) { btn.disabled = false; btn.style.opacity = 1; }
+    var errEl = document.getElementById('mp-error');
+    errEl.textContent = 'Network error. Please check your connection and try again.';
+    errEl.style.display = 'block';
+  };
+  x.send(JSON.stringify({ lead_ids: _pendingLeadIds, mail_type: mailType }));
+}
+var _pendingLeadIds = [];
 function sendPrintPost(leadId){
   _pendingLeadId=leadId;
   // Show address in the modal
