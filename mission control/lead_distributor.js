@@ -342,6 +342,9 @@ function normaliseLead(rawLead, product, customerId) {
     base.priceLabel = rawLead.priceLabel || (rawLead.price ? '\u00a3' + Number(rawLead.price).toLocaleString() : '');
     base.estimatedMoveWindow = rawLead.estimatedMoveWindow || '';
     base.listedDate = rawLead.listedDate || '';
+    // Preserve Rightmove freshness signals so delivery can enforce 24h/48h.
+    base.firstVisibleDate = rawLead.firstVisibleDate || '';
+    base.updateDate = rawLead.updateDate || '';
   }
 
   // New Business specific fields
