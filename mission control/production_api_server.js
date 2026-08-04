@@ -8798,8 +8798,17 @@ function syncCustomers(product) {
                   });
                   var cfLeads = [];
                   var cfLocations = tendAreas.length ? tendAreas : [''];
+                  // Map county/region names to the search term Contracts Finder
+                  // understands (e.g. "greater-london" -> "london", "kent" -> "kent").
+                  var CF_SEARCH_TERM = {
+                    'greater-london':'london','london':'london','east-of-england':'','east-midlands':'',
+                    'north-east':'','north-west':'','south-east':'','south-west':'','west-midlands-region':'birmingham',
+                    'yorkshire':'yorkshire','yorkshire-and-the-humber':'yorkshire','wales':'wales','scotland':'scotland',
+                    'greater-manchester':'manchester','merseyside':'liverpool','tyne-and-wear':'newcastle'
+                  };
                   for (var cfi = 0; cfi < cfLocations.length && cfLeads.length < 60; cfi++) {
-                    var locBatch = await tendersScraper.fetchTendersFromHTML('construction', cfLocations[cfi], 30);
+                    var cfLoc = CF_SEARCH_TERM[String(cfLocations[cfi]).toLowerCase()] !== undefined ? CF_SEARCH_TERM[String(cfLocations[cfi]).toLowerCase()] : String(cfLocations[cfi]).toLowerCase().replace(/-/g,' ');
+                    var locBatch = await tendersScraper.fetchTendersFromHTML('construction', cfLoc, 30);
                     if (locBatch && locBatch.length > 0) cfLeads = cfLeads.concat(locBatch);
                   }
                   if (cfLeads && cfLeads.length > 0) {
