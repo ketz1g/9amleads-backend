@@ -6170,7 +6170,22 @@ app.post('/api/distribute', adminAuth, async (req, res) => {
     // Reload DB cache so subsequent reads reflect the distributor's writes
     _dbData = null;
     getDb();
-    res.json({ success: true, result });
+    // Diagnostic: show the postcode-area distribution of the source pool so we
+    // can see whether B/HA/NW (customer areas) actually have leads to match.
+    var poolAreas = {};
+    var dbgDb = getDb();
+    var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[product] ? PRODUCT_LEAD_FILES[product].file : 'moving-leads.json');
+    var poolArr = [];
+    try { poolArr = JSON.parse(fs.readFileSync(poolFile, 'utf-8')); } catch(e) {}
+    if (Array.isArray(poolArr)) {
+      poolArr.forEach(function(l) {
+        var pc = l.postcode || l.address || '';
+        var a = extractPostcodeArea(pc);
+        if (a) poolAreas[a] = (poolAreas[a] || 0) + 1;
+        else poolAreas['_noPc'] = (poolAreas['_noPc'] || 0) + 1;
+      });
+    }
+    res.json({ success: true, result, pool_areas: poolAreas, pool_count: Array.isArray(poolArr) ? poolArr.length : 0 });
   } catch (e) {
     console.error('[DISTRIBUTE] Error:', e.message);
     res.status(500).json({ error: e.message });
