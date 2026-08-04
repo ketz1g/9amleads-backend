@@ -8785,7 +8785,20 @@ function syncCustomers(product) {
           try {
             var rmScraper = require('./rightmove_scraper_v2');
             var apifyKey = process.env.APIFY_API_KEY || '';
-            leads = await rmScraper.collectMovingLeads();
+            // Gather the postcode areas of ALL moving customers so the scraper
+            // targets every area they chose (not just London/whatever the old
+            // region IDs happened to return).
+            var mvCusts = (getDb().customers || []).filter(function(c) { return c.product === 'moving' || ((c.biz_field3 || '').indexOf('moving') !== -1); });
+            var mvAreas = [];
+            mvCusts.forEach(function(c) {
+              var cfg = {};
+              try { cfg = JSON.parse(c.product_config || '{}'); } catch(e) {}
+              var prim = cfg[c.product] || {};
+              var cAreas = [];
+              try { cAreas = prim.target_areas ? JSON.parse(prim.target_areas) : JSON.parse(c.target_areas || '[]'); } catch(e) { cAreas = []; }
+              cAreas.forEach(function(a) { if (a && mvAreas.indexOf(a) === -1) mvAreas.push(a); });
+            });
+            leads = await rmScraper.collectMovingLeads({ areas: mvAreas });
             if (leads && leads.length > 0) {
               // Keep ALL live on-market listings — they are all real, current
               // properties. Prefer recently-updated first but do NOT discard
@@ -8835,17 +8848,17 @@ function syncCustomers(product) {
               leads = usedPool.slice(0, 500);
               console.log('[SCRAPER] Rightmove: ' + freshPool.length + ' new<24h, ' + fallbackPool.length + ' 24-48h, ' + otherPool.length + ' OLD DROPPED, using ' + leads.length + ' fresh listings');
             }
-            // ENRICH fresh moving leads with real postcodes via the free detail page.
-            // Rightmove's list view hides postcodes (display address only), so without
-            // this the postcode-area match only works for a handful of leads and
-            // customers miss leads in their other requested areas (e.g. B, HA).
-            // Cap enrichment to keep the daily run fast; prefer leads that currently
-            // lack a postcode so we fill coverage gaps.
+            // ENRICH fresh moving leads with real postcodes via the free detail page
+            // (parallel, fast). Rightmove's list view hides postcodes, so without this
+            // the postcode-area match only works for a handful of leads and customers
+            // miss leads in their other requested areas (e.g. B, HA). Enrich up to a
+            // bounded batch so the daily run stays quick; the distributor then picks
+            // across ALL the customer's postcode areas and adds house numbers after.
             try {
-              var noPc = leads.filter(function(l) { return !l.postcode; }).slice(0, 220);
-              var hasPc = leads.filter(function(l) { return !!l.postcode; });
-              var toEnrich = noPc.concat(hasPc).slice(0, 320);
-              var enrichedNow = await rmScraper.enrichMovingLeads(toEnrich, 2);
+              var noPcFirst = leads.filter(function(l) { return !l.postcode; });
+              var hasPcThen = leads.filter(function(l) { return !!l.postcode; });
+              var toEnrich = noPcFirst.concat(hasPcThen).slice(0, 260);
+              var enrichedNow = await rmScraper.enrichMovingLeads(toEnrich, 6);
               var enrichedMap = {};
               enrichedNow.forEach(function(le) { enrichedMap[le.id] = le; });
               leads = leads.map(function(l) { return enrichedMap[l.id] || l; });
