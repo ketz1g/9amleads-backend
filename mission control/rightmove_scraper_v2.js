@@ -143,8 +143,15 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
 // (licensed Royal Mail PAF data). Given the street name and full postcode from
 // the Rightmove detail page, Postcoder returns the numbered addresses so we can
 // append the correct house number.
+// NOTE: Postcoder charges credits per lookup (2 credits ≈ 7p). It is DISABLED by
+// default — the Rightmove detail page already returns a full numbered address for
+// free, so Postcoder is only a precision upgrade. Enable only if explicitly set
+// (POSTCODER_ENABLED=true) and keep usage to the final delivered leads only.
 function lookupPostcoderAddress(postcode, streetHint) {
   return new Promise((resolve) => {
+    if (process.env.POSTCODER_ENABLED !== 'true' && process.env.POSTCODER_ENABLED !== '1') {
+      return resolve(null);
+    }
     const key = process.env.POSTCODER_API_KEY;
     if (!key) return resolve(null);
     const cleanPc = (postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
