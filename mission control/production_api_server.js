@@ -2987,6 +2987,40 @@ app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '9amAdmin2024!';
 if (!process.env.ADMIN_PASSWORD) console.warn('[WARN] ADMIN_PASSWORD not set. Using default. Set ADMIN_PASSWORD env var for security.');
 
+// GET /api/admin/leads-overview — per-customer lead delivery stats (today/week/month)
+// so the admin can verify each customer receives their promised lead count.
+app.get('/api/admin/leads-overview', adminAuth, (req, res) => {
+  try {
+    var dbL = getDb();
+    var now = new Date();
+    var todayStr = now.toISOString().split('T')[0];
+    var monthStr = todayStr.substring(0, 7);
+    var weekStart = new Date(now); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    var weekStartStr = weekStart.toISOString().split('T')[0];
+
+    var rows = (dbL.customers || []).map(function(c) {
+      var custLeads = (dbL.leads || []).filter(function(l) { return l.customer_id === c.id; });
+      var delivered = custLeads.filter(function(l) { return l.delivered || l.delivered_at; });
+      var todayC = delivered.filter(function(l) { var d = (l.delivered_at || l.created_at || '').split('T')[0]; return d === todayStr; }).length;
+      var weekC = delivered.filter(function(l) { var d = (l.delivered_at || l.created_at || '').split('T')[0]; return d >= weekStartStr; }).length;
+      var monthC = delivered.filter(function(l) { var d = (l.delivered_at || l.created_at || '').split('T')[0]; return d.substring(0,7) === monthStr; }).length;
+      return {
+        id: c.id, email: c.email, company: c.company || c.email,
+        product: c.product, plan: c.plan || 'free_trial',
+        promised_per_day: c.leads_per_day || (function() { try { return getPlanLimit(c.product, c.plan, c.coverage || 'postcode'); } catch(e) { return 5; } })(),
+        coverage: c.coverage || 'postcode',
+        leads_today: todayC,
+        leads_week: weekC,
+        leads_month: monthC,
+        total_leads: delivered.length,
+        trial_ends: c.trial_ends || '',
+        created_at: c.created_at || ''
+      };
+    });
+    res.json({ success: true, customers: rows, generated_at: now.toISOString() });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/verify — validate the admin password (used by the admin login form)
 app.post('/api/admin/verify', (req, res) => {
   const auth = req.headers.authorization;
