@@ -134,7 +134,14 @@ function isFullDistrict(code, districts) {
 
 
 function extractPostcodeArea(postcode) {
-  return (postcode || '').toUpperCase().replace(/[^A-Z].*$/, '');
+  if (!postcode) return '';
+  var s = String(postcode).toUpperCase().trim();
+  // If the string contains a full postcode (possibly inside an address, e.g.
+  // "16 Brick House 1a Faringdon Avenue, Romford, RM3 8SH"), extract it first.
+  var m = s.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/);
+  if (m) s = m[0];
+  var out = s.replace(/[^A-Z].*$/, '');
+  return out.length >= 1 && out.length <= 4 ? out : '';
 }
 
 function getMatchingArea(code, areas) {
