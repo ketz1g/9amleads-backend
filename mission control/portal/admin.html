@@ -172,6 +172,7 @@ async function adminLogin() {
     const r = await fetch(API + '/api/admin/verify', { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + pass } });
     const d = await r.json();
     if (!d.valid) {
+      document.getElementById('loginError').textContent = 'Incorrect password (server rejected login)';
       document.getElementById('loginError').style.display = 'block';
       return;
     }
@@ -181,12 +182,9 @@ async function adminLogin() {
     document.getElementById('adminPage').style.display = 'block';
     loadData();
   } catch(e) {
-    // Fall back to local check if verify endpoint unreachable
-    sessionStorage.setItem('9amAdminPass', pass);
-    saveAdminAuth();
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('adminPage').style.display = 'block';
-    loadData();
+    // Verify MUST succeed — never allow login with an unverified password
+    document.getElementById('loginError').textContent = 'Cannot reach server. Check connection and try again.';
+    document.getElementById('loginError').style.display = 'block';
   }
 }
 
