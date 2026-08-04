@@ -341,10 +341,15 @@ async function collectMovingLeads(config) {
 
   for (const loc of locations) {
     try {
+      var isAreaTargeted = !!(config.areas && Array.isArray(config.areas) && config.areas.length > 0 && / area$/.test(loc.name || ''));
       var maxPages = loc.pages || 2;
       for (var pi = 0; pi < maxPages; pi++) {
         var pg = await fetchRightmovePage(loc.id, loc.name, pi * 24);
         if (pg.length === 0) break;
+        if (isAreaTargeted) {
+          var areaTag = String(loc.name).replace(' area', '').toUpperCase();
+          pg.forEach(function(p) { p.areaTargeted = areaTag; });
+        }
         console.log('[RIGHTMOVE] ' + loc.name + ' page ' + (pi + 1) + ': ' + pg.length);
         allProperties.push.apply(allProperties, pg);
         if (pg.length < 24) break;
