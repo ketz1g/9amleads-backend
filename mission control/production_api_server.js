@@ -4983,11 +4983,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
 // Naming: -starter / -growth / -power (matches checkout planMap pro→growth, enterprise→power).
 // All are weekly subscriptions (interval=week, confirmed live on Stripe).
 const STRIPE_PRICE_IDS = {
-  moving: { 'mov-starter': 'price_1Tm6PMADspDnFpfBJtsUWi6v', 'mov-growth': 'price_1Tm6PNADspDnFpfB847Dubdf', 'mov-power': 'price_1Tm6POADspDnFpfBkf0gfqXs' },
-  planning: { 'plan-starter': 'price_1Tm6PTADspDnFpfBfSSc0fUR', 'plan-growth': 'price_1Tm6PUADspDnFpfBKFFst74I', 'plan-power': 'price_1Tm6PUADspDnFpfB8Dvu7tq5' },
-  newbusiness: { 'nb-starter': 'price_1Tm6PRADspDnFpfBx80lgJ84', 'nb-growth': 'price_1Tm6PSADspDnFpfBXakzcGEL', 'nb-power': 'price_1Tm6PSADspDnFpfBGRGc5zQ9' },
-  probate: { 'prob-starter': 'price_1Tm6PPADspDnFpfBkewa97Bv', 'prob-growth': 'price_1Tm6PPADspDnFpfB3q61i5FP', 'prob-power': 'price_1Tm6PQADspDnFpfBazgz1UD7' },
-  tenders: { 'tend-starter': 'price_1Tm6PVADspDnFpfBqUAL1K6Z', 'tend-growth': 'price_1Tm6PWADspDnFpfB68IGEx5J', 'tend-power': 'price_1Tm6PXADspDnFpfBf8c9Ww8s' },
+  moving: { 'mov-starter': 'price_1TsOW7ADspDnFpfBbiqbOOnb', 'mov-growth': 'price_1TsOW7ADspDnFpfBFi8xRpFG', 'mov-power': 'price_1TsOW8ADspDnFpfBtcjoVRvJ' },
+  planning: { 'plan-starter': 'price_1TsOWAADspDnFpfBFF9WA0gR', 'plan-growth': 'price_1TsOWAADspDnFpfBIyA0TSDP', 'plan-power': 'price_1TsOWBADspDnFpfBuoZcCYrn' },
+  newbusiness: { 'nb-starter': 'price_1TsOVjADspDnFpfBGm2vNEjh', 'nb-growth': 'price_1TsOVkADspDnFpfBfPdXdQjZ', 'nb-power': 'price_1TsOVkADspDnFpfBJK8lqbol' },
+  probate: { 'prob-starter': 'price_1TsOW8ADspDnFpfB72jEnBFX', 'prob-growth': 'price_1TsOW9ADspDnFpfBAFxbNBDt', 'prob-power': 'price_1TsOW9ADspDnFpfB3HSDoQ6U' },
+  tenders: { 'tend-starter': 'price_1TsOWBADspDnFpfBaf9IsPed', 'tend-growth': 'price_1TsOWCADspDnFpfBSjYEqpFq', 'tend-power': 'price_1TsOWCADspDnFpfBHWhNa4Ij' },
   'builder-package': { 'bld-package': 'price_1Tm6PYADspDnFpfB1PoCynL3' },
   'marketing-package': { 'mkt-package': 'price_1Tm6PZADspDnFpfBuTg9lDWp' },
   'property-package': { 'prp-package': 'price_1Tm6PaADspDnFpfBtGP40kRG' },
@@ -5087,8 +5087,8 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     }
 
     const { plan } = req.body;
-    const validPlans = ['starter', 'pro', 'enterprise', 'builder-package', 'marketing-package', 'property-package', 'moving-package'];
-    const proValid = ['starter', 'pro', 'enterprise', 'builder-package', 'marketing-package', 'property-package', 'moving-package', 'pro'];
+    const validPlans = ['starter', 'pro', 'enterprise', 'builder-package', 'marketing-package', 'property-package', 'moving-package', 'pro-plan'];
+    const proValid = ['starter', 'pro', 'enterprise', 'builder-package', 'marketing-package', 'property-package', 'moving-package', 'pro', 'pro-plan'];
     if (!plan || !proValid.includes(plan)) {
       return res.status(400).json({ error: 'Invalid plan. Choose: starter, pro, enterprise, or a package' });
     }
