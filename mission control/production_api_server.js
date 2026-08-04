@@ -1015,7 +1015,8 @@ app.post('/api/direct-mail/notifications/read', authMiddleware, (req, res) => {
 const FRONTEND_DIR = path.join(__dirname, '9amleads');
 const ROOT_DIR = __dirname;
 // Only serve specific public directories from root
-app.use('/portal', express.static(path.join(ROOT_DIR, 'portal')));
+// Portal pages: no-cache so admin/dashboard always show live data (never a stale copy)
+app.use('/portal', express.static(path.join(ROOT_DIR, 'portal'), { setHeaders: function(res, path) { if (/\.html?$/.test(path)) res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); } }));
 app.use('/movingleadsdaily', express.static(path.join(ROOT_DIR, 'movingleadsdaily')));
 app.use('/probateleads', express.static(path.join(ROOT_DIR, 'probateleads')));
 app.use('/newbusinessalert', express.static(path.join(ROOT_DIR, 'newbusinessalert')));
