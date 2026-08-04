@@ -860,8 +860,8 @@ function doSignup() {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:plan, email:email, product:product, products:products }));
       success.style.display = 'block'; button.innerHTML = '<i class="fas fa-check"></i> Redirecting...';
-      // For paid plans, redirect to Stripe checkout immediately
-      if (plan === 'pro' || plan === 'enterprise') {
+      // For paid plans, redirect to Stripe checkout immediately (weekly subscription)
+      if (plan === 'starter' || plan === 'pro' || plan === 'enterprise') {
         fetch(API + '/api/create-checkout', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + d.token }, body:JSON.stringify({ plan:plan }) })
         .then(function(r) { return r.json(); })
         .then(function(cd) { if (cd.url) window.location.href = cd.url; else window.location.href = '/portal/dashboard.html?onboard=1'; })
