@@ -4222,8 +4222,8 @@ cron.schedule('0 9 * * 1-5', async () => {
 // won't fire and customers miss their daily leads.
 cron.schedule('*/10 * * * *', async () => {
   try {
-    const http = require('http');
-    http.get({ hostname: '127.0.0.1', port: PORT, path: '/api/health' }, function(res) { res.resume(); }).on('error', function() {});
+    const https = require('https');
+    https.get({ hostname: 'nineamleads-backend.onrender.com', path: '/api/health' }, function(res) { res.resume(); }).on('error', function() {});
   } catch(e) {}
 });
 
