@@ -8754,11 +8754,28 @@ function syncCustomers(product) {
         } else if (product === 'planning') {
           try {
             var planScraper = require('./planning_scraper');
-            leads = await planScraper.collectPlanningLeads();
+            // Aggregate the postcode areas of ALL planning customers so the PLOTA
+            // query targets the places our customers actually want leads from
+            // (instead of a hardcoded default list that may miss London, etc.).
+            var planCusts = (getDb().customers || []).filter(function(c) { return c.product === 'planning' || ((c.biz_field3 || '').indexOf('planning') !== -1); });
+            var planAreas = [];
+            var planFilters = [];
+            planCusts.forEach(function(c) {
+              var cfg = {};
+              try { cfg = JSON.parse(c.product_config || '{}'); } catch(e) {}
+              var cAreas = [];
+              var prim = cfg[c.product] || {};
+              try { cAreas = prim.target_areas ? JSON.parse(prim.target_areas) : JSON.parse(c.target_areas || '[]'); } catch(e) { cAreas = []; }
+              cAreas.forEach(function(a) { if (a && planAreas.indexOf(a) === -1) planAreas.push(a); });
+              var f2 = {};
+              try { f2 = JSON.parse(c.biz_field2 || '{}'); } catch(e) {}
+              if (f2['f-app-type']) planFilters = planFilters.concat(f2['f-app-type']);
+            });
+            leads = await planScraper.collectPlanningLeads({ postcodeAreas: planAreas.length ? planAreas : undefined, filters: planFilters });
             if (leads && leads.length > 0) {
               // Planning leads are freshly scraped — no additional freshness filter
               // (brownfield/application data is current at scrape time).
-              console.log('[SCRAPER] Planning: ' + leads.length + ' leads');
+              console.log('[SCRAPER] Planning: ' + leads.length + ' leads for areas ' + planAreas.join(','));
             } else {
               console.log('[SCRAPER] Planning: 0 from scraper');
               leads = [];
