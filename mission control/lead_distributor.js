@@ -156,7 +156,12 @@ function leadMatchesTarget(lead, customer, product) {
         if (isPostcodeAreaAny) {
           var areaCodeUpper = (area || '').toUpperCase();
           var leadAll = leadText + ' ' + (lead.postcode || '');
-          var pcRe = new RegExp('\\b' + areaCodeUpper.replace(/[A-Z]/g, '[A-Z]') + '\\s?[0-9]', 'i');
+          // Match the EXACT postcode area code (e.g. "BA", "G", "TQ") followed by
+          // a digit — NOT a wildcard. Previously each letter was turned into [A-Z],
+          // so "BA" matched any two-letter postcode area (KT, WR, TS...) and leads
+          // were delivered to customers outside their chosen areas.
+          var escArea = areaCodeUpper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          var pcRe = new RegExp('\\b' + escArea + '\\s?[0-9]', 'i');
           if (pcRe.test(leadAll)) { areaMatch = true; break; }
           var areaTownMap = {
             'B': 'birmingham', 'EN': 'enfield', 'NW': 'london', 'SW': 'london', 'SE': 'london',
