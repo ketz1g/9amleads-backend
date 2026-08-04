@@ -455,6 +455,13 @@ function normaliseLead(rawLead, product, customerId) {
     base.buyer = rawLead.buyer || rawLead.authority || '';
     base.buyerEmail = rawLead.buyerEmail || '';
     base.buyerPhone = rawLead.buyerPhone || '';
+    // Enriched buyer contact + how to apply (from the tender detail page)
+    base.contactName = rawLead.contactName || '';
+    base.contactEmail = rawLead.contactEmail || base.buyerEmail;
+    base.contactPhone = rawLead.contactPhone || base.buyerPhone;
+    base.buyerAddress = rawLead.buyerAddress || '';
+    base.howToApply = rawLead.howToApply || '';
+    base.applyLink = rawLead.applyLink || base.url || '';
     base.value = rawLead.value || '';
     base.contractType = rawLead.contractType || '';
     base.publishedDate = rawLead.publishedDate || '';
