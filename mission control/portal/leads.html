@@ -137,10 +137,33 @@ footer a{color:var(--accent);text-decoration:underline}
 <div class="modal">
 <button class="mp-close" onclick="closeMailModal()">&times;</button>
 <h3><i class="fas fa-mail-bulk" style="color:var(--accent);margin-right:6px"></i> Print &amp; Post This Lead</h3>
-<div class="sub">Choose what to send. It will be printed and delivered to:</div>
+<div class="sub" id="mp-step-label">Step 1 of 2 · Choose what to send</div>
 <div class="mp-addr" id="mp-addr"></div>
+
+<!-- Step 1: choose -->
+<div id="mp-step-choose">
 <div id="mp-items"></div>
+<button class="btn btn-primary" onclick="mpContinue()" style="width:100%;justify-content:center;margin-top:6px" id="mp-continue-btn"><i class="fas fa-arrow-right"></i> Continue</button>
 <div class="mp-error" id="mp-error"></div>
+</div>
+
+<!-- Step 2: confirm schedule -->
+<div id="mp-step-confirm" style="display:none">
+<div style="background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:8px" id="mp-confirm-title">A4 Letter — repeat mailing</div>
+<div id="mp-confirm-schedule" style="display:grid;gap:8px;margin-bottom:10px"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:10px;margin-top:4px">
+<div style="font-size:12px;color:var(--text2)">Total (one payment)</div>
+<div style="font-family:var(--ff-h);font-weight:900;font-size:20px;color:var(--accent)" id="mp-confirm-total">£0</div>
+</div>
+</div>
+<div style="display:flex;gap:8px">
+<button class="btn btn-outline" onclick="mpBack()" style="flex:1;justify-content:center"><i class="fas fa-arrow-left"></i> Back</button>
+<button class="btn btn-primary" onclick="mpPay()" style="flex:1.5;justify-content:center" id="mp-pay-btn"><i class="fas fa-lock"></i> Pay &amp; Send</button>
+</div>
+<div class="mp-foot" style="margin-top:10px">You pay securely via Stripe. Scheduled follow-ups are dispatched automatically on their dates.</div>
+</div>
+
 <div class="mp-foot">Prices include colour printing + Royal Mail postage. You pay securely via Stripe only when sending.</div>
 </div>
 </div>
@@ -386,6 +409,8 @@ function sendPrintPost(leadId){
   }
   document.getElementById('mp-addr').innerHTML='<b>'+addr+'</b>';
   document.getElementById('mp-error').style.display='none';
+  _selectedMailType='';
+  _repeatMode='three';
   var items=[
     {t:'letter_a4',n:'A4 Letter',d:'A personal introduction letter — ready to send',p:'£1.49',rec:true},
     {t:'flyer_a5',n:'A5 Leaflet',d:'Full-colour leaflet (needs an uploaded design)',p:'£1.99'},
@@ -393,7 +418,7 @@ function sendPrintPost(leadId){
   ];
   var html='';
   items.forEach(function(it){
-    html+='<button class="mp-item" onclick="doSendPrintPost(\''+it.t+'\',this)" '+(it.rec?'style="border-color:var(--accent);background:#f0f7ff"':'')+'>'+
+    html+='<button class="mp-item" onclick="selectMailType(this,\''+it.t+'\')" data-mail="'+it.t+'">'+
       '<div><div class="mp-name">'+it.n+(it.rec?' <span style="font-size:9px;font-weight:700;color:#fff;background:var(--accent);border-radius:4px;padding:1px 6px;vertical-align:middle">RECOMMENDED</span>':'')+'</div><div class="mp-desc">'+it.d+'</div></div>'+
       '<div class="mp-price">'+it.p+'</div></button>';
   });
@@ -407,12 +432,21 @@ function sendPrintPost(leadId){
     '<div id="mp-repeat-summary" style="font-size:11px;color:var(--muted);margin-top:8px"></div>'+
     '</div>';
   document.getElementById('mp-items').innerHTML=html;
-  _repeatMode='three';
+  // Preselect letter + three-repeat (recommended)
+  selectMailType(document.querySelector('#mp-items [data-mail="letter_a4"]'),'letter_a4');
   selectRepeat(document.querySelector('#mp-items [data-rep="three"]'),'three');
   updateRepeatSummary();
+  mpShowStep(1);
   document.getElementById('mail-modal').className='modal-overlay show';
 }
 var _repeatMode='three';
+var _selectedMailType='letter_a4';
+var _pendingLeadId='';
+function selectMailType(el,type){
+  _selectedMailType=type;
+  document.querySelectorAll('#mp-items [data-mail]').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='#fff';});
+  if(el){el.style.borderColor='var(--accent)';el.style.background='#f0f7ff';}
+}
 function selectRepeat(el,mode){
   _repeatMode=mode;
   document.querySelectorAll('#mp-items [data-rep]').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='#fff';});
@@ -427,13 +461,42 @@ function updateRepeatSummary(){
     : 'Single mailing only.';
   sum.textContent=txt;
 }
-function closeMailModal(){document.getElementById('mail-modal').className='modal-overlay';_pendingLeadId='';}
-function doSendPrintPost(mailType,btn){
-  if(btn){btn.disabled=true;btn.style.opacity=.6;}
-  document.getElementById('mp-error').style.display='none';
+function mpShowStep(step){
+  document.getElementById('mp-step-choose').style.display = step===1?'':'none';
+  document.getElementById('mp-step-confirm').style.display = step===2?'':'none';
+  document.getElementById('mp-step-label').textContent = step===1?'Step 1 of 2 · Choose what to send':'Step 2 of 2 · Confirm your schedule';
+}
+function mpContinue(){
+  var mailType = _selectedMailType || 'letter_a4';
   var pricePerItem = mailType==='flyer_a5'?1.99 : mailType==='flyer_plus_letter'?2.99 : 1.49;
+  var label = mailType==='flyer_a5'?'A5 Leaflet':mailType==='flyer_plus_letter'?'Leaflet + Letter':'A4 Letter';
+  var intervals = _repeatMode==='three' ? [0,14,30] : [0];
+  var scheduleHtml = '';
+  var today = new Date();
+  var intervalLabels = {0:'Send now',14:'In 2 weeks',30:'In a month'};
+  intervals.forEach(function(days){
+    var d = new Date(today); d.setDate(d.getDate()+days);
+    var dateStr = d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    scheduleHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#fff;border:1px solid var(--border);border-radius:8px">'+
+      '<div style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:'+(days===0?'var(--accent)':'#e2e8f0')+';color:'+(days===0?'#fff':'var(--text2)')+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">'+(days===0?'1':(days/7))+'</span>'+
+      '<div><div style="font-size:12px;font-weight:700;color:var(--text)">'+(intervalLabels[days]||('In '+days+' days'))+'</div><div style="font-size:10px;color:var(--muted)">Delivered '+(days===0?'today':dateStr)+'</div></div></div>'+
+      '<div style="font-size:13px;font-weight:800;color:var(--accent)">£'+pricePerItem.toFixed(2)+'</div></div>';
+  });
+  document.getElementById('mp-confirm-title').textContent = label + (_repeatMode==='three'?' — repeat mailing':'');
+  document.getElementById('mp-confirm-schedule').innerHTML = scheduleHtml;
+  var total = pricePerItem * intervals.length;
+  document.getElementById('mp-confirm-total').textContent = '£'+total.toFixed(2);
+  document.getElementById('mp-error').style.display='none';
+  mpShowStep(2);
+}
+function mpBack(){ mpShowStep(1); }
+function mpPay(){
+  var mailType = _selectedMailType || 'letter_a4';
   var intervals = _repeatMode==='three' ? [0,14,30] : [0];
   var endpoint = intervals.length>1 ? '/api/direct-mail/send-repeat' : '/api/direct-mail/send-lead';
+  var btn = document.getElementById('mp-pay-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Redirecting to payment...';}
+  document.getElementById('mp-error').style.display='none';
   var x=new XMLHttpRequest();
   x.open('POST',endpoint,true);
   x.setRequestHeader('Authorization','Bearer '+_token);
@@ -444,14 +507,15 @@ function doSendPrintPost(mailType,btn){
       closeMailModal();
       window.location.href=d.checkout_url;
     } else {
-      if(btn){btn.disabled=false;btn.style.opacity=1;}
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-lock"></i> Pay &amp; Send';}
       var errEl=document.getElementById('mp-error');
       errEl.textContent=(d&&d.error)||'Could not start print & post. Please try again.';
       errEl.style.display='block';
+      mpShowStep(1);
     }
   };
   x.onerror=function(){
-    if(btn){btn.disabled=false;btn.style.opacity=1;}
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-lock"></i> Pay &amp; Send';}
     var errEl=document.getElementById('mp-error');
     errEl.textContent='Network error. Please check your connection and try again.';
     errEl.style.display='block';
@@ -460,6 +524,7 @@ function doSendPrintPost(mailType,btn){
   if (intervals.length > 1) body.intervals = intervals;
   x.send(JSON.stringify(body));
 }
+function closeMailModal(){document.getElementById('mail-modal').className='modal-overlay';_pendingLeadId='';}
 function closeOnEsc(e){if(e.key==='Escape')closeMailModal();}
 var currentRange = 'today';
 function setRange(range) {
