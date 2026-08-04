@@ -21,10 +21,21 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 .stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 14px;text-align:center}
 .stat .num{font-family:var(--ff-h);font-size:26px;font-weight:900;color:var(--accent)}
 .stat .lbl{font-size:11px;color:var(--text2);margin-top:2px}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:10px;padding:5px}
+.tabs .tab{flex:1;text-align:center;padding:11px 14px;border-radius:7px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;border:none;background:none;font-family:var(--ff-b);transition:.2s;white-space:nowrap}
+.tabs .tab:hover{color:var(--text);background:#f1f5f9}
+.tabs .tab.active{background:var(--accent);color:#fff}
+.tabs .tab .tab-count{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(0,0,0,.08)}
+.tabs .tab.active .tab-count{background:rgba(255,255,255,.25)}
 .search-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
 .search-bar input{flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--ff-b);outline:none;transition:.2s}
 .search-bar input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(14,165,233,.08)}
 .search-bar select{padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--ff-b);background:#fff;outline:none;cursor:pointer}
+.day-group{margin-bottom:18px}
+.day-head{display:flex;align-items:center;justify-content:space-between;padding:8px 4px 8px 0;border-bottom:1px solid var(--border);margin-bottom:8px}
+.day-head .day-title{font-family:var(--ff-h);font-size:14px;font-weight:800;color:var(--text)}
+.day-head .day-sub{font-size:11px;color:var(--muted)}
+.day-head .day-count{font-size:11px;font-weight:700;color:var(--accent);background:#eff6ff;padding:3px 10px;border-radius:20px}
 .lead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;transition:.15s}
 .lead:hover{border-color:var(--accent);background:#fafbff}
 .lead .addr{font-weight:600;font-size:13px;color:var(--text)}
@@ -77,13 +88,17 @@ footer a{color:var(--accent);text-decoration:underline}
 <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">All Time</div></div>
 </div>
 
+<div class="tabs" id="lead-tabs">
+<button class="tab active" data-range="today" onclick="setRange('today')"><i class="fas fa-sun" style="font-size:11px;margin-right:4px"></i>Today <span class="tab-count" id="tab-today">0</span></button>
+<button class="tab" data-range="week" onclick="setRange('week')"><i class="fas fa-calendar-week" style="font-size:11px;margin-right:4px"></i>This Week <span class="tab-count" id="tab-week">0</span></button>
+<button class="tab" data-range="month" onclick="setRange('month')"><i class="fas fa-calendar-alt" style="font-size:11px;margin-right:4px"></i>This Month <span class="tab-count" id="tab-month">0</span></button>
+<button class="tab" data-range="all" onclick="setRange('all')"><i class="fas fa-database" style="font-size:11px;margin-right:4px"></i>All Time <span class="tab-count" id="tab-all">0</span></button>
+</div>
+
 <div class="search-bar">
-<input type="text" id="search-input" placeholder="Search by address, postcode or area..." onkeyup="filterLeads()">
+<input type="text" id="search-input" placeholder="Search by address, postcode, company or area..." onkeyup="filterLeads()">
 <select id="status-filter" onchange="filterLeads()">
 <option value="">All statuses</option><option value="SSTC">SSTC</option><option value="New">New</option><option value="Reduced">Reduced</option><option value="Available">Available</option>
-</select>
-<select id="date-filter" onchange="filterLeads()">
-<option value="all">All time</option><option value="today">Today</option><option value="week">This week</option><option value="month">This month</option>
 </select>
 </div>
 
@@ -122,9 +137,30 @@ function renderLeads(leads) {
   var container = document.getElementById('leads-container');
   if (!leads.length) { container.innerHTML = ''; document.getElementById('no-leads').style.display = 'block'; return; }
   document.getElementById('no-leads').style.display = 'none';
+  // Group by day (only group for week/month/all views; today is one group)
+  var groups = {};
+  var order = [];
+  leads.forEach(function(l){
+    var day = leadCreatedDay(l) || 'Unknown';
+    if (!groups[day]) { groups[day] = []; order.push(day); }
+    groups[day].push(l);
+  });
+  order.sort(function(a,b){ return b.localeCompare(a); });
   var html = '';
-  for (var i = 0; i < leads.length; i++) {
-    var l = leads[i];
+  order.forEach(function(day){
+    var dayLeads = groups[day];
+    if (currentRange === 'today') {
+      html += renderLeadList(dayLeads, true);
+    } else {
+      html += '<div class="day-group"><div class="day-head"><div><div class="day-title">' + dayLabel(day) + '</div><div class="day-sub">' + new Date(day+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) + '</div></div><span class="day-count">' + dayLeads.length + ' lead' + (dayLeads.length!==1?'s':'') + '</span></div>' + renderLeadList(dayLeads, false) + '</div>';
+    }
+  });
+  container.innerHTML = html;
+}
+function renderLeadList(dayLeads, noGroup) {
+  var html = '';
+  for (var i = 0; i < dayLeads.length; i++) {
+    var l = dayLeads[i];
     var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
     var product = l.product || d.product || 'moving';
     var dateStr = l.created_at ? new Date(l.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
@@ -200,7 +236,7 @@ function renderLeads(leads) {
         mailBtn(l.id) + '</div></div>';
     }
   }
-  container.innerHTML = html;
+  return html;
 }
 function mailBtn(leadId){
   return '<button onclick="sendPrintPost(\''+leadId+'\')" title="Print &amp; post a letter or flyer to this lead" class="mail-btn"><i class="fas fa-mail-bulk"></i> Print &amp; Post</button>';
@@ -264,22 +300,48 @@ function doSendPrintPost(mailType,btn){
   x.send(JSON.stringify({lead_id:_pendingLeadId,mail_type:mailType}));
 }
 function closeOnEsc(e){if(e.key==='Escape')closeMailModal();}
+var currentRange = 'today';
+function setRange(range) {
+  currentRange = range;
+  document.querySelectorAll('#lead-tabs .tab').forEach(function(t){
+    t.classList.toggle('active', t.getAttribute('data-range') === range);
+  });
+  var labels = { today:'Today', week:'This week', month:'This month', all:'All time' };
+  document.getElementById('date-label').textContent = labels[range] || 'All time';
+  filterLeads();
+}
+function leadCreatedDay(l) { return (l.created_at||'').split('T')[0]; }
+function inRange(l, range) {
+  var day = leadCreatedDay(l);
+  if (!day) return true;
+  var now = new Date();
+  if (range === 'today') { return day === now.toISOString().split('T')[0]; }
+  if (range === 'week') { var w = new Date(now); w.setDate(w.getDate()-w.getDay()); return day >= w.toISOString().split('T')[0]; }
+  if (range === 'month') { return day.substring(0,7) === now.toISOString().split('T')[0].substring(0,7); }
+  return true;
+}
 function filterLeads() {
   var q = document.getElementById('search-input').value.toLowerCase();
   var status = document.getElementById('status-filter').value.toLowerCase();
-  var date = document.getElementById('date-filter').value;
   var filtered = allLeads.filter(function(l){
     var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
-    var addr = (d.address||d.title||'').toLowerCase();
-    var ls = (d.listingStatus||'').toLowerCase();
+    var addr = ((d.address||'')+' '+(d.title||'')+' '+(d.postcode||'')+' '+(d.company||'')+' '+(d.tenderTitle||'')).toLowerCase();
+    var ls = (d.listingStatus||d.status||'').toLowerCase();
     if (q && !addr.includes(q)) return false;
     if (status && ls !== status) return false;
-    if (date === 'today') { var t = new Date().toISOString().split('T')[0]; if (!(l.created_at||'').startsWith(t)) return false; }
-    if (date === 'week') { var w = new Date(); w.setDate(w.getDate()-w.getDay()); var ws = w.toISOString().split('T')[0]; if ((l.created_at||'') < ws) return false; }
-    if (date === 'month') { var m = new Date().toISOString().split('T')[0].substring(0,7); if (!(l.created_at||'').startsWith(m)) return false; }
+    if (!inRange(l, currentRange)) return false;
     return true;
   });
   renderLeads(filtered);
+}
+function dayLabel(day) {
+  if (!day) return '';
+  var now = new Date();
+  var today = now.toISOString().split('T')[0];
+  var y = new Date(now); y.setDate(y.getDate()-1); var yest = y.toISOString().split('T')[0];
+  if (day === today) return 'Today';
+  if (day === yest) return 'Yesterday';
+  return new Date(day+'T12:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'});
 }
 function doLogout() {
   if (confirm('Log out of your dashboard?')) {
@@ -309,11 +371,16 @@ var _token = '';
       var today = new Date().toISOString().split('T')[0];
       var tl = allLeads.filter(function(l){return (l.created_at||'').startsWith(today);});
       var ml = allLeads.filter(function(l){return (l.created_at||'').startsWith(today.substring(0,7));});
+      var wk = allLeads.filter(function(l){var w=new Date();w.setDate(w.getDate()-w.getDay());return (l.created_at||'')>=w.toISOString().split('T')[0];});
       document.getElementById('stat-today').textContent = tl.length;
-      document.getElementById('stat-week').textContent = allLeads.length;
+      document.getElementById('stat-week').textContent = wk.length;
       document.getElementById('stat-month').textContent = ml.length;
       document.getElementById('stat-total').textContent = allLeads.length;
-      renderLeads(allLeads);
+      document.getElementById('tab-today').textContent = tl.length;
+      document.getElementById('tab-week').textContent = wk.length;
+      document.getElementById('tab-month').textContent = ml.length;
+      document.getElementById('tab-all').textContent = allLeads.length;
+      setRange('today');
     } catch(e) {}
   };
   x.send();
