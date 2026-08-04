@@ -9173,6 +9173,37 @@ app.post('/api/admin/test-probate', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/test-tenders — fetch area-relevant tenders (Contracts Finder),
+// merge into the tenders product file, and return the result. Useful for testing
+// that tenders reach the pool in the customer's chosen county/region.
+app.post('/api/admin/test-tenders', adminAuth, async (req, res) => {
+  try {
+    var tendersScraper = require('./tenders_scraper');
+    var areas = (req.body && req.body.areas) || ['greater-london'];
+    var CF_SEARCH_TERM = { 'greater-london':'london','london':'london','greater-manchester':'manchester','merseyside':'liverpool','tyne-and-wear':'newcastle','west-midlands-region':'birmingham','yorkshire':'yorkshire' };
+    var cfLeads = [];
+    for (var cfi = 0; cfi < areas.length; cfi++) {
+      var cfLoc = CF_SEARCH_TERM[String(areas[cfi]).toLowerCase()] !== undefined ? CF_SEARCH_TERM[String(areas[cfi]).toLowerCase()] : String(areas[cfi]).toLowerCase().replace(/-/g, ' ');
+      var batch = await tendersScraper.fetchTendersFromHTML('construction', cfLoc, 30);
+      if (batch && batch.length > 0) cfLeads = cfLeads.concat(batch);
+    }
+    // Merge into existing pool
+    var poolFile = path.join(DATA_DIR, 'tenders-leads.json');
+    var pool = [];
+    try { pool = JSON.parse(fs.readFileSync(poolFile, 'utf-8')); } catch(e) { pool = []; }
+    if (!Array.isArray(pool)) pool = [];
+    var seen = {};
+    pool.forEach(function(l) { var k = (l.title || l.id || '').toLowerCase().trim(); if (k) seen[k] = 1; });
+    var added = 0;
+    cfLeads.forEach(function(l) {
+      var k = (l.title || l.id || '').toLowerCase().trim();
+      if (k && !seen[k]) { seen[k] = 1; pool.push(l); added++; }
+    });
+    if (added > 0) fs.writeFileSync(poolFile, JSON.stringify(pool, null, 2));
+    res.json({ success: true, fetched: cfLeads.length, added: added, pool_count: pool.length, sample: cfLeads[0] || null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/test-planning — run the planning scraper, save leads to the product file, return result
 app.post('/api/admin/test-planning', adminAuth, async (req, res) => {
   try {
