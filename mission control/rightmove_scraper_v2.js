@@ -5,24 +5,56 @@
 const https = require('https');
 
 const LOCATIONS = [
-  { id: 'REGION%5E87490', name: 'London', pages: 50 },
-  { id: 'REGION%5E87464', name: 'Manchester & North West', pages: 15 },
-  { id: 'REGION%5E87463', name: 'Birmingham & Midlands', pages: 15 },
-  { id: 'REGION%5E87474', name: 'Yorkshire & Humber', pages: 15 },
-  { id: 'REGION%5E87479', name: 'Essex', pages: 12 },
-  { id: 'REGION%5E87475', name: 'Hertfordshire', pages: 12 },
-  { id: 'REGION%5E87477', name: 'Kent', pages: 12 },
-  { id: 'REGION%5E87465', name: 'Surrey', pages: 12 },
-  { id: 'REGION%5E87473', name: 'Sussex', pages: 12 },
-  { id: 'REGION%5E87480', name: 'Hampshire', pages: 12 },
-  { id: 'REGION%5E87466', name: 'Thames Valley', pages: 12 },
-  { id: 'REGION%5E87482', name: 'East Midlands', pages: 10 },
-  { id: 'REGION%5E87481', name: 'South West', pages: 10 },
-  { id: 'REGION%5E87476', name: 'East of England', pages: 10 },
-  { id: 'REGION%5E87483', name: 'North East', pages: 8 },
-  { id: 'REGION%5E87493', name: 'Scotland', pages: 8 },
-  { id: 'REGION%5E87494', name: 'Wales', pages: 8 },
+  { id: 'REGION%5E93917', name: 'Greater London', pages: 50 },
+  { id: 'REGION%5E94019', name: 'Manchester City Centre', pages: 8 },
+  { id: 'REGION%5E94028', name: 'Birmingham City Centre', pages: 8 },
+  { id: 'REGION%5E93905', name: 'Yorkshire and the Humber', pages: 8 },
+  { id: 'REGION%5E94124', name: 'Sheffield City Centre', pages: 6 },
+  { id: 'REGION%5E94022', name: 'Liverpool City Centre', pages: 6 },
+  { id: 'REGION%5E94100', name: 'Newcastle City Centre', pages: 6 },
+  { id: 'REGION%5E93914', name: 'North East, England', pages: 6 },
+  { id: 'REGION%5E93911', name: 'East of England', pages: 6 },
+  { id: 'REGION%5E93920', name: 'Bristol (County)', pages: 6 },
+  { id: 'REGION%5E94118', name: 'South Devon', pages: 6 },
+  { id: 'REGION%5E93961', name: 'NW (Postcode Area)', pages: 15 },
 ];
+
+// Maps a UK postcode AREA code (e.g. "B", "HA", "NW") to working Rightmove region
+// identifiers so we can scrape exactly where each customer asked for leads.
+// Only regions verified to resolve to the correct place are listed.
+const AREA_TO_REGIONS = {
+  'NW': [93961],
+  'HA': [93956],          // Harrow (London Borough)
+  'EN': [93950],          // Enfield (London Borough)
+  'B': [94028, 94127],    // Birmingham City Centre + Jewellery Quarter
+  'M': [94019],           // Manchester City Centre
+  'L': [94022],           // Liverpool City Centre
+  'S': [94124],           // Sheffield City Centre
+  'NE': [94100],          // Newcastle City Centre
+  'BS': [93920],          // Bristol (County)
+  'E': [93917, 93926],    // Greater London + North East London
+  'N': [93917, 93926],
+  'NW1': [93961],
+  'SW': [93917],
+  'SE': [93917],
+  'W': [93917],
+  'WC': [93917],
+  'EC': [93917],
+  'LE': [93905],
+  'LS': [93905],
+  'HD': [93905],
+  'HG': [93905],
+  'HU': [93905],
+  'YO': [93905],
+  'DN': [93905],
+  'DN17': [93905],
+  'EX': [94118],
+  'TQ': [94118],
+  'PL': [94118],
+  'BA': [93920],
+  'TA': [94118],
+  'DT': [94118],
+};
 
 function fetchRightmovePage(locationId, locationName, pageIndex) {
   return new Promise((resolve) => {
@@ -227,22 +259,41 @@ function fetchPropertyDetail(propertyUrl) {
 }
 
 // Enrich a batch of list-view leads with full addresses and postcodes
-// by fetching their detail pages. Runs with a small delay between requests.
+// by fetching their detail pages (parallel). This runs quickly so we can get
+// real postcodes for area matching BEFORE assignment.
 async function enrichMovingLeads(leads, concurrency) {
-  concurrency = concurrency || 3;
+  concurrency = concurrency || 6;
+  const enriched = new Array(leads.length);
+  let idx = 0;
+  async function worker() {
+    while (true) {
+      const i = idx++;
+      if (i >= leads.length) break;
+      const lead = leads[i];
+      const detail = await fetchPropertyDetail(lead.url);
+      if (detail) {
+        lead.address = detail.fullAddress || lead.address;
+        lead.postcode = detail.postcode || lead.postcode || '';
+        lead.fullAddress = detail.fullAddress || lead.address;
+      }
+      enriched[i] = lead;
+    }
+  }
+  const workers = [];
+  for (let w = 0; w < concurrency; w++) workers.push(worker());
+  await Promise.all(workers);
+  return enriched.filter(Boolean);
+}
+
+// Enrich a SMALL batch (the final selected leads) with exact house numbers via
+// Postcoder (licensed Royal Mail PAF). Rightmove never publishes house numbers,
+// so this is the accurate source — but it is rate-limited, so use sparingly.
+async function enrichMovingLeadsPostcoder(leads) {
   const enriched = [];
   for (let i = 0; i < leads.length; i++) {
     const lead = leads[i];
-    const detail = await fetchPropertyDetail(lead.url);
-    if (detail) {
-      lead.address = detail.fullAddress || lead.address;
-      lead.postcode = detail.postcode || lead.postcode || '';
-      lead.fullAddress = detail.fullAddress || lead.address;
-    }
-    // Enrich with the exact house number via Postcoder (licensed Royal Mail PAF).
-    // Rightmove never publishes house numbers, so this is the accurate source.
     if (lead.postcode) {
-      const streetHint = (detail && detail.fullAddress) || lead.address || '';
+      const streetHint = lead.fullAddress || lead.address || '';
       let fullAddr = await lookupPostcoderAddress(lead.postcode, streetHint);
       if (fullAddr && fullAddr.rateLimited) {
         await new Promise(function(r) { setTimeout(r, 30000); });
@@ -258,16 +309,34 @@ async function enrichMovingLeads(leads, concurrency) {
       }
     }
     enriched.push(lead);
-    if (i % concurrency === 0 && i > 0) {
-      await new Promise(function(r) { setTimeout(r, 400); });
-    }
   }
   return enriched;
 }
 
 async function collectMovingLeads(config) {
   config = config || {};
-  const locations = config.locations || LOCATIONS;
+  // If the caller passes postcode AREA codes (e.g. ["B","HA","NW"]), add the
+  // matching Rightmove regions to the default list so we actually get leads in
+  // every area the customer chose (the old region IDs pointed at the wrong places).
+  let locations = config.locations || LOCATIONS.slice();
+  if (config.areas && Array.isArray(config.areas) && config.areas.length > 0) {
+    const added = {};
+    const extraLocs = [];
+    config.areas.forEach(function(area) {
+      const key = String(area).toUpperCase().trim();
+      (AREA_TO_REGIONS[key] || []).forEach(function(rid) {
+        const locKey = 'REGION%5E' + rid;
+        if (!added[locKey]) {
+          added[locKey] = true;
+          extraLocs.push({ id: locKey, name: key + ' area', pages: 12 });
+        }
+      });
+    });
+    if (extraLocs.length) {
+      locations = extraLocs.concat(locations);
+      console.log('[RIGHTMOVE] Added ' + extraLocs.length + ' area-targeted regions for ' + config.areas.join(','));
+    }
+  }
   const allProperties = [];
 
   for (const loc of locations) {
@@ -300,7 +369,7 @@ async function collectMovingLeads(config) {
   return deduped;
 }
 
-module.exports = { collectMovingLeads, enrichMovingLeads, fetchPropertyDetail, lookupPostcoderAddress };
+module.exports = { collectMovingLeads, enrichMovingLeads, enrichMovingLeadsPostcoder, fetchPropertyDetail, lookupPostcoderAddress };
 
 if (require.main === module) {
   collectMovingLeads().then(function(l) {
