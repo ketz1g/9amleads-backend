@@ -2987,6 +2987,14 @@ app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '9amAdmin2024!';
 if (!process.env.ADMIN_PASSWORD) console.warn('[WARN] ADMIN_PASSWORD not set. Using default. Set ADMIN_PASSWORD env var for security.');
 
+// POST /api/admin/verify — validate the admin password (used by the admin login form)
+app.post('/api/admin/verify', (req, res) => {
+  const auth = req.headers.authorization;
+  const ok = !!auth && auth === 'Bearer ' + ADMIN_PASSWORD;
+  if (ok) return res.json({ success: true, valid: true, admin: true });
+  return res.status(401).json({ success: false, valid: false, error: 'Invalid admin password' });
+});
+
 function adminAuth(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || auth !== 'Bearer ' + ADMIN_PASSWORD) {
