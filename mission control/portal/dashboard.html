@@ -827,6 +827,10 @@ document.querySelectorAll('.modal').forEach(function(m){
           if (card && unlocked) { card.style.opacity = '1'; card.style.background = ''; }
           if (card && !unlocked) { card.style.opacity = '.65'; card.style.background = '#fafafa'; }
         });
+        // "Secure Your Trial" card only makes sense on a free trial. Hide it for
+        // paid plans (and for free/cancelled which no longer need card setup).
+        var paymentCard = document.getElementById('payment-setup-card');
+        if (paymentCard) paymentCard.style.display = data.plan === 'free_trial' ? '' : 'none';
       }
       if (data.leads_per_day) document.getElementById('plan-leads').textContent = data.leads_per_day;
       if (data.trial_ends) {
