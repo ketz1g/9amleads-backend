@@ -10114,7 +10114,10 @@ app.get('/api/admin/health-report', adminAuth, (req, res) => {
     var ukHour = parseInt(new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hour12: false }));
     var ukMin = parseInt(new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', minute: '2-digit' }));
     var isWeekday = [1,2,3,4,5].indexOf(new Date().getDay()) !== -1;
-    if (isWeekday && (ukHour > 9 || (ukHour === 9 && ukMin >= 30)) && (__deliveryFireCount === 0)) {
+    var custsActive = (dbH.customers || []).filter(function(c) { return c.plan !== 'cancelled' && c.product; }).length;
+    // If delivery fired via cron OR leads were delivered today (manual/admin), it's fine.
+    var deliveredOk = (__deliveryFireCount > 0) || (todayDelivered > 0 && custsActive > 0);
+    if (isWeekday && (ukHour > 9 || (ukHour === 9 && ukMin >= 30)) && !deliveredOk) {
       issues.push({ severity:'high', label:'Delivery has NOT fired today (past 09:30 UK)', details:[], message:'Delivery not fired' });
     } else if (!isWeekday && todayDelivered > 0) {
       issues.push({ severity:'low', label:'Delivered ' + todayDelivered + ' leads on weekend (unusual)', details:[], message:'Weekend delivery' });
