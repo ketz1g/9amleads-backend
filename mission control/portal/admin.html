@@ -163,29 +163,35 @@ function getAdminAuth() { return sessionStorage.getItem('9amAdminAuth') === 'tru
 function getAdminPass() { return sessionStorage.getItem('9amAdminPass') || ''; }
 function adminHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminPass() }; }
 
+async function verifyPass(pass) {
+  // Retry up to 5 times with backoff — the backend may be waking from a cold start
+  for (var attempt = 1; attempt <= 5; attempt++) {
+    try {
+      const r = await fetch(API + '/api/admin/verify', { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + pass } });
+      const d = await r.json();
+      if (d) return d;
+    } catch(e) { /* fall through to retry */ }
+    await new Promise(function(res) { setTimeout(res, 3000 * attempt); });
+  }
+  return { valid: false, error: 'server_unreachable' };
+}
+
 async function adminLogin() {
   const pass = document.getElementById('adminPass').value;
   document.getElementById('loginError').style.display = 'none';
   if (!pass) { document.getElementById('loginError').style.display = 'block'; return; }
   // Verify the password server-side BEFORE proceeding
-  try {
-    const r = await fetch(API + '/api/admin/verify', { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + pass } });
-    const d = await r.json();
-    if (!d.valid) {
-      document.getElementById('loginError').textContent = 'Incorrect password (server rejected login)';
-      document.getElementById('loginError').style.display = 'block';
-      return;
-    }
-    sessionStorage.setItem('9amAdminPass', pass);
-    saveAdminAuth();
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('adminPage').style.display = 'block';
-    loadData();
-  } catch(e) {
-    // Verify MUST succeed — never allow login with an unverified password
-    document.getElementById('loginError').textContent = 'Cannot reach server. Check connection and try again.';
+  const d = await verifyPass(pass);
+  if (!d.valid) {
+    document.getElementById('loginError').textContent = (d.error === 'server_unreachable') ? 'Cannot reach server. Waking it up — wait 30s and try again.' : 'Incorrect password (server rejected login)';
     document.getElementById('loginError').style.display = 'block';
+    return;
   }
+  sessionStorage.setItem('9amAdminPass', pass);
+  saveAdminAuth();
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('adminPage').style.display = 'block';
+  loadData();
 }
 
 function adminLogout() {
