@@ -9182,7 +9182,32 @@ app.post('/api/admin/blog/generate-all', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===== ADMIN DIRECT MAIL DASHBOARD =====
+// ===== PUBLIC BLOG ROUTES =====
+// GET /blog — list all published posts
+app.get('/blog', (req, res) => {
+  try {
+    var dbData = getDb();
+    var posts = (dbData.blog_posts || []).filter(function(p) { return p.published; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    var cards = posts.map(function(p) {
+      return '<a href="/blog/' + p.slug + '" style="display:block;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px;margin-bottom:12px;background:rgba(255,255,255,0.03)"><div style="font-size:11px;color:#0ea5e9;margin-bottom:6px">' + (p.product_name || p.category || '') + '</div><div style="font-weight:700;margin-bottom:6px">' + p.title + '</div><div style="font-size:12px;color:#999">' + (p.description || '') + '</div></a>';
+    }).join('') || '<p style="color:#888">No posts yet.</p>';
+    var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Blog | 9amLeads</title><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:Inter,sans-serif;background:#000;color:#fff;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}a{color:#0ea5e9}</style></head><body><h1 style="font-family:Outfit,sans-serif">9amLeads Blog</h1>' + cards + '</body></html>';
+    res.type('html').send(html);
+  } catch(e) { res.status(500).send('Error loading blog'); }
+});
+
+// GET /blog/:slug — serve a generated post (public, no auth)
+app.get('/blog/:slug', (req, res) => {
+  try {
+    var dbData = getDb();
+    var posts = dbData.blog_posts || [];
+    var post = posts.find(function(p) { return p.slug === req.params.slug && p.published; });
+    if (!post) {
+      return res.status(404).send('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Post not found</title></head><body style="background:#000;color:#fff;font-family:Inter,sans-serif;padding:40px;text-align:center"><h1>Post not found</h1><a href="/blog" style="color:#0ea5e9">Back to Blog</a></body></html>');
+    }
+    res.type('html').send(post.html);
+  } catch(e) { res.status(500).send('Error loading post'); }
+});
 
 // GET /api/admin/direct-mail/dashboard — Admin DM overview
 app.get('/api/admin/direct-mail/dashboard', adminAuth, (req, res) => {
