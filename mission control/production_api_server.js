@@ -979,16 +979,11 @@ function validateEmail(email) {
 // ===== APP =====
 const app = express();
 app.use(cors({ origin: ['https://www.9amleads.com', 'https://9amleads.com', 'http://localhost:8012'], credentials: true }));
-// Capture raw body for Stripe signature verification
-app.use(function(req, res, next) {
-  var chunks = [];
-  req.on('data', function(c) { chunks.push(c); });
-  req.on('end', function() {
-    if (chunks.length) req.rawBody = Buffer.concat(chunks).toString('utf-8');
-    next();
-  });
-});
-app.use(express.json({ limit: '2mb' }));
+// Capture raw body for Stripe signature verification (preserve stream for express.json)
+app.use(express.json({
+  limit: '2mb',
+  verify: function(req, res, buf) { req.rawBody = buf.toString('utf-8'); }
+}));
 
 // Rate limiting
 const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: 'Too many requests. Please slow down.' } });
