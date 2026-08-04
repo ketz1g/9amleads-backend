@@ -144,6 +144,13 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div class="sect-title"><i class="fas fa-history" style="color:var(--accent)"></i> Your Campaigns</div>
 <div id="campaigns-list"></div>
 </div>
+
+<!-- Repeat Mailing Series -->
+<div class="card">
+<div class="sect-title"><i class="fas fa-redo-alt" style="color:var(--accent)"></i> Repeat Mailing Series <span style="margin-left:auto;font-size:11px;color:var(--text2)">automatic follow-ups</span></div>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">When you send a lead with a repeat option, all follow-up mailings are listed here and dispatched automatically on their due date.</p>
+<div id="repeat-series-list"></div>
+</div>
 </div>
 
 <script>
@@ -410,6 +417,31 @@ function loadCampaigns(){
     list.innerHTML=html;
   });
 }
+function loadRepeatSeries(){
+  api('GET','/api/direct-mail/repeat-series',null,function(err,d){
+    var series=(d&&d.series)||[];
+    var list=document.getElementById('repeat-series-list');
+    if(!series.length){list.innerHTML='<div class="empty"><i class="fas fa-redo-alt"></i>No repeat mailings yet — use the repeat option when sending a lead</div>';return;}
+    var html='';
+    series.forEach(function(s){
+      var mails='';
+      (s.mailings||[]).forEach(function(m,i2){
+        var sent = m.status==='sent_to_provider'||m.status==='dispatched'||m.status==='completed';
+        var statusColor = sent ? 'var(--success)' : m.status==='failed' ? '#dc2626' : 'var(--muted)';
+        var label = sent ? 'Sent' : m.status==='failed' ? 'Failed' : m.payment_status==='paid' ? 'Scheduled' : 'Pending';
+        mails+='<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">'+
+          '<div><span style="color:'+statusColor+';font-weight:700">'+(i2+1)+'.</span> '+(m.delivery_date||'soon')+'</div>'+
+          '<span class="tag" style="background:'+(sent?'#f0fdf4':m.status==='failed'?'#fef2f2':'#eff6ff')+';color:'+statusColor+'">'+label+'</span></div>';
+      });
+      html+='<div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px">'+
+        '<div><div style="font-weight:700;font-size:13px">'+(s.lead_label||'Lead')+'</div><div style="font-size:11px;color:var(--muted)">'+(s.mailings||[]).length+' mailings · £'+s.total.toFixed(2)+' total</div></div>'+
+        '<span class="tag">'+s.mail_type.replace(/_/g,' ')+'</span></div>'+
+        mails+'</div>';
+    });
+    list.innerHTML=html;
+  });
+}
 
 (function(){
   var sd=localStorage.getItem('mld_portal_session');
@@ -419,6 +451,7 @@ function loadCampaigns(){
   loadProfile();
   loadTemplates();
   loadCampaigns();
+  loadRepeatSeries();
 })();
 </script>
 </body></html>
