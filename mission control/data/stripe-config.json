@@ -16,14 +16,14 @@
       "nb-power": "price_1Tm6PSADspDnFpfBGRGc5zQ9"
     },
     "planning": {
-      "plan-starter": "price_1TmEKSADspDnFpfBrCHXJBFu",
-      "plan-growth": "price_1TmEKTADspDnFpfBVdi1APEq",
-      "plan-power": "price_1TmEKTADspDnFpfBxFjHeoP9"
+      "plan-starter": "price_1Tm6PTADspDnFpfBfSSc0fUR",
+      "plan-growth": "price_1Tm6PUADspDnFpfBKFFst74I",
+      "plan-power": "price_1Tm6PUADspDnFpfB8Dvu7tq5"
     },
     "tenders": {
-      "tend-starter": "price_1TmEKTADspDnFpfBsi6jjA6B",
-      "tend-growth": "price_1TmEKUADspDnFpfBqnyKzJxM",
-      "tend-power": "price_1TmEKUADspDnFpfBugGOoqhD"
+      "tend-starter": "price_1Tm6PVADspDnFpfBqUAL1K6Z",
+      "tend-growth": "price_1Tm6PWADspDnFpfB68IGEx5J",
+      "tend-power": "price_1Tm6PXADspDnFpfBf8c9Ww8s"
     },
     "builder-package": { "bld-package": "price_1Tm6PYADspDnFpfB1PoCynL3" },
     "marketing-package": { "mkt-package": "price_1Tm6PZADspDnFpfBuTg9lDWp" },
