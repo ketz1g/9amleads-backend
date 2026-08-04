@@ -137,17 +137,30 @@ function getAdminAuth() { return sessionStorage.getItem('9amAdminAuth') === 'tru
 function getAdminPass() { return sessionStorage.getItem('9amAdminPass') || ''; }
 function adminHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminPass() }; }
 
-function adminLogin() {
+async function adminLogin() {
   const pass = document.getElementById('adminPass').value;
   document.getElementById('loginError').style.display = 'none';
-  if (pass) {
+  if (!pass) { document.getElementById('loginError').style.display = 'block'; return; }
+  // Verify the password server-side BEFORE proceeding
+  try {
+    const r = await fetch(API + '/api/admin/verify', { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + pass } });
+    const d = await r.json();
+    if (!d.valid) {
+      document.getElementById('loginError').style.display = 'block';
+      return;
+    }
     sessionStorage.setItem('9amAdminPass', pass);
     saveAdminAuth();
     document.getElementById('loginPage').style.display = 'none';
     document.getElementById('adminPage').style.display = 'block';
     loadData();
-  } else {
-    document.getElementById('loginError').style.display = 'block';
+  } catch(e) {
+    // Fall back to local check if verify endpoint unreachable
+    sessionStorage.setItem('9amAdminPass', pass);
+    saveAdminAuth();
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('adminPage').style.display = 'block';
+    loadData();
   }
 }
 
@@ -159,9 +172,33 @@ function adminLogout() {
 }
 
 if (getAdminAuth()) {
-  document.getElementById('loginPage').style.display = 'none';
-  document.getElementById('adminPage').style.display = 'block';
-  loadData();
+  // Validate the stored token server-side; if invalid, force re-login
+  var storedPass = getAdminPass();
+  if (storedPass) {
+    fetch(API + '/api/admin/verify', { headers: { 'Authorization': 'Bearer ' + storedPass } }).then(function(r) {
+      return r.json();
+    }).then(function(d) {
+      if (d && d.valid) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('adminPage').style.display = 'block';
+        loadData();
+      } else {
+        // Stored password invalid — clear and show login
+        sessionStorage.removeItem('9amAdminAuth');
+        sessionStorage.removeItem('9amAdminPass');
+        document.getElementById('loginPage').style.display = 'block';
+        document.getElementById('adminPage').style.display = 'none';
+      }
+    }).catch(function() {
+      // Server unreachable — optimistically show dashboard
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('adminPage').style.display = 'block';
+      loadData();
+    });
+  } else {
+    document.getElementById('loginPage').style.display = 'block';
+    document.getElementById('adminPage').style.display = 'none';
+  }
 }
 
 function badgeClass(product) {
