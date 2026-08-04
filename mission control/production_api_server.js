@@ -4782,15 +4782,16 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         return true;
       }
       // Available undelivered leads per product.
-      // MOVING freshness rule: only leads first-listed or updated within 48h are
-      // deliverable. Older listings are excluded so customers see recent moves.
+      // MOVING freshness rule: prefer leads first-listed/updated within 48h, but
+      // allow up to 7 days so quiet postcode areas (e.g. B Birmingham) still get
+      // leads. The scraper already drops anything older than 7 days.
       function isMovingFresh(l) {
         try {
           var ld2 = JSON.parse(l.data || '{}');
           var fv = ld2.firstVisibleDate || ld2.updateDate || '';
           if (!fv) return true; // no date info -> keep (better than nothing)
-          var t48 = new Date(Date.now() - 48 * 3600000).toISOString();
-          return fv >= t48;
+          var t7d = new Date(Date.now() - 7 * 86400000).toISOString();
+          return fv >= t7d;
         } catch(e) { return true; }
       }
       var availByProd = {};
@@ -8837,31 +8838,38 @@ function syncCustomers(product) {
                 var now = new Date();
                 var t24 = new Date(now - 24 * 3600000).toISOString();
                 var t48 = new Date(now - 48 * 3600000).toISOString();
+                var t7d = new Date(now - 7 * 86400000).toISOString();
                 if (fv && fv >= t24) return 'fresh24';
                 if (fv && fv >= t48) return 'fresh48';
                 if (up && up >= t24) return 'fresh24';
                 if (up && up >= t48) return 'fresh48';
+                if (fv && fv >= t7d) return 'week';   // fallback so quiet areas still get leads
+                if (up && up >= t7d) return 'week';
                 return 'old';
               }
               var freshPool = [];
               var fallbackPool = [];
+              var weekPool = [];
               var otherPool = [];
               desiredLeads.forEach(function(l) {
                 var b = leadFreshBucket(l);
                 if (b === 'fresh24') freshPool.push(l);
                 else if (b === 'fresh48') fallbackPool.push(l);
+                else if (b === 'week') weekPool.push(l);
                 else otherPool.push(l);
               });
-              // KEEP ONLY FRESH: new<24h primary, 24-48h fallback. Older listings are
-              // dropped so customers only see genuinely recent moving opportunities.
-              var usedPool = freshPool.concat(fallbackPool);
+              // Freshness: new<24h primary, 24-48h fallback, then up-to-7-days as a
+              // safety net so quiet postcode areas (e.g. B Birmingham) still get leads
+              // rather than none. Delivery's own 48h guard prefers fresher leads but
+              // won't starve an area. Older than 7 days are dropped.
+              var usedPool = freshPool.concat(fallbackPool, weekPool);
               usedPool.sort(function(a, b) {
                 var bv = (b.firstVisibleDate || b.updateDate || '');
                 var av = (a.firstVisibleDate || a.updateDate || '');
                 return bv.localeCompare(av);
               });
               leads = usedPool.slice(0, 500);
-              console.log('[SCRAPER] Rightmove: ' + freshPool.length + ' new<24h, ' + fallbackPool.length + ' 24-48h, ' + otherPool.length + ' OLD DROPPED, using ' + leads.length + ' fresh listings');
+              console.log('[SCRAPER] Rightmove: ' + freshPool.length + ' <24h, ' + fallbackPool.length + ' 24-48h, ' + weekPool.length + ' <7d, ' + otherPool.length + ' DROPPED, using ' + leads.length + ' listings');
             }
             // ENRICH fresh moving leads with real postcodes via the free detail page
             // (parallel, fast). Rightmove's list view hides postcodes, so without this
