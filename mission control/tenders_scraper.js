@@ -277,6 +277,133 @@ async function collectTendersLeads(config) {
   return leads;
 }
 
+// ===== TENDER DETAIL ENRICHMENT =====
+// Fetch the tender's detail page and extract the buyer contact info + how to
+// apply, so customers can actually contact/apply rather than only see the title.
+// Works for Contracts Finder and Public Contracts Scotland.
+function fetchTenderDetail(url) {
+  return new Promise((resolve) => {
+    if (!url) return resolve({});
+    try {
+      const parsed = new URL(url);
+      const opts = {
+        hostname: parsed.hostname,
+        path: parsed.pathname + parsed.search,
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-GB,en;q=0.9',
+          'Connection': 'keep-alive'
+        },
+        timeout: 30000
+      };
+      const req = https.request(opts, (res) => {
+        let body = '';
+        res.on('data', c => body += c);
+        res.on('end', () => {
+          if (res.statusCode !== 200) { resolve({}); return; }
+          const text = body.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+          const html = body;
+          const out = {};
+          // Contact name — CF uses "Contact name", PCS uses "Contact person"
+          const nameMatch = text.match(/Contact\s+(?:name|person)\s*:?\s*([A-Z][A-Za-z' .-]{2,60}?)(?=\s+(?:Address|Telephone|Email|E-mail|Country|NUTS)\b)/i);
+          if (nameMatch) out.contactName = nameMatch[1].trim();
+          else {
+            const name2 = text.match(/Contact\s+(?:name|person)\s*:?\s*([A-Z][A-Za-z' .-]{2,60})/i);
+            if (name2) out.contactName = name2[1].trim();
+          }
+          // Telephone (CF: "Telephone +44...", PCS: "Telephone: +44...")
+          const telMatch = text.match(/Telephone\s*:?\s*(\+?[0-9 ()-]{7,18}?)(?=\s+(?:Email|E-mail|Address|NUTS)\b|$)/i);
+          if (telMatch) out.contactPhone = telMatch[1].trim();
+          // Email (from mailto link preferred)
+          const mailto = html.match(/mailto:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+          const emailMatch = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+          if (mailto) out.contactEmail = mailto[1];
+          else if (emailMatch) out.contactEmail = emailMatch[1];
+          // Buyer address block (CF format: "Address" ... "Country" ... "Telephone")
+          const addrStart = text.indexOf('Address');
+          if (addrStart !== -1) {
+            let addrEnd = text.indexOf('Country', addrStart);
+            let addrBlock = '';
+            if (addrEnd > addrStart) {
+              addrBlock = text.substring(addrStart + 7, addrEnd).trim();
+            } else {
+              addrEnd = text.indexOf('Telephone', addrStart);
+              addrBlock = text.substring(addrStart + 7, addrEnd > addrStart ? addrEnd : addrStart + 90).trim();
+            }
+            addrBlock = addrBlock.replace(/^:?\s*/, '').replace(/\s{2,}/g, ', ');
+            // Only keep if it looks like an address (contains a letter + postcode-ish)
+            if (addrBlock && addrBlock.length > 8 && /[A-Za-z]/.test(addrBlock) && !/buyer profile/i.test(addrBlock)) {
+              // Drop trailing "United Kingdom" for brevity
+              out.buyerAddress = addrBlock.replace(/\s+United Kingdom\s*$/i, '');
+            }
+          }
+          // PCS address: after "Name and addresses <buyer>" the street/city/postcode
+          // follow on one line, ending at the postcode + UK.
+          if (!out.buyerAddress) {
+            const naIdx = text.indexOf('Name and addresses');
+            if (naIdx !== -1) {
+              const after = text.substring(naIdx + 18, naIdx + 260);
+              const pcMatch = after.match(/([A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2})/i);
+              if (pcMatch) {
+                // Address = everything between the buyer name and the postcode
+                const end = pcMatch.index + pcMatch[1].length;
+                const segment = after.substring(0, end).trim();
+                // Skip the leading organisation name (first "word set")
+                const parts = segment.split(/\s{2,}|&nbsp;|,\s+(?=[A-Z])/).filter(Boolean);
+                const lastPart = parts[parts.length - 1] || segment;
+                let addr = lastPart;
+                if (addr.length < 12) addr = segment;
+                // addr may contain the org name + address; take from first ", " onward if possible
+                const comma = addr.indexOf(',');
+                if (comma !== -1 && addr.substring(0, comma).split(' ').length <= 4) addr = addr.substring(comma + 1).trim();
+                if (addr && addr.length > 8 && !/buyer profile/i.test(addr)) out.buyerAddress = addr.replace(/\s+UK\s*$/i, '');
+              }
+            }
+          }
+          // How to apply / application info — stop at "About the buyer"
+          const applyStart = text.indexOf('How to apply');
+          if (applyStart !== -1) {
+            const applyEnd = text.indexOf('About the buyer', applyStart);
+            let how = text.substring(applyStart, applyEnd > applyStart ? applyEnd : applyStart + 150).trim();
+            how = how.replace(/^How to apply\s*:?\s*/i, '').replace(/^:?\s*/, '').replace(/^\s*y\s+/, '');
+            if (how) out.howToApply = how;
+          }
+          // Apply link (more information / external portal)
+          const moreHref = html.match(/More information[\s\S]{0,200}?href="([^"]+)"/);
+          const applyHref = html.match(/How to apply[\s\S]{0,300}?href="([^"]+)"/);
+          if (moreHref && moreHref[1] && moreHref[1].indexOf('http') === 0) out.applyLink = moreHref[1];
+          else if (applyHref && applyHref[1] && applyHref[1].indexOf('http') === 0) out.applyLink = applyHref[1];
+          resolve(out);
+        });
+      });
+      req.on('error', () => resolve({}));
+      req.setTimeout(30000, () => { req.destroy(); resolve({}); });
+      req.end();
+    } catch(e) { resolve({}); }
+  });
+}
+
+// Enrich a batch of tender leads with detail-page contact info.
+async function enrichTenders(leads) {
+  const out = [];
+  for (let i = 0; i < leads.length; i++) {
+    const lead = leads[i];
+    const detail = await fetchTenderDetail(lead.url);
+    if (Object.keys(detail).length) {
+      lead.contactName = detail.contactName || lead.contactName || '';
+      lead.contactPhone = detail.contactPhone || lead.contactPhone || '';
+      lead.contactEmail = detail.contactEmail || lead.buyerEmail || lead.contactEmail || '';
+      lead.buyerAddress = detail.buyerAddress || lead.buyerAddress || '';
+      lead.howToApply = detail.howToApply || lead.howToApply || '';
+      lead.applyLink = detail.applyLink || lead.applyLink || lead.url || '';
+    }
+    out.push(lead);
+  }
+  return out;
+}
+
 // ===== SAMPLE DATA GENERATOR =====
 function generateSampleTenders(keywords, location, count) {
   const tenderDescriptions = [
@@ -691,7 +818,7 @@ async function main() {
   }
 }
 
-module.exports = { collectTendersLeads, fetchTendersFromHTML };
+module.exports = { collectTendersLeads, fetchTendersFromHTML, fetchTenderDetail, enrichTenders };
 
 if (require.main === module) {
   main().catch(e => console.error('Error:', e.message));
