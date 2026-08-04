@@ -4984,10 +4984,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
 // All are weekly subscriptions (interval=week, confirmed live on Stripe).
 const STRIPE_PRICE_IDS = {
   moving: { 'mov-starter': 'price_1Tm6PMADspDnFpfBJtsUWi6v', 'mov-growth': 'price_1Tm6PNADspDnFpfB847Dubdf', 'mov-power': 'price_1Tm6POADspDnFpfBkf0gfqXs' },
-  planning: { 'plan-starter': 'price_1TmEKSADspDnFpfBrCHXJBFu', 'plan-growth': 'price_1TmEKTADspDnFpfBVdi1APEq', 'plan-power': 'price_1TmEKTADspDnFpfBxFjHeoP9' },
+  planning: { 'plan-starter': 'price_1Tm6PTADspDnFpfBfSSc0fUR', 'plan-growth': 'price_1Tm6PUADspDnFpfBKFFst74I', 'plan-power': 'price_1Tm6PUADspDnFpfB8Dvu7tq5' },
   newbusiness: { 'nb-starter': 'price_1Tm6PRADspDnFpfBx80lgJ84', 'nb-growth': 'price_1Tm6PSADspDnFpfBXakzcGEL', 'nb-power': 'price_1Tm6PSADspDnFpfBGRGc5zQ9' },
   probate: { 'prob-starter': 'price_1Tm6PPADspDnFpfBkewa97Bv', 'prob-growth': 'price_1Tm6PPADspDnFpfB3q61i5FP', 'prob-power': 'price_1Tm6PQADspDnFpfBazgz1UD7' },
-  tenders: { 'tend-starter': 'price_1TmEKTADspDnFpfBsi6jjA6B', 'tend-growth': 'price_1TmEKUADspDnFpfBqnyKzJxM', 'tend-power': 'price_1TmEKUADspDnFpfBugGOoqhD' },
+  tenders: { 'tend-starter': 'price_1Tm6PVADspDnFpfBqUAL1K6Z', 'tend-growth': 'price_1Tm6PWADspDnFpfB68IGEx5J', 'tend-power': 'price_1Tm6PXADspDnFpfBf8c9Ww8s' },
   'builder-package': { 'bld-package': 'price_1Tm6PYADspDnFpfB1PoCynL3' },
   'marketing-package': { 'mkt-package': 'price_1Tm6PZADspDnFpfBuTg9lDWp' },
   'property-package': { 'prp-package': 'price_1Tm6PaADspDnFpfBtGP40kRG' },
@@ -5097,7 +5097,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     if (!customer) return res.status(404).json({ error: 'User not found' });
 
     // Verify availability before checkout
-    var packageKeys = { 'builder-package': 'bld-package', 'marketing-package': 'mkt-package', 'property-package': 'prp-package', 'moving-package': 'mov-package', 'pro': 'pro-plan' };
+    var packageKeys = { 'builder-package': 'bld-package', 'marketing-package': 'mkt-package', 'property-package': 'prp-package', 'moving-package': 'mov-package', 'pro-plan': 'pro-plan' };
     if (!packageKeys[plan]) {
       const availRule = getLeadTypeRule(customer.product);
       if (!availRule.enabled) {
@@ -5108,9 +5108,12 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
       }
     }
 
-    // Handle packages and pro plan directly
+    // Handle industry packages + the standalone 9amLeads Pro plan directly.
+    // NOTE: `plan='pro'` is the PER-PRODUCT pro tier (→ growth price). The
+    // standalone 9amLeads Pro package uses `plan='pro-plan'` (£249/wk) and is
+    // passed explicitly by the front-end when offering that product.
     var priceId;
-    var packageMap = { 'builder-package': 'builder-package', 'marketing-package': 'marketing-package', 'property-package': 'property-package', 'moving-package': 'moving-package', 'pro': 'pro' };
+    var packageMap = { 'builder-package': 'builder-package', 'marketing-package': 'marketing-package', 'property-package': 'property-package', 'moving-package': 'moving-package', 'pro-plan': 'pro' };
     if (packageKeys[plan]) {
       var priceIdMap = STRIPE_PRICE_IDS[packageMap[plan]] || {};
       priceId = priceIdMap[packageKeys[plan]];
