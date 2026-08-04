@@ -148,11 +148,10 @@ function leadMatchesTarget(lead, customer, product) {
       for (const area of targets) {
         var areaLower = (area || '').toLowerCase().trim();
         if (!areaLower || areaLower === 'all uk' || areaLower === 'all-uk' || areaLower === 'ukwide' || areaLower === 'united kingdom' || areaLower === 'uk' || coverage === 'ukwide') { areaMatch = true; break; }
-        // Direct text match (town/city/address)
-        if (leadText.includes(areaLower)) { areaMatch = true; break; }
-        // Postcode-area targets (e.g. B, EN, NW): match if the lead's postcode or
-        // address contains a postcode starting with that area code, OR a known
-        // town/region maps to it.
+        // Postcode-area targets (e.g. B, EN, NW, G, BA): STRICT postcode matching.
+        // Never do loose "includes()" text matching for these — a single-letter area
+        // like "G" would match the letter 'g' inside any word (e.g. "building"),
+        // delivering leads from every region to the customer.
         if (isPostcodeAreaAny) {
           var areaCodeUpper = (area || '').toUpperCase();
           var leadAll = leadText + ' ' + (lead.postcode || '');
@@ -174,7 +173,22 @@ function leadMatchesTarget(lead, customer, product) {
             'HA': 'london', 'BR': 'london', 'RM': 'london', 'W': 'london', 'E': 'london', 'N': 'london',
             'EC': 'london', 'WC': 'london'
           };
-          if (areaTownMap[areaCodeUpper] && leadText.includes(areaTownMap[areaCodeUpper])) { areaMatch = true; break; }
+          // Town-name match is only a hint — it MUST be confirmed by the lead's
+          // postcode area actually matching the requested area code (e.g. NW +
+          // "London" must NOT match a lead whose postcode is SW11).
+          if (areaTownMap[areaCodeUpper] && leadText.includes(areaTownMap[areaCodeUpper])) {
+            var townPc = extractPostcodeArea(lead.postcode || '');
+            var areaLen = areaCodeUpper.length;
+            if (townPc) {
+              var areaMatchCond = townPc === areaCodeUpper;
+              // Single-letter areas (E, N, W, S, B...) also cover their two-letter
+              // variants (E1, EC1, N1, NW1, W1, WC1...). Two-letter areas are exact.
+              if (areaLen === 1) {
+                areaMatchCond = townPc === areaCodeUpper || townPc.indexOf(areaCodeUpper) === 0;
+              }
+              if (areaMatchCond) { areaMatch = true; break; }
+            }
+          }
         }
         // County/region-to-postcode matching: check if the lead's postcode area
         // falls within the target county or region.
@@ -196,14 +210,16 @@ function leadMatchesTarget(lead, customer, product) {
             'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
             'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
           };
-          // Try exact, then match any key that CONTAINS the area name
+          // Try exact, then match any key that CONTAINS the area name.
+          // Guard: never substring-match a single-letter area code (e.g. "G" would
+          // match inside "greater-london"), which wrongly allows any region.
           var countyKeys = Object.keys(countyPostcodes);
           if (countyPostcodes[areaLower] && countyPostcodes[areaLower].indexOf(pcCode) >= 0) { areaMatch = true; break; }
           if (!areaMatch) {
             for (var ck = 0; ck < countyKeys.length; ck++) {
-              if (areaLower.indexOf(countyKeys[ck]) !== -1 || countyKeys[ck].indexOf(areaLower) !== -1) {
-                if (countyPostcodes[countyKeys[ck]].indexOf(pcCode) >= 0) { areaMatch = true; break; }
-              }
+              var countyKey = countyKeys[ck];
+              var keysOverlap = areaLower.length >= 2 && countyKey.length >= 2 && (areaLower.indexOf(countyKey) !== -1 || countyKey.indexOf(areaLower) !== -1);
+              if (keysOverlap && countyPostcodes[countyKey].indexOf(pcCode) >= 0) { areaMatch = true; break; }
             }
           }
         }
