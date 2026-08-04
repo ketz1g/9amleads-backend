@@ -7620,7 +7620,7 @@ async function sendDmCampaign(campaignId, customerId) {
         console.log('[DM-SEND] Proof of posting saved for campaign ' + campaign.id.substring(0, 8));
       }
     } catch(proofErr) { console.log('[DM-SEND] Proof capture skipped:', proofErr.message); }
-    return { success: true, provider: provider.name, provider_campaign_id: providerCampaignId, recipient_count: sentIds.length, message: 'Sent ' + sentIds.length + ' item(s) to Stannp for printing' };
+    return { success: true, provider: provider.name, provider_campaign_id: providerCampaignId, recipient_count: sentIds.length, message: 'Sent ' + sentIds.length + ' item(s) to our print partner for printing' };
   }
 
   // MOCK / legacy campaign path
@@ -7661,8 +7661,8 @@ app.post('/api/direct-mail/campaigns/:id/send', authMiddleware, async (req, res)
       db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), req.params.id, req.user.id);
       return res.status(500).json({ success: false, error: result.error });
     }
-    sendDMNotification(req.user.id, 'campaign_sent', '📬 Campaign Sent to Print', 'Campaign Sent to Provider',
-      '<p>Your campaign "' + result.campaign_name + '" has been sent to ' + result.provider + ' for printing.</p><p style="font-size:12px;color:#5a6280">Provider ID: ' + result.provider_campaign_id + ' · Recipients: ' + result.recipient_count + '</p>',
+    sendDMNotification(req.user.id, 'campaign_sent', '📬 Campaign Sent to Print', 'Your mailing is on its way to the printer',
+      '<p>Your mailing "' + (result.campaign_name || '') + '" has been sent to our print partner and will be dispatched shortly.</p><p style="font-size:12px;color:#5a6280">Recipients: ' + result.recipient_count + '</p>',
       'Track Campaign', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail');
     res.json({ success: true, provider: result.provider, provider_campaign_id: result.provider_campaign_id, recipient_count: result.recipient_count, invalid_addresses: 0, total_valid: result.recipient_count, message: result.message });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -9165,6 +9165,20 @@ app.post('/api/admin/direct-mail/campaigns/:id/refund', adminAuth, (req, res) =>
     db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run('refunded', 'cancelled', new Date().toISOString(), req.params.id);
     db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), campaign.customer_id, req.params.id, campaign.status, 'cancelled', 'admin', 'Payment refunded by admin', new Date().toISOString());
     res.json({ success: true, message: 'Campaign refunded' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/direct-mail/campaigns/:id/delete-permanent — Permanently delete a
+// campaign and its recipients/status history (admin). Used to clean up test data.
+app.post('/api/admin/direct-mail/campaigns/:id/delete-permanent', adminAuth, (req, res) => {
+  try {
+    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(req.params.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    db.prepare('DELETE FROM direct_mail_recipients WHERE campaign_id = ?').run(req.params.id);
+    db.prepare('DELETE FROM direct_mail_status_history WHERE campaign_id = ?').run(req.params.id);
+    db.prepare('DELETE FROM direct_mail_provider_logs WHERE campaign_id = ?').run(req.params.id);
+    db.prepare('DELETE FROM direct_mail_campaigns WHERE id = ?').run(req.params.id);
+    res.json({ success: true, message: 'Campaign permanently deleted' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
