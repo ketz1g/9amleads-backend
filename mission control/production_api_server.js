@@ -979,7 +979,16 @@ function validateEmail(email) {
 // ===== APP =====
 const app = express();
 app.use(cors({ origin: ['https://www.9amleads.com', 'https://9amleads.com', 'http://localhost:8012'], credentials: true }));
-app.use(express.json());
+// Capture raw body for Stripe signature verification
+app.use(function(req, res, next) {
+  var chunks = [];
+  req.on('data', function(c) { chunks.push(c); });
+  req.on('end', function() {
+    if (chunks.length) req.rawBody = Buffer.concat(chunks).toString('utf-8');
+    next();
+  });
+});
+app.use(express.json({ limit: '2mb' }));
 
 // Rate limiting
 const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: 'Too many requests. Please slow down.' } });
@@ -5198,11 +5207,47 @@ app.post('/api/setup-checkout', authMiddleware, async (req, res) => {
 // Handle setup成功的 webhook in the stripe webhook handler (setup_intent.succeeded saves payment method)
 
 // ===== DIRECT MAIL PAYMENTS =====
-// POST /api/stripe/webhook — handle Stripe checkout completed events
+// POST /api/stripe/webhook — handle Stripe subscription events
+// Processes: checkout.session.completed (new subscription), invoice.paid
+// (successful weekly renewal), invoice.payment_failed (dunning),
+// customer.subscription.deleted (cancellation).
+// Optional signature verification when STRIPE_WEBHOOK_SECRET is set; falls back
+// to processing events without verification so the payment flow keeps working
+// even before the secret is configured.
 app.post('/api/stripe/webhook', async (req, res) => {
   try {
+    // Optional signature verification (enables when secret configured)
+    var rawBody = req.rawBody;
+    var sig = req.headers['stripe-signature'];
+    if (STRIPE_WEBHOOK_SECRET && sig && rawBody) {
+      try {
+        var crypto = require('crypto');
+        var parts = {};
+        sig.split(',').forEach(function(p) { var kv = p.trim().split('='); parts[kv[0]] = kv[1]; });
+        var signed = parts['t'] + '.' + rawBody;
+        var expected = crypto.createHmac('sha256', STRIPE_WEBHOOK_SECRET).update(signed).digest('hex');
+        if (expected !== parts['v1']) { return res.status(400).json({ error: 'Invalid signature' }); }
+      } catch(sigErr) { console.error('[STRIPE] Signature error:', sigErr.message); }
+    }
+
     var event = req.body;
-    if (event.type === 'checkout.session.completed') {
+    var evType = event.type || '';
+
+    // Helper: set the customer's plan + per-product daily limit from lead rules
+    function applyPlan(cust, plan, product) {
+      var leadsPerDay = 5;
+      try {
+        var rule = getLeadTypeRule(product || cust.product || 'moving');
+        var planKey = plan === 'essential' ? 'starter' : (plan || 'starter');
+        var cov = cust.coverage || 'postcode';
+        leadsPerDay = getPlanLimit(product || cust.product || 'moving', planKey, cov) || leadsPerDay;
+      } catch(e) {}
+      db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = NULL WHERE id = ?').run(plan, leadsPerDay, cust.id);
+      if (product) db.prepare('UPDATE customers SET product = ? WHERE id = ?').run(product, cust.id);
+      saveDb();
+    }
+
+    if (evType === 'checkout.session.completed') {
       var session = event.data.object;
       var customerEmail = session.customer_email || (session.customer_details && session.customer_details.email);
       var plan = session.metadata && session.metadata.plan;
@@ -5222,19 +5267,57 @@ app.post('/api/stripe/webhook', async (req, res) => {
         }
       }
 
+      // New subscription — set plan + save Stripe customer/subscription IDs
       if (customerEmail && plan) {
         var customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(customerEmail);
         if (customer) {
-          var weeklyLimits = { starter: 25, growth: 75, power: 125, pro: 75, enterprise: 125 };
-          var weeklyMax = weeklyLimits[plan] || 25;
-          var leadsPerDay = Math.ceil(weeklyMax / 5);
-          db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = NULL WHERE id = ?').run(plan, leadsPerDay, customer.id);
-          if (product) db.prepare('UPDATE customers SET product = ? WHERE id = ?').run(product, customer.id);
+          applyPlan(customer, plan, product);
+          if (session.customer) db.prepare('UPDATE customers SET stripe_customer_id = ? WHERE id = ?').run(session.customer, customer.id);
+          if (session.subscription) db.prepare('UPDATE customers SET stripe_subscription_id = ? WHERE id = ?').run(session.subscription, customer.id);
           saveDb();
           console.log('[STRIPE] Upgraded ' + customerEmail + ' to ' + plan);
         }
       }
     }
+
+    // Weekly renewal succeeded — keep plan active (Stripe handles billing)
+    else if (evType === 'invoice.paid') {
+      var inv = event.data.object;
+      var invCustEmail = inv.customer_email || '';
+      var invCustomer = inv.customer ? db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(inv.customer) : null;
+      if (!invCustomer && invCustEmail) invCustomer = db.prepare('SELECT * FROM customers WHERE email = ?').get(invCustEmail);
+      if (invCustomer) {
+        db.prepare('UPDATE customers SET auto_send_paused = 0, plan = COALESCE(plan, ?) WHERE id = ?').run('starter', invCustomer.id);
+        saveDb();
+        console.log('[STRIPE] Weekly renewal paid: ' + (invCustomer.email || invCustomer.id));
+      }
+    }
+
+    // Payment failed — pause auto-charge + notify
+    else if (evType === 'invoice.payment_failed') {
+      var invF = event.data.object;
+      var fCustEmail = invF.customer_email || '';
+      var fCustomer = invF.customer ? db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(invF.customer) : null;
+      if (!fCustomer && fCustEmail) fCustomer = db.prepare('SELECT * FROM customers WHERE email = ?').get(fCustEmail);
+      if (fCustomer) {
+        db.prepare('UPDATE customers SET auto_send_paused = 1 WHERE id = ?').run(fCustomer.id);
+        saveDb();
+        try { dmDashboardNotify(fCustomer.id, 'payment_failed', '⚠️ Payment failed', 'Your weekly subscription payment failed. Update your payment method to keep your leads and Print & Post running.', ''); } catch(ne) {}
+        console.log('[STRIPE] Payment failed for ' + (fCustomer.email || fCustomer.id));
+      }
+    }
+
+    // Subscription cancelled
+    else if (evType === 'customer.subscription.deleted') {
+      var sub = event.data.object;
+      var subCustomer = sub.customer ? db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(sub.customer) : null;
+      if (subCustomer) {
+        db.prepare('UPDATE customers SET plan = ?, auto_send_paused = 1 WHERE id = ?').run('cancelled', subCustomer.id);
+        saveDb();
+        console.log('[STRIPE] Subscription cancelled for ' + (subCustomer.email || subCustomer.id));
+      }
+    }
+
     res.json({ received: true });
   } catch(e) { console.error('[STRIPE] Webhook error:', e.message); res.status(500).json({ error: e.message }); }
 });
