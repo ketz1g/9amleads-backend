@@ -234,6 +234,10 @@ function fetchGazetteDetail(noticeId) {
 // matching by the street/town text so probate leads get area-matchable postcodes.
 function resolveProbatePostcode(addressText) {
   return new Promise((resolve) => {
+    // Postcoder is disabled by default (POSTCODER_ENABLED) to avoid burning paid
+    // credits. The Gazette detail page already includes the full postcode for most
+    // notices; this resolver only fills gaps and only when explicitly enabled.
+    if (process.env.POSTCODER_ENABLED !== 'true' && process.env.POSTCODER_ENABLED !== '1') { resolve(''); return; }
     const key = process.env.POSTCODER_API_KEY;
     const addr = (addressText || '').trim();
     if (!key || !addr) { resolve(''); return; }
