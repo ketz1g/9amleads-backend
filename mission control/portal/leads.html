@@ -236,14 +236,22 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="meta">' + planMeta.join(' \u00b7 ') + '</div>' + planDesc + planApplicant + '</div>' +
         '<div class="right"><span class="badge">' + status + '</span>' + mailBtn(l.id) + '</div></div>';
     } else if (product === 'tenders') {
+      // Tenders are applied for ONLINE (portal/email) — not via post — so show the
+      // buyer contact + apply button instead of a Print & Post button.
       var tendTitle = d.tenderTitle || d.title || 'Opportunity';
       var tendMeta = [d.buyer || d.contractingAuthority, d.contractValueLabel && d.contractValueLabel !== '&pound' ? d.contractValueLabel : '', d.closingDate ? 'Deadline ' + new Date(d.closingDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.publishedDate ? 'Published ' + d.publishedDate : '', d.postcode].filter(Boolean);
       var tendLink = d.url ? '<a href="' + d.url + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View tender</a>' : '';
       var tendDesc = d.description ? '<div class="meta" style="margin-top:2px">' + d.description.substring(0,120) + '</div>' : '';
+      var tendContact = [];
+      if (d.contactName) tendContact.push('<i class="fas fa-user" style="font-size:9px;margin-right:3px"></i>' + d.contactName);
+      if (d.contactEmail) tendContact.push('<a href="mailto:' + d.contactEmail + '" style="color:var(--accent)">' + d.contactEmail + '</a>');
+      if (d.contactPhone) tendContact.push('<a href="tel:' + d.contactPhone.replace(/[^0-9+]/g,'') + '" style="color:var(--accent)">' + d.contactPhone + '</a>');
+      var tendContactHtml = tendContact.length ? '<div class="meta" style="margin-top:3px">' + tendContact.join(' \u00b7 ') + '</div>' : '';
+      var applyBtn = (d.applyLink || d.url) ? '<a href="' + (d.applyLink || d.url) + '" target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:7px 14px;border-radius:7px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--ff-b);text-decoration:none;box-shadow:0 2px 8px rgba(99,102,241,.25)"><i class="fas fa-external-link-alt"></i> Apply Online</a>' : '';
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + tendTitle + '</div>' +
-        '<div class="meta">' + tendMeta.join(' \u00b7 ') + (tendLink ? ' \u00b7 ' + tendLink : '') + '</div>' + tendDesc + '</div>' +
-        '<div class="right"><span class="badge">' + status + '</span></div></div>';
+        '<div class="meta">' + tendMeta.join(' \u00b7 ') + (tendLink ? ' \u00b7 ' + tendLink : '') + '</div>' + tendDesc + tendContactHtml + '</div>' +
+        '<div class="right"><span class="badge">' + status + '</span>' + applyBtn + '</div></div>';
     } else {
       // moving / default
       var addr = d.address || d.title || 'Property';
@@ -501,6 +509,15 @@ var _token = '';
       document.getElementById('tab-week').textContent = wk.length;
       document.getElementById('tab-month').textContent = ml.length;
       document.getElementById('tab-all').textContent = allLeads.length;
+      // Detect product: if ALL leads are tenders, hide the Print & Post actions
+      // (tenders are applied for online, not via post).
+      var prods = {};
+      allLeads.forEach(function(l){ prods[l.product||'moving'] = 1; });
+      var isTendersOnly = allLeads.length > 0 && Object.keys(prods).length === 1 && prods.tenders;
+      if (isTendersOnly) {
+        var bbar = document.getElementById('bulk-bar');
+        if (bbar) bbar.style.display = 'none';
+      }
       setRange('today');
     } catch(e) {}
   };
