@@ -8835,6 +8835,23 @@ function syncCustomers(product) {
               leads = usedPool.slice(0, 500);
               console.log('[SCRAPER] Rightmove: ' + freshPool.length + ' new<24h, ' + fallbackPool.length + ' 24-48h, ' + otherPool.length + ' OLD DROPPED, using ' + leads.length + ' fresh listings');
             }
+            // ENRICH fresh moving leads with real postcodes via the free detail page.
+            // Rightmove's list view hides postcodes (display address only), so without
+            // this the postcode-area match only works for a handful of leads and
+            // customers miss leads in their other requested areas (e.g. B, HA).
+            // Cap enrichment to keep the daily run fast; prefer leads that currently
+            // lack a postcode so we fill coverage gaps.
+            try {
+              var noPc = leads.filter(function(l) { return !l.postcode; }).slice(0, 220);
+              var hasPc = leads.filter(function(l) { return !!l.postcode; });
+              var toEnrich = noPc.concat(hasPc).slice(0, 320);
+              var enrichedNow = await rmScraper.enrichMovingLeads(toEnrich, 2);
+              var enrichedMap = {};
+              enrichedNow.forEach(function(le) { enrichedMap[le.id] = le; });
+              leads = leads.map(function(l) { return enrichedMap[l.id] || l; });
+              var withRealPc = leads.filter(function(l) { return l.postcode && /[A-Z]{1,2}[0-9]/.test(l.postcode); }).length;
+              console.log('[SCRAPER] Rightmove enriched ' + enrichedNow.length + ' leads; ' + withRealPc + '/' + leads.length + ' now have real postcodes');
+            } catch(encErr) { console.log('[SCRAPER] Rightmove enrichment error:', encErr.message); }
             // Apify supplement disabled - actor was blocked. Free scraper expanded to 13 regions x 4-20 pages.
             if (false && apifyKey) {
               try {
