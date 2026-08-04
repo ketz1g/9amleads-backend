@@ -4587,6 +4587,42 @@ cron.schedule('0 8 * * *', async () => {
   } catch(e) { console.log('[TRIAL AUTO-CHARGE] Error:', e.message); }
 });
 
+// REPEAT MAILING CRON — dispatches scheduled follow-up campaigns (paid repeat
+// series) to Stannp on their due date. Runs daily at 07:00 UTC (08:00 UK).
+cron.schedule('0 7 * * *', async () => {
+  console.log('[REPEAT-MAIL] Checking scheduled follow-ups...');
+  try {
+    var dbR = getDb();
+    var campaigns = dbR.direct_mail_campaigns || [];
+    var todayStr = new Date().toISOString().split('T')[0];
+    var due = campaigns.filter(function(c) {
+      return c.notes && c.notes.indexOf('Repeat mailing ') === 0 &&
+             c.stripe_payment_status === 'paid' &&
+             c.status === 'approved' &&
+             c.delivery_date && c.delivery_date <= todayStr;
+    });
+    var dispatched = 0;
+    for (var ri = 0; ri < due.length; ri++) {
+      var c = due[ri];
+      try {
+        var sendRes = await sendDmCampaign(c.id, c.customer_id);
+        if (sendRes && sendRes.success) {
+          dispatched++;
+          console.log('[REPEAT-MAIL] Dispatched follow-up: ' + c.id.substring(0, 8) + ' for ' + c.customer_id);
+          try {
+            var rLead = dbR.direct_mail_recipients.find(function(r) { return r.campaign_id === c.id; });
+            if (rLead && rLead.lead_id) {
+              dmDashboardNotify(c.customer_id, 'repeat_mailed', '📬 Follow-up mailed', 'A scheduled follow-up mailing was dispatched to one of your leads.', '');
+            }
+          } catch(nErr) {}
+        }
+      } catch(e2) { console.log('[REPEAT-MAIL] Error dispatching ' + c.id + ': ' + e2.message); }
+    }
+    if (dispatched > 0) saveDb();
+    console.log('[REPEAT-MAIL] Complete: ' + dispatched + ' follow-ups dispatched');
+  } catch(e) { console.log('[REPEAT-MAIL] Error:', e.message); }
+});
+
 // POST /api/cancel-trial — cancel trial, no charge
 app.post('/api/cancel-trial', authMiddleware, async (req, res) => {
   try {
@@ -5272,6 +5308,21 @@ app.post('/api/stripe/webhook', async (req, res) => {
           saveDb();
           console.log('[STRIPE] Upgraded ' + customerEmail + ' to ' + plan);
         }
+      }
+
+      // Repeat mailing series: mark ALL campaigns in the group as paid so the
+      // cron can dispatch each scheduled follow-up on its due date.
+      var repeatGroup = session.metadata && session.metadata.repeat_group;
+      if (repeatGroup) {
+        try {
+          var repeatCams = db.prepare('SELECT id FROM direct_mail_campaigns WHERE notes = ?').all('Repeat mailing ' + repeatGroup);
+          repeatCams.forEach(function(rc) {
+            db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, stripe_payment_id = ?, updated_at = ? WHERE id = ?')
+              .run('paid', session.payment_intent || session.id || 'repeat', new Date().toISOString(), rc.id);
+          });
+          saveDb();
+          console.log('[STRIPE] Repeat series paid: ' + repeatGroup + ' (' + repeatCams.length + ' mailings)');
+        } catch(repErr) { console.log('[STRIPE] Repeat group mark error:', repErr.message); }
       }
     }
 
@@ -8250,6 +8301,161 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
     } else {
       res.status(400).json({ error: session.error?.message || 'Checkout creation failed' });
     }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/send-repeat — Print & post a lead NOW and schedule
+// automatic follow-up mailings (e.g. now, +2 weeks, +1 month). One Stripe
+// checkout covers the full series. Each follow-up is stored as a scheduled
+// campaign that the repeat cron dispatches to Stannp on its due date.
+app.post('/api/direct-mail/send-repeat', authMiddleware, async (req, res) => {
+  try {
+    var lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(req.body.lead_id, req.user.id);
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    var mailType = req.body.mail_type || 'letter'; // letter | flyer | flyer_plus_letter
+    // intervals = days from NOW for each follow-up. First mailing is immediate (day 0).
+    var intervals = req.body.intervals || [0, 14, 30]; // e.g. now, +14d, +30d
+    if (!Array.isArray(intervals) || intervals.length === 0) intervals = [0, 14, 30];
+    // Cap at 5 mailings per lead to avoid abuse
+    if (intervals.length > 5) intervals = intervals.slice(0, 5);
+    var nowIso = new Date().toISOString();
+    var parsed = {};
+    try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
+    var addrLine1 = parsed.address_line1 || parsed.address || parsed.street || '';
+    var city = parsed.city || parsed.town || '';
+    var postcode = parsed.postcode || '';
+    var name = parsed.company || parsed.name || parsed.address || 'Homeowner';
+    if (!addrLine1 || !postcode) return res.status(400).json({ error: 'This lead does not have a complete postal address yet.' });
+
+    // Auto-select template (same as single send)
+    var useTemplateId = req.body.template_id || '';
+    if (!useTemplateId) {
+      var dmSettings = null;
+      try { dmSettings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id); } catch(e) {}
+      if (dmSettings && dmSettings.default_template_id) useTemplateId = dmSettings.default_template_id;
+    }
+    if (!useTemplateId) {
+      var anyTemplate = null;
+      try { anyTemplate = db.prepare('SELECT * FROM direct_mail_templates WHERE customer_id = ? ORDER BY created_at DESC LIMIT 1').get(req.user.id); } catch(e) {}
+      if (anyTemplate) useTemplateId = anyTemplate.id;
+    }
+    if (!useTemplateId && (mailType === 'letter_a4' || mailType === 'flyer_plus_letter')) {
+      var bizProfile = null;
+      try { bizProfile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id); } catch(e) {}
+      if (bizProfile && (bizProfile.company_name || bizProfile.business_type)) {
+        var bizName = bizProfile.company_name || 'Our Team';
+        var bizType = bizProfile.business_type || 'local business';
+        var bizOffer = bizProfile.special_offer || '';
+        var bizCta = bizProfile.call_to_action || 'get in touch today';
+        var generated = 'Dear [name],\n\nWe are ' + bizName + ', a ' + bizType + ' serving ' + (bizProfile.service_areas || 'your local area') + '. We noticed you may be moving soon and we would love the opportunity to help you.\n\n' +
+          (bizOffer ? 'As a special offer, ' + bizOffer + '.\n\n' : '') +
+          'We pride ourselves on reliable, professional service at a fair price.\n\nPlease ' + bizCta + '.\n\nKind regards,\n' + bizName;
+        var tmpId = uuidv4();
+        db.prepare('INSERT INTO direct_mail_templates (id,customer_id,name,description,template_type,business_type,flyer_front_material_id,flyer_back_material_id,letter_material_id,ai_generated_text,status,created_at,updated_at,last_used_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+          .run(tmpId, req.user.id, 'Auto letter for ' + bizName.substring(0, 20), 'Auto-generated from business profile', 'letter', bizType, '', '', '', generated, 'approved', nowIso, nowIso, '');
+        useTemplateId = tmpId;
+      }
+    }
+
+    var price = PRINT_POST_PRICES[mailType] ? PRINT_POST_PRICES[mailType].customer : PRINT_POST_PRICES.letter_a4.customer;
+    var total = Math.round(intervals.length * price * 100) / 100;
+    var groupId = uuidv4();
+
+    // Create one campaign per mailing (immediate + scheduled follow-ups)
+    var createdCampaignIds = [];
+    intervals.forEach(function(days) {
+      var daysN = parseInt(days) || 0;
+      var sendDate = new Date(Date.now() + daysN * 86400000).toISOString().split('T')[0];
+      var status = daysN === 0 ? 'approved' : 'approved'; // all approved; cron dispatches by delivery_date
+      var campaignId = uuidv4();
+      db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+        .run(campaignId, req.user.id, 'Print & Post: ' + name.substring(0, 30) + (daysN === 0 ? '' : ' (follow-up ' + Math.round(daysN / 7) + 'w)'), mailType, status, useTemplateId, '', 1, 0, sendDate, price, 'Repeat mailing ' + groupId, '', '', '', '', '', '', nowIso, nowIso);
+      var recipientId = uuidv4();
+      db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
+        .run(recipientId, req.user.id, campaignId, name, parsed.company || '', addrLine1, parsed.address_line2 || '', city, postcode, 'United Kingdom', lead.id, 'pending', nowIso);
+      createdCampaignIds.push(campaignId);
+    });
+    var primaryCampaignId = createdCampaignIds[0];
+
+    // Store the repeat schedule (for the cron + dashboard display)
+    var dbR = getDb();
+    if (!dbR.repeat_mailings) dbR.repeat_mailings = [];
+    dbR.repeat_mailings.push({
+      id: uuidv4(), customer_id: req.user.id, lead_id: lead.id,
+      group_id: groupId, campaign_ids: createdCampaignIds,
+      mail_type: mailType, price_per_item: price, total: total,
+      intervals: intervals, template_id: useTemplateId,
+      status: 'scheduled', created_at: nowIso
+    });
+    saveDb();
+
+    // One Stripe checkout for the whole series
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    try {
+      var dmProvider = getDirectMailProvider();
+      var balCheck = await dmProvider.getBalance();
+      if (balCheck && balCheck.success && balCheck.balance < total) {
+        return res.status(400).json({ error: 'Print & Post is temporarily unavailable — our print partner is reloading credit. Please try again in a few minutes.' });
+      }
+    } catch(balErr) { console.log('[DM-SEND-REPEAT] Balance check skipped:', balErr.message); }
+
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    var amountPence = Math.round(total * 100);
+    var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    var sessionBody = {
+      mode: 'payment',
+      customer_email: customer.email,
+      'line_items[0][price_data][currency]': 'gbp',
+      'line_items[0][price_data][product_data][name]': 'Print & Post Series: ' + intervals.length + ' mailings',
+      'line_items[0][price_data][product_data][description]': name.substring(0, 50) + ' · ' + intervals.length + ' x £' + price.toFixed(2) + ' (now, then scheduled follow-ups)',
+      'line_items[0][price_data][unit_amount]': String(amountPence),
+      'line_items[0][quantity]': '1',
+      success_url: baseUrl + '/portal/dashboard.html?dm_payment=success&campaign_id=' + primaryCampaignId,
+      cancel_url: baseUrl + '/portal/dashboard.html?dm_payment=cancel&campaign_id=' + primaryCampaignId,
+      'metadata[customer_id]': customer.id,
+      'metadata[campaign_id]': primaryCampaignId,
+      'metadata[repeat_group]': groupId,
+      'metadata[type]': 'direct_mail_campaign',
+      'metadata[recipient_count]': String(intervals.length),
+      'metadata[total_amount]': String(amountPence)
+    };
+    var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
+    if (session.url) {
+      db.prepare('UPDATE direct_mail_campaigns SET stripe_session_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ?').run(session.id, 'pending', nowIso, primaryCampaignId);
+      res.json({ success: true, campaign_id: primaryCampaignId, checkout_url: session.url, total: total, price_per_item: price, mailings: intervals.length, intervals: intervals, repeat_group: groupId });
+    } else {
+      res.status(400).json({ error: session.error?.message || 'Checkout creation failed' });
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/repeat-series — List the customer's repeat mailing series
+// with each mailing's due date + status (for the dashboard).
+app.get('/api/direct-mail/repeat-series', authMiddleware, (req, res) => {
+  try {
+    var dbR = getDb();
+    var series = (dbR.repeat_mailings || []).filter(function(s) { return s.customer_id === req.user.id; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    var expanded = series.slice(0, 20).map(function(s) {
+      var cams = (dbR.direct_mail_campaigns || []).filter(function(c) { return (s.campaign_ids || []).indexOf(c.id) !== -1; }).sort(function(a, b) { return (a.delivery_date || '').localeCompare(b.delivery_date || ''); });
+      var mailings = cams.map(function(c) {
+        return {
+          id: c.id,
+          delivery_date: c.delivery_date || '',
+          status: c.status || 'approved',
+          payment_status: c.stripe_payment_status || '',
+          provider_id: c.provider_campaign_id || ''
+        };
+      });
+      var lead = (dbR.leads || []).find(function(l) { return l.id === s.lead_id; });
+      var leadLabel = '';
+      if (lead) { try { var d = JSON.parse(lead.data || '{}'); leadLabel = d.address || d.company || d.name || d.title || s.lead_id; } catch(e) {} }
+      return {
+        id: s.id, group_id: s.group_id, lead_id: s.lead_id, lead_label: leadLabel,
+        mail_type: s.mail_type, price_per_item: s.price_per_item, total: s.total,
+        intervals: s.intervals, status: s.status, created_at: s.created_at, mailings: mailings
+      };
+    });
+    res.json({ success: true, series: expanded, total: expanded.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
