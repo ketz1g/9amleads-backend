@@ -4113,31 +4113,33 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===== DAILY SCHEDULE: 02:30 UTC (03:30 BST) scraper â†’ 02:33/03:33 distributor â†’ 02:36/03:36 delivery =====
-cron.schedule('30 2 * * *', async () => {
-  console.log('[02:30 UTC] Running scraper...');
+// ===== DAILY SCHEDULE: 06:00 UK scraper → 06:05 UK distributor → 09:00 UK delivery =====
+// Fresh scrapes run just 3 hours before the 09:00 UK delivery so leads are as
+// new as possible in customers' dashboards, emails and CRM.
+cron.schedule('0 6 * * *', async () => {
+  console.log('[06:00 UK] Running scraper...');
   try {
     const http = require('http');
     var body = JSON.stringify({});
     var req = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
-      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[02:30 UTC] Scraper done:', b.substring(0, 100)); });
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[06:00 UK] Scraper done:', b.substring(0, 100)); });
     });
     req.write(body); req.end();
-  } catch(e) { console.log('[02:30 UTC] Scraper error:', e.message); }
-});
-cron.schedule('33 2 * * *', async () => {
-  console.log('[02:33 UTC] Distributing...');
+  } catch(e) { console.log('[06:00 UK] Scraper error:', e.message); }
+}, { timezone: 'Europe/London' });
+cron.schedule('5 6 * * *', async () => {
+  console.log('[06:05 UK] Distributing...');
   try {
     const http = require('http');
     var body2 = JSON.stringify({});
     var req2 = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body2) } }, function(res) {
-      var b2 = ''; res.on('data', function(c) { b2 += c; }); res.on('end', function() { console.log('[02:33 UTC] Distributor done:', b2.substring(0, 100)); });
+      var b2 = ''; res.on('data', function(c) { b2 += c; }); res.on('end', function() { console.log('[06:05 UK] Distributor done:', b2.substring(0, 100)); });
     });
     req2.write(body2); req2.end();
-  } catch(e) { console.log('[02:33 UTC] Distributor error:', e.message); }
-});
+  } catch(e) { console.log('[06:05 UK] Distributor error:', e.message); }
+}, { timezone: 'Europe/London' });
 // ===== DELIVERY CRON: Runs directly (not via HTTP) to avoid timing issues =====
-// Pipeline: 02:30 UTC scraper → 02:33 UTC distributor → 08:00 UTC delivery
+// Pipeline: 06:00 UK scraper → 06:05 UK distributor → 09:00 UK delivery
 // Delivery runs Mon-Fri at 09:00 UK time (handles BST/GMT automatically via timezone).
 var __deliveryFireCount = 0;
 var __lastDeliveryFire = '';
