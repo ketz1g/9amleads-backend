@@ -26,29 +26,29 @@ function saveData(d) { fs.writeFileSync(DATA_FILE, JSON.stringify(d, null, 2)); 
 // Prices vary per product. Plan names: Starter, Growth, Power
 const PRICING_DATA = {
   moving: [
-    { id: 'mov-starter', name: 'Moving Starter',     price: 2900,  interval: 'week', leadsLabel: '1-5 estimated leads/day' },
-    { id: 'mov-growth',  name: 'Moving Growth',      price: 5900,  interval: 'week', leadsLabel: '5-15 estimated leads/day' },
+    { id: 'mov-starter', name: 'Moving Starter',     price: 2500,  interval: 'week', leadsLabel: '1-5 estimated leads/day' },
+    { id: 'mov-growth',  name: 'Moving Growth',      price: 4900,  interval: 'week', leadsLabel: '5-15 estimated leads/day' },
     { id: 'mov-power',   name: 'Moving Power',       price: 9900,  interval: 'week', leadsLabel: '15-35 estimated leads/day' }
   ],
   probate: [
-    { id: 'prob-starter', name: 'Probate Starter',   price: 3900,  interval: 'week', leadsLabel: '0-2 estimated leads/day' },
-    { id: 'prob-growth',  name: 'Probate Growth',    price: 7900,  interval: 'week', leadsLabel: '2-6 estimated leads/day' },
-    { id: 'prob-power',   name: 'Probate Power',     price: 14900, interval: 'week', leadsLabel: '5-15 estimated leads/day' }
+    { id: 'prob-starter', name: 'Probate Starter',   price: 2500,  interval: 'week', leadsLabel: '0-2 estimated leads/day' },
+    { id: 'prob-growth',  name: 'Probate Growth',    price: 4900,  interval: 'week', leadsLabel: '2-6 estimated leads/day' },
+    { id: 'prob-power',   name: 'Probate Power',     price: 9900, interval: 'week', leadsLabel: '5-15 estimated leads/day' }
   ],
   newbusiness: [
-    { id: 'nb-starter', name: 'New Business Starter', price: 1900, interval: 'week', leadsLabel: '1-5 estimated leads/day' },
-    { id: 'nb-growth',  name: 'New Business Growth',  price: 3900, interval: 'week', leadsLabel: '5-15 estimated leads/day' },
-    { id: 'nb-power',   name: 'New Business Power',   price: 7900, interval: 'week', leadsLabel: '15-40 estimated leads/day' }
+    { id: 'nb-starter', name: 'New Business Starter', price: 2500, interval: 'week', leadsLabel: '1-5 estimated leads/day' },
+    { id: 'nb-growth',  name: 'New Business Growth',  price: 2500, interval: 'week', leadsLabel: '5-15 estimated leads/day' },
+    { id: 'nb-power',   name: 'New Business Power',   price: 4900, interval: 'week', leadsLabel: '15-40 estimated leads/day' }
   ],
   planning: [
     { id: 'plan-starter', name: 'Planning Starter', price: 4900, interval: 'week', leadsLabel: '1-3 estimated leads/day' },
     { id: 'plan-growth',  name: 'Planning Growth',  price: 9900, interval: 'week', leadsLabel: '3-10 estimated leads/day' },
-    { id: 'plan-power',   name: 'Planning Power',   price: 17900, interval: 'week', leadsLabel: '10-25 estimated leads/day' }
+    { id: 'plan-power',   name: 'Planning Power',   price: 9900, interval: 'week', leadsLabel: '10-25 estimated leads/day' }
   ],
   tenders: [
     { id: 'tend-starter', name: 'Tenders Starter', price: 4900, interval: 'week', leadsLabel: '3-5 estimated tenders/day' },
     { id: 'tend-growth',  name: 'Tenders Growth',  price: 9900, interval: 'week', leadsLabel: '5-15 estimated tenders/day' },
-    { id: 'tend-power',   name: 'Tenders Power',   price: 17900, interval: 'week', leadsLabel: '15-40 estimated tenders/day' }
+    { id: 'tend-power',   name: 'Tenders Power',   price: 9900, interval: 'week', leadsLabel: '15-40 estimated tenders/day' }
   ],
   // Industry Packages (Stage 34)
   'builder-package': [
@@ -61,7 +61,7 @@ const PRICING_DATA = {
     { id: 'prp-package', name: 'Property Package', price: 10900, interval: 'week', leadsLabel: 'Probate + Planning + New Business combined' }
   ],
   'moving-package': [
-    { id: 'mov-package', name: 'Moving Package', price: 5900, interval: 'week', leadsLabel: 'Moving + Probate combined' }
+    { id: 'mov-package', name: 'Moving Package', price: 4900, interval: 'week', leadsLabel: 'Moving + Probate combined' }
   ],
   // 9amLeads Pro (Stage 35)
   'pro': [
