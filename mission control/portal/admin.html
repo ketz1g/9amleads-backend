@@ -216,10 +216,11 @@ if (getAdminAuth()) {
         document.getElementById('adminPage').style.display = 'none';
       }
     }).catch(function() {
-      // Server unreachable — optimistically show dashboard
-      document.getElementById('loginPage').style.display = 'none';
-      document.getElementById('adminPage').style.display = 'block';
-      loadData();
+      // Server unreachable — force login (don't show stale/empty dashboard)
+      document.getElementById('loginError').textContent = 'Cannot reach server. Check connection and try again.';
+      document.getElementById('loginError').style.display = 'block';
+      document.getElementById('loginPage').style.display = 'block';
+      document.getElementById('adminPage').style.display = 'none';
     });
   } else {
     document.getElementById('loginPage').style.display = 'block';
