@@ -7327,6 +7327,154 @@ app.get('/api/direct-mail/automation', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/direct-mail/setup — Get the customer's full Print & Post setup status:
+// business profile, uploaded materials, default template, and readiness flags.
+app.get('/api/direct-mail/setup', authMiddleware, (req, res) => {
+  try {
+    var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+    var materials = db.prepare('SELECT * FROM direct_mail_materials WHERE customer_id = ?').all(req.user.id);
+    var settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
+    var defaultTemplate = null;
+    if (settings && settings.default_template_id) {
+      defaultTemplate = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(settings.default_template_id, req.user.id);
+    }
+    if (!defaultTemplate) {
+      defaultTemplate = db.prepare('SELECT * FROM direct_mail_templates WHERE customer_id = ? ORDER BY created_at DESC LIMIT 1').get(req.user.id);
+    }
+    var flyerFront = materials.find(function(m) { return m.type === 'flyer_front'; });
+    var flyerBack = materials.find(function(m) { return m.type === 'flyer_back'; });
+    var letterMat = materials.find(function(m) { return m.type === 'letter'; });
+    var hasCoverText = !!(defaultTemplate && defaultTemplate.ai_generated_text);
+    var ready = {
+      business_info: !!(profile && (profile.company_name || profile.business_type) && profile.phone),
+      leaflet_front: !!(flyerFront && flyerFront.file_data),
+      leaflet_back: !!(flyerBack && flyerBack.file_data),
+      cover_letter: !!(hasCoverText || (letterMat && letterMat.file_data))
+    };
+    var allReady = ready.business_info && ready.leaflet_front && ready.cover_letter;
+    res.json({
+      success: true,
+      profile: profile || null,
+      materials: materials.map(function(m) { return { id: m.id, name: m.name, type: m.type, file_type: m.file_type, file_size: m.file_size, created_at: m.created_at }; }),
+      default_template: defaultTemplate ? { id: defaultTemplate.id, name: defaultTemplate.name, template_type: defaultTemplate.template_type, flyer_front_material_id: defaultTemplate.flyer_front_material_id, flyer_back_material_id: defaultTemplate.flyer_back_material_id, letter_material_id: defaultTemplate.letter_material_id, ai_generated_text: defaultTemplate.ai_generated_text || '' } : null,
+      ready: ready,
+      all_ready: allReady,
+      price: PRINT_POST_PRICES,
+      auto_send_enabled: !!(settings && settings.enable_auto_send)
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/setup — ONE-CLICK "Save my Print & Post setup".
+// Saves business info + leaflet front/back + cover letter in a single call and
+// builds/updates the customer's default template so every one-click send and
+// auto-campaign uses these saved materials automatically.
+app.post('/api/direct-mail/setup', authMiddleware, (req, res) => {
+  try {
+    var nowIso = new Date().toISOString();
+
+    // 1. Business profile
+    var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+    var p = {
+      id: profile ? profile.id : uuidv4(),
+      customer_id: req.user.id,
+      company_name: req.body.company_name || '',
+      business_type: req.body.business_type || '',
+      logo_url: profile ? profile.logo_url : '',
+      website: req.body.website || '',
+      phone: req.body.phone || '',
+      email: req.body.email || '',
+      address_line1: req.body.address_line1 || '',
+      address_line2: req.body.address_line2 || '',
+      city: req.body.city || '',
+      postcode: req.body.postcode || '',
+      country: req.body.country || 'United Kingdom',
+      services_offered: req.body.services_offered || '',
+      service_areas: req.body.service_areas || req.body.city || '',
+      special_offer: req.body.special_offer || '',
+      preferred_colours: profile ? profile.preferred_colours : '',
+      brand_tone: req.body.brand_tone || 'professional',
+      google_reviews_link: profile ? profile.google_reviews_link : '',
+      facebook_page: profile ? profile.facebook_page : '',
+      instagram_page: profile ? profile.instagram_page : '',
+      short_description: req.body.short_description || '',
+      call_to_action: req.body.call_to_action || 'get in touch today',
+      created_at: profile ? profile.created_at : nowIso,
+      updated_at: nowIso
+    };
+    if (profile) {
+      db.prepare('UPDATE customer_business_profiles SET company_name=?,business_type=?,logo_url=?,website=?,phone=?,email=?,address_line1=?,address_line2=?,city=?,postcode=?,country=?,services_offered=?,service_areas=?,special_offer=?,preferred_colours=?,brand_tone=?,google_reviews_link=?,facebook_page=?,instagram_page=?,short_description=?,call_to_action=?,updated_at=? WHERE id=?').run(p.company_name, p.business_type, p.logo_url, p.website, p.phone, p.email, p.address_line1, p.address_line2, p.city, p.postcode, p.country, p.services_offered, p.service_areas, p.special_offer, p.preferred_colours, p.brand_tone, p.google_reviews_link, p.facebook_page, p.instagram_page, p.short_description, p.call_to_action, p.updated_at, p.id);
+    } else {
+      db.prepare('INSERT INTO customer_business_profiles (id,customer_id,company_name,business_type,logo_url,website,phone,email,address_line1,address_line2,city,postcode,country,services_offered,service_areas,special_offer,preferred_colours,brand_tone,google_reviews_link,facebook_page,instagram_page,short_description,call_to_action,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(p.id, p.customer_id, p.company_name, p.business_type, p.logo_url, p.website, p.phone, p.email, p.address_line1, p.address_line2, p.city, p.postcode, p.country, p.services_offered, p.service_areas, p.special_offer, p.preferred_colours, p.brand_tone, p.google_reviews_link, p.facebook_page, p.instagram_page, p.short_description, p.call_to_action, p.created_at, p.updated_at);
+    }
+
+    // 2. Materials: leaflet front / back / letter (base64). One per type (latest replaces).
+    function saveMaterial(type, fileName, fileData) {
+      if (!fileData) return '';
+      var existingMat = db.prepare('SELECT * FROM direct_mail_materials WHERE customer_id = ? AND type = ? ORDER BY created_at DESC LIMIT 1').get(req.user.id, type);
+      var ext = '.' + (fileName || 'file').split('.').pop().toLowerCase();
+      if (['.pdf','.png','.jpg','.jpeg'].indexOf(ext) === -1) ext = '.png';
+      var m = {
+        id: existingMat ? existingMat.id : uuidv4(),
+        customer_id: req.user.id,
+        name: fileName || (type + ext),
+        type: type,
+        file_data: fileData,
+        file_type: ext === '.pdf' ? 'pdf' : 'image',
+        file_size: fileData.length,
+        description: type,
+        campaign_id: '',
+        template_id: '',
+        created_at: existingMat ? existingMat.created_at : nowIso
+      };
+      if (existingMat) {
+        db.prepare('UPDATE direct_mail_materials SET name=?,type=?,file_data=?,file_type=?,file_size=?,description=?,updated_at=? WHERE id=?').run(m.name, m.type, m.file_data, m.file_type, m.file_size, m.description, nowIso, m.id);
+      } else {
+        db.prepare('INSERT INTO direct_mail_materials (id,customer_id,name,type,file_data,file_type,file_size,description,campaign_id,template_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(m.id, m.customer_id, m.name, m.type, m.file_data, m.file_type, m.file_size, m.description, m.campaign_id, m.template_id, m.created_at);
+      }
+      return m.id;
+    }
+    var frontId = saveMaterial('flyer_front', req.body.leaflet_front_name, req.body.leaflet_front);
+    var backId = saveMaterial('flyer_back', req.body.leaflet_back_name, req.body.leaflet_back);
+    var letterId = saveMaterial('letter', req.body.cover_letter_name, req.body.cover_letter_pdf);
+
+    // 3. Default template (create or update)
+    var settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
+    var tpl = null;
+    if (settings && settings.default_template_id) {
+      tpl = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(settings.default_template_id, req.user.id);
+    }
+    if (!tpl) {
+      tpl = db.prepare('SELECT * FROM direct_mail_templates WHERE customer_id = ? AND name = ? LIMIT 1').get(req.user.id, 'My Print & Post Setup');
+    }
+    var coverText = req.body.cover_letter || '';
+    var tplType = req.body.default_mail_type || (req.body.leaflet_front ? 'flyer_front_back' : 'letter');
+    if (tpl) {
+      db.prepare('UPDATE direct_mail_templates SET name=?,template_type=?,business_type=?,flyer_front_material_id=?,flyer_back_material_id=?,letter_material_id=?,ai_generated_text=?,status=?,updated_at=? WHERE id=?').run('My Print & Post Setup', tplType, p.business_type, frontId, backId, letterId, coverText, 'approved', nowIso, tpl.id);
+    } else {
+      var tplId = uuidv4();
+      db.prepare('INSERT INTO direct_mail_templates (id,customer_id,name,description,template_type,business_type,flyer_front_material_id,flyer_back_material_id,letter_material_id,ai_generated_text,status,created_at,updated_at,last_used_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(tplId, req.user.id, 'My Print & Post Setup', 'Your saved Print & Post materials', tplType, p.business_type, frontId, backId, letterId, coverText, 'approved', nowIso, nowIso, '');
+      tpl = { id: tplId };
+    }
+
+    // 4. Set as default template in automation settings
+    if (settings) {
+      db.prepare('UPDATE direct_mail_automation_settings SET default_template_id=?,mail_type=?,updated_at=? WHERE customer_id=?').run(tpl.id, req.body.default_mail_type || 'letter', nowIso, req.user.id);
+    } else {
+      var sId = uuidv4();
+      db.prepare('INSERT INTO direct_mail_automation_settings (id,customer_id,enable_auto_send,lead_types,postcode_areas,default_template_id,mail_type,max_daily_spend,max_monthly_spend,max_letters_per_day,min_leads_before_send,send_timing,pause_on_payment_fail,pause_on_provider_fail,pause_on_spend_limit,avoid_duplicate_mailing,repeat_mailing_days,consent_given,consent_date,consent_ip,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(sId, req.user.id, 0, '', '', tpl.id, req.body.default_mail_type || 'letter', 0, 0, 0, 1, 'after_9am', 1, 1, 1, 1, 30, 0, '', '', nowIso, nowIso);
+    }
+
+    var ready = {
+      business_info: !!(p.company_name && p.phone),
+      leaflet_front: !!frontId,
+      leaflet_back: !!backId,
+      cover_letter: !!(coverText || letterId)
+    };
+    res.json({ success: true, message: 'Your Print & Post setup has been saved.', template_id: tpl.id, ready: ready });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== GDPR / SUPPRESSION / PRIVACY =====
 // GET /api/direct-mail/suppression — Get customer's suppression list
 app.get('/api/direct-mail/suppression', authMiddleware, (req, res) => {
