@@ -397,15 +397,45 @@ function sendPrintPost(leadId){
       '<div><div class="mp-name">'+it.n+(it.rec?' <span style="font-size:9px;font-weight:700;color:#fff;background:var(--accent);border-radius:4px;padding:1px 6px;vertical-align:middle">RECOMMENDED</span>':'')+'</div><div class="mp-desc">'+it.d+'</div></div>'+
       '<div class="mp-price">'+it.p+'</div></button>';
   });
+  // Repeat mailing frequency selector — send now, then again in 2 weeks, then a month
+  html+='<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">'+
+    '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px"><i class="fas fa-redo-alt" style="color:var(--accent);margin-right:4px"></i> Repeat mailing <span style="font-weight:400;color:var(--muted);font-size:11px">(optional — follow-ups convert more)</span></div>'+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+    '<button class="mp-item" style="flex:1;min-width:120px;margin-bottom:0;padding:10px 12px" onclick="selectRepeat(this,\'once\')" data-rep="once"><div><div class="mp-name" style="font-size:12px">Send once</div><div class="mp-desc">1 mailing now</div></div></button>'+
+    '<button class="mp-item" style="flex:1;min-width:120px;margin-bottom:0;padding:10px 12px;border-color:var(--accent);background:#f0f7ff" onclick="selectRepeat(this,\'three\')" data-rep="three"><div><div class="mp-name" style="font-size:12px">Send now, then 2 weeks, then a month</div><div class="mp-desc">3 mailings in total</div></div></button>'+
+    '</div>'+
+    '<div id="mp-repeat-summary" style="font-size:11px;color:var(--muted);margin-top:8px"></div>'+
+    '</div>';
   document.getElementById('mp-items').innerHTML=html;
+  _repeatMode='three';
+  selectRepeat(document.querySelector('#mp-items [data-rep="three"]'),'three');
+  updateRepeatSummary();
   document.getElementById('mail-modal').className='modal-overlay show';
+}
+var _repeatMode='three';
+function selectRepeat(el,mode){
+  _repeatMode=mode;
+  document.querySelectorAll('#mp-items [data-rep]').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='#fff';});
+  if(el){el.style.borderColor='var(--accent)';el.style.background='#f0f7ff';}
+  updateRepeatSummary();
+}
+function updateRepeatSummary(){
+  var sum=document.getElementById('mp-repeat-summary');
+  if(!sum)return;
+  var txt = _repeatMode==='three'
+    ? 'You\'ll be charged once for all 3 mailings — sent now, in 2 weeks, and in a month. Keeps your business front of mind and boosts conversions.'
+    : 'Single mailing only.';
+  sum.textContent=txt;
 }
 function closeMailModal(){document.getElementById('mail-modal').className='modal-overlay';_pendingLeadId='';}
 function doSendPrintPost(mailType,btn){
   if(btn){btn.disabled=true;btn.style.opacity=.6;}
   document.getElementById('mp-error').style.display='none';
+  var pricePerItem = mailType==='flyer_a5'?1.99 : mailType==='flyer_plus_letter'?2.99 : 1.49;
+  var intervals = _repeatMode==='three' ? [0,14,30] : [0];
+  var endpoint = intervals.length>1 ? '/api/direct-mail/send-repeat' : '/api/direct-mail/send-lead';
   var x=new XMLHttpRequest();
-  x.open('POST','/api/direct-mail/send-lead',true);
+  x.open('POST',endpoint,true);
   x.setRequestHeader('Authorization','Bearer '+_token);
   x.setRequestHeader('Content-Type','application/json');
   x.onload=function(){
@@ -426,7 +456,9 @@ function doSendPrintPost(mailType,btn){
     errEl.textContent='Network error. Please check your connection and try again.';
     errEl.style.display='block';
   };
-  x.send(JSON.stringify({lead_id:_pendingLeadId,mail_type:mailType}));
+  var body = { lead_id: _pendingLeadId, mail_type: mailType };
+  if (intervals.length > 1) body.intervals = intervals;
+  x.send(JSON.stringify(body));
 }
 function closeOnEsc(e){if(e.key==='Escape')closeMailModal();}
 var currentRange = 'today';
