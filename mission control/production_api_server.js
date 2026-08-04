@@ -3023,6 +3023,14 @@ app.get('/api/admin/leads-overview', adminAuth, (req, res) => {
 });
 
 // POST /api/admin/verify — validate the admin password (used by the admin login form)
+// Accept GET too: the browser's fetch() defaults to GET; a GET here previously
+// returned 404 which made the login show "Cannot reach server".
+app.get('/api/admin/verify', (req, res) => {
+  const auth = req.headers.authorization;
+  const ok = !!auth && auth === 'Bearer ' + ADMIN_PASSWORD;
+  if (ok) return res.json({ success: true, valid: true, admin: true });
+  return res.status(401).json({ success: false, valid: false, error: 'Invalid admin password' });
+});
 app.post('/api/admin/verify', (req, res) => {
   const auth = req.headers.authorization;
   const ok = !!auth && auth === 'Bearer ' + ADMIN_PASSWORD;
