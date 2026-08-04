@@ -6460,14 +6460,15 @@ function generateLeadEmailHTML(customer, leads) {
       body += '</div>';
     }
 
-    // Contact info
-    var hasEmail = d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email;
-    var hasPhone = d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone || d.mobile;
+    // Contact info (incl. enriched tender contact name/email/phone)
+    var contEmail = d.contactEmail || d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email;
+    var contPhone = d.contactPhone || d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone || d.mobile;
     var hasWebsite = d.website || d.url;
-    if (hasEmail || hasPhone || hasWebsite) {
+    if (d.contactName || contEmail || contPhone || hasWebsite) {
       body += '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;margin-top:8px">';
-      if (hasEmail) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\u2709\uFE0F <a href="mailto:' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email) + '" style="color:#38bdf8;text-decoration:none">' + (d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email) + '</a></div>';
-      if (hasPhone) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\uD83D\uDCDE ' + (d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone || d.mobile) + '</div>';
+      if (d.contactName) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\uD83D\uDC64 Contact: ' + d.contactName + '</div>';
+      if (contEmail) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\u2709\uFE0F <a href="mailto:' + contEmail + '" style="color:#38bdf8;text-decoration:none">' + contEmail + '</a></div>';
+      if (contPhone) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\uD83D\uDCDE ' + contPhone + '</div>';
       if (hasWebsite) { var w = d.website || d.url || ''; body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\uD83C\uDF10 <a href="http://' + w.replace(/^https?:\/\//, '') + '" style="color:#38bdf8;text-decoration:none" target="_blank">' + w + '</a></div>'; }
       body += '</div>';
     }
@@ -6489,8 +6490,11 @@ function generateLeadEmailHTML(customer, leads) {
       if (d.noticeUrl) actionLinks.push({ url: d.noticeUrl, label: 'View on UK Gazette' }); else actionLinks.push({ url: 'https://www.gov.uk/government/publications/how-to-search-for-probate-records', label: 'Search Probate Records' });
       actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'tenders') {
-      if (d.pcsUrl && !d.generated) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' }); else if (d.tenderNoticeId && !d.generated) actionLinks.push({ url: 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId, label: 'View Tender' });
+      // Tenders are applied for ONLINE — the Apply Online button is the primary action
+      var tendApplyUrl = d.applyLink || d.pcsUrl || d.tenderUrl || d.portalUrl || (d.tenderNoticeId ? 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId : '');
+      if (tendApplyUrl && !d.generated) actionLinks.push({ url: tendApplyUrl, label: '\uD83D\uDCE8 Apply Online' });
       else if (d.pcsUrl && !d.generated) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' });
+      else if (d.tenderNoticeId && !d.generated) actionLinks.push({ url: 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId, label: 'View Tender' });
       else actionLinks.push({ url: 'https://www.gov.uk/contracts-finder', label: 'Browse Tenders' });
     }
     if (actionLinks.length > 0) {
@@ -9067,6 +9071,19 @@ function syncCustomers(product) {
               }
             } catch(e) { console.log('[SCRAPER] Tenders fallback error:', e.message); leads = []; }
           }
+          // ENRICH tender leads with buyer contact + how-to-apply from the detail page.
+          // Tenders must be applied for online (portal/email), not via post — so each
+          // lead carries the contact name/phone/email/address/apply link the customer
+          // needs to actually respond.
+          try {
+            var tendersScraperE = require('./tenders_scraper');
+            if (leads && leads.length > 0) {
+              var tEnriched = await tendersScraperE.enrichTenders(leads);
+              leads = tEnriched;
+              var withContact = (leads || []).filter(function(l) { return l.contactEmail || l.contactPhone; }).length;
+              console.log('[SCRAPER] Tenders enriched: ' + withContact + '/' + (leads ? leads.length : 0) + ' with contact info');
+            }
+          } catch(teErr) { console.log('[SCRAPER] Tenders enrichment error:', teErr.message); }
         } else if (product === 'planning') {
           try {
             var planScraper = require('./planning_scraper');
