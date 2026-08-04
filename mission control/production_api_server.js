@@ -5977,6 +5977,131 @@ app.post('/api/subscription/update', authMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/payments — Payment history & billing overview for the dashboard.
+// Shows the customer's weekly plan, next billing date, upcoming invoice,
+// payment method on file, and a history of invoices (paid / upcoming / failed).
+app.get('/api/payments', authMiddleware, async (req, res) => {
+  try {
+    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+
+    var plan = customer.plan || 'free_trial';
+    var product = customer.product || 'moving';
+    var priceAmount = plan === 'starter' ? 25 : (plan === 'pro' ? 49 : (plan === 'enterprise' ? 99 : 0));
+    var rule = getLeadTypeRule(product);
+    var planName = rule ? rule.name : (product || 'Moving Leads');
+    var coverageLabel = COVERAGE_LABELS[customer.coverage] || customer.coverage || 'postcode';
+
+    // Gather Stripe data if we have a Stripe customer / subscription
+    var stripeCustomerId = customer.stripe_customer_id || '';
+    var stripeSubId = customer.stripe_subscription_id || '';
+    var subscription = null;
+    var upcomingInvoice = null;
+    var invoices = [];
+    var paymentMethod = null;
+    var totalSpendThisMonth = 0;
+    var totalSpendAllTime = 0;
+
+    if (STRIPE_SECRET_KEY) {
+      // 1. Subscription (from Stripe, source of truth)
+      if (stripeSubId) {
+        var sub = await stripeApiRequest('GET', 'subscriptions/' + stripeSubId, {});
+        if (sub && sub.id) {
+          var item = (sub.items && sub.items.data && sub.items.data[0]) || {};
+          var price = item.price || {};
+          var recurring = price.recurring || {};
+          subscription = {
+            id: sub.id,
+            status: sub.status,
+            plan_amount: price.unit_amount ? price.unit_amount / 100 : 0,
+            currency: price.currency || 'gbp',
+            interval: recurring.interval || 'week',
+            current_period_start: sub.current_period_start ? new Date(sub.current_period_start * 1000).toISOString() : '',
+            current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : '',
+            cancel_at_period_end: !!sub.cancel_at_period_end,
+            created: sub.created ? new Date(sub.created * 1000).toISOString() : ''
+          };
+          // Use the live subscription amount when available
+          if (subscription.plan_amount) priceAmount = subscription.plan_amount;
+        }
+      }
+
+      // 2. Upcoming invoice (next charge)
+      try {
+        var up = await stripeApiRequest('GET', 'invoices/upcoming' + (stripeCustomerId ? '?customer=' + stripeCustomerId : ''), {});
+        if (up && up.id && up.amount_due !== undefined) {
+          upcomingInvoice = {
+            id: up.id,
+            amount: up.amount_due / 100,
+            currency: up.currency || 'gbp',
+            due_date: up.created ? new Date(up.created * 1000).toISOString() : '',
+            next_payment_attempt: up.next_payment_attempt ? new Date(up.next_payment_attempt * 1000).toISOString() : ''
+          };
+        }
+      } catch(ue) { /* no upcoming invoice (no active sub) */ }
+
+      // 3. Invoice history (last 12)
+      try {
+        var invPath = 'invoices?limit=12' + (stripeCustomerId ? '&customer=' + stripeCustomerId : '');
+        var invRes = await stripeApiRequest('GET', invPath, {});
+        if (invRes && invRes.data) {
+          invoices = invRes.data.map(function(inv) {
+            var amountPaid = (inv.amount_paid || 0) / 100;
+            totalSpendThisMonth += amountPaid;
+            totalSpendAllTime += amountPaid;
+            return {
+              id: inv.id,
+              number: inv.number || inv.id,
+              status: inv.status, // paid | open | void | uncollectible | draft
+              amount: inv.amount_due / 100,
+              amount_paid: amountPaid,
+              currency: inv.currency || 'gbp',
+              period_start: inv.period_start ? new Date(inv.period_start * 1000).toISOString() : '',
+              period_end: inv.period_end ? new Date(inv.period_end * 1000).toISOString() : '',
+              created: inv.created ? new Date(inv.created * 1000).toISOString() : '',
+              hosted_invoice_url: inv.hosted_invoice_url || '',
+              invoice_pdf: inv.invoice_pdf || ''
+            };
+          });
+        }
+      } catch(ie) { /* no invoices */ }
+
+      // 4. Payment method on file (card)
+      if (stripeCustomerId) {
+        try {
+          var pm = await stripeApiRequest('GET', 'payment_methods?customer=' + stripeCustomerId + '&type=card&limit=1', {});
+          if (pm && pm.data && pm.data[0]) {
+            var card = pm.data[0].card || {};
+            paymentMethod = {
+              id: pm.data[0].id,
+              brand: card.brand || 'card',
+              last4: card.last4 || '',
+              exp_month: card.exp_month || '',
+              exp_year: card.exp_year || '',
+              type: pm.data[0].type || 'card'
+            };
+          }
+        } catch(pe) { /* no payment method */ }
+      }
+    }
+
+    res.json({
+      success: true,
+      plan: plan,
+      plan_name: planName,
+      coverage_label: coverageLabel,
+      price_per_week: priceAmount,
+      subscription: subscription,
+      upcoming_invoice: upcomingInvoice,
+      invoices: invoices,
+      payment_method: paymentMethod,
+      has_payment_method: !!paymentMethod,
+      total_spend_this_month: Math.round(totalSpendThisMonth * 100) / 100,
+      total_spend_all_time: Math.round(totalSpendAllTime * 100) / 100
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== DEDUPLICATION DATABASE =====
 // ===== DIRECT MAIL PAYMENT METHODS =====
 // POST /api/direct-mail/setup-payment — Create SetupIntent to save a payment method
