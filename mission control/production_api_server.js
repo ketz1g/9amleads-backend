@@ -7411,7 +7411,35 @@ app.post('/api/direct-mail/campaigns', authMiddleware, (req, res) => {
 app.get('/api/direct-mail/campaigns', authMiddleware, (req, res) => {
   try {
     const campaigns = db.prepare('SELECT * FROM direct_mail_campaigns WHERE customer_id = ? ORDER BY created_at DESC').all(req.user.id);
-    res.json({ success: true, campaigns: campaigns });
+    // Attach a friendly tracking summary so customers can see where each
+    // mailing is and whether proof of posting is available.
+    var expanded = campaigns.map(function(c) {
+      var track = { step: 0, label: 'Received', provider_status: c.provider_status || '', dispatched: false, proof_available: false };
+      var st = c.provider_status || '';
+      if (c.status === 'draft' || c.status === 'awaiting_approval') { track.step = 1; track.label = 'Awaiting review'; }
+      else if (c.status === 'approved' || c.stripe_payment_status === 'pending') { track.step = 2; track.label = 'Ready to pay'; }
+      else if (c.status === 'paid') { track.step = 3; track.label = 'Paid · sending to printer'; }
+      else if (c.status === 'sent_to_provider' || c.status === 'queued') { track.step = 4; track.label = 'Sent to print · processing'; }
+      else if (c.status === 'printing') { track.step = 4; track.label = 'Printing'; }
+      else if (c.status === 'dispatched' || c.status === 'completed') {
+        track.step = 5; track.label = st === 'dispatched' ? 'Dispatched to Royal Mail' : 'Delivered';
+        track.dispatched = true; track.proof_available = true;
+      }
+      else if (c.status === 'failed' || c.status === 'cancelled') { track.step = 0; track.label = c.status === 'failed' ? 'Failed' : 'Cancelled'; }
+      else { track.step = 3; track.label = c.status || 'Processing'; }
+      return {
+        id: c.id, name: c.name, description: c.description, status: c.status,
+        provider_status: c.provider_status, provider_campaign_id: c.provider_campaign_id,
+        sent_count: c.sent_count, target_count: c.target_count,
+        delivery_date: c.delivery_date, budget: c.budget,
+        stripe_payment_status: c.stripe_payment_status,
+        proof_url: c.proof_url || '',
+        repeat_group: c.notes && c.notes.indexOf('Repeat mailing ') === 0 ? c.notes.replace('Repeat mailing ', '') : '',
+        tracking: track,
+        created_at: c.created_at, updated_at: c.updated_at
+      };
+    });
+    res.json({ success: true, campaigns: expanded });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -7582,6 +7610,16 @@ async function sendDmCampaign(campaignId, customerId) {
     db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, provider_status = ?, sent_count = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('sent_to_provider', provider.name, providerCampaignId, 'processing', sentIds.length, new Date().toISOString(), campaign.id, customerId);
     db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaign.id, campaign.status, 'sent_to_provider', 'system', 'Sent to provider: ' + provider.name + ' (IDs: ' + providerCampaignId.substring(0, 60) + ') · Items: ' + sentIds.length, new Date().toISOString());
     db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaign.id, provider.name, 'sendMailpiece', JSON.stringify({ mailType: mailType, recipients: recipientCount, files: files.length }), JSON.stringify({ success: true, ids: sentIds, failures: failedIds.length }), 200, 1, failedIds.length ? (failedIds.length + ' recipients failed') : '', new Date().toISOString());
+    // Capture the proof-of-posting PDF from Stannp for the customer's reassurance
+    try {
+      var firstId = String(providerCampaignId).split(',')[0];
+      var proofRes = await provider.getProofOfPosting(firstId);
+      if (proofRes && proofRes.proof_url) {
+        db.prepare('UPDATE direct_mail_campaigns SET proof_url = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(proofRes.proof_url, new Date().toISOString(), campaign.id, customerId);
+        saveDb();
+        console.log('[DM-SEND] Proof of posting saved for campaign ' + campaign.id.substring(0, 8));
+      }
+    } catch(proofErr) { console.log('[DM-SEND] Proof capture skipped:', proofErr.message); }
     return { success: true, provider: provider.name, provider_campaign_id: providerCampaignId, recipient_count: sentIds.length, message: 'Sent ' + sentIds.length + ' item(s) to Stannp for printing' };
   }
 
@@ -7652,6 +7690,10 @@ app.get('/api/direct-mail/campaigns/:id/proof', authMiddleware, async (req, res)
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
     if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
     if (!campaign.provider_campaign_id) return res.status(400).json({ error: 'Campaign has not been sent to a provider yet' });
+    // Return the stored proof URL immediately if we captured it at dispatch time
+    if (campaign.proof_url) {
+      return res.json({ success: true, proof: { success: true, provider_campaign_id: campaign.provider_campaign_id, proof_url: campaign.proof_url, generated_at: campaign.updated_at || new Date().toISOString(), recipient_count: campaign.sent_count || 1, postage_date: campaign.delivery_date || '', estimated_delivery: '' }, cached: true });
+    }
     var provider = getDirectMailProvider();
     var proof = await provider.getProofOfPosting(campaign.provider_campaign_id);
     if (!proof.success) return res.status(500).json({ error: 'Failed to get proof of posting' });
