@@ -2508,7 +2508,20 @@ app.post('/api/ai/generate-letter', authMiddleware, async (req, res) => {
 
     var promptCta = 'Generate a STRONG CALL-TO-ACTION focused business introduction letter for ' + businessData.company_name + ' in the ' + businessData.business_type + ' industry. The primary goal is to get the reader to take action: ' + (businessData.call_to_action || 'Get in touch');
 
-    var prompts = [promptBase, promptShort, promptFriendly, promptPremium, promptCta];
+    // When a specific version is requested, only generate that one so the
+    // response is fast (~5s). Otherwise generate all variants.
+    function promptsMap(v) {
+      if (v === 'SHORT') return promptShort;
+      if (v === 'FRIENDLY') return promptFriendly;
+      if (v === 'PREMIUM') return promptPremium;
+      if (v === 'CALL TO ACTION') return promptCta;
+      return promptBase;
+    }
+    var requestedVersion = (req.body.version || '').toUpperCase();
+    var wantedKeys = ['PROFESSIONAL','SHORT','FRIENDLY','PREMIUM','CALL TO ACTION'];
+    var onlyOne = wantedKeys.indexOf(requestedVersion) !== -1;
+    var prompts = onlyOne ? [promptsMap(requestedVersion)] : [promptBase, promptShort, promptFriendly, promptPremium, promptCta];
+
     var letters = [];
 
     for (var pi = 0; pi < prompts.length; pi++) {
@@ -2534,15 +2547,23 @@ app.post('/api/ai/generate-letter', authMiddleware, async (req, res) => {
       }
     }
 
-    res.json({
-      success: true,
-      professional: letters[0] || letters[0] === '' ? letters[0] : '',
-      short: letters[1] || '',
-      friendly: letters[2] || '',
-      premium: letters[3] || '',
-      call_to_action: letters[4] || '',
-      input: businessData
-    });
+    // Build the response object. For a single-version request, only that field
+    // is populated; others are empty strings.
+    var resp = { success: true, professional: '', short: '', friendly: '', premium: '', call_to_action: '', input: businessData };
+    if (onlyOne) {
+      var respKey = requestedVersion === 'PROFESSIONAL' ? 'professional' :
+                    requestedVersion === 'SHORT' ? 'short' :
+                    requestedVersion === 'FRIENDLY' ? 'friendly' :
+                    requestedVersion === 'PREMIUM' ? 'premium' : 'call_to_action';
+      resp[respKey] = letters[0] || '';
+    } else {
+      resp.professional = letters[0] || '';
+      resp.short = letters[1] || '';
+      resp.friendly = letters[2] || '';
+      resp.premium = letters[3] || '';
+      resp.call_to_action = letters[4] || '';
+    }
+    res.json(resp);
   } catch (e) {
     res.status(500).json({ error: 'Sorry, the AI Marketing Builder encountered an error. Please try again.' });
   }
