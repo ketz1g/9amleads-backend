@@ -381,7 +381,86 @@ async function collectMovingLeads(config) {
   return deduped;
 }
 
-module.exports = { collectMovingLeads, enrichMovingLeads, enrichMovingLeadsPostcoder, fetchPropertyDetail, lookupPostcoderAddress };
+// ===== ZOOPLA VIA APIFY (house numbers + extra supply) =====
+// Zoopla exposes full addresses WITH house numbers natively, unlike Rightmove.
+// Runs through the rented dhrumil~zoopla-scraper actor. Flat $30/mo rental makes
+// this far cheaper than Postcoder's per-lead cost at scale. Falls back silently
+// if the actor isn't rented (403) or returns nothing.
+function fetchZooplaApify(areas, maxProperties) {
+  return new Promise(async (resolve) => {
+    try {
+      const key = process.env.APIFY_API_KEY || '';
+      if (!key) { resolve([]); return; }
+      const areasList = (Array.isArray(areas) ? areas : [areas]).map(function(a) { return String(a).toUpperCase(); }).filter(Boolean);
+      if (areasList.length === 0) { resolve([]); return; }
+      const listUrls = areasList.map(function(a) {
+        const outcode = String(a).replace(/[^A-Z0-9]/gi, '').toLowerCase();
+        return { url: 'https://www.zoopla.co.uk/for-sale/property/' + outcode + '/?results_sort=newest_listings&search_source=for-sale' };
+      });
+      const input = {
+        listUrls: listUrls,
+        fullPropertyDetails: false, // list view already has house numbers; keeps cost minimal
+        monitoringMode: false,
+        enableDelistingTracker: false,
+        proxy: { useApifyProxy: true, apifyProxyGroups: ['RESIDENTIAL'], apifyProxyCountry: 'GB' }
+      };
+      if (maxProperties) input.maxProperties = maxProperties;
+      const body = JSON.stringify(input);
+      const req = https.request({
+        hostname: 'api.apify.com',
+        path: '/v2/acts/dhrumil~zoopla-scraper/run-sync-get-dataset-items?token=' + key + '&memory=256&timeout=120',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'Accept': 'application/json' },
+        timeout: 150000
+      }, function(res) {
+        let b = '';
+        res.on('data', function(c) { b += c; });
+        res.on('end', function() {
+          try {
+            const items = JSON.parse(b);
+            if (!Array.isArray(items)) {
+              console.log('[ZOOPLA] non-array response: ' + b.substring(0, 120));
+              resolve([]); return;
+            }
+            const leads = items.map(function(p, i) {
+              const addr = (p.address || '').trim();
+              const num = (p.nameOrNumber || '').trim();
+              const fullAddr = [num, addr].filter(Boolean).join(', ').trim();
+              const priceMatch = String(p.price || '').match(/[0-9,]+/);
+              return {
+                id: 'ZOOPLA_' + (p.id || p.url || Date.now() + '_' + i),
+                address: fullAddr || addr,
+                fullAddress: fullAddr || addr,
+                street: addr,
+                buildingNumber: num,
+                postcode: p.postalCode || (p.outcode ? p.outcode + ' ' + (p.incode || '') : ''),
+                bedrooms: parseInt(p.bedrooms) || 0,
+                propertyType: p.propertyType || 'Unknown',
+                price: priceMatch ? parseInt(priceMatch[0].replace(/,/g, '')) : 0,
+                priceLabel: p.price || '',
+                status: 'available',
+                agent: p.agent || '',
+                url: p.url || '',
+                firstVisibleDate: p.listingUpdateDate || new Date().toISOString(),
+                updateDate: p.listingUpdateDate || '',
+                source: 'Zoopla (Apify)',
+                scrapedAt: new Date().toISOString()
+              };
+            });
+            console.log('[ZOOPLA] ' + leads.length + ' leads (areas: ' + areasList.join(',') + ')');
+            resolve(leads);
+          } catch(e) { console.log('[ZOOPLA] parse error: ' + e.message); resolve([]); }
+        });
+      });
+      req.on('error', function(e) { console.log('[ZOOPLA] request error: ' + e.message); resolve([]); });
+      req.setTimeout(150000, function() { req.destroy(); resolve([]); });
+      req.write(body);
+      req.end();
+    } catch(e) { console.log('[ZOOPLA] error: ' + e.message); resolve([]); }
+  });
+}
+
+module.exports = { collectMovingLeads, enrichMovingLeads, enrichMovingLeadsPostcoder, fetchPropertyDetail, lookupPostcoderAddress, fetchZooplaApify };
 
 if (require.main === module) {
   collectMovingLeads().then(function(l) {
