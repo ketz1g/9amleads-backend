@@ -10349,6 +10349,7 @@ function syncCustomers(product) {
           try {
             var probateScraper = require('./probate_leads_scraper');
             leads = await probateScraper.collectProbateLeads();
+            console.log('[SCRAPER] Probate raw scrape: ' + (leads ? leads.length : 0) + ' leads');
             if (leads && leads.length > 0) {
               var fp = filterFresh(leads, 'scrapedAt');
               leads = fp.fresh.length > 0 ? fp.fresh : fp.fallback;
