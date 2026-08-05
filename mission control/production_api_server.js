@@ -302,13 +302,24 @@ function _run(sql, params) {
   if (q.isInsert) {
     const row = {};
     const colsMatch = sql.match(/\(([^)]+)\)\s*VALUES/i);
-    const valsMatch = sql.match(/VALUES\s*\(([^)]+)\)/i);
-    if (colsMatch && valsMatch) {
+    // Match the VALUES(...) block robustly: find '(' after VALUES and the matching ')'.
+    const valsStart = sql.search(/VALUES\s*\(/i);
+    let valsStr = '';
+    if (valsStart !== -1) {
+      let open = sql.indexOf('(', valsStart);
+      let depth = 0;
+      for (let i = open; i < sql.length; i++) {
+        if (sql[i] === '(') depth++;
+        else if (sql[i] === ')') { depth--; if (depth === 0) { valsStr = sql.substring(open + 1, i); break; } }
+      }
+    }
+    if (colsMatch && valsStr) {
       const cols = colsMatch[1].split(',').map(c => c.trim());
-      const vals = valsMatch[1].split(',').map(v => v.trim());
+      const vals = valsStr.split(',').map(v => v.trim());
       let paramIdx = 0;
       cols.forEach((c, i) => {
         const raw = vals[i];
+        if (raw === undefined) return;
         if (raw === '?') {
           row[c] = params[paramIdx++];
         } else {
