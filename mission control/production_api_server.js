@@ -3204,6 +3204,64 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
   });
 });
 
+// POST /api/admin/bulk-create-customers — create test customers directly in DB
+// (bypasses the signup rate limit for bulk testing). Admin auth only.
+app.post('/api/admin/bulk-create-customers', adminAuth, (req, res) => {
+  try {
+    const list = Array.isArray(req.body) ? req.body : (req.body && req.body.customers);
+    if (!Array.isArray(list) || list.length === 0) return res.status(400).json({ error: 'customers array required' });
+    var db = getDb();
+    if (!db.customers) db.customers = [];
+    var bcrypt = require('bcryptjs');
+    var created = 0, errors = [];
+    for (var i = 0; i < list.length; i++) {
+      var a = list[i];
+      if (!a.email || !a.product) { errors.push((a.email || '?') + ': missing email/product'); continue; }
+      if (db.customers.some(function(c) { return c.email === a.email.toLowerCase(); })) { errors.push(a.email + ': already exists'); continue; }
+      var id = (require('uuid').v4)();
+      var pwHash = bcrypt.hashSync(a.password || 'Wemovehomes321', 10);
+      var coverage = a.coverage || (a.product === 'moving' || a.product === 'newbusiness' ? 'postcode' : 'county');
+      var areas = a.areas || [];
+      var plan = a.plan || 'free_trial';
+      var isAllUK = areas.some(function(x) { return /all[\s-]?uk/i.test(String(x)); });
+      if (isAllUK) coverage = 'ukwide';
+      var trialEnds = plan === 'free_trial' ? new Date(Date.now() + 7 * 86400000).toISOString() : null;
+      var dailyLimit = getPlanLimit(a.product, plan, coverage) || 5;
+      var cust = {
+        id: id,
+        email: a.email.toLowerCase(),
+        company: a.company || a.email,
+        contact_name: a.name || a.company || '',
+        phone: a.phone || '',
+        password_hash: pwHash,
+        product: a.product,
+        lead_type: a.product,
+        business_type: a.product,
+        target_areas: JSON.stringify(isAllUK ? ['All UK'] : areas),
+        coverage: coverage,
+        biz_field2: a.bizField2 || '',
+        biz_field3: JSON.stringify([a.product]),
+        source: a.source || 'test',
+        plan: plan,
+        trial_ends: trialEnds,
+        marketing_consent: a.marketingConsent ? 1 : 0,
+        created_at: new Date().toISOString(),
+        extra_postcodes: '0',
+        crm_webhook_url: a.crmWebhookUrl || '',
+        campaign_sent: '[]',
+        signup_ip: 'bulk-test',
+        leads_per_day: dailyLimit,
+        email_verified: 1,
+        verification_token: ''
+      };
+      db.customers.push(cust);
+      created++;
+    }
+    saveDb();
+    res.json({ success: true, created: created, errors: errors });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== BREVO EMAIL INTEGRATION =====
 const BREVO_API_KEY = process.env.BREVO_API_KEY || ''; // Set via Render env var - do not hardcode
 
