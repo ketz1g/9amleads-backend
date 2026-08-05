@@ -210,8 +210,8 @@ function calcTotal() {
 <div class="form-group">
 <label>Your Plan</label>
 <div class="grid-2" id="s-plan-container">
-<label class="plan-opt plan-sel" id="plan-free_trial"><input type="radio" name="plan" value="free_trial" checked onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Free Trial</div><div class="plan-d">Up to 25/week · 7-day trial · 3 areas · any 1 type</div></div><div class="plan-p">Free</div></label>
-<label class="plan-opt" id="plan-starter"><input type="radio" name="plan" value="starter" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Starter</div><div class="plan-d">Up to 25/week · any 1 lead type · 3 areas</div></div><div class="plan-p">£25<span class="pw">/wk</span></div></label>
+<label class="plan-opt plan-sel" id="plan-free_trial"><input type="radio" name="plan" value="free_trial" checked onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Free Trial</div><div class="plan-d">Up to 25/week · 7-day trial · unlimited areas · any 1 type</div></div><div class="plan-p">Free</div></label>
+<label class="plan-opt" id="plan-starter"><input type="radio" name="plan" value="starter" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Starter</div><div class="plan-d">Up to 25/week · any 1 lead type · unlimited areas</div></div><div class="plan-p">£25<span class="pw">/wk</span></div></label>
 <label class="plan-opt" id="plan-pro"><input type="radio" name="plan" value="pro" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Pro</div><div class="plan-d">Up to 75/week · any types · unlimited areas</div></div><div class="plan-p">£49<span class="pw">/wk</span></div></label>
 <label class="plan-opt" id="plan-enterprise"><input type="radio" name="plan" value="enterprise" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Enterprise</div><div class="plan-d">Up to 125/week · any types · All UK unlimited</div></div><div class="plan-p">£99<span class="pw">/wk</span></div></label>
 </div>
@@ -426,10 +426,6 @@ async function addSignupPostcode() {
   var err = document.getElementById('s-postcode-error');
   err.style.display = 'none';
   if (!area || area.length < 1) { err.textContent = 'Please select or type a postcode area'; err.style.display = 'block'; return; }
-  var plan = document.querySelector('input[name="plan"]:checked')?.value;
-  var isUnlimited = plan === 'pro' || plan === 'enterprise';
-  var maxAreas = isUnlimited ? 999 : 3;
-  if (signupPostcodes.length >= maxAreas) { err.textContent = maxAreas === 999 ? 'Unlimited areas ,  you\'re on Pro!' : 'Maximum 3 areas allowed (upgrade to Pro for unlimited)'; err.style.display = 'block'; return; }
   if (signupPostcodes.some(function(a) { return a.toLowerCase() === area.toLowerCase(); })) { err.textContent = '"' + area + '" already added'; err.style.display = 'block'; return; }
   signupPostcodes.push(area);
   input.value = '';
@@ -441,10 +437,8 @@ function removeSignupPostcode(code) {
   renderSignupPostcodes();
 }
 function updatePostcodeLimit() {
-  var plan = document.querySelector('input[name="plan"]:checked')?.value;
-  var isUnlimited = plan === 'pro' || plan === 'enterprise';
   var label = document.getElementById('s-postcode-limit-label');
-  if (label) label.textContent = isUnlimited ? 'unlimited' : 'pick up to 3';
+  if (label) label.textContent = 'unlimited';
   renderSignupPostcodes();
   onLeadTypeChange();
 }
@@ -452,13 +446,11 @@ function updatePostcodeLimit() {
 function renderSignupPostcodes() {
   var tags = document.getElementById('s-postcode-tags');
   var html = '';
-  var plan = document.querySelector('input[name="plan"]:checked')?.value;
-  var isUnlimited = plan === 'pro' || plan === 'enterprise';
   for (var i = 0; i < signupPostcodes.length; i++) {
     html += '<span class="tag" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:5px;font-size:11px;font-weight:600;color:#0ea5e9">' + signupPostcodes[i] + ' <span style="cursor:pointer;opacity:0.7;margin-left:2px" onclick="removeSignupPostcode(\'' + signupPostcodes[i] + '\')">&times;</span></span>';
   }
   tags.innerHTML = html;
-  document.getElementById('s-postcode-count').textContent = signupPostcodes.length > 0 ? (signupPostcodes.length + (isUnlimited ? ' areas selected' : ' of 3 selected')) : '';
+  document.getElementById('s-postcode-count').textContent = signupPostcodes.length > 0 ? (signupPostcodes.length + ' areas selected (unlimited)') : '';
 }
 
 // ===== FILTER SYSTEM =====
