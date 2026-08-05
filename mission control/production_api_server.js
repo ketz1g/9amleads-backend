@@ -9085,6 +9085,10 @@ app.post('/api/admin/seo/refresh-sitemap', adminAuth, function(req, res) {
     for (var pi = 0; pi < posts.length; pi++) {
       urls.push('<url><loc>https://9amleads.com/blog/' + posts[pi].slug + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>');
     }
+    var staticSlugs = ['moving-leads-uk', 'probate-leads-uk', 'public-sector-tenders-uk', 'win-probate-instructions'];
+    for (var si = 0; si < staticSlugs.length; si++) {
+      urls.push('<url><loc>https://9amleads.com/blog/' + staticSlugs[si] + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>');
+    }
     var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
     for (var ui = 0; ui < urls.length; ui++) xml += '  ' + urls[ui] + '\n';
     xml += '</urlset>';
@@ -12730,6 +12734,10 @@ cron.schedule('0 4 * * *', async () => {
         ];
         for (var pi = 0; pi < posts.length; pi++) {
           urls.push('<url><loc>https://9amleads.com/blog/' + posts[pi].slug + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + (posts[pi].created_at ? posts[pi].created_at.split('T')[0] : today) + '</lastmod></url>');
+        }
+        var staticSlugs = ['moving-leads-uk', 'probate-leads-uk', 'public-sector-tenders-uk', 'win-probate-instructions'];
+        for (var si = 0; si < staticSlugs.length; si++) {
+          urls.push('<url><loc>https://9amleads.com/blog/' + staticSlugs[si] + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>');
         }
         var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
         for (var ui = 0; ui < urls.length; ui++) xml += '  ' + urls[ui] + '\n';
