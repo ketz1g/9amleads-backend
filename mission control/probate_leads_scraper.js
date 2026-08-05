@@ -341,60 +341,106 @@ async function enrichGazetteLeads(leads, limit) {
 function fetchGazetteProbate(maxItems) {
   return new Promise((resolve) => {
     if (!APIFY_API_KEY) { resolve([]); return; }
+    // Use an ASYNC run + poll the dataset. The actor has a 7200s default timeout
+    // and can take 10-30+ minutes to scrape a full day of Gazette notices, so a
+    // blocking run-sync call times out. We start the run, poll its status, and
+    // pull the dataset once it succeeds.
     const input = JSON.stringify({
       sp_intended_usage: 'other',
       sp_improvement_suggestions: 'testing',
-      maxItems: Math.min(maxItems || 100, 10)  // actor has ~100s cold start; 10 completes reliably
+      editions: ['london', 'edinburgh', 'belfast'],
+      publishedSinceDays: 1,
+      maxItems: Math.min(maxItems || 100, 100),
+      proxyConfiguration: { useApifyProxy: false }
     });
     const options = {
       hostname: 'api.apify.com',
-      path: '/v2/acts/rcfzPm2dJk9vig8hp/run-sync-get-dataset-items?token=' + APIFY_API_KEY + '&timeout=300&memory=512',
+      path: '/v2/acts/jungle_synthesizer~uk-gazette-probate-notices-scraper/runs?token=' + APIFY_API_KEY,
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(input), 'Accept': 'application/json' },
-      timeout: 360000
+      timeout: 30000
     };
     const req = https.request(options, (res) => {
       let body = '';
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
         try {
-          const items = JSON.parse(body);
-          if (Array.isArray(items) && items.length > 0) {
-            console.log('    Gazette returned ' + items.length + ' probate notices');
-            resolve(items.map(function(p) {
-              var addr = p.decedent_address || '';
-              var pc = (addr.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0] || '';
-              return {
-                id: 'GAZ_' + (p.notice_id || Date.now() + '_' + Math.random().toString(36).slice(2,6)),
-                name: p.decedent_name || '',
-                surname: (p.decedent_name || '').split(' ').slice(-1)[0] || '',
-                deceasedAddress: addr,
-                dateOfDeath: p.decedent_dod || '',
-                grantDate: p.publish_date || '',
-                claimExpiry: p.claim_expiry_date || '',
-                estateValue: p.estate_value_indicator || 0,
-                estateValueLabel: p.estate_value_indicator ? p.estate_value_indicator : '',
-                solicitor: p.executor_solicitor || p.executor_name || '',
-                executorName: p.executor_name || '',
-                executorAddress: p.executor_address || '',
-                solicitorAddress: p.solicitor_address || '',
-                noticeUrl: p.notice_url || '',
-                postcode: pc,
-                occupation: p.decedent_occupation || '',
-                grantType: p.notice_type || 'Deceased Estates',
-                source: 'The Gazette',
-                scrapedAt: new Date().toISOString()
-              };
-            }));
-          } else {
-            console.log('    Gazette returned no records');
-            resolve([]);
+          const run = JSON.parse(body);
+          const runId = run.data && run.data.id;
+          const datasetId = run.data && run.data.defaultDatasetId;
+          if (!runId) { console.log('    Gazette async start failed'); resolve([]); return; }
+          console.log('    Gazette run started: ' + runId);
+          // Poll the run status every 20s, up to ~30 minutes
+          let polls = 0;
+          const maxPolls = 90;
+          function poll() {
+            if (polls >= maxPolls) { console.log('    Gazette poll timeout'); resolve([]); return; }
+            polls++;
+            const statusReq = https.request({ hostname: 'api.apify.com', path: '/v2/actor-runs/' + runId + '?token=' + APIFY_API_KEY, method: 'GET', headers: { 'Authorization': 'Bearer ' + APIFY_API_KEY, 'Accept': 'application/json' }, timeout: 20000 }, (res2) => {
+              let b2 = '';
+              res2.on('data', c2 => b2 += c2);
+              res2.on('end', () => {
+                try {
+                  const st = JSON.parse(b2).data.status;
+                  if (st === 'SUCCEEDED') {
+                    // Pull dataset items
+                    const itemsReq = https.request({ hostname: 'api.apify.com', path: '/v2/datasets/' + datasetId + '/items?token=' + APIFY_API_KEY, method: 'GET', headers: { 'Authorization': 'Bearer ' + APIFY_API_KEY, 'Accept': 'application/json' }, timeout: 30000 }, (res3) => {
+                      let b3 = '';
+                      res3.on('data', c3 => b3 += c3);
+                      res3.on('end', () => {
+                        try {
+                          const items = JSON.parse(b3);
+                          if (Array.isArray(items) && items.length > 0) {
+                            console.log('    Gazette returned ' + items.length + ' probate notices');
+                            resolve(items.map(function(p) {
+                              var addr = p.decedent_address || '';
+                              var pc = (addr.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0] || '';
+                              return {
+                                id: 'GAZ_' + (p.notice_id || Date.now() + '_' + Math.random().toString(36).slice(2,6)),
+                                name: p.decedent_name || '',
+                                surname: (p.decedent_name || '').split(' ').slice(-1)[0] || '',
+                                deceasedAddress: addr,
+                                dateOfDeath: p.decedent_dod || '',
+                                grantDate: p.publish_date || '',
+                                claimExpiry: p.claim_expiry_date || '',
+                                estateValue: p.estate_value_indicator || 0,
+                                estateValueLabel: p.estate_value_indicator ? p.estate_value_indicator : '',
+                                solicitor: p.executor_solicitor || p.executor_name || '',
+                                executorName: p.executor_name || '',
+                                executorAddress: p.executor_address || '',
+                                solicitorAddress: p.solicitor_address || '',
+                                noticeUrl: p.notice_url || '',
+                                postcode: pc,
+                                occupation: p.decedent_occupation || '',
+                                grantType: p.notice_type || 'Deceased Estates',
+                                source: 'The Gazette',
+                                scrapedAt: new Date().toISOString()
+                              };
+                            }));
+                          } else {
+                            console.log('    Gazette returned no records'); resolve([]);
+                          }
+                        } catch(e) { console.log('    Gazette dataset parse error'); resolve([]); }
+                      });
+                    });
+                    itemsReq.on('error', () => resolve([]));
+                    itemsReq.end();
+                    return;
+                  }
+                  if (st === 'FAILED' || st === 'TIMED-OUT' || st === 'ABORTED') { console.log('    Gazette run ' + st); resolve([]); return; }
+                  setTimeout(poll, 20000);
+                } catch(e) { console.log('    Gazette poll parse error'); resolve([]); }
+              });
+            });
+            statusReq.on('error', () => { setTimeout(poll, 20000); });
+            statusReq.end();
           }
-        } catch(e) { console.log('    Gazette parse error: ' + e.message); resolve([]); }
+          setTimeout(poll, 20000);
+        } catch(e) { console.log('    Gazette start parse error: ' + e.message); resolve([]); }
       });
     });
-    req.on('error', (e) => { console.log('    Gazette error: ' + e.message); resolve([]); });
-    req.setTimeout(180000, () => { req.destroy(); resolve([]); });
+    req.on('error', (e) => { console.log('    Gazette start error: ' + e.message); resolve([]); });
+    req.setTimeout(30000, () => { req.destroy(); resolve([]); });
     req.write(input);
     req.end();
   });
