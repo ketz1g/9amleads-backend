@@ -2124,7 +2124,13 @@ app.get('/api/leads', authMiddleware, (req, res) => {
 
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
 
-  res.json(leads.map(l => {
+  const nowIso = new Date().toISOString();
+  const visible = leads.filter(function(l) {
+    if (l.delivered || l.delivered_at) return true;
+    return !(l.release_at && l.release_at > nowIso);
+  });
+
+  res.json(visible.map(l => {
     const parsed = JSON.parse(l.data || '{}');
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
     return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
@@ -2140,7 +2146,13 @@ app.get('/api/leads/today', authMiddleware, (req, res) => {
 
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
 
-  res.json(leads.map(l => {
+  const nowIso = new Date().toISOString();
+  const visible = leads.filter(function(l) {
+    if (l.delivered || l.delivered_at) return true;
+    return !(l.release_at && l.release_at > nowIso);
+  });
+
+  res.json(visible.map(l => {
     const parsed = JSON.parse(l.data || '{}');
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
     return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
@@ -5155,7 +5167,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         }
       }
       
-      if (custLeads.length === 0) continue;
+      if (custLeads.length === 0) {
+        console.log('[DELIVERY] WARN: ' + cust.email + ' (' + cust.product + ') got 0 leads today — no undelivered leads in pool');
+        errors++;
+        lastErr = cust.email + ': no leads in pool';
+        continue;
+      }
       // Deduplicate leads by address within batch
       var seenAddrs = {}; custLeads = custLeads.filter(function(cl) {
         try { var cd = JSON.parse(cl.data || '{}'); var key = (cd.address || cd.postcode || cl.id || '').toLowerCase().trim(); return key && !seenAddrs[key] ? (seenAddrs[key]=true) : false; } catch(e) { return true; }
