@@ -213,7 +213,7 @@ async function generateBlogPost() {
 }
 
 async function generateAllPosts() {
-  if (!confirm('Generate ALL remaining blog templates now? This creates all ~' + 35 + ' posts.')) return;
+  if (!confirm('Generate ALL remaining blog templates now? This creates all remaining posts.')) return;
   var btn = document.querySelector('#seoPage .btn');
   btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating all...';
   try {
