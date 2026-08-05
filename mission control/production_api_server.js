@@ -9163,6 +9163,51 @@ var BLOG_TEMPLATES = [
   { category: 'general', title: 'How to Budget for {type}', desc: 'Plan your marketing budget around {type}.', keywords: ['{type} budget', '{type} spend', '{type} planning'] },
   { category: 'general', title: 'The Next 12 Months of {type}: What to Expect', desc: 'Look ahead at how {type} will evolve.', keywords: ['{type} 2026', '{type} future', '{type} outlook'] }
 ];
+var BLOG_VARIATIONS = [
+  { key: 'guide', title: '{title} (Complete Guide)', desc: ' A complete, detailed guide on this topic.', kw: ['complete guide'] },
+  { key: 'beginner', title: '{title}: A Beginner\'s Guide', desc: ' Perfect for beginners getting started with this topic.', kw: ['beginner guide'] },
+  { key: '2026', title: '{title} in 2026', desc: ' The latest 2026 insights, trends and best practices.', kw: ['2026'] },
+  { key: 'checklist', title: '{title}: The Ultimate Checklist', desc: ' A step-by-step checklist to make this topic actionable today.', kw: ['checklist'] },
+  { key: 'mistakes', title: '{title}: Common Mistakes to Avoid', desc: ' Avoid the costly mistakes most people make with this topic.', kw: ['common mistakes'] },
+  { key: 'case-study', title: '{title}: Real Case Studies', desc: ' Real-world case studies and results from this approach.', kw: ['case studies'] },
+  { key: 'faq', title: '{title}: FAQs Answered', desc: ' Straight answers to the most common questions on this topic.', kw: ['FAQ'] },
+  { key: 'toolkit', title: '{title}: The Practical Toolkit', desc: ' Practical tools, templates and resources for this topic.', kw: ['toolkit'] },
+  { key: 'local', title: 'UK Local Guide: {title}', desc: ' A UK-focused look at this topic with local context.', kw: ['UK local', 'UK market'] },
+  { key: 'advanced', title: '{title}: Advanced Strategies', desc: ' Advanced tactics and strategies beyond the basics.', kw: ['advanced strategies'] }
+];
+function blogTemplateCount() { return BLOG_TEMPLATES.length * (1 + BLOG_VARIATIONS.length); }
+function blogTemplateKey(baseIndex, varIndex) { return varIndex === -1 ? 'base_' + baseIndex : 'var_' + baseIndex + '_' + varIndex; }
+function blogTemplateUsedMap(dbData) {
+  var used = {};
+  (dbData.blog_posts || []).forEach(function(p) {
+    if (p.template_key) used[p.template_key] = 1;
+    else if (typeof p.template_index === 'number') used['base_' + p.template_index] = 1;
+  });
+  return used;
+}
+function blogAvailableTemplates(dbData) {
+  var used = blogTemplateUsedMap(dbData);
+  var out = [];
+  for (var bi = 0; bi < BLOG_TEMPLATES.length; bi++) {
+    var key = 'base_' + bi;
+    if (!used[key]) out.push({ template: BLOG_TEMPLATES[bi], key: key, varIndex: -1 });
+  }
+  for (var vi = 0; vi < BLOG_VARIATIONS.length; vi++) {
+    for (var bj = 0; bj < BLOG_TEMPLATES.length; bj++) {
+      var vkey = blogTemplateKey(bj, vi);
+      if (!used[vkey]) out.push({ template: BLOG_TEMPLATES[bj], key: vkey, varIndex: vi });
+    }
+  }
+  return out;
+}
+function blogRenderTitle(template, variation) {
+  var title = template.title;
+  if (variation && variation !== -1) {
+    var v = BLOG_VARIATIONS[variation];
+    title = v.title.replace('{title}', title);
+  }
+  return title;
+}
 var LEAD_TYPE_PAGES = { moving: '/movingleadsdaily/', probate: '/probateleads/', newbusiness: '/newbusinessalert/', planning: '/planningleads/', tenders: '/tenders/', general: '/pricing/' };
 
 // GET /api/admin/blog/posts Ã¢â‚¬â€ List all blog posts
@@ -9170,7 +9215,7 @@ app.get('/api/admin/blog/posts', adminAuth, function(req, res) {
   try {
     var dbData = getDb();
     var posts = (dbData.blog_posts || []).filter(function(p) { return p.published; });
-    var templatesTotal = BLOG_TEMPLATES.length;
+    var templatesTotal = blogTemplateCount();
     res.json({ posts: posts, total: posts.length, templates_total: templatesTotal, templates_used: posts.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -9204,9 +9249,8 @@ app.get('/api/admin/seo/report', adminAuth, function(req, res) {
     var thisWeek = published.filter(function(p) { return p.created_at && p.created_at >= new Date(Date.now() - 7*86400000).toISOString(); });
     var thisMonth = published.filter(function(p) { return p.created_at && p.created_at >= new Date(Date.now() - 30*86400000).toISOString(); });
     var usedIndices = posts.map(function(p) { return p.template_index; });
-    var remaining = 0;
-    var templatesTotal = BLOG_TEMPLATES.length;
-    for (var ti = 0; ti < templatesTotal; ti++) { if (usedIndices.indexOf(ti) === -1) remaining++; }
+    var remaining = blogAvailableTemplates(dbData).length;
+    var templatesTotal = blogTemplateCount();
     res.json({
       total_posts: published.length,
       templates_total: templatesTotal,
@@ -9287,23 +9331,23 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
     var dbData = getDb();
     if (!dbData.blog_posts) dbData.blog_posts = [];
     var count = Math.min(BLOG_BATCH_SIZE, 5);
-    var usedIndices = dbData.blog_posts.map(function(p) { return p.template_index; });
-    var available = [];
-    for (var ai = 0; ai < BLOG_TEMPLATES.length; ai++) {
-      if (usedIndices.indexOf(ai) === -1) available.push(ai);
-    }
+    var available = blogAvailableTemplates(dbData);
     var generated = [];
     for (var bi = 0; bi < count && bi < available.length; bi++) {
       var ti = available[bi];
       var templates = BLOG_TEMPLATES;
+      var template = ti.template;
+      var templateKey = ti.key;
+      var variationIdx = ti.varIndex;
       var types = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads', planning: 'planning leads', tenders: 'tender opportunities', general: 'business leads' };
-      var template = templates[ti % templates.length];
       var productName = PRODCAT[template.category] || 'Business Leads';
       var type = types[template.category] || 'leads';
-      var title = template.title.replace(/{type}/g, type);
-      var desc = template.desc.replace(/{type}/g, type);
+      var title = blogRenderTitle(template, variationIdx).replace(/{type}/g, type);
+      var desc = template.desc.replace(/{type}/g, type) + (variationIdx !== -1 ? BLOG_VARIATIONS[variationIdx].desc : '');
       var kw = template.keywords.map(function(k) { return k.replace(/{type}/g, type); });
+      if (variationIdx !== -1) kw = kw.concat(BLOG_VARIATIONS[variationIdx].kw);
       var slug = title.toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
+      if (dbData.blog_posts.some(function(p) { return p.slug === slug; })) continue;
       var paraPool = [
         'In today\'s market, businesses need every advantage. ' + title + ' is one of the most effective ways to stay ahead.',
         productName + ' provide a stream of exclusive opportunities your competitors don\'t have access to.',
@@ -9324,7 +9368,7 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
       var jsonLd = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"' + title.replace(/"/g, '\\"') + '","description":"' + desc.replace(/"/g, '\\"') + '","datePublished":"' + new Date().toISOString() + '","author":{"@type":"Organization","name":"9amLeads","url":"https://9amleads.com"},"publisher":{"@type":"Organization","name":"9amLeads","url":"https://9amleads.com"},"mainEntityOfPage":"https://9amleads.com/blog/' + slug + '","keywords":"' + kw.join(', ') + '"}</script>';
       var productLink2 = 'https://9amleads.com/' + (template.category === 'newbusiness' ? 'newbusinessalert/' : template.category === 'planning' ? 'planningleads/' : template.category === 'tenders' ? 'tenders/' : template.category === 'probate' ? 'probateleads/' : 'movingleadsdaily/');
       html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + title + ' | 9amLeads Blog</title><meta name="description" content="' + desc + '"><meta name="keywords" content="' + kw.join(', ') + '"><meta property="og:title" content="' + title + '"><meta property="og:description" content="' + desc + '"><meta property="og:url" content="https://9amleads.com/blog/' + slug + '"><meta property="og:type" content="article"><meta property="og:site_name" content="9amLeads"><link rel="canonical" href="https://9amleads.com/blog/' + slug + '">' + jsonLd + '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:Inter,sans-serif;background:#000;color:#fff;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}h1{font-size:28px;font-weight:800;font-family:Outfit,sans-serif}h2{font-size:20px;font-weight:700;margin-top:32px;color:#f5f5f5}p{color:#ccc}a{color:#0ea5e9}</style></head><body><h1>' + title + '</h1><p style="color:#888">' + desc + '</p>' + sections + '<h2>Get Started with 9amLeads</h2><p>Ready to put these strategies into practice? <a href="' + productLink2 + '" style="color:#0ea5e9">Explore ' + productName + '</a> and start receiving fresh ' + type + ' every morning. Start your free 7-day trial today.</p><hr style="border:none;border-top:1px solid #222;margin:32px 0"><div style="font-size:12px;color:#666"><strong>About 9amLeads</strong> - We deliver fresh, exclusive business leads every morning at 9am. <a href="https://9amleads.com" style="color:#0ea5e9">Visit 9amLeads.com</a> to learn more.</div></body></html>';
-      var post = { id: 'blog_' + Date.now() + '_' + bi, title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_index: ti, word_count: wordCount, reading_time: Math.ceil(wordCount / 200) + ' min read', created_at: new Date().toISOString(), published: true };
+      var post = { id: 'blog_' + Date.now() + '_' + bi, title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_key: templateKey, template_index: variationIdx, word_count: wordCount, reading_time: Math.ceil(wordCount / 200) + ' min read', created_at: new Date().toISOString(), published: true };
       dbData.blog_posts.push(post);
       generated.push(post);
     }
@@ -9370,20 +9414,23 @@ app.post('/api/admin/blog/generate-all', adminAuth, function(req, res) {
   try {
     var dbData = getDb();
     if (!dbData.blog_posts) dbData.blog_posts = [];
-    var usedIndices = dbData.blog_posts.map(function(p) { return p.template_index; });
     var existingSlugs = {};
     dbData.blog_posts.forEach(function(p) { existingSlugs[p.slug] = 1; });
-        var templates = BLOG_TEMPLATES;
+    var available = blogAvailableTemplates(dbData);
     var types = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads', planning: 'planning leads', tenders: 'tender opportunities', general: 'business leads' };
     var generated = [];
-    for (var bi = 0; bi < templates.length; bi++) {
-      if (usedIndices.indexOf(bi) !== -1) continue;
-      var template = templates[bi];
+    for (var bi = 0; bi < available.length; bi++) {
+      var ti = available[bi];
+      var templates = BLOG_TEMPLATES;
+      var template = ti.template;
+      var templateKey = ti.key;
+      var variationIdx = ti.varIndex;
       var productName = PRODCAT[template.category] || 'Business Leads';
       var type = types[template.category] || 'leads';
-      var title = template.title.replace(/{type}/g, type);
-      var desc = template.desc.replace(/{type}/g, type);
+      var title = blogRenderTitle(template, variationIdx).replace(/{type}/g, type);
+      var desc = template.desc.replace(/{type}/g, type) + (variationIdx !== -1 ? BLOG_VARIATIONS[variationIdx].desc : '');
       var kw = template.keywords.map(function(k) { return k.replace(/{type}/g, type); });
+      if (variationIdx !== -1) kw = kw.concat(BLOG_VARIATIONS[variationIdx].kw);
       var slug = title.toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
       if (existingSlugs[slug]) continue;
       var sections = '<h2>Introduction</h2><p>' + title + ' is essential for modern businesses.</p><p>Learn how ' + type + ' can transform your pipeline.</p>';
@@ -9392,7 +9439,7 @@ app.post('/api/admin/blog/generate-all', adminAuth, function(req, res) {
       var jsonLdAll = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"' + title.replace(/"/g, '\\"') + '","description":"' + desc.replace(/"/g, '\\"') + '","datePublished":"' + new Date().toISOString() + '","author":{"@type":"Organization","name":"9amLeads","url":"https://9amleads.com"},"publisher":{"@type":"Organization","name":"9amLeads","url":"https://9amleads.com"},"mainEntityOfPage":"https://9amleads.com/blog/' + slug + '","keywords":"' + kw.join(', ') + '"}</script>';
       var prodLinkAll = 'https://9amleads.com/' + (template.category === 'newbusiness' ? 'newbusinessalert/' : template.category === 'planning' ? 'planningleads/' : template.category === 'tenders' ? 'tenders/' : template.category === 'probate' ? 'probateleads/' : 'movingleadsdaily/');
       var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + title + ' | 9amLeads Blog</title><meta name="description" content="' + desc + '"><meta name="keywords" content="' + kw.join(', ') + '"><meta property="og:title" content="' + title + '"><meta property="og:description" content="' + desc + '"><meta property="og:url" content="https://9amleads.com/blog/' + slug + '"><meta property="og:type" content="article"><meta property="og:site_name" content="9amLeads"><link rel="canonical" href="https://9amleads.com/blog/' + slug + '">' + jsonLdAll + '<style>body{font-family:Inter,sans-serif;background:#000;color:#fff;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}h1{font-size:28px;font-weight:800}h2{font-size:20px;font-weight:700;margin-top:32px}p{color:#ccc}a{color:#0ea5e9}</style></head><body><h1>' + title + '</h1><p>' + desc + '</p>' + sections + '<h2>Get Started with 9amLeads</h2><p>Ready to put these strategies into practice? <a href="' + prodLinkAll + '" style="color:#0ea5e9">Explore ' + productName + '</a> and start receiving fresh ' + type + ' every morning. Start your free 7-day trial today.</p><hr style="border:none;border-top:1px solid #222;margin:32px 0"><div style="font-size:12px;color:#666"><strong>About 9amLeads</strong> - We deliver fresh, exclusive business leads every morning at 9am. <a href="https://9amleads.com" style="color:#0ea5e9">Visit 9amLeads.com</a> to learn more.</div></body></html>';
-      var post = { id: 'blog_' + Date.now() + '_' + bi, title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_index: bi, word_count: wordCount, reading_time: Math.ceil(wordCount / 200) + ' min read', created_at: new Date().toISOString(), published: true };
+      var post = { id: 'blog_' + Date.now() + '_' + bi, title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_key: templateKey, template_index: variationIdx, word_count: wordCount, reading_time: Math.ceil(wordCount / 200) + ' min read', created_at: new Date().toISOString(), published: true };
       dbData.blog_posts.push(post);
       generated.push(post);
     }
@@ -12769,22 +12816,20 @@ cron.schedule('0 4 * * *', async () => {
     if (!dbData.blog_posts) dbData.blog_posts = [];
 
     // 1. Auto-generate up to 3 posts per day (keeps fresh content flowing)
-        var templates = BLOG_TEMPLATES;
-    var usedIndices = dbData.blog_posts.map(function(p) { return p.template_index; });
-    var available = [];
-    for (var ti = 0; ti < templates.length; ti++) {
-      if (usedIndices.indexOf(ti) === -1) available.push(ti);
-    }
+    var available = blogAvailableTemplates(dbData);
     var types = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads', planning: 'planning leads', tenders: 'tender opportunities', general: 'business leads' };
     var generated = [];
     for (var bi = 0; bi < Math.min(3, available.length); bi++) {
       var tIndex = available[bi];
-      var template = templates[tIndex];
+      var template = tIndex.template;
+      var templateKey = tIndex.key;
+      var variationIdx = tIndex.varIndex;
       var productName = PRODCAT[template.category] || 'Business Leads';
       var type = types[template.category] || 'leads';
-      var title = template.title.replace(/{type}/g, type);
-      var desc = template.desc.replace(/{type}/g, type);
+      var title = blogRenderTitle(template, variationIdx).replace(/{type}/g, type);
+      var desc = template.desc.replace(/{type}/g, type) + (variationIdx !== -1 ? BLOG_VARIATIONS[variationIdx].desc : '');
       var kw = template.keywords.map(function(k) { return k.replace(/{type}/g, type); });
+      if (variationIdx !== -1) kw = kw.concat(BLOG_VARIATIONS[variationIdx].kw);
       var slug = title.toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
       if (dbData.blog_posts.some(function(p) { return p.slug === slug; })) continue;
       var paraPool = [
@@ -12809,7 +12854,7 @@ cron.schedule('0 4 * * *', async () => {
       var wordCount = sections.replace(/<[^>]+>/g, '').split(/\s+/).length;
       var jsonLd = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"' + title.replace(/"/g, '\\"') + '","description":"' + desc.replace(/"/g, '\\"') + '","datePublished":"' + new Date().toISOString() + '","author":{"@type":"Organization","name":"9amLeads","url":"https://9amleads.com"},"publisher":{"@type":"Organization","name":"9amLeads","url":"https://9amleads.com"},"mainEntityOfPage":"https://9amleads.com/blog/' + slug + '","keywords":"' + kw.join(', ') + '"}</script>';
       var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + title + ' | 9amLeads Blog</title><meta name="description" content="' + desc + '"><meta name="keywords" content="' + kw.join(', ') + '"><meta property="og:title" content="' + title + '"><meta property="og:description" content="' + desc + '"><meta property="og:url" content="https://9amleads.com/blog/' + slug + '"><meta property="og:type" content="article"><meta property="og:site_name" content="9amLeads"><link rel="canonical" href="https://9amleads.com/blog/' + slug + '">' + jsonLd + '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:Inter,sans-serif;background:#000;color:#fff;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}h1{font-size:28px;font-weight:800;font-family:Outfit,sans-serif}h2{font-size:20px;font-weight:700;margin-top:32px;color:#f5f5f5}p{color:#ccc}a{color:#0ea5e9}</style></head><body><h1>' + title + '</h1><p style="color:#888">' + desc + '</p>' + sections + '<hr style="border:none;border-top:1px solid #222;margin:32px 0"><div style="font-size:12px;color:#666"><strong>About 9amLeads</strong> - We deliver fresh, exclusive business leads every morning at 9am. <a href="https://9amleads.com" style="color:#0ea5e9">Visit 9amLeads.com</a> to learn more.</div></body></html>';
-      var post = { id: 'blog_' + Date.now() + '_' + bi, title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_index: tIndex, word_count: wordCount, reading_time: Math.ceil(wordCount / 200) + ' min read', created_at: new Date().toISOString(), published: true, auto_generated: true };
+      var post = { id: 'blog_' + Date.now() + '_' + bi, title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_key: templateKey, template_index: variationIdx, word_count: wordCount, reading_time: Math.ceil(wordCount / 200) + ' min read', created_at: new Date().toISOString(), published: true, auto_generated: true };
       dbData.blog_posts.push(post);
       generated.push(post);
       seoLog.push('Generated: ' + slug);
