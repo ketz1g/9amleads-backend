@@ -4301,11 +4301,11 @@ cron.schedule('5 6 * * *', async () => {
 // Delivery runs Mon-Fri at 09:00 UK time (handles BST/GMT automatically via timezone).
 var __deliveryFireCount = 0;
 var __lastDeliveryFire = '';
-// ===== DELIVERY CRON: Mon-Fri 13:15 UK ===== (timezone: Europe/London)
-cron.schedule('15 13 * * 1-5', async () => {
+// ===== DELIVERY CRON: Mon-Fri 13:30 UK ===== (timezone: Europe/London)
+cron.schedule('30 13 * * 1-5', async () => {
   __deliveryFireCount++;
   __lastDeliveryFire = new Date().toISOString();
-  console.log('[13:15 UK] Running delivery...');
+  console.log('[13:30 UK] Running delivery...');
   try {
     const http = require('http');
     var body = JSON.stringify({});
@@ -4973,7 +4973,7 @@ cron.schedule('0 0 * * *', async () => {
     var ukHourH = parseInt(new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hour12: false }));
     var ukMinH = parseInt(new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', minute: '2-digit' }));
     var isWeekday = [1,2,3,4,5].indexOf(new Date().getDay()) !== -1;
-    if (isWeekday && (ukHourH > 13 || (ukHourH === 13 && ukMinH >= 30)) && (__deliveryFireCount === 0)) {
+    if (isWeekday && (ukHourH > 13 || (ukHourH === 13 && ukMinH >= 45)) && (__deliveryFireCount === 0)) {
       console.log('[HEALTH] Delivery did not fire today — re-triggering now (safety)');
       try {
         var httpD = require('http');
