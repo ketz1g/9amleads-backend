@@ -9287,10 +9287,15 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
     var dbData = getDb();
     if (!dbData.blog_posts) dbData.blog_posts = [];
     var count = Math.min(BLOG_BATCH_SIZE, 5);
+    var usedIndices = dbData.blog_posts.map(function(p) { return p.template_index; });
+    var available = [];
+    for (var ai = 0; ai < BLOG_TEMPLATES.length; ai++) {
+      if (usedIndices.indexOf(ai) === -1) available.push(ai);
+    }
     var generated = [];
-    for (var bi = 0; bi < count; bi++) {
-      var ti = dbData.blog_posts.length + bi;
-            var templates = BLOG_TEMPLATES;
+    for (var bi = 0; bi < count && bi < available.length; bi++) {
+      var ti = available[bi];
+      var templates = BLOG_TEMPLATES;
       var types = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads', planning: 'planning leads', tenders: 'tender opportunities', general: 'business leads' };
       var template = templates[ti % templates.length];
       var productName = PRODCAT[template.category] || 'Business Leads';
