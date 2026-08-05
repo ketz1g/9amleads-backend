@@ -9860,7 +9860,7 @@ function syncCustomers(product) {
             function chParseDate(ds) { if (!ds) return 0; var t = Date.parse(ds); return isNaN(t) ? 0 : t; }
             function chDateStr(ms) { return new Date(ms).toISOString().split('T')[0]; }
             function chFetchAdvanced(fromDate, cb) {
-              var url = '/advanced-search/companies?incorporated_from=' + fromDate + '&size=100&start_index=0&company_status=active';
+              var url = '/advanced-search/companies?incorporated_from=' + fromDate + '&size=250&start_index=0&company_status=active';
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeySimple + ':').toString('base64'), 'Accept': 'application/json', 'User-Agent': '9amLeads/1.0' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
