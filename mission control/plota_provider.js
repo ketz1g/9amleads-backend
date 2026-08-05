@@ -88,14 +88,18 @@ async function collectFresh(freshnessHours) {
   // We search all categories and filter server-side
   var allApps = [];
   // Reduced categories to avoid rate limiting (demo key: 20 req/h)
-  // Combined categories for broader results with fewer requests
-  var data1 = await apiRequest('/v1/applications?date_from=' + dateFrom + '&limit=100');
-  if (data1 && data1.data) allApps = allApps.concat(data1.data);
-  // Fetch one more page for more results if available
-  if (allApps.length < 50) {
-    await new Promise(function(r) { setTimeout(r, 1000); });
-    var data2 = await apiRequest('/v1/applications?date_from=' + dateFrom + '&limit=100&offset=100');
-    if (data2 && data2.data) allApps = allApps.concat(data2.data);
+  // Combined categories for broader results with fewer requests.
+  // Fetch up to 5 pages of 100 (500 apps) so a real PLOTA key captures the full
+  // daily supply across the councils PLOTA covers.
+  var maxPages = 5;
+  for (var pg = 0; pg < maxPages; pg++) {
+    var dataPage = await apiRequest('/v1/applications?date_from=' + dateFrom + '&limit=100&offset=' + (pg * 100));
+    if (dataPage && dataPage.data && dataPage.data.length > 0) {
+      allApps = allApps.concat(dataPage.data);
+      if (pg < maxPages - 1) await new Promise(function(r) { setTimeout(r, 1000); });
+    } else {
+      break;
+    }
   }
 
   // Dedup by reference + council
