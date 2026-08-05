@@ -9344,7 +9344,10 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
     var generated = [];
     var debugAvail = available.length;
     var debugFirst = available.slice(0,3).map(function(a) { return a.key; });
+    var debugSkipped = 0;
+    var debugError = '';
     for (var bi = 0; bi < count && bi < available.length; bi++) {
+      try {
       var ti = available[bi];
       var templates = BLOG_TEMPLATES;
       var template = ti.template;
@@ -9358,7 +9361,7 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
       var kw = template.keywords.map(function(k) { return k.replace(/{type}/g, type); });
       if (variationIdx !== -1) kw = kw.concat(BLOG_VARIATIONS[variationIdx].kw);
       var slug = title.toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
-      if (dbData.blog_posts.some(function(p) { return p.slug === slug; })) continue;
+      if (dbData.blog_posts.some(function(p) { return p.slug === slug; })) { debugSkipped++; continue; }
       var paraPool = [
         'In today\'s market, businesses need every advantage. ' + title + ' is one of the most effective ways to stay ahead.',
         productName + ' provide a stream of exclusive opportunities your competitors don\'t have access to.',
@@ -9382,9 +9385,10 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
       var post = { id: 'blog_' + Date.now() + '_' + bi, title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_key: templateKey, template_index: variationIdx, word_count: wordCount, reading_time: Math.ceil(wordCount / 200) + ' min read', created_at: new Date().toISOString(), published: true };
       dbData.blog_posts.push(post);
       generated.push(post);
+      } catch(innerE) { debugError = innerE.message; break; }
     }
     fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
-    res.json({ success: true, count: generated.length });
+    res.json({ success: true, count: generated.length, debug: { available: debugAvail, first: debugFirst, skipped: debugSkipped, error: debugError } });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
