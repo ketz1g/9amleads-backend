@@ -182,10 +182,14 @@ function formatApifyTenders(items, locationFilter) {
 // The old /api/rest/2.0/notices JSON API was retired. The HTML search
 // results page (www.contractsfinder.service.gov.uk/search/results) still
 // returns real, current notices and is parseable without a key.
-function fetchTendersFromHTML(keywords, location, maxCount) {
+function fetchTendersFromHTML(keywords, location, maxCount, pageNum) {
   return new Promise((resolve) => {
-    const searchTerm = Array.isArray(keywords) ? keywords.join(' ') : (keywords || 'construction');
-    const searchPath = '/search/results?keywords=' + encodeURIComponent(searchTerm);
+    const searchTerm = Array.isArray(keywords) ? keywords.join(' ') : (keywords || '');
+    // Paginated Contracts Finder search. page=1 is the first page; the site
+    // returns ~20 results per page. Add statuses=current + stage so we capture
+    // live opportunities only.
+    const pg = pageNum && pageNum > 1 ? '&page=' + pageNum : '';
+    const searchPath = '/search/results?keywords=' + encodeURIComponent(searchTerm) + '&tenderStage=2&statuses=current' + pg;
     const options = {
       hostname: 'www.contractsfinder.service.gov.uk',
       path: searchPath,
@@ -270,11 +274,26 @@ function fetchTendersFromHTML(keywords, location, maxCount) {
 // Collect fresh tenders for the distributor (exported for production server)
 async function collectTendersLeads(config) {
   config = config || {};
-  const keywords = config.keywords || 'construction';
+  const keywords = config.keywords || '';
   const location = config.location || '';
-  const maxCount = config.maxCount || 100;
-  let leads = await fetchTendersFromHTML(keywords, location, maxCount);
-  return leads;
+  const maxCount = config.maxCount || 250;
+  // Paginate Contracts Finder (empty keyword = ALL live notices). ~20 per page.
+  // Loop up to 12 pages (~240 notices) or until a page returns fewer than 10
+  // (end of results) — captures the full daily supply.
+  async function paginate() {
+    let all = [];
+    for (let p = 1; p <= 12; p++) {
+      let page = await fetchTendersFromHTML(keywords, location, maxCount, p);
+      if (!page || page.length === 0) break;
+      all = all.concat(page);
+      if (all.length >= maxCount) break;
+      if (page.length < 10) break;
+      // small delay to be polite to the site
+      await new Promise(r => setTimeout(r, 400));
+    }
+    return all;
+  }
+  return paginate();
 }
 
 // ===== TENDER DETAIL ENRICHMENT =====
