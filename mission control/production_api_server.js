@@ -5102,16 +5102,42 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         } catch(e) { return true; }
       }
       var availByProd = {};
+      var availFreshByProd = {};
       products.forEach(function(p) {
-        availByProd[p] = (db.leads || []).filter(function(l) {
+        var pool = (db.leads || []).filter(function(l) {
           if (l.customer_id !== cust.id || l.delivered !== 0 || l.product !== p) return false;
           if (p === 'moving' && !isMovingFresh(l)) return false;
           return true;
         });
+        availByProd[p] = pool;
+        // FRESHNESS (24h): build a strictly-fresh pool. Leads are only "fresh" if
+        // their first-visible/updated/created date is within the last 24 hours.
+        var fresh = pool.filter(function(l) {
+          try {
+            var fd = JSON.parse(l.data || '{}');
+            var fv = fd.firstVisibleDate || fd.updateDate || fd.incorporationDate || fd.publishedDate || fd.scrapedAt || l.created_at || '';
+            if (!fv) return false;
+            var t24 = new Date(Date.now() - 24 * 3600000).toISOString();
+            return fv >= t24;
+          } catch(e) { return false; }
+        });
+        availFreshByProd[p] = fresh;
       });
       var pickedIds = [];
       if (primaryPickedId) pickedIds.push(primaryPickedId);
       var totalNeeded = totalDailyLimit;
+      // EXACT-COUNT GUARANTEE: never over-deliver. If leads were already delivered
+      // to this customer today (e.g. a manual re-run, or the 09:00 + 09:30 watchdog
+      // both fired), only deliver the remaining gap so the customer gets EXACTLY the
+      // promised count — no more, no less.
+      var alreadyDeliveredToday = (db.leads || []).filter(function(l) {
+        return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today);
+      }).length;
+      totalNeeded = Math.max(0, totalNeeded - alreadyDeliveredToday);
+      if (totalNeeded === 0) {
+        console.log('[DELIVERY] ' + cust.email + ' already received ' + alreadyDeliveredToday + ' today (promise=' + totalDailyLimit + ') — skipping (exact-count)');
+        continue;
+      }
       // Per-product daily caps (multi-product customers): track how many leads of
       // each product we've taken this batch and stop at each product's own limit.
       var prodTaken = {};
@@ -5131,11 +5157,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var usedAreas = {};
       custAreas.forEach(function(a) { usedAreas[a] = {}; });
       var areaCycle = 0;
-      for (var r1p = 0; r1p < products.length && custLeads.length < totalDailyLimit; r1p++) {
+        for (var r1p = 0; r1p < products.length && custLeads.length < totalNeeded; r1p++) {
         var r1prod = products[r1p];
         if (prodTaken[r1prod] >= prodDailyCap(r1prod)) continue;
         if (!canTakeProduct(r1prod, cust.plan, weekStart2, today, custLeads)) continue;
-        var r1pool = (availByProd[r1prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+        var r1pool = (availFreshByProd[r1prod] && availFreshByProd[r1prod].length > 0 ? availFreshByProd[r1prod] : (availByProd[r1prod] || [])).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
         if (r1pool.length === 0) continue;
         // Try least-represented area first (works for any coverage type with specific areas)
         if (custAreas.length > 0) {
@@ -5163,7 +5189,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             var r2prod = products[r2p];
             if (prodTaken[r2prod] >= prodDailyCap(r2prod)) continue;
             if (!canTakeProduct(r2prod, cust.plan, weekStart2, today, custLeads)) continue;
-            var r2pool = (availByProd[r2prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+            var r2pool = (availFreshByProd[r2prod] && availFreshByProd[r2prod].length > 0 ? availFreshByProd[r2prod] : (availByProd[r2prod] || [])).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
             if (r2pool.length === 0) continue;
           if (custAreas.length > 0) {
             var counts2 = areaCounts(custLeads, custAreas);
