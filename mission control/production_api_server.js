@@ -3503,16 +3503,16 @@ const LEAD_TYPE_RULES = {
     coverage: ['postcode', 'county', 'region'],
     plans: {
       free_trial: { default: 5, postcode: 5, county: 5, region: 5 },
-      starter:  { default: 10, postcode: 10, county: 10, region: 10 },
-      pro:      { default: 25, postcode: 25, county: 25, region: 25 },
-      enterprise: { default: 50, postcode: 50, county: 50, region: 50 },
+      starter:  { default: 5,  postcode: 5,  county: 5,  region: 5 },
+      pro:      { default: 10, postcode: 10, county: 10, region: 10 },
+      enterprise: { default: 20, postcode: 20, county: 20, region: 20 },
     },
     min_area: 'postcode', up_to: false, enabled: true,
     price_starter: 'price_1Tm6PRADspDnFpfBx80lgJ84',
     price_growth: 'price_1Tm6PSADspDnFpfBXakzcGEL',
     price_power: 'price_1Tm6PSADspDnFpfBGRGc5zQ9',
-    weekly_est: { starter: 50, pro: 125, enterprise: 250 },
-    monthly_est: { starter: 200, pro: 500, enterprise: 1000 }
+    weekly_est: { starter: 25, pro: 50, enterprise: 100 },
+    monthly_est: { starter: 100, pro: 200, enterprise: 400 }
   },
   planning: {
     name: 'Planning Permissions', key: 'planning', local: false, model: 'weekly',
