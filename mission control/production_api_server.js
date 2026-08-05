@@ -9985,13 +9985,12 @@ function syncCustomers(product) {
               }
               return all;
             }
-            // Fetch companies incorporated since 24h ago; if too few, widen to 48h
-            var nbAll = await chFetchAll(chDateStr(cutoff24hMs));
-            console.log('[SCRAPER] NB: Companies House returned ' + nbAll.length + ' for last 24h');
-            if (nbAll.length < 5) {
-              var nb48extra = await chFetchAll(chDateStr(cutoff48hMs));
-              nbAll = nbAll.concat(nb48extra);
-            }
+            // Fetch companies incorporated since 48h ago — a wider window gives a
+            // much richer pool (~8,000+ active companies vs ~1,900 for 24h) so
+            // customers always have supply. Fresh-first delivery still prioritises
+            // the newest 24h for the "fresh" promise.
+            var nbAll = await chFetchAll(chDateStr(cutoff48hMs));
+            console.log('[SCRAPER] NB: Companies House returned ' + nbAll.length + ' for last 48h');
             // Deduplicate and map to standard format
             var nbSeen = {};
             var nbFiltered = nbAll.filter(function(c) {
