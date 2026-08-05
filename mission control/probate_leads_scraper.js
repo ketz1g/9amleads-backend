@@ -362,10 +362,13 @@ function fetchGazetteProbate(maxItems) {
           if (Array.isArray(items) && items.length > 0) {
             console.log('    Gazette returned ' + items.length + ' probate notices');
             resolve(items.map(function(p) {
+              var addr = p.decedent_address || '';
+              var pc = (addr.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0] || '';
               return {
                 id: 'GAZ_' + (p.notice_id || Date.now() + '_' + Math.random().toString(36).slice(2,6)),
                 name: p.decedent_name || '',
-                deceasedAddress: p.decedent_address || '',
+                surname: (p.decedent_name || '').split(' ').slice(-1)[0] || '',
+                deceasedAddress: addr,
                 dateOfDeath: p.decedent_dod || '',
                 grantDate: p.publish_date || '',
                 claimExpiry: p.claim_expiry_date || '',
@@ -376,6 +379,7 @@ function fetchGazetteProbate(maxItems) {
                 executorAddress: p.executor_address || '',
                 solicitorAddress: p.solicitor_address || '',
                 noticeUrl: p.notice_url || '',
+                postcode: pc,
                 occupation: p.decedent_occupation || '',
                 grantType: p.notice_type || 'Deceased Estates',
                 source: 'The Gazette',
@@ -858,26 +862,38 @@ async function collectProbateLeads(config) {
   var maxItems = config.maxItems || 50;
   var self = this;
   return (async function() {
-    var results = await fetchGazetteHTML(maxItems, 1);
-    if (!results || results.length === 0) return [];
-    if (results.length >= 25) {
-      var page2 = await fetchGazetteHTML(maxItems, 2);
-      if (page2 && page2.length > 0) {
-        var seen = {};
-        results.forEach(function(r){ seen[r.id] = 1; });
-        page2.forEach(function(r){ if (!seen[r.id]) { seen[r.id] = 1; results.push(r); } });
+    var results = [];
+    // PRIMARY: Apify Gazette actor. It runs on Apify's infrastructure, which
+    // bypasses the Gazette blocking Render's datacenter IP (the free HTML scrape
+    // returns 0 from Render but ~97 from residential IPs). Returns rich data:
+    // name, full address + postcode, date of death, executor, solicitor.
+    if (config.useApifyFirst !== false && APIFY_API_KEY) {
+      console.log('[PROBATE] Trying Apify Gazette actor first (bypasses Render IP block)...');
+      try { results = await fetchGazetteProbate(maxItems); } catch(e) { console.log('[PROBATE] Apify error:', e.message); }
+      if (results.length > 0) {
+        console.log('[PROBATE] Apify Gazette actor returned ' + results.length + ' probate records');
+        return results;
       }
     }
-    // Enrich the free notices with full addresses (street + locality + postcode)
-    // by fetching each notice's linked-data JSON. Free, no Apify cost.
-    if (results.length > 0 && config.skipEnrich !== true) {
-      try {
-        results = await enrichGazetteLeads(results, maxItems);
-      } catch(e) { console.log('[PROBATE] Enrich error: ' + e.message); }
+    // FALLBACK: free Gazette HTML (works from residential IPs / local dev).
+    var html = await fetchGazetteHTML(maxItems, 1);
+    if (html && html.length > 0) {
+      if (html.length >= 25) {
+        var page2 = await fetchGazetteHTML(maxItems, 2);
+        if (page2 && page2.length > 0) {
+          var seen = {};
+          html.forEach(function(r){ seen[r.id] = 1; });
+          page2.forEach(function(r){ if (!seen[r.id]) { seen[r.id] = 1; html.push(r); } });
+        }
+      }
+      results = html;
+      if (config.skipEnrich !== true) {
+        try { results = await enrichGazetteLeads(results, maxItems); } catch(e) { console.log('[PROBATE] Enrich error: ' + e.message); }
+      }
+      if (results.length > 0) return results;
     }
     if (results.length === 0) {
-    // Fallback: Gazette via Apify actor (accurate details but PAY_PER_EVENT and
-    // can time out). Retry once.
+    // Fallback: Gazette via Apify actor (if useApifyFirst was false or both empty). Retry once.
     console.log('[PROBATE] Gazette HTML empty, trying Apify Gazette actor...');
     var gazAttempts = config.retries === 0 ? 1 : 2;
     for (var gz = 0; gz < gazAttempts && results.length === 0; gz++) {
