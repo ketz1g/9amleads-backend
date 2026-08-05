@@ -9021,6 +9021,148 @@ app.post('/api/admin/impersonate', adminAuth, async (req, res) => {
 // ===== BLOG ENGINE & SEO ENDPOINTS =====
 var BLOG_BATCH_SIZE = 10;
 var PRODCAT = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permission Leads', tenders: 'Public Sector Tenders', general: 'Business Leads' };
+
+// ===== SHARED BLOG TEMPLATE LIBRARY =====
+// Single source of truth for the SEO blog generator (cron + manual buttons).
+// {type} is replaced per-category (e.g. "moving leads"). Template index is the
+// position in this array and is stored on each generated post as template_index.
+var BLOG_TEMPLATES = [
+  { category: 'moving', title: 'How to Get More {type} Without Spending on Ads', desc: 'Learn how removal companies and estate agents can generate consistent {type} without expensive advertising.', keywords: ['{type} lead generation', '{type} UK', 'get {type}'] },
+  { category: 'moving', title: 'The Ultimate Guide to {type} for Estate Agents', desc: 'Everything estate agents need to know about {type} and how to win instructions.', keywords: ['{type} for estate agents', 'estate agent {type}', '{type} leads for agents'] },
+  { category: 'moving', title: '10 Proven Tips to Convert More {type} Into Bookings', desc: 'Stop losing customers. These actionable tips will help you convert more {type}.', keywords: ['convert {type}', '{type} conversion tips', '{type} booking rate'] },
+  { category: 'moving', title: 'Why {type} Are Better Than Pay-Per-Click Advertising', desc: 'Compare the ROI of {type} vs PPC advertising for your business.', keywords: ['{type} vs PPC', '{type} ROI', '{type} advertising'] },
+  { category: 'moving', title: 'How to Choose the Right Postcode Areas for Your {type}', desc: 'Select postcode territories that maximise {type} volume and conversion.', keywords: ['{type} postcode targeting', 'best postcodes for {type}', '{type} areas'] },
+  { category: 'moving', title: 'The Morning Routine That Doubles Your {type} Conversion Rate', desc: 'The 9am routine that top companies use to dominate {type}.', keywords: ['{type} morning routine', '{type} conversion system', '{type} workflow'] },
+  { category: 'moving', title: 'How {type} Are Collected: From Listing to Your Inbox', desc: 'Behind the scenes of {type} collection and daily delivery.', keywords: ['how {type} work', '{type} explained', '{type} data sources'] },
+  { category: 'moving', title: 'How to Win Estate Agent Instructions Using {type}', desc: 'Use {type} to secure more property instructions for your agency.', keywords: ['{type} for agents', 'win instructions with {type}', '{type} strategy'] },
+  { category: 'moving', title: 'The Best Time of Day to Contact {type} Prospects', desc: 'Timing is everything. Learn when {type} prospects are most responsive.', keywords: ['{type} best time', '{type} response time', 'when to contact {type}'] },
+  { category: 'moving', title: 'How to Build a Referral Engine From Your {type}', desc: 'Turn {type} wins into a self-sustaining referral system.', keywords: ['{type} referrals', '{type} word of mouth', '{type} repeat business'] },
+  { category: 'moving', title: '{type} Pricing Strategies That Win More Quotes', desc: 'How to price your quotes when converting {type} into paying jobs.', keywords: ['{type} pricing', '{type} quotes', '{type} rates'] },
+  { category: 'moving', title: 'How to Follow Up {type} Without Being Annoying', desc: 'A structured follow-up sequence that converts {type} without pestering.', keywords: ['{type} follow-up', '{type} sequence', '{type} nurture'] },
+  { category: 'moving', title: 'The Complete {type} Toolkit for Removal Companies', desc: 'Everything a removal company needs to convert {type} into bookings.', keywords: ['{type} toolkit', '{type} for removals', '{type} playbook'] },
+  { category: 'moving', title: 'How to Spot High-Value {type} Early', desc: 'Identify the {type} with the highest profit potential before competitors.', keywords: ['high-value {type}', '{type} value', '{type} scoring'] },
+  { category: 'moving', title: 'The Psychology of Buying: Why {type} Prospects Act Fast', desc: 'Understand buyer psychology to convert {type} more effectively.', keywords: ['{type} psychology', '{type} buyer behaviour', '{type} mindset'] },
+  { category: 'moving', title: 'How to Use Google Business Profile to Convert {type}', desc: 'Leverage your local SEO presence to win {type} prospects.', keywords: ['{type} local SEO', '{type} google business', '{type} local presence'] },
+  { category: 'moving', title: 'Common Mistakes When Handling {type}', desc: 'Avoid the mistakes that cost you valuable {type} and revenue.', keywords: ['{type} mistakes', 'avoid {type} errors', '{type} best practice'] },
+  { category: 'moving', title: 'How to Scale Your Business With {type}', desc: 'Grow from one van to a fleet using a steady stream of {type}.', keywords: ['scale with {type}', '{type} growth', '{type} expansion'] },
+  { category: 'moving', title: 'The Seasonal Guide to {type} in the UK', desc: 'Understand seasonal peaks and troughs in {type} across the year.', keywords: ['seasonal {type}', '{type} trends', '{type} UK market'] },
+  { category: 'moving', title: 'How to Get Reviews That Convert More {type}', desc: 'Social proof that turns {type} prospects into customers.', keywords: ['{type} reviews', '{type} testimonials', '{type} social proof'] },
+  { category: 'moving', title: 'The 60-Second Rule: Speed and {type}', desc: 'Why speed of first contact decides who wins each {type}.', keywords: ['{type} speed', '{type} first response', '{type} urgency'] },
+  { category: 'moving', title: 'How to Train Your Team to Handle {type}', desc: 'Staff training for maximising {type} conversion in your business.', keywords: ['{type} team training', '{type} staff', '{type} onboarding'] },
+  { category: 'moving', title: 'The Hidden Costs of Missing {type} Opportunities', desc: 'What ignoring {type} really costs your business each month.', keywords: ['{type} opportunity cost', 'missed {type}', '{type} revenue loss'] },
+  { category: 'moving', title: 'How to Use Data to Improve Your {type} Results', desc: 'Measure and improve your {type} conversion with simple data.', keywords: ['{type} analytics', '{type} metrics', '{type} tracking'] },
+  { category: 'moving', title: '{type} for New Removal Companies: Getting Started', desc: 'A beginner\'s guide to {type} for new removal businesses.', keywords: ['{type} for beginners', 'start with {type}', '{type} starter guide'] },
+  { category: 'moving', title: 'The Anatomy of a Winning {type} Response', desc: 'What the best {type} responses have in common.', keywords: ['{type} response', '{type} outreach', '{type} messaging'] },
+  { category: 'moving', title: 'How to Stand Out When Contacting {type}', desc: 'Cut through the noise when prospects receive {type} from many companies.', keywords: ['stand out with {type}', '{type} differentiation', '{type} unique'] },
+  { category: 'moving', title: 'The Future of {type}: Trends to Watch', desc: 'Where the {type} market is heading and how to prepare.', keywords: ['future of {type}', '{type} trends 2026', '{type} outlook'] },
+  { category: 'moving', title: 'How to Turn One-Time {type} Into Long-Term Clients', desc: 'Retention strategies that keep {type} clients coming back.', keywords: ['{type} retention', '{type} loyalty', '{type} repeat clients'] },
+  { category: 'moving', title: 'The Financial Case for Investing in {type}', desc: 'A clear ROI breakdown for adding {type} to your marketing mix.', keywords: ['{type} ROI', '{type} investment', '{type} business case'] },
+  { category: 'probate', title: 'How Solicitors Can Win More {type} With Daily Leads', desc: 'A guide for solicitors on winning more {type} through daily lead generation.', keywords: ['{type} for solicitors', 'win {type}', '{type} generation'] },
+  { category: 'probate', title: 'The Executor\'s Journey: Why Timing Matters in {type}', desc: 'Understanding executor timing is key to winning {type}.', keywords: ['{type} timing', '{type} executor', '{type} conversion'] },
+  { category: 'probate', title: '{type} vs Traditional Marketing: Which Delivers Better ROI', desc: 'Compare {type} against traditional marketing methods for probate work.', keywords: ['{type} ROI', '{type} marketing', '{type} vs traditional'] },
+  { category: 'probate', title: '5 Mistakes Solicitors Make Following Up on {type}', desc: 'Avoid common mistakes that cost valuable {type} and hurt conversion.', keywords: ['{type} mistakes', '{type} follow-up', '{type} best practice'] },
+  { category: 'probate', title: 'How to Build a Scalable {type} Pipeline', desc: 'Create a repeatable system for generating {type} every single day.', keywords: ['{type} pipeline', '{type} system', '{type} scalability'] },
+  { category: 'probate', title: 'The Complete {type} Checklist for New Probate Solicitors', desc: 'Everything new solicitors need to know about {type}.', keywords: ['{type} checklist', 'new solicitor {type}', '{type} onboarding'] },
+  { category: 'probate', title: 'How to Talk to Executors About {type}', desc: 'Communication strategies for {type} that build trust and win instructions.', keywords: ['{type} communication', 'talk to executors {type}', '{type} trust'] },
+  { category: 'probate', title: 'The First 48 Hours: {type} Best Practice', desc: 'Why the first 48 hours decide who wins each {type}.', keywords: ['{type} first 48 hours', '{type} speed', '{type} urgency'] },
+  { category: 'probate', title: 'How to Price {type} Services for Profit', desc: 'Pricing strategies that make {type} work profitable for your firm.', keywords: ['{type} pricing', '{type} fees', '{type} profit'] },
+  { category: 'probate', title: 'The Role of Wills and Estates in {type}', desc: 'How {type} connect to wills, estates and the broader probate market.', keywords: ['{type} wills', '{type} estates', '{type} probate market'] },
+  { category: 'probate', title: 'How to Handle Emotional Conversations Around {type}', desc: 'Navigate the sensitive human side of {type} with professionalism.', keywords: ['{type} empathy', '{type} sensitivity', '{type} professionalism'] },
+  { category: 'probate', title: 'How to Convert {type} Into Repeat Business', desc: 'Turn one-off {type} instructions into long-term client relationships.', keywords: ['{type} repeat business', '{type} retention', '{type} client care'] },
+  { category: 'probate', title: 'The Data Behind {type}: What the Register Tells You', desc: 'How official register data creates reliable {type}.', keywords: ['{type} data', '{type} register', '{type} sources'] },
+  { category: 'probate', title: 'How to Build a Team Around Your {type}', desc: 'Scaling your practice to handle more {type} volume.', keywords: ['{type} team', '{type} staffing', '{type} scaling'] },
+  { category: 'probate', title: 'The Legal Essentials of {type} Work', desc: 'Key legal knowledge every firm needs before pursuing {type}.', keywords: ['{type} legal', '{type} compliance', '{type} regulation'] },
+  { category: 'probate', title: 'How to Write Letters That Win {type}', desc: 'Craft compelling outreach letters for {type} prospects.', keywords: ['{type} letters', '{type} outreach', '{type} mailings'] },
+  { category: 'probate', title: 'The Cost of Not Pursuing {type} for Your Firm', desc: 'What firms lose by ignoring the {type} market.', keywords: ['{type} opportunity', 'missed {type}', '{type} revenue'] },
+  { category: 'probate', title: 'How to Use {type} to Grow Your Conveyancing Work', desc: 'Connect {type} to onward conveyancing instructions.', keywords: ['{type} conveyancing', '{type} cross-sell', '{type} growth'] },
+  { category: 'probate', title: 'The Seasonal Cycle of {type}', desc: 'Understand when {type} volume peaks throughout the year.', keywords: ['seasonal {type}', '{type} trends', '{type} cycle'] },
+  { category: 'probate', title: 'How to Track Success in {type}', desc: 'Metrics that show whether your {type} strategy is working.', keywords: ['{type} metrics', '{type} KPIs', '{type} measurement'] },
+  { category: 'newbusiness', title: 'How to Find and Win {type} Using Companies House Data', desc: 'Generate {type} from Companies House registrations.', keywords: ['{type} from Companies House', '{type} generation', '{type} UK'] },
+  { category: 'newbusiness', title: 'Why {type} Are the Best Source of B2B Growth', desc: 'Why {type} are the most undervalued B2B lead source.', keywords: ['{type} B2B', '{type} growth', '{type} strategy'] },
+  { category: 'newbusiness', title: 'How to Target {type} by Industry Sector', desc: 'Filter {type} by specific industries to find your ideal client.', keywords: ['{type} industry targeting', '{type} filtering', '{type} sectors'] },
+  { category: 'newbusiness', title: 'The {type} Playbook: From Registration to Closed Deal', desc: 'Complete playbook for turning {type} into paying customers.', keywords: ['{type} playbook', '{type} sales process', '{type} outreach'] },
+  { category: 'newbusiness', title: '10 Services You Can Sell to {type}', desc: 'Newly registered businesses need everything from accounting to web design.', keywords: ['services for {type}', '{type} opportunities', '{type} cross-sell'] },
+  { category: 'newbusiness', title: 'How to Sell to {type} Before Anyone Else', desc: 'First-mover advantage with {type} who just registered.', keywords: ['first contact {type}', '{type} speed', '{type} first mover'] },
+  { category: 'newbusiness', title: 'The Accountant\'s Guide to {type}', desc: 'Why {type} are the perfect clients for accountants.', keywords: ['{type} for accountants', '{type} bookkeeping', '{type} tax'] },
+  { category: 'newbusiness', title: 'How Web Designers Can Win {type}', desc: 'Every new business needs a website. Position yourself to win {type}.', keywords: ['{type} for web designers', '{type} websites', '{type} digital'] },
+  { category: 'newbusiness', title: 'How to Onboard {type} Clients Smoothly', desc: 'Make the first 30 days with {type} clients effortless.', keywords: ['{type} onboarding', '{type} client experience', '{type} retention'] },
+  { category: 'newbusiness', title: 'The {type} CRM: Managing Your Pipeline', desc: 'Use a CRM to track and convert {type} effectively.', keywords: ['{type} CRM', '{type} pipeline', '{type} management'] },
+  { category: 'newbusiness', title: 'How to Cold Call {type} Successfully', desc: 'A proven script and approach for cold calling {type}.', keywords: ['{type} cold calling', '{type} scripts', '{type} phone outreach'] },
+  { category: 'newbusiness', title: 'How to Email {type} That Get Replies', desc: 'Write {type} emails that prospects actually respond to.', keywords: ['{type} email outreach', '{type} email templates', '{type} replies'] },
+  { category: 'newbusiness', title: 'The First Month of {type}: A Timeline', desc: 'What to expect in your first 30 days of pursuing {type}.', keywords: ['{type} first month', '{type} timeline', '{type} expectations'] },
+  { category: 'newbusiness', title: 'How to Cross-Sell to Existing {type} Clients', desc: 'Grow revenue by offering more services to {type} clients.', keywords: ['{type} cross-selling', '{type} upsell', '{type} expansion'] },
+  { category: 'newbusiness', title: 'The Ultimate {type} Outreach Calendar', desc: 'A monthly calendar for consistent {type} outreach.', keywords: ['{type} calendar', '{type} outreach plan', '{type} consistency'] },
+  { category: 'newbusiness', title: 'How to Use LinkedIn to Win {type}', desc: 'Build authority and win {type} through LinkedIn.', keywords: ['{type} LinkedIn', '{type} social selling', '{type} network'] },
+  { category: 'newbusiness', title: 'The {type} Survival Guide for Small Agencies', desc: 'How small agencies compete for {type} against bigger firms.', keywords: ['{type} for small agencies', '{type} competition', '{type} niche'] },
+  { category: 'newbusiness', title: 'How to Measure {type} Campaign Success', desc: 'Track the right metrics for your {type} campaigns.', keywords: ['{type} metrics', '{type} analytics', '{type} ROI'] },
+  { category: 'newbusiness', title: 'The Psychology of {type} Owners', desc: 'Understand what newly registered business owners respond to.', keywords: ['{type} psychology', '{type} buyer persona', '{type} behaviour'] },
+  { category: 'newbusiness', title: 'How to Automate Your {type} Follow-Ups', desc: 'Set up automated follow-up sequences for {type}.', keywords: ['{type} automation', '{type} drip campaigns', '{type} follow-up'] },
+  { category: 'newbusiness', title: 'Why Most {type} Fail to Get Clients (and How to Win)', desc: 'The gap between {type} and closed deals, and how to bridge it.', keywords: ['{type} failure', '{type} success', '{type} conversion'] },
+  { category: 'newbusiness', title: 'How to Partner With Other Providers for {type}', desc: 'Strategic partnerships that multiply {type} opportunities.', keywords: ['{type} partnerships', '{type} referrals', '{type} network'] },
+  { category: 'newbusiness', title: 'The {type} Lead Scoring Model', desc: 'Prioritise your {type} so you chase the right prospects first.', keywords: ['{type} lead scoring', '{type} prioritisation', '{type} qualification'] },
+  { category: 'newbusiness', title: 'How to Build Authority in the {type} Niche', desc: 'Position yourself as the go-to provider for {type}.', keywords: ['{type} authority', '{type} thought leadership', '{type} niche'] },
+  { category: 'newbusiness', title: 'The Complete {type} Marketing Stack', desc: 'The tools you need to win {type} consistently.', keywords: ['{type} tools', '{type} stack', '{type} software'] },
+  { category: 'planning', title: 'How to Win {type} Contracts: A Complete Guide', desc: 'Win {type} contracts for builders and architects.', keywords: ['{type} contracts', 'win {type}', '{type} for builders'] },
+  { category: 'planning', title: 'The Value of {type} for Architects and Designers', desc: 'Why {type} fill your project pipeline.', keywords: ['{type} for architects', '{type} for designers', '{type} pipeline'] },
+  { category: 'planning', title: '{type}: Spotting High-Value Projects Before Competitors', desc: 'Identify the most valuable {type} before anyone else.', keywords: ['{type} value', '{type} prioritisation', '{type} opportunities'] },
+  { category: 'planning', title: 'How to Use {type} to Grow Your Construction Business', desc: 'Use {type} to build a consistent construction pipeline.', keywords: ['{type} for construction', '{type} for builders', '{type} growth'] },
+  { category: 'planning', title: '{type} vs Tenders: Which Should You Focus On?', desc: 'Compare {type} and public sector tenders for your business.', keywords: ['{type} vs tenders', '{type} comparison', '{type} strategy'] },
+  { category: 'planning', title: 'How to Read a Planning Application: {type} Basics', desc: 'Understand the key details in {type} applications.', keywords: ['{type} applications', 'read {type}', '{type} basics'] },
+  { category: 'planning', title: 'The Architect\'s Pipeline: Using {type} Effectively', desc: 'How architects convert {type} into design projects.', keywords: ['{type} for architects', '{type} design work', '{type} projects'] },
+  { category: 'planning', title: 'How to Spot Expansion Opportunities in {type}', desc: 'Find {type} with the biggest upside for your firm.', keywords: ['{type} expansion', '{type} upside', '{type} opportunity'] },
+  { category: 'planning', title: 'The Builder\'s Guide to {type} Enquiries', desc: 'Turn {type} into confirmed building projects.', keywords: ['{type} for builders', '{type} enquiries', '{type} conversion'] },
+  { category: 'planning', title: 'How to Price {type} Work Profitably', desc: 'Bid and price {type} work so your margins stay healthy.', keywords: ['{type} pricing', '{type} estimating', '{type} margins'] },
+  { category: 'planning', title: 'The Kitchen Fitter\'s {type} Opportunity', desc: 'Why {type} are ideal leads for kitchen and bathroom fitters.', keywords: ['{type} for kitchen fitters', '{type} for bathroom fitters', '{type} home improvement'] },
+  { category: 'planning', title: 'How to Win Extensions With {type}', desc: 'Target {type} for home extensions and loft conversions.', keywords: ['{type} extensions', '{type} loft conversions', '{type} home builds'] },
+  { category: 'planning', title: 'The Legal Side of {type} for Contractors', desc: 'What contractors need to know about {type} regulations.', keywords: ['{type} regulations', '{type} building regs', '{type} compliance'] },
+  { category: 'planning', title: 'How to Create a {type} Referral Network', desc: 'Build relationships that feed you {type} from other trades.', keywords: ['{type} referrals', '{type} partnerships', '{type} network'] },
+  { category: 'planning', title: 'The Seasonal Nature of {type}', desc: 'Plan your year around the rhythm of {type}.', keywords: ['seasonal {type}', '{type} trends', '{type} planning cycle'] },
+  { category: 'planning', title: 'How to Respond to {type} Quickly', desc: 'Speed your response to {type} to win more projects.', keywords: ['{type} speed', '{type} response', '{type} fast quotes'] },
+  { category: 'planning', title: 'The Complete {type} Toolkit for Tradespeople', desc: 'Everything a tradesperson needs to win {type}.', keywords: ['{type} toolkit', '{type} for trades', '{type} playbook'] },
+  { category: 'planning', title: 'How to Turn {type} Into Design-Build Projects', desc: 'Offer design-build services to win more {type}.', keywords: ['{type} design-build', '{type} full service', '{type} packages'] },
+  { category: 'planning', title: 'The ROI of {type} for Small Builders', desc: 'Calculate the return on {type} for small construction firms.', keywords: ['{type} ROI', '{type} for small builders', '{type} profit'] },
+  { category: 'planning', title: 'How to Use {type} to Beat Your Competitors', desc: 'Win the {type} your competitors are missing.', keywords: ['{type} competitive edge', '{type} advantage', '{type} competition'] },
+  { category: 'tenders', title: 'How to Win More {type} as a Small Business', desc: 'Small businesses can win {type} with the right strategy.', keywords: ['{type} for small business', 'win {type}', '{type} strategy'] },
+  { category: 'tenders', title: 'The Complete {type} Response Toolkit', desc: 'Everything you need to respond to {type} effectively.', keywords: ['{type} response', '{type} submission', '{type} toolkit'] },
+  { category: 'tenders', title: 'How to Find {type} That Match Your Business', desc: 'Find {type} that perfectly match your expertise.', keywords: ['find {type}', '{type} filtering', '{type} matching'] },
+  { category: 'tenders', title: 'The ROI of {type}: Is It Worth the Investment?', desc: 'Calculate the real return on investment for {type}.', keywords: ['{type} ROI', '{type} investment', '{type} value'] },
+  { category: 'tenders', title: 'How to Write Winning {type} Responses', desc: 'Expert tips for writing {type} responses that actually win.', keywords: ['{type} writing', '{type} tips', '{type} bid'] },
+  { category: 'tenders', title: 'The {type} Selection Process Explained', desc: 'Understand how {type} are evaluated and won.', keywords: ['{type} process', '{type} evaluation', '{type} scoring'] },
+  { category: 'tenders', title: 'How to Find the Right {type} for Your Sector', desc: 'Match {type} to your sector, from IT to cleaning.', keywords: ['{type} by sector', '{type} IT', '{type} construction'] },
+  { category: 'tenders', title: 'The IT Company\'s Guide to {type}', desc: 'How IT businesses win government {type}.', keywords: ['{type} for IT', '{type} technology', '{type} digital services'] },
+  { category: 'tenders', title: 'How Cleaning Companies Win {type}', desc: 'Target {type} for cleaning and facilities services.', keywords: ['{type} for cleaning', '{type} facilities', '{type} FM'] },
+  { category: 'tenders', title: 'The First {type} You Should Bid On', desc: 'Choose your first {type} wisely to build momentum.', keywords: ['first {type}', '{type} beginners', '{type} starting out'] },
+  { category: 'tenders', title: 'How to Write a Compliance Section for {type}', desc: 'Get your compliance docs right for {type} submissions.', keywords: ['{type} compliance', '{type} documentation', '{type} requirements'] },
+  { category: 'tenders', title: 'The Pricing Strategy for {type}', desc: 'Price your {type} bids to win and stay profitable.', keywords: ['{type} pricing', '{type} bid strategy', '{type} margins'] },
+  { category: 'tenders', title: 'How to Win Framework {type}', desc: 'Get onto frameworks to access exclusive {type}.', keywords: ['{type} frameworks', '{type} approved suppliers', '{type} panels'] },
+  { category: 'tenders', title: 'The Team Behind Winning {type}', desc: 'Bid writing teams that win {type} consistently.', keywords: ['{type} bid team', '{type} resources', '{type} capability'] },
+  { category: 'tenders', title: 'Common Mistakes in {type} Submissions', desc: 'Avoid the errors that get {type} rejected.', keywords: ['{type} mistakes', '{type} rejection', '{type} errors'] },
+  { category: 'tenders', title: 'How to Use Case Studies to Win {type}', desc: 'Prove your track record in {type} responses.', keywords: ['{type} case studies', '{type} evidence', '{type} examples'] },
+  { category: 'tenders', title: 'The {type} Calendar: Key Deadlines', desc: 'Track the key dates in the {type} year.', keywords: ['{type} deadlines', '{type} calendar', '{type} schedule'] },
+  { category: 'tenders', title: 'How to Win Your First {type} in 90 Days', desc: 'A 90-day plan to win your first {type}.', keywords: ['{type} 90 days', '{type} fast win', '{type} quick start'] },
+  { category: 'tenders', title: 'The Difference Between {type} and Frameworks', desc: 'Know whether {type} or frameworks suit your business.', keywords: ['{type} vs frameworks', '{type} types', '{type} options'] },
+  { category: 'tenders', title: 'How to Partner Up to Win {type}', desc: 'Consortium bids to win {type} too big for one firm.', keywords: ['{type} consortium', '{type} partnerships', '{type} joint bids'] },
+  { category: 'general', title: 'Why Daily {type} Beat Weekly Lead Batches', desc: 'Why daily delivery outperforms weekly lead batches.', keywords: ['daily {type}', '{type} frequency', '{type} delivery'] },
+  { category: 'general', title: 'The Ultimate {type} Strategy Guide for UK', desc: 'Complete strategy for multi-channel lead generation.', keywords: ['{type} strategy', '{type} guide', '{type} UK'] },
+  { category: 'general', title: 'How to Track and Improve Your {type} Conversion', desc: 'Data-driven approach to tracking conversion rate.', keywords: ['{type} conversion rate', 'track {type}', '{type} analytics'] },
+  { category: 'general', title: 'The Cost of {type} vs Other Marketing Channels', desc: 'Compare {type} costs against Google Ads and Facebook.', keywords: ['{type} cost', '{type} vs ads', '{type} pricing'] },
+  { category: 'general', title: 'How {type} Can Transform Your Business in 30 Days', desc: 'Real results from businesses using {type}.', keywords: ['{type} transformation', '{type} results', '{type} case study'] },
+  { category: 'general', title: 'The Beginner\'s Guide to {type}', desc: 'Everything you need to know to start with {type}.', keywords: ['{type} for beginners', 'start {type}', '{type} 101'] },
+  { category: 'general', title: 'How to Choose the Right {type} Provider', desc: 'What to look for when buying {type}.', keywords: ['choose {type}', '{type} providers', '{type} comparison'] },
+  { category: 'general', title: 'The {type} Starter Checklist for UK Businesses', desc: 'A checklist to launch your {type} strategy today.', keywords: ['{type} checklist', '{type} launch', '{type} quick start'] },
+  { category: 'general', title: 'How {type} Fit Into Your Marketing Funnel', desc: 'See where {type} sit in your sales funnel.', keywords: ['{type} funnel', '{type} marketing', '{type} pipeline'] },
+  { category: 'general', title: 'The Truth About {type}: Myths Debunked', desc: 'Separate fact from fiction about {type}.', keywords: ['{type} myths', '{type} truth', '{type} facts'] },
+  { category: 'general', title: 'How to Get the Most From Your {type}', desc: 'Maximise the value of every {type} you receive.', keywords: ['maximise {type}', '{type} value', '{type} best practices'] },
+  { category: 'general', title: 'The {type} Guide for Busy Business Owners', desc: 'Time-efficient strategies for {type} in a busy schedule.', keywords: ['{type} for busy owners', '{type} time saving', '{type} efficiency'] },
+  { category: 'general', title: 'How to Combine {type} With Your Current Marketing', desc: 'Blend {type} with SEO, PPC and referrals.', keywords: ['{type} with SEO', '{type} with PPC', '{type} omni-channel'] },
+  { category: 'general', title: 'The Psychology of Buying {type}', desc: 'Understand why businesses invest in {type}.', keywords: ['{type} psychology', '{type} buying behaviour', '{type} motivation'] },
+  { category: 'general', title: 'How to Set Realistic Expectations for {type}', desc: 'Know what {type} can and can\'t do for your business.', keywords: ['{type} expectations', '{type} reality', '{type} results'] },
+  { category: 'general', title: 'The Annual Review: Refreshing Your {type} Strategy', desc: 'A yearly framework to keep your {type} strategy sharp.', keywords: ['{type} annual review', '{type} refresh', '{type} strategy'] },
+  { category: 'general', title: 'How to Educate Your Team About {type}', desc: 'Get your whole team aligned on {type}.', keywords: ['{type} team education', '{type} training', '{type} culture'] },
+  { category: 'general', title: 'The {type} Glossary Every Business Should Know', desc: 'Key terms around {type} explained simply.', keywords: ['{type} glossary', '{type} terms', '{type} jargon'] },
+  { category: 'general', title: 'How to Budget for {type}', desc: 'Plan your marketing budget around {type}.', keywords: ['{type} budget', '{type} spend', '{type} planning'] },
+  { category: 'general', title: 'The Next 12 Months of {type}: What to Expect', desc: 'Look ahead at how {type} will evolve.', keywords: ['{type} 2026', '{type} future', '{type} outlook'] }
+];
 var LEAD_TYPE_PAGES = { moving: '/movingleadsdaily/', probate: '/probateleads/', newbusiness: '/newbusinessalert/', planning: '/planningleads/', tenders: '/tenders/', general: '/pricing/' };
 
 // GET /api/admin/blog/posts Ã¢â‚¬â€ List all blog posts
@@ -9028,7 +9170,7 @@ app.get('/api/admin/blog/posts', adminAuth, function(req, res) {
   try {
     var dbData = getDb();
     var posts = (dbData.blog_posts || []).filter(function(p) { return p.published; });
-    var templatesTotal = 35;
+    var templatesTotal = BLOG_TEMPLATES.length;
     res.json({ posts: posts, total: posts.length, templates_total: templatesTotal, templates_used: posts.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -9063,7 +9205,7 @@ app.get('/api/admin/seo/report', adminAuth, function(req, res) {
     var thisMonth = published.filter(function(p) { return p.created_at && p.created_at >= new Date(Date.now() - 30*86400000).toISOString(); });
     var usedIndices = posts.map(function(p) { return p.template_index; });
     var remaining = 0;
-    var templatesTotal = 35;
+    var templatesTotal = BLOG_TEMPLATES.length;
     for (var ti = 0; ti < templatesTotal; ti++) { if (usedIndices.indexOf(ti) === -1) remaining++; }
     res.json({
       total_posts: published.length,
@@ -9148,21 +9290,7 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
     var generated = [];
     for (var bi = 0; bi < count; bi++) {
       var ti = dbData.blog_posts.length + bi;
-      var templates = [
-        { category: 'moving', title: 'How to Get More {type} Leads Without Spending on Ads', desc: 'Learn how removal companies and estate agents can generate consistent {type} leads without expensive advertising.', keywords: ['{type} lead generation', '{type} leads UK', 'get {type} leads'] },
-        { category: 'moving', title: 'The Ultimate Guide to {type} for Estate Agents', desc: 'Everything estate agents need to know about {type}.', keywords: ['{type} for estate agents', 'estate agent {type}', '{type} leads for agents'] },
-        { category: 'moving', title: '10 Proven Tips to Convert More {type} Into Bookings', desc: 'Stop losing customers. These actionable tips will help you convert more {type}.', keywords: ['convert {type}', '{type} conversion tips', '{type} booking rate'] },
-        { category: 'probate', title: 'How Solicitors Can Win More {type} With Daily Leads', desc: 'A guide for solicitors on winning more {type} through daily lead generation.', keywords: ['{type} for solicitors', 'win {type}', '{type} generation'] },
-        { category: 'probate', title: 'The Executor\'s Journey: Why Timing Matters in {type}', desc: 'Understanding executor timing is key to winning {type}.', keywords: ['{type} timing', '{type} executor', '{type} conversion'] },
-        { category: 'newbusiness', title: 'How to Find and Win {type} Using Companies House Data', desc: 'Generate {type} from Companies House registrations.', keywords: ['{type} from Companies House', '{type} generation', '{type} UK'] },
-        { category: 'newbusiness', title: 'Why {type} Are the Best Source of B2B Growth', desc: 'Why {type} are the most undervalued B2B lead source.', keywords: ['{type} B2B', '{type} growth', '{type} strategy'] },
-        { category: 'planning', title: 'How to Win {type} Contracts: A Complete Guide', desc: 'Win {type} contracts for builders and architects.', keywords: ['{type} contracts', 'win {type}', '{type} for builders'] },
-        { category: 'planning', title: 'The Value of {type} for Architects and Designers', desc: 'Why {type} fill your project pipeline.', keywords: ['{type} for architects', '{type} for designers', '{type} pipeline'] },
-        { category: 'tenders', title: 'How to Win More {type} as a Small Business', desc: 'Small businesses can win {type} with the right strategy.', keywords: ['{type} for small business', 'win {type}', '{type} strategy'] },
-        { category: 'tenders', title: 'The Complete {type} Response Toolkit', desc: 'Everything you need to respond to {type} effectively.', keywords: ['{type} response', '{type} submission', '{type} toolkit'] },
-        { category: 'general', title: 'Why Daily {type} Beat Weekly Lead Batches Every Time', desc: 'Why daily lead delivery outperforms weekly batches.', keywords: ['daily {type}', '{type} frequency', '{type} timing'] },
-        { category: 'general', title: 'The Ultimate {type} Strategy Guide for UK Businesses', desc: 'Complete strategy for multi-channel lead generation.', keywords: ['{type} strategy', '{type} guide', 'UK {type}'] }
-      ];
+            var templates = BLOG_TEMPLATES;
       var types = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads', planning: 'planning leads', tenders: 'tender opportunities', general: 'business leads' };
       var template = templates[ti % templates.length];
       var productName = PRODCAT[template.category] || 'Business Leads';
@@ -9238,41 +9366,7 @@ app.post('/api/admin/blog/generate-all', adminAuth, function(req, res) {
     var dbData = getDb();
     if (!dbData.blog_posts) dbData.blog_posts = [];
     var usedIndices = dbData.blog_posts.map(function(p) { return p.template_index; });
-    var templates = [
-      { category: 'moving', title: 'How to Get More {type} Leads Without Spending on Ads', desc: 'Learn how removal companies can generate consistent {type} leads without expensive advertising.', keywords: ['{type} lead generation', '{type} leads UK'] },
-      { category: 'moving', title: 'The Ultimate Guide to {type} for Estate Agents', desc: 'Everything estate agents need to know about {type}.', keywords: ['{type} for estate agents', 'estate agent {type}'] },
-      { category: 'moving', title: '10 Proven Tips to Convert More {type} Into Bookings', desc: 'Stop losing customers with these actionable tips.', keywords: ['convert {type}', '{type} conversion tips'] },
-      { category: 'moving', title: 'Why {type} Are Better Than Pay-Per-Click Advertising', desc: 'Compare ROI of {type} vs PPC advertising.', keywords: ['{type} vs PPC', '{type} ROI'] },
-      { category: 'moving', title: 'How to Choose the Right Postcode Areas for Your {type}', desc: 'Select postcode territories that maximise {type} volume.', keywords: ['{type} postcode targeting', 'best postcodes for {type}'] },
-      { category: 'moving', title: 'The Morning Routine That Doubles Your {type} Conversion Rate', desc: 'The 9am routine that top companies use to dominate.', keywords: ['{type} morning routine', '{type} conversion system'] },
-      { category: 'moving', title: 'How {type} Are Collected: From Listing to Your Inbox', desc: 'Behind the scenes of {type} collection.', keywords: ['how {type} work', '{type} explained'] },
-      { category: 'probate', title: 'How Solicitors Can Win More {type} With Daily Leads', desc: 'A guide for solicitors on winning more {type}.', keywords: ['{type} for solicitors', 'win {type}'] },
-      { category: 'probate', title: 'The Executor\'s Journey: Why Timing Matters in {type}', desc: 'Understanding executor timing is key to winning {type}.', keywords: ['{type} timing', '{type} executor'] },
-      { category: 'probate', title: '{type} vs Traditional Marketing: Which Delivers Better ROI', desc: 'Compare {type} against traditional marketing methods.', keywords: ['{type} ROI', '{type} marketing'] },
-      { category: 'probate', title: '5 Mistakes Solicitors Make Following Up on {type}', desc: 'Avoid common mistakes that cost valuable {type}.', keywords: ['{type} mistakes', '{type} follow-up'] },
-      { category: 'probate', title: 'How to Build a Scalable {type} Pipeline', desc: 'Create a repeatable system for generating {type}.', keywords: ['{type} pipeline', '{type} system'] },
-      { category: 'probate', title: 'The Complete {type} Checklist for New Probate Solicitors', desc: 'Everything new solicitors need to know about {type}.', keywords: ['{type} checklist', 'new solicitor {type}'] },
-      { category: 'newbusiness', title: 'How to Find and Win {type} Using Companies House Data', desc: 'Generate {type} from Companies House registrations.', keywords: ['{type} from Companies House', '{type} generation'] },
-      { category: 'newbusiness', title: 'Why {type} Are the Best Source of B2B Growth', desc: 'Why {type} are the most undervalued B2B lead source.', keywords: ['{type} B2B', '{type} growth'] },
-      { category: 'newbusiness', title: 'How to Target {type} by Industry Sector', desc: 'Filter {type} by specific industries.', keywords: ['{type} industry targeting', '{type} filtering'] },
-      { category: 'newbusiness', title: 'The {type} Playbook: From Registration to Closed Deal', desc: 'Complete playbook for turning {type} into paying customers.', keywords: ['{type} playbook', '{type} sales process'] },
-      { category: 'newbusiness', title: '10 Services You Can Sell to {type}', desc: 'Newly registered businesses need everything.', keywords: ['services for {type}', '{type} opportunities'] },
-      { category: 'planning', title: 'How to Win {type} Contracts: A Complete Guide', desc: 'Win {type} contracts for builders and architects.', keywords: ['{type} contracts', 'win {type}'] },
-      { category: 'planning', title: 'The Value of {type} for Architects and Designers', desc: 'Why {type} fill your project pipeline.', keywords: ['{type} for architects', '{type} for designers'] },
-      { category: 'planning', title: '{type}: Spotting High-Value Projects Before Competitors', desc: 'Identify the most valuable {type}.', keywords: ['{type} value', '{type} prioritisation'] },
-      { category: 'planning', title: 'How to Use {type} to Grow Your Construction Business', desc: 'Use {type} to build a consistent pipeline.', keywords: ['{type} for construction', '{type} for builders'] },
-      { category: 'planning', title: '{type} vs Tenders: Which Should You Focus On?', desc: 'Compare {type} and public sector tenders.', keywords: ['{type} vs tenders', '{type} comparison'] },
-      { category: 'tenders', title: 'How to Win More {type} as a Small Business', desc: 'Small businesses can win {type} with the right strategy.', keywords: ['{type} for small business', 'win {type}'] },
-      { category: 'tenders', title: 'The Complete {type} Response Toolkit', desc: 'Everything to respond to {type} effectively.', keywords: ['{type} response', '{type} submission'] },
-      { category: 'tenders', title: 'How to Find {type} That Match Your Business', desc: 'Find {type} that perfectly match your expertise.', keywords: ['find {type}', '{type} filtering'] },
-      { category: 'tenders', title: 'The ROI of {type}: Is It Worth the Investment?', desc: 'Calculate the real return on investment for {type}.', keywords: ['{type} ROI', '{type} investment'] },
-      { category: 'tenders', title: 'How to Write Winning {type} Responses', desc: 'Expert tips for writing {type} responses that win.', keywords: ['{type} writing', '{type} tips'] },
-      { category: 'general', title: 'Why Daily {type} Beat Weekly Lead Batches', desc: 'Why daily delivery outperforms weekly batches.', keywords: ['daily {type}', '{type} frequency'] },
-      { category: 'general', title: 'The Ultimate {type} Strategy Guide for UK', desc: 'Complete strategy for multi-channel lead generation.', keywords: ['{type} strategy', '{type} guide'] },
-      { category: 'general', title: 'How to Track and Improve Your {type} Conversion', desc: 'Data-driven approach to tracking conversion rate.', keywords: ['{type} conversion rate', 'track {type}'] },
-      { category: 'general', title: 'The Cost of {type} vs Other Marketing Channels', desc: 'Compare {type} costs against Google Ads and Facebook.', keywords: ['{type} cost', '{type} vs ads'] },
-      { category: 'general', title: 'How {type} Can Transform Your Business in 30 Days', desc: 'Real results from businesses using {type}.', keywords: ['{type} transformation', '{type} results'] }
-    ];
+        var templates = BLOG_TEMPLATES;
     var types = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads', planning: 'planning leads', tenders: 'tender opportunities', general: 'business leads' };
     var generated = [];
     for (var bi = 0; bi < templates.length; bi++) {
@@ -12667,41 +12761,7 @@ cron.schedule('0 4 * * *', async () => {
     if (!dbData.blog_posts) dbData.blog_posts = [];
 
     // 1. Auto-generate up to 3 posts per day (keeps fresh content flowing)
-    var templates = [
-      { category: 'moving', title: 'How to Get More {type} Leads Without Spending on Ads', desc: 'Learn how removal companies and estate agents can generate consistent {type} leads without expensive advertising.', keywords: ['{type} lead generation', '{type} leads UK', 'get {type} leads'] },
-      { category: 'moving', title: 'The Ultimate Guide to {type} for Estate Agents', desc: 'Everything estate agents need to know about {type}.', keywords: ['{type} for estate agents', 'estate agent {type}', '{type} leads for agents'] },
-      { category: 'moving', title: '10 Proven Tips to Convert More {type} Into Bookings', desc: 'Stop losing customers. These actionable tips will help you convert more {type}.', keywords: ['convert {type}', '{type} conversion tips', '{type} booking rate'] },
-      { category: 'moving', title: 'Why {type} Are Better Than Pay-Per-Click Advertising', desc: 'Compare the ROI of {type} vs PPC advertising for your business.', keywords: ['{type} vs PPC', '{type} ROI', '{type} advertising'] },
-      { category: 'moving', title: 'How to Choose the Right Postcode Areas for Your {type}', desc: 'Select postcode territories that maximise {type} volume and conversion.', keywords: ['{type} postcode targeting', 'best postcodes for {type}', '{type} areas'] },
-      { category: 'moving', title: 'The Morning Routine That Doubles Your {type} Conversion Rate', desc: 'The 9am routine that top companies use to dominate {type}.', keywords: ['{type} morning routine', '{type} conversion system', '{type} workflow'] },
-      { category: 'moving', title: 'How {type} Are Collected: From Listing to Your Inbox', desc: 'Behind the scenes of {type} collection and delivery.', keywords: ['how {type} work', '{type} explained', '{type} data sources'] },
-      { category: 'probate', title: 'How Solicitors Can Win More {type} With Daily Leads', desc: 'A guide for solicitors on winning more {type} through daily lead generation.', keywords: ['{type} for solicitors', 'win {type}', '{type} generation'] },
-      { category: 'probate', title: 'The Executor\'s Journey: Why Timing Matters in {type}', desc: 'Understanding executor timing is key to winning {type}.', keywords: ['{type} timing', '{type} executor', '{type} conversion'] },
-      { category: 'probate', title: '{type} vs Traditional Marketing: Which Delivers Better ROI', desc: 'Compare {type} against traditional marketing methods for probate work.', keywords: ['{type} ROI', '{type} marketing', '{type} vs traditional'] },
-      { category: 'probate', title: '5 Mistakes Solicitors Make Following Up on {type}', desc: 'Avoid common mistakes that cost valuable {type} and hurt conversion.', keywords: ['{type} mistakes', '{type} follow-up', '{type} best practice'] },
-      { category: 'probate', title: 'How to Build a Scalable {type} Pipeline', desc: 'Create a repeatable system for generating {type} every single day.', keywords: ['{type} pipeline', '{type} system', '{type} scalability'] },
-      { category: 'probate', title: 'The Complete {type} Checklist for New Probate Solicitors', desc: 'Everything new solicitors need to know about {type}.', keywords: ['{type} checklist', 'new solicitor {type}', '{type} onboarding'] },
-      { category: 'newbusiness', title: 'How to Find and Win {type} Using Companies House Data', desc: 'Generate {type} from Companies House registrations.', keywords: ['{type} from Companies House', '{type} generation', '{type} UK'] },
-      { category: 'newbusiness', title: 'Why {type} Are the Best Source of B2B Growth', desc: 'Why {type} are the most undervalued B2B lead source.', keywords: ['{type} B2B', '{type} growth', '{type} strategy'] },
-      { category: 'newbusiness', title: 'How to Target {type} by Industry Sector', desc: 'Filter {type} by specific industries to find your ideal client.', keywords: ['{type} industry targeting', '{type} filtering', '{type} sectors'] },
-      { category: 'newbusiness', title: 'The {type} Playbook: From Registration to Closed Deal', desc: 'Complete playbook for turning {type} into paying customers.', keywords: ['{type} playbook', '{type} sales process', '{type} outreach'] },
-      { category: 'newbusiness', title: '10 Services You Can Sell to {type}', desc: 'Newly registered businesses need everything from accounting to web design.', keywords: ['services for {type}', '{type} opportunities', '{type} cross-sell'] },
-      { category: 'planning', title: 'How to Win {type} Contracts: A Complete Guide', desc: 'Win {type} contracts for builders and architects.', keywords: ['{type} contracts', 'win {type}', '{type} for builders'] },
-      { category: 'planning', title: 'The Value of {type} for Architects and Designers', desc: 'Why {type} fill your project pipeline.', keywords: ['{type} for architects', '{type} for designers', '{type} pipeline'] },
-      { category: 'planning', title: '{type}: Spotting High-Value Projects Before Competitors', desc: 'Identify the most valuable {type} before anyone else.', keywords: ['{type} value', '{type} prioritisation', '{type} opportunities'] },
-      { category: 'planning', title: 'How to Use {type} to Grow Your Construction Business', desc: 'Use {type} to build a consistent construction pipeline.', keywords: ['{type} for construction', '{type} for builders', '{type} growth'] },
-      { category: 'planning', title: '{type} vs Tenders: Which Should You Focus On?', desc: 'Compare {type} and public sector tenders for your business.', keywords: ['{type} vs tenders', '{type} comparison', '{type} strategy'] },
-      { category: 'tenders', title: 'How to Win More {type} as a Small Business', desc: 'Small businesses can win {type} with the right strategy.', keywords: ['{type} for small business', 'win {type}', '{type} strategy'] },
-      { category: 'tenders', title: 'The Complete {type} Response Toolkit', desc: 'Everything you need to respond to {type} effectively.', keywords: ['{type} response', '{type} submission', '{type} toolkit'] },
-      { category: 'tenders', title: 'How to Find {type} That Match Your Business', desc: 'Find {type} that perfectly match your expertise.', keywords: ['find {type}', '{type} filtering', '{type} matching'] },
-      { category: 'tenders', title: 'The ROI of {type}: Is It Worth the Investment?', desc: 'Calculate the real return on investment for {type}.', keywords: ['{type} ROI', '{type} investment', '{type} value'] },
-      { category: 'tenders', title: 'How to Write Winning {type} Responses', desc: 'Expert tips for writing {type} responses that actually win.', keywords: ['{type} writing', '{type} tips', '{type} bid'] },
-      { category: 'general', title: 'Why Daily {type} Beat Weekly Lead Batches', desc: 'Why daily delivery outperforms weekly lead batches.', keywords: ['daily {type}', '{type} frequency', '{type} delivery'] },
-      { category: 'general', title: 'The Ultimate {type} Strategy Guide for UK', desc: 'Complete strategy for multi-channel lead generation.', keywords: ['{type} strategy', '{type} guide', '{type} UK'] },
-      { category: 'general', title: 'How to Track and Improve Your {type} Conversion', desc: 'Data-driven approach to tracking conversion rate.', keywords: ['{type} conversion rate', 'track {type}', '{type} analytics'] },
-      { category: 'general', title: 'The Cost of {type} vs Other Marketing Channels', desc: 'Compare {type} costs against Google Ads and Facebook.', keywords: ['{type} cost', '{type} vs ads', '{type} pricing'] },
-      { category: 'general', title: 'How {type} Can Transform Your Business in 30 Days', desc: 'Real results from businesses using {type}.', keywords: ['{type} transformation', '{type} results', '{type} case study'] }
-    ];
+        var templates = BLOG_TEMPLATES;
     var usedIndices = dbData.blog_posts.map(function(p) { return p.template_index; });
     var available = [];
     for (var ti = 0; ti < templates.length; ti++) {
