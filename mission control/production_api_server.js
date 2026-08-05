@@ -2403,6 +2403,13 @@ app.put('/api/settings', authMiddleware, (req, res) => {
   if (phone) db.prepare('UPDATE customers SET phone = ? WHERE id = ?').run(phone, req.user.id);
   if (password && password.length >= 8) { var pwHash = require('bcryptjs').hashSync(password, 10); db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?').run(pwHash, req.user.id); }
   if (target_areas) {
+    // "All UK" selection => ukwide coverage (no specific postcode areas needed).
+    const hasAllUK = target_areas.some(function(a){ return /all[\s-]?uk/i.test(String(a)); });
+    if (hasAllUK) {
+      db.prepare('UPDATE customers SET coverage = ?, target_areas = ? WHERE id = ?').run('ukwide', JSON.stringify(['All UK']), req.user.id);
+      res.json({ success: true });
+      return;
+    }
     const validation = validatePostcodes(target_areas, customer.plan, customer.product, req.user.id);
     if (!validation.valid) {
       return res.status(400).json({ error: validation.errors.join(' ') });
