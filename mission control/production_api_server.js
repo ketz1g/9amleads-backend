@@ -10348,9 +10348,14 @@ function syncCustomers(product) {
         } else if (product === 'probate') {
           try {
             var probateScraper = require('./probate_leads_scraper');
-            leads = await probateScraper.collectProbateLeads();
+            // The Apify Gazette actor has a ~100s cold start; give it up to 200s
+            // but no more so a slow actor never hangs the whole pipeline.
+            leads = await Promise.race([
+              probateScraper.collectProbateLeads(),
+              new Promise(function(r){ setTimeout(function(){ r([]); }, 200000); })
+            ]);
             console.log('[SCRAPER] Probate raw scrape: ' + (leads ? leads.length : 0) + ' leads');
-            try { lastScrape.probate_raw = (leads ? leads.length : 0); lastScrape.probate_at = new Date().toISOString(); fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape, null, 2)); } catch(e2) {}
+            try { lastScrape.probate_raw = (leads ? leads.length : 0); lastScrape.probate_at = new Date().toISOString(); lastScrape.probate_apify = (leads && leads[0] && leads[0].source) || ''; fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape, null, 2)); } catch(e2) {}
             if (leads && leads.length > 0) {
               var fp = filterFresh(leads, 'scrapedAt');
               leads = fp.fresh.length > 0 ? fp.fresh : fp.fallback;
