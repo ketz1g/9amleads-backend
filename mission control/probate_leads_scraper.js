@@ -269,6 +269,7 @@ async function enrichGazetteLeads(leads, limit) {
   const max = limit || Math.min(leads.length, 30);
   for (let i = 0; i < max; i++) {
     const lead = leads[i];
+    if (!lead || !lead.id) continue;
     const noticeId = lead.id.replace('GAZ_', '');
     const detail = await fetchGazetteDetail(noticeId);
     if (detail) {
