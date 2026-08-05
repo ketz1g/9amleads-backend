@@ -344,7 +344,7 @@ function fetchGazetteProbate(maxItems) {
     const input = JSON.stringify({
       sp_intended_usage: 'other',
       sp_improvement_suggestions: 'testing',
-      maxItems: Math.min(maxItems || 100, 20)  // the actor is slow at scale; 20 completes in ~3.5min
+      maxItems: Math.min(maxItems || 100, 10)  // actor has ~100s cold start; 10 completes reliably
     });
     const options = {
       hostname: 'api.apify.com',
