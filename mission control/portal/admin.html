@@ -436,6 +436,19 @@ async function loadSeoReport() {
     if (d.last_generated) {
       html += '<div style="grid-column:1/-1;font-size:10px;color:#5c6480;text-align:center;padding:2px 0">Last post: ' + new Date(d.last_generated).toLocaleDateString() + '</div>';
     }
+    if (d.automation) {
+      var lastRun = d.automation.last_run ? new Date(d.automation.last_run).toLocaleString() : 'not yet run';
+      html += '<div style="grid-column:1/-1;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15);border-radius:8px;padding:10px;font-size:11px;color:#86efac">' +
+        '<div style="font-weight:700;margin-bottom:4px">\u2699\ufe0f SEO Automation: <span style="color:#22c55e">ACTIVE</span></div>' +
+        '<div>' + d.automation.cron + '</div>' +
+        '<div style="color:#5c6480;margin-top:3px">Last run: ' + lastRun + ' &middot; ' + d.automation.posts_left_to_auto + ' posts remaining in queue</div></div>';
+    }
+    if (d.backlinks) {
+      html += '<div style="grid-column:1/-1;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:10px;font-size:11px;color:#fcd34d">' +
+        '<div style="font-weight:700;margin-bottom:4px">\U0001f517 Backlinks</div>' +
+        '<div>' + d.backlinks.internal_links + '</div>' +
+        '<div style="color:#a16207;margin-top:3px">' + d.backlinks.suggestion + '</div></div>';
+    }
     document.getElementById('seoDashboard').innerHTML = html;
   } catch(e) { document.getElementById('seoDashboard').innerHTML = '<div style="color:#5c6480;font-size:11px">Error loading SEO data</div>'; }
 }
