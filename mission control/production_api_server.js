@@ -10001,12 +10001,14 @@ function syncCustomers(product) {
             }).map(function(c) {
               return { id: 'CH_NB_' + c.company_number, name: c.company_name.trim(), companyNumber: c.company_number, companyName: c.company_name.trim(), address: c.address_snippet || (c.registered_office_address ? [c.registered_office_address.address_line_1, c.registered_office_address.address_line_2, c.registered_office_address.locality, c.registered_office_address.region, c.registered_office_address.postal_code].filter(Boolean).join(', ') : ''), incorporationDate: c.date_of_creation || '', sicCode: (c.sic_codes || []).join(', ') || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
             });
-            // Strict: keep only those incorporated within 24h, else fallback to 48h
+            // Strict: keep only those incorporated within 24h, else fallback to 48h.
+            // We keep BOTH so the pool holds a richer supply — customers get the
+            // newest first, but a wider 48h window avoids quiet-day shortages.
             var nb24 = nbFiltered.filter(function(l){ var t = chParseDate(l.incorporationDate); return t >= cutoff24hMs; });
             var nb48 = nbFiltered.filter(function(l){ var t = chParseDate(l.incorporationDate); return t >= cutoff48hMs && t < cutoff24hMs; });
-            if (nb24.length >= 5) leads = nb24;
-            else if (nb48.length >= 5) leads = nb48;
-            else leads = nb24.concat(nb48).slice(0, 100);
+            if (nb24.length >= 5) leads = nb24.concat(nb48).slice(0, 4000);
+            else if (nb48.length >= 5) leads = nb48.slice(0, 4000);
+            else leads = nb24.concat(nb48).slice(0, 200);
             // Mark freshness for display
             leads = leads.map(function(l){
               var t = chParseDate(l.incorporationDate);
