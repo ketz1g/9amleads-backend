@@ -127,25 +127,32 @@ function fetchProbateRegistry() {
 // The search page (HTML) is free to fetch and includes notice IDs, deceased
 // names, publication dates. Detail pages add the full address and estate info.
 // OGL v3 licence (personal data requires care, but these are public notices).
-function fetchGazetteHTML(maxItems) {
+function fetchGazetteHTML(maxItems, pageNum) {
   return new Promise((resolve) => {
-    const searchPath = '/all-notices/notice?notice-type=deceased-estates&results-page-size=' + (maxItems || 50) + '&sort-by=latest-date';
+    const searchPath = '/all-notices/notice?notice-type=deceased-estates&results-page-size=' + (maxItems || 50) + '&sort-by=latest-date' + (pageNum && pageNum > 1 ? '&results-page=' + pageNum : '');
     const req = https.request({ hostname: 'www.thegazette.co.uk', path: searchPath, method: 'GET', headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36', 'Accept-Language': 'en-GB,en;q=0.9' }, timeout: 30000 }, (res) => {
       let body = '';
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
-        if (res.statusCode !== 200) { console.log('    Gazette HTML HTTP ' + res.statusCode); resolve([]); return; }
+        if (res.statusCode !== 200) { console.log('    Gazette HTTP ' + res.statusCode); resolve([]); return; }
+        // The Gazette search page uses <article id="item-..."> blocks. Each block
+        // contains the deceased name, notice id, publication date, and (when the
+        // search is in full-article mode) the deceased address.
         const articles = body.split('<article id="item-');
         const leads = [];
         for (let i = 1; i < articles.length; i++) {
           const a = articles[i];
           const idMatch = a.match(/notice\/(\d+)/);
           const titleMatch = a.match(/<h3>([\s\S]*?)<\/h3>/);
-          const dateMatch = a.match(/<dd>([0-9]{1,2} [A-Za-z]+ [0-9]{4})<\/dd>/);
+          const dateMatch = a.match(/Publication date<\/dt>\s*<dd>([0-9]{1,2} [A-Za-z]+ [0-9]{4})/);
           if (!idMatch || !titleMatch) continue;
           const name = titleMatch[1].replace(/<[^>]+>/g, '').trim();
           const noticeId = idMatch[1];
-          const pubDate = dateMatch ? dateMatch[1] : '';
+          const pubDate = dateMatch ? dateMatch[1].trim() : '';
+          // Extract deceased address from the block if present ("Address of Deceased")
+          let deceasedAddress = '';
+          const addrMatch = a.match(/Address of Deceased<\/dt>\s*<dd>([\s\S]*?)<\/dd>/);
+          if (addrMatch) deceasedAddress = addrMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
           // Parse name into surname-first format (Gazette lists "SURNAME, First Name")
           let deceasedName = name;
           let surname = '', firstNames = name;
@@ -159,7 +166,7 @@ function fetchGazetteHTML(maxItems) {
             id: 'GAZ_' + noticeId,
             name: deceasedName,
             surname: surname,
-            deceasedAddress: '',
+            deceasedAddress: deceasedAddress,
             dateOfDeath: '',
             grantDate: pubDate,
             claimExpiry: '',
@@ -190,36 +197,50 @@ function fetchGazetteHTML(maxItems) {
 // structured address (street, locality, postcode, region). Free, reliable.
 function fetchGazetteDetail(noticeId) {
   return new Promise((resolve) => {
-    const req = https.request({ hostname: 'www.thegazette.co.uk', path: '/notice/' + noticeId, method: 'GET', headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36', 'Accept-Language': 'en-GB,en;q=0.9' }, timeout: 15000 }, (res) => {
+    // Use the Gazette's structured linked-data JSON endpoint (much faster and more
+    // reliable than parsing the HTML detail page). Returns familyName, firstName,
+    // full address (street/locality/postcode/region), claim deadline, solicitor etc.
+    const req = https.request({ hostname: 'www.thegazette.co.uk', path: '/notice/' + noticeId + '/data.json?view=linked-data&_metadata=all', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36', 'Accept-Language': 'en-GB,en;q=0.9' }, timeout: 15000 }, (res) => {
       let body = '';
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
         if (res.statusCode !== 200) { resolve(null); return; }
-        const street = (body.match(/property="vcard:street-address"[^>]*>([^<]+)</) || [])[1];
-        const locality = (body.match(/property="vcard:locality"[^>]*>([^<]+)</) || [])[1];
-        const postcode = (body.match(/property="vcard:postal-code"[^>]*>([^<]+)</) || [])[1];
-        const region = (body.match(/property="vcard:region"[^>]*>([^<]+)</) || [])[1];
-        const fullName = (body.match(/property="vcard:fn"[^>]*>([^<]+)</) || [])[1];
-        const deceased = (body.match(/property="vcard:title"[^>]*>([^<]+)</) || [])[1];
-        const fullAddress = [street, locality].filter(Boolean).join(', ');
-        // Extract extra details: date of death, solicitor, executor
-        const dod = (body.match(/property="schema:dateOfDeath"[^>]*>([^<]+)</) || body.match(/(?:died|date of death)[^<]{0,40}?([0-9]{1,2} (?:January|February|March|April|May|June|July|August|September|October|November|December) [0-9]{4})/i) || [])[1];
-        // Find the notice text for solicitor/executor mentions
-        const cleanText = body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-        const solicitorMatch = cleanText.match(/(?:solicitor[s]?[:\s]+|solicitors?\s+(?:for|of)\s+)([A-Z][A-Za-z'& ]{3,60})/) || cleanText.match(/It is contacted by ([A-Z][A-Za-z'& ]{3,60})/) || [];
-        const executorMatch = cleanText.match(/(?:executor[s]?|personal representatives?|administrator[s]?)[:\s]+([A-Z][A-Za-z'& .]{3,60})/) || cleanText.match(/The executor[s]?[:\s]+([A-Z][A-Za-z'& .]{3,60})/) || [];
-        const claimantMatch = cleanText.match(/(?:address:|to the Personal Representatives of)[\s]+([A-Z][A-Za-z0-9'& .]{5,80})/) || [];
-        resolve({
-          deceasedAddress: fullAddress,
-          locality: locality || '',
-          postcode: postcode || '',
-          region: region || '',
-          deceasedName: fullName || deceased || '',
-          dateOfDeath: (dod || '').trim() || '',
-          solicitor: (solicitorMatch || [])[1] ? (solicitorMatch)[1].trim() : '',
-          executorName: (executorMatch || [])[1] ? (executorMatch)[1].trim() : (claimantMatch || [])[1] ? (claimantMatch)[1].trim() : '',
-          noticeText: cleanText.substring(0, 400)
-        });
+        try {
+          const j = JSON.parse(body);
+          const pt = (j.result && j.result.primaryTopic) || {};
+          const isAbout = pt.isAbout || {};
+          const estateOf = isAbout.hasEstateOf || {};
+          const addr = estateOf.hasAddress || {};
+          const streetAddress = addr.streetAddress || '';
+          const locality = addr.locality || '';
+          const region = addr.region || '';
+          const postcode = addr.postalCode || addr.postcode || '';
+          const fullName = [estateOf.firstName, estateOf.familyName].filter(Boolean).join(' ');
+          const deceasedName = [estateOf.title, estateOf.firstName, estateOf.familyName].filter(Boolean).join(' ').trim() || fullName;
+          const fullAddress = [streetAddress, locality, region, postcode].filter(Boolean).join(', ');
+          const claimDeadline = isAbout.hasClaimDeadline || '';
+          // Solicitor / executor extraction from the notice text fields if present
+          let solicitor = '';
+          let executorName = '';
+          const tt = (pt.tt || '').toString() || '';
+          const noticeText = typeof tt === 'string' ? tt.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+          const solMatch = noticeText.match(/(?:solicitor[s]?[:\s]+|solicitors?\s+(?:for|of)\s+)([A-Z][A-Za-z'& ]{3,60})/);
+          if (solMatch) solicitor = solMatch[1].trim();
+          const execMatch = noticeText.match(/(?:executor[s]?|personal representatives?|administrator[s]?)[:\s]+([A-Z][A-Za-z'& .]{3,60})/);
+          if (execMatch) executorName = execMatch[1].trim();
+          resolve({
+            deceasedAddress: fullAddress,
+            locality: locality || '',
+            postcode: postcode || '',
+            region: region || '',
+            deceasedName: deceasedName || '',
+            dateOfDeath: estateOf.dateOfDeath || '',
+            solicitor: solicitor,
+            executorName: executorName,
+            claimDeadline: claimDeadline,
+            noticeText: noticeText.substring(0, 400)
+          });
+        } catch(e) { resolve(null); }
       });
     });
     req.on('error', () => resolve(null));
@@ -822,18 +843,31 @@ if (require.main === module) {
 
 async function collectProbateLeads(config) {
   config = config || {};
-  // Primary: FREE Gazette HTML search (no Apify cost, fast, reliable). Returns
+  // Primary: FREE Gazette ATOM feed (no Apify cost, fast, reliable). Returns
   // real deceased-estates notices with names + publication dates + URLs.
+  // Paginate a couple of pages so we capture ALL of today's notices (not just
+  // the first page) — the Gazette publishes ~20-27 deceased-estate notices/day.
   var maxItems = config.maxItems || 50;
-  var results = await fetchGazetteHTML(maxItems);
-  // Enrich the free HTML notices with full addresses (street + locality + postcode)
-  // by fetching each notice's detail page. Free, no Apify cost.
-  if (results.length > 0 && config.skipEnrich !== true) {
-    try {
-      results = await enrichGazetteLeads(results, maxItems);
-    } catch(e) { console.log('[PROBATE] Enrich error: ' + e.message); }
-  }
-  if (results.length === 0) {
+  var self = this;
+  return (async function() {
+    var results = await fetchGazetteHTML(maxItems, 1);
+    if (!results || results.length === 0) return [];
+    if (results.length >= 25) {
+      var page2 = await fetchGazetteHTML(maxItems, 2);
+      if (page2 && page2.length > 0) {
+        var seen = {};
+        results.forEach(function(r){ seen[r.id] = 1; });
+        page2.forEach(function(r){ if (!seen[r.id]) { seen[r.id] = 1; results.push(r); } });
+      }
+    }
+    // Enrich the free notices with full addresses (street + locality + postcode)
+    // by fetching each notice's linked-data JSON. Free, no Apify cost.
+    if (results.length > 0 && config.skipEnrich !== true) {
+      try {
+        results = await enrichGazetteLeads(results, maxItems);
+      } catch(e) { console.log('[PROBATE] Enrich error: ' + e.message); }
+    }
+    if (results.length === 0) {
     // Fallback: Gazette via Apify actor (accurate details but PAY_PER_EVENT and
     // can time out). Retry once.
     console.log('[PROBATE] Gazette HTML empty, trying Apify Gazette actor...');
@@ -862,6 +896,7 @@ async function collectProbateLeads(config) {
   }
   console.log('[PROBATE] Got ' + results.length + ' probate records');
   return results;
+  })();
 }
 
 module.exports = { fetchProbateRegistry, fetchProbateApify, fetchGazetteProbate, fetchGazetteHTML, fetchGazetteDetail, enrichGazetteLeads, collectProbateLeads };
