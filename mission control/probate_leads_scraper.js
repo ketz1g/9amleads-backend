@@ -287,43 +287,51 @@ function resolveProbatePostcode(addressText) {
 
 async function enrichGazetteLeads(leads, limit) {
   const enriched = [];
-  const max = limit || Math.min(leads.length, 30);
-  for (let i = 0; i < max; i++) {
-    const lead = leads[i];
-    if (!lead || !lead.id) continue;
-    const noticeId = lead.id.replace('GAZ_', '');
-    const detail = await fetchGazetteDetail(noticeId);
-    if (detail) {
-      if (detail.deceasedAddress) lead.deceasedAddress = detail.deceasedAddress;
-      if (detail.postcode) lead.postcode = detail.postcode;
-      if (detail.deceasedName) lead.name = detail.deceasedName;
-      if (detail.dateOfDeath) lead.dateOfDeath = detail.dateOfDeath;
-      if (detail.solicitor) lead.solicitor = detail.solicitor;
-      if (detail.executorName) lead.executorName = detail.executorName;
-      if (detail.noticeText) lead.description = detail.noticeText;
-      lead.locality = detail.locality || '';
-      lead.region = detail.region || '';
-      lead.fullAddress = (detail.deceasedAddress + ', ' + detail.postcode).trim();
-    }
-    // Ensure a full postcode exists (needed for area matching + display).
-    // Prefer the Gazette detail postcode, else extract from address, else Postcoder.
-    if (!lead.postcode && lead.deceasedAddress) {
-      const inlinePc = (lead.deceasedAddress.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0];
-      if (inlinePc) {
-        lead.postcode = inlinePc.toUpperCase();
-      } else {
-        const pc = await resolveProbatePostcode(lead.deceasedAddress);
-        if (pc) lead.postcode = pc;
+  // Enrich in small batches with delays to avoid Gazette rate-limiting (the
+  // search page already includes most deceased addresses + postcodes, so
+  // enrichment is a bonus that fills gaps rather than a hard requirement).
+  const max = limit || Math.min(leads.length, 20);
+  return (async function() {
+    for (let i = 0; i < max; i++) {
+      const lead = leads[i];
+      if (!lead || !lead.id) { enriched.push(lead); continue; }
+      const noticeId = lead.id.replace('GAZ_', '');
+      try {
+        const detail = await fetchGazetteDetail(noticeId);
+        if (detail) {
+          if (detail.deceasedAddress) lead.deceasedAddress = detail.deceasedAddress;
+          if (detail.postcode) lead.postcode = detail.postcode;
+          if (detail.deceasedName) lead.name = detail.deceasedName;
+          if (detail.dateOfDeath) lead.dateOfDeath = detail.dateOfDeath;
+          if (detail.solicitor) lead.solicitor = detail.solicitor;
+          if (detail.executorName) lead.executorName = detail.executorName;
+          if (detail.noticeText) lead.description = detail.noticeText;
+          lead.locality = detail.locality || '';
+          lead.region = detail.region || '';
+          lead.fullAddress = (detail.deceasedAddress + ', ' + detail.postcode).trim();
+        }
+      } catch(e) { /* keep raw lead - search page address is enough */ }
+      // Ensure a full postcode exists (needed for area matching + display).
+      if (!lead.postcode && lead.deceasedAddress) {
+        const inlinePc = (lead.deceasedAddress.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0];
+        if (inlinePc) {
+          lead.postcode = inlinePc.toUpperCase();
+        } else {
+          try { const pc = await resolveProbatePostcode(lead.deceasedAddress); if (pc) lead.postcode = pc; } catch(e2) {}
+        }
       }
       if (lead.postcode && lead.fullAddress && lead.fullAddress.toLowerCase().indexOf(lead.postcode.toLowerCase()) === -1) {
         lead.fullAddress = lead.fullAddress + ', ' + lead.postcode;
       }
+      enriched.push(lead);
+      // small delay between detail fetches (politeness + avoids throttling)
+      if (i % 3 === 2) await new Promise(r => setTimeout(r, 300));
     }
-    enriched.push(lead);
-    await new Promise(function(r) { setTimeout(r, 300); });
-  }
-  console.log('    Enriched ' + enriched.length + ' Gazette notices with addresses + postcodes');
-  return enriched;
+    // Append any leads beyond the enrich cap unchanged (address already captured).
+    for (let j = max; j < leads.length; j++) enriched.push(leads[j]);
+    console.log('    Enriched ' + enriched.length + ' Gazette notices with addresses + postcodes');
+    return enriched;
+  })();
 }
 
 // ===== UK GAZETTE PROBATE NOTICES (via Apify actor) =====
