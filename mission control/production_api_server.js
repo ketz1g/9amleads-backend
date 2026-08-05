@@ -4343,8 +4343,8 @@ cron.schedule('0 6 * * *', async () => {
     req.write(body); req.end();
   } catch(e) { console.log('[06:00 UK] Scraper error:', e.message); }
 }, { timezone: 'Europe/London' });
-cron.schedule('5 6 * * *', async () => {
-  console.log('[06:05 UK] Distributing...');
+cron.schedule('20 6 * * *', async () => {
+  console.log('[06:20 UK] Distributing...');
   try {
     const http = require('http');
     var body2 = JSON.stringify({});
@@ -6819,10 +6819,13 @@ app.post('/api/scrape-save', async (req, res) => {
 
 // ===== LEAD DISTRIBUTION ENDPOINTS =====
 // POST /api/distribute — trigger lead distributor (match scraped leads to customers)
-app.post('/api/distribute', adminAuth, async (req, res) => {
-  try {
-    const { product } = req.body || {};
-
+app.post('/api/distribute', adminAuth, (req, res) => {
+  const { product } = req.body || {};
+  const bgId = (require('uuid').v4)();
+  console.log('[DISTRIBUTE] Background distribution started (id=' + bgId + ' product=' + (product || 'all') + ')');
+  res.json({ success: true, background: true, run_id: bgId, message: 'Distribution started in background' });
+  (async () => {
+    try {
     // Reload DB from file to get latest state
     _dbData = null;
     getDb();
@@ -6852,11 +6855,11 @@ app.post('/api/distribute', adminAuth, async (req, res) => {
         else poolAreas['_noPc'] = (poolAreas['_noPc'] || 0) + 1;
       });
     }
-    res.json({ success: true, result, pool_areas: poolAreas, pool_count: Array.isArray(poolArr) ? poolArr.length : 0 });
+    console.log('[DISTRIBUTE] Completed: ' + JSON.stringify(result).substring(0, 300));
   } catch (e) {
     console.error('[DISTRIBUTE] Error:', e.message);
-    res.status(500).json({ error: e.message });
   }
+  })();
 });
 
 // GET /api/debug/last-email — view the last generated lead email HTML in browser
@@ -9868,15 +9871,19 @@ app.post('/api/admin/clear-leads', adminAuth, (req, res) => {
 });
 
 
-app.post('/api/admin/run-scrapers', adminAuth, async (req, res) => {
+app.post('/api/admin/run-scrapers', adminAuth, (req, res) => {
+  const startTime = new Date().toISOString();
+  const forceScrape = req.body && req.body.force ? true : false;
+  if (forceScrape) console.log('[SCRAPER] Force scrape requested - ignoring daily cache');
+  const bgId = (require('uuid').v4)();
+  console.log('[SCRAPER] Background scrape started (id=' + bgId + ')');
+  res.json({ success: true, background: true, run_id: bgId, message: 'Scraping started in background' });
+  (async () => {
   try {
-    const startTime = new Date().toISOString();
     const https = require('https');
     const dayOfWeek = new Date().getDay();
     const results = {};
     const todayStr = new Date().toISOString().split('T')[0];
-    const forceScrape = req.body && req.body.force ? true : false;
-    if (forceScrape) console.log('[SCRAPER] Force scrape requested - ignoring daily cache');
     var bgTasks = [];
 
     // Load last scrape dates (persisted to JSON file, resets daily)
@@ -10389,10 +10396,11 @@ function syncCustomers(product) {
       scraperLog.scraper_logs.push({ id: uuidv4(), start_time: startTime, end_time: new Date().toISOString(), duration_seconds: Math.floor((Date.now() - new Date(startTime).getTime()) / 1000), results: JSON.parse(JSON.stringify(results)), status: 'completed' });
       saveDb();
     } catch(logErr) { console.log('[SCRAPER] Log error:', logErr.message); }
-    res.json({ success: true, results });
+    console.log('[SCRAPER] Background scrape completed: ' + JSON.stringify(results));
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    console.log('[SCRAPER] Background scrape error: ' + e.message);
   }
+  })();
 });
 // POST /api/admin/test-ch — test Companies House API from Render
 // Stream worker status
