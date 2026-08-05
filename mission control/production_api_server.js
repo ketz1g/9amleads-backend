@@ -3204,8 +3204,7 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
   });
 });
 
-// POST /api/admin/bulk-create-customers — create test customers directly in DB
-// (bypasses the signup rate limit for bulk testing). Admin auth only.
+// POST /api/admin/bulk-create-customers — create test customers directly in DB// (bypasses the signup rate limit for bulk testing). Admin auth only.
 app.post('/api/admin/bulk-create-customers', adminAuth, (req, res) => {
   try {
     const list = Array.isArray(req.body) ? req.body : (req.body && req.body.customers);
@@ -10014,7 +10013,7 @@ function syncCustomers(product) {
               l.freshnessBadge = t >= cutoff24hMs ? 'Incorporated today' : 'Incorporated within 48h';
               return l;
             });
-            console.log('[SCRAPER] NB: ' + nbResults.length + ' raw, ' + (leads ? leads.length : 0) + ' newly-incorporated');
+            console.log('[SCRAPER] NB: ' + (nbAll ? nbAll.length : 0) + ' raw, ' + (leads ? leads.length : 0) + ' newly-incorporated');
           } catch(e) { console.log('[SCRAPER] NB error:', e.message); leads = []; }
         } else if (product === 'planning') {
           leads = [];
