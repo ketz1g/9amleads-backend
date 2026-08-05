@@ -653,6 +653,18 @@ async function distributeProduct(product) {
     const normalised = normaliseLead(rawLead, product, '');
     const addrKey = normalised.address.toLowerCase().trim();
     if (addrKey && existingAddresses.has(addrKey)) { duplicates++; continue; }
+    // COMPANY-NUMBER DEDUP: Companies House registrations share registered-office
+    // addresses (formation agents), so address alone is unreliable. Dedupe on the
+    // unique company number so a newly-formed company is NEVER delivered twice.
+    if (product === 'newbusiness') {
+      const coNum = (rawLead.companyNumber || rawLead.company_number || '').toString().trim().toLowerCase();
+      if (coNum && (db.leads || []).some(function(l) {
+        try {
+          const ld = typeof l.data === 'string' ? JSON.parse(l.data) : (l.data || {});
+          return String(ld.companyNumber || ld.company_number || '').toLowerCase() === coNum;
+        } catch(e) { return false; }
+      })) { duplicates++; continue; }
+    }
 
     // Per-lead exclusivity: every lead goes to all matching customers,
     // but each customer only gets their daily limit.
