@@ -344,11 +344,11 @@ function fetchGazetteProbate(maxItems) {
     const input = JSON.stringify({
       sp_intended_usage: 'other',
       sp_improvement_suggestions: 'testing',
-      maxItems: maxItems || 100
+      maxItems: Math.min(maxItems || 100, 20)  // the actor is slow at scale; 20 completes in ~3.5min
     });
     const options = {
       hostname: 'api.apify.com',
-      path: '/v2/acts/rcfzPm2dJk9vig8hp/run-sync-get-dataset-items?token=' + APIFY_API_KEY + '&timeout=300',
+      path: '/v2/acts/rcfzPm2dJk9vig8hp/run-sync-get-dataset-items?token=' + APIFY_API_KEY + '&timeout=300&memory=512',
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(input), 'Accept': 'application/json' },
       timeout: 360000
