@@ -9346,6 +9346,8 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
     var debugFirst = available.slice(0,3).map(function(a) { return a.key; });
     var debugSkipped = 0;
     var debugError = '';
+    var debugSkippedSlugs = [];
+    var debugTriedSlugs = [];
     for (var bi = 0; bi < count && bi < available.length; bi++) {
       try {
       var ti = available[bi];
@@ -9361,7 +9363,8 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
       var kw = template.keywords.map(function(k) { return k.replace(/{type}/g, type); });
       if (variationIdx !== -1) kw = kw.concat(BLOG_VARIATIONS[variationIdx].kw);
       var slug = title.toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
-      if (dbData.blog_posts.some(function(p) { return p.slug === slug; })) { debugSkipped++; continue; }
+      debugTriedSlugs.push(templateKey + '=' + slug);
+      if (dbData.blog_posts.some(function(p) { return p.slug === slug; })) { debugSkipped++; debugSkippedSlugs.push(templateKey + '=' + slug); continue; }
       var paraPool = [
         'In today\'s market, businesses need every advantage. ' + title + ' is one of the most effective ways to stay ahead.',
         productName + ' provide a stream of exclusive opportunities your competitors don\'t have access to.',
@@ -9388,7 +9391,7 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
       } catch(innerE) { debugError = innerE.message; break; }
     }
     fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
-    res.json({ success: true, count: generated.length, debug: { available: debugAvail, first: debugFirst, skipped: debugSkipped, error: debugError } });
+    res.json({ success: true, count: generated.length, debug: { available: debugAvail, first: debugFirst, skipped: debugSkipped, error: debugError, tried: debugTriedSlugs, skippedSlugs: debugSkippedSlugs } });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
