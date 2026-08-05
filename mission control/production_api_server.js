@@ -9229,7 +9229,7 @@ app.post('/api/admin/blog/delete', adminAuth, function(req, res) {
     if (!dbData.blog_posts) dbData.blog_posts = [];
     dbData.blog_posts = dbData.blog_posts.filter(function(p) { return p.slug !== slug; });
     fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
-    res.json({ success: true });
+    res.json({ success: true, count: generated.length, debug: { available: debugAvail, first: debugFirst } });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -9332,8 +9332,9 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
     if (!dbData.blog_posts) dbData.blog_posts = [];
     var count = Math.min(BLOG_BATCH_SIZE, 5);
     var available = blogAvailableTemplates(dbData);
-    console.log('[BLOG-GEN] available=' + available.length + ' count=' + count);
     var generated = [];
+    var debugAvail = available.length;
+    var debugFirst = available.slice(0,3).map(function(a) { return a.key; });
     for (var bi = 0; bi < count && bi < available.length; bi++) {
       var ti = available[bi];
       var templates = BLOG_TEMPLATES;
