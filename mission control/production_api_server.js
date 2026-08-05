@@ -10044,10 +10044,20 @@ function syncCustomers(product) {
             } catch(e) { console.log('[SCRAPER] Planning fallback error: ' + (e && e.message || '')); }
           }
         } else if (product === 'tenders') {
+          leads = [];
+          // PRIMARY: Contracts Finder (free, paginated, ~150-240 live notices).
+          try {
+            var tendersScraper = require('./tenders_scraper');
+            var cfLeads = await tendersScraper.collectTendersLeads({ keywords: '', location: '', maxCount: 250 });
+            if (cfLeads && cfLeads.length > 0) {
+              leads = cfLeads;
+              console.log('[SCRAPER] Contracts Finder returned ' + cfLeads.length + ' tenders');
+            }
+          } catch(e) { console.log('[SCRAPER] Contracts Finder error:', e.message); }
+          // FALLBACK: Apify actor (if configured), then PCS
+          if (!leads || leads.length < 3) {
           var tendKey = process.env.APIFY_API_KEY;
           var tendActor = process.env.APIFY_TENDERS_ACTOR || '';
-          leads = [];
-          if (tendKey && tendActor) {
             try {
               leads = await new Promise(function(r) {
                 var b = JSON.stringify({ maxResults: 500 });
