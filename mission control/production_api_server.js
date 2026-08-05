@@ -1026,6 +1026,44 @@ app.use('/assets', express.static(path.join(ROOT_DIR, 'assets')));
 app.use('/css', express.static(path.join(ROOT_DIR, 'css')));
 app.use(express.static(FRONTEND_DIR, { index: 'index.html' }));
 
+// ===== DYNAMIC SITEMAP ===== (serves fresh sitemap with all blog posts; must be before SPA fallback)
+app.get('/sitemap.xml', (req, res) => {
+  try {
+    var dbData = getDb();
+    var posts = (dbData.blog_posts || []).filter(function(p) { return p.published; });
+    var today = new Date().toISOString().split('T')[0];
+    var urls = [
+      '<url><loc>https://9amleads.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/pricing/</loc><priority>0.9</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/movingleadsdaily/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/probateleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/newbusinessalert/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/planningleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/tenders/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/how-it-works/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/who-we-serve/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/blog/</loc><priority>0.7</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/founder/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/invest/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/about.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/contact.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/terms.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/privacy.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>'
+    ];
+    for (var pi = 0; pi < posts.length; pi++) {
+      urls.push('<url><loc>https://9amleads.com/blog/' + posts[pi].slug + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + (posts[pi].created_at ? posts[pi].created_at.split('T')[0] : today) + '</lastmod></url>');
+    }
+    var staticSlugs = ['moving-leads-uk', 'probate-leads-uk', 'public-sector-tenders-uk', 'win-probate-instructions'];
+    for (var si = 0; si < staticSlugs.length; si++) {
+      urls.push('<url><loc>https://9amleads.com/blog/' + staticSlugs[si] + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>');
+    }
+    var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    for (var ui = 0; ui < urls.length; ui++) xml += '  ' + urls[ui] + '\n';
+    xml += '</urlset>';
+    res.type('application/xml').send(xml);
+  } catch(e) { res.status(500).send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>'); }
+});
+
 // ===== PUBLIC BLOG ROUTES ===== (must be before the SPA fallback below)
 // GET /blog — list all published posts
 app.get('/blog', (req, res) => {
