@@ -282,6 +282,7 @@ async function collectTendersLeads(config) {
   // (end of results) — captures the full daily supply.
   async function paginate() {
     let all = [];
+    const seenIds = {};
     for (let p = 1; p <= 12; p++) {
       let page = await fetchTendersFromHTML(keywords, location, maxCount, p);
       if (!page || page.length === 0) break;
@@ -291,9 +292,90 @@ async function collectTendersLeads(config) {
       // small delay to be polite to the site
       await new Promise(r => setTimeout(r, 400));
     }
+    // ADD Find a Tender (FTS) — the UK's high-value contract portal. Complements
+    // Contracts Finder with a separate supply stream (different notices).
+    if (all.length < maxCount) {
+      for (let f = 1; f <= 3; f++) {
+        let fts = await fetchFindATender(maxCount, f);
+        if (!fts || fts.length === 0) break;
+        let added = 0;
+        fts.forEach(function(l){ if (l.id && !seenIds.has(l.id)) { seenIds.add(l.id); all.push(l); added++; } });
+        if (added === 0 || all.length >= maxCount) break;
+        await new Promise(r => setTimeout(r, 400));
+      }
+    }
     return all;
   }
   return paginate();
+}
+
+// ===== FIND A TENDER (FTS) SCRAPER =====
+// FTS (www.find-tender.service.gov.uk) is the UK's official replacement for the
+// OJEU/TED regime — high-value public contracts across the whole UK. It publishes
+// ~20 notices per search-result page and carries hundreds of thousands of notices.
+// This adds a second, complementary supply stream on top of Contracts Finder.
+function fetchFindATender(maxCount, pageNum) {
+  return new Promise((resolve) => {
+    const pg = pageNum && pageNum > 1 ? '&p=' + pageNum : '';
+    const searchPath = '/Search/Results?NoticeType=ContractNotice&NoticeStatus=Open&SortField=PublishedDate' + pg;
+    const req = https.request({ hostname: 'www.find-tender.service.gov.uk', path: searchPath, method: 'GET', headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36', 'Accept-Language': 'en-GB,en;q=0.9' }, timeout: 30000 }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) { resolve([]); return; }
+        const results = [];
+        const blocks = body.split('<div class="search-result">');
+        for (let i = 1; i < blocks.length; i++) {
+          const b = blocks[i];
+          const headMatch = b.match(/<h2 id="([0-9]+-[0-9]+-heading)"[^>]*><a[^>]*>([\s\S]*?)<\/a><\/h2>/);
+          if (!headMatch) continue;
+          const noticeId = headMatch[1].replace('-heading', '');
+          const title = headMatch[2].replace(/<[^>]+>/g, '').trim();
+          // Buyer from the sub-header block
+          const subHeader = b.match(/<div class="search-result-sub-header[^>]*>([\s\S]*?)<\/div>/);
+          let buyer = subHeader ? subHeader[1].replace(/<[^>]+>/g, '').trim() : '';
+          // Parse the <dt><strong>LABEL</strong></dt><dd>VALUE</dd> fields
+          function field(label) {
+            const m = b.match(new RegExp('<strong>' + label + '</strong><\\/dt>\\s*<dd[^>]*>([\\s\\S]*?)<\\/dd>', 'i'));
+            return m ? m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : '';
+          }
+          const publishedDate = field('Publication date');
+          const closingDate = field('Closing date') || field('Deadline');
+          const location = field('Location') || field('Contract location');
+          const noticeType = field('Notice type');
+          const suppliers = field('Suppliers');
+          const clean = (s) => (s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+          const text = clean(b);
+          const locPc = (text.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0] || '';
+          results.push({
+            id: 'FTS_' + noticeId,
+            title: title,
+            contractingAuthority: buyer,
+            contractValue: 0,
+            contractValueLabel: '',
+            deadlineDate: closingDate,
+            cpvCode: '',
+            description: text.length > 100 ? text.substring(0, 400) : text,
+            location: location,
+            postcode: locPc,
+            publishedDate: publishedDate,
+            procurementType: noticeType || 'Open',
+            status: 'Open',
+            buyerEmail: '',
+            url: 'https://www.find-tender.service.gov.uk/Notice/' + noticeId,
+            source: 'Find a Tender',
+            scrapedAt: new Date().toISOString()
+          });
+          if (maxCount && results.length >= maxCount) break;
+        }
+        console.log('    Find a Tender (FTS) returned ' + results.length + ' notices');
+        resolve(results);
+      });
+    });
+    req.on('error', (e) => { console.log('    Find a Tender error: ' + e.message); resolve([]); });
+    req.setTimeout(30000, () => { req.destroy(); resolve([]); });
+    req.end();
+  });
 }
 
 // ===== TENDER DETAIL ENRICHMENT =====
@@ -837,7 +919,7 @@ async function main() {
   }
 }
 
-module.exports = { collectTendersLeads, fetchTendersFromHTML, fetchTenderDetail, enrichTenders };
+module.exports = { collectTendersLeads, fetchTendersFromHTML, fetchFindATender, fetchTenderDetail, enrichTenders };
 
 if (require.main === module) {
   main().catch(e => console.error('Error:', e.message));
