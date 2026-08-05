@@ -9977,7 +9977,7 @@ function syncCustomers(product) {
               var page = await new Promise(function(resolve) { chFetchAdvancedPage(fromDate, 0, 250, resolve); });
               all = all.concat(page.items); hits = page.hits;
               var pages = Math.ceil(hits / 250);
-              for (var pi = 1; pi < pages && pi < 10; pi++) {
+              for (var pi = 1; pi < pages && pi < 40; pi++) {
                 var next = await new Promise(function(resolve) { chFetchAdvancedPage(fromDate, pi * 250, 250, resolve); });
                 if (!next.items || next.items.length === 0) break;
                 all = all.concat(next.items);
