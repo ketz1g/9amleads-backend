@@ -9371,6 +9371,8 @@ app.post('/api/admin/blog/generate-all', adminAuth, function(req, res) {
     var dbData = getDb();
     if (!dbData.blog_posts) dbData.blog_posts = [];
     var usedIndices = dbData.blog_posts.map(function(p) { return p.template_index; });
+    var existingSlugs = {};
+    dbData.blog_posts.forEach(function(p) { existingSlugs[p.slug] = 1; });
         var templates = BLOG_TEMPLATES;
     var types = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads', planning: 'planning leads', tenders: 'tender opportunities', general: 'business leads' };
     var generated = [];
@@ -9383,6 +9385,7 @@ app.post('/api/admin/blog/generate-all', adminAuth, function(req, res) {
       var desc = template.desc.replace(/{type}/g, type);
       var kw = template.keywords.map(function(k) { return k.replace(/{type}/g, type); });
       var slug = title.toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
+      if (existingSlugs[slug]) continue;
       var sections = '<h2>Introduction</h2><p>' + title + ' is essential for modern businesses.</p><p>Learn how ' + type + ' can transform your pipeline.</p>';
       sections += '<h2>The Benefits</h2><p>Consistent ' + type + ' provide a reliable stream of opportunities.</p><p>Daily delivery ensures you are always first to respond.</p>';
       var wordCount = sections.replace(/<[^>]+>/g, '').split(/\s+/).length;
