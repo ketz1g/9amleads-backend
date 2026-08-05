@@ -9158,6 +9158,38 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/blog/regen — Rebuild SEO HTML for ALL existing posts
+// (adds JSON-LD, meta keywords, canonical, internal product links to older posts)
+app.post('/api/admin/blog/regen', adminAuth, function(req, res) {
+  try {
+    var dbData = getDb();
+    var posts = dbData.blog_posts || [];
+    var updated = 0;
+    for (var pi = 0; pi < posts.length; pi++) {
+      var p = posts[pi];
+      if (!p.title || !p.slug) continue;
+      var type = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads', planning: 'planning leads', tenders: 'tender opportunities', general: 'business leads' }[p.category] || 'leads';
+      var kw = (p.keywords || []).map(function(k) { return k; });
+      var jsonLd = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"' + p.title.replace(/"/g, '\\"') + '","description":"' + (p.description||'').replace(/"/g, '\\"') + '","datePublished":"' + (p.created_at || new Date().toISOString()) + '","author":{"@type":"Organization","name":"9amLeads","url":"https://9amleads.com"},"publisher":{"@type":"Organization","name":"9amLeads","url":"https://9amleads.com"},"mainEntityOfPage":"https://9amleads.com/blog/' + p.slug + '","keywords":"' + kw.join(', ') + '"}</script>';
+      var prodLink = 'https://9amleads.com/' + (p.category === 'newbusiness' ? 'newbusinessalert/' : p.category === 'planning' ? 'planningleads/' : p.category === 'tenders' ? 'tenders/' : p.category === 'probate' ? 'probateleads/' : 'movingleadsdaily/');
+      var prodName = PRODCAT[p.category] || 'Business Leads';
+      // If post already has an <h1>, keep body; otherwise rebuild minimal
+      var body = '';
+      var h1m = p.html.match(/<h1[^>]*>(.*?)<\/h1>/);
+      var titleText = h1m ? h1m[1].replace(/<[^>]+>/g, '') : p.title;
+      var descText = p.description || '';
+      // Extract existing content between </h1> and </body> if possible
+      var contentMatch = p.html.match(/<\/h1>([\s\S]*?)<\/body>/);
+      var innerContent = contentMatch ? contentMatch[1] : ('<p>' + descText + '</p>');
+      var footer = '<h2>Get Started with 9amLeads</h2><p>Ready to put these strategies into practice? <a href="' + prodLink + '" style="color:#0ea5e9">Explore ' + prodName + '</a> and start receiving fresh ' + type + ' every morning. Start your free 7-day trial today.</p><hr style="border:none;border-top:1px solid #222;margin:32px 0"><div style="font-size:12px;color:#666"><strong>About 9amLeads</strong> - We deliver fresh, exclusive business leads every morning at 9am. <a href="https://9amleads.com" style="color:#0ea5e9">Visit 9amLeads.com</a> to learn more.</div>';
+      p.html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + p.title + ' | 9amLeads Blog</title><meta name="description" content="' + descText + '"><meta name="keywords" content="' + kw.join(', ') + '"><meta property="og:title" content="' + p.title + '"><meta property="og:description" content="' + descText + '"><meta property="og:url" content="https://9amleads.com/blog/' + p.slug + '"><meta property="og:type" content="article"><meta property="og:site_name" content="9amLeads"><link rel="canonical" href="https://9amleads.com/blog/' + p.slug + '">' + jsonLd + '<style>body{font-family:Inter,sans-serif;background:#000;color:#fff;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}h1{font-size:28px;font-weight:800;font-family:Outfit,sans-serif}h2{font-size:20px;font-weight:700;margin-top:32px;color:#f5f5f5}p{color:#ccc}a{color:#0ea5e9}</style></head><body><h1>' + titleText + '</h1><p style="color:#888">' + descText + '</p>' + innerContent + footer + '</body></html>';
+      updated++;
+    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+    res.json({ success: true, regenerated: updated });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/blog/generate-all — Generate all remaining templates
 app.post('/api/admin/blog/generate-all', adminAuth, function(req, res) {
   try {
