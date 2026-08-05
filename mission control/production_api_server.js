@@ -10350,6 +10350,7 @@ function syncCustomers(product) {
             var probateScraper = require('./probate_leads_scraper');
             leads = await probateScraper.collectProbateLeads();
             console.log('[SCRAPER] Probate raw scrape: ' + (leads ? leads.length : 0) + ' leads');
+            try { lastScrape.probate_raw = (leads ? leads.length : 0); lastScrape.probate_at = new Date().toISOString(); fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape, null, 2)); } catch(e2) {}
             if (leads && leads.length > 0) {
               var fp = filterFresh(leads, 'scrapedAt');
               leads = fp.fresh.length > 0 ? fp.fresh : fp.fallback;
@@ -10570,6 +10571,7 @@ app.get('/api/admin/system-status', adminAuth, (req, res) => {
       var ls = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'last-scrape.json'), 'utf-8'));
       out.last_scrape = ls;
     } catch(e) {}
+    out.probate_raw_last = out.last_scrape ? out.last_scrape.probate_raw : null;
 
     out.healthy = out.database.ok && out.integrations.stripe && out.integrations.brevo && out.warnings_ok;
     res.json({ success: true, ...out });
