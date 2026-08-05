@@ -32,7 +32,7 @@ const POSTCODE_ASSIGNMENTS_FILE = path.join(DATA_DIR, 'postcode-assignments.json
 const PRODUCT_PLAN_LIMITS = {
   moving:    { free_trial:{default:5,postcode:5,county:5,region:5,ukwide:5},   starter:{default:5,postcode:5,county:5,region:5},   pro:{default:15,postcode:15,county:15,region:15},   enterprise:{default:30,postcode:30,county:30,region:30} },
   probate:   { free_trial:{default:5,county:5,region:5,ukwide:5},              starter:{default:5,county:5,region:5,ukwide:5},    pro:{default:15,county:15,region:15,ukwide:15},    enterprise:{default:30,county:30,region:30,ukwide:30} },
-  newbusiness:{ free_trial:{default:5,postcode:5,county:5,region:5},           starter:{default:10,postcode:10,county:10,region:10},pro:{default:25,postcode:25,county:25,region:25},   enterprise:{default:50,postcode:50,county:50,region:50} },
+  newbusiness:{ free_trial:{default:5,postcode:5,county:5,region:5},           starter:{default:5,postcode:5,county:5,region:5},     pro:{default:10,postcode:10,county:10,region:10},      enterprise:{default:20,postcode:20,county:20,region:20} },
   planning:  { free_trial:{default:1,county:1,region:1,ukwide:1},              starter:{default:1,county:1,region:1,ukwide:1},     pro:{default:3,county:3,region:3,ukwide:3},        enterprise:{default:5,county:5,region:5,ukwide:5} },
   tenders:   { free_trial:{default:1,county:1,region:1,ukwide:1},              starter:{default:1,county:1,region:1,ukwide:1},     pro:{default:3,county:3,region:3,ukwide:3},        enterprise:{default:5,county:5,region:5,ukwide:5} }
 };
