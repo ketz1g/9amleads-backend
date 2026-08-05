@@ -9042,7 +9042,18 @@ app.get('/api/admin/seo/report', adminAuth, function(req, res) {
       sitemap_urls: published.length + 16,
       last_generated: published.length > 0 ? published[published.length - 1].created_at : null,
       sitemap_healthy: true,
-      blog_accessible: true
+      blog_accessible: true,
+      automation: {
+        enabled: true,
+        cron: 'Daily 04:00 UK — auto-generates up to 3 posts, refreshes sitemap, pings Google/Bing/IndexNow',
+        last_run: dbData.seo_last_run || null,
+        posts_left_to_auto: remaining
+      },
+      backlinks: {
+        internal_links: published.filter(function(p) { return p.html && p.html.indexOf('9amleads.com/') > -1; }).length + ' of ' + published.length + ' posts link internally',
+        suggestion: 'To build external backlinks: submit 9amleads.com to Google Business Profile, Yell, Bing Places, Crunchbase, LinkedIn Company page, and relevant industry directories. Guest posts and digital PR (HARO/Featured) build authority fastest.',
+        external_needs_manual: true
+      }
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -12711,7 +12722,8 @@ cron.schedule('0 4 * * *', async () => {
         seoLog.push('Search engines pinged');
       } catch(e6) { seoLog.push('Sitemap error: ' + (e6 && e6.message || '')); }
     }
-    if (generated.length > 0) fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+    dbData.seo_last_run = new Date().toISOString();
+    fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
     console.log('[SEO] Pipeline done: ' + seoLog.join(' | '));
   } catch(e) {
     console.log('[SEO] Cron error: ' + (e && e.message || e));
