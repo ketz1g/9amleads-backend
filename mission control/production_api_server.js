@@ -9325,6 +9325,15 @@ app.post('/api/admin/seo/refresh-sitemap', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// DEBUG: diagnostic for blog template availability
+app.get('/api/admin/blog/debug', adminAuth, function(req, res) {
+  try {
+    var dbData = getDb();
+    var avail = blogAvailableTemplates(dbData);
+    res.json({ total: blogTemplateCount(), available: avail.length, first: avail.slice(0,5).map(function(a){return a.key;}), posts: (dbData.blog_posts||[]).length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/blog/generate Ã¢â‚¬â€ Generate next batch of blog posts (up to 5)
 app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
   try {
