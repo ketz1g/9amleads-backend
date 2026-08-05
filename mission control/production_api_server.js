@@ -9229,7 +9229,22 @@ app.post('/api/admin/blog/delete', adminAuth, function(req, res) {
     if (!dbData.blog_posts) dbData.blog_posts = [];
     dbData.blog_posts = dbData.blog_posts.filter(function(p) { return p.slug !== slug; });
     fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
-    res.json({ success: true, count: generated.length, debug: { available: debugAvail, first: debugFirst } });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/blog/reset-variations — Delete ALL auto-generated variation posts
+// (keeps base templates + hand-written posts) so the daily cron can release 6-8/day fresh.
+app.post('/api/admin/blog/reset-variations', adminAuth, function(req, res) {
+  try {
+    var dbData = getDb();
+    if (!dbData.blog_posts) dbData.blog_posts = [];
+    var before = dbData.blog_posts.length;
+    var kept = dbData.blog_posts.filter(function(p) { return !(p.template_key && p.template_key.indexOf('var_') === 0); });
+    var removed = before - kept.length;
+    dbData.blog_posts = kept;
+    fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+    res.json({ success: true, removed: removed, remaining: kept.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -12817,11 +12832,12 @@ cron.schedule('0 4 * * *', async () => {
     var dbData = getDb();
     if (!dbData.blog_posts) dbData.blog_posts = [];
 
-    // 1. Auto-generate up to 3 posts per day (keeps fresh content flowing)
+    // 1. Auto-generate 6-8 posts per day (random each day for natural cadence)
+    var dailyTarget = 6 + Math.floor(Math.random() * 3); // 6, 7 or 8
     var available = blogAvailableTemplates(dbData);
     var types = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads', planning: 'planning leads', tenders: 'tender opportunities', general: 'business leads' };
     var generated = [];
-    for (var bi = 0; bi < Math.min(3, available.length); bi++) {
+    for (var bi = 0; bi < Math.min(dailyTarget, available.length); bi++) {
       var tIndex = available[bi];
       var template = tIndex.template;
       var templateKey = tIndex.key;
