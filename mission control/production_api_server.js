@@ -10359,7 +10359,7 @@ function syncCustomers(product) {
               console.log('[SCRAPER] Probate: 0 from scraper');
               leads = [];
             }
-          } catch(e) { console.log('[SCRAPER] Probate error:', e.message); leads = []; }
+          } catch(e) { console.log('[SCRAPER] Probate error:', e.message); leads = []; try { lastScrape.probate_error = e.message; lastScrape.probate_at = new Date().toISOString(); fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape, null, 2)); } catch(e2) {} }
         } else {
           leads = [];
         }
