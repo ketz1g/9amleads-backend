@@ -9202,7 +9202,7 @@ function blogAvailableTemplates(dbData) {
 }
 function blogRenderTitle(template, variation) {
   var title = template.title;
-  if (variation && variation !== -1) {
+  if (variation !== -1) {
     var v = BLOG_VARIATIONS[variation];
     title = v.title.replace('{title}', title);
   }
