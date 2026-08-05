@@ -9284,7 +9284,7 @@ app.get('/api/admin/seo/report', adminAuth, function(req, res) {
       blog_accessible: true,
       automation: {
         enabled: true,
-        cron: 'Daily 04:00 UK — auto-generates up to 3 posts, refreshes sitemap, pings Google/Bing/IndexNow',
+        cron: 'Daily 04:00 UK — auto-releases 6-8 new posts, refreshes sitemap, pings Google/Bing/IndexNow',
         last_run: dbData.seo_last_run || null,
         posts_left_to_auto: remaining
       },
