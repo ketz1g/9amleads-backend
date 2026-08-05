@@ -9950,23 +9950,40 @@ function syncCustomers(product) {
             var cutoff48hMs = nowMs - 48 * 3600000;
             function chParseDate(ds) { if (!ds) return 0; var t = Date.parse(ds); return isNaN(t) ? 0 : t; }
             function chDateStr(ms) { return new Date(ms).toISOString().split('T')[0]; }
-            function chFetchAdvanced(fromDate, cb) {
-              var url = '/advanced-search/companies?incorporated_from=' + fromDate + '&size=250&start_index=0&company_status=active';
+            function chFetchAdvancedPage(fromDate, startIndex, size, cb) {
+              var url = '/advanced-search/companies?incorporated_from=' + fromDate + '&size=' + (size || 250) + '&start_index=' + (startIndex || 0) + '&company_status=active';
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeySimple + ':').toString('base64'), 'Accept': 'application/json', 'User-Agent': '9amLeads/1.0' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
-                  try { var d = JSON.parse(body); cb(d.items || []); } catch(e) { cb([]); }
+                  try { var d = JSON.parse(body); cb({ items: d.items || [], hits: d.hits || 0 }); } catch(e) { cb({ items: [], hits: 0 }); }
                 });
               });
-              req.on('error', function() { cb([]); });
-              req.setTimeout(15000, function() { req.destroy(); cb([]); });
+              req.on('error', function() { cb({ items: [], hits: 0 }); });
+              req.setTimeout(15000, function() { req.destroy(); cb({ items: [], hits: 0 }); });
               req.end();
             }
+            // Fetch ALL companies incorporated since 24h ago via pagination
+            // (Companies House registers ~1,500 UK companies/day; the old single-page
+            // fetch only captured 250 — the pool cap kept it hidden. Paginate so we
+            // capture the full daily supply for growth.)
+            async function chFetchAll(fromDate) {
+              var all = []; var hits = 0;
+              var page = await new Promise(function(resolve) { chFetchAdvancedPage(fromDate, 0, 250, resolve); });
+              all = all.concat(page.items); hits = page.hits;
+              var pages = Math.ceil(hits / 250);
+              for (var pi = 1; pi < pages && pi < 10; pi++) {
+                var next = await new Promise(function(resolve) { chFetchAdvancedPage(fromDate, pi * 250, 250, resolve); });
+                if (!next.items || next.items.length === 0) break;
+                all = all.concat(next.items);
+                if (all.length >= hits) break;
+              }
+              return all;
+            }
             // Fetch companies incorporated since 24h ago; if too few, widen to 48h
-            var nbResults = await new Promise(function(resolve) { chFetchAdvanced(chDateStr(cutoff24hMs), resolve); });
-            var nbAll = nbResults.slice();
-            if (nbResults.length < 5) {
-              var nb48extra = await new Promise(function(resolve) { chFetchAdvanced(chDateStr(cutoff48hMs), resolve); });
+            var nbAll = await chFetchAll(chDateStr(cutoff24hMs));
+            console.log('[SCRAPER] NB: Companies House returned ' + nbAll.length + ' for last 24h');
+            if (nbAll.length < 5) {
+              var nb48extra = await chFetchAll(chDateStr(cutoff48hMs));
               nbAll = nbAll.concat(nb48extra);
             }
             // Deduplicate and map to standard format
@@ -10352,7 +10369,7 @@ function syncCustomers(product) {
           var k = l.id || l.title || l.address || '';
           if (k && !seenIds.has(k)) { seenIds.add(k); merged.push(l); }
         });
-        leads = merged.slice(0, 300);
+        leads = merged.slice(0, 5000);
         if (!leads || leads.length === 0) { leads = []; }
         fs.writeFileSync(poolPath, JSON.stringify(leads, null, 2));
         markScrapedToday(product); // Record this product as scraped today
