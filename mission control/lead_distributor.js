@@ -112,6 +112,16 @@ function getTodayStr() {
   return new Date().toISOString().split('T')[0];
 }
 
+// Returns today's 09:00 UK release time (ISO). Leads are hidden from dashboards
+// until this moment so they appear at the same time the 9am email is sent.
+function getReleaseAt() {
+  try {
+    const uk = new Date(new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }));
+    uk.setHours(9, 0, 0, 0);
+    return uk.toISOString();
+  } catch(e) { return new Date().toISOString(); }
+}
+
 // Normalise a postcode for matching: "SW1A 1AA" → "sw1a"
 function normalisePostcode(pc) {
   if (!pc) return '';
@@ -766,6 +776,10 @@ async function distributeProduct(product) {
         delivered: 0,
         created_at: now,
         delivered_at: null,
+        // Leads are released to the dashboard at 09:00 UK (same time the email is
+        // sent), not when the distributor runs at 06:05. The dashboard filters out
+        // any lead whose release_at is still in the future.
+        release_at: getReleaseAt(),
       };
       db.leads.push(leadRecord);
       existingAddresses.add(ak);
