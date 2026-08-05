@@ -667,6 +667,20 @@ async function distributeProduct(product) {
       }
     }
 
+    // TENDERS FALLBACK: public sector opportunities are national. If a tenders
+    // lead matches no customer's county/area (many notices carry no location or
+    // a generic region), still offer it to active tenders customers so they are
+    // never left without their promised daily leads. Tier 0 = lowest priority so
+    // exact-area matches always win in the round-robin.
+    if (matchedCustomers.length === 0 && product === 'tenders') {
+      for (const customer of activeCustomers) {
+        const isTendersCustomer = customer.product === 'tenders' || (customer.biz_field3 && String(customer.biz_field3).indexOf('tenders') !== -1);
+        if (isTendersCustomer) {
+          matchedCustomers.push({ customer, tier: 0 });
+        }
+      }
+    }
+
     if (matchedCustomers.length === 0) { noMatch++; continue; }
     // Capture the lead's planning category (for even distribution across app types)
     var leadCat = matchedCustomers.length > 0 && matchedCustomers[0].appCategory ? matchedCustomers[0].appCategory : '';
