@@ -5282,7 +5282,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       try {
         var htmlContent = generateLeadEmailHTML(cust, custLeads);
         var covName3 = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
-        var subject = 'Your 9am Opportunities for ' + covName3 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        var subject = '9amLeads — Your Daily Opportunities for ' + covName3 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, htmlContent);
         // Send to CRM webhook if configured
         if (cust.crm_webhook_url) {
@@ -6946,12 +6946,15 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px">';
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
-  // Header — dark sleek
+  // Header — branded with proper 9amLeads logo
   body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:36px 30px 24px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
-  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#ffffff;text-align:center;margin-bottom:10px"><span style="display:inline-block;width:38px;height:38px;border-radius:10px;text-align:center;line-height:38px;font-size:18px;background:linear-gradient(135deg,#0ea5e9,#6366f1);margin-right:6px;vertical-align:middle">9</span><span style="vertical-align:middle">am Leads</span></div>';
+  body += '<table cellpadding="0" cellspacing="0" align="center"><tr>';
+  body += '<td style="background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:12px;width:44px;height:44px;text-align:center;vertical-align:middle;line-height:44px;font-family:Georgia,serif;font-size:22px;font-weight:900;color:#ffffff">9</td>';
+  body += '<td style="padding-left:12px;vertical-align:middle;text-align:left"><div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#ffffff;letter-spacing:-0.3px;line-height:1.1">9am<span style="color:' + accent + '">Leads</span></div><div style="font-size:9px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;font-weight:600">Fresh business leads &middot; Every morning</div></td>';
+  body += '</tr></table>';
   var areasLabel = '';
   try { var custAreas = JSON.parse(customer.target_areas || '[]'); areasLabel = custAreas.length > 0 ? custAreas.join(', ') : ''; } catch(e) {}
-  if (areasLabel) body += '<p style="color:#f1f5f9;font-size:11px;margin:0;text-transform:uppercase;letter-spacing:3px;font-weight:600">' + areasLabel + '</p>';
+  if (areasLabel) body += '<p style="color:#f1f5f9;font-size:11px;margin:14px 0 0;text-transform:uppercase;letter-spacing:3px;font-weight:600">' + areasLabel + '</p>';
   body += '</td></tr>';
 
   // Greeting + count — dark card
@@ -7178,9 +7181,11 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<td style="padding:0 5px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">fb</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">tt</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">ig</span></a></td>';
-  body += '<p style="color:#e2e8f0;font-size:10px;margin:0 0 4px;letter-spacing:.4px">9am Leads Ltd</p>';
-  body += '<p style="color:#e2e8f0;font-size:9px;margin:0 0 12px;letter-spacing:.3px"><a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="tel:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a></p>';
-  body += '<p style="color:#94a3b8;font-size:8px;margin:0;letter-spacing:.4px">Fresh exclusive opportunities delivered at 9am every morning &bull; Not sure? Call hello@9amleads.com &bull; 9amLeads.com</p>';
+  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 8px"><tr><td style="background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:8px;width:28px;height:28px;text-align:center;vertical-align:middle;line-height:28px;font-family:Georgia,serif;font-size:14px;font-weight:900;color:#ffffff">9</td><td style="padding-left:8px;vertical-align:middle"><span style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:#e2e8f0;letter-spacing:-0.2px">9am<span style="color:' + accent + '">Leads</span></span></td></tr></table>';
+  body += '<p style="color:#94a3b8;font-size:9px;margin:0 0 8px;letter-spacing:.3px">Fresh exclusive business opportunities, delivered at 9am every morning</p>';
+  body += '<p style="color:#e2e8f0;font-size:10px;margin:0 0 4px;letter-spacing:.4px">9amLeads &middot; hello@9amleads.com</p>';
+  body += '<p style="color:#e2e8f0;font-size:9px;margin:0 0 12px;letter-spacing:.3px"><a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a></p>';
+  body += '<p style="color:#94a3b8;font-size:8px;margin:0;letter-spacing:.4px">You are receiving these opportunities because you subscribed to a 9amLeads plan &bull; <a href="{{ unsubscribe }}" style="color:#94a3b8;text-decoration:underline">Unsubscribe</a></p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
