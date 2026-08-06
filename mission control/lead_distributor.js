@@ -679,12 +679,13 @@ async function distributeProduct(product) {
       }
     }
 
-    // FALLBACK ONLY for tenders/planning/probate (county/region products where a
-    // lead may carry no clean county text). MOVING + NEWBUSINESS are EXCLUDED —
-    // they have reliable postcode data and must use STRICT area matching, never
-    // a fallback that delivers out-of-area leads. This was the bug that sent
-    // wrong-area leads (e.g. Cambridge leads to a B/HA/NW customer).
-    if (product === 'tenders' || product === 'planning' || product === 'probate') {
+    // FALLBACK ONLY for tenders/probate (products where a lead may carry no
+    // clean county text at all). MOVING, NEWBUSINESS and PLANNING are EXCLUDED —
+    // they have reliable postcode/application data and must use STRICT area
+    // matching, never a fallback that delivers out-of-area leads. This was the
+    // bug that sent wrong-area leads (e.g. Cambridge leads to a B/HA/NW customer,
+    // and a Lancaster planning app to a greater-london customer).
+    if (product === 'tenders' || product === 'probate') {
       for (const customer of activeCustomers) {
         const isProductCustomer = customer.product === product || (customer.biz_field3 && String(customer.biz_field3).indexOf(product) !== -1);
         if (!isProductCustomer) continue;
