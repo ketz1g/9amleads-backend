@@ -679,20 +679,19 @@ async function distributeProduct(product) {
       }
     }
 
-    // TENDERS + PLANNING + PROBATE FALLBACK: public sector opportunities, planning
-    // applications, and probate notices are often national/regional and carry no
-    // clean county text. If a lead matches no customer's county/area, still offer
-    // it to active customers of that product so they are never left without their
-    // promised daily leads. We ALWAYS add these customers as tier-0 (lowest priority)
-    // so an "All UK" account can't hog every lead while county accounts starve —
-    // the round-robin balances between them. Tier 0 = lowest priority so
-    // exact-area matches still win when they exist.
-    for (const customer of activeCustomers) {
-      const isProductCustomer = customer.product === product || (customer.biz_field3 && String(customer.biz_field3).indexOf(product) !== -1);
-      if (!isProductCustomer) continue;
-      const alreadyMatched = matchedCustomers.some(function(mc) { return mc.customer.id === customer.id; });
-      if (!alreadyMatched) {
-        matchedCustomers.push({ customer, tier: 0 });
+    // FALLBACK ONLY for tenders/planning/probate (county/region products where a
+    // lead may carry no clean county text). MOVING + NEWBUSINESS are EXCLUDED —
+    // they have reliable postcode data and must use STRICT area matching, never
+    // a fallback that delivers out-of-area leads. This was the bug that sent
+    // wrong-area leads (e.g. Cambridge leads to a B/HA/NW customer).
+    if (product === 'tenders' || product === 'planning' || product === 'probate') {
+      for (const customer of activeCustomers) {
+        const isProductCustomer = customer.product === product || (customer.biz_field3 && String(customer.biz_field3).indexOf(product) !== -1);
+        if (!isProductCustomer) continue;
+        const alreadyMatched = matchedCustomers.some(function(mc) { return mc.customer.id === customer.id; });
+        if (!alreadyMatched) {
+          matchedCustomers.push({ customer, tier: 0 });
+        }
       }
     }
 
