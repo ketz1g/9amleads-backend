@@ -5160,6 +5160,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       }
       var availByProd = {};
       var availFreshByProd = {};
+      var availGlobalByProd = {};
       products.forEach(function(p) {
         var pool = (db.leads || []).filter(function(l) {
           if (l.customer_id !== cust.id || l.delivered !== 0 || l.product !== p) return false;
@@ -5167,6 +5168,16 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           return true;
         });
         availByProd[p] = pool;
+        // GLOBAL-POOL GUARANTEE: if this customer's pre-assigned pool is short
+        // (the distributor under-assigned due to area competition), we can still
+        // meet the promise from ANY undelivered lead in this product+area. This
+        // is used as a final fallback in Round 2 so every customer always gets
+        // their promised daily count when market supply exists.
+        var globalPool = (db.leads || []).filter(function(l) {
+          if (l.delivered !== 0 || l.product !== p) return false;
+          return true;
+        });
+        availGlobalByProd[p] = globalPool;
         // FRESHNESS (24h): build a strictly-fresh pool. Leads are only "fresh" if
         // their first-visible/updated/created date is within the last 24 hours.
         var fresh = pool.filter(function(l) {
@@ -5218,7 +5229,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         var r1prod = products[r1p];
         if (prodTaken[r1prod] >= prodDailyCap(r1prod)) continue;
         if (!canTakeProduct(r1prod, cust.plan, weekStart2, today, custLeads)) continue;
-        var r1pool = (availFreshByProd[r1prod] && availFreshByProd[r1prod].length > 0 ? availFreshByProd[r1prod] : (availByProd[r1prod] || [])).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+        var r1pool = (availByProd[r1prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; }).sort(function(a,b){
+          // Prefer fresh leads first (firstVisibleDate recent), but keep ALL so the promise is always met
+          var fa=0,fb=0;
+          try{var da=JSON.parse(a.data||'{}');fa=new Date(da.firstVisibleDate||0).getTime();}catch(e){}
+          try{var db2=JSON.parse(b.data||'{}');fb=new Date(db2.firstVisibleDate||0).getTime();}catch(e){}
+          return fb-fa;
+        });
         if (r1pool.length === 0) continue;
         // Try least-represented area first (works for any coverage type with specific areas)
         if (custAreas.length > 0) {
@@ -5246,7 +5263,24 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             var r2prod = products[r2p];
             if (prodTaken[r2prod] >= prodDailyCap(r2prod)) continue;
             if (!canTakeProduct(r2prod, cust.plan, weekStart2, today, custLeads)) continue;
-            var r2pool = (availFreshByProd[r2prod] && availFreshByProd[r2prod].length > 0 ? availFreshByProd[r2prod] : (availByProd[r2prod] || [])).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+            var r2pool = (availByProd[r2prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; }).sort(function(a,b){
+              // Prefer fresh leads first, but keep ALL so the promise is always met
+              var fa=0,fb=0;
+              try{var da=JSON.parse(a.data||'{}');fa=new Date(da.firstVisibleDate||0).getTime();}catch(e){}
+              try{var db2=JSON.parse(b.data||'{}');fb=new Date(db2.firstVisibleDate||0).getTime();}catch(e){}
+              return fb-fa;
+            });
+            // GLOBAL-POOL FALLBACK: if this customer's pre-assigned pool is empty
+            // but supply exists elsewhere in their product+area, pull from the
+            // global undelivered pool so we ALWAYS meet the promised count.
+            if (r2pool.length === 0) {
+              r2pool = (availGlobalByProd[r2prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; }).sort(function(a,b){
+                var fa=0,fb=0;
+                try{var da=JSON.parse(a.data||'{}');fa=new Date(da.firstVisibleDate||0).getTime();}catch(e){}
+                try{var db2=JSON.parse(b.data||'{}');fb=new Date(db2.firstVisibleDate||0).getTime();}catch(e){}
+                return fb-fa;
+              });
+            }
             if (r2pool.length === 0) continue;
           if (custAreas.length > 0) {
             var counts2 = areaCounts(custLeads, custAreas);
@@ -5255,6 +5289,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               for (var sa2 = 0; sa2 < sortedAreas2.length; sa2++) {
                 var areaLead2 = findLeadForProductAndArea(r2prod, sortedAreas2[sa2], r2pool, pickedIds);
                 if (areaLead2) {
+                  // If this lead was pre-assigned to another customer (global fallback),
+                  // reassign it to this customer so it delivers correctly.
+                  if (areaLead2.customer_id !== cust.id) {
+                    areaLead2.customer_id = cust.id;
+                    areaLead2.claimed_at = new Date().toISOString();
+                  }
                   custLeads.push(areaLead2); pickedIds.push(areaLead2.id);
                   prodTaken[r2prod]++;
                   found2 = true; break;
