@@ -771,6 +771,13 @@ async function distributeProduct(product) {
     // then by per-postcode usage, then total usage.
     const eligible = customers.filter(mc => mc.tier <= tierFilter);
     eligible.sort((a, b) => {
+      // PLAN PRIORITY: paid/higher-tier customers get first access to scarce
+      // area leads, so a pro customer (15/day) is never short-changed by free
+      // trial accounts competing for the same postcode areas.
+      const planRank = { enterprise: 4, pro: 3, starter: 2, essential: 2, free_trial: 1 };
+      const ar = planRank[a.customer.plan] || 1;
+      const br = planRank[b.customer.plan] || 1;
+      if (ar !== br) return br - ar;
       if (cat) {
         var auCat = customerPostcodeUsage[a.customer.id]['cat_' + cat] || 0;
         var buCat = customerPostcodeUsage[b.customer.id]['cat_' + cat] || 0;
