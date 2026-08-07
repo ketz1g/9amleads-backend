@@ -5049,6 +5049,26 @@ cron.schedule('0 0 * * *', async () => {
     } catch(e) { console.log('[HEALTH] Alert email failed:', e.message); }
   }
 });
+// DIAGNOSTIC: dump pool area distribution for a product
+app.get('/api/admin/pool-areas', adminAuth, (req, res) => {
+  try {
+    var prod = req.query.product || 'moving';
+    var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : 'moving-leads.json');
+    var raw = null;
+    try { raw = JSON.parse(fs.readFileSync(poolFile, 'utf-8')); } catch(e) {}
+    var arr = [];
+    if (Array.isArray(raw)) arr = raw;
+    else if (raw && typeof raw === 'object') {
+      Object.keys(raw).forEach(function(k){ if(k.indexOf('_')===0)return; if(Array.isArray(raw[k])) arr = arr.concat(raw[k]); });
+    }
+    var areas = {};
+    arr.forEach(function(l){
+      var pc = extractPostcodeArea(l.postcode || l.address || l.location || l.name || '');
+      if (pc) areas[pc] = (areas[pc]||0)+1;
+    });
+    res.json({ file: poolFile, total: arr.length, by_area: areas });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   try {
     var delivered = 0, errors = 0, lastErr = '';
