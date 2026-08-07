@@ -5072,6 +5072,7 @@ app.get('/api/admin/pool-areas', adminAuth, (req, res) => {
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   try {
     var delivered = 0, errors = 0, lastErr = '';
+    var _deliverDiag = {};
     _dbData = null;
     var db = getDb();
     var today = new Date().toISOString().split('T')[0];
@@ -5306,6 +5307,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             // the full daily supply, e.g. 1600+ moving properties) and create them
             // on-demand so the promised daily count is ALWAYS met when supply exists.
             if (r2pool.length === 0) {
+              if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: custAreas.slice(0,5) };
               try {
                 var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[r2prod] ? PRODUCT_LEAD_FILES[r2prod].file : 'moving-leads.json');
                 var poolRaw = null;
@@ -5362,8 +5364,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   }
                   r2pool = createdFromPool.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
                   console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': created ' + createdFromPool.length + ' pool leads, r2pool=' + r2pool.length);
+                  _deliverDiag[cust.email].poolfile += createdFromPool.length;
+                  _deliverDiag[cust.email].poolfile_total += 1;
                 } else {
                   console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': no pool leads to use');
+                  _deliverDiag[cust.email].poolfile_total += 1;
                 }
               } catch(e3) { console.log('[DELIVERY] Pool-file fallback error:', e3.message); }
             }
@@ -5446,7 +5451,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       } catch(ex) { errors++; console.log('[DELIVER] Error: ' + ex?.message); lastErr = ex?.message; }
     }
     saveDb();
-    res.json({ success: true, customers_processed: customers.length, leads_delivered: delivered, errors: errors, lastError: lastErr });
+    res.json({ success: true, customers_processed: customers.length, leads_delivered: delivered, errors: errors, lastError: lastErr, diag: _deliverDiag || null });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
