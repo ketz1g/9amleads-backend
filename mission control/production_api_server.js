@@ -5299,6 +5299,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     if (Array.isArray(poolRaw[k])) poolArr = poolArr.concat(poolRaw[k]);
                   });
                 }
+                console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': file=' + poolFile + ' poolRaw=' + (poolRaw?Object.keys(poolRaw).length+'keys':'null') + ' flattened=' + poolArr.length);
                 if (Array.isArray(poolArr) && poolArr.length > 0) {
                   var existingKeys = {};
                   (db.leads || []).forEach(function(l){ if(l.product===r2prod){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); existingKeys[k]=1; }catch(e){} } });
@@ -5340,6 +5341,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     createdFromPool.push(newLead);
                   }
                   r2pool = createdFromPool.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+                  console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': created ' + createdFromPool.length + ' pool leads, r2pool=' + r2pool.length);
+                } else {
+                  console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': no pool leads to use');
                 }
               } catch(e3) { console.log('[DELIVERY] Pool-file fallback error:', e3.message); }
             }
