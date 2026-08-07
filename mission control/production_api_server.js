@@ -5288,24 +5288,53 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             if (r2pool.length === 0) {
               try {
                 var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[r2prod] ? PRODUCT_LEAD_FILES[r2prod].file : 'moving-leads.json');
+                var poolRaw = null;
+                try { poolRaw = JSON.parse(fs.readFileSync(poolFile, 'utf-8')); } catch(e2) {}
                 var poolArr = [];
-                try { poolArr = JSON.parse(fs.readFileSync(poolFile, 'utf-8')); } catch(e2) {}
+                if (Array.isArray(poolRaw)) {
+                  poolArr = poolRaw;
+                } else if (poolRaw && typeof poolRaw === 'object') {
+                  Object.keys(poolRaw).forEach(function(k){
+                    if (k.indexOf('_') === 0) return;
+                    if (Array.isArray(poolRaw[k])) poolArr = poolArr.concat(poolRaw[k]);
+                  });
+                }
                 if (Array.isArray(poolArr) && poolArr.length > 0) {
                   var existingKeys = {};
-                  (db.leads || []).forEach(function(l){ if(l.product===r2prod){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||''); existingKeys[k]=1; }catch(e){} } });
+                  (db.leads || []).forEach(function(l){ if(l.product===r2prod){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); existingKeys[k]=1; }catch(e){} } });
                   var createdFromPool = [];
                   for (var pf=0; pf<poolArr.length && createdFromPool.length < totalNeeded; pf++) {
                     var rl = poolArr[pf];
-                    var areaOfPoolLead = extractPostcodeArea(rl.postcode || rl.address || '');
+                    var areaOfPoolLead = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || '');
+                    if (!areaOfPoolLead) continue;
                     var custAreaHit = false;
                     if (custAreas.length > 0) {
                       custAreaHit = custAreas.some(function(a){ return extractPostcodeArea(a) === areaOfPoolLead; });
                     } else { custAreaHit = true; }
                     if (!custAreaHit) continue;
-                    var poolKey = (rl.postcode||rl.address||rl.id||'');
+                    var poolKey = (rl.postcode||rl.address||rl.id||rl.url||'');
                     if (existingKeys[poolKey]) continue;
-                    var nl = normaliseLead(rl, r2prod, cust.id);
-                    var newLead = { id: 'lead_' + Date.now() + '_' + pf, customer_id: cust.id, product: r2prod, data: JSON.stringify(nl), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null };
+                    var poolLeadData = {
+                      id: rl.id || ('LD_' + r2prod + '_' + pf),
+                      address: rl.address || rl.name || rl.company || '',
+                      postcode: rl.postcode || rl.location || '',
+                      price: rl.price || rl.priceLabel || rl.estateValueLabel || '',
+                      bedrooms: rl.bedrooms || 0,
+                      propertyType: rl.propertyType || rl.type || '',
+                      status: rl.status || rl.listingStatus || 'new',
+                      agent: rl.agent || rl.agentName || '',
+                      url: rl.url || '',
+                      source: rl.source || r2prod,
+                      city: rl.city || '',
+                      scrapedAt: rl.scrapedAt || new Date().toISOString(),
+                      firstVisibleDate: rl.firstVisibleDate || rl.updateDate || '',
+                      updateDate: rl.updateDate || '',
+                      priceLabel: rl.priceLabel || (rl.price ? '\u00a3' + Number(rl.price).toLocaleString() : ''),
+                      listedDate: rl.listedDate || '',
+                      company: rl.companyName || rl.name || rl.company || '',
+                      companyNumber: rl.companyNumber || ''
+                    };
+                    var newLead = { id: 'lead_' + Date.now() + '_' + pf, customer_id: cust.id, product: r2prod, data: JSON.stringify(poolLeadData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
                     db.leads.push(newLead);
                     existingKeys[poolKey] = 1;
                     createdFromPool.push(newLead);
