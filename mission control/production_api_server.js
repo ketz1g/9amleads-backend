@@ -3519,8 +3519,8 @@ const LEAD_TYPE_RULES = {
     coverage: ['county', 'ukwide'],
     area_limit: { free_trial: 3, starter: 3, pro: 999, enterprise: 999 },
     plans: {
-      free_trial: { default: 1, county: 1, region: 1, ukwide: 1 },
-      starter:  { default: 1,  county: 1,  region: 1,  ukwide: 1 },
+      free_trial: { default: 5, county: 5, region: 5, ukwide: 5 },
+      starter:  { default: 5,  county: 5,  region: 5,  ukwide: 5 },
       pro:      { default: 3,  county: 3,  region: 3,  ukwide: 3 },
       enterprise: { default: 5, county: 5, region: 5, ukwide: 5 },
     },
@@ -3553,8 +3553,8 @@ const LEAD_TYPE_RULES = {
     coverage: ['county', 'region', 'ukwide'],
     area_limit: { free_trial: 3, starter: 3, pro: 999, enterprise: 999 },
     plans: {
-      free_trial: { default: 1, county: 1, region: 1, ukwide: 1 },
-      starter:  { default: 1,  county: 1,  region: 1,  ukwide: 1 },
+      free_trial: { default: 5, county: 5, region: 5, ukwide: 5 },
+      starter:  { default: 5,  county: 5,  region: 5,  ukwide: 5 },
       pro:      { default: 3,  county: 3,  region: 3,  ukwide: 3 },
       enterprise: { default: 5, county: 5, region: 5, ukwide: 5 },
     },
