@@ -5281,6 +5281,39 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 return fb-fa;
               });
             }
+            // POOL-FILE FALLBACK: still short and no undelivered DB leads for this
+            // product+area? Load fresh leads from the scrape pool file (which holds
+            // the full daily supply, e.g. 1600+ moving properties) and create them
+            // on-demand so the promised daily count is ALWAYS met when supply exists.
+            if (r2pool.length === 0) {
+              try {
+                var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[r2prod] ? PRODUCT_LEAD_FILES[r2prod].file : 'moving-leads.json');
+                var poolArr = [];
+                try { poolArr = JSON.parse(fs.readFileSync(poolFile, 'utf-8')); } catch(e2) {}
+                if (Array.isArray(poolArr) && poolArr.length > 0) {
+                  var existingKeys = {};
+                  (db.leads || []).forEach(function(l){ if(l.product===r2prod){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||''); existingKeys[k]=1; }catch(e){} } });
+                  var createdFromPool = [];
+                  for (var pf=0; pf<poolArr.length && createdFromPool.length < totalNeeded; pf++) {
+                    var rl = poolArr[pf];
+                    var areaOfPoolLead = extractPostcodeArea(rl.postcode || rl.address || '');
+                    var custAreaHit = false;
+                    if (custAreas.length > 0) {
+                      custAreaHit = custAreas.some(function(a){ return extractPostcodeArea(a) === areaOfPoolLead; });
+                    } else { custAreaHit = true; }
+                    if (!custAreaHit) continue;
+                    var poolKey = (rl.postcode||rl.address||rl.id||'');
+                    if (existingKeys[poolKey]) continue;
+                    var nl = normaliseLead(rl, r2prod, cust.id);
+                    var newLead = { id: 'lead_' + Date.now() + '_' + pf, customer_id: cust.id, product: r2prod, data: JSON.stringify(nl), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null };
+                    db.leads.push(newLead);
+                    existingKeys[poolKey] = 1;
+                    createdFromPool.push(newLead);
+                  }
+                  r2pool = createdFromPool.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+                }
+              } catch(e3) { console.log('[DELIVERY] Pool-file fallback error:', e3.message); }
+            }
             if (r2pool.length === 0) continue;
           if (custAreas.length > 0) {
             var counts2 = areaCounts(custLeads, custAreas);
