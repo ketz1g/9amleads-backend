@@ -599,7 +599,13 @@ async function distributeProduct(product) {
   // Deduplicate within the current batch (same company number or address)
   var seenKeys = new Set();
   allScrapedLeads = allScrapedLeads.filter(function(l) {
-    var key = (l.companyNumber || l.id || l.address || '').toLowerCase().trim();
+    // Dedup by ADDRESS always (a property/company/notice at the same address must
+    // never be delivered twice), plus company number/id as a fallback. Using the
+    // unique pool id alone let the same property (different scraped ids) through,
+    // which created duplicate leads for a customer (e.g. two HA1 2JN leads).
+    var addrKey = (l.address || l.name || l.company || '').toLowerCase().trim();
+    var coKey = (l.companyNumber || l.company_number || '').toString().toLowerCase().trim();
+    var key = (addrKey || coKey || l.id || '').toLowerCase().trim();
     if (!key || seenKeys.has(key)) return false;
     seenKeys.add(key);
     return true;
