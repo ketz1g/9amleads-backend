@@ -5073,7 +5073,7 @@ app.get('/api/admin/pool-areas', adminAuth, (req, res) => {
       var d = (l.scrapedAt || '').split('T')[0] || 'none';
       byDate[d] = (byDate[d]||0)+1;
     });
-    res.json({ file: poolFile, total: arr.length, by_area: areas, by_date: byDate, samples: arr.slice(0,5).map(function(l){return {postcode:l.postcode,address:l.address,location:l.location,name:l.name,scrapedAt:l.scrapedAt,keys:Object.keys(l).slice(0,15)};} ) });
+    res.json({ file: poolFile, total: arr.length, by_area: areas, by_date: byDate, keys: (raw && typeof raw === 'object' ? Object.keys(raw).filter(function(k){return k.indexOf('_')!==0;}).slice(0,20) : []), samples: arr.slice(0,5).map(function(l){return {postcode:l.postcode,address:l.address,location:l.location,name:l.name,scrapedAt:l.scrapedAt,keys:Object.keys(l).slice(0,15)};} ) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
