@@ -10825,6 +10825,7 @@ app.get('/api/admin/system-status', adminAuth, (req, res) => {
       stripe: !!STRIPE_SECRET_KEY,
       brevo: !!BREVO_API_KEY,
       apify: !!process.env.APIFY_API_KEY,
+      stannp: !!STANNP_API_KEY,
       postcoder_enabled: process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1'
     };
 
