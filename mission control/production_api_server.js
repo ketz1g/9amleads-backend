@@ -5230,6 +5230,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today);
       }).length;
       totalNeeded = Math.max(0, totalNeeded - alreadyDeliveredToday);
+      // NO SPLIT EMAILS: if this customer already received their daily email (a
+      // watchdog/manual re-run), top up the missing leads in the DB but NEVER send
+      // a second partial email. All promised leads go out in ONE email.
+      var alreadyEmailedToday = (db.leads || []).some(function(l) {
+        return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today);
+      });
       if (totalNeeded === 0) {
         console.log('[DELIVERY] ' + cust.email + ' already received ' + alreadyDeliveredToday + ' today (promise=' + totalDailyLimit + ') — skipping (exact-count)');
         continue;
@@ -5443,10 +5449,16 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       });
       if (custLeads.length === 0) continue;
       try {
-        var htmlContent = generateLeadEmailHTML(cust, custLeads);
-        var covName3 = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
-        var subject = '9amLeads — Your Daily Opportunities for ' + covName3 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, htmlContent);
+        // NO SPLIT EMAILS: if this customer already got their daily email, only
+        // mark the top-up leads as delivered — don't send a second email.
+        if (!alreadyEmailedToday) {
+          var htmlContent = generateLeadEmailHTML(cust, custLeads);
+          var covName3 = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
+          var subject = '9amLeads — Your Daily Opportunities for ' + covName3 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+          await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, htmlContent);
+        } else {
+          console.log('[DELIVERY] ' + cust.email + ': already emailed today — topping up ' + custLeads.length + ' leads silently (no second email)');
+        }
         // Send to CRM webhook if configured
         if (cust.crm_webhook_url) {
           try {
