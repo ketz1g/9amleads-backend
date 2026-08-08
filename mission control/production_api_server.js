@@ -11033,6 +11033,53 @@ app.post('/api/admin/purge-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/add-test-lead — inject a custom test lead into a customer's
+// leads so it shows in their dashboard "My Leads" for Print & Post testing.
+app.post('/api/admin/add-test-lead', adminAuth, (req, res) => {
+  try {
+    const email = req.body.email;
+    if (!email) return res.status(400).json({ error: 'email required' });
+    _dbData = null;
+    const db = getDb();
+    const customer = (db.customers || []).filter(function(c) { return c.email === email; })[0];
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    const leadData = {
+      id: req.body.lead_id || ('TEST_' + Date.now()),
+      name: req.body.name || 'Test Lead',
+      address: req.body.address || req.body.address_line1 || '',
+      postcode: req.body.postcode || '',
+      city: req.body.city || '',
+      price: req.body.price || '',
+      bedrooms: req.body.bedrooms || 0,
+      propertyType: req.body.property_type || '',
+      status: req.body.status || 'new',
+      agent: req.body.agent || '',
+      url: req.body.url || '',
+      source: req.body.source || 'manual-test',
+      scrapedAt: new Date().toISOString(),
+      firstVisibleDate: new Date().toISOString(),
+      updateDate: new Date().toISOString(),
+      company: req.body.company || '',
+      companyNumber: req.body.company_number || ''
+    };
+    const newLead = {
+      id: 'lead_' + Date.now() + '_test',
+      customer_id: customer.id,
+      product: customer.product || 'moving',
+      data: JSON.stringify(leadData),
+      status: 'new',
+      delivered: req.body.mark_delivered === true ? 1 : 0,
+      created_at: new Date().toISOString(),
+      delivered_at: req.body.mark_delivered === true ? new Date().toISOString() : null,
+      release_at: null
+    };
+    db.leads.push(newLead);
+    saveDb();
+    res.json({ success: true, lead: newLead, message: 'Test lead added to ' + customer.email });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+
 app.post('/api/admin/cleanup', adminAuth, (req, res) => {
   try {
     const db = getDb();
