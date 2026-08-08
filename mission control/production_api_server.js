@@ -616,13 +616,15 @@ var STANNP_WEBHOOK_SECRET = process.env.STANNP_WEBHOOK_SECRET || '';
 // ===== SHARED BRAND COLOURS PER LEAD TYPE =====
 // Single source of truth so campaign emails, daily lead emails and the dashboard
 // all use the SAME colour scheme per lead type. Dark, high-contrast shades so
-// white text is always readable on the product colour.
+// white text is always readable on the product colour. Each product also has a
+// LIGHT accent for use on DARK backgrounds (e.g. footer/header) so the "Leads"
+// wordmark stays visible — dark-on-dark is never used.
 var PRODUCT_BRAND = {
-  moving:      { color: '#bf360c', color2: '#8f2700', bg: '#fff7f2', name: 'Moving Leads',     short: 'MOVING',  page: 'https://9amleads.com/movingleadsdaily/',   logo: '9' },
-  probate:     { color: '#5b21b6', color2: '#3b1364', bg: '#f8f5ff', name: 'Probate Leads',     short: 'PROBATE', page: 'https://9amleads.com/probateleads/',      logo: '9' },
-  newbusiness: { color: '#166534', color2: '#0f4524', bg: '#f0fdf4', name: 'New Business Alerts', short: 'NEW BIZ', page: 'https://9amleads.com/newbusinessalert/',   logo: '9' },
-  planning:    { color: '#115e59', color2: '#0b3d3a', bg: '#f0fdfa', name: 'Planning Permission Leads', short: 'PLANNING', page: 'https://9amleads.com/planningleads/',   logo: '9' },
-  tenders:     { color: '#3730a3', color2: '#232080', bg: '#f5f7ff', name: 'Public Sector Tenders', short: 'TENDER', page: 'https://9amleads.com/tenders/',          logo: '9' }
+  moving:      { color: '#bf360c', color2: '#8f2700', light: '#fb923c', bg: '#fff7f2', name: 'Moving Leads',     short: 'MOVING',  page: 'https://9amleads.com/movingleadsdaily/',   logo: '9' },
+  probate:     { color: '#5b21b6', color2: '#3b1364', light: '#a78bfa', bg: '#f8f5ff', name: 'Probate Leads',     short: 'PROBATE', page: 'https://9amleads.com/probateleads/',      logo: '9' },
+  newbusiness: { color: '#166534', color2: '#0f4524', light: '#4ade80', bg: '#f0fdf4', name: 'New Business Alerts', short: 'NEW BIZ', page: 'https://9amleads.com/newbusinessalert/',   logo: '9' },
+  planning:    { color: '#115e59', color2: '#0b3d3a', light: '#2dd4bf', bg: '#f0fdfa', name: 'Planning Permission Leads', short: 'PLANNING', page: 'https://9amleads.com/planningleads/',   logo: '9' },
+  tenders:     { color: '#3730a3', color2: '#232080', light: '#818cf8', bg: '#f5f7ff', name: 'Public Sector Tenders', short: 'TENDER', page: 'https://9amleads.com/tenders/',          logo: '9' }
 };
 function getProductBrand(product){
   return PRODUCT_BRAND[product] || PRODUCT_BRAND.moving;
@@ -7228,11 +7230,11 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px">';
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
-  // Header — branded with proper 9amLeads logo
-  body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:36px 30px 24px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
+  // Header — branded with proper 9amLeads logo (compact, readable on dark bg)
+  body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:24px 30px 18px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
   body += '<table cellpadding="0" cellspacing="0" align="center"><tr>';
-  body += '<td style="background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:12px;width:44px;height:44px;text-align:center;vertical-align:middle;line-height:44px;font-family:Georgia,serif;font-size:22px;font-weight:900;color:#ffffff">' + brand.logo + '</td>';
-  body += '<td style="padding-left:12px;vertical-align:middle;text-align:left"><div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#ffffff;letter-spacing:-0.3px;line-height:1.1">9am<span style="color:' + accent + '">Leads</span></div><div style="font-size:9px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;font-weight:600">Fresh business leads &middot; Every morning</div></td>';
+  body += '<td style="background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:9px;width:30px;height:30px;text-align:center;vertical-align:middle;line-height:30px;font-family:Georgia,serif;font-size:16px;font-weight:900;color:#ffffff">' + brand.logo + '</td>';
+  body += '<td style="padding-left:10px;vertical-align:middle;text-align:left"><div style="font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:900;color:#ffffff;letter-spacing:-0.2px;line-height:1.15">9am<span style="color:' + brand.light + '">Leads</span></div><div style="font-size:8px;color:#94a3b8;letter-spacing:1.3px;text-transform:uppercase;margin-top:2px;font-weight:600">Fresh business leads &middot; Every morning</div></td>';
   body += '</tr></table>';
   var areasLabel = '';
   try { var custAreas = JSON.parse(customer.target_areas || '[]'); areasLabel = custAreas.length > 0 ? custAreas.join(', ') : ''; } catch(e) {}
@@ -7451,8 +7453,8 @@ function generateLeadEmailHTML(customer, leads) {
   body += '</div></div></td></tr>';
 
   // Footer — dark sleek
-  body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:28px 30px 24px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">';
-  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:900;color:#e2e8f0;text-align:center;margin-bottom:16px"><span style="display:inline-block;width:34px;height:34px;border-radius:9px;text-align:center;line-height:34px;font-size:15px;background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');margin-right:5px;vertical-align:middle">' + brand.logo + '</span><span style="vertical-align:middle">am Leads</span></div>';
+  body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:22px 30px 20px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">';
+  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:#e2e8f0;text-align:center;margin-bottom:12px"><span style="display:inline-block;width:26px;height:26px;border-radius:7px;text-align:center;line-height:26px;font-size:13px;background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');margin-right:5px;vertical-align:middle">' + brand.logo + '</span><span style="vertical-align:middle">am Leads</span></div>';
   var pricingLink = customer.product === 'planning' ? 'https://www.9amleads.com/planningleads' : customer.product === 'moving' ? 'https://www.9amleads.com/movingleadsdaily' : customer.product === 'probate' ? 'https://www.9amleads.com/probateleads' : customer.product === 'newbusiness' ? 'https://www.9amleads.com/newbusinessalert' : customer.product === 'tenders' ? 'https://www.9amleads.com/tenders' : 'https://www.9amleads.com/pricing';
   body += '<div style="margin-bottom:12px"><a href="' + dashboardUrl + '" style="display:inline-block;padding:12px 36px;background:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px;letter-spacing:0.8px">VIEW DASHBOARD</a></div>';
   body += '<a href="' + pricingLink + '" style="display:inline-block;padding:10px 30px;border:1px solid rgba(255,255,255,0.15);color:#f1f5f9;text-decoration:none;border-radius:50px;font-weight:600;font-size:12px">View ' + (customer.product ? getLeadTypeRule(customer.product).name : 'Pricing') + '</a>';
@@ -7463,7 +7465,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<td style="padding:0 5px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">fb</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">tt</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">ig</span></a></td>';
-  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 8px"><tr><td style="background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:8px;width:28px;height:28px;text-align:center;vertical-align:middle;line-height:28px;font-family:Georgia,serif;font-size:14px;font-weight:900;color:#ffffff">' + brand.logo + '</td><td style="padding-left:8px;vertical-align:middle"><span style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:#e2e8f0;letter-spacing:-0.2px">9am<span style="color:' + accent + '">Leads</span></span></td></tr></table>';
+  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 8px"><tr><td style="background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:7px;width:22px;height:22px;text-align:center;vertical-align:middle;line-height:22px;font-family:Georgia,serif;font-size:12px;font-weight:900;color:#ffffff">' + brand.logo + '</td><td style="padding-left:7px;vertical-align:middle"><span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:900;color:#e2e8f0;letter-spacing:-0.2px">9am<span style="color:' + brand.light + '">Leads</span></span></td></tr></table>';
   body += '<p style="color:#94a3b8;font-size:9px;margin:0 0 8px;letter-spacing:.3px">Fresh exclusive business opportunities, delivered at 9am every morning</p>';
   body += '<p style="color:#e2e8f0;font-size:10px;margin:0 0 4px;letter-spacing:.4px">9amLeads &middot; hello@9amleads.com</p>';
   body += '<p style="color:#e2e8f0;font-size:9px;margin:0 0 12px;letter-spacing:.3px"><a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a></p>';
