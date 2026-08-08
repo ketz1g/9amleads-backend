@@ -5436,6 +5436,92 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           }
         }
       }
+      // FINAL GUARANTEE PASS: if the customer is STILL short of their promised
+      // count after Round 1 + Round 2, pull the remaining gap directly from the
+      // scrape pool file (regardless of the pre-assigned/global DB pools). This
+      // guarantees the exact promised daily count is always delivered in ONE
+      // email whenever market supply exists.
+      if (custLeads.length < totalNeeded) {
+        for (var fgp = 0; fgp < products.length && custLeads.length < totalNeeded; fgp++) {
+          var fgProd = products[fgp];
+          if (prodTaken[fgProd] >= prodDailyCap(fgProd)) continue;
+          if (!canTakeProduct(fgProd, cust.plan, weekStart2, today, custLeads)) continue;
+          try {
+            var fgPoolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[fgProd] ? PRODUCT_LEAD_FILES[fgProd].file : 'moving-leads.json');
+            var fgRaw = null;
+            try { fgRaw = JSON.parse(fs.readFileSync(fgPoolFile, 'utf-8')); } catch(e2) {}
+            var fgArr = [];
+            if (Array.isArray(fgRaw)) fgArr = fgRaw;
+            else if (fgRaw && typeof fgRaw === 'object') {
+              Object.keys(fgRaw).forEach(function(k){ if (k.indexOf('_') === 0) return; if (Array.isArray(fgRaw[k])) fgArr = fgArr.concat(fgRaw[k]); });
+            }
+            if (!Array.isArray(fgArr) || fgArr.length === 0) continue;
+            var fgExisting = {};
+            (db.leads || []).forEach(function(l){ if(l.product===fgProd){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); fgExisting[k]=1; }catch(e){} } });
+            var fgNeed = totalNeeded - custLeads.length;
+            var fgCreated = 0;
+            for (var fgi = 0; fgi < fgArr.length && fgCreated < fgNeed; fgi++) {
+              var fgLead = fgArr[fgi];
+              var fgArea = extractPostcodeArea(fgLead.postcode || fgLead.address || fgLead.location || fgLead.name || '');
+              if (!fgArea) continue;
+              var fgAreaOk = false;
+              if (custAreas.length > 0) {
+                var fgCounties = custAreas.some(function(a){ return !/^[A-Z]{1,3}$/i.test(a); });
+                if (fgCounties) {
+                  var fgCountyMap = {
+                    'essex': ['CM','CO','SS','IG'],'hertfordshire':['AL','EN','HP','SG','WD'],'kent':['CT','DA','ME','TN'],
+                    'surrey':['CR','GU','KT','RH','SM','TW'],'sussex':['BN','RH','TN'],'hampshire':['GU','PO','SO','SP','RG'],
+                    'london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
+                    'greater-london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
+                    'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
+                    'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
+                    'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
+                    'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
+                    'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
+                    'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
+                    'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
+                    'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
+                  };
+                  var fgAreaLower = String(custAreas[0] || '').toLowerCase().replace(/[\s-]+/g, '-');
+                  fgAreaOk = (fgCountyMap[fgAreaLower] || []).indexOf(fgArea) >= 0;
+                } else {
+                  fgAreaOk = custAreas.some(function(a){ return extractPostcodeArea(a) === fgArea; });
+                }
+              } else { fgAreaOk = true; }
+              if (!fgAreaOk) continue;
+              var fgKey = (fgLead.postcode||fgLead.address||fgLead.id||fgLead.url||'');
+              if (fgExisting[fgKey]) continue;
+              var fgData = {
+                id: fgLead.id || ('LD_' + fgProd + '_' + fgi),
+                address: fgLead.address || fgLead.name || fgLead.company || '',
+                postcode: fgLead.postcode || fgLead.location || '',
+                price: fgLead.price || fgLead.priceLabel || fgLead.estateValueLabel || '',
+                bedrooms: fgLead.bedrooms || 0,
+                propertyType: fgLead.propertyType || fgLead.type || '',
+                status: fgLead.status || fgLead.listingStatus || 'new',
+                agent: fgLead.agent || fgLead.agentName || '',
+                url: fgLead.url || '',
+                source: fgLead.source || fgProd,
+                city: fgLead.city || '',
+                scrapedAt: fgLead.scrapedAt || new Date().toISOString(),
+                firstVisibleDate: fgLead.firstVisibleDate || fgLead.updateDate || '',
+                updateDate: fgLead.updateDate || '',
+                priceLabel: fgLead.priceLabel || (fgLead.price ? '\u00a3' + Number(fgLead.price).toLocaleString() : ''),
+                listedDate: fgLead.listedDate || '',
+                company: fgLead.companyName || fgLead.name || fgLead.company || '',
+                companyNumber: fgLead.companyNumber || ''
+              };
+              var fgNew = { id: 'lead_' + Date.now() + '_' + fgi, customer_id: cust.id, product: fgProd, data: JSON.stringify(fgData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
+              db.leads.push(fgNew);
+              fgExisting[fgKey] = 1;
+              custLeads.push(fgNew); pickedIds.push(fgNew.id); prodTaken[fgProd]++;
+              fgCreated++;
+              if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: custAreas.slice(0,5) };
+              _deliverDiag[cust.email].poolfile++;
+            }
+          } catch(e4) { console.log('[DELIVERY] Final guarantee error:', e4.message); }
+        }
+      }
       
       if (custLeads.length === 0) {
         console.log('[DELIVERY] WARN: ' + cust.email + ' (' + cust.product + ') got 0 leads today — no undelivered leads in pool');
