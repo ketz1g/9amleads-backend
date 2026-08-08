@@ -3104,7 +3104,7 @@ app.get('/api/admin/leads-overview', adminAuth, (req, res) => {
       return {
         id: c.id, email: c.email, company: c.company || c.email,
         product: c.product, plan: c.plan || 'free_trial',
-        promised_per_day: c.leads_per_day || (function() { try { return getPlanLimit(c.product, c.plan, c.coverage || 'postcode'); } catch(e) { return 5; } })(),
+        promised_per_day: (function() { try { return getPlanLimit(c.product, c.plan, c.coverage || 'postcode'); } catch(e) { return 5; } })(),
         coverage: c.coverage || 'postcode',
         leads_today: todayC,
         leads_week: weekC,
