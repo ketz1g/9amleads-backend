@@ -11034,6 +11034,16 @@ app.post('/api/admin/purge-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/stannp-balance — report Stannp print credit balance (admin)
+app.get('/api/admin/stannp-balance', adminAuth, async (req, res) => {
+  try {
+    var provider = getDirectMailProvider();
+    var bal = await provider.getBalance();
+    if (bal && bal.success) return res.json({ success: true, balance: bal.balance, configured: !!STANNP_API_KEY });
+    res.json({ success: false, error: (bal && bal.error) || 'Failed to get balance', configured: !!STANNP_API_KEY });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/add-test-lead — inject a custom test lead into a customer's
 // leads so it shows in their dashboard "My Leads" for Print & Post testing.
 app.post('/api/admin/add-test-lead', adminAuth, (req, res) => {
