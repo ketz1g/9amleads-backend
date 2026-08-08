@@ -12,6 +12,30 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "https://nineamleads-backend.onrender.com/sitemap.xml"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/robots.txt"
+  to = "https://nineamleads-backend.onrender.com/robots.txt"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/blog"
+  to = "https://nineamleads-backend.onrender.com/blog"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/blog/*"
+  to = "https://nineamleads-backend.onrender.com/blog/:splat"
+  status = 200
+  force = true
+
 [[headers]]
   for = "/*"
   [headers.values]
