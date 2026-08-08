@@ -3528,7 +3528,7 @@ const LEAD_TYPE_RULES = {
     price_starter: 'price_1TmEKSADspDnFpfBrCHXJBFu',
     price_growth: 'price_1TmEKTADspDnFpfBVdi1APEq',
     price_power: 'price_1TmEKTADspDnFpfBxFjHeoP9',
-    weekly_est: { starter: 5, pro: 15, enterprise: 25 },
+    weekly_est: { free_trial: 25, starter: 5, pro: 15, enterprise: 25 },
     monthly_est: { starter: 20, pro: 60, enterprise: 100 }
   },
   probate: {
@@ -3562,7 +3562,7 @@ const LEAD_TYPE_RULES = {
     price_starter: 'price_1TmEKTADspDnFpfBsi6jjA6B',
     price_growth: 'price_1TmEKUADspDnFpfBqnyKzJxM',
     price_power: 'price_1TmEKUADspDnFpfBugGOoqhD',
-    weekly_est: { starter: 5, pro: 15, enterprise: 25 },
+    weekly_est: { free_trial: 25, starter: 5, pro: 15, enterprise: 25 },
     monthly_est: { starter: 20, pro: 60, enterprise: 100 }
   },
   property: {
