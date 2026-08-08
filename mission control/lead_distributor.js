@@ -675,7 +675,12 @@ async function distributeProduct(product) {
     for (const customer of activeCustomers) {
       const result = leadMatchesTarget(rawLead, customer, product);
       if (result.match) {
-        matchedCustomers.push({ customer, tier: result.tier });
+        // Specific-area customers (postcode/county/region with real targets) get
+        // priority over ukwide/all-UK customers for scarce leads.
+        const cfg = getProductConfig(customer, product);
+        const cov = cfg.coverage || 'default';
+        const isSpecific = cov !== 'ukwide' && cfg.targets.length > 0;
+        matchedCustomers.push({ customer, tier: result.tier, isSpecificArea: isSpecific });
       }
     }
 
@@ -778,6 +783,12 @@ async function distributeProduct(product) {
       const ar = planRank[a.customer.plan] || 1;
       const br = planRank[b.customer.plan] || 1;
       if (ar !== br) return br - ar;
+      // COVERAGE PRIORITY: specific-area customers (county/region/postcode) get
+      // first access over ukwide/all-UK customers, so a greater-london customer is
+      // never starved by an "All UK" account claiming every lead.
+      const isSpecificA = a.isSpecificArea === true;
+      const isSpecificB = b.isSpecificArea === true;
+      if (isSpecificA !== isSpecificB) return isSpecificA ? -1 : 1;
       if (cat) {
         var auCat = customerPostcodeUsage[a.customer.id]['cat_' + cat] || 0;
         var buCat = customerPostcodeUsage[b.customer.id]['cat_' + cat] || 0;
