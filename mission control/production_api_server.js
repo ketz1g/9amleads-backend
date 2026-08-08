@@ -7231,10 +7231,10 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
   // Header — branded with proper 9amLeads logo (compact, readable on dark bg)
-  body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:24px 30px 18px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
+  body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:22px 30px 16px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
   body += '<table cellpadding="0" cellspacing="0" align="center"><tr>';
-  body += '<td style="background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:9px;width:30px;height:30px;text-align:center;vertical-align:middle;line-height:30px;font-family:Georgia,serif;font-size:16px;font-weight:900;color:#ffffff">' + brand.logo + '</td>';
-  body += '<td style="padding-left:10px;vertical-align:middle;text-align:left"><div style="font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:900;color:#ffffff;letter-spacing:-0.2px;line-height:1.15">9am<span style="color:' + brand.light + '">Leads</span></div><div style="font-size:8px;color:#94a3b8;letter-spacing:1.3px;text-transform:uppercase;margin-top:2px;font-weight:600">Fresh business leads &middot; Every morning</div></td>';
+  body += '<td style="background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:9px;width:28px;height:28px;text-align:center;vertical-align:middle;line-height:28px;font-family:Georgia,serif;font-size:15px;font-weight:900;color:#ffffff">' + brand.logo + '</td>';
+  body += '<td style="padding-left:9px;vertical-align:middle;text-align:left"><div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:#ffffff;letter-spacing:-0.2px;line-height:1.2">9am<span style="color:' + brand.light + '">Leads</span></div><div style="font-size:8px;color:#94a3b8;letter-spacing:1.2px;text-transform:uppercase;margin-top:2px;font-weight:600">Fresh business leads &middot; Every morning</div></td>';
   body += '</tr></table>';
   var areasLabel = '';
   try { var custAreas = JSON.parse(customer.target_areas || '[]'); areasLabel = custAreas.length > 0 ? custAreas.join(', ') : ''; } catch(e) {}
@@ -7242,11 +7242,12 @@ function generateLeadEmailHTML(customer, leads) {
   body += '</td></tr>';
 
   // Greeting + count — dark card
-  body += '<tr><td style="background:#12141e;padding:28px 30px 20px">';
-  body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:800;color:#f1f5f9;margin:0 0 4px;letter-spacing:-0.3px">Good Morning, ' + (customer.company || 'there') + '</h2>';
-  body += '<p style="color:#e2e8f0;font-size:13px;margin:0 0 20px">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
+  body += '<tr><td style="background:#12141e;padding:24px 30px 18px">';
+  body += '<table cellpadding="0" cellspacing="0"><tr><td><span style="display:inline-block;padding:3px 12px;border-radius:6px;background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');color:#fff;font-size:9px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase">' + brand.short + '</span></td></tr></table>';
+  body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#f1f5f9;margin:10px 0 4px;letter-spacing:-0.3px">Good Morning, ' + (customer.company || 'there') + '</h2>';
+  body += '<p style="color:#cbd5e1;font-size:13px;margin:0 0 16px">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
   body += '<div style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.05));border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:14px 20px;margin-bottom:16px">';
-  body += '<table cellpadding="0" cellspacing="0"><tr><td style="vertical-align:middle"><span style="font-size:32px;font-weight:900;color:#10b981;line-height:1">' + leads.length + '</span></td><td style="padding-left:14px;vertical-align:middle"><span style="font-size:14px;color:#6ee7b7;font-weight:600">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' ready today</span></td></tr></table></div>';
+  body += '<table cellpadding="0" cellspacing="0"><tr><td style="vertical-align:middle"><span style="font-size:30px;font-weight:900;color:#10b981;line-height:1">' + leads.length + '</span></td><td style="padding-left:14px;vertical-align:middle"><span style="font-size:14px;color:#6ee7b7;font-weight:600">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' ready today</span></td></tr></table></div>';
   body += '<p style="font-size:12px;color:#e2e8f0;line-height:1.6;margin:0;padding:12px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px">' + aboutText + '</p>';
   body += '</td></tr>';
 
