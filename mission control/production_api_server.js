@@ -5442,6 +5442,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // guarantees the exact promised daily count is always delivered in ONE
       // email whenever market supply exists.
       if (custLeads.length < totalNeeded) {
+        if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: custAreas.slice(0,5) };
+        _deliverDiag[cust.email].poolfile_total++;
+        _deliverDiag[cust.email].final_pass = 'has=' + custLeads.length + ' need=' + totalNeeded + ' areas=' + JSON.stringify(custAreas) + ' poolfile=' + (PRODUCT_LEAD_FILES[products[0]] ? PRODUCT_LEAD_FILES[products[0]].file : '?');
+        console.log('[FINAL-GUARANTEE] ' + cust.email + ' short: has=' + custLeads.length + ' need=' + totalNeeded + ' areas=' + JSON.stringify(custAreas) + ' poolfile=' + (PRODUCT_LEAD_FILES[products[0]] ? PRODUCT_LEAD_FILES[products[0]].file : '?'));
         for (var fgp = 0; fgp < products.length && custLeads.length < totalNeeded; fgp++) {
           var fgProd = products[fgp];
           if (prodTaken[fgProd] >= prodDailyCap(fgProd)) continue;
@@ -5516,6 +5520,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               fgExisting[fgKey] = 1;
               custLeads.push(fgNew); pickedIds.push(fgNew.id); prodTaken[fgProd]++;
               fgCreated++;
+              console.log('[FINAL-GUARANTEE] ' + cust.email + ' created pool lead: ' + fgArea + ' ' + (fgLead.postcode||fgLead.address||'').substring(0,40));
               if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: custAreas.slice(0,5) };
               _deliverDiag[cust.email].poolfile++;
             }
