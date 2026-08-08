@@ -577,16 +577,21 @@ async function distributeProduct(product) {
 
   console.log(`  Total scraped leads available: ${allScrapedLeads.length}`);
 
-  // When no scraped leads exist, still continue to Phase 4 generation (targeted lead creation)
+  // Use the FULL pool (not just today's scraped batch) so every customer can
+  // always be assigned their FULL promised daily quota. The scraper pool already
+  // keeps leads fresh (moving drops >7d; other products are capped per customer),
+  // so older-but-valid leads are still great prospects. Prefer today's leads in
+  // the sort, but never limit assignment to today only — that caused customers
+  // (e.g. moving pro 15/day) to be short-changed when today's batch lacked enough
+  // leads in their areas.
   if (allScrapedLeads.length > 0) {
-    // Filter to today's leads only
     const today = getTodayStr();
-    const todayLeads = allScrapedLeads.filter(l => {
+    allScrapedLeads.forEach(function(l) {
       const scrapedDate = l.scrapedAt ? l.scrapedAt.split('T')[0] : '';
-      return scrapedDate === today;
+      l._isToday = scrapedDate === today;
     });
-    allScrapedLeads = todayLeads.length > 0 ? todayLeads : allScrapedLeads;
-    console.log(`  Leads from today: ${todayLeads.length} (using ${allScrapedLeads.length})`);
+    allScrapedLeads.sort(function(a, b) { return (b._isToday ? 1 : 0) - (a._isToday ? 1 : 0); });
+    console.log(`  Using full pool: ${allScrapedLeads.length} leads (today's first)`);
   } else {
     console.log('  No scraped leads — will generate Phase 4 targeted leads');
   }
@@ -899,7 +904,8 @@ async function distributeProduct(product) {
         var chosen = null;
         if (qcAreas.length > 0) {
           for (var qa = 0; qa < qcAreas.length && !chosen; qa++) {
-            chosen = qPool.find(function(a) { return extractPostcodeArea(a.lead.postcode || a.lead.address || a.lead.location || '') === qcAreas[qa]; });
+            var wantArea = extractPostcodeArea(qcAreas[qa]);
+            chosen = qPool.find(function(a) { return extractPostcodeArea(a.lead.postcode || a.lead.address || a.lead.location || '') === wantArea; });
           }
         }
         if (!chosen) chosen = qPool[0];
