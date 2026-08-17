@@ -4146,15 +4146,36 @@ function adminAuth(req, res, next) {
 app.get('/api/admin/stats', adminAuth, (req, res) => {
   const totalCustomers = db.prepare('SELECT COUNT(*) as count FROM customers').get();
   const freeTrials = db.prepare('SELECT COUNT(*) as count FROM customers WHERE plan = \'free_trial\'').get();
-  const paidCustomers = db.prepare('SELECT COUNT(*) as count FROM customers WHERE plan != \'free_trial\'').get();
+  // A customer is "paid" if their plan is not a free trial, OR they have an active
+  // Stripe subscription / non-trial selected plan (trial_ends passed and paid).
+  var allCusts = getDb().customers || [];
+  var paidCustomers = allCusts.filter(function(c) {
+    if (c.plan && c.plan !== 'free_trial') return true;
+    if (c.stripe_subscription_id || (c.selected_plan && c.selected_plan !== 'free_trial' && c.selected_plan !== 'starter')) return true;
+    return false;
+  }).length;
   const totalLeads = db.prepare('SELECT COUNT(*) as count FROM leads').get();
   const todayLeads = db.prepare('SELECT COUNT(*) as count FROM leads WHERE date(created_at) = date(\'now\')').get();
-  const deliveriesToday = db.prepare('SELECT COUNT(*) as count FROM deliveries WHERE date(delivered_at) = date(\'now\')').get();
+  // Deliveries are recorded by setting delivered=1 + delivered_at on each lead
+  // (there is no populated 'deliveries' table), so count delivered leads today.
+  const deliveriesToday = db.prepare('SELECT COUNT(*) as count FROM leads WHERE delivered = 1 AND date(delivered_at) = date(\'now\')').get();
   const bounced = db.prepare('SELECT COUNT(*) as count FROM customers WHERE bounced > 0').get();
 
-  const byProduct = db.prepare('SELECT product, COUNT(*) as count FROM customers GROUP BY product').all();
-  const bySource = db.prepare('SELECT source, COUNT(*) as count FROM customers GROUP BY source').all();
-  const recentSignups = db.prepare('SELECT date(created_at) as day, COUNT(*) as count FROM customers GROUP BY date(created_at) ORDER BY day DESC LIMIT 7').all();
+  const byProduct = (function() {
+    var counts = {};
+    (getDb().customers || []).forEach(function(c) { var p = c.product || 'unknown'; counts[p] = (counts[p] || 0) + 1; });
+    return Object.keys(counts).map(function(p) { return { product: p, count: counts[p] }; });
+  })();
+  const bySource = (function() {
+    var counts = {};
+    (getDb().customers || []).forEach(function(c) { var s = c.source || 'unknown'; counts[s] = (counts[s] || 0) + 1; });
+    return Object.keys(counts).map(function(s) { return { source: s, count: counts[s] }; });
+  })();
+  const recentSignups = (function() {
+    var counts = {};
+    (getDb().customers || []).forEach(function(c) { var d = String(c.created_at || '').split('T')[0]; if (d) counts[d] = (counts[d] || 0) + 1; });
+    return Object.keys(counts).sort().reverse().slice(0, 7).map(function(d) { return { day: d, count: counts[d] }; });
+  })();
 
   // JSON-level stats (expired trials, weekly signups, CRM connected)
   var dbS = getDb();
