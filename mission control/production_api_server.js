@@ -7119,6 +7119,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // Prefer the freshest leads first (latest source date across all fields),
           // so 24h leads deliver before 24-48h fallback leads — across every product.
           // Keep ALL within the fresh window so the exact-count promise is always met.
+          // CRITICAL for exact-count + real door numbers: leads that ALREADY have a
+          // confirmed house number are preferred, so the door-number gate rarely drops
+          // a selected lead. Un-numbered leads are only used as a last resort and are
+          // replaced by the top-up if they can't be verified.
+          function confirmed(l){ try{ var dd=JSON.parse(l.data||'{}'); return hasPremiseNumber(dd.fullAddress||dd.address||dd.deceasedAddress||'', dd.postcode||''); }catch(e){ return false; } }
+          var ca = confirmed(a), cb = confirmed(b);
+          if (ca !== cb) return ca ? -1 : 1;
           function leadFreshMs(l) {
             try { var d = JSON.parse(l.data || '{}'); var v = d.firstVisibleDate || d.updateDate || d.incorporationDate || d.publishedDate || d.receivedDate || d.scrapedAt || l.created_at || ''; return new Date(v || 0).getTime(); } catch(e) { return 0; }
           }
@@ -7152,7 +7159,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             if (prodTaken[r2prod] >= prodDailyCap(r2prod)) continue;
             if (!canTakeProduct(r2prod, cust.plan, weekStart2, today, custLeads)) continue;
             var r2pool = (availByProd[r2prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; }).sort(function(a,b){
-              // Prefer fresh leads first, but keep ALL so the promise is always met
+              // Prefer fresh leads first, but keep ALL so the promise is always met.
+              // Prefer already-confirmed (door-numbered) leads first so the gate
+              // rarely drops a selected lead — guarantees exact count + real numbers.
+              function confirmed(l){ try{ var dd=JSON.parse(l.data||'{}'); return hasPremiseNumber(dd.fullAddress||dd.address||dd.deceasedAddress||'', dd.postcode||''); }catch(e){ return false; } }
+              var ca = confirmed(a), cb = confirmed(b);
+              if (ca !== cb) return ca ? -1 : 1;
               var fa=0,fb=0;
               try{var da=JSON.parse(a.data||'{}');fa=new Date(da.firstVisibleDate||0).getTime();}catch(e){}
               try{var db2=JSON.parse(b.data||'{}');fb=new Date(db2.firstVisibleDate||0).getTime();}catch(e){}
@@ -7693,6 +7705,55 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           }
         }
       } catch(topErr) { console.log('[DELIVERY] Door-number top-up error:', topErr.message); }
+      // FINAL EXACT-COUNT GUARANTEE: if still short of the promised count, create
+      // fresh leads from the scrape pool file and PAF-enrich them until we reach
+      // EXACTLY totalDailyLimit confirmed-numbered leads. This guarantees the
+      // customer gets exactly what they were promised — no more, no less — and
+      // every lead has a verified door number. If supply genuinely runs out, we
+      // deliver what exists (never over-deliver, never fabricate).
+      try {
+        var finalShort = Math.max(0, totalDailyLimit - custLeads.length);
+        if (finalShort > 0 && (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1')) {
+          for (var fp = 0; fp < products.length && custLeads.length < totalDailyLimit; fp++) {
+            var fprod = products[fp];
+            if (prodTaken[fprod] >= prodDailyCap(fprod)) continue;
+            if (!canTakeProduct(fprod, cust.plan, weekStart2, today, custLeads)) continue;
+            try {
+              var fpoolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[fprod] ? PRODUCT_LEAD_FILES[fprod].file : 'moving-leads.json');
+              var fpoolRaw = null;
+              try { fpoolRaw = JSON.parse(fs.readFileSync(fpoolFile, 'utf-8')); } catch(e3) {}
+              var fpoolArr = [];
+              if (Array.isArray(fpoolRaw)) fpoolArr = fpoolRaw;
+              else if (fpoolRaw && typeof fpoolRaw === 'object') { Object.keys(fpoolRaw).forEach(function(k){ if(k.indexOf('_')===0) return; if(Array.isArray(fpoolRaw[k])) fpoolArr = fpoolArr.concat(fpoolRaw[k]); }); }
+              var fcreated = [];
+              for (var fc=0; fc<fpoolArr.length && fcreated.length < finalShort && custLeads.length < totalDailyLimit; fc++) {
+                var fl = fpoolArr[fc];
+                if (fl.commercial) continue;
+                var flD = fl.firstVisibleDate || fl.addedOn || fl.publishedDate || fl.receivedDate || fl.updateDate || fl.created_at || '';
+                if (!flD || flD < freshCutoffNow) continue;
+                if (pickedIds.indexOf(fl.id) !== -1) continue;
+                var farea = extractPostcodeArea(fl.postcode || fl.address || '');
+                if (!farea) continue;
+                var fAddr = fl.fullAddress || fl.address || '';
+                var fld = Object.assign({}, fl, { id: fl.id, address: fAddr, postcode: fl.postcode || '' });
+                var fenr = await pcDeliver.enrichMovingLeadsPostcoder([fld]);
+                if (fenr && fenr[0] && fenr[0].buildingNumber && fenr[0].postcode) {
+                  fcreated.push(fenr[0]);
+                  custLeads.push(fenr[0]);
+                  pickedIds.push(fenr[0].id);
+                  prodTaken[fprod]++;
+                }
+              }
+              if (fcreated.length > 0) saveDb();
+            } catch(ferr) { console.log('[DELIVERY] Final guarantee pass error:', ferr.message); }
+          }
+          if (custLeads.length >= totalDailyLimit) {
+            console.log('[DELIVERY] Final guarantee pass: ' + cust.email + ' now at ' + custLeads.length + '/' + totalDailyLimit + ' confirmed leads');
+          } else {
+            console.log('[DELIVERY-TOPDUP] WARNING: ' + cust.email + ' supply exhausted — delivered ' + custLeads.length + ' of ' + totalDailyLimit + ' promised (no over-delivery)');
+          }
+        }
+      } catch(fgErr) { console.log('[DELIVERY] Final guarantee pass outer error:', fgErr.message); }
       try {
         // NO SPLIT EMAILS: if this customer already got their daily email, only
         // mark the top-up leads as delivered — don't send a second email.
