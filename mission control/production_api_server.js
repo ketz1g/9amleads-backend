@@ -15172,7 +15172,13 @@ app.post('/api/admin/postcoder/enrich-customer-leads', adminAuth, async (req, re
       var a = String(addr || '').replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '');
       return /(^|[\s,])(\d{1,5}[A-Za-z]?)(\s|,|$)/.test(a) || /flat\s+\d+/i.test(a) || /\b(no\.?\s*)?\d{1,5}[A-Za-z]?\b/i.test(a);
     }
+    // Optional `sent_only`: only enrich leads that were actually SENT to this
+    // customer (delivered) and still lack a door number. Keeps Postcoder usage
+    // proportional to what we've shipped, so we never burn credits on un-shown
+    // pool leads. Default (false) enriches all of the customer's door-less leads.
+    var sentOnly = !!(req.body && req.body.sent_only);
     var doorless = leads.filter(function(l) {
+      if (sentOnly && !(l.delivered || l.delivered_at)) return false;
       var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
       return d.postcode && !hasPremiseNumber(d.fullAddress || d.address || d.deceasedAddress || '', d.postcode);
     });
