@@ -44,21 +44,13 @@ function getDailyBudget() {
   } else if (_activeCountCache && (now - _activeCountAt) < 300000) {
     active = _activeCountCache;
   } else {
+    // The server keeps customers in DATA_DIR/database.json (JSON DB). Use that.
     try {
-      var dbPath = process.env.DB_PATH || path.join(DATA_DIR, 'database.json');
-      if (/\.db$/i.test(dbPath)) {
-        // SQLite DB (production). Count active (non-cancelled) customers.
-        var Database = require('better-sqlite3');
-        var db = new Database(dbPath, { readonly: true });
-        var row = db.prepare("SELECT COUNT(*) AS c FROM customers WHERE plan IS NOT NULL AND plan != 'cancelled'").get();
-        active = row ? row.c : 0;
-        db.close();
-      } else {
-        var jdb = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
-        active = (jdb.customers || []).filter(function(c){
-          return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3);
-        }).length;
-      }
+      var dbPath = process.env.DB_JSON_PATH || path.join(DATA_DIR, 'database.json');
+      var jdb = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+      active = (jdb.customers || []).filter(function(c){
+        return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3);
+      }).length;
     } catch(e) {
       active = 0;
     }
