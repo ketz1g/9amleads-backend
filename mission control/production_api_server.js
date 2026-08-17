@@ -9388,7 +9388,7 @@ app.get('/api/subscription', authMiddleware, (req, res) => {
   });
 });
 
-// POST /api/subscription/cancel — cancel subscription with retention offer for paid plans
+// POST /api/subscription/cancel — cancel subscription for paid plans (stops weekly billing at period end)
 app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
   try {
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -9399,50 +9399,7 @@ app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
       return res.json({ success: true, message: 'Your free trial has been cancelled.' });
     }
 
-    // Check if this is an accept/reject for retention offer
-    var accept = req.body.accept;
-    if (accept === true) {
-      // Apply retention discount: 50% off for 2 weeks
-      var discountEnd = new Date();
-      discountEnd.setDate(discountEnd.getDate() + 14);
-      db.prepare('UPDATE customers SET discount = 50, discount_until = ? WHERE id = ?').run(discountEnd.toISOString(), req.user.id);
-      // Apply the discount at the Stripe PRICE level: flexible-billing subscriptions
-      // do NOT support coupons, so we switch the subscription to a 50%-off price
-      // (created on demand) to actually halve the weekly charge.
-      try {
-        if (customer.stripe_subscription_id) {
-          var subForRetention = await stripeApiRequest('GET', 'subscriptions/' + customer.stripe_subscription_id, {});
-          var subItemRet = subForRetention && subForRetention.items && subForRetention.items.data && subForRetention.items.data[0];
-          var origPrice = subItemRet && subItemRet.price;
-          if (subItemRet && subItemRet.id && origPrice && origPrice.unit_amount) {
-            // Create a one-off 50%-off price mirroring the current plan
-            var discountPrice = await stripeApiRequest('POST', 'prices', {
-              currency: origPrice.currency,
-              'recurring[interval]': (origPrice.recurring && origPrice.recurring.interval) || 'week',
-              'recurring[interval_count]': String((origPrice.recurring && origPrice.recurring.interval_count) || 1),
-              'unit_amount': String(Math.round(origPrice.unit_amount / 2)),
-              'product[metadata][retention_50]': '1',
-              metadata: { purpose: 'retention_50', parent_price: origPrice.id, active_until: discountEnd.toISOString() }
-            });
-            var discountPriceId = discountPrice && discountPrice.id;
-            if (discountPriceId) {
-              await stripeApiRequest('POST', 'subscriptions/' + customer.stripe_subscription_id, {
-                'items[0][id]': subItemRet.id,
-                'items[0][price]': discountPriceId,
-                proration_behavior: 'none'
-              });
-            }
-          }
-        }
-      } catch(retErr) { console.log('[RETENTION] Stripe discount apply error:', retErr.message); }
-      return res.json({ success: true, message: 'You\'re Staying! 50% discount applied for the next 2 weeks. Your leads continue as normal.', discount: 50 });
-    }
-    if (accept === false) {
-      // Force cancel - proceed to cancellation
-    } else {
-      // First cancel attempt: offer retention discount for paid plans
-      return res.json({ success: true, offer: true, message: 'We\'d love to keep you! Save 50% for the next 2 weeks.', discount: 50, weeks: 2 });
-    }
+    // (Retention discount offer removed - cancellation proceeds directly)
 
     const sub = db.prepare('SELECT * FROM subscriptions WHERE customer_id = ? AND status = \'active\'').get(req.user.id);
     if (!sub || !sub.stripe_id) {
