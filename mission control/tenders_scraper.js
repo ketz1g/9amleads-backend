@@ -282,7 +282,7 @@ async function collectTendersLeads(config) {
   // (end of results) — captures the full daily supply.
   async function paginate() {
     let all = [];
-    const seenIds = {};
+    const seenIds = new Set();
     for (let p = 1; p <= 12; p++) {
       let page = await fetchTendersFromHTML(keywords, location, maxCount, p);
       if (!page || page.length === 0) break;
@@ -293,16 +293,15 @@ async function collectTendersLeads(config) {
       await new Promise(r => setTimeout(r, 400));
     }
     // ADD Find a Tender (FTS) — the UK's high-value contract portal. Complements
-    // Contracts Finder with a separate supply stream (different notices).
-    if (all.length < maxCount) {
-      for (let f = 1; f <= 3; f++) {
-        let fts = await fetchFindATender(maxCount, f);
-        if (!fts || fts.length === 0) break;
-        let added = 0;
-        fts.forEach(function(l){ if (l.id && !seenIds.has(l.id)) { seenIds.add(l.id); all.push(l); added++; } });
-        if (added === 0 || all.length >= maxCount) break;
-        await new Promise(r => setTimeout(r, 400));
-      }
+    // Contracts Finder with a separate supply stream (different notices). Run up
+    // to 10 pages so high-value notices add meaningful volume to the pool.
+    for (let f = 1; f <= 10; f++) {
+      let fts = await fetchFindATender(maxCount, f);
+      if (!fts || fts.length === 0) break;
+      let added = 0;
+      fts.forEach(function(l){ if (l.id && !seenIds.has(l.id)) { seenIds.add(l.id); all.push(l); added++; } });
+      if (added === 0 || all.length >= maxCount) break;
+      await new Promise(r => setTimeout(r, 400));
     }
     return all;
   }
