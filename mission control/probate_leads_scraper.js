@@ -262,6 +262,13 @@ function resolveProbatePostcode(addressText) {
     const key = process.env.POSTCODER_API_KEY;
     const addr = (addressText || '').trim();
     if (!key || !addr) { resolve(''); return; }
+    // SHARED DAILY-CREDIT GUARD: probate's Postcoder lookups must draw from the
+    // same global daily budget as every other product, or credits burn far faster
+    // than POSTCODER_DAILY_BUDGET intends.
+    try {
+      const pcBudget = require('./postcoder_budget');
+      if (!pcBudget.spend()) { resolve(''); return; }
+    } catch(pe) { console.log('[POSTCODER] Budget guard error:', pe.message); }
     // Extract any inline postcode first
     const inline = (addr.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0];
     if (inline) { resolve(inline.toUpperCase()); return; }
@@ -918,6 +925,12 @@ async function collectProbateLeads(config) {
       try { results = await fetchGazetteProbate(maxItems); } catch(e) { console.log('[PROBATE] Apify error:', e.message); }
       if (results.length > 0) {
         console.log('[PROBATE] Apify Gazette actor returned ' + results.length + ' probate records');
+        // Enrich with full Gazette detail pages (house number + postcode) so the
+        // actor's possibly-number-less addresses are completed before emailing.
+        if (config.skipEnrich !== true) {
+          try { results = await enrichGazetteLeads(results, results.length); } catch(e) { console.log('[PROBATE] Apify-first enrich error: ' + e.message); }
+          console.log('[PROBATE] Apify-first enrichment complete (' + results.length + ' records)');
+        }
         return results;
       }
     }
@@ -963,6 +976,18 @@ async function collectProbateLeads(config) {
         console.log('[PROBATE] Apify returned ' + results.length + ' probate records');
       }
     } catch(e) { console.log('[PROBATE] Apify error:', e.message); }
+  }
+  // ALWAYS enrich the final set with full Gazette detail pages (which include the
+  // deceased's house number + postcode). Every source path above (Apify actor,
+  // registry, Playwright) can return an address without the door number, so we
+  // run detail enrichment here to guarantee complete addresses before emailing.
+  if (results.length > 0 && config.skipEnrich !== true) {
+    var enrichedFinal = [];
+    try { enrichedFinal = await enrichGazetteLeads(results, results.length); } catch(e) { console.log('[PROBATE] Final enrich error: ' + e.message); }
+    if (enrichedFinal && enrichedFinal.length > 0) {
+      results = enrichedFinal;
+      console.log('[PROBATE] Final enrichment complete (' + results.length + ' records)');
+    }
   }
   console.log('[PROBATE] Got ' + results.length + ' probate records');
   return results;
