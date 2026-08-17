@@ -4188,7 +4188,7 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
   res.json({
     total_customers: totalCustomers.count,
     free_trials: freeTrials.count,
-    paid_customers: paidCustomers.count,
+    paid_customers: paidCustomers,
     expired_trials: expiredTrials,
     this_week_signups: weekSignups,
     crm_connected: crmConnected,
