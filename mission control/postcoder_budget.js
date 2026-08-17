@@ -10,6 +10,10 @@ const path = require('path');
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const USAGE_FILE = path.join(DATA_DIR, 'postcoder-usage.json');
 
+// Cache for the auto-scaled active-account count (re-read at most every 5 min).
+var _activeCountCache = 0;
+var _activeCountAt = 0;
+
 function load() {
   try { return JSON.parse(fs.readFileSync(USAGE_FILE, 'utf-8')); } catch(e) { return {}; }
 }
@@ -22,8 +26,51 @@ function enabled() {
 }
 
 function getDailyBudget() {
-  var b = parseInt(process.env.POSTCODER_DAILY_BUDGET || '150', 10);
-  return b > 0 ? b : 150;
+  // AUTO-SCALE with active customers so the budget always matches demand:
+  //   base = fixed daily floor for collection pre-enrichment (pool stocking)
+  //   per-account = delivered leads/day × credit per lead, × buffer for
+  //   pre-enrichment + final-guarantee re-enrichment
+  // If POSTCODER_DAILY_BUDGET is explicitly set (a hard ceiling), respect it.
+  var hardCap = parseInt(process.env.POSTCODER_DAILY_BUDGET || '0', 10);
+  var base = parseInt(process.env.POSTCODER_BASE_BUDGET || '90', 10);
+  var perAccount = parseInt(process.env.POSTCODER_PER_ACCOUNT || '20', 10);
+  // Cache the active-account count (re-read at most every 5 min) to avoid reading
+  // the whole DB file on every lookup.
+  var active = 0;
+  var now = Date.now();
+  var envActive = parseInt(process.env.POSTCODER_ACTIVE_ACCOUNTS || '0', 10);
+  if (envActive > 0) {
+    active = envActive; // explicit override wins
+  } else if (_activeCountCache && (now - _activeCountAt) < 300000) {
+    active = _activeCountCache;
+  } else {
+    try {
+      var dbPath = process.env.DB_PATH || path.join(DATA_DIR, 'database.json');
+      if (/\.db$/i.test(dbPath)) {
+        // SQLite DB (production). Count active (non-cancelled) customers.
+        var Database = require('better-sqlite3');
+        var db = new Database(dbPath, { readonly: true });
+        var row = db.prepare("SELECT COUNT(*) AS c FROM customers WHERE plan IS NOT NULL AND plan != 'cancelled'").get();
+        active = row ? row.c : 0;
+        db.close();
+      } else {
+        var jdb = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+        active = (jdb.customers || []).filter(function(c){
+          return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3);
+        }).length;
+      }
+    } catch(e) {
+      active = 0;
+    }
+    _activeCountCache = active;
+    _activeCountAt = now;
+  }
+  var scaled = base + (active * perAccount);
+  // A hard ceiling (if set) prevents runaway cost; otherwise the budget scales up
+  // automatically as accounts grow.
+  var budget = hardCap > 0 ? Math.min(hardCap, scaled) : scaled;
+  if (budget < 1) budget = 1;
+  return budget;
 }
 
 // Try to spend one lookup credit. Returns true if allowed (and records the spend),
