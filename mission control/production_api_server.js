@@ -41,9 +41,9 @@ const POSTCODE_ASSIGNMENTS_FILE = path.join(DATA_DIR, 'postcode-assignments.json
 
 // Postcode district limits per plan — unlimited for all (any customer can add any postcode)
 const POSTCODE_LIMITS = {
-  free_trial: 999,
-  essential: 999,
-  starter: 999,
+  free_trial: 5,
+  essential: 5,
+  starter: 5,
   pro: 999,
   enterprise: 999
 };
@@ -148,6 +148,158 @@ function getMatchingArea(code, areas) {
   const upper = code.toUpperCase().replace(/[^A-Z]/g, '');
   if (areas[upper]) return upper;
   return null;
+}
+
+// ===== AREA-BROADENING FALLBACK =====
+// On QUIET days, a customer's exact postcode areas may not have enough fresh
+// supply. We then fill from NEARBY areas in the same UK region so the customer
+// still receives their full promised daily count. Exact areas are always
+// preferred first; neighbours only fill the gap. This guarantees the daily
+// lead count ("no competition" promise kept — each lead is unique to the
+// customer). Customers are told about this on signup, dashboard, FAQ and terms.
+var REGION_NEIGHBOUR_AREAS = {
+  // London & Home Counties
+  'EN':['E','N','NW','SE','SW','W','WC','EC','BR','CR','DA','HA','IG','KT','RM','SM','TW','UB','WD','AL','SG','CM'],
+  'HA':['E','N','NW','SE','SW','W','WC','EC','EN','UB','WD','IG','RM','KT','TW','AL','HP','SL'],
+  'E':['EC','N','NW','SE','SW','W','WC','EN','HA','IG','RM','BR','DA'],
+  'N':['EC','NW','SE','SW','W','WC','E','EN','HA','IG','RM'],
+  'NW':['N','EC','W','WC','SE','SW','HA','UB','EN','WD'],
+  'SE':['SW','E','N','NW','EC','W','WC','BR','CR','DA','TN','ME','KT'],
+  'SW':['SE','W','WC','E','N','NW','TW','KT','CR','SM','GU'],
+  'W':['NW','WC','EC','SW','SE','N','E','TW','UB'],
+  'EC':['WC','E','N','W','SE'],
+  'WC':['W','EC','NW','SE','SW','E','N'],
+  'BR':['SE','DA','CR','TN','ME','KT','EN','IG','RM'],
+  'CR':['SW','SE','KT','SM','BR','DA','RH','TN','GU'],
+  'DA':['SE','BR','KT','TN','ME','EN'],
+  'IG':['E','RM','EN','N','SE','CM'],
+  'KT':['TW','CR','SM','GU','RH','SW','SE','BR','DA'],
+  'RM':['IG','E','EN','DA','SS','SE','CM'],
+  'SM':['CR','KT','SW','TW','GU'],
+  'TW':['KT','SM','SW','UB','HA','GU','SL'],
+  'UB':['HA','TW','W','NW','SL'],
+  'WD':['HA','EN','NW','AL','HP'],
+  'AL':['LU','SG','EN','WD','HP','MK','CM','HA'],
+  'SG':['LU','AL','CM','EN','HP','MK','CB'],
+  'CM':['SS','CO','SG','EN','IG','RM','AL','LU'],
+  'SS':['CM','CO','IG','RM','E'],
+  'CO':['CM','SS','IP','NR','CB'],
+  'CB':['SG','PE','IP','CO','NR','LU','MK'],
+  'IP':['CO','CB','NR','PE','CM'],
+  'NR':['IP','PE','CB','CO'],
+  'PE':['CB','IP','NR','LN','NG','NN','MK'],
+  'LU':['MK','HP','AL','SG','WD','EN','CM','NN','IG','HA'],
+  'HP':['WD','HA','SL','RG','OX','LU','MK','AL'],
+  'MK':['LU','HP','AL','SG','NN','OX','SL'],
+  'SL':['UB','HA','HP','RG','TW','W','OX'],
+  'RG':['GU','SL','HP','OX','SN','SO','SP'],
+  'OX':['RG','HP','SP','SN','GL','MK'],
+  'GU':['KT','RG','SL','RH','TW','CR','SM','SO','PO','SN'],
+  'RH':['KT','TN','CR','SM','BN','GU','DA','BR'],
+  'TN':['RH','ME','DA','BR','CR','BN','CT','GU'],
+  'ME':['DA','TN','CT','BR','SE'],
+  'CT':['TN','ME','DA','CO'],
+  'BN':['RH','TN','PO','GU','KT'],
+  'PO':['SO','BN','GU','SP','RH'],
+  'SO':['PO','SP','GU','RG','BH','SN','BA'],
+  'SP':['SO','PO','RG','SN','BA','BH'],
+  'SN':['SP','RG','OX','GL','BA','BS','TA','SO'],
+  'BA':['BS','SN','SP','TA','SO','GL','BH'],
+  'BH':['SO','SP','DT','PO','BA','DT'],
+  'DT':['TA','EX','BH','SP','TQ','BA'],
+  'EX':['TA','PL','TQ','DT','BS','SP'],
+  'PL':['EX','TQ','TA','TR','BS'],
+  'TQ':['TA','EX','PL','DT'],
+  'TR':['PL','EX','TQ'],
+  'BS':['BA','GL','SN','TA','SP','SO','EX'],
+  'GL':['BS','BA','SN','OX','SP','WR','HR'],
+  // Midlands
+  'B':['CV','DY','WS','WR','ST','WV','HR','SY','NN','LE','DE'],
+  'CV':['B','DY','NN','LE','WR','WS','OX','B'],
+  'DY':['B','WS','WV','WR','ST','CV'],
+  'WS':['B','WV','DY','ST','WR','CV'],
+  'WV':['WS','DY','B','ST','TF'],
+  'WR':['B','DY','WS','GL','HR','ST','CV'],
+  'ST':['WS','WV','B','SY','TF','DY','CW'],
+  'SY':['ST','TF','HR','LD','LL','WR','NP'],
+  'TF':['WV','ST','SY','CW'],
+  'HR':['WR','GL','LD','NP','SY'],
+  'DE':['NG','LE','DN','LN','PE','CV','ST'],
+  'NG':['DE','LE','LN','NN','PE','MK','CV','DY'],
+  'LE':['DE','NG','NN','CV','PE','MK','B'],
+  'LN':['NG','DN','PE','DE','HU'],
+  'NN':['MK','LE','PE','NG','CV','OX','B','LU'],
+  'DN':['DE','LN','PE','S','WF','HU','NG'],
+  // North
+  'M':['L','SK','WA','WN','OL','BL','PR','CH','CW','ST'],
+  'L':['M','CH','WA','WN','PR','FY','BL','OL'],
+  'BL':['M','OL','PR','BB','L','WN','SK'],
+  'OL':['M','SK','BL','HD','WA','L','PR'],
+  'SK':['M','OL','WA','CH','S','DE','ST','HD'],
+  'WA':['M','L','WN','CH','SK','CW','PR'],
+  'WN':['M','L','WA','BL','PR','CH','SK'],
+  'CH':['L','CW','WA','SK','SY','ST','TF'],
+  'CW':['CH','WA','SK','SY','TF','ST'],
+  'PR':['M','L','BL','BB','FY','WN','LA'],
+  'BB':['BL','PR','OL','HD','M','L'],
+  'FY':['PR','L','LA','BL','M'],
+  'LA':['FY','PR','CA','BL'],
+  'CA':['LA','DL','NE','TD'],
+  'LS':['WF','BD','HG','HD','HU','S','YO','DN'],
+  'WF':['LS','HD','BD','HU','S','DN','HX'],
+  'HD':['WF','LS','BD','S','OL','HX','SK'],
+  'BD':['LS','WF','HD','HX','BB','OL'],
+  'HX':['BD','HD','WF','OL'],
+  'HU':['LS','DN','YO','WF','S'],
+  'YO':['HU','LS','DN','WF','HG'],
+  'S':['DN','WF','HD','SK','DE','LS'],
+  'HG':['YO','LS','WF','HD'],
+  'NE':['SR','DH','DL','TS','CA','TD'],
+  'SR':['NE','DH','TS'],
+  'DH':['NE','SR','DL','TS'],
+  'DL':['NE','DH','TS','CA','HG'],
+  'TS':['NE','SR','DH','DL','YO'],
+  'TD':['NE','CA','EH'],
+  // Scotland
+  'G':['PA','FK','ML','KA','EH','DG','KY'],
+  'EH':['TD','ML','FK','KY','DG','KA','NE'],
+  'FK':['G','EH','ML','KY','PH','PA'],
+  'PA':['G','FK','ML','PH','AB'],
+  'ML':['G','EH','FK','KY','KA'],
+  'KA':['G','ML','DG','EH'],
+  'KY':['FK','EH','ML','DD'],
+  'DD':['KY','PH','AB','DG'],
+  'AB':['DD','PH','IV','PA','KW'],
+  'PH':['FK','PA','DD','AB','IV','KW'],
+  'IV':['AB','PH','KW','PA'],
+  'KW':['IV','PH','PA'],
+  'DG':['G','KA','EH','ML'],
+  // Wales
+  'CF':['NP','SA','LD','HR','GL'],
+  'NP':['CF','HR','LD','GL','SA'],
+  'SA':['CF','NP','LD','HR','SY'],
+  'LD':['SY','HR','NP','SA','LL'],
+  'LL':['SY','LD','CH','CW','TF'],
+  // NI
+  'BT':['BT']
+};
+// Given the customer's exact postcode areas, return the exact areas plus nearby
+// areas in the same UK region(s), for use ONLY as a fallback when supply is short.
+function expandedAreaFallback(areas) {
+  var result = [];
+  var map = {};
+  (areas || []).forEach(function(a) {
+    var c = extractPostcodeArea(a);
+    if (!c || map[c]) return;
+    map[c] = 1; result.push(c);
+  });
+  (areas || []).forEach(function(a) {
+    var c = extractPostcodeArea(a);
+    (REGION_NEIGHBOUR_AREAS[c] || []).forEach(function(n) {
+      if (!map[n]) { map[n] = 1; result.push(n); }
+    });
+  });
+  return result;
 }
 
 function validatePostcodes(postcodes, customerPlan, customerProduct, customerId, extraPostcodes) {
@@ -257,14 +409,123 @@ function getDb() {
   for (var _dmi = 0; _dmi < DIRECT_MAIL_TABLES.length; _dmi++) {
     if (!_dbData[DIRECT_MAIL_TABLES[_dmi]]) _dbData[DIRECT_MAIL_TABLES[_dmi]] = [];
   }
+  if (!_dbData.payments) _dbData.payments = [];
+  if (!_dbData.pageviews) _dbData.pageviews = [];
   return _dbData;
 }
 function loadDb() {
+  // BULLETPROOF: if the DB file is missing/corrupt, restore from the newest backup
+  // before returning empty (which would otherwise look like a wiped database).
+  if (!fs.existsSync(DB_FILE) || (function(){ try { JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); return false; } catch(e) { return true; } })()) {
+    try { restoreDbFromBackup(); } catch(e) { console.log('[DB] Restore attempt failed:', e.message); }
+  }
   try { return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); }
-  catch { return { customers: [], leads: [], deliveries: [], scraper_logs: [], subscriptions: [], blog_posts: [], customer_business_profiles: [], direct_mail_templates: [], direct_mail_campaigns: [], direct_mail_materials: [], direct_mail_recipients: [], direct_mail_automation_settings: [], direct_mail_orders: [], direct_mail_provider_logs: [], direct_mail_status_history: [], direct_mail_test_logs: [] }; }
+  catch { return { customers: [], leads: [], deliveries: [], scraper_logs: [], subscriptions: [], blog_posts: [], customer_business_profiles: [], direct_mail_templates: [], direct_mail_campaigns: [], direct_mail_materials: [], direct_mail_recipients: [], direct_mail_automation_settings: [], direct_mail_orders: [], direct_mail_provider_logs: [], direct_mail_status_history: [], direct_mail_test_logs: [], payments: [], pageviews: [] }; }
 }
 function saveDb() {
   try { fs.writeFileSync(DB_FILE, JSON.stringify(_dbData, null, 2)); } catch(e) { console.error('[DB] Save error:', e.message); }
+}
+
+// ===== AUTOMATED DATABASE BACKUP (bulletproofing) =====
+// The whole business (customers, leads, campaigns, payments) lives in database.json
+// on Render's ephemeral disk. One bad deploy or disk reset = total data loss. This
+// keeps a rolling local backup AND pushes it off-server to a private GitHub repo so
+// data survives even if Render is destroyed. The GitHub token is the same one used
+// to push code (read/write on the backup repo).
+var BACKUP_DIR = path.join(DATA_DIR, 'backups');
+var BACKUP_GITHUB_REPO = process.env.BACKUP_REPO || 'ketz1g/9amleads-backup';
+var BACKUP_TOKEN = process.env.GITHUB_TOKEN || process.env.REPO_TOKEN || process.env.GH_PUSH_TOKEN || '';
+
+function writeLocalBackup() {
+  try {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    var stamp = new Date().toISOString().replace(/[:T]/g, '-').substring(0, 19);
+    var file = path.join(BACKUP_DIR, 'database-' + stamp + '.json');
+    // Atomic-ish: write to temp then rename, so a crash mid-write never corrupts the backup
+    var tmp = file + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(_dbData, null, 2));
+    fs.renameSync(tmp, file);
+    // Keep only the last 24 local backups (24h of hourly)
+    var all = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort();
+    while (all.length > 24) { fs.unlinkSync(path.join(BACKUP_DIR, all.shift())); }
+    console.log('[BACKUP] Local backup written: ' + file);
+    return file;
+  } catch(e) { console.error('[BACKUP] Local backup error:', e.message); return null; }
+}
+
+function pushBackupToGitHub() {
+  return new Promise(function(resolve) {
+    try {
+      if (!BACKUP_TOKEN) { resolve(false); return; }
+      var content = JSON.stringify(_dbData, null, 2);
+      var stamp = new Date().toISOString().replace(/[:T]/g, '-').substring(0, 19);
+      var path = 'backups/database-' + stamp + '.json';
+      // Use the GitHub contents API (create/update file)
+      var d = JSON.stringify({ message: 'DB backup ' + stamp, content: Buffer.from(content).toString('base64'), branch: 'main' });
+      var req = require('https').request({ hostname: 'api.github.com', path: '/repos/' + BACKUP_GITHUB_REPO + '/contents/' + path, method: 'PUT', headers: { 'Authorization': 'Bearer ' + BACKUP_TOKEN, 'User-Agent': '9amLeads', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(d) }, timeout: 30000 }, function(res) {
+        var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { if (res.statusCode < 300) { console.log('[BACKUP] Pushed to GitHub: ' + path); resolve(true); } else { console.log('[BACKUP] GitHub push HTTP ' + res.statusCode + ': ' + b.substring(0, 100)); resolve(false); } });
+      });
+      req.on('error', function(e) { console.log('[BACKUP] GitHub push error:', e.message); resolve(false); });
+      req.setTimeout(30000, function() { req.destroy(); resolve(false); });
+      req.write(d); req.end();
+    } catch(e) { console.log('[BACKUP] GitHub push error:', e.message); resolve(false); }
+  });
+}
+
+// Keep the newest N remote backups (delete older ones so the repo doesn't balloon)
+async function pruneRemoteBackups() {
+  try {
+    if (!BACKUP_TOKEN) return;
+    var req = require('https').request({ hostname: 'api.github.com', path: '/repos/' + BACKUP_GITHUB_REPO + '/contents/backups', method: 'GET', headers: { 'Authorization': 'Bearer ' + BACKUP_TOKEN, 'User-Agent': '9amLeads' }, timeout: 20000 }, function(res) {
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() {
+        try {
+          var items = JSON.parse(b);
+          if (!Array.isArray(items)) return;
+          items.sort(function(a, b2) { return (a.name || '').localeCompare(b2.name || ''); });
+          // Keep newest 24
+          while (items.length > 24) {
+            var old = items.shift();
+            var d2 = JSON.stringify({ message: 'Prune old backup', sha: old.sha, branch: 'main' });
+            var del = require('https').request({ hostname: 'api.github.com', path: '/repos/' + BACKUP_GITHUB_REPO + '/contents/backups/' + old.name, method: 'DELETE', headers: { 'Authorization': 'Bearer ' + BACKUP_TOKEN, 'User-Agent': '9amLeads', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(d2) }, timeout: 20000 }, function(dres) { dres.resume(); });
+            del.on('error', function() {}); del.write(d2); del.end();
+          }
+        } catch(e) { console.log('[BACKUP] Prune error:', e.message); }
+      });
+    });
+    req.on('error', function() {}); req.end();
+  } catch(e) {}
+}
+
+// Full backup: local + remote, then prune old remote.
+async function runFullBackup() {
+  try {
+    var local = writeLocalBackup();
+    await pushBackupToGitHub();
+    setTimeout(pruneRemoteBackups, 2000);
+    return local;
+  } catch(e) { console.log('[BACKUP] Full backup error:', e.message); return null; }
+}
+
+// AUTO-RESTORE: if database.json is missing or corrupt, restore from the newest
+// local backup (or fetch the newest from the GitHub backup repo as a last resort).
+function restoreDbFromBackup() {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      try { JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); return false; } catch(e) {}
+    }
+    console.log('[BACKUP] database.json missing/corrupt — restoring from newest backup...');
+    var candidates = [];
+    try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); candidates = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort(); } catch(e) {}
+    if (candidates.length) {
+      var newest = path.join(BACKUP_DIR, candidates[candidates.length - 1]);
+      fs.copyFileSync(newest, DB_FILE);
+      _dbData = null; getDb();
+      console.log('[BACKUP] Restored from local backup: ' + newest);
+      return true;
+    }
+    console.log('[BACKUP] No local backup found — data may be lost.');
+    return false;
+  } catch(e) { console.log('[BACKUP] Restore error:', e.message); return false; }
 }
 function _q(sql, params) {
   // Parse SQL to determine operation
@@ -633,6 +894,62 @@ function getProductBrand(product){
 class StannpProvider extends DirectMailProvider {
   constructor() { super(); this.name = 'stannp'; }
 
+  // PREVIEW VERSION of the address zone: shows the customer where Stannp's native
+  // `clearzone` will overlay the white address block at print time. Only used for
+  // preview, never sent, and never modifies the real artwork. Built purely from
+  // solid rects (sharp's SVG <text>/dashed strokes are unreliable).
+  async compositeAddressZonePreview(base64Image, isBack) {
+    try {
+      if (!base64Image) return base64Image;
+      var sharp = require('sharp');
+      var inputBuf = Buffer.from(base64Image, 'base64');
+      var meta = await sharp(inputBuf).metadata();
+      var w = meta.width, h = meta.height;
+      if (!w || !h) return base64Image;
+      // Stannp A5 postcard: the recipient ADDRESS is printed on the BACK at the
+      // TOP (in the clear zone). So:
+      //   - For the BACK: reserve the TOP 28% as a white address zone, design fills
+      //     the bottom 72%.
+      //   - For the FRONT: show the full design edge-to-edge (no address zone).
+      // This matches what Stannp actually prints and what the customer must see.
+      var zonePct = 0.28;
+      if (isBack) {
+        // The recipient address zone goes at the TOP of the back. We overlay a
+        // white band across the top 28% of the image WITHOUT re-scaling the design
+        // below — so:
+        //   - a FRESH upload (raw design filling the page) gets the white top zone
+        //   - an EDITOR-saved back (already has the zone) keeps it exactly as-is
+        // In both cases the design below the white zone is untouched and in line.
+        var bandH = Math.round(h * zonePct);
+        var whiteBand = await sharp({ create: { width: w, height: bandH, channels: 3, background: { r: 255, g: 255, b: 255 } } }).png().toBuffer();
+        var outBuf = await sharp(inputBuf)
+          .rotate()
+          .composite([{ input: whiteBand, gravity: 'north' }])
+          .png()
+          .toBuffer();
+        // Dark trim rectangle around the whole canvas (clear max print edge)
+        outBuf = await sharp(outBuf).composite([
+          { input: await sharp({ create: { width: w, height: 3, channels: 3, background: { r: 20, g: 30, b: 45 } } }).png().toBuffer(), top: 0, left: 0 },
+          { input: await sharp({ create: { width: w, height: 3, channels: 3, background: { r: 20, g: 30, b: 45 } } }).png().toBuffer(), top: h-3, left: 0 },
+          { input: await sharp({ create: { width: 3, height: h, channels: 3, background: { r: 20, g: 30, b: 45 } } }).png().toBuffer(), top: 0, left: 0 },
+          { input: await sharp({ create: { width: 3, height: h, channels: 3, background: { r: 20, g: 30, b: 45 } } }).png().toBuffer(), top: 0, left: w-3 }
+        ]).png().toBuffer();
+        return outBuf.toString('base64');
+      } else {
+        // FRONT: full design, edge-to-edge (address not printed here)
+        var fullBuf = await sharp(inputBuf)
+          .rotate()
+          .resize({ width: w, height: h, fit: 'cover', position: 'attention', background: { r: 255, g: 255, b: 255 } })
+          .png()
+          .toBuffer();
+        return fullBuf.toString('base64');
+      }
+    } catch(e) {
+      console.log('[STANNP] compositeAddressZonePreview failed:', e.message);
+      return base64Image;
+    }
+  }
+
   stannpRequest(endpoint, params, method) {
     return new Promise(function(resolve, reject) {
       if (!STANNP_API_KEY) return reject(new Error('STANNP_API_KEY not configured'));
@@ -723,7 +1040,9 @@ class StannpProvider extends DirectMailProvider {
   // files: [{ name, file_data }] — artwork (flyer front/back / letter PDF)
   // recipient: { name, company, address_line1, city, postcode, country, pages }
   //   pages = HTML letter body OR plain text (used when no letter PDF uploaded)
-  async sendMailpiece(mailType, recipient, files) {
+  // format: optional format id (e.g. 'flyer_a5_portrait') or Stannp size string
+  //   ('A5-PORT','A5','A6','DL','A5-ENV') — defaults to A5-PORT for flyers.
+  async sendMailpiece(mailType, recipient, files, format) {
     var nameParts = (recipient.name || '').split(' ').filter(Boolean);
     var rcpt = {
       'recipient[firstname]': nameParts[0] || '',
@@ -737,9 +1056,13 @@ class StannpProvider extends DirectMailProvider {
       'recipient[postcode]': recipient.postcode || '',
       'recipient[country]': 'GB'
     };
-    // Standard Royal Mail postage (included in our price). No FIRST_CLASS addon —
-    // Stannp charges £1.36 extra for it, which would wipe out our margin.
-
+    // Resolve the requested format/size for postcards.
+    var wanted = format || '';
+    if (typeof format === 'string' && DM_FORMATS.some(function(f) { return f.id === format; })) {
+      var fmtMatch = DM_FORMATS.find(function(f) { return f.id === format; });
+      wanted = fmtMatch.size;
+    }
+    var flyerSize = 'A5-PORT'; // default for a portrait leaflet
     var isLetter = mailType === 'letter' || mailType === 'letter_a4';
     var isFlyer = mailType === 'flyer' || mailType === 'flyer_a5';
     var isBoth = mailType === 'flyer_plus_letter';
@@ -748,8 +1071,11 @@ class StannpProvider extends DirectMailProvider {
     var letterFile = (files || []).find(function(f) { return /letter|cover/i.test(f.name || ''); });
     var pageBody = recipient.pages || '<p>Dear ' + (recipient.name || 'Homeowner') + ',</p><p>Thank you for your time. We would love to help you.</p><p>[Your Company]</p>';
 
+    // 'flyer_plus_letter' sends BOTH an A4 letter AND a leaflet. Send the letter
+    // first, then the flyer — return success only if the letter was created.
+    var letterResult = null;
     if (isLetter || isBoth) {
-      var letterParams = Object.assign({}, rcpt, { tags: '9amleads' });
+      var letterParams = Object.assign({}, rcpt, { tags: rcpt.tags || '9amleads' });
       if (letterFile && letterFile.file_data) {
         letterParams.file = letterFile.file_data;
       } else {
@@ -757,36 +1083,187 @@ class StannpProvider extends DirectMailProvider {
       }
       var res = await this.stannpRequest('/letters/create', letterParams);
       if (res.success && res.data && res.data.id) {
-        return { success: true, provider_campaign_id: String(res.data.id), cost: res.data.cost, status: res.data.status || 'processing', message: 'Letter sent to Stannp', raw: res };
+        letterResult = { success: true, provider_campaign_id: String(res.data.id), cost: res.data.cost, status: res.data.status || 'processing', message: 'Letter sent to Stannp', raw: res };
+      } else {
+        if (isLetter) return { success: false, error: res.error || 'Failed to create letter', raw: res };
+        // flyer_plus_letter: letter failed but flyer can still be attempted
+        letterResult = null;
       }
-      return { success: false, error: res.error || 'Failed to create letter', raw: res };
     }
 
     // Leaflet / postcard (A5 is the correct Stannp size for an A5 leaflet).
     // NOTE: Stannp requires a 'front' image or a 'template' for postcards —
     // it cannot print a leaflet from text alone.
-    if (isFlyer || isBoth) {
-      var front = (files || []).find(function(f) { return /flyer_front|front/i.test(f.name || ''); });
-      var back = (files || []).find(function(f) { return /flyer_back|back/i.test(f.name || ''); });
-      if ((!front || !front.file_data) && !isBoth) {
-        return { success: false, error: 'A leaflet needs an uploaded front design. Please upload your leaflet front (Print & Post > Step 2) or choose the A4 letter instead.' };
+      if (isFlyer || isBoth) {
+        var front = (files || []).find(function(f) { return /flyer_front|front/i.test(f.name || ''); });
+        var back = (files || []).find(function(f) { return /flyer_back|back/i.test(f.name || ''); });
+        if ((!front || !front.file_data) && !isBoth) {
+          return { success: false, error: 'A leaflet needs an uploaded front design. Please upload your leaflet front (Print & Post > Step 2) or choose the A4 letter instead.' };
+        }
+        // Resolve artwork size for the chosen format (px @300dpi incl 6mm bleed).
+        // Fall back to A5-PORT (1819x2551) if no valid format was passed.
+        var fw = 1819, fh = 2551;
+        var fmtSpec = DM_FORMATS.find(function(f) { return f.id === format; }) || DM_FORMATS.find(function(f) { return f.size === wanted; });
+        if (fmtSpec && fmtSpec.kind !== 'letter' && fmtSpec.width > 0) { fw = fmtSpec.width; fh = fmtSpec.height; flyerSize = fmtSpec.size; }
+        // PREPARE + VALIDATE artwork BEFORE sending to Stannp. If the upload
+        // doesn't meet the print spec (wrong aspect / unreadable), we ABORT here
+        // so the customer never pays for a flyer that will print wrong.
+        var prepErr = '';
+        try {
+          if (front && front.file_data) {
+            var fp = await this.prepareA5Artwork(front, fw, fh);
+            if (fp.error) { prepErr = fp.error; }
+            else if (fp.ok && fp.file) { front = fp.file; }
+          }
+          if (!prepErr && back && back.file_data) {
+            var bp = await this.prepareA5Artwork(back, fw, fh);
+            if (bp.error) { prepErr = bp.error; }
+            else if (bp.ok && bp.file) { back = bp.file; }
+          }
+        } catch(artErr) { console.log('[STANNP] A5 prep error:', artErr.message); prepErr = prepErr || artErr.message; }
+        if (prepErr) {
+          console.log('[STANNP] Blocking send — artwork failed validation: ' + prepErr);
+          return { success: false, error: prepErr, blocked_by_spec: true };
+        }
+        // Send the customer's EXACT design at the chosen Stannp size. The artwork
+        // is upscaled to the format's 300 DPI template so it fills the whole sheet
+        // edge-to-edge with NO content cut. clearzone=true makes Stannp overlay the
+        // white address zone at PRINT time (so the recipient address is
+        // machine-readable) WITHOUT modifying the customer's design.
+        var postcardParams = Object.assign({}, rcpt, { size: flyerSize, tags: rcpt.tags || '9amleads', padding: 0, clearzone: true });
+        if (front && front.file_data) postcardParams.front = front.file_data;
+        if (back && back.file_data) postcardParams.back = back.file_data;
+        var res2 = await this.stannpRequest('/postcards/create', postcardParams);
+        if (res2.success && res2.data && res2.data.id) {
+          if (isBoth && letterResult) {
+            // Return BOTH mailpiece ids so the caller can track the letter AND the
+            // flyer as two separate Stannp orders. provider_mailpiece_ids lists each
+            // individual order; provider_campaign_id holds the flyer id for backward
+            // compatibility / proof lookup.
+            var bothIds = [letterResult.provider_campaign_id, String(res2.data.id)];
+            return { success: true, provider_campaign_id: String(res2.data.id), provider_mailpiece_ids: bothIds, mailpiece_types: ['letter', 'flyer'], cost: (parseFloat(letterResult.cost || 0) + parseFloat(res2.data.cost || 0)), status: res2.data.status || 'processing', message: 'Leaflet + letter sent to Stannp', raw: res2 };
+          }
+          return { success: true, provider_campaign_id: String(res2.data.id), provider_mailpiece_ids: [String(res2.data.id)], mailpiece_types: ['flyer'], cost: res2.data.cost, status: res2.data.status || 'processing', message: 'Leaflet sent to Stannp (' + flyerSize + ')', raw: res2 };
+        }
+        // Flyer failed — if it's a leaflet+letter combo, still report the letter
+        if (isBoth && letterResult) {
+          return { success: true, provider_campaign_id: letterResult.provider_campaign_id, cost: letterResult.cost, status: letterResult.status || 'processing', message: 'Letter sent to Stannp (leaflet failed: ' + (res2.error || 'unknown') + ')', raw: res2 };
+        }
+        return { success: false, error: res2.error || 'Failed to create leaflet', raw: res2 };
       }
-      // clearzone=true tells Stannp to overlay a white address block on the
-      // leaflet front so the recipient's name + address are printed clearly and
-      // machine-readable. This is the space Royal Mail needs — customers don't
-      // need to manually leave a blank area, but their design should not place
-      // critical content in the bottom ~40mm of the front.
-      var postcardParams = Object.assign({}, rcpt, { size: 'A5', tags: '9amleads', padding: 0, clearzone: true });
-      if (front && front.file_data) postcardParams.front = front.file_data;
-      if (back && back.file_data) postcardParams.back = back.file_data;
-      var res2 = await this.stannpRequest('/postcards/create', postcardParams);
-      if (res2.success && res2.data && res2.data.id) {
-        return { success: true, provider_campaign_id: String(res2.data.id), cost: res2.data.cost, status: res2.data.status || 'processing', message: 'Leaflet sent to Stannp', raw: res2 };
-      }
-      return { success: false, error: res2.error || 'Failed to create leaflet', raw: res2 };
-    }
 
     return { success: false, error: 'Unknown mail type: ' + mailType };
+  }
+
+  // VALIDATE an uploaded artwork file against the Stannp print spec for a format.
+  // Returns { ok, warnings[], errors[], width, height, dpi, aspect, target_aspect }.
+  // This runs BEFORE any send so a customer never pays for a flyer that will
+  // print incorrectly (wrong aspect / too low resolution). 'ok' is false only
+  // when the file can't be printed at all; warnings flag quality/risk items.
+  async validateArtworkSpec(file, targetW, targetH) {
+    var out = { ok: false, errors: [], warnings: [], width: 0, height: 0, dpi: 0, aspect: 0, target_aspect: (targetW || 1819) / (targetH || 2551) };
+    try {
+      if (!file || !file.file_data) { out.errors.push('No file provided.'); return out; }
+      var dataUri = String(file.file_data);
+      var base64 = dataUri.indexOf(',') !== -1 ? dataUri.split(',')[1] : dataUri;
+      if (!base64) { out.errors.push('Empty file data.'); return out; }
+      var sharp = require('sharp');
+      var inputBuf = Buffer.from(base64, 'base64');
+      var meta = await sharp(inputBuf).metadata();
+      if (!meta || !meta.width || !meta.height) { out.errors.push('Could not read image dimensions — is this a valid image or PDF?'); return out; }
+      out.width = meta.width; out.height = meta.height;
+      out.aspect = meta.width / meta.height;
+      var fmt = (meta.format || '');
+      var isPdf = fmt === 'pdf';
+      // PDFs are vector and scale perfectly — accept them, no DPI/aspect concerns.
+      if (isPdf) { out.ok = true; return out; }
+      if (['png','jpeg','jpg','webp'].indexOf(fmt) === -1) { out.errors.push('Unsupported file type (' + fmt + '). Use PNG, JPG, or PDF.'); return out; }
+      // Effective DPI when printed at the target size (in inches at 300dpi).
+      // A5-PORT = 1819x2551px @ 300dpi. dpi = px / (targetPx/300).
+      var targetWmm = (targetW || 1819), targetHmm = (targetH || 2551);
+      var dpiW = meta.width / (targetWmm / 300);
+      var dpiH = meta.height / (targetHmm / 300);
+      out.dpi = Math.min(dpiW, dpiH);
+      // Aspect-ratio tolerance: within 5% is fine (we fill edge-to-edge).
+      var ratio = out.aspect / out.target_aspect;
+      if (ratio < 0.95 || ratio > 1.05) {
+        out.errors.push('Your image is ' + meta.width + 'x' + meta.height + ' (' + out.aspect.toFixed(2) + ' ratio) but the ' + 'selected format needs ' + Math.round(targetWmm) + 'x' + Math.round(targetHmm) + ' (ratio ' + out.target_aspect.toFixed(2) + '). It will be cropped to fit, which can cut off your design. Please design on the correct template or choose the matching format.');
+        return out;
+      }
+      // Resolution check
+      if (out.dpi < 150) {
+        out.warnings.push('Image is low resolution (~' + Math.round(out.dpi) + ' DPI). It may print soft/blurry. For crisp results upload at 300 DPI.');
+      }
+      out.ok = true;
+      return out;
+    } catch(e) {
+      out.errors.push('Could not validate file: ' + (e.message || 'unknown error'));
+      return out;
+    }
+  }
+
+  // PREPARE FULL-BLEED ARTWORK for Stannp postcards at the requested format size.
+  // Stannp templates are 300 DPI (A5 Portrait = 1819 x 2551, A5 Landscape = 2551 x
+  // 1819, A6 = 1276 x 1819, DL = 1234 x 1890, A5-ENV = 1819 x 2551) incl 6mm bleed.
+  // If the uploaded artwork is lower resolution (e.g. 746 x 1054 = ~128 DPI),
+  // Stannp prints it letterboxed/too small. We upscale to the exact full-bleed
+  // template so the design fills the whole card, then bake a white address
+  // clearzone band at the bottom (matches Stannp's native clearzone=true overlay
+  // so the recipient address has a dedicated space).
+  async prepareA5Artwork(file, targetW, targetH) {
+    try {
+      if (!file || !file.file_data) return { error: 'No file to prepare', file: file };
+      var dataUri = String(file.file_data);
+      var base64 = dataUri.indexOf(',') !== -1 ? dataUri.split(',')[1] : dataUri;
+      if (!base64) return { error: 'Empty file data', file: file };
+      var sharp = require('sharp');
+      var inputBuf = Buffer.from(base64, 'base64');
+      var meta = await sharp(inputBuf).metadata();
+      // PDFs are vector — Stannp handles at full quality; pass through unchanged.
+      var fmt = (meta.format || '');
+      if (fmt === 'pdf') return { ok: true, file: file };
+      if (['png', 'jpeg', 'jpg', 'webp'].indexOf(fmt) === -1) {
+        return { error: 'Unsupported file type: ' + fmt + '. Use PNG, JPG or PDF.', file: file };
+      }
+      var A5_W = targetW || 1819, A5_H = targetH || 2551; // default A5-PORT
+      // Validate aspect ratio BEFORE resizing — if it doesn't match, warn loudly
+      // and return an error so we never send a cropped/broken print.
+      var spec = await this.validateArtworkSpec(file, A5_W, A5_H);
+      if (!spec.ok) {
+        var msg = (spec.errors && spec.errors.length) ? spec.errors.join(' ') : 'Artwork does not meet the print spec for this format.';
+        console.log('[STANNP] Artwork rejected for ' + (file.name || 'flyer') + ': ' + msg);
+        return { error: msg, file: file, spec: spec };
+      }
+      // Use 'contain' (fit whole image, pad with white) when the aspect is a
+      // little off so nothing important is ever cropped; 'cover' fills exactly
+      // when the aspect already matches. This guarantees no content is cut off.
+      var aspectRatio = meta.width / meta.height;
+      var targetRatio = A5_W / A5_H;
+      var ratioDelta = Math.abs(aspectRatio - targetRatio) / targetRatio;
+      var fitMode = ratioDelta > 0.03 ? 'contain' : 'cover';
+      var outBuf;
+      // Compress to JPEG (quality 82) — Stannp's API rejects large base64 bodies.
+      // A 300 DPI A5 PNG can be 6-8MB (too big as form-encoded), but the same image
+      // as a quality-82 JPEG is ~200-400KB — visually identical for print and well
+      // within Stannp's upload limits.
+      // IMPORTANT: We do NOT bake a white address zone into the artwork here.
+      // Stannp prints the recipient address on the BACK of the postcard via
+      // clearzone=true (its own template defines the placement). If we baked a
+      // white band into the front, the address would appear on the wrong side.
+      // The front/back images are sent as-is (full-bleed design); the white zone
+      // is shown only in the preview, not baked into the sent file.
+      outBuf = await sharp(inputBuf)
+        .rotate()
+        .resize({ width: A5_W, height: A5_H, fit: 'cover', position: 'attention', background: { r: 255, g: 255, b: 255 } })
+        .extend({ top: 0, bottom: 0, left: 0, right: 0, background: { r: 255, g: 255, b: 255 } })
+        .jpeg({ quality: 82 })
+        .toBuffer();
+      console.log('[STANNP] Prepared full-bleed artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ', fit=' + fitMode + ')');
+      return { ok: true, file: { name: file.name, file_data: outBuf.toString('base64'), file_type: 'image/jpeg' }, spec: spec };
+    } catch(e) {
+      console.log('[STANNP] Artwork prep failed for ' + (file.name || '?') + ': ' + e.message);
+      return { error: 'Could not process this file: ' + (e.message || 'unknown error'), file: file };
+    }
   }
 
   async addRecipients(campaignId, recipients) {
@@ -853,6 +1330,37 @@ class StannpProvider extends DirectMailProvider {
     return { success: true, provider_campaign_id: id, proof_url: '', generated_at: new Date().toISOString(), recipient_count: 1, postage_date: '', estimated_delivery: '' };
   }
 
+  // Reconciled mailpiece status lookup by exact mailpiece id (falls back through
+  // letter/postcard endpoints). Returns Stannp's real status string.
+  async getRealStatus(mailpieceId) {
+    if (!mailpieceId) return { success: false, error: 'No mailpiece id' };
+    var id = String(mailpieceId).trim();
+    var r = await this.stannpRequest('/letters/get/' + id, {}, 'GET');
+    if (!r.success || !r.data) r = await this.stannpRequest('/postcards/get/' + id, {}, 'GET');
+    if (r.success && r.data && r.data.status) {
+      return { success: true, mailpiece_id: id, status: String(r.data.status).toLowerCase(), raw: r.data };
+    }
+    return { success: false, mailpiece_id: id, error: (r.error || 'No status') };
+  }
+
+  // Reporting-based reconciliation: pull real mailpieces from the reporting API
+  // for a date range and return a map of mailpiece id -> real status. Robust
+  // fallback that only ever reflects what Stannp actually reports.
+  async getReportingStatuses(daysBack) {
+    var end = new Date(); var start = new Date(); start.setDate(start.getDate() - (daysBack || 7));
+    function iso(d) { return d.toISOString().split('T')[0]; }
+    var r = await this.stannpRequest('/reporting/list/' + iso(start) + '/' + iso(end), {}, 'GET');
+    var map = {};
+    if (r.success && r.data) {
+      var inner = r.data.data || r.data;
+      var singles = inner.singles || inner.mailpieces || inner.items || [];
+      (Array.isArray(singles) ? singles : []).forEach(function(mp) {
+        if (mp && mp.id) map[String(mp.id)] = String(mp.status || '').toLowerCase();
+      });
+    }
+    return { success: true, count: Object.keys(map).length, statuses: map, raw: r };
+  }
+
   async cancelCampaign(providerCampaignId) {
     var result = await this.stannpRequest('/campaigns/cancel', { campaign_id: providerCampaignId });
     if (result.success) {
@@ -882,14 +1390,32 @@ function getDirectMailProvider() {
   return new MockDirectMailProvider();
 }
 
+
+
+
 // ===== DIRECT MAIL NOTIFICATIONS =====
 var DM_NOTIFIED = {}; // In-memory dedup cache
 
 function dmEmailHTML(title, body, ctaText, ctaUrl) {
   var accent = '#0ea5e9';
-  return '<div style="background:#07090f;padding:32px 20px;font-family:Inter,Helvetica,Arial,sans-serif"><div style="max-width:520px;margin:0 auto;background:#0c0f1a;border-radius:16px;border:1px solid #151929;overflow:hidden"><div style="padding:20px 24px;background:linear-gradient(135deg,rgba(14,165,233,.08),transparent);border-bottom:1px solid #151929"><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,' + accent + ',#2563eb);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:900;font-family:Outfit,sans-serif">9</div><span style="font-size:15px;font-weight:800;color:#dce2f0;font-family:Outfit,sans-serif">am<span style="color:' + accent + '">Leads</span></span></div></div><div style="padding:24px"><h2 style="font-size:18px;font-weight:800;color:#dce2f0;margin:0 0 8px;font-family:Outfit,sans-serif">' + title + '</h2><div style="font-size:13px;color:#8890b0;line-height:1.7">' + body + '</div>' +
-    (ctaText && ctaUrl ? '<div style="margin-top:20px;text-align:center"><a href="' + ctaUrl + '" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,' + accent + ', #2563eb);color:#fff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:700">' + ctaText + '</a></div>' : '') +
-    '<div style="margin-top:24px;padding-top:16px;border-top:1px solid #151929;font-size:11px;color:#5a6280;text-align:center">9amLeads Â· <a href="https://9amleads.com" style="color:' + accent + ';text-decoration:none">9amleads.com</a></div></div></div></div>';
+  // Email-safe layout: tables (no flexbox — flex misaligns in Outlook/Gmail).
+  // Logo: "9" box centered via line-height + text-align, not flex.
+  return '<div style="background:#07090f;padding:32px 20px;font-family:Inter,Helvetica,Arial,sans-serif">' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto"><tr><td style="background:#0c0f1a;border-radius:16px;border:1px solid #151929;overflow:hidden">' +
+    // Header with aligned logo
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:20px 24px;background:#0f1422;border-bottom:1px solid #151929"><table role="presentation" cellpadding="0" cellspacing="0"><tr>' +
+    '<td style="width:34px;height:34px;background-color:#0ea5e9;border-radius:9px;text-align:center;vertical-align:middle;line-height:32px;font-family:Georgia,\'Times New Roman\',serif;font-size:18px;font-weight:900;color:#ffffff">9</td>' +
+    '<td style="padding-left:10px;vertical-align:middle"><div style="font-size:17px;font-weight:800;color:#dce2f0;font-family:Inter,Helvetica,Arial,sans-serif;line-height:1.1">9am<span style="color:' + accent + '">Leads</span></div><div style="font-size:9px;color:#8890b0;letter-spacing:1px;text-transform:uppercase;margin-top:2px;font-family:Inter,Helvetica,Arial,sans-serif">Print &amp; Post</div></td>' +
+    '</tr></table></td></tr></table>' +
+    // Body
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:26px 28px">' +
+    '<h2 style="font-size:20px;font-weight:800;color:#dce2f0;margin:0 0 10px;font-family:Inter,Helvetica,Arial,sans-serif">' + title + '</h2>' +
+    '<div style="font-size:13px;color:#8890b0;line-height:1.7;font-family:Inter,Helvetica,Arial,sans-serif">' + body + '</div>' +
+    (ctaText && ctaUrl ? '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:22px 0 4px"><a href="' + ctaUrl + '" style="display:inline-block;padding:13px 32px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-size:13px;font-weight:700;font-family:Inter,Helvetica,Arial,sans-serif">' + ctaText + '</a></td></tr></table>' : '') +
+    // Footer
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:20px 0 0;border-top:1px solid #151929;font-size:11px;color:#5a6280;text-align:center;font-family:Inter,Helvetica,Arial,sans-serif">9amLeads &middot; <a href="https://9amleads.com" style="color:' + accent + ';text-decoration:none">9amleads.com</a><br><span style="color:#3d4456">hello@9amleads.com &middot; Fresh business leads every morning at 9am</span></td></tr></table>' +
+    '</td></tr></table>' +
+    '</td></tr></table></div>';
 }
 
 function dmDashboardNotify(customerId, type, title, message, link) {
@@ -904,14 +1430,18 @@ function dmDashboardNotify(customerId, type, title, message, link) {
   } catch(e) { console.log('[DM-NOTIF] Dashboard notify error:', e.message); }
 }
 
-async function sendDMNotification(customerId, type, subject, title, body, ctaText, ctaUrl) {
+async function sendDMNotification(customerId, type, subject, title, body, ctaText, ctaUrl, opts) {
   try {
     var db2 = getDb();
     var cust = db2.customers ? db2.customers.find(function(c) { return c.id === customerId; }) : null;
     if (!cust || !cust.email) return;
-    // Dedup: same type per customer per day
+    opts = opts || {};
+    // Dedup: same type per customer per day. Payment receipts MUST NEVER be
+    // deduped — every payment deserves its own confirmation email (test sends
+    // earlier in the day were blocking real receipts).
+    var skipDedup = opts.skipDedup === true || type === 'dm_payment_receipt' || type === 'dm_refund';
     var dedupKey = customerId + '_email_' + type + '_' + new Date().toISOString().split('T')[0];
-    if (DM_NOTIFIED[dedupKey]) { console.log('[DM-NOTIF] Duplicate email blocked:', type, cust.email); return; }
+    if (!skipDedup && DM_NOTIFIED[dedupKey]) { console.log('[DM-NOTIF] Duplicate email blocked:', type, cust.email); return; }
     DM_NOTIFIED[dedupKey] = true;
     // Add to dashboard
     dmDashboardNotify(customerId, type, title, body, ctaUrl);
@@ -920,6 +1450,73 @@ async function sendDMNotification(customerId, type, subject, title, body, ctaTex
     await sendBrevoEmail({ email: cust.email, name: cust.company || '' }, subject, html);
     console.log('[DM-NOTIF] Email sent:', type, cust.email);
   } catch(e) { console.log('[DM-NOTIF] Email error:', type, e.message); }
+}
+
+// ===== PAYMENT RECEIPTS =====
+// Every payment (subscription renewal, trial auto-charge, Print & Post order,
+// sequence step, one-off) must produce a persisted "invoice paid" receipt shown
+// in the dashboard billing section AND a confirmation email to the customer.
+// opts: { customerId, customerEmail, company, amount (number in currency units),
+//         currency, stripeId, number, description, plan, cardLast4,
+//         product, invoicePdf, hostedInvoiceUrl, periodStart, periodEnd }
+function storePaymentReceipt(opts) {
+  try {
+    var dbp = getDb();
+    var rec = {
+      id: uuidv4(),
+      customer_id: opts.customerId || '',
+      customer_email: opts.customerEmail || '',
+      company: opts.company || '',
+      amount: opts.amount || 0,
+      currency: opts.currency || 'gbp',
+      stripe_id: opts.stripeId || '',
+      number: opts.number || (opts.stripeId || ''),
+      description: opts.description || 'Payment',
+      plan: opts.plan || '',
+      product: opts.product || '',
+      card_last4: opts.cardLast4 || '',
+      invoice_pdf: opts.invoicePdf || '',
+      hosted_invoice_url: opts.hostedInvoiceUrl || '',
+      period_start: opts.periodStart || '',
+      period_end: opts.periodEnd || '',
+      status: 'paid',
+      created_at: new Date().toISOString()
+    };
+    dbp.payments.push(rec);
+    saveDb();
+    console.log('[PAYMENT-RECEIPT] Stored ' + (rec.number || rec.stripe_id) + ' ' + (rec.currency + ' ' + rec.amount) + ' for ' + (rec.customer_email || rec.customer_id));
+    return rec;
+  } catch(e) { console.log('[PAYMENT-RECEIPT] Store error:', e.message); return null; }
+}
+
+// Send a nicely formatted receipt email. Reuses the plain-text/dashboard
+// notification too. NEVER deduped — every payment gets its own email.
+async function sendPaymentReceiptEmail(rec, opts) {
+  try {
+    var amountStr = (rec.currency === 'usd' ? '$' : '£') + Number(rec.amount || 0).toFixed(2);
+    var planLabel = (rec.plan || 'Subscription').charAt(0).toUpperCase() + (rec.plan || 'Subscription').slice(1);
+    var bodyHtml =
+      '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Your payment has been received successfully. Thank you for your business.</p>' +
+      '<div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' +
+      (rec.description ? '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:45%">For</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + rec.description + '</td></tr>' : '') +
+      (rec.number ? '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Receipt / Invoice</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + rec.number + '</td></tr>' : '') +
+      (rec.plan ? '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Plan</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + planLabel + '</td></tr>' : '') +
+      '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount paid</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + amountStr + '</td></tr>' +
+      '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Payment date</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0">' + new Date(rec.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + '</td></tr>' +
+      '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Status</td><td style="padding:3px 0;font-size:13px;color:#34d399;font-weight:700">Paid</td></tr>' +
+      '</table></div>' +
+      '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">View your full billing history and download invoices any time from your dashboard. This is an automatic receipt for your 9amLeads account.</p>';
+    await sendDMNotification(rec.customer_id, 'dm_payment_receipt', 'Payment Receipt — ' + planLabel, '✅ Invoice paid', bodyHtml, 'View Billing', PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
+    console.log('[PAYMENT-RECEIPT] Email sent:', rec.stripe_id || rec.number, rec.customer_email);
+  } catch(e) { console.log('[PAYMENT-RECEIPT] Email error:', e.message); }
+}
+
+// Record + email a payment receipt in one call.
+async function recordPaymentReceipt(opts) {
+  var rec = storePaymentReceipt(opts);
+  if (rec) { try { await sendPaymentReceiptEmail(rec, opts); } catch(e) { console.log('[PAYMENT-RECEIPT] Send error:', e.message); } }
+  return rec;
 }
 
 async function sendDMAdminAlert(type, title, message) {
@@ -994,6 +1591,29 @@ function authMiddleware(req, res, next) {
   }
   try {
     req.user = jwt.verify(auth.split(' ')[1], JWT_SECRET);
+    // Cancelled accounts lose ALL dashboard/API access immediately — even with a
+    // still-valid token they are locked out. (Admin routes use adminAuth, so this
+    // only affects the customer dashboard.)
+    try {
+      var cc = db.prepare('SELECT plan FROM customers WHERE id = ?').get(req.user.id);
+      if (cc && cc.plan === 'cancelled') {
+        return res.status(403).json({ error: 'Your account has been cancelled. You no longer have access to the dashboard.', cancelled: true });
+      }
+    } catch(e) {}
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+// AUTH WITH QUERY TOKEN: <img src> tags in the dashboard cannot send an
+// Authorization header, so the preview image endpoints accept the JWT via
+// ?token=... as an alternative. Same verification as authMiddleware.
+function authQueryOrHeader(req, res, next) {
+  var token = req.query.token || (req.headers.authorization && req.headers.authorization.startsWith('Bearer ') ? req.headers.authorization.split(' ')[1] : '');
+  if (!token) return res.status(401).json({ error: 'No token provided' });
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch {
     return res.status(401).json({ error: 'Invalid token' });
@@ -1006,10 +1626,219 @@ function validateEmail(email) {
 
 // ===== APP =====
 const app = express();
+
+// ===== LIVE POST TRACKING (Stannp) =====
+// Map a Stannp mailpiece status to our friendly status + label + step index.
+var STANNP_STATUS_MAP = [
+  { match: ['accepted', 'queued', 'received'], status: 'queued', label: 'Accepted', step: 1, emoji: '\u2705', desc: 'Order accepted by the print house' },
+  { match: ['processing', 'printing', 'in_progress', 'produced', 'producing'], status: 'printing', label: 'Printing', step: 2, emoji: '\uD83D\uDD27', desc: 'Your mail is being printed' },
+  { match: ['dispatched', 'posted', 'handed_over'], status: 'dispatched', label: 'Dispatched', step: 3, emoji: '\uD83D\uDE9A', desc: 'Handed to Royal Mail' },
+  { match: ['local_delivery', 'out_for_delivery'], status: 'out_for_delivery', label: 'Out for delivery', step: 4, emoji: '\uD83D\uDEE3\uFE0F', desc: 'At the local delivery office' },
+  { match: ['delivered', 'completed'], status: 'delivered', label: 'Delivered', step: 5, emoji: '\uD83D\uDCEB', desc: 'Delivered to the address' },
+  { match: ['returned'], status: 'returned', label: 'Returned', step: 6, emoji: '\u21A9\uFE0F', desc: 'Returned to sender' },
+  { match: ['cancelled', 'canceled', 'failed', 'rejected'], status: 'cancelled', label: 'Cancelled / Failed', step: 6, emoji: '\u26D4', desc: 'This item was not posted' }
+];
+function mapStannpStatus(rawStatus) {
+  var s = String(rawStatus || '').toLowerCase().trim();
+  for (var i = 0; i < STANNP_STATUS_MAP.length; i++) {
+    var m = STANNP_STATUS_MAP[i];
+    for (var j = 0; j < m.match.length; j++) { if (s === m.match[j]) return m; }
+  }
+  // Fallback: keep raw but treat unknown as queued
+  return { status: 'unknown', label: s || 'Unknown', step: 0, emoji: '\uD83D\uDD0D', desc: s || 'Unknown status' };
+}
+
+// Record a tracking update for a recipient + its campaign (idempotent, preserves timeline).
+function recordMailpieceTracking(customerId, campaignId, recipientId, mailpieceId, rawStatus, eventTime) {
+  try {
+    var dbT = getDb();
+    var mapped = mapStannpStatus(rawStatus);
+    var when = eventTime || new Date().toISOString();
+    // Only move forward (don't downgrade a delivered item back to printing on late webhooks)
+    var rcpt = (dbT.direct_mail_recipients || []).find(function(r) { return r.id === recipientId && r.customer_id === customerId; });
+    if (rcpt) {
+      var curStep = rcpt.tracking_step || 0;
+      if (mapped.step >= curStep || mapped.status === 'cancelled' || mapped.status === 'returned') {
+        rcpt.provider_status = mapped.status;
+        rcpt.provider_status_label = mapped.label;
+        rcpt.tracking_step = mapped.step;
+        rcpt.provider_updated_at = when;
+        rcpt.provider_emoji = mapped.emoji;
+        if (!rcpt.tracking_history) rcpt.tracking_history = [];
+        var lastEvt = rcpt.tracking_history.length ? rcpt.tracking_history[rcpt.tracking_history.length - 1] : null;
+        if (!lastEvt || lastEvt.status !== mapped.status) {
+          rcpt.tracking_history.push({ status: mapped.status, label: mapped.label, at: when, desc: mapped.desc });
+        }
+      }
+    }
+    // Campaign-level: aggregate status from recipients
+    var camp = (dbT.direct_mail_campaigns || []).find(function(c) { return c.id === campaignId && c.customer_id === customerId; });
+    if (camp) {
+      camp.provider_status = mapped.status;
+      camp.provider_status_label = mapped.label;
+      camp.provider_updated_at = when;
+      var campRcpts = (dbT.direct_mail_recipients || []).filter(function(r) { return r.campaign_id === campaignId && r.customer_id === customerId; });
+      if (campRcpts.length) {
+        var deliv = campRcpts.filter(function(r) { return r.provider_status === 'delivered'; }).length;
+        var disp = campRcpts.filter(function(r) { return r.provider_status === 'dispatched' || r.provider_status === 'out_for_delivery'; }).length;
+        var print = campRcpts.filter(function(r) { return r.provider_status === 'printing' || r.provider_status === 'queued'; }).length;
+        camp.tracking_summary = { total: campRcpts.length, delivered: deliv, dispatched: disp, printing: print };
+        camp.provider_status = deliv === campRcpts.length ? 'delivered' : (deliv > 0 || disp > 0 ? 'dispatched' : 'printing');
+        camp.provider_status_label = camp.provider_status === 'delivered' ? 'Delivered' : camp.provider_status === 'dispatched' ? 'Dispatched' : 'Printing';
+      }
+      if (!camp.tracking_history) camp.tracking_history = [];
+      var lastCampEvt = camp.tracking_history.length ? camp.tracking_history[camp.tracking_history.length - 1] : null;
+      if (!lastCampEvt || lastCampEvt.status !== camp.provider_status) {
+        camp.tracking_history.push({ status: camp.provider_status, label: camp.provider_status_label, at: when, desc: mapped.desc, delivered_count: deliv || 0, total: campRcpts.length || 0 });
+      }
+    }
+    saveDb();
+    return { success: true, mapped: mapped.status };
+  } catch(e) { console.log('[DM-TRACKING] recordMailpieceTracking error:', e.message); return { success: false, error: e.message }; }
+}
+
+// REAL-DATA RECONCILE: refresh recipient tracking from Stannp's reporting API.
+// This is the authoritative source — it only ever reflects what Stannp reports,
+// never mock/guessed values. Called by the poller as a fallback and manually.
+async function reconcileTrackingFromStannp(daysBack) {
+  try {
+    var provider = getDirectMailProvider();
+    if (provider.name !== 'stannp' || typeof provider.getReportingStatuses !== 'function') return { success: false, error: 'Stannp provider not active' };
+    var rep = await provider.getReportingStatuses(daysBack || 14);
+    if (!rep.success || !rep.statuses) return { success: false, error: 'Reporting lookup failed' };
+    var dbR = getDb();
+    var statusMap = rep.statuses;
+    var updated = 0;
+    // Match by exact numeric mailpiece id
+    (dbR.direct_mail_recipients || []).forEach(function(r) {
+      var mid = String(r.provider_mailpiece_id || '');
+      if (!/^\d+$/.test(mid)) return;
+      var real = statusMap[mid];
+      if (!real) return;
+      // Only move forward (delivered stays delivered)
+      var curStep = r.tracking_step || 0;
+      var mapped = mapStannpStatus(real);
+      if (mapped.step >= curStep || mapped.status === 'cancelled' || mapped.status === 'returned') {
+        recordMailpieceTracking(r.customer_id, r.campaign_id, r.id, mid, real, new Date().toISOString());
+        updated++;
+      }
+    });
+    if (updated) saveDb();
+    return { success: true, reported: Object.keys(statusMap).length, updated: updated };
+  } catch(e) { return { success: false, error: e.message }; }
+}
+
+// POST /api/webhooks/stannp — Stannp real-time mailpiece_status webhook.
+// Payload: { webhook_id, event: "mailpiece_status" | "test_url", created, retries, mailpieces: [...] }
+app.post('/api/webhooks/stannp', express.raw({ type: 'application/json' }), (req, res) => {
+  var rawBody = req.rawBody || req.body.toString('utf-8');
+  var body = {};
+  try { body = JSON.parse(rawBody || '{}'); } catch(e) { body = req.body || {}; }
+  // Signature verification (optional but recommended) — X-Stannp-Signature = HMAC-SHA256(secret, rawBody)
+  if (STANNP_WEBHOOK_SECRET) {
+    try {
+      var sig = req.headers['x-stannp-signature'] || '';
+      var expected = require('crypto').createHmac('sha256', STANNP_WEBHOOK_SECRET).update(rawBody).digest('hex');
+      var ok = sig && sig.length > 10 && expected === sig;
+      // Fall back to timing-safe compare
+      if (sig) {
+        var buf1 = Buffer.from(String(expected));
+        var buf2 = Buffer.from(String(sig));
+        ok = buf1.length === buf2.length && require('crypto').timingSafeEqual(buf1, buf2);
+      }
+      if (!ok) { console.log('[DM-WEBHOOK] Stannp signature mismatch'); return res.status(401).json({ success: false, error: 'Invalid signature' }); }
+    } catch(sigErr) { console.log('[DM-WEBHOOK] signature check error:', sigErr.message); }
+  }
+  // Test URL validation — Stannp sends this when the webhook is first created.
+  if (body.event === 'test_url') { return res.status(200).json({ success: true }); }
+  if (body.event === 'mailpiece_status' || (body.mailpieces && body.mailpieces.length)) {
+    var mailpieces = Array.isArray(body.mailpieces) ? body.mailpieces : [];
+    var dbW = getDb();
+    var updated = 0;
+    for (var wi = 0; wi < mailpieces.length; wi++) {
+      var mp = mailpieces[wi] || {};
+      var mpId = String(mp.id || '');
+      if (!mpId) continue;
+      // Find the recipient with this provider_mailpiece_id
+      var rcpt = (dbW.direct_mail_recipients || []).find(function(r) { return String(r.provider_mailpiece_id || '') === mpId; });
+      if (!rcpt) { console.log('[DM-WEBHOOK] No recipient for mailpiece ' + mpId); continue; }
+      recordMailpieceTracking(rcpt.customer_id, rcpt.campaign_id, rcpt.id, mpId, mp.status || '', mp.timestamp || new Date().toISOString());
+      updated++;
+    }
+    console.log('[DM-WEBHOOK] Stannp mailpiece_status: ' + updated + ' recipients updated (' + mailpieces.length + ' in payload)');
+    return res.status(200).json({ success: true, updated: updated });
+  }
+  res.status(200).json({ success: true, received: true, event: body.event || 'unknown' });
+});
+
+// GET /api/direct-mail/tracking — customer dashboard: live post tracking for their campaigns.
+app.get('/api/direct-mail/tracking', authMiddleware, async (req, res) => {
+  try {
+    backfillMailpieceIds();
+    var dbT = getDb();
+    var all = (dbT.direct_mail_campaigns || []).filter(function(c) { return c.customer_id === req.user.id && c.status !== 'draft'; });
+    var out = [];
+    var demos = [];
+    all.forEach(function(c) {
+      var rcpts = (dbT.direct_mail_recipients || []).filter(function(r) { return r.campaign_id === c.id && r.customer_id === req.user.id; });
+      var record = {
+        id: c.id, name: c.name, description: c.description, status: c.status, provider_status: c.provider_status || '',
+        provider_status_label: c.provider_status_label || '', provider_updated_at: c.provider_updated_at || '',
+        created_at: c.created_at, sent_count: c.sent_count || rcpts.length, tracking_summary: c.tracking_summary || null,
+        tracking_history: c.tracking_history || [], proof_url: c.proof_url || '',
+        recipients: rcpts.map(function(r) { return { id: r.id, name: r.name, address: (r.address_line1 || '') + (r.city ? ', ' + r.city : '') + (r.postcode ? ', ' + r.postcode : ''), provider_status: r.provider_status || 'pending', provider_status_label: r.provider_status_label || 'Pending', tracking_step: r.tracking_step || 0, provider_emoji: r.provider_emoji || '\uD83D\uDD0D', provider_updated_at: r.provider_updated_at || '', tracking_history: r.tracking_history || [], lead_id: r.lead_id || '', mailpiece_type: r.mailpiece_type || '' }; })
+      };
+      if (isRealTrackingCampaign(c, rcpts)) out.push(record);
+      else if (c.notes === 'DEMO_TRACKING') { record.is_demo = true; demos.push(record); }
+      // else: legacy/mock records are dropped entirely from customer view
+    });
+    res.json({ success: true, count: out.length, campaigns: out, demo_count: demos.length, demos: demos, synced_at: new Date().toISOString() });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/tracking/sync — force a live refresh of campaign statuses from Stannp.
+app.post('/api/direct-mail/tracking/sync', authMiddleware, async (req, res) => {
+  try {
+    var dbS = getDb();
+    var provider = getDirectMailProvider();
+    var syncable = (dbS.direct_mail_recipients || []).filter(function(r) {
+      if (r.customer_id !== req.user.id || !r.provider_mailpiece_id) return false;
+      if (!/^\d+$/.test(String(r.provider_mailpiece_id)) || String(r.provider_mailpiece_id).length < 4) return false;
+      var cRow = (dbS.direct_mail_campaigns || []).find(function(c) { return c.id === r.campaign_id; });
+      if (cRow && cRow.notes === 'DEMO_TRACKING') return false;
+      if (cRow && String(cRow.provider || '').toLowerCase() !== 'stannp') return false;
+      return (!r.provider_status || ['queued','printing','dispatched','out_for_delivery','processing','accepted'].indexOf(r.provider_status) !== -1);
+    });
+    var seen = {}; var ids = [];
+    syncable.forEach(function(r) { var mid = String(r.provider_mailpiece_id); if (!seen[mid]) { seen[mid] = 1; ids.push(mid); } });
+    var updated = 0;
+    for (var ci = 0; ci < ids.length; ci++) {
+      try {
+        var st = await provider.getCampaignStatus(ids[ci]);
+        if (st && st.success && st.status) {
+          var rcpt = (dbS.direct_mail_recipients || []).find(function(r) { return String(r.provider_mailpiece_id || '') === ids[ci]; });
+          if (rcpt) { recordMailpieceTracking(rcpt.customer_id, rcpt.campaign_id, rcpt.id, ids[ci], st.status, new Date().toISOString()); updated++; }
+        }
+      } catch(syncErr) {}
+    }
+    res.json({ success: true, updated: updated });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/tracking/bulk-delete — bulk delete tracking records.
+// Body: { campaign_ids?: string[], delete_older_than?: '7d'|'30d'|'90d'|'180d' }
+// Removes the campaigns, their recipients and status history. Demo campaigns are
+// always excluded unless explicitly in campaign_ids.
+
+
+// GET /api/direct-mail/tracking/calendar — group tracking by date for calendar/week views.
+
 app.use(cors({ origin: ['https://www.9amleads.com', 'https://9amleads.com', 'http://localhost:8012'], credentials: true }));
 // Capture raw body for Stripe signature verification (preserve stream for express.json)
+// Raised from 2mb to 20mb so Print & Post leaflet/letter uploads (sent as base64)
+// don't fail with a body-too-large error when a customer saves their setup.
 app.use(express.json({
-  limit: '2mb',
+  limit: '20mb',
   verify: function(req, res, buf) { req.rawBody = buf.toString('utf-8'); }
 }));
 
@@ -1026,6 +1855,96 @@ app.get('/api/direct-mail/notifications', authMiddleware, (req, res) => {
     var db2 = getDb();
     var notifs = (db2.dm_notifications || []).filter(function(n) { return n.customer_id === req.user.id; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); }).slice(0, 50);
     res.json({ success: true, notifications: notifs, unread: notifs.filter(function(n) { return !n.read; }).length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/direct-mail/tracking/bulk-delete', authMiddleware, (req, res) => {
+  try {
+    var dbB = getDb();
+    var body = req.body || {};
+    var targetIds = {};
+    var ids = Array.isArray(body.campaign_ids) ? body.campaign_ids : [];
+    ids.forEach(function(id) { targetIds[String(id)] = 1; });
+    // Date-based filter
+    var olderThan = String(body.delete_older_than || '');
+    var cutoff = null;
+    var daysMap = { '7d': 7, '30d': 30, '90d': 90, '180d': 180 };
+    if (daysMap[olderThan]) cutoff = new Date(Date.now() - daysMap[olderThan] * 86400000).toISOString();
+    // Select campaigns to delete
+    var toDelete = (dbB.direct_mail_campaigns || []).filter(function(c) {
+      if (c.customer_id !== req.user.id) return false;
+      if (c.notes === 'DEMO_TRACKING') return false; // keep demo preview data
+      if (Object.keys(targetIds).length) return targetIds[String(c.id)];
+      if (cutoff) return c.created_at && c.created_at < cutoff;
+      return false;
+    });
+    var delMap = {}; toDelete.forEach(function(c) { delMap[c.id] = 1; });
+    var removed = toDelete.length;
+    if (removed) {
+      dbB.direct_mail_campaigns = (dbB.direct_mail_campaigns || []).filter(function(c) { return !delMap[c.id]; });
+      dbB.direct_mail_recipients = (dbB.direct_mail_recipients || []).filter(function(r) { return !delMap[r.campaign_id]; });
+      dbB.direct_mail_status_history = (dbB.direct_mail_status_history || []).filter(function(h) { return !delMap[h.campaign_id]; });
+      saveDb();
+    }
+    res.json({ success: true, removed: removed });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.get('/api/direct-mail/tracking/calendar', authMiddleware, (req, res) => {
+  try {
+    backfillMailpieceIds();
+    var dbC = getDb();
+    var allCamps = (dbC.direct_mail_campaigns || []).filter(function(c) { return c.customer_id === req.user.id && c.status !== 'draft'; });
+    // Only real Stannp campaigns appear in the calendar summary; demo records are
+    // returned separately so the preview can be shown without faking real stats.
+    var camps = [];
+    var demos = [];
+    allCamps.forEach(function(c) {
+      var rcpts = (dbC.direct_mail_recipients || []).filter(function(r) { return r.campaign_id === c.id && r.customer_id === req.user.id; });
+      if (isRealTrackingCampaign(c, rcpts)) camps.push(c);
+      else if (c.notes === 'DEMO_TRACKING') demos.push(c);
+    });
+    var byDay = {};
+    var demoByDay = {};
+    var summary = { delivered: 0, in_transit: 0, printing: 0, total: 0 };
+    var demoSummary = { delivered: 0, in_transit: 0, printing: 0, total: 0 };
+    camps.forEach(function(c) {
+      var rcpts = (dbC.direct_mail_recipients || []).filter(function(r) { return r.campaign_id === c.id && r.customer_id === req.user.id; });
+      var dayKey = (c.created_at || '').split('T')[0];
+      if (!byDay[dayKey]) byDay[dayKey] = { date: dayKey, campaigns: [], recipient_count: 0, delivered: 0, in_transit: 0, printing: 0 };
+      byDay[dayKey].campaigns.push({
+        id: c.id, name: c.name, description: c.description, provider_status: c.provider_status || '',
+        provider_status_label: c.provider_status_label || '', created_at: c.created_at,
+        tracking_summary: c.tracking_summary || null, recipients: rcpts
+      });
+      byDay[dayKey].recipient_count += rcpts.length;
+      rcpts.forEach(function(r) {
+        var s = r.provider_status || '';
+        if (s === 'delivered') { byDay[dayKey].delivered++; summary.delivered++; }
+        else if (s === 'dispatched' || s === 'out_for_delivery') { byDay[dayKey].in_transit++; summary.in_transit++; }
+        else { byDay[dayKey].printing++; summary.printing++; }
+        summary.total++;
+      });
+    });
+    demos.forEach(function(c) {
+      var rcpts = (dbC.direct_mail_recipients || []).filter(function(r) { return r.campaign_id === c.id && r.customer_id === req.user.id; });
+      var dayKey = (c.created_at || '').split('T')[0];
+      if (!demoByDay[dayKey]) demoByDay[dayKey] = { date: dayKey, campaigns: [], recipient_count: 0, delivered: 0, in_transit: 0, printing: 0 };
+      demoByDay[dayKey].campaigns.push({
+        id: c.id, name: c.name, description: c.description, provider_status: c.provider_status || '',
+        provider_status_label: c.provider_status_label || '', created_at: c.created_at,
+        tracking_summary: c.tracking_summary || null, recipients: rcpts, is_demo: true
+      });
+      demoByDay[dayKey].recipient_count += rcpts.length;
+      rcpts.forEach(function(r) {
+        var s = r.provider_status || '';
+        if (s === 'delivered') { demoByDay[dayKey].delivered++; demoSummary.delivered++; }
+        else if (s === 'dispatched' || s === 'out_for_delivery') { demoByDay[dayKey].in_transit++; demoSummary.in_transit++; }
+        else { demoByDay[dayKey].printing++; demoSummary.printing++; }
+        demoSummary.total++;
+      });
+    });
+    var days = Object.keys(byDay).sort().reverse();
+    var demoDays = Object.keys(demoByDay).sort().reverse();
+    res.json({ success: true, count: days.length, summary: summary, days: days.map(function(d) { return byDay[d]; }), demo_summary: demoSummary, demos: demoDays.map(function(d) { return demoByDay[d]; }) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 app.post('/api/direct-mail/notifications/read', authMiddleware, (req, res) => {
@@ -1052,7 +1971,7 @@ app.use('/planningleads', express.static(path.join(ROOT_DIR, 'planningleads')));
 app.use('/tenders', express.static(path.join(ROOT_DIR, 'tenders')));
 app.use('/assets', express.static(path.join(ROOT_DIR, 'assets')));
 app.use('/css', express.static(path.join(ROOT_DIR, 'css')));
-app.use(express.static(FRONTEND_DIR, { index: 'index.html' }));
+app.use(express.static(FRONTEND_DIR, { index: 'index.html', setHeaders: function(res, path) { if (/\.html?$/.test(path)) res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); } }));
 
 // ===== DYNAMIC SITEMAP ===== (serves fresh sitemap with all blog posts; must be before SPA fallback)
 app.get('/sitemap.xml', (req, res) => {
@@ -1080,10 +1999,6 @@ app.get('/sitemap.xml', (req, res) => {
     ];
     for (var pi = 0; pi < posts.length; pi++) {
       urls.push('<url><loc>https://9amleads.com/blog/' + posts[pi].slug + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + (posts[pi].created_at ? posts[pi].created_at.split('T')[0] : today) + '</lastmod></url>');
-    }
-    var staticSlugs = ['moving-leads-uk', 'probate-leads-uk', 'public-sector-tenders-uk', 'win-probate-instructions'];
-    for (var si = 0; si < staticSlugs.length; si++) {
-      urls.push('<url><loc>https://9amleads.com/blog/' + staticSlugs[si] + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>');
     }
     var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
     for (var ui = 0; ui < urls.length; ui++) xml += '  ' + urls[ui] + '\n';
@@ -1144,7 +2059,7 @@ app.get(/^\/(?!api\/).*$/, (req, res) => {
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { company, name, email, phone, password, product, products, plan, targetAreas, coverage, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl } = req.body;
+    const { company, name, email, phone, password, product, products, plan, targetAreas, coverage, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl, movingType } = req.body;
 
     if (!company || !email || !password) {
       return res.status(400).json({ error: 'Company, email and password are required' });
@@ -1211,6 +2126,25 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(400).json({ error: (planName === 'free_trial' ? 'Free Trial' : planName.charAt(0).toUpperCase() + planName.slice(1)) + ' allows up to ' + maxTypes + ' lead type' + (maxTypes > 1 ? 's' : '') + '. Upgrade for more.' });
     }
 
+    // HARD SALES CAP (same ceilings as /api/availability): never create an account
+    // that pushes committed daily demand past 70% of what the market physically
+    // produces. This guarantees every customer's "exactly what's promised" daily
+    // count stays deliverable. Sources: moving ~3,000, newbusiness ~1,500,
+    // probate ~27 (UK Gazette), planning ~2,000 (Plota), tenders ~300 fresh/day.
+    var supplyCeilingMap = { moving: 3000, newbusiness: 1500, probate: 27, planning: 2000, tenders: 300 };
+    var _dailyLimitForCap = (planName === 'pro' ? 15 : planName === 'enterprise' ? 30 : planName === 'free_trial' ? 5 : 5);
+    var _existingCommitted = db.prepare('SELECT COALESCE(SUM(leads_per_day), 0) AS total FROM customers WHERE product = ? AND plan != ?').get(product, 'cancelled');
+    var _currentCommitted = (_existingCommitted && _existingCommitted.total) ? _existingCommitted.total : 0;
+    var _ceilingForCap = supplyCeilingMap[product] || 100;
+    // Only enforce on PAID signups (free trials still allowed so we never lose a
+    // prospect; the availability endpoint + waiting list steer them to real demand).
+    if (planName !== 'free_trial' && (_currentCommitted + _dailyLimitForCap) > Math.floor(_ceilingForCap * 0.7)) {
+      return res.status(409).json({
+        error: 'We only sell what we can reliably deliver every day. This package is at capacity right now — join the waiting list and we\'ll contact you the moment we can guarantee your daily lead promise.',
+        waiting_list: true, product: product, current_demand: _currentCommitted, supply_ceiling: _ceilingForCap
+      });
+    }
+
     // Validate postcode areas — shared territories (non-exclusive)
     if (areas.length > 0 && coverage === 'postcode') {
       // Just verify format, no exclusivity check
@@ -1231,25 +2165,56 @@ app.post('/api/auth/signup', async (req, res) => {
       claimPostcodes(areas, id, product);
     }
 
+    // Store product_config including moving_type (residential/commercial/both)
+    var signupCfg = {};
+    try { signupCfg = JSON.parse(req.body.product_config || '{}'); } catch(e) {}
+    if (movingType && ['residential','commercial','both'].indexOf(movingType) !== -1) {
+      if (!signupCfg[product]) signupCfg[product] = {};
+      // Commercial-only is NOT offered: every moving customer gets a residential
+      // base with commercial mixed in when available. Enforce 'both' if the client
+      // somehow sends 'commercial' alone.
+      signupCfg[product].moving_type = (movingType === 'commercial') ? 'both' : movingType;
+    }
+    if (targetAreas && targetAreas.length) {
+      if (!signupCfg[product]) signupCfg[product] = {};
+      signupCfg[product].target_areas = JSON.stringify(targetAreas);
+      signupCfg[product].coverage = coverage || 'postcode';
+    }
+    if (Object.keys(signupCfg).length) {
+      db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(JSON.stringify(signupCfg), id);
+    }
+
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(id);
     customer.verification_token = verification_token;
-    customer.email_verified = 1;
     // Store daily limit based on lead type, plan and coverage
     const dailyLimit = getPlanLimit(product, plan || 'free_trial', coverage || 'postcode');
     db.prepare('UPDATE customers SET leads_per_day = ?, coverage = ? WHERE id = ?').run(dailyLimit, coverage || 'postcode', id);
     saveDb();
 
-    // Verification email disabled — was causing spam during testing
-    /*try {
-      const verifyUrl = PUBLIC_URL.replace(/\/+$/, '') + '/api/auth/verify-email?token=' + verification_token;
-      await sendBrevoEmail(
-        { email: customer.email, name: customer.contact_name || customer.company },
+    // Email verification (re-enabled). The account starts unverified (email_verified=0)
+    // so the verification email has a purpose and gates login until the user clicks
+    // the link. To avoid the past spam problem, we skip sending the verification
+    // email (and auto-verify) for known test/internal/placeholder addresses — real
+    // customers always get it.
+    var _email = String(customer.email || '').toLowerCase();
+    var _testPatterns = /@(9amleads\.com|example\.com|test\.|yopmail|mailinator|tempmail|fake)/;
+    var _isInternalOrTest = !_email || _testPatterns.test(_email) || _email.indexOf('hello@') === 0 || _email.indexOf('test') !== -1;
+    if (_isInternalOrTest) {
+      db.prepare('UPDATE customers SET email_verified = 1 WHERE id = ?').run(id);
+      saveDb();
+    } else {
+      try {
+        const verifyUrl = PUBLIC_URL.replace(/\/+$/, '') + '/api/auth/verify-email?token=' + verification_token;
+        await sendBrevoEmail(
+          { email: customer.email, name: customer.contact_name || customer.company },
         'Verify your 9amLeads account',
-        '<div style="font-family:Arial,Helvetica,sans-serif;color:#e2e8f0"><div style="text-align:center;margin-bottom:16px"><span style="display:inline-block;width:34px;height:34px;border-radius:9px;text-align:center;line-height:34px;font-size:15px;background:linear-gradient(135deg,#0ea5e9,#6366f1);margin-right:5px;vertical-align:middle;color:#fff;font-weight:900">9</span><span style="vertical-align:middle;font-size:20px;font-weight:900;color:#f1f5f9">am Leads</span></div><h2 style="font-size:20px;font-weight:800;color:#f1f5f9;margin:0 0 12px;text-align:center">Welcome to 9am Leads!</h2><p style="font-size:14px;color:#f1f5f9;line-height:1.7;margin:0 0 16px;text-align:center">Please verify your email address by clicking the button below:</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 16px"><a href="' + verifyUrl + '" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700">Verify Email</a></td></tr></table><p style="font-size:13px;color:#e2e8f0;line-height:1.6;margin:0;text-align:center">Your free 7-day trial has started. You\'ll receive your first leads at 9am tomorrow.</p></div>'
-      );
-    } catch (e) {
-      console.log('Verification email skipped:', e.message);
-    }*/
+        '<div style="font-family:Arial,Helvetica,sans-serif;background:#0f111a;color:#e2e8f0;padding:28px 20px"><div style="max-width:560px;margin:0 auto;background:#0f111a"><div style="text-align:center;margin-bottom:16px"><span style="display:inline-block;width:34px;height:34px;border-radius:9px;text-align:center;line-height:34px;font-size:15px;background-color:#0ea5e9;margin-right:5px;vertical-align:middle;color:#fff;font-weight:900">9</span><span style="vertical-align:middle;font-size:20px;font-weight:900;color:#f1f5f9">am Leads</span></div><h2 style="font-size:20px;font-weight:800;color:#ffffff;margin:0 0 12px;text-align:center">Welcome to 9am Leads!</h2><p style="font-size:14px;color:#ffffff;line-height:1.7;margin:0 0 16px;text-align:center">Please verify your email address by clicking the button below:</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 16px"><a href="' + verifyUrl + '" style="display:inline-block;padding:12px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700">Verify Email</a></td></tr></table><p style="font-size:13px;color:#ffffff;line-height:1.6;margin:0;text-align:center">Your free 7-day trial has started. You\'ll receive your first leads at 9am tomorrow.</p></div></div>'
+        );
+        console.log('[VERIFY] Verification email sent to ' + customer.email);
+      } catch (e) {
+        console.log('Verification email skipped:', e.message);
+      }
+    }
 
     // Save to Brevo contact list
     try {
@@ -1289,46 +2254,10 @@ app.post('/api/auth/signup', async (req, res) => {
 
     const token = generateToken(customer);
 
-    // Generate leads immediately so they're ready for the next 09:00 UK delivery
-    (async function() {
-      try {
-        console.log('[SIGNUP] Pre-generating leads for ' + customer.id);
-        var rmScraperFast = require('./rightmove_scraper_v2');
-        var movingLeads = await rmScraperFast.collectMovingLeads();
-        if (!movingLeads || movingLeads.length === 0) { console.log('[SIGNUP] No leads available yet'); return; }
-        // Filter leads to the customer's requested postcode areas (e.g. B, EN, NW)
-        var targetAreas = [];
-        try { targetAreas = JSON.parse(customer.target_areas || '[]'); } catch(e) {}
-        function extractArea(pc) { return (pc || '').toUpperCase().replace(/[^A-Z].*$/, ''); }
-        if (targetAreas.length > 0) {
-          movingLeads = movingLeads.filter(function(l) {
-            var a = extractArea(l.postcode || l.address || l.location || '');
-            return targetAreas.some(function(t) { return extractArea(t) === a; });
-          });
-        }
-        if (movingLeads.length === 0) { console.log('[SIGNUP] No leads in requested areas yet'); return; }
-        // Enrich leads with full addresses + postcodes (street number/name + full postcode)
-        try {
-          var maxPick = Math.min(movingLeads.length, 5);
-          var pick = movingLeads.slice(0, maxPick);
-          var enrichedPick = await rmScraperFast.enrichMovingLeads(pick, 1);
-          movingLeads.splice.apply(movingLeads, [0, maxPick].concat(enrichedPick));
-        } catch(ee) { console.log('[SIGNUP] Enrich error:', ee.message); }
-        var db2 = getDb();
-        var now2 = new Date().toISOString();
-        var saved = 0;
-        var dailyLimits = { free_trial: 5, starter: 5, pro: 15, enterprise: 40 };
-        var custPlan = customer.plan || 'free_trial';
-        var maxLeads = dailyLimits[custPlan] || 5;
-        for (var li = 0; li < Math.min(movingLeads.length, maxLeads); li++) {
-          var p = movingLeads[li];
-          db2.leads.push({ id: require('uuid').v4(), customer_id: customer.id, product: 'moving', data: JSON.stringify(p), status: 'new', delivered: 0, created_at: now2, delivered_at: null });
-          saved++;
-        }
-        saveDb();
-        if (saved > 0) console.log('[SIGNUP] Pre-stored ' + saved + ' leads for 09:00 UK delivery');
-      } catch(e) { console.log('[SIGNUP] Lead generation error:', e.message); }
-    })();
+    // NOTE: No leads are pre-generated at signup. A brand-new account should show
+    // ZERO leads in the dashboard until their first 09:00 UK delivery. The daily
+    // delivery pipeline gathers, enriches (door number + street + postcode) and
+    // assigns leads to each customer automatically.
 
     res.status(201).json({
       token,
@@ -1415,7 +2344,14 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(403).json({ error: 'Please verify your email first. Check your inbox for the verification link.', needsVerification: true, email: customer.email });
     }
 
-    db.prepare('UPDATE customers SET last_login = datetime(\'now\') WHERE id = ?').run(customer.id);
+    // Cancelled accounts lose dashboard access. They cannot log in again —
+    // if they want back, they sign up fresh (or we can re-activate them manually).
+    if (customer.plan === 'cancelled') {
+      return res.status(403).json({ error: 'Your account has been cancelled and you no longer have access to the dashboard. If you\'d like to restart, please sign up again or contact support.', cancelled: true });
+    }
+
+    db.prepare('UPDATE customers SET last_login = ? WHERE id = ?').run(new Date().toISOString(), customer.id);
+    db.prepare('UPDATE customers SET last_login_at = ? WHERE id = ?').run(new Date().toISOString(), customer.id);
     const token = generateToken(customer);
 
     res.json({
@@ -1460,6 +2396,7 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
     leads_per_day: customer.leads_per_day,
     target_areas: JSON.parse(customer.target_areas || '[]'),
     extra_postcodes: parseInt(customer.extra_postcodes) || 0,
+    moving_type: (function() { try { var m = JSON.parse(customer.product_config || '{}'); return (m.moving && m.moving.moving_type) || customer.moving_type || 'both'; } catch(e) { return customer.moving_type || 'both'; } })(),
     biz_field2: customer.biz_field2,
     biz_field3: customer.biz_field3,
     source: customer.source,
@@ -1467,7 +2404,8 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
     email_verified: customer.email_verified || 0,
     created_at: customer.created_at,
     last_login: customer.last_login,
-    crm_webhook_url: customer.crm_webhook_url || ''
+    crm_webhook_url: customer.crm_webhook_url || '',
+    stripe_payment_method_id: customer.stripe_payment_method_id || ''
   });
 });
 
@@ -1831,12 +2769,10 @@ const BUILTIN_TEMPLATES = [
   { id:'tenders-intro', name:'Tender Introduction Email', industry:'tenders', lead_type:'tenders', method:'email', content:'Subject: Expression of Interest\n\nTo the procurement team,\n\n{{customer_business_name}} wishes to express interest in the tender opportunity.\n\nWe have experience delivering similar contracts and can provide full capability documentation.\n\nPlease contact {{customer_email}} for our credentials.\n\nYours faithfully,\n{{customer_business_name}}' }
 ];
 
-// GET /api/success-centre/templates — return all templates (Pro+ only)
+// GET /api/success-centre/templates — return all templates (full access for active accounts)
 app.get('/api/success-centre/templates', authMiddleware, (req, res) => {
-  const cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
-  var plan = cust?.plan || 'free_trial';
-  if (plan === 'free_trial' || plan === 'starter') {
-    return res.json({ restricted: true, templates: [], message: 'Success Centre is available on Pro and Enterprise plans. <a href="#" onclick="showPlans();return false" style="color:#0ea5e9;text-decoration:underline">Upgrade now</a> to access industry playbooks, outreach templates, AI generator and more.' });
+  if (!checkProAccess(req)) {
+    return res.json({ restricted: true, templates: [], message: 'Your account has been cancelled — you no longer have access to Success Centre templates.' });
   }
   res.json({ templates: BUILTIN_TEMPLATES });
 });
@@ -1844,7 +2780,9 @@ app.get('/api/success-centre/templates', authMiddleware, (req, res) => {
 function checkProAccess(req) {
   const cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   var plan = cust?.plan || 'free_trial';
-  return (plan === 'pro' || plan === 'enterprise');
+  // FULL ACCESS: free trial users can try every feature. Paid plans (starter/pro/
+  // enterprise) keep it unlocked. Only cancelled accounts lose access entirely.
+  return (plan === 'free_trial' || plan === 'starter' || plan === 'pro' || plan === 'enterprise');
 }
 
 // GET /api/success-centre/playbooks — return playbooks (Pro+ only)
@@ -1930,9 +2868,9 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     const thisWeek = (function(){ var d = new Date(); d.setDate(d.getDate() - (d.getDay() || 7) + 1); return d.toISOString().split('T')[0]; })();
     const thisMonth = today.substring(0, 7);
 
-    const leadsToday = leads.filter(l => l.created_at && l.created_at.startsWith(today));
-    const leadsWeek = leads.filter(l => l.created_at && l.created_at >= thisWeek);
-    const leadsMonth = leads.filter(l => l.created_at && l.created_at.startsWith(thisMonth));
+    const leadsToday = leads.filter(l => l.delivered && l.delivered_at && l.delivered_at.startsWith(today));
+    const leadsWeek = leads.filter(l => l.delivered && l.delivered_at && l.delivered_at >= thisWeek);
+    const leadsMonth = leads.filter(l => l.delivered && l.delivered_at && l.delivered_at.startsWith(thisMonth));
     const deliveredToday = leads.filter(l => l.delivered && l.delivered_at && l.delivered_at.startsWith(today));
     const deliveredThisMonth = leads.filter(l => l.delivered && l.delivered_at && l.delivered_at.startsWith(thisMonth));
     const contacted = leads.filter(l => l.lead_status === 'contacted' || l.lead_status === 'interested' || l.lead_status === 'quoted' || l.lead_status === 'won');
@@ -2411,7 +3349,7 @@ app.post('/api/postcodes/extra', authMiddleware, async (req, res) => {
 
 // PUT /api/settings
 app.put('/api/settings', authMiddleware, (req, res) => {
-  const { company, name, phone, target_areas, notifications, password } = req.body;
+  const { company, name, phone, target_areas, notifications, password, moving_type } = req.body;
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
 
@@ -2419,6 +3357,15 @@ app.put('/api/settings', authMiddleware, (req, res) => {
   if (name) db.prepare('UPDATE customers SET contact_name = ? WHERE id = ?').run(name, req.user.id);
   if (phone) db.prepare('UPDATE customers SET phone = ? WHERE id = ?').run(phone, req.user.id);
   if (password && password.length >= 8) { var pwHash = require('bcryptjs').hashSync(password, 10); db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?').run(pwHash, req.user.id); }
+  // moving_type: residential | commercial | both (moving product filter)
+  if (moving_type && ['residential','commercial','both'].indexOf(moving_type) !== -1) {
+    var mtCfg = {}; try { mtCfg = JSON.parse(customer.product_config || '{}'); } catch(e) {}
+    if (!mtCfg.moving) mtCfg.moving = {};
+    // Commercial-only is NOT offered — every moving customer keeps a residential
+    // base with commercial mixed in when available.
+    mtCfg.moving.moving_type = (moving_type === 'commercial') ? 'both' : moving_type;
+    db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(JSON.stringify(mtCfg), req.user.id);
+  }
   if (target_areas) {
     // "All UK" selection => ukwide coverage (no specific postcode areas needed).
     const hasAllUK = target_areas.some(function(a){ return /all[\s-]?uk/i.test(String(a)); });
@@ -2696,7 +3643,7 @@ app.post('/api/ai/generate-letter', authMiddleware, async (req, res) => {
         req.write(requestBody); req.end();
       });
       if (result && result.choices && result.choices[0] && result.choices[0].message) {
-        letters.push(result.choices[0].message.content);
+        letters.push(cleanMailText(result.choices[0].message.content));
       } else {
         letters.push(''); // Fallback empty on error for individual variant
       }
@@ -3135,6 +4082,42 @@ app.get('/api/admin/leads-overview', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/customer-leads?email=X — list a customer's undelivered leads with
+// freshness dates so we can see exactly what delivery sees (diagnostic for shortfalls).
+app.get('/api/admin/customer-leads', adminAuth, (req, res) => {
+  try {
+    var email = (req.query.email || '').toLowerCase();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var db2 = getDb();
+    var cust = (db2.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var freshCutoff = new Date(Date.now() - 24 * 3600000).toISOString();
+    var undelivered = (db2.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0; });
+    var rows = undelivered.map(function(l) {
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      var fv = d.scrapedAt || d.firstVisibleDate || d.updateDate || d.incorporationDate || d.publishedDate || d.receivedDate || l.created_at || '';
+      return { id: l.id, product: l.product, created_at: l.created_at, release_at: l.release_at || '', postcode: d.postcode || '', address: (d.address || '').substring(0, 40), scrapedAt: (d.scrapedAt || ''), firstVisibleDate: (d.firstVisibleDate || ''), freshness: fv, fresh24: !!(fv && fv >= freshCutoff) };
+    }).sort(function(a, b) { return (b.freshness || '').localeCompare(a.freshness || ''); });
+    res.json({ success: true, email: email, plan: cust.plan, product: cust.product, target_areas: cust.target_areas || '', undelivered_total: undelivered.length, fresh24_count: rows.filter(function(r) { return r.fresh24; }).length, leads: rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/lead/un-deliver — revert an over-delivered lead back to
+// undelivered (cleanup for exact-count compliance). Body: { lead_id, email? }.
+app.post('/api/admin/lead/un-deliver', adminAuth, (req, res) => {
+  try {
+    var leadId = (req.body && req.body.lead_id) || '';
+    if (!leadId) return res.status(400).json({ error: 'lead_id required' });
+    var db2 = getDb();
+    var lead = (db2.leads || []).find(function(l) { return l.id === leadId; });
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    lead.delivered = 0;
+    lead.delivered_at = null;
+    saveDb();
+    res.json({ success: true, message: 'Lead ' + leadId + ' reverted to undelivered (exact-count cleanup)', lead: { id: lead.id, customer_id: lead.customer_id, product: lead.product } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/verify — validate the admin password (used by the admin login form)
 // Accept GET too: the browser's fetch() defaults to GET; a GET here previously
 // returned 404 which made the login show "Cannot reach server".
@@ -3356,26 +4339,43 @@ async function sendBrevoEmail(to, subject, htmlContent) {
   });
 
   return new Promise((resolve, reject) => {
-    const req = https.request({
-      hostname: 'api.brevo.com',
-      path: '/v3/smtp/email',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': BREVO_API_KEY,
-        'Content-Length': Buffer.byteLength(data)
-      }
-    }, (res) => {
-      let body = '';
-      res.on('data', c => body += c);
-      res.on('end', () => {
-        if (res.statusCode < 300) resolve(JSON.parse(body));
-        else reject(new Error(body));
+    // RETRY WITH BACKOFF: Brevo rate-limits (429) are common during the 9am batch
+    // (many customers emailed at once). Retry up to 4 times with 1s/2s/4s/8s waits
+    // so a temporary 429 never silently drops a customer's daily email. This is
+    // critical for the "every customer gets exactly what they pay for" guarantee.
+    function attempt(attemptNum) {
+      const req = https.request({
+        hostname: 'api.brevo.com',
+        path: '/v3/smtp/email',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': BREVO_API_KEY,
+          'Content-Length': Buffer.byteLength(data)
+        }
+      }, (res) => {
+        let body = '';
+        res.on('data', c => body += c);
+        res.on('end', () => {
+          if (res.statusCode < 300) {
+            try { resolve(JSON.parse(body)); } catch(e) { resolve({}); }
+          } else if ((res.statusCode === 429 || res.statusCode >= 500) && attemptNum < 4) {
+            var delay = 1000 * Math.pow(2, attemptNum - 1);
+            console.log('[BREVO] Rate-limited (HTTP ' + res.statusCode + '), retrying in ' + delay + 'ms (' + to.email + ')');
+            setTimeout(function() { attempt(attemptNum + 1); }, delay);
+          } else {
+            reject(new Error(body.substring(0, 200)));
+          }
+        });
       });
-    });
-    req.on('error', reject);
-    req.write(data);
-    req.end();
+      req.on('error', function(err) {
+        if (attemptNum < 4) { var d2 = 1000 * Math.pow(2, attemptNum - 1); setTimeout(function() { attempt(attemptNum + 1); }, d2); }
+        else reject(err);
+      });
+      req.write(data);
+      req.end();
+    }
+    attempt(1);
   });
 }
 
@@ -3419,8 +4419,35 @@ app.post('/api/check-availability', async (req, res) => {
     // Basic availability heuristic
     const db = getDb();
     const existingCustomers = (db.customers || []).filter(c => c.product === product && c.plan !== 'cancelled' && (!c.trial_ends || new Date(c.trial_ends) > new Date()));
-    const totalCommitted = existingCustomers.reduce((sum, c) => sum + (parseInt(c.leads_per_day) || 5), 0);
+    // Committed daily demand = sum of each customer's ACTUAL plan daily limit (from
+    // LEAD_TYPE_RULES), not the raw leads_per_day field (which defaults to 5 and
+    // over-counts demand — e.g. probate is now 1/day but would count as 5, making
+    // the hard cap 5x more restrictive than it should be).
+    const totalCommitted = existingCustomers.reduce((sum, c) => sum + getPlanLimit(product, c.plan || 'starter', c.coverage || 'default'), 0);
     var leadsToday = (db.leads || []).filter(function(l) { return l.product === product && l.delivered === 0; }).length;
+
+    // HARD SALES CAP based on the PHYSICAL supply ceiling of each data source.
+    // The market only produces a fixed number of fresh leads per day:
+    //   moving ~3,000, newbusiness ~1,500 (Companies House), probate ~27 (UK
+    //   Gazette deceased-estates notices), planning ~2,000 (Plota), tenders ~300.
+    // To honour the "exactly what's promised" guarantee we must NEVER sell more
+    // daily-lead capacity than the source can physically produce. The cap keeps
+    // a safety margin so every customer's full promise is always deliverable.
+    var supplyCeiling = {
+      moving: 3000, newbusiness: 1500, probate: 100, planning: 2000, tenders: 300
+    };
+    var ceiling = supplyCeiling[product] || 100;
+    // After this signup, committed demand would be totalCommitted + dailyLimit.
+    var projectedCommitted = totalCommitted + dailyLimit;
+    if (projectedCommitted > Math.floor(ceiling * 0.7)) {
+      return res.json({
+        available: false, limited: true, hard_cap: true,
+        message: rule.name + ' are currently at capacity in the UK. We only sell what we can reliably deliver every day, so this package is not available right now.',
+        recommendation: 'Join the waiting list and we\'ll contact you the moment we can guarantee your daily lead promise.',
+        daily_limit: dailyLimit, committed_demand: totalCommitted, supply_ceiling: ceiling, projected_demand: projectedCommitted,
+        max_accounts_at_this_plan: Math.floor((ceiling * 0.7) / dailyLimit)
+      });
+    }
 
     // Estimate available supply
     var weeklyAvg = leadsToday; // Simplified: use today's available leads
@@ -3502,12 +4529,7 @@ const LEAD_TYPE_RULES = {
   moving: {
     name: 'Moving Leads', key: 'moving', local: true, model: 'daily',
     coverage: ['postcode', 'county', 'region'],
-    plans: {
-      free_trial: { default: 5, postcode: 5, county: 5, region: 5 },
-      starter:  { default: 5,  postcode: 5,  county: 5,  region: 5 },
-      pro:      { default: 15, postcode: 15, county: 15, region: 15 },
-      enterprise: { default: 30, postcode: 30, county: 30, region: 30 },
-    },
+    plans: { free_trial: { default: 5, postcode: 5, county: 5, region: 5 }, starter: { default: 5, postcode: 5, county: 5, region: 5 }, pro: { default: 10, postcode: 10, county: 10, region: 10 }, enterprise: { default: 15, postcode: 15, county: 15, region: 15 } },
     min_area: 'postcode', up_to: false, enabled: true,
     price_starter: 'price_1Tm6PMADspDnFpfBJtsUWi6v',
     price_growth: 'price_1Tm6PNADspDnFpfB847Dubdf',
@@ -3518,12 +4540,7 @@ const LEAD_TYPE_RULES = {
   newbusiness: {
     name: 'New Business Alerts', key: 'newbusiness', local: true, model: 'daily',
     coverage: ['postcode', 'county', 'region'],
-    plans: {
-      free_trial: { default: 5, postcode: 5, county: 5, region: 5 },
-      starter:  { default: 5,  postcode: 5,  county: 5,  region: 5 },
-      pro:      { default: 10, postcode: 10, county: 10, region: 10 },
-      enterprise: { default: 20, postcode: 20, county: 20, region: 20 },
-    },
+    plans: { free_trial: { default: 5, postcode: 5, county: 5, region: 5 }, starter: { default: 5, postcode: 5, county: 5, region: 5 }, pro: { default: 10, postcode: 10, county: 10, region: 10 }, enterprise: { default: 15, postcode: 15, county: 15, region: 15 } },
     min_area: 'postcode', up_to: false, enabled: true,
     price_starter: 'price_1Tm6PRADspDnFpfBx80lgJ84',
     price_growth: 'price_1Tm6PSADspDnFpfBXakzcGEL',
@@ -3535,12 +4552,7 @@ const LEAD_TYPE_RULES = {
     name: 'Planning Permissions', key: 'planning', local: false, model: 'weekly',
     coverage: ['county', 'ukwide'],
     area_limit: { free_trial: 3, starter: 3, pro: 999, enterprise: 999 },
-    plans: {
-      free_trial: { default: 5, county: 5, region: 5, ukwide: 5 },
-      starter:  { default: 5,  county: 5,  region: 5,  ukwide: 5 },
-      pro:      { default: 3,  county: 3,  region: 3,  ukwide: 3 },
-      enterprise: { default: 5, county: 5, region: 5, ukwide: 5 },
-    },
+    plans: { free_trial: { default: 1, county: 1, region: 1, ukwide: 1 }, starter: { default: 1, county: 1, region: 1, ukwide: 1 }, pro: { default: 3, county: 3, region: 3, ukwide: 3 }, enterprise: { default: 5, county: 5, region: 5, ukwide: 5 } },
     min_area: 'county', up_to: true, enabled: true,
     price_starter: 'price_1TmEKSADspDnFpfBrCHXJBFu',
     price_growth: 'price_1TmEKTADspDnFpfBVdi1APEq',
@@ -3552,29 +4564,19 @@ const LEAD_TYPE_RULES = {
     name: 'Probate Leads', key: 'probate', local: false, model: 'weekly',
     coverage: ['county', 'ukwide'],
     area_limit: { free_trial: 3, starter: 3, pro: 999, enterprise: 999 },
-    plans: {
-      free_trial: { default: 5, county: 5, region: 5, ukwide: 5 },
-      starter:  { default: 5,  county: 5,  region: 5,  ukwide: 5 },
-      pro:      { default: 15, county: 15, region: 15, ukwide: 15 },
-      enterprise: { default: 30, county: 30, region: 30, ukwide: 30 },
-    },
+    plans: { free_trial: { default: 2, county: 2, region: 2, ukwide: 2 }, starter: { default: 2, county: 2, region: 2, ukwide: 2 }, pro: { default: 5, county: 5, region: 5, ukwide: 5 }, enterprise: { default: 10, county: 10, region: 10, ukwide: 10 } },
     min_area: 'county', up_to: true, enabled: true,
     price_starter: 'price_1TxQqKADspDnFpfBccT0Lh2w',
     price_growth: 'price_1Tm6PPADspDnFpfB3q61i5FP',
     price_power: 'price_1Tm6PQADspDnFpfBazgz1UD7',
-    weekly_est: { starter: 25, pro: 75, enterprise: 150 },
-    monthly_est: { starter: 100, pro: 300, enterprise: 600 }
+    weekly_est: { starter: 10, pro: 25, enterprise: 50 },
+    monthly_est: { starter: 40, pro: 100, enterprise: 200 }
   },
   tenders: {
     name: 'Public Tenders', key: 'tenders', local: false, model: 'weekly',
     coverage: ['county', 'region', 'ukwide'],
     area_limit: { free_trial: 3, starter: 3, pro: 999, enterprise: 999 },
-    plans: {
-      free_trial: { default: 5, county: 5, region: 5, ukwide: 5 },
-      starter:  { default: 5,  county: 5,  region: 5,  ukwide: 5 },
-      pro:      { default: 3,  county: 3,  region: 3,  ukwide: 3 },
-      enterprise: { default: 5, county: 5, region: 5, ukwide: 5 },
-    },
+    plans: { free_trial: { default: 1, county: 1, region: 1, ukwide: 1 }, starter: { default: 1, county: 1, region: 1, ukwide: 1 }, pro: { default: 3, county: 3, region: 3, ukwide: 3 }, enterprise: { default: 5, county: 5, region: 5, ukwide: 5 } },
     min_area: 'county', up_to: true, enabled: true,
     price_starter: 'price_1TmEKTADspDnFpfBsi6jjA6B',
     price_growth: 'price_1TmEKUADspDnFpfBqnyKzJxM',
@@ -3687,12 +4689,12 @@ const CAMPAIGN_EMAILS = [
 // Paid customer email series (sent weekly after subscription starts)
 const PAID_EMAIL_SERIES = [
   { week: 0, subject: 'Welcome to 9amLeads \u2014 Your opportunities arrive tomorrow at 9am!', template: 'paid_welcome' },
-  { week: 1, subject: 'Tip #1: The 30-Minute Rule \u2014 Why Speed Wins', template: 'paid_tip1' },
-  { week: 2, subject: 'Tip #2: Script That Converts \u2014 What To Say', template: 'paid_tip2' },
-  { week: 3, subject: 'Tip #3: Track Everything to Improve Conversion', template: 'paid_tip3' },
-  { week: 4, subject: 'Tip #4: Follow Up \u2014 The Money Is In The Follow-Up', template: 'paid_tip4' },
-  { week: 8, subject: 'Check-in: How many opportunities have you converted?', template: 'paid_checkin1' },
-  { week: 12, subject: 'You\u2019ve been with us 3 months \u2014 here\u2019s your ROI', template: 'paid_checkin2' }
+  { week: 1, subject: 'Tip #1: Get More Replies With Print & Post', template: 'paid_tip1' },
+  { week: 2, subject: 'Tip #2: Never Miss A Lead With Auto Send', template: 'paid_tip2' },
+  { week: 3, subject: 'Tip #3: Meet Your Leads Face To Face', template: 'paid_tip3' },
+  { week: 4, subject: 'Tip #4: Follow Up By Post \u2014 The Second Letter Wins', template: 'paid_tip4' },
+  { week: 8, subject: 'How to get even more from your leads', template: 'paid_checkin1' },
+  { week: 12, subject: '3 months in \u2014 here\u2019s how to scale', template: 'paid_checkin2' }
 ];
 
 function getCampaignEmailHTML(customer, template) {
@@ -3727,23 +4729,23 @@ function getCampaignEmailHTML(customer, template) {
     tenders: 'Follow up fast. Tenders close on a deadline and the buyer needs capability statements. Submit online and follow up with a printed pack.' }[prod] || 'Follow up fast.';
   
   const templates = {
-    trial_day1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Is Active</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Your daily <strong style="color:#fff">' + productName + '</strong> <strong style="color:' + accent + '">are ready now</strong>.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to 9amLeads. Over the next 7 days you\'ll receive exclusive <strong>' + productName + '</strong> delivered to your inbox every morning at 9am. Here\'s how to get the most out of your trial:</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:2;margin:0">✅ <strong style="color:#fff">9:00am</strong> : Lead sheet arrives in your inbox<br>✉️ <strong style="color:#fff">9:15am</strong> : ' + outreachPrep + '<br>🚶 <strong style="color:#fff">10:00am</strong> : ' + outreachVisit + '<br>📬 <strong style="color:#fff">Afternoon</strong> : ' + outreachPost + '</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">What makes these leads exclusive?</strong> Unlike lead generation sites where your quote is one of dozens, every lead we send is sent to <strong>you alone</strong>. No competitors. No bidding wars. You are the first and only person to contact them.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">💡 Pro tip:</strong> ' + outreachTip + ' Use the AI-drafted flyers, introduction letters, and visit in person templates in your dashboard for every lead. Set your alarm for 9am and start your lead hour.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">To get the most from your trial, <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">log into your dashboard</a> and set up your CRM webhook so leads flow straight into your system. If you don\'t use a CRM, no problem : leads arrive by email too.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">🚀 NEW: Direct Mail Marketing Automation — automatically send professional letters and flyers to your leads by post. Set it up from your dashboard.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
-    trial_day3: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">How Are Your First Leads Looking?</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">3 days in : time for a quick check-in.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">You\'re three days into your 9amLeads trial. By now you should have received a few days\' worth of <strong>' + productName + '</strong>. We wanted to check in and see how things are going.</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ Are the leads relevant to your <strong>specific business</strong>?<br>✅ Is the volume what you <strong>expected</strong>?<br>✅ Have you managed to <strong>follow up yet</strong>?<br>✅ Are the postcode areas <strong>working for you</strong>?</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If the answer to any of these is &ldquo;no&rdquo; : don\'t worry. You can <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">adjust your territory settings in the dashboard</a> to refine which opportunities you receive. Every lead includes AI-drafted flyers, introduction letters, and visit in person templates ready to use. Narrow it down, expand it out, or target specific cities.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">💡 Tip of the day:</strong> Follow up within 30 minutes. We know we keep saying it, but it\'s because it works. Your lead is a real person who needs help <em>right now</em>. Every minute you wait, someone else reaches them first.</p><p style="color:#94a3b8;font-size:13px;margin:0 0 16px">Not loving it? Reply to this email and tell us what\'s off. We can tweak your settings or switch you to a different lead type.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
-    trial_day5: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Tips to Convert More Leads</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">You\'ve got 2 days left in your trial. Let\'s make them count.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">By now you\'ve had a few days of <strong>' + productName + '</strong> landing in your inbox. Whether you\'ve closed deals yet or not, here are three tips that will dramatically improve your conversion rate:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;margin:0 0 16px"><div style="margin-bottom:16px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">1</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Follow up within 30 minutes</strong><br><span style="color:#94a3b8;font-size:13px">Speed is your superpower. When a lead goes SSTC, registers a company, or a probate grant is issued : they are actively looking for help. Our data shows that following up within 30 minutes triples your conversion rate compared to waiting 2 hours. Set your alarm, drop everything, and start preparing.</span></div></div><div style="margin-bottom:16px;clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">2</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Personalise your pitch</strong><br><span style="color:#94a3b8;font-size:13px">Don\'t read from a script. Reference their specific situation : the property address, the company they just registered, the probate value. &ldquo;I see you\'ve just listed [property] on Rightmove : congratulations. I specialise in helping sellers in [area] get a fast, fair price.&rdquo; Personalised pitches close at 2x the rate of generic ones.</span></div></div><div style="clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">3</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Follow up : the money is in the 2nd follow-up</strong><br><span style="color:#94a3b8;font-size:13px">Most sales don\'t happen on the first contact. People are busy, they need to check with a partner, or they\'re comparing options. Follow up on day 2 with an email, contact again on day 4. Exclusive leads mean no one else is contacting them : take your time and build the relationship.</span></div></div></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Your free trial ends in <strong style="color:' + accent + '">2 days</strong>. After that, your leads will pause. Upgrade now to keep them flowing without interruption.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Upgrade & Keep Your Leads â†’</a></td></tr></table>',
-    trial_day7: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Ends Tomorrow</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Action needed : your daily leads will pause after today.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">This is your 7-day reminder. Tomorrow your free trial ends, and your daily <strong>' + productName + '</strong> delivery will pause. Here\'s what you\'ll lose:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ <strong style="color:#fff">Daily exclusive leads</strong> at 9am every morning<br>✅ <strong style="color:#fff">No competition</strong> : you\'re the only person who gets them<br>✅ <strong style="color:#fff">Full dashboard access</strong> with lead history & analytics<br>✅ <strong style="color:#fff">CRM integration</strong> : push leads to your system<br>✅ <strong style="color:#fff">Priority support</strong> when you need it</p></div><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><em>&ldquo;I got 12 leads in my first week using 9amLeads. Converted 3. Made <strong style="color:' + accent + '">£3,600</strong> in additional revenue. Best £49 I\'ve ever spent.&rdquo;</em><br><span style="color:#94a3b8;font-size:11px">: Mark S., Southampton</span></p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Plans start from just <strong style="color:#fff">£49/month</strong>. No long-term contract. Cancel anytime. Upgrade now and your leads keep flowing tomorrow at 9am as if nothing happened.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">🚀 NEW: Direct Mail Marketing Automation — automatically send professional letters and flyers to your leads by post. Set it up from your dashboard.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Now : Keep Your Leads</a></td></tr></table>',
+    trial_day1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Is Active \u2014 Here\'s How To Win More Work</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Your daily <strong style="color:#fff">' + productName + '</strong> <strong style="color:' + accent + '">are ready now</strong>. Here\'s how to turn them into jobs.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to 9amLeads. Over the next 7 days you\'ll receive exclusive <strong>' + productName + '</strong> every morning at 9am \u2014 and nobody else gets the same leads. Be the first to contact them and you win the work. Here\'s how to get the most out of your trial:</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:2;margin:0">✅ <strong style="color:#fff">9:00am</strong> : Your lead sheet arrives<br>📬 <strong style="color:#fff">Print &amp; Post</strong> : We print, address and post your leaflet, flyer or introduction letter to each lead for you \u2014 no stamps, no trips to the post office<br>⚡ <strong style="color:#fff">Auto Send</strong> : We post to every new lead automatically \u2014 we do all the hard work for you<br>🏠 <strong style="color:#fff">Visit</strong> : Knock on the door of your closest leads and win the job in person</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">🚀 Let us do the hard work with Print &amp; Post and Auto Send</strong><br>Don\'t want to spend your day printing and posting? Upload your own flyer, leaflet or introduction letter in the dashboard \u2014 or pick one of our ready-made templates \u2014 and we\'ll print it, address it and post it straight to your leads. Turn on <strong style="color:#fff">Auto Send</strong> and every new lead gets your marketing in the post automatically. You just answer the phone.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">💡 3 tips to get the most from your dashboard:</strong></p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:2;margin:0">1. <strong style="color:#fff">Upload your flyer, leaflet or introduction letter</strong> in the Print &amp; Post section \u2014 we\'ll handle the rest<br>2. <strong style="color:#fff">Widen your areas</strong> \u2014 the more postcodes or counties you cover, the more leads you get. Add areas any time from your dashboard settings<br>3. <strong style="color:#fff">Switch on Auto Send</strong> so your marketing goes out to every lead without lifting a finger</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">⬆️ Want more? Upgrade to Pro or Enterprise</strong><br>Your free trial gives you up to 5 leads a day. Upgrade to <strong style="color:#fff">Pro</strong> for more leads per day, wider areas and more lead types \u2014 or <strong style="color:#fff">Enterprise</strong> for the maximum daily volume, unlimited areas and priority support. The more leads you get, the more jobs you win.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">Log into your dashboard</a> now to upload your marketing, widen your areas and turn on Auto Send \u2014 we\'ll do the rest.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pro &amp; Enterprise Plans</a></td></tr></table>',
+    trial_day3: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">How Are Your First Leads Looking?</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">3 days in : time for a quick check-in.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">You\'re three days into your 9amLeads trial. By now you should have received a few days\' worth of <strong>' + productName + '</strong>. We wanted to check in and see how things are going.</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ Are the leads relevant to your <strong>specific business</strong>?<br>✅ Is the volume what you <strong>expected</strong>?<br>✅ Have you managed to <strong>follow up yet</strong>?<br>✅ Are the postcode areas <strong>working for you</strong>?</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If the answer to any of these is &ldquo;no&rdquo; : don\'t worry. You can <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">adjust your territory settings in the dashboard</a> to refine which opportunities you receive. Every lead includes AI-drafted flyers, introduction letters, and visit in person templates ready to use. Narrow it down, expand it out, or target specific cities.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">💡 Tip of the day:</strong> Send a printed letter or flyer to your leads with Print &amp; Post \u2014 we print and post it for you \u2014 and visit them in person where you can. A physical letter gets opened and remembered far more than an email.</p><p style="color:#94a3b8;font-size:13px;margin:0 0 16px">Not loving it? Reply to this email and tell us what\'s off. We can tweak your settings or switch you to a different lead type.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Pricing & Plans</a></td></tr></table>',
+    trial_day5: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Tips to Convert More Leads</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">You\'ve got 2 days left in your trial. Let\'s make them count.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">By now you\'ve had a few days of <strong>' + productName + '</strong> landing in your inbox. Whether you\'ve closed deals yet or not, here are three tips that will dramatically improve your conversion rate:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;margin:0 0 16px"><div style="margin-bottom:16px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">1</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Send a letter or flyer with Print &amp; Post</strong><br><span style="color:#94a3b8;font-size:13px">A printed letter gets opened; emails get deleted. With Print &amp; Post we print, address and post your letter or flyer to the lead for you \u2014 and you can even visit them in person. It\'s the fastest way to stand out from every competitor.</span></div></div><div style="margin-bottom:16px;clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">2</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Personalise your pitch</strong><br><span style="color:#94a3b8;font-size:13px">Don\'t read from a script. Reference their specific situation : the property address, the company they just registered, the probate value. &ldquo;I see you\'ve just listed [property] on Rightmove : congratulations. I specialise in helping sellers in [area] get a fast, fair price.&rdquo; Personalised pitches close at 2x the rate of generic ones.</span></div></div><div style="clear:both"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:10px;float:left">3</div><div style="margin-left:38px"><strong style="color:#fff;font-size:14px">Follow up : the money is in the 2nd follow-up</strong><br><span style="color:#94a3b8;font-size:13px">Most sales don\'t happen on the first contact. People are busy, they need to check with a partner, or they\'re comparing options. Follow up on day 2 with an email, contact again on day 4. Exclusive leads mean no one else is contacting them : take your time and build the relationship.</span></div></div></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Your free trial ends in <strong style="color:' + accent + '">2 days</strong>. After that, your leads will pause. Upgrade now to keep them flowing without interruption.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Upgrade & Keep Your Leads â†’</a></td></tr></table>',
+    trial_day7: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Free Trial Ends Tomorrow</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Action needed : your daily leads will pause after today.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">This is your 7-day reminder. Tomorrow your free trial ends, and your daily <strong>' + productName + '</strong> delivery will pause. Here\'s what you\'ll lose:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ <strong style="color:#fff">Daily exclusive leads</strong> at 9am every morning<br>✅ <strong style="color:#fff">No competition</strong> : you\'re the only person who gets them<br>✅ <strong style="color:#fff">Full dashboard access</strong> with lead history & analytics<br>✅ <strong style="color:#fff">CRM integration</strong> : push leads to your system<br>✅ <strong style="color:#fff">Priority support</strong> when you need it</p></div><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><em>&ldquo;I got 12 leads in my first week using 9amLeads. Converted 3. Made <strong style="color:' + accent + '">£3,600</strong> in additional revenue. Best £49 I\'ve ever spent.&rdquo;</em><br><span style="color:#94a3b8;font-size:11px">: Mark S., Southampton</span></p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Plans start from just <strong style="color:#fff">£49/month</strong>. No long-term contract. Cancel anytime. Upgrade now and your leads keep flowing tomorrow at 9am as if nothing happened.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">🚀 NEW: Direct Mail Marketing Automation. automatically send professional letters and flyers to your leads by post. Set it up from your dashboard.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Now : Keep Your Leads</a></td></tr></table>',
     trial_day9: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Daily Leads Have Paused</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Your 7-day trial has ended. Here\'s how to restart.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">As expected, your free trial has ended and your daily <strong>' + productName + '</strong> delivery has been paused. Don\'t worry : your lead history is still intact, and you can restart in 3 simple steps:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">To restart your leads:</strong><br>1. <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">Log into your dashboard</a><br>2. Choose your plan<br>3. Leads restart at <strong style="color:' + accent + '">9am tomorrow</strong></p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'re not sure whether 9amLeads is right for you, reply to this email and tell us what\'s holding you back. We\'re a small UK team and we personally read every reply. We\'ll help you decide : no pushy sales pitch, just honest advice.</p><div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><em>&ldquo;I was sceptical at first but decided to give it a month. We picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month : already covered our annual subscription 10x over.&rdquo;</em><br><span style="color:#94a3b8;font-size:11px">: Sarah L., Manchester</span></p></div><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px">Restart My Leads â†’</a></td></tr></table>',
     trial_day12: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Still Not Sure? Let\'s Talk</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">We understand. Let\'s figure this out together.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">We know that choosing a lead generation service is a big decision. Maybe the leads weren\'t quite right for your ' + bizType + '. Maybe the timing wasn\'t perfect. Maybe you just need more information before committing.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Whatever it is : <strong style="color:#fff">we want to help</strong>. Reply to this email and tell us what\'s holding you back. Are the postcodes not quite right? Wrong lead type? Budget concerns? Not enough time to follow up? We\'ll help you find a solution.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">To sweeten the deal, here\'s a <strong style="color:#fff">30% discount</strong> on your first month when you\'re ready to give it another go:</p><div style="background:rgba(14,165,233,0.06);border:2px dashed ' + accent + ';border-radius:12px;padding:16px;text-align:center;margin:0 0 16px"><p style="color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 4px;color:#94a3b8">Discount Code</p><p style="font-family:Outfit,sans-serif;font-size:28px;font-weight:800;color:' + accent + ';margin:0;letter-spacing:3px">WELCOME30</p><p style="color:#94a3b8;font-size:11px;margin:4px 0 0">30% off your first month</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">See if 9amLeads is right for your business by visiting our <a href="' + PUBLIC_URL + '/who-we-serve" style="color:' + accent + '">who we serve page</a> : we work with estate agents, probate practitioners, accountants, solicitors, and more.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/who-we-serve" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">See Who We Serve</a></td></tr></table>',
     trial_day16: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Businesses That Transformed Their Pipeline</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Real results from real 9amLeads customers.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Still on the fence? Here are three stories from businesses just like yours who use 9amLeads to fill their pipeline every single day:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Estate Agent : Southampton</strong><br>&ldquo;Got 12 moving leads in my first week using 9amLeads. Contacted every one within 30 minutes. Converted 3 instructions and made <strong style="color:' + accent + '">£3,600</strong> in additional revenue. My monthly subscription paid for itself on the first lead.&rdquo;<br><span style="color:#94a3b8;font-size:11px">: Mark S., Independent Estate Agent</span></p></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Probate Practitioner : Manchester</strong><br>&ldquo;We\'ve picked up <strong style="color:' + accent + '">4 new clients</strong> in our first month using 9amLeads probate leads. Already covered our annual subscription 10x over. The exclusivity is the game-changer : no one else is following up with these families.&rdquo;<br><span style="color:#94a3b8;font-size:11px">: Sarah L., Probate Services Ltd</span></p></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0"><strong style="color:#fff">Construction Company : Bristol</strong><br>&ldquo;Won 2 contracts worth <strong style="color:' + accent + '">£1.4M</strong> in our first quarter using 9amLeads tenders. We went from scrambling for work to having a consistent pipeline. Best business decision we\'ve made in 10 years.&rdquo;<br><span style="color:#94a3b8;font-size:11px">: James R., Bristol Construction Co</span></p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Your success story could be next. Your account is still waiting, and your <strong style="color:' + accent + '">WELCOME30</strong> discount code is ready for you. Upgrade now and your leads restart at 9am tomorrow.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Restart With 30% Off â†’</a></td></tr></table>',
     trial_day21: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Come Back : 30% Off Your First Month</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">We\'d love to have you back. Here\'s a little incentive.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">It\'s been a few weeks since your trial ended. Since then, hundreds of new exclusive <strong>' + productName + '</strong> have been delivered to our customers every single morning. Here\'s what you\'ve been missing:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ <strong style="color:#fff">Daily leads</strong> arriving at 9am every morning<br>✅ <strong style="color:#fff">Zero competition</strong> : exclusive to you<br>âš¡ <strong style="color:#fff">First to contact</strong> : every single time<br>✅ <strong style="color:#fff">Dashboard & CRM</strong> : manage everything in one place</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Come back and try again with <strong style="color:#fff">30% off your first month</strong>. Use the code below at checkout:</p><div style="background:rgba(14,165,233,0.06);border:2px dashed ' + accent + ';border-radius:12px;padding:16px;text-align:center;margin:0 0 16px"><p style="color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 4px;color:#94a3b8">Discount Code</p><p style="font-family:Outfit,sans-serif;font-size:28px;font-weight:800;color:' + accent + ';margin:0;letter-spacing:3px">WELCOME30</p><p style="color:#94a3b8;font-size:11px;margin:4px 0 0">Expires soon : use it before it\'s gone</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">No commitment. No long-term contract. Cancel anytime. Your leads restart at 9am tomorrow.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Claim 30% Off Now</a></td></tr></table>',
     trial_day30: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Account Is Still Waiting</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">No pressure. Your account is safe and ready when you are.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">It\'s been 30 days since your trial ended, and we wanted to let you know that your 9amLeads account is <strong style="color:#fff">still here</strong>. Nothing has been deleted. All your lead history, settings, postcode preferences, and dashboard access are preserved exactly as you left them.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Whenever you\'re ready, upgrading takes 30 seconds. Your leads will restart at <strong style="color:' + accent + '">9am the next morning</strong> as if you never paused. No setup required. No waiting period.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'d like to have a chat with our team about whether 9amLeads is right for your ' + bizType + ', just reply to this email. We\'re here to help.</p><p style="color:#94a3b8;font-size:13px;margin:0 0 20px">No pressure. Just wanted to remind you that your account is waiting.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Visit Dashboard</a></td></tr></table>',
     trial_day60: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Last Chance : Account Will Be Archived</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Final notice : your account will be archived in 30 days.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">This is your final notice. Your 9amLeads account has been inactive for 60 days. In <strong style="color:' + accent + '">30 days</strong>, your account will be archived to free up resources.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">What does archiving mean?</strong> Your lead history and account data will be preserved and stored securely. You won\'t lose anything. However, you\'ll need to <a href="mailto:hello@9amleads.com" style="color:' + accent + '">contact our support team</a> to reactivate your account : it won\'t be available for instant self-service upgrade.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If you upgrade in the next 30 days, everything stays active. Your postcode areas, your settings, your lead history : all of it. Leads restart at 9am tomorrow morning.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px"><strong style="color:#fff">This is your last chance</strong> to keep your account active without needing to contact us. Don\'t let your leads slip away.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/pricing" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:15px;box-shadow:0 4px 20px ' + accent + '40">Upgrade Before Archive â†’</a></td></tr></table>',
-    paid_welcome: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Welcome to 9amLeads Premium</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">You\'re now a paid subscriber. Let\'s make this work for you.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Thank you for upgrading to 9amLeads Premium. Your daily <strong>' + productName + '</strong> will keep arriving at your inbox every morning at 9am <strong style="color:#fff">without interruption</strong>. Here\'s everything you now have access to:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">Your Premium Benefits:</strong><br>✅ <strong style="color:#fff">Daily leads</strong> at 9am every morning : consistently<br>✅ <strong style="color:#fff">Exclusive access</strong> : no one else receives these leads<br>✅ <strong style="color:#fff">Dashboard</strong> : full lead history, analytics, and management<br>✅ <strong style="color:#fff">CRM integration</strong> : leads pushed straight to your CRM<br>✅ <strong style="color:#fff">Priority support</strong> : reply anytime and we\'ll help</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Over the coming weeks we\'ll send you weekly tips and strategies : everything from letter and visit in person templates to follow-up sequences : to help you convert as many leads as possible.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">First step: <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">log into your dashboard</a> and make sure your CRM webhook is configured (or just check your leads are landing in your inbox). If you need help setting anything up, reply to this email and we\'ll walk you through it.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">🚀 NEW: Direct Mail Marketing Automation — automatically send professional letters and flyers to your leads by post. Set it up from your dashboard.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Go to Dashboard</a></td></tr></table>',
-    paid_tip1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">The 30-Minute Rule</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Why speed wins : and how to make it your habit.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome to your first weekly tip. This one is the most important, so we\'re leading with it: <strong style="color:' + accent + '">follow-up within 30 minutes</strong>.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Why does speed matter so much? Because your lead is a real person who has just taken a specific action : their house went SSTC on Rightmove, they registered a new company at Companies House, or a probate grant was issued. They are <strong style="color:#fff">actively looking for help right now</strong>. Every minute you wait, a competitor reaches them first, booking with someone else, or losing interest.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">Here\'s your 3-part system:</strong></p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">1</div><div><strong style="color:#fff;font-size:14px">Set your alarm for 9:00am</strong><br><span style="color:#94a3b8;font-size:13px">When the lead email arrives, drop everything and start preparing your outreach. Block 9-10am as your dedicated lead hour every morning.</span></div></div></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">2</div><div><strong style="color:#fff;font-size:14px">Keep your script ready</strong><br><span style="color:#94a3b8;font-size:13px">You only need 3-5 talking points. Have them printed or pinned to your monitor so you\'re ready before the lead arrives.</span></div></div></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:28px;height:28px;border-radius:50%;background:' + accent + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px">3</div><div><strong style="color:#fff;font-size:14px">Track your response time</strong><br><span style="color:#94a3b8;font-size:13px">Note what time you contacted each lead. If you\'re calling outside 30 minutes, set an earlier alarm or use push notifications.</span></div></div></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Our data shows that those who reach leads within 30 minutes convert at <strong style="color:' + accent + '">3x the rate</strong> of those who wait 2+ hours. Speed isn\'t just a nice-to-have : it\'s your biggest competitive advantage. Learn more about <a href="' + PUBLIC_URL + '/how-it-works" style="color:' + accent + '">how it works</a>.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/how-it-works" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Learn More â†’</a></td></tr></table>',
-    paid_tip2: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Your Outreach Kit : Letters &amp; Visit Them in Person</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">How to follow up with every lead in person.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Following up within 30 minutes is step one. But knowing <strong style="color:#fff">how to present your business</strong> is what separates the pros from the amateurs. Here\'s a simple 3-step outreach system that works across every lead type : moving, probate, new business, planning, and tenders.</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#e2e8f0;font-size:13px;line-height:1.7;margin:0"><strong style="color:' + accent + '">1. Send a Personal Introduction Letter</strong><br>Print a professional letter on your company letterhead. Introduce yourself, explain how you help [business type] like theirs, and include your business card. Mention you saw their [listing / registration / application] and wanted to be the first to offer your services. &ldquo;I help sellers in [area] achieve a fast, fair price &mdash; and I do it with zero hassle for you.&rdquo;</p></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 10px"><p style="color:#e2e8f0;font-size:13px;line-height:1.7;margin:0"><strong style="color:' + accent + '">2. Drop a Letter &amp; Business Card</strong><br>Print a colour flyer showcasing your services, past results, and a special offer. Hand-deliver it to their address along with 2-3 business cards. Leave it in a weatherproof envelope if posted. A physical flyer left at their door gets seen &mdash; emails get deleted.</p></div><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.7;margin:0"><strong style="color:' + accent + '">3. Visit in Person (If Local)</strong><br>If their address is within your area, knock on the door. Be polite, brief, and leave a card if they don\'t answer. &ldquo;Hi [name], I\'m [your name] from [company]. I saw your [listing / registration] and thought I\'d pop by to introduce myself. Here\'s my card and a flyer &mdash; no pressure at all.&rdquo; Most people appreciate the personal touch.</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">Why this works:</strong> Physical outreach stands out. A letter and flyer on the kitchen table gets read. A doorstep visit shows you care enough to show up. Combined with an email follow-up, you\'ll be remembered long after your competitors are forgotten.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Adapt this for your industry. If you\'re in probate, include a compassionate intro and reference the estate executor. If you\'re in new business, mention their SIC code and offer a free consultation. The more personal, the better.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Go to Dashboard</a></td></tr></table>',
-    paid_tip3: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Track Everything to Improve</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Three metrics that will transform your conversion rate.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">The most successful 9amLeads customers do one thing differently: they <strong style="color:#fff">track their numbers</strong>. Not because they love spreadsheets : because what gets measured gets improved. Here are the three metrics you should be tracking:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0"><strong style="color:' + accent + '">✅ Flyers &amp; Letters Sent</strong><br>how many do you actually send a flyer or letter to? Aim for <strong style="color:#fff">100%</strong>. Every lead you skip is money left on the table.<br><br><strong style="color:' + accent + '">✅ Conversations Had</strong><br>How many local leads do you visit in person? Aim for <strong style="color:#fff">80%+</strong>. If you\'re below this, plan a route and batch your visits by day.<br><br><strong style="color:' + accent + '">💰 Conversions Closed</strong><br>How many conversations turn into paying customers? Industry average with exclusive leads is <strong style="color:#fff">20-30%</strong>. If you\'re below this, improve your flyer design and follow-up process.</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'re following up on 100% of leads, having conversations with 60%+, and closing 25%+ : you\'re performing at an elite level. If not, focus on the weakest link and improve it.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Your dashboard shows your full lead history. Use it to identify which postcode areas and lead types perform best, then <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">double down on what works</a>.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">View Lead History</a></td></tr></table>',
-    paid_tip4: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Follow Up : The Money Is In The Follow-Up</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Why most conversions happen after multiple touchpoints.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Here\'s a truth that most lead buyers ignore: <strong style="color:#fff">most people don\'t respond on the first approach</strong>. They\'re busy. They need time. They want to compare options. They\'re overwhelmed by the process.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">The money is made on the second, third, and fourth touchpoints. Here\'s a proven follow-up sequence using physical outreach:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0"><strong style="color:' + accent + '">Day 1 : Personal Letter + Flyer</strong><br>Print a letter on your company paper with your business card clipped to it. Hand-deliver or post with a flyer showcasing your services. First impressions matter &mdash; make it professional.<br><br><strong style="color:' + accent + '">Day 3 : Visit in Person</strong><br>If local, knock on their door. Be brief, introduce yourself, and leave another card if they don\'t answer. Most people appreciate the personal effort.<br><br><strong style="color:' + accent + '">Day 7 : Email Follow-Up</strong><br>Send a short email: &ldquo;Hi [name], I popped by last week and left some information about how I help [business type] in [area]. If you\'d like a free, no-obligation chat, just reply to this email. No pressure at all. Best, [your name]&rdquo;<br><br><strong style="color:' + accent + '">Day 14 : Final Flyer Drop</strong><br>One last flyer drop with a handwritten note: &ldquo;Just checking in one last time. If the timing\'s not right, no problem. My details are inside &mdash; feel free to reach out whenever you\'re ready.&rdquo;</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:#fff">Why physical outreach wins with exclusive leads:</strong> Because you\'re the only person following up with them, you have time to do it properly. A letter on the kitchen table gets read every day. A flyer pinned to their notice board keeps your name in front of them. Your competitors are sending emails that get deleted &mdash; you\'re leaving something they can hold.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Most of our top-performing customers close deals 1-2 weeks after the lead first arrives. Patience + physical presence = profit.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Go to Dashboard</a></td></tr></table>',
-    paid_checkin1: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">Check-in: How Many Leads Have You Converted?</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">8 weeks in : let\'s take stock of your results.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">You\'ve been receiving <strong>' + productName + '</strong> for 8 weeks now. That\'s roughly 40 days of exclusive leads delivered straight to your inbox. Let\'s do a quick audit:</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0">✅ Are you following up within <strong style="color:#fff">30 minutes</strong> of receiving leads?<br>✅ Are you <strong style="color:#fff">following up</strong> with everyone who doesn\'t answer?<br>✅ Are your <strong style="color:#fff">postcode areas</strong> performing well?<br>✅ Could you <strong style="color:#fff">add more areas</strong> for more volume?<br>✅ Are you tracking your <strong style="color:#fff">conversion rate</strong>?</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">If you\'re happy with your results : fantastic. If not, let\'s fix it. Reply to this email and tell us what\'s not working. We can help you optimise your postcode areas, upgrade your plan for more leads, or switch to a different lead type that might perform better for your business.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="color:' + accent + '">Check your dashboard</a> for lead history and conversion analytics.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">View Dashboard</a></td></tr></table>',
-    paid_checkin2: '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center">3 Months Strong : Here\'s Your Impact</h2><p style="color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px">Three months of daily leads. Let\'s look at what you\'ve achieved.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">Congratulations : you\'ve been with 9amLeads for <strong style="color:' + accent + '">3 months</strong>. That\'s roughly 90 days of exclusive <strong>' + productName + '</strong> delivered straight to your inbox every morning at 9am. By now you should have a clear picture of what works and what doesn\'t.</p><div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#e2e8f0;font-size:13px;line-height:1.8;margin:0"><strong style="color:#fff">Ready to scale up?</strong><br>📈 <strong style="color:#fff">Add a second lead type</strong> : diversify your pipeline with probate, new business, or planning leads<br>🌍 <strong style="color:#fff">Expand your postcodes</strong> : cover more areas for more volume<br>⬆️ <strong style="color:#fff">Upgrade your plan</strong> : get more leads per day at a better per-lead price<br>✅ <strong style="color:#fff">Check your dashboard</strong> : see which territories convert best</p></div><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px">We\'d love to hear your story. How many leads have you converted? What\'s the biggest deal you\'ve closed? Reply to this email and let us know : your feedback helps us improve, and we might feature your success story.</p><p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px">Thank you for being a valued 9amLeads customer. We\'re here whenever you need us : just hit reply.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Scale Up Now</a></td></tr></table>',
+    paid_welcome: "<h2 style=\"font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center\">Welcome to 9amLeads Premium</h2><p style=\"color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px\">You're now a paid subscriber. Let's make this work for you.</p><p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">Thank you for upgrading to 9amLeads Premium. Your daily <strong>" + productName + "</strong> will keep arriving at your inbox every morning at 9am <strong style=\"color:#fff\">without interruption</strong>. Here's everything you now have access to:</p><div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px\"><p style=\"color:#e2e8f0;font-size:13px;line-height:1.8;margin:0\"><strong style=\"color:#fff\">Your Premium Benefits:</strong><br>✅ <strong style=\"color:#fff\">Daily leads</strong> at 9am every morning : consistently<br>✅ <strong style=\"color:#fff\">Exclusive access</strong> : no one else receives these leads<br>✅ <strong style=\"color:#fff\">Dashboard</strong> : full lead history, analytics, and management<br>✅ <strong style=\"color:#fff\">Print &amp; Post</strong> : we print and mail your letters and flyers for you<br>✅ <strong style=\"color:#fff\">Auto Send</strong> : your leads are posted automatically, no manual work<br>✅ <strong style=\"color:#fff\">Priority support</strong> : reply anytime and we'll help</p></div><p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">Over the coming weeks we'll send you helpful tips : how to get the most from Print &amp; Post, Auto Send, your territories, and more : so every lead turns into work.</p><p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 20px\">First step: <a href=\"" + PUBLIC_URL + "/portal/dashboard.html\" style=\"color:" + accent + "\">log into your dashboard</a> and check your leads are landing. Then head to the <strong>Print &amp; Post</strong> page to set up your letter and flyer : we do the printing and posting for you.</p>" + "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:4px 0 0\"><a href=\"" + PUBLIC_URL + "/portal/dashboard.html\" style=\"display:inline-block;padding:12px 32px;background:linear-gradient(135deg," + accent + ",#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px\">Open My Dashboard</a></td></tr></table>",
+    paid_tip1: "<h2 style=\"font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center\">Get More Replies With Print &amp; Post</h2><p style=\"color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px\">A printed letter in the post gets opened. Emails get deleted.</p><p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">Here's a simple way to stand out from every other business chasing the same leads : <strong style=\"color:#fff\">send a physical letter or flyer</strong>. When a seller sees their new home's details with your brochure on the kitchen table, or an executor receives a compassionate letter at a difficult time : they remember you.</p>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px\"><div style=\"display:flex;align-items:flex-start;gap:12px\"><div style=\"width:28px;height:28px;border-radius:50%;background:" + accent + ";color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px\">1</div><div><strong style=\"color:#fff;font-size:14px\">Print &amp; Post does it all for you</strong><br><span style=\"color:#94a3b8;font-size:13px\">No printer, no stamps, no trips to the post office. Choose your letter or flyer, we print it, address it, and post it to your lead within days. Your exact design goes out : your logo, your message.</span></div></div></div>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px\"><div style=\"display:flex;align-items:flex-start;gap:12px\"><div style=\"width:28px;height:28px;border-radius:50%;background:" + accent + ";color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px\">2</div><div><strong style=\"color:#fff;font-size:14px\">Your lead is 3x more likely to reply</strong><br><span style=\"color:#94a3b8;font-size:13px\">A hand-addressed envelope gets opened. A physical brochure gets read and kept. Studies consistently show physical mail outperforms email for response rates : and your leads are pre-qualified, so the reply rate is even higher.</span></div></div></div>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px\"><div style=\"display:flex;align-items:flex-start;gap:12px\"><div style=\"width:28px;height:28px;border-radius:50%;background:" + accent + ";color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px\">3</div><div><strong style=\"color:#fff;font-size:14px\">Set it up once, send it in seconds</strong><br><span style=\"color:#94a3b8;font-size:13px\">Save your letter and flyer in Print Setup. Then from any lead, hit Post and it's on its way. One click, and the whole job is handled.</span></div></div></div>" + "<p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">Every new lead on your dashboard has a <strong style=\"color:#fff\">Post</strong> button. Try it on your next lead and see the difference a printed letter makes.</p>" + "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:4px 0 0\"><a href=\"" + PUBLIC_URL + "/portal/direct-mail.html\" style=\"display:inline-block;padding:12px 32px;background:linear-gradient(135deg," + accent + ",#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px\">Try Print &amp; Post</a></td></tr></table>",
+    paid_tip2: "<h2 style=\"font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center\">Never Miss A Lead With Auto Send</h2><p style=\"color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px\">Your leads get posted automatically : while you focus on the work.</p><p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">Life gets busy. Some mornings you're on a job, in a meeting, or simply forget to send that letter. <strong style=\"color:#fff\">Auto Send</strong> makes sure every single lead is posted the moment it lands : no effort, no gaps.</p>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px\"><div style=\"display:flex;align-items:flex-start;gap:12px\"><div style=\"width:28px;height:28px;border-radius:50%;background:" + accent + ";color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px\">1</div><div><strong style=\"color:#fff;font-size:14px\">Switch it on once</strong><br><span style=\"color:#94a3b8;font-size:13px\">Turn on Auto Send from your dashboard, and every new lead is automatically printed and posted to the customer at 9am : the same time your leads arrive.</span></div></div></div>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px\"><div style=\"display:flex;align-items:flex-start;gap:12px\"><div style=\"width:28px;height:28px;border-radius:50%;background:" + accent + ";color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px\">2</div><div><strong style=\"color:#fff;font-size:14px\">Consistency wins work</strong><br><span style=\"color:#94a3b8;font-size:13px\">The businesses that follow up with 100% of leads convert the most. Auto Send guarantees you never miss one : even on your busiest days.</span></div></div></div>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px\"><div style=\"display:flex;align-items:flex-start;gap:12px\"><div style=\"width:28px;height:28px;border-radius:50%;background:" + accent + ";color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px\">3</div><div><strong style=\"color:#fff;font-size:14px\">You stay in control</strong><br><span style=\"color:#94a3b8;font-size:13px\">Choose to follow up with a letter, a flyer, or both. Change it any time. You decide the message : we handle the printing and posting.</span></div></div></div>" + "<p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">It's the closest thing to a 24/7 assistant : every lead contacted, automatically, on time, every day.</p>" + "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:4px 0 0\"><a href=\"" + PUBLIC_URL + "/portal/auto.html\" style=\"display:inline-block;padding:12px 32px;background:linear-gradient(135deg," + accent + ",#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px\">Turn On Auto Send</a></td></tr></table>",
+    paid_tip3: "<h2 style=\"font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center\">Meet Your Leads Face To Face</h2><p style=\"color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px\">A personal visit builds trust no email ever could.</p><p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">Your leads come with full addresses. That means you can do something most competitors never will : <strong style=\"color:#fff\">knock on the door</strong>.</p>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px\"><div style=\"display:flex;align-items:flex-start;gap:12px\"><div style=\"width:28px;height:28px;border-radius:50%;background:" + accent + ";color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px\">1</div><div><strong style=\"color:#fff;font-size:14px\">Combine your letter with a visit</strong><br><span style=\"color:#94a3b8;font-size:13px\">Post a letter or flyer, then follow up in person a day or two later. A quick introduction works best : mention you posted some information and wanted to say hello. Short, friendly, no pressure.</span></div></div></div>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px\"><div style=\"display:flex;align-items:flex-start;gap:12px\"><div style=\"width:28px;height:28px;border-radius:50%;background:" + accent + ";color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px\">2</div><div><strong style=\"color:#fff;font-size:14px\">Your leads are local</strong><br><span style=\"color:#94a3b8;font-size:13px\">A moving lead's new home, a planning applicant's property, a new company's registered office : they're all real addresses near you. Batch a few visits into one route to save time.</span></div></div></div>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px\"><div style=\"display:flex;align-items:flex-start;gap:12px\"><div style=\"width:28px;height:28px;border-radius:50%;background:" + accent + ";color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px\">3</div><div><strong style=\"color:#fff;font-size:14px\">More areas = more work</strong><br><span style=\"color:#94a3b8;font-size:13px\">If you're converting well, widen your territory. Adding a postcode area or upgrading your plan means more of these local opportunities every morning : and the per-lead price drops.</span></div></div></div>" + "<p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">Visit + letter + follow-up is the combination that wins the job. You can widen your areas or upgrade any time from your dashboard.</p>" + "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:4px 0 0\"><a href=\"" + PUBLIC_URL + "/portal/dashboard.html\" style=\"display:inline-block;padding:12px 32px;background:linear-gradient(135deg," + accent + ",#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px\">Add More Areas</a></td></tr></table>",
+    paid_tip4: "<h2 style=\"font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center\">Follow Up By Post : The Second Letter Wins</h2><p style=\"color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px\">Most jobs are won on the second or third contact.</p><p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">Not everyone replies to your first letter : most people are busy and need time. That's normal. The businesses that win send a <strong style=\"color:#fff\">second letter</strong> a couple of weeks later : and it's exactly when the customer is ready to act.</p>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px\"><div style=\"display:flex;align-items:flex-start;gap:12px\"><div style=\"width:28px;height:28px;border-radius:50%;background:" + accent + ";color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px\">1</div><div><strong style=\"color:#fff;font-size:14px\">Use Post Again on your leads</strong><br><span style=\"color:#94a3b8;font-size:13px\">Any lead you've already sent to has a Post Again button. Re-send your letter or flyer two weeks later : it lands when they're ready to choose.</span></div></div></div>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px\"><div style=\"display:flex;align-items:flex-start;gap:12px\"><div style=\"width:28px;height:28px;border-radius:50%;background:" + accent + ";color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px\">2</div><div><strong style=\"color:#fff;font-size:14px\">Bulk send your whole week</strong><br><span style=\"color:#94a3b8;font-size:13px\">Select all your week's leads on My Leads and send them in one go. One payment, every lead printed and posted : a huge time-saver.</span></div></div></div>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 8px\"><div style=\"display:flex;align-items:flex-start;gap:12px\"><div style=\"width:28px;height:28px;border-radius:50%;background:" + accent + ";color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px\">3</div><div><strong style=\"color:#fff;font-size:14px\">Call or visit too</strong><br><span style=\"color:#94a3b8;font-size:13px\">Post isn't the only option. Give them a quick call or drop by : combined with the letters you've already sent, it's the full follow-up that wins the work.</span></div></div></div>" + "<p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">One follow-up can be the difference between finding someone else and a signed job. Re-mail your best leads this week.</p>" + "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:4px 0 0\"><a href=\"" + PUBLIC_URL + "/portal/leads.html\" style=\"display:inline-block;padding:12px 32px;background:linear-gradient(135deg," + accent + ",#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px\">Post Again / Bulk Send</a></td></tr></table>",
+    paid_checkin1: "<h2 style=\"font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center\">How To Get Even More From Your Leads</h2><p style=\"color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px\">8 weeks in : let's make sure every lead works as hard as it can.</p><p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">You've been receiving <strong>" + productName + "</strong> for 8 weeks now. Here are the ways our best customers get more from the same leads:</p>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px\"><p style=\"color:#e2e8f0;font-size:13px;line-height:1.8;margin:0\"><strong style=\"color:#fff\">✅ Are you sending a letter or flyer to every lead?</strong><br>If not, Print &amp; Post makes it one click : no printer, no stamps.<br><br><strong style=\"color:#fff\">✅ Is Auto Send on?</strong><br>It posts your leads automatically at 9am, so you never miss one.<br><br><strong style=\"color:#fff\">✅ Are you following up by post?</strong><br>Re-send to leads a couple of weeks later : most jobs are won on the second contact.<br><br><strong style=\"color:#fff\">✅ Could you cover more areas?</strong><br>More territory = more opportunities. Upgrade or widen your areas any time.</p></div>" + "<p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">If you'd like help setting any of this up : replying to this email gets you straight through to support.</p>" + "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:4px 0 0\"><a href=\"" + PUBLIC_URL + "/portal/dashboard.html\" style=\"display:inline-block;padding:12px 32px;background:linear-gradient(135deg," + accent + ",#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px\">Check My Dashboard</a></td></tr></table>",
+    paid_checkin2: "<h2 style=\"font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#fff;margin:0 0 6px;text-align:center\">3 Months Strong : Here's How To Scale</h2><p style=\"color:#94a3b8;font-size:13px;text-align:center;margin:0 0 20px\">Three months of daily leads. Let's take it to the next level.</p><p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">Congratulations : you've been with 9amLeads for <strong style=\"color:#fff\">3 months</strong>. Here's how the most successful customers scale from here:</p>" + "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;margin:0 0 16px\"><p style=\"color:#e2e8f0;font-size:13px;line-height:1.8;margin:0\"><strong style=\"color:#fff\">🌍 Add postcode areas</strong> : cover more territory for more daily leads<br>⬆️ <strong style=\"color:#fff\">Upgrade your plan</strong> : more leads per day at a better per-lead price<br>📬 <strong style=\"color:#fff\">Switch on Auto Send</strong> : every lead posted automatically<br>🏢 <strong style=\"color:#fff\">Add a second lead type</strong> : diversify with probate, new business, or planning leads<br>✅ <strong style=\"color:#fff\">Check your dashboard</strong> : see which areas convert best</p></div>" + "<p style=\"color:#e2e8f0;font-size:14px;line-height:1.7;margin:0 0 16px\">One extra job from a new area or lead type usually covers months of subscription. The tools to scale are already in your dashboard : we're here whenever you need us.</p>" + "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:4px 0 0\"><a href=\"" + PUBLIC_URL + "/portal/dashboard.html\" style=\"display:inline-block;padding:12px 32px;background:linear-gradient(135deg," + accent + ",#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px\">Scale Up Now</a></td></tr></table>",
 };
 
 // ===== BREVO OUTBOUND CAMPAIGN UPLOAD INFRASTRUCTURE =====
@@ -3754,13 +4756,13 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
   var accent = { moving: '#ff6b35', planning: '#10b981', probate: '#a855f7', newbusiness: '#06b6d4', tenders: '#6366f1' }[campaignKey] || '#0ea5e9';
   var prodLabel = { moving: 'Moving Leads', planning: 'Planning Permissions', probate: 'Probate Leads', newbusiness: 'New Business Alerts', tenders: 'Public Tenders' }[campaignKey] || '';
   var insightCards = {
-    moving: { emoji: '\uD83D\uDE9A', tip: 'Moving leads convert fastest when you\'re the first to contact the seller. Your brochure and letter should arrive the same day the property goes SSTC.', metric: 'Avg. move value: \u00a31,000-\u00a33,000' },
-    planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Planning applicants are actively choosing builders. Your flyer arriving the same week the application is submitted positions you ahead of every competitor.', metric: 'Avg. project value: \u00a320,000-\u00a3100,000' },
-    probate: { emoji: '\u2696\uFE0F', tip: 'Probate requires a compassionate approach. Families remember who reached out with sensitivity, not who pushed the hardest.', metric: 'Avg. estate value: \u00a3150,000+' },
-    newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often don\'t have a website or phone number yet. Check Companies House weekly and be ready when their details go live.', metric: 'Avg. client LTV: 2-5 years' },
-    tenders: { emoji: '\uD83D\uDCCB', tip: 'Tenders close on deadlines. Submit your capability statement early and follow up with a printed pack to stand out.', metric: 'Avg. contract value: \u00a350,000-\u00a3500,000' }
+    moving: { emoji: '\uD83D\uDE9A', tip: 'A printed brochure on the seller\'s kitchen table wins the job. Use Print &amp; Post to send your letter the day the property goes SSTC — or the day a commercial premises comes to market — then visit in person and leave a card.', metric: 'Avg. move value: \u00a31,000-\u00a33,000' },
+    planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Planning applicants are actively choosing builders. Send your flyer with Print &amp; Post the week the application is submitted, then visit to introduce yourself \u2014 you\'ll be ahead of every competitor.', metric: 'Avg. project value: \u00a320,000-\u00a3100,000' },
+    probate: { emoji: '\u2696\uFE0F', tip: 'A compassionate letter to the executor stands out. Use Print &amp; Post for a professional introduction, and follow up by post a couple of weeks later \u2014 families remember who reached out with sensitivity.', metric: 'Avg. estate value: \u00a3150,000+' },
+    newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often have no website or phone number yet. Send your brochure to the registered office with Print &amp; Post, then call or visit once their details go live.', metric: 'Avg. client LTV: 2-5 years' },
+    tenders: { emoji: '\uD83D\uDCCB', tip: 'Stand out by sending a printed capability pack. Use Print &amp; Post to get your documents to the buying organisation early, and follow up before the deadline.', metric: 'Avg. contract value: \u00a350,000-\u00a3500,000' }
   };
-  var insight = insightCards[campaignKey] || { emoji: '\uD83D\uDCA1', tip: 'Follow up within 30 minutes to maximise your conversion rate.', metric: '' };
+  var insight = insightCards[campaignKey] || { emoji: '\uD83D\uDCA1', tip: 'Send a letter or flyer with Print &amp; Post and follow up in person to win the work.', metric: '' };
   var name = recipientName || '{{FIRSTNAME}}';
   var bodyText = (email.body || '').replace(/\n/g, '<br>');
   var ctaBtn = email.cta && !email.cta.toLowerCase().includes('reply') 
@@ -3791,6 +4793,7 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
     (insight.metric ? '<p style="font-size:11px;color:#38bdf8;margin:0 0 8px"><strong>' + insight.metric + '</strong></p>' : '') +
     '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">' +
 '<p style="font-size:10px;color:#94a3b8;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
+'<p style="font-size:9px;color:#64748b;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>' +
     '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:26px;text-align:center;text-decoration:none;margin:0 3px;font-size:10px;font-weight:700;color:#94a3b8">f</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:26px;text-align:center;text-decoration:none;margin:0 3px;font-size:10px;font-weight:700;color:#94a3b8">t</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:26px;text-align:center;text-decoration:none;margin:0 3px;font-size:10px;font-weight:700;color:#94a3b8">i</a></div>' +
     '</div></div></td></tr>' +
     // Premium separator
@@ -3803,7 +4806,7 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
     '<p style="color:#64748b;font-size:10px;margin:2px 0 0">Founder, 9amLeads</p>' +
     '</div></td></tr>' +
     // Footer
-    '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:20px 30px 16px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">' +
+    '<tr><td bgcolor="#0f111a" style="background-color:#0f111a;background-image:linear-gradient(135deg,#0f111a,#1a1b2e);padding:20px 30px 16px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">' +
     '<p style="color:#64748b;font-size:10px;margin:0 0 6px">9am Leads Ltd</p>' +
     '<p style="color:#64748b;font-size:9px;margin:0 0 8px"><a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a>' +
      ' &bull; <a href="https://www.9amleads.com/privacy.html#unsubscribe" style="color:#38bdf8;text-decoration:underline">Unsubscribe</a></p>' +
@@ -4101,15 +5104,15 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
 
     var pricingUrl = customer.product === 'planning' ? PUBLIC_URL + '/planningleads' : customer.product === 'moving' ? PUBLIC_URL + '/movingleadsdaily' : customer.product === 'probate' ? PUBLIC_URL + '/probateleads' : customer.product === 'newbusiness' ? PUBLIC_URL + '/newbusinessalert' : customer.product === 'tenders' ? PUBLIC_URL + '/tenders' : PUBLIC_URL + '/pricing';
   var insightCards = {
-    moving: { emoji: '\uD83D\uDE9A', tip: 'Moving leads convert fastest when you\'re the first to contact the seller. Your brochure and letter should arrive the same day the property goes SSTC.', metric: 'Avg. move value: \u00a31,000-\u00a33,000', link: PUBLIC_URL + '/movingleadsdaily' },
-    planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Planning applicants are actively choosing builders. Your flyer arriving the same week the application is submitted positions you ahead of every competitor.', metric: 'Avg. project value: \u00a320,000-\u00a3100,000', link: PUBLIC_URL + '/planningleads' },
-    probate: { emoji: '\u2696\uFE0F', tip: 'Probate requires a compassionate approach. Families remember who reached out with sensitivity, not who pushed the hardest.', metric: 'Avg. estate value: \u00a3150,000+', link: PUBLIC_URL + '/probateleads' },
-    newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often don\'t have a website or phone number yet. Check Companies House weekly and be ready when their details go live.', metric: 'Avg. client LTV: 2-5 years', link: PUBLIC_URL + '/newbusinessalert' },
-    tenders: { emoji: '\uD83D\uDCCB', tip: 'Tenders close on deadlines. Submit your capability statement early and follow up with a printed pack to stand out.', metric: 'Avg. contract value: \u00a350,000-\u00a3500,000', link: PUBLIC_URL + '/tenders' }
+    moving: { emoji: '\uD83D\uDE9A', tip: 'Send a printed brochure with Print &amp; Post the day a property goes SSTC — or a commercial premises comes to market — then visit in person and leave a card. Your letter on the kitchen table gets read while competitors\' emails get deleted.', metric: 'Avg. move value: \u00a31,000-\u00a33,000', link: PUBLIC_URL + '/movingleadsdaily' },
+    planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Use Print &amp; Post to send your flyer the week the application is submitted, then visit to introduce yourself. You\'ll be ahead of every competitor quoting.', metric: 'Avg. project value: \u00a320,000-\u00a3100,000', link: PUBLIC_URL + '/planningleads' },
+    probate: { emoji: '\u2696\uFE0F', tip: 'A compassionate printed letter to the executor stands out. Use Print &amp; Post, then follow up by post a couple of weeks later. Families remember who reached out with sensitivity.', metric: 'Avg. estate value: \u00a3150,000+', link: PUBLIC_URL + '/probateleads' },
+    newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often have no website or phone yet. Send your brochure to the registered office with Print &amp; Post, then call or visit once their details go live.', metric: 'Avg. client LTV: 2-5 years', link: PUBLIC_URL + '/newbusinessalert' },
+    tenders: { emoji: '\uD83D\uDCCB', tip: 'Send a printed capability pack with Print &amp; Post to stand out, and follow up before the deadline. Buyers notice the professional touch.', metric: 'Avg. contract value: \u00a350,000-\u00a3500,000', link: PUBLIC_URL + '/tenders' }
   };
-  var insight = insightCards[prod] || { emoji: '\uD83D\uDCA1', tip: 'Follow up within 30 minutes to maximise your conversion rate.', metric: '', link: PUBLIC_URL + '/pricing' };
+  var insight = insightCards[prod] || { emoji: '\uD83D\uDCA1', tip: 'Send a letter or flyer with Print &amp; Post and follow up in person to win the work.', metric: '', link: PUBLIC_URL + '/pricing' };
   
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#0f111a;font-family:Inter,Arial,sans-serif;color:#e2e8f0"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%"><tr><td style="background:#12141e;padding:28px 30px 22px;border-radius:16px 16px 0 0;border-bottom:1px solid rgba(255,255,255,0.06);text-align:center"><div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:4px"><span style="display:inline-block;width:36px;height:36px;border-radius:9px;text-align:center;line-height:36px;font-size:16px;background:linear-gradient(135deg,#0ea5e9,#6366f1);margin-right:5px;vertical-align:middle">9</span><span style="vertical-align:middle">am Leads</span></div></td></tr><tr><td style="background:#12141e;padding:20px 30px">' + (templates[template] || templates.trial_day1) + '</td></tr>' +
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#0f111a;font-family:Inter,Arial,sans-serif;color:#e2e8f0"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%"><tr><td style="background:#12141e;padding:28px 30px 22px;border-radius:16px 16px 0 0;border-bottom:1px solid rgba(255,255,255,0.06);text-align:center"><div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:4px"><span style="display:inline-block;width:36px;height:36px;border-radius:9px;text-align:center;line-height:34px;font-size:16px;background-color:#0ea5e9;color:#ffffff;margin-right:5px;vertical-align:middle">9</span><span style="vertical-align:middle;color:#ffffff">am Leads</span></div></td></tr><tr><td style="background:#12141e;padding:20px 30px">' + (templates[template] || templates.trial_day1) + '</td></tr>' +
   // Product insight card
   '<tr><td style="background:#12141e;padding:0 30px 16px"><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px">' +
   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">' + insight.emoji + '</span><span style="font-size:12px;font-weight:700;color:#f1f5f9">' + productName + ' Insight</span></div>' +
@@ -4117,6 +5120,7 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   (insight.metric ? '<p style="font-size:11px;color:#38bdf8;margin:0 0 8px"><strong>' + insight.metric + '</strong></p>' : '') +
   '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">' +
 '<p style="font-size:10px;color:#94a3b8;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
+'<p style="font-size:9px;color:#64748b;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>' +
    '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">ig</a></div>' +
    '</div></div></td></tr>' +
   // Footer
@@ -4316,6 +5320,28 @@ function httpsPost(url, data) {
     } catch (e) { reject(e); }
   });
 }
+// Download a binary file (e.g. Stannp proof-of-posting PDF) and return it as base64
+// so we can store a copy that never expires. Stannp's proof URLs carry an expiry
+// token, so we save the PDF locally and serve it from our own dashboard.
+function downloadBinary(url) {
+  return new Promise((resolve, reject) => {
+    try {
+      const parsed = new URL(url);
+      const isHttps = parsed.protocol === 'https:';
+      const mod = require(isHttps ? 'https' : 'http');
+      const req = mod.request({ hostname: parsed.hostname, port: parsed.port || (isHttps ? 443 : 80), path: parsed.pathname + parsed.search, method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0 (9amLeads)' }, timeout: 30000 }, res => {
+        if (res.statusCode !== 200) { res.resume(); return reject(new Error('HTTP ' + res.statusCode)); }
+        const chunks = [];
+        res.on('data', c => chunks.push(c));
+        res.on('end', () => resolve(Buffer.concat(chunks).toString('base64')));
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+      req.end();
+    } catch (e) { reject(e); }
+  });
+}
+
 // ===== ADMIN SEND ALL CAMPAIGN EMAILS (for review) =====
 app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
   try {
@@ -4350,6 +5376,7 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
 // new as possible in customers' dashboards, emails and CRM.
 cron.schedule('0 6 * * *', async () => {
   console.log('[06:00 UK] Running scraper...');
+  global.__lastScrapeCronFire = new Date().toISOString();
   try {
     const http = require('http');
     var body = JSON.stringify({});
@@ -4374,11 +5401,14 @@ cron.schedule('20 6 * * *', async () => {
 // Pipeline: 06:00 UK scraper → 06:05 UK distributor → 09:00 UK delivery
 // Delivery runs Mon-Fri at 09:00 UK time (handles BST/GMT automatically via timezone).
 var __deliveryFireCount = 0;
+var _deliveryLock = false;
 var __lastDeliveryFire = '';
+var __lastDeliveryDate = ''; // YYYY-MM-DD of the most recent delivery fire (daily watchdog)
 // ===== DELIVERY CRON: Mon-Fri 09:00 UK ===== (timezone: Europe/London)
 cron.schedule('0 9 * * 1-5', async () => {
   __deliveryFireCount++;
   __lastDeliveryFire = new Date().toISOString();
+  __lastDeliveryDate = new Date().toISOString().split('T')[0];
   console.log('[09:00 UK] Running delivery...');
   try {
     const http = require('http');
@@ -4395,15 +5425,78 @@ cron.schedule('0 9 * * 1-5', async () => {
   timezone: 'Europe/London'
 });
 
+// DELIVERY WATCHDOG: Mon-Fri 09:35 UK — if the 09:00 delivery cron missed (deploy,
+// crash, race), re-trigger it so customers still get their daily leads. Checks the
+// date the delivery actually fired rather than a lifetime counter.
+cron.schedule('2 9 * * 1-5', async () => {
+  try {
+    var todayStr = new Date().toISOString().split('T')[0];
+    if (__lastDeliveryDate === todayStr) return; // already fired today
+    console.log('[WATCHDOG] 09:02 delivery did not fire today — re-triggering now (safety)');
+    const httpW = require('http');
+    var bodyW = JSON.stringify({});
+    var wreq = httpW.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyW) } }, function(wres) {
+      var wb = ''; wres.on('data', function(c) { wb += c; }); wres.on('end', function() { console.log('[WATCHDOG] Re-trigger delivery done:', wb.substring(0, 200)); });
+    });
+    wreq.on('error', function(e) { console.log('[WATCHDOG] Re-trigger request error:', e.message); });
+    wreq.write(bodyW); wreq.end();
+  } catch(e) { console.log('[WATCHDOG] Error:', e.message); }
+}, {
+  timezone: 'Europe/London'
+});
+
 // KEEP-ALIVE: self-ping every 10 minutes so Render never sleeps the service.
-// Critical — if the instance sleeps, the 06:00 scrape + 09:00 delivery crons
-// won't fire and customers miss their daily leads.
 cron.schedule('*/10 * * * *', async () => {
   try {
     const https = require('https');
     https.get({ hostname: 'nineamleads-backend.onrender.com', path: '/api/health' }, function(res) { res.resume(); }).on('error', function() {});
   } catch(e) {}
 });
+
+
+// Hourly DATABASE BACKUP — writes a local backup AND pushes it off-server to the
+// private GitHub backup repo, so the whole business survives any Render failure.
+cron.schedule('15 * * * *', async () => {
+  try { await runFullBackup(); } catch(e) { console.log('[BACKUP] Cron error:', e.message); }
+});
+
+// STANNP LOW-BALANCE ALERT — checks the print-credit balance every 30 minutes and
+// emails the owner if it drops below the threshold, so real customer orders never
+// fail silently because our print partner credit ran out. Only alerts once per
+// low-balance "episode" (re-alerts if it drops below the next lower tier).
+cron.schedule('*/30 * * * *', async () => {
+  try {
+    if (!STANNP_API_KEY) return;
+    var prov = getDirectMailProvider();
+    if (!prov || prov.name !== 'stannp') return;
+    var balR = await prov.getBalance();
+    if (!balR || !balR.success) { console.log('[STANNP-ALERT] Balance check failed:', balR && balR.error); return; }
+    var bal = balR.balance || 0;
+    var threshold = 25;
+    var g = getDb();
+    if (!g.stannp_alerts) g.stannp_alerts = { last_alert_balance: 999 };
+    var last = g.stannp_alerts.last_alert_balance || 999;
+    // Alert when below threshold AND we haven't already alerted at/below this level
+    if (bal < threshold && last > bal) {
+      var ownerEmail = process.env.OWNER_EMAIL || 'ketzman1g@gmail.com';
+      var bodyHtml =
+        '<p style="color:#e2e8f0;font-size:14px;line-height:1.7">Stannp print-credit balance is running low:</p>' +
+        '<div style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.25);border-radius:12px;padding:16px 20px;font-size:14px;color:#fecaca">' +
+        '<b>Current balance: £' + bal.toFixed(2) + '</b> (threshold £' + threshold + ')</div>' +
+        '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin-top:12px">When this runs out, customer Print &amp; Post orders will fail at checkout. Please top up at the <a href="https://app.stannp.com" style="color:#38bdf8">Stannp dashboard</a>.</p>';
+      try {
+        await sendBrevoEmail({ email: ownerEmail, name: '9amLeads Owner' }, '⚠️ 9amLeads: Stannp print credit low (£' + bal.toFixed(2) + ')', bodyHtml);
+        g.stannp_alerts.last_alert_balance = bal;
+        saveDb();
+        console.log('[STANNP-ALERT] Low balance email sent: £' + bal.toFixed(2));
+      } catch(alertErr) { console.log('[STANNP-ALERT] Email send failed:', alertErr.message); }
+    } else {
+      // Reset the "last alerted" level once they top back up above threshold
+      if (bal >= threshold) { g.stannp_alerts.last_alert_balance = 999; saveDb(); }
+    }
+  } catch(e) { console.log('[STANNP-ALERT] Error:', e.message); }
+}, { timezone: 'Europe/London' });
+
 
 // Sequence processing every hour
 cron.schedule('0 * * * *', async () => {
@@ -4580,14 +5673,22 @@ async function runAutoSend() {
       var settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(cust.id);
       if (!settings || !settings.enable_auto_send) { results.skipped++; continue; }
       results.enabled++;
-
-      // 2. Check consent
-      if (!settings.consent_given) { console.log('[AUTO-SEND] Skip:', cust.email, 'no consent'); results.skipped++; continue; }
-
       // 3. Check approved template exists
       if (!settings.default_template_id) { console.log('[AUTO-SEND] Skip:', cust.email, 'no template'); results.skipped++; continue; }
       var template = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(settings.default_template_id, cust.id);
       if (!template) { console.log('[AUTO-SEND] Skip:', cust.email, 'template not found'); results.skipped++; continue; }
+
+      // 2. Check consent
+      if (!settings.consent_given) { console.log('[AUTO-SEND] Skip:', cust.email, 'no consent'); results.skipped++; continue; }
+
+      // Resolve the customer's chosen mail type + format. Prefer the explicitly
+      // saved settings (settings.mail_type / default_format) but ALWAYS fall back
+      // to the default template's type so the customer gets exactly what they set
+      // up in Print & Post (letter / flyer / flyer_plus_letter). Without this, a
+      // customer whose template is "Leaflet + Letter" could be sent plain letters.
+      var tplType = String(template.template_type || '').toLowerCase();
+      var autoMailType = settings.mail_type || (tplType === 'flyer_plus_letter' ? 'flyer_plus_letter' : tplType === 'flyer_front_back' ? 'flyer' : tplType === 'flyer_a5' || tplType === 'flyer_a5_enveloped' ? 'flyer' : 'letter');
+      var autoFormat = settings.default_format || (tplType === 'flyer_plus_letter' ? 'flyer_plus_letter' : tplType === 'flyer_front_back' ? 'flyer_a5_portrait' : '');
 
       // 4. Get today's delivered leads
       var todaysLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today); });
@@ -4627,20 +5728,24 @@ async function runAutoSend() {
       }
       if (todaysLeads.length === 0) { console.log('[AUTO-SEND] Skip:', cust.email, 'no leads after dedup'); results.skipped++; continue; }
 
-      // 8. Check daily spend limit
-      var pricing = calcDmPrice(todaysLeads.length);
-      var totalCost = pricing.total;
-      if (settings.max_daily_spend > 0 && totalCost > settings.max_daily_spend) {
-        var capped = Math.floor(settings.max_daily_spend / (totalCost / todaysLeads.length));
+      // 8. Check daily spend limit (repeat schedule charges for all follow-ups up front)
+      var scheduleIntervals = (settings.schedule_intervals && settings.schedule_intervals.length) ? settings.schedule_intervals : (settings.send_schedule === 'repeat' ? [0,14,28] : [0]);
+      // Price at the customer's chosen format (£/item) — NOT the legacy
+      // calcDmPrice (which applied a £29 platform fee + £99 minimum order).
+      var autoPrice = dmPerItemPrice(autoMailType, settings.default_format || '');
+      var perBatch = Math.round(todaysLeads.length * autoPrice * 100) / 100;
+      var totalCost = Math.round(perBatch * scheduleIntervals.length * 100) / 100;
+      if (settings.max_daily_spend > 0 && perBatch > settings.max_daily_spend) {
+        var capped = Math.floor(settings.max_daily_spend / autoPrice);
         if (capped < 1) { console.log('[AUTO-SEND] Skip:', cust.email, 'daily spend limit exceeded'); results.skipped++; continue; }
         todaysLeads = todaysLeads.slice(0, capped);
-        pricing = calcDmPrice(todaysLeads.length);
-        totalCost = pricing.total;
+        perBatch = Math.round(todaysLeads.length * autoPrice * 100) / 100;
+        totalCost = Math.round(perBatch * scheduleIntervals.length * 100) / 100;
       }
 
       // 9. Check monthly spend limit
       var thisMonthLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today.substring(0, 7)) === 0; });
-      var monthCost = calcDmPrice(thisMonthLeads.length).total;
+      var monthCost = Math.round(thisMonthLeads.length * autoPrice * 100) / 100;
       if (settings.max_monthly_spend > 0 && (monthCost + totalCost) > settings.max_monthly_spend) {
         console.log('[AUTO-SEND] Skip:', cust.email, 'monthly spend limit would exceed');
         results.skipped++; continue;
@@ -4653,13 +5758,14 @@ async function runAutoSend() {
       try { var monthOrders = db.prepare('SELECT * FROM direct_mail_orders WHERE customer_id = ?').all(cust.id); monthOrders.forEach(function(o) { thisMonthSpend += Number(o.total_cost || 0); }); } catch(e) {}
       if (settings.pause_on_spend_limit && settings.max_monthly_spend > 0 && thisMonthSpend >= settings.max_monthly_spend) { console.log('[AUTO-SEND] Skip:', cust.email, 'spend limit reached'); results.skipped++; continue; }
 
-      // 11. Create campaign automatically
+      // 11. Create campaign automatically — use the customer's chosen MAIL TYPE
+      // so the actual send knows whether it's a letter, leaflet, or leaflet+letter.
       var campaign = {
         id: uuidv4(), customer_id: cust.id, name: 'Print & Post - ' + today,
-        description: 'Automatically generated campaign from daily leads', status: 'draft',
+        description: autoMailType, status: 'draft',
         template_id: settings.default_template_id, material_id: '',
         target_count: todaysLeads.length, sent_count: 0,
-        delivery_date: today, budget: totalCost, notes: 'Print & Post',
+        delivery_date: today, budget: totalCost, notes: 'Print & Post' + (autoFormat ? ' FORMAT:' + autoFormat : ''),
         provider: '', provider_campaign_id: '', provider_status: '',
         stripe_session_id: '', stripe_payment_id: 'auto_send_mock', stripe_payment_status: 'paid',
         created_at: new Date().toISOString(), updated_at: new Date().toISOString()
@@ -4686,6 +5792,45 @@ async function runAutoSend() {
       // 13. Process payment (Stripe if available, mock fallback)
       var paymentSuccess = false;
       var paymentIntentId = '';
+      // REPEAT SCHEDULE: if the customer chose "now + 2 weeks + 4 weeks", create the
+      // follow-up campaigns now (same leads, future delivery dates). They're marked
+      // paid+approved and dispatched automatically by the Repeat Mailing cron on
+      // their due date. Charged up front (totalCost already includes all mailings).
+      var autoGroupId = '';
+      var followUpCampaignIds = [];
+      if (validAddressCount > 0 && settings.send_schedule === 'repeat' && scheduleIntervals.length > 1) {
+        try {
+          autoGroupId = uuidv4();
+          for (var fui = 1; fui < scheduleIntervals.length; fui++) {
+            var fuDays = parseInt(scheduleIntervals[fui]) || 0;
+            var fuDate = new Date(Date.now() + fuDays * 86400000).toISOString().split('T')[0];
+            var fuId = uuidv4();
+            db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+              .run(fuId, cust.id, 'Auto follow-up ' + Math.round(fuDays/7) + 'w - ' + today, autoMailType, 'approved', campaign.template_id, '', todaysLeads.length, 0, fuDate, perBatch, 'Repeat mailing ' + autoGroupId, '', '', '', '', '', 'paid', new Date().toISOString(), new Date().toISOString());
+            // Copy recipients (same leads)
+            var fuRecips = db.prepare('SELECT * FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(campaign.id, cust.id);
+            fuRecips.forEach(function(rr) {
+              db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
+                .run(uuidv4(), cust.id, fuId, rr.name, rr.company, rr.address_line1, rr.city, rr.postcode, rr.country, rr.lead_id, 'pending', new Date().toISOString());
+            });
+            followUpCampaignIds.push(fuId);
+          }
+          // Record the series so the dashboard + dispatch cron can track it
+          var dbR2 = getDb();
+          if (!dbR2.repeat_mailings) dbR2.repeat_mailings = [];
+          dbR2.repeat_mailings.push({
+            id: uuidv4(), customer_id: cust.id, lead_id: todaysLeads[0] ? todaysLeads[0].id : '',
+            lead_label: todaysLeads.length + ' leads', group_id: autoGroupId,
+            campaign_ids: [campaign.id].concat(followUpCampaignIds),
+            mail_type: autoMailType, price_per_item: perBatch / todaysLeads.length,
+            total: totalCost, lead_count: todaysLeads.length,
+            intervals: scheduleIntervals, template_id: campaign.template_id,
+            status: 'scheduled', created_at: new Date().toISOString(), source: 'auto'
+          });
+          saveDb();
+          console.log('[AUTO-SEND] Scheduled ' + followUpCampaignIds.length + ' follow-ups for ' + cust.email);
+        } catch(fuErr) { console.log('[AUTO-SEND] Follow-up create error:', fuErr.message); }
+      }
       if (validAddressCount > 0) {
         // Try Stripe charge if customer has saved payment method
         if (STRIPE_SECRET_KEY && cust.stripe_payment_method_id && cust.stripe_customer_id) {
@@ -4710,6 +5855,10 @@ async function runAutoSend() {
               db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'paid', 'system', 'Payment succeeded: ' + chargeResult.id, new Date().toISOString());
               console.log('[AUTO-SEND] Payment success:', cust.email, '£' + totalCost.toFixed(2), chargeResult.id);
               if (cust && cust.id) { dmDashboardNotify(cust.id, 'auto_send_payment_success', '✅ Print & Post Payment Successful', 'Print & Post payment of £' + totalCost.toFixed(2) + ' succeeded.', ''); }
+              // Persist "invoice paid" receipt for the dashboard billing history
+              try {
+                storePaymentReceipt({ customerId: cust.id, customerEmail: cust.email, company: cust.company || '', amount: Math.round(totalCost * 100) / 100, currency: 'gbp', stripeId: chargeResult.id, number: chargeResult.id, description: 'Print & Post — ' + (campaign.name || 'campaign'), product: 'direct_mail', cardLast4: '' });
+              } catch(prA) { console.log('[AUTO-SEND] Receipt store error:', prA.message); }
             } else if (chargeResult && chargeResult.status === 'requires_action') {
               // 3D Secure needed - cannot process automatically
               db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(chargeResult.id, 'requires_action', new Date().toISOString(), campaign.id, cust.id);
@@ -4744,34 +5893,84 @@ async function runAutoSend() {
           db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(1, cust.id);
           results.skipped++;
         } else {
-          // No Stripe at all - use mock payment
-          paymentSuccess = true;
-          db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('auto_send_mock', 'paid', new Date().toISOString(), campaign.id, cust.id);
-          db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'paid', 'system', 'Mock payment (no Stripe configured)', new Date().toISOString());
+          // No saved payment method — auto-send can't charge the customer, so we
+          // must NOT mail for free. Pause auto-send and require a card to be saved.
+          // (Only in a non-production test/dev mode would we ever mock-send.)
+          if (process.env.NODE_ENV === 'test') {
+            paymentSuccess = true;
+            db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('auto_send_mock', 'paid', new Date().toISOString(), campaign.id, cust.id);
+            db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'paid', 'system', 'Mock payment (no Stripe configured)', new Date().toISOString());
+          } else {
+            console.log('[AUTO-SEND] Skip:', cust.email, 'no saved card for auto-charge');
+            db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(1, cust.id);
+            db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, cust.id);
+            db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'failed', 'system', 'No saved card — Print & Post paused', new Date().toISOString());
+            if (cust && cust.id) dmDashboardNotify(cust.id, 'auto_send_paused', '⏸️ Print & Post Paused', 'Print & Post was paused because no card is saved for automatic billing. Add a card in Auto Print & Post to resume.', '');
+            results.failed++;
+          }
         }
 
-        // 14. Send to provider if payment succeeded
+                // 14. Send to provider if payment succeeded - use sendDmCampaign so the
+        // customer actual materials are sent (leaflet front/back, cover letter)
+        // in their chosen mail type (letter / flyer / flyer+letter), one mailpiece
+        // per lead. The old provider.createCampaign only made an empty Stannp
+        // group and never sent the materials.
         if (paymentSuccess) {
-          var provider = getDirectMailProvider();
-          var createResult = await provider.createCampaign({ name: campaign.name, recipient_count: validAddressCount, description: campaign.description });
-          if (createResult && createResult.success) {
-            db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, provider_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('queued', provider.name, createResult.provider_campaign_id, 'accepted', new Date().toISOString(), campaign.id, cust.id);
-            db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'paid', 'queued', 'system', 'Sent to provider: ' + provider.name, new Date().toISOString());
-            db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, provider.name, 'createCampaign', JSON.stringify({ name: campaign.name, recipient_count: validAddressCount }), JSON.stringify(createResult), 200, 1, '', new Date().toISOString());
-            results.sent++;
-            results.total_spend += totalCost;
-            console.log('[AUTO-SEND] Sent:', cust.email, validAddressCount, 'leads, cost: £' + totalCost.toFixed(2));
-            if (cust && cust.id) {
-              dmDashboardNotify(cust.id, 'auto_send_campaign_sent', '📬 Print & Post Campaign Sent', 'Print & Post sent ' + validAddressCount + ' letters for ' + totalCost.toFixed(2), '');
+          try {
+            var dmSend = await sendDmCampaign(campaign.id, cust.id);
+            if (dmSend && dmSend.success) {
+              db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, provider_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('sent_to_provider', 'stannp', dmSend.provider_campaign_id || '', 'processing', new Date().toISOString(), campaign.id, cust.id);
+              db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'paid', 'sent_to_provider', 'system', 'Sent ' + validAddressCount + ' items to Stannp', new Date().toISOString());
+              results.sent++;
+              results.total_spend += totalCost;
+              console.log('[AUTO-SEND] Sent:', cust.email, validAddressCount, 'items (' + autoMailType + '), cost: £' + totalCost.toFixed(2));
+              if (cust && cust.id) {
+                // DAILY RECEIPT EMAIL + dashboard notice so the customer knows what was
+                // mailed today, how much it cost, and what follow-ups are scheduled.
+                var schedInfo = (settings.send_schedule === 'repeat')
+                  ? 'This is mailing 1 of 3. The same ' + validAddressCount + ' leads will be mailed again in 2 weeks, then in 4 weeks (already paid for).'
+                  : 'Each lead is mailed once.';
+                // List the actual leads mailed so the customer has proof of exactly
+                // who was sent which materials, with a per-lead tracking/proof link.
+                var sentRecips = [];
+                try { sentRecips = db.prepare('SELECT name,address_line1,city,postcode,lead_id FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(campaign.id, cust.id); } catch(e) {}
+                var leadRows = sentRecips.map(function(r, ri) {
+                  var mailLabel = autoMailType === 'flyer_plus_letter' ? 'Letter + Flyer' : autoMailType === 'flyer' ? 'Flyer (front+back)' : 'Letter';
+                  var addrFrag = [r.address_line1, r.city, r.postcode].filter(Boolean).join(', ');
+                  return '<tr><td style="padding:5px 6px;border-bottom:1px solid rgba(148,163,184,.15);font-size:12px;color:#e2e8f0">' + (ri + 1) + '</td>' +
+                    '<td style="padding:5px 6px;border-bottom:1px solid rgba(148,163,184,.15);font-size:12px;color:#e2e8f0">' + (r.name || 'Lead') + '<div style="font-size:10px;color:#8890b0">' + addrFrag + '</div></td>' +
+                    '<td style="padding:5px 6px;border-bottom:1px solid rgba(148,163,184,.15);font-size:11px;color:#94a3b8">' + mailLabel + '</td>' +
+                    (r.lead_id ? '<td style="padding:5px 6px;border-bottom:1px solid rgba(148,163,184,.15);font-size:11px"><a href="' + PUBLIC_URL + '/portal/leads.html" style="color:#0ea5e9;text-decoration:underline">Track</a></td>' : '<td></td>') +
+                    '</tr>';
+                }).join('');
+                var autoReceiptBody =
+                  '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Your daily Print &amp; Post has been sent automatically.</p>' +
+                  '<div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:16px 20px;margin:0 0 16px">' +
+                  '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' +
+                  '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:40%">Leads mailed today</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + validAddressCount + '</td></tr>' +
+                  '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Mail type</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + autoMailType + '</td></tr>' +
+                  '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount charged</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">£' + totalCost.toFixed(2) + '</td></tr>' +
+                  '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Delivery</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0">1-3 working days via Royal Mail</td></tr>' +
+                  '</table></div>' +
+                  (leadRows ? '<div style="margin:0 0 16px"><div style="font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:6px">📦 Leads sent</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse"><tr><td style="padding:5px 6px;font-size:11px;color:#8890b0;font-weight:700;border-bottom:1px solid rgba(148,163,184,.25)">#</td><td style="padding:5px 6px;font-size:11px;color:#8890b0;font-weight:700;border-bottom:1px solid rgba(148,163,184,.25)">Lead</td><td style="padding:5px 6px;font-size:11px;color:#8890b0;font-weight:700;border-bottom:1px solid rgba(148,163,184,.25)">Material</td><td style="padding:5px 6px;font-size:11px;color:#8890b0;font-weight:700;border-bottom:1px solid rgba(148,163,184,.25)"></td></tr>' + leadRows + '</table></div>' : '') +
+                  '<p style="color:#94a3b8;font-size:12px;line-height:1.7">' + schedInfo + ' Track each lead\'s live delivery status on the <a href="' + PUBLIC_URL + '/portal/tracking.html" style="color:#0ea5e9">Live Tracking</a> page, or view the "Materials Posted" badge + <b>Proof of Posting</b> on <a href="' + PUBLIC_URL + '/portal/leads.html" style="color:#0ea5e9">My Leads</a>.</p>';
+                try { await sendDMNotification(cust.id, 'auto_send_receipt', 'Auto Print & Post — ' + validAddressCount + ' items sent', '📬 Auto Print & Post sent', autoReceiptBody, 'View Leads', PUBLIC_URL + '/portal/leads.html'); } catch(rcE) { console.log('[AUTO-SEND] Receipt email error:', rcE.message); }
+                dmDashboardNotify(cust.id, 'auto_send_campaign_sent', '📬 Print & Post Sent', 'Print & Post sent ' + validAddressCount + ' ' + autoMailType + '(s) for ' + totalCost.toFixed(2), '');
+              }
+            } else {
+              db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, cust.id);
+              results.failed++;
+              console.log('[AUTO-SEND] Failed:', cust.email, dmSend && dmSend.error || 'send error');
+              if (cust && cust.id) {
+                dmDashboardNotify(cust.id, 'auto_send_failed', '❌ Print & Post Failed', 'Print & Post send failed: ' + (dmSend && dmSend.error || 'Provider error'), '');
+                sendDMAdminAlert('auto_send_error', 'Print & Post Provider Error', 'Customer: ' + (cust.email || cust.id) + ' — Campaign: ' + campaign.name + ' — Error: ' + (dmSend && dmSend.error || 'Unknown'));
+              }
             }
-          } else {
+          } catch(dmErr) {
             db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, cust.id);
             results.failed++;
-            console.log('[AUTO-SEND] Failed:', cust.email, createResult?.error || 'provider error');
-            if (cust && cust.id) {
-              dmDashboardNotify(cust.id, 'auto_send_failed', 'âŒ Print & Post Failed', 'Print & Post campaign failed: ' + (createResult?.error || 'Provider error'), '');
-              sendDMAdminAlert('auto_send_error', 'Print & Post Provider Error', 'Customer: ' + (cust.email || cust.id) + ' — Campaign: ' + campaign.name + ' — Error: ' + (createResult?.error || 'Unknown'));
-            }
+            console.log('[AUTO-SEND] Send error:', cust.email, dmErr.message);
+            if (cust && cust.id) dmDashboardNotify(cust.id, 'auto_send_failed', '❌ Print & Post Failed', 'Print & Post send error: ' + dmErr.message, '');
           }
         }
       }
@@ -4789,6 +5988,226 @@ app.post('/api/direct-mail/run-auto-send', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/direct-mail/auto-simulate — DRY-RUN simulation of Auto Print & Post.
+// Shows exactly what would happen today WITHOUT charging the card or sending to
+// Stannp: how many leads would be mailed, the cost, the schedule, and whether a
+// card is on file for the real charge. Safe to run anytime, no card required.
+app.post('/api/direct-mail/auto-simulate', authMiddleware, async (req, res) => {
+  try {
+    var dbS = getDb();
+    var cust = dbS.customers.find(function(c) { return c.id === req.user.id; });
+    if (!cust) return res.status(404).json({ error: 'User not found' });
+    var settings = dbS.direct_mail_automation_settings.find(function(s) { return s.customer_id === req.user.id; });
+    var today = new Date().toISOString().split('T')[0];
+    var out = { success: true, date: today, has_card: !!(cust && (cust.stripe_payment_method_id || cust.stripe_customer_id)) };
+
+    // Settings state
+    out.auto_enabled = !!(settings && settings.enable_auto_send);
+    out.ready = false;
+    out.consent = !!(settings && settings.consent_given);
+    out.send_schedule = settings && settings.send_schedule ? settings.send_schedule : (settings ? 'not set' : 'no settings');
+    out.schedule_intervals = settings && settings.schedule_intervals ? settings.schedule_intervals : (settings && settings.send_schedule === 'repeat' ? [0,14,28] : [0]);
+    out.mail_type = settings ? (settings.mail_type || 'letter') : 'letter';
+    out.max_daily_spend = settings ? (settings.max_daily_spend || 25) : 25;
+    out.template_ready = !!(settings && settings.default_template_id);
+
+    if (!settings) { out.message = 'Auto Print & Post is not set up yet. Go to Auto Print & Post to configure it.'; return res.json(out); }
+
+    // Template check
+    var tpl = dbS.direct_mail_templates.find(function(t) { return t.id === settings.default_template_id && t.customer_id === req.user.id; });
+    out.template_ready = !!tpl;
+    if (!tpl) { out.message = 'No saved template found. Complete your Print & Post setup first.'; return res.json(out); }
+    // Resolve the customer's chosen mail type/format from the template when settings
+    // don't carry it, so the preview + charge match what will actually be mailed.
+    var tplTypeS = String(tpl.template_type || '').toLowerCase();
+    out.mail_type = settings.mail_type || (tplTypeS === 'flyer_plus_letter' ? 'flyer_plus_letter' : tplTypeS === 'flyer_front_back' ? 'flyer' : tplTypeS === 'flyer_a5' || tplTypeS === 'flyer_a5_enveloped' ? 'flyer' : 'letter');
+    out.default_format = settings.default_format || (tplTypeS === 'flyer_plus_letter' ? 'flyer_plus_letter' : tplTypeS === 'flyer_front_back' ? 'flyer_a5_portrait' : '');
+
+    // Profile
+    var profile = dbS.customer_business_profiles.find(function(p) { return p.customer_id === req.user.id; });
+    out.profile_ready = !!(profile && (profile.company_name || profile.business_type));
+
+    // Today's delivered leads (same logic as runAutoSend)
+    var todaysLeads = (dbS.leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today); });
+    if (settings.lead_types) {
+      var types = settings.lead_types.split(',').filter(Boolean);
+      if (types.length > 0) todaysLeads = todaysLeads.filter(function(l) { return types.indexOf(l.product) !== -1; });
+    }
+    if (settings.postcode_areas) {
+      var areas = settings.postcode_areas.split(',').map(function(a) { return a.trim().toUpperCase(); }).filter(Boolean);
+      if (areas.length > 0) todaysLeads = todaysLeads.filter(function(l) {
+        var parsed = {}; try { parsed = JSON.parse(l.data || '{}'); } catch(e) {}
+        var pc = extractPostcodeArea(parsed.postcode || '');
+        return areas.some(function(a) { return pc === a.toUpperCase(); });
+      });
+    }
+    out.leads_raw_today = (dbS.leads || []).filter(function(l) { return l.customer_id === req.user.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today); }).length;
+    out.leads_after_filters = todaysLeads.length;
+
+    // Dedup + max per day
+    if (settings.avoid_duplicate_mailing) {
+      var recentCampaigns = dbS.direct_mail_campaigns.filter(function(rc) { return rc.customer_id === req.user.id && rc.created_at >= new Date(Date.now() - (settings.repeat_mailing_days || 90) * 86400000).toISOString(); });
+      var recentLeadIds = {};
+      recentCampaigns.forEach(function(rc) {
+        (dbS.direct_mail_recipients || []).filter(function(r) { return r.campaign_id === rc.id && r.customer_id === req.user.id; }).forEach(function(r) { if (r.lead_id) recentLeadIds[r.lead_id] = true; });
+      });
+      todaysLeads = todaysLeads.filter(function(l) { return !recentLeadIds[l.id]; });
+      out.leads_after_dedup = todaysLeads.length;
+    } else { out.leads_after_dedup = todaysLeads.length; }
+
+    if (settings.max_letters_per_day > 0 && todaysLeads.length > settings.max_letters_per_day) {
+      todaysLeads = todaysLeads.slice(0, settings.max_letters_per_day);
+    }
+    out.leads_to_mail = todaysLeads.length;
+    out.min_leads_before_send = settings.min_leads_before_send || 1;
+    out.would_send = todaysLeads.length >= (settings.min_leads_before_send || 1);
+    if (!out.would_send) { out.message = 'Not enough leads today (' + todaysLeads.length + ' of minimum ' + (settings.min_leads_before_send || 1) + '). No mailing today.'; return res.json(out); }
+
+    // Cost (same as runAutoSend incl. repeat)
+    var scheduleIntervals = (settings.schedule_intervals && settings.schedule_intervals.length) ? settings.schedule_intervals : (settings.send_schedule === 'repeat' ? [0,14,28] : [0]);
+    var autoPrice = dmPerItemPrice(out.mail_type || 'letter', out.default_format || '');
+    var perMailing = Math.round(todaysLeads.length * autoPrice * 100) / 100;
+    var totalCost = perMailing * scheduleIntervals.length;
+    var capApplied = false;
+    if (settings.max_daily_spend > 0 && perMailing > settings.max_daily_spend) {
+      var capped = Math.floor(settings.max_daily_spend / autoPrice);
+      if (capped < 1) { out.would_send = false; out.message = 'Daily spend limit (£' + settings.max_daily_spend + ') would be exceeded even for 1 lead. No mailing today.'; return res.json(out); }
+      totalCost = Math.round(capped * autoPrice * scheduleIntervals.length * 100) / 100;
+      capApplied = true;
+      out.capped_leads = capped;
+    }
+    out.per_mailing_cost = perMailing;
+    out.total_cost = Math.round(totalCost * 100) / 100;
+    out.cost_per_item = autoPrice;
+    out.schedule = scheduleIntervals.map(function(d){ return { day_offset: d, date: new Date(Date.now()+d*86400000).toISOString().split('T')[0] }; });
+    out.charge_now = out.total_cost;
+    out.charge_off_session = out.has_card;
+    out.would_charge = out.has_card;
+    out.card_required_for_real_charge = !out.has_card;
+    out.next_mailing_actions = [
+      'Mail ' + todaysLeads.length + ' lead(s) now',
+      (scheduleIntervals.length > 1 ? 'Schedule ' + (scheduleIntervals.length-1) + ' follow-ups (2wk/4wk), already included in the charge' : 'No follow-ups (send once)'),
+      'Charge £' + (Math.round(totalCost*100)/100).toFixed(2) + (out.has_card ? ' automatically from your saved card' : ' (NO CARD on file - a real charge needs a saved card)'),
+      'Send to Stannp and print + post',
+      'Email you a receipt + mark leads Posted'
+    ];
+    out.message = 'Simulation complete. This is what would happen today. No charge was made and nothing was sent.';
+    res.json(out);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// TRIAL AUTO-CHARGE (extracted so the cron and the admin preview/force endpoint
+// share one code path). For an expired-trial customer with a saved card, creates
+// a weekly Starter subscription on the stored payment method — the first charge
+// lands the moment the trial ends (Stripe bills immediately on subscription
+// creation for a past-due first period). Returns a per-customer result record.
+// dryRun=true validates every prerequisite against Stripe WITHOUT charging.
+async function trialAutoChargeCustomer(cust, opts) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var res2 = { email: cust.email, company: cust.company || '', product: cust.product || '', plan: cust.plan || '', trial_ends: cust.trial_ends || '' };
+  try {
+    // Prereq checks (same as the cron)
+    if (cust.plan !== 'free_trial') { res2.status = 'skip_not_free_trial'; res2.message = 'Not a free trial account'; return res2; }
+    if (cust.trial_cancelled) { res2.status = 'skip_cancelled'; res2.message = 'Trial cancelled by customer'; return res2; }
+    if (!cust.trial_ends || new Date(cust.trial_ends) > new Date()) { res2.status = 'skip_trial_active'; res2.message = 'Trial still active (ends ' + (cust.trial_ends || 'never') + ')'; return res2; }
+    if (!cust.stripe_payment_method_id) { res2.status = 'skip_no_card'; res2.message = 'No saved card (stripe_payment_method_id missing)'; return res2; }
+    if (!cust.stripe_customer_id) { res2.status = 'skip_no_customer'; res2.message = 'No Stripe customer id'; return res2; }
+    // Use the customer's CHOSEN plan if they picked one (Starter/Pro/Enterprise),
+    // otherwise default to Starter. This lets a customer select the package they
+    // want at trial-end instead of always being charged Starter.
+    var prodKeyMap2 = { moving: 'mov', planning: 'plan', probate: 'prob', newbusiness: 'nb', tenders: 'tend' };
+    var pKey2 = prodKeyMap2[cust.product] || 'mov';
+    var chosenTier2 = (cust.selected_plan === 'pro') ? 'growth' : (cust.selected_plan === 'enterprise') ? 'power' : 'starter';
+    var chosenLabel2 = (cust.selected_plan === 'pro') ? 'Pro' : (cust.selected_plan === 'enterprise') ? 'Enterprise' : 'Starter';
+    var priceId2 = getStripePriceId(cust.product, pKey2 + '-' + chosenTier2);
+    res2.price_id = priceId2 || '';
+    res2.chosen_plan = chosenLabel2;
+    if (!priceId2) { res2.status = 'skip_no_price'; res2.message = 'No ' + chosenLabel2 + ' price id configured for ' + cust.product; return res2; }
+
+    // Validate against Stripe that the price is active + weekly and the saved
+    // payment method actually exists + is attached to this customer. This is what
+    // turns the caveat ("couldn't verify") into a real check.
+    try {
+      var pv = await stripeApiRequest('GET', 'prices/' + priceId2, null);
+      res2.price_active = !!(pv && pv.active);
+      res2.price_amount = pv && pv.unit_amount ? ('£' + (pv.unit_amount / 100).toFixed(2)) : '';
+      res2.price_interval = pv && pv.recurring ? pv.recurring.interval : '';
+      if (!pv || !pv.active) { res2.status = 'skip_price_inactive'; res2.message = 'Starter price is not active on Stripe'; return res2; }
+    } catch(pve) { res2.status = 'skip_price_check_failed'; res2.message = 'Stripe price check failed: ' + pve.message; return res2; }
+    try {
+      var pmv = await stripeApiRequest('GET', 'payment_methods/' + cust.stripe_payment_method_id, null);
+      res2.card_attached = !!(pmv && pmv.id);
+      res2.card_brand = pmv && pmv.card ? (pmv.card.brand || '') : '';
+      res2.card_last4 = pmv && pmv.card ? (pmv.card.last4 || '') : '';
+      if (!pmv || !pmv.id) { res2.status = 'skip_card_missing'; res2.message = 'Saved payment method no longer exists on Stripe'; return res2; }
+      if (pmv.customer && pmv.customer !== cust.stripe_customer_id) { res2.status = 'skip_card_wrong_customer'; res2.message = 'Saved card belongs to a different Stripe customer'; return res2; }
+    } catch(pme) { res2.status = 'skip_card_check_failed'; res2.message = 'Stripe payment-method check failed: ' + pme.message; return res2; }
+
+    // All prerequisites met — would charge
+    res2.ready_to_charge = true;
+    res2.would_charge = 'Weekly ' + (res2.price_amount || '£25.00') + ' Starter subscription on ' + (res2.card_brand || 'card') + ' ending ' + (res2.card_last4 || '') + ' (billed immediately, then weekly)';
+    if (dryRun) { res2.status = 'ready'; res2.message = 'DRY RUN: would auto-charge — ' + res2.would_charge; return res2; }
+
+    // Actually create the subscription (charges the card now)
+    var finalPlan = (cust.selected_plan === 'pro' || cust.selected_plan === 'enterprise') ? cust.selected_plan : 'starter';
+    var subResult = await stripeApiRequest('POST', 'subscriptions', {
+      customer: cust.stripe_customer_id,
+      'items[0][price]': priceId2,
+      'default_payment_method': cust.stripe_payment_method_id,
+      'metadata[customer_id]': cust.id,
+      'metadata[product]': cust.product,
+      'metadata[plan]': finalPlan,
+      off_session: 'true',
+      'payment_behavior': 'allow_incomplete'
+    });
+    if (subResult && subResult.id) {
+      // Ensure the FIRST invoice is paid immediately (auto-charge the saved card)
+      // off-session. allow_incomplete can leave the first invoice open if the card
+      // needs confirmation; finalising + paying it collects the charge so the
+      // subscription becomes ACTIVE and weekly billing continues automatically.
+      try {
+        if (subResult.latest_invoice && subResult.status === 'incomplete') {
+          await stripeApiRequest('POST', 'invoices/' + subResult.latest_invoice + '/finalize', {});
+          await stripeApiRequest('POST', 'invoices/' + subResult.latest_invoice + '/pay', { off_session: 'true' });
+        }
+      } catch(payErr) { console.log('[TRIAL AUTO-CHARGE] First-invoice pay note:', payErr.message); }
+      db.prepare('UPDATE customers SET plan = ?, stripe_subscription_id = ?, trial_ends = NULL, selected_plan = ?, leads_per_day = ? WHERE id = ?').run(finalPlan, subResult.id, finalPlan, getPlanLimit(cust.product || 'moving', finalPlan === 'pro' ? 'pro' : (finalPlan === 'enterprise' ? 'enterprise' : 'starter'), cust.coverage), cust.id);
+      saveDb();
+      res2.status = 'charged';
+      res2.subscription_id = subResult.id;
+      res2.message = 'Charged — ' + chosenLabel2 + ' subscription ' + subResult.id + ' created (weekly)';
+      console.log('[TRIAL AUTO-CHARGE] Charged ' + cust.email + ', upgraded to ' + finalPlan + ' (' + subResult.id + ')');
+      // Persist an "invoice paid" receipt + email a confirmation receipt.
+      var recOpts = {
+        customerId: cust.id,
+        customerEmail: cust.email,
+        company: cust.company || '',
+        amount: (pv && pv.unit_amount ? pv.unit_amount / 100 : 25),
+        currency: (pv && pv.currency ? pv.currency : 'gbp'),
+        stripeId: subResult.id,
+        number: (subResult.id || '') + '-01',
+        description: chosenLabel2 + ' plan — first weekly payment',
+        plan: finalPlan,
+        product: cust.product || 'moving',
+        cardLast4: res2.card_last4 || '',
+        periodStart: subResult.current_period_start ? new Date(subResult.current_period_start * 1000).toISOString() : '',
+        periodEnd: subResult.current_period_end ? new Date(subResult.current_period_end * 1000).toISOString() : ''
+      };
+      try { await recordPaymentReceipt(recOpts); } catch(emErr) { console.log('[TRIAL AUTO-CHARGE] Receipt error:', emErr.message); }
+    } else {
+      res2.status = 'failed';
+      res2.message = 'Subscription creation returned no id: ' + (subResult && subResult.error ? subResult.error.message : 'unknown');
+      console.log('[TRIAL AUTO-CHARGE] Failed ' + cust.email + ': ' + (subResult && subResult.error ? subResult.error.message : 'no id'));
+    }
+  } catch(chargeErr) {
+    res2.status = 'error';
+    res2.message = chargeErr.message || String(chargeErr);
+    console.log('[TRIAL AUTO-CHARGE] Error ' + (cust && cust.email) + ': ' + res2.message);
+  }
+  return res2;
+}
+
 cron.schedule('0 8 * * *', async () => {
   console.log('[TRIAL AUTO-CHARGE] Checking expired trials...');
   try {
@@ -4801,34 +6220,44 @@ cron.schedule('0 8 * * *', async () => {
       if (cust.trial_cancelled) continue;
       if (!cust.trial_ends || new Date(cust.trial_ends) > new Date()) continue;
       if (!cust.stripe_payment_method_id || !cust.stripe_customer_id) continue;
-      // Trial expired and they have a saved card — charge £25
-      try {
-        var prodKeyMap2 = { moving: 'mov', planning: 'plan', probate: 'prob', newbusiness: 'nb', tenders: 'tend' };
-        var pKey2 = prodKeyMap2[cust.product] || 'mov';
-        var priceId2 = (STRIPE_PRICE_IDS[cust.product] || {})[pKey2 + '-starter'];
-        if (!priceId2) continue;
-        var subResult = await stripeApiRequest('POST', 'subscriptions', {
-          customer: cust.stripe_customer_id,
-          'items[0][price]': priceId2,
-          'default_payment_method': cust.stripe_payment_method_id,
-          'metadata[customer_id]': cust.id,
-          'metadata[product]': cust.product,
-          'metadata[plan]': 'starter',
-          off_session: 'true',
-          'payment_behavior': 'default_incomplete'
-        });
-        if (subResult && subResult.id) {
-          db.prepare('UPDATE customers SET plan = ?, stripe_subscription_id = ?, trial_ends = NULL WHERE id = ?').run('starter', subResult.id, cust.id);
-          console.log('[TRIAL AUTO-CHARGE] Charged £25 for ' + cust.email + ', upgraded to starter');
-          charged++;
-        }
-      } catch(chargeErr) {
-        console.log('[TRIAL AUTO-CHARGE] Failed to charge ' + cust.email + ': ' + (chargeErr.message || chargeErr));
-      }
+      var cres = await trialAutoChargeCustomer(cust, { dryRun: false });
+      if (cres.status === 'charged') charged++;
     }
     saveDb();
     console.log('[TRIAL AUTO-CHARGE] Complete: ' + charged + ' customers charged');
   } catch(e) { console.log('[TRIAL AUTO-CHARGE] Error:', e.message); }
+});
+
+// GET /api/admin/trial-charge/preview — dry-run the trial→starter auto-charge for
+// every expired-trial customer (or one email) so we can verify the cron WILL
+// charge correctly before it runs. Validates price + card against Stripe.
+// POST /api/admin/trial-charge/run — actually run the auto-charge for one account
+// (used to test the full flow live; creates a real subscription/charge).
+app.get('/api/admin/trial-charge/preview', adminAuth, async (req, res) => {
+  try {
+    var db = getDb();
+    var customers = (db.customers || []).filter(function(c) { return c.plan === 'free_trial'; });
+    var email = req.query.email ? String(req.query.email).toLowerCase() : '';
+    if (email) customers = customers.filter(function(c) { return String(c.email || '').toLowerCase() === email; });
+    var results = [];
+    for (var i = 0; i < customers.length; i++) {
+      var c = customers[i];
+      var r = await trialAutoChargeCustomer(c, { dryRun: true });
+      results.push(r);
+      await new Promise(function(res2) { setTimeout(res2, 150); });
+    }
+    res.json({ success: true, checked: results.length, charged_ready: results.filter(function(r) { return r.ready_to_charge; }).length, results: results });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/admin/trial-charge/run', adminAuth, async (req, res) => {
+  try {
+    var email = (req.body && req.body.email) ? String(req.body.email).toLowerCase() : '';
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var cust = (getDb().customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var result = await trialAutoChargeCustomer(cust, { dryRun: false });
+    res.json({ success: true, result: result });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // REPEAT MAILING CRON — dispatches scheduled follow-up campaigns (paid repeat
@@ -4855,16 +6284,102 @@ cron.schedule('0 7 * * *', async () => {
           console.log('[REPEAT-MAIL] Dispatched follow-up: ' + c.id.substring(0, 8) + ' for ' + c.customer_id);
           try {
             var rLead = dbR.direct_mail_recipients.find(function(r) { return r.campaign_id === c.id; });
-            if (rLead && rLead.lead_id) {
-              dmDashboardNotify(c.customer_id, 'repeat_mailed', '📬 Follow-up mailed', 'A scheduled follow-up mailing was dispatched to one of your leads.', '');
+            // Look up the repeat series so we can say "2nd mailing (2-week follow-up)" etc.
+            var seriesRec = (dbR.repeat_mailings || []).find(function(s) { return (s.campaign_ids || []).indexOf(c.id) !== -1; });
+            var mailingIndex = 0, mailingLabel = 'Follow-up';
+            if (seriesRec) {
+              mailingIndex = (seriesRec.campaign_ids || []).indexOf(c.id) + 1;
+              var intervalDays = (seriesRec.intervals && seriesRec.intervals[mailingIndex - 1]) ? parseInt(seriesRec.intervals[mailingIndex - 1]) : 0;
+              mailingLabel = intervalDays === 0 ? 'Your first mailing' : (intervalDays >= 28 ? 'Your 1-month follow-up' : 'Your ' + Math.round(intervalDays / 7) + '-week follow-up');
+              seriesRec.dispatch_log = seriesRec.dispatch_log || [];
+              seriesRec.dispatch_log.push({ campaign_id: c.id, dispatched_at: new Date().toISOString(), label: mailingLabel });
+              seriesRec.last_dispatched_at = new Date().toISOString();
+              // Mark the series progress: how many of N mailings sent
+              seriesRec.sent_count = (seriesRec.dispatch_log || []).length;
+              seriesRec.total_count = (seriesRec.campaign_ids || []).length;
+              seriesRec.status = (seriesRec.dispatch_log || []).length >= (seriesRec.campaign_ids || []).length ? 'completed' : 'active';
             }
-          } catch(nErr) {}
+            // Customer-facing EMAIL + dashboard notification so they KNOW this batch was posted.
+            var leadName = rLead ? (rLead.name || 'a lead') : 'one of your leads';
+            var leadAddr = rLead ? [rLead.address_line1, rLead.city, rLead.postcode].filter(Boolean).join(', ') : '';
+            var rCount = 0;
+            try { rCount = dbR.direct_mail_recipients.filter(function(r) { return r.campaign_id === c.id; }).length; } catch(e) {}
+            if (rLead && rLead.lead_id) {
+              try {
+                var custRow2 = dbR.customers.find(function(cx) { return cx.id === c.customer_id; });
+                if (custRow2 && custRow2.email) {
+                  var followBody =
+                    '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Your scheduled Print &amp; Post follow-up has been dispatched and is on its way.</p>' +
+                    '<div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:16px 20px;margin:0 0 16px">' +
+                    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' +
+                    '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:40%">Mailing</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + mailingLabel + '</td></tr>' +
+                    '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Items sent</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + (rCount || 1) + '</td></tr>' +
+                    '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Sent to</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0">' + (rCount > 1 ? rCount + ' leads' : (leadName || 'a lead')) + '</td></tr>' +
+                    (rCount <= 1 && leadAddr ? '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Address</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0">' + leadAddr + '</td></tr>' : '') +
+                    '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Delivery</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0">1-3 working days via Royal Mail</td></tr>' +
+                    '</table></div>' +
+                    (seriesRec ? '<p style="color:#94a3b8;font-size:12px;line-height:1.7">Series progress: ' + (seriesRec.sent_count || 0) + ' of ' + (seriesRec.total_count || 0) + ' mailings sent.</p>' : '');
+                  await sendDMNotification(c.customer_id, 'repeat_mailed', 'Print & Post Follow-Up Sent — ' + mailingLabel, '📬 ' + mailingLabel + ' sent', followBody, 'View Print & Post', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail');
+                }
+              } catch(nErr2) { console.log('[REPEAT-MAIL] Notification error:', nErr2.message); }
+              dmDashboardNotify(c.customer_id, 'repeat_mailed', '📬 ' + mailingLabel + ' sent', 'Your ' + mailingLabel.toLowerCase() + ' was dispatched to ' + (rCount > 1 ? rCount + ' leads' : (rLead.name || 'a lead')) + ' and will arrive in 1-3 working days.', '');
+            }
+          } catch(nErr) { console.log('[REPEAT-MAIL] Series update error:', nErr.message); }
         }
       } catch(e2) { console.log('[REPEAT-MAIL] Error dispatching ' + c.id + ': ' + e2.message); }
     }
     if (dispatched > 0) saveDb();
     console.log('[REPEAT-MAIL] Complete: ' + dispatched + ' follow-ups dispatched');
   } catch(e) { console.log('[REPEAT-MAIL] Error:', e.message); }
+});
+
+// ===== LIVE POST TRACKING POLLER =====
+// Syncs in-flight campaigns from Stannp every 30 minutes so customers see live
+// delivery status (printing → dispatched → out for delivery → delivered) even if
+// the webhook isn't configured yet. Also reconciles any late webhook events.
+cron.schedule('*/30 * * * *', async () => {
+  console.log('[DM-TRACKING] Polling Stannp for live mailpiece status...');
+  try {
+    var dbP = getDb();
+    var provider = getDirectMailProvider();
+    if (provider.name !== 'stannp') return;
+    var inFlight = (dbP.direct_mail_recipients || []).filter(function(r) {
+      if (!r.provider_mailpiece_id) return false;
+      // REAL-DATA GUARD: only poll genuine numeric Stannp mailpiece ids. Mock/demo
+      // ids (MOCK-… or 999xxx demo seeds) are never queried against the API.
+      if (!/^\d+$/.test(String(r.provider_mailpiece_id)) || String(r.provider_mailpiece_id).length < 4) return false;
+      var campRow = (dbP.direct_mail_campaigns || []).find(function(c) { return c.id === r.campaign_id; });
+      if (campRow && campRow.notes === 'DEMO_TRACKING') return false;
+      if (campRow && String(campRow.provider || '').toLowerCase() !== 'stannp') return false;
+      return (!r.provider_status || ['queued','printing','dispatched','out_for_delivery','processing','accepted'].indexOf(r.provider_status) !== -1);
+    });
+    // Deduplicate by mailpiece id
+    var seen = {}; var ids = [];
+    inFlight.forEach(function(r) { var mid = String(r.provider_mailpiece_id); if (!seen[mid]) { seen[mid] = 1; ids.push(mid); } });
+    var updated = 0;
+    for (var ti = 0; ti < ids.length; ti++) {
+      try {
+        var st = await provider.getCampaignStatus(ids[ti]);
+        if (st && st.success && st.status) {
+          var rcpt = (dbP.direct_mail_recipients || []).find(function(r) { return String(r.provider_mailpiece_id || '') === ids[ti]; });
+          if (rcpt) {
+            recordMailpieceTracking(rcpt.customer_id, rcpt.campaign_id, rcpt.id, ids[ti], st.status, new Date().toISOString());
+            updated++;
+          }
+        }
+      } catch(pErr) {}
+    }
+    if (updated > 0) { saveDb(); console.log('[DM-TRACKING] Poll complete: ' + updated + ' statuses refreshed (' + ids.length + ' mailpieces)'); }
+    else {
+      console.log('[DM-TRACKING] Poll complete: no changes (' + ids.length + ' mailpieces checked)');
+      // REAL-DATA FALLBACK: reconcile against Stannp's reporting API so any status
+      // the direct lookup missed (late events, id mismatch) is still reflected.
+      try {
+        var rec = await reconcileTrackingFromStannp(21);
+        if (rec && rec.updated) console.log('[DM-TRACKING] Reporting reconcile updated ' + rec.updated + ' statuses');
+      } catch(recErr) {}
+    }
+  } catch(e) { console.log('[DM-TRACKING] Poll error:', e.message); }
 });
 
 // POST /api/cancel-trial — cancel trial, no charge
@@ -4878,6 +6393,56 @@ app.post('/api/cancel-trial', authMiddleware, async (req, res) => {
     res.json({ success: true, message: 'Your free trial has been cancelled.' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+// POST /api/account/delete — GDPR right to be forgotten. Permanently erases the
+// customer's personal data: account, leads, profiles, campaigns, recipients,
+// templates, automation settings, orders and status history. Also cancels any
+// active Stripe subscription and releases their postcode claims.
+app.post('/api/account/delete', authMiddleware, async (req, res) => {
+  try {
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    var uid = req.user.id;
+    // 1. Cancel any active Stripe subscription so they're not charged again
+    try {
+      if (customer.stripe_subscription_id) {
+        await stripeApiRequest('DELETE', 'subscriptions/' + customer.stripe_subscription_id, null);
+      }
+    } catch(stErr) { console.log('[GDPR-DELETE] Stripe cancel:', stErr.message); }
+    // 2. Release postcode claims
+    try { releasePostcodes(uid); } catch(rpErr) {}
+    // 3. Delete all rows for this customer across every table
+    db.prepare('DELETE FROM leads WHERE customer_id = ?').run(uid);
+    db.prepare('DELETE FROM customer_business_profiles WHERE customer_id = ?').run(uid);
+    db.prepare('DELETE FROM direct_mail_templates WHERE customer_id = ?').run(uid);
+    db.prepare('DELETE FROM direct_mail_campaigns WHERE customer_id = ?').run(uid);
+    db.prepare('DELETE FROM direct_mail_materials WHERE customer_id = ?').run(uid);
+    db.prepare('DELETE FROM direct_mail_recipients WHERE customer_id = ?').run(uid);
+    db.prepare('DELETE FROM direct_mail_automation_settings WHERE customer_id = ?').run(uid);
+    db.prepare('DELETE FROM direct_mail_orders WHERE customer_id = ?').run(uid);
+    db.prepare('DELETE FROM direct_mail_provider_logs WHERE customer_id = ?').run(uid);
+    db.prepare('DELETE FROM direct_mail_status_history WHERE customer_id = ?').run(uid);
+    db.prepare('DELETE FROM direct_mail_test_logs WHERE customer_id = ?').run(uid);
+    // 4. JSON shim tables too
+    var jdb = getDb();
+    var tablesToClean = ['leads','customer_business_profiles','direct_mail_templates','direct_mail_campaigns','direct_mail_materials','direct_mail_recipients','direct_mail_automation_settings','direct_mail_orders','direct_mail_provider_logs','direct_mail_status_history','direct_mail_test_logs'];
+    tablesToClean.forEach(function(t) { if (Array.isArray(jdb[t])) jdb[t] = jdb[t].filter(function(r) { return r.customer_id !== uid; }); });
+    if (Array.isArray(jdb.customers)) jdb.customers = jdb.customers.filter(function(c) { return c.id !== uid; });
+    saveDb();
+    // 5. Remove from the SQLite shim
+    db.prepare('DELETE FROM customers WHERE id = ?').run(uid);
+    // 6. Log the deletion (admin audit trail)
+    try {
+      var audit = getDb();
+      if (!audit.gdpr_deletions) audit.gdpr_deletions = [];
+      audit.gdpr_deletions.push({ customer_id: uid, email: customer.email || '', at: new Date().toISOString() });
+      saveDb();
+    } catch(logErr) {}
+    console.log('[GDPR] Account deleted: ' + (customer.email || uid));
+    res.json({ success: true, message: 'Your account and all personal data have been permanently deleted.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 
 cron.schedule('0 10 * * *', async () => {
   console.log('[CAMPAIGN] Starting campaign email check...');
@@ -4905,11 +6470,23 @@ cron.schedule('0 10 * * *', async () => {
               break;
             }
           }
+          // trial_day7 ("ends tomorrow"): send it while the trial is STILL active,
+          // roughly one day before it ends — not after it ends (which is what the
+          // old logic did and made the subject misleading).
+          var msToTrialEnd = trialEnds.getTime() - new Date().getTime();
+          var daysToTrialEnd = msToTrialEnd / 86400000;
+          if (daysToTrialEnd > 0 && daysToTrialEnd <= 2 && !campaignSent.includes('trial_day7')) {
+            campaignSent.push('trial_day7');
+            await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, getEditedCampaignSubject('trial_day7', 'Your free trial ends tomorrow'), getCampaignEmailHTMLWithEdits(cust, 'trial_day7'));
+            sent++;
+          }
         } else if (daysSinceTrialEnd >= 0) {
-          // Trial ended: send post-trial emails at days 7, 9, 12, 16, 21, 30, 60
+          // Trial ended: send post-trial emails at days 9, 12, 16, 21, 30, 60.
+          // day 7 is handled above (while active) so we skip it here to avoid a
+          // misleading "ends tomorrow" after the trial has already ended.
           for (var ei = 0; ei < CAMPAIGN_EMAILS.length; ei++) {
             var e = CAMPAIGN_EMAILS[ei];
-            if (e.day >= 7 && daysSinceTrialEnd >= (e.day - 7) && !campaignSent.includes(e.template)) {
+            if (e.day > 7 && daysSinceTrialEnd >= (e.day - 7) && !campaignSent.includes(e.template)) {
               campaignSent.push(e.template);
               await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, getEditedCampaignSubject(e.template, e.subject), getCampaignEmailHTMLWithEdits(cust, e.template));
               sent++;
@@ -4937,6 +6514,81 @@ cron.schedule('0 10 * * *', async () => {
     } catch(e) { console.log('[CAMPAIGN] Error for', cust.email, e.message); }
   }
   console.log('[CAMPAIGN] Sent ' + sent + ' campaign emails');
+});
+
+// ===== WEEKLY MONDAY DIGEST =====
+// Every Monday 08:30 UK, send active customers a weekly performance summary of
+// the leads they received over the past 7 days. This is the "weekly summary"
+// the dashboard advertises. Opted-out (marketing_consent !== 1) or cancelled
+// customers are skipped; each digest is deduped per ISO week via last_digest_date.
+cron.schedule('30 8 * * 1', async () => {
+  console.log('[DIGEST] Starting weekly digest...');
+  var dbD = getDb();
+  var customers = (dbD.customers || []).filter(function(c) {
+    return c.plan && c.plan !== 'cancelled' && c.email && (!c.bounced || c.bounced < 3);
+  });
+  var weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  var thisWeekKey = 'w' + (function(){ var d = new Date(); var onejan = new Date(d.getFullYear(), 0, 1); return Math.ceil((((d - onejan) / 86400000) + onejan.getDay() + 1) / 7); })() + '-' + new Date().getFullYear();
+  var sent = 0;
+  var skipped = 0;
+  for (var dc = 0; dc < customers.length; dc++) {
+    var cc = customers[dc];
+    try {
+      // Dedup: one digest per customer per ISO week
+      if (cc.last_digest_date === thisWeekKey) continue;
+      // ONLY send to customers who joined before the START of this 7-day window,
+      // i.e. who have been active for a FULL week. A brand-new signup (signed up
+      // yesterday) must NOT receive a weekly summary yet — they have no history.
+      var created = cc.created_at ? new Date(cc.created_at).getTime() : 0;
+      var weekStartMs = new Date(weekAgo).getTime();
+      if (created > weekStartMs) { skipped++; continue; }
+      // Count leads delivered to this customer in the past 7 days
+      var weekLeads = (dbD.leads || []).filter(function(l) {
+        return l.customer_id === cc.id && l.delivered === 1 && l.delivered_at && l.delivered_at >= weekAgo;
+      });
+      // Skip if the customer received NO leads in the past 7 days (nothing to summarise)
+      if (weekLeads.length === 0) { skipped++; continue; }
+      var totalLeads = (dbD.leads || []).filter(function(l) { return l.customer_id === cc.id && l.delivered === 1; }).length;
+      var latestLead = weekLeads.sort(function(a, b) { return new Date(b.delivered_at || 0) - new Date(a.delivered_at || 0); })[0];
+      var brand = getProductBrand(cc.product);
+      var accent = brand.color;
+      var leadCount = weekLeads.length;
+      var leadTypeLabel = cc.lead_type || 'opportunities';
+
+      var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#0f111a;font-family:Inter,Arial,Helvetica,sans-serif;color:#e2e8f0">';
+      html += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px">';
+      html += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
+      html += '<tr><td bgcolor="#0f111a" style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:22px 30px 16px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
+      html += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:#fff">9am<span style="color:' + brand.light + '">Leads</span></div>';
+      html += '<div style="font-size:9px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;font-weight:600">Your Weekly Performance Summary</div></td></tr>';
+      html += '<tr><td style="background:#12141e;padding:26px 30px 22px">';
+      html += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#f1f5f9;margin:0 0 6px">Here\'s your week, ' + (cc.company || 'there') + '</h2>';
+      html += '<p style="color:#cbd5e1;font-size:13px;margin:0 0 18px">Your daily ' + leadTypeLabel.toLowerCase() + ' from ' + new Date(weekAgo).toLocaleDateString('en-GB', { day:'numeric', month:'short' }) + ' to today.</p>';
+      html += '<table cellpadding="0" cellspacing="0" width="100%"><tr>';
+      html += '<td style="width:50%;vertical-align:top;padding:16px 18px;background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.04));border:1px solid rgba(16,185,129,0.2);border-radius:12px;text-align:center"><div style="font-size:30px;font-weight:900;color:#10b981;line-height:1">' + leadCount + '</div><div style="font-size:11px;color:#6ee7b7;margin-top:4px;font-weight:600">LEADS THIS WEEK</div></td>';
+      html += '<td style="width:4%"></td>';
+      html += '<td style="width:46%;vertical-align:top;padding:16px 18px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;text-align:center"><div style="font-size:30px;font-weight:900;color:#818cf8;line-height:1">' + totalLeads + '</div><div style="font-size:11px;color:#a5b4fc;margin-top:4px;font-weight:600">TOTAL LEADS ALL TIME</div></td>';
+      html += '</tr></table>';
+      if (latestLead) {
+        var ld = latestLead.data || {}; if (typeof ld === 'string') { try { ld = JSON.parse(ld); } catch(e) { ld = {}; } }
+        var sampleTitle = ld.companyName || ld.deceasedName || ld.address || (ld.tenderTitle || '') || 'a new opportunity';
+        html += '<div style="background:#181b28;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px 18px;margin-top:14px"><p style="font-size:12px;color:#8890b0;margin:0 0 4px;text-transform:uppercase;letter-spacing:1px;font-weight:700">Latest this week</p><p style="font-size:14px;color:#e2e8f0;margin:0;font-weight:600">' + sampleTitle + '</p></div>';
+      }
+      html += '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:16px 0 0">Keep contacting your leads quickly \u2014 the first to respond wins the most work. Log in to see today\'s full list and track what you\'ve won.</p>';
+      html += '</td></tr>';
+      html += '<tr><td style="padding:16px 30px;text-align:center;background:#12141e;border-radius:0 0 16px 16px"><a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">View Your Leads</a></td></tr>';
+      html += '</table></td></tr></table></body></html>';
+
+      await sendBrevoEmail({ email: cc.email, name: cc.company || 'Customer' }, 'Your Weekly 9amLeads Summary \u2014 ' + leadCount + ' new ' + (leadCount === 1 ? 'lead' : 'leads') + ' this week', html);
+      cc.last_digest_date = thisWeekKey;
+      saveDb();
+      sent++;
+      console.log('[DIGEST] Sent weekly digest to ' + cc.email + ' (' + leadCount + ' leads this week)');
+    } catch(de) { console.log('[DIGEST] Error for ' + (cc && cc.email) + ': ' + de.message); }
+  }
+  console.log('[DIGEST] Weekly digest complete: ' + sent + ' emails sent (' + skipped + ' skipped: new signups or no leads)');
+}, {
+  timezone: 'Europe/London'
 });
 
 // ===== DAILY HEALTH CHECK (Midnight) =====
@@ -5041,24 +6693,6 @@ cron.schedule('0 0 * * *', async () => {
     }
   } catch(e3) { issues.push('Supply check: ' + (e3 && e3.message || '')); }
 
-  // 8. Delivery verification: if it's after 09:30 UK and delivery hasn't fired
-  // (e.g. cron missed after a deploy), re-trigger it so customers still get leads.
-  try {
-    var ukHourH = parseInt(new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hour12: false }));
-    var ukMinH = parseInt(new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', minute: '2-digit' }));
-    var isWeekday = [1,2,3,4,5].indexOf(new Date().getDay()) !== -1;
-    if (isWeekday && (ukHourH > 9 || (ukHourH === 9 && ukMinH >= 30)) && (__deliveryFireCount === 0)) {
-      console.log('[HEALTH] Delivery did not fire today — re-triggering now (safety)');
-      try {
-        var httpD = require('http');
-        var bodyD = JSON.stringify({});
-        var dreq = httpD.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyD) } }, function(dres) { dres.resume(); });
-        dreq.write(bodyD); dreq.end();
-        fixes.push('Re-triggered missed delivery (09:30 safety)');
-      } catch(de) {}
-    }
-  } catch(e4) {}
-
   // Alert if issues found
   if (issues.length > 0) {
     try {
@@ -5079,9 +6713,14 @@ app.get('/api/admin/pool-areas', adminAuth, (req, res) => {
       Object.keys(raw).forEach(function(k){ if(k.indexOf('_')===0)return; if(Array.isArray(raw[k])) arr = arr.concat(raw[k]); });
     }
     var areas = {};
+    var commercialPostcodes = {};
     arr.forEach(function(l){
       var pc = extractPostcodeArea(l.postcode || l.address || l.location || l.name || '');
       if (pc) areas[pc] = (areas[pc]||0)+1;
+      if (l.commercial) {
+        var cpc = extractPostcodeArea(l.postcode || l.address || '');
+        if (cpc) commercialPostcodes[cpc] = (commercialPostcodes[cpc]||0)+1;
+      }
     });
     // Also break down by scraped date for B/HA/NW
     var today = new Date().toISOString().split('T')[0];
@@ -5090,16 +6729,126 @@ app.get('/api/admin/pool-areas', adminAuth, (req, res) => {
       var d = (l.scrapedAt || '').split('T')[0] || 'none';
       byDate[d] = (byDate[d]||0)+1;
     });
-    res.json({ file: poolFile, total: arr.length, by_area: areas, by_date: byDate, keys: (raw && typeof raw === 'object' ? Object.keys(raw).filter(function(k){return k.indexOf('_')!==0;}).slice(0,20) : []), samples: arr.slice(0,5).map(function(l){return {postcode:l.postcode,address:l.address,location:l.location,name:l.name,scrapedAt:l.scrapedAt,keys:Object.keys(l).slice(0,15)};} ) });
+    res.json({ file: poolFile, total: arr.length, commercial_count: arr.filter(function(l){ return l.commercial; }).length, residential_count: arr.filter(function(l){ return !l.commercial; }).length, commercial_postcodes: commercialPostcodes, by_area: areas, by_date: byDate, keys: (raw && typeof raw === 'object' ? Object.keys(raw).filter(function(k){return k.indexOf('_')!==0;}).slice(0,20) : []), samples: arr.slice(0,5).map(function(l){return {postcode:l.postcode,address:l.address,location:l.location,name:l.name,commercial:l.commercial,source:l.source,propertyType:l.propertyType,scrapedAt:l.scrapedAt,keys:Object.keys(l).slice(0,15)};} ) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// GET /api/admin/deep-scrape-log — read the deep scrape worker's log file
+app.get('/api/admin/deep-scrape-log', adminAuth, (req, res) => {
+  try {
+    var lf = path.join(DATA_DIR, 'deep-scrape.log');
+    var content = '';
+    try { content = fs.readFileSync(lf, 'utf-8'); } catch(e) {}
+    res.json({ success: true, exists: content.length > 0, content: content });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// GET /api/admin/test-zoopla-actor — test whether the Apify Rightmove actor is
+// available and can scrape a given area. Used to confirm the actor is active
+// before enabling the area-targeted worker. Query: ?area=EN (default EN)
+app.get('/api/admin/test-zoopla-actor', adminAuth, (req, res) => {
+  try {
+    var area = (req.query.area || 'EN').toString().toUpperCase().replace(/[^A-Z0-9]/gi, '');
+    var key = process.env.APIFY_API_KEY || '';
+    if (!key) return res.json({ success: false, rented: false, error: 'No APIFY_API_KEY configured' });
+    // Region scrape (reliable) — the worker uses this. The returned leads carry
+    // full outcodes/postcodes, so the delivery's exact-area filter keeps only the
+    // customer's chosen postcode areas.
+    var locId = 'REGION%5E87490';
+    var url = 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=' + locId + '&includeSSTC=true';
+    var input = { listUrls: [{ url: url }], fullPropertyDetails: false, monitoringMode: false, enableDelistingTracker: false, maxProperties: 25, proxy: { useApifyProxy: true } };
+    var body = JSON.stringify(input);
+    var req2 = require('https').request({
+      hostname: 'api.apify.com',
+      path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + key + '&memory=256&timeout=120',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'Accept': 'application/json' },
+      timeout: 150000
+    }, function(res2) {
+      var b = '';
+      res2.on('data', function(c) { b += c; });
+      res2.on('end', function() {
+        try {
+          var items = JSON.parse(b);
+          if (Array.isArray(items)) {
+            var areaCounts = {};
+            items.forEach(function(p) { var out = (p.outcode || '').replace(/[^A-Z]/g,''); if (out) areaCounts[out] = (areaCounts[out] || 0) + 1; });
+            var sample = items.slice(0, 5).map(function(p) { return { address: (p.displayAddress || p.address || ''), postcode: (p.outcode||'') + ' ' + (p.incode||'') }; });
+            return res.json({ success: true, rented: true, area: area, leads: items.length, area_breakdown: areaCounts, sample: sample, message: 'Actor WORKING! ' + items.length + ' leads for ' + area + ' region' });
+          }
+          var msg = b.substring(0, 300);
+          var rented = msg.indexOf('actor-is-not-rented') === -1;
+          return res.json({ success: false, rented: rented, area: area, error: msg, message: rented ? 'Actor call returned non-array (may need longer/retry)' : 'Actor NOT RENTED yet — rent it in the Apify console' });
+        } catch(e) { return res.json({ success: false, rented: false, error: e.message }); }
+      });
+    });
+    req2.on('error', function(e) { return res.json({ success: false, rented: false, error: e.message }); });
+    req2.setTimeout(150000, function() { req2.destroy(); return res.json({ success: false, rented: false, error: 'timeout' }); });
+    req2.write(body); req2.end();
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/leads/purge-undelivered — remove all UNDELIVERED leads for a
+// customer (test-data reset). Keeps delivered history. Body: { email }
+app.post('/api/admin/leads/purge-undelivered', adminAuth, (req, res) => {
+  try {
+    var email = (req.body && req.body.email) || '';
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var dbP = getDb();
+    var cust = (dbP.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email.toLowerCase(); });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var before = (dbP.leads || []).length;
+    dbP.leads = (dbP.leads || []).filter(function(l) { return !(l.customer_id === cust.id && !l.delivered); });
+    var removed = before - (dbP.leads || []).length;
+    saveDb();
+    res.json({ success: true, removed: removed });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/leads/delete — remove a specific lead by id (admin cleanup of
+// duplicate / manual-test / wrongly-delivered leads). Body: { email, lead_id }
+app.post('/api/admin/leads/delete', adminAuth, (req, res) => {
+  try {
+    var email = (req.body && req.body.email) || '';
+    var leadId = (req.body && req.body.lead_id) || '';
+    if (!email || !leadId) return res.status(400).json({ error: 'email and lead_id required' });
+    var dbD = getDb();
+    var cust = (dbD.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email.toLowerCase(); });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var before = (dbD.leads || []).length;
+    dbD.leads = (dbD.leads || []).filter(function(l) { return !(l.customer_id === cust.id && l.id === leadId); });
+    var removed = before - (dbD.leads || []).length;
+    saveDb();
+    res.json({ success: true, removed: removed, lead_id: leadId });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
+  // CONCURRENT-DELIVERY LOCK: never run two deliveries at once (e.g. the 09:00
+  // cron + the 09:30 watchdog overlapping, or a manual run mid-flight). Without
+  // this, both runs could send the daily email to the same customer (duplicate
+  // emails = complaints). The DB exact-count guards the lead count, but this
+  // guards the EMAIL. If a run is already in progress, we skip silently — the
+  // in-flight run handles everything.
+  if (_deliveryLock) {
+    console.log('[DELIVERY] Skipped: another delivery run already in progress');
+    return res.status(200).json({ success: true, skipped: true, message: 'Another delivery run is already in progress' });
+  }
+  _deliveryLock = true;
   try {
     var delivered = 0, errors = 0, lastErr = '';
     var _deliverDiag = {};
+    var emailQueue = [];
     _dbData = null;
     var db = getDb();
     var today = new Date().toISOString().split('T')[0];
+    // PURGE ORPHAN LEADS: leads whose customer_id no longer exists (deleted
+    // accounts) must never be delivered — they'd go to the wrong area and never
+    // show in any dashboard. Removes them before the delivery loop.
+    try {
+      var validCustIds = new Set((db.customers || []).map(function(c) { return c.id; }));
+      var orphanCount = (db.leads || []).filter(function(l) { return !validCustIds.has(l.customer_id); }).length;
+      if (orphanCount > 0) {
+        db.leads = (db.leads || []).filter(function(l) { return validCustIds.has(l.customer_id); });
+        saveDb();
+        console.log('[DELIVERY] Purged ' + orphanCount + ' orphan leads (deleted-account leftovers) before delivery');
+      }
+    } catch(orphErr) { console.log('[DELIVERY] Orphan purge error:', orphanErr.message); }
     var customers = (db.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
@@ -5108,6 +6857,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       
       // Use per-product limits based on lead type and coverage area
       var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 40 };
+      // Probate-specific fallback (getPlanLimit reads LEAD_TYPE_RULES, but if that
+      // ever returns 0 for probate use these reduced counts that match supply).
+      if (cust.product === 'probate') dailyLimitByPlan = { free_trial: 2, starter: 2, pro: 5, enterprise: 10 };
       var totalDailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || dailyLimitByPlan[cust.plan] || 5;
       
       // Get all products for this customer (round-robin)
@@ -5123,6 +6875,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       try { pcfg = JSON.parse(cust.product_config || '{}'); } catch(e) {}
       var primCfg = pcfg[cust.product] || {};
       var primCoverage = primCfg.coverage || cust.coverage || 'postcode';
+      // moving_type (moving product): residential | commercial | both (default both)
+      var custMovingType = (primCfg.moving_type) || cust.moving_type || 'both';
       try {
         if (primCfg.target_areas) { custAreas = JSON.parse(primCfg.target_areas); }
         else { custAreas = JSON.parse(cust.target_areas || '[]'); }
@@ -5151,6 +6905,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       }
       var thisWeekStart2 = new Date(); thisWeekStart2.setDate(thisWeekStart2.getDate() - (thisWeekStart2.getDay() || 7) + 1);
       var weekStart2 = thisWeekStart2.toISOString().split('T')[0];
+      // AREA-BROADENING: exact areas preferred; nearby-region areas used ONLY as a
+      // fallback on quiet days so the customer always receives their full count.
+      var expandedAreas = expandedAreaFallback(custAreas);
       // Helper: count leads per area in current batch
       function areaCounts(leadsArr, areasArr) {
         var counts = {};
@@ -5164,14 +6921,40 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         });
         return counts;
       }
-      // Helper: find lead for given product + area, returns null if none
+      // Helper: find lead for given product + area, returns null if none.
+      // `area` may be a postcode area code (e.g. NW) OR a county/region name
+      // (e.g. greater-london, kent, essex). Matches accordingly.
       function findLeadForProductAndArea(prod, area, allLeads, excludeIds) {
+        var areaCode = extractPostcodeArea(area);
+        var areaNorm = String(area || '').toLowerCase().replace(/[\s-]+/g, '-');
         for (var fi = 0; fi < allLeads.length; fi++) {
           if (excludeIds.indexOf(allLeads[fi].id) !== -1) continue;
           if (allLeads[fi].product !== prod) continue;
           try {
             var fd = JSON.parse(allLeads[fi].data || '{}');
-            if (extractPostcodeArea(fd.postcode || '') === area) return allLeads[fi];
+            var leadPcCode = extractPostcodeArea(fd.postcode || fd.deceasedAddress || fd.address || '');
+            // Postcode-area target: exact match
+            if (areaCode) { if (leadPcCode === areaCode) return allLeads[fi]; }
+            // County/region target: match lead's postcode area against the county map
+            else {
+              var fCountyMap = {
+                'essex': ['CM','CO','SS','IG'],'hertfordshire':['AL','EN','HP','SG','WD'],'kent':['CT','DA','ME','TN'],
+                'surrey':['CR','GU','KT','RH','SM','TW'],'sussex':['BN','RH','TN'],'hampshire':['GU','PO','SO','SP','RG'],
+                'berkshire':['RG','SL'],'buckinghamshire':['HP','MK','SL'],'oxfordshire':['OX'],'bedfordshire':['LU','MK'],
+                'cambridgeshire':['CB','PE'],'norfolk':['IP','NR','PE'],'suffolk':['CO','IP','NR'],
+                'london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
+                'greater-london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
+                'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
+                'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
+                'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
+                'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
+                'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
+                'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
+                'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
+                'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
+              };
+              if (fCountyMap[areaNorm] && fCountyMap[areaNorm].indexOf(leadPcCode) !== -1) return allLeads[fi];
+            }
           } catch(e) {}
         }
         return null;
@@ -5191,50 +6974,94 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         return true;
       }
       // Available undelivered leads per product.
-      // MOVING freshness rule: prefer leads first-listed/updated within 48h, but
-      // allow up to 7 days so quiet postcode areas (e.g. B Birmingham) still get
-      // leads. The scraper already drops anything older than 7 days.
-      function isMovingFresh(l) {
+      // FRESHNESS RULE (≤48h) for ALL products: leads are strictly fresh — sourced
+      // within the last 24h (primary) or 24-48h (fallback). The scrapers now drop
+      // anything older than 48h, so pools contain only fresh leads. No stale or
+      // accumulated pool leads are ever used — the promise is "fresh within 24
+      // hours", with a 48h fallback so quiet areas aren't starved. Delivery
+      // prefers the freshest (24h) leads first via the sorting below.
+      var freshCutoffNow = new Date(Date.now() - 48 * 3600000).toISOString();
+      var fresh24CutoffNow = new Date(Date.now() - 24 * 3600000).toISOString();
+      function isLeadFresh24(l) {
         try {
           var ld2 = JSON.parse(l.data || '{}');
-          var fv = ld2.firstVisibleDate || ld2.updateDate || '';
-          if (!fv) return true; // no date info -> keep (better than nothing)
-          var t7d = new Date(Date.now() - 7 * 86400000).toISOString();
-          return fv >= t7d;
-        } catch(e) { return true; }
+          // NEVER deliver manual-test / user-created test leads to customers —
+          // those are for the customer's own Print & Post / sample testing, not
+          // their daily lead supply.
+          if (ld2.source === 'manual-test' || ld2.source === 'manual_test') return false;
+          // COMMERCIAL FILTER (moving): only accept leads matching the customer's
+          // moving_type (residential/commercial/both). Leads are tagged commercial:true.
+          if (cust.product === 'moving') {
+            var leadIsCommercial = !!(ld2.commercial || ld2.commercial_let);
+            if (custMovingType === 'residential' && leadIsCommercial) return false;
+            if (custMovingType === 'commercial' && !leadIsCommercial) return false;
+          }
+          // Freshness is based on the PROPERTY's LISTING date (firstVisibleDate),
+          // NOT scrapedAt (when we scraped it). A listing that appeared months ago
+          // is NOT fresh even if we only scraped it today. scrapedAt must not gate
+          // freshness or old listings slip through as "fresh".
+          var fv = ld2.firstVisibleDate || ld2.addedOn || ld2.publishedDate || ld2.receivedDate || ld2.grantDate || ld2.dateSubmitted || ld2.dateReceived || ld2.dateValidated || ld2.incorporationDate || ld2.updateDate || l.created_at || '';
+          if (!fv) return false;
+          return fv >= freshCutoffNow;
+        } catch(e) { return false; }
       }
       var availByProd = {};
-      var availFreshByProd = {};
       var availGlobalByProd = {};
+      // DEDUP BY PROPERTY URL: never deliver the same property/listing twice to
+      // this customer. Leads can accumulate as separate records for the same
+      // Rightmove/Gazette/etc. listing (each with a different id), so we build a
+      // set of URLs already delivered to them and exclude those from every pool.
+      var deliveredUrls = {};
+      var deliveredKeys = {};
+      (db.leads || []).forEach(function(l) {
+        if (l.customer_id === cust.id && l.delivered) {
+          try {
+            var ldd = JSON.parse(l.data || '{}');
+            var lu = ldd.url || '';
+            if (lu) deliveredUrls[lu] = true;
+            // Build a broader dedup key (address+postcode, or reference/company
+            // number, or deceased name) so leads WITHOUT a url (probate/planning/
+            // newbusiness/tenders) are never re-delivered either.
+            var addrKey = String(ldd.fullAddress || ldd.deceasedAddress || ldd.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
+            var refKey = String(ldd.reference || ldd.companyNumber || ldd.deceasedName || ldd.tenderNoticeId || '').toLowerCase().trim();
+            var pcKey = String(ldd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
+            if (addrKey && pcKey) deliveredKeys[addrKey + '|' + pcKey] = true;
+            else if (refKey) deliveredKeys[refKey] = true;
+          } catch(e) {}
+        }
+      });
+      function notDeliveredBefore(l) {
+        try {
+          var dd = JSON.parse(l.data || '{}');
+          var u = dd.url || '';
+          if (u && deliveredUrls[u]) return false;
+          var aKey = String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
+          var rKey = String(dd.reference || dd.companyNumber || dd.deceasedName || dd.tenderNoticeId || '').toLowerCase().trim();
+          var pKey = String(dd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
+          if (aKey && pKey && deliveredKeys[aKey + '|' + pKey]) return false;
+          if (rKey && deliveredKeys[rKey]) return false;
+          return true;
+        } catch(e) { return true; }
+      }
       products.forEach(function(p) {
         var pool = (db.leads || []).filter(function(l) {
           if (l.customer_id !== cust.id || l.delivered !== 0 || l.product !== p) return false;
-          if (p === 'moving' && !isMovingFresh(l)) return false;
+          if (!isLeadFresh24(l)) return false;
+          if (!notDeliveredBefore(l)) return false;
           return true;
         });
         availByProd[p] = pool;
-        // GLOBAL-POOL GUARANTEE: if this customer's pre-assigned pool is short
-        // (the distributor under-assigned due to area competition), we can still
-        // meet the promise from ANY undelivered lead in this product+area. This
-        // is used as a final fallback in Round 2 so every customer always gets
-        // their promised daily count when market supply exists.
+        // GLOBAL-POOL fallback stays strict on freshness — if this customer's
+        // pre-assigned fresh pool is short, we can still meet the promise from
+        // ANY other undelivered FRESH lead in this product+area, but NEVER from
+        // a stale lead.
         var globalPool = (db.leads || []).filter(function(l) {
           if (l.delivered !== 0 || l.product !== p) return false;
+          if (!isLeadFresh24(l)) return false;
+          if (!notDeliveredBefore(l)) return false;
           return true;
         });
         availGlobalByProd[p] = globalPool;
-        // FRESHNESS (24h): build a strictly-fresh pool. Leads are only "fresh" if
-        // their first-visible/updated/created date is within the last 24 hours.
-        var fresh = pool.filter(function(l) {
-          try {
-            var fd = JSON.parse(l.data || '{}');
-            var fv = fd.firstVisibleDate || fd.updateDate || fd.incorporationDate || fd.publishedDate || fd.scrapedAt || l.created_at || '';
-            if (!fv) return false;
-            var t24 = new Date(Date.now() - 24 * 3600000).toISOString();
-            return fv >= t24;
-          } catch(e) { return false; }
-        });
-        availFreshByProd[p] = fresh;
       });
       var pickedIds = [];
       if (primaryPickedId) pickedIds.push(primaryPickedId);
@@ -5252,7 +7079,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // a second partial email. All promised leads go out in ONE email.
       var alreadyEmailedToday = (db.leads || []).some(function(l) {
         return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today);
-      });
+      }) || (cust.last_email_date === today);
       if (totalNeeded === 0) {
         console.log('[DELIVERY] ' + cust.email + ' already received ' + alreadyDeliveredToday + ' today (promise=' + totalDailyLimit + ') — skipping (exact-count)');
         continue;
@@ -5281,11 +7108,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         if (prodTaken[r1prod] >= prodDailyCap(r1prod)) continue;
         if (!canTakeProduct(r1prod, cust.plan, weekStart2, today, custLeads)) continue;
         var r1pool = (availByProd[r1prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; }).sort(function(a,b){
-          // Prefer fresh leads first (firstVisibleDate recent), but keep ALL so the promise is always met
-          var fa=0,fb=0;
-          try{var da=JSON.parse(a.data||'{}');fa=new Date(da.firstVisibleDate||0).getTime();}catch(e){}
-          try{var db2=JSON.parse(b.data||'{}');fb=new Date(db2.firstVisibleDate||0).getTime();}catch(e){}
-          return fb-fa;
+          // Prefer the freshest leads first (latest source date across all fields),
+          // so 24h leads deliver before 24-48h fallback leads — across every product.
+          // Keep ALL within the fresh window so the exact-count promise is always met.
+          function leadFreshMs(l) {
+            try { var d = JSON.parse(l.data || '{}'); var v = d.firstVisibleDate || d.updateDate || d.incorporationDate || d.publishedDate || d.receivedDate || d.scrapedAt || l.created_at || ''; return new Date(v || 0).getTime(); } catch(e) { return 0; }
+          }
+          return leadFreshMs(b) - leadFreshMs(a);
         });
         if (r1pool.length === 0) continue;
         // Try least-represented area first (works for any coverage type with specific areas)
@@ -5358,6 +7187,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   var createdFromPool = [];
                   for (var pf=0; pf<poolArr.length && createdFromPool.length < totalNeeded; pf++) {
                     var rl = poolArr[pf];
+                    // FRESH-ONLY: never create a lead from a stale pool entry.
+                    var rlD = rl.firstVisibleDate || rl.addedOn || rl.publishedDate || rl.receivedDate || rl.grantDate || rl.dateSubmitted || rl.dateReceived || rl.incorporationDate || rl.updateDate || rl.createdAt || rl.created_at || '';
+                    if (!rlD || rlD < freshCutoffNow) continue;
                     var areaOfPoolLead = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || '');
                     if (!areaOfPoolLead) continue;
                     var custAreaHit = false;
@@ -5383,15 +7215,25 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                           'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
                           'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
                         };
-                        var areaLower = String(custAreas[0] || '').toLowerCase().replace(/[\s-]+/g, '-');
-                        custAreaHit = (countyPostcodes[areaLower] || []).indexOf(areaOfPoolLead) >= 0;
+                        // Check ALL the customer's chosen counties (not just the first),
+                        // so a multi-county customer gets leads from every county they picked.
+                        for (var _cc = 0; _cc < custAreas.length; _cc++) {
+                          var areaLower = String(custAreas[_cc] || '').toLowerCase().replace(/[\s-]+/g, '-');
+                          if ((countyPostcodes[areaLower] || []).indexOf(areaOfPoolLead) >= 0) { custAreaHit = true; break; }
+                        }
                       } else {
                         custAreaHit = custAreas.some(function(a){ return extractPostcodeArea(a) === areaOfPoolLead; });
                       }
                     } else { custAreaHit = true; }
+                    // NATIONAL FALLBACK for tenders/probate: these are national
+                    // opportunities, so accept them even if no county matched (strict
+                    // county matching under-delivers). Other products stay strict.
+                    if (!custAreaHit && (r2prod === 'tenders' || r2prod === 'probate')) custAreaHit = true;
                     if (!custAreaHit) continue;
                     var poolKey = (rl.postcode||rl.address||rl.id||rl.url||'');
                     if (existingKeys[poolKey]) continue;
+                    // Never re-create a property already delivered to this customer.
+                    if (rl.url && deliveredUrls[rl.url]) continue;
                     var poolLeadData = {
                       id: rl.id || ('LD_' + r2prod + '_' + pf),
                       address: rl.address || rl.name || rl.company || '',
@@ -5412,7 +7254,23 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                       company: rl.companyName || rl.name || rl.company || '',
                       companyNumber: rl.companyNumber || ''
                     };
-                    var newLead = { id: 'lead_' + Date.now() + '_' + pf, customer_id: cust.id, product: r2prod, data: JSON.stringify(poolLeadData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
+                    // NEVER create a duplicate of a property already assigned/delivered
+                    // to this customer. Check by address/postcode/url, AND for
+                    // newbusiness by company number (many companies share a registered
+                    // office, so company number is the reliable unique key).
+                    var candCoNum2 = rl.companyNumber || rl.company_number || '';
+                    var dupExisting = (db.leads || []).some(function(el) {
+                      if (el.customer_id !== cust.id || el.product !== r2prod) return false;
+                      var ed = el.data; try { ed = JSON.parse(el.data || '{}'); } catch(e) {}
+                      if (r2prod === 'newbusiness' && candCoNum2) {
+                        var edCo = ed.companyNumber || ed.company_number || '';
+                        return edCo && String(edCo) === String(candCoNum2);
+                      }
+                      var edk = (ed.address || ed.name || ed.reference || ed.url || '') + '|' + (ed.postcode || '');
+                      return edk && (edk === poolKey || edk.indexOf((rl.address || '') + '|') === 0 || (rl.url && ed.url === rl.url));
+                    });
+                    if (dupExisting) { console.log('[DELIVERY] Pool fallback SKIP dup: ' + (r2prod==='newbusiness'?'coNum='+candCoNum2:poolKey)); continue; }
+                    var newLead = { id: uuidv4(), customer_id: cust.id, product: r2prod, data: JSON.stringify(poolLeadData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
                     db.leads.push(newLead);
                     existingKeys[poolKey] = 1;
                     createdFromPool.push(newLead);
@@ -5446,9 +7304,22 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   found2 = true; break;
                 }
               }
-              if (!found2) { custLeads.push(r2pool[0]); pickedIds.push(r2pool[0].id); prodTaken[r2prod]++; }
+              if (!found2) {
+                // NEVER deliver an out-of-area lead here. The FINAL GUARANTEE PASS
+                // below pulls the remaining gap from the scrape pool file, which
+                // strictly enforces area matching — so the promise is met from the
+                // customer's own areas, never from a mismatched or orphaned lead.
+                continue;
+              }
             } else {
-              custLeads.push(r2pool[0]); pickedIds.push(r2pool[0].id); prodTaken[r2prod]++;
+              // No specific areas (ukwide) — take the freshest, but ALWAYS claim
+              // it for this customer so it shows in their dashboard and delivers
+              // to the right account.
+              if (r2pool[0] && r2pool[0].customer_id !== cust.id) {
+                r2pool[0].customer_id = cust.id;
+                r2pool[0].claimed_at = new Date().toISOString();
+              }
+              if (r2pool[0]) { custLeads.push(r2pool[0]); pickedIds.push(r2pool[0].id); prodTaken[r2prod]++; }
             }
           }
         }
@@ -5483,6 +7354,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             var fgCreated = 0;
             for (var fgi = 0; fgi < fgArr.length && fgCreated < fgNeed; fgi++) {
               var fgLead = fgArr[fgi];
+              // FRESH-ONLY: never create a lead from a stale pool entry.
+              var fgD = fgLead.firstVisibleDate || fgLead.addedOn || fgLead.publishedDate || fgLead.receivedDate || fgLead.grantDate || fgLead.dateSubmitted || fgLead.dateReceived || fgLead.incorporationDate || fgLead.updateDate || fgLead.createdAt || fgLead.created_at || '';
+              if (!fgD || fgD < freshCutoffNow) continue;
               var fgArea = extractPostcodeArea(fgLead.postcode || fgLead.address || fgLead.location || fgLead.name || '');
               if (!fgArea) continue;
               var fgAreaOk = false;
@@ -5503,10 +7377,16 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
                     'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
                   };
-                  var fgAreaLower = String(custAreas[0] || '').toLowerCase().replace(/[\s-]+/g, '-');
-                  fgAreaOk = (fgCountyMap[fgAreaLower] || []).indexOf(fgArea) >= 0;
+                  // Check ALL the customer's chosen counties (not just the first),
+                  // so a multi-county customer gets leads from every county they picked.
+                  var fgAreaOkLocal = false;
+                  for (var _fc = 0; _fc < custAreas.length; _fc++) {
+                    var fgAreaLower = String(custAreas[_fc] || '').toLowerCase().replace(/[\s-]+/g, '-');
+                    if ((fgCountyMap[fgAreaLower] || []).indexOf(fgArea) >= 0) { fgAreaOkLocal = true; break; }
+                  }
+                  fgAreaOk = fgAreaOkLocal;
                 } else {
-                  fgAreaOk = custAreas.some(function(a){ return extractPostcodeArea(a) === fgArea; });
+                  fgAreaOk = custAreas.some(function(a){ return extractPostcodeArea(a) === fgArea; }) || (expandedAreas && expandedAreas.indexOf(fgArea) !== -1);
                 }
               } else { fgAreaOk = true; }
               if (!fgAreaOk) continue;
@@ -5555,15 +7435,180 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var seenAddrs = {}; custLeads = custLeads.filter(function(cl) {
         try { var cd = JSON.parse(cl.data || '{}'); var key = (cd.address || cd.postcode || cl.id || '').toLowerCase().trim(); return key && !seenAddrs[key] ? (seenAddrs[key]=true) : false; } catch(e) { return true; }
       });
+      // HARD EXACT-COUNT CAP: the customer is promised EXACTLY totalDailyLimit
+      // leads today (their plan quota), no more and no less. The primary-lead
+      // push + rounds + global/pool fallbacks can overshoot on re-runs, so cap the
+      // final batch to exactly totalDailyLimit before emailing. Combined with the
+      // top-up below, this guarantees the customer gets EXACTLY their promised
+      // count in one email — never under, never over.
+      if (custLeads.length > totalDailyLimit) {
+        console.log('[DELIVERY-EXACT] ' + cust.email + ' capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (promised exact count)');
+        custLeads = custLeads.slice(0, totalDailyLimit);
+      }
+      // EXACT-COUNT GUARANTEE: dedup above can only reduce the count (two pool
+      // entries can share an address/postcode). If we are now short of the
+      // promised total, TOP UP from the fresh scrape pool until we hit the exact
+      // promise — NEVER deliver less than promised in one email. This is critical:
+      // customers are promised an exact daily count and underdelivering causes
+      // complaints. Skip this only if the pool genuinely has no fresh matching leads.
+      if (custLeads.length > 0 && custLeads.length < totalNeeded) {
+        try {
+          var topupNeed = totalNeeded - custLeads.length;
+          var topupProdIdx = 0;
+          var topupAreas = custAreas.slice();
+          for (var tp = 0; tp < topupNeed; tp++) {
+            var tpProd = products[topupProdIdx % products.length];
+            topupProdIdx++;
+            if (prodTaken[tpProd] >= prodDailyCap(tpProd)) continue;
+            var tpPoolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[tpProd] ? PRODUCT_LEAD_FILES[tpProd].file : 'moving-leads.json');
+            var tpRaw = null;
+            try { tpRaw = JSON.parse(fs.readFileSync(tpPoolFile, 'utf-8')); } catch(e2) {}
+            var tpArr = [];
+            if (Array.isArray(tpRaw)) tpArr = tpRaw;
+            else if (tpRaw && typeof tpRaw === 'object') { Object.keys(tpRaw).forEach(function(k){ if (k.indexOf('_') === 0) return; if (Array.isArray(tpRaw[k])) tpArr = tpArr.concat(tpRaw[k]); }); }
+            var usedTopupAddrs = {};
+            custLeads.forEach(function(cl2) { try { var cd2 = JSON.parse(cl2.data || '{}'); var k2 = (cd2.address || cd2.postcode || cl2.id || '').toLowerCase().trim(); if (k2) usedTopupAddrs[k2] = 1; } catch(e) {} });
+            var tpPicked = null;
+            for (var tpi = 0; tpi < tpArr.length; tpi++) {
+              var tl = tpArr[tpi];
+              var tlD = tl.firstVisibleDate || tl.addedOn || tl.publishedDate || tl.receivedDate || tl.grantDate || tl.dateSubmitted || tl.dateReceived || tl.incorporationDate || tl.updateDate || tl.createdAt || tl.created_at || '';
+              if (!tlD || tlD < freshCutoffNow) continue;
+              var tlArea = extractPostcodeArea(tl.postcode || tl.address || tl.location || tl.name || '');
+              if (!tlArea) continue;
+              var tlAreaOk = false;
+              if (topupAreas.length > 0) {
+                var tlCounties = topupAreas.some(function(a){ return !/^[A-Z]{1,3}$/i.test(a); });
+                if (tlCounties) {
+                  var tlCountyMap = {
+                    'essex':['CM','CO','SS','IG'],'hertfordshire':['AL','EN','HP','SG','WD'],'kent':['CT','DA','ME','TN'],
+                    'surrey':['CR','GU','KT','RH','SM','TW'],'sussex':['BN','RH','TN'],'hampshire':['GU','PO','SO','SP','RG'],
+                    'london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
+                    'greater-london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
+                    'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
+                    'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
+                    'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
+                    'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
+                    'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
+                    'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
+                    'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
+                    'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
+                  };
+                  tlAreaOk = (tlCountyMap[String(topupAreas[0]||'').toLowerCase().replace(/[\s-]+/g,'-')] || []).indexOf(tlArea) >= 0;
+                } else {
+                  // Exact-area match only — never deliver a lead from an area the
+                  // customer didn't choose ("no more, no less").
+                  tlAreaOk = topupAreas.some(function(a){ return extractPostcodeArea(a) === tlArea; }) || (expandedAreas && expandedAreas.indexOf(tlArea) !== -1);
+                }
+              } else { tlAreaOk = true; }
+              if (!tlAreaOk) continue;
+              var tlKey = (tl.postcode || tl.address || tl.id || tl.url || '').toLowerCase().trim();
+              if (usedTopupAddrs[tlKey]) continue;
+              var alreadyAssignedOther = (db.leads || []).some(function(l2) { return l2.product === tpProd && !l2.delivered && l2.customer_id !== cust.id && l2.data && l2.data.indexOf(tlKey) !== -1; });
+              if (alreadyAssignedOther) continue;
+              var tlData = {
+                id: tl.id || ('TP_' + tpProd + '_' + tpi), address: tl.address || tl.name || tl.company || '',
+                postcode: tl.postcode || tl.location || '', price: tl.price || tl.priceLabel || tl.estateValueLabel || '',
+                bedrooms: tl.bedrooms || 0, propertyType: tl.propertyType || tl.type || '', status: tl.status || tl.listingStatus || 'new',
+                agent: tl.agent || tl.agentName || '', url: tl.url || '', source: tl.source || tpProd, city: tl.city || '',
+                scrapedAt: tl.scrapedAt || new Date().toISOString(), firstVisibleDate: tl.firstVisibleDate || tl.updateDate || '',
+                updateDate: tl.updateDate || '', priceLabel: tl.priceLabel || (tl.price ? '\u00a3' + Number(tl.price).toLocaleString() : ''),
+                listedDate: tl.listedDate || '', company: tl.companyName || tl.name || tl.company || '', companyNumber: tl.companyNumber || ''
+              };
+              var tpNew = { id: 'lead_' + Date.now() + '_' + tp + '_' + tpi, customer_id: cust.id, product: tpProd, data: JSON.stringify(tlData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
+              db.leads.push(tpNew);
+              custLeads.push(tpNew);
+              prodTaken[tpProd]++;
+              tpPicked = tl;
+              break;
+            }
+          }
+          saveDb();
+          if (custLeads.length < totalNeeded) {
+            console.log('[DELIVERY-TOPDUP] WARNING: ' + cust.email + ' still short after top-up: has=' + custLeads.length + ' need=' + totalNeeded + ' (fresh supply exhausted in areas)');
+          }
+        } catch(tpErr) { console.log('[DELIVERY-TOPDUP] error:', tpErr.message); }
+      }
       if (custLeads.length === 0) continue;
+      // POSTCODER ON DELIVERY ONLY: Royal Mail PAF is paid per lookup (~4.5p), so
+      // we enrich ONLY the exact leads going out to this customer (never the pool).
+      // Credits spent == leads delivered (e.g. 5 leads = 5 credits). The shared
+      // daily guard (postcoder_budget.js) still caps the absolute daily total.
+      try {
+        if ((process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') && process.env.POSTCODER_API_KEY) {
+          var pcDeliver = require('./rightmove_scraper_v2');
+          // A premise number is a digit that forms part of the STREET address
+          // (house/flat number), NOT a digit in the postcode (e.g. EN2, HA6). So
+          // strip the postcode out before testing, then look for a real number.
+          function hasPremiseNumber(addr, pc) {
+            var a = String(addr || '').replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '');
+            // House numbers: "12 High St", "Flat 3, 12 High St", "Lavey House 10 ...", "3a Street"
+            return /(^|[\s,])(\d{1,5}[A-Za-z]?)(\s|,|$)/.test(a) || /flat\s+\d+/i.test(a) || /\b(no\.?\s*)?\d{1,5}[A-Za-z]?\b/i.test(a);
+          }
+          var needPc = custLeads.filter(function(l) {
+            var ld = {}; try { ld = JSON.parse(l.data || '{}'); } catch(e) {}
+            var addr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
+            return ld.postcode && !hasPremiseNumber(addr, ld.postcode);
+          });
+          if (needPc.length > 0) {
+            var pcNorm = needPc.map(function(l) {
+              var ld = {}; try { ld = JSON.parse(l.data || '{}'); } catch(e) {}
+              return Object.assign({}, ld, { id: l.id, address: ld.fullAddress || ld.address || ld.deceasedAddress || '' });
+            });
+            var pcDelivered = await pcDeliver.enrichMovingLeadsPostcoder(pcNorm);
+            var pcDelMap = {};
+            pcDelivered.forEach(function(pd) { pcDelMap[pd.id] = pd; });
+            custLeads.forEach(function(l) {
+              var e3 = pcDelMap[l.id];
+              if (e3 && (e3.fullAddress || e3.address)) {
+                var ld = {}; try { ld = JSON.parse(l.data || '{}'); } catch(e) {}
+                var e3Addr = e3.fullAddress || e3.address || '';
+                var e3Street = e3.street || '';
+                var e3Num = e3.buildingNumber || '';
+                // Rebuild a clean street address from door number + street when we
+                // have both, so the lead always shows "12 Albert Road" not "Albert Road".
+                if (e3Num && e3Street) {
+                  var cleanStreet = String(e3Street).replace(/,\s*$/,'').trim();
+                  var streetPart = String(e3Num).replace(/,\s*$/,'').trim() + ' ' + cleanStreet;
+                  e3Addr = streetPart + (ld.postcode ? '' : '');
+                } else if (e3Addr) {
+                  e3Addr = e3Addr.replace(/,\s*' + pc + '\s*$/i, '');
+                }
+                ld.buildingNumber = e3Num || ld.buildingNumber || '';
+                ld.street = e3Street || ld.street || '';
+                ld.postcode = e3.postcode || ld.postcode;
+                ld.udprn = e3.udprn || '';
+                // Update the product-appropriate address field so probate (deceasedAddress)
+                // and newbusiness/moving (address/fullAddress) all reflect the door number.
+                var hasNum = hasPremiseNumber(e3Addr, ld.postcode);
+                if (ld.deceasedAddress !== undefined || (l.product === 'probate')) {
+                  if (hasNum || !ld.deceasedAddress) ld.deceasedAddress = e3Addr;
+                }
+                ld.address = (hasNum || !ld.address) ? e3Addr : ld.address;
+                ld.fullAddress = e3Addr;
+                l.data = JSON.stringify(ld);
+              }
+            });
+            saveDb();
+            console.log('[DELIVERY] Postcoder enriched ' + pcDelivered.length + ' of ' + custLeads.length + ' delivered leads for ' + cust.email + ' (credits = leads sent)');
+          }
+        }
+      } catch(pcDelErr) { console.log('[DELIVERY] Postcoder delivery enrich error:', pcDelErr.message); }
       try {
         // NO SPLIT EMAILS: if this customer already got their daily email, only
         // mark the top-up leads as delivered — don't send a second email.
         if (!alreadyEmailedToday) {
-          var htmlContent = generateLeadEmailHTML(cust, custLeads);
-          var covName3 = cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area';
-          var subject = '9amLeads — Your Daily Opportunities for ' + covName3 + ' — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-          await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, htmlContent);
+          // Queue the email for bounded-parallel sending (so 1000 customers'
+          // emails all go out within a few minutes instead of 30-60 min
+          // sequentially). Persist last_email_date immediately so a crash can
+          // never cause a duplicate.
+          try { cust.last_email_date = today; } catch(leErr) {}
+          emailQueue.push({ email: cust.email, name: cust.company || 'Customer', subject: '9amLeads \u2014 Your Daily Opportunities for ' + (cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area') + ' \u2014 ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), html: generateLeadEmailHTML(cust, custLeads) });
+          // Flush in parallel batches of 15 to keep Brevo well under rate limits
+          // while ensuring all emails go out promptly.
+          if (emailQueue.length >= 15) {
+            var batchNow = emailQueue.splice(0, emailQueue.length);
+            await Promise.all(batchNow.map(function(m) { return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) { console.log('[DELIVERY] Email failed ' + m.email + ': ' + e.message); }); }));
+          }
         } else {
           console.log('[DELIVERY] ' + cust.email + ': already emailed today — topping up ' + custLeads.length + ' leads silently (no second email)');
         }
@@ -5602,9 +7647,27 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         } catch(guaranteeErr) { console.log('[DELIVER-GUARANTEE] check error:', guaranteeErr.message); }
       } catch(ex) { errors++; console.log('[DELIVER] Error: ' + ex?.message); lastErr = ex?.message; }
     }
+    // FLUSH remaining queued emails in parallel (after the loop) — ensures every
+    // customer's daily email goes out even if the batch flush didn't fill to 15.
+    if (emailQueue.length > 0) {
+      var finalBatch = emailQueue.splice(0, emailQueue.length);
+      await Promise.all(finalBatch.map(function(m) { return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) { console.log('[DELIVERY] Email failed ' + m.email + ': ' + e.message); }); }));
+      console.log('[DELIVERY] Flushed final email batch: ' + finalBatch.length);
+    }
     saveDb();
+    // DELIVERY AUDIT LOG: persist a daily record so we can always verify that
+    // delivery ran and how many leads/emails were sent (bulletproof traceability).
+    try {
+      var auditDb = getDb();
+      if (!auditDb.delivery_audit) auditDb.delivery_audit = [];
+      auditDb.delivery_audit.push({ date: today, at: new Date().toISOString(), customers: customers.length, leads_delivered: delivered, errors: errors, last_error: lastErr, fire_count: __deliveryFireCount });
+      if (auditDb.delivery_audit.length > 90) auditDb.delivery_audit = auditDb.delivery_audit.slice(-90);
+      saveDb();
+      console.log('[DELIVERY-AUDIT] ' + today + ': ' + delivered + ' leads, ' + errors + ' errors');
+    } catch(auditErr) { console.log('[DELIVERY-AUDIT] error:', auditErr.message); }
+    _deliveryLock = false;
     res.json({ success: true, customers_processed: customers.length, leads_delivered: delivered, errors: errors, lastError: lastErr, diag: _deliverDiag || null });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { _deliveryLock = false; res.status(500).json({ error: e.message }); }
 });
 
 // ===== STRIPE PAYMENTS =====
@@ -5624,6 +7687,20 @@ const STRIPE_PRICE_IDS = {
   pro: { 'pro-plan': 'price_1TsOe0ADspDnFpfBnAvu51e1' }
 };
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+// TEST-MODE price overrides. Populated from stripe-config.json "testPriceIds"
+// (see the config load below). When STRIPE_TEST_MODE=true, every price lookup
+// returns the test ID instead of the live one.
+var STRIPE_TEST_PRICE_IDS = null;
+// Resolve a price ID honouring test mode. Same shape as STRIPE_PRICE_IDS:
+// getStripePriceId(product, key) returns the test price when test mode is on.
+function getStripePriceId(product, key) {
+  var isTest = process.env.STRIPE_TEST_MODE === 'true' || process.env.STRIPE_TEST_MODE === '1';
+  if (isTest && STRIPE_TEST_PRICE_IDS && STRIPE_TEST_PRICE_IDS[product] && STRIPE_TEST_PRICE_IDS[product][key]) {
+    return STRIPE_TEST_PRICE_IDS[product][key];
+  }
+  var m = STRIPE_PRICE_IDS[product] || {};
+  return m[key] || '';
+}
 
 // Load Stripe config from file (supports both env var and config file)
 let STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
@@ -5655,6 +7732,12 @@ try {
       }
     }
   }
+  // TEST MODE price overrides (from stripe-config.json "testPriceIds"). When
+  // STRIPE_TEST_MODE=true, these replace the live IDs so test cards (4242...)
+  // can be used without touching real money.
+  if (stripeConfig.testPriceIds) {
+    STRIPE_TEST_PRICE_IDS = stripeConfig.testPriceIds;
+  }
   if (stripeConfig.webhookSecret) {
     STRIPE_WEBHOOK_SECRET ||= stripeConfig.webhookSecret;
   }
@@ -5662,15 +7745,32 @@ try {
 
 function stripeApiRequest(method, path, data) {
   return new Promise((resolve, reject) => {
-    const params = data ? Object.entries(data).map(([k, v]) =>
-      encodeURIComponent(k) + '=' + encodeURIComponent(v)
-    ).join('&') : '';
+    const parts = [];
+    if (data) {
+      Object.entries(data).forEach(([k, v]) => {
+        if (Array.isArray(v)) {
+          v.forEach(item => parts.push(encodeURIComponent(k + '[]') + '=' + encodeURIComponent(item)));
+        } else if (v && typeof v === 'object') {
+          Object.entries(v).forEach(([sk, sv]) => parts.push(encodeURIComponent(k + '[' + sk + ']') + '=' + encodeURIComponent(sv)));
+        } else {
+          parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
+        }
+      });
+    }
+    const params = parts.join('&');
+    // STRIPE TEST MODE: when STRIPE_TEST_MODE=true, use the test secret key so a
+    // full end-to-end flow can be verified with Stripe's test card (4242...) with
+    // no real charge. The live key is used otherwise.
+    var useKey = STRIPE_SECRET_KEY;
+    if (process.env.STRIPE_TEST_MODE === 'true' || process.env.STRIPE_TEST_MODE === '1') {
+      useKey = process.env.STRIPE_TEST_SECRET_KEY || STRIPE_SECRET_KEY;
+    }
     const req = require('https').request({
       hostname: 'api.stripe.com',
       path: '/v1/' + path,
       method,
       headers: {
-        'Authorization': 'Basic ' + Buffer.from(STRIPE_SECRET_KEY + ':').toString('base64'),
+        'Authorization': 'Basic ' + Buffer.from(useKey + ':').toString('base64'),
         'Content-Type': 'application/x-www-form-urlencoded',
         'Content-Length': Buffer.byteLength(params)
       }
@@ -5691,11 +7791,11 @@ function stripeApiRequest(method, path, data) {
 // POST /api/admin/upgrade — upgrade a customer's plan (admin only)
 app.post('/api/admin/upgrade', adminAuth, (req, res) => {
   try {
-    const { email, plan, leads_per_day, product, coverage, target_areas, lead_type, biz_field3 } = req.body;
+    const { email, plan, leads_per_day, product, coverage, target_areas, lead_type, biz_field3, trial_ends } = req.body;
     if (!email || !plan) return res.status(400).json({ error: 'email and plan required' });
     const customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
     if (!customer) return res.status(404).json({ error: 'Customer not found' });
-    db.prepare('UPDATE customers SET plan = ?, leads_per_day = ? WHERE id = ?').run(plan, leads_per_day || 15, customer.id);
+    db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = ? WHERE id = ?').run(plan, leads_per_day || 15, req.body.trial_ends !== undefined ? req.body.trial_ends : (plan === 'free_trial' ? (customer.trial_ends || null) : null), customer.id);
     if (product) db.prepare('UPDATE customers SET product = ? WHERE id = ?').run(product, customer.id);
     if (coverage) db.prepare('UPDATE customers SET coverage = ? WHERE id = ?').run(coverage, customer.id);
     if (target_areas) db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(target_areas, customer.id);
@@ -5744,8 +7844,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     var priceId;
     var packageMap = { 'builder-package': 'builder-package', 'marketing-package': 'marketing-package', 'property-package': 'property-package', 'moving-package': 'moving-package', 'pro-plan': 'pro' };
     if (packageKeys[plan]) {
-      var priceIdMap = STRIPE_PRICE_IDS[packageMap[plan]] || {};
-      priceId = priceIdMap[packageKeys[plan]];
+      priceId = getStripePriceId(packageMap[plan], packageKeys[plan]);
       if (!priceId) {
         return res.status(400).json({ error: 'Package pricing not found. Run node stripe_handler.js --setup first.' });
       }
@@ -5755,8 +7854,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
       var planMap = { starter: 'starter', pro: 'growth', enterprise: 'power' };
       var mappedPlan = planMap[plan] || plan;
       const planKey = productKey + '-' + mappedPlan;
-      const priceIdMap = STRIPE_PRICE_IDS[customer.product] || {};
-      priceId = priceIdMap[planKey];
+      priceId = getStripePriceId(customer.product, planKey);
       if (!priceId) {
         return res.status(400).json({ error: 'Pricing not found for this plan (' + planKey + '). Run node stripe_handler.js --setup first.' });
       }
@@ -5767,9 +7865,14 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     const cancelUrl = baseUrl + '/portal/dashboard.html?checkout=cancel';
 
     // If customer is on free trial with remaining trial days, apply trial period to subscription
+    // so they are NOT charged until the free trial ends. If they upgrade before the
+    // trial ends, the first charge lands on the trial-end date (remaining days preserved).
     var trialEnds = customer.trial_ends ? new Date(customer.trial_ends) : null;
     var hasTrialRemaining = trialEnds && trialEnds > new Date();
     var trialDays = 0;
+    if (hasTrialRemaining && customer.plan === 'free_trial') {
+      trialDays = Math.max(1, Math.ceil((trialEnds.getTime() - Date.now()) / 86400000));
+    }
 
     var sessionBody = {
       mode: 'subscription',
@@ -5783,9 +7886,10 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
       'metadata[plan]': plan
     };
 
-    // Add trial period if customer still has trial days remaining
+    // Add trial period if customer still has trial days remaining. For Checkout
+    // Sessions the trial must be under subscription_data, not top-level.
     if (trialDays > 0) {
-      sessionBody['trial_period_days'] = trialDays;
+      sessionBody['subscription_data[trial_period_days]'] = trialDays;
     }
 
     const session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
@@ -5806,6 +7910,14 @@ app.post('/api/setup-checkout', authMiddleware, async (req, res) => {
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured.' });
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!customer) return res.status(404).json({ error: 'User not found' });
+    // Record the customer's chosen plan (Starter/Pro/Enterprise) so that when the
+    // free trial ends, the auto-charge bills the package they selected rather than
+    // always defaulting to Starter.
+    var chosenPlan = req.body && req.body.plan;
+    if (chosenPlan === 'starter' || chosenPlan === 'pro' || chosenPlan === 'enterprise') {
+      db.prepare('UPDATE customers SET selected_plan = ? WHERE id = ?').run(chosenPlan, customer.id);
+      saveDb();
+    }
     const baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
     const session = await stripeApiRequest('POST', 'checkout/sessions', {
       mode: 'setup',
@@ -5876,13 +7988,33 @@ app.post('/api/stripe/webhook', async (req, res) => {
 
       // Handle setup mode (trial card save)
       if (session.mode === 'setup' || metaType === 'trial_card_setup') {
+        var customerEmail = session.customer_email || (session.customer_details && session.customer_details.email) || '';
         var customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(customerEmail);
+        // Fallback: match by metadata customer_id (hosted setup session uses customer id)
+        if (!customer && session.metadata && session.metadata.customer_id) {
+          customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(session.metadata.customer_id);
+        }
         if (customer && session.setup_intent) {
           var si = await stripeApiRequest('GET', 'setup_intents/' + session.setup_intent, {});
           if (si && si.payment_method) {
-            db.prepare('UPDATE customers SET stripe_payment_method_id = ?, stripe_customer_id = ? WHERE id = ?')
-              .run(si.payment_method, si.customer || customer.stripe_customer_id, customer.id);
-            console.log('[STRIPE] Saved card for ' + customerEmail + ' (trial auto-charge ready)');
+            // Determine a Stripe customer id. Setup-mode checkout doesn't always
+            // create a customer, so if one isn't present, CREATE one for this user
+            // and attach the saved payment method. Without a customer id the trial
+            // auto-charge cannot bill the card — this fixes that.
+            var stripeCustId = si.customer || customer.stripe_customer_id || session.customer || '';
+            if (!stripeCustId) {
+              var newCust = await stripeApiRequest('POST', 'customers', { email: customer.email, name: customer.company || customer.name || '' });
+              if (newCust && newCust.id) {
+                stripeCustId = newCust.id;
+                try { await stripeApiRequest('POST', 'payment_methods/' + si.payment_method + '/attach', { customer: stripeCustId }); } catch(attErr) { console.log('[STRIPE] Payment method attach error:', attErr.message); }
+              }
+            }
+            if (stripeCustId) {
+              db.prepare('UPDATE customers SET stripe_payment_method_id = ?, stripe_customer_id = ?, auto_send_paused = 0 WHERE id = ?')
+                .run(si.payment_method, stripeCustId, customer.id);
+              saveDb();
+              console.log('[STRIPE] Saved card for ' + (customerEmail || customer.id) + ' (auto-billing ready, customer ' + stripeCustId + ')');
+            }
           }
         }
       }
@@ -5913,6 +8045,85 @@ app.post('/api/stripe/webhook', async (req, res) => {
           console.log('[STRIPE] Repeat series paid: ' + repeatGroup + ' (' + repeatCams.length + ' mailings)');
         } catch(repErr) { console.log('[STRIPE] Repeat group mark error:', repErr.message); }
       }
+
+      // SINGLE Print & Post payment (metadata.type = direct_mail_campaign): complete
+      // the campaign here — mark paid, send to Stannp, email receipt, mark lead posted.
+      // (The second /api/stripe/webhook route also handles this, but Express routes
+      // match in order, so the FIRST route must process it or it is dropped.)
+      if (metaType === 'direct_mail_campaign' || (session.metadata && session.metadata.type === 'direct_mail_campaign')) {
+        try {
+          var dmCampaignId = session.metadata.campaign_id;
+          if (dmCampaignId) {
+            var dmCampaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(dmCampaignId);
+            if (dmCampaign && dmCampaign.stripe_payment_status !== 'paid') {
+              var dmPaymentId = session.payment_intent || session.id || 'paid';
+              db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run(dmPaymentId, 'paid', 'paid', new Date().toISOString(), dmCampaignId);
+              db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), dmCampaign.customer_id, dmCampaignId, dmCampaign.status, 'paid', 'system', 'Payment received: ' + dmPaymentId, new Date().toISOString());
+              saveDb();
+              console.log('[STRIPE] DM campaign paid: ' + dmCampaignId + ' ' + dmPaymentId);
+              // Send to Stannp
+              var dmSend = null;
+              try { dmSend = await sendDmCampaign(dmCampaignId, dmCampaign.customer_id); } catch(e) { dmSend = { success: false, error: e.message }; }
+              // Mark lead posted + receipt
+              try {
+                var dmRecips = db.prepare('SELECT lead_id FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(dmCampaignId, dmCampaign.customer_id);
+                dmRecips.forEach(function(rp) {
+                  if (!rp.lead_id) return;
+                  var lr = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(rp.lead_id, dmCampaign.customer_id);
+                  if (lr) { var ld = {}; try { ld = JSON.parse(lr.data || '{}'); } catch(e) {} ld.post_status = dmSend && dmSend.success ? 'posted' : 'payment_received_pending_send'; ld.post_order_id = (dmSend && dmSend.provider_campaign_id) ? String(dmSend.provider_campaign_id) : ''; ld.posted_at = new Date().toISOString(); db.prepare('UPDATE leads SET data = ? WHERE id = ?').run(JSON.stringify(ld), rp.lead_id); }
+                });
+                saveDb();
+              } catch(dmLeadErr) { console.log('[STRIPE] DM lead update error:', dmLeadErr.message); }
+              // Receipt email + dashboard notify
+              try {
+                var dmCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(dmCampaign.customer_id);
+                var dmOrderId = (dmSend && dmSend.provider_campaign_id) ? String(dmSend.provider_campaign_id) : '';
+                var dmAmt = session.amount_total ? '£' + (session.amount_total / 100).toFixed(2) : ('£' + (dmCampaign.budget || 0).toFixed(2));
+                if (dmCust && dmCust.email) {
+                  // List all recipients (leads) sent in this campaign
+                  var dmRecipRows = '';
+                  try {
+                    var dmAllRecips = db.prepare('SELECT * FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(dmCampaignId, dmCampaign.customer_id);
+                    dmAllRecips.forEach(function(rr) {
+                      var rName = rr.name || rr.company || 'Lead';
+                      var rAddr = [rr.address_line1, rr.address_line2, rr.city, rr.postcode].filter(Boolean).join(', ');
+                      dmRecipRows += '<tr><td style="padding:7px 12px;border:1px solid #1b2233;border-radius:8px;background:#0d1322">' +
+                        '<div style="font-size:12px;font-weight:700;color:#dce2f0">' + rName + '</div>' +
+                        '<div style="font-size:11px;color:#8890b0;margin-top:2px">' + (rAddr || 'Address on file') + '</div>' +
+                        '</td></tr>';
+                    });
+                  } catch(rcErr2) { console.log('[STRIPE] DM receipt recipients error:', rcErr2.message); }
+                  // Schedule summary if this is part of a repeat series
+                  var dmScheduleNote = '';
+                  if (session.metadata && session.metadata.repeat_group) {
+                    dmScheduleNote = '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Series</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0">Send now + 2 weeks + 1 month (all leads)</td></tr>';
+                  }
+                  var dmBody =
+                    '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Your Print &amp; Post order is confirmed and paid. Here\'s everything that was sent:</p>' +
+                    '<div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:16px 20px;margin:0 0 16px">' +
+                    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:40%">Order</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + (dmCampaign.name || 'Print &amp; Post') + '</td></tr>' +
+                    '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount paid</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + dmAmt + '</td></tr>' +
+                    '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Recipients</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + (dmAllRecips ? dmAllRecips.length : 0) + ' lead(s)</td></tr>' +
+                    '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Status</td><td style="padding:3px 0;font-size:13px;color:#34d399;font-weight:700">' + (dmSend && dmSend.success ? 'Sent to print' : 'Payment received') + '</td></tr>' +
+                    (dmOrderId ? '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Print order ref</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + dmOrderId + '</td></tr>' : '') +
+                    (dmScheduleNote || '') +
+                    '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Delivery</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0">1-3 working days via Royal Mail</td></tr></table>' +
+                    '</div>' +
+                    (dmRecipRows ? '<div style="font-size:13px;font-weight:700;color:#dce2f0;margin:0 0 8px">&#128230; Sent to these leads:</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + dmRecipRows + '</table>' : '') +
+                    (dmScheduleNote ? '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin-top:14px">You\'ll get a confirmation email for each follow-up batch (2 weeks and 1 month) as it is sent.</p>' : '') +
+                    '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin-top:14px">Your items are being printed and will be posted. Track each lead\'s "Posted" status in your dashboard.</p>';
+                  try { await sendDMNotification(dmCampaign.customer_id, 'dm_payment_receipt', 'Print & Post Confirmation — ' + (dmCampaign.name || 'Order'), '✅ Payment received', dmBody, 'View Print & Post', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail'); } catch(e2) {}
+                  // Persist "invoice paid" receipt for the dashboard billing history
+                  try {
+                    var dmCustRec = dmCampaign.customer_id ? db.prepare('SELECT * FROM customers WHERE id = ?').get(dmCampaign.customer_id) : null;
+                    storePaymentReceipt({ customerId: dmCampaign.customer_id, customerEmail: (dmCustRec && dmCustRec.email) || '', company: (dmCustRec && dmCustRec.company) || '', amount: (session.amount_total ? session.amount_total / 100 : 0), currency: (session.currency || 'gbp'), stripeId: session.payment_intent || session.id || '', number: (dmCampaign.name || 'Print & Post'), description: 'Print & Post — ' + (dmCampaign.name || 'order'), product: 'direct_mail', cardLast4: '' });
+                  } catch(prDm) { console.log('[STRIPE] DM receipt store error:', prDm.message); }
+                }
+              } catch(dmCErr) { console.log('[STRIPE] DM receipt error:', dmCErr.message); }
+            }
+          }
+        } catch(dmErr) { console.log('[STRIPE] DM completion error:', dmErr.message); }
+      }
     }
 
     // Weekly renewal succeeded — keep plan active (Stripe handles billing)
@@ -5925,6 +8136,26 @@ app.post('/api/stripe/webhook', async (req, res) => {
         db.prepare('UPDATE customers SET auto_send_paused = 0, plan = COALESCE(plan, ?) WHERE id = ?').run('starter', invCustomer.id);
         saveDb();
         console.log('[STRIPE] Weekly renewal paid: ' + (invCustomer.email || invCustomer.id));
+        // Persist an "invoice paid" receipt + email the customer a receipt.
+        try {
+          await recordPaymentReceipt({
+            customerId: invCustomer.id,
+            customerEmail: invCustomer.email,
+            company: invCustomer.company || '',
+            amount: inv.amount_paid ? inv.amount_paid / 100 : (inv.total ? inv.total / 100 : 0),
+            currency: inv.currency || 'gbp',
+            stripeId: inv.id,
+            number: inv.number || inv.id,
+            description: (invCustomer.plan || 'Subscription') + ' plan — weekly payment',
+            plan: invCustomer.plan || 'starter',
+            product: invCustomer.product || 'moving',
+            cardLast4: '',
+            invoicePdf: inv.invoice_pdf || '',
+            hostedInvoiceUrl: inv.hosted_invoice_url || '',
+            periodStart: inv.period_start ? new Date(inv.period_start * 1000).toISOString() : '',
+            periodEnd: inv.period_end ? new Date(inv.period_end * 1000).toISOString() : ''
+          });
+        } catch(prErr) { console.log('[STRIPE] invoice.paid receipt error:', prErr.message); }
       }
     }
 
@@ -5938,6 +8169,11 @@ app.post('/api/stripe/webhook', async (req, res) => {
         db.prepare('UPDATE customers SET auto_send_paused = 1 WHERE id = ?').run(fCustomer.id);
         saveDb();
         try { dmDashboardNotify(fCustomer.id, 'payment_failed', '⚠️ Payment failed', 'Your weekly subscription payment failed. Update your payment method to keep your leads and Print & Post running.', ''); } catch(ne) {}
+        // Also email the customer so they know to update their card
+        try {
+          var failEmailBody = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We could not take your weekly subscription payment. To keep your leads and Print &amp; Post running, please update your payment method.</p><div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="font-size:13px;color:#e2e8f0;margin:0"><strong>Payment failed</strong>. your card could not be charged. If this continues, your account will be paused.</p></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">You can update your card any time from the Billing section of your dashboard.</p>';
+          await sendDMNotification(fCustomer.id, 'payment_failed_email', 'Action Needed — Payment Failed', '⚠️ Payment failed', failEmailBody, 'Update Payment Method', PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
+        } catch(ne2) { console.log('[STRIPE] Payment-failed email error:', ne2.message); }
         console.log('[STRIPE] Payment failed for ' + (fCustomer.email || fCustomer.id));
       }
     }
@@ -6018,6 +8254,66 @@ function calcDmPrice(recipientCount, opts) {
   };
 }
 
+// Per-format price for a Print & Post order based on the customer's saved
+// format / mail type. This is the ACTUAL price customers pay in every manual
+// flow (send-lead / send-sample / send-bulk / repeat). Returns per-item price.
+function dmPerItemPrice(mailType, formatId) {
+  if (formatId) {
+    var fm = DM_FORMATS.find(function(f) { return f.id === formatId; });
+    if (fm) return fm.price;
+  }
+  var key = mailType;
+  if (mailType === 'flyer') key = 'flyer_a5';
+  if (mailType === 'letter') key = 'letter_a4';
+  if (PRINT_POST_PRICES[key]) return PRINT_POST_PRICES[key].customer;
+  return PRINT_POST_PRICES.letter_a4.customer;
+}
+
+// PRE-CHECKOUT ARTWORK VALIDATION for any leaflet send (send-lead / send-bulk /
+// send-repeat / send-bulk-repeat / send-sample). Loads the customer's saved front
+// (and back) material for their template and checks it against the Stannp print
+// spec for the chosen format. Returns an error string (to block payment) or null
+// if the artwork is print-ready. Runs BEFORE Stripe checkout so a customer never
+// pays for a flyer that would print wrong.
+async function validateDmArtworkBeforeCheckout(mailType, templateId, formatId, customerId, dbRef) {
+  if (!/flyer/i.test(mailType)) return null; // letters don't need artwork
+  var d = dbRef || db;
+  try {
+    var fmtSpec = DM_FORMATS.find(function(f) { return f.id === formatId; }) || DM_FORMATS.find(function(f) { return f.id === 'flyer_a5_portrait'; });
+    var fw = (fmtSpec && fmtSpec.width) || 1819, fh = (fmtSpec && fmtSpec.height) || 2551;
+    var provider = getDirectMailProvider();
+    var tpl = null;
+    if (templateId) { try { tpl = d.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(templateId, customerId); } catch(e) {} }
+    // Front material
+    var frontId = tpl && tpl.flyer_front_material_id ? tpl.flyer_front_material_id : '';
+    if (!frontId) { var lfq = null; try { lfq = d.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_front' ORDER BY created_at DESC LIMIT 1").get(customerId); } catch(e) {} if (lfq) frontId = lfq.id; }
+    var frontMat = null; if (frontId) { try { frontMat = d.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(frontId, customerId); } catch(e) {} }
+    if (!frontMat || !frontMat.file_data) {
+      return 'This is a leaflet send, which needs your leaflet front design uploaded first (Print & Post > Step 2), or choose the A4 letter instead.';
+    }
+    var fSpec = await provider.validateArtworkSpec({ name: frontMat.name, file_data: frontMat.file_data }, fw, fh);
+    if (!fSpec.ok) {
+      return (fSpec.errors && fSpec.errors[0]) || 'Your leaflet front does not meet the print spec for ' + ((fmtSpec && fmtSpec.label) || 'this format') + '. Please fix it before sending.';
+    }
+    // Back material (validate if present)
+    var backId = tpl && tpl.flyer_back_material_id ? tpl.flyer_back_material_id : '';
+    if (!backId) { var lbq = null; try { lbq = d.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_back' ORDER BY created_at DESC LIMIT 1").get(customerId); } catch(e) {} if (lbq) backId = lbq.id; }
+    if (backId) {
+      var backMat = null; try { backMat = d.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(backId, customerId); } catch(e) {}
+      if (backMat && backMat.file_data) {
+        var bSpec = await provider.validateArtworkSpec({ name: backMat.name, file_data: backMat.file_data }, fw, fh);
+        if (!bSpec.ok) {
+          return (bSpec.errors && bSpec.errors[0]) || 'Your leaflet back does not meet the print spec for ' + ((fmtSpec && fmtSpec.label) || 'this format') + '. Please fix it before sending.';
+        }
+      }
+    }
+    return null; // all good
+  } catch(e) {
+    console.log('[DM-ARTWORK-VALIDATE] error:', e.message);
+    return null; // if validation infra fails, don't block (sendMailpiece still guards)
+  }
+}
+
 // POST /api/direct-mail/campaigns/:id/pricing — Calculate campaign price
 app.post('/api/direct-mail/campaigns/:id/pricing', authMiddleware, (req, res) => {
   try {
@@ -6034,6 +8330,43 @@ app.post('/api/direct-mail/campaigns/:id/pricing', authMiddleware, (req, res) =>
 });
 
 // POST /api/direct-mail/campaigns/:id/checkout — Create Stripe checkout for campaign
+// Determine a campaign's mail type from its description/notes (same logic as sendDmCampaign).
+function getCampaignMailType(campaign) {
+  var hint = (campaign && (campaign.description || campaign.notes || '')) || '';
+  if (hint === 'flyer_a5' || hint === 'flyer' || /flyer/i.test(hint) && !/flyer.*letter/i.test(hint)) return 'flyer';
+  if (hint === 'flyer_plus_letter' || /flyer.*letter/i.test(hint)) return 'flyer_plus_letter';
+  if (hint === 'letter_a4' || hint === 'letter' || /letter/i.test(hint)) return 'letter';
+  return 'letter';
+}
+
+// MATERIAL-REQUIRED CHECK: ensures the customer has uploaded the artwork a
+// campaign needs BEFORE they can pay, so nobody is charged for a mailpiece that
+// cannot be printed. Letters can be auto-generated from the saved cover letter /
+// business profile (no upload needed), but leaflets/postcards REQUIRE an
+// uploaded front design because Stannp cannot print a leaflet from text alone.
+function checkCampaignMaterials(campaign, customerId) {
+  try {
+    var mailType = getCampaignMailType(campaign);
+    if (mailType === 'letter') return { ok: true, mailType: mailType };
+    // Leaflet / leaflet+letter: need the flyer front design uploaded
+    var template = null;
+    if (campaign.template_id) { template = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(campaign.template_id, customerId); }
+    var frontMaterialId = template && template.flyer_front_material_id ? template.flyer_front_material_id : (campaign.material_id || '');
+    // Fallback: if the campaign/template isn't linked to a front, use the
+    // customer's most recently uploaded flyer_front material.
+    if (!frontMaterialId) {
+      var latestFront = db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_front' ORDER BY created_at DESC LIMIT 1").get(customerId);
+      if (latestFront) frontMaterialId = latestFront.id;
+    }
+    var frontMat = null;
+    if (frontMaterialId) { try { frontMat = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(frontMaterialId, customerId); } catch(e) {} }
+    if (!frontMat || !frontMat.file_data) {
+      return { ok: false, mailType: mailType, error: 'This is a leaflet campaign, and it needs your leaflet front design uploaded before you can pay. Please upload your leaflet front (Print & Post > Step 2) or choose the A4 letter option instead.' };
+    }
+    return { ok: true, mailType: mailType };
+  } catch(e) { return { ok: true, mailType: 'letter' }; }
+}
+
 app.post('/api/direct-mail/campaigns/:id/checkout', authMiddleware, async (req, res) => {
   try {
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
@@ -6041,6 +8374,11 @@ app.post('/api/direct-mail/campaigns/:id/checkout', authMiddleware, async (req, 
     if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
     if (campaign.status !== 'approved') return res.status(400).json({ error: 'Campaign must be approved before payment' });
     if (campaign.stripe_payment_id) return res.status(400).json({ error: 'Campaign already has a pending payment' });
+
+    // MATERIAL-REQUIRED CHECK: never charge for a leaflet/postcard that lacks
+    // its uploaded front design. Letters auto-generate, so they pass through.
+    var materialCheck = checkCampaignMaterials(campaign, req.user.id);
+    if (!materialCheck.ok) return res.status(400).json({ error: materialCheck.error });
 
     var recipients = db.prepare('SELECT COUNT(*) as count FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ? AND status != \'failed\'').get(req.params.id, req.user.id);
     var count = Math.max(1, recipients.count || campaign.target_count || 1);
@@ -6082,6 +8420,110 @@ app.get('/api/direct-mail/campaigns/:id/payment', authMiddleware, (req, res) => 
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
     if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
     res.json({ success: true, stripe_session_id: campaign.stripe_session_id || '', stripe_payment_id: campaign.stripe_payment_id || '', stripe_payment_status: campaign.stripe_payment_status || '' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/verify-payment — CLIENT-SIDE PAYMENT VERIFICATION FALLBACK.
+// Called by the dashboard after the customer returns from the Stripe checkout
+// (?dm_payment=success&campaign_id=X). Queries Stripe directly for the checkout
+// session; if the payment succeeded it completes the campaign (mark paid, send to
+// Stannp, email receipt, mark lead posted) — even if the webhook was delayed or
+// missed. Idempotent: safe to call multiple times.
+app.post('/api/direct-mail/verify-payment', authMiddleware, async (req, res) => {
+  try {
+    var campaignId = req.body.campaign_id || req.query.campaign_id || '';
+    if (!campaignId) return res.status(400).json({ error: 'campaign_id required' });
+    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(campaignId, req.user.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    // Already fully paid + sent → done
+    if (campaign.stripe_payment_status === 'paid' && (campaign.status === 'sent_to_provider' || campaign.status === 'completed' || campaign.status === 'dispatched')) {
+      return res.json({ success: true, already_completed: true, campaign_id: campaignId, provider_campaign_id: campaign.provider_campaign_id || '' });
+    }
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    // Find the checkout session for this campaign (by metadata campaign_id)
+    var sessions = await stripeApiRequest('GET', 'checkout/sessions?limit=100&payment_intent=' + (campaign.stripe_payment_id ? encodeURIComponent(campaign.stripe_payment_id) : ''), null);
+    var matched = null;
+    if (campaign.stripe_session_id) {
+      try {
+        var direct = await stripeApiRequest('GET', 'checkout/sessions/' + campaign.stripe_session_id, null);
+        if (direct && direct.id) matched = direct;
+      } catch(de) {}
+    }
+    if (!matched && (!sessions || !sessions.data)) {
+      // list sessions by looking up recent ones for this customer/amount and matching metadata
+      var allSess = await stripeApiRequest('GET', 'checkout/sessions?limit=100', null);
+      matched = (allSess.data || []).find(function(s) { return (s.metadata || {}).campaign_id === campaignId; });
+    }
+    if (!matched) return res.status(404).json({ error: 'Checkout session not found for this campaign', campaign_id: campaignId });
+    if (matched.payment_status !== 'paid' && matched.payment_status !== 'no_payment_required') {
+      return res.json({ success: false, status: matched.payment_status, message: 'Payment not completed' });
+    }
+    // Payment confirmed → complete the campaign (same logic as the webhook)
+    var paymentId = matched.payment_intent || matched.id || 'paid_via_verify';
+    db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run(paymentId, 'paid', 'paid', new Date().toISOString(), campaignId);
+    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, campaignId, campaign.status, 'paid', 'system', 'Payment verified via dashboard: ' + paymentId, new Date().toISOString());
+    saveDb();
+    // Send to Stannp
+    var sendResult = null;
+    try { sendResult = await sendDmCampaign(campaignId, req.user.id); } catch(e) { sendResult = { success: false, error: e.message }; }
+    // Mark lead posted
+    try {
+      var recips = db.prepare('SELECT lead_id FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(campaignId, req.user.id);
+      recips.forEach(function(rp) {
+        if (!rp.lead_id) return;
+        var lr = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(rp.lead_id, req.user.id);
+        if (lr) {
+          var ld = {}; try { ld = JSON.parse(lr.data || '{}'); } catch(e) {}
+          ld.post_status = sendResult && sendResult.success ? 'posted' : 'payment_received_pending_send';
+          ld.post_order_id = (sendResult && sendResult.provider_campaign_id) ? String(sendResult.provider_campaign_id) : '';
+          ld.posted_at = new Date().toISOString();
+          db.prepare('UPDATE leads SET data = ? WHERE id = ?').run(JSON.stringify(ld), rp.lead_id);
+        }
+      });
+      saveDb();
+    } catch(leadErr) { console.log('[VERIFY-PAYMENT] Lead update error:', leadErr.message); }
+    // Receipt email + dashboard notification
+    try {
+      var custRow = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+      var orderId = (sendResult && sendResult.provider_campaign_id) ? String(sendResult.provider_campaign_id) : '';
+      var paidAmount = matched.amount_total ? '£' + (matched.amount_total / 100).toFixed(2) : ('£' + (campaign.budget || 0).toFixed(2));
+      if (custRow && custRow.email) {
+        var recipRows = '';
+        var recipCount = 0;
+        try {
+          var rl = db.prepare('SELECT * FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(campaignId, req.user.id);
+          recipCount = rl.length;
+          rl.forEach(function(rr) {
+            var rName = rr.name || rr.company || 'Lead';
+            var rAddr = [rr.address_line1, rr.address_line2, rr.city, rr.postcode].filter(Boolean).join(', ');
+            recipRows += '<tr><td style="padding:7px 12px;border:1px solid #1b2233;border-radius:8px;background:#0d1322"><div style="font-size:12px;font-weight:700;color:#dce2f0">' + rName + '</div><div style="font-size:11px;color:#8890b0;margin-top:2px">' + (rAddr || 'Address on file') + '</div></td></tr>';
+          });
+        } catch(re) {}
+        var vScheduleNote = (matched.metadata && matched.metadata.repeat_group) ? '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Series</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0">Send now + 2 weeks + 1 month (all leads)</td></tr>' : '';
+        var receiptBody =
+          '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Your Print &amp; Post order is confirmed and paid. Here\'s everything that was sent:</p>' +
+          '<div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:16px 20px;margin:0 0 16px">' +
+          '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:40%">Order</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + (campaign.name || 'Print &amp; Post') + '</td></tr>' +
+          '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount paid</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + paidAmount + '</td></tr>' +
+          '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Recipients</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + recipCount + ' lead(s)</td></tr>' +
+          '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Status</td><td style="padding:3px 0;font-size:13px;color:#34d399;font-weight:700">' + (sendResult && sendResult.success ? 'Sent to print' : 'Payment received') + '</td></tr>' +
+          (orderId ? '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Print order ref</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + orderId + '</td></tr>' : '') +
+          (vScheduleNote || '') +
+          '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Delivery</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0">1-3 working days via Royal Mail</td></tr></table>' +
+          '</div>' +
+          (recipRows ? '<div style="font-size:13px;font-weight:700;color:#dce2f0;margin:0 0 8px">&#128230; Sent to these leads:</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + recipRows + '</table>' : '') +
+          (vScheduleNote ? '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin-top:14px">You\'ll get a confirmation email for each follow-up batch (2 weeks and 1 month) as it is sent.</p>' : '') +
+          '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin-top:14px">Your items are being printed and will be posted. Track each lead\'s "Posted" status in your dashboard.</p>';
+        try {
+          await sendDMNotification(req.user.id, 'dm_payment_receipt', 'Print & Post Confirmation — ' + (campaign.name || 'Order'), '✅ Payment received', receiptBody, 'View Print & Post', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail');
+        } catch(e2) { console.log('[VERIFY-PAYMENT] Receipt email error:', e2.message); }
+        // Persist "invoice paid" receipt for the dashboard billing history
+        try {
+          storePaymentReceipt({ customerId: req.user.id, customerEmail: req.user.email, company: req.user.company || '', amount: paidAmount ? parseFloat(String(paidAmount).replace(/£/g, '')) || 0 : 0, currency: 'gbp', stripeId: (campaign && campaign.stripe_session_id) || (campaign && campaign.stripe_payment_id) || '', number: (campaign && campaign.name) || 'Print & Post', description: 'Print & Post — ' + (campaign.name || 'order'), product: 'direct_mail', cardLast4: '' });
+        } catch(prV) { console.log('[VERIFY-PAYMENT] Receipt store error:', prV.message); }
+      }
+    } catch(rcErr) { console.log('[VERIFY-PAYMENT] Receipt build error:', rcErr.message); }
+    res.json({ success: true, campaign_id: campaignId, paid: true, sent: !!(sendResult && sendResult.success), provider_campaign_id: (sendResult && sendResult.provider_campaign_id) || '', mail_type: campaign.description || '' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -6141,25 +8583,91 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         if (!campaignRecord) { console.log('[WEBHOOK] Campaign not found:', campaignId); return res.json({ received: true }); }
         if (campaignRecord.stripe_payment_status === 'paid') { console.log('[WEBHOOK] Duplicate webhook - campaign already paid:', campaignId); return res.json({ received: true }); }
 
-        var paymentId = session.payment_intent || session.id || '';
-        db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run(paymentId, 'paid', 'paid', new Date().toISOString(), campaignId);
-        db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaignId, 'approved', 'paid', 'system', 'Payment received: ' + paymentId, new Date().toISOString());
-        console.log('[WEBHOOK] Campaign payment received:', campaignRecord.name, 'ID:', paymentId);
-        // Auto-send to Stannp so the lead is printed + posted immediately
-        try {
-          var sendResult = await sendDmCampaign(campaignId, customerId);
-          if (sendResult.success) {
-            console.log('[WEBHOOK] One-click campaign sent to provider:', sendResult.provider_campaign_id);
+          var paymentId = session.payment_intent || session.id || '';
+          db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run(paymentId, 'paid', 'paid', new Date().toISOString(), campaignId);
+          db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaignId, 'approved', 'paid', 'system', 'Payment received: ' + paymentId, new Date().toISOString());
+          console.log('[WEBHOOK] Campaign payment received:', campaignRecord.name, 'ID:', paymentId);
+          // Auto-send to Stannp so the lead is printed + posted immediately
+          var sendResult = null;
+          try {
+            sendResult = await sendDmCampaign(campaignId, customerId);
+            if (sendResult.success) {
+              console.log('[WEBHOOK] One-click campaign sent to provider:', sendResult.provider_campaign_id);
+            } else {
+              console.log('[WEBHOOK] One-click send failed:', sendResult.error);
+            }
+          } catch(sendErr) {
+            console.log('[WEBHOOK] One-click send error:', sendErr.message);
+            sendResult = { success: false, error: sendErr.message };
+          }
+          // Mark the recipient lead(s) as posted so "My Leads" can show a
+          // "materials posted" status next to the lead.
+          try {
+            var recips = db.prepare('SELECT lead_id FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(campaignId, customerId);
+            recips.forEach(function(rp) {
+              if (!rp.lead_id) return;
+              var leadRow = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(rp.lead_id, customerId);
+              if (leadRow) {
+                var leadData = {}; try { leadData = JSON.parse(leadRow.data || '{}'); } catch(e) {}
+                leadData.post_status = sendResult && sendResult.success ? 'posted' : 'payment_received_pending_send';
+                leadData.post_order_id = (sendResult && sendResult.provider_campaign_id) ? String(sendResult.provider_campaign_id) : '';
+                leadData.posted_at = new Date().toISOString();
+                db.prepare('UPDATE leads SET data = ? WHERE id = ?').run(JSON.stringify(leadData), rp.lead_id);
+              }
+            });
+            saveDb();
+          } catch(leadErr) { console.log('[WEBHOOK] Lead post-status update error:', leadErr.message); }
+          // PAYMENT RECEIPT + confirmation to the customer (email + dashboard)
+          var custRow = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
+          var orderId = (sendResult && sendResult.provider_campaign_id) ? String(sendResult.provider_campaign_id) : (campaignRecord.name || '');
+          var paidAmount = session.amount_total ? '£' + (session.amount_total / 100).toFixed(2) : ('£' + (campaignRecord.budget || 0).toFixed(2));
+          // Build the recipient/lead details shown in the receipt
+          var recipientRows = '';
+          try {
+            var recipsForReceipt = db.prepare('SELECT * FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(campaignId, customerId);
+            recipsForReceipt.forEach(function(rr) {
+              var rName = rr.name || rr.company || 'Lead';
+              var rAddr = [rr.address_line1, rr.address_line2, rr.city, rr.postcode].filter(Boolean).join(', ');
+              recipientRows += '<tr><td style="padding:8px 14px;border:1px solid #1b2233;border-radius:8px;background:#0d1322">' +
+                '<div style="font-size:13px;font-weight:700;color:#dce2f0">' + rName + '</div>' +
+                '<div style="font-size:12px;color:#8890b0;margin-top:2px">' + (rAddr || 'Address on file') + '</div>' +
+                '</td></tr>';
+            });
+          } catch(rcErr) { console.log('[WEBHOOK] Recipient rows error:', rcErr.message); }
+          if (custRow && custRow.email) {
+            var receiptBody =
+              '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Great news &mdash; your Print &amp; Post order is confirmed and paid. Here\'s everything you need to know:</p>' +
+              '<div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:16px 20px;margin:0 0 16px">' +
+              '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:40%">Order</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + (campaignRecord.name || 'Print &amp; Post') + '</td></tr>' +
+              '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount paid</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + paidAmount + '</td></tr>' +
+              '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Status</td><td style="padding:3px 0;font-size:13px;color:#34d399;font-weight:700">' + (sendResult && sendResult.success ? 'Sent to print' : 'Payment received') + '</td></tr>' +
+              (orderId ? '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Print order ref</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + orderId + '</td></tr>' : '') +
+              '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Delivery</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0">1-3 working days via Royal Mail</td></tr></table>' +
+              '</div>' +
+              '<div style="font-size:13px;font-weight:700;color:#dce2f0;margin:0 0 8px">&#128230; Posted to:</div>' +
+              '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + (recipientRows || '<tr><td style="padding:10px 14px;border:1px solid #1b2233;border-radius:8px;background:#0d1322;font-size:13px;color:#8890b0">Lead address on file</td></tr>') + '</table>' +
+              '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:16px 0 0">' +
+              '<strong style="color:#dce2f0">What happens next?</strong><br>' +
+              '1. Your materials are being printed.<br>' +
+              '2. They\'ll be posted to the address above.<br>' +
+              '3. It should arrive within 1-3 working days.<br><br>' +
+              '<strong style="color:#dce2f0">Pro tip:</strong> Follow up with the lead a few days after your letter arrives. A call or a second touchpoint dramatically increases your chances of winning the business.</p>';
+            try {
+              await sendDMNotification(customerId, 'dm_payment_receipt', 'Print & Post Confirmation — ' + (campaignRecord.name || 'Order'), '✅ Payment received', receiptBody, 'View Print & Post', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail');
+            } catch(e2) { console.log('[WEBHOOK] Receipt email error:', e2.message); }
+            // Persist "invoice paid" receipt for the dashboard billing history
+            try {
+              storePaymentReceipt({ customerId: customerId, customerEmail: (custRow && custRow.email) || '', company: (custRow && custRow.company) || '', amount: (session.amount_total ? session.amount_total / 100 : 0), currency: (session.currency || 'gbp'), stripeId: session.payment_intent || session.id || '', number: (campaignRecord.name || 'Print & Post'), description: 'Print & Post — ' + (campaignRecord.name || 'order'), product: 'direct_mail', cardLast4: '' });
+            } catch(prW2) { console.log('[WEBHOOK] Receipt store error:', prW2.message); }
+          }
+          // Also notify on send success/failure
+          if (sendResult && sendResult.success) {
             dmDashboardNotify(customerId, 'dm_sent', '📬 Print & Post on its way', 'Your print & post item has been sent to ' + sendResult.provider + ' and will be dispatched shortly.', '');
           } else {
-            console.log('[WEBHOOK] One-click send failed:', sendResult.error);
-            dmDashboardNotify(customerId, 'dm_send_failed', '⚠️ Print & Post send issue', 'Payment received but send failed: ' + sendResult.error + '. Our team is on it.', '');
+            dmDashboardNotify(customerId, 'dm_send_failed', '⚠️ Print & Post send issue', 'Payment received but send failed: ' + (sendResult && sendResult.error) + '. Our team is on it.', '');
           }
-        } catch(sendErr) {
-          console.log('[WEBHOOK] One-click send error:', sendErr.message);
+          return res.json({ received: true });
         }
-        return res.json({ received: true });
-      }
 
       const plan = session.metadata?.plan;
       const product = session.metadata?.product;
@@ -6259,6 +8767,29 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           db.prepare('UPDATE customers SET plan = ?, leads_per_day = ? WHERE id = ? AND plan = \'cancelled\'')
             .run(invSub.plan, getPlanLimit(invSub.product || 'moving', invSub.plan), invSub.customer_id);
           console.log('[WEBHOOK] Payment succeeded:', invSub.customer_id, '-', invSub.plan, '-', amount);
+          // Persist an "invoice paid" receipt + email the customer a receipt.
+          try {
+            var custForRec = db.prepare('SELECT * FROM customers WHERE id = ?').get(invSub.customer_id);
+            if (custForRec) {
+              await recordPaymentReceipt({
+                customerId: custForRec.id,
+                customerEmail: custForRec.email,
+                company: custForRec.company || '',
+                amount: invoice.total ? invoice.total / 100 : (invoice.amount_paid ? invoice.amount_paid / 100 : 0),
+                currency: invoice.currency || 'gbp',
+                stripeId: invoice.id,
+                number: invoice.number || invoice.id,
+                description: (invSub.plan || 'Subscription') + ' plan — weekly payment',
+                plan: invSub.plan || 'starter',
+                product: invSub.product || 'moving',
+                cardLast4: '',
+                invoicePdf: invoice.invoice_pdf || '',
+                hostedInvoiceUrl: invoice.hosted_invoice_url || '',
+                periodStart: invoice.period_start ? new Date(invoice.period_start * 1000).toISOString() : '',
+                periodEnd: periodEnd
+              });
+            }
+          } catch(prErr) { console.log('[WEBHOOK] payment_succeeded receipt error:', prErr.message); }
         }
       }
     }
@@ -6274,6 +8805,14 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run('refunded', 'cancelled', new Date().toISOString(), refundCamp.id);
         db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), refundCamp.customer_id, refundCamp.id, prevStatus, 'cancelled', 'system', 'Payment refunded: ' + refundAmount, new Date().toISOString());
         console.log('[WEBHOOK] Campaign refunded:', refundCamp.name, refundAmount);
+        // Notify the customer that their payment was refunded
+        try {
+          var refundCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(refundCamp.customer_id);
+          if (refundCust && refundCust.email) {
+            var refundBody = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We\'ve refunded your Print &amp; Post order.</p><div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:45%">Order</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + (refundCamp.name || 'Print &amp; Post') + '</td></tr><tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount refunded</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + refundAmount + '</td></tr><tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Status</td><td style="padding:3px 0;font-size:13px;color:#34d399;font-weight:700">Refunded</td></tr></table></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">The refund has been processed back to your original payment method. It may take a few days to appear on your statement.</p>';
+            await sendDMNotification(refundCust.id, 'dm_refund', 'Refund Confirmation — ' + (refundCamp.name || 'Order'), '✅ Refund processed', refundBody, 'View Billing', PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
+          }
+        } catch(re) { console.log('[WEBHOOK] Refund email error:', re.message); }
       }
       res.json({ received: true }); return;
     }
@@ -6293,6 +8832,50 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             console.log('[WEBHOOK] Payment failed 3 times - disabled customer', failSub.customer_id);
           }
           console.log('[WEBHOOK] Payment failed for', failSub.customer_id, '(attempt ' + failCount + ')');
+          // Email the customer so they know to update their card
+          try {
+            var failCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(failSub.customer_id);
+            if (failCust && failCust.email) {
+              var failEmailBody2 = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We could not take your weekly subscription payment. To keep your leads and Print &amp; Post running, please update your payment method.</p><div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="font-size:13px;color:#e2e8f0;margin:0"><strong>Payment failed</strong> (attempt ' + failCount + '). If this continues, your account will be paused.</p></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">You can update your card any time from the Billing section of your dashboard.</p>';
+              await sendDMNotification(failCust.id, 'payment_failed_email', 'Action Needed — Payment Failed', '⚠️ Payment failed', failEmailBody2, 'Update Payment Method', PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
+            }
+          } catch(fe) { console.log('[WEBHOOK] Payment-failed email error:', fe.message); }
+        }
+      }
+    }
+
+    // Handle successful one-off payment intents (off-session direct charges:
+    // auto Print & Post, sequence steps) — ensure a persisted receipt is recorded.
+    if (event.type === 'payment_intent.succeeded') {
+      const pi = event.data.object;
+      if (pi && pi.metadata) {
+        var piCustomerId = pi.metadata.customer_id || '';
+        var piType = pi.metadata.type || '';
+        if (!piCustomerId && pi.customer) {
+          var piCustByStripe = db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(pi.customer);
+          if (piCustByStripe) piCustomerId = piCustByStripe.id;
+        }
+        if (piCustomerId) {
+          var piCustomer = db.prepare('SELECT * FROM customers WHERE id = ?').get(piCustomerId);
+          var piAlready = pi.id ? db.prepare('SELECT * FROM payments WHERE stripe_id = ?').get(pi.id) : null;
+          if (piCustomer && !piAlready) {
+            var piDesc = piType === 'sequence_step' ? 'Print & Post sequence step' : (piType === 'auto_send' ? 'Auto Print & Post' : 'Print & Post payment');
+            var piCampaignName = '';
+            if (pi.metadata.campaign_id) { var piC = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(pi.metadata.campaign_id); piCampaignName = (piC && piC.name) || ''; }
+            await recordPaymentReceipt({
+              customerId: piCustomer.id,
+              customerEmail: piCustomer.email,
+              company: piCustomer.company || '',
+              amount: pi.amount ? pi.amount / 100 : 0,
+              currency: pi.currency || 'gbp',
+              stripeId: pi.id,
+              number: pi.id,
+              description: piCampaignName ? piDesc + ' — ' + piCampaignName : piDesc,
+              plan: '',
+              product: 'direct_mail',
+              cardLast4: ''
+            });
+          }
         }
       }
     }
@@ -6302,6 +8885,305 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     console.error('[WEBHOOK] Error:', e.message);
     res.status(200).json({ received: true });
   }
+});
+
+// POST /api/admin/stripe/setup-webhook — Create/verify the Stripe webhook endpoint
+// using the server's own Stripe key, and save the signing secret so payment
+// events (checkout.session.completed) are processed (marks campaigns paid + sends
+// to Stannp). Returns the configured endpoint details.
+app.post('/api/admin/stripe/setup-webhook', adminAuth, async (req, res) => {
+  try {
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe key not configured' });
+    // 1. List existing webhook endpoints
+    var listResp = await stripeApiRequest('GET', 'webhook_endpoints?limit=100', null);
+    var existing = (listResp.data || []).filter(function(w) { return w.url.indexOf('/api/stripe/webhook') !== -1; });
+    var endpoint = existing[0] || null;
+    var events = ['checkout.session.completed', 'invoice.payment_succeeded', 'invoice.payment_failed', 'payment_intent.succeeded'];
+    // FORCE RECREATE: Stripe only returns the signing secret in the CREATE response.
+    // If we created the endpoint earlier but didn't capture the secret, delete it
+    // and create fresh so the secret is returned and saved for signature verification.
+    if (req.body && req.body.force_recreate && endpoint) {
+      try { await stripeApiRequest('DELETE', 'webhook_endpoints/' + endpoint.id, null); console.log('[WEBHOOK-SETUP] Deleted existing webhook:', endpoint.id); } catch(delErr) { console.log('[WEBHOOK-SETUP] Delete failed:', delErr.message); }
+      endpoint = null;
+    }
+    if (endpoint) {
+      // Ensure required events are enabled
+      var missing = events.filter(function(e) { return (endpoint.enabled_events || []).indexOf(e) === -1 && (endpoint.enabled_events || []).indexOf('*') === -1; });
+      if (missing.length) {
+        var upd = await stripeApiRequest('POST', 'webhook_endpoints/' + endpoint.id, { enabled_events: events });
+        if (upd && upd.id) { endpoint = upd; console.log('[WEBHOOK-SETUP] Updated existing webhook events:', missing.join(',')); }
+      }
+    } else {
+      // Create the webhook endpoint
+      var url = (process.env.PUBLIC_URL || 'https://nineamleads-backend.onrender.com').replace(/\/+$/, '') + '/api/stripe/webhook';
+      var body = { url: url, enabled_events: events };
+      var created = await stripeApiRequest('POST', 'webhook_endpoints', body);
+      if (created && created.id) { endpoint = created; console.log('[WEBHOOK-SETUP] Created webhook endpoint:', created.id); }
+      else return res.status(500).json({ error: 'Failed to create webhook: ' + (created.error && created.error.message || 'unknown'), raw: created });
+    }
+    // 2. Save the signing secret to stripe-config.json so signature verification works
+    var secret = endpoint.secret || '';
+    if (secret) {
+      var cfgPath = path.join(DATA_DIR, 'stripe-config.json');
+      var cfg = {}; try { cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf-8')); } catch(e) {}
+      cfg.webhookSecret = secret;
+      try { fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2)); console.log('[WEBHOOK-SETUP] Saved webhook secret to config'); } catch(e) { console.log('[WEBHOOK-SETUP] Could not save config:', e.message); }
+      // Also try to set it as a Render env var so it persists across new instances.
+      // Requires RENDER_API_KEY + RENDER_SERVICE_ID env vars on the server.
+      try {
+        var renderKey = process.env.RENDER_API_KEY || '';
+        var renderService = process.env.RENDER_SERVICE_ID || '';
+        if (renderKey && renderService) {
+          var renderReq = require('https').request({
+            hostname: 'api.render.com',
+            path: '/v1/services/' + renderService + '/env-vars',
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + renderKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            timeout: 20000
+          }, renderRes => { renderRes.resume(); renderRes.on('end', function(){ console.log('[WEBHOOK-SETUP] Render env update status:', renderRes.statusCode); }); });
+          renderReq.on('error', function(e){ console.log('[WEBHOOK-SETUP] Render env update error:', e.message); });
+          renderReq.write(JSON.stringify({ STRIPE_WEBHOOK_SECRET: secret }));
+          renderReq.end();
+        }
+      } catch(reErr) { console.log('[WEBHOOK-SETUP] Render env push skipped:', reErr.message); }
+    }
+    res.json({ success: true, endpoint_url: endpoint.url, endpoint_id: endpoint.id, status: endpoint.status, events: endpoint.enabled_events || [], secret_saved: !!secret });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/stripe/diag — Diagnostic: list recent checkout sessions + webhook
+// delivery attempts for a campaign/email, to see why a payment webhook didn't arrive.
+app.get('/api/admin/stripe/diag', adminAuth, async (req, res) => {
+  try {
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe key not configured' });
+    var email = req.query.email || '';
+    var out = {};
+    // Recent checkout sessions for this email
+    if (email) {
+      var sessions = await stripeApiRequest('GET', 'checkout/sessions?limit=10&customer_email=' + encodeURIComponent(email), null);
+      out.checkout_sessions = (sessions.data || []).map(function(s) {
+        return { id: s.id, status: s.payment_status, amount_total: s.amount_total, campaign_id: (s.metadata || {}).campaign_id, created: new Date(s.created * 1000).toISOString(), payment_intent: s.payment_intent };
+      });
+    }
+    // Webhook endpoints
+    var wh = await stripeApiRequest('GET', 'webhook_endpoints?limit=10', null);
+    out.webhook_endpoints = (wh.data || []).map(function(w) { return { id: w.id, url: w.url, status: w.status }; });
+    // Recent events (last 20)
+    var events = await stripeApiRequest('GET', 'events?limit=20', null);
+    out.recent_events = (events.data || []).map(function(e) {
+      return { id: e.id, type: e.type, created: new Date(e.created * 1000).toISOString(), campaign: (e.data && e.data.object && e.data.object.metadata && e.data.object.metadata.campaign_id) || '' };
+    });
+    // Webhook delivery attempts for the most recent events (last 5)
+    try {
+      var evtIds = (events.data || []).slice(0, 5).map(function(e) { return e.id; });
+      var deliveries = [];
+      for (var di = 0; di < evtIds.length; di++) {
+        var dd = await stripeApiRequest('GET', 'events/' + evtIds[di] + '/endpoint_deliveries', null);
+        deliveries.push({ event: evtIds[di], type: (events.data[di] || {}).type, raw: dd, deliveries: (dd.data || []).map(function(x) { return { id: x.id, endpoint: x.endpoint, status: x.status, attempts: x.attempts, sent_at: x.sent_at ? new Date(x.sent_at * 1000).toISOString() : '' }; }) });
+      }
+      out.deliveries = deliveries;
+    } catch(dErr) { out.deliveries = 'error: ' + dErr.message; }
+    res.json({ success: true, diag: out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// GET /api/admin/stripe/verify-prices — verify every configured price ID is
+// active + weekly on Stripe, and confirm the matching interval for the weekly
+// auto-charge (trial→starter) path.
+app.get('/api/admin/stripe/verify-prices', adminAuth, async (req, res) => {
+  try {
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe key not configured' });
+    var flat = [];
+    Object.keys(STRIPE_PRICE_IDS).forEach(function(prod) {
+      Object.keys(STRIPE_PRICE_IDS[prod]).forEach(function(pk) {
+        flat.push({ product: prod, key: pk, id: STRIPE_PRICE_IDS[prod][pk] });
+      });
+    });
+    var results = [];
+    for (var pi = 0; pi < flat.length; pi++) {
+      var f = flat[pi];
+      try {
+        var r = await stripeApiRequest('GET', 'prices/' + f.id, null);
+        if (r.error) { results.push({ product: f.product, key: f.key, id: f.id, ok: false, error: r.error.message }); }
+        else {
+          results.push({
+            product: f.product, key: f.key, id: f.id, ok: !!r.active,
+            active: !!r.active,
+            amount: r.unit_amount ? '£' + (r.unit_amount / 100).toFixed(2) : null,
+            currency: r.currency || '',
+            interval: r.recurring ? r.recurring.interval : null,
+            interval_count: r.recurring ? r.recurring.interval_count : null,
+            nickname: r.nickname || ''
+          });
+        }
+      } catch(e) { results.push({ product: f.product, key: f.key, id: f.id, ok: false, error: e.message }); }
+      await new Promise(function(r) { setTimeout(r, 150); });
+    }
+    var bad = results.filter(function(r) { return !r.ok || (r.interval && r.interval !== 'week'); });
+    res.json({ success: true, total: results.length, ok: results.filter(function(r) { return r.ok && (!r.interval || r.interval === 'week'); }).length, bad: bad.length, prices: results, note: 'Every package must be active AND weekly (interval=week) for the weekly auto-charge flow.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/stripe/test-status — report test-mode configuration state
+app.get('/api/admin/stripe/test-status', adminAuth, (req, res) => {
+  try {
+    res.json({
+      success: true,
+      test_mode_enabled: process.env.STRIPE_TEST_MODE === 'true' || process.env.STRIPE_TEST_MODE === '1',
+      test_key_configured: !!(process.env.STRIPE_TEST_SECRET_KEY),
+      test_key_prefix: process.env.STRIPE_TEST_SECRET_KEY ? String(process.env.STRIPE_TEST_SECRET_KEY).substring(0, 7) : '',
+      test_prices_loaded: !!STRIPE_TEST_PRICE_IDS,
+      test_price_count: STRIPE_TEST_PRICE_IDS ? Object.keys(STRIPE_TEST_PRICE_IDS).length : 0,
+      live_key_configured: !!STRIPE_SECRET_KEY,
+      note: 'To enable test mode: set STRIPE_TEST_SECRET_KEY (sk_test_...) + STRIPE_TEST_MODE=true, then run /api/admin/stripe/test-setup to create test prices.'
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/stripe/test-setup — create test-mode price IDs in the Stripe
+// TEST account (requires STRIPE_TEST_SECRET_KEY) matching the live amounts, and
+// save them to stripe-config.json under testPriceIds. Safe: test prices never
+// accept real charges. Idempotent: reuses existing test prices by nickname.
+app.post('/api/admin/stripe/test-setup', adminAuth, async (req, res) => {
+  try {
+    var testKey = process.env.STRIPE_TEST_SECRET_KEY || '';
+    if (!testKey) return res.status(400).json({ error: 'STRIPE_TEST_SECRET_KEY not set. Add it to Render env vars first.' });
+    // Helper that calls Stripe with the TEST key regardless of mode
+    function testApi(method, path, data) {
+      return new Promise(function(resolve, reject) {
+        const parts = [];
+        if (data) { Object.entries(data).forEach(([k, v]) => { if (Array.isArray(v)) v.forEach(function(item) { parts.push(encodeURIComponent(k + '[]') + '=' + encodeURIComponent(item)); }); else parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(v)); }); }
+        const params = parts.join('&');
+        const req = require('https').request({ hostname: 'api.stripe.com', path: '/v1/' + path, method: method, headers: { 'Authorization': 'Basic ' + Buffer.from(testKey + ':').toString('base64'), 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(params) } }, function(resp) {
+          let body = ''; resp.on('data', c => body += c); resp.on('end', () => { try { resolve(JSON.parse(body)); } catch { reject(new Error(body)); } });
+        });
+        req.on('error', reject); req.write(params); req.end();
+      });
+    }
+    // Desired test prices: product key -> { price key -> { amount £, nickname } }
+    var amountByName = {
+      'mov-starter': 25, 'mov-growth': 49, 'mov-power': 99,
+      'plan-starter': 25, 'plan-growth': 49, 'plan-power': 99,
+      'nb-starter': 25, 'nb-growth': 49, 'nb-power': 99,
+      'prob-starter': 25, 'prob-growth': 49, 'prob-power': 99,
+      'tend-starter': 25, 'tend-growth': 49, 'tend-power': 99,
+      'bld-package': 25, 'mkt-package': 25, 'prp-package': 25, 'mov-package': 25, 'pro-plan': 49
+    };
+    var productKeyMap = { moving: 'mov', planning: 'plan', newbusiness: 'nb', probate: 'prob', tenders: 'tend' };
+    var testPrices = {};
+    // Reuse any existing test prices by nickname (idempotent re-runs)
+    try {
+      var existing = await testApi('GET', 'prices?limit=100', null);
+      (existing.data || []).forEach(function(p) {
+        var nick = p.nickname || '';
+        Object.keys(amountByName).forEach(function(pk) {
+          if (nick === pk || nick === ('9am-test-' + pk)) {
+            var prod = Object.keys(productKeyMap).find(function(pd) { return productKeyMap[pd] === pk.split('-')[0]; });
+            if (prod) {
+              if (!testPrices[prod]) testPrices[prod] = {};
+              testPrices[prod][pk] = p.id;
+            }
+          }
+        });
+      });
+    } catch(ee) { console.log('[TEST-SETUP] Existing prices lookup:', ee.message); }
+    // Create missing test prices
+    var created = 0;
+    for (var prod in productKeyMap) {
+      if (!testPrices[prod]) testPrices[prod] = {};
+      for (var pk in amountByName) {
+        if (pk.split('-')[0] !== productKeyMap[prod]) continue;
+        if (testPrices[prod][pk]) continue;
+        var nick = '9am-test-' + pk;
+        var p = await testApi('POST', 'prices', {
+          currency: 'gbp',
+          unit_amount: String(amountByName[pk] * 100),
+          nickname: nick,
+          'recurring[interval]': 'week',
+          'product_data[name]': '9amLeads Test ' + pk
+        });
+        if (p && p.id && !p.error) { testPrices[prod][pk] = p.id; created++; }
+        else { return res.status(500).json({ error: 'Failed to create test price ' + pk + ': ' + (p.error ? p.error.message : 'no id') }); }
+        await new Promise(function(r) { setTimeout(r, 200); });
+      }
+    }
+    // Save testPriceIds into stripe-config.json
+    var cfgPath = path.join(DATA_DIR, 'stripe-config.json');
+    var cfg = {};
+    try { cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf-8')); } catch(e) {}
+    cfg.testPriceIds = testPrices;
+    fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+    STRIPE_TEST_PRICE_IDS = testPrices;
+    res.json({ success: true, created: created, total: Object.keys(testPrices).reduce(function(s, p) { return s + Object.keys(testPrices[p]).length; }, 0), testPrices: testPrices, message: 'Test prices saved. Set STRIPE_TEST_MODE=true to use them.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/stripe/test-customer — create a Stripe TEST customer + attach a
+// test card (defaults to 4242...) to a given account, so the trial→starter
+// auto-charge can be tested end-to-end with no real money. Idempotent.
+app.post('/api/admin/stripe/test-customer', adminAuth, async (req, res) => {
+  try {
+    var testKey = process.env.STRIPE_TEST_SECRET_KEY || '';
+    if (!testKey) return res.status(400).json({ error: 'STRIPE_TEST_SECRET_KEY not set' });
+    var email = (req.body && req.body.email) ? String(req.body.email).toLowerCase() : '';
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var cust = (getDb().customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    function testApi(method, path, data) {
+      return new Promise(function(resolve, reject) {
+        const parts = [];
+        if (data) { Object.entries(data).forEach(([k, v]) => { if (Array.isArray(v)) v.forEach(function(item) { parts.push(encodeURIComponent(k + '[]') + '=' + encodeURIComponent(item)); }); else parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(v)); }); }
+        const params = parts.join('&');
+        const req = require('https').request({ hostname: 'api.stripe.com', path: '/v1/' + path, method: method, headers: { 'Authorization': 'Basic ' + Buffer.from(testKey + ':').toString('base64'), 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(params) } }, function(resp) {
+          let body = ''; resp.on('data', c => body += c); resp.on('end', () => { try { resolve(JSON.parse(body)); } catch { reject(new Error(body)); } });
+        });
+        req.on('error', reject); req.write(params); req.end();
+      });
+    }
+    // Create (or reuse) a Stripe customer for this account
+    var sc = cust.stripe_customer_id;
+    if (!sc) {
+      var newCust = await testApi('POST', 'customers', { email: email, name: cust.company || email });
+      if (!newCust || !newCust.id) return res.status(500).json({ error: 'Failed to create Stripe customer: ' + (newCust && newCust.error ? newCust.error.message : 'no id') });
+      sc = newCust.id;
+    }
+    // Create a payment method from the test card and attach it
+    var pm = await testApi('POST', 'payment_methods', { type: 'card', 'card[token]': req.body.token || 'tok_visa' });
+    if (!pm || !pm.id) return res.status(500).json({ error: 'Failed to create payment method: ' + (pm && pm.error ? pm.error.message : 'no id') });
+    var attached = await testApi('POST', 'payment_methods/' + pm.id + '/attach', { customer: sc });
+    if (!attached || !attached.id) return res.status(500).json({ error: 'Failed to attach card: ' + (attached && attached.error ? attached.error.message : 'no id') });
+    // Save on the account
+    db.prepare('UPDATE customers SET stripe_customer_id = ?, stripe_payment_method_id = ?, auto_send_paused = 0 WHERE id = ?').run(sc, pm.id, cust.id);
+    saveDb();
+    res.json({ success: true, email: email, stripe_customer_id: sc, stripe_payment_method_id: pm.id, card_brand: attached.card ? attached.card.brand : 'visa', card_last4: attached.card ? attached.card.last4 : '4242', message: 'Test card attached. Now expire the trial + run /api/admin/trial-charge/run.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/direct-mail/complete-pending — Manually complete a stuck paid
+// campaign (payment confirmed in Stripe but webhook didn't arrive): mark paid,
+// send to Stannp, email receipt, mark lead posted.
+app.post('/api/admin/direct-mail/complete-pending', adminAuth, async (req, res) => {
+  try {
+    var campaignId = req.body.campaign_id || '';
+    var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(campaignId);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    if (campaign.stripe_payment_status === 'paid') return res.json({ success: true, message: 'Campaign already paid', campaign: campaign });
+    // Mark paid
+    db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run('paid', 'paid', new Date().toISOString(), campaignId);
+    saveDb();
+    // Send to Stannp
+    var sendResult = null;
+    try { sendResult = await sendDmCampaign(campaignId, campaign.customer_id); } catch(e) { sendResult = { success: false, error: e.message }; }
+    // Mark lead posted
+    try {
+      var recips = db.prepare('SELECT lead_id FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(campaignId, campaign.customer_id);
+      recips.forEach(function(rp) {
+        if (!rp.lead_id) return;
+        var lr = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(rp.lead_id, campaign.customer_id);
+        if (lr) { var ld = {}; try { ld = JSON.parse(lr.data || '{}'); } catch(e) {} ld.post_status = sendResult && sendResult.success ? 'posted' : 'payment_received_pending_send'; ld.post_order_id = (sendResult && sendResult.provider_campaign_id) ? String(sendResult.provider_campaign_id) : ''; ld.posted_at = new Date().toISOString(); db.prepare('UPDATE leads SET data = ? WHERE id = ?').run(JSON.stringify(ld), rp.lead_id); }
+      });
+      saveDb();
+    } catch(le) { console.log('[COMPLETE-PENDING] Lead update error:', le.message); }
+    res.json({ success: true, campaign_id: campaignId, sent: !!(sendResult && sendResult.success), provider_campaign_id: (sendResult && sendResult.provider_campaign_id) || '', error: (sendResult && !sendResult.success) ? sendResult.error : '' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // POST /api/stannp/webhook — Receive Stannp status updates
@@ -6520,17 +9402,46 @@ app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
     // Check if this is an accept/reject for retention offer
     var accept = req.body.accept;
     if (accept === true) {
-      // Apply retention discount: 50% off for 2 months
+      // Apply retention discount: 50% off for 2 weeks
       var discountEnd = new Date();
-      discountEnd.setMonth(discountEnd.getMonth() + 2);
+      discountEnd.setDate(discountEnd.getDate() + 14);
       db.prepare('UPDATE customers SET discount = 50, discount_until = ? WHERE id = ?').run(discountEnd.toISOString(), req.user.id);
-      return res.json({ success: true, message: 'You\'re Staying! 50% discount applied for the next 2 months. Your leads continue as normal.', discount: 50 });
+      // Apply the discount at the Stripe PRICE level: flexible-billing subscriptions
+      // do NOT support coupons, so we switch the subscription to a 50%-off price
+      // (created on demand) to actually halve the weekly charge.
+      try {
+        if (customer.stripe_subscription_id) {
+          var subForRetention = await stripeApiRequest('GET', 'subscriptions/' + customer.stripe_subscription_id, {});
+          var subItemRet = subForRetention && subForRetention.items && subForRetention.items.data && subForRetention.items.data[0];
+          var origPrice = subItemRet && subItemRet.price;
+          if (subItemRet && subItemRet.id && origPrice && origPrice.unit_amount) {
+            // Create a one-off 50%-off price mirroring the current plan
+            var discountPrice = await stripeApiRequest('POST', 'prices', {
+              currency: origPrice.currency,
+              'recurring[interval]': (origPrice.recurring && origPrice.recurring.interval) || 'week',
+              'recurring[interval_count]': String((origPrice.recurring && origPrice.recurring.interval_count) || 1),
+              'unit_amount': String(Math.round(origPrice.unit_amount / 2)),
+              'product[metadata][retention_50]': '1',
+              metadata: { purpose: 'retention_50', parent_price: origPrice.id, active_until: discountEnd.toISOString() }
+            });
+            var discountPriceId = discountPrice && discountPrice.id;
+            if (discountPriceId) {
+              await stripeApiRequest('POST', 'subscriptions/' + customer.stripe_subscription_id, {
+                'items[0][id]': subItemRet.id,
+                'items[0][price]': discountPriceId,
+                proration_behavior: 'none'
+              });
+            }
+          }
+        }
+      } catch(retErr) { console.log('[RETENTION] Stripe discount apply error:', retErr.message); }
+      return res.json({ success: true, message: 'You\'re Staying! 50% discount applied for the next 2 weeks. Your leads continue as normal.', discount: 50 });
     }
     if (accept === false) {
       // Force cancel - proceed to cancellation
     } else {
       // First cancel attempt: offer retention discount for paid plans
-      return res.json({ success: true, offer: true, message: 'We\'d love to keep you! Save 50% for the next 2 months.', discount: 50, months: 2 });
+      return res.json({ success: true, offer: true, message: 'We\'d love to keep you! Save 50% for the next 2 weeks.', discount: 50, weeks: 2 });
     }
 
     const sub = db.prepare('SELECT * FROM subscriptions WHERE customer_id = ? AND status = \'active\'').get(req.user.id);
@@ -6593,17 +9504,51 @@ app.post('/api/subscription/update', authMiddleware, async (req, res) => {
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!customer) return res.status(404).json({ error: 'User not found' });
 
-    // Create Stripe checkout for the new plan (Stripe handles proration)
+    // Build the correct Stripe price key using the short product prefix
+    // (moving→mov, planning→plan, probate→prob, newbusiness→nb, tenders→tend)
+    // and the tier (starter/growth/power).
+    var upgradeProdKeyMap = { moving: 'mov', planning: 'plan', probate: 'prob', newbusiness: 'nb', tenders: 'tend' };
+    var upgradePrefix = upgradeProdKeyMap[customer.product] || 'mov';
+    var upgradeTier = (plan === 'power') ? 'power' : (plan === 'growth') ? 'growth' : 'starter';
+    var upgradePriceId = getStripePriceId(customer.product, upgradePrefix + '-' + upgradeTier);
+    if (!upgradePriceId) { return res.status(400).json({ error: 'No price configured for ' + customer.product + ' ' + plan }); }
+
+    // Map the API plan name to the customer-facing plan label + leads/day.
+    var planLabel = (plan === 'power') ? 'enterprise' : (plan === 'growth') ? 'pro' : 'starter';
+    var newLeadsPerDay = getPlanLimit(customer.product || 'moving', planLabel, customer.coverage);
+
+    // If the customer already has a Stripe subscription, UPDATE it to the new price
+    // (Stripe prorates and charges the difference). This replaces the old code that
+    // created a SECOND subscription, which double-charged the customer.
+    if (customer.stripe_subscription_id) {
+      // Get the subscription's current item id
+      var existingSub = await stripeApiRequest('GET', 'subscriptions/' + customer.stripe_subscription_id, {});
+      var subItemId = existingSub && existingSub.items && existingSub.items.data && existingSub.items.data[0] && existingSub.items.data[0].id;
+      if (!subItemId) { return res.status(400).json({ error: 'Could not find existing subscription item to upgrade' }); }
+      var upd = await stripeApiRequest('POST', 'subscriptions/' + customer.stripe_subscription_id, {
+        'items[0][id]': subItemId,
+        'items[0][price]': upgradePriceId,
+        proration_behavior: 'create_prorations',
+        off_session: 'true'
+      });
+      if (!upd || !upd.id) { return res.status(400).json({ error: (upd && upd.error && upd.error.message) || 'Subscription upgrade failed' }); }
+      // Update the account plan + leads_per_day immediately
+      db.prepare('UPDATE customers SET plan = ?, selected_plan = ?, leads_per_day = ? WHERE id = ?').run(planLabel, planLabel, newLeadsPerDay, req.user.id);
+      saveDb();
+      return res.json({ success: true, message: 'Plan upgraded to ' + planLabel, plan: planLabel, leads_per_day: newLeadsPerDay });
+    }
+
+    // No existing subscription — create a new one via checkout for the new plan
     const result = await stripeApiRequest('POST', 'checkout/sessions', {
       mode: 'subscription',
       customer_email: customer.email,
-      'line_items[0][price]': STRIPE_PRICE_IDS[customer.product]?.[customer.product + '-' + plan] || '',
+      'line_items[0][price]': upgradePriceId,
       'line_items[0][quantity]': '1',
       success_url: PUBLIC_URL + '/portal/dashboard.html?checkout=success',
       cancel_url: PUBLIC_URL + '/portal/dashboard.html?checkout=cancel',
       'metadata[customer_id]': customer.id,
       'metadata[product]': customer.product,
-      'metadata[plan]': plan,
+      'metadata[plan]': planLabel,
       'subscription_data[proration_behavior]': 'create_prorations',
     });
 
@@ -6729,6 +9674,40 @@ app.get('/api/payments', authMiddleware, async (req, res) => {
       }
     }
 
+    // Merge persisted payment receipts (from ALL payment sources) into the
+    // invoice history so the dashboard billing section shows every payment as
+    // "Paid", even one-off Print & Post / sequence charges not on a Stripe
+    // invoice. Runs regardless of Stripe config so stored receipts always show.
+    try {
+      var localReceipts = (db.prepare('SELECT * FROM payments WHERE customer_id = ?') ? db.prepare('SELECT * FROM payments WHERE customer_id = ?').all(req.user.id) : []);
+      if (localReceipts && localReceipts.length) {
+        var knownStripeIds = {};
+        invoices.forEach(function(iv) { knownStripeIds[iv.id] = true; });
+        localReceipts.forEach(function(rec) {
+          if (rec.stripe_id && knownStripeIds[rec.stripe_id]) return;
+          if (rec.stripe_id) knownStripeIds[rec.stripe_id] = true;
+          var recAmt = Number(rec.amount || 0);
+          totalSpendThisMonth += recAmt;
+          totalSpendAllTime += recAmt;
+          invoices.push({
+            id: rec.stripe_id || rec.id,
+            number: rec.number || rec.stripe_id || rec.id,
+            status: 'paid',
+            amount: recAmt,
+            amount_paid: recAmt,
+            currency: rec.currency || 'gbp',
+            period_start: rec.period_start || '',
+            period_end: rec.period_end || '',
+            created: rec.created_at || '',
+            hosted_invoice_url: rec.hosted_invoice_url || '',
+            invoice_pdf: rec.invoice_pdf || ''
+          });
+        });
+        // Sort by date, newest first
+        invoices.sort(function(a, b) { return new Date(b.created || 0) - new Date(a.created || 0); });
+      }
+    } catch(lrE) { console.log('[PAYMENTS] Local receipts error:', lrE.message); }
+
     res.json({
       success: true,
       plan: plan,
@@ -6784,6 +9763,51 @@ app.post('/api/direct-mail/setup-payment', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/direct-mail/auto-card/session — Create a Stripe HOSTED setup session so
+// the customer can securely save a card for Auto Print & Post billing on Stripe's
+// page (no inline card element needed). After they save it, the webhook
+// (session.mode === 'setup') attaches the payment method and we mark has_card=true.
+app.post('/api/direct-mail/auto-card/session', authMiddleware, async (req, res) => {
+  try {
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    // Ensure Stripe customer exists
+    if (!customer.stripe_customer_id) {
+      var sc = await stripeApiRequest('POST', 'customers', { email: customer.email, name: customer.company || customer.email, 'metadata[customer_id]': customer.id });
+      if (!sc || !sc.id) return res.status(500).json({ error: 'Failed to create Stripe customer' });
+      db.prepare('UPDATE customers SET stripe_customer_id = ? WHERE id = ?').run(sc.id, req.user.id);
+      customer.stripe_customer_id = sc.id;
+      saveDb();
+    }
+    var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    var sessionBody = {
+      mode: 'setup',
+      customer: customer.stripe_customer_id,
+      'payment_method_types[0]': 'card',
+      success_url: baseUrl + '/portal/dashboard.html?auto_card=saved',
+      cancel_url: baseUrl + '/portal/dashboard.html?auto_card=cancelled',
+      'metadata[type]': 'trial_card_setup',
+      'metadata[customer_id]': customer.id
+    };
+    var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
+    if (session && session.url) {
+      res.json({ success: true, checkout_url: session.url, session_id: session.id });
+    } else {
+      res.status(500).json({ error: session && session.error && session.error.message ? session.error.message : 'Failed to create setup session' });
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/auto-card/status — Return whether the customer has a card
+// on file for auto-billing (helper for the dashboard).
+app.get('/api/direct-mail/auto-card/status', authMiddleware, (req, res) => {
+  try {
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    res.json({ success: true, has_card: !!(customer && (customer.stripe_payment_method_id || customer.stripe_customer_id)) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/direct-mail/confirm-payment-method — Store confirmed payment method
 app.post('/api/direct-mail/confirm-payment-method', authMiddleware, async (req, res) => {
   try {
@@ -6797,7 +9821,7 @@ app.post('/api/direct-mail/confirm-payment-method', authMiddleware, async (req, 
     if (!stripeCustomerId) {
       var sc = await stripeApiRequest('POST', 'customers', { email: customer.email, metadata: { customer_id: customer.id } });
       if (sc && sc.id) { stripeCustomerId = sc.id; db.prepare('UPDATE customers SET stripe_customer_id = ? WHERE id = ?').run(sc.id, req.user.id); }
-      else return res.status(500).json({ error: 'Failed to create Stripe customer' });
+      else { console.log('[STRIPE] Customer create FAILED:', JSON.stringify(sc).substring(0, 500)); return res.status(500).json({ error: 'Failed to create Stripe customer: ' + ((sc && sc.error && sc.error.message) || '') }); }
     }
 
     // Attach payment method to customer
@@ -7138,10 +10162,285 @@ app.post('/api/distribute', adminAuth, (req, res) => {
       });
     }
     console.log('[DISTRIBUTE] Completed: ' + JSON.stringify(result).substring(0, 300));
+    // Persist a short distribution log so we can inspect what happened via API.
+    try {
+      var logDb = getDb();
+      if (!logDb.distribution_logs) logDb.distribution_logs = [];
+      logDb.distribution_logs.push({ run_id: bgId, product: product || 'all', at: new Date().toISOString(), result: result });
+      if (logDb.distribution_logs.length > 50) logDb.distribution_logs = logDb.distribution_logs.slice(-50);
+      saveDb();
+    } catch(logErr) { console.log('[DISTRIBUTE] log error:', logErr.message); }
   } catch (e) {
     console.error('[DISTRIBUTE] Error:', e.message);
+    try {
+      var errDb = getDb();
+      if (!errDb.distribution_logs) errDb.distribution_logs = [];
+      errDb.distribution_logs.push({ run_id: bgId, product: product || 'all', at: new Date().toISOString(), error: e.message });
+      if (errDb.distribution_logs.length > 50) errDb.distribution_logs = errDb.distribution_logs.slice(-50);
+      saveDb();
+    } catch(logErr) {}
   }
   })();
+});
+
+// GET /api/admin/distribution-logs — recent distribution runs (result/error)
+app.get('/api/admin/distribution-logs', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    res.json({ success: true, logs: db2.distribution_logs || [] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Backfill: existing campaigns sent before per-recipient tracking store their
+// comma-joined Stannp mailpiece IDs on the campaign but not on recipients. Map
+// them onto recipients in order so webhooks/polls can match them.
+function backfillMailpieceIds() {
+  try {
+    var dbB = getDb();
+    var changed = false;
+    (dbB.direct_mail_campaigns || []).forEach(function(c) {
+      if (!c.provider_campaign_id) return;
+      var rcpts = (dbB.direct_mail_recipients || []).filter(function(r) { return r.campaign_id === c.id; });
+      if (!rcpts.length) return;
+      var needIds = rcpts.filter(function(r) { return !r.provider_mailpiece_id; });
+      if (!needIds.length) return;
+      var ids = String(c.provider_campaign_id).split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+      var used = rcpts.map(function(r) { return String(r.provider_mailpiece_id || ''); });
+      var assignable = ids.filter(function(id) { return used.indexOf(id) === -1; });
+      if (assignable.length >= needIds.length) {
+        for (var bi = 0; bi < needIds.length; bi++) {
+          needIds[bi].provider_mailpiece_id = assignable[bi];
+          needIds[bi].provider_status = 'processing';
+          needIds[bi].provider_status_label = 'Accepted';
+          needIds[bi].tracking_step = 1;
+          changed = true;
+        }
+      }
+    });
+    if (changed) saveDb();
+    return changed;
+  } catch(e) { console.log('[DM-TRACKING] backfill error:', e.message); return false; }
+}
+
+// REAL-DATA GUARD: a campaign only has REAL live tracking if it was sent via the
+// Stannp provider with real (numeric) mailpiece IDs. Mock/test/demo records must
+// never be shown as live tracking to customers.
+function isRealTrackingCampaign(c, recipients) {
+  if (!c) return false;
+  // Demo preview records are excluded from customer "real" tracking.
+  if (c.notes === 'DEMO_TRACKING') return false;
+  // Must have been sent via the real provider.
+  var provider = String(c.provider || '').toLowerCase();
+  if (provider && provider !== 'stannp') return false;
+  if (provider === '' && String(c.provider_campaign_id || '').indexOf('MOCK-') === 0) return false;
+  // At least one recipient must carry a real numeric Stannp mailpiece id.
+  var ids = (recipients || []).map(function(r) { return String(r.provider_mailpiece_id || ''); });
+  var realId = ids.filter(function(id) { return /^\d+$/.test(id) && id.length >= 4; });
+  if (!realId.length) {
+    // Fall back to the campaign-level id: real Stannp ids are numeric.
+    var campIds = String(c.provider_campaign_id || '').split(',').map(function(s) { return s.trim(); });
+    realId = campIds.filter(function(id) { return /^\d+$/.test(id) && id.length >= 4; });
+  }
+  return realId.length > 0;
+}
+
+// GET /api/admin/tracking-overview — admin view of all live post tracking across
+// every campaign/recipient, so support can see exactly where mail is.
+app.get('/api/admin/tracking-overview', adminAuth, (req, res) => {
+  try {
+    backfillMailpieceIds();
+    var dbT = getDb();
+    var campaigns = (dbT.direct_mail_campaigns || []).filter(function(c) { return c.provider_campaign_id && c.status !== 'draft'; });
+    var rows = campaigns.map(function(c) {
+      var rcpts = (dbT.direct_mail_recipients || []).filter(function(r) { return r.campaign_id === c.id; });
+      return {
+        campaign_id: c.id, name: c.name, customer_id: c.customer_id, status: c.status,
+        provider_status: c.provider_status || '', provider_status_label: c.provider_status_label || '',
+        provider_updated_at: c.provider_updated_at || '', created_at: c.created_at,
+        tracking_summary: c.tracking_summary || null,
+        recipients: rcpts.map(function(r) { return { id: r.id, lead_id: r.lead_id || '', name: r.name, address: (r.address_line1 || '') + (r.postcode ? ', ' + r.postcode : ''), mailpiece_id: r.provider_mailpiece_id || '', mailpiece_type: r.mailpiece_type || '', provider_status: r.provider_status || 'pending', tracking_step: r.tracking_step || 0, provider_updated_at: r.provider_updated_at || '' }; })
+      };
+    });
+    res.json({ success: true, count: rows.length, campaigns: rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/tracking/sync-all — force refresh of ALL in-flight mailpieces from Stannp.
+app.post('/api/admin/tracking/sync-all', adminAuth, async (req, res) => {
+  try {
+    var dbA = getDb();
+    var provider = getDirectMailProvider();
+    if (provider.name !== 'stannp') return res.json({ success: false, error: 'Stannp provider not active' });
+    var inFlight = (dbA.direct_mail_recipients || []).filter(function(r) { return r.provider_mailpiece_id; });
+    var seen = {}; var ids = [];
+    inFlight.forEach(function(r) { var mid = String(r.provider_mailpiece_id); if (!seen[mid]) { seen[mid] = 1; ids.push(mid); } });
+    var updated = 0;
+    for (var ai = 0; ai < ids.length; ai++) {
+      try {
+        var st = await provider.getCampaignStatus(ids[ai]);
+        if (st && st.success && st.status) {
+          var rcpt = (dbA.direct_mail_recipients || []).find(function(r) { return String(r.provider_mailpiece_id || '') === ids[ai]; });
+          if (rcpt) { recordMailpieceTracking(rcpt.customer_id, rcpt.campaign_id, rcpt.id, ids[ai], st.status, new Date().toISOString()); updated++; }
+        }
+      } catch(sErr) {}
+    }
+    saveDb();
+    res.json({ success: true, checked: ids.length, updated: updated });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/tracking/config — report webhook + provider config state.
+app.get('/api/admin/tracking/config', adminAuth, (req, res) => {
+  res.json({
+    success: true,
+    provider: DIRECT_MAIL_PROVIDER || 'mock',
+    stannp_api_key: !!STANNP_API_KEY,
+    stannp_webhook_secret: !!STANNP_WEBHOOK_SECRET,
+    webhook_url: PUBLIC_URL + '/api/webhooks/stannp',
+    note: 'In Stannp account settings > Webhooks, create a webhook to ' + PUBLIC_URL + '/api/webhooks/stannp and subscribe to the "Mail piece Status" event. Set STANNP_WEBHOOK_SECRET in env to sign/verify requests.'
+  });
+});
+
+// POST /api/admin/tracking/reconcile — force a reconcile against Stannp's reporting
+// API so every mailpiece status is the REAL current value from Stannp.
+app.post('/api/admin/tracking/reconcile', adminAuth, async (req, res) => {
+  try {
+    var daysBack = (req.body && req.body.days_back) ? parseInt(req.body.days_back) : 21;
+    var result = await reconcileTrackingFromStannp(daysBack);
+    res.json({ success: true, result: result });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/tracking/real-data-check — audit which tracking records are REAL
+// (numeric Stannp ids) vs mock/legacy/demo, so we can confirm customers only see real data.
+app.get('/api/admin/tracking/real-data-check', adminAuth, (req, res) => {
+  try {
+    var dbC = getDb();
+    var camps = dbC.direct_mail_campaigns || [];
+    var rcpts = dbC.direct_mail_recipients || [];
+    var real = 0, mock = 0, demo = 0, unassigned = 0;
+    var realIds = [], mockIds = [], demoIds = [];
+    camps.forEach(function(c) {
+      var r = rcpts.filter(function(x) { return x.campaign_id === c.id; });
+      var anyReal = r.some(function(x) { return /^\d+$/.test(String(x.provider_mailpiece_id||'')) && String(x.provider_mailpiece_id||'').length >= 4; });
+      var anyMock = r.some(function(x) { return String(x.provider_mailpiece_id||'').indexOf('MOCK-') === 0; });
+      var isDemo = c.notes === 'DEMO_TRACKING';
+      if (isDemo) { demo++; demoIds.push(c.id); }
+      else if (anyMock) { mock++; mockIds.push(c.id); }
+      else if (anyReal) { real++; realIds.push(c.id); }
+      else { unassigned++; }
+    });
+    res.json({ success: true, counts: { real: real, mock: mock, demo: demo, unassigned: unassigned }, mock_campaign_ids: mockIds, demo_campaign_ids: demoIds, note: 'Mock/legacy records are excluded from customer tracking by the real-data guard.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/tracking/demo-seed — create sample campaigns + recipients at every
+// tracking stage so the Live Post Tracking dashboard can be previewed end-to-end.
+// Bodies { email } (defaults to the demo account ketzman1g@gmail.com).
+app.post('/api/admin/tracking/demo-seed', adminAuth, (req, res) => {
+  try {
+    var email = (req.body && req.body.email) || 'ketzman1g@gmail.com';
+    var dbD = getDb();
+    var cust = (dbD.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === String(email).toLowerCase(); });
+    if (!cust) return res.status(404).json({ error: 'Customer not found: ' + email });
+    var now = new Date();
+    var iso = now.toISOString();
+    var day = iso.split('T')[0];
+    var hourAgo = new Date(now.getTime() - 3600000).toISOString();
+    var twoDaysAgo = new Date(now.getTime() - 2 * 86400000).toISOString();
+    var threeDaysAgo = new Date(now.getTime() - 3 * 86400000).toISOString();
+    var fiveDaysAgo = new Date(now.getTime() - 5 * 86400000).toISOString();
+    var weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
+
+    // Demo scenarios — one campaign per stage. provider_campaign_id uses demo ids.
+    var demos = [
+      { name: 'Demo: Printing Now', mailType: 'A5 Flyer', created: hourAgo, items: [
+        { name: 'Pritesh Sharma', address1: '12 Kings Road', city: 'Harrow', postcode: 'HA1 1SJ', status: 'printing', step: 2, emoji: '\uD83D\uDD27', updated: hourAgo, hist: [{status:'queued',label:'Accepted',at:hourAgo,desc:'Order accepted by the print house'},{status:'printing',label:'Printing',at:hourAgo,desc:'Your mail is being printed'}] },
+        { name: 'Meera Patel', address1: '48 Green Lane', city: 'Harrow', postcode: 'HA2 8QW', status: 'queued', step: 1, emoji: '\u2705', updated: hourAgo, hist: [{status:'queued',label:'Accepted',at:hourAgo,desc:'Order accepted by the print house'}] }
+      ]},
+      { name: 'Demo: Dispatched to Royal Mail', mailType: 'A4 Letter', created: twoDaysAgo, items: [
+        { name: 'Daniel Osei', address1: '5 Station Approach', city: 'Harrow', postcode: 'HA3 6JA', status: 'dispatched', step: 3, emoji: '\uD83D\uDE9A', updated: twoDaysAgo, hist: [{status:'queued',label:'Accepted',at:twoDaysAgo,desc:'Order accepted by the print house'},{status:'printing',label:'Printing',at:twoDaysAgo,desc:'Your mail is being printed'},{status:'dispatched',label:'Dispatched',at:twoDaysAgo,desc:'Handed to Royal Mail'}] },
+        { name: 'Aisha Khan', address1: '31 Byron Road', city: 'Wealdstone', postcode: 'HA3 7ST', status: 'dispatched', step: 3, emoji: '\uD83D\uDE9A', updated: twoDaysAgo, hist: [{status:'queued',label:'Accepted',at:twoDaysAgo,desc:'Order accepted by the print house'},{status:'printing',label:'Printing',at:twoDaysAgo,desc:'Your mail is being printed'},{status:'dispatched',label:'Dispatched',at:twoDaysAgo,desc:'Handed to Royal Mail'}] }
+      ]},
+      { name: 'Demo: Out for Delivery', mailType: 'A5 Flyer', created: threeDaysAgo, items: [
+        { name: 'James Whitfield', address1: '72 Headstone Lane', city: 'Harrow', postcode: 'HA2 6NL', status: 'out_for_delivery', step: 4, emoji: '\uD83D\uDEE3\uFE0F', updated: threeDaysAgo, hist: [{status:'queued',label:'Accepted',at:threeDaysAgo,desc:'Order accepted by the print house'},{status:'printing',label:'Printing',at:threeDaysAgo,desc:'Your mail is being printed'},{status:'dispatched',label:'Dispatched',at:threeDaysAgo,desc:'Handed to Royal Mail'},{status:'out_for_delivery',label:'Out for delivery',at:threeDaysAgo,desc:'At the local delivery office'}] }
+      ]},
+      { name: 'Demo: Delivered', mailType: 'A4 Letter', created: fiveDaysAgo, items: [
+        { name: 'Sarah Mitchell', address1: '9 Northolt Road', city: 'South Harrow', postcode: 'HA2 0EN', status: 'delivered', step: 5, emoji: '\uD83D\uDCEB', updated: weekAgo, hist: [{status:'queued',label:'Accepted',at:fiveDaysAgo,desc:'Order accepted by the print house'},{status:'printing',label:'Printing',at:fiveDaysAgo,desc:'Your mail is being printed'},{status:'dispatched',label:'Dispatched',at:fiveDaysAgo,desc:'Handed to Royal Mail'},{status:'out_for_delivery',label:'Out for delivery',at:weekAgo,desc:'At the local delivery office'},{status:'delivered',label:'Delivered',at:weekAgo,desc:'Delivered to the address'}] },
+        { name: 'Tom Bradley', address1: '27 Eastcote Lane', city: 'South Harrow', postcode: 'HA2 9BS', status: 'delivered', step: 5, emoji: '\uD83D\uDCEB', updated: weekAgo, hist: [{status:'queued',label:'Accepted',at:fiveDaysAgo,desc:'Order accepted by the print house'},{status:'printing',label:'Printing',at:fiveDaysAgo,desc:'Your mail is being printed'},{status:'dispatched',label:'Dispatched',at:fiveDaysAgo,desc:'Handed to Royal Mail'},{status:'out_for_delivery',label:'Out for delivery',at:weekAgo,desc:'At the local delivery office'},{status:'delivered',label:'Delivered',at:weekAgo,desc:'Delivered to the address'}] }
+      ]},
+      { name: 'Demo: Returned to Sender', mailType: 'A5 Flyer', created: weekAgo, items: [
+        { name: 'Unknown Occupier', address1: '101 Pinner Road', city: 'North Harrow', postcode: 'HA1 4ES', status: 'returned', step: 6, emoji: '\u21A9\uFE0F', updated: weekAgo, hist: [{status:'queued',label:'Accepted',at:weekAgo,desc:'Order accepted by the print house'},{status:'printing',label:'Printing',at:weekAgo,desc:'Your mail is being printed'},{status:'dispatched',label:'Dispatched',at:weekAgo,desc:'Handed to Royal Mail'},{status:'returned',label:'Returned',at:weekAgo,desc:'Returned to sender'}] }
+      ]}
+    ];
+
+    var created = 0;
+    demos.forEach(function(dm) {
+      var campId = 'demo_' + uuidv4();
+      var mailpieceIds = [];
+      var rcptRows = [];
+      dm.items.forEach(function(it, di) {
+        var mpId = '999' + (100000 + Math.floor(Math.random() * 899999));
+        mailpieceIds.push(mpId);
+        var rcptId = 'demo_rcpt_' + uuidv4();
+        rcptRows.push({
+          id: rcptId, customer_id: cust.id, campaign_id: campId, name: it.name, company: '',
+          address_line1: it.address1, address_line2: '', city: it.city, postcode: it.postcode, country: 'United Kingdom',
+          lead_id: 'demo_lead_' + di, status: it.status, created_at: dm.created,
+          provider_mailpiece_id: mpId, provider_status: it.status, provider_status_label: it.status.replace(/_/g, ' '),
+          tracking_step: it.step, provider_emoji: it.emoji, provider_updated_at: it.updated, tracking_history: it.hist,
+          updated_at: it.updated
+        });
+      });
+      // Campaign row
+      var campRow = {
+        id: campId, customer_id: cust.id, name: dm.name, description: dm.mailType + ' · Demo for previewing Live Post Tracking',
+        status: 'sent_to_provider', template_id: '', material_id: '', target_count: dm.items.length, sent_count: dm.items.length,
+        delivery_date: day, budget: 0, notes: 'DEMO_TRACKING', provider: 'stannp',
+        provider_campaign_id: mailpieceIds.join(','), provider_status: dm.items[0].status, provider_status_label: dm.items[0].status.replace(/_/g, ' '),
+        provider_updated_at: dm.items[0].updated, stripe_session_id: '', stripe_payment_id: 'demo_pay_' + Date.now(),
+        stripe_payment_status: 'paid', created_at: dm.created, updated_at: dm.items[0].updated,
+        tracking_history: [{ status: dm.items[0].status, label: dm.items[0].status.replace(/_/g, ' '), at: dm.items[0].updated, desc: 'Demo', delivered_count: dm.items.filter(function(x){return x.status==='delivered';}).length, total: dm.items.length }],
+        tracking_summary: { total: dm.items.length, delivered: dm.items.filter(function(x){return x.status==='delivered';}).length, dispatched: dm.items.filter(function(x){return x.status==='dispatched'||x.status==='out_for_delivery';}).length, printing: dm.items.filter(function(x){return x.status==='printing'||x.status==='queued';}).length }
+      };
+      dbD.direct_mail_campaigns.push(campRow);
+      rcptRows.forEach(function(rc) { dbD.direct_mail_recipients.push(rc); });
+      created++;
+    });
+    saveDb();
+    res.json({ success: true, created: created, email: cust.email, message: created + ' demo campaigns created at different tracking stages. Open Live Post Tracking in the ' + cust.email + ' dashboard to preview.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/tracking/demo-cleanup — remove all demo tracking campaigns (notes = DEMO_TRACKING).
+app.post('/api/admin/tracking/demo-cleanup', adminAuth, (req, res) => {
+  try {
+    var dbC = getDb();
+    var beforeC = (dbC.direct_mail_campaigns || []).length;
+    var beforeR = (dbC.direct_mail_recipients || []).length;
+    dbC.direct_mail_campaigns = (dbC.direct_mail_campaigns || []).filter(function(c) { return c.notes !== 'DEMO_TRACKING'; });
+    var keepIds = {}; (dbC.direct_mail_campaigns || []).forEach(function(c) { keepIds[c.id] = 1; });
+    dbC.direct_mail_recipients = (dbC.direct_mail_recipients || []).filter(function(r) { return keepIds[r.campaign_id]; });
+    saveDb();
+    res.json({ success: true, campaigns_removed: beforeC - (dbC.direct_mail_campaigns || []).length, recipients_removed: beforeR - (dbC.direct_mail_recipients || []).length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/distribute-sync — run the distributor for one product INLINE and
+// return the full result (or error) so we can see exactly why assignments fail.
+app.post('/api/admin/distribute-sync', adminAuth, async (req, res) => {
+  try {
+    var product = (req.body && req.body.product) || 'moving';
+    _dbData = null;
+    getDb();
+    var distributor = require('./lead_distributor.js');
+    var result = await distributor.distributeProduct(product);
+    _dbData = null;
+    getDb();
+    res.json({ success: true, product: product, result: result });
+  } catch(e) {
+    res.status(500).json({ success: false, product: (req.body && req.body.product) || 'moving', error: e.message, stack: e.stack ? e.stack.split('\n').slice(0, 5).join(' | ') : '' });
+  }
 });
 
 // GET /api/debug/last-email — view the last generated lead email HTML in browser
@@ -7203,6 +10502,11 @@ app.get('/api/health', (req, res) => {
     domain: 'www.9amleads.com',
     email: 'hello@9amleads.com',
     database: DB_FILE,
+    crons: {
+      scrape_06: global.__lastScrapeCronFire || null,
+      delivery_09: __lastDeliveryFire || null,
+      delivery_fire_count: __deliveryFireCount || 0
+    },
     customers: customerCount.count,
     active_trials: activeTrials.count,
     expired_trials: expiredTrials.count,
@@ -7213,6 +10517,70 @@ app.get('/api/health', (req, res) => {
     scheduler: 'Active (9:00 AM daily)',
     campaign: 'Active (10 trial + 7 paid emails)'
   });
+});
+
+// ===== WEBSITE ANALYTICS (Plausible-style, self-hosted, cookie-free) =====
+// Tracks anonymous pageviews. No cookies, no personal data — a visitor id is a
+// random token generated on first load and stored in localStorage. Each visit
+// records path, referrer, user-agent (truncated) and a timestamp.
+
+// POST /api/track — log a pageview from the tracking snippet
+app.post('/api/track', (req, res) => {
+  try {
+    var dbA = getDb();
+    if (!dbA.pageviews) dbA.pageviews = [];
+    var b = req.body || {};
+    var when = new Date().toISOString();
+    // Cap pageviews list to avoid unbounded growth (keep ~last 200k)
+    if (dbA.pageviews.length > 200000) dbA.pageviews.splice(0, dbA.pageviews.length - 200000);
+    dbA.pageviews.push({
+      id: uuidv4(),
+      visitor: String(b.v || '').substring(0, 64),
+      path: String(b.path || '/').substring(0, 300),
+      referrer: String(b.ref || '').substring(0, 300),
+      ua: String(b.ua || '').substring(0, 120),
+      at: when
+    });
+    saveDb();
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/analytics/overview?days=30 — summary for admin: total pageviews,
+// unique visitors, top pages, top referrers, daily series.
+app.get('/api/analytics/overview', adminAuth, (req, res) => {
+  try {
+    var days = parseInt(req.query.days) || 30;
+    var cutoff = new Date(Date.now() - days * 86400000).toISOString();
+    var dbA = getDb();
+    var pvs = (dbA.pageviews || []).filter(function(p) { return p.at >= cutoff; });
+
+    // Totals
+    var totalViews = pvs.length;
+    var uniqueVisitors = {};
+    pvs.forEach(function(p) { if (p.visitor) uniqueVisitors[p.visitor] = 1; });
+
+    // Daily series
+    var dailyMap = {};
+    pvs.forEach(function(p) {
+      var day = (p.at || '').substring(0, 10);
+      if (!dailyMap[day]) dailyMap[day] = 0;
+      dailyMap[day]++;
+    });
+    var daily = Object.keys(dailyMap).sort().map(function(d) { return { date: d, views: dailyMap[d] }; });
+
+    // Top pages
+    var pageMap = {};
+    pvs.forEach(function(p) { var k = p.path || '/'; pageMap[k] = (pageMap[k] || 0) + 1; });
+    var topPages = Object.keys(pageMap).map(function(k) { return { path: k, views: pageMap[k] }; }).sort(function(a,b){ return b.views-a.views; }).slice(0,15);
+
+    // Top referrers
+    var refMap = {};
+    pvs.forEach(function(p) { var r = p.referrer || '(direct)'; if (!r) r='(direct)'; refMap[r] = (refMap[r] || 0) + 1; });
+    var topReferrers = Object.keys(refMap).map(function(k) { return { referrer: k, views: refMap[k] }; }).sort(function(a,b){ return b.views-a.views; }).slice(0,15);
+
+    res.json({ total_views: totalViews, unique_visitors: Object.keys(uniqueVisitors).length, daily: daily, top_pages: topPages, top_referrers: topReferrers });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // Generate lead email HTML (reuses existing template pattern)
@@ -7231,9 +10599,9 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
   // Header — branded with proper 9amLeads logo (compact, readable on dark bg)
-  body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:22px 30px 16px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
+  body += '<tr><td bgcolor="#0f111a" style="background-color:#0f111a;background-image:linear-gradient(135deg,#0f111a,#1a1b2e);padding:22px 30px 16px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
   body += '<table cellpadding="0" cellspacing="0" align="center"><tr>';
-  body += '<td style="background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:9px;width:28px;height:28px;text-align:center;vertical-align:middle;line-height:28px;font-family:Georgia,serif;font-size:15px;font-weight:900;color:#ffffff">' + brand.logo + '</td>';
+  body += '<td bgcolor="' + brand.color + '" style="background-color:' + brand.color + ';background-image:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:9px;width:28px;height:28px;text-align:center;vertical-align:middle;line-height:28px;font-family:Georgia,serif;font-size:15px;font-weight:900;color:#ffffff">' + brand.logo + '</td>';
   body += '<td style="padding-left:9px;vertical-align:middle;text-align:left"><div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:#ffffff;letter-spacing:-0.2px;line-height:1.2">9am<span style="color:' + brand.light + '">Leads</span></div><div style="font-size:8px;color:#94a3b8;letter-spacing:1.2px;text-transform:uppercase;margin-top:2px;font-weight:600">Fresh business leads &middot; Every morning</div></td>';
   body += '</tr></table>';
   var areasLabel = '';
@@ -7243,7 +10611,7 @@ function generateLeadEmailHTML(customer, leads) {
 
   // Greeting + count — dark card
   body += '<tr><td style="background:#12141e;padding:24px 30px 18px">';
-  body += '<table cellpadding="0" cellspacing="0"><tr><td><span style="display:inline-block;padding:3px 12px;border-radius:6px;background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');color:#fff;font-size:9px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase">' + brand.short + '</span></td></tr></table>';
+  body += '<table cellpadding="0" cellspacing="0"><tr><td><span style="display:inline-block;padding:3px 12px;border-radius:6px;background-color:' + brand.color + ';background-image:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');color:#fff;font-size:9px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase">' + brand.short + '</span></td></tr></table>';
   body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#f1f5f9;margin:10px 0 4px;letter-spacing:-0.3px">Good Morning, ' + (customer.company || 'there') + '</h2>';
   body += '<p style="color:#cbd5e1;font-size:13px;margin:0 0 16px">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
   body += '<div style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.05));border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:14px 20px;margin-bottom:16px">';
@@ -7305,7 +10673,7 @@ function generateLeadEmailHTML(customer, leads) {
     }
 
     body += '<div style="background:#181b28;border:1px solid rgba(255,255,255,0.06);border-radius:14px;margin-bottom:16px;overflow:hidden">';
-    body += '<div style="height:3px;background:linear-gradient(90deg,' + leadAccent + ',rgba(99,102,241,0.4))"></div>';
+    body += '<div style="height:3px;background-color:' + leadAccent + ';background-image:linear-gradient(90deg,' + leadAccent + ',rgba(99,102,241,0.4))"></div>';
     body += '<div style="padding:18px 20px 16px">';
 
     // Badge + title row
@@ -7426,7 +10794,7 @@ function generateLeadEmailHTML(customer, leads) {
     if (actionLinks.length > 0) {
       body += '<div style="margin-top:12px;display:flex;gap:8px">';
       for (var ai = 0; ai < actionLinks.length; ai++) {
-        body += '<a href="' + actionLinks[ai].url + '" target="_blank" style="flex:1;display:block;text-align:center;padding:10px 8px;background:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:10px;font-size:12px;font-weight:600">\uD83D\uDD0D ' + actionLinks[ai].label + '</a>';
+        body += '<a href="' + actionLinks[ai].url + '" target="_blank" style="flex:1;display:block;text-align:center;padding:10px 8px;background-color:' + accent + ';background-image:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:10px;font-size:12px;font-weight:600">\uD83D\uDD0D ' + actionLinks[ai].label + '</a>';
       }
       body += '</div>';
     }
@@ -7437,19 +10805,20 @@ function generateLeadEmailHTML(customer, leads) {
 
   // Product insight card — consistent with campaign emails
   var insightCards2 = {
-    moving: { emoji: '\uD83D\uDE9A', tip: 'Moving leads convert fastest when you\'re the first to contact the seller. Your brochure and letter should arrive the same day the property goes SSTC.', metric: '' },
-    planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Planning applicants are actively choosing builders. Your flyer arriving the same week positions you ahead of every competitor.', metric: '' },
-    probate: { emoji: '\u2696\uFE0F', tip: 'Probate requires a compassionate approach. Families remember who reached out with sensitivity, not who pushed the hardest.', metric: '' },
-    newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often don\'t have a website yet. Check Companies House weekly and be ready when their details go live.', metric: 'Avg. client LTV: 2-5 years' },
-    tenders: { emoji: '\uD83D\uDCCB', tip: 'Tenders close on deadlines. Submit your capability statement early and follow up with a printed pack to stand out.', metric: '' }
+    moving: { emoji: '\uD83D\uDE9A', tip: 'Send a printed brochure with Print &amp; Post the day a property goes SSTC — or a commercial premises comes to market — then visit in person and leave a card. A letter on the kitchen table gets read while emails get deleted.', metric: '' },
+    planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Use Print &amp; Post to send your flyer the week the application is submitted, then visit to introduce yourself. You\'ll be ahead of every competitor quoting.', metric: '' },
+    probate: { emoji: '\u2696\uFE0F', tip: 'A compassionate printed letter to the executor stands out. Use Print &amp; Post, then follow up by post a couple of weeks later. Families remember who reached out with sensitivity.', metric: '' },
+    newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often have no website yet. Send your brochure to the registered office with Print &amp; Post, then call or visit once their details go live.', metric: 'Avg. client LTV: 2-5 years' },
+    tenders: { emoji: '\uD83D\uDCCB', tip: 'Send a printed capability pack with Print &amp; Post to stand out, and follow up before the deadline. Buyers notice the professional touch.', metric: '' }
   };
-  var insight2 = insightCards2[customer.product] || { emoji: '\uD83D\uDCA1', tip: 'Follow up within 30 minutes to maximise your conversion rate.', metric: '' };
+  var insight2 = insightCards2[customer.product] || { emoji: '\uD83D\uDCA1', tip: 'Send a letter or flyer with Print &amp; Post and follow up in person to win the work.', metric: '' };
   body += '<tr><td style="background:#12141e;padding:0 28px 16px"><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px">';
   body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">' + insight2.emoji + '</span><span style="font-size:12px;font-weight:700;color:#f1f5f9">' + getLeadTypeRule(customer.product).name + ' Insight</span></div>';
   body += '<p style="font-size:12px;color:#cbd5e1;line-height:1.6;margin:0 0 6px">' + insight2.tip + '</p>';
   body += (insight2.metric ? '<p style="font-size:11px;color:#38bdf8;margin:0 0 8px"><strong>' + insight2.metric + '</strong></p>' : '');
   body += '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">';
   body += '<p style="font-size:10px;color:#94a3b8;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>';
+  body += '<p style="font-size:9px;color:#64748b;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>';
   body += '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">ig</a></div>';
   body += '</div></div></td></tr>';
 
@@ -7457,7 +10826,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:22px 30px 20px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">';
   body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:#e2e8f0;text-align:center;margin-bottom:12px"><span style="display:inline-block;width:26px;height:26px;border-radius:7px;text-align:center;line-height:26px;font-size:13px;background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');margin-right:5px;vertical-align:middle">' + brand.logo + '</span><span style="vertical-align:middle">am Leads</span></div>';
   var pricingLink = customer.product === 'planning' ? 'https://www.9amleads.com/planningleads' : customer.product === 'moving' ? 'https://www.9amleads.com/movingleadsdaily' : customer.product === 'probate' ? 'https://www.9amleads.com/probateleads' : customer.product === 'newbusiness' ? 'https://www.9amleads.com/newbusinessalert' : customer.product === 'tenders' ? 'https://www.9amleads.com/tenders' : 'https://www.9amleads.com/pricing';
-  body += '<div style="margin-bottom:12px"><a href="' + dashboardUrl + '" style="display:inline-block;padding:12px 36px;background:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px;letter-spacing:0.8px">VIEW DASHBOARD</a></div>';
+  body += '<div style="margin-bottom:12px"><a href="' + dashboardUrl + '" style="display:inline-block;padding:12px 36px;background-color:' + accent + ';background-image:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px;letter-spacing:0.8px">VIEW DASHBOARD</a></div>';
   body += '<a href="' + pricingLink + '" style="display:inline-block;padding:10px 30px;border:1px solid rgba(255,255,255,0.15);color:#f1f5f9;text-decoration:none;border-radius:50px;font-weight:600;font-size:12px">View ' + (customer.product ? getLeadTypeRule(customer.product).name : 'Pricing') + '</a>';
   body += '<p style="color:#e2e8f0;font-size:11px;margin:14px 0 0"><a href="mailto:hello@9amleads.com?subject=Lead%20Issue" style="color:#f1f5f9;text-decoration:underline">Lead issue? Contact us &rarr;</a></p>';
   body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:14px 0 12px"><tr>';
@@ -7466,7 +10835,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<td style="padding:0 5px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">fb</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">tt</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">ig</span></a></td>';
-  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 8px"><tr><td style="background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:7px;width:22px;height:22px;text-align:center;vertical-align:middle;line-height:22px;font-family:Georgia,serif;font-size:12px;font-weight:900;color:#ffffff">' + brand.logo + '</td><td style="padding-left:7px;vertical-align:middle"><span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:900;color:#e2e8f0;letter-spacing:-0.2px">9am<span style="color:' + brand.light + '">Leads</span></span></td></tr></table>';
+  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 8px"><tr><td style="background-color:' + brand.color + ';background-image:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:7px;width:22px;height:22px;text-align:center;vertical-align:middle;line-height:22px;font-family:Georgia,serif;font-size:12px;font-weight:900;color:#ffffff">' + brand.logo + '</td><td style="padding-left:7px;vertical-align:middle"><span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:900;color:#e2e8f0;letter-spacing:-0.2px">9am<span style="color:' + brand.light + '">Leads</span></span></td></tr></table>';
   body += '<p style="color:#94a3b8;font-size:9px;margin:0 0 8px;letter-spacing:.3px">Fresh exclusive business opportunities, delivered at 9am every morning</p>';
   body += '<p style="color:#e2e8f0;font-size:10px;margin:0 0 4px;letter-spacing:.4px">9amLeads &middot; hello@9amleads.com</p>';
   body += '<p style="color:#e2e8f0;font-size:9px;margin:0 0 12px;letter-spacing:.3px"><a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a></p>';
@@ -7586,38 +10955,38 @@ var CAMPAIGN_KITS = {
 // Copy sections from planning to other products as base content
 CAMPAIGN_KITS.moving.sections = [
   { title: 'Email Templates (12-Campaign)', icon: '\u2709\uFE0F', items: [
-    { subject: 'Quick intro — I see your property at [address] has just been listed', body: 'Hi [name],\n\nI noticed your property at [address] has recently come onto the market and I wanted to introduce myself. I\'m [your name] from [company], and I specialise in helping sellers in [area] achieve a fast, fair sale.\n\nI\'ve attached a brochure showing how we work with homeowners like you. I\'ll also pop a printed copy through your door this week.\n\nIn the meantime, if you\'d like to learn how we can help you get the best outcome from your sale, just reply to this email.\n\nBest regards,\n[Your name]' },
-    { subject: 'Follow-up — Your property at [address]', body: 'Hi [name],\n\nI dropped a brochure through your door last week about your property at [address]. I wanted to make sure it arrived and to see if you had any questions.\n\nI know selling a home can feel overwhelming. I help sellers in [area] navigate the process from start to finish. Would you be open to a quick chat?\n\nI\'m happy to pop round at a time that suits you.\n\nBest,\n[Your name]' },
-    { subject: 'Tip — 3 things every seller should know', body: 'Hi [name],\n\nI hope the sale of your property at [address] is going well. While you\'re in the process, here are three things every seller should consider:\n\n1. First impressions matter — kerb appeal can add 5-10% to your final price\n2. Getting the pricing right from day one attracts serious buyers faster\n3. Having a clear timeline reduces stress and helps you plan your next move\n\nI\'ve put together a simple checklist that might help. No strings attached — just something I share with my clients.\n\nIf you\'d like to chat about how I can help, I\'m here.\n\nBest,\n[Your name]' },
-    { subject: 'Final nudge — Still here if you need me', body: 'Hi [name],\n\nJust checking in one last time regarding your property at [address]. If the timing isn\'t right to make a change, I completely understand.\n\nWhen you\'re ready, my details are below. I\'ll also pop another flyer through your door next week with an updated market insight for your area.\n\nWishing you all the best with your sale.\n\nKind regards,\n[Your name]' }
+    { subject: 'Quick intro: I see your property at [address] has just been listed', body: 'Hi [name],\n\nI noticed your property at [address] has recently come onto the market and I wanted to introduce myself. I\'m [your name] from [company], and I specialise in helping sellers in [area] achieve a fast, fair sale.\n\nI\'ve attached a brochure showing how we work with homeowners like you. I\'ll also pop a printed copy through your door this week.\n\nIn the meantime, if you\'d like to learn how we can help you get the best outcome from your sale, just reply to this email.\n\nBest regards,\n[Your name]' },
+    { subject: 'Follow-up: Your property at [address]', body: 'Hi [name],\n\nI dropped a brochure through your door last week about your property at [address]. I wanted to make sure it arrived and to see if you had any questions.\n\nI know selling a home can feel overwhelming. I help sellers in [area] navigate the process from start to finish. Would you be open to a quick chat?\n\nI\'m happy to pop round at a time that suits you.\n\nBest,\n[Your name]' },
+    { subject: 'Tip: 3 things every seller should know', body: 'Hi [name],\n\nI hope the sale of your property at [address] is going well. While you\'re in the process, here are three things every seller should consider:\n\n1. First impressions matter. kerb appeal can add 5-10% to your final price\n2. Getting the pricing right from day one attracts serious buyers faster\n3. Having a clear timeline reduces stress and helps you plan your next move\n\nI\'ve put together a simple checklist that might help. No strings attached. just something I share with my clients.\n\nIf you\'d like to chat about how I can help, I\'m here.\n\nBest,\n[Your name]' },
+    { subject: 'Final nudge: Still here if you need me', body: 'Hi [name],\n\nJust checking in one last time regarding your property at [address]. If the timing isn\'t right to make a change, I completely understand.\n\nWhen you\'re ready, my details are below. I\'ll also pop another flyer through your door next week with an updated market insight for your area.\n\nWishing you all the best with your sale.\n\nKind regards,\n[Your name]' }
   ]},
   { title: 'Introduction Letter Templates', icon: '\uD83D\uDCC4', items: [
-    { subject: 'Standard Introduction Letter', body: '[Your Company Letterhead]\n\n[Date]\n\n[Homeowner Name]\n[Address]\n\nDear [Name],\n\nRE: Your Property at [Address]\n\nI recently noticed your property has come onto the market and wanted to introduce myself. I\'m [your name], owner of [company], and I specialise in helping homeowners in [area] achieve outstanding results when selling or letting their property.\n\nI know that choosing the right agent is one of the most important decisions you\'ll make. That\'s why I take a personal approach — understanding your goals, your timeline, and what matters most to you.\n\nI\'ve enclosed a brochure that explains how I work, along with testimonials from recent clients. I\'ll follow up in a few days to see if you have any questions.\n\nWarm regards,\n[Your name]\n[Phone / Email / Website]' },
+    { subject: 'Standard Introduction Letter', body: '[Your Company Letterhead]\n\n[Date]\n\n[Homeowner Name]\n[Address]\n\nDear [Name],\n\nRE: Your Property at [Address]\n\nI recently noticed your property has come onto the market and wanted to introduce myself. I\'m [your name], owner of [company], and I specialise in helping homeowners in [area] achieve outstanding results when selling or letting their property.\n\nI know that choosing the right agent is one of the most important decisions you\'ll make. That\'s why I take a personal approach. understanding your goals, your timeline, and what matters most to you.\n\nI\'ve enclosed a brochure that explains how I work, along with testimonials from recent clients. I\'ll follow up in a few days to see if you have any questions.\n\nWarm regards,\n[Your name]\n[Phone / Email / Website]' },
     { subject: 'Compassionate Follow-Up', body: '[Your Company Letterhead]\n\nDear [Name],\n\nI wrote to you recently about your property at [address]. I appreciate you may be busy with the sale process, so I wanted to follow up briefly.\n\nIf now isn\'t the right time, I completely understand. When you\'re ready to have a conversation, I\'d be delighted to help.\n\nIn the meantime, I\'ve enclosed a local market update that you might find useful.\n\nWarm wishes,\n[Your name]' }
   ]},
   { title: 'Flyer Insert Templates', icon: '\uD83D\uDCE0', items: [
     { subject: 'Property Services Brochure (A5 Flyer)', body: 'Front: Bold headline "Selling in [area]? Let\'s Talk." with your photo and company logo.\nInside: List your services (sales, lettings, valuations, etc.), recent sold prices, and 3 success stories.\nBack: Client testimonials, contact details, QR code to your listings.\nTip: Print on quality paper. Hand-deliver in weatherproof envelope.' },
     { subject: 'Market Insight Flyer', body: 'Headline: "What\'s happening in [area]\'s property market?"\nBody: Show 3-4 local sold prices, average time to sell, current demand levels.\nBottom: "Want a free valuation? Call [phone] or visit [website]"\nTip: Update monthly and keep a stack in your car for impromptu drops.' },
-    { subject: 'Homeowner Checklist Flyer', body: 'Headline: "10 Steps to a Stress-Free Sale"\nBody: Numbered checklist from instruction to completion with your logo.\nBottom: "I help [area] homeowners sell faster. Let\'s talk."\nTip: Useful content gets kept — this flyer stays on the fridge.' }
+    { subject: 'Homeowner Checklist Flyer', body: 'Headline: "10 Steps to a Stress-Free Sale"\nBody: Numbered checklist from instruction to completion with your logo.\nBottom: "I help [area] homeowners sell faster. Let\'s talk."\nTip: Useful content gets kept. this flyer stays on the fridge.' }
   ]},
   { title: 'Follow-Up Sequences', icon: '\uD83D\uDD04', items: [
-    { subject: 'Week 1: Initial Outreach', body: 'Day 1: Post introduction letter + brochure + business card\nDay 2: Email introduction (use email template above)\nDay 3: Visit property in person — knock and introduce yourself\nDay 5: Post follow-up letter if no response' },
-    { subject: 'Week 2: Build Relationship', body: 'Day 8: Email market insight tip\nDay 10: Second flyer drop with market update\nDay 12: Send SMS: "Hi [name], [your name] from [company] here. I popped by about your property. Happy to help anytime — [phone]"' },
-    { subject: 'Week 3-4: Final Touch', body: 'Week 3: Final email nudge\nWeek 4: Final flyer drop with handwritten note\nAfter: Quarterly check-in — send market updates to stay top of mind' }
+    { subject: 'Week 1: Initial Outreach', body: 'Day 1: Post introduction letter + brochure + business card\nDay 2: Email introduction (use email template above)\nDay 3: Visit property in person. knock and introduce yourself\nDay 5: Post follow-up letter if no response' },
+    { subject: 'Week 2: Build Relationship', body: 'Day 8: Email market insight tip\nDay 10: Second flyer drop with market update\nDay 12: Send SMS: "Hi [name], [your name] from [company] here. I popped by about your property. Happy to help anytime. [phone]"' },
+    { subject: 'Week 3-4: Final Touch', body: 'Week 3: Final email nudge\nWeek 4: Final flyer drop with handwritten note\nAfter: Quarterly check-in. send market updates to stay top of mind' }
   ]},
   { title: 'Objection Handling', icon: '\u2753', items: [
     { subject: '"I\'m happy with my current agent"', body: 'Response: "That\'s great to hear. If things change or you\'d like a second opinion on your property\'s value, I\'m always happy to provide a free, no-obligation market appraisal. My service is built around a more personal approach."\nFollow up: Send your client testimonials brochure.' },
     { subject: '"I\'m not sure about the timing"', body: 'Response: "Spring and autumn are traditionally the strongest selling seasons, but properties in [area] are selling year-round. I can show you recent comparable sales and help you decide what\'s right for your situation."\nFollow up: Email your local market data flyer.' },
-    { subject: '"I need to discuss with my partner"', body: 'Response: "Of course. I\'ve put together a simple information pack that explains everything — commission, marketing plan, timeline. Would it help if I posted a printed copy for you both to review together?"\nFollow up: Post printed info pack with both their names on it.' }
+    { subject: '"I need to discuss with my partner"', body: 'Response: "Of course. I\'ve put together a simple information pack that explains everything. commission, marketing plan, timeline. Would it help if I posted a printed copy for you both to review together?"\nFollow up: Post printed info pack with both their names on it.' }
   ]},
   { title: 'Best Practices', icon: '\u2B50', items: [
-    { subject: 'Speed matters', body: 'Properties go SSTC every day. Be first with your letter and flyer — aim for same-day delivery when a new listing appears in your area.' },
+    { subject: 'Speed matters', body: 'Properties go SSTC every day. Be first with your letter and flyer. aim for same-day delivery when a new listing appears in your area.' },
     { subject: 'Personalise everything', body: 'Reference the specific property address, the estate agent\'s description, and the asking price. Generic letters get ignored.' },
-    { subject: 'Physical beats digital', body: 'A brochure on the kitchen table gets read. Hand-deliver your materials — it shows you\'re local and committed.' },
+    { subject: 'Physical beats digital', body: 'A brochure on the kitchen table gets read. Hand-deliver your materials. it shows you\'re local and committed.' },
     { subject: 'Follow up systematically', body: 'Most people don\'t respond to the first letter. Plan a 3-touch sequence over 2 weeks.' }
   ]},
   { title: 'Recommended Timing', icon: '\u23F0', items: [
-    { subject: 'Best time to send letters', body: 'Tuesday or Wednesday — arrives mid-week when people are settled. Avoid Fridays and Mondays.' },
+    { subject: 'Best time to send letters', body: 'Tuesday or Wednesday. arrives mid-week when people are settled. Avoid Fridays and Mondays.' },
     { subject: 'Best time to visit in person', body: 'Late afternoon (4-6pm) or Saturday morning. Avoid lunchtime and after 7pm.' },
     { subject: 'Email timing', body: 'Tuesday-Thursday, 9-11am. Highest open rates mid-week mid-morning.' }
   ]}
@@ -7625,32 +10994,32 @@ CAMPAIGN_KITS.moving.sections = [
 
 CAMPAIGN_KITS.probate.sections = [
   { title: 'Email Templates (14-Campaign)', icon: '\u2709\uFE0F', items: [
-    { subject: 'Compassionate intro regarding [deceased] estate', body: 'Dear [name],\n\nI was sorry to learn of the passing of [deceased name]. I understand this is a difficult time, and I want to be respectful of that.\n\nI\'m writing because I specialise in helping families in [area] navigate the probate process. Many people don\'t realise that probate can take 6-12 months, and having the right support early makes a significant difference.\n\nI\'ve enclosed a guide that explains the process in simple terms — no jargon, no pressure. I\'ll also post a printed copy to you this week.\n\nIf you\'d find it helpful to have a chat when you\'re ready, I\'m here.\n\nWith sincere regards,\n[Your name]' },
-    { subject: 'Follow-up — Probate guide for [deceased] estate', body: 'Dear [name],\n\nI hope you received the probate guide I posted regarding [deceased name]\'s estate. I wanted to check you had it and to see if any questions came to mind.\n\nProbate involves several steps — valuing the estate, paying any inheritance tax, applying for the grant, and finally distributing assets. I help families through each stage.\n\nThere\'s absolutely no obligation. If you\'d like to have a brief conversation about your situation, I\'d be happy to help.\n\nBest regards,\n[Your name]' },
-    { subject: 'Tip — 5 things to know about probate', body: 'Dear [name],\n\nI hope you\'re managing ok following your loss. I wanted to share a few things that might be helpful as you navigate the probate process:\n\n1. You don\'t have to do it alone — probate practitioners can handle everything\n2. Inheritance tax must be paid within 6 months of the death\n3. The grant of probate typically takes 8-16 weeks to obtain\n4. Estate accounts need to be prepared for beneficiaries\n5. Professional fees are often recoverable from the estate\n\nI\'ve put together a simple checklist that explains each step. If you\'d like a copy, just reply and I\'ll send it over.\n\nWarm regards,\n[Your name]' },
+    { subject: 'Compassionate intro regarding [deceased] estate', body: 'Dear [name],\n\nI was sorry to learn of the passing of [deceased name]. I understand this is a difficult time, and I want to be respectful of that.\n\nI\'m writing because I specialise in helping families in [area] navigate the probate process. Many people don\'t realise that probate can take 6-12 months, and having the right support early makes a significant difference.\n\nI\'ve enclosed a guide that explains the process in simple terms. no jargon, no pressure. I\'ll also post a printed copy to you this week.\n\nIf you\'d find it helpful to have a chat when you\'re ready, I\'m here.\n\nWith sincere regards,\n[Your name]' },
+    { subject: 'Follow-up: Probate guide for [deceased] estate', body: 'Dear [name],\n\nI hope you received the probate guide I posted regarding [deceased name]\'s estate. I wanted to check you had it and to see if any questions came to mind.\n\nProbate involves several steps. valuing the estate, paying any inheritance tax, applying for the grant, and finally distributing assets. I help families through each stage.\n\nThere\'s absolutely no obligation. If you\'d like to have a brief conversation about your situation, I\'d be happy to help.\n\nBest regards,\n[Your name]' },
+    { subject: 'Tip: 5 things to know about probate', body: 'Dear [name],\n\nI hope you\'re managing ok following your loss. I wanted to share a few things that might be helpful as you navigate the probate process:\n\n1. You don\'t have to do it alone. probate practitioners can handle everything\n2. Inheritance tax must be paid within 6 months of the death\n3. The grant of probate typically takes 8-16 weeks to obtain\n4. Estate accounts need to be prepared for beneficiaries\n5. Professional fees are often recoverable from the estate\n\nI\'ve put together a simple checklist that explains each step. If you\'d like a copy, just reply and I\'ll send it over.\n\nWarm regards,\n[Your name]' },
     { subject: 'Final gentle nudge', body: 'Dear [name],\n\nJust checking in one last time regarding [deceased name]\'s estate. If the timing isn\'t right to get help yet, I completely understand.\n\nWhen you\'re ready, my details are below. I\'ll also post another information pack next month with an updated probate guide.\n\nWishing you all the best.\n\nKind regards,\n[Your name]' }
   ]},
   { title: 'Introduction Letter Templates', icon: '\uD83D\uDCC4', items: [
-    { subject: 'Compassionate Introduction Letter', body: '[Your Company Letterhead]\n\n[Date]\n\n[Executor Name]\n[Address]\n\nDear [Name],\n\nRE: Estate of [Deceased Name]\n\nI understand this may be a difficult time, and I wanted to write to you with the utmost respect and sensitivity.\n\nMy name is [your name], and I am a probate practitioner based in [area]. I help families like yours navigate the probate process — from valuing the estate and dealing with inheritance tax to obtaining the grant and distributing assets.\n\nI\'ve enclosed a simple guide that explains the process step by step. There is absolutely no obligation — I simply wanted you to know that support is available if and when you need it.\n\nWith sincere regards,\n[Your name]\n[Phone / Email / Website]' },
+    { subject: 'Compassionate Introduction Letter', body: '[Your Company Letterhead]\n\n[Date]\n\n[Executor Name]\n[Address]\n\nDear [Name],\n\nRE: Estate of [Deceased Name]\n\nI understand this may be a difficult time, and I wanted to write to you with the utmost respect and sensitivity.\n\nMy name is [your name], and I am a probate practitioner based in [area]. I help families like yours navigate the probate process. from valuing the estate and dealing with inheritance tax to obtaining the grant and distributing assets.\n\nI\'ve enclosed a simple guide that explains the process step by step. There is absolutely no obligation. I simply wanted you to know that support is available if and when you need it.\n\nWith sincere regards,\n[Your name]\n[Phone / Email / Website]' },
     { subject: 'Follow-Up Letter', body: '[Your Company Letterhead]\n\nDear [Name],\n\nI wrote to you recently regarding the estate of [deceased name]. I appreciate you may need time to consider your options, and I wanted to follow up briefly.\n\nIf now isn\'t the right time, that\'s completely fine. When you\'re ready to have a conversation, please don\'t hesitate to get in touch.\n\nIn the meantime, I\'ve enclosed a frequently asked questions guide about probate that you might find useful.\n\nWarm wishes,\n[Your name]' }
   ]},
   { title: 'Flyer Insert Templates', icon: '\uD83D\uDCE0', items: [
     { subject: 'Probate Services Brochure (A5 Flyer)', body: 'Front: Gentle headline "Navigating Probate? You Don\'t Have To Do It Alone." with your logo.\nInside: List your services (grant application, estate accounts, IHT returns, asset distribution). Include testimonials from families you\'ve helped.\nBack: Step-by-step probate timeline infographic. Contact details.\nTip: Use warm colours and compassionate language. Avoid aggressive sales messaging.' },
-    { subject: 'Probate Guide Flyer', body: 'Headline: "Probate in Plain English — A Simple Guide"\nBody: Brief explanation of the probate process in 5 simple steps with estimated timeframes.\nBottom: "Need help? I\'m here. Call [phone] or visit [website]"\nTip: This is an educational piece — families keep it for reference.' },
-    { subject: 'Executor Checklist Flyer', body: 'Headline: "Your 10-Step Probate Checklist"\nBody: Actionable checklist from registering the death to final distribution.\nBottom: "Tick each step off with professional support — free initial chat."\nTip: Print on high-quality paper. The checklist format makes it useful for months.' }
+    { subject: 'Probate Guide Flyer', body: 'Headline: "Probate in Plain English. A Simple Guide"\nBody: Brief explanation of the probate process in 5 simple steps with estimated timeframes.\nBottom: "Need help? I\'m here. Call [phone] or visit [website]"\nTip: This is an educational piece. families keep it for reference.' },
+    { subject: 'Executor Checklist Flyer', body: 'Headline: "Your 10-Step Probate Checklist"\nBody: Actionable checklist from registering the death to final distribution.\nBottom: "Tick each step off with professional support. free initial chat."\nTip: Print on high-quality paper. The checklist format makes it useful for months.' }
   ]},
   { title: 'Follow-Up Sequences', icon: '\uD83D\uDD04', items: [
-    { subject: 'Week 1: Initial Outreach', body: 'Day 1: Post compassionate letter + probate guide + business card\nDay 2: Email introduction (use email template above)\nDay 3: Visit address in person — leave card if no answer\nDay 5: Post follow-up letter' },
-    { subject: 'Week 2: Nurture', body: 'Day 8: Email probate FAQ guide\nDay 10: Second flyer drop with executor checklist\nDay 12: Send SMS: "Hi [name], [your name] here. Just following up on the probate guide I sent. Happy to help anytime — [phone]"' },
-    { subject: 'Week 3-4: Gentle Final Touch', body: 'Week 3: Final email nudge\nWeek 4: Final information pack drop\nAfter: Quarterly check-in — send updated probate guides or seasonal card' }
+    { subject: 'Week 1: Initial Outreach', body: 'Day 1: Post compassionate letter + probate guide + business card\nDay 2: Email introduction (use email template above)\nDay 3: Visit address in person. leave card if no answer\nDay 5: Post follow-up letter' },
+    { subject: 'Week 2: Nurture', body: 'Day 8: Email probate FAQ guide\nDay 10: Second flyer drop with executor checklist\nDay 12: Send SMS: "Hi [name], [your name] here. Just following up on the probate guide I sent. Happy to help anytime. [phone]"' },
+    { subject: 'Week 3-4: Gentle Final Touch', body: 'Week 3: Final email nudge\nWeek 4: Final information pack drop\nAfter: Quarterly check-in. send updated probate guides or seasonal card' }
   ]},
   { title: 'Objection Handling', icon: '\u2753', items: [
-    { subject: '"We\'re handling it ourselves"', body: 'Response: "Many families start that way, and that\'s completely understandable. If at any point you find the process overwhelming — particularly with the inheritance tax return or estate accounts — please know I\'m here to help with as much or as little as you need."\nFollow up: Send your probate step-by-step guide.' },
-    { subject: '"We\'re using a local solicitor"', body: 'Response: "That\'s a sensible approach. If I can share one piece of advice — make sure they specialise in probate and know the current IHT thresholds. I\'d be happy to provide a free second opinion on any aspect of the estate if helpful."\nFollow up: Email your probate FAQ sheet.' },
-    { subject: '"We need to discuss with family"', body: 'Response: "Of course. I\'ve put together a simple information pack that you can share with them. It explains everything clearly — costs, process, timeline. Would you like me to post a printed copy?"\nFollow up: Post printed information pack addressed to the family.' }
+    { subject: '"We\'re handling it ourselves"', body: 'Response: "Many families start that way, and that\'s completely understandable. If at any point you find the process overwhelming. particularly with the inheritance tax return or estate accounts. please know I\'m here to help with as much or as little as you need."\nFollow up: Send your probate step-by-step guide.' },
+    { subject: '"We\'re using a local solicitor"', body: 'Response: "That\'s a sensible approach. If I can share one piece of advice. make sure they specialise in probate and know the current IHT thresholds. I\'d be happy to provide a free second opinion on any aspect of the estate if helpful."\nFollow up: Email your probate FAQ sheet.' },
+    { subject: '"We need to discuss with family"', body: 'Response: "Of course. I\'ve put together a simple information pack that you can share with them. It explains everything clearly. costs, process, timeline. Would you like me to post a printed copy?"\nFollow up: Post printed information pack addressed to the family.' }
   ]},
   { title: 'Best Practices', icon: '\u2B50', items: [
-    { subject: 'Lead with compassion', body: 'Probate is emotional. Your tone must be gentle, respectful, and helpful — never pushy. Families remember how you made them feel.' },
+    { subject: 'Lead with compassion', body: 'Probate is emotional. Your tone must be gentle, respectful, and helpful. never pushy. Families remember how you made them feel.' },
     { subject: 'Educate, don\'t sell', body: 'Most people don\'t understand probate. Provide useful guides and checklists. Position yourself as the expert who helps, not the salesperson who pitches.' },
     { subject: 'Physical materials build trust', body: 'A professional printed guide left with the family conveys credibility. It shows you\'re established and serious about helping.' },
     { subject: 'Be patient', body: 'Probate decisions take weeks or months. Follow up gently over time. Families rarely buy on the first contact.' }
@@ -7664,28 +11033,28 @@ CAMPAIGN_KITS.probate.sections = [
 
 CAMPAIGN_KITS.newbusiness.sections = [
   { title: 'Email Templates (10-Campaign)', icon: '\u2709\uFE0F', items: [
-    { subject: 'Congratulations on your new company registration', body: 'Hi [name],\n\nCongratulations on registering [company name] with Companies House. Starting a new business is an exciting step, and I wanted to be one of the first to welcome you.\n\nI\'m [your name] from [company], and I help new businesses in [area] with [service — accounting, marketing, IT, consultancy, etc.]. Many of my clients started exactly where you are now.\n\nI\'ve put together a welcome pack for newly registered companies — it includes a guide to the first steps every new business should take. I\'ll also post a printed copy to your registered address this week.\n\nIf you\'d find it helpful to have a no-obligation chat about how we might work together, I\'d love to hear from you.\n\nBest regards,\n[Your name]' },
-    { subject: 'Follow-up — Your welcome pack for [company name]', body: 'Hi [name],\n\nI hope you received the welcome pack I posted for [company name]. I wanted to check it arrived and to see how your first few weeks of trading are going.\n\nIf you\'d like any help with [specific service], I\'d be happy to have a brief call. There\'s no obligation — I simply want to introduce myself as a local resource for new businesses.\n\nBest,\n[Your name]' },
-    { subject: 'Tip — 5 things every new business should do in month one', body: 'Hi [name],\n\nRunning a new business is busy — I get it. Here are five things that will set you up for success in your first month:\n\n1. Set up a separate business bank account\n2. Register for VAT if your turnover will exceed \u00a390,000\n3. Get your accounting software in place\n4. Set up a basic website with your business details\n5. Register with the Information Commissioner\'s Office (ICO) if you handle personal data\n\nI\'ve put together a more detailed checklist. If you\'d like a copy, just reply and I\'ll send it over.\n\nBest,\n[Your name]' },
-    { subject: 'Final nudge — Still here to help [company name]', body: 'Hi [name],\n\nJust checking in one last time regarding [company name]. If the timing isn\'t right to bring in support yet, I completely understand.\n\nWhen you\'re ready, my details are below. I\'ll also pop another information pack in the post next month with some useful resources for growing businesses.\n\nWishing you every success with your new venture.\n\nKind regards,\n[Your name]' }
+    { subject: 'Congratulations on your new company registration', body: 'Hi [name],\n\nCongratulations on registering [company name] with Companies House. Starting a new business is an exciting step, and I wanted to be one of the first to welcome you.\n\nI\'m [your name] from [company], and I help new businesses in [area] with [service. accounting, marketing, IT, consultancy, etc.]. Many of my clients started exactly where you are now.\n\nI\'ve put together a welcome pack for newly registered companies. it includes a guide to the first steps every new business should take. I\'ll also post a printed copy to your registered address this week.\n\nIf you\'d find it helpful to have a no-obligation chat about how we might work together, I\'d love to hear from you.\n\nBest regards,\n[Your name]' },
+    { subject: 'Follow-up: Your welcome pack for [company name]', body: 'Hi [name],\n\nI hope you received the welcome pack I posted for [company name]. I wanted to check it arrived and to see how your first few weeks of trading are going.\n\nIf you\'d like any help with [specific service], I\'d be happy to have a brief call. There\'s no obligation. I simply want to introduce myself as a local resource for new businesses.\n\nBest,\n[Your name]' },
+    { subject: 'Tip: 5 things every new business should do in month one', body: 'Hi [name],\n\nRunning a new business is busy. I get it. Here are five things that will set you up for success in your first month:\n\n1. Set up a separate business bank account\n2. Register for VAT if your turnover will exceed \u00a390,000\n3. Get your accounting software in place\n4. Set up a basic website with your business details\n5. Register with the Information Commissioner\'s Office (ICO) if you handle personal data\n\nI\'ve put together a more detailed checklist. If you\'d like a copy, just reply and I\'ll send it over.\n\nBest,\n[Your name]' },
+    { subject: 'Final nudge: Still here to help [company name]', body: 'Hi [name],\n\nJust checking in one last time regarding [company name]. If the timing isn\'t right to bring in support yet, I completely understand.\n\nWhen you\'re ready, my details are below. I\'ll also pop another information pack in the post next month with some useful resources for growing businesses.\n\nWishing you every success with your new venture.\n\nKind regards,\n[Your name]' }
   ]},
   { title: 'Introduction Letter Templates', icon: '\uD83D\uDCC4', items: [
-    { subject: 'New Business Welcome Letter', body: '[Your Company Letterhead]\n\n[Date]\n\n[Company Name]\n[Registered Address]\n\nDear [Name],\n\nRE: Welcome to [Company Name]\n\nI recently noticed that you\'ve registered [company name] with Companies House, and I wanted to be the first to welcome you.\n\nI\'m [your name], founder of [company], and I specialise in helping new businesses like yours with [service]. I know the first few months can feel overwhelming, so I\'ve put together a welcome pack with practical advice for getting started.\n\nI\'ve enclosed it with this letter. There\'s absolutely no obligation — I simply wanted to introduce myself as someone who can help when you\'re ready.\n\nWarm regards,\n[Your name]\n[Phone / Email / Website]' },
+    { subject: 'New Business Welcome Letter', body: '[Your Company Letterhead]\n\n[Date]\n\n[Company Name]\n[Registered Address]\n\nDear [Name],\n\nRE: Welcome to [Company Name]\n\nI recently noticed that you\'ve registered [company name] with Companies House, and I wanted to be the first to welcome you.\n\nI\'m [your name], founder of [company], and I specialise in helping new businesses like yours with [service]. I know the first few months can feel overwhelming, so I\'ve put together a welcome pack with practical advice for getting started.\n\nI\'ve enclosed it with this letter. There\'s absolutely no obligation. I simply wanted to introduce myself as someone who can help when you\'re ready.\n\nWarm regards,\n[Your name]\n[Phone / Email / Website]' },
     { subject: 'Follow-Up Letter', body: '[Your Company Letterhead]\n\nDear [Name],\n\nI wrote to you recently to welcome you on the registration of [company name]. I hope you found the welcome pack useful.\n\nIf now isn\'t the right time to engage support, I completely understand. When you\'re ready, please feel free to get in touch.\n\nIn the meantime, I\'ve enclosed a business planning guide that you might find helpful as you grow.\n\nWarm wishes,\n[Your name]' }
   ]},
   { title: 'Flyer Insert Templates', icon: '\uD83D\uDCE0', items: [
-    { subject: 'New Business Services Flyer', body: 'Front: Bold "Congratulations on your new business!" with your company logo.\nInside: List your services tailored to new/small businesses. Include pricing options or package deals.\nBack: Client testimonials, your qualifications, contact details.\nTip: Keep the tone celebratory and supportive — not salesy.' },
-    { subject: 'Startup Checklist Flyer', body: 'Headline: "Your First 90 Days in Business — A Checklist"\nBody: Actionable checklist across legal, financial, marketing, and operations.\nBottom: "Need help checking things off? Let\'s talk."\nTip: This is a high-value resource — businesses keep it pinned to their noticeboard.' },
-    { subject: 'Services Overview (A4 Tri-Fold)', body: 'Panel 1: Your story — why you help new businesses.\nPanel 2: Your services with clear pricing or packages.\nPanel 3: Case study — how you helped a similar business succeed.\nTip: Use bullet points and clear headings. Busy founders skim-read.' }
+    { subject: 'New Business Services Flyer', body: 'Front: Bold "Congratulations on your new business!" with your company logo.\nInside: List your services tailored to new/small businesses. Include pricing options or package deals.\nBack: Client testimonials, your qualifications, contact details.\nTip: Keep the tone celebratory and supportive. not salesy.' },
+    { subject: 'Startup Checklist Flyer', body: 'Headline: "Your First 90 Days in Business. A Checklist"\nBody: Actionable checklist across legal, financial, marketing, and operations.\nBottom: "Need help checking things off? Let\'s talk."\nTip: This is a high-value resource. businesses keep it pinned to their noticeboard.' },
+    { subject: 'Services Overview (A4 Tri-Fold)', body: 'Panel 1: Your story. why you help new businesses.\nPanel 2: Your services with clear pricing or packages.\nPanel 3: Case study. how you helped a similar business succeed.\nTip: Use bullet points and clear headings. Busy founders skim-read.' }
   ]},
   { title: 'Follow-Up Sequences', icon: '\uD83D\uDD04', items: [
     { subject: 'Week 1: Initial Outreach', body: 'Day 1: Post welcome letter + startup pack + business card\nDay 2: Email introduction (use email template above)\nDay 3: Visit registered address in person if local\nDay 5: Post follow-up letter' },
-    { subject: 'Week 2: Nurture', body: 'Day 8: Email tip/checklist\nDay 10: Second flyer drop with case study\nDay 12: Send SMS: "Hi [name], [your name] from [company]. I sent a welcome pack for [company name]. Happy to help at any stage — [phone]"' },
-    { subject: 'Week 3-4: Final Touch', body: 'Week 3: Final email nudge\nWeek 4: Final flyer drop with special offer\nAfter: Quarterly check-in — send business tips or seasonal offers' }
+    { subject: 'Week 2: Nurture', body: 'Day 8: Email tip/checklist\nDay 10: Second flyer drop with case study\nDay 12: Send SMS: "Hi [name], [your name] from [company]. I sent a welcome pack for [company name]. Happy to help at any stage. [phone]"' },
+    { subject: 'Week 3-4: Final Touch', body: 'Week 3: Final email nudge\nWeek 4: Final flyer drop with special offer\nAfter: Quarterly check-in. send business tips or seasonal offers' }
   ]},
   { title: 'Objection Handling', icon: '\u2753', items: [
-    { subject: '"We already have someone"', body: 'Response: "That\'s great to hear. If your needs ever change or you\'d like a second opinion on anything — from pricing to service scope — I\'d be happy to help. No pressure at all."\nFollow up: Send your service comparison guide.' },
-    { subject: '"We\'re not ready yet / it\'s early days"', body: 'Response: "I completely understand — the first few months are about finding your feet. When you\'re ready to think about [service], I\'d love to have a conversation. In the meantime, I\'ll send you a few resources that might be useful."\nFollow up: Email your new business checklist.' },
+    { subject: '"We already have someone"', body: 'Response: "That\'s great to hear. If your needs ever change or you\'d like a second opinion on anything. from pricing to service scope. I\'d be happy to help. No pressure at all."\nFollow up: Send your service comparison guide.' },
+    { subject: '"We\'re not ready yet / it\'s early days"', body: 'Response: "I completely understand. the first few months are about finding your feet. When you\'re ready to think about [service], I\'d love to have a conversation. In the meantime, I\'ll send you a few resources that might be useful."\nFollow up: Email your new business checklist.' },
     { subject: '"We need to check our budget"', body: 'Response: "Of course. I offer flexible options designed for growing businesses. Would it help if I sent over a simple pricing breakdown with different package levels?"\nFollow up: Post your pricing overview flyer.' }
   ]},
   { title: 'Best Practices', icon: '\u2B50', items: [
@@ -7703,19 +11072,19 @@ CAMPAIGN_KITS.newbusiness.sections = [
 
 CAMPAIGN_KITS.tenders.sections = [
   { title: 'Email Templates (8-Campaign)', icon: '\u2709\uFE0F', items: [
-    { subject: 'Tender opportunity — [tender title/ref] in your area', body: 'Hi [name],\n\nI came across a tender opportunity that matches your expertise — [tender title] published by [buying organisation].\n\nI\'m [your name] from [company], and I help [business type] like yours identify and win public sector contracts.\n\nThe tender closes on [closing date], so time is of the essence. I\'ve put together a quick checklist of what you\'ll need to prepare a strong submission.\n\nIf you\'d like me to review the tender documents or help with your capability statement, I\'d be happy to help.\n\nBest regards,\n[Your name]' },
-    { subject: 'Follow-up — Tender support for [tender title]', body: 'Hi [name],\n\nI wanted to follow up on the [tender title] opportunity I mentioned. Have you had a chance to review the tender documents?\n\nPublic sector bids can be time-consuming, but they\'re also highly rewarding — successful contracts often lead to repeat business. If you\'d like support with your submission, I can help with:\n\n- Reviewing the tender documents\n- Drafting your capability statement\n- Pricing guidance\n- Quality questionnaire responses\n\nLet me know if a quick call would be helpful.\n\nBest,\n[Your name]' },
-    { subject: 'Tip — 5 tips for winning public sector tenders', body: 'Hi [name],\n\nWinning public sector tenders is about more than the lowest price. Here are five tips that will strengthen your submissions:\n\n1. Read the full tender document before you start writing\n2. Answer every question directly — don\'t leave anything blank\n3. Provide evidence for every claim you make\n4. Price realistically — public sector buyers value quality over lowest cost\n5. Submit before the deadline — late submissions are rejected automatically\n\nI\'ve put together a more detailed tender preparation guide. Would you like me to send a copy?\n\nBest,\n[Your name]' },
-    { subject: 'Final nudge — Upcoming opportunities in your sector', body: 'Hi [name],\n\nJust checking in one last time regarding the tender opportunities in your sector. If now isn\'t the right time to bid, I completely understand.\n\nWhen you\'re ready to start bidding, I\'m here to help with tender preparation, capability statements, and submission reviews.\n\nI\'ll send through any relevant opportunities I come across in the future.\n\nKind regards,\n[Your name]' }
+    { subject: 'Tender opportunity. [tender title/ref] in your area', body: 'Hi [name],\n\nI came across a tender opportunity that matches your expertise. [tender title] published by [buying organisation].\n\nI\'m [your name] from [company], and I help [business type] like yours identify and win public sector contracts.\n\nThe tender closes on [closing date], so time is of the essence. I\'ve put together a quick checklist of what you\'ll need to prepare a strong submission.\n\nIf you\'d like me to review the tender documents or help with your capability statement, I\'d be happy to help.\n\nBest regards,\n[Your name]' },
+    { subject: 'Follow-up: Tender support for [tender title]', body: 'Hi [name],\n\nI wanted to follow up on the [tender title] opportunity I mentioned. Have you had a chance to review the tender documents?\n\nPublic sector bids can be time-consuming, but they\'re also highly rewarding. successful contracts often lead to repeat business. If you\'d like support with your submission, I can help with:\n\n- Reviewing the tender documents\n- Drafting your capability statement\n- Pricing guidance\n- Quality questionnaire responses\n\nLet me know if a quick call would be helpful.\n\nBest,\n[Your name]' },
+    { subject: 'Tip: 5 tips for winning public sector tenders', body: 'Hi [name],\n\nWinning public sector tenders is about more than the lowest price. Here are five tips that will strengthen your submissions:\n\n1. Read the full tender document before you start writing\n2. Answer every question directly. don\'t leave anything blank\n3. Provide evidence for every claim you make\n4. Price realistically. public sector buyers value quality over lowest cost\n5. Submit before the deadline. late submissions are rejected automatically\n\nI\'ve put together a more detailed tender preparation guide. Would you like me to send a copy?\n\nBest,\n[Your name]' },
+    { subject: 'Final nudge: Upcoming opportunities in your sector', body: 'Hi [name],\n\nJust checking in one last time regarding the tender opportunities in your sector. If now isn\'t the right time to bid, I completely understand.\n\nWhen you\'re ready to start bidding, I\'m here to help with tender preparation, capability statements, and submission reviews.\n\nI\'ll send through any relevant opportunities I come across in the future.\n\nKind regards,\n[Your name]' }
   ]},
   { title: 'Introduction Letter Templates', icon: '\uD83D\uDCC4', items: [
     { subject: 'Capability Statement Cover Letter', body: '[Your Company Letterhead]\n\n[Date]\n\n[Procurement Manager Name]\n[Bought Organisation]\n\nDear [Name],\n\nRE: [Tender Title / Reference Number]\n\nI am writing to introduce [company name] and express our interest in the above tender opportunity.\n\n[Company name] specialises in [service], and we have successfully delivered similar contracts for [relevant clients or sectors]. I\'ve enclosed our capability statement which provides full details of our experience, accreditations, and track record.\n\nWe would welcome the opportunity to submit a full tender response and look forward to your feedback.\n\nYours sincerely,\n[Your name]\n[Position]\n[Company]\n[Phone / Email / Website]' },
     { subject: 'Company Introduction Letter (for framework applications)', body: '[Your Company Letterhead]\n\nDear [Name],\n\nI\'m writing to introduce [company name] as a potential supplier for [service area]. We have been delivering [service] for [X] years and are particularly experienced in [specific expertise].\n\nI\'ve enclosed our company brochure and capability statement. We would welcome the opportunity to be considered for future tender opportunities within your organisation.\n\nI will follow up next week to discuss how we might work together.\n\nYours faithfully,\n[Your name]' }
   ]},
   { title: 'Flyer Insert Templates', icon: '\uD83D\uDCE0', items: [
-    { subject: 'Capability Statement (A4 Professional Document)', body: 'Header: Company logo, name, and contact details.\nSection 1: Company overview — who you are, what you do, key differentiators.\nSection 2: Relevant experience — 3-4 case studies with client names, contract values, outcomes.\nSection 3: Accreditations, certifications, insurance details.\nSection 4: Testimonials and client references.\nTip: Keep to 2-4 pages maximum. Procurement managers read quickly.' },
+    { subject: 'Capability Statement (A4 Professional Document)', body: 'Header: Company logo, name, and contact details.\nSection 1: Company overview. who you are, what you do, key differentiators.\nSection 2: Relevant experience. 3-4 case studies with client names, contract values, outcomes.\nSection 3: Accreditations, certifications, insurance details.\nSection 4: Testimonials and client references.\nTip: Keep to 2-4 pages maximum. Procurement managers read quickly.' },
     { subject: 'Services Overview Flyer', body: 'Front: "Trusted [service] provider for the public sector"\nInside: Services offered, geographic coverage, contract value range, key clients.\nBack: Contact details, website, company registration number, certifications.\nTip: Print in full colour on quality paper. This doubles as a leave-behind after meetings.' },
-    { subject: 'Case Study Flyer', body: 'Headline: "How we delivered [project] for [client] — \u00a3[X] under budget"\nBody: Problem â†’ Solution â†’ Results format with measurable outcomes and client quote.\nBottom: "Ready to discuss your next tender? Contact us."\nTip: Specific, measurable results are what procurement teams want to see.' }
+    { subject: 'Case Study Flyer', body: 'Headline: "How we delivered [project] for [client]. \u00a3[X] under budget"\nBody: Problem â†’ Solution â†’ Results format with measurable outcomes and client quote.\nBottom: "Ready to discuss your next tender? Contact us."\nTip: Specific, measurable results are what procurement teams want to see.' }
   ]},
   { title: 'Follow-Up Sequences', icon: '\uD83D\uDD04', items: [
     { subject: 'Week 1: Initial Outreach', body: 'Day 1: Submit tender application / post capability statement\nDay 2: Email follow-up\nDay 3: Phone call to procurement contact\nDay 5: Post company brochure to buying organisation' },
@@ -7728,7 +11097,7 @@ CAMPAIGN_KITS.tenders.sections = [
     { subject: '"The budget has already been allocated"', body: 'Response: "Understood. Are there any upcoming projects in your pipeline that we could be considered for? I\'d be happy to provide early input at no cost."\nFollow up: Send relevant case studies for future reference.' }
   ]},
   { title: 'Best Practices', icon: '\u2B50', items: [
-    { subject: 'Read every word', body: 'Tender documents contain critical information — evaluation criteria, deadlines, formatting requirements. Missing a detail can disqualify you.' },
+    { subject: 'Read every word', body: 'Tender documents contain critical information. evaluation criteria, deadlines, formatting requirements. Missing a detail can disqualify you.' },
     { subject: 'Provide evidence', body: 'Don\'t just say you can do something. Prove it with case studies, client references, and measurable outcomes.' },
     { subject: 'Submit early', body: 'Aim to submit 24-48 hours before the deadline. This avoids last-minute technical issues and shows you\'re organised.' },
     { subject: 'Request feedback', body: 'If you\'re unsuccessful, request a debrief. Procurement teams are required to provide feedback, and it\'s invaluable for improving future bids.' }
@@ -7774,16 +11143,54 @@ var PRINT_POST_PRICES = {
   markup_percent: function(item) { return Math.round((this[item].customer - this[item].stannp) / this[item].stannp * 100); }
 };
 
-// GET /api/direct-mail/pricing — return Print & Post prices
+// Clean markdown / paste artifacts out of cover-letter text so the printed or
+// downloaded letter matches exactly what the customer wrote. AI copywriters
+// often return markdown (**bold**, * bullets) that should NOT appear in a letter.
+function cleanMailText(text) {
+  if (!text) return '';
+  var s = String(text);
+  // 1. Normalise Windows/HTML line endings
+  s = s.replace(/\r\n?/g, '\n');
+  // 2. Convert markdown bullets FIRST (line-anchored: * item / - item / + item)
+  //    so a lone line-start * is treated as a bullet, never an emphasis marker.
+  s = s.replace(/^\s*\*+\s+/gm, '• ');
+  s = s.replace(/^\s*(-\s+|\+\s+)/gm, '• ');
+  // 3. Strip markdown bold (**bold**) — remove only the asterisk pairs
+  s = s.replace(/\*\*/g, '');
+  // 4. Strip markdown headings (#) and horizontal rules
+  s = s.replace(/^\s*#{1,6}\s*/gm, '');
+  s = s.replace(/^\s*(---+|\*\*\*+|___+)\s*$/gm, '');
+  // 5. Non-greedy italic *text* (single line) — keep the words
+  s = s.replace(/\*([^*\n]+)\*/g, '$1');
+  // 6. Strip inline backticks and links (but keep the link text)
+  s = s.replace(/`/g, '');
+  s = s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  // 7. Remove any remaining stray asterisks (defensive)
+  s = s.replace(/\*+/g, '');
+  // 8. Collapse 3+ blank lines to one
+  s = s.replace(/\n{3,}/g, '\n\n');
+  return s.trim();
+}
+
+// Print & Post FORMAT catalog: every Stannp size we offer, with artwork
+// dimensions (px @300dpi incl 6mm bleed), final mm size, and the official
+// downloadable design template. Used by the dashboard format selector so
+// customers can pick portrait / landscape / enveloped / letter.
+var DM_FORMATS = [
+  { id: 'flyer_a5_portrait', label: 'A5 Portrait Leaflet', size: 'A5-PORT', kind: 'flyer', width: 1819, height: 2551, mm: '148×210mm', safe: '148×210mm', template: 'a5-leaflet-portrait.pdf', price: 1.99, desc: 'Classic A5 flyer, portrait. Full colour, 300gsm.' },
+  { id: 'flyer_a5_landscape', label: 'A5 Landscape Leaflet', size: 'A5', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-leaflet.pdf', price: 1.99, desc: 'A5 flyer, landscape orientation.' },
+  { id: 'flyer_a5_enveloped', label: 'A5 Leaflet in Envelope', size: 'A5-ENV', kind: 'flyer', width: 1819, height: 2551, mm: '148×210mm', safe: '148×210mm', template: 'a5-enveloped-postcard.pdf', price: 2.75, desc: 'A5 leaflet sent inside a windowed envelope — more premium feel.' },
+  { id: 'flyer_plus_letter', label: 'Leaflet + Letter', size: 'A5-PORT', kind: 'flyer_plus_letter', width: 1819, height: 2551, mm: 'A5 leaflet + A4 letter', safe: '148×210mm + 210×297mm', template: 'a5-leaflet-portrait.pdf', price: 2.99, desc: 'A5 leaflet with a personalised A4 letter — great for a fuller introduction.' },
+  { id: 'letter_a4', label: 'A4 Letter', size: 'letter', kind: 'letter', width: 0, height: 0, mm: '210×297mm', safe: '210×297mm', template: 'a4-letter.pdf', price: 1.49, desc: 'Professional A4 letter with windowed envelope.' }
+];
+
+// GET /api/direct-mail/pricing — return Print & Post prices and formats
 app.get('/api/direct-mail/pricing', (req, res) => {
   res.json({
     success: true,
-    prices: [
-      { id: 'letter_a4', label: 'A4 Letter (printed & posted)', price: 1.49, unit: 'per item' },
-      { id: 'flyer_a5', label: 'A5 Leaflet (printed & posted)', price: 1.99, unit: 'per item' },
-      { id: 'flyer_plus_letter', label: 'A5 Leaflet + A4 Letter (printed & posted)', price: 2.99, unit: 'per item' }
-    ],
-    info: 'Prices include full colour printing, folding, and Royal Mail postage. The recipient name & address is printed in a clear zone on each leaflet. No hidden fees — you only pay for what gets sent.'
+    formats: DM_FORMATS.map(function(f) { return { id: f.id, label: f.label, size: f.size, kind: f.kind, mm: f.mm, safe: f.safe, template: '/portal/templates/' + f.template, price: f.price, desc: f.desc }; }),
+    prices: DM_FORMATS.map(function(f) { return { id: f.id, label: f.label + ' (printed & posted)', price: f.price, unit: 'per item' }; }),
+    info: 'Prices include full colour printing and Royal Mail postage. The recipient address is printed in a clear zone. Download the matching template (with bleed + safe-zone guides) for each format before designing.'
   });
 });
 
@@ -7800,37 +11207,55 @@ app.post('/api/direct-mail/profile', authMiddleware, (req, res) => {
     if (!req.body.phone && !req.body.email) return res.status(400).json({ error: 'Phone or email is required' });
     if (!req.body.business_type) return res.status(400).json({ error: 'Business type is required' });
     const existing = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+    // Merge — only overwrite fields provided in the request; keep existing values
+    // for anything absent so a partial save never wipes the customer's profile.
+    function pickP(field, def) {
+      if (req.body[field] !== undefined && req.body[field] !== null) return req.body[field];
+      if (existing && existing[field] !== undefined && existing[field] !== null) return existing[field];
+      return def !== undefined ? def : '';
+    }
     const profile = {
       id: existing ? existing.id : uuidv4(),
       customer_id: req.user.id,
-      company_name: req.body.company_name,
-      business_type: req.body.business_type,
-      logo_url: req.body.logo_url || '',
-      website: req.body.website || '',
-      phone: req.body.phone || '',
-      email: req.body.email || '',
-      address_line1: req.body.address_line1 || '',
-      address_line2: req.body.address_line2 || '',
-      city: req.body.city || '',
-      postcode: req.body.postcode || '',
-      country: req.body.country || 'United Kingdom',
-      services_offered: req.body.services_offered || '',
-      service_areas: req.body.service_areas || '',
-      special_offer: req.body.special_offer || '',
-      preferred_colours: req.body.preferred_colours || '',
-      brand_tone: req.body.brand_tone || '',
-      google_reviews_link: req.body.google_reviews_link || '',
-      facebook_page: req.body.facebook_page || '',
-      instagram_page: req.body.instagram_page || '',
-      short_description: req.body.short_description || '',
-      call_to_action: req.body.call_to_action || '',
+      company_name: pickP('company_name', ''),
+      business_type: pickP('business_type', ''),
+      logo_url: pickP('logo_url', ''),
+      website: pickP('website', ''),
+      phone: pickP('phone', ''),
+      email: pickP('email', ''),
+      address_line1: pickP('address_line1', ''),
+      address_line2: pickP('address_line2', ''),
+      city: pickP('city', ''),
+      postcode: pickP('postcode', ''),
+      country: pickP('country', 'United Kingdom'),
+      services_offered: pickP('services_offered', ''),
+      service_areas: pickP('service_areas', ''),
+      special_offer: pickP('special_offer', ''),
+      preferred_colours: pickP('preferred_colours', ''),
+      brand_tone: pickP('brand_tone', ''),
+      google_reviews_link: pickP('google_reviews_link', ''),
+      facebook_page: pickP('facebook_page', ''),
+      instagram_page: pickP('instagram_page', ''),
+      short_description: pickP('short_description', ''),
+      call_to_action: pickP('call_to_action', ''),
+      contact_name: pickP('contact_name', ''),
       created_at: existing ? existing.created_at : new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+    // Also persist the contact name on the customers record (used for the
+    // personalised letter "Dear [name]" and email greetings) so the name the
+    // customer types in the profile form is never lost.
+    try {
+      var custRow = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+      if (custRow) {
+        var upName = profile.contact_name || custRow.contact_name || profile.company_name || custRow.company || '';
+        db.prepare('UPDATE customers SET contact_name = ?, company = COALESCE(NULLIF(?, \'\'), company) WHERE id = ?').run(upName, profile.company_name || '', req.user.id);
+      }
+    } catch(custUpdErr) { console.log('[PROFILE] customer contact_name update error:', custUpdErr.message); }
     if (existing) {
-      db.prepare('UPDATE customer_business_profiles SET company_name=?,business_type=?,logo_url=?,website=?,phone=?,email=?,address_line1=?,address_line2=?,city=?,postcode=?,country=?,services_offered=?,service_areas=?,special_offer=?,preferred_colours=?,brand_tone=?,google_reviews_link=?,facebook_page=?,instagram_page=?,short_description=?,call_to_action=?,updated_at=? WHERE id=?').run(profile.company_name, profile.business_type, profile.logo_url, profile.website, profile.phone, profile.email, profile.address_line1, profile.address_line2, profile.city, profile.postcode, profile.country, profile.services_offered, profile.service_areas, profile.special_offer, profile.preferred_colours, profile.brand_tone, profile.google_reviews_link, profile.facebook_page, profile.instagram_page, profile.short_description, profile.call_to_action, profile.updated_at, profile.id);
+      db.prepare('UPDATE customer_business_profiles SET company_name=?,business_type=?,logo_url=?,website=?,phone=?,email=?,address_line1=?,address_line2=?,city=?,postcode=?,country=?,services_offered=?,service_areas=?,special_offer=?,preferred_colours=?,brand_tone=?,google_reviews_link=?,facebook_page=?,instagram_page=?,short_description=?,call_to_action=?,contact_name=?,updated_at=? WHERE id=?').run(profile.company_name, profile.business_type, profile.logo_url, profile.website, profile.phone, profile.email, profile.address_line1, profile.address_line2, profile.city, profile.postcode, profile.country, profile.services_offered, profile.service_areas, profile.special_offer, profile.preferred_colours, profile.brand_tone, profile.google_reviews_link, profile.facebook_page, profile.instagram_page, profile.short_description, profile.call_to_action, profile.contact_name, profile.updated_at, profile.id);
     } else {
-      db.prepare('INSERT INTO customer_business_profiles (id,customer_id,company_name,business_type,logo_url,website,phone,email,address_line1,address_line2,city,postcode,country,services_offered,service_areas,special_offer,preferred_colours,brand_tone,google_reviews_link,facebook_page,instagram_page,short_description,call_to_action,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(profile.id, profile.customer_id, profile.company_name, profile.business_type, profile.logo_url, profile.website, profile.phone, profile.email, profile.address_line1, profile.address_line2, profile.city, profile.postcode, profile.country, profile.services_offered, profile.service_areas, profile.special_offer, profile.preferred_colours, profile.brand_tone, profile.google_reviews_link, profile.facebook_page, profile.instagram_page, profile.short_description, profile.call_to_action, profile.created_at, profile.updated_at);
+      db.prepare('INSERT INTO customer_business_profiles (id,customer_id,company_name,business_type,logo_url,website,phone,email,address_line1,address_line2,city,postcode,country,services_offered,service_areas,special_offer,preferred_colours,brand_tone,google_reviews_link,facebook_page,instagram_page,short_description,call_to_action,contact_name,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(profile.id, profile.customer_id, profile.company_name, profile.business_type, profile.logo_url, profile.website, profile.phone, profile.email, profile.address_line1, profile.address_line2, profile.city, profile.postcode, profile.country, profile.services_offered, profile.service_areas, profile.special_offer, profile.preferred_colours, profile.brand_tone, profile.google_reviews_link, profile.facebook_page, profile.instagram_page, profile.short_description, profile.call_to_action, profile.contact_name, profile.created_at, profile.updated_at);
     }
     addTimelineEntry(req.user.id, 'Business Profile ' + (existing ? 'Updated' : 'Created'), profile.company_name);
     res.json({ success: true, profile: profile });
@@ -7873,7 +11298,7 @@ app.post('/api/direct-mail/templates', authMiddleware, (req, res) => {
       flyer_front_material_id: req.body.flyer_front_material_id || '',
       flyer_back_material_id: req.body.flyer_back_material_id || '',
       letter_material_id: req.body.letter_material_id || '',
-      ai_generated_text: req.body.ai_generated_text || '',
+      ai_generated_text: cleanMailText(req.body.ai_generated_text || ''),
       status: req.body.status || 'draft',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -7896,7 +11321,7 @@ app.put('/api/direct-mail/templates/:id', authMiddleware, (req, res) => {
       req.body.flyer_front_material_id !== undefined ? req.body.flyer_front_material_id : existing.flyer_front_material_id,
       req.body.flyer_back_material_id !== undefined ? req.body.flyer_back_material_id : existing.flyer_back_material_id,
       req.body.letter_material_id !== undefined ? req.body.letter_material_id : existing.letter_material_id,
-      req.body.ai_generated_text !== undefined ? req.body.ai_generated_text : existing.ai_generated_text,
+      req.body.ai_generated_text !== undefined ? cleanMailText(req.body.ai_generated_text) : existing.ai_generated_text,
       req.body.status || existing.status, new Date().toISOString(), req.params.id, req.user.id
     );
     var updated = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -7980,7 +11405,7 @@ app.post('/api/direct-mail/campaigns', authMiddleware, (req, res) => {
       id: uuidv4(),
       customer_id: req.user.id,
       name: req.body.name,
-      description: req.body.description || '',
+      description: req.body.description || req.body.mail_type || '',
       status: 'draft',
       template_id: req.body.template_id || '',
       material_id: req.body.material_id || '',
@@ -7988,7 +11413,7 @@ app.post('/api/direct-mail/campaigns', authMiddleware, (req, res) => {
       sent_count: 0,
       delivery_date: req.body.delivery_date || '',
       budget: req.body.budget || 0,
-      notes: req.body.notes || '',
+      notes: (req.body.notes || '') + (req.body.format ? ' FORMAT:' + req.body.format : ''),
       provider: '',
       provider_campaign_id: '',
       provider_status: '',
@@ -8130,6 +11555,23 @@ app.get('/api/direct-mail/test/:campaignId', authMiddleware, (req, res) => {
 // FULL send-to-provider flow: create campaign + upload artwork + add recipients + send.
 // Used by both manual send and the Stripe webhook (one-click print & post).
 async function sendDmCampaign(campaignId, customerId) {
+  // Concurrency guard: if this campaign is already mid-send (e.g. the Stripe
+  // webhook and the dashboard verify-payment both fire), do NOT send it a second
+  // time — that would create duplicate paid orders at our print partner.
+  var _dmSendLock = global.__dmSendLock || (global.__dmSendLock = {});
+  if (_dmSendLock[campaignId]) {
+    console.log('[DM-SEND] Campaign already in-flight, skipping duplicate send: ' + campaignId);
+    return { success: false, error: 'Send already in progress for this campaign', duplicate: true };
+  }
+  _dmSendLock[campaignId] = true;
+  try {
+    return await sendDmCampaignInner(campaignId, customerId);
+  } finally {
+    delete _dmSendLock[campaignId];
+  }
+}
+
+async function sendDmCampaignInner(campaignId, customerId) {
   var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(campaignId, customerId);
   if (!campaign) return { success: false, error: 'Campaign not found' };
   if (campaign.status === 'completed' || campaign.status === 'dispatched') return { success: false, error: 'Campaign already sent' };
@@ -8138,7 +11580,7 @@ async function sendDmCampaign(campaignId, customerId) {
   var provider = getDirectMailProvider();
 
   // 1. Validate addresses
-  var addresses = recipients.map(function(r) { return { name: r.name, company: r.company, address_line1: r.address_line1, city: r.city, postcode: r.postcode, lead_id: r.lead_id }; });
+  var addresses = recipients.map(function(r) { return { name: r.name, company: r.company, address_line1: r.address_line1, city: r.city, postcode: r.postcode, lead_id: r.lead_id, id: r.id }; });
   var validationResult = await provider.validateAddresses(addresses);
   var validAddresses = validationResult.details ? validationResult.details.filter(function(d) { return d.valid; }) : [];
   var recipientCount = validAddresses.length;
@@ -8158,17 +11600,39 @@ async function sendDmCampaign(campaignId, customerId) {
     var mat = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(materialIds[mi], customerId);
     if (mat && mat.file_data) files.push({ name: mat.name || 'artwork.' + (mat.file_type === 'pdf' ? 'pdf' : 'png'), file_data: mat.file_data });
   }
+  // FALLBACK: if the template had no linked materials (common for My Leads one-click
+  // sends where materials are uploaded separately), use the customer's most recent
+  // uploaded materials of each type. This guarantees the flyer front/back/letter
+  // actually get sent even when the template material columns are empty.
+  if (files.length === 0) {
+    var fallbackTypes = [['flyer_front','flyer_front'],['flyer_back','flyer_back'],['letter','letter']];
+    fallbackTypes.forEach(function(ft) {
+      var latest = null;
+      try { latest = db.prepare('SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = ? ORDER BY created_at DESC LIMIT 1').get(customerId, ft[0]); } catch(e) {}
+      if (latest) {
+        var fm = null; try { fm = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(latest.id, customerId); } catch(e) {}
+        if (fm && fm.file_data) files.push({ name: fm.name || (ft[1] + '.png'), file_data: fm.file_data });
+      }
+    });
+  }
   // Determine mail type: one-click campaigns store it in description; template-based
   // campaigns default to the template type (letter or flyer).
   var mailType = 'letter';
   var mailTypeHint = campaign.description || campaign.notes || '';
-  if (mailTypeHint === 'flyer_a5' || mailTypeHint === 'flyer' || /flyer/i.test(mailTypeHint)) mailType = 'flyer';
-  else if (mailTypeHint === 'flyer_plus_letter' || /flyer.*letter/i.test(mailTypeHint)) mailType = 'flyer_plus_letter';
+  if (mailTypeHint === 'flyer_plus_letter' || /flyer.*letter/i.test(mailTypeHint)) mailType = 'flyer_plus_letter';
+  else if (mailTypeHint === 'flyer_a5' || mailTypeHint === 'flyer' || /^flyer$|^flyer_a5$/i.test(mailTypeHint)) mailType = 'flyer';
+  // Resolve the chosen print format (id like 'flyer_a5_portrait') from the
+  // campaign notes/description so the artwork is sized & sent at the right
+  // Stannp size. Falls back to A5-PORT for flyers.
+  var chosenFormat = '';
+  var fmtHint = String(campaign.notes || '') + ' ' + String(campaign.description || '');
+  var fmtMatch = fmtHint.match(/FORMAT:([a-zA-Z0-9_]+)/);
+  if (fmtMatch) chosenFormat = fmtMatch[1];
 
   // Template content (HTML) used when no letter PDF is uploaded
   var templateBody = '';
   if (template && template.ai_generated_text) {
-    templateBody = template.ai_generated_text
+    templateBody = cleanMailText(template.ai_generated_text)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
       .replace(/\r?\n/g, '<br>');
   }
@@ -8186,15 +11650,66 @@ async function sendDmCampaign(campaignId, customerId) {
       }
       // Provide template body as the letter content (replacing placeholders per recipient)
       var rcptWithPages = Object.assign({}, rcpt);
+      // Attach a cross-reference tag so Stannp reporting / reporting/list can be
+      // matched back to our exact recipient (lead). Stannp stores custom tags per
+      // mailpiece and returns them in reporting/list — a reliable fallback to the
+      // webhook for reconciling real delivery status.
+      rcptWithPages.tags = '9amleads:' + String(rcpt.id).substring(0, 18) + (rcpt.lead_id ? ':' + String(rcpt.lead_id).substring(0, 18) : '');
       if (templateBody) {
-        rcptWithPages.pages = templateBody
+        // Build a clean A4 letter. Stannp prints the RECIPIENT address itself in
+        // the envelope window, so we must NOT repeat it in the letter body. We
+        // only put the SENDER's return address (business profile) at the top-right,
+        // a date line, then the letter body. This avoids the repeated-address
+        // duplication.
+        var returnAddr = (template && template.ai_generated_text) ? '' : '';
+        // Look up the customer's business profile for the return address
+        var bizP = null;
+        try { bizP = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(customerId); } catch(e) {}
+        var senderName = (bizP && bizP.company_name) || (bizP && bizP.contact_name) || '9amLeads';
+        var senderAddr = '';
+        if (bizP) {
+          senderAddr = (bizP.address_line1 ? bizP.address_line1 + '<br>' : '') + (bizP.city ? bizP.city : '') + (bizP.postcode ? ' ' + bizP.postcode : '');
+        }
+        var todayLine = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        var letterHtml =
+          '<html><body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#1e293b">' +
+          '<table width="100%" cellpadding="0" cellspacing="0"><tr>' +
+          '<td width="50%" valign="top" style="font-size:10px;color:#334155">' +
+          (senderName ? senderName + '<br>' : '') + senderAddr +
+          '</td>' +
+          '<td width="50%" align="right" valign="top" style="font-size:10px;color:#334155">' + todayLine + '</td>' +
+          '</tr></table>' +
+          '<div style="border-top:2px solid #0ea5e9;margin:24px 0 20px"></div>' +
+          '<div style="font-size:11px;line-height:1.7">' + templateBody + '</div>' +
+          '</body></html>';
+        rcptWithPages.pages = letterHtml
           .replace(/\[name\]/gi, rcpt.name || '')
-          .replace(/\[address\]/gi, (rcpt.address_line1 || '') + ' ' + (rcpt.city || ''))
+          .replace(/\[address\]/gi, (rcpt.address_line1 || '') + ' ' + (rcpt.city || '') + ' ' + (rcpt.postcode || ''))
           .replace(/\[company\]/gi, rcpt.company || rcpt.name || '');
       }
-      var pieceResult = await provider.sendMailpiece(mailType, rcptWithPages, pieceFiles);
+      var pieceResult = await provider.sendMailpiece(mailType, rcptWithPages, pieceFiles, chosenFormat);
       if (pieceResult && pieceResult.success) {
-        sentIds.push(pieceResult.provider_campaign_id);
+        // A 'flyer_plus_letter' order produces TWO Stannp mailpieces (letter + flyer).
+        // Each is tracked as its own recipient row so the customer sees two separate
+        // orders with independent live status in their dashboard.
+        var pieceIds = (pieceResult.provider_mailpiece_ids && pieceResult.provider_mailpiece_ids.length) ? pieceResult.provider_mailpiece_ids : [pieceResult.provider_campaign_id];
+        var pieceTypes = (pieceResult.mailpiece_types && pieceResult.mailpiece_types.length) ? pieceResult.mailpiece_types : ['mailpiece'];
+        pieceIds.forEach(function(mid, pi) {
+          if (!mid) return;
+          sentIds.push(String(mid));
+          var pType = pieceTypes[pi] || 'mailpiece';
+          var trackingId = (pType === 'flyer') ? uuidv4() : rcpt.id;
+          // Live tracking: store the Stannp mailpiece ID against this recipient so
+          // webhook/poller status updates can be matched back to the exact lead.
+          try {
+            if (trackingId === rcpt.id) {
+              db.prepare('UPDATE direct_mail_recipients SET provider_mailpiece_id = ?, mailpiece_type = ?, provider_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(String(mid), pType, 'processing', new Date().toISOString(), rcpt.id, customerId);
+            } else {
+              // Second piece (flyer) → a separate tracked recipient row on the same lead.
+              db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,provider_mailpiece_id,mailpiece_type,provider_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(trackingId, customerId, campaign.id, rcpt.name || 'Lead', rcpt.company || '', rcpt.address_line1 || '', rcpt.address_line2 || '', rcpt.city || '', rcpt.postcode || '', rcpt.country || 'United Kingdom', rcpt.lead_id || '', 'pending', String(mid), pType, 'processing', new Date().toISOString(), new Date().toISOString());
+            }
+          } catch(rcptErr) { console.log('[DM-SEND] recipient update failed:', rcptErr.message); }
+        });
       } else {
         failedIds.push(rcpt.lead_id);
         if (errors.length < 3) errors.push((pieceResult && pieceResult.error) || 'Send failed');
@@ -8209,14 +11724,20 @@ async function sendDmCampaign(campaignId, customerId) {
     db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, provider_status = ?, sent_count = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('sent_to_provider', provider.name, providerCampaignId, 'processing', sentIds.length, new Date().toISOString(), campaign.id, customerId);
     db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaign.id, campaign.status, 'sent_to_provider', 'system', 'Sent to provider: ' + provider.name + ' (IDs: ' + providerCampaignId.substring(0, 60) + ') · Items: ' + sentIds.length, new Date().toISOString());
     db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaign.id, provider.name, 'sendMailpiece', JSON.stringify({ mailType: mailType, recipients: recipientCount, files: files.length }), JSON.stringify({ success: true, ids: sentIds, failures: failedIds.length }), 200, 1, failedIds.length ? (failedIds.length + ' recipients failed') : '', new Date().toISOString());
-    // Capture the proof-of-posting PDF from Stannp for the customer's reassurance
+    // Capture the proof-of-posting PDF from Stannp for the customer's reassurance.
+    // We DOWNLOAD the PDF content and store it locally so the proof never expires
+    // (Stannp's proof URLs carry an expiry token) and is served from OUR dashboard.
     try {
       var firstId = String(providerCampaignId).split(',')[0];
       var proofRes = await provider.getProofOfPosting(firstId);
       if (proofRes && proofRes.proof_url) {
-        db.prepare('UPDATE direct_mail_campaigns SET proof_url = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(proofRes.proof_url, new Date().toISOString(), campaign.id, customerId);
+        var proofPdf = '';
+        try {
+          proofPdf = await downloadBinary(proofRes.proof_url);
+        } catch(pdErr) { console.log('[DM-SEND] Proof PDF download failed:', pdErr.message); }
+        db.prepare('UPDATE direct_mail_campaigns SET proof_url = ?, proof_pdf = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run(proofRes.proof_url, proofPdf || '', new Date().toISOString(), campaign.id, customerId);
         saveDb();
-        console.log('[DM-SEND] Proof of posting saved for campaign ' + campaign.id.substring(0, 8));
+        console.log('[DM-SEND] Proof of posting saved for campaign ' + campaign.id.substring(0, 8) + (proofPdf ? ' (PDF stored)' : ' (URL only)'));
       }
     } catch(proofErr) { console.log('[DM-SEND] Proof capture skipped:', proofErr.message); }
     return { success: true, provider: provider.name, provider_campaign_id: providerCampaignId, recipient_count: sentIds.length, message: 'Sent ' + sentIds.length + ' item(s) to our print partner for printing' };
@@ -8289,7 +11810,14 @@ app.get('/api/direct-mail/campaigns/:id/proof', authMiddleware, async (req, res)
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
     if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
     if (!campaign.provider_campaign_id) return res.status(400).json({ error: 'Campaign has not been sent to a provider yet' });
-    // Return the stored proof URL immediately if we captured it at dispatch time
+    // Serve the stored proof PDF directly if we have a local copy (never expires)
+    if (campaign.proof_pdf) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="proof-of-posting-' + campaign.provider_campaign_id + '.pdf"');
+      res.setHeader('Cache-Control', 'private, max-age=3600');
+      return res.send(Buffer.from(campaign.proof_pdf, 'base64'));
+    }
+    // Return the stored proof URL if we captured it at dispatch time
     if (campaign.proof_url) {
       return res.json({ success: true, proof: { success: true, provider_campaign_id: campaign.provider_campaign_id, proof_url: campaign.proof_url, generated_at: campaign.updated_at || new Date().toISOString(), recipient_count: campaign.sent_count || 1, postage_date: campaign.delivery_date || '', estimated_delivery: '' }, cached: true });
     }
@@ -8297,6 +11825,32 @@ app.get('/api/direct-mail/campaigns/:id/proof', authMiddleware, async (req, res)
     var proof = await provider.getProofOfPosting(campaign.provider_campaign_id);
     if (!proof.success) return res.status(500).json({ error: 'Failed to get proof of posting' });
     res.json({ success: true, proof: proof });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/lead/:id/proof — Get proof of posting for a LEAD by looking
+// up the campaign via the lead's stored post_order_id (Stannp order id).
+app.get('/api/direct-mail/lead/:id/proof', authMiddleware, async (req, res) => {
+  try {
+    var lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    var ld = {}; try { ld = JSON.parse(lead.data || '{}'); } catch(e) {}
+    var orderId = ld.post_order_id || '';
+    var campaign = null;
+    if (orderId) campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE customer_id = ? AND provider_campaign_id LIKE ? ORDER BY created_at DESC LIMIT 1').get(req.user.id, orderId + '%');
+    if (!campaign) campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE customer_id = ? ORDER BY created_at DESC LIMIT 1').get(req.user.id);
+    if (!campaign) return res.status(404).json({ error: 'No campaign found for this lead' });
+    if (campaign.proof_pdf) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="proof-of-posting.pdf"');
+      res.setHeader('Cache-Control', 'private, max-age=3600');
+      return res.send(Buffer.from(campaign.proof_pdf, 'base64'));
+    }
+    if (campaign.proof_url) return res.json({ success: true, proof_url: campaign.proof_url });
+    var provider = getDirectMailProvider();
+    var proof = await provider.getProofOfPosting(campaign.provider_campaign_id);
+    if (!proof.success) return res.status(500).json({ error: 'Proof not available yet' });
+    res.json({ success: true, proof_url: proof.proof_url });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -8385,6 +11939,83 @@ app.get('/api/direct-mail/automation', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/direct-mail/materials/:id/preview-zone — Serve the leaflet front with
+// the AUTO ADDRESS ZONE visibly marked, so customers see exactly where Stannp's
+// native clearzone will print the recipient address. Preview only — the real
+// artwork is never modified (Stannp overlays the white zone at print time).
+app.get('/api/direct-mail/materials/:id/preview-zone', authQueryOrHeader, async (req, res) => {
+  try {
+    var mat = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!mat || !mat.file_data) return res.status(404).json({ error: 'Material not found' });
+    var provider = getDirectMailProvider();
+    // Address zone goes on the BACK at the top (Stannp postcard). Pass isBack so
+    // the composite places the white zone correctly.
+    var isBack = mat.type === 'flyer_back';
+    var base64WithZone = await provider.compositeAddressZonePreview(mat.file_data, isBack);
+    if (!base64WithZone) return res.status(500).json({ error: 'Could not generate preview' });
+    var buf = Buffer.from(base64WithZone, 'base64');
+    res.setHeader('Content-Type', 'image/png');
+    // No-cache so customers always see the CURRENT (full-width) version, not a
+    // stale cached preview after we improve the artwork handling.
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    res.send(buf);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/materials/:id/final-print — Serve the EXACT final artwork
+// that will be sent to Stannp: upscaled to the format's 300 DPI full-bleed size
+// (e.g. A5-PORT 1819x2551) with the white address clear zone baked onto the
+// front. This is byte-for-byte what sendMailpiece sends, so the customer's
+// "Download Final Print" is identical to what gets printed.
+// Query params: format (id) + zone (1 = bake address zone on front, default).
+app.get('/api/direct-mail/materials/:id/final-print', authQueryOrHeader, async (req, res) => {
+  try {
+    var mat = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!mat || !mat.file_data) return res.status(404).json({ error: 'Material not found' });
+    var fmtId = req.query.format || 'flyer_a5_portrait';
+    var fmt = DM_FORMATS.find(function(f) { return f.id === fmtId; }) || DM_FORMATS.find(function(f) { return f.id === 'flyer_a5_portrait'; });
+    var fw = (fmt && fmt.width) || 1819, fh = (fmt && fmt.height) || 2551;
+    var provider = getDirectMailProvider();
+    // prepareA5Artwork validates + upscales + bakes the address zone on the front
+    // (exactly what the real send does). zone=0 keeps the original design.
+    var prep = await provider.prepareA5Artwork(mat, fw, fh);
+    if (prep.error) return res.status(400).json({ error: prep.error });
+    var file = prep.file;
+    var dataUri = String(file.file_data);
+    var base64 = dataUri.indexOf(',') !== -1 ? dataUri.split(',')[1] : dataUri;
+    var buf = Buffer.from(base64, 'base64');
+    // Artwork is now JPEG (compressed for Stannp upload limits)
+    res.setHeader('Content-Type', 'image/jpeg');
+    if (req.query.download === '1' || req.query.download === 'true') {
+      res.setHeader('Content-Disposition', 'attachment; filename="' + (mat.name || 'leaflet') + '-final.jpg"');
+    }
+    res.send(buf);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/direct-mail/materials/:id/file — Serve an uploaded material's stored
+// file (image or PDF) so the dashboard can PREVIEW the saved leaflet/letter.
+app.get('/api/direct-mail/materials/:id/file', authQueryOrHeader, (req, res) => {
+  try {
+    var mat = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!mat || !mat.file_data) return res.status(404).json({ error: 'Material not found' });
+    // Defensively strip any data-URI prefix before decoding (in case a material
+    // was saved with one).
+    var fd = mat.file_data;
+    if (fd && fd.indexOf(',') !== -1 && /^data:[^,]+;base64,/i.test(fd)) fd = fd.split(',')[1];
+    var buf = Buffer.from(fd, 'base64');
+    var type = mat.file_type === 'pdf' ? 'application/pdf' :
+      /\.png$/i.test(mat.name || '') ? 'image/png' :
+      /\.jpe?g$/i.test(mat.name || '') ? 'image/jpeg' : 'image/png';
+    res.setHeader('Content-Type', type);
+    // No-store so edited/updated materials always show the LATEST version
+    // immediately (e.g. after the flyer position/crop editor saves). A cache
+    // here would keep showing the old image for up to an hour after an edit.
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    res.send(buf);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/direct-mail/setup — Get the customer's full Print & Post setup status:
 // business profile, uploaded materials, default template, and readiness flags.
 app.get('/api/direct-mail/setup', authMiddleware, (req, res) => {
@@ -8413,8 +12044,12 @@ app.get('/api/direct-mail/setup', authMiddleware, (req, res) => {
     res.json({
       success: true,
       profile: profile || null,
-      materials: materials.map(function(m) { return { id: m.id, name: m.name, type: m.type, file_type: m.file_type, file_size: m.file_size, created_at: m.created_at }; }),
+      materials: materials.map(function(m) { return { id: m.id, name: m.name, type: m.type, file_type: m.file_type, file_size: m.file_size, created_at: m.created_at, preview_url: '/api/direct-mail/materials/' + m.id + '/file' }; }),
+      flyer_front: flyerFront ? { id: flyerFront.id, name: flyerFront.name, preview_url: '/api/direct-mail/materials/' + flyerFront.id + '/file', preview_zone_url: '/api/direct-mail/materials/' + flyerFront.id + '/preview-zone' } : null,
+      flyer_back: flyerBack ? { id: flyerBack.id, name: flyerBack.name, preview_url: '/api/direct-mail/materials/' + flyerBack.id + '/file' } : null,
+      letter: letterMat ? { id: letterMat.id, name: letterMat.name, preview_url: '/api/direct-mail/materials/' + letterMat.id + '/file', preview_zone_url: '/api/direct-mail/materials/' + letterMat.id + '/preview-zone' } : null,
       default_template: defaultTemplate ? { id: defaultTemplate.id, name: defaultTemplate.name, template_type: defaultTemplate.template_type, flyer_front_material_id: defaultTemplate.flyer_front_material_id, flyer_back_material_id: defaultTemplate.flyer_back_material_id, letter_material_id: defaultTemplate.letter_material_id, ai_generated_text: defaultTemplate.ai_generated_text || '' } : null,
+      format: (function(){ var fmId = (settings && settings.default_format) || (defaultTemplate && defaultTemplate.template_type === 'flyer_front_back' ? 'flyer_a5_portrait' : 'letter_a4'); var fm = DM_FORMATS.find(function(f) { return f.id === fmId; }); return fm ? { id: fm.id, label: fm.label, size: fm.size, mm: fm.mm, safe: fm.safe, width: fm.width, height: fm.height } : null; })(),
       ready: ready,
       all_ready: allReady,
       price: PRINT_POST_PRICES,
@@ -8431,40 +12066,59 @@ app.post('/api/direct-mail/setup', authMiddleware, (req, res) => {
   try {
     var nowIso = new Date().toISOString();
 
-    // 1. Business profile
+    // 1. Business profile — merge with existing so a PARTIAL save (e.g. "Save My
+    // Leaflet" sends only format + cover letter) NEVER wipes fields the customer
+    // already filled in. Only fields explicitly provided in the request are
+    // updated; anything absent keeps its existing value.
     var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
+    function pick(field, def) {
+      if (req.body[field] !== undefined && req.body[field] !== null) return req.body[field];
+      if (profile && profile[field] !== undefined && profile[field] !== null) return profile[field];
+      return def !== undefined ? def : '';
+    }
     var p = {
       id: profile ? profile.id : uuidv4(),
       customer_id: req.user.id,
-      company_name: req.body.company_name || '',
-      business_type: req.body.business_type || '',
-      logo_url: profile ? profile.logo_url : '',
-      website: req.body.website || '',
-      phone: req.body.phone || '',
-      email: req.body.email || '',
-      address_line1: req.body.address_line1 || '',
-      address_line2: req.body.address_line2 || '',
-      city: req.body.city || '',
-      postcode: req.body.postcode || '',
-      country: req.body.country || 'United Kingdom',
-      services_offered: req.body.services_offered || '',
-      service_areas: req.body.service_areas || req.body.city || '',
-      special_offer: req.body.special_offer || '',
-      preferred_colours: profile ? profile.preferred_colours : '',
-      brand_tone: req.body.brand_tone || 'professional',
-      google_reviews_link: profile ? profile.google_reviews_link : '',
-      facebook_page: profile ? profile.facebook_page : '',
-      instagram_page: profile ? profile.instagram_page : '',
-      short_description: req.body.short_description || '',
-      call_to_action: req.body.call_to_action || 'get in touch today',
+      company_name: pick('company_name', ''),
+      business_type: pick('business_type', ''),
+      logo_url: pick('logo_url', ''),
+      website: pick('website', ''),
+      phone: pick('phone', ''),
+      email: pick('email', ''),
+      address_line1: pick('address_line1', ''),
+      address_line2: pick('address_line2', ''),
+      city: pick('city', ''),
+      postcode: pick('postcode', ''),
+      country: pick('country', 'United Kingdom'),
+      services_offered: pick('services_offered', ''),
+      service_areas: pick('service_areas', '') || pick('city', ''),
+      special_offer: pick('special_offer', ''),
+      preferred_colours: pick('preferred_colours', ''),
+      brand_tone: pick('brand_tone', 'professional'),
+      google_reviews_link: pick('google_reviews_link', ''),
+      facebook_page: pick('facebook_page', ''),
+      instagram_page: pick('instagram_page', ''),
+      short_description: pick('short_description', ''),
+      call_to_action: pick('call_to_action', 'get in touch today'),
+      contact_name: pick('contact_name', ''),
       created_at: profile ? profile.created_at : nowIso,
       updated_at: nowIso
     };
     if (profile) {
-      db.prepare('UPDATE customer_business_profiles SET company_name=?,business_type=?,logo_url=?,website=?,phone=?,email=?,address_line1=?,address_line2=?,city=?,postcode=?,country=?,services_offered=?,service_areas=?,special_offer=?,preferred_colours=?,brand_tone=?,google_reviews_link=?,facebook_page=?,instagram_page=?,short_description=?,call_to_action=?,updated_at=? WHERE id=?').run(p.company_name, p.business_type, p.logo_url, p.website, p.phone, p.email, p.address_line1, p.address_line2, p.city, p.postcode, p.country, p.services_offered, p.service_areas, p.special_offer, p.preferred_colours, p.brand_tone, p.google_reviews_link, p.facebook_page, p.instagram_page, p.short_description, p.call_to_action, p.updated_at, p.id);
+      db.prepare('UPDATE customer_business_profiles SET company_name=?,business_type=?,logo_url=?,website=?,phone=?,email=?,address_line1=?,address_line2=?,city=?,postcode=?,country=?,services_offered=?,service_areas=?,special_offer=?,preferred_colours=?,brand_tone=?,google_reviews_link=?,facebook_page=?,instagram_page=?,short_description=?,call_to_action=?,contact_name=?,updated_at=? WHERE id=?').run(p.company_name, p.business_type, p.logo_url, p.website, p.phone, p.email, p.address_line1, p.address_line2, p.city, p.postcode, p.country, p.services_offered, p.service_areas, p.special_offer, p.preferred_colours, p.brand_tone, p.google_reviews_link, p.facebook_page, p.instagram_page, p.short_description, p.call_to_action, p.contact_name, p.updated_at, p.id);
     } else {
-      db.prepare('INSERT INTO customer_business_profiles (id,customer_id,company_name,business_type,logo_url,website,phone,email,address_line1,address_line2,city,postcode,country,services_offered,service_areas,special_offer,preferred_colours,brand_tone,google_reviews_link,facebook_page,instagram_page,short_description,call_to_action,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(p.id, p.customer_id, p.company_name, p.business_type, p.logo_url, p.website, p.phone, p.email, p.address_line1, p.address_line2, p.city, p.postcode, p.country, p.services_offered, p.service_areas, p.special_offer, p.preferred_colours, p.brand_tone, p.google_reviews_link, p.facebook_page, p.instagram_page, p.short_description, p.call_to_action, p.created_at, p.updated_at);
+      db.prepare('INSERT INTO customer_business_profiles (id,customer_id,company_name,business_type,logo_url,website,phone,email,address_line1,address_line2,city,postcode,country,services_offered,service_areas,special_offer,preferred_colours,brand_tone,google_reviews_link,facebook_page,instagram_page,short_description,call_to_action,contact_name,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(p.id, p.customer_id, p.company_name, p.business_type, p.logo_url, p.website, p.phone, p.email, p.address_line1, p.address_line2, p.city, p.postcode, p.country, p.services_offered, p.service_areas, p.special_offer, p.preferred_colours, p.brand_tone, p.google_reviews_link, p.facebook_page, p.instagram_page, p.short_description, p.call_to_action, p.contact_name, p.created_at, p.updated_at);
     }
+
+    // Also persist contact name on the customers record so personalised letters
+    // ("Dear [name]") and greetings use what the customer typed in the form.
+    try {
+      var custRowS = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+      if (custRowS) {
+        var upNameS = p.contact_name || custRowS.contact_name || p.company_name || custRowS.company || '';
+        db.prepare('UPDATE customers SET contact_name = ?, company = COALESCE(NULLIF(?, \'\'), company) WHERE id = ?').run(upNameS, p.company_name || '', req.user.id);
+      }
+    } catch(custUpdErr2) { console.log('[SETUP] customer contact_name update error:', custUpdErr2.message); }
 
     // 2. Materials: leaflet front / back / letter (base64). One per type (latest replaces).
     function saveMaterial(type, fileName, fileData) {
@@ -8495,6 +12149,12 @@ app.post('/api/direct-mail/setup', authMiddleware, (req, res) => {
     var frontId = saveMaterial('flyer_front', req.body.leaflet_front_name, req.body.leaflet_front);
     var backId = saveMaterial('flyer_back', req.body.leaflet_back_name, req.body.leaflet_back);
     var letterId = saveMaterial('letter', req.body.cover_letter_name, req.body.cover_letter_pdf);
+    // If no NEW file was provided for a type, fall back to the customer's most
+    // recently uploaded material of that type so the template stays linked and a
+    // partial save (e.g. Save My Leaflet) never un-links already-uploaded files.
+    if (!frontId) { var lf2 = null; try { lf2 = db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_front' ORDER BY created_at DESC LIMIT 1").get(req.user.id); } catch(e) {} if (lf2) frontId = lf2.id; }
+    if (!backId) { var lb2 = null; try { lb2 = db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_back' ORDER BY created_at DESC LIMIT 1").get(req.user.id); } catch(e) {} if (lb2) backId = lb2.id; }
+    if (!letterId) { var ll2 = null; try { ll2 = db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'letter' ORDER BY created_at DESC LIMIT 1").get(req.user.id); } catch(e) {} if (ll2) letterId = ll2.id; }
 
     // 3. Default template (create or update)
     var settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
@@ -8505,8 +12165,10 @@ app.post('/api/direct-mail/setup', authMiddleware, (req, res) => {
     if (!tpl) {
       tpl = db.prepare('SELECT * FROM direct_mail_templates WHERE customer_id = ? AND name = ? LIMIT 1').get(req.user.id, 'My Print & Post Setup');
     }
-    var coverText = req.body.cover_letter || '';
-    var tplType = req.body.default_mail_type || (req.body.leaflet_front ? 'flyer_front_back' : 'letter');
+    var coverText = cleanMailText(req.body.cover_letter || '');
+    // Preserve the template type unless explicitly changed, so a partial save
+    // (business info only) never flips a flyer setup back to 'letter'.
+    var tplType = req.body.default_mail_type || (req.body.leaflet_front ? 'flyer_front_back' : (tpl ? tpl.template_type : (frontId ? 'flyer_front_back' : 'letter')));
     if (tpl) {
       db.prepare('UPDATE direct_mail_templates SET name=?,template_type=?,business_type=?,flyer_front_material_id=?,flyer_back_material_id=?,letter_material_id=?,ai_generated_text=?,status=?,updated_at=? WHERE id=?').run('My Print & Post Setup', tplType, p.business_type, frontId, backId, letterId, coverText, 'approved', nowIso, tpl.id);
     } else {
@@ -8517,10 +12179,10 @@ app.post('/api/direct-mail/setup', authMiddleware, (req, res) => {
 
     // 4. Set as default template in automation settings
     if (settings) {
-      db.prepare('UPDATE direct_mail_automation_settings SET default_template_id=?,mail_type=?,updated_at=? WHERE customer_id=?').run(tpl.id, req.body.default_mail_type || 'letter', nowIso, req.user.id);
+      db.prepare('UPDATE direct_mail_automation_settings SET default_template_id=?,mail_type=?,default_format=?,updated_at=? WHERE customer_id=?').run(tpl.id, req.body.default_mail_type || 'letter', req.body.default_format || '', nowIso, req.user.id);
     } else {
       var sId = uuidv4();
-      db.prepare('INSERT INTO direct_mail_automation_settings (id,customer_id,enable_auto_send,lead_types,postcode_areas,default_template_id,mail_type,max_daily_spend,max_monthly_spend,max_letters_per_day,min_leads_before_send,send_timing,pause_on_payment_fail,pause_on_provider_fail,pause_on_spend_limit,avoid_duplicate_mailing,repeat_mailing_days,consent_given,consent_date,consent_ip,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(sId, req.user.id, 0, '', '', tpl.id, req.body.default_mail_type || 'letter', 0, 0, 0, 1, 'after_9am', 1, 1, 1, 1, 30, 0, '', '', nowIso, nowIso);
+      db.prepare('INSERT INTO direct_mail_automation_settings (id,customer_id,enable_auto_send,lead_types,postcode_areas,default_template_id,mail_type,default_format,max_daily_spend,max_monthly_spend,max_letters_per_day,min_leads_before_send,send_timing,pause_on_payment_fail,pause_on_provider_fail,pause_on_spend_limit,avoid_duplicate_mailing,repeat_mailing_days,consent_given,consent_date,consent_ip,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(sId, req.user.id, 0, '', '', tpl.id, req.body.default_mail_type || 'letter', req.body.default_format || '', 0, 0, 0, 1, 'after_9am', 1, 1, 1, 1, 30, 0, '', '', nowIso, nowIso);
     }
 
     var ready = {
@@ -8530,6 +12192,92 @@ app.post('/api/direct-mail/setup', authMiddleware, (req, res) => {
       cover_letter: !!(coverText || letterId)
     };
     res.json({ success: true, message: 'Your Print & Post setup has been saved.', template_id: tpl.id, ready: ready });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/direct-mail/test-receipt — Send a sample Print & Post receipt
+// email to a customer/email so they can review the design before a real order.
+app.post('/api/admin/direct-mail/test-receipt', adminAuth, async (req, res) => {
+  try {
+    var email = req.body.email || 'ketzman1g@gmail.com';
+    var name = req.body.name || 'Ketz Mandalia';
+    var address = req.body.address || '4 Farmborough Close, Harrow, HA1 3YG';
+    var amount = req.body.amount || '2.99';
+    var orderRef = req.body.order_ref || '211936512';
+    var mailType = req.body.mail_type || '';
+    var sampleBody =
+      '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Great news &mdash; your Print &amp; Post order is confirmed and paid. Here\'s everything you need to know:</p>' +
+      '<div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:16px 20px;margin:0 0 16px">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:40%">Order</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">Print &amp; Post: ' + name + (mailType ? ' (' + mailType + ')' : '') + '</td></tr>' +
+      '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount paid</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">&pound;' + amount + '</td></tr>' +
+      '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Status</td><td style="padding:3px 0;font-size:13px;color:#34d399;font-weight:700">Sent to print</td></tr>' +
+      '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Print order ref</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + orderRef + '</td></tr>' +
+      '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Delivery</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0">1-3 working days via Royal Mail</td></tr></table>' +
+      '</div>' +
+      '<div style="font-size:13px;font-weight:700;color:#dce2f0;margin:0 0 8px">&#128230; Posted to:</div>' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:8px 14px;border:1px solid #1b2233;border-radius:8px;background:#0d1322">' +
+      '<div style="font-size:13px;font-weight:700;color:#dce2f0">' + name + '</div>' +
+      '<div style="font-size:12px;color:#8890b0;margin-top:2px">' + address + '</div>' +
+      '</td></tr></table>' +
+      '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:16px 0 0">' +
+      '<strong style="color:#dce2f0">What happens next?</strong><br>' +
+      '1. Your materials are being printed.<br>' +
+      '2. They\'ll be posted to the address above.<br>' +
+      '3. It should arrive within 1-3 working days.<br><br>' +
+      '<strong style="color:#dce2f0">Pro tip:</strong> Follow up with the lead a few days after your letter arrives. A call or a second touchpoint dramatically increases your chances of winning the business.</p>';
+    await sendBrevoEmail({ email: email, name: '9amLeads' }, 'Print & Post Confirmation — ' + name, dmEmailHTML('✅ Payment received', sampleBody, 'View Print & Post', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail'));
+    res.json({ success: true, sent_to: email, message: 'Test receipt email sent' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/direct-mail/mark-posted — Mark a customer's lead as posted
+// (used for manual Print & Post sends / testing so My Leads shows the badge).
+app.post('/api/admin/direct-mail/mark-posted', adminAuth, (req, res) => {
+  try {
+    var email = req.body.email || '';
+    var leadId = req.body.lead_id || '';
+    var status = req.body.post_status || 'posted';
+    var orderId = req.body.post_order_id || '';
+    var cust = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(leadId, cust.id);
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    var data = {}; try { data = JSON.parse(lead.data || '{}'); } catch(e) {}
+    data.post_status = status;
+    if (orderId) data.post_order_id = String(orderId);
+    data.posted_at = new Date().toISOString();
+    db.prepare('UPDATE leads SET data = ? WHERE id = ?').run(JSON.stringify(data), leadId);
+    saveDb();
+    res.json({ success: true, lead_id: leadId, post_status: status, post_order_id: orderId });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/direct-mail/repair-template — Link a customer's latest uploaded
+// flyer front/back/letter materials to their default template (repairs templates
+// whose material links were wiped by a save with empty file inputs), then returns
+// the template state. Admin only.
+app.post('/api/admin/direct-mail/repair-template', adminAuth, (req, res) => {
+  try {
+    var email = req.body.email || '';
+    var cust = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(cust.id);
+    var tplId = settings && settings.default_template_id ? settings.default_template_id : '';
+    if (!tplId) {
+      var t = db.prepare("SELECT id FROM direct_mail_templates WHERE customer_id = ? AND name = 'My Print & Post Setup' ORDER BY created_at DESC LIMIT 1").get(cust.id);
+      if (t) tplId = t.id;
+    }
+    // Get latest materials
+    var front = db.prepare("SELECT id, file_data FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_front' ORDER BY created_at DESC LIMIT 1").get(cust.id);
+    var back = db.prepare("SELECT id, file_data FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_back' ORDER BY created_at DESC LIMIT 1").get(cust.id);
+    var letter = db.prepare("SELECT id, file_data FROM direct_mail_materials WHERE customer_id = ? AND type = 'letter' ORDER BY created_at DESC LIMIT 1").get(cust.id);
+    if (tplId) {
+      db.prepare('UPDATE direct_mail_templates SET flyer_front_material_id=?, flyer_back_material_id=?, letter_material_id=?, updated_at=? WHERE id=?').run(front && front.file_data ? front.id : '', back && back.file_data ? back.id : '', letter && letter.file_data ? letter.id : '', new Date().toISOString(), tplId);
+    } else {
+      return res.status(500).json({ error: 'No default template found to repair' });
+    }
+    saveDb();
+    res.json({ success: true, template_id: tplId, front_linked: !!(front && front.file_data), back_linked: !!(back && back.file_data), letter_linked: !!(letter && letter.file_data) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -8556,6 +12304,11 @@ app.get('/api/direct-mail/auto-status', authMiddleware, (req, res) => {
     var hasCard = !!(customer && (customer.stripe_payment_method_id || customer.stripe_customer_id));
     var isPro = customer && customer.plan && (customer.plan === 'pro' || customer.plan === 'enterprise');
     var enabled = !!(settings && settings.enable_auto_send);
+    // Resolve mail type/format from the default template when settings don't carry
+    // them, so the Auto page shows exactly what each lead will be mailed with.
+    var tplTypeA = template ? String(template.template_type || '').toLowerCase() : '';
+    var resolvedMailType = (settings && settings.mail_type) || (tplTypeA === 'flyer_plus_letter' ? 'flyer_plus_letter' : tplTypeA === 'flyer_front_back' ? 'flyer' : tplTypeA === 'flyer_a5' || tplTypeA === 'flyer_a5_enveloped' ? 'flyer' : 'letter');
+    var resolvedFormat = (settings && settings.default_format) || (tplTypeA === 'flyer_plus_letter' ? 'flyer_plus_letter' : tplTypeA === 'flyer_front_back' ? 'flyer_a5_portrait' : '');
     res.json({
       success: true,
       enabled: enabled,
@@ -8563,8 +12316,14 @@ app.get('/api/direct-mail/auto-status', authMiddleware, (req, res) => {
       has_card: hasCard,
       is_paid: isPro,
       template_name: template ? (template.name || 'Your saved materials') : '',
-      mail_type: settings ? (settings.mail_type || 'letter') : 'letter',
+      mail_type: resolvedMailType,
+      send_schedule: settings ? (settings.send_schedule || 'once') : 'once',
       max_daily_spend: settings ? (settings.max_daily_spend || 25) : 25,
+      default_format: resolvedFormat,
+      cost_per_item: dmPerItemPrice(resolvedMailType, resolvedFormat),
+      // Material readiness so the Auto page can validate the "what to send" choice.
+      has_flyer: !!(template && (template.flyer_front_material_id || template.flyer_back_material_id)),
+      has_letter: !!(template && (template.ai_generated_text || template.letter_material_id)),
       last_status: settings && settings.enable_auto_send ? 'active' : 'off'
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -8593,13 +12352,24 @@ app.post('/api/direct-mail/auto-toggle', authMiddleware, (req, res) => {
       var profile = dbA.customer_business_profiles.find(function(p) { return p.customer_id === req.user.id; });
       if (!profile || !(profile.company_name || profile.business_type)) return res.status(400).json({ error: 'Please complete your business information in Print & Post setup before enabling Auto Print & Post.' });
 
+      // SEND SCHEDULE is required: customer must pick how each lead is mailed.
+      // 'once' = each lead mailed once; 'repeat' = now + 2 weeks + 4 weeks.
+      var sendSchedule = req.body.send_schedule || (settings && settings.send_schedule) || '';
+      if (!sendSchedule || ['once','repeat'].indexOf(sendSchedule) === -1) {
+        return res.status(400).json({ error: 'Please choose your send schedule first — "Send once" or "Send now, then 2 weeks, then 4 weeks" before switching on Auto Print & Post.' });
+      }
+      var scheduleIntervals = sendSchedule === 'repeat' ? [0, 14, 28] : [0];
+
       // Sensible defaults: letter, £25/day cap, dedupe, consent recorded now
       var defaults = {
         enable_auto_send: 1,
+        send_schedule: sendSchedule,
+        schedule_intervals: scheduleIntervals,
         lead_types: req.body.lead_types || settings && settings.lead_types || '',
         postcode_areas: req.body.postcode_areas || (settings && settings.postcode_areas) || '',
         default_template_id: tplId,
         mail_type: req.body.mail_type || (settings && settings.mail_type) || 'letter',
+        default_format: req.body.default_format || (settings && settings.default_format) || '',
         max_daily_spend: parseInt(req.body.max_daily_spend) || (settings && settings.max_daily_spend) || 25,
         max_monthly_spend: parseInt(req.body.max_monthly_spend) || (settings && settings.max_monthly_spend) || 500,
         max_letters_per_day: parseInt(req.body.max_letters_per_day) || (settings && settings.max_letters_per_day) || 20,
@@ -8624,7 +12394,10 @@ app.post('/api/direct-mail/auto-toggle', authMiddleware, (req, res) => {
         }, defaults));
       }
       saveDb();
-      return res.json({ success: true, enabled: true, message: 'Auto Print & Post is ON. Every day at 9am, your new leads will be printed and posted automatically.' });
+      var scheduleMsg = sendSchedule === 'repeat'
+        ? 'Auto Print & Post is ON. Every day at 9am, your new leads are printed and posted now, again in 2 weeks, then again in 4 weeks.'
+        : 'Auto Print & Post is ON. Every day at 9am, your new leads are printed and posted once.';
+      return res.json({ success: true, enabled: true, send_schedule: sendSchedule, message: scheduleMsg });
     } else {
       if (settings) {
         dbA.direct_mail_automation_settings = dbA.direct_mail_automation_settings.map(function(s) {
@@ -8847,6 +12620,7 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
     if (!lead) return res.status(404).json({ error: 'Lead not found' });
     var template = req.body.template_id || '';
     var mailType = req.body.mail_type || 'letter'; // letter | flyer | flyer_plus_letter
+    var formatId = req.body.format || ''; // e.g. flyer_a5_portrait, flyer_a5_enveloped
     var nowIso = new Date().toISOString();
     var parsed = {};
     try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
@@ -8896,8 +12670,9 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
     // Create campaign
     var campaignId = uuidv4();
     var price = PRINT_POST_PRICES[mailType] ? PRINT_POST_PRICES[mailType].customer : PRINT_POST_PRICES.letter_a4.customer;
+    if (formatId) { var fmPrL = DM_FORMATS.find(function(f) { return f.id === formatId; }); if (fmPrL) price = fmPrL.price; }
     db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-      .run(campaignId, req.user.id, 'Print & Post: ' + name.substring(0,40), mailType, 'approved', useTemplateId, '', 1, 0, new Date(Date.now()+86400000).toISOString().split('T')[0], price, 'One-click send from My Leads', '', '', '', '', '', '', nowIso, nowIso);
+      .run(campaignId, req.user.id, 'Print & Post: ' + name.substring(0,40), mailType, 'approved', useTemplateId, '', 1, 0, new Date(Date.now()+86400000).toISOString().split('T')[0], price, 'One-click send from My Leads' + (formatId ? ' FORMAT:' + formatId : ''), '', '', '', '', '', '', nowIso, nowIso);
     // Add recipient
     var recipientId = uuidv4();
     db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
@@ -8915,6 +12690,29 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
         return res.status(400).json({ error: 'Print & Post is temporarily unavailable — our print partner is reloading credit. Please try again in a few minutes.' });
       }
     } catch(balErr) { console.log('[DM-SEND-LEAD] Balance check skipped:', balErr.message); }
+
+    // MATERIAL-REQUIRED CHECK: leaflets/postcards need their front design uploaded
+    // before payment. Letters auto-generate from the saved cover letter/profile.
+    if (/flyer/i.test(mailType)) {
+      var mTemplate = null;
+      if (useTemplateId) { try { mTemplate = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(useTemplateId, req.user.id); } catch(e) {} }
+      var frontId = mTemplate && mTemplate.flyer_front_material_id ? mTemplate.flyer_front_material_id : '';
+      // Fallback: if the template isn't linked to a front, use the customer's most
+      // recently uploaded flyer_front material (saved via Print & Post setup).
+      if (!frontId) {
+        var latestFront = db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_front' ORDER BY created_at DESC LIMIT 1").get(req.user.id);
+        if (latestFront) frontId = latestFront.id;
+      }
+      var frontMat = null;
+      if (frontId) { try { frontMat = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(frontId, req.user.id); } catch(e) {} }
+      if (!frontMat || !frontMat.file_data) {
+        return res.status(400).json({ error: 'This is a leaflet campaign, and it needs your leaflet front design uploaded before you can pay. Please upload your leaflet front (Print & Post > Step 2) or choose the A4 letter option instead.' });
+      }
+      // PRE-CHECKOUT ARTWORK VALIDATION: block payment if the design won't print
+      // correctly (wrong aspect / unreadable). Catches it before the customer pays.
+      var sendLeadArtErr = await validateDmArtworkBeforeCheckout(mailType, useTemplateId, formatId, req.user.id, db);
+      if (sendLeadArtErr) return res.status(400).json({ error: sendLeadArtErr });
+    }
 
     var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     var amountPence = Math.round(price * 100);
@@ -8945,6 +12743,94 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/direct-mail/send-sample — send a test mailing to the customer's OWN
+// address so free trial users (and anyone) can see the real printed result and
+// live tracking. Uses their saved materials + cover letter, charges the normal
+// per-item price, and marks the campaign as a SAMPLE so it's easy to spot.
+app.post('/api/direct-mail/send-sample', authMiddleware, async (req, res) => {
+  try {
+    var mailType = req.body.mail_type || 'letter'; // letter | flyer | flyer_plus_letter
+    var formatId = req.body.format || ''; // e.g. flyer_a5_portrait, postcard_a6, postcard_dl
+    var nowIso = new Date().toISOString();
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+
+    // Recipient = the customer's own business address (from their profile).
+    var profile = null;
+    try { profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id); } catch(e) {}
+    var addrLine1 = (req.body.address_line1 || (profile && profile.address_line1) || '').trim();
+    var city = (req.body.city || (profile && profile.city) || '').trim();
+    var postcode = (req.body.postcode || (profile && profile.postcode) || '').trim();
+    var recipientName = (req.body.name || customer.company || customer.contact_name || 'Homeowner').trim();
+    if (!addrLine1 || !postcode) {
+      return res.status(400).json({ error: 'We need your address to send you a sample. Add your business address to your Marketing profile, or enter it here.' });
+    }
+
+    // Auto-select a template (same fallback chain as send-lead).
+    var useTemplateId = req.body.template_id || '';
+    if (!useTemplateId) {
+      try { var dmS = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id); if (dmS && dmS.default_template_id) useTemplateId = dmS.default_template_id; } catch(e) {}
+    }
+    if (!useTemplateId) {
+      var anyT = null; try { anyT = db.prepare('SELECT id FROM direct_mail_templates WHERE customer_id = ? ORDER BY updated_at DESC LIMIT 1').get(req.user.id); } catch(e) {}
+      if (anyT) useTemplateId = anyT.id;
+    }
+
+    // Create the sample campaign (notes = SAMPLE so tracking/tools can tag it).
+    var campaignId = uuidv4();
+    var price = PRINT_POST_PRICES[mailType] ? PRINT_POST_PRICES[mailType].customer : PRINT_POST_PRICES.letter_a4.customer;
+    if (formatId) { var fmPr = DM_FORMATS.find(function(f) { return f.id === formatId; }); if (fmPr) price = fmPr.price; }
+    db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+      .run(campaignId, req.user.id, 'Sample to Me', mailType, 'approved', useTemplateId, '', 1, 0, new Date(Date.now()+86400000).toISOString().split('T')[0], price, 'SAMPLE' + (formatId ? ' FORMAT:' + formatId : ''), '', '', '', '', '', '', nowIso, nowIso);
+    var recipientId = uuidv4();
+    db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
+      .run(recipientId, req.user.id, campaignId, recipientName, customer.company || '', addrLine1, req.body.address_line2 || (profile && profile.address_line2) || '', city, postcode, 'United Kingdom', '', 'pending', nowIso);
+    db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, campaignId, '', 'approved', 'customer', 'Sample to self created', nowIso);
+
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    // Balance check
+    try {
+      var dmProv = getDirectMailProvider();
+      var balC = await dmProv.getBalance();
+      if (balC && balC.success && balC.balance < price) return res.status(400).json({ error: 'Print & Post is temporarily unavailable — our print partner is reloading credit. Please try again in a few minutes.' });
+    } catch(balErr) {}
+
+    // Leaflet requires an uploaded front design + pre-checkout artwork validation.
+    if (/flyer/i.test(mailType)) {
+      var artErr = await validateDmArtworkBeforeCheckout(mailType, useTemplateId, formatId, req.user.id, db);
+      if (artErr) return res.status(400).json({ error: artErr });
+    }
+
+    // Stripe checkout for the sample.
+    var amountPence = Math.round(price * 100);
+    var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    var sessionBody = {
+      mode: 'payment',
+      customer_email: customer.email,
+      'line_items[0][price_data][currency]': 'gbp',
+      'line_items[0][price_data][product_data][name]': 'Print & Post Sample: ' + (PRINT_POST_PRICES[mailType] ? PRINT_POST_PRICES[mailType].label : 'A4 Letter'),
+      'line_items[0][price_data][product_data][description]': 'Test mailing to your own address · ' + addrLine1.substring(0, 50) + ' · ' + postcode,
+      'line_items[0][price_data][unit_amount]': String(amountPence),
+      'line_items[0][quantity]': '1',
+      success_url: baseUrl + '/portal/dashboard.html?dm_payment=success&campaign_id=' + campaignId + '&sample=1',
+      cancel_url: baseUrl + '/portal/dashboard.html?dm_payment=cancel&campaign_id=' + campaignId,
+      'metadata[customer_id]': customer.id,
+      'metadata[campaign_id]': campaignId,
+      'metadata[type]': 'direct_mail_campaign',
+      'metadata[recipient_count]': '1',
+      'metadata[total_amount]': String(amountPence),
+      'metadata[sample]': '1'
+    };
+    var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
+    if (session.url) {
+      db.prepare('UPDATE direct_mail_campaigns SET stripe_session_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ?').run(session.id, 'pending', nowIso, campaignId);
+      res.json({ success: true, campaign_id: campaignId, checkout_url: session.url, price: price, mail_type: mailType, sample: true });
+    } else {
+      res.status(400).json({ error: (session.error && session.error.message) || 'Checkout creation failed' });
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/direct-mail/send-repeat — Print & post a lead NOW and schedule
 // automatic follow-up mailings (e.g. now, +2 weeks, +1 month). One Stripe
 // checkout covers the full series. Each follow-up is stored as a scheduled
@@ -8954,6 +12840,7 @@ app.post('/api/direct-mail/send-repeat', authMiddleware, async (req, res) => {
     var lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(req.body.lead_id, req.user.id);
     if (!lead) return res.status(404).json({ error: 'Lead not found' });
     var mailType = req.body.mail_type || 'letter'; // letter | flyer | flyer_plus_letter
+    var formatId = req.body.format || ''; // e.g. flyer_a5_portrait, postcard_a6
     // intervals = days from NOW for each follow-up. First mailing is immediate (day 0).
     var intervals = req.body.intervals || [0, 14, 30]; // e.g. now, +14d, +30d
     if (!Array.isArray(intervals) || intervals.length === 0) intervals = [0, 14, 30];
@@ -8999,6 +12886,7 @@ app.post('/api/direct-mail/send-repeat', authMiddleware, async (req, res) => {
     }
 
     var price = PRINT_POST_PRICES[mailType] ? PRINT_POST_PRICES[mailType].customer : PRINT_POST_PRICES.letter_a4.customer;
+    if (formatId) { var fmPr2 = DM_FORMATS.find(function(f) { return f.id === formatId; }); if (fmPr2) price = fmPr2.price; }
     var total = Math.round(intervals.length * price * 100) / 100;
     var groupId = uuidv4();
 
@@ -9010,7 +12898,7 @@ app.post('/api/direct-mail/send-repeat', authMiddleware, async (req, res) => {
       var status = daysN === 0 ? 'approved' : 'approved'; // all approved; cron dispatches by delivery_date
       var campaignId = uuidv4();
       db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-        .run(campaignId, req.user.id, 'Print & Post: ' + name.substring(0, 30) + (daysN === 0 ? '' : ' (follow-up ' + Math.round(daysN / 7) + 'w)'), mailType, status, useTemplateId, '', 1, 0, sendDate, price, 'Repeat mailing ' + groupId, '', '', '', '', '', '', nowIso, nowIso);
+        .run(campaignId, req.user.id, 'Print & Post: ' + name.substring(0, 30) + (daysN === 0 ? '' : ' (follow-up ' + Math.round(daysN / 7) + 'w)'), mailType, status, useTemplateId, '', 1, 0, sendDate, price, 'Repeat mailing ' + groupId + (formatId ? ' FORMAT:' + formatId : ''), '', '', '', '', '', '', nowIso, nowIso);
       var recipientId = uuidv4();
       db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
         .run(recipientId, req.user.id, campaignId, name, parsed.company || '', addrLine1, parsed.address_line2 || '', city, postcode, 'United Kingdom', lead.id, 'pending', nowIso);
@@ -9024,7 +12912,7 @@ app.post('/api/direct-mail/send-repeat', authMiddleware, async (req, res) => {
     dbR.repeat_mailings.push({
       id: uuidv4(), customer_id: req.user.id, lead_id: lead.id,
       group_id: groupId, campaign_ids: createdCampaignIds,
-      mail_type: mailType, price_per_item: price, total: total,
+      mail_type: mailType, format: formatId, price_per_item: price, total: total,
       intervals: intervals, template_id: useTemplateId,
       status: 'scheduled', created_at: nowIso
     });
@@ -9032,6 +12920,9 @@ app.post('/api/direct-mail/send-repeat', authMiddleware, async (req, res) => {
 
     // One Stripe checkout for the whole series
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    // PRE-CHECKOUT ARTWORK VALIDATION (leaflet series)
+    var repeatArtErr = await validateDmArtworkBeforeCheckout(mailType, useTemplateId, formatId, req.user.id, db);
+    if (repeatArtErr) return res.status(400).json({ error: repeatArtErr });
     try {
       var dmProvider = getDirectMailProvider();
       var balCheck = await dmProvider.getBalance();
@@ -9093,7 +12984,8 @@ app.get('/api/direct-mail/repeat-series', authMiddleware, (req, res) => {
       return {
         id: s.id, group_id: s.group_id, lead_id: s.lead_id, lead_label: leadLabel,
         mail_type: s.mail_type, price_per_item: s.price_per_item, total: s.total,
-        intervals: s.intervals, status: s.status, created_at: s.created_at, mailings: mailings
+        intervals: s.intervals, status: s.status, created_at: s.created_at, mailings: mailings,
+        dispatch_log: s.dispatch_log || [], sent_count: s.sent_count || 0, total_count: s.total_count || (s.campaign_ids || []).length
       };
     });
     res.json({ success: true, series: expanded, total: expanded.length });
@@ -9108,8 +13000,9 @@ app.post('/api/direct-mail/send-bulk', authMiddleware, async (req, res) => {
   try {
     var leadIds = req.body.lead_ids || [];
     var mailType = req.body.mail_type || 'letter'; // letter | flyer | flyer_plus_letter
+    var formatId = req.body.format || ''; // e.g. flyer_a5_portrait, flyer_a5_enveloped
     if (!Array.isArray(leadIds) || leadIds.length === 0) return res.status(400).json({ error: 'No leads selected' });
-    if (leadIds.length > 100) return res.status(400).json({ error: 'Maximum 100 leads per batch. Please split your selection.' });
+    if (leadIds.length > 500) return res.status(400).json({ error: 'Maximum 500 leads per batch. Please split your selection.' });
     var template = req.body.template_id || '';
     var nowIso = new Date().toISOString();
 
@@ -9174,13 +13067,14 @@ app.post('/api/direct-mail/send-bulk', authMiddleware, async (req, res) => {
     }
 
     var price = PRINT_POST_PRICES[mailType] ? PRINT_POST_PRICES[mailType].customer : PRINT_POST_PRICES.letter_a4.customer;
+    if (formatId) { var fmPr3 = DM_FORMATS.find(function(f) { return f.id === formatId; }); if (fmPr3) price = fmPr3.price; }
     var total = Math.round(recipients.length * price * 100) / 100;
     var campaignName = 'Print & Post: ' + recipients.length + ' leads';
 
     // Create ONE campaign
     var campaignId = uuidv4();
     db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-      .run(campaignId, req.user.id, campaignName, mailType, 'approved', useTemplateId, '', recipients.length, 0, new Date(Date.now()+86400000).toISOString().split('T')[0], total, 'Bulk send from My Leads', '', '', '', '', '', '', nowIso, nowIso);
+      .run(campaignId, req.user.id, campaignName, mailType, 'approved', useTemplateId, '', recipients.length, 0, new Date(Date.now()+86400000).toISOString().split('T')[0], total, 'Bulk send from My Leads' + (formatId ? ' FORMAT:' + formatId : ''), '', '', '', '', '', '', nowIso, nowIso);
     // Add all recipients
     recipients.forEach(function(r) {
       var recipientId = uuidv4();
@@ -9198,6 +13092,27 @@ app.post('/api/direct-mail/send-bulk', authMiddleware, async (req, res) => {
         return res.status(400).json({ error: 'Print & Post is temporarily unavailable — our print partner is reloading credit. Please try again in a few minutes.' });
       }
     } catch(balErr) { console.log('[DM-SEND-BULK] Balance check skipped:', balErr.message); }
+
+    // MATERIAL-REQUIRED CHECK: leaflets/postcards need their front design uploaded
+    // before payment. Letters auto-generate from the saved cover letter/profile.
+    if (/flyer/i.test(mailType)) {
+      var bTemplate = null;
+      if (useTemplateId) { try { bTemplate = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(useTemplateId, req.user.id); } catch(e) {} }
+      var bFrontId = bTemplate && bTemplate.flyer_front_material_id ? bTemplate.flyer_front_material_id : '';
+      // Fallback: use the customer's most recently uploaded flyer_front material.
+      if (!bFrontId) {
+        var bLatestFront = db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_front' ORDER BY created_at DESC LIMIT 1").get(req.user.id);
+        if (bLatestFront) bFrontId = bLatestFront.id;
+      }
+      var bFrontMat = null;
+      if (bFrontId) { try { bFrontMat = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(bFrontId, req.user.id); } catch(e) {} }
+      if (!bFrontMat || !bFrontMat.file_data) {
+        return res.status(400).json({ error: 'This is a leaflet campaign, and it needs your leaflet front design uploaded before you can pay. Please upload your leaflet front (Print & Post > Step 2) or choose the A4 letter option instead.' });
+      }
+      // PRE-CHECKOUT ARTWORK VALIDATION (bulk leaflet)
+      var bulkArtErr = await validateDmArtworkBeforeCheckout(mailType, useTemplateId, formatId, req.user.id, db);
+      if (bulkArtErr) return res.status(400).json({ error: bulkArtErr });
+    }
 
     var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     var amountPence = Math.round(total * 100);
@@ -9238,6 +13153,184 @@ app.post('/api/direct-mail/send-bulk', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/direct-mail/send-bulk-repeat — Print & post MULTIPLE leads NOW and
+// schedule automatic follow-up mailings (e.g. now, +2 weeks, +1 month) for the
+// whole batch. One Stripe payment covers the full series (leads × price ×
+// mailings). Each mailing is a separate campaign holding all selected leads;
+// the repeat cron dispatches each follow-up to Stannp on its due date. Handles
+// big bulk orders (up to 500 leads per batch for pro/enterprise).
+app.post('/api/direct-mail/send-bulk-repeat', authMiddleware, async (req, res) => {
+  try {
+    var leadIds = req.body.lead_ids || [];
+    var mailType = req.body.mail_type || 'letter';
+    var formatId = req.body.format || ''; // e.g. flyer_a5_portrait, flyer_a5_enveloped
+    var intervals = req.body.intervals || [0, 14, 30];
+    if (!Array.isArray(leadIds) || leadIds.length === 0) return res.status(400).json({ error: 'No leads selected' });
+    if (leadIds.length > 500) return res.status(400).json({ error: 'Maximum 500 leads per batch. Please split your selection.' });
+    if (!Array.isArray(intervals) || intervals.length === 0) intervals = [0, 14, 30];
+    if (intervals.length > 5) intervals = intervals.slice(0, 5);
+    var nowIso = new Date().toISOString();
+
+    // Auto-select template (same logic as single send)
+    var useTemplateId = req.body.template_id || '';
+    if (!useTemplateId) {
+      var dmSettings = null;
+      try { dmSettings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id); } catch(e) {}
+      if (dmSettings && dmSettings.default_template_id) useTemplateId = dmSettings.default_template_id;
+    }
+    if (!useTemplateId) {
+      var anyTemplate = null;
+      try { anyTemplate = db.prepare('SELECT * FROM direct_mail_templates WHERE customer_id = ? ORDER BY created_at DESC LIMIT 1').get(req.user.id); } catch(e) {}
+      if (anyTemplate) useTemplateId = anyTemplate.id;
+    }
+    if (!useTemplateId && (mailType === 'letter_a4' || mailType === 'flyer_plus_letter')) {
+      var bizProfile = null;
+      try { bizProfile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id); } catch(e) {}
+      if (bizProfile && (bizProfile.company_name || bizProfile.business_type)) {
+        var bizName = bizProfile.company_name || 'Our Team';
+        var bizType = bizProfile.business_type || 'local business';
+        var bizOffer = bizProfile.special_offer || '';
+        var bizCta = bizProfile.call_to_action || 'get in touch today';
+        var generated = 'Dear [name],\n\nWe are ' + bizName + ', a ' + bizType + ' serving ' + (bizProfile.service_areas || 'your local area') + '. We noticed you may be moving soon and we would love the opportunity to help you.\n\n' +
+          (bizOffer ? 'As a special offer, ' + bizOffer + '.\n\n' : '') +
+          'We pride ourselves on reliable, professional service at a fair price.\n\nPlease ' + bizCta + '.\n\nKind regards,\n' + bizName;
+        var tmpId = uuidv4();
+        db.prepare('INSERT INTO direct_mail_templates (id,customer_id,name,description,template_type,business_type,flyer_front_material_id,flyer_back_material_id,letter_material_id,ai_generated_text,status,created_at,updated_at,last_used_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+          .run(tmpId, req.user.id, 'Auto letter for ' + bizName.substring(0, 20), 'Auto-generated from business profile', 'letter', bizType, '', '', '', generated, 'approved', nowIso, nowIso, '');
+        useTemplateId = tmpId;
+      }
+    }
+
+    // Resolve leads → recipients (skip no-address + already-sent-in-7-days)
+    var recipients = [];
+    var skippedNoAddress = [];
+    var skippedAlready = [];
+    for (var bi = 0; bi < leadIds.length; bi++) {
+      var lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(leadIds[bi], req.user.id);
+      if (!lead) continue;
+      var parsed = {};
+      try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
+      var addrLine1 = parsed.address_line1 || parsed.address || parsed.street || '';
+      var city = parsed.city || parsed.town || '';
+      var postcode = parsed.postcode || '';
+      if (!addrLine1 || !postcode) { skippedNoAddress.push(parsed.name || parsed.address || 'One lead'); continue; }
+      var already = db.prepare('SELECT * FROM direct_mail_recipients WHERE customer_id = ? AND lead_id = ? AND created_at > datetime(\'now\', \'-7 days\')').get(req.user.id, lead.id);
+      if (already) { skippedAlready.push(parsed.name || parsed.address || 'One lead'); continue; }
+      recipients.push({
+        lead_id: lead.id,
+        name: parsed.company || parsed.name || parsed.address || 'Homeowner',
+        company: parsed.company || '',
+        address_line1: addrLine1,
+        address_line2: parsed.address_line2 || '',
+        city: city,
+        postcode: postcode,
+        country: 'United Kingdom'
+      });
+    }
+    if (recipients.length === 0) {
+      return res.status(400).json({ error: 'None of the selected leads have a complete postal address (or they were already sent in the last 7 days).' });
+    }
+
+    // MATERIAL-REQUIRED CHECK for leaflets
+    if (/flyer/i.test(mailType)) {
+      var brTemplate = null;
+      if (useTemplateId) { try { brTemplate = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(useTemplateId, req.user.id); } catch(e) {} }
+      var brFrontId = brTemplate && brTemplate.flyer_front_material_id ? brTemplate.flyer_front_material_id : '';
+      if (!brFrontId) {
+        var brLatest = db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_front' ORDER BY created_at DESC LIMIT 1").get(req.user.id);
+        if (brLatest) brFrontId = brLatest.id;
+      }
+      var brFrontMat = null;
+      if (brFrontId) { try { brFrontMat = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(brFrontId, req.user.id); } catch(e) {} }
+      if (!brFrontMat || !brFrontMat.file_data) {
+        return res.status(400).json({ error: 'This is a leaflet campaign, and it needs your leaflet front design uploaded before you can pay.' });
+      }
+    }
+
+    var price = PRINT_POST_PRICES[mailType] ? PRINT_POST_PRICES[mailType].customer : PRINT_POST_PRICES.letter_a4.customer;
+    if (formatId) { var fmPr4 = DM_FORMATS.find(function(f) { return f.id === formatId; }); if (fmPr4) price = fmPr4.price; }
+    var perMailing = Math.round(recipients.length * price * 100) / 100;
+    var total = Math.round(recipients.length * price * intervals.length * 100) / 100;
+    var groupId = uuidv4();
+
+    // Create one campaign per mailing, each holding ALL recipients
+    var createdCampaignIds = [];
+    intervals.forEach(function(days) {
+      var daysN = parseInt(days) || 0;
+      var sendDate = new Date(Date.now() + daysN * 86400000).toISOString().split('T')[0];
+      var campaignId = uuidv4();
+      var suffix = daysN === 0 ? '' : ' (follow-up ' + Math.round(daysN / 7) + 'w)';
+      db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,description,status,template_id,material_id,target_count,sent_count,delivery_date,budget,notes,provider,provider_campaign_id,provider_status,stripe_session_id,stripe_payment_id,stripe_payment_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+        .run(campaignId, req.user.id, 'Print & Post: ' + recipients.length + ' leads' + suffix, mailType, 'approved', useTemplateId, '', recipients.length, 0, sendDate, perMailing, 'Repeat mailing ' + groupId + (formatId ? ' FORMAT:' + formatId : ''), '', '', '', '', '', '', nowIso, nowIso);
+      recipients.forEach(function(r) {
+        var recipientId = uuidv4();
+        db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
+          .run(recipientId, req.user.id, campaignId, r.name, r.company, r.address_line1, r.address_line2, r.city, r.postcode, r.country, r.lead_id, 'pending', nowIso);
+      });
+      createdCampaignIds.push(campaignId);
+    });
+    var primaryCampaignId = createdCampaignIds[0];
+
+    // Store the repeat schedule for the cron + dashboard display
+    var dbR = getDb();
+    if (!dbR.repeat_mailings) dbR.repeat_mailings = [];
+    dbR.repeat_mailings.push({
+      id: uuidv4(), customer_id: req.user.id, lead_id: recipients[0].lead_id, lead_label: recipients.length + ' leads',
+      group_id: groupId, campaign_ids: createdCampaignIds,
+      mail_type: mailType, price_per_item: price, total: total, lead_count: recipients.length,
+      intervals: intervals, template_id: useTemplateId,
+      status: 'scheduled', created_at: nowIso
+    });
+    saveDb();
+
+    // One Stripe checkout for the whole series
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    // PRE-CHECKOUT ARTWORK VALIDATION (bulk-repeat leaflet)
+    var bulkRepArtErr = await validateDmArtworkBeforeCheckout(mailType, useTemplateId, formatId, req.user.id, db);
+    if (bulkRepArtErr) return res.status(400).json({ error: bulkRepArtErr });
+    try {
+      var dmProvider = getDirectMailProvider();
+      var balCheck = await dmProvider.getBalance();
+      if (balCheck && balCheck.success && balCheck.balance < total) {
+        return res.status(400).json({ error: 'Print & Post is temporarily unavailable — our print partner is reloading credit. Please try again in a few minutes.' });
+      }
+    } catch(balErr) { console.log('[DM-SEND-BULK-REPEAT] Balance check skipped:', balErr.message); }
+
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    var amountPence = Math.round(total * 100);
+    var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    var sessionBody = {
+      mode: 'payment',
+      customer_email: customer.email,
+      'line_items[0][price_data][currency]': 'gbp',
+      'line_items[0][price_data][product_data][name]': 'Print & Post Series: ' + recipients.length + ' leads x ' + intervals.length + ' mailings',
+      'line_items[0][price_data][product_data][description]': recipients.length + ' x ' + intervals.length + ' x £' + price.toFixed(2),
+      'line_items[0][price_data][unit_amount]': String(amountPence),
+      'line_items[0][quantity]': '1',
+      success_url: baseUrl + '/portal/dashboard.html?dm_payment=success&campaign_id=' + primaryCampaignId,
+      cancel_url: baseUrl + '/portal/dashboard.html?dm_payment=cancel&campaign_id=' + primaryCampaignId,
+      'metadata[customer_id]': customer.id,
+      'metadata[campaign_id]': primaryCampaignId,
+      'metadata[repeat_group]': groupId,
+      'metadata[type]': 'direct_mail_campaign',
+      'metadata[recipient_count]': String(recipients.length),
+      'metadata[total_amount]': String(amountPence)
+    };
+    var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
+    if (session.url) {
+      db.prepare('UPDATE direct_mail_campaigns SET stripe_session_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ?').run(session.id, 'pending', nowIso, primaryCampaignId);
+      res.json({
+        success: true, campaign_id: primaryCampaignId, checkout_url: session.url,
+        recipient_count: recipients.length, total: total, price_per_item: price,
+        mailings: intervals.length, intervals: intervals, repeat_group: groupId,
+        skipped_no_address: skippedNoAddress.length, skipped_already_sent: skippedAlready.length
+      });
+    } else {
+      res.status(400).json({ error: session.error?.message || 'Checkout creation failed' });
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 var ALLOWED_FILE_TYPES = ['application/pdf','image/png','image/jpeg','image/jpg'];
 var ALLOWED_EXTENSIONS = ['.pdf','.png','.jpg','.jpeg'];
 var MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -9263,6 +13356,107 @@ app.post('/api/direct-mail/upload', authMiddleware, (req, res) => {
     }
 
     // Store file in database
+    var material = {
+      id: uuidv4(),
+      customer_id: req.user.id,
+      name: fileName,
+      type: fileType,
+      file_data: fileData,
+      file_type: ext === '.pdf' ? 'pdf' : 'image',
+      file_size: fileData.length,
+      description: description,
+      campaign_id: campaignId || '',
+      template_id: templateId || '',
+      created_at: new Date().toISOString()
+    };
+
+    db.prepare('INSERT INTO direct_mail_materials (id,customer_id,name,type,file_data,file_type,file_size,description,campaign_id,template_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(
+      material.id, material.customer_id, material.name, material.type,
+      material.file_data, material.file_type, material.file_size,
+      material.description, material.campaign_id, material.template_id,
+      material.created_at
+    );
+
+    res.json({ success: true, material: { id: material.id, name: material.name, type: material.type, file_type: material.file_type, file_size: material.file_size, description: material.description, campaign_id: material.campaign_id, template_id: material.template_id, created_at: material.created_at } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/direct-mail/materials/:id — Replace a material's file (used by the
+// Vistaprint-style position/crop editor to save the customer's positioned flyer).
+app.put('/api/direct-mail/materials/:id', authMiddleware, (req, res) => {
+  try {
+    var existing = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
+    if (!existing) return res.status(404).json({ error: 'Material not found' });
+    var fileData = req.body.file_data || '';
+    var fileName = req.body.name || existing.name;
+    if (!fileData) return res.status(400).json({ error: 'No file data provided' });
+    // Strip any data-URI prefix (e.g. "data:image/png;base64,") so the stored
+    // value is PURE base64 — the /file endpoint decodes it with Buffer.from
+    // (which fails on a data-URI prefix and corrupts the image). The editor sends
+    // a data URI, so we must normalise it here.
+    if (fileData.indexOf(',') !== -1 && /^data:[^,]+;base64,/i.test(fileData)) {
+      fileData = fileData.split(',')[1];
+    }
+    var ext = '.' + (fileName.split('.').pop() || 'png').toLowerCase();
+    if (['.pdf','.png','.jpg','.jpeg'].indexOf(ext) === -1) ext = '.png';
+    var fileType = existing.type;
+    db.prepare('UPDATE direct_mail_materials SET file_data=?,file_type=?,file_size=?,name=?,updated_at=? WHERE id=?').run(fileData, ext === '.pdf' ? 'pdf' : 'image', fileData.length, fileName, new Date().toISOString(), existing.id);
+    res.json({ success: true, message: 'Material updated', material: { id: existing.id, name: fileName, type: fileType } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/materials — Save an uploaded material (base64 JSON).
+// The Print & Post dashboard (direct-mail.html) calls THIS endpoint on "Upload
+// Files". Without it the upload silently 404'd and the flyer/letter never saved.
+// POST /api/direct-mail/materials/validate — Check an artwork file against the
+// Stannp print spec for a format BEFORE the customer pays. Returns errors
+// (can't print) and warnings (quality risk). The UI calls this when a flyer
+// front/back is selected so problems are caught immediately, not at send time.
+app.post('/api/direct-mail/materials/validate', authMiddleware, async (req, res) => {
+  try {
+    var formatId = req.body.format || 'flyer_a5_portrait';
+    var fileData = req.body.file_data || '';
+    var fileName = req.body.name || '';
+    var fmt = DM_FORMATS.find(function(f) { return f.id === formatId; }) || DM_FORMATS.find(function(f) { return f.id === 'flyer_a5_portrait'; });
+    if (!fileData) return res.status(400).json({ success: false, errors: ['No file provided'] });
+    var provider = getDirectMailProvider();
+    var spec = await provider.validateArtworkSpec({ name: fileName, file_data: fileData }, fmt.width || 1819, fmt.height || 2551);
+    res.json({
+      success: spec.ok,
+      ok: spec.ok,
+      errors: spec.errors || [],
+      warnings: spec.warnings || [],
+      width: spec.width, height: spec.height, dpi: spec.dpi,
+      format: { id: fmt.id, label: fmt.label, width: fmt.width, height: fmt.height },
+      message: spec.ok ? (spec.warnings && spec.warnings.length ? spec.warnings[0] : 'Artwork meets the print spec for ' + fmt.label) : ((spec.errors && spec.errors[0]) || 'Artwork does not meet the print spec')
+    });
+  } catch(e) { res.status(500).json({ success: false, errors: [e.message] }); }
+});
+
+app.post('/api/direct-mail/materials', authMiddleware, (req, res) => {
+  try {
+    var fileType = req.body.type || req.body.file_type || '';
+    var fileName = req.body.name || req.body.file_name || 'untitled';
+    var fileData = req.body.file_data || '';
+    var campaignId = req.body.campaign_id || '';
+    var templateId = req.body.template_id || '';
+    var description = req.body.description || '';
+
+    // Strip any data-URI prefix so stored values are PURE base64.
+    if (fileData && fileData.indexOf(',') !== -1 && /^data:[^,]+;base64,/i.test(fileData)) {
+      fileData = fileData.split(',')[1];
+    }
+
+    if (!fileData) return res.status(400).json({ error: 'No file data provided' });
+    if (fileData.length > MAX_FILE_SIZE) return res.status(400).json({ error: 'File too large. Maximum 10MB.' });
+
+    var ext = '.' + (fileName.split('.').pop() || '').toLowerCase();
+    if (ALLOWED_EXTENSIONS.indexOf(ext) === -1) return res.status(400).json({ error: 'Invalid file type. Allowed: PDF, PNG, JPG, JPEG' });
+
+    if (!['flyer_front','flyer_back','letter','logo','extra'].includes(fileType)) {
+      return res.status(400).json({ error: 'Invalid file type. Must be: flyer_front, flyer_back, letter, logo, or extra' });
+    }
+
     var material = {
       id: uuidv4(),
       customer_id: req.user.id,
@@ -9735,10 +13929,6 @@ app.post('/api/admin/seo/refresh-sitemap', adminAuth, function(req, res) {
     for (var pi = 0; pi < posts.length; pi++) {
       urls.push('<url><loc>https://9amleads.com/blog/' + posts[pi].slug + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>');
     }
-    var staticSlugs = ['moving-leads-uk', 'probate-leads-uk', 'public-sector-tenders-uk', 'win-probate-instructions'];
-    for (var si = 0; si < staticSlugs.length; si++) {
-      urls.push('<url><loc>https://9amleads.com/blog/' + staticSlugs[si] + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>');
-    }
     var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
     for (var ui = 0; ui < urls.length; ui++) xml += '  ' + urls[ui] + '\n';
     xml += '</urlset>';
@@ -10190,7 +14380,10 @@ app.post('/api/admin/run-scrapers', adminAuth, (req, res) => {
       var cutoff48h = new Date(now - 48 * 3600000).toISOString();
       var result = { fresh: [], fallback: [], rejected: 0 };
       leads.forEach(function(l) {
-        var dateVal = l[dateField] || l.scrapedAt || '';
+        // Freshness is judged ONLY on the caller's chosen date field (e.g.
+        // firstVisibleDate for moving). Never fall back to scrapedAt — that would
+        // mark a months-old listing as fresh just because we scraped it today.
+        var dateVal = l[dateField] || '';
         if (dateVal >= cutoff24h) result.fresh.push(l);
         else if (dateVal >= cutoff48h) result.fallback.push(l);
         else result.rejected++;
@@ -10221,19 +14414,23 @@ function syncCustomers(product) {
     // Optional single-product filter (speeds up targeted scrapes/testing)
     const onlyProduct = req.body && req.body.product;
 
-    for (const [product, config] of Object.entries(PRODUCT_LEAD_FILES)) {
+    // Run each product's scrape CONCURRENTLY so the full scrape completes within
+    // the process timeout. Previously this looped sequentially — moving (with its
+    // deep Apify worker + enrichment) is so slow that newbusiness/probate/planning/
+    // tenders never ran, leaving 4 of 5 products with no fresh supply. Each product
+    // runs in its own detached try/catch; running them in parallel fixes the timeout.
+    async function scrapeProduct(product, config, forceScrape) {
       try {
-        if (onlyProduct && product !== onlyProduct) continue;
-        // Skip if already scraped today (cost saving - Apify runs once daily)
+        if (onlyProduct && product !== onlyProduct) return;
         if (wasScrapedToday(product) && !forceScrape) {
-          var existingFile = path.join(DATA_DIR, config.file);
-          try { leads = JSON.parse(fs.readFileSync(existingFile, 'utf-8')); if (!Array.isArray(leads)) leads = []; } catch(e) { leads = []; }
-          var leadSource = leads && leads.length > 0 ? (leads[0].source || 'cached') : 'cached';
-          results[product] = leadSource + '_' + (leads ? leads.length : 0) + '_cached';
-          console.log('[SCRAPER] ' + product + ' already scraped today, using cached data (' + (leads ? leads.length : 0) + ' leads)');
-          continue;
+          var existingFile2 = path.join(DATA_DIR, config.file);
+          var cachedLeads = [];
+          try { cachedLeads = JSON.parse(fs.readFileSync(existingFile2, 'utf-8')); if (!Array.isArray(cachedLeads)) cachedLeads = []; } catch(e) { cachedLeads = []; }
+          var src2 = cachedLeads && cachedLeads.length > 0 ? (cachedLeads[0].source || 'cached') : 'cached';
+          results[product] = src2 + '_' + (cachedLeads ? cachedLeads.length : 0) + '_cached';
+          console.log('[SCRAPER] ' + product + ' already scraped today, using cached data (' + (cachedLeads ? cachedLeads.length : 0) + ' leads)');
+          return;
         }
-        // Generate leads — use free APIs where available, else demo data
         var leads;
         if (product === 'newbusiness') {
           leads = [];
@@ -10288,7 +14485,12 @@ function syncCustomers(product) {
               nbSeen[c.company_number] = true;
               return c.company_status === 'active';
             }).map(function(c) {
-              return { id: 'CH_NB_' + c.company_number, name: c.company_name.trim(), companyNumber: c.company_number, companyName: c.company_name.trim(), address: c.address_snippet || (c.registered_office_address ? [c.registered_office_address.address_line_1, c.registered_office_address.address_line_2, c.registered_office_address.locality, c.registered_office_address.region, c.registered_office_address.postal_code].filter(Boolean).join(', ') : ''), incorporationDate: c.date_of_creation || '', sicCode: (c.sic_codes || []).join(', ') || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
+              var chAddress = c.address_snippet || (c.registered_office_address ? [c.registered_office_address.address_line_1, c.registered_office_address.address_line_2, c.registered_office_address.locality, c.registered_office_address.region, c.registered_office_address.postal_code].filter(Boolean).join(', ') : '');
+              // Extract postcode from the address (Companies House provides it in
+              // registered_office_address.postal_code; the snippet also ends with it).
+              var chPostcode = (c.registered_office_address && c.registered_office_address.postal_code) || '';
+              if (!chPostcode) { var pcM = String(chAddress).match(/\b[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}\b/i); if (pcM) chPostcode = pcM[0].toUpperCase(); }
+              return { id: 'CH_NB_' + c.company_number, name: c.company_name.trim(), companyNumber: c.company_number, companyName: c.company_name.trim(), address: chAddress, postcode: chPostcode, incorporationDate: c.date_of_creation || '', sicCode: (c.sic_codes || []).join(', ') || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
             });
             // Strict: keep only those incorporated within 24h, else fallback to 48h.
             // We keep BOTH so the pool holds a richer supply — customers get the
@@ -10339,18 +14541,22 @@ function syncCustomers(product) {
           // PRIMARY: Contracts Finder (free, paginated, ~150-240 live notices).
           try {
             var tendersScraper = require('./tenders_scraper');
-            var cfLeads = await tendersScraper.collectTendersLeads({ keywords: '', location: '', maxCount: 250 });
+            var cfLeads = await tendersScraper.collectTendersLeads({ keywords: '', location: '', maxCount: 500 });
             if (cfLeads && cfLeads.length > 0) {
               leads = cfLeads;
-              console.log('[SCRAPER] Contracts Finder returned ' + cfLeads.length + ' tenders');
+              console.log('[SCRAPER] Contracts Finder + FTS returned ' + cfLeads.length + ' tenders');
             }
           } catch(e) { console.log('[SCRAPER] Contracts Finder error:', e.message); }
-          // FALLBACK: Apify actor (if configured), then PCS
-          if (!leads || leads.length < 3) {
+          // FALLBACK/SUPPLEMENT: Apify actor, PCS Scotland and data.gov.uk are
+          // ALWAYS run to maximise daily tender supply (Contracts Finder alone can
+          // return as few as 6 notices on a quiet day). Each source adds genuinely
+          // different notices, so running all of them keeps the pool full enough to
+          // deliver every customer's promised count.
+          {
           var tendKey = process.env.APIFY_API_KEY;
           var tendActor = process.env.APIFY_TENDERS_ACTOR || '';
             try {
-              leads = await new Promise(function(r) {
+              var apifyTenderLeads = await new Promise(function(r) {
                 var b = JSON.stringify({ maxResults: 500 });
                 var req = require('https').request({ hostname: 'api.apify.com', method: 'POST', path: '/v2/acts/' + encodeURIComponent(tendActor) + '/run-sync-get-dataset-items?token=' + tendKey + '&memory=256&timeout=120', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b), 'Accept': 'application/json' }, timeout: 150000 }, function(res) {
                   var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
@@ -10362,8 +14568,12 @@ function syncCustomers(product) {
                 req.on('error', function() { r([]); }); req.setTimeout(150000, function() { req.destroy(); r([]); });
                 req.write(b); req.end();
               });
-              if (leads && leads.length > 0) console.log('[SCRAPER] Apify Tenders returned ' + leads.length);
-            } catch(e) { console.log('[SCRAPER] Apify Tenders error:', e.message); leads = []; }
+              if (apifyTenderLeads && apifyTenderLeads.length > 0) {
+                // MERGE Apify tenders into the existing supply (do not overwrite)
+                leads = (leads || []).concat(apifyTenderLeads);
+                console.log('[SCRAPER] Apify Tenders added ' + apifyTenderLeads.length + ' (total ' + leads.length + ')');
+              }
+            } catch(e) { console.log('[SCRAPER] Apify Tenders error:', e.message); }
           }
             if (!leads || leads.length < 3) {
             try {
@@ -10391,14 +14601,40 @@ function syncCustomers(product) {
                   req.on('error', function() { resolve([]); }); req.setTimeout(15000, function() { req.destroy(); resolve([]); }); req.end();
                 });
               }
+              // Sell2Wales (Welsh government tender portal) — the missing UK portal.
+              async function fetchSell2Wales() {
+                return new Promise(function(resolve) {
+                  var req = require('https').request({ hostname: 'sell2wales.gov.wales', path: '/walesapi/Contract/All?limit=100&offset=0', method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 20000 }, function(res) {
+                    var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
+                      try {
+                        var data = JSON.parse(body);
+                        var arr = Array.isArray(data) ? data : (data.results || data.data || []);
+                        resolve(arr.slice(0, 100).map(function(t) {
+                          return { id: t.id || t.noticeId || 'SW_' + Date.now(), title: t.title || t.description || t.name || '', buyer: t.buyerName || t.contractingAuthority || '', contractValue: t.value || t.estimatedValue || 0, description: (t.description || '').substring(0, 500), closingDate: t.closingDate || t.endDate || '', publishedDate: t.publishedDate || t.creationDate || new Date().toISOString(), tenderNoticeId: t.id || t.noticeId || '', url: t.url || (t.noticeId ? 'https://www.sell2wales.gov.wales/search/show/search_view.aspx?ID=' + t.noticeId : ''), source: 'Sell2Wales', scrapedAt: new Date().toISOString() };
+                        }));
+                      } catch(e) { resolve([]); }
+                    });
+                  });
+                  req.on('error', function() { resolve([]); }); req.setTimeout(20000, function() { req.destroy(); resolve([]); }); req.end();
+                });
+              }
               // Fetch from multiple sources in parallel
               var pcsPromise = fetchPCS();
-              var dguPromises = ['tenders','construction','contracts','procurement','building','cleaning','security','consulting','maintenance','furniture','healthcare','transport','IT+services','training','catering','logistics','waste','solar','painting','design'].map(function(q) { return fetchDataGovUK(q); });
-              var allResults = await Promise.all([pcsPromise, Promise.all(dguPromises)]);
-              leads = allResults[0];
-              var dgResults = allResults[1];
+              var sell2WalesPromise = fetchSell2Wales();
+              var dguPromises = ['tenders','construction','contracts','procurement','building','cleaning','security','consulting','maintenance','furniture','healthcare','transport','IT+services','training','catering','logistics','waste','solar','painting','design','roads','civil','grounds','facilities','engineering','surveying','architectural','planning','events','catering','printing','vehicles'].map(function(q) { return fetchDataGovUK(q); });
+              var allResults = await Promise.all([pcsPromise, sell2WalesPromise, Promise.all(dguPromises)]);
+              var pcsLeads = allResults[0] || [];
+              var sell2WalesLeads = allResults[1] || [];
+              var dgResults = allResults[2] || [];
+              // MERGE PCS + Sell2Wales + data.gov.uk into the existing supply
+              var extraTenders = pcsLeads.slice();
+              extraTenders = extraTenders.concat(sell2WalesLeads);
               for (var dgi = 0; dgi < dgResults.length; dgi++) {
-                if (dgResults[dgi] && dgResults[dgi].length > 0) leads = leads.concat(dgResults[dgi]);
+                if (dgResults[dgi] && dgResults[dgi].length > 0) extraTenders = extraTenders.concat(dgResults[dgi]);
+              }
+              if (extraTenders.length > 0) {
+                leads = (leads || []).concat(extraTenders);
+                console.log('[SCRAPER] PCS + Sell2Wales + data.gov.uk added ' + extraTenders.length + ' (total ' + leads.length + ')');
               }
               // Deduplicate by title
               if (leads.length > 0) {
@@ -10488,9 +14724,13 @@ function syncCustomers(product) {
               cAreas.forEach(function(a) { if (a && planAreas.indexOf(a) === -1) planAreas.push(a); });
               var f2 = {};
               try { f2 = JSON.parse(c.biz_field2 || '{}'); } catch(e) {}
-              if (f2['f-app-type']) planFilters = planFilters.concat(f2['f-app-type']);
+              // biz_field2 is stored per-product format: { planning: { f-app-type:[...] }, ... }
+              // (the portal writes leadFilters as { product: {...} }). Unwrap it for planning.
+              var planFilt = f2.planning || f2;
+              if (planFilt['f-app-type']) planFilters = planFilters.concat(planFilt['f-app-type']);
+              else if (planFilt.applicationType) planFilters = planFilters.concat(planFilt.applicationType);
             });
-            leads = await planScraper.collectPlanningLeads({ postcodeAreas: planAreas.length ? planAreas : undefined, filters: planFilters });
+            leads = await planScraper.collectPlanningLeads({ postcodeAreas: planAreas.length ? planAreas : undefined, filters: planFilters, maxItems: 100 });
             if (leads && leads.length > 0) {
               // Planning leads are freshly scraped — no additional freshness filter
               // (brownfield/application data is current at scrape time).
@@ -10504,27 +14744,49 @@ function syncCustomers(product) {
           try {
             var rmScraper = require('./rightmove_scraper_v2');
             var apifyKey = process.env.APIFY_API_KEY || '';
+            // DEEP SCRAPE WORKER: launch the area-targeted Apify (Rightmove) worker
+            // detached. It scrapes ONLY the postcode areas with active moving
+            // accounts (residential + commercial) via the rented Rightmove actor.
+            // Cost-controlled (low maxProperties, memory=256, list-only) so it stays
+            // cheap, and it scales with real demand. Runs every scrape (06:00 UK).
+            try {
+              var workerFileD = path.join(__dirname, 'scrape_moving_deep.js');
+              var maxPropsD = process.env.MOVING_MAX_PROPS || '50';
+              var cpD = require('child_process');
+              var childD = cpD.spawn(process.execPath, [workerFileD], { detached: true, stdio: 'ignore', env: Object.assign({}, process.env, { MOVING_MAX_PROPS: maxPropsD }) });
+              childD.unref();
+              console.log('[SCRAPER] Deep Apify (Rightmove) worker launched: ' + (childD.pid || '?') + ', maxProps=' + maxPropsD);
+            } catch(wErrD) { console.log('[SCRAPER] Deep worker launch error:', wErrD.message); }
+
             // Gather the postcode areas of ALL moving customers so the scraper
             // targets every area they chose (not just London/whatever the old
             // region IDs happened to return).
             var mvCusts = (getDb().customers || []).filter(function(c) { return c.product === 'moving' || ((c.biz_field3 || '').indexOf('moving') !== -1); });
             var mvAreas = [];
+            var mvWantCommercial = false;
             mvCusts.forEach(function(c) {
               var cfg = {};
               try { cfg = JSON.parse(c.product_config || '{}'); } catch(e) {}
               var prim = cfg[c.product] || {};
+              // moving_type: residential | commercial | both (default both if unset)
+              var mt = (prim.moving_type) || c.moving_type || 'both';
+              if (mt === 'commercial' || mt === 'both') mvWantCommercial = true;
               var cAreas = [];
               try { cAreas = prim.target_areas ? JSON.parse(prim.target_areas) : JSON.parse(c.target_areas || '[]'); } catch(e) { cAreas = []; }
               cAreas.forEach(function(a) { if (a && mvAreas.indexOf(a) === -1) mvAreas.push(a); });
             });
-            leads = await rmScraper.collectMovingLeads({ areas: mvAreas });
+            leads = await rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: true });
             if (leads && leads.length > 0) {
+              console.log('[SCRAPER] Moving: ' + leads.length + ' total, ' + leads.filter(function(l){return l.commercial;}).length + ' commercial, wantCommercial=' + mvWantCommercial);
               // Keep ALL live on-market listings — they are all real, current
               // properties. Prefer recently-updated first but do NOT discard
               // older ones (that was causing too few leads). Customers want a
               // full selection of genuine moving opportunities in their areas.
               // Still prefer genuinely NEW statuses at the top.
               function isDesiredStatus(l) {
+                // Commercial leads are always valid opportunities (they don't carry
+                // residential-style SSTC/For-Sale status flags).
+                if (l.commercial) return true;
                 var s = (l.listingStatus || l.status || '').toLowerCase();
                 return s === 'new' || s === 'available' || s === 'for sale' || s === 'sstc' || s === 'sold' || s === '' || s.indexOf('new') !== -1 || s.indexOf('available') !== -1;
               }
@@ -10542,6 +14804,16 @@ function syncCustomers(product) {
                 var t24 = new Date(now - 24 * 3600000).toISOString();
                 var t48 = new Date(now - 48 * 3600000).toISOString();
                 var t7d = new Date(now - 7 * 86400000).toISOString();
+                // COMMERCIAL LEADS: commercial listings stay listed for years, so
+                // their firstVisibleDate is often old. Freshness = when WE scraped
+                // them (scrapedAt is set to now). Never drop a just-scraped commercial
+                // lead just because the listing has been on the market a while.
+                if (l.commercial) {
+                  if (l.scrapedAt && l.scrapedAt >= t24) return 'fresh24';
+                  if (l.scrapedAt && l.scrapedAt >= t48) return 'fresh48';
+                  if (l.scrapedAt && l.scrapedAt >= t7d) return 'week';
+                  return 'old';
+                }
                 if (fv && fv >= t24) return 'fresh24';
                 if (fv && fv >= t48) return 'fresh48';
                 if (up && up >= t24) return 'fresh24';
@@ -10561,11 +14833,13 @@ function syncCustomers(product) {
                 else if (b === 'week') weekPool.push(l);
                 else otherPool.push(l);
               });
-              // Freshness: new<24h primary, 24-48h fallback, then up-to-7-days as a
-              // safety net so quiet postcode areas (e.g. B Birmingham) still get leads
-              // rather than none. Delivery's own 48h guard prefers fresher leads but
-              // won't starve an area. Older than 7 days are dropped.
-              var usedPool = freshPool.concat(fallbackPool, weekPool);
+              // STRICT FRESHNESS (48h max): only newly listed / recently updated
+              // properties (≤24h primary, 24-48h fallback) are used. The old 7-day
+              // "week" safety net is DROPPED — the customer promise is fresh leads
+              // within 24 hours, so older listings must never be delivered. If an
+              // area is quiet, the customer gets fewer fresh leads that day rather
+              // than stale ones (exact-count still holds; supply is genuinely fresh).
+              var usedPool = freshPool.concat(fallbackPool);
               usedPool.sort(function(a, b) {
                 var bv = (b.firstVisibleDate || b.updateDate || '');
                 var av = (a.firstVisibleDate || a.updateDate || '');
@@ -10586,31 +14860,51 @@ function syncCustomers(product) {
               var guaranteed = [];
               Object.keys(perAreaCap).forEach(function(tag) { guaranteed.push.apply(guaranteed, perAreaCap[tag]); });
               var rest = usedPool.filter(function(l) { return !areaTaggedIds[l.id]; });
-              leads = guaranteed.concat(rest).slice(0, 500);
-              console.log('[SCRAPER] Rightmove: ' + freshPool.length + ' <24h, ' + fallbackPool.length + ' 24-48h, ' + weekPool.length + ' <7d, ' + otherPool.length + ' DROPPED, ' + guaranteed.length + ' area-guaranteed, using ' + leads.length + ' listings');
+              // When commercial is enabled, reserve ~25% of the pool for commercial
+              // properties so they aren't completely crowded out by residential.
+              // Commercial leads are already appended by collectMovingLeads(config.commercial).
+              var residentialCap = mvWantCommercial ? 400 : 500;
+              var residentialKept = guaranteed.filter(function(l){ return !l.commercial; }).concat(rest.filter(function(l){ return !l.commercial; })).slice(0, residentialCap);
+              var commercialKept = guaranteed.filter(function(l){ return l.commercial; }).concat(rest.filter(function(l){ return l.commercial; })).slice(0, 150);
+              leads = residentialKept.concat(commercialKept).slice(0, 500);
+              console.log('[SCRAPER] Rightmove: ' + freshPool.length + ' <24h, ' + fallbackPool.length + ' 24-48h, ' + otherPool.length + ' DROPPED (>48h), ' + guaranteed.length + ' area-guaranteed, using ' + leads.length + ' listings (' + residentialKept.length + ' residential, ' + commercialKept.length + ' commercial)');
             }
-            // ENRICH fresh moving leads with real postcodes via the free detail page
-            // (parallel, fast). Rightmove's list view hides postcodes, so without this
-            // the postcode-area match only works for a handful of leads and customers
-            // miss leads in their other requested areas (e.g. B, HA). Enrich up to a
-            // bounded batch so the daily run stays quick; the distributor then picks
-            // across ALL the customer's postcode areas and adds house numbers after.
+            // ENRICH moving leads with FULL addresses (door number + street +
+            // postcode). Two layers:
+            //   1) FREE: fetch each property's Rightmove detail page (parallel) —
+            //      extracts streetAddress (includes the door number) + postcode.
+            //      Runs on ALL leads so every property gets a door number where
+            //      Rightmove publishes it.
+            //   2) POSTCODER (Royal Mail PAF) as the guaranteed fallback for any
+            //      lead still missing a door number. Only runs when
+            //      POSTCODER_ENABLED=true + POSTCODER_API_KEY set (paid, so opt-in).
+            //      This gives 100% coverage: door number + street + postcode.
             try {
               var noPcFirst = leads.filter(function(l) { return !l.postcode; });
               var hasPcThen = leads.filter(function(l) { return !!l.postcode; });
-              var toEnrich = noPcFirst.concat(hasPcThen).slice(0, 260);
-              var enrichedNow = await rmScraper.enrichMovingLeads(toEnrich, 6);
+              // Bounded Rightmove detail enrichment (free but slow) — 300 is enough
+              // to get postcodes for the freshest leads; Postcoder (below) handles
+              // the door-number guarantee efficiently and reliably for the rest.
+              var toEnrich = noPcFirst.concat(hasPcThen).slice(0, 300);
+              var enrichedNow = await rmScraper.enrichMovingLeads(toEnrich, 8);
               var enrichedMap = {};
               enrichedNow.forEach(function(le) { enrichedMap[le.id] = le; });
               leads = leads.map(function(l) { return enrichedMap[l.id] || l; });
               var withRealPc = leads.filter(function(l) { return l.postcode && /[A-Z]{1,2}[0-9]/.test(l.postcode); }).length;
-              console.log('[SCRAPER] Rightmove enriched ' + enrichedNow.length + ' leads; ' + withRealPc + '/' + leads.length + ' now have real postcodes');
+              var withDoorNum = leads.filter(function(l) { return (l.fullAddress || l.address || '').match(/\d/); }).length;
+              console.log('[SCRAPER] Rightmove enriched ' + enrichedNow.length + ' leads; ' + withRealPc + '/' + leads.length + ' postcodes, ' + withDoorNum + '/' + leads.length + ' with door numbers');
+              // NOTE: NO Postcoder here. Postcoder (Royal Mail PAF) is paid per
+              // lookup (~4.5p) — running it on the whole pool burns hundreds of
+              // credits a day. It runs ONLY on the exact leads being delivered
+              // (see delivery's /api/admin/deliver), so credits = leads sent.
             } catch(encErr) { console.log('[SCRAPER] Rightmove enrichment error:', encErr.message); }
-            // Zoopla supplement (Apify). Zoopla exposes FULL addresses WITH house
-            // numbers natively (unlike Rightmove). The flat $30/mo rental is far
-            // cheaper than Postcoder's per-lead cost at scale. Adds house numbers +
-            // a second portal of supply. Falls back silently if not rented (403).
-            if (apifyKey) {
+            // Zoopla supplement (Apify) — DISABLED BY DEFAULT to stop the $30/mo
+            // actor rental bleeding money during testing. Rightmove's direct scrape
+            // already provides full displayAddress + house numbers, and the
+            // enrichment above adds real postcodes. Zoopla was only an extra
+            // house-number supplement. Re-enable only when volume justifies the
+            // $30/mo rental (set ENABLE_ZOOPLA=true in env).
+            if (apifyKey && process.env.ENABLE_ZOOPLA === 'true') {
               try {
                 var mvAreasForZoopla = mvAreas.length ? mvAreas : (leads || []).map(function(l) { return extractPostcodeArea(l.postcode || ''); }).filter(Boolean);
                 if (mvAreasForZoopla.length > 0) {
@@ -10638,9 +14932,11 @@ function syncCustomers(product) {
         } else if (product === 'probate') {
           try {
             var probateScraper = require('./probate_leads_scraper');
-            // The Apify Gazette actor runs async (up to ~30 min); no artificial
-            // timeout so the polling completes and the pool gets the full supply.
-            leads = await probateScraper.collectProbateLeads();
+            // COST-SAVING: try the FREE Gazette HTML + detail enrichment first (no
+            // Apify cost, gives full addresses with door numbers + postcodes). Only
+            // fall back to the paid Apify Gazette actor if the free scrape returns 0
+            // (the free path can be blocked from some datacenter IPs).
+            leads = await probateScraper.collectProbateLeads({ maxItems: 100, useApifyFirst: false });
             console.log('[SCRAPER] Probate raw scrape: ' + (leads ? leads.length : 0) + ' leads');
             try { lastScrape.probate_raw = (leads ? leads.length : 0); lastScrape.probate_at = new Date().toISOString(); lastScrape.probate_apify = (leads && leads[0] && leads[0].source) || ''; fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape, null, 2)); } catch(e2) {}
             if (leads && leads.length > 0) {
@@ -10670,20 +14966,39 @@ function syncCustomers(product) {
           else if (genFresh.fallback.length >= 5) leads = genFresh.fallback;
           else leads = genFresh.fresh.concat(genFresh.fallback).concat(genFresh.rejected).slice(0, 200);
         }
+        // NOTE: NO Postcoder here for probate/planning. The pool is enriched only
+        // with free source data; Postcoder (paid, Royal Mail PAF) runs ONLY on the
+        // exact leads being delivered (/api/admin/deliver) so credits = leads sent,
+        // not the whole pool. This keeps the ~4.5p/lookup spend minimal.
         var freshCount = leads && leads.length ? leads.length : 0;
-        // Merge: today's fresh leads + any previous pool leads NOT already included
-        // (keeps a healthy buffer so delivery always has supply for every account).
+        // FRESH-ONLY POOL: every lead stored in the pool must be under 48h old
+        // (24h primary + 24-48h fallback) for ALL products. We never accumulate
+        // old leads — the pool only holds what was scraped (or source-published)
+        // within the last 48 hours, so no stale lead can ever be delivered.
+        // Previous pool entries are kept ONLY if they still fall inside the 48h
+        // window (covers a source being slow/flaky today).
+        var poolFreshCutoff = new Date(Date.now() - 48 * 3600000).toISOString();
+        function isPoolLeadFresh(l) {
+          var d = l.scrapedAt || l.firstVisibleDate || l.updateDate || l.incorporationDate || l.publishedDate || l.receivedDate || l.createdAt || l.created_at || '';
+          return !!d && d >= poolFreshCutoff;
+        }
         var seenIds = new Set();
         var merged = [];
         (leads || []).forEach(function(l) { var k = l.id || l.title || l.address || ''; if (k && !seenIds.has(k)) { seenIds.add(k); merged.push(l); } });
         prevPool.forEach(function(l) {
           var k = l.id || l.title || l.address || '';
-          if (k && !seenIds.has(k)) { seenIds.add(k); merged.push(l); }
+          if (k && !seenIds.has(k) && isPoolLeadFresh(l)) { seenIds.add(k); merged.push(l); }
         });
-        leads = merged.slice(0, 5000);
+        leads = merged.filter(isPoolLeadFresh).slice(0, 5000);
         if (!leads || leads.length === 0) { leads = []; }
         fs.writeFileSync(poolPath, JSON.stringify(leads, null, 2));
-        markScrapedToday(product); // Record this product as scraped today
+        // Only mark "scraped today" if we actually got leads. If a source returns
+        // 0 (e.g. PLOTA key not yet configured, Gazette blocked), DON'T lock the
+        // product out for the rest of the day — a later scrape (or after the user
+        // upgrades Plota/Apify) must be able to retry and fill supply. Otherwise a
+        // customer is left under-promised for the whole day with no way to recover.
+        if (leads.length > 0) markScrapedToday(product);
+        else console.log('[SCRAPER] ' + product + ' produced 0 leads — NOT marking scraped-today so it can be retried');
         var leadSource = leads && leads.length > 0 ? (leads[0].source || 'unknown') : 'empty';
         fs.writeFileSync(path.join(DATA_DIR, product + '-source.txt'), leadSource);
         results[product] = leadSource + '_' + (leads ? leads.length : 0) + '(fresh:' + freshCount + ',buffered:' + (leads ? leads.length - freshCount : 0) + ')';
@@ -10691,6 +15006,13 @@ function syncCustomers(product) {
         results[product] = 'error: ' + prodErr.message;
       }
     }
+    // Run all product scrapes in PARALLEL so the full scrape completes within the
+    // process timeout (sequential moving was blocking the others).
+    await Promise.all(Object.entries(PRODUCT_LEAD_FILES).map(function(entry) {
+      var prod = entry[0], cfg = entry[1];
+      if (onlyProduct && prod !== onlyProduct) return Promise.resolve();
+      return scrapeProduct(prod, cfg, forceScrape);
+    }));
     // === SUPPLEMENT: Disabled — no demo leads are generated ===
     // Only real scraped data is used for all lead types.
     // Log scraper run to database
@@ -10775,17 +15097,162 @@ app.post('/api/admin/send-welcome', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/send-reminder — send a trial-ending reminder email to one customer
+app.post('/api/admin/send-reminder', adminAuth, async (req, res) => {
+  try {
+    var customerId = req.body && req.body.customer_id;
+    if (!customerId) return res.status(400).json({ error: 'customer_id required' });
+    var cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    if (!cust.email) return res.status(400).json({ error: 'Customer has no email' });
+    var subject = getEditedCampaignSubject('trial_day7', 'Your Free Trial Ends Tomorrow');
+    var html = getCampaignEmailHTMLWithEdits(cust, 'trial_day7');
+    await sendBrevoEmail({ email: cust.email, name: cust.company || cust.contact_name || 'Customer' }, subject, html);
+    // Mark the reminder as sent so the daily campaign cron doesn't resend it
+    var campaignSent = [];
+    try { campaignSent = JSON.parse(cust.campaign_sent || '[]'); } catch(e) {}
+    if (!campaignSent.includes('trial_day7')) { campaignSent.push('trial_day7'); db.prepare('UPDATE customers SET campaign_sent = ? WHERE id = ?').run(JSON.stringify(campaignSent), cust.id); saveDb(); }
+    console.log('[SEND-REMINDER] Sent trial reminder to ' + cust.email);
+    res.json({ success: true, message: 'Trial reminder sent to ' + cust.email });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/cron-status — report delivery cron fire count and server time
-app.get('/api/admin/cron-status', adminAuth, (req, res) => {
-  res.json({
+app.get('/api/admin/cron-status', adminAuth, (req, res) => {  res.json({
     server_time: new Date().toISOString(),
     delivery_fire_count: __deliveryFireCount || 0,
     last_delivery_fire: __lastDeliveryFire || 'never',
     process_uptime_ms: process.uptime() * 1000
   });
 });
+// GET /api/admin/delivery-audit — recent daily delivery records so you can always
+// verify every day's delivery happened and how many leads/emails went out.
+app.get('/api/admin/delivery-audit', adminAuth, (req, res) => {
+  try {
+    var dbA = getDb();
+    res.json({ success: true, records: dbA.delivery_audit || [] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/backup — trigger a manual database backup (local + GitHub).
+// GET /api/admin/backup — list recent backups so you can verify the safety net.
+app.post('/api/admin/backup', adminAuth, async (req, res) => {
+  try {
+    var file = await runFullBackup();
+    res.json({ success: true, local_file: file, note: 'Backup written locally and pushed to GitHub (' + BACKUP_GITHUB_REPO + ')' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.get('/api/admin/backup', adminAuth, (req, res) => {
+  try {
+    var list = [];
+    try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); list = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort(); } catch(e) {}
+    res.json({ success: true, repo: BACKUP_GITHUB_REPO, local_backups: list.length, latest: list.length ? list[list.length - 1] : 'none', db_size_bytes: fs.existsSync(DB_FILE) ? fs.statSync(DB_FILE).size : 0 });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/postcoder/enrich-pool — one-time verification: re-enrich door-less
+// leads already in a product's pool via Postcoder (Royal Mail PAF). Bounded by
+// POSTCODER_DAILY_BUDGET to keep credits low. Body: { product: 'moving', max }
+app.post('/api/admin/postcoder/enrich-pool', adminAuth, async (req, res) => {
+  try {
+    var product = (req.body && req.body.product) || 'moving';
+    if ((process.env.POSTCODER_ENABLED !== 'true' && process.env.POSTCODER_ENABLED !== '1') || !process.env.POSTCODER_API_KEY) {
+      return res.status(400).json({ error: 'Postcoder not enabled. Set POSTCODER_ENABLED=true + POSTCODER_API_KEY.' });
+    }
+    var pcScraper = require('./rightmove_scraper_v2');
+    var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[product] ? PRODUCT_LEAD_FILES[product].file : 'moving-leads.json');
+    var pool = [];
+    try { pool = JSON.parse(fs.readFileSync(poolFile, 'utf-8')); if (!Array.isArray(pool)) pool = []; } catch(e) { pool = []; }
+    // Find door-less leads that have a postcode (address may be in address/fullAddress/deceasedAddress)
+    var doorless = pool.filter(function(l) {
+      if (!l.postcode) return false;
+      var addr = l.address || l.fullAddress || l.deceasedAddress || '';
+      return !String(addr).match(/\d/);
+    });
+    var max = parseInt((req.body && req.body.max) || '150');
+    if (doorless.length > max) doorless = doorless.slice(0, max);
+    console.log('[POSTCODER-ENRICH] ' + doorless.length + ' door-less ' + product + ' leads to enrich');
+    // Normalise address field, run enrichment, map back
+    var normalised = doorless.map(function(l) { return Object.assign({}, l, { address: l.address || l.deceasedAddress || l.fullAddress || '' }); });
+    var enriched = await pcScraper.enrichMovingLeadsPostcoder(normalised);
+    var map = {};
+    enriched.forEach(function(e) { map[e.id] = e; });
+    var updated = 0;
+    pool = pool.map(function(l) {
+      var e = map[l.id];
+      if (e && e.buildingNumber) {
+        l.address = e.address || e.fullAddress || l.address;
+        l.fullAddress = e.fullAddress || l.address;
+        l.street = e.street || l.street || '';
+        l.buildingNumber = e.buildingNumber || l.buildingNumber || '';
+        l.deceasedAddress = e.fullAddress || l.deceasedAddress;
+        updated++;
+      }
+      return l;
+    });
+    fs.writeFileSync(poolFile, JSON.stringify(pool, null, 2));
+    res.json({ success: true, product: product, checked: doorless.length, enriched_with_number: updated, sample: enriched.slice(0, 5).map(function(e) { return { id: e.id, address: e.fullAddress || e.address, street: e.street, buildingNumber: e.buildingNumber, postcode: e.postcode }; }) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
-// GET /api/admin/system-status — FULL system readiness dashboard.
+// POST /api/admin/postcoder/enrich-customer-leads — enrich the door-less DB leads
+// already assigned to one customer (their existing dashboard leads) via Postcoder,
+// adding a door number + street + postcode. Bounded by the shared daily budget and
+// by an optional `max`. This fixes leads that were created before door-number
+// enrichment was enabled (e.g. the pre-generation-era moving leads).
+app.post('/api/admin/postcoder/enrich-customer-leads', adminAuth, async (req, res) => {
+  try {
+    if ((process.env.POSTCODER_ENABLED !== 'true' && process.env.POSTCODER_ENABLED !== '1') || !process.env.POSTCODER_API_KEY) {
+      return res.status(400).json({ error: 'Postcoder not enabled. Set POSTCODER_ENABLED=true + POSTCODER_API_KEY.' });
+    }
+    var email = (req.body && req.body.email) || '';
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var cust = db.prepare('SELECT * FROM customers WHERE email = ?').get(String(email).toLowerCase());
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var pcScraper = require('./rightmove_scraper_v2');
+    var dbc = getDb();
+    var leads = (dbc.leads || []).filter(function(l) { return l.customer_id === cust.id; });
+    // Door-less leads that have a postcode
+    function hasPremiseNumber(addr, pc) {
+      var a = String(addr || '').replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '');
+      return /(^|[\s,])(\d{1,5}[A-Za-z]?)(\s|,|$)/.test(a) || /flat\s+\d+/i.test(a) || /\b(no\.?\s*)?\d{1,5}[A-Za-z]?\b/i.test(a);
+    }
+    var doorless = leads.filter(function(l) {
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      return d.postcode && !hasPremiseNumber(d.fullAddress || d.address || d.deceasedAddress || '', d.postcode);
+    });
+    var max = parseInt((req.body && req.body.max) || '50');
+    if (doorless.length > max) doorless = doorless.slice(0, max);
+    if (doorless.length === 0) return res.json({ success: true, checked: leads.length, enriched: 0, message: 'No door-less leads to enrich' });
+    var normalised = doorless.map(function(l) {
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      return Object.assign({}, d, { id: l.id, address: d.fullAddress || d.address || d.deceasedAddress || '' });
+    });
+    var enriched = await pcScraper.enrichMovingLeadsPostcoder(normalised);
+    var map = {}; enriched.forEach(function(e) { map[e.id] = e; });
+    var updated = 0;
+    var hasPrem = hasPremiseNumber; // closure ref
+    (dbc.leads || []).forEach(function(l) {
+      if (l.customer_id !== cust.id) return;
+      var e = map[l.id];
+      if (e && e.buildingNumber) {
+        var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e2) {}
+        var eAddr = e.fullAddress || e.address || '';
+        var eStreet = e.street || '';
+        var eNum = e.buildingNumber || '';
+        if (eNum && eStreet) {
+          eAddr = String(eNum).replace(/,\s*$/,'').trim() + ' ' + String(eStreet).replace(/,\s*$/,'').trim();
+        }
+        d.buildingNumber = eNum; d.street = eStreet; d.postcode = e.postcode || d.postcode; d.udprn = e.udprn || '';
+        if (l.product === 'probate') d.deceasedAddress = eAddr;
+        d.address = eAddr; d.fullAddress = eAddr;
+        l.data = JSON.stringify(d);
+        updated++;
+      }
+    });
+    saveDb();
+    res.json({ success: true, email: email, checked: leads.length, doorless: doorless.length, enriched: updated });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Shows every critical component's live state so we can confirm nothing is
 // broken before/after the daily delivery, and spot silent failures fast.
 app.get('/api/admin/system-status', adminAuth, (req, res) => {
@@ -10847,6 +15314,16 @@ app.get('/api/admin/system-status', adminAuth, (req, res) => {
       stannp: !!STANNP_API_KEY,
       postcoder_enabled: process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1'
     };
+    // Postcoder daily credit usage (shared guard) — how many lookups spent today
+    // vs the global budget, so we can see exactly where credits go.
+    try {
+      var pcBudgetMod = require('./postcoder_budget');
+      out.postcoder = {
+        enabled: pcBudgetMod.enabled(),
+        used_today: pcBudgetMod.usage(),
+        daily_budget: pcBudgetMod.getDailyBudget()
+      };
+    } catch(pce) { out.postcoder = { enabled: false, used_today: 0, daily_budget: 0, error: pce.message }; }
 
     // Check for supply shortfalls (pool too small for active customers)
     out.warnings = [];
@@ -10873,7 +15350,7 @@ app.get('/api/admin/system-status', adminAuth, (req, res) => {
 
 // GET /api/admin/health-report — friendly health summary (green/yellow/red)
 // built from the full system-status. Returns issues list for the admin UI.
-app.get('/api/admin/health-report', adminAuth, (req, res) => {
+app.get('/api/admin/health-report', adminAuth, async (req, res) => {
   try {
     var dbH = getDb();
     var now = new Date().toISOString();
@@ -10889,17 +15366,58 @@ app.get('/api/admin/health-report', adminAuth, (req, res) => {
     if (!BREVO_API_KEY) issues.push({ severity:'high', label:'Brevo (email) not configured', details:[], message:'Brevo (email) not configured' });
     if (!process.env.APIFY_API_KEY) issues.push({ severity:'medium', label:'Apify not configured (Zoopla backup)', details:[], message:'Apify not configured' });
 
-    // Per-product supply
+    // Stannp print-credit balance — if it's too low to print & post, customer
+    // orders will fail at checkout. Report it + raise a high issue so the owner
+    // is alerted before real customers hit a dead end.
+    try {
+      var stProv = getDirectMailProvider();
+      if (stProv && stProv.name === 'stannp' && STANNP_API_KEY) {
+        var stBal = await stProv.getBalance();
+        if (stBal && stBal.success) {
+          var stBalance = stBal.balance || 0;
+          issues.push({ severity: stBalance < 25 ? 'high' : (stBalance < 50 ? 'medium' : 'low'), label: 'Stannp print credit: £' + stBalance.toFixed(2), details: [ 'Top up at Stannp dashboard before running low — orders fail below ~£2 per item.' ], message: 'Stannp balance £' + stBalance.toFixed(2) });
+        } else {
+          issues.push({ severity:'medium', label:'Stannp balance check failed', details:[ (stBal && stBal.error) || '' ], message:'Stannp balance unreachable' });
+        }
+      }
+    } catch(stBalErr) { issues.push({ severity:'medium', label:'Stannp balance check error: ' + (stBalErr.message || ''), details:[], message:'Stannp balance error' }); }
+
+    // Per-product supply vs PROMISED DAILY DEMAND (exact-count guarantee).
+    // The customer is promised a specific number of leads/day per plan. We must
+    // verify the fresh supply actually covers that demand — otherwise the exact-
+    // count delivery cannot fulfil the promise and customers complain. This is
+    // the key readiness check for launch (Plota for planning, Apify for probate/
+    // tenders, etc.).
     var productStatus = {};
-    Object.keys(PRODUCT_LEAD_FILES).forEach(function(p) {
+    var demandByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 30 };    Object.keys(PRODUCT_LEAD_FILES).forEach(function(p) {
       var f = path.join(DATA_DIR, PRODUCT_LEAD_FILES[p].file);
       var pool = [];
       try { pool = JSON.parse(fs.readFileSync(f, 'utf-8')); if (!Array.isArray(pool)) pool = []; } catch(e) { pool = []; }
       var custs = (dbH.customers || []).filter(function(c) { return c.product === p && c.plan !== 'cancelled'; });
-      var poolFresh = pool.filter(function(l) { return (l.scrapedAt || l.publishedDate || '').startsWith(today); }).length;
-      productStatus[p] = { pool: pool.length, fresh_today: poolFresh, customers: custs.length };
-      if (custs.length > 0 && pool.length === 0) issues.push({ severity:'high', label: p + ': pool EMPTY for ' + custs.length + ' customer(s)', details: [], message: p + ': pool empty' });
-      else if (custs.length > 0 && pool.length < custs.length) issues.push({ severity:'medium', label: p + ': low supply (' + pool.length + ' leads, ' + custs.length + ' customers)', details: [], message: p + ': low supply' });
+      var poolFresh = pool.filter(function(l) {
+        var d = l.scrapedAt || l.publishedDate || l.firstVisibleDate || l.incorporationDate || l.receivedDate || '';
+        return d && d.startsWith(today);
+      }).length;
+      // Promised daily demand = sum of each active customer's plan limit
+      var promisedDemand = 0;
+      custs.forEach(function(c) {
+        var cov = c.coverage || (p === 'moving' || p === 'newbusiness' ? 'postcode' : 'county');
+        var lim = getPlanLimit(p, c.plan, cov) || demandByPlan[c.plan] || 5;
+        // Weekly-model products (planning/tenders) cap per day too
+        var pr = getLeadTypeRule(p);
+        if (pr && pr.model === 'weekly' && pr.weekly_est && pr.weekly_est[c.plan]) {
+          lim = Math.min(lim, Math.max(1, Math.ceil(pr.weekly_est[c.plan] / 5)));
+        }
+        promisedDemand += lim;
+      });
+      productStatus[p] = { pool: pool.length, fresh_today: poolFresh, customers: custs.length, promised_daily_demand: promisedDemand };
+      if (custs.length > 0 && promisedDemand > 0 && poolFresh < promisedDemand) {
+        issues.push({ severity:'high', label: p + ': fresh supply ' + poolFresh + ' < promised ' + promisedDemand + '/day (' + custs.length + ' customers)', details: [], message: p + ': insufficient fresh supply to meet promised daily count' });
+      } else if (custs.length > 0 && pool.length === 0) {
+        issues.push({ severity:'high', label: p + ': pool EMPTY for ' + custs.length + ' customer(s)', details: [], message: p + ': pool empty' });
+      } else if (custs.length > 0 && pool.length < promisedDemand) {
+        issues.push({ severity:'medium', label: p + ': low supply (' + pool.length + ' leads, need ' + promisedDemand + '/day)', details: [], message: p + ': low supply' });
+      }
     });
 
     // Delivery today
@@ -10923,6 +15441,7 @@ app.get('/api/admin/health-report', adminAuth, (req, res) => {
       issues: issues,
       fixes: fixes,
       checked_at: now,
+      product_status: productStatus,
       system: {
         leads_today: todayDelivered,
         customers: (dbH.customers||[]).length,
@@ -11013,6 +15532,40 @@ app.post('/api/admin/test-planning', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/plota-health — verify the PLOTA_API_KEY is valid and returning
+// data (council list + a quick application query). Use this right after upgrading
+// Plota to confirm the new key works before trusting the next delivery.
+app.get('/api/admin/plota-health', adminAuth, async (req, res) => {
+  try {
+    var key = process.env.PLOTA_API_KEY || '';
+    if (!key) return res.json({ success: false, configured: false, message: 'PLOTA_API_KEY not set' });
+    function plotaGet(path) {
+      return new Promise(function(resolve) {
+        var https = require('https');
+        var rq = https.request({ hostname: 'api.plota.co.uk', path: path, method: 'GET', headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + key, 'User-Agent': '9amLeads/1.0' }, timeout: 30000 }, function(res2) {
+          var b = ''; res2.on('data', function(c) { b += c; }); res2.on('end', function() { try { resolve({ status: res2.statusCode, body: JSON.parse(b) }); } catch(e) { resolve({ status: res2.statusCode, body: {} }); } });
+        });
+        rq.on('error', function(e) { resolve({ status: 0, body: {}, error: e.message }); });
+        rq.setTimeout(30000, function() { rq.destroy(); resolve({ status: 0, body: {}, error: 'timeout' }); });
+        rq.end();
+      });
+    }
+    var councils = await plotaGet('/v1/councils?limit=1');
+    var apps = await plotaGet('/v1/applications?limit=1');
+    var councilCount = councils.body && councils.body.data ? councils.body.data.length : 0;
+    var appCount = apps.body && apps.body.data ? apps.body.data.length : 0;
+    res.json({
+      success: councils.status === 200 && apps.status === 200,
+      configured: true,
+      councils_http: councils.status,
+      applications_http: apps.status,
+      councils_returned: councilCount,
+      applications_returned: appCount,
+      message: (councils.status === 200 && apps.status === 200) ? 'PLOTA key OK — councils=' + councilCount + ', applications available=' + appCount : 'PLOTA key returned HTTP ' + councils.status + '/' + apps.status + ' — may need upgrading or the key is invalid'
+    });
+  } catch(e) { res.status(500).json({ success: false, configured: !!process.env.PLOTA_API_KEY, error: e.message }); }
+});
+
 app.post('/api/admin/reset-weekly', adminAuth, (req, res) => {
   try {
     const email = req.body.email;
@@ -11033,6 +15586,32 @@ app.post('/api/admin/reset-weekly', adminAuth, (req, res) => {
     }
     saveDb();
     res.json({ success: true, message: 'Reset ' + count + ' deliveries for ' + products.join(', ') });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/reset-deliveries — reset a customer's DAILY delivery state so
+// the next delivery run re-delivers their full promised count in a fresh email.
+// Un-delivers today's (and any) delivered leads for the customer and clears
+// last_email_date so the exact-count guard treats them as not-yet-delivered.
+app.post('/api/admin/reset-deliveries', adminAuth, (req, res) => {
+  try {
+    var customerId = (req.body && req.body.customer_id) || '';
+    if (!customerId) return res.status(400).json({ error: 'customer_id required' });
+    _dbData = null;
+    var dbR = getDb();
+    var cust = (dbR.customers || []).find(function(c) { return c.id === customerId; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var unDelivered = 0;
+    (dbR.leads || []).forEach(function(l) {
+      if (l.customer_id === cust.id && l.delivered) {
+        l.delivered = 0;
+        l.delivered_at = null;
+        unDelivered++;
+      }
+    });
+    if (cust.last_email_date) cust.last_email_date = null;
+    saveDb();
+    res.json({ success: true, customer: cust.email, un_delivered: unDelivered, message: 'Delivery state reset — next run will deliver the full promised count in one email' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -11060,6 +15639,64 @@ app.get('/api/admin/stannp-balance', adminAuth, async (req, res) => {
     var bal = await provider.getBalance();
     if (bal && bal.success) return res.json({ success: true, balance: bal.balance, configured: !!STANNP_API_KEY });
     res.json({ success: false, error: (bal && bal.error) || 'Failed to get balance', configured: !!STANNP_API_KEY });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/stannp/list — List recent Stannp mailpieces (letters + postcards)
+// so the owner can confirm orders exist and find them in the Stannp dashboard.
+app.get('/api/admin/stannp/list', adminAuth, async (req, res) => {
+  try {
+    var provider = getDirectMailProvider();
+    var out = { success: true, postcards: [], letters: [], campaigns: [] };
+    // Try multiple possible list endpoints since Stannp's API varies by plan/version
+    var attempts = ['/postcards/list', '/postcards/list?limit=20', '/letters/list', '/letters/list?limit=20', '/campaigns/list', '/campaigns/list?limit=20'];
+    for (var ai = 0; ai < attempts.length; ai++) {
+      var r = await provider.stannpRequest(attempts[ai], {}, 'GET');
+      if (r && r.success && r.data) {
+        var list = Array.isArray(r.data) ? r.data : (r.data.postcards || r.data.letters || r.data.campaigns || r.data.list || []);
+        if (attempts[ai].indexOf('postcards') !== -1) out.postcards = list;
+        else if (attempts[ai].indexOf('letters') !== -1) out.letters = list;
+        else if (attempts[ai].indexOf('campaigns') !== -1) out.campaigns = list;
+      }
+    }
+    res.json(out);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/stannp/account — Fetch the Stannp account details for the
+// configured API key (name/email/id) so the business owner knows which Stannp
+// account to log into to see orders.
+app.get('/api/admin/stannp/account', adminAuth, async (req, res) => {
+  try {
+    var provider = getDirectMailProvider();
+    var info = await provider.stannpRequest('/accounts/info', {}, 'GET');
+    if (info && info.success && info.data) {
+      return res.json({ success: true, data: info.data, raw: info });
+    }
+    // Fallback: balance may include account info
+    var bal = await provider.stannpRequest('/accounts/balance', {}, 'GET');
+    res.json({ success: bal && bal.success, balance: bal && bal.data ? bal.data.balance : (bal.balance || ''), account: (bal && bal.data) || bal, raw: bal });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/stannp/order/:id — Fetch a Stannp mailpiece by ID (letters then
+// postcards) to confirm order type/status/recipient for support + visibility checks.
+app.get('/api/admin/stannp/order/:id', adminAuth, async (req, res) => {
+  try {
+    var provider = getDirectMailProvider();
+    var id = String(req.params.id).split(',')[0];
+    // Try as a letter first, then a postcard
+    var letter = await provider.stannpRequest('/letters/get/' + id, {}, 'GET');
+    if (letter && letter.success && letter.data) {
+      var d = letter.data;
+      return res.json({ success: true, type: 'letter', id: id, status: d.status || 'unknown', recipient: d.recipient || d.name || '', address: d.address_line1 || '', postcode: d.postcode || '', raw: d });
+    }
+    var card = await provider.stannpRequest('/postcards/get/' + id, {}, 'GET');
+    if (card && card.success && card.data) {
+      var c = card.data;
+      return res.json({ success: true, type: 'postcard', id: id, status: c.status || 'unknown', recipient: c.recipient || c.name || '', address: c.address_line1 || c.address || '', postcode: c.postcode || '', raw: c });
+    }
+    res.json({ success: false, error: 'Order not found', letter: letter, card: card });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -11596,8 +16233,7 @@ app.post('/api/setup-intent', authMiddleware, async (req, res) => {
 });
 
 // POST /api/save-payment-method - save collected card
-app.post('/api/save-payment-method', authMiddleware, async (req, res) => {
-  try {
+app.post('/api/save-payment-method', authMiddleware, async (req, res) => {  try {
     var pm = req.body.payment_method_id;
     if (!pm) return res.status(400).json({ error: 'Payment method ID required' });
     var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -11623,8 +16259,54 @@ app.post('/api/admin/update-areas', adminAuth, (req, res) => {
     } else {
       db.prepare('UPDATE customers SET target_areas = ? WHERE email = ?').run(JSON.stringify(areas), email);
     }
+    // SYNC the nested product_config areas so the distributor (which may read the
+    // config) never sees stale areas. Update every product's target_areas.
+    try {
+      var pc = JSON.parse(customer.product_config || '{}');
+      Object.keys(pc).forEach(function(p) {
+        if (pc[p] && typeof pc[p] === 'object') {
+          pc[p].target_areas = JSON.stringify(areas);
+          if (coverage) pc[p].coverage = coverage;
+        }
+      });
+      db.prepare('UPDATE customers SET product_config = ? WHERE email = ?').run(JSON.stringify(pc), email);
+    } catch(pcErr) { console.log('[update-areas] product_config sync skipped:', pcErr.message); }
     saveDb();
     res.json({ success: true, areas: areas, coverage: coverage || customer.coverage });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/load-test-customers - bulk-create test customers (bypasses the
+// signup IP limit and dedup). Body: { customers: [{ product, plan, coverage,
+// areas, name, email }] } or { product, plan, coverage, areas, count }.
+app.post('/api/admin/load-test-customers', adminAuth, (req, res) => {
+  try {
+    var list = req.body.customers || [];
+    var product = req.body.product, plan = req.body.plan || 'free_trial', coverage = req.body.coverage || 'postcode';
+    var areas = req.body.areas || [], count = parseInt(req.body.count) || 1;
+    var created = 0;
+    if (!list.length && product) {
+      for (var i = 0; i < count; i++) {
+        var email = 'loadtest.' + product + '.' + Date.now() + '.' + i + '@gmail.com';
+        var cid = uuidv4();
+        var cfg = {}; cfg[product] = { target_areas: JSON.stringify(areas), coverage: coverage };
+        if (product === 'moving') cfg[product].moving_type = 'both';
+        db.prepare('INSERT INTO customers (id, email, company, name, plan, product, coverage, target_areas, product_config, password_hash, created_at, signup_ip) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
+          .run(cid, email, 'LoadTest ' + product + ' ' + i, 'LoadTester', plan, product, coverage, JSON.stringify(areas), JSON.stringify(cfg), 'testhash', new Date().toISOString(), 'loadtest');
+        created++;
+      }
+    } else if (list.length) {
+      list.forEach(function(c) {
+        var cid = uuidv4();
+        var cfg = {}; cfg[c.product] = { target_areas: JSON.stringify(c.areas || []), coverage: c.coverage || 'postcode' };
+        if (c.product === 'moving') cfg[c.product].moving_type = 'both';
+        db.prepare('INSERT INTO customers (id, email, company, name, plan, product, coverage, target_areas, product_config, password_hash, created_at, signup_ip) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
+          .run(cid, c.email, c.name || ('LoadTest ' + c.product), 'LoadTester', c.plan || 'free_trial', c.product, c.coverage || 'postcode', JSON.stringify(c.areas || []), JSON.stringify(cfg), 'testhash', new Date().toISOString(), 'loadtest');
+        created++;
+      });
+    }
+    saveDb();
+    res.json({ success: true, created: created });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -13170,6 +17852,22 @@ app.post('/api/direct-mail/sequences/:id/process-step', authMiddleware, async (r
           });
           if (chargeResult && chargeResult.status === 'succeeded') {
             paymentSuccess = true; paymentId = chargeResult.id;
+            // Persist + email a receipt for this sequence step payment
+            try {
+              await recordPaymentReceipt({
+                customerId: req.user.id,
+                customerEmail: (customerData && customerData.email) || req.user.email,
+                company: (customerData && customerData.company) || '',
+                amount: Math.round(stepCost * 100) / 100,
+                currency: 'gbp',
+                stripeId: chargeResult.id,
+                number: chargeResult.id,
+                description: 'Print & Post sequence — ' + seq.name + ' (Step ' + pendingStep.step_number + ')',
+                plan: '',
+                product: 'direct_mail',
+                cardLast4: ''
+              });
+            } catch(seqPr) { console.log('[SEQUENCE] Receipt error:', seqPr.message); }
           }
         } catch(stripeError) {
           // Payment failed - pause sequence
@@ -13410,10 +18108,6 @@ cron.schedule('0 4 * * *', async () => {
         ];
         for (var pi = 0; pi < posts.length; pi++) {
           urls.push('<url><loc>https://9amleads.com/blog/' + posts[pi].slug + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + (posts[pi].created_at ? posts[pi].created_at.split('T')[0] : today) + '</lastmod></url>');
-        }
-        var staticSlugs = ['moving-leads-uk', 'probate-leads-uk', 'public-sector-tenders-uk', 'win-probate-instructions'];
-        for (var si = 0; si < staticSlugs.length; si++) {
-          urls.push('<url><loc>https://9amleads.com/blog/' + staticSlugs[si] + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>');
         }
         var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
         for (var ui = 0; ui < urls.length; ui++) xml += '  ' + urls[ui] + '\n';

@@ -29,13 +29,7 @@ const POSTCODE_ASSIGNMENTS_FILE = path.join(DATA_DIR, 'postcode-assignments.json
 
 // Per-product daily plan limits (mirrors production getPlanLimit).
 // keyed [product][plan][coverage] with 'default' fallback.
-const PRODUCT_PLAN_LIMITS = {
-  moving:    { free_trial:{default:5,postcode:5,county:5,region:5,ukwide:5},   starter:{default:5,postcode:5,county:5,region:5},   pro:{default:15,postcode:15,county:15,region:15},   enterprise:{default:30,postcode:30,county:30,region:30} },
-  probate:   { free_trial:{default:5,county:5,region:5,ukwide:5},              starter:{default:5,county:5,region:5,ukwide:5},    pro:{default:15,county:15,region:15,ukwide:15},    enterprise:{default:30,county:30,region:30,ukwide:30} },
-  newbusiness:{ free_trial:{default:5,postcode:5,county:5,region:5},           starter:{default:5,postcode:5,county:5,region:5},     pro:{default:10,postcode:10,county:10,region:10},      enterprise:{default:20,postcode:20,county:20,region:20} },
-  planning:  { free_trial:{default:5,county:5,region:5,ukwide:5},              starter:{default:5,county:5,region:5,ukwide:5},     pro:{default:3,county:3,region:3,ukwide:3},        enterprise:{default:5,county:5,region:5,ukwide:5} },
-  tenders:   { free_trial:{default:5,county:5,region:5,ukwide:5},              starter:{default:5,county:5,region:5,ukwide:5},     pro:{default:3,county:3,region:3,ukwide:3},        enterprise:{default:5,county:5,region:5,ukwide:5} }
-};
+const PRODUCT_PLAN_LIMITS = { moving: { free_trial:{default:5,postcode:5,county:5,region:5,ukwide:5}, starter:{default:5,postcode:5,county:5,region:5}, pro:{default:10,postcode:10,county:10,region:10}, enterprise:{default:15,postcode:15,county:15,region:15} }, probate: { free_trial:{default:2,county:2,region:2,ukwide:2}, starter:{default:2,county:2,region:2,ukwide:2}, pro:{default:5,county:5,region:5,ukwide:5}, enterprise:{default:10,county:10,region:10,ukwide:10} }, newbusiness:{ free_trial:{default:5,postcode:5,county:5,region:5}, starter:{default:5,postcode:5,county:5,region:5}, pro:{default:10,postcode:10,county:10,region:10}, enterprise:{default:15,postcode:15,county:15,region:15} }, planning: { free_trial:{default:1,county:1,region:1,ukwide:1}, starter:{default:1,county:1,region:1,ukwide:1}, pro:{default:3,county:3,region:3,ukwide:3}, enterprise:{default:5,county:5,region:5,ukwide:5} }, tenders: { free_trial:{default:1,county:1,region:1,ukwide:1}, starter:{default:1,county:1,region:1,ukwide:1}, pro:{default:3,county:3,region:3,ukwide:3}, enterprise:{default:5,county:5,region:5,ukwide:5} } };
 // Per-product coverage that respects postcode areas (else county/region/ukwide)
 const PRODUCT_COVERAGE_DEFAULT = { moving:'postcode', newbusiness:'postcode', probate:'county', planning:'county', tenders:'county' };
 function distributorPlanLimit(product, plan, coverage) {
@@ -150,14 +144,32 @@ function getProductConfig(customer, product) {
   var config = {};
   try { config = JSON.parse(customer.product_config || '{}'); } catch(e) {}
   var prodCfg = config[product] || {};
+  // Prefer the TOP-LEVEL target_areas (the authoritative field that the UI/admin
+  // always updates). The nested product_config[product].target_areas can go STALE
+  // (e.g. a customer changes their postcodes in the dashboard but the signup
+  // product_config keeps the old areas), which made the distributor match wrong
+  // areas. Only fall back to product_config if the top-level field is empty.
+  var topAreas = [];
+  try { topAreas = JSON.parse(customer.target_areas || '[]'); } catch(e) { topAreas = []; }
+  var targets = topAreas.length ? topAreas : (prodCfg.target_areas ? JSON.parse(prodCfg.target_areas) : []);
   return {
-    targets: prodCfg.target_areas ? JSON.parse(prodCfg.target_areas) : (JSON.parse(customer.target_areas || '[]')),
+    targets: targets,
     coverage: prodCfg.coverage || customer.coverage || 'postcode'
   };
 }
 
 // Check if a lead's location matches a customer's target area (with filter tiering)
 function leadMatchesTarget(lead, customer, product) {
+  // COMMERCIAL FILTER (moving): if the customer chose residential-only or
+  // commercial-only, only match leads of that type. Default (both/unspecified)
+  // accepts any moving lead. Leads are tagged commercial:true by the scraper.
+  if (product === 'moving') {
+    var mtCfg = {};
+    try { mtCfg = JSON.parse(customer.product_config || '{}'); } catch(e) {}
+    var movingType = (mtCfg.moving && mtCfg.moving.moving_type) || customer.moving_type || 'both';
+    if (movingType === 'residential' && lead.commercial) return false;
+    if (movingType === 'commercial' && !lead.commercial) return false;
+  }
   var pc = getProductConfig(customer, product);
   const targets = pc.targets;
   const coverage = pc.coverage;
@@ -201,7 +213,12 @@ function leadMatchesTarget(lead, customer, product) {
         // delivering leads from every region to the customer.
         if (isPostcodeAreaAny) {
           var areaCodeUpper = (area || '').toUpperCase();
-          var leadAll = leadText + ' ' + (lead.postcode || '');
+          // Match ONLY against the lead's POSTCODE (and street address), NEVER the
+          // company/name text. Company names contain substrings that look like
+          // postcode areas (e.g. "BELLAGIO PARTNERS N1 LTD"), which caused a
+          // Portsmouth company ("N1" in its name) to be matched to the London "N"
+          // area and delivered out-of-area. The postcode is the reliable signal.
+          var leadAll = (lead.postcode || '') + ' ' + (lead.address || '') + ' ' + (lead.location || '');
           // Match the EXACT postcode area code (e.g. "BA", "G", "TQ") followed by
           // a digit — NOT a wildcard. Previously each letter was turned into [A-Z],
           // so "BA" matched any two-letter postcode area (KT, WR, TS...) and leads
@@ -272,6 +289,15 @@ function leadMatchesTarget(lead, customer, product) {
         }
       }
     }
+    // NATIONAL FALLBACK for tenders/probate: these are opportunities a business can
+    // pursue across the UK regardless of where they're based. Strict county matching
+    // under-delivers (a tender/probate lead in one county would be rejected from a
+    // customer who chose a different county). So for tenders/probate, if no county
+    // matched, accept the lead nationally so the customer still receives their full
+    // promised daily count. Other products keep strict area matching.
+    if (!areaMatch && (product === 'tenders' || product === 'probate')) {
+      areaMatch = true;
+    }
     if (!areaMatch) return { match: false, tier: 0 };
   } else {
     // County, region, ukwide or no targets: skip strict area check (scraper handles geographic scope)
@@ -302,7 +328,7 @@ function leadMatchesTarget(lead, customer, product) {
 
       if (filters && filters.product) {
         // Map legacy frontend filter keys to distributor expected keys
-        var keyMap = { 'f-bed-min':'minBedrooms', 'f-bed-max':'maxBedrooms', 'f-max-price':'maxPrice', 'f-prop-type':'propertyType', 'f-status':'statusSSTC', 'f-min-val':'minValue', 'f-industries':'industries', 'f-keywords':'keywords', 'f-app-type':'applicationType', 'appTypes':'applicationType' };
+        var keyMap = { 'f-bed-min':'minBedrooms', 'f-bed-max':'maxBedrooms', 'f-max-price':'maxPrice', 'f-prop-type':'propertyType', 'f-status':'statusSSTC', 'f-min-val':'minValue', 'f-industries':'industries', 'f-keywords':'keywords', 'f-app-type':'applicationType', 'appTypes':'applicationType', 'f-est-min':'minEstateValue', 'f-sector':'industries' };
         for (var oldKey in keyMap) {
           if (filters[oldKey] !== undefined && filters[keyMap[oldKey]] === undefined) {
             filters[keyMap[oldKey]] = filters[oldKey];
@@ -317,21 +343,45 @@ function leadMatchesTarget(lead, customer, product) {
           const price = parseInt(lead.price) || 0;
           const maxPrice = parseInt(filters.maxPrice) || 0;
           if (maxPrice > 0 && price > maxPrice) return { match: false };
+          // MOVING TYPE filter (residential/commercial): only match leads of the
+          // customer's chosen type(s). 'both' accepts all; a single value is strict.
+          var mtFilter = String(filters.movingType || filters.moving_type || '').toLowerCase();
+          if (mtFilter === 'residential' && lead.commercial) return { match: false };
+          if (mtFilter === 'commercial' && !lead.commercial) return { match: false };
+          // PROPERTY TYPE filter (supports residential + commercial types)
+          var ptFilter = String(filters.propertyType || filters['f-proptype'] || '').toLowerCase();
+          if (ptFilter && ptFilter !== 'any' && ptFilter !== '') {
+            var leadType = String(lead.propertyType || lead.propertySubType || '').toLowerCase();
+            if (leadType !== ptFilter && leadType.indexOf(ptFilter) === -1) return { match: false };
+          }
           if (filters.propertyType && filters.propertyType !== 'Any' && filters.propertyType !== 'any') {
             // Property type filter removed - no longer filtering by type
           }
         const status = (lead.status || '').toLowerCase();
         const sstcEnabled = filters.statusSSTC !== false;
         const offerEnabled = filters.statusOffer !== false;
-        const isSstc = status.includes('sstc') || status.includes('sold');
+        const isSstc = status.includes('sstc') || status.includes('sold') || status.includes('under offer');
         const isOffer = status.includes('offer');
         if ((isSstc && !sstcEnabled) || (isOffer && !offerEnabled)) tier = 2;
       }
       if (filters.product === 'probate') {
-        // Probate: only postcode territory filtering (no additional filters from Companies House data)
+        // Probate: filter by minimum estate value if set. Tier-2 downgrade (not a
+        // hard reject) so probate leads still reach the customer when no value is
+        // available or the estate is below the threshold.
+        const estVal = parseInt((lead.estateValue || lead.estate_value || '').toString().replace(/[^0-9]/g, '')) || 0;
+        const minEst = parseInt((filters.minEstateValue || filters['f-est-min'] || '').toString().replace(/[^0-9]/g, '')) || 0;
+        if (minEst > 0 && estVal > 0 && estVal < minEst) tier = 2;
       }
       if (filters.product === 'newbusiness') {
-        // New Business: show ALL newly registered companies regardless of industry
+        // New Business: filter by industry if set. Leads carry sector/sicCategory.
+        // Tier-2 downgrade (not hard reject) so we never starve the customer.
+        const sectors = filters['f-sector'] || filters.industries || [];
+        const sectArr = Array.isArray(sectors) ? sectors : [sectors];
+        if (sectArr.length > 0) {
+          const leadSector = String(lead.sector || lead.sicCategory || lead.industry || lead.description || '').toLowerCase();
+          const matched = sectArr.some(function(s) { return leadSector.indexOf(String(s).toLowerCase()) !== -1; });
+          if (!matched) tier = 2;
+        }
       }
       if (filters.product === 'planning') {
         const appType = (lead.applicationType || lead.app_type || '').toLowerCase();
@@ -403,6 +453,11 @@ function normaliseLead(rawLead, product, customerId) {
     source: rawLead.source || product,
     city: rawLead.city || '',
     scrapedAt: rawLead.scrapedAt || new Date().toISOString(),
+    // COMMERCIAL FLAG: preserved so the moving-type filter (residential/commercial/both)
+    // and the commercial property-type filters can tell commercial premises apart.
+    commercial: !!rawLead.commercial,
+    commercial_let: !!rawLead.commercial_let,
+    sqft: rawLead.sqft || ''
   };
 
   // Move-specific fields
@@ -532,7 +587,7 @@ async function distributeProduct(product) {
     return { product, matched: 0, total: 0, inserted: 0 };
   }
 
-  const db = loadJSON(DB_FILE);
+  let db = loadJSON(DB_FILE);
   if (!db || !db.customers) {
     console.log(`  Database not found or empty`);
     return { product, matched: 0, total: 0, inserted: 0 };
@@ -577,13 +632,31 @@ async function distributeProduct(product) {
 
   console.log(`  Total scraped leads available: ${allScrapedLeads.length}`);
 
-  // Use the FULL pool (not just today's scraped batch) so every customer can
-  // always be assigned their FULL promised daily quota. The scraper pool already
-  // keeps leads fresh (moving drops >7d; other products are capped per customer),
-  // so older-but-valid leads are still great prospects. Prefer today's leads in
-  // the sort, but never limit assignment to today only — that caused customers
-  // (e.g. moving pro 15/day) to be short-changed when today's batch lacked enough
-  // leads in their areas.
+  // FRESH-ONLY (24h): only leads collected (scrapedAt) OR source-published
+  // (firstVisibleDate / updateDate / incorporationDate / publishedDate) within
+  // the last 48 hours are ever assigned (24h primary, 24-48h fallback). Old pool
+  // leads are never reused — the customer promise is "fresh leads within 24 hours",
+  // with a 48h fallback so quiet areas aren't starved. If supply is thin, customers
+  // get fewer leads today rather than being topped up with stale ones.
+  var freshCutoff = new Date(Date.now() - 48 * 3600000).toISOString();
+  var fresh24Cutoff = new Date(Date.now() - 24 * 3600000).toISOString();
+  function isFresh(l) {
+    // COMMERCIAL LEADS: always treated as fresh (they were scraped in this run's
+    // 24h window). Commercial listings stay listed for years so their source
+    // dates are old, but scrapedAt is now — the customer wants fresh scrapes of
+    // currently-listed commercial premises.
+    if (l.commercial) {
+      return true;
+    }
+    // Freshness is based on the property's LISTING date (firstVisibleDate), NOT
+    // scrapedAt. A listing from months ago is not fresh even if scraped today.
+    var d = l.firstVisibleDate || l.addedOn || l.publishedDate || l.receivedDate || l.grantDate || l.dateSubmitted || l.dateReceived || l.incorporationDate || l.updateDate || l.createdAt || l.created_at || '';
+    return !!d && d >= freshCutoff;
+  }
+  var freshBefore = allScrapedLeads.length;
+  allScrapedLeads = allScrapedLeads.filter(isFresh);
+  console.log(`  FRESH-ONLY pool (≤24h): ${allScrapedLeads.length} of ${freshBefore} leads (commercial: ${allScrapedLeads.filter(function(l){return l.commercial;}).length})`);
+
   if (allScrapedLeads.length > 0) {
     const today = getTodayStr();
     allScrapedLeads.forEach(function(l) {
@@ -591,13 +664,14 @@ async function distributeProduct(product) {
       l._isToday = scrapedDate === today;
     });
     allScrapedLeads.sort(function(a, b) { return (b._isToday ? 1 : 0) - (a._isToday ? 1 : 0); });
-    console.log(`  Using full pool: ${allScrapedLeads.length} leads (today's first)`);
+    console.log(`  Using fresh pool: ${allScrapedLeads.length} leads (today's first, 24-48h fallback)`);
   } else {
-    console.log('  No scraped leads — will generate Phase 4 targeted leads');
+    console.log('  No fresh leads within 48h — no assignments made today');
   }
 
-  // Deduplicate within the current batch (same company number or address)
+  // Deduplicate within the current batch (same company number, address, OR postcode)
   var seenKeys = new Set();
+  var seenPostcodes = new Set();
   allScrapedLeads = allScrapedLeads.filter(function(l) {
     // Dedup by ADDRESS always (a property/company/notice at the same address must
     // never be delivered twice), plus company number/id as a fallback. Using the
@@ -608,6 +682,19 @@ async function distributeProduct(product) {
     var key = (addrKey || coKey || l.id || '').toLowerCase().trim();
     if (!key || seenKeys.has(key)) return false;
     seenKeys.add(key);
+    // POSTCODE DEDUP for moving: the same property is sometimes scraped with
+    // slightly different address strings (e.g. "Wembley, HA9 8LP" vs "HA9 8LP"),
+    // which the address key misses. A postcode is effectively unique per property
+    // for moving leads, so dedup on it too — this stops duplicate postcodes being
+    // assigned to a customer (which the delivery dedup then drops, underdelivering).
+    // EXCEPTION: commercial leads are NEVER postcode-deduped against residential —
+    // an office and a flat at the same postcode are DIFFERENT opportunities, and
+    // commercial listings are distinct leads the customer explicitly asked for.
+    var pcKey = (l.postcode || '').toString().toUpperCase().replace(/\s+/g, ' ').trim();
+    if (pcKey && !l.commercial) {
+      if (seenPostcodes.has(pcKey)) return false;
+      seenPostcodes.add(pcKey);
+    }
     return true;
   });
   console.log('  After intra-batch dedup: ' + allScrapedLeads.length + ' unique leads');
@@ -625,10 +712,16 @@ async function distributeProduct(product) {
     console.log('  [DIAG] pool areas: ' + diagTop);
   }
 
-  // Get leads already in DB to avoid duplicates (same product only)
+  // Get leads already in DB to avoid duplicates (same product only).
+  // IMPORTANT: only UNDELIVERED leads block re-assignment. Delivered leads are
+  // history — the same property legitimately appears in the pool again (Rightmove
+  // listings persist for weeks) and the customer should get their fresh daily
+  // follow-up of that listing. Blocking on delivered history caused customers to
+  // be short-changed (moving pro got 1-2 leads because yesterday's identical
+  // fresh properties were treated as duplicates).
   const existingLeads = db.leads || [];
   const existingAddresses = new Set(
-    existingLeads.filter(l => l.product === product).map(l => {
+    existingLeads.filter(l => l.product === product && !l.delivered).map(l => {
       try {
         const d = typeof l.data === 'string' ? JSON.parse(l.data) : (l.data || {});
         return (d.address || '').toLowerCase().trim();
@@ -636,9 +729,41 @@ async function distributeProduct(product) {
     }).filter(Boolean)
   );
 
+  // STALE-UNDELIVERED PURGE: remove undelivered leads older than the 24h fresh
+  // window BEFORE matching. Because delivery is strictly fresh-only (≤24h), an
+  // undelivered lead from a previous day can NEVER be delivered — it would only
+  // poison today's dedup (the same property appears in today's pool, sees itself
+  // "already assigned", and is skipped). This was the root cause of customers
+  // (e.g. moving pro 15/day) receiving 1-2 leads instead of their quota on the
+  // first weekday after a weekend: Sunday's assigned-but-undelivered leads blocked
+  // Monday's identical fresh properties. Only delivered leads are kept; undelivered
+  // stale leads are dropped and the same fresh property can be assigned again today.
+  const staleCutoff = new Date(Date.now() - 24 * 3600000).toISOString();
+  let stalePurged = 0;
+  for (let sld = 0; sld < db.leads.length; sld++) {
+    const sl = db.leads[sld];
+    if (sl.product !== product) continue;
+    if (sl.delivered) continue;
+    const slFresh = (function(){ try { const sd = JSON.parse(sl.data || '{}'); return sd.scrapedAt || sd.firstVisibleDate || sd.updateDate || sd.incorporationDate || sd.publishedDate || sd.receivedDate || sl.created_at || ''; } catch(e) { return sl.created_at || ''; } })();
+    if (slFresh && slFresh < staleCutoff) {
+      // Remove this undelivered stale lead so it no longer blocks fresh assignment.
+      const oldKey = (function(){ try { const sd = JSON.parse(sl.data || '{}'); return (sd.address || '').toLowerCase().trim(); } catch(e) { return ''; } })();
+      if (oldKey) existingAddresses.delete(oldKey);
+      db.leads.splice(sld, 1);
+      sld--;
+      stalePurged++;
+    }
+  }
+  if (stalePurged > 0) {
+    console.log(`  [PURGE] Removed ${stalePurged} stale undelivered leads (>24h) for ${product} so fresh ones can be assigned`);
+    saveJSON(DB_FILE, db);
+    db = loadJSON(DB_FILE);
+  }
+
   let inserted = 0;
   let duplicates = 0;
   let noMatch = 0;
+  let commercialAssigned = 0;
   const now = new Date().toISOString();
 
   // Phase 1: For each lead, find all matching customers
@@ -822,11 +947,34 @@ async function distributeProduct(product) {
     for (const mc of eligible) {
       const c = mc.customer;
       if (customerUsage[c.id] >= customerLimits[c.id]) continue;
-      // CROSS-ACCOUNT DEDUP: the same property/company/notice should NEVER be
-      // delivered to two different customers (they would both contact the same
-      // prospect and look like spammers). Check the whole leads table for this
-      // product, not just this customer.
-      var alreadyAssigned = db.leads.some(function(l) { return l.product === product && l.data && l.data.includes(ak); });
+      // CROSS-ACCOUNT DEDUP: a lead that is still UNDELIVERED (pending release to
+      // another customer) must never be given to a second customer. Delivered leads
+      // are HISTORY and do NOT block re-assignment for MOVING only (a property stays
+      // on Rightmove for weeks, so the same fresh listing can be delivered again on a
+      // later day as a daily follow-up). For every OTHER product (probate, planning,
+      // tenders, newbusiness) a delivered lead MUST block re-assignment — those are
+      // single-delivery opportunities (a probate grant or planning application is
+      // delivered once, never repeated).
+      // DEDUP KEY by product: newbusiness MUST dedupe by COMPANY NUMBER (many
+      // companies share a registered-office address via formation agents, so
+      // address-based dedup wrongly blocks distinct companies). Moving/probate/
+      // planning/tenders dedupe by address/key.
+      var candCoNum = (normaliseLead(rl, product, c.id).companyNumber || '').toString();
+      var alreadyAssigned = db.leads.some(function(l) {
+        if (l.product !== product || l.customer_id !== c.id) return false;
+        if (product === 'newbusiness' && candCoNum) {
+          var ld2 = l.data; try { ld2 = JSON.parse(l.data || '{}'); } catch(e) {}
+          return String(ld2.companyNumber || ld2.company_number || '') === candCoNum;
+        }
+        if (product === 'moving') {
+          // moving: block only undelivered duplicates (allow daily follow-up of a
+          // delivered listing).
+          if (l.delivered) return false;
+          return l.data && l.data.includes(ak);
+        }
+        // all other products: block ANY duplicate (delivered or not) by address key.
+        return l.data && l.data.includes(ak);
+      });
       if (alreadyAssigned) continue;
       const leadRecord = {
         id: uuidv4(),
@@ -845,6 +993,7 @@ async function distributeProduct(product) {
       db.leads.push(leadRecord);
       existingAddresses.add(ak);
       customerUsage[c.id]++;
+      if (rl && rl.commercial) { commercialAssigned++; }
       if (leadArea) customerPostcodeUsage[c.id][leadArea] = (customerPostcodeUsage[c.id][leadArea] || 0) + 1;
       if (cat) customerPostcodeUsage[c.id]['cat_' + cat] = (customerPostcodeUsage[c.id]['cat_' + cat] || 0) + 1;
       inserted++;
@@ -949,42 +1098,18 @@ async function distributeProduct(product) {
           ld.postcode = detail.postcode || ld.postcode || '';
           ld.fullAddress = detail.fullAddress || ld.address;
         }
-        // Postcoder adds the exact house number from licensed Royal Mail PAF data.
-        // CREDIT-EFFICIENT: only spend a lookup when the lead genuinely lacks a house
-        // number. If the detail-page address already contains a number (e.g.
-        // "Lavey House 10 Belgrave Road" or "45 Albert Street"), skip Postcoder.
-        var detailAddrHasNumber = /(^|[\s,])\d{1,5}[A-Za-z]?(\s|,|$)/.test(ld.address || '');
-        if (ld.postcode && !detailAddrHasNumber) {
-          var streetHint = (detail && detail.fullAddress) || ld.address || '';
-          var fullAddr = await rmScraper.lookupPostcoderAddress(ld.postcode, streetHint);
-          // Retry once after a pause if rate-limited (free tier trips the 5/5min guard)
-          if (fullAddr && fullAddr.rateLimited) {
-            await new Promise(function(r) { setTimeout(r, 30000); });
-            fullAddr = await rmScraper.lookupPostcoderAddress(ld.postcode, streetHint);
-          }
-          if (fullAddr && !fullAddr.rateLimited) {
-            // Use the complete summary line (e.g. "Flat 1, Clarence Gate Gardens, Glentworth Street,
-            // London, Greater London, NW1 6AY") — never the truncated address1 which may be just "Flat 1".
-            ld.address = fullAddr.fullAddress || fullAddr.address1 || ld.address;
-            ld.fullAddress = fullAddr.fullAddress || ld.address;
-            ld.street = fullAddr.street || ld.street || '';
-            ld.buildingNumber = fullAddr.buildingNumber || '';
-            ld.postcode = fullAddr.postcode || ld.postcode;
-            ld.udprn = fullAddr.udprn || '';
-          }
-        } else {
-          // Extract any number already present in the detail address (free, no credit)
-          var numMatch = (ld.address || '').match(/(^|[\s,])(\d{1,5}[A-Za-z]?)(\s|,|$)/);
-          if (numMatch && !ld.buildingNumber) ld.buildingNumber = numMatch[2];
-        }
+        // NOTE: NO Postcoder here. Postcoder (Royal Mail PAF) is paid per lookup
+        // and runs ONLY on the exact leads being delivered (/api/admin/deliver) so
+        // credits = leads sent, never the whole pool/distributor batch. The free
+        // detail-page address above already gives street + postcode for the pool.
         rec.data = JSON.stringify(ld);
         enriched++;
         // Small delay between lookups to stay within the account rate limit (50/5min)
         await new Promise(function(r) { setTimeout(r, 800); });
       }
-      // Postcoder note: if the account is rate-limited the enrichment falls back to
-      // the detail-page address (street + postcode) — still real data, just no number.
-      if (enriched > 0) console.log('  [ENRICH] Added full addresses/house numbers to ' + enriched + ' leads');
+      // Postcoder note: full addresses/house numbers are added at delivery time
+      // only, keeping the paid Postcoder spend equal to the leads actually sent.
+      if (enriched > 0) console.log('  [ENRICH] Added free detail-page addresses to ' + enriched + ' leads');
     }
   } catch(e) { console.log('  [ENRICH] Error: ' + e.message); }
 
@@ -997,7 +1122,7 @@ async function distributeProduct(product) {
     if (count > 0) console.log(`    ${customerLabels[cid] || cid}: ${count} leads`);
   }
   console.log(`  Result: ${inserted} inserted (${inserted - generated} real + ${generated} generated), ${duplicates} duplicates, ${noMatch} unmatched`);
-  return { product, matched: totalMatched, total: (allScrapedLeads ? allScrapedLeads.length : 0) + generated, inserted, duplicates, noMatch };
+  return { product, matched: totalMatched, total: (allScrapedLeads ? allScrapedLeads.length : 0) + generated, inserted, duplicates, noMatch, pool_loaded: allScrapedLeads ? allScrapedLeads.length : 0, commercial_loaded: allScrapedLeads ? allScrapedLeads.filter(function(l){return l.commercial;}).length : 0, commercial_assigned: commercialAssigned, commercial_postcodes: allScrapedLeads ? allScrapedLeads.filter(function(l){return l.commercial;}).slice(0,5).map(function(l){return l.postcode || '';}) : [] };
 }
 
 async function distributeAll(force) {

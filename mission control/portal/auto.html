@@ -1,0 +1,267 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auto Print &amp; Post · 9amLeads</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{--accent:#0ea5e9;--bg:#f8fafc;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--text2:#64748b;--muted:#94a3b8;--success:#22c55e;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.5}
+.top{background:#fff;border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.top .logo{font-family:var(--ff-h);font-size:20px;font-weight:900;color:var(--text)}.top .logo span{color:var(--accent)}
+.top .nav{display:flex;gap:4px;flex-wrap:wrap}.top .nav a{padding:8px 16px;font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;border-radius:6px;transition:.2s}.top .nav a:hover{color:var(--text);background:#f1f5f9}.top .nav a.active{color:var(--accent);background:#eff6ff}
+.container{max-width:1100px;margin:0 auto;padding:28px 24px}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.page-header h1{font-family:var(--ff-h);font-size:22px;font-weight:800}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;text-decoration:none;font-family:var(--ff-b);transition:.2s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-outline{background:#fff;color:var(--text2);border:1px solid var(--border)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.sect-title{font-family:var(--ff-h);font-size:15px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+#toast{position:fixed;bottom:24px;right:24px;background:#1e293b;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;z-index:999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+@media(max-width:768px){.container{padding:20px 16px}.top{padding:12px 16px}.top .nav a{padding:6px 10px;font-size:12px}}
+</style></head><body>
+<div class="top">
+<div class="logo">9am<span>Leads</span></div>
+<div class="nav"><a href="/portal/dashboard.html">Dashboard</a><a href="/portal/leads.html">My Leads</a><a href="/portal/direct-mail.html">Print &amp; Post</a><a href="#" class="active">Auto Print &amp; Post</a><a href="#" onclick="doLogout();return false" style="color:#dc2626;font-weight:700"><i class="fas fa-sign-out-alt"></i> Logout</a></div>
+</div>
+<div class="container">
+<div class="page-header">
+<div><h1><i class="fas fa-robot" style="color:var(--success);margin-right:6px"></i> Auto Print &amp; Post</h1><div class="sub" style="font-size:13px;color:var(--text2);margin-top:2px">Your new leads are printed and posted automatically, every day at 9am</div></div>
+</div>
+
+<!-- Auto Print & Post -->
+<div class="card" id="auto-pp-card">
+<div class="sect-title"><i class="fas fa-robot" style="color:var(--success)"></i> Auto Print &amp; Post <span id="auto-pp-badge" style="margin-left:auto;font-size:10px;font-weight:700;color:var(--muted);background:#f1f5f9;padding:2px 10px;border-radius:20px">OFF</span></div>
+<div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px;background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+  <b style="color:var(--text)">How it works. You don't have to lift a finger:</b>
+  <ol style="margin:6px 0 0 18px;padding:0">
+    <li>Your new leads arrive in your inbox <b>every morning at 9am</b>.</li>
+    <li>We <b>automatically print &amp; post</b> your materials to those leads, using your saved leaflet/letter and cover letter.</li>
+    <li>You're charged automatically for exactly what was sent (e.g. 12 letters &times; &pound;1.49 = &pound;17.88), from the card saved on your account.</li>
+    <li>You get a <b>confirmation email each time a batch is sent</b>, and every lead is marked "Posted" in your dashboard.</li>
+    <li>Choose <b>"Send once"</b>, or <b>"Send now + 2 weeks + 4 weeks"</b>. For repeat, the same leads are automatically mailed again at 2 weeks and 4 weeks (already paid for), each with its own confirmation email.</li>
+  </ol>
+  <div style="margin-top:8px;font-size:11px;color:var(--muted)">You control it with a daily spend limit, a monthly cap, and you can switch it off anytime. No mailing = no charge.</div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<div style="flex:1;min-width:200px">
+<div style="font-size:13px;font-weight:700;color:var(--text)">Automatic daily mailing</div>
+<div style="font-size:11px;color:var(--muted)" id="auto-pp-detail">Switch on to mail your new leads automatically after 9am.</div>
+</div>
+<label class="switch" style="position:relative;display:inline-block;width:58px;height:32px;flex-shrink:0">
+<input type="checkbox" id="auto-pp-toggle" onchange="autoPpToggle(this.checked)" style="opacity:0;width:0;height:0">
+<span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#cbd5e1;border-radius:32px;transition:.3s"></span>
+<span style="position:absolute;content:'';height:26px;width:26px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
+</label>
+</div>
+
+<!-- What to send. which mailpiece auto-send creates for each lead -->
+<div id="auto-pp-mt-wrap" style="margin-top:14px;border:1px solid var(--border);border-radius:10px;padding:14px">
+  <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px"><i class="fas fa-mail-bulk" style="color:var(--accent);margin-right:4px"></i> What to send</div>
+  <div style="font-size:12px;color:var(--text2);line-height:1.7">Choose what we print &amp; post to each new lead automatically. We use your saved materials from Print &amp; Post setup.</div>
+  <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap" id="auto-pp-mt-options">
+    <button type="button" class="mt-opt" data-mt="letter" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;font-family:inherit;text-align:left;transition:.2s"><div style="font-size:13px;font-weight:700">A4 Letter</div><div style="font-size:11px;color:var(--muted);margin-top:2px">£1.49 each</div></button>
+    <button type="button" class="mt-opt" data-mt="flyer" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;font-family:inherit;text-align:left;transition:.2s"><div style="font-size:13px;font-weight:700">A5 Flyer</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Front + back · £1.99 each</div></button>
+    <button type="button" class="mt-opt" data-mt="flyer_plus_letter" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;font-family:inherit;text-align:left;transition:.2s"><div style="font-size:13px;font-weight:700">Leaflet + Letter</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Both · £2.99 each</div></button>
+  </div>
+  <div id="auto-pp-mt-warn" style="display:none;margin-top:10px;padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#92400e;line-height:1.6"></div>
+</div>
+
+<!-- Send schedule. auto-send always sends each lead once per day -->
+<div id="auto-pp-schedule-wrap" style="margin-top:14px;border:1px solid var(--border);border-radius:10px;padding:14px">
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px"><i class="fas fa-calendar-alt" style="color:var(--accent);margin-right:4px"></i> How often each lead is mailed</div>
+<div style="font-size:12px;color:var(--text2);line-height:1.7">Auto Print &amp; Post sends <b>each new lead once</b>, on the day it arrives at 9am. No repeats, no scheduling to manage.</div>
+<div style="margin-top:10px;font-size:12px;color:var(--text2);line-height:1.7"><b style="color:var(--text)"><i class="fas fa-redo-alt" style="color:var(--accent)"></i> Follow-ups. you choose when</b>
+<ul style="margin:6px 0 0 18px;padding:0">
+<li><b>Send a follow-up any time:</b> after a lead has been mailed, it stays on your <b>My Leads</b> page with a <b>"Post Again"</b> button. Click it to send them another letter or flyer whenever you want. 2 weeks, a month, or any date you choose.</li>
+<li><b>Bulk follow-ups:</b> on My Leads, use <b>Select All</b> on the week or month view, then <b>Print &amp; Post</b> to re-mail all of them in one go.</li>
+<li><b>Repeat on send:</b> when sending a lead, you can optionally pick "now + 2 weeks + 1 month" to pre-schedule follow-ups automatically.</li>
+</ul>
+<div style="margin-top:10px;padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#92400e;line-height:1.7"><b><i class="fas fa-lightbulb"></i> Why following up matters:</b> Most conversions don't happen on the first contact. Following up a lead a week or two later. whether by <b>re-sending a letter</b>, dropping in <b>person</b>, or making a <b>phone call</b>. dramatically increases your chances of winning the work. One follow-up can be the difference between "we found someone else" and a signed job.</div>
+<div style="margin-top:8px;font-size:11px;color:var(--muted)">Each follow-up mailing is charged separately when you send it (letter £1.49 / leaflet £1.99 / leaflet + letter £2.99 each).</div>
+</div>
+<input type="hidden" id="auto-pp-schedule" value="once">
+</div>
+<div id="auto-pp-status" style="font-size:12px;color:var(--success);margin-top:8px"></div>
+<div id="auto-pp-card-status" style="font-size:12px;margin-top:10px;padding:12px 14px;border-radius:10px;display:none"></div>
+<div id="auto-pp-card-setup" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:10px;padding:14px">
+  <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px"><i class="fas fa-credit-card" style="color:var(--accent);margin-right:4px"></i> Save a card for automatic billing</div>
+  <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:8px">Auto Print &amp; Post charges your card automatically each day it sends leads (e.g. 12 letters &times; &pound;1.49 = &pound;17.88). We'll only charge when leads are actually mailed, up to your daily spend limit.</div>
+  <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:10px"><b style="color:var(--text)">How to save it:</b>
+    <ol style="margin:4px 0 0 18px;padding:0">
+      <li>Click <b>"Save Card Securely"</b> below.</li>
+      <li>You'll be taken to a secure <b>Stripe page to enter your card</b> (we never see your card number).</li>
+      <li>This only <b>stores your card</b> for future auto-billing. <b>No charge is made now.</b></li>
+      <li>You'll be brought back here and Auto Print &amp; Post billing will be ready.</li>
+    </ol>
+  </div>
+  <div style="font-size:11px;color:#16a34a;font-weight:700;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 10px;margin-bottom:10px"><i class="fas fa-info-circle"></i> You will <u>not</u> be charged today. The card is only saved so we can charge you automatically when leads are actually mailed.</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="autoPpSaveCard()" id="auto-pp-savecard-btn" style="justify-content:center"><i class="fas fa-lock"></i> Save Card Securely</button>
+    <button class="btn btn-outline" onclick="document.getElementById('auto-pp-card-setup').style.display='none'" style="justify-content:center">Cancel</button>
+  </div>
+  <div id="auto-pp-card-msg" style="font-size:11px;color:var(--muted);margin-top:8px">Secure &amp; encrypted via Stripe. No mailing = no charge.</div>
+</div>
+</div>
+
+<!-- Settings note -->
+<div class="card">
+<div class="sect-title"><i class="fas fa-info-circle" style="color:var(--accent)"></i> Before you switch on</div>
+<div style="font-size:12px;color:var(--text2);line-height:1.7">Make sure your <a href="/portal/direct-mail.html" style="color:var(--accent);font-weight:600">Print &amp; Post setup</a> is complete first: your business profile, leaflet and cover letter. Auto Print &amp; Post uses those saved materials for every mailing.</div>
+</div>
+
+</div>
+<div id="toast"></div>
+<script>
+var _token='';
+function api(method,path,body,cb){
+  var x=new XMLHttpRequest();
+  x.open(method,path,true);
+  x.setRequestHeader('Authorization','Bearer '+_token);
+  if(body)x.setRequestHeader('Content-Type','application/json');
+  x.onload=function(){try{cb(null,JSON.parse(x.responseText));}catch(e){cb(null,x.responseText);}};
+  x.onerror=function(){cb('network');};
+  x.send(body?JSON.stringify(body):null);
+}
+function doLogout(){if(confirm('Log out?')){localStorage.removeItem('mld_portal_session');window.location.href='/portal/';}}
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(function(){t.style.display='none';},3000);}
+
+// ===== AUTO PRINT & POST =====
+var _autoMt=''; // current 'what to send' selection (letter | flyer | flyer_plus_letter)
+var _hasFlyer=false, _hasLetter=false; // material readiness from auto-status
+function autoMtSelect(mt, alsoSave){
+  _autoMt=mt;
+  var opts=document.querySelectorAll('.mt-opt');
+  for(var i=0;i<opts.length;i++){
+    var b=opts[i];
+    if(b.getAttribute('data-mt')===mt){ b.style.borderColor='var(--accent)'; b.style.background='#eff6ff'; b.style.boxShadow='0 0 0 2px rgba(14,165,233,.2)'; }
+    else { b.style.borderColor='var(--border)'; b.style.background='#fff'; b.style.boxShadow='none'; }
+  }
+  var warn=document.getElementById('auto-pp-mt-warn');
+  if(warn){
+    if(mt==='flyer'&&!_hasFlyer){ warn.style.display='block'; warn.textContent='You haven\'t uploaded a flyer front/back in Print & Post setup yet. Please add them before choosing A5 Flyer.'; }
+    else if(mt==='flyer_plus_letter'&&(!_hasFlyer||!_hasLetter)){ warn.style.display='block'; warn.textContent='Leaflet + Letter needs a flyer (front/back) and a cover letter. Please complete them in Print & Post setup first.'; }
+    else { warn.style.display='none'; }
+  }
+  if(alsoSave) autoPpSaveMt(mt);
+}
+function autoPpSaveMt(mt){
+  // Only persist when auto-send is currently ON (so picking a "what to send" option
+  // doesn't accidentally switch auto-send on). auto-toggle merges settings (doesn't
+  // clobber the customer's template, spend limits, or lead filters) and persists
+  // mail_type + default_format for auto-send.
+  var toggle=document.getElementById('auto-pp-toggle');
+  if(!toggle||!toggle.checked) return;
+  api('POST','/api/direct-mail/auto-toggle',{enable:true, send_schedule:'once', mail_type:mt, default_format:(mt==='letter'?'letter_a4':mt==='flyer'?'flyer_a5_portrait':'flyer_plus_letter')},function(err,d){});
+}
+function autoPpLoad(){
+  api('GET','/api/direct-mail/auto-status',null,function(err,d){
+    if(!d||!d.success)return;
+    var toggle=document.getElementById('auto-pp-toggle');
+    var badge=document.getElementById('auto-pp-badge');
+    var detail=document.getElementById('auto-pp-detail');
+    var status=document.getElementById('auto-pp-status');
+    var cardStatus=document.getElementById('auto-pp-card-status');
+    var cardSetup=document.getElementById('auto-pp-card-setup');
+    if(toggle) toggle.checked=!!d.enabled;
+    if(badge){
+      if(d.enabled){ badge.textContent='ON'; badge.style.color='#16a34a'; badge.style.background='#f0fdf4'; badge.style.border='1px solid #bbf7d0'; }
+      else { badge.textContent='OFF'; badge.style.color='var(--muted)'; badge.style.background='#f1f5f9'; badge.style.border='none'; }
+    }
+    // Material readiness + what-to-send selection
+    _hasFlyer=!!d.has_flyer;
+    _hasLetter=!!d.has_letter;
+    var mt=d.mail_type||'letter';
+    if(mt==='flyer_plus_letter'&&!_hasFlyer&&!_hasLetter) mt='letter';
+    else if(mt==='flyer'&&!_hasFlyer) mt='letter';
+    autoMtSelect(mt, false);
+    if(detail){
+      var fmtName = d.default_format ? String(d.default_format).replace(/_/g,' ') : (d.mail_type==='letter'?'A4 letter':d.mail_type);
+      if(d.enabled){
+        detail.textContent='Using your saved "'+(d.template_name||'materials')+'" for '+(d.mail_type||'letter')+' ('+fmtName+', £'+((d.cost_per_item||0).toFixed(2))+') up to £'+d.max_daily_spend+'/day. Each new lead is mailed once.';
+      }
+      else if(!d.ready) detail.textContent='Complete your Print & Post setup (business info + cover letter) to unlock Auto Print & Post.';
+      else detail.textContent='Ready to go. Uses your saved "'+(d.template_name||'materials')+'". Switch on below.';
+    }
+    if(status) status.textContent='';
+    if(cardStatus){
+      if(d.enabled){
+        cardStatus.innerHTML = d.has_card
+          ? '<span style="color:#16a34a"><i class="fas fa-check-circle"></i> Card on file for auto-billing. You\'ll be charged automatically only when leads are mailed.</span>'
+          : '<span style="color:#f59e0b"><i class="fas fa-exclamation-triangle"></i> No card on file. Auto Print &amp; Post can\'t charge you yet. Save a card below.</span>';
+        cardStatus.style.background = d.has_card ? '#f0fdf4' : '#fffbeb';
+        cardStatus.style.border = d.has_card ? '1px solid #bbf7d0' : '1px solid #fde68a';
+        cardStatus.style.display='block';
+        if(cardSetup) cardSetup.style.display = d.has_card ? 'none' : 'block';
+      } else {
+        cardStatus.style.display='none';
+        if(cardSetup && d.ready) cardSetup.style.display = 'block';
+      }
+    }
+    if(toggle&&!d.ready){ toggle.disabled=true; }
+  });
+}
+function autoPpToggle(enabled){
+  var status=document.getElementById('auto-pp-status');
+  var toggle=document.getElementById('auto-pp-toggle');
+  status.style.color='var(--accent)';
+  status.textContent='Saving...';
+  // Send the customer's chosen "what to send" (letter / flyer / leaflet+letter) and
+  // schedule (once). The backend persists mail_type + default_format for auto-send.
+  var sendMt=_autoMt||'letter';
+  var sendFmt=(sendMt==='letter'?'letter_a4':sendMt==='flyer'?'flyer_a5_portrait':'flyer_plus_letter');
+  api('POST','/api/direct-mail/auto-toggle',{enable:enabled, send_schedule:'once', mail_type:sendMt, default_format:sendFmt},function(err,d){
+    if(d&&d.success){
+      status.style.color='var(--success)';
+      status.textContent=d.message;
+      autoPpLoad();
+    } else {
+      status.style.color='#dc2626';
+      status.textContent=(d&&d.error)||'Could not update. Please try again.';
+      if(toggle) toggle.checked=!enabled;
+    }
+  });
+}
+function autoPpSaveCard(){
+  var msg=document.getElementById('auto-pp-card-msg');
+  var btn=document.getElementById('auto-pp-savecard-btn');
+  if(msg){msg.textContent='Opening secure Stripe page...';msg.style.color='var(--accent)';}
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Opening...';}
+  api('POST','/api/direct-mail/auto-card/session',{},function(err,d){
+    if(d&&d.success&&d.checkout_url){
+      window.location.href=d.checkout_url;
+    } else {
+      if(msg){msg.textContent=(d&&d.error)||'Could not start card setup. Please try again.';msg.style.color='#dc2626';}
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-lock"></i> Save Card Securely';}
+    }
+  });
+}
+function autoPpCardReturn(){  var qp=new URLSearchParams(window.location.search);
+  var saved=qp.get('auto_card');
+  if(saved==='saved'){
+    var status=document.getElementById('auto-pp-status');
+    if(status){status.style.color='#16a34a';status.textContent='✅ Card saved. Auto Print &amp; Post billing is ready.';}
+    try{history.replaceState(null,'',window.location.pathname+window.location.search.replace(/[?&]auto_card=[^&]*/g,'').replace(/^&/,'?'));}catch(e){}
+  } else if(saved==='cancelled'){
+    var status=document.getElementById('auto-pp-status');
+    if(status){status.style.color='#f59e0b';status.textContent='Card save cancelled. You can retry anytime.';}
+    try{history.replaceState(null,'',window.location.pathname+window.location.search.replace(/[?&]auto_card=[^&]*/g,'').replace(/^&/,'?'));}catch(e){}
+  }
+  if(saved) autoPpLoad();
+}
+
+(function(){
+  var sd=localStorage.getItem('mld_portal_session');
+  if(!sd){window.location.href='/portal/';return;}
+  var sess=JSON.parse(sd);_token=sess.token;
+  if(!_token){window.location.href='/portal/';return;}
+  var opts=document.querySelectorAll('.mt-opt');
+  for(var i=0;i<opts.length;i++){
+    opts[i].addEventListener('click',function(){ autoMtSelect(this.getAttribute('data-mt'), true); });
+  }
+  autoPpLoad();
+  autoPpCardReturn();
+})();
+</script>
+</body></html>

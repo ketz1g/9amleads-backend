@@ -45,7 +45,7 @@ h1 span{color:#0ea5e9}
 
 <div class="container" id="seoPage" style="display:none">
 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px">
-<div><div style="display:flex;align-items:center;gap:8px"><div style="width:32px;height:32px;background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;font-family:'Outfit',sans-serif"><i class="fas fa-search"></i></div><h1>SEO &amp; <span>Blog</span></h1></div><p class="sub" style="margin-bottom:0">Automated SEO engine — blog posts, sitemap, indexing</p></div>
+<div><div style="display:flex;align-items:center;gap:8px"><div style="width:32px;height:32px;background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;font-family:'Outfit',sans-serif"><i class="fas fa-search"></i></div><h1>SEO &amp; <span>Blog</span></h1></div><p class="sub" style="margin-bottom:0">Automated SEO engine. blog posts, sitemap, indexing</p></div>
 <div style="display:flex;gap:8px">
 <a href="/portal/admin.html" class="btn btn-outline btn-sm"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
 <a href="/portal/" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Portal</a>
@@ -102,7 +102,7 @@ async function adminLogin() {
   const d = await verifyPass(pass);
   if (btn) { btn.innerHTML = '<i class="fas fa-lock"></i> Sign In'; btn.disabled = false; }
   if (!d.valid) {
-    document.getElementById('loginError').textContent = (d.error === 'server_unreachable') ? 'Cannot reach server. Waking it up — wait 30s and try again.' : 'Incorrect password (server rejected login)';
+    document.getElementById('loginError').textContent = (d.error === 'server_unreachable') ? 'Cannot reach server. Waking it up. wait 30s and try again.' : 'Incorrect password (server rejected login)';
     document.getElementById('loginError').style.display = 'block';
     return;
   }

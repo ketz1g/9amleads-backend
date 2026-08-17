@@ -56,7 +56,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 .badge{padding:3px 10px;border-radius:5px;font-size:9px;font-weight:700;background:rgba(34,197,94,.08);color:var(--success);white-space:nowrap}
 .mail-btn{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:7px 14px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#2563eb);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--ff-b);transition:.2s;box-shadow:0 2px 8px rgba(14,165,233,.25)}
 .mail-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(14,165,233,.35)}
-.badge-sstc{background:rgba(245,158,11,.08);color:#d97706}
+.badge-new{background:rgba(245,158,11,.08);color:#d97706}
 .empty{text-align:center;padding:60px 20px;color:var(--text2)}
 .empty i{font-size:40px;color:var(--border);display:block;margin-bottom:10px}
 .loading{text-align:center;padding:60px;color:var(--text2);font-size:13px}
@@ -106,10 +106,12 @@ footer a{color:var(--accent);text-decoration:underline}
 <button class="tab" data-range="all" onclick="setRange('all')"><i class="fas fa-database" style="font-size:11px;margin-right:4px"></i>All Time <span class="tab-count" id="tab-all">0</span></button>
 </div>
 
+<div style="font-size:11px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6"><b>ℹ️ Quiet days:</b> On days when fewer fresh leads are available in your exact postcode areas, we send you the leads <b>closest to your chosen postcodes</b> so you still get your full daily count. Every lead is still unique to you. No competition.</div>
+
 <div class="search-bar">
 <input type="text" id="search-input" placeholder="Search by address, postcode, company or area..." onkeyup="filterLeads()">
 <select id="status-filter" onchange="filterLeads()">
-<option value="">All statuses</option><option value="SSTC">SSTC</option><option value="New">New</option><option value="Reduced">Reduced</option><option value="Available">Available</option>
+<option value="">All statuses</option><option value="newly listed">newly listed</option><option value="New">New</option><option value="Reduced">Reduced</option><option value="Available">Available</option>
 </select>
 </div>
 
@@ -150,7 +152,7 @@ footer a{color:var(--accent);text-decoration:underline}
 <!-- Step 2: confirm schedule -->
 <div id="mp-step-confirm" style="display:none">
 <div style="background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
-<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:8px" id="mp-confirm-title">A4 Letter — repeat mailing</div>
+<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:8px" id="mp-confirm-title">A4 Letter, repeat mailing</div>
 <div id="mp-confirm-schedule" style="display:grid;gap:8px;margin-bottom:10px"></div>
 <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:10px;margin-top:4px">
 <div style="font-size:12px;color:var(--text2)">Total (one payment)</div>
@@ -229,7 +231,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + biz + '</div>' +
         '<div class="meta">' + (d.address||'') + '</div>' +
         '<div class="meta">' + metaParts.join(' \u00b7 ') + (chLink ? ' \u00b7 ' + chLink : '') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + mailBtn(l.id) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + mailBtn(l.id, d) + '</div></div>';
     } else if (product === 'probate') {
       var pName = d.deceasedName || d.name || 'Probate Estate';
       var pAddr = d.deceasedAddress || d.address || '';
@@ -246,7 +248,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + pName + '</div>' +
         '<div class="meta">' + pFullAddr + '</div>' +
         '<div class="meta">' + pMeta.join(' \u00b7 ') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + mailBtn(l.id) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + mailBtn(l.id, d) + '</div></div>';
     } else if (product === 'planning') {
       var planTitle = d.address || (d.description||'').substring(0,40) || 'Planning Application';
       var planDate = d.dateSubmitted || d.receivedDate || d.date_received || l.created_at || '';
@@ -259,7 +261,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="meta">' + planMeta.join(' \u00b7 ') + '</div>' + planDesc + planApplicant + '</div>' +
         '<div class="right"><span class="badge">' + status + '</span>' + mailBtn(l.id) + '</div></div>';
     } else if (product === 'tenders') {
-      // Tenders are applied for ONLINE (portal/email) — not via post — so show the
+      // Tenders are applied for ONLINE (portal/email), not via post, so show the
       // buyer contact + apply button instead of a Print & Post button.
       var tendTitle = d.tenderTitle || d.title || 'Opportunity';
       var tendMeta = [d.buyer || d.contractingAuthority, d.contractValueLabel && d.contractValueLabel !== '&pound' ? d.contractValueLabel : '', d.closingDate ? 'Deadline ' + new Date(d.closingDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.publishedDate ? 'Published ' + d.publishedDate : '', d.postcode].filter(Boolean);
@@ -289,13 +291,33 @@ function renderLeadList(dayLeads, noGroup) {
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + fullAddr + '</div>' +
         '<div class="meta">' + moveMeta.join(' \u00b7 ') + '</div></div>' +
-        '<div class="right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div><span class="badge ' + (status === 'SSTC' ? 'badge-sstc' : '') + '">' + status + '</span>' +
-        mailBtn(l.id) + '</div></div>';
+        '<div class="right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div><span class="badge ' + (status === 'newly listed' ? 'badge-new' : '') + '">' + status + '</span>' +
+        postBadge(d, l.id) + mailBtn(l.id, d) + '</div></div>';
     }
   }
   return html;
 }
-function mailBtn(leadId){
+function postBadge(d, leadId){
+  if (!d) return '';
+  if (d.post_status === 'posted') {
+    var postedDate = '';
+    if (d.posted_at) {
+      try { postedDate = ' · posted ' + new Date(d.posted_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); } catch(e) {}
+    }
+    var proofLink = '<a href="#" onclick="event.stopPropagation();window.open(\'/api/direct-mail/lead/' + leadId + '/proof\',\'_blank\');return false;" style="color:#fff;text-decoration:underline;font-size:10px;margin-left:4px" title="View proof of posting">View proof</a>';
+    return '<span class="badge badge-posted" title="Your materials were posted to this lead" style="background:#16a34a;color:#fff;border:none">✓ Materials Posted' + postedDate + '</span>' + proofLink;
+  }
+  if (d.post_status && d.post_status.indexOf('pending') !== -1) {
+    return '<span class="badge badge-posted" title="Payment received, being printed" style="background:#f59e0b;color:#fff;border:none">⏳ Being Printed</span>';
+  }
+  return '';
+}
+function mailBtn(leadId, d){
+  // If already posted, show a "Post Again" button (for a follow-up letter after a
+  // few weeks). keeps the posted date visible via the badge above.
+  if (d && d.post_status === 'posted') {
+    return '<button onclick="sendPrintPost(\''+leadId+'\')" title="Send a follow-up letter or flyer to this lead" class="mail-btn"><i class="fas fa-redo-alt"></i> Post Again</button>';
+  }
   return '<button onclick="sendPrintPost(\''+leadId+'\')" title="Print &amp; post a letter or flyer to this lead" class="mail-btn"><i class="fas fa-mail-bulk"></i> Print &amp; Post</button>';
 }
 var selectedLeads = [];
@@ -349,21 +371,117 @@ function updateBulkBar() {
 function bulkOpenMail() {
   if (!selectedLeads.length) { alert('Select at least one lead first'); return; }
   _pendingLeadIds = selectedLeads.slice();
-  document.getElementById('mp-addr').innerHTML = '<b>' + selectedLeads.length + ' lead' + (selectedLeads.length!==1?'s':'') + '</b> selected for bulk print &amp; post.';
+  var n = selectedLeads.length;
+  _bulkCount = n;
+  _selectedMailType='';
+  _repeatMode='once';
+  document.getElementById('mp-addr').innerHTML = '<b>' + n + ' lead' + (n!==1?'s':'') + '</b> selected for bulk print &amp; post.';
   document.getElementById('mp-error').style.display = 'none';
   var items = [
-    {t:'letter_a4',n:'A4 Letter',d:'A personal introduction letter',p:'£1.49 each'},
-    {t:'flyer_a5',n:'A5 Leaflet',d:'Full-colour leaflet (needs an uploaded design)',p:'£1.99 each'},
-    {t:'flyer_plus_letter',n:'Leaflet + Letter',d:'Leaflet with a letter inside',p:'£2.99 each'}
+    {t:'letter_a4',n:'A4 Letter',d:'A personal introduction letter',p:'£1.49 each',total:'£'+(n*1.49).toFixed(2)},
+    {t:'flyer_a5',n:'A5 Leaflet',d:'Full-colour leaflet (needs an uploaded design)',p:'£1.99 each',total:'£'+(n*1.99).toFixed(2)},
+    {t:'flyer_a5_enveloped',n:'A5 Leaflet in Envelope',d:'Premium leaflet in a windowed envelope',p:'£2.75 each',total:'£'+(n*2.75).toFixed(2)},
+    {t:'flyer_plus_letter',n:'Leaflet + Letter',d:'Leaflet with a letter inside',p:'£2.99 each',total:'£'+(n*2.99).toFixed(2)}
   ];
   var html = '';
   items.forEach(function(it){
-    html += '<button class="mp-item" onclick="doSendBulkPrintPost(\''+it.t+'\',this)">' +
-      '<div><div class="mp-name">'+it.n+'</div><div class="mp-desc">'+it.d+'</div></div>' +
-      '<div class="mp-price">'+it.p+'</div></button>';
+    html += '<button class="mp-item" onclick="bulkSelectMailType(this,\''+it.t+'\')" data-mail="'+it.t+'">' +
+      '<div><div class="mp-name">'+it.n+'</div><div class="mp-desc">'+it.d+' &middot; '+n+' item'+(n!==1?'s':'')+'</div></div>' +
+      '<div class="mp-price" style="text-align:right"><div>'+it.p+'</div><div style="font-size:12px;color:var(--accent);font-weight:700">Total '+it.total+'</div></div></button>';
   });
+  // Repeat option for bulk. Send once, or follow-ups in 2 weeks + a month
+  html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">'+
+    '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px"><i class="fas fa-redo-alt" style="color:var(--accent);margin-right:4px"></i> Repeat mailing <span style="font-weight:400;color:var(--muted);font-size:11px">(optional: follow-ups convert more)</span></div>'+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+    '<button class="mp-item" style="flex:1;min-width:120px;margin-bottom:0;padding:10px 12px" onclick="bulkSelectRepeat(this,\'once\')" data-rep="once"><div><div class="mp-name" style="font-size:12px">Send once</div><div class="mp-desc">1 mailing now</div></div></button>'+
+    '<button class="mp-item" style="flex:1;min-width:120px;margin-bottom:0;padding:10px 12px" onclick="bulkSelectRepeat(this,\'three\')" data-rep="three"><div><div class="mp-name" style="font-size:12px">Send now, then 2 weeks, then a month</div><div class="mp-desc">3 mailings &middot; charged once</div></div></button>'+
+    '</div>'+
+    '<div id="mp-repeat-summary" style="font-size:11px;color:var(--muted);margin-top:8px"></div>'+
+    '</div>';
   document.getElementById('mp-items').innerHTML = html;
+  // Preselect letter + send-once
+  bulkSelectMailType(document.querySelector('#mp-items [data-mail="letter_a4"]'),'letter_a4');
+  bulkSelectRepeat(document.querySelector('#mp-items [data-rep="once"]'),'once');
   document.getElementById('mail-modal').className = 'modal-overlay show';
+}
+var _bulkCount = 0;
+function bulkSelectMailType(el,type){
+  _selectedMailType=type;
+  document.querySelectorAll('#mp-items [data-mail]').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='#fff';});
+  if(el){el.style.borderColor='var(--accent)';el.style.background='#f0f7ff';}
+}
+function bulkSelectRepeat(el,mode){
+  _repeatMode=mode;
+  document.querySelectorAll('#mp-items [data-rep]').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='#fff';});
+  if(el){el.style.borderColor='var(--accent)';el.style.background='#f0f7ff';}
+  var sum=document.getElementById('mp-repeat-summary');
+  if(sum)sum.textContent = mode==='three'
+    ? 'All '+_bulkCount+' leads sent 3 times (now, 2 weeks, a month). One payment for the full series.'
+    : 'Each selected lead sent once.';
+}
+function bulkConfirm(){
+  // Show a clear confirm with the CORRECT multi-lead × mailings total
+  var mailType = _selectedMailType || 'letter_a4';
+  var pricePerItem = mailType==='flyer_a5'?1.99 : mailType==='flyer_a5_enveloped'?2.75 : mailType==='flyer_plus_letter'?2.99 : 1.49;
+  var label = mailType==='flyer_a5'?'A5 Leaflet':mailType==='flyer_a5_enveloped'?'A5 Leaflet in Envelope':mailType==='flyer_plus_letter'?'Leaflet + Letter':'A4 Letter';
+  var intervals = _repeatMode==='three' ? [0,14,30] : [0];
+  var scheduleHtml = '';
+  var today = new Date();
+  var intervalLabels = {0:'Send now',14:'In 2 weeks',30:'In a month'};
+  intervals.forEach(function(days, idx){
+    var d = new Date(today); d.setDate(d.getDate()+days);
+    var dateStr = d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    var perBatch = (pricePerItem * _bulkCount);
+    scheduleHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#fff;border:1px solid var(--border);border-radius:8px">'+
+      '<div style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:'+(idx===0?'var(--accent)':'#e2e8f0')+';color:'+(idx===0?'#fff':'var(--text2)')+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">'+(idx+1)+'</span>'+
+      '<div><div style="font-size:12px;font-weight:700;color:var(--text)">'+(intervalLabels[days]||('In '+days+' days'))+'</div><div style="font-size:10px;color:var(--muted)">'+_bulkCount+' item'+( _bulkCount!==1?'s':'')+' &middot; Delivered '+(days===0?'today':dateStr)+'</div></div></div>'+
+      '<div style="font-size:13px;font-weight:800;color:var(--accent)">£'+perBatch.toFixed(2)+'</div></div>';
+  });
+  document.getElementById('mp-confirm-title').textContent = label + ', '+_bulkCount+' lead'+( _bulkCount!==1?'s':'')+(_repeatMode==='three'?' · repeat mailing':'');
+  document.getElementById('mp-confirm-schedule').innerHTML = scheduleHtml;
+  var total = pricePerItem * _bulkCount * intervals.length;
+  document.getElementById('mp-confirm-total').textContent = '£'+total.toFixed(2);
+  document.getElementById('mp-error').style.display='none';
+  mpShowStep(2);
+}
+function bulkBack(){ mpShowStep(1); }
+function bulkPay(){
+  var mailType = _selectedMailType || 'letter_a4';
+  var resolved = resolveMailType(mailType);
+  // Bulk repeat: send all selected leads now + follow-ups (2wk/1mo) in one payment.
+  // Bulk single: send all selected leads once.
+  var useRepeat = _repeatMode === 'three';
+  var endpoint = useRepeat ? '/api/direct-mail/send-bulk-repeat' : '/api/direct-mail/send-bulk';
+  var btn = document.getElementById('mp-pay-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Redirecting to payment...';}
+  document.getElementById('mp-error').style.display='none';
+  var x=new XMLHttpRequest();
+  x.open('POST',endpoint,true);
+  x.setRequestHeader('Authorization','Bearer '+_token);
+  x.setRequestHeader('Content-Type','application/json');
+  x.onload=function(){
+    var d={};try{d=JSON.parse(x.responseText);}catch(e){}
+    if(d&&d.checkout_url){
+      closeMailModal();
+      bulkClear();
+      window.location.href=d.checkout_url;
+    } else {
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-lock"></i> Pay &amp; Send';}
+      var errEl=document.getElementById('mp-error');
+      errEl.textContent=(d&&d.error)||'Could not start print & post. Please try again.';
+      errEl.style.display='block';
+      mpShowStep(1);
+    }
+  };
+  x.onerror=function(){
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-lock"></i> Pay &amp; Send';}
+    var errEl=document.getElementById('mp-error');
+    errEl.textContent='Network error. Please check your connection and try again.';
+    errEl.style.display='block';
+  };
+  var body = { lead_ids: _pendingLeadIds, mail_type: resolved.mail_type };
+  if(resolved.format) body.format = resolved.format;
+  x.send(JSON.stringify(body));
 }
 function doSendBulkPrintPost(mailType, btn) {
   if (btn) { btn.disabled = true; btn.style.opacity = .6; }
@@ -395,7 +513,15 @@ function doSendBulkPrintPost(mailType, btn) {
 }
 var _pendingLeadIds = [];
 function sendPrintPost(leadId){
+  // If the customer has selected multiple leads (bulk bar active), send ALL
+  // selected leads together rather than this single lead. avoids confusion
+  // between "Print & Post" on one lead vs the bulk bar.
+  if (selectedLeads.length > 0) {
+    bulkOpenMail();
+    return;
+  }
   _pendingLeadId=leadId;
+  _bulkCount = 0;
   // Show address in the modal
   var addr='';
   for(var i=0;i<allLeads.length;i++){
@@ -410,10 +536,11 @@ function sendPrintPost(leadId){
   document.getElementById('mp-addr').innerHTML='<b>'+addr+'</b>';
   document.getElementById('mp-error').style.display='none';
   _selectedMailType='';
-  _repeatMode='three';
+  _repeatMode='once';
   var items=[
-    {t:'letter_a4',n:'A4 Letter',d:'A personal introduction letter — ready to send',p:'£1.49',rec:true},
+    {t:'letter_a4',n:'A4 Letter',d:'A personal introduction letter, ready to send',p:'£1.49',rec:true},
     {t:'flyer_a5',n:'A5 Leaflet',d:'Full-colour leaflet (needs an uploaded design)',p:'£1.99'},
+    {t:'flyer_a5_enveloped',n:'A5 Leaflet in Envelope',d:'Premium leaflet in a windowed envelope',p:'£2.75'},
     {t:'flyer_plus_letter',n:'Leaflet + Letter',d:'Leaflet with a letter inside',p:'£2.99'}
   ];
   var html='';
@@ -422,9 +549,9 @@ function sendPrintPost(leadId){
       '<div><div class="mp-name">'+it.n+(it.rec?' <span style="font-size:9px;font-weight:700;color:#fff;background:var(--accent);border-radius:4px;padding:1px 6px;vertical-align:middle">RECOMMENDED</span>':'')+'</div><div class="mp-desc">'+it.d+'</div></div>'+
       '<div class="mp-price">'+it.p+'</div></button>';
   });
-  // Repeat mailing frequency selector — send now, then again in 2 weeks, then a month
+  // Repeat mailing frequency selector. Send now, then again in 2 weeks, then a month
   html+='<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">'+
-    '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px"><i class="fas fa-redo-alt" style="color:var(--accent);margin-right:4px"></i> Repeat mailing <span style="font-weight:400;color:var(--muted);font-size:11px">(optional — follow-ups convert more)</span></div>'+
+    '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px"><i class="fas fa-redo-alt" style="color:var(--accent);margin-right:4px"></i> Repeat mailing <span style="font-weight:400;color:var(--muted);font-size:11px">(optional: follow-ups convert more)</span></div>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
     '<button class="mp-item" style="flex:1;min-width:120px;margin-bottom:0;padding:10px 12px" onclick="selectRepeat(this,\'once\')" data-rep="once"><div><div class="mp-name" style="font-size:12px">Send once</div><div class="mp-desc">1 mailing now</div></div></button>'+
     '<button class="mp-item" style="flex:1;min-width:120px;margin-bottom:0;padding:10px 12px;border-color:var(--accent);background:#f0f7ff" onclick="selectRepeat(this,\'three\')" data-rep="three"><div><div class="mp-name" style="font-size:12px">Send now, then 2 weeks, then a month</div><div class="mp-desc">3 mailings in total</div></div></button>'+
@@ -432,14 +559,15 @@ function sendPrintPost(leadId){
     '<div id="mp-repeat-summary" style="font-size:11px;color:var(--muted);margin-top:8px"></div>'+
     '</div>';
   document.getElementById('mp-items').innerHTML=html;
-  // Preselect letter + three-repeat (recommended)
+  // Preselect letter + send-once (default). Repeat (3-mailing series) is an
+  // optional add-on the customer can choose if they want follow-ups.
   selectMailType(document.querySelector('#mp-items [data-mail="letter_a4"]'),'letter_a4');
-  selectRepeat(document.querySelector('#mp-items [data-rep="three"]'),'three');
+  selectRepeat(document.querySelector('#mp-items [data-rep="once"]'),'once');
   updateRepeatSummary();
   mpShowStep(1);
   document.getElementById('mail-modal').className='modal-overlay show';
 }
-var _repeatMode='three';
+var _repeatMode='once';
 var _selectedMailType='letter_a4';
 var _pendingLeadId='';
 function selectMailType(el,type){
@@ -457,7 +585,7 @@ function updateRepeatSummary(){
   var sum=document.getElementById('mp-repeat-summary');
   if(!sum)return;
   var txt = _repeatMode==='three'
-    ? 'You\'ll be charged once for all 3 mailings — sent now, in 2 weeks, and in a month. Keeps your business front of mind and boosts conversions.'
+    ? 'You\'ll be charged once for all 3 mailings. Sent now, in 2 weeks, and in a month. Keeps your business front of mind and boosts conversions.'
     : 'Single mailing only.';
   sum.textContent=txt;
 }
@@ -467,31 +595,42 @@ function mpShowStep(step){
   document.getElementById('mp-step-label').textContent = step===1?'Step 1 of 2 · Choose what to send':'Step 2 of 2 · Confirm your schedule';
 }
 function mpContinue(){
+  // Route to bulk flow when sending multiple selected leads
+  if (_bulkCount > 1) { bulkConfirm(); return; }
   var mailType = _selectedMailType || 'letter_a4';
-  var pricePerItem = mailType==='flyer_a5'?1.99 : mailType==='flyer_plus_letter'?2.99 : 1.49;
-  var label = mailType==='flyer_a5'?'A5 Leaflet':mailType==='flyer_plus_letter'?'Leaflet + Letter':'A4 Letter';
+  var pricePerItem = mailType==='flyer_a5'?1.99 : mailType==='flyer_a5_enveloped'?2.75 : mailType==='flyer_plus_letter'?2.99 : 1.49;
+  var label = mailType==='flyer_a5'?'A5 Leaflet':mailType==='flyer_a5_enveloped'?'A5 Leaflet in Envelope':mailType==='flyer_plus_letter'?'Leaflet + Letter':'A4 Letter';
   var intervals = _repeatMode==='three' ? [0,14,30] : [0];
   var scheduleHtml = '';
   var today = new Date();
   var intervalLabels = {0:'Send now',14:'In 2 weeks',30:'In a month'};
-  intervals.forEach(function(days){
+  intervals.forEach(function(days, idx){
     var d = new Date(today); d.setDate(d.getDate()+days);
     var dateStr = d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
     scheduleHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#fff;border:1px solid var(--border);border-radius:8px">'+
-      '<div style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:'+(days===0?'var(--accent)':'#e2e8f0')+';color:'+(days===0?'#fff':'var(--text2)')+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">'+(days===0?'1':(days/7))+'</span>'+
+      '<div style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:'+(idx===0?'var(--accent)':'#e2e8f0')+';color:'+(idx===0?'#fff':'var(--text2)')+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">'+(idx+1)+'</span>'+
       '<div><div style="font-size:12px;font-weight:700;color:var(--text)">'+(intervalLabels[days]||('In '+days+' days'))+'</div><div style="font-size:10px;color:var(--muted)">Delivered '+(days===0?'today':dateStr)+'</div></div></div>'+
       '<div style="font-size:13px;font-weight:800;color:var(--accent)">£'+pricePerItem.toFixed(2)+'</div></div>';
   });
-  document.getElementById('mp-confirm-title').textContent = label + (_repeatMode==='three'?' — repeat mailing':'');
+  document.getElementById('mp-confirm-title').textContent = label + (_repeatMode==='three'?', repeat mailing':'');
   document.getElementById('mp-confirm-schedule').innerHTML = scheduleHtml;
   var total = pricePerItem * intervals.length;
   document.getElementById('mp-confirm-total').textContent = '£'+total.toFixed(2);
   document.getElementById('mp-error').style.display='none';
   mpShowStep(2);
 }
-function mpBack(){ mpShowStep(1); }
+function mpBack(){ if (_bulkCount > 1) { bulkBack(); return; } mpShowStep(1); }
+// Map the internal mail-type token to the backend format id + mail_type.
+function resolveMailType(t){
+  if(t==='flyer_a5_enveloped')return {mail_type:'flyer',format:'flyer_a5_enveloped'};
+  if(t==='flyer_a5')return {mail_type:'flyer',format:'flyer_a5_portrait'};
+  if(t==='letter_a4')return {mail_type:'letter',format:'letter_a4'};
+  return {mail_type:t,format:''};
+}
 function mpPay(){
+  if (_bulkCount > 1) { bulkPay(); return; }
   var mailType = _selectedMailType || 'letter_a4';
+  var resolved = resolveMailType(mailType);
   var intervals = _repeatMode==='three' ? [0,14,30] : [0];
   var endpoint = intervals.length>1 ? '/api/direct-mail/send-repeat' : '/api/direct-mail/send-lead';
   var btn = document.getElementById('mp-pay-btn');
@@ -520,7 +659,8 @@ function mpPay(){
     errEl.textContent='Network error. Please check your connection and try again.';
     errEl.style.display='block';
   };
-  var body = { lead_id: _pendingLeadId, mail_type: mailType };
+  var body = { lead_id: _pendingLeadId, mail_type: resolved.mail_type };
+  if(resolved.format) body.format = resolved.format;
   if (intervals.length > 1) body.intervals = intervals;
   x.send(JSON.stringify(body));
 }
@@ -595,9 +735,12 @@ var _token = '';
       document.getElementById('leads-loading').style.display = 'none';
       allLeads = leads.sort(function(a,b){return(b.created_at||'').localeCompare(a.created_at||'');});
       var today = new Date().toISOString().split('T')[0];
-      var tl = allLeads.filter(function(l){return (l.created_at||'').startsWith(today);});
-      var ml = allLeads.filter(function(l){return (l.created_at||'').startsWith(today.substring(0,7));});
-      var wk = allLeads.filter(function(l){var w=new Date();w.setDate(w.getDate()-w.getDay());return (l.created_at||'')>=w.toISOString().split('T')[0];});
+      // Count DELIVERED leads (the actual plan promise). created_at includes
+      // undelivered top-ups that would over-count "Today".
+      var dl = function(l){return (l.delivered_at||'').startsWith(today);};
+      var tl = allLeads.filter(dl);
+      var ml = allLeads.filter(function(l){return (l.delivered_at||'').startsWith(today.substring(0,7));});
+      var wk = allLeads.filter(function(l){var w=new Date();w.setDate(w.getDate()-w.getDay());return (l.delivered_at||'')>=w.toISOString().split('T')[0];});
       document.getElementById('stat-today').textContent = tl.length;
       document.getElementById('stat-week').textContent = wk.length;
       document.getElementById('stat-month').textContent = ml.length;
@@ -615,7 +758,7 @@ var _token = '';
         var bbar = document.getElementById('bulk-bar');
         if (bbar) bbar.style.display = 'none';
       }
-      setRange('today');
+      setRange('month');
     } catch(e) {}
   };
   x.send();

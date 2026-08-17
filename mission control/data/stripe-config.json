@@ -31,5 +31,32 @@
     "moving-package": { "mov-package": "price_1TsOe2ADspDnFpfBMkCtyt8E" },
     "pro": { "pro-plan": "price_1TsOe0ADspDnFpfBnAvu51e1" }
   },
+  "testPriceIds": {
+    "moving": {
+      "mov-starter": "price_1U2eDlPS0MvjZiF9uzZSJKUP",
+      "mov-growth": "price_1U2eDlPS0MvjZiF9y0Sy9RAO",
+      "mov-power": "price_1U2eDmPS0MvjZiF9MgAyM2aS"
+    },
+    "planning": {
+      "plan-starter": "price_1U2eDnPS0MvjZiF9iAol8d2y",
+      "plan-growth": "price_1U2eDnPS0MvjZiF94RFmwgr0",
+      "plan-power": "price_1U2eDnPS0MvjZiF9GrjemXPY"
+    },
+    "newbusiness": {
+      "nb-starter": "price_1U2eDoPS0MvjZiF9jPI1j8fC",
+      "nb-growth": "price_1U2eDoPS0MvjZiF9X9PfX4kR",
+      "nb-power": "price_1U2eDpPS0MvjZiF98GkvCARr"
+    },
+    "probate": {
+      "prob-starter": "price_1U2eDpPS0MvjZiF9y8BrtL8t",
+      "prob-growth": "price_1U2eDqPS0MvjZiF9eW6CAMW5",
+      "prob-power": "price_1U2eDqPS0MvjZiF9IoA2KAt6"
+    },
+    "tenders": {
+      "tend-starter": "price_1U2eDrPS0MvjZiF9twciPRac",
+      "tend-growth": "price_1U2eDrPS0MvjZiF90cHT3EJh",
+      "tend-power": "price_1U2eDrPS0MvjZiF9AlJTGWQa"
+    }
+  },
   "setupComplete": true
 }

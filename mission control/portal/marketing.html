@@ -40,7 +40,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 </div>
 <div class="container">
 <div class="page-header">
-<div><h1><i class="fas fa-pen-fancy" style="color:var(--accent);margin-right:6px"></i> Marketing Tools</h1><div class="sub">Generate professional letters and flyers with AI — print them or send via Print &amp; Post</div></div>
+<div><h1><i class="fas fa-pen-fancy" style="color:var(--accent);margin-right:6px"></i> Marketing Tools</h1><div class="sub">Generate professional letters and flyers with AI. print them or send via Print &amp; Post</div></div>
 </div>
 <div id="toast"></div>
 
@@ -62,28 +62,6 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <button class="btn btn-primary" onclick="saveProfile()" style="margin-top:12px"><i class="fas fa-save"></i> Save Profile</button>
 </div>
 
-<!-- AI Letter -->
-<div class="card">
-<div class="sect-title"><i class="fas fa-envelope-open-text" style="color:var(--accent)"></i> AI Letter Generator</div>
-<div class="grid-3">
-<div><label class="label">Tone</label><div id="letter-tones"><span class="tone-pill" onclick="setTone('letter','professional')">Professional</span><span class="tone-pill" onclick="setTone('letter','friendly')">Friendly</span><span class="tone-pill" onclick="setTone('letter','bold')">Bold</span><span class="tone-pill" onclick="setTone('letter','premium')">Premium</span></div></div>
-<div><label class="label">Version</label><select class="input" id="letter-version"><option value="4">All 4 versions</option><option value="PROFESSIONAL">Professional</option><option value="SHORT">Short</option><option value="FRIENDLY">Friendly</option><option value="CALL TO ACTION">Call To Action</option></select></div>
-<div><label class="label">&nbsp;</label><button class="btn btn-primary" onclick="genLetter()" style="width:100%"><i class="fas fa-magic"></i> Generate Letter</button></div>
-</div>
-<div id="letter-result" class="result-box" style="display:none"></div>
-</div>
-
-<!-- AI Flyer -->
-<div class="card">
-<div class="sect-title"><i class="fas fa-flag" style="color:var(--accent)"></i> AI Flyer Generator</div>
-<div class="grid-3">
-<div><label class="label">Tone</label><div id="flyer-tones"><span class="tone-pill" onclick="setTone('flyer','professional')">Professional</span><span class="tone-pill" onclick="setTone('flyer','bold')">Bold</span><span class="tone-pill" onclick="setTone('flyer','friendly')">Friendly</span></div></div>
-<div><label class="label">Headline Focus</label><input class="input" id="flyer-focus" placeholder="e.g. Stress-free moving"></div>
-<div><label class="label">&nbsp;</label><button class="btn btn-primary" onclick="genFlyer()" style="width:100%"><i class="fas fa-magic"></i> Generate Flyer</button></div>
-</div>
-<div id="flyer-result" class="result-box" style="display:none"></div>
-</div>
-
 <!-- Saved Templates -->
 <div class="card">
 <div class="sect-title"><i class="fas fa-bookmark" style="color:var(--accent)"></i> Saved Templates</div>
@@ -99,11 +77,9 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 
 <script>
 var _token='';
-var tones={letter:'professional',flyer:'professional'};
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(function(){t.style.display='none';},3000);}
 function api(method,path,body,cb){var x=new XMLHttpRequest();x.open(method,path,true);x.setRequestHeader('Authorization','Bearer '+_token);if(body)x.setRequestHeader('Content-Type','application/json');x.onload=function(){try{cb(null,JSON.parse(x.responseText));}catch(e){cb(null,x.responseText);}};x.onerror=function(){cb('network');};x.send(body?JSON.stringify(body):null);}
 function doLogout(){if(confirm('Log out?')){localStorage.removeItem('mld_portal_session');window.location.href='/portal/';}}
-function setTone(kind,val){tones[kind]=val;document.querySelectorAll('#'+kind+'-tones .tone-pill').forEach(function(p){p.classList.toggle('active',p.textContent.toLowerCase()===val);});}
 
 function saveProfile(){
   var body={
@@ -151,53 +127,6 @@ function getBizData(){
     call_to_action:document.getElementById('p-cta').value||'Get in touch today',
     tone:tones.letter
   };
-}
-
-function genLetter(){
-  var v=document.getElementById('letter-version').value;
-  var body=getBizData();
-  if(v!=='4')body.version=v;
-  document.getElementById('letter-result').style.display='block';
-  document.getElementById('letter-result').textContent='Generating your letter...';
-  api('POST','/api/ai/generate-letter',body,function(err,d){
-    if(d&&d.error){document.getElementById('letter-result').textContent='Error: '+d.error;return;}
-    if(d&&d.success){
-      var labels={professional:'Professional',short:'Short',friendly:'Friendly',premium:'Premium',call_to_action:'Call To Action'};
-      var variants=['professional','short','friendly','premium','call_to_action'];
-      var html='';
-      variants.forEach(function(key){
-        if(d[key]){
-          var show = v==='4' || v.toLowerCase()===key || (v==='CALL TO ACTION'&&key==='call_to_action');
-          if(show)html+='<div class="generated-item"><h4>'+(labels[key]||key)+'</h4><div style="white-space:pre-wrap">'+d[key]+'</div></div>';
-        }
-      });
-      if(!html)html='<div class="empty">No letter generated for the selected version.</div>';
-      document.getElementById('letter-result').innerHTML=html;
-    } else {
-      document.getElementById('letter-result').textContent='No letter generated. '+(d&&d.message||'');
-    }
-  });
-}
-function genFlyer(){
-  var body=getBizData();
-  body.focus=document.getElementById('flyer-focus').value;
-  body.style=tones.flyer;
-  document.getElementById('flyer-result').style.display='block';
-  document.getElementById('flyer-result').textContent='Generating your flyer...';
-  api('POST','/api/ai/generate-flyer',body,function(err,d){
-    if(d&&d.error){document.getElementById('flyer-result').textContent='Error: '+d.error;return;}
-    if(d&&d.success){
-      var sections=[['headline','Headline'],['subheadline','Subheadline'],['services','Services'],['offer','Offer'],['trust','Trust'],['call_to_action','Call To Action'],['back_page','Back Page'],['qr_text','QR Text'],['slogan','Slogan']];
-      var html='';
-      sections.forEach(function(s){
-        if(d[s[0]])html+='<div class="generated-item"><h4>'+s[1]+'</h4><div style="white-space:pre-wrap">'+d[s[0]]+'</div></div>';
-      });
-      if(!html)html='<div class="empty">No flyer content generated.</div>';
-      document.getElementById('flyer-result').innerHTML=html;
-    } else {
-      document.getElementById('flyer-result').textContent='No flyer generated. '+(d&&d.message||'');
-    }
-  });
 }
 
 function saveTemplate(){

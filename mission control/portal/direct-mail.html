@@ -44,7 +44,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 </style></head><body>
 <div class="top">
 <div class="logo">9am<span>Leads</span></div>
-<div class="nav"><a href="/portal/dashboard.html">Dashboard</a><a href="/portal/leads.html">My Leads</a><a href="#" class="active">Print &amp; Post</a><a href="/portal/" onclick="doLogout();return false" style="color:#dc2626;font-weight:700"><i class="fas fa-sign-out-alt"></i> Logout</a></div>
+<div class="nav"><a href="/portal/dashboard.html">Dashboard</a><a href="/portal/leads.html">My Leads</a><a href="#" class="active">Print &amp; Post</a><a href="/portal/tracking.html">📬 Live Tracking</a><a href="/portal/auto.html">Auto P&amp;P</a><a href="/portal/" onclick="doLogout();return false" style="color:#dc2626;font-weight:700"><i class="fas fa-sign-out-alt"></i> Logout</a></div>
 </div>
 <div class="container">
 <div class="page-header">
@@ -57,6 +57,10 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <!-- Step 1: Business Profile -->
 <div class="card">
 <div class="sect-title"><i class="fas fa-building" style="color:var(--accent)"></i> Step 1 · Your Business Profile</div>
+<div style="margin-bottom:12px;padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:12px;color:#166534;line-height:1.7">
+  <b><i class="fas fa-list-ol" style="margin-right:4px"></i> How this works:</b> This is the <b>sender's name &amp; address</b> printed on your mailings (and used as the "from" on your letters). Fill it in once. it's saved and reused for every mailing.
+  <div style="margin-top:6px;font-size:11px;color:#15803d">💡 <b>Tip:</b> Use your real business address and phone number so recipients can identify and contact you. Your <b>Contact Name</b> is used in personalised letters ("Dear Ketz..." if you want a personal touch).</div>
+</div>
 <p style="font-size:12px;color:var(--text2);margin-bottom:12px">This is the sender address shown on your mailings.</p>
 <div class="grid-2">
 <div><label class="label">Company Name</label><input class="input" id="p-company" placeholder="Your company name"></div>
@@ -71,85 +75,276 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 
 <!-- Step 2: Template / Cover Letter -->
 <div class="card">
-<div class="sect-title"><i class="fas fa-file-alt" style="color:var(--accent)"></i> Step 2 · Your Cover Letter</div>
-<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Write your own cover letter, paste one in, or generate it with AI. Use <b>[name]</b> and <b>[address]</b> placeholders which are filled with each lead's details.</p>
+<div class="sect-title"><i class="fas fa-file-alt" style="color:var(--accent)"></i> Step 2 · Choose Format &amp; Your Cover Letter</div>
+<div style="margin-bottom:12px;padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:12px;color:#166534;line-height:1.8">
+  <b><i class="fas fa-list-ol" style="margin-right:4px"></i> How this works. follow these steps in order:</b>
+  <ol style="margin:6px 0 0 18px;padding:0">
+    <li><b>Pick your format</b> below (A5 Portrait / A5 Landscape / A5 in Envelope / A4 Letter). This sets the print size.</li>
+    <li><b>Upload your flyer front &amp; back</b> (or use our <b>Edit / Position</b> tool to position and crop your design onto the page).</li>
+    <li>Write your <b>cover letter</b> (only needed for letter and leaflet+letter sends).</li>
+    <li>Review the <b>Print-Ready preview</b>, then click <b>Save My Leaflet</b>.</li>
+  </ol>
+  <div style="margin-top:6px;font-size:11px;color:#15803d">💡 <b>Tip:</b> The <b>bottom strip</b> of the front is where your recipient's address prints (Royal Mail requirement). Keep it plain. Use the <b>Edit / Position</b> tool to make your design fill the page the way you want. you're in control of the final look.</div>
+</div>
+<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Pick the print format (size &amp; orientation), download the matching design template with correct bleed + safe-zone lines, then write your cover letter (optional for leaflet-only sends).</p>
+
+<!-- Format selector -->
+<div style="margin-bottom:16px;padding:14px;background:#f8fafc;border:1px solid var(--border);border-radius:10px">
+<div class="lbl" style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-ruler" style="color:var(--accent);margin-right:4px"></i> Print Format <span style="font-weight:400;color:var(--text2);font-size:11px">(choose portrait or landscape, A5 or letter)</span></div>
+<div id="fmt-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px"></div>
+<div id="fmt-detail" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:8px;font-size:11px;color:#1e40af;line-height:1.6"></div>
+</div>
+
 <div class="grid-2">
-<div><label class="label">Template Name</label><input class="input" id="t-name" placeholder="e.g. My Introduction Letter"></div>
+<div><label class="label">Cover Letter Name</label><input class="input" id="t-name" placeholder="e.g. My Introduction Letter"></div>
 <div><label class="label">Type</label><select class="input" id="t-type"><option value="letter">Letter</option><option value="flyer">Leaflet (A5)</option><option value="postcard">Postcard</option></select></div>
 </div>
 <div style="margin-top:12px">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-<label class="label" style="margin-bottom:0">Cover Letter Text</label>
-<div style="display:flex;gap:6px">
-<select class="input" id="t-version" style="width:auto;padding:6px 10px;font-size:11px"><option value="PROFESSIONAL">Professional</option><option value="SHORT">Short</option><option value="FRIENDLY">Friendly</option><option value="CALL TO ACTION">Call To Action</option><option value="PREMIUM">Premium</option></select>
-<button class="btn btn-outline" onclick="genLetterAI()" style="padding:6px 12px;font-size:11px"><i class="fas fa-magic"></i> Generate with AI</button>
+<label class="label" style="margin-bottom:0">Cover Letter Text <span style="color:var(--muted);font-weight:400">(optional. leaflet-only sends don't need one)</span></label>
 </div>
+<textarea class="input" id="t-content" rows="8" oninput="updateLetterPreviewLive()" placeholder="Dear [name],&#10;&#10;We are your local removal specialists...&#10;&#10;Kind regards,&#10;[Your Company]"></textarea>
+<div style="font-size:10px;color:var(--muted);margin-top:4px">Tip: if you paste a letter that includes markdown formatting (*, **, #), we clean it automatically when you save and print.</div>
 </div>
-<textarea class="input" id="t-content" rows="10" placeholder="Dear [name],&#10;&#10;We are your local removal specialists...&#10;&#10;Kind regards,&#10;[Your Company]"></textarea>
+<div style="display:flex;gap:10px;margin-top:12px">
+<button class="btn btn-primary" onclick="saveTemplate()" style="flex:1"><i class="fas fa-save"></i> Save Cover Letter</button>
+<button class="btn btn-outline" onclick="downloadCoverLetter()" style="flex:1"><i class="fas fa-download"></i> Download Cover Letter</button>
 </div>
-<div style="margin-top:8px;font-size:11px;color:var(--muted)" id="t-ai-status"></div>
-<button class="btn btn-primary" onclick="saveTemplate()" style="margin-top:12px"><i class="fas fa-save"></i> Save Cover Letter</button>
 
 <!-- Upload Materials -->
 <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
-<div class="sect-title"><i class="fas fa-upload" style="color:var(--accent)"></i> Upload Your Leaflet Design (PDF / PNG / JPG)</div>
+<div class="sect-title"><i class="fas fa-upload" style="color:var(--accent)"></i> Your Leaflet Design (PDF / PNG / JPG)</div>
+<div id="materials-list" style="margin-top:12px"></div>
+
+<!-- Final print preview with whited-out address zone + download -->
+<div id="final-print-preview" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#f8fafc">
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-print" style="color:var(--accent);margin-right:4px"></i> Your Print-Ready Leaflet <span style="color:var(--success);font-weight:700">(address zone on back top. no content lost)</span></div>
+<div style="padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;color:#15803d;line-height:1.6;margin-bottom:10px">
+<i class="fas fa-check-circle" style="margin-right:4px"></i><b>No redesign needed. and nothing is cut off.</b> We keep your <b>entire flyer design</b> and reserve a clean white address space on the <b>top of the BACK</b> of the leaflet (Royal Mail requirement). Your full design is preserved on the front and the rest of the back; the recipient's address is printed in the white area at the top of the back.
+</div>
+<p style="font-size:11px;color:var(--text2);margin-bottom:10px">The recipient's name &amp; address are printed in the <b>white area at the TOP of the BACK</b> of the leaflet. This clear zone is required by Royal Mail so the address can be machine-read and your flyer delivered correctly. The <b>front</b> keeps your full design (no white space).</p>
+<p style="font-size:11px;color:#0369a1;background:#eff6ff;border:1px solid #bae6fd;border-radius:8px;padding:8px 10px;margin-bottom:10px"><i class="fas fa-edit" style="margin-right:4px"></i><b>Tip:</b> To position your design correctly within the address line, click <b>Edit / Position</b> on the <b>back</b> flyer and drag/stretch it so your design sits below the white top area.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+  <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
+    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px">Front. Print-Ready <span id="fp-front-label" style="font-weight:400;color:var(--muted)"></span></div>
+    <img id="fp-front-img" alt="Final print preview (front, full design)" style="max-width:100%;max-height:260px;border-radius:6px;border:1px solid #334155">
+    <div id="fp-front-specs" style="font-size:10px;color:var(--text2);margin-top:6px;line-height:1.5"></div>
+    <a class="btn btn-primary btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:8px;color:#fff" id="fp-download-final" target="_blank" rel="noopener"><i class="fas fa-download"></i> Download Print-Ready Version</a>
+    <a class="btn btn-outline btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:6px" id="fp-download-orig" target="_blank" rel="noopener"><i class="fas fa-file-image"></i> Download My Original</a>
+  </div>
+  <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
+    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px">Back. Print-Ready <span style="color:var(--success);font-weight:400">(address zone at top)</span></div>
+    <div style="border:2px solid #0c4a6e;border-radius:6px;padding:2px;display:inline-block">
+      <img id="fp-back-img" alt="Final print preview (back, address zone top)" style="max-width:100%;max-height:250px;border-radius:4px;display:block">
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:6px" id="fp-back-name"></div>
+    <a class="btn btn-outline btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:8px" id="fp-download-back" target="_blank" rel="noopener"><i class="fas fa-download"></i> Download My Back</a>
+  </div>
+</div>
+<div style="font-size:10px;color:var(--muted);margin-top:10px">Download Print-Ready = exactly what we send to print (white address zone on the top of the back). Download My Original = your uploaded design, untouched.</div>
+</div>
+
+<!-- Letter preview + guidelines (shows when letter / leaflet+letter format selected) -->
+<div id="letter-preview-box" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff">
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-envelope" style="color:var(--accent);margin-right:4px"></i> Your Letter Preview <span style="color:var(--success);font-weight:700">One-Sided A4 · Address Window Shown</span></div>
+<div style="display:flex;gap:14px;flex-wrap:wrap">
+  <!-- The A4 page (portrait, fixed aspect) -->
+  <div style="flex:0 0 360px">
+    <div style="background:#fff;border:1px solid #cbd5e1;border-radius:4px;width:340px;height:480px;overflow:hidden;box-shadow:0 2px 12px rgba(15,23,42,0.10);padding:18px 24px;position:relative">
+      <!-- Address window (blocked off) at top-left -->
+      <div style="background:#f1f5f9;border:1.5px solid #0ea5e9;border-radius:4px;width:130px;height:48px;position:absolute;top:18px;left:24px;display:flex;align-items:center;justify-content:center;font-size:7px;color:#0ea5e9;font-weight:700;text-align:center;z-index:2">RECIPIENT<br>ADDRESS<br>(printed here)</div>
+      <!-- Return address top-right -->
+      <div style="font-size:7px;color:#64748b;line-height:1.4;text-align:right;position:absolute;top:18px;right:24px" id="lp-letter-from"></div>
+      <!-- Letter body (shows the full letter; fit judged by character count) -->
+      <div style="font-size:9px;line-height:1.5;color:#1e293b;white-space:pre-wrap;margin-top:52px;overflow-y:auto;max-height:410px" id="lp-letter-body">Your cover letter text appears here.</div>
+      <!-- Page edge indicator line -->
+      <div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:#cbd5e1"></div>
+    </div>
+    <!-- Fit status -->
+    <div id="lp-fit-status" style="font-size:10px;font-weight:700;margin-top:8px;color:#15803d">✓ Fits on one A4 page</div>
+  </div>
+  <!-- Guidance -->
+  <div style="flex:1;min-width:240px;font-size:11px;color:var(--text2);line-height:1.7">
+    <b style="color:#0ea5e9">The blue box (top-left)</b> is the <b>envelope window</b>. the recipient's address prints there. Keep it clear.<br><br>
+    <b>Your letter fills one side of A4.</b> Keep your cover letter short enough to fit on one page. if it's too long it will spill onto a second side, which costs extra and looks unprofessional.<br><br>
+    <b style="color:var(--success)">The page preview updates live</b> as you write. Watch the status below the page: <b style="color:#15803d">"Fits on one A4 page"</b> = good, or <b style="color:#dc2626">"Letter is too long. shorten it"</b>.
+  </div>
+</div>
+<div style="display:flex;gap:10px;margin-top:12px">
+  <a class="btn btn-outline btn-sm" style="flex:1;justify-content:center;font-size:11px" href="/portal/templates/a4-letter.pdf" download="a4-letter.pdf" target="_blank"><i class="fas fa-file-pdf"></i> Download Letter Template (with guidelines)</a>
+</div>
+</div>
+
+
+<!-- Design tips + how the white space works -->
+<div id="flyer-tips" style="display:none;margin-top:14px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff">
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-lightbulb" style="color:#f59e0b;margin-right:4px"></i> Guides &amp; Top tips</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">
+  <div style="padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:11px;color:#1e40af;line-height:1.7">
+    <b style="color:var(--text)"><i class="fas fa-crop-alt" style="color:var(--accent);margin-right:4px"></i> How to use Edit / Position</b><br>
+    Click <b>Edit / Position</b> on your saved flyer to open the editor:<br>
+    • <b>Drag the flyer</b> to move it around the page<br>
+    • <b>Drag any blue square (handle)</b> to stretch it up/down or left/right<br>
+    • Use <b>+ / − / scroll wheel</b> to scale the whole design<br>
+    • Click <b>Save Positioned Flyer</b> when it looks right<br>
+    The print matches exactly what you position. you're in full control.
+  </div>
+  <div style="padding:10px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.6">
+    <b style="color:var(--text)">Why the white space?</b><br>
+    Royal Mail machines read the recipient's address automatically. To do that reliably, the address must sit on a <b>clean white area</b> with no design, images or text underneath. If anything overlaps it, the address can't be read and the flyer may be delayed or returned.
+  </div>
+  <div style="padding:10px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.6">
+    <b style="color:var(--text)">The easy way (recommended)</b><br>
+    You don't need to change anything. your <b>print-ready version</b> above already has the white space added. Just download it and use it.
+  </div>
+  <div style="padding:10px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.6">
+    <b style="color:var(--text)">Want your own design?</b><br>
+    Download the <b>design template</b> below (it shows the exact bleed, safe zone and the clear zone marked). Design within the safe zone and leave the bottom ~28% (the orange clear zone) blank. then upload your finished front and back.
+  </div>
+  <div style="padding:10px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.6;grid-column:1/-1">
+    <b style="color:var(--text)">Top tips</b><br>
+    • Keep logos, contact details and your call to action <b>inside the safe zone</b><br>
+    • Make the background reach the <b>edge (bleed)</b> so there are no white borders<br>
+    • Use <b>300 DPI</b> images for crisp print (we auto-upscale for you)<br>
+    • Avoid text across the bottom clear zone<br>
+    • After editing, <b>hard-refresh (Ctrl+F5)</b> if the preview looks old
+  </div>
+</div>
+</div>
+<div style="margin-top:14px;padding:12px 14px;background:#f8fafc;border:1px dashed var(--border);border-radius:10px">
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-file-upload" style="color:var(--accent);margin-right:4px"></i> Upload or replace your files below</div>
+<div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">
+<b><i class="fas fa-list-ol" style="margin-right:4px"></i> How to upload:</b>
+1. Pick your flyer <b>front</b> and <b>back</b> images (PNG/JPG/PDF). &nbsp; 2. They'll be checked against the print spec automatically. &nbsp; 3. Use <b>Edit / Position</b> on any saved file to fine-tune how it fills the page. &nbsp; 4. Click <b>Upload Files</b> or <b>Save My Leaflet</b>.
+</div>
 <div class="grid-3">
-<div><label class="label">Leaflet Front</label><input type="file" class="input" id="up-flyer-front" accept=".pdf,.png,.jpg,.jpeg"></div>
-<div><label class="label">Leaflet Back</label><input type="file" class="input" id="up-flyer-back" accept=".pdf,.png,.jpg,.jpeg"></div>
+<div><label class="label">Leaflet Front</label><input type="file" class="input" id="up-flyer-front" accept=".pdf,.png,.jpg,.jpeg" onchange="validateArtwork(this,'flyer_front')"></div>
+<div><label class="label">Leaflet Back</label><input type="file" class="input" id="up-flyer-back" accept=".pdf,.png,.jpg,.jpeg" onchange="validateArtwork(this,'flyer_back')"></div>
 <div><label class="label">Cover Letter PDF (optional)</label><input type="file" class="input" id="up-letter" accept=".pdf,.png,.jpg,.jpeg"></div>
 </div>
+<div id="artwork-validation" style="margin-top:10px;display:none"></div>
+</div>
 <div style="margin-top:8px;padding:10px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:11px;color:#0369a1">
-<i class="fas fa-info-circle" style="margin-right:4px"></i><b>Important — address space:</b> The recipient's name &amp; address is printed automatically in a reserved clear zone on the <b>leaflet back</b>, and that area is kept white so Royal Mail can read it. Design specs: <b>3mm bleed</b> on all edges, keep important content <b>5mm inside</b> the trim, and keep the <b>top-left ~80×40mm of the back</b> fairly plain for the address. Use the templates above to get this exactly right.
+<i class="fas fa-info-circle" style="margin-right:4px"></i><b>Important: address clear zone:</b> The recipient's name &amp; address is printed automatically in a reserved <b>clear zone</b> on the <b>front</b>, and that area is kept <b>white</b> so Royal Mail can machine-read it. Design specs: <b>6mm bleed</b> on all edges (we extend your design edge-to-edge for you), keep important content <b>inside the safe zone</b>, and leave the marked <b>orange clear zone</b> plain. Download the template for your chosen format to see the exact guides.
 </div>
 
 <!-- Design Templates -->
 <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
-<div class="sect-title"><i class="fas fa-ruler-combined" style="color:var(--accent)"></i> Design Templates (Print Specs)</div>
-<p style="font-size:12px;color:var(--text2);margin-bottom:10px">Download the official blank templates with exact dimensions, bleed, safe zones and the address clear zone. Design on these and you can't go wrong.</p>
-<div class="grid-3">
-<a class="btn btn-outline" href="/portal/templates/a5-leaflet.pdf" target="_blank" style="justify-content:center;text-align:center"><i class="fas fa-file-pdf"></i> A5 Leaflet Template</a>
-<a class="btn btn-outline" href="/portal/templates/a5-leaflet-portrait.pdf" target="_blank" style="justify-content:center;text-align:center"><i class="fas fa-file-pdf"></i> A5 Portrait Leaflet</a>
-<a class="btn btn-outline" href="/portal/templates/a4-letter.pdf" target="_blank" style="justify-content:center;text-align:center"><i class="fas fa-file-pdf"></i> A4 Letter Template</a>
+<div class="sect-title"><i class="fas fa-ruler-combined" style="color:var(--accent)"></i> Design Template (Print Specs)</div>
+<p style="font-size:12px;color:var(--text2);margin-bottom:10px">Download the official blank template for your chosen format. it shows the exact <b>bleed margin</b> (red), <b>safe zone</b> (blue) and <b>address clear zone</b> (orange) so your design prints perfectly. Front and back templates included.</p>
+<div id="tpl-downloads" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px"></div>
+<div style="font-size:11px;color:var(--muted)">Design on the template, then upload your front and back below. We print edge-to-edge (300 DPI) and keep the address clear zone white for Royal Mail.</div>
+<button class="btn btn-primary" onclick="saveFlyerSetup()" id="save-flyer-btn" style="margin-top:12px;width:100%;justify-content:center"><i class="fas fa-save"></i> Save My Leaflet (Front &amp; Back)</button>
+<div id="save-flyer-status" style="font-size:12px;color:var(--success);margin-top:8px;text-align:center"></div>
+
+<!-- Print specs guide (Clear Zones / Bleed / Safe Zones / Trim Marks) -->
+<div style="margin-top:14px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+  <button onclick="togglePrintGuide(this)" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f8fafc;border:none;cursor:pointer;font-family:var(--ff-b);font-size:12px;font-weight:700;color:var(--text);text-align:left"><span><i class="fas fa-drafting-compass" style="color:var(--accent);margin-right:6px"></i> How to read the template. Clear Zones, Bleed, Safe Zones &amp; Trim Marks</span><span class="pp-guide-arrow" style="color:var(--accent)">▾</span></button>
+  <div id="pp-print-guide" style="display:none;padding:14px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.7">
+    <p style="margin-bottom:10px">Each region's postal provider (e.g. Royal Mail) has <b>strict requirements</b> on where the address sits so your mail can be machine-read, sorted and delivered correctly. We print the address and the postage indicia stamp directly onto your item. The template markings show you the exact borders to design within. they are <b>guides only</b> and never printed on the final item.</p>
+    <div style="display:grid;gap:10px;margin-top:4px">
+      <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:8px">
+        <span style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#dc2626;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">1</span>
+        <div><div style="font-weight:700;color:var(--text)">Trim Marks (red line)</div>
+        <div style="font-size:11px">We print on larger paper and then <b>cut it down to size</b>. The trim marks are where we cut. Anything outside them is removed.</div></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:8px">
+        <span style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#dc2626;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">2</span>
+        <div><div style="font-weight:700;color:var(--text)">Bleed Margin</div>
+        <div style="font-size:11px">The area aligned with the trim marks that gets <b>cut off</b>. Make your <b>background colour / design overflow into this margin</b> so you get an <b>edge-to-edge</b> print with no white edges. <span style="color:var(--success)">✓ We do this automatically. your design is upscaled so it fills the full sheet.</span></div></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:8px">
+        <span style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">3</span>
+        <div><div style="font-weight:700;color:var(--text)">Safe Zone (blue line)</div>
+        <div style="font-size:11px">Keep all <b>important text, logos, QR codes, contact details and your call to action</b> inside this area. Printers can print with a <b>minor skew</b>, so anything outside the safe zone risks being cut off. Recommended: everything within the Safe Zone.</div></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:8px">
+        <span style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">4</span>
+        <div><div style="font-weight:700;color:var(--text)">Clear Zone (orange area)</div>
+        <div style="font-size:11px">The <b>recipient address and barcode</b> are printed here and must be <b>machine-readable</b>. A white overlay is applied by default so nothing disturbs reading. <b>Do not put dark colours, images or markings across this area</b>. it can incur a hand-sorting charge or leave your item undeliverable. We keep this zone white for you automatically.</div></div>
+      </div>
+    </div>
+    <div style="margin-top:10px;padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#92400e"><i class="fas fa-exclamation-triangle" style="margin-right:4px;color:#d97706"></i><b>Important:</b> If the address area is not kept clear, the item may not be machine-readable, may incur a hand-sorting charge, and could be <b>undeliverable</b>. Address visibility is the sender's responsibility. so please design with the clear zone in mind.</div>
+    <div style="margin-top:8px;padding:10px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:11px;color:#0369a1"><i class="fas fa-info-circle" style="margin-right:4px;color:#0ea5e9"></i><b>Return address:</b> On postcards and greeting cards we can also print a <b>return address</b> inside the clear zone. Add it in your business profile and it's printed automatically.</div>
+  </div>
 </div>
-<div style="margin-top:8px;font-size:11px;color:var(--muted)">More formats (A6, DL, envelopes) available on request.</div>
+</div>
 </div>
 <button class="btn btn-outline" onclick="uploadMaterials()" style="margin-top:10px"><i class="fas fa-upload"></i> Upload Files</button>
-<div id="materials-list" style="margin-top:12px"></div>
 </div>
 <div id="templates-list" style="margin-top:14px"></div>
 </div>
 
 <!-- Step 3: Select Recipients -->
 <div class="card">
-<div class="sect-title"><i class="fas fa-users" style="color:var(--accent)"></i> Step 3 · Select Recipients</div>
-<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Choose the leads to send your mailing to.</p>
+<div class="sect-title"><i class="fas fa-users" style="color:var(--accent)"></i> Step 3 · Who to send to</div>
+<div style="margin-bottom:12px;padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:12px;color:#166534;line-height:1.7">
+  <b><i class="fas fa-list-ol" style="margin-right:4px"></i> How this works:</b>
+  <ol style="margin:6px 0 0 18px;padding:0">
+    <li>Click <b>Load My Leads</b> to see the leads in your account.</li>
+    <li><b>Tick the boxes</b> next to the leads you want to mail to.</li>
+    <li>Choose your <b>cover letter</b> and <b>delivery date</b>.</li>
+    <li>Review the <b>estimated cost</b>, then click <b>Create &amp; Send Campaign</b>. you'll pay securely and we print &amp; post to each selected lead.</li>
+  </ol>
+  <div style="margin-top:6px;font-size:11px;color:#15803d">💡 <b>Tip:</b> You're charged per item sent (£1.49 letter / £1.99 A5 leaflet / £2.75 A5 in envelope / £2.99 leaflet + letter). Only tick the leads you actually want to mail.</div>
+</div>
+<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Pick <b>which of your leads</b> get this mailing. You'll pay per item when you send (A4 letter £1.49 / A5 leaflet £1.99 / A5 leaflet in envelope £2.75 / leaflet + letter £2.99 each).</p>
 <div class="grid-2">
 <div><label class="label">Cover Letter</label><select class="input" id="c-template" onchange="loadTemplateContent(this)"><option value="">Select a saved cover letter...</option></select></div>
 <div><label class="label">Delivery Date</label><input type="date" class="input" id="c-date"></div>
 </div>
-<button class="btn btn-primary" onclick="loadLeads()" style="margin-top:12px"><i class="fas fa-search"></i> Load My Leads</button>
+<div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
+<button class="btn btn-primary" onclick="loadLeads()"><i class="fas fa-search"></i> Load My Leads</button>
+<button class="btn btn-outline" onclick="selectAllLeads(true)"><i class="fas fa-check-double"></i> Select All</button>
+<button class="btn btn-outline" onclick="selectAllLeads(false)"><i class="fas fa-times"></i> Clear</button>
+</div>
 <div id="leads-list" style="margin-top:14px"></div>
 <div style="margin-top:14px;padding:14px;background:#f8fafc;border:1px solid var(--border);border-radius:10px">
 <div style="font-size:13px;font-weight:700">Selected: <span id="sel-count">0</span> recipients</div>
+<div style="font-size:11px;color:var(--muted);margin-top:2px">Tick the leads above to include them in this mailing. Your cover letter and materials are used for each one.</div>
 <div class="price-card" style="margin-top:10px">
-<div class="lbl" style="color:var(--muted)">Estimated cost (A4 letter £1.49 / A5 flyer £1.99 / flyer + letter £2.99 per item)</div>
+<div class="lbl" style="color:var(--muted)">Estimated cost. per item (A4 letter £1.49 / A5 leaflet £1.99 / A5 in envelope £2.75 / flyer + letter £2.99)</div>
 <div class="amt">£<span id="est-cost">0.00</span></div>
 </div>
-<button class="btn btn-primary" onclick="createCampaign()" style="margin-top:12px;width:100%;justify-content:center"><i class="fas fa-paper-plane"></i> Create &amp; Send Campaign</button>
+<button class="btn btn-primary" onclick="createCampaign()" id="create-campaign-btn" style="margin-top:12px;width:100%;justify-content:center"><i class="fas fa-paper-plane"></i> Create &amp; Send Campaign</button>
 </div>
 </div>
 
-<!-- Step 4: Campaigns -->
-<div class="card">
-<div class="sect-title"><i class="fas fa-history" style="color:var(--accent)"></i> Your Campaigns</div>
-<div id="campaigns-list"></div>
-</div>
 
-<!-- Repeat Mailing Series -->
-<div class="card">
-<div class="sect-title"><i class="fas fa-redo-alt" style="color:var(--accent)"></i> Repeat Mailing Series <span style="margin-left:auto;font-size:11px;color:var(--text2)">automatic follow-ups</span></div>
-<p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">When you send a lead with a repeat option, all follow-up mailings are listed here and dispatched automatically on their due date.</p>
-<div id="repeat-series-list"></div>
+<!-- SAMPLE TO SELF (free trial users can test delivery to their own address) -->
+<div class="card" style="border:2px solid #0ea5e9;background:linear-gradient(135deg,#f0f9ff,#eff6ff)">
+<div class="sect-title"><i class="fas fa-envelope-open-text" style="color:var(--accent)"></i> Try It. Send a Sample To Yourself</div>
+<div style="margin-bottom:12px;padding:12px 14px;background:#fff;border:1px solid #bae6fd;border-radius:10px;font-size:12px;color:#0c4a6e;line-height:1.7">
+  <b><i class="fas fa-list-ol" style="margin-right:4px"></i> How it works:</b>
+  <ol style="margin:6px 0 0 18px;padding:0">
+    <li>Enter <b>your own address</b> below.</li>
+    <li>Pick the <b>sample type</b> (A4 letter / A5 leaflet / leaflet + letter).</li>
+    <li>Click <b>Send Me A Sample</b> and pay the per-item price.</li>
+    <li>We print &amp; post a <b>real sample</b> to your address, and you can <b>track it live</b> from the print house to your door.</li>
+  </ol>
+  <div style="margin-top:6px;font-size:11px;color:#0369a1">💡 <b>Tip:</b> This is the exact way to check your flyer looks right before mailing to customers. If it isn't right, adjust it with <b>Edit / Position</b> and send another sample. you see the real printed result before anyone else does.</div>
+</div>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">Not sure how your letter or leaflet will look when it arrives? <b>Send yourself a real sample.</b> We print and post it to <b>your own address</b>, and you can follow the live delivery tracking from the moment it leaves the print house. You pay the normal per-item price (A4 letter £1.49 / A5 leaflet £1.99 / A5 in envelope £2.75).</p>
+<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Deliver to my address</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<input class="input" id="sample-name" placeholder="Your name" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--ff-b);outline:none">
+<input class="input" id="sample-addr1" placeholder="Street address *" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--ff-b);outline:none">
+<input class="input" id="sample-city" placeholder="Town / City" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--ff-b);outline:none">
+<input class="input" id="sample-postcode" placeholder="Postcode *" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--ff-b);outline:none">
+</div>
+<div style="margin-top:10px">
+<label class="label">Sample type</label>
+<select class="input" id="sample-type" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--ff-b);outline:none;background:#fff;width:100%">
+<option value="letter">A4 Letter. £1.49</option>
+<option value="flyer">A5 Leaflet. £1.99 (uses your selected format + uploaded design)</option>
+<option value="flyer_plus_letter">Leaflet + Letter. £2.99</option>
+</select>
+<div style="font-size:10px;color:var(--muted);margin-top:4px">Leaflet samples use the format selected above (A5 portrait / A5 landscape / A5 in envelope).</div>
+</div>
+</div>
+<button class="btn btn-primary" onclick="sendSample()" style="width:100%;justify-content:center"><i class="fas fa-paper-plane"></i> Send Me A Sample (£1.49+)</button>
+<div id="sample-status" style="font-size:11px;color:var(--text2);margin-top:8px"></div>
 </div>
 
 <!-- FAQ -->
@@ -158,7 +353,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div style="display:grid;gap:12px;margin-top:4px">
 <div>
 <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">How are my letters and leaflets sent?</div>
-<p style="font-size:12px;color:var(--text2);line-height:1.6">Your items are printed, folded and posted by a trusted third-party mailing service, and delivered through Royal Mail. You don't need to do anything — once you pay, everything is handled for you.</p>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">Your items are printed, folded and posted by a trusted third-party mailing service, and delivered through Royal Mail. You don't need to do anything. Once you pay, everything is handled for you.</p>
 </div>
 <div>
 <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">How do I know my items were actually sent?</div>
@@ -170,7 +365,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 </div>
 <div>
 <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Can I send to the same lead more than once?</div>
-<p style="font-size:12px;color:var(--text2);line-height:1.6">Yes. Use the <b>Repeat mailing</b> option when sending to schedule automatic follow-ups (e.g. now, in 2 weeks, then a month). Each follow-up is tracked in your Repeat Mailing Series.</p>
+<p style="font-size:12px;color:var(--text2);line-height:1.6">Yes. Use the <b>Repeat mailing</b> option when sending to schedule automatic follow-ups (e.g. now, in 2 weeks, then a month). Each follow-up is sent automatically on its due date.</p>
 </div>
 </div>
 </div>
@@ -183,6 +378,12 @@ var selectedTemplate='';
 var currentLeadType='moving';
 
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(function(){t.style.display='none';},3000);}
+function togglePrintGuide(btn){
+  var g=document.getElementById('pp-print-guide');
+  var arrow=btn.querySelector('.pp-guide-arrow');
+  if(g.style.display==='none'||!g.style.display){g.style.display='block';if(arrow)arrow.textContent='▴';}
+  else{g.style.display='none';if(arrow)arrow.textContent='▾';}
+}
 function api(method,path,body,cb){
   var x=new XMLHttpRequest();
   x.open(method,path,true);
@@ -194,9 +395,23 @@ function api(method,path,body,cb){
 }
 function doLogout(){if(confirm('Log out?')){localStorage.removeItem('mld_portal_session');window.location.href='/portal/';}}
 
+// Download a print template PDF reliably (popup-blocker safe, same origin)
+function downloadTemplate(file, name){
+  try{
+    var a=document.createElement('a');
+    a.href='/portal/templates/'+file;
+    a.download=name||file;
+    a.target='_blank';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){document.body.removeChild(a);},500);
+  }catch(e){ window.open('/portal/templates/'+file,'_blank'); }
+}
+
 function saveProfile(){
   var body={
     company_name:document.getElementById('p-company').value,
+    contact_name:document.getElementById('p-name').value,
     business_type:document.getElementById('p-businesstype')?document.getElementById('p-businesstype').value:'Removal Company',
     phone:document.getElementById('p-phone').value,
     email:document.getElementById('p-email')?document.getElementById('p-email').value:'',
@@ -227,52 +442,38 @@ function saveTemplate(){
   var name=document.getElementById('t-name').value||('Cover Letter '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}));
   var body={name:name,type:document.getElementById('t-type').value,ai_generated_text:document.getElementById('t-content').value};
   if(!body.ai_generated_text){toast('Write or generate a cover letter first');return;}
-  api('POST','/api/direct-mail/templates',body,function(err,d){toast(d&&d.success?'Cover letter saved':'Template error');if(d&&d.success)loadTemplates();});
-}
-function genLetterAI(){
-  var statusEl=document.getElementById('t-ai-status');
-  var v=document.getElementById('t-version').value;
-  statusEl.innerHTML='<i class="fas fa-spinner fa-spin"></i> Generating your cover letter...';
-  statusEl.style.color='var(--accent)';
-  api('POST','/api/ai/generate-letter',{version:v},function(err,d){
-    if(d&&d.error){statusEl.textContent='Error: '+d.error;statusEl.style.color='#dc2626';return;}
+  api('POST','/api/direct-mail/templates',body,function(err,d){
     if(d&&d.success){
-      var key=v==='PROFESSIONAL'?'professional':v==='SHORT'?'short':v==='FRIENDLY'?'friendly':v==='PREMIUM'?'premium':'call_to_action';
-      var text=d[key]||'';
-      if(!text){for(var k in d){if(typeof d[k]==='string'&&d[k].length>20&&k!=='input'){text=d[k];break;}}}
-      if(text){
-        // Strip formal-letter scaffolding placeholders so the printed cover
-        // letter is clean. Keep only [name] and [address] which we auto-fill.
-        text=text
-          .replace(/^[=\-\s]*(PROFESSIONAL|PROFESSIONAL LETTER)\s*[=\-]*\s*$/gim,'')
-          .split('\n').filter(function(line){
-            var l=line.trim();
-            if(!l)return true;
-            if(/^\[(Your )?(Name|Position|Title|Address|Contact|Company|Phone|Email|Website|Date|Postcode)\]$/i.test(l))return false;
-            if(/^\[Recipient(?:'s)? (Name|Position|Title|Company|Address|Contact)\]$/i.test(l))return false;
-            if(/^\[Date\]$/i.test(l))return false;
-            return true;
-          }).join('\n')
-          .replace(/\[Your Company\]/g,'[Your Company]')
-          .replace(/\[Your Name\]/g,'[name]')
-          .replace(/\[Name\]/g,'[name]')
-          .replace(/\[Your Address\]/g,'[address]')
-          .replace(/\[Your Contact\]/g,'')
-          .replace(/\[Recipient's Name\]/g,'[name]')
-          .replace(/\n{3,}/g,'\n\n')
-          .trim();
-        document.getElementById('t-content').value=text;
-        statusEl.innerHTML='<i class="fas fa-check" style="color:var(--success)"></i> Cover letter generated — review, edit, then click Save Cover Letter.';
-        statusEl.style.color='var(--success)';
-      } else {
-        statusEl.textContent='AI returned no text. Please try again.';
-        statusEl.style.color='#dc2626';
-      }
+      toast('Cover letter saved');
+      loadTemplates();
+      // ALSO save this letter as the setup's active cover letter so it's what
+      // actually gets sent (the send reads the setup template text, not a
+      // separate saved template). This guarantees the pasted letter is used.
+      var fmtId=_selectedFormat||'flyer_a5_portrait';
+      var mt = fmtId==='letter_a4' ? 'letter' : (fmtId==='flyer_plus_letter' ? 'flyer_plus_letter' : 'flyer');
+      api('POST','/api/direct-mail/setup',{default_mail_type:mt,default_format:fmtId,cover_letter:document.getElementById('t-content').value},function(e2,d2){
+        if(d2&&d2.success){ toast('Cover letter saved as your active letter'); loadLetterPreview(); }
+      });
     } else {
-      statusEl.textContent='Could not generate. Please try again.';
-      statusEl.style.color='#dc2626';
+      toast('Template error');
     }
   });
+}
+// Download exactly the cover letter text shown in the editor (as saved. the
+// backend strips any markdown * / ** / # so what you see is what prints).
+function downloadCoverLetter(){
+  var text=document.getElementById('t-content').value||'';
+  if(!text.trim()){toast('Write a cover letter first');return;}
+  var name=(document.getElementById('t-name').value||'cover-letter').trim().replace(/[^a-z0-9-_ ]/gi,'').replace(/\s+/g,'-').toLowerCase();
+  var blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download=(name||'cover-letter')+'.txt';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);a.remove();},100);
+  toast('Cover letter downloaded');
 }
 function loadTemplates(){
   api('GET','/api/direct-mail/templates?include_materials=1&include_content=1',null,function(err,d){
@@ -284,12 +485,181 @@ function loadTemplates(){
     var html='';
     tpls.forEach(function(t){
       sel.innerHTML+='<option value="'+t.id+'" data-type="'+(t.template_type||'letter')+'">'+t.name+'</option>';
-      html+='<div class="recipient" style="cursor:pointer" onclick="editTemplate(\''+t.id+'\')"><div><div class="addr">'+t.name+'</div><div class="meta">'+t.template_type+' · click to load into editor</div></div><span class="tag">Saved</span></div>';
+      var isSetup = t.name === 'My Print & Post Setup';
+      var delBtn = isSetup ? '' : '<button onclick="deleteTemplate(\''+t.id+'\',\''+String(t.name||'').replace(/'/g,"\\'")+'\')" style="margin-left:10px;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;color:#dc2626;border:1px solid #fecaca;background:#fff;cursor:pointer"><i class="fas fa-trash"></i> Delete</button>';
+      html+='<div class="recipient" style="display:flex;align-items:center"><div style="flex:1;cursor:pointer" onclick="editTemplate(\''+t.id+'\')"><div class="addr">'+t.name+'</div><div class="meta">'+t.template_type+' · click to load into editor'+(isSetup?' · your active setup':'')+'</div></div><span class="tag">Saved</span>'+delBtn+'</div>';
     });
-    list.innerHTML=html||'<div class="empty"><i class="fas fa-file-alt"></i>No cover letters yet — write one or generate with AI above</div>';
+    list.innerHTML=html||'<div class="empty"><i class="fas fa-file-alt"></i>No cover letters yet. Write one or generate with AI above</div>';
+  });
+}
+// Delete a saved cover letter / template.
+function deleteTemplate(id, name){
+  if(!id)return;
+  if(!confirm('Delete the cover letter "'+(name||'this template')+'"?'))return;
+  api('DELETE','/api/direct-mail/templates/'+id,null,function(err,d){
+    if(d&&d.success){
+      toast('Deleted '+(name||'cover letter'));
+      loadTemplates();
+    } else {
+      toast('Could not delete: '+((d&&d.error)||'try again'));
+    }
   });
 }
 var _allTemplates=[];
+var _selectedFormat='flyer_a5_portrait';
+var _formats=[];
+function fmtTemplateFile(id){
+  var f=_formats.find(function(x){return x.id===id;});
+  return f?f.template:'/portal/templates/a5-leaflet-portrait.pdf';
+}
+function fmtLabel(id){
+  var f=_formats.find(function(x){return x.id===id;});
+  return f?f.label:'A5 Portrait Leaflet';
+}
+function loadFormats(){
+  api('GET','/api/direct-mail/pricing',null,function(err,d){
+    _formats=(d&&d.formats)||[];
+    if(!_formats.length)return;
+    var grid=document.getElementById('fmt-grid');
+    var html='';
+    _formats.forEach(function(f){
+      var sel=(f.id===_selectedFormat)?'style="border-color:var(--accent);background:#eff6ff;box-shadow:0 0 0 3px rgba(14,165,233,.15)"':'';
+      html+='<div onclick="selectFormat(\''+f.id+'\')" '+sel+' data-fid="'+f.id+'" class="fmt-card" style="cursor:pointer;border:2px solid var(--border);border-radius:10px;padding:10px 12px;background:#fff;transition:.15s"><div style="font-size:12px;font-weight:700;color:var(--text)">'+f.label+'</div><div style="font-size:10px;color:var(--muted);margin-top:2px">'+f.mm+' · £'+f.price.toFixed(2)+'</div><div style="font-size:10px;color:var(--text2);margin-top:4px">'+f.desc+'</div></div>';
+    });
+    grid.innerHTML=html;
+    renderFormatDetail();
+    renderTemplateDownloads();
+  });
+}
+function selectFormat(id){
+  _selectedFormat=id;
+  document.querySelectorAll('.fmt-card').forEach(function(el){
+    if(el.getAttribute('data-fid')===id){el.style.borderColor='var(--accent)';el.style.background='#eff6ff';el.style.boxShadow='0 0 0 3px rgba(14,165,233,.15)';}
+    else{el.style.borderColor='var(--border)';el.style.background='#fff';el.style.boxShadow='';}
+  });
+  renderFormatDetail();
+  renderTemplateDownloads();
+}
+function renderFormatDetail(){
+  var f=_formats.find(function(x){return x.id===_selectedFormat;});
+  var el=document.getElementById('fmt-detail');
+  if(!f){el.style.display='none';return;}
+  el.style.display='block';
+  if(f.id==='flyer_plus_letter'){
+    el.innerHTML='<i class="fas fa-info-circle" style="margin-right:4px"></i><b>'+f.label+':</b> an A5 leaflet (front &amp; back) PLUS a personalised A4 letter, sent together in one envelope. Price <b>£'+f.price.toFixed(2)+'</b> per recipient. Download both templates below, design each, then upload your leaflet front/back and cover letter.';
+    loadLetterPreview();
+    return;
+  }
+  if(f.id==='letter_a4'){
+    el.innerHTML='<i class="fas fa-info-circle" style="margin-right:4px"></i><b>'+f.label+':</b> A4 '+f.mm+' · the recipient address prints in the envelope window (top-left). Just write your cover letter in the editor. no image needed. Price <b>£'+f.price.toFixed(2)+'</b> per item.';
+    loadLetterPreview();
+    return;
+  }
+  el.innerHTML='<i class="fas fa-info-circle" style="margin-right:4px"></i><b>'+f.label+':</b> '+f.mm+' final size · safe zone '+f.safe+' · 6mm bleed all round · full colour · price <b>£'+f.price.toFixed(2)+'</b> per item. Your artwork is auto-upscaled to 300 DPI and the recipient address is printed in the clear zone.';
+  var lp=document.getElementById('letter-preview-box'); if(lp)lp.style.display='none';
+}
+// Update the letter preview live as the customer types/pastes in the editor.
+function updateLetterPreviewLive(){
+  var box=document.getElementById('letter-preview-box');
+  var bodyEl=document.getElementById('lp-letter-body');
+  if(!box||!bodyEl)return;
+  if(box.style.display==='none')return; // only update if the preview is visible
+  var text=document.getElementById('t-content')?document.getElementById('t-content').value:'';
+  bodyEl.textContent=text||'Your cover letter text appears here.';
+  checkLetterFit();
+}
+// Check whether the letter fits on one A4 page (compares body scroll height to the
+// page area, and a character estimate) and shows a clear status.
+function checkLetterFit(){
+  var statusEl=document.getElementById('lp-fit-status');
+  var bodyEl=document.getElementById('lp-letter-body');
+  if(!statusEl||!bodyEl)return;
+  var text=bodyEl.textContent||'';
+  // Real A4 capacity: an A4 side holds ~500-600 words / ~3,200-3,900 chars in
+  // print; Stannp accepted a 6,600-char letter as a single A4 PDF. We judge ONLY
+  // by character/word count (not the preview element's scrollHeight, which is
+  // unreliable. emojis/line-heights inflate it and cause false "too long").
+  var charCount = text.trim().length;
+  var wordCount = text.trim().split(/\s+/).filter(function(w){return w.length>0;}).length;
+  var tooLong = charCount > 6200 || wordCount > 1000;
+  if(tooLong){
+    statusEl.textContent='⚠ This is around ' + wordCount + ' words. probably too long for one A4 page. Consider shortening it.';
+    statusEl.style.color='#dc2626';
+  } else if(charCount > 4500 || wordCount > 700){
+    statusEl.textContent='~' + wordCount + ' words. getting long for one A4 page. Shorten a little if you want it to sit comfortably.';
+    statusEl.style.color='#b45309';
+  } else {
+    statusEl.textContent='✓ Fits on one A4 page (' + wordCount + ' words / ' + charCount + ' chars)';
+    statusEl.style.color='#15803d';
+  }
+}
+// Populate + show the letter preview (used for A4 letter / leaflet+letter formats)
+// Fetches the ACTUAL saved cover letter text from the setup so it reflects what's
+// really saved (not just what's in the editor field right now).
+function loadLetterPreview(){
+  var box=document.getElementById('letter-preview-box');
+  if(!box)return;
+  box.style.display='block';
+  // Use whatever is currently in the editor field first (fast), then update with
+  // the saved letter from the setup.
+  var editorText=document.getElementById('t-content')?document.getElementById('t-content').value:'';
+  var bodyEl=document.getElementById('lp-letter-body');
+  var fromEl=document.getElementById('lp-letter-from');
+  if(bodyEl)bodyEl.textContent=editorText||'Loading your saved cover letter…';
+  checkLetterFit();
+  // Fill the return address from the profile fields
+  if(fromEl){
+    var biz='';
+    var cn=document.getElementById('p-company')?document.getElementById('p-company').value:'';
+    var a1=document.getElementById('p-addr1')?document.getElementById('p-addr1').value:'';
+    var ci=document.getElementById('p-city')?document.getElementById('p-city').value:'';
+    var pc=document.getElementById('p-postcode')?document.getElementById('p-postcode').value:'';
+    biz=(cn?cn+'<br>':'')+(a1?a1+'<br>':'')+(ci?ci+'<br>':'')+(pc?pc:'');
+    fromEl.innerHTML=biz||'Your Company<br>Address';
+  }
+  // Fetch the saved setup/cover letter so the preview reflects what's saved,
+  // BUT only when the editor field is empty. If the customer has typed/pasted
+  // text into the editor, that is what they see (their latest content wins).
+  api('GET','/api/direct-mail/setup',null,function(err,d){
+    if(!d||!d.success)return;
+    var editorNow=document.getElementById('t-content')?document.getElementById('t-content').value:'';
+    var saved='';
+    if(d.default_template && d.default_template.ai_generated_text) saved=d.default_template.ai_generated_text;
+    else if(d.cover_letter) saved=d.cover_letter;
+    // If the editor has its own text, keep showing it (don't overwrite).
+    if(editorNow && editorNow.trim().length>0){ if(bodyEl)bodyEl.textContent=editorNow; }
+    else if(saved && bodyEl) bodyEl.textContent=saved;
+    checkLetterFit();
+    // Prefer the setup's saved business info for the return address
+    if(fromEl && d.profile && d.profile.company_name){
+      var pb='';
+      pb=(d.profile.company_name?d.profile.company_name+'<br>':'');
+      pb+=(d.profile.address_line1?d.profile.address_line1+'<br>':'');
+      pb+=(d.profile.city?d.profile.city+'<br>':'');
+      pb+=(d.profile.postcode?d.profile.postcode:'');
+      if(pb)fromEl.innerHTML=pb;
+    }
+  });
+}
+function renderTemplateDownloads(){
+  var f=_formats.find(function(x){return x.id===_selectedFormat;});
+  var el=document.getElementById('tpl-downloads');
+  if(!f){return;}
+  var base=f.template.replace(/\.pdf$/,'');
+  var dl='';
+  if(f.id==='flyer_plus_letter'){
+    dl+='<a class="btn btn-outline" href="'+base+'.pdf" download="a5-leaflet-portrait.pdf"><i class="fas fa-file-pdf"></i> Leaflet Template (front)</a>';
+    dl+='<a class="btn btn-outline" href="'+base+'-back.pdf" download="a5-leaflet-portrait-back.pdf"><i class="fas fa-file-pdf"></i> Leaflet Back Template</a>';
+    dl+='<a class="btn btn-outline" href="/portal/templates/a4-letter.pdf" download="a4-letter.pdf"><i class="fas fa-file-pdf"></i> Letter Template</a>';
+    el.innerHTML=dl;
+    return;
+  }
+  dl+='<a class="btn btn-outline" href="'+base+'.pdf" download="'+base.replace('/portal/templates/','')+'.pdf"><i class="fas fa-file-pdf"></i> Download '+f.label+' Template (front)</a>';
+  if(f.kind==='flyer'){
+    dl+='<a class="btn btn-outline" href="'+base+'-back.pdf" download="'+base.replace('/portal/templates/','')+'-back.pdf"><i class="fas fa-file-pdf"></i> Back Template</a>';
+  }
+  el.innerHTML=dl;
+}
 function loadTemplateContent(sel){
   var id=sel.value;
   if(!id){return;}
@@ -323,26 +693,120 @@ function readFileAsBase64(file, cb){
   reader.onload=function(e){cb(e.target.result.split(',')[1]||'');};
   reader.readAsDataURL(file);
 }
+// Validate a selected flyer front/back against the Stannp print spec for the
+// current format BEFORE saving/sending, so a wrong-aspect or low-res upload is
+// caught immediately (not at print time when it would cost a refund).
+function validateArtwork(input, kind){
+  var box=document.getElementById('artwork-validation');
+  if(!box)return;
+  if(!input||!input.files||!input.files[0]){box.style.display='none';box.innerHTML='';return;}
+  var file=input.files[0];
+  box.style.display='block';
+  box.innerHTML='<div style="padding:10px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-spinner fa-spin"></i> Checking '+file.name+' against the print spec...</div>';
+  readFileAsBase64(file,function(b64){
+    api('POST','/api/direct-mail/materials/validate',{format:_selectedFormat,name:file.name,file_data:'data:'+(file.type||'image/png')+';base64,'+b64},function(err,d){
+      if(!d){box.innerHTML='<div style="padding:10px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12px;color:#dc2626">Could not validate this file. Please try again.</div>';return;}
+      if(d.ok){
+        var warn=d.warnings&&d.warnings.length?'<div style="margin-top:6px;color:#b45309"><i class="fas fa-exclamation-triangle"></i> '+d.warnings.join(' ')+'</div>':'';
+        box.innerHTML='<div style="padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;color:#15803d"><i class="fas fa-check-circle"></i> <b>'+file.name+'</b> is ready to print ('+d.width+'×'+d.height+', ~'+Math.round(d.dpi||0)+' DPI) for '+d.format.label+'.'+warn+'</div>';
+      } else {
+        box.innerHTML='<div style="padding:10px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12px;color:#dc2626"><i class="fas fa-times-circle"></i> <b>'+file.name+'</b> needs attention:<br>'+(d.errors&&d.errors.length?d.errors.join('<br>'):(d.message||'Does not meet the print spec'))+'</div>';
+      }
+    });
+  });
+}
 function uploadFile(inputId,type,next){
   var input=document.getElementById(inputId);
-  if(!input.files||!input.files[0]){next();return;}
+  if(!input.files||!input.files[0]){next(false);return;}
   var file=input.files[0];
   readFileAsBase64(file,function(data){
     api('POST','/api/direct-mail/materials',{name:file.name,type:type,file_data:data},function(err,d){
-      toast(d&&d.success?(type+' uploaded'):('Upload '+type+' error'));
-      next();
+      var ok = !err && d && d.success;
+      if(!ok){toast('Upload '+type+' failed: '+((d&&d.error)||'could not save file'));}
+      else toast((type==='flyer_front'?'Leaflet front':'Leaflet back')+' saved');
+      next(!ok);
     });
   });
 }
 function uploadMaterials(){
   toast('Uploading materials...');
+  var btn=document.getElementById('save-flyer-btn');
   uploadFile('up-flyer-front','flyer_front',function(){
     uploadFile('up-flyer-back','flyer_back',function(){
       uploadFile('up-letter','letter',function(){
-        toast('Materials uploaded');
         loadMaterials();
+        // Persist the format + cover letter too so the setup is fully saved.
+        saveFlyerFormatOnly(null,btn);
+        toast('Materials uploaded & setup saved');
       });
     });
+  });
+}
+// Delete a saved material (flyer front/back/letter). Re-renders the list.
+function deleteMaterial(id, name){
+  if(!id)return;
+  if(!confirm('Delete "'+(name||'this file')+'" from your saved materials?'))return;
+  api('DELETE','/api/direct-mail/materials/'+id,null,function(err,d){
+    if(d&&d.success){
+      toast('Deleted '+(name||'file'));
+      loadMaterials();
+    } else {
+      toast('Could not delete: '+((d&&d.error)||'try again'));
+    }
+  });
+}
+// Save the leaflet front & back (uploading any files chosen) plus the selected
+// format and cover letter, so the customer's Print & Post setup is persisted.
+function saveFlyerSetup(){
+  var btn=document.getElementById('save-flyer-btn');
+  var statusEl=document.getElementById('save-flyer-status');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving...';}
+  if(statusEl){statusEl.textContent='';statusEl.style.color='';}
+  var frontSel=document.getElementById('up-flyer-front');
+  var backSel=document.getElementById('up-flyer-back');
+  var letterSel=document.getElementById('up-letter');
+  var haveFront=frontSel&&frontSel.files&&frontSel.files[0];
+  var haveBack=backSel&&backSel.files&&backSel.files[0];
+  var haveLetter=letterSel&&letterSel.files&&letterSel.files[0];
+  var toUpload=[];
+  if(haveFront)toUpload.push(['up-flyer-front','flyer_front']);
+  if(haveBack)toUpload.push(['up-flyer-back','flyer_back']);
+  if(haveLetter)toUpload.push(['up-letter','letter']);
+  if(toUpload.length===0){
+    // Nothing to upload. just persist the format + cover letter on the setup.
+    saveFlyerFormatOnly(statusEl,btn);
+    return;
+  }
+  var done=0,total=toUpload.length,errCount=0;
+  function step(){
+    done++;
+    if(done===total){
+      if(errCount>0){
+        if(statusEl){statusEl.textContent='Some files failed to save. Please try again.';statusEl.style.color='#dc2626';}
+        if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> Save My Leaflet (Front &amp; Back)';}
+        return;
+      }
+      saveFlyerFormatOnly(statusEl,btn);
+    }
+  }
+  toUpload.forEach(function(pair){ uploadFile(pair[0],pair[1],function(err){if(err)errCount++;step();}); });
+}
+function saveFlyerFormatOnly(statusEl,btn){
+  var body={default_mail_type:_selectedFormat==='letter_a4'?'letter':(_selectedFormat==='flyer_plus_letter'?'flyer_plus_letter':'flyer'),default_format:_selectedFormat};
+  var coverText=document.getElementById('t-content')?document.getElementById('t-content').value:'';
+  if(coverText)body.cover_letter=coverText;
+  api('POST','/api/direct-mail/setup',body,function(err,d){
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> Save My Leaflet (Front &amp; Back)';}
+    if(!statusEl)return;
+    if(d&&d.success){
+      statusEl.textContent='✅ '+fmtLabel(_selectedFormat)+' saved. You can now send this to your leads.';
+      statusEl.style.color='#16a34a';
+      loadMaterials();
+      loadTemplates();
+    } else {
+      statusEl.textContent='Error: '+((d&&d.error)||'could not save');
+      statusEl.style.color='#dc2626';
+    }
   });
 }
 function loadMaterials(){
@@ -350,25 +814,86 @@ function loadMaterials(){
     var mats=(d&&d.materials)||[];
     var list=document.getElementById('materials-list');
     var html='';
+    var tokq=(_token?('?token='+encodeURIComponent(_token)+'&v='+Date.now()):'');
     mats.forEach(function(m){
-      html+='<div class="recipient"><div><div class="addr">'+m.name+'</div><div class="meta">'+m.type+' · '+m.file_type+'</div></div><span class="tag">Uploaded</span></div>';
+      var thumb=m.id?'<div style="width:56px;height:56px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:#f8fafc;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-right:10px"><img src="/api/direct-mail/materials/'+m.id+'/file'+tokq+'" style="max-width:100%;max-height:100%;object-fit:contain" alt="preview"></div>':'';
+      html+='<div class="recipient" style="display:flex;align-items:center">'+thumb+'<div style="flex:1"><div class="addr">'+m.name+'</div><div class="meta">'+m.type+' · '+m.file_type+'</div></div><span class="tag">Saved</span><button onclick="openFlyerEditor(\''+m.id+'\',\''+String(m.name||'').replace(/'/g,"\\'")+'\',\''+m.type+'\')" style="margin-left:10px;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit / Position</button><a href="/api/direct-mail/materials/'+m.id+'/file'+tokq+'" download="'+m.name+'" target="_blank" style="margin-left:8px;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;color:var(--accent);border:1px solid var(--border);text-decoration:none"><i class="fas fa-download"></i> Download</a><button onclick="deleteMaterial(\''+m.id+'\',\''+String(m.name||'').replace(/'/g,"\\'")+'\')" style="margin-left:8px;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;color:#dc2626;border:1px solid #fecaca;background:#fff;cursor:pointer"><i class="fas fa-trash"></i> Delete</button></div>';
     });
     list.innerHTML=html||'<div class="empty" style="padding:15px"><i class="fas fa-upload"></i>No materials uploaded yet</div>';
   });
+  loadFinalPrintPreview();
+}
+// Load + show the FINAL PRINT preview (front with whited-out address zone, back)
+// and wire the download buttons. Uses the /api/direct-mail/setup response which
+// returns preview_zone_url (whited out) + preview_url (original) + format spec.
+function loadFinalPrintPreview(){
+  var box=document.getElementById('final-print-preview');
+  if(!box)return;
+  api('GET','/api/direct-mail/setup',null,function(err,d){
+    if(!d||!d.success)return;
+    var tokq=(_token?('?token='+encodeURIComponent(_token)+'&v='+Date.now()):'');
+    var hasFront = d.flyer_front && (d.flyer_front.preview_zone_url || d.flyer_front.preview_url);
+    var hasBack = d.flyer_back && d.flyer_back.preview_url;
+    if(!hasFront && !hasBack){ box.style.display='none'; return; }
+    box.style.display='block';
+    var tips=document.getElementById('flyer-tips');
+    if(tips)tips.style.display='block';
+    var fmtParam = (d.format && d.format.id) ? d.format.id : 'flyer_a5_portrait';
+    var frontTokq = tokq + '&format=' + encodeURIComponent(fmtParam);
+    // Front preview = whited-out version
+    var frontImg=document.getElementById('fp-front-img');
+    if(frontImg && d.flyer_front){
+      // Use /final-print for the preview so it ALWAYS shows the latest edited
+      // version (final-print reads the current material, no-store, inline).
+      var fmtParam2=(d.format&&d.format.id)||'flyer_a5_portrait';
+      frontImg.src='/api/direct-mail/materials/'+d.flyer_front.id+'/final-print'+tokq+'&format='+encodeURIComponent(fmtParam2);
+      if(document.getElementById('fp-front-label'))document.getElementById('fp-front-label').textContent=d.flyer_front.name||'';
+    }
+    // Specs
+    var specsEl=document.getElementById('fp-front-specs');
+    if(specsEl&&d.format){ specsEl.innerHTML='<b>Print spec:</b> '+d.format.mm+' · safe zone '+d.format.safe+' · 6mm bleed · 300 DPI.'; }
+    // Downloads. use the FINAL-PRINT endpoint so what's downloaded = exactly
+    // what's sent to Stannp (upscaled 300 DPI + address zone baked in).
+    var dlFinal=document.getElementById('fp-download-final');
+    var dlOrig=document.getElementById('fp-download-orig');
+    if(dlFinal&&d.flyer_front){
+      dlFinal.href='/api/direct-mail/materials/'+d.flyer_front.id+'/final-print'+frontTokq+'&download=1'; dlFinal.download=(d.flyer_front.name||'leaflet-front')+'-final.png'; dlFinal.style.display='flex';
+    } else if(dlFinal){ dlFinal.style.display='none'; }
+    if(dlOrig&&d.flyer_front&&d.flyer_front.preview_url){
+      dlOrig.href=d.flyer_front.preview_url+tokq; dlOrig.download=d.flyer_front.name||'leaflet-front'; dlOrig.style.display='flex';
+    } else if(dlOrig){ dlOrig.style.display='none'; }
+    // Back. Stannp prints the recipient address on the BACK at the TOP, so the
+    // back preview shows the address zone (white) at the top via /preview-zone.
+    var backImg=document.getElementById('fp-back-img');
+    var dlBack=document.getElementById('fp-download-back');
+    if(backImg&&d.flyer_back&&d.flyer_back.preview_url){
+      backImg.src='/api/direct-mail/materials/'+d.flyer_back.id+'/preview-zone'+tokq;
+      if(document.getElementById('fp-back-name'))document.getElementById('fp-back-name').textContent=d.flyer_back.name||'';
+      if(dlBack){dlBack.href='/api/direct-mail/materials/'+d.flyer_back.id+'/preview-zone'+tokq; dlBack.download=d.flyer_back.name||'leaflet-back'; dlBack.style.display='flex';}
+    } else {
+      if(backImg){backImg.style.display='none';} 
+      if(dlBack){dlBack.style.display='none';}
+    }
+  });
 }
 function loadLeads(){
+  var list=document.getElementById('leads-list');
+  list.innerHTML='<div class="empty" style="padding:16px"><i class="fas fa-spinner fa-spin"></i> Loading your leads...</div>';
   api('GET','/api/leads',null,function(err,d){
     var leads=Array.isArray(d)?d:[];
-    var list=document.getElementById('leads-list');
     if(!leads.length){list.innerHTML='<div class="empty"><i class="fas fa-inbox"></i>No leads available yet</div>';return;}
     var html='';
     leads.forEach(function(l){
       var dd=typeof l.data==='string'?JSON.parse(l.data||'{}'):(l.data||{});
-      var addr=dd.address||dd.company||dd.deceasedName||dd.tenderTitle||'Lead';
+      var nm=(dd.name||dd.contact_name||'');
+      var addr=dd.address_line1||dd.address||dd.street||dd.company||dd.deceasedAddress||dd.tenderTitle||'';
       var pc=dd.postcode||dd.location||'';
+      var city=dd.city||dd.town||'';
+      var label=nm?(nm+' · '+(addr||'Lead')):(addr||'Lead');
+      var sub=[pc,city].filter(Boolean).join(', ');
       var isSel=selectedLeads.has(l.id);
-      html+='<div class="recipient" style="cursor:pointer;'+(isSel?'border-color:var(--accent);background:#f0f7ff':'')+'" onclick="toggleLead(\''+l.id+'\',this)">'+
-        '<div><div class="addr">'+addr.substring(0,60)+'</div><div class="meta">'+(pc||'')+'</div></div>'+
+      html+='<div class="recipient" data-lead-id="'+l.id+'" style="cursor:pointer;'+(isSel?'border-color:var(--accent);background:#f0f7ff':'')+'" onclick="toggleLead(\''+l.id+'\',this)">'+
+        '<div><div class="addr">'+label.substring(0,60)+'</div><div class="meta">'+(sub||'')+'</div></div>'+
         '<span class="status-badge'+(isSel?' approved':'')+'">'+(isSel?'Selected':'Select')+'</span></div>';
     });
     list.innerHTML=html;
@@ -379,9 +904,28 @@ function toggleLead(id,el){
   if(selectedLeads.has(id)){selectedLeads.delete(id);el.style.borderColor='var(--border)';el.style.background='';el.querySelector('.status-badge').textContent='Select';el.querySelector('.status-badge').className='status-badge';}
   else{selectedLeads.add(id);el.style.borderColor='var(--accent)';el.style.background='#f0f7ff';el.querySelector('.status-badge').textContent='Selected';el.querySelector('.status-badge').className='status-badge approved';}
   document.getElementById('sel-count').textContent=selectedLeads.size;
-  var tType=document.getElementById('c-template').selectedOptions&&document.getElementById('c-template').selectedOptions[0]?document.getElementById('c-template').selectedOptions[0].getAttribute('data-type'):'';
-  var price=tType==='flyer'||tType==='postcard'?1.99:1.49;
+  var price = 1.49;
+  var fSel = _formats.find(function(x){return x.id===_selectedFormat;});
+  if(fSel) price = fSel.price;
   document.getElementById('est-cost').textContent=(selectedLeads.size*price).toFixed(2);
+}
+// Select or clear ALL currently-loaded leads at once.
+function selectAllLeads(select){
+  var list=document.getElementById('leads-list');
+  var rows=list?list.querySelectorAll('.recipient'):[];
+  rows.forEach(function(el){
+    var id=el.getAttribute('data-lead-id');
+    if(!id)return;
+    if(select){
+      if(!selectedLeads.has(id)){selectedLeads.add(id);el.style.borderColor='var(--accent)';el.style.background='#f0f7ff';var b=el.querySelector('.status-badge');if(b){b.textContent='Selected';b.className='status-badge approved';}}
+    } else {
+      if(selectedLeads.has(id)){selectedLeads.delete(id);el.style.borderColor='var(--border)';el.style.background='';var b=el.querySelector('.status-badge');if(b){b.textContent='Select';b.className='status-badge';}}
+    }
+  });
+  document.getElementById('sel-count').textContent=selectedLeads.size;
+  var price=1.49;var fSel=_formats.find(function(x){return x.id===_selectedFormat;});if(fSel)price=fSel.price;
+  document.getElementById('est-cost').textContent=(selectedLeads.size*price).toFixed(2);
+  toast(select?'All leads selected':'Selection cleared');
 }
 
 function newCampaign(){
@@ -390,99 +934,210 @@ function newCampaign(){
   toast('Select your leads below');
 }
 
+function sendSample(){
+  var addr1=document.getElementById('sample-addr1').value.trim();
+  var postcode=document.getElementById('sample-postcode').value.trim();
+  var city=document.getElementById('sample-city').value.trim();
+  var name=document.getElementById('sample-name').value.trim();
+  var mailType=document.getElementById('sample-type').value;
+  if(!addr1||!postcode){toast('Enter your street address and postcode');return;}
+  var st=document.getElementById('sample-status');
+  st.textContent='Creating your sample…';
+  api('POST','/api/direct-mail/send-sample',{mail_type:mailType,format:_selectedFormat,name:name,address_line1:addr1,address_line2:'',city:city,postcode:postcode},function(err,d){
+    if(!d||!d.success){st.textContent='Error: '+((d&&d.error)||'Could not create sample');return;}
+    st.innerHTML='✅ Sample created ('+fmtLabel(_selectedFormat)+'). opening payment to send it to your address…';
+    window.location.href=d.checkout_url;
+  });
+}
 function createCampaign(){
-  var templateId=document.getElementById('c-template').value;
-  if(!templateId){toast('Select a template first');return;}
   if(selectedLeads.size===0){toast('Select at least one recipient');return;}
-  var name='Campaign '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-  api('POST','/api/direct-mail/campaigns',{name:name,template_id:templateId,target_count:selectedLeads.size,delivery_date:document.getElementById('c-date').value},function(err,d){
-    if(!d||!d.campaign){toast('Failed to create campaign');return;}
-    var campaignId=d.campaign.id;
-    // Add recipients
-    api('GET','/api/leads',null,function(err2,leads){
-      var leadsArr=Array.isArray(leads)?leads:[];
-      var added=0;
-      leadsArr.forEach(function(l){
-        if(!selectedLeads.has(l.id))return;
-        var dd=typeof l.data==='string'?JSON.parse(l.data||'{}'):(l.data||{});
-        var addrStr=dd.address||dd.company||dd.deceasedAddress||'';
-        // Parse address into lines for mailing
-        var lines=addrStr.split(',').map(function(s){return s.trim();}).filter(Boolean);
-        var recipient={
-          lead_id:l.id,
-          name:dd.company||dd.deceasedName||dd.name||'Lead',
-          company:dd.company||'',
-          address_line1:lines[0]||'',
-          address_line2:lines[1]||'',
-          city:lines.length>2?lines.slice(1,-1).join(', '):(dd.city||''),
-          postcode:dd.postcode||dd.location||(lines.length?lines[lines.length-1]:'')
-        };
-        api('POST','/api/direct-mail/campaigns/'+campaignId+'/recipients',recipient,function(er3){added++;});
-      });
-      toast('Campaign created with '+added+' recipients');
-      setTimeout(loadCampaigns,1000);
-      selectedLeads.clear();
-    });
+  var leadIds=Array.from(selectedLeads);
+  var mailType=_selectedFormat==='flyer_plus_letter'?'flyer_plus_letter':(_selectedFormat&&_selectedFormat.indexOf('letter')===0?'letter':'flyer');
+  var btn=document.getElementById('create-campaign-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Creating &amp; opening payment...';}
+  api('POST','/api/direct-mail/send-bulk',{lead_ids:leadIds,mail_type:mailType,format:_selectedFormat},function(err,d){
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> Create &amp; Send Campaign';}
+    if(!d||!d.checkout_url){
+      toast('Failed to start: '+((d&&d.error)||'unknown error'));
+      return;
+    }
+    selectedLeads.clear();
+    window.location.href=d.checkout_url;
   });
 }
 
-function loadCampaigns(){
-  api('GET','/api/direct-mail/campaigns',null,function(err,d){
-    var cams=(d&&d.campaigns)||[];
-    var list=document.getElementById('campaigns-list');
-    if(!cams.length){list.innerHTML='<div class="empty"><i class="fas fa-history"></i>No campaigns yet</div>';return;}
-    var html='';
-    cams.forEach(function(c){
-      var tr=c.tracking||{step:0,label:'Received'};
-      var steps=['Received','Review','Paid','Printing','Delivered'];
-      var stepHtml='';
-      steps.forEach(function(s,i2){
-        var done = tr.step > i2 || (tr.step===5 && i2<=4);
-        var active = tr.step===i2+1 && tr.step<5;
-        stepHtml+='<div style="flex:1;text-align:center;position:relative">'+
-          '<div style="width:18px;height:18px;border-radius:50%;margin:0 auto;'+(done?'background:var(--success);color:#fff':active?'background:var(--accent);color:#fff':'background:#e2e8f0;color:var(--muted)')+';display:flex;align-items:center;justify-content:center;font-size:8px">'+(done?'<i class="fas fa-check"></i>':(i2+1))+'</div>'+
-          '<div style="font-size:8px;color:'+(done?'var(--success)':active?'var(--accent)':'var(--muted)')+';font-weight:'+(done||active?'700':'400')+';margin-top:3px">'+s+'</div></div>';
-      });
-      var statusColor = c.status==='completed'||c.status==='dispatched' ? 'var(--success)' : c.status==='failed'||c.status==='cancelled' ? '#dc2626' : 'var(--accent)';
-      var proofBtn = c.proof_url || tr.proof_available ?
-        '<a href="/api/direct-mail/campaigns/'+c.id+'/proof" target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:7px 12px;border-radius:7px;background:#fff;border:1px solid var(--accent);color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;text-decoration:none"><i class="fas fa-file-pdf"></i> View Proof of Posting</a>'
-        : '';
-      var dispatchedLine = tr.dispatched ? '<div style="font-size:10px;color:var(--muted);margin-top:2px">Dispatched '+(c.delivery_date||'')+' · '+(c.sent_count||0)+' item'+(c.sent_count===1?'':'s')+'</div>' : '';
-      html+='<div style="border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">'+
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">'+
-        '<div><div style="font-weight:700;font-size:13px">'+c.name+'</div>'+
-        '<div style="font-size:11px;color:var(--muted)">'+(c.target_count||0)+' recipients · Created '+new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</div>'+
-        dispatchedLine+'</div>'+
-        '<span style="font-size:11px;font-weight:700;color:'+statusColor+'">'+(tr.label||c.status)+'</span></div>'+
-        '<div style="display:flex;align-items:center;gap:4px;margin-top:12px">'+stepHtml+'</div>'+
-        proofBtn+'</div>';
-    });
-    list.innerHTML=html;
-  });
+// ===== FLYER POSITION/CROP EDITOR (Vistaprint-style) =====
+// Uses a clean rectangle model (rx, ry, rw, rh in canvas coords) so stretching is
+// natural: dragging a handle resizes the rectangle and the OPPOSITE edge stays
+// fixed (like resizing a window). Drag the body to move, zoom scales from centre.
+var _flyerEditor = { id:'', matType:'', img:null, rx:0, ry:0, rw:0, rh:0, dragging:false, startX:0, startY:0, startRx:0, startRy:0, startRw:0, startRh:0, mode:'move', canvas:null, ctx:null, cw:360, ch:505, loaded:false, zoneH:0 };
+function openFlyerEditor(id, name, matType){
+  _flyerEditor.id=id; _flyerEditor.matType=matType||''; _flyerEditor.loaded=false;
+  var modal=document.getElementById('flyer-editor-modal');
+  modal.style.display='flex';
+  var canvas=document.getElementById('flyer-editor-canvas');
+  _flyerEditor.canvas=canvas; _flyerEditor.ctx=canvas.getContext('2d');
+  canvas.width=_flyerEditor.cw; canvas.height=_flyerEditor.ch;
+  _flyerEditor.zoneH=Math.round(_flyerEditor.ch*0.28);
+  document.getElementById('flyer-editor-save').disabled=false;
+  document.getElementById('flyer-editor-save').innerHTML='<i class="fas fa-check"></i> Save Positioned Flyer';
+  document.getElementById('flyer-editor-status').textContent='';
+  document.getElementById('flyer-editor-zoomlabel').textContent='100%';
+  var img=new Image();
+  img.onload=function(){ _flyerEditor.img=img; _flyerEditor.loaded=true; _flyerEditor.reset(); flyerEditorDraw(); };
+  img.src='/api/direct-mail/materials/'+id+'/file?token='+encodeURIComponent(_token)+'&v='+Date.now();
+  // mouse + touch handlers
+  canvas.onmousedown=function(e){ flyerEditorStart(e.clientX,e.clientY); };
+  window.onmousemove=function(e){ if(_flyerEditor.dragging)flyerEditorMove(e.clientX,e.clientY); };
+  window.onmouseup=function(){ _flyerEditor.dragging=false; canvas.style.cursor='grab'; };
+  canvas.onwheel=function(e){ e.preventDefault(); flyerEditorZoom(e.deltaY<0?1:-1); };
+  canvas.addEventListener('touchstart',function(e){ var t=e.touches[0]; flyerEditorStart(t.clientX,t.clientY); },{passive:false});
+  canvas.addEventListener('touchmove',function(e){ e.preventDefault(); var t=e.touches[0]; flyerEditorMove(t.clientX,t.clientY); },{passive:false});
+  canvas.addEventListener('touchend',function(){ _flyerEditor.dragging=false; },{passive:false});
 }
-function loadRepeatSeries(){
-  api('GET','/api/direct-mail/repeat-series',null,function(err,d){
-    var series=(d&&d.series)||[];
-    var list=document.getElementById('repeat-series-list');
-    if(!series.length){list.innerHTML='<div class="empty"><i class="fas fa-redo-alt"></i>No repeat mailings yet — use the repeat option when sending a lead</div>';return;}
-    var html='';
-    series.forEach(function(s){
-      var mails='';
-      (s.mailings||[]).forEach(function(m,i2){
-        var sent = m.status==='sent_to_provider'||m.status==='dispatched'||m.status==='completed';
-        var statusColor = sent ? 'var(--success)' : m.status==='failed' ? '#dc2626' : 'var(--muted)';
-        var label = sent ? 'Sent' : m.status==='failed' ? 'Failed' : m.payment_status==='paid' ? 'Scheduled' : 'Pending';
-        mails+='<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">'+
-          '<div><span style="color:'+statusColor+';font-weight:700">'+(i2+1)+'.</span> '+(m.delivery_date||'soon')+'</div>'+
-          '<span class="tag" style="background:'+(sent?'#f0fdf4':m.status==='failed'?'#fef2f2':'#eff6ff')+';color:'+statusColor+'">'+label+'</span></div>';
-      });
-      html+='<div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px">'+
-        '<div><div style="font-weight:700;font-size:13px">'+(s.lead_label||'Lead')+'</div><div style="font-size:11px;color:var(--muted)">'+(s.mailings||[]).length+' mailings · £'+s.total.toFixed(2)+' total</div></div>'+
-        '<span class="tag">'+s.mail_type.replace(/_/g,' ')+'</span></div>'+
-        mails+'</div>';
-    });
-    list.innerHTML=html;
+function closeFlyerEditor(){ document.getElementById('flyer-editor-modal').style.display='none'; }
+function flyerEditorReset(){
+  var c=_flyerEditor.canvas, w=c.width, h=c.height;
+  var iw=_flyerEditor.img? _flyerEditor.img.width:1, ih=_flyerEditor.img? _flyerEditor.img.height:1;
+  var baseF=Math.min(w/iw,h/ih);
+  _flyerEditor.rw=iw*baseF; _flyerEditor.rh=ih*baseF;
+  _flyerEditor.rx=(w-_flyerEditor.rw)/2; _flyerEditor.ry=(h-_flyerEditor.rh)/2;
+  flyerEditorDraw();
+}
+function flyerEditorPoint(cx,cy){
+  // Convert screen coords to canvas coords
+  var c=_flyerEditor.canvas, r=c.getBoundingClientRect();
+  return { x:(cx-r.left)*(c.width/r.width), y:(cy-r.top)*(c.height/r.height) };
+}
+function flyerEditorHit(cx,cy){
+  var p=flyerEditorPoint(cx,cy), rect=_flyerEditor;
+  var x=rect.rx,y=rect.ry,w=rect.rw,h=rect.rh;
+  var hw=10, d=8;
+  function near(tx,ty){ return Math.abs(p.x-tx)<=hw&&Math.abs(p.y-ty)<=hw; }
+  if(near(x,y))return 'tl';
+  if(near(x+w,y))return 'tr';
+  if(near(x,y+h))return 'bl';
+  if(near(x+w,y+h))return 'br';
+  if(Math.abs(p.x-x)<=d&&p.y>y+hw&&p.y<y+h-hw)return 'l';
+  if(Math.abs(p.x-(x+w))<=d&&p.y>y+hw&&p.y<y+h-hw)return 'r';
+  if(Math.abs(p.y-y)<=d&&p.x>x+hw&&p.x<x+w-hw)return 't';
+  if(Math.abs(p.y-(y+h))<=d&&p.x>x+hw&&p.x<x+w-hw)return 'b';
+  // inside the rect = move
+  if(p.x>=x&&p.x<=x+w&&p.y>=y&&p.y<=y+h)return 'move';
+  return null;
+}
+function flyerEditorStart(cx,cy){
+  _flyerEditor.dragging=true; _flyerEditor.startX=cx; _flyerEditor.startY=cy;
+  _flyerEditor.startRx=_flyerEditor.rx; _flyerEditor.startRy=_flyerEditor.ry;
+  _flyerEditor.startRw=_flyerEditor.rw; _flyerEditor.startRh=_flyerEditor.rh;
+  _flyerEditor.mode=flyerEditorHit(cx,cy);
+  var c=_flyerEditor.canvas;
+  c.style.cursor = _flyerEditor.mode==='move' ? 'grabbing' : 'nwse-resize';
+}
+function flyerEditorMove(cx,cy){
+  var c=_flyerEditor.canvas, r=c.getBoundingClientRect();
+  var dx=(cx-_flyerEditor.startX)*(c.width/r.width);
+  var dy=(cy-_flyerEditor.startY)*(c.height/r.height);
+  var m=_flyerEditor.mode, rx=_flyerEditor.startRx, ry=_flyerEditor.startRy, rw=_flyerEditor.startRw, rh=_flyerEditor.startRh;
+  var minS=20;
+  if(m==='move'){ _flyerEditor.rx=rx+dx; _flyerEditor.ry=ry+dy; }
+  else if(m){
+    // Resize keeping the OPPOSITE edge fixed
+    if(m.indexOf('r')!==-1){ rw=Math.max(minS,rx+rw+dx-rx); }
+    if(m.indexOf('l')!==-1){ var newW=Math.max(minS,rw-dx); rx=rx+(rw-newW); rw=newW; }
+    if(m.indexOf('b')!==-1){ rh=Math.max(minS,ry+rh+dy-ry); }
+    if(m.indexOf('t')!==-1){ var newH=Math.max(minS,rh-dy); ry=ry+(rh-newH); rh=newH; }
+    _flyerEditor.rx=rx; _flyerEditor.ry=ry; _flyerEditor.rw=rw; _flyerEditor.rh=rh;
+    var pct=Math.round((rw/_flyerEditor.cw)*100);
+    document.getElementById('flyer-editor-zoomlabel').textContent=pct+'%';
+  }
+  flyerEditorDraw();
+}
+function flyerEditorZoom(dir){
+  var cx=_flyerEditor.rx+_flyerEditor.rw/2, cy=_flyerEditor.ry+_flyerEditor.rh/2;
+  var f=1+(dir*0.15);
+  _flyerEditor.rw=Math.max(20,_flyerEditor.rw*f);
+  _flyerEditor.rh=Math.max(20,_flyerEditor.rh*f);
+  _flyerEditor.rx=cx-_flyerEditor.rw/2; _flyerEditor.ry=cy-_flyerEditor.rh/2;
+  document.getElementById('flyer-editor-zoomlabel').textContent=Math.round((_flyerEditor.rw/_flyerEditor.cw)*100)+'%';
+  flyerEditorDraw();
+}
+function flyerEditorDraw(){
+  var c=_flyerEditor.canvas, ctx=_flyerEditor.ctx, w=_flyerEditor.cw, h=_flyerEditor.ch;
+  ctx.clearRect(0,0,w,h);
+  // White A5 canvas + darker outer border
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#334155'; ctx.lineWidth=2; ctx.strokeRect(0,0,w,h);
+  // Draw the design (positioned + stretched rectangle)
+  if(_flyerEditor.img && _flyerEditor.loaded){
+    var dx=_flyerEditor.rx, dy=_flyerEditor.ry, dw=_flyerEditor.rw, dh=_flyerEditor.rh;
+    ctx.drawImage(_flyerEditor.img, dx, dy, dw, dh);
+    // solid selection border (darker)
+    ctx.strokeStyle='#1e293b'; ctx.lineWidth=2; ctx.strokeRect(dx,dy,dw,dh);
+    // stretch handles. larger + darker (corners + edges)
+    var hw=9;
+    var pts=[{x:dx,y:dy},{x:dx+dw,y:dy},{x:dx,y:dy+dh},{x:dx+dw,y:dy+dh},{x:dx+dw/2,y:dy},{x:dx+dw/2,y:dy+dh},{x:dx,y:dy+dh/2},{x:dx+dw,y:dy+dh/2}];
+    ctx.fillStyle='#0369a1'; ctx.strokeStyle='#0c4a6e'; ctx.lineWidth=2;
+    pts.forEach(function(p){ ctx.beginPath(); ctx.rect(p.x-hw/2,p.y-hw/2,hw,hw); ctx.fill(); ctx.stroke(); });
+  }
+  // Address zone overlay. DARK and clearly visible. Stannp prints the recipient
+  // address on the BACK at the TOP, so:
+  //   - BACK material: show the zone at the TOP.
+  //   - FRONT material: no zone (front is pure design).
+  var zoneH=_flyerEditor.zoneH;
+  var zoneTop;
+  if(_flyerEditor.matType==='flyer_back'){ zoneTop=0; } else { zoneTop=-1; } // -1 = don't draw
+  if(zoneTop>=0){
+    ctx.fillStyle='rgba(219,234,254,0.95)'; ctx.fillRect(0, zoneTop, w, zoneH);
+    ctx.strokeStyle='#0c4a6e'; ctx.lineWidth=4; ctx.strokeRect(0, zoneTop, w, zoneH);
+    ctx.strokeStyle='#0c4a6e'; ctx.setLineDash([8,5]); ctx.lineWidth=2; ctx.strokeRect(2, zoneTop+2, w-4, zoneH-4); ctx.setLineDash([]);
+    ctx.fillStyle='#0c4a6e'; ctx.fillRect(0, zoneTop, w, 26);
+    ctx.fillStyle='#ffffff'; ctx.font='bold 13px Arial'; ctx.textAlign='center';
+    ctx.fillText('ADDRESS ZONE. recipient address prints here', w/2, zoneTop+18);
+    ctx.fillStyle='#0c4a6e'; ctx.font='bold 12px Arial';
+    ctx.fillText('Keep this area plain (white)', w/2, zoneTop+42);
+  }
+}
+function saveFlyerEditor(){
+  var btn=document.getElementById('flyer-editor-save');
+  var status=document.getElementById('flyer-editor-status');
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Preparing full-quality print...'; status.textContent='';
+  // Render the positioned flyer at FULL A5 PRINT RESOLUTION (1819 x 2551 = 300 DPI)
+  // so the saved image is crisp and text stays readable when printed. We map the
+  // editor rectangle (rx/ry/rw/rh on the small canvas) to the full print canvas.
+  var PW=1819, PH=2551; // A5-PORT full print
+  var zonePct=0.28, zoneH=Math.round(PH*zonePct);
+  var outCanvas=document.createElement('canvas');
+  outCanvas.width=PW; outCanvas.height=PH;
+  var ctx=outCanvas.getContext('2d');
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,PW,PH);
+  // High-quality upscaling so text is sharp
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  if(_flyerEditor.img && _flyerEditor.loaded){
+    // Scale factor from editor canvas to print canvas
+    var sxP=PW/_flyerEditor.cw, syP=PH/_flyerEditor.ch;
+    var dx=_flyerEditor.rx*sxP, dy=_flyerEditor.ry*syP;
+    var dw=_flyerEditor.rw*sxP, dh=_flyerEditor.rh*syP;
+    ctx.drawImage(_flyerEditor.img, dx, dy, dw, dh);
+  }
+  // ADDRESS ZONE: Stannp prints the recipient address on the BACK at the TOP.
+  //   - BACK material: reserve the TOP 28% as a clean white zone (design stays
+  //     in the bottom 72%).
+  //   - FRONT material: NO white zone. the front is the pure design (Stannp
+  //     never prints the address on the front).
+  if(_flyerEditor.matType === 'flyer_back'){
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0, 0, PW, zoneH); // top zone
+  }
+  var out=outCanvas.toDataURL('image/png');
+  var base64=out.split(',')[1]||'';
+  api('PUT','/api/direct-mail/materials/'+_flyerEditor.id,{file_data:'data:image/png;base64,'+base64},function(err,d){
+    if(d&&d.success){
+      status.textContent='✅ ' + (_flyerEditor.matType==='flyer_back' ? 'Back flyer saved (address zone at top)' : 'Front flyer saved at full print quality');
+      setTimeout(function(){ closeFlyerEditor(); loadMaterials(); loadFinalPrintPreview(); }, 800);
+    } else {
+      status.textContent='Error saving: '+((d&&d.error)||'try again'); status.style.color='#dc2626';
+      btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> Save Positioned Flyer';
+    }
   });
 }
 
@@ -493,8 +1148,40 @@ function loadRepeatSeries(){
   if(!_token){window.location.href='/portal/';return;}
   loadProfile();
   loadTemplates();
-  loadCampaigns();
-  loadRepeatSeries();
-})();
-</script>
+  loadFormats();
+  loadMaterials();
+  loadLeads();
+  loadLetterPreview();
+})();</script>
+
+<!-- Flyer position/crop editor modal (Vistaprint-style) -->
+<div id="flyer-editor-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.85);z-index:9999;align-items:center;justify-content:center;padding:16px">
+<div style="background:#fff;border-radius:14px;max-width:720px;width:100%;max-height:92vh;overflow:auto;padding:18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div style="font-size:15px;font-weight:800;color:var(--text)"><i class="fas fa-crop-alt" style="color:var(--accent);margin-right:6px"></i> Position &amp; Crop Your Leaflet</div>
+    <button onclick="closeFlyerEditor()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b">✕</button>
+  </div>
+  <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">
+    <b>You control the final print.</b> <b>Drag</b> the image to move it, <b>drag any blue square (handle)</b> to stretch it up/down or left/right, and use the zoom buttons / scroll wheel to scale. Position your design until it fills the page the way you want. The <b>bottom strip</b> is where your recipient's address is printed (Royal Mail requirement). keep it plain. When it looks right, click <b>Save</b>. Because you position it yourself, the print matches exactly what you see.
+  </p>
+  <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#1e3a8a;line-height:1.6">
+    <b><i class="fas fa-eye" style="color:#2563eb;margin-right:4px"></i>Can't see your flyer?</b> Press the <b>Reset View</b> button below to bring your design back into view. You can then adjust your flyer's <b>size</b> so it fits within the required print area.
+  </div>
+  <div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:#f8fafc;text-align:center;position:relative;overflow:hidden;height:440px" id="flyer-editor-stage">
+    <canvas id="flyer-editor-canvas" style="max-width:100%;max-height:100%;cursor:grab;touch-action:none"></canvas>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:12px;flex-wrap:wrap">
+    <button class="btn btn-outline btn-sm" onclick="flyerEditorZoom(-1)"><i class="fas fa-minus"></i></button>
+    <span style="font-size:12px;color:var(--text2)" id="flyer-editor-zoomlabel">100%</span>
+    <button class="btn btn-outline btn-sm" onclick="flyerEditorZoom(1)"><i class="fas fa-plus"></i></button>
+    <button class="btn btn-outline btn-sm" onclick="flyerEditorReset()" style="margin-left:8px"><i class="fas fa-sync-alt"></i> Reset View</button>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:14px">
+    <button class="btn btn-outline" onclick="closeFlyerEditor()" style="flex:1;justify-content:center"><i class="fas fa-times"></i> Cancel</button>
+    <button class="btn btn-primary" onclick="saveFlyerEditor()" id="flyer-editor-save" style="flex:1;justify-content:center"><i class="fas fa-check"></i> Save Positioned Flyer</button>
+  </div>
+  <div id="flyer-editor-status" style="font-size:12px;color:var(--success);margin-top:8px;text-align:center"></div>
+</div>
+</div>
+
 </body></html>

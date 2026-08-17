@@ -1,0 +1,307 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Live Post Tracking · 9amLeads</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{--accent:#0ea5e9;--bg:#f8fafc;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--text2:#64748b;--muted:#94a3b8;--success:#22c55e;--danger:#dc2626;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.5}
+.top{background:#fff;border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.top .logo{font-family:var(--ff-h);font-size:20px;font-weight:900;color:var(--text)}.top .logo span{color:var(--accent)}
+.top .nav{display:flex;gap:4px;flex-wrap:wrap}.top .nav a{padding:8px 16px;font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;border-radius:6px;transition:.2s}.top .nav a:hover{color:var(--text);background:#f1f5f9}.top .nav a.active{color:var(--accent);background:#eff6ff}
+.container{max-width:1180px;margin:0 auto;padding:28px 24px}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-header h1{font-family:var(--ff-h);font-size:22px;font-weight:800}
+.page-header .sub{font-size:13px;color:var(--text2);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;text-decoration:none;font-family:var(--ff-b);transition:.2s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-outline{background:#fff;color:var(--text2);border:1px solid var(--border)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{opacity:.9}
+.btn-sm{padding:8px 14px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 14px;text-align:center}
+.stat .num{font-family:var(--ff-h);font-size:24px;font-weight:900;color:var(--accent)}
+.stat .lbl{font-size:11px;color:var(--text2);margin-top:2px}
+.viewbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.seg{display:inline-flex;background:#f1f5f9;border-radius:9px;padding:4px;gap:2px}
+.seg button{padding:8px 18px;border:none;background:transparent;border-radius:7px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;font-family:var(--ff-b);transition:.2s}
+.seg button.active{background:#fff;color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.cal-nav{display:flex;align-items:center;gap:10px}
+.cal-nav button{width:32px;height:32px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:14px;color:var(--text2);font-family:var(--ff-b)}
+.cal-nav button:hover{border-color:var(--accent);color:var(--accent)}
+.cal-title{font-family:var(--ff-h);font-size:15px;font-weight:800;min-width:170px;text-align:center}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px}
+.cal-dow{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:center;padding:4px 0}
+.cal-day{min-height:64px;border:1px solid var(--border);border-radius:8px;padding:6px;cursor:pointer;transition:.15s;position:relative;background:#fff}
+.cal-day:hover{border-color:var(--accent);background:#f0f7ff}
+.cal-day.other{opacity:.4}
+.cal-day .d-num{font-size:12px;font-weight:700;color:var(--text)}
+.cal-day.today .d-num{color:var(--accent)}
+.cal-day.selected{border-color:var(--accent);background:#eff6ff;box-shadow:0 0 0 2px rgba(14,165,233,.2)}
+.cal-day .d-count{font-size:10px;font-weight:700;margin-top:3px}
+.cal-day .d-count.n-delivered{color:var(--success)}
+.cal-day .d-count.n-other{color:var(--accent)}
+.day-list{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.day-head{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;border-bottom:1px solid var(--border);background:#fafbfc}
+.day-head .d-title{font-family:var(--ff-h);font-size:14px;font-weight:800}
+.day-head .d-sub{font-size:11px;color:var(--muted)}
+.day-head .d-badges{display:flex;gap:8px;align-items:center}
+.camp{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.camp-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.camp-head .c-name{font-family:var(--ff-h);font-size:14px;font-weight:800}
+.camp-head .c-meta{font-size:11px;color:var(--text2);margin-top:3px}
+.camp-sel{width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.badge{padding:3px 11px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.badge.queued{background:#f1f5f9;color:var(--text2)}
+.badge.printing{background:#fff7ed;color:#c2410c}
+.badge.dispatched{background:#eff6ff;color:#1d4ed8}
+.badge.out_for_delivery{background:#fef3c7;color:#b45309}
+.badge.delivered{background:#f0fdf4;color:#15803d}
+.badge.returned,.badge.cancelled{background:#fef2f2;color:#b91c1c}
+.track-steps{display:flex;align-items:center;gap:0;padding:14px 18px;border-bottom:1px solid var(--border);overflow-x:auto}
+.tstep{flex:1;min-width:64px;text-align:center;position:relative;padding-top:28px;font-size:10px;color:var(--muted);font-weight:600}
+.tstep .dot{position:absolute;top:4px;left:50%;transform:translateX(-50%);width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--muted)}
+.tstep.done .dot{background:var(--success);border-color:var(--success);color:#fff}
+.tstep.done{color:var(--success)}
+.tstep.active .dot{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 0 4px rgba(14,165,233,.15)}
+.tstep.active{color:var(--accent)}
+.tstep .tsep{position:absolute;top:13px;left:50%;width:100%;height:2px;background:var(--border)}
+.tstep.done .tsep{background:var(--success)}
+.tstep:last-child .tsep{display:none}
+.rcpt-list{padding:8px 18px 14px}
+.rcpt{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 6px;border-bottom:1px solid #f1f5f9}
+.rcpt:last-child{border-bottom:none}
+.rcpt .r-name{font-weight:600;font-size:13px}
+.rcpt .r-addr{font-size:11px;color:var(--text2);margin-top:2px}
+.rcpt .r-status{font-size:12px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:6px}
+.timeline{margin-top:6px;font-size:11px;color:var(--muted)}
+.timeline span{margin-right:10px}
+.bulk-bar{position:sticky;bottom:16px;z-index:90;display:none;align-items:center;gap:14px;background:#0f172a;color:#fff;border-radius:14px;padding:13px 18px;box-shadow:0 12px 40px rgba(0,0,0,.35);max-width:1180px;margin:14px auto}
+.bulk-bar.show{display:flex}
+.bulk-bar .bc{font-weight:800;font-size:14px;font-family:var(--ff-h)}
+.bulk-bar .btn-danger{margin-left:auto}
+.empty{text-align:center;padding:60px 20px;color:var(--text2)}
+.empty .ico{font-size:42px;margin-bottom:12px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}.container{padding:18px 14px}.top{padding:12px 16px}.cal-day{min-height:44px}}
+</style>
+</head><body>
+<div class="top">
+  <a href="/portal/dashboard.html" class="logo">9am<span>Leads</span></a>
+  <div class="nav">
+    <a href="/portal/dashboard.html">Dashboard</a>
+    <a href="/portal/leads.html">My Leads</a>
+    <a href="/portal/direct-mail.html">Print &amp; Post</a>
+    <a href="/portal/tracking.html" class="active"><i class="fas fa-truck-fast"></i> Live Tracking</a>
+    <a href="/portal/auto.html">Auto P&amp;P</a>
+    <a href="/portal/marketing.html">Marketing</a>
+  </div>
+</div>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1>Live Post Tracking</h1>
+      <div class="sub">Track every letter and flyer. Browse by day or week, and clean up old mailings.</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="refresh()"><i class="fas fa-sync-alt"></i> Refresh</button>
+      <button class="btn btn-primary btn-sm" onclick="syncNow()"><i class="fas fa-satellite-dish"></i> Sync Now</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">Total Posted</div></div>
+    <div class="stat"><div class="num" id="stat-inflight">0</div><div class="lbl">In Transit</div></div>
+    <div class="stat"><div class="num" id="stat-delivered">0</div><div class="lbl">Delivered</div></div>
+    <div class="stat"><div class="num" id="stat-printing">0</div><div class="lbl">Printing</div></div>
+  </div>
+
+  <div class="viewbar">
+    <div class="seg" id="view-seg">
+      <button data-view="calendar" class="active" onclick="setView('calendar')"><i class="fas fa-calendar-days"></i> Calendar</button>
+      <button data-view="week" onclick="setView('week')"><i class="fas fa-calendar-week"></i> Week</button>
+      <button data-view="list" onclick="setView('list')"><i class="fas fa-list"></i> List</button>
+    </div>
+    <div class="cal-nav" id="cal-nav" style="display:none">
+      <button onclick="navMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="cal-title" id="cal-title"></div>
+      <button onclick="navMonth(1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+    <button class="btn btn-outline btn-sm" id="bulk-toggle" style="display:none" onclick="toggleBulk()"><i class="fas fa-trash"></i> Bulk Delete</button>
+  </div>
+
+  <div id="loading" class="empty"><div class="ico">📬</div>Loading your live post tracking…</div>
+  <div id="calendar-view"></div>
+  <div id="week-view" style="display:none"></div>
+  <div id="list-view" style="display:none"></div>
+  <div id="empty-state" class="empty" style="display:none">
+    <div class="ico">📭</div>
+    <div style="font-weight:700;color:var(--text);font-size:15px;margin-bottom:6px">No posted mail yet</div>
+    <p style="font-size:13px">When you send your first letter or flyer through <a href="/portal/direct-mail.html" style="color:var(--accent);font-weight:600">Print &amp; Post</a>, you'll be able to follow it here every step of the way.</p>
+  </div>
+
+  <div class="bulk-bar" id="bulk-bar">
+    <span class="bc"><span id="bulk-count">0</span> selected</span>
+    <button class="btn btn-danger btn-sm" onclick="bulkDeleteSelected()"><i class="fas fa-trash"></i> Delete selected</button>
+    <button class="btn btn-outline btn-sm" onclick="toggleBulk(false)" style="background:rgba(255,255,255,.1);color:#e2e8f0;border:none">Cancel</button>
+  </div>
+</div>
+
+<script>
+var _token='';
+(function(){
+  var sd=localStorage.getItem('mld_portal_session');
+  if(!sd){window.location.href='/portal/';return;}
+  try{var sess=JSON.parse(sd);_token=sess.token||'';}catch(e){window.location.href='/portal/';return;}
+  if(!_token){window.location.href='/portal/';return;}
+  load();
+})();
+function apiGet(url, cb){var x=new XMLHttpRequest();x.open('GET',url,true);x.setRequestHeader('Authorization','Bearer '+_token);x.onload=function(){try{cb(JSON.parse(x.responseText));}catch(e){cb(null);}};x.onerror=function(){cb(null);};x.send();}
+function apiPost(url, body, cb){var x=new XMLHttpRequest();x.open('POST',url,true);x.setRequestHeader('Authorization','Bearer '+_token);x.setRequestHeader('Content-Type','application/json');x.onload=function(){try{cb(JSON.parse(x.responseText));}catch(e){cb(null);}};x.onerror=function(){cb(null);};x.send(JSON.stringify(body||{}));}
+function fmt(t){if(!t)return'';var d=new Date(t);if(isNaN(d))return t;return d.toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
+function dayLabel(dayKey){var d=new Date(dayKey+'T12:00:00');var today=new Date();var yest=new Date();yest.setDate(today.getDate()-1);var tKey=today.toISOString().split('T')[0],yKey=yest.toISOString().split('T')[0];var s=d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});if(dayKey===tKey)return'Today · '+s;if(dayKey===yKey)return'Yesterday · '+s;return s;}
+function stepClasses(status){var steps=['queued','printing','dispatched','out_for_delivery','delivered'];var idx=steps.indexOf(status||'queued');var out='';for(var i=0;i<steps.length;i++){var cls='tstep'+(i<idx?' done':i===idx?' active':'');var label=steps[i]==='out_for_delivery'?'Out for<br>delivery':steps[i][0].toUpperCase()+steps[i].slice(1);var icon=steps[i]==='queued'?'✅':steps[i]==='printing'?'🔧':steps[i]==='dispatched'?'🚚':steps[i]==='out_for_delivery'?'🚛':'📬';out+='<div class="'+cls+'"><div class="tsep"></div><div class="dot">'+icon+'</div>'+label+'</div>';}return out;}
+function badge(status){var s=status||'pending';var map={queued:'Accepted',printing:'Printing',dispatched:'Dispatched',out_for_delivery:'Out for delivery',delivered:'Delivered',returned:'Returned',cancelled:'Cancelled'};return '<span class="badge '+s+'">'+(map[s]||s)+'</span>';}
+function campHTML(c, bulk){
+  var rcpts=c.recipients||[];
+  var cs=c.provider_status||'queued';
+  var sumTxt=c.tracking_summary?('📦 '+c.tracking_summary.delivered+'/'+c.tracking_summary.total+' delivered'):'';
+  var sel=bulk?'<label style="display:flex;align-items:center"><input type="checkbox" class="camp-sel" data-cid="'+c.id+'" onclick="updateBulkBar()"></label>':'';
+  var html='<div class="camp"><div class="camp-head"><div style="display:flex;align-items:center;gap:10px">'+sel+'<div><div class="c-name">'+(c.name||'Print &amp; Post')+'</div><div class="c-meta">'+(c.description||'')+(c.created_at?' · Posted '+fmt(c.created_at):'')+(sumTxt?' · '+sumTxt:'')+'</div></div></div>'+badge(cs)+'</div><div class="track-steps">'+stepClasses(cs)+'</div><div class="rcpt-list">'+(rcpts.length?rcpts.map(function(r){
+    var rh=(r.tracking_history||[]).slice(-3).reverse().map(function(h){return '<span>'+h.label+' · '+fmt(h.at)+'</span>';}).join('');
+    return '<div class="rcpt"><div><div class="r-name">'+(r.provider_emoji||'📬')+' '+(r.name||'Lead')+(r.mailpiece_type?' <span style="font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase">'+r.mailpiece_type+'</span>':'')+'</div><div class="r-addr">'+(r.address||'')+'</div>'+(rh?'<div class="timeline">'+rh+'</div>':'')+'</div><div class="r-status">'+badge(r.provider_status)+'</div></div>';
+  }).join(''):'<div style="padding:12px 6px;font-size:12px;color:var(--muted)">No recipient details</div>')+'</div></div>';
+  return html;
+}
+function renderCal(data){
+  var s=data.summary||{};
+  document.getElementById('stat-total').textContent=s.total||0;
+  document.getElementById('stat-inflight').textContent=s.in_transit||0;
+  document.getElementById('stat-delivered').textContent=s.delivered||0;
+  document.getElementById('stat-printing').textContent=s.printing||0;
+  var dayMap={};(data.days||[]).forEach(function(d){dayMap[d.date]=d;});
+  var demoMap={};(data.demos||[]).forEach(function(d){demoMap[d.date]=d;});
+  // Build calendar grid for the viewed month
+  var viewY=_calY, viewM=_calM;
+  var first=new Date(viewY,viewM,1);
+  var startDow=(first.getDay()+6)%7; // Monday first
+  var daysInMonth=new Date(viewY,viewM+1,0).getDate();
+  var cells='';
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(function(d){cells+='<div class="cal-dow">'+d+'</div>';});
+  var todayKey=new Date().toISOString().split('T')[0];
+  for(var i=0;i<startDow;i++){
+    var prevD=new Date(viewY,viewM,1-i).getDate();
+    cells+='<div class="cal-day other"><div class="d-num">'+prevD+'</div></div>';
+  }
+  for(var d=1;d<=daysInMonth;d++){
+    var key=viewY+'-'+String(viewM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var dd=dayMap[key];
+    var demoDd=demoMap[key];
+    var cls='cal-day'+(key===todayKey?' today':'')+(key===_selDate?' selected':'');
+    var badgeHtml='';
+    if(dd){
+      if(dd.delivered>0)badgeHtml+='<div class="d-count n-delivered">📬 '+dd.delivered+'</div>';
+      var other=dd.in_transit+dd.printing;
+      if(other>0)badgeHtml+='<div class="d-count n-other">🚚 '+other+'</div>';
+    }
+    if(demoDd)badgeHtml+='<div class="d-count" style="color:#8b5cf6">✨ '+(demoDd.recipient_count||0)+' demo</div>';
+    cells+='<div class="'+cls+'" onclick="selectDate(\''+key+'\')"><div class="d-num">'+d+'</div>'+badgeHtml+'</div>';
+  }
+  var rem=7-((startDow+daysInMonth)%7||7);if(rem===7)rem=0;
+  for(var i=0;i<rem;i++){cells+='<div class="cal-day other"><div class="d-num">'+(i+1)+'</div></div>';}
+  document.getElementById('calendar-view').innerHTML='<div class="cal-grid">'+cells+'</div>'+(dayMap[_selDate]||demoMap[_selDate]?renderDay(dayMap[_selDate]||demoMap[_selDate],_bulkMode):'<div style="font-size:12px;color:var(--muted);text-align:center;padding:20px">Select a day to see its mailings</div>');
+}
+function renderDay(dd, bulk){
+  var html='<div class="day-list"><div class="day-head"><div><div class="d-title">'+dayLabel(dd.date)+'</div><div class="d-sub">'+dd.recipient_count+' item'+(dd.recipient_count===1?'':'s')+' posted</div></div><div class="d-badges">'+(dd.delivered>0?'<span class="badge delivered">📬 '+dd.delivered+' delivered</span>':'')+(dd.in_transit>0?'<span class="badge dispatched">🚚 '+dd.in_transit+' in transit</span>':'')+(dd.printing>0?'<span class="badge printing">🔧 '+dd.printing+' printing</span>':'')+'</div></div>'+(dd.campaigns||[]).map(function(c){return campHTML(c,bulk);}).join('')+'</div>';
+  return html;
+}
+function renderWeek(data){
+  var s=data.summary||{};
+  document.getElementById('stat-total').textContent=s.total||0;
+  document.getElementById('stat-inflight').textContent=s.in_transit||0;
+  document.getElementById('stat-delivered').textContent=s.delivered||0;
+  document.getElementById('stat-printing').textContent=s.printing||0;
+  var dayMap={};(data.days||[]).forEach(function(d){dayMap[d.date]=d;});
+  var demoMap={};(data.demos||[]).forEach(function(d){demoMap[d.date]=d;});
+  var today=new Date();var dayIdx=(today.getDay()+6)%7;
+  var weekStart=new Date(today);weekStart.setDate(today.getDate()-dayIdx);
+  var html='';
+  for(var i=0;i<7;i++){
+    var d=new Date(weekStart);d.setDate(weekStart.getDate()+i);
+    var key=d.toISOString().split('T')[0];
+    var dd=dayMap[key]||demoMap[key];
+    if(dd)html+=renderDay(dd,_bulkMode);
+  }
+  if(!html)html='<div class="empty"><div class="ico">📅</div>No mailings this week yet.</div>';
+  document.getElementById('week-view').innerHTML=html;
+}
+function renderList(data){
+  var s=data.summary||{};
+  document.getElementById('stat-total').textContent=s.total||0;
+  document.getElementById('stat-inflight').textContent=s.in_transit||0;
+  document.getElementById('stat-delivered').textContent=s.delivered||0;
+  document.getElementById('stat-printing').textContent=s.printing||0;
+  var days=(data.days||[]).slice();var demos=(data.demos||[]).slice();
+  var all=demos.concat(days).sort(function(a,b){return b.date.localeCompare(a.date);});
+  var html=all.map(function(dd){return renderDay(dd,_bulkMode);}).join('');
+  if(!html)html='<div class="empty"><div class="ico">📭</div>No mailings yet.</div>';
+  document.getElementById('list-view').innerHTML=html;
+}
+var _calY=new Date().getFullYear(),_calM=new Date().getMonth(),_selDate=new Date().toISOString().split('T')[0];
+var _view='calendar',_bulkMode=false,_daysData=null;
+function load(){
+  apiGet('/api/direct-mail/tracking/calendar',function(d){
+    if(!d||!d.success){document.getElementById('loading').style.display='none';document.getElementById('empty-state').style.display='block';return;}
+    _daysData=d;
+    document.getElementById('loading').style.display='none';
+    document.getElementById('empty-state').style.display='none';
+    renderAll();
+  });
+}
+function renderAll(){
+  if(_view==='calendar'){document.getElementById('calendar-view').style.display='block';document.getElementById('week-view').style.display='none';document.getElementById('list-view').style.display='none';renderCal(_daysData);}
+  else if(_view==='week'){document.getElementById('calendar-view').style.display='none';document.getElementById('week-view').style.display='block';document.getElementById('list-view').style.display='none';renderWeek(_daysData);}
+  else{document.getElementById('calendar-view').style.display='none';document.getElementById('week-view').style.display='none';document.getElementById('list-view').style.display='block';renderList(_daysData);}
+}
+function setView(v){
+  _view=v;
+  document.querySelectorAll('#view-seg button').forEach(function(b){b.classList.toggle('active',b.dataset.view===v);});
+  document.getElementById('cal-nav').style.display=v==='calendar'?'flex':'none';
+  document.getElementById('bulk-toggle').style.display='flex';
+  renderAll();
+}
+function navMonth(d){_calM+=d;if(_calM<0){_calM=11;_calY--;}if(_calM>11){_calM=0;_calY++;}document.getElementById('cal-title').textContent=new Date(_calY,_calM,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});renderCal(_daysData);}
+function selectDate(key){_selDate=key;renderCal(_daysData);}
+function toggleBulk(force){
+  _bulkMode=(typeof force==='boolean')?force:!_bulkMode;
+  document.getElementById('bulk-bar').classList.toggle('show',_bulkMode);
+  document.getElementById('bulk-toggle').classList.toggle('active',_bulkMode);
+  renderAll();
+}
+function updateBulkBar(){
+  var n=document.querySelectorAll('.camp-sel:checked').length;
+  document.getElementById('bulk-count').textContent=n;
+  if(!document.getElementById('bulk-bar').classList.contains('show'))document.getElementById('bulk-bar').classList.add('show');
+}
+function bulkDeleteSelected(){
+  var ids=[];document.querySelectorAll('.camp-sel:checked').forEach(function(cb){ids.push(cb.dataset.cid);});
+  if(!ids.length)return;
+  if(!confirm('Delete '+ids.length+' mailing record'+(ids.length===1?'':'s')+'? This cannot be undone.'))return;
+  apiPost('/api/direct-mail/tracking/bulk-delete',{campaign_ids:ids},function(d){
+    if(d&&d.success){alert('Deleted '+d.removed+' record'+(d.removed===1?'':'s')+'.');toggleBulk(false);load();}
+    else alert('Delete failed. Please try again.');
+  });
+}
+function syncNow(){
+  var btn=document.querySelector('.page-header .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spin"></span>Syncing…';
+  apiPost('/api/direct-mail/tracking/sync',{},function(){btn.disabled=false;btn.innerHTML='<i class="fas fa-satellite-dish"></i> Sync Now';setTimeout(load,500);});
+}
+function refresh(){load();}
+document.getElementById('cal-title').textContent=new Date(_calY,_calM,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+setInterval(function(){if(document.visibilityState==='visible')load();},60000);
+</script>
+</body></html>

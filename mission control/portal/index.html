@@ -1,7 +1,20 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<script>
+/* 9amLeads anonymous analytics (cookie-free, GDPR-friendly) */
+(function(){
+  var trackKey='9am_visitor_id';
+  var vid=localStorage.getItem(trackKey);
+  if(!vid){vid='v'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);localStorage.setItem(trackKey,vid);}
+  try{
+    fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      v:vid, path:location.pathname, ref:document.referrer||'', ua:navigator.userAgent
+    }),keepalive:true});
+  }catch(e){}
+})();
+</script>
 <title>Sign Up | 9amLeads Customer Portal</title>
-<meta name="description" content="Start your free 7-day trial. Get exclusive business leads delivered to your inbox at 9am every morning. No card required.">
+<meta name="description" content="Start your free 7-day trial. Get exclusive business leads delivered to your inbox at 9am every morning. No obligation.">
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -127,7 +140,7 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div class="center">
 <div class="logo"><div class="icon">9</div>9am<span>Leads</span></div>
 <h1>Start Your <span style="color:#0ea5e9">Free Trial</span></h1>
-<p class="sub" id="page-subtitle">Fill in your business details once and we'll create ready-to-use marketing materials for you. 7 days free, no card required. Cancel anytime.</p>
+<p class="sub" id="page-subtitle">Fill in your business details once and we'll create ready-to-use marketing materials for you. 7-day free trial required. Cancel anytime.</p>
 <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:12px">
 <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:100px;font-size:11px;font-weight:600;color:#0ea5e9">Campaign Packs</span>
 <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.15);border-radius:100px;font-size:11px;font-weight:600;color:#a855f7">AI Flyer Builder</span>
@@ -140,7 +153,7 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div class="trust-bar">
 <span><i class="fas fa-lock" style="color:#22c55e"></i> Encrypted</span>
 <span><i class="fas fa-shield-alt" style="color:#0ea5e9"></i> UK Based</span>
-<span><i class="fas fa-credit-card" style="color:#f59e0b"></i> No Card</span>
+<span><i class="fas fa-credit-card" style="color:#f59e0b"></i> No Obligation</span>
 <span><i class="fas fa-ban" style="color:#ef4444"></i> Cancel Anytime</span>
 <span><i class="fas fa-check-circle" style="color:#22c55e"></i> 7 Days Free</span>
 </div>
@@ -186,7 +199,7 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <span style="text-align:right"><span style="font-size:11px;color:#0ea5e9;font-weight:700">£25</span><span style="font-size:9px;color:#6b7280">/wk</span></span>
 </label>
 <label class="prod-cb" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer">
-<input type="checkbox" value="probate" onchange="calcTotal()"> <span style="flex:1"><strong style="color:#f1f5f9">⚖️ Probate</strong><br><span style="font-size:9px;color:#6b7280">Gazette · 5/day · County</span></span>
+<input type="checkbox" value="probate" onchange="calcTotal()"> <span style="flex:1"><strong style="color:#f1f5f9">⚖️ Probate</strong><br><span style="font-size:9px;color:#6b7280">Gazette · up to 2/day · County</span></span>
 <span style="text-align:right"><span style="font-size:11px;color:#f59e0b;font-weight:700">£25</span><span style="font-size:9px;color:#6b7280">/wk</span></span>
 </label>
 <label class="prod-cb" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer">
@@ -195,30 +208,57 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </label>
 </div>
 <div id="s-price-total" style="font-size:12px;color:#f1f5f9;padding:8px 10px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.08);border-radius:6px;margin-bottom:8px;text-align:center"><span id="s-total-price">£25</span>/wk <span style="font-size:10px;color:#6b7280">,  Starter plan. Upgrade to Pro or Enterprise from your dashboard.</span></div>
+<div id="s-moving-type" style="display:none;margin-bottom:8px">
+<label style="font-size:11px;color:#94a3b8;display:block;margin-bottom:4px">Moving Lead Type</label>
+<div style="display:flex;gap:6px">
+<label class="prod-cb" style="flex:1;display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;justify-content:center">
+<input type="radio" name="moving_type" value="residential" checked onchange="updateMovingTypeLabel()"> <span style="font-size:11px;color:#f1f5f9">🏠 Residential</span>
+</label>
+<label class="prod-cb" style="flex:1;display:flex;align-items:center;gap:6px;padding:8px 10px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer;justify-content:center">
+<input type="radio" name="moving_type" value="both" onchange="updateMovingTypeLabel()"> <span style="font-size:11px;color:#f1f5f9">🔀 Residential + Commercial</span>
+</label>
+</div>
+<p style="font-size:10px;color:#6b7280;margin-top:4px" id="moving-type-hint">Residential + Commercial = homes and flats as your daily base, with commercial premises (offices, retail, warehouses) added when available. Commercial listings are rare in most areas, so we add them onto your residential leads when one comes up.</p>
+</div>
 </div>
 
 <script>
 function calcTotal() {
   var els = document.querySelectorAll('#s-products-container input:checked');
-  var prices = { moving: 25, planning: 25, newbusiness: 25, probate: 15, tenders: 15 };
+  var prices = { moving: 25, planning: 25, newbusiness: 25, probate: 25, tenders: 25 };
   var total = 0;
   els.forEach(function(el) { total += prices[el.value] || 0; });
   document.getElementById('s-total-price').textContent = '£' + total;
+  // Show the moving-type selector when Moving is selected
+  var mt = document.getElementById('s-moving-type');
+  var movingChecked = document.querySelector('#s-products-container input[value="moving"]:checked');
+  if (mt) mt.style.display = movingChecked ? 'block' : 'none';
+  // Reflect lead-type changes in the area selector (postcode vs county) and filters
+  onLeadTypeChange();
+  updatePostcodeLimit();
+}
+function updateMovingTypeLabel() {
+  var sel = document.querySelector('#s-moving-type input[type=radio]:checked');
+  if (!sel) return;
+  var hint = document.getElementById('moving-type-hint');
+  if (!hint) return;
+  if (sel.value === 'residential') hint.textContent = 'Homes and flats for sale (newly listed, under offer, new listings).';
+  else hint.textContent = 'Residential + Commercial = homes and flats as your daily base, with commercial premises (offices, retail, warehouses) added when available. Commercial listings are rare in most areas, so we add them onto your residential leads when one comes up.';
 }
 </script>
 
 <div class="form-group">
 <label>Your Plan</label>
 <div class="grid-2" id="s-plan-container">
-<label class="plan-opt plan-sel" id="plan-free_trial"><input type="radio" name="plan" value="free_trial" checked onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Free Trial</div><div class="plan-d">Up to 25/week · 7-day trial · unlimited areas · any 1 type</div></div><div class="plan-p">Free</div></label>
-<label class="plan-opt" id="plan-starter"><input type="radio" name="plan" value="starter" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Starter</div><div class="plan-d">Up to 25/week · any 1 lead type · unlimited areas</div></div><div class="plan-p">£25<span class="pw">/wk</span></div></label>
+<label class="plan-opt plan-sel" id="plan-free_trial"><input type="radio" name="plan" value="free_trial" checked onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Free Trial</div><div class="plan-d">Up to 25/week · 7-day trial · 5 postcode areas · any 1 type</div></div><div class="plan-p">Free</div></label>
+<label class="plan-opt" id="plan-starter"><input type="radio" name="plan" value="starter" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Starter</div><div class="plan-d">Up to 25/week · any 1 lead type · 5 postcode areas</div></div><div class="plan-p">£25<span class="pw">/wk</span></div></label>
 <label class="plan-opt" id="plan-pro"><input type="radio" name="plan" value="pro" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Pro</div><div class="plan-d">Up to 75/week · any types · unlimited areas</div></div><div class="plan-p">£49<span class="pw">/wk</span></div></label>
 <label class="plan-opt" id="plan-enterprise"><input type="radio" name="plan" value="enterprise" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Enterprise</div><div class="plan-d">Up to 125/week · any types · All UK unlimited</div></div><div class="plan-p">£99<span class="pw">/wk</span></div></label>
 </div>
 </div>
 
 <div class="form-group">
-<label>Where do you work? <span class="ml">(select your postcode areas)</span></label>
+<label>Where do you work? <span class="ml" id="s-area-label">(select your postcode areas)</span></label>
 <div id="s-postcode-tags" class="tags"></div>
 <div id="s-postcode-wrapper">
 <div class="quick-areas">
@@ -349,12 +389,24 @@ function calcTotal() {
 <button type="button" class="qa" onclick="addQuickArea('YO')">YO</button>
 <button type="button" class="qa" onclick="addQuickArea('ZE')">ZE</button>
 </div>
-<div class="ar"><input type="text" id="s-postcode-input" placeholder="e.g. Birmingham, Essex, North London, Kent" class="sf" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
+<div class="ar"><input type="text" id="s-postcode-input" placeholder="e.g. London, Essex, Kent, Birmingham"       class="sf" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
 <button type="button" class="btn-s" onclick="addSignupPostcode()">Add</button>
 <button type="button" class="btn-o" onclick="setAllUK()">All UK</button></div>
 <span id="s-postcode-count" class="ml"></span>
 </div>
 <div id="s-postcode-error" class="err"></div>
+<div style="font-size:10px;color:#6b7280;line-height:1.6;margin-top:6px"><b>ℹ️ Quiet days:</b> On days when fewer fresh leads are available in your exact postcode areas, we send you the leads <b>closest to your chosen postcodes</b> so you still get your full daily count. Every lead is still unique to you. No competition.</div>
+</div>
+
+<!-- County/area selector for specialist lead types (planning, probate, tenders).
+     Shown instead of the postcode selector when a county-based lead type is chosen. -->
+<div id="county-area-selector" style="display:none;margin-top:8px">
+  <label style="font-size:12px;color:#8890a8;display:block;margin-bottom:6px">Your counties / areas <span style="color:#0ea5e9">(select at least 3)</span></label>
+  <div id="s-county-tags" class="tags"></div>
+  <div class="ar">
+    <select id="s-county-select" style="width:100%;padding:9px 12px;background:#1e2030;border:1px solid #2a2d42;border-radius:6px;font-size:12px;color:#e2e8f0;font-family:inherit" onchange="addSpecialistCounty(this.value)"><option value="">Choose a county or area...</option></select>
+  </div>
+  <div style="font-size:10px;color:#6b7280;line-height:1.6;margin-top:6px">New business, planning, probate and tenders leads are matched by county/area. Select at least 3 areas (or choose All UK) for best coverage &mdash; Pro &amp; Enterprise can go UK-wide.</div>
 </div>
 
 <div id="s-filters-container"></div>
@@ -405,7 +457,7 @@ Fresh UK business opportunities delivered daily at 9am from Rightmove, Companies
 </div>
 
 <div class="footer-text">
-Free 7 day trial · No card required · <a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a>
+Free 7 day trial · No Obligation · <a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a>
 </div>
 
 <script>
@@ -418,15 +470,20 @@ var signupPostcodes = [];
 var VALID_POSTCODE_AREAS = ['AB','AL','B','BA','BB','BD','BH','BL','BN','BR','BS','BT','CA','CB','CF','CH','CM','CO','CR','CT','CV','CW','DA','DD','DE','DG','DH','DL','DN','DT','DY','E','EC','EH','EN','EX','FK','FY','G','GL','GU','GY','HA','HD','HG','HP','HR','HS','HU','HX','IG','IM','IP','IV','JE','KA','KT','KW','KY','L','LA','LD','LE','LL','LN','LS','LU','M','ME','MK','ML','MN','MS','N','NE','NG','NL','NN','NP','NR','NW','OL','OX','PA','PE','PH','PL','PO','PR','RG','RH','RM','S','SA','SE','SG','SK','SL','SM','SN','SO','SP','SR','SS','ST','SW','SY','TA','TD','TF','TN','TQ','TR','TS','TW','UB','W','WA','WC','WD','WF','WN','WR','WS','WV','YO','ZE'];
 function isValidPostcodeArea(code) { return VALID_POSTCODE_AREAS.includes(code); }
 function addQuickArea(area) { var inp = document.getElementById('s-postcode-input'); if (inp) inp.value = area; addSignupPostcode(); }
-function setAllUK() { signupPostcodes = ['All UK']; renderSignupPostcodes(); }
+function setAllUK() { selectedCoverage = 'ukwide'; signupPostcodes = ['all-uk']; specCounties = []; renderSignupPostcodes(); }
 
 async function addSignupPostcode() {
   var input = document.getElementById('s-postcode-input');
   var area = (input?.value || '').trim();
   var err = document.getElementById('s-postcode-error');
   err.style.display = 'none';
-  if (!area || area.length < 1) { err.textContent = 'Please select or type a postcode area'; err.style.display = 'block'; return; }
+  if (!area || area.length < 1) { err.textContent = 'Please select or type an area'; err.style.display = 'block'; return; }
   if (signupPostcodes.some(function(a) { return a.toLowerCase() === area.toLowerCase(); })) { err.textContent = '"' + area + '" already added'; err.style.display = 'block'; return; }
+  var limit = getPostcodeAreaLimit();
+  if (signupPostcodes.length >= limit && limit < 999) {
+    err.textContent = 'Your ' + getSelectedPlan() + ' plan requires up to ' + limit + ' ' + areaLabelText() + (isCountyBased() ? ' (minimum 3).' : '.') + ' Upgrade to Pro or Enterprise for unlimited areas.';
+    err.style.display = 'block'; return;
+  }
   signupPostcodes.push(area);
   input.value = '';
   renderSignupPostcodes();
@@ -436,9 +493,41 @@ function removeSignupPostcode(code) {
   signupPostcodes = signupPostcodes.filter(function(c) { return c !== code; });
   renderSignupPostcodes();
 }
+function getSelectedPlan() {
+  var pr = document.querySelector('#s-plan-container input[type=radio]:checked');
+  return pr ? pr.value : 'free_trial';
+}
+function getSelectedLeadTypes() {
+  var els = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
+  var types = [];
+  for (var i = 0; i < els.length; i++) types.push(els[i].value);
+  return types;
+}
+// County/area-based products (not postcode-based). planning, probate, tenders
+var COUNTY_BASED = ['planning', 'probate', 'tenders', 'newbusiness'];
+function isCountyBased() {
+  var types = getSelectedLeadTypes();
+  if (!types.length) return false;
+  // If ANY county-based product is selected, use county/area mode (a customer can
+  // add multiple products; the widest requirement governs the area selector).
+  return types.some(function(t) { return COUNTY_BASED.indexOf(t) !== -1; });
+}
+function getPostcodeAreaLimit() {
+  var p = getSelectedPlan();
+  if (p === 'pro' || p === 'enterprise') return 999;
+  // Planning/Probate/Tenders use counties/areas with a 3-area minimum on
+  // free/starter. Moving/New Business use 5 postcode areas.
+  return isCountyBased() ? 3 : 5;
+}
+function areaLabelText() {
+  return isCountyBased() ? 'counties/areas' : 'postcode areas';
+}
 function updatePostcodeLimit() {
   var label = document.getElementById('s-postcode-limit-label');
-  if (label) label.textContent = 'unlimited';
+  var limit = getPostcodeAreaLimit();
+  if (label) label.textContent = limit >= 999 ? 'unlimited' : String(limit);
+  var areaLabel = document.getElementById('s-area-label');
+  if (areaLabel) areaLabel.textContent = isCountyBased() ? '(select at least 3 counties/areas)' : '(select your postcode areas)';
   renderSignupPostcodes();
   onLeadTypeChange();
 }
@@ -450,14 +539,22 @@ function renderSignupPostcodes() {
     html += '<span class="tag" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:5px;font-size:11px;font-weight:600;color:#0ea5e9">' + signupPostcodes[i] + ' <span style="cursor:pointer;opacity:0.7;margin-left:2px" onclick="removeSignupPostcode(\'' + signupPostcodes[i] + '\')">&times;</span></span>';
   }
   tags.innerHTML = html;
-  document.getElementById('s-postcode-count').textContent = signupPostcodes.length > 0 ? (signupPostcodes.length + ' areas selected (unlimited)') : '';
+  var limit = getPostcodeAreaLimit();
+  document.getElementById('s-postcode-count').textContent = signupPostcodes.length > 0 ? (signupPostcodes.length + ' / ' + (limit >= 999 ? 'unlimited' : limit) + ' ' + areaLabelText() + ' selected') : '';
+  // Also render the county tags (specialist lead types) into their own container
+  renderCountyTags();
+  // Update the visible area selector based on the selected lead types
+  var countySel = document.getElementById('county-area-selector');
+  var postcodeWrap = document.getElementById('s-postcode-wrapper');
+  if (countySel) countySel.style.display = isCountyBased() ? 'block' : 'none';
+  if (postcodeWrap) postcodeWrap.style.display = isCountyBased() ? 'none' : 'block';
 }
 
 // ===== FILTER SYSTEM =====
 var filterDefs = {
   moving: [{ id:'f-bed-min', label:'Min Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] }, { id:'f-bed-max', label:'Max Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] } ],
-  probate: [],
-  newbusiness: [],
+  probate: [{ id:'f-est-min', label:'Min Estate Value', type:'select', opts:['Any','£25k','£50k','£100k','£250k','£500k','£1M'] }],
+  newbusiness: [{ id:'f-sector', label:'Industries', type:'checkboxes', opts:['Construction','Professional Services','Retail','Hospitality','Healthcare','Transport & Logistics','Technology','Financial','Manufacturing','Other'] }],
   planning: [{ id:'f-app-type', label:'Application Types', type:'checkboxes', opts:['Householder','Full Planning','Outline Planning','Listed Building','Change of Use','Lawful Development','Permitted Development','Prior Approval','Advertisement Consent'] }],
   tenders: [{ id:'f-min-val', label:'Min Contract Value', type:'select', opts:['Any','£10k','£50k','£100k','£250k','£500k','£1M','£2M','£5M','£10M'] }, { id:'f-keywords', label:'Additional Keywords', type:'text', placeholder:'construction, IT, healthcare...' }]
 };
@@ -575,62 +672,64 @@ function onLeadTypeChange() {
     if (v === 'planning' || v === 'probate' || v === 'tenders') hasSpecialist = true;
     if (v === 'moving' || v === 'newbusiness') hasLocal = true;
   }
-  var localSel = document.getElementById('local-area-selector');
-  
+  // Toggle the county/area selector vs the postcode selector based on whether a
+  // specialist (county-based) lead type is selected.
+  var countySel = document.getElementById('county-area-selector');
+  var postcodeWrap = document.getElementById('s-postcode-wrapper');
+  if (countySel) countySel.style.display = isCountyBased() ? 'block' : 'none';
+  if (postcodeWrap) postcodeWrap.style.display = isCountyBased() ? 'none' : 'block';
+  // If a county-based type is active and the dropdown isn't populated yet, fill it.
+  if (isCountyBased()) populateCountySelect();
   var plan = document.querySelector('input[name="plan"]:checked')?.value;
   var isUnlimited = plan === 'pro' || plan === 'enterprise';
-  // For Pro/Enterprise, auto-set specialist to UK-wide and hide the selector
-  if (specSel) {
-    if (hasSpecialist && isUnlimited) {
-      specSel.style.display = 'none';
-      selectSpecialistArea('ukwide');
-    } else {
-      specSel.style.display = 'none';
-    }
+  // For Pro/Enterprise on specialist types, auto-set to UK-wide
+  if (hasSpecialist && isUnlimited) {
+    selectSpecialistArea('ukwide');
   }
-  if (localSel) localSel.style.display = (hasLocal || !hasSpecialist) ? 'block' : 'none';
 }
 
 function selectSpecialistArea(type) {
-  var radios = document.querySelectorAll('#specialist-area-selector input[type=radio]');
-  radios.forEach(function(r) { r.checked = r.value === type; });
-  var picker = document.getElementById('spec-area-picker');
-  if (!picker) return;
   if (type === 'ukwide') {
-    picker.style.display = 'none';
     selectedCoverage = 'ukwide';
     signupPostcodes = ['all-uk'];
+    specCounties = [];
     renderSignupPostcodes();
     return;
   }
-  selectedCoverage = type;
-  picker.style.display = 'block';
+  selectedCoverage = 'county';
   signupPostcodes = [];
-  var counties = 'Bedfordshire,Berkshire,Bristol,Buckinghamshire,Cambridgeshire,Cheshire,Cornwall,Cumbria,Derbyshire,Devon,Dorset,Durham,East Sussex,Essex,Gloucestershire,Greater London,Greater Manchester,Hampshire,Herefordshire,Hertfordshire,Isle of Wight,Kent,Lancashire,Leicestershire,Lincolnshire,Merseyside,Norfolk,North Yorkshire,Northamptonshire,Northumberland,Nottinghamshire,Oxfordshire,Rutland,Shropshire,Somerset,South Yorkshire,Staffordshire,Suffolk,Surrey,Tyne and Wear,Warwickshire,West Midlands,West Sussex,West Yorkshire,Wiltshire,Worcestershire'.split(',');
-  picker.innerHTML = '<div style="margin-bottom:4px"><label style="font-size:11px;color:#6b7280;font-weight:600">Select up to 3 counties</label><span id="sc-county-count" style="font-size:10px;color:#8890a8;margin-left:6px">0/3 selected</span></div><div id="sc-county-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div><select id="signup-county-select" style="width:100%;padding:9px 12px;background:#1e2030;border:1px solid #2a2d42;border-radius:6px;font-size:12px;color:#e2e8f0;font-family:inherit" onchange="addSpecialistCounty(this.value)"><option value="">Choose a county...</option>' + counties.map(function(c) { return '<option value="' + c.toLowerCase().replace(/\s+/g,'-') + '">' + c + '</option>'; }).join('') + '</select><div style="font-size:10px;color:#6b7280;margin-top:4px">Pick up to 3 counties for best coverage. Pro & Enterprise can go UK-wide.</div>';
+  specCounties = [];
+  renderSignupPostcodes();
+  populateCountySelect();
 }
 var specCounties = [];
+var SPECIALIST_COUNTIES = ['Bedfordshire','Berkshire','Bristol','Buckinghamshire','Cambridgeshire','Cheshire','Cornwall','Cumbria','Derbyshire','Devon','Dorset','Durham','East Sussex','Essex','Gloucestershire','Greater London','Greater Manchester','Hampshire','Herefordshire','Hertfordshire','Isle of Wight','Kent','Lancashire','Leicestershire','Lincolnshire','Merseyside','Norfolk','North Yorkshire','Northamptonshire','Northumberland','Nottinghamshire','Oxfordshire','Rutland','Shropshire','Somerset','South Yorkshire','Staffordshire','Suffolk','Surrey','Tyne and Wear','Warwickshire','West Midlands','West Sussex','West Yorkshire','Wiltshire','Worcestershire'];
+function populateCountySelect() {
+  var sel = document.getElementById('s-county-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Choose a county or area...</option>' + SPECIALIST_COUNTIES.map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('') + '<option value="all-uk">All UK</option>';
+}
 function addSpecialistCounty(val) {
-  if (!val || specCounties.length >= 3) { document.getElementById('signup-county-select').value = ''; return; }
+  var sel = document.getElementById('s-county-select');
+  if (!val) { if (sel) sel.value = ''; return; }
+  if (val === 'all-uk') { selectSpecialistArea('ukwide'); if (sel) sel.value = ''; return; }
   if (specCounties.indexOf(val) === -1) {
     specCounties.push(val);
     signupPostcodes = specCounties;
+    selectedCoverage = 'county';
     renderSignupPostcodes();
-    var tags = document.getElementById('sc-county-tags');
-    var count = document.getElementById('sc-county-count');
-    if (tags) tags.innerHTML = specCounties.map(function(c) { return '<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:4px;font-size:10px;color:#0ea5e9;font-weight:600">' + c + ' <span style="cursor:pointer" onclick="removeSpecialistCounty(\'' + c + '\')">&times;</span></span>'; }).join('');
-    if (count) count.textContent = specCounties.length + '/3 selected';
   }
-  document.getElementById('signup-county-select').value = '';
+  if (sel) sel.value = '';
 }
 function removeSpecialistCounty(val) {
   specCounties = specCounties.filter(function(c) { return c !== val; });
   signupPostcodes = specCounties;
   renderSignupPostcodes();
-  var tags = document.getElementById('sc-county-tags');
-  var count = document.getElementById('sc-county-count');
-  if (tags) tags.innerHTML = specCounties.map(function(c) { return '<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:4px;font-size:10px;color:#0ea5e9;font-weight:600">' + c + ' <span style="cursor:pointer" onclick="removeSpecialistCounty(\'' + c + '\')">&times;</span></span>'; }).join('');
-  if (count) count.textContent = specCounties.length + '/3 selected';
+}
+function renderCountyTags() {
+  var tags = document.getElementById('s-county-tags');
+  if (!tags) return;
+  tags.innerHTML = specCounties.map(function(c) { return '<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:4px;font-size:10px;color:#0ea5e9;font-weight:600">' + c + ' <span style="cursor:pointer" onclick="removeSpecialistCounty(\'' + c + '\')">&times;</span></span>'; }).join('');
 }
 
 function updateCoverageOptions() {
@@ -752,7 +851,7 @@ async function checkAvailability() {
   contBtn.style.display = 'none';
   var primary = getPrimaryLeadType();
   try {
-    var resp = await fetch(API + '/api/check-availability', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ product:primary, plan:document.querySelector('#s-plan-container input[type=radio]:checked')?.value || 'free_trial', coverage:signupCities_removed.indexOf('All UK (unlimited)') !== -1 ? 'ukwide' : signupCities_removed.length > 0 ? 'county' : selectedCoverage, postcodes:signupPostcodes }) });
+    var resp = await fetch(API + '/api/check-availability', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ product:primary, plan:document.querySelector('#s-plan-container input[type=radio]:checked')?.value || 'free_trial', coverage:selectedCoverage, postcodes:signupPostcodes }) });
     var data = await resp.json();
     loadingDiv.style.display = 'none';
     resultDiv.style.display = 'block';
@@ -799,6 +898,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ===== SIGNUP =====
 function doSignup() {
+  var button = document.getElementById('signup-btn');
+  var error = document.getElementById('signup-error');
+  var success = document.getElementById('signup-success');
   var name = document.getElementById('s-name').value.trim();
   var company = document.getElementById('s-company').value.trim();
   var email = document.getElementById('s-email').value.trim().toLowerCase();
@@ -817,16 +919,39 @@ function doSignup() {
 
   var product = products[0];
   var targetAreas = signupPostcodes;
-  // For county/region coverage, get the selected county/region instead of postcodes
+  // For county/region coverage, get the selected county/region instead of postcodes.
+  // When the county selector (specialist lead types) was used, signupPostcodes already
+  // holds the chosen counties. don't override it with a stale #county-select.
   if (selectedCoverage === 'county') {
     var countyVal = document.getElementById('county-select')?.value;
     if (countyVal && countyVal !== 'all-uk') { targetAreas = [countyVal]; }
+    else if (signupPostcodes.length === 0) { targetAreas = []; }
   } else if (selectedCoverage === 'region') {
     var regionVal = document.getElementById('region-select')?.value;
     if (regionVal && regionVal !== 'all-uk') { targetAreas = [regionVal]; }
   }
+  // Enforce a minimum of 3 counties/areas when county coverage is used
+  // (planning/probate/tenders/new business). Customers can add as many as they want;
+  // "All UK" bypasses the minimum.
+  if (selectedCoverage === 'county' && targetAreas.length > 0 && targetAreas.length < 3) {
+    document.getElementById('signup-error').textContent = 'Please select at least 3 counties/areas (or choose All UK)';
+    document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
+  }
   if (targetAreas.length === 0 && selectedCoverage !== 'ukwide') {
     document.getElementById('signup-error').textContent = 'Please add at least one postcode area or select a county/region';
+    document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
+  }
+  // Enforce the postcode-area limit for postcode coverage (free_trial/starter = 5,
+  // pro/enterprise = unlimited).
+  var pLimit = getPostcodeAreaLimit();
+  if (selectedCoverage === 'postcode' && targetAreas.length > pLimit && pLimit < 999) {
+    document.getElementById('signup-error').textContent = 'Your ' + planVal + ' plan allows up to ' + pLimit + ' postcode areas. You selected ' + targetAreas.length + '. Upgrade to Pro or Enterprise for unlimited areas.';
+    document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
+  }
+  // Enforce the county/area minimum (3) for planning/probate/tenders on
+  // free/starter. these products use counties/areas, not postcodes.
+  if (isCountyBased() && selectedCoverage !== 'ukwide' && targetAreas.length < 3 && getPostcodeAreaLimit() < 999) {
+    document.getElementById('signup-error').textContent = 'Planning, Probate and Tenders use counties/areas. Please select at least 3 ' + areaLabelText() + ' (you selected ' + targetAreas.length + ').';
     document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
   }
   var planRadio = document.querySelector('#s-plan-container input[type=radio]:checked');
@@ -838,16 +963,13 @@ function doSignup() {
       plan = 'pro';
     }
   }
-  var button = document.getElementById('signup-btn');
-  var error = document.getElementById('signup-error');
-  var success = document.getElementById('signup-success');
   error.style.display = 'none'; success.style.display = 'none';
   if (!name || !company || !email || !password) { error.textContent = 'Please fill in all fields'; error.style.display = 'block'; return; }
   if (password.length < 8) { error.textContent = 'Password must be at least 8 characters'; error.style.display = 'block'; return; }
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
   fetch(API + '/api/auth/signup', {
     method:'POST', headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()) })
+    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()), movingType:(document.querySelector('#s-moving-type input[type=radio]:checked')?.value || 'both') })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:plan, email:email, product:product, products:products }));
