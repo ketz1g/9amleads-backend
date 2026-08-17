@@ -7618,6 +7618,76 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         console.log('[DELIVERY] ' + cust.email + ': all ' + doorGatedBefore + ' leads dropped by door-number gate — no email sent (avoid sending useless leads).');
         continue;
       }
+      // DOOR-NUMBER TOP-UP: if the gate dropped leads and the customer is now
+      // short of their promised count, pull REPLACEMENT leads from the pool and
+      // enrich them so they have a verified door number, keeping the exact-count
+      // promise WITH correct addresses. We never re-add a lead that still has no
+      // confirmed number — so every sent lead is correctly addressed.
+      try {
+        var shortBy = Math.max(0, totalDailyLimit - custLeads.length);
+        if (shortBy > 0 && (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1')) {
+          var topUpPool = [];
+          products.forEach(function(p) {
+            (availByProd[p] || []).forEach(function(pl) { if (pickedIds.indexOf(pl.id) === -1) topUpPool.push(pl); });
+            (availGlobalByProd[p] || []).forEach(function(pl) { if (pickedIds.indexOf(pl.id) === -1) topUpPool.push(pl); });
+          });
+          // Dedupe by id, prefer freshest, and only door-less ones (those already
+          // numbered in the pool can be added directly without PAF spend).
+          var seenT = {}; topUpPool = topUpPool.filter(function(pl) { if (seenT[pl.id]) return false; seenT[pl.id] = true; return true; });
+          function tupFresh(l) { try { var d = JSON.parse(l.data || '{}'); var v = d.firstVisibleDate || d.updateDate || d.scrapedAt || l.created_at || ''; return new Date(v || 0).getTime(); } catch(e) { return 0; } }
+          topUpPool.sort(function(a,b){ return tupFresh(b)-tupFresh(a); });
+          var alreadyNumbered = [];
+          var needPcTop = [];
+          topUpPool.forEach(function(pl) {
+            var ld = {}; try { ld = JSON.parse(pl.data || '{}'); } catch(e) {}
+            if (hasPremiseNumber(ld.fullAddress || ld.address || ld.deceasedAddress || '', ld.postcode || '')) {
+              alreadyNumbered.push(pl);
+            } else if (ld.postcode) {
+              needPcTop.push(pl);
+            }
+          });
+          var added = 0;
+          // 1) Add pool leads that already have door numbers (no PAF spend).
+          for (var ti = 0; ti < alreadyNumbered.length && added < shortBy; ti++) {
+            var al = alreadyNumbered[ti];
+            if (pickedIds.indexOf(al.id) !== -1) continue;
+            if (!hasPremiseNumber((function(){ try { var ld = JSON.parse(al.data||'{}'); return ld.fullAddress||ld.address||ld.deceasedAddress||''; } catch(e){ return ''; } })(), (function(){ try { var ld = JSON.parse(al.data||'{}'); return ld.postcode||''; } catch(e){ return ''; } })())) continue;
+            custLeads.push(al); pickedIds.push(al.id); added++;
+          }
+          // 2) Enrich remaining door-less candidates via PAF, keep only confirmed.
+          if (added < shortBy && needPcTop.length > 0) {
+            var topNorm = needPcTop.slice(0, shortBy).map(function(pl) {
+              var ld = {}; try { ld = JSON.parse(pl.data || '{}'); } catch(e) {}
+              return Object.assign({}, ld, { id: pl.id, address: ld.fullAddress || ld.address || ld.deceasedAddress || '' });
+            });
+            var topEnriched = await pcDeliver.enrichMovingLeadsPostcoder(topNorm);
+            var topMap = {}; topEnriched.forEach(function(te) { topMap[te.id] = te; });
+            for (var tj = 0; tj < topNorm.length && added < shortBy; tj++) {
+              var te = topMap[topNorm[tj].id];
+              if (!te || !te.buildingNumber) continue;
+              if (pickedIds.indexOf(topNorm[tj].id) !== -1) continue;
+              var srcLead = null;
+              (db.leads || []).forEach(function(ll) { if (ll.id === topNorm[tj].id) srcLead = ll; });
+              if (!srcLead) continue;
+              var tld = {}; try { tld = JSON.parse(srcLead.data || '{}'); } catch(e) {}
+              var eAddr = te.fullAddress || te.address || '';
+              var eStreet = te.street || ''; var eNum = te.buildingNumber || '';
+              if (eNum && eStreet) eAddr = String(eNum).replace(/,\s*$/,'').trim() + ' ' + String(eStreet).replace(/,\s*$/,'').trim();
+              tld.buildingNumber = eNum; tld.street = eStreet; tld.postcode = te.postcode || tld.postcode; tld.udprn = te.udprn || '';
+              tld.address = eAddr; tld.fullAddress = eAddr;
+              srcLead.data = JSON.stringify(tld);
+              if (!hasPremiseNumber(eAddr, tld.postcode || '')) continue;
+              custLeads.push(srcLead); pickedIds.push(srcLead.id); added++;
+            }
+            saveDb();
+          }
+          if (added > 0) {
+            console.log('[DELIVERY] Door-number top-up: added ' + added + ' replacement lead(s) for ' + cust.email + ' (now ' + custLeads.length + ' of ' + totalDailyLimit + ' promised)');
+          } else if (shortBy > 0) {
+            console.log('[DELIVERY] Door-number top-up: no replacement leads with verified numbers for ' + cust.email + ' (kept ' + custLeads.length + ' — short by ' + shortBy + ')');
+          }
+        }
+      } catch(topErr) { console.log('[DELIVERY] Door-number top-up error:', topErr.message); }
       try {
         // NO SPLIT EMAILS: if this customer already got their daily email, only
         // mark the top-up leads as delivered — don't send a second email.
