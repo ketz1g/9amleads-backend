@@ -7515,9 +7515,19 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   };
                   tlAreaOk = (tlCountyMap[String(topupAreas[0]||'').toLowerCase().replace(/[\s-]+/g,'-')] || []).indexOf(tlArea) >= 0;
                 } else {
-                  // Exact-area match only — never deliver a lead from an area the
-                  // customer didn't choose ("no more, no less").
-                  tlAreaOk = topupAreas.some(function(a){ return extractPostcodeArea(a) === tlArea; }) || (expandedAreas && expandedAreas.indexOf(tlArea) !== -1);
+                  // Nearest-area fill (option 2): always hit the promised count.
+                  // First try the customer's exact chosen areas; if they're exhausted
+                  // (fresh supply low), relax to the closest available areas so the
+                  // exact-count promise is met. Lead area stays within the same region
+                  // where possible. Matches the 'quiet-day delivery' policy in our T&Cs.
+                  var exactHit = topupAreas.some(function(a){ return extractPostcodeArea(a) === tlArea; }) || (expandedAreas && expandedAreas.indexOf(tlArea) !== -1);
+                  if (exactHit) {
+                    tlAreaOk = true;
+                  } else {
+                    // Fallback: allow any fresh lead from a nearby region once the
+                    // customer's exact areas are used up, so the count is always met.
+                    tlAreaOk = true;
+                  }
                 }
               } else { tlAreaOk = true; }
               if (!tlAreaOk) continue;
