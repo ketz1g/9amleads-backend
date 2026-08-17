@@ -14867,10 +14867,43 @@ function syncCustomers(product) {
               var withRealPc = leads.filter(function(l) { return l.postcode && /[A-Z]{1,2}[0-9]/.test(l.postcode); }).length;
               var withDoorNum = leads.filter(function(l) { return (l.fullAddress || l.address || '').match(/\d/); }).length;
               console.log('[SCRAPER] Rightmove enriched ' + enrichedNow.length + ' leads; ' + withRealPc + '/' + leads.length + ' postcodes, ' + withDoorNum + '/' + leads.length + ' with door numbers');
-              // NOTE: NO Postcoder here. Postcoder (Royal Mail PAF) is paid per
-              // lookup (~4.5p) — running it on the whole pool burns hundreds of
-              // credits a day. It runs ONLY on the exact leads being delivered
-              // (see delivery's /api/admin/deliver), so credits = leads sent.
+              // COLLECTION-TIME PAF (bounded): pre-resolve real door numbers on the
+              // freshest door-less leads so the pool is stocked with correctly-addressed
+              // leads BEFORE delivery. This is what lets customers get their EXACT daily
+              // count (e.g. 5/day) with accurate addresses: delivery only needs to pick
+              // from an already-numbered pool, so the door-number gate rarely drops a
+              // lead. Spend is bounded by the shared daily budget (canLookup), and we
+              // sort by freshness so the leads most likely to be delivered are enriched
+              // first. Any lead still lacking a number gets one more chance at delivery.
+              if (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') {
+                try {
+                  // RESERVE FOR DELIVERY: never spend the whole daily budget at
+                  // collection time. Always leave a reserve (default 60) so the 09:00
+                  // delivery can still PAF-enrich any sent lead that wasn't pre-numbered.
+                  // This is what guarantees the customer's EXACT daily count is met.
+                  var pcReserve = parseInt(process.env.POSTCODER_DELIVERY_RESERVE || '60', 10);
+                  var pcBud = require('./postcoder_budget');
+                  var budgetLeft = (pcBud.getDailyBudget() || 0) - (pcBud.usage() || 0);
+                  var allowAtScrape = Math.max(0, budgetLeft - pcReserve);
+                  var pafTargets = leads.filter(function(l) {
+                    return !l.commercial && l.postcode && !/^\s*\d+[A-Za-z]?[\s,]/i.test((l.fullAddress || l.address || '').trim());
+                  }).sort(function(a, b) {
+                    function fms(l) { try { var d = l.firstVisibleDate || l.updateDate || l.scrapedAt || ''; return new Date(d || 0).getTime(); } catch(e) { return 0; } }
+                    return fms(b) - fms(a);
+                  }).slice(0, Math.max(0, Math.min(130, allowAtScrape)));
+                  if (pafTargets.length > 0) {
+                    // NOTE: enrichMovingLeadsPostcoder -> lookupPostcoderAddress spends
+                    // through the shared budget guard internally, so we do NOT call
+                    // canLookup() here (that would double-count). We simply cap the
+                    // batch; leads beyond today's budget resolve to null and are skipped.
+                    var pafEnriched = await rmScraper.enrichMovingLeadsPostcoder(pafTargets);
+                      var pafMap = {}; pafEnriched.forEach(function(pe) { pafMap[pe.id] = pe; });
+                      leads = leads.map(function(l) { var e = pafMap[l.id]; if (e && (e.buildingNumber || /^\s*\d+/.test((e.fullAddress || '').trim()))) { if (e.buildingNumber) l.buildingNumber = e.buildingNumber; if (e.street) l.street = e.street; if (e.fullAddress) { l.fullAddress = e.fullAddress; l.address = e.fullAddress; } } return l; });
+                      var nowNum = leads.filter(function(l) { return (l.fullAddress || l.address || '').match(/\d/); }).length;
+                      console.log('[SCRAPER] Collection PAF complete: ' + nowNum + '/' + leads.length + ' leads now have door numbers');
+                    }
+                } catch(pcErr) { console.log('[SCRAPER] Collection PAF error:', pcErr.message); }
+              }
             } catch(encErr) { console.log('[SCRAPER] Rightmove enrichment error:', encErr.message); }
             // Zoopla supplement (Apify) — DISABLED BY DEFAULT to stop the $30/mo
             // actor rental bleeding money during testing. Rightmove's direct scrape

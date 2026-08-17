@@ -491,6 +491,27 @@ async function enrichMovingLeads(leads, concurrency) {
         lead.postcode = detail.postcode || lead.postcode || '';
         lead.fullAddress = detail.fullAddress || lead.address;
         lead.photo = detail.photo || lead.photo || '';
+        // COLLECTION-TIME DOOR NUMBER: read the house number straight from the
+        // property photo via vision (free — no Postcoder spend) and prepend it to
+        // the address. Rightmove hides the number in text, so the photo is our only
+        // free source. Leads that get a number here pass the delivery door-number
+        // gate without needing a paid PAF lookup. If vision returns nothing, the
+        // lead keeps its raw address and PAF handles it at delivery time.
+        if (lead.photo && !/^\s*\d+[A-Za-z]?[\s,]/i.test((lead.fullAddress || lead.address || '').trim())) {
+          try {
+            const dn = await readDoorNumberFromPhoto(lead.photo);
+            if (dn && /^\s*\d+[A-Za-z]?/i.test(dn)) {
+              const cleanNum = dn.trim();
+              const base = (lead.fullAddress || lead.address || '').trim();
+              if (base && base.toLowerCase().indexOf(cleanNum.toLowerCase()) === -1) {
+                const addrWithNum = cleanNum + ' ' + base;
+                lead.fullAddress = addrWithNum;
+                lead.address = addrWithNum;
+                lead.buildingNumber = cleanNum;
+              }
+            }
+          } catch (vnErr) { /* keep raw address; PAF covers it at delivery */ }
+        }
       }
       enriched[i] = lead;
     }
