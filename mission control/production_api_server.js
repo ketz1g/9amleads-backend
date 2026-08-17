@@ -7593,6 +7593,23 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           }
         }
       } catch(pcDelErr) { console.log('[DELIVERY] Postcoder delivery enrich error:', pcDelErr.message); }
+      // DOOR-NUMBER GATE: Print & Post needs a REAL, correctly-addressed lead (with
+      // house number) so mail reaches the right property. A lead without a verified
+      // door number is useless for print & post and must NOT be sent. After the
+      // Postcoder enrich above, drop any lead that still lacks a confirmed premise
+      // number — the customer gets only leads with real, usable addresses.
+      var doorGatedBefore = custLeads.length;
+      custLeads = custLeads.filter(function(l) {
+        var ld = {}; try { ld = JSON.parse(l.data || '{}'); } catch(e) {}
+        return hasPremiseNumber(ld.fullAddress || ld.address || ld.deceasedAddress || '', ld.postcode || '');
+      });
+      if (custLeads.length !== doorGatedBefore) {
+        console.log('[DELIVERY] Door-number gate: dropped ' + (doorGatedBefore - custLeads.length) + ' of ' + doorGatedBefore + ' leads for ' + cust.email + ' (no verified house number) — kept ' + custLeads.length);
+      }
+      if (custLeads.length === 0) {
+        console.log('[DELIVERY] ' + cust.email + ': all ' + doorGatedBefore + ' leads dropped by door-number gate — no email sent (avoid sending useless leads).');
+        continue;
+      }
       try {
         // NO SPLIT EMAILS: if this customer already got their daily email, only
         // mark the top-up leads as delivered — don't send a second email.
