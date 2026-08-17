@@ -6849,7 +6849,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         console.log('[DELIVERY] Purged ' + orphanCount + ' orphan leads (deleted-account leftovers) before delivery');
       }
     } catch(orphErr) { console.log('[DELIVERY] Orphan purge error:', orphanErr.message); }
-    var customers = (db.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
+    // Optional TEST filter: if body has customer_email (or test_email), deliver
+    // ONLY to that customer so we can verify a single account (e.g. door numbers)
+    // without emailing everyone. Omitting it runs the normal full delivery.
+    var onlyEmail = String((req.body && (req.body.customer_email || req.body.test_email)) || '').toLowerCase().trim();
+    var customers = (db.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && (!onlyEmail || String(c.email || '').toLowerCase() === onlyEmail); });
+    console.log('[DELIVERY] Running for ' + customers.length + ' customer(s)' + (onlyEmail ? ' (filtered to ' + onlyEmail + ')' : ''));
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
       var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
@@ -7073,7 +7078,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var alreadyDeliveredToday = (db.leads || []).filter(function(l) {
         return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today);
       }).length;
-      totalNeeded = Math.max(0, totalNeeded - alreadyDeliveredToday);
+      // TEST/FORCE MODE: if body has force=true (a test delivery), ignore today's
+      // already-delivered count and send the full quota so we can verify output.
+      var forceFull = onlyEmail && req.body && req.body.force === true;
+      totalNeeded = forceFull ? totalDailyLimit : Math.max(0, totalNeeded - alreadyDeliveredToday);
       // NO SPLIT EMAILS: if this customer already received their daily email (a
       // watchdog/manual re-run), top up the missing leads in the DB but NEVER send
       // a second partial email. All promised leads go out in ONE email.
@@ -7613,7 +7621,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       try {
         // NO SPLIT EMAILS: if this customer already got their daily email, only
         // mark the top-up leads as delivered — don't send a second email.
-        if (!alreadyEmailedToday) {
+        // (In test/force mode we DO send the email so we can verify output.)
+        if (!alreadyEmailedToday || forceFull) {
           // Queue the email for bounded-parallel sending (so 1000 customers'
           // emails all go out within a few minutes instead of 30-60 min
           // sequentially). Persist last_email_date immediately so a crash can
