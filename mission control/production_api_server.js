@@ -7900,8 +7900,11 @@ try {
   if (stripeConfig.testPriceIds) {
     STRIPE_TEST_PRICE_IDS = stripeConfig.testPriceIds;
   }
-  if (stripeConfig.webhookSecret) {
-    STRIPE_WEBHOOK_SECRET ||= stripeConfig.webhookSecret;
+  // Webhook secret comes from the env var (authoritative). The stripe-config.json
+  // fallback below is only used if the env var is empty. STRIPE_WEBHOOK_SECRET is a
+  // const set from env, so we assign via a temp rather than reassigning the const.
+  if (stripeConfig.webhookSecret && !process.env.STRIPE_WEBHOOK_SECRET) {
+    global.__stripeWebhookSecretOverride = stripeConfig.webhookSecret;
   }
 } catch(e) { console.error('[STRIPE] Config load error:', e.message); }
 
