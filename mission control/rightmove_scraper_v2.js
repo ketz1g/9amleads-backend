@@ -392,25 +392,13 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
             // number that PAF publishes.
             console.log('[POSTCODER] Door number hint ' + dn + ' did not directly match PAF for ' + cleanPc + ' — using PAF building number.');
           }
-          // No door number known: only use an exact street match that ALSO has a
-          // building number, so we never ship a number-less or wrongly-numbered
-          // address. A pure street name with no number is not enough for print & post.
-          const match = addresses.find(function(a) {
-              const st = (a.street || a.addressline1 || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-              const num = String(a.number || a.premise || '');
-              return hint && st && hint.indexOf(st) !== -1 && num && /\d/.test(num);
-            });
-            if (match) return resolve({
-              fullAddress: match.summaryline || match.addressline1 || '',
-              address1: match.addressline1 || '',
-              street: match.street || '',
-              buildingNumber: match.number || match.premise || '',
-              town: match.posttown || match.county || '',
-              postcode: match.postcode || cleanPc,
-              udprn: match.udprn || ''
-            });
+          // No door number known: we must NEVER guess. Picking the first numbered
+          // address on the street (e.g. "1 Moncrieff Close") would ship a WRONG
+          // address to print & post. So when we don't have a reliable number, we
+          // reject the lead — accuracy over count. The customer gets only leads
+          // whose exact house number we can confirm.
           }
-          // No confirmable address with a building number -> reject (accuracy over count).
+          // No confirmable address -> reject (accuracy over count).
           return resolve(null);
         } catch(e) { resolve(null); }
       });
