@@ -5152,7 +5152,7 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
 cron.schedule('30 5 * * *', async () => {
   console.log('[SCRAPER CRON] Starting daily lead generation...');
   const http = require('http');
-  http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json' } }, function(res) {}).end();
+  http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json' } }, function(res) {}).end();
 });
 
 // Generate realistic-looking demo leads for any product
@@ -5401,7 +5401,7 @@ cron.schedule('0 6 * * *', async () => {
   try {
     const http = require('http');
     var body = JSON.stringify({});
-    var req = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+    var req = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
       var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[06:00 UK] Scraper done:', b.substring(0, 100)); });
     });
     req.write(body); req.end();
@@ -5412,7 +5412,7 @@ cron.schedule('20 6 * * *', async () => {
   try {
     const http = require('http');
     var body2 = JSON.stringify({});
-    var req2 = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body2) } }, function(res) {
+    var req2 = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body2) } }, function(res) {
       var b2 = ''; res.on('data', function(c) { b2 += c; }); res.on('end', function() { console.log('[06:05 UK] Distributor done:', b2.substring(0, 100)); });
     });
     req2.write(body2); req2.end();
@@ -5434,7 +5434,7 @@ cron.schedule('0 9 * * 1-5', async () => {
   try {
     const http = require('http');
     var body = JSON.stringify({});
-    var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+    var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
       var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[09:00 UK] Delivery done:', b.substring(0, 200)); });
     });
     req.on('error', function(e) { console.log('[09:00 UK] Delivery request error:', e.message); });
@@ -5456,7 +5456,7 @@ cron.schedule('2 9 * * 1-5', async () => {
     console.log('[WATCHDOG] 09:02 delivery did not fire today — re-triggering now (safety)');
     const httpW = require('http');
     var bodyW = JSON.stringify({});
-    var wreq = httpW.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyW) } }, function(wres) {
+    var wreq = httpW.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyW) } }, function(wres) {
       var wb = ''; wres.on('data', function(c) { wb += c; }); wres.on('end', function() { console.log('[WATCHDOG] Re-trigger delivery done:', wb.substring(0, 200)); });
     });
     wreq.on('error', function(e) { console.log('[WATCHDOG] Re-trigger request error:', e.message); });
@@ -6705,7 +6705,7 @@ cron.schedule('0 0 * * *', async () => {
           try {
             var httpMod = require('http');
             var bodyH = JSON.stringify({ product: hp, force: true });
-            var hreq = httpMod.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer 9amAdmin2024!', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyH) } }, function(hres) { hres.resume(); });
+            var hreq = httpMod.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyH) } }, function(hres) { hres.resume(); });
             hreq.write(bodyH); hreq.end();
             fixes.push('Triggered re-scrape for empty pool: ' + hp);
           } catch(se) {}
@@ -16096,7 +16096,7 @@ app.post('/api/send-enquiry', async (req, res) => {
 app.post('/api/admin/release-postcodes', async (req, res) => {
   try {
     const auth = req.headers.authorization;
-    if (!auth || auth !== 'Bearer 9amAdmin2024!') return res.status(401).json({ error: 'Unauthorized' });
+    if (!auth || auth !== 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '') return res.status(401).json({ error: 'Unauthorized' });
     const { codes } = req.body || {};
     const assignmentsData = loadAssignments();
     const map = assignmentsData.assignments || {};
@@ -16116,7 +16116,7 @@ app.post('/api/admin/release-postcodes', async (req, res) => {
 app.post('/api/admin/reset', async (req, res) => {
   try {
     const auth = req.headers.authorization;
-    if (!auth || auth !== 'Bearer 9amAdmin2024!') return res.status(401).json({ error: 'Unauthorized' });
+    if (!auth || auth !== 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '') return res.status(401).json({ error: 'Unauthorized' });
     const dbData = getDb();
     dbData.customers = [];
     dbData.leads = [];
