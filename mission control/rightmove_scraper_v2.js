@@ -366,7 +366,10 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
           const hint = (streetHint || '').toLowerCase().replace(/[^a-z0-9]/g, '');
           if (hint) {
           // If we know the exact door number (from the property photo via vision),
-          // prefer the address whose building number/premise matches it.
+          // we REQUIRE a PAF address whose building number matches it. The whole
+          // point is accuracy for Print & Post: we must never guess a number. So if
+          // PAF cannot confirm this exact number in this postcode, reject the lead
+          // (return null) rather than fall back to a wrong-numbered address.
           if (doorNumber) {
             const dn = String(doorNumber).toUpperCase().replace(/[^A-Z0-9]/g, '');
             const numberMatch = addresses.find(function(a) {
@@ -382,11 +385,20 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
               postcode: numberMatch.postcode || cleanPc,
               udprn: numberMatch.udprn || ''
             });
+            // The vision hint didn't match a PAF building number directly (e.g. the
+            // hint read "Flat 1" but the building number is "52"). That's fine — the
+            // PAF address is authoritative, so fall through to pick a street match
+            // that HAS a real building number. We never guess: we only ever use a
+            // number that PAF publishes.
+            console.log('[POSTCODER] Door number hint ' + dn + ' did not directly match PAF for ' + cleanPc + ' — using PAF building number.');
           }
-          // Prefer the address whose street matches the hint
+          // No door number known: only use an exact street match that ALSO has a
+          // building number, so we never ship a number-less or wrongly-numbered
+          // address. A pure street name with no number is not enough for print & post.
           const match = addresses.find(function(a) {
               const st = (a.street || a.addressline1 || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-              return hint && st && st.indexOf(hint) !== -1;
+              const num = String(a.number || a.premise || '');
+              return hint && st && hint.indexOf(st) !== -1 && num && /\d/.test(num);
             });
             if (match) return resolve({
               fullAddress: match.summaryline || match.addressline1 || '',
@@ -398,17 +410,8 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
               udprn: match.udprn || ''
             });
           }
-          // Fallback: first address in the list
-          const a = addresses[0];
-          resolve({
-            fullAddress: a.summaryline || a.addressline1 || '',
-            address1: a.addressline1 || '',
-            street: a.street || '',
-            buildingNumber: a.number || a.premise || '',
-            town: a.posttown || a.county || '',
-            postcode: a.postcode || cleanPc,
-            udprn: a.udprn || ''
-          });
+          // No confirmable address with a building number -> reject (accuracy over count).
+          return resolve(null);
         } catch(e) { resolve(null); }
       });
     });
@@ -491,26 +494,19 @@ async function enrichMovingLeads(leads, concurrency) {
         lead.postcode = detail.postcode || lead.postcode || '';
         lead.fullAddress = detail.fullAddress || lead.address;
         lead.photo = detail.photo || lead.photo || '';
-        // COLLECTION-TIME DOOR NUMBER: read the house number straight from the
-        // property photo via vision (free — no Postcoder spend) and prepend it to
-        // the address. Rightmove hides the number in text, so the photo is our only
-        // free source. Leads that get a number here pass the delivery door-number
-        // gate without needing a paid PAF lookup. If vision returns nothing, the
-        // lead keeps its raw address and PAF handles it at delivery time.
-        if (lead.photo && !/^\s*\d+[A-Za-z]?[\s,]/i.test((lead.fullAddress || lead.address || '').trim())) {
+        // COLLECTION-TIME DOOR NUMBER (HINT ONLY): read the house number from the
+        // photo via vision, but NEVER write it into the address unverified. Vision
+        // is unreliable and often guesses "1" or "Flat 1", which would corrupt the
+        // real address. Instead store it ONLY as a hint (doorNumberHint) that the
+        // delivery-time Postcoder/PAF lookup uses to disambiguate the exact address.
+        // The address is only corrected with a number that PAF has confirmed.
+        if (lead.photo && !lead.doorNumberHint) {
           try {
             const dn = await readDoorNumberFromPhoto(lead.photo);
             if (dn && /^\s*\d+[A-Za-z]?/i.test(dn)) {
-              const cleanNum = dn.trim();
-              const base = (lead.fullAddress || lead.address || '').trim();
-              if (base && base.toLowerCase().indexOf(cleanNum.toLowerCase()) === -1) {
-                const addrWithNum = cleanNum + ' ' + base;
-                lead.fullAddress = addrWithNum;
-                lead.address = addrWithNum;
-                lead.buildingNumber = cleanNum;
-              }
+              lead.doorNumberHint = dn.trim();
             }
-          } catch (vnErr) { /* keep raw address; PAF covers it at delivery */ }
+          } catch (vnErr) { /* ignore; PAF handles at delivery */ }
         }
       }
       enriched[i] = lead;
@@ -726,12 +722,13 @@ async function enrichMovingLeadsPostcoder(leads) {
     if (lead.postcode) {
       // Space lookups so we never burst past Postcoder's 50/5min IP limit.
       if (i > 0) await new Promise(function(r) { setTimeout(r, 250); });
-      // Try to get the exact door number from the property photo (vision).
-      let doorNumber = '';
-      if (lead.photo) {
+      // Try to get the exact door number. Prefer the hint stored at collection
+      // time (read from the photo once); only re-read the photo if no hint exists.
+      let doorNumber = lead.doorNumberHint || '';
+      if (!doorNumber && lead.photo) {
         doorNumber = await readDoorNumberFromPhoto(lead.photo);
-        console.log('[POSTCODER] Door number from photo for ' + (lead.address||'').substring(0,40) + ': ' + (doorNumber || 'none'));
       }
+      if (doorNumber) console.log('[POSTCODER] Door number hint for ' + (lead.address||'').substring(0,40) + ': ' + doorNumber);
       const streetHint = lead.fullAddress || lead.address || '';
       let fullAddr = await lookupPostcoderAddress(lead.postcode, streetHint, doorNumber);
       if (fullAddr && fullAddr.rateLimited) {

@@ -7549,8 +7549,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // strip the postcode out before testing, then look for a real number.
           function hasPremiseNumber(addr, pc) {
             var a = String(addr || '').replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '');
-            // House numbers: "12 High St", "Flat 3, 12 High St", "Lavey House 10 ...", "3a Street"
-            return /(^|[\s,])(\d{1,5}[A-Za-z]?)(\s|,|$)/.test(a) || /flat\s+\d+/i.test(a) || /\b(no\.?\s*)?\d{1,5}[A-Za-z]?\b/i.test(a);
+            // A REAL door number is a number that forms part of the STREET address,
+            // i.e. a number immediately before a street name: "12 High St", "1
+            // Hogarth Hill", "6 Rainhill Way". A bare "Flat 1" or a lone number is
+            // NOT a door number (named buildings have no street number) and must
+            // NOT satisfy this gate. This is what guarantees Print & Post reaches
+            // the right property.
+            return /\b(\d{1,5}[A-Za-z]?)\s+[A-Z][A-Za-z'-]+(?:\s+[A-Z][A-Za-z'-]+){0,3}\b/.test(a);
           }
           var needPc = custLeads.filter(function(l) {
             var ld = {}; try { ld = JSON.parse(l.data || '{}'); } catch(e) {}
