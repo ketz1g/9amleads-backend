@@ -7735,7 +7735,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 var farea = extractPostcodeArea(fl.postcode || fl.address || '');
                 if (!farea) continue;
                 var fAddr = fl.fullAddress || fl.address || '';
-                var fld = Object.assign({}, fl, { id: fl.id, address: fAddr, postcode: fl.postcode || '' });
+                var fld = Object.assign({}, fl, { id: fl.id, address: fAddr, postcode: fl.postcode || '', product: fprod });
                 var fenr = await pcDeliver.enrichMovingLeadsPostcoder([fld]);
                 if (fenr && fenr[0] && fenr[0].buildingNumber && fenr[0].postcode) {
                   fcreated.push(fenr[0]);
