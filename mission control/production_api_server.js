@@ -5454,6 +5454,34 @@ cron.schedule('2 9 * * 1-5', async () => {
     var todayStr = new Date().toISOString().split('T')[0];
     if (__lastDeliveryDate === todayStr) return; // already fired today
     console.log('[WATCHDOG] 09:02 delivery did not fire today — re-triggering now (safety)');
+    // NOTIFY CUSTOMERS: let every active customer know their leads are on the way.
+    // Funny + lighthearted so a delay never sounds alarming. Sent once per day via a
+    // watchdog_notified flag so a customer isn't spammed across retries.
+    try {
+      var wDb = getDb();
+      var wNotified = {};
+      if (wDb.watchdog_notified) wNotified = wDb.watchdog_notified;
+      var wCustomers = (wDb.customers || []).filter(function(c){ return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
+      var wSubject = '🦥 Your leads had a lie-in — but they\'re on the way!';
+      var wBody = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px">'
+        + '<h2 style="color:#fbbf24;margin:0 0 8px">Oops — the 9am alarm was a bit sleepy today 😴</h2>'
+        + '<p style="font-size:15px;line-height:1.6;color:#cbd5e1">Nothing to worry about — your <b>daily leads are on the way</b> right now. 🚚💨</p>'
+        + '<p style="font-size:15px;line-height:1.6;color:#cbd5e1">Think of it like your leads decided to hit snooze, grab a coffee, and pop in a little later than usual. The system is being given a gentle nudge to get its act together, and your fresh opportunities will be with you <b>very shortly</b>.</p>'
+        + '<p style="font-size:15px;line-height:1.6;color:#cbd5e1">Thanks so much for your patience — we really appreciate you! 🙏</p>'
+        + '<p style="font-size:13px;color:#94a3b8;margin:16px 0 0">— The 9amLeads Team</p></div>';
+      for (var wci = 0; wci < wCustomers.length; wci++) {
+        var wc = wCustomers[wci];
+        var wKey = wc.id || wc.email;
+        if (wNotified[wKey] === todayStr) continue; // already told today
+        try {
+          await sendBrevoEmail({ email: wc.email, name: wc.company || 'Customer' }, wSubject, wBody);
+          wNotified[wKey] = todayStr;
+          console.log('[WATCHDOG] Delay notice sent to ' + wc.email);
+        } catch(wnErr) { console.log('[WATCHDOG] Delay notice failed for ' + wc.email + ': ' + wnErr.message); }
+      }
+      wDb.watchdog_notified = wNotified;
+      saveDb();
+    } catch(wnErr2) { console.log('[WATCHDOG] Delay notification error:', wnErr2.message); }
     const httpW = require('http');
     var bodyW = JSON.stringify({});
     var wreq = httpW.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyW) } }, function(wres) {
