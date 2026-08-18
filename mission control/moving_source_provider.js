@@ -284,8 +284,9 @@ class RightmoveProvider {
 const PROVIDERS = { homedata: HomedataProvider, rightmove: RightmoveProvider };
 
 function getSourcePriority() {
-  const primary = CONFIG.primarySource;
-  const fallback = CONFIG.fallbackSource;
+  // Read env live so tests and config changes take effect without a restart.
+  const primary = process.env.MOVING_PRIMARY_SOURCE || CONFIG.primarySource || 'rightmove';
+  const fallback = process.env.MOVING_FALLBACK_SOURCE || CONFIG.fallbackSource || 'rightmove';
   const order = [];
   if (PROVIDERS[primary]) order.push(primary);
   if (PROVIDERS[fallback] && fallback !== primary) order.push(fallback);
