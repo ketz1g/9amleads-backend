@@ -7791,16 +7791,20 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', scrapedAt: l.scrapedAt || '' };
         }
         // REQUIRED: a real, deliverable address = a postcode AND a non-empty street
-        // address. A confirmed door number (hasPremiseNumber) is preferred but NOT
-        // required — otherwise moving/probate delivery is blocked whenever PAF can't
-        // confirm the exact house number (Rightmove hides it). Drop only broken leads
-        // with no address or no postcode.
+        // address AND a confirmed door number (house/flat number). Print & Post needs
+        // the exact premise, so a lead without a door number (e.g. a named development
+        // like "Eeko") is dropped and replaced by the top-up/final-pass with a lead
+        // that HAS a resolvable door number.
         var addr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
         var pc = ld.postcode || '';
         if (!addr || !pc) return false; // broken lead: no address/postcode
         // A valid full postcode (with the trailing inward code) is required for
         // mail to be deliverable. Bare area codes (SW1) are not enough.
-        return /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc.trim());
+        if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc.trim())) return false;
+        // STRICT: require a confirmed door number for property products (moving/probate).
+        // A lead with only a street name and no house number cannot be printed/posted
+        // to the right property, so it is not deliverable.
+        return hasPremiseNumber(addr, pc);
       });
       if (custLeads.length !== doorGatedBefore) {
         console.log('[DELIVERY] Door-number gate: dropped ' + (doorGatedBefore - custLeads.length) + ' of ' + doorGatedBefore + ' leads for ' + cust.email + ' (no verified house number) — kept ' + custLeads.length);
@@ -7918,7 +7922,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 var fenrPc = (fenr && fenr[0] && fenr[0].postcode) || fl.postcode || '';
                 var fenrAddr = (fenr && fenr[0] && (fenr[0].fullAddress || fenr[0].address)) || fAddr || fl.address || '';
                 var fenrFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(fenrPc).trim());
-                if (fenr && fenr[0] && fenrAddr && fenrFullPc) {
+                // STRICT: only accept a replacement lead that has a confirmed door
+                // number (house/flat number) so every delivered lead is printable/postable
+                // to the right property. Leads without a street number are skipped.
+                var fenrHasNum = hasPremiseNumber(fenrAddr, fenrPc) || !!(fenr && fenr[0] && (fenr[0].buildingNumber));
+                if (fenr && fenr[0] && fenrAddr && fenrFullPc && fenrHasNum) {
                   var fenrLead = fenr[0];
                   if (!fenrLead.postcode) fenrLead.postcode = fenrPc;
                   if (!fenrLead.fullAddress) fenrLead.fullAddress = fenrAddr;
