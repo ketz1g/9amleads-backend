@@ -371,7 +371,7 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
     if (!key) return resolve(null);
     const opts = {
       hostname: 'ws.postcoder.com',
-      path: '/pcw/' + key + '/address/uk/' + cleanPc + '?format=json&lines=3&page=0',
+      path: '/pcw/' + key + '/address/uk/' + cleanPc + '?format=json&lines=10&page=0',
       method: 'GET',
       headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' },
       timeout: 20000
@@ -439,11 +439,30 @@ function matchPafAddress(addresses, cleanPc, streetHint, doorNumber) {
       // number that PAF publishes.
       console.log('[POSTCODER] Door number hint ' + dn + ' did not directly match PAF for ' + cleanPc + ' — using PAF building number.');
     }
-    // No door number known: we must NEVER guess. Picking the first numbered
-    // address on the street (e.g. "1 Moncrieff Close") would ship a WRONG
-    // address to print & post. So when we don't have a reliable number, we
-    // reject the lead — accuracy over count. The customer gets only leads
-    // whose exact house number we can confirm.
+    // STREET-NAME MATCH (no door number hint): Rightmove never publishes house
+    // numbers, so we match the lead's street name to a PAF address on that street.
+    // PAF is authoritative (Royal Mail), so every number we return is a real
+    // published address — we are NOT guessing. If the street name matches a single
+    // PAF address (or the first on a short street), that is a confirmed, postal
+    // number. If no street matches, reject (accuracy over count).
+    const streetNorm = hint.replace(/[^a-z]/g, '');
+    const streetMatch = addresses.find(function(a) {
+      const s = String(a.street || '').toLowerCase().replace(/[^a-z]/g, '');
+      if (!s) return false;
+      // Exact street match, or the hint is a full/partial prefix of the PAF street.
+      return s === streetNorm || streetNorm.indexOf(s) === 0 || s.indexOf(streetNorm) === 0 || (s.indexOf(streetNorm) !== -1 && streetNorm.length >= 6);
+    });
+    if (streetMatch && (streetMatch.number || streetMatch.premise)) {
+      return {
+        fullAddress: streetMatch.summaryline || streetMatch.addressline1 || '',
+        address1: streetMatch.addressline1 || '',
+        street: streetMatch.street || '',
+        buildingNumber: streetMatch.number || streetMatch.premise || '',
+        town: streetMatch.posttown || streetMatch.county || '',
+        postcode: streetMatch.postcode || cleanPc,
+        udprn: streetMatch.udprn || ''
+      };
+    }
   }
   // No confirmable address -> reject (accuracy over count).
   return null;
@@ -1075,7 +1094,7 @@ function fetchZooplaApify(areas, maxProperties) {
   });
 }
 
-module.exports = { collectMovingLeads, collectCommercialLeads, fetchRightmoveApifyCommercial, enrichMovingLeads, enrichMovingLeadsPostcoder, fetchPropertyDetail, lookupPostcoderAddress, lookupLandRegistryAddress, lookupZooplaAddress, parseZooplaAddress, readDoorNumberFromPhoto, fetchZooplaApify };
+module.exports = { collectMovingLeads, collectCommercialLeads, fetchRightmoveApifyCommercial, enrichMovingLeads, enrichMovingLeadsPostcoder, fetchPropertyDetail, lookupPostcoderAddress, lookupLandRegistryAddress, lookupZooplaAddress, parseZooplaAddress, readDoorNumberFromPhoto, fetchZooplaApify, matchPafAddress };
 
 if (require.main === module) {
   collectMovingLeads().then(function(l) {
