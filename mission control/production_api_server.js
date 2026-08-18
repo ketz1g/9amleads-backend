@@ -7604,13 +7604,15 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             return /\b(\d{1,5}[A-Za-z]?)\s+[A-Z][A-Za-z'-]+(?:\s+[A-Z][A-Za-z'-]+){0,3}\b/.test(a);
           }
           var needPc = custLeads.filter(function(l) {
-            var ld = {}; try { ld = JSON.parse(l.data || '{}'); } catch(e) {}
+            var ld = null; try { ld = JSON.parse(l.data || ''); } catch(e) { ld = null; }
+            if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '' };
             var addr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
             return ld.postcode && !hasPremiseNumber(addr, ld.postcode);
           });
           if (needPc.length > 0) {
             var pcNorm = needPc.map(function(l) {
-              var ld = {}; try { ld = JSON.parse(l.data || '{}'); } catch(e) {}
+              var ld = null; try { ld = JSON.parse(l.data || ''); } catch(e) { ld = null; }
+              if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '' };
               return Object.assign({}, ld, { id: l.id, address: ld.fullAddress || ld.address || ld.deceasedAddress || '' });
             });
             var pcDelivered = await pcDeliver.enrichMovingLeadsPostcoder(pcNorm);
@@ -7659,7 +7661,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // number — the customer gets only leads with real, usable addresses.
       var doorGatedBefore = custLeads.length;
       custLeads = custLeads.filter(function(l) {
-        var ld = {}; try { ld = JSON.parse(l.data || '{}'); } catch(e) {}
+        // Robust lead-data read: prefer l.data (JSON) but fall back to top-level
+        // fields (postcode/address/scrapedAt) which some creation paths store.
+        var ld = null;
+        try { ld = JSON.parse(l.data || ''); } catch(e) { ld = null; }
+        if (!ld || typeof ld !== 'object') {
+          ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', scrapedAt: l.scrapedAt || '' };
+        }
         return hasPremiseNumber(ld.fullAddress || ld.address || ld.deceasedAddress || '', ld.postcode || '');
       });
       if (custLeads.length !== doorGatedBefore) {
