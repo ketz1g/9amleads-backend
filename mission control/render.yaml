@@ -26,6 +26,10 @@ services:
         value: data/9amleads-prod.db
       - key: BREVO_API_KEY
         sync: false
+      - key: POSTCODER_ENABLED
+        sync: false
+      - key: POSTCODER_API_KEY
+        sync: false
       - key: COMPANIES_HOUSE_API_KEY
         sync: false
       - key: APIFY_API_KEY

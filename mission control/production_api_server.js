@@ -11345,6 +11345,7 @@ app.get('/api/health', (req, res) => {
     paid_customers: paidCustomers.count,
     leads: leadCount.count,
     brevo_configured: !!BREVO_API_KEY,
+    postcoder_configured: (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') && !!process.env.POSTCODER_API_KEY,
     stripe_configured: !!STRIPE_SECRET_KEY,
     scheduler: 'Active (9:00 AM daily)',
     campaign: 'Active (10 trial + 7 paid emails)'
