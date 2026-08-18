@@ -15097,29 +15097,58 @@ function syncCustomers(product) {
                   var resolvedCount = 0, uprnCount = 0;
                   // COST CAP: resolve at most N leads per run so credits are never
                   // over-spent. Default 10 (each get-properties = 6 credits => 60 max).
-                  var maxResolve = parseInt(process.env.MOVING_PROPALT_MAX_RESOLVE_PER_RUN || '10', 10);
-                  // Resolve only leads with a full postcode + no confirmed UPRN yet.
-                  for (var hi = 0; hi < (leads||[]).length && resolvedCount < maxResolve; hi++) {
-                    var hl = leads[hi];
-                    if (hl.commercial) continue;
-                    if (!hl.postcode || !/[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i.test(String(hl.postcode).trim())) continue;
-                    if (hl.uprn) { uprnCount++; continue; }
-                    var hres = await hybridMsp.resolveAddress({
-                      address: hl.address || hl.fullAddress || '', street: hl.street || hl.address || hl.fullAddress || '',
-                      postcode: hl.postcode || '', houseNumber: hl.buildingNumber || '', sourceProvider: 'rightmove'
+                  // COST-EFFICIENT POSTCODE-BATCHED resolution: one get-properties
+                  // call (6 credits) returns ALL properties in a postcode with UPRNs
+                  // (~23 properties, ~0.26 credits each), far cheaper than per-lead.
+                  // We group leads by postcode and match each to its property by
+                  // street + house number.
+                  var maxPostcodes = parseInt(process.env.MOVING_PROPALT_MAX_POSTCODES_PER_RUN || '20', 10);
+                  // Group leads needing resolution by postcode.
+                  var pcGroups = {};
+                  (leads||[]).forEach(function(hl){
+                    if (hl.commercial || hl.uprn) return;
+                    var pc = String(hl.postcode||'').toUpperCase().trim();
+                    if (!/[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i.test(pc)) return;
+                    if (!pcGroups[pc]) pcGroups[pc] = [];
+                    pcGroups[pc].push(hl);
+                  });
+                  var pcs = Object.keys(pcGroups).slice(0, maxPostcodes);
+                  for (var pci = 0; pci < pcs.length; pci++) {
+                    var pcode = pcs[pci];
+                    var props = await hybridMsp.propaltGetPropertiesByPostcode(pcode);
+                    if (!props) { resolvedCount += pcGroups[pcode].length; continue; }
+                    // Build a lookup by street+number.
+                    var propMap = {};
+                    props.forEach(function(p){ var k = String((p.building_number||p.poan||'') + (p.thoroughfare||'')).toLowerCase().replace(/[^0-9a-z]/g,''); if(k) propMap[k] = p; });
+                    var resolved = 0;
+                    pcGroups[pcode].forEach(function(hl){
+                      var key = String((hl.buildingNumber||'') + (hl.street||hl.address||'')).toLowerCase().replace(/[^0-9a-z]/g,'');
+                      var matched = propMap[key] || props.find(function(p){ var st=(p.thoroughfare||'').toLowerCase().replace(/[^a-z0-9]/g,''); var addr=(hl.address||hl.fullAddress||'').toLowerCase().replace(/[^a-z0-9]/g,''); return st && addr && addr.indexOf(st)!==-1; });
+                      if (matched && matched.uprn) {
+                        hl.uprn = String(matched.uprn);
+                        var num = String(matched.building_number||matched.poan||'').trim();
+                        if (num) hl.buildingNumber = num;
+                        var parts=[];
+                        if (matched.sub_building_name) parts.push(matched.sub_building_name);
+                        if (num && matched.thoroughfare) parts.push(num+' '+matched.thoroughfare);
+                        else if (matched.building_name) parts.push(matched.building_name);
+                        else if (matched.thoroughfare) parts.push(matched.thoroughfare);
+                        if (matched.town) parts.push(matched.town);
+                        if (matched.postcode) parts.push(matched.postcode);
+                        var full = parts.join(', ');
+                        if (full) { hl.address = full; hl.fullAddress = full; }
+                        hl.addressConfidence = 98;
+                        hl.addressVerificationStatus = 'EXACT_ADDRESS';
+                        hl.addressVerificationSource = 'propalt-addressbase';
+                        hl.sourceProvider = 'rightmove+propalt';
+                        uprnCount++;
+                        resolved++;
+                      }
                     });
-                    if (hres && hres.uprn) {
-                      hl.uprn = hres.uprn;
-                      if (hres.verifiedAddress || hres.fullAddress) { hl.address = hres.verifiedAddress || hres.fullAddress; hl.fullAddress = hres.verifiedAddress || hres.fullAddress; }
-                      if (hres.houseNumber) hl.buildingNumber = hres.houseNumber;
-                      hl.addressConfidence = hres.addressConfidence || 0;
-                      hl.addressVerificationStatus = hres.addressVerificationStatus || 'UNRESOLVED';
-                      hl.sourceProvider = 'rightmove+propalt';
-                      uprnCount++;
-                    }
-                    resolvedCount++;
+                    resolvedCount += pcGroups[pcode].length;
+                    console.log('[SCRAPER] Propalt postcode ' + pcode + ': ' + pcGroups[pcode].length + ' leads, ' + resolved + ' matched (1 call = 6 credits)');
                   }
-                  console.log('[SCRAPER] Propalt hybrid resolved ' + resolvedCount + ' leads, UPRN matched ' + uprnCount);
+                  console.log('[SCRAPER] Propalt hybrid: resolved ' + resolvedCount + ' leads across ' + pcs.length + ' postcodes, UPRN matched ' + uprnCount);
                 } catch(hyErr) { console.log('[SCRAPER] Propalt hybrid resolve error (using Rightmove addresses): ' + hyErr.message); }
               }
             } catch(mErr) { console.log('[SCRAPER] Moving collection error: ' + mErr.message); }

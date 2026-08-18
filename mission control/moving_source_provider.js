@@ -774,6 +774,21 @@ function postcoderVerifyUprn(uprn) {
   });
 }
 
+// Fetch ALL properties in a postcode (with UPRNs) via Propalt get-properties.
+// ONE call (6 credits) returns ~23 properties with UPRNs — the cost-efficient way
+// to resolve many leads sharing a postcode. Returns the array or null on error.
+async function propaltGetPropertiesByPostcode(postcode) {
+  if (!CONFIG.propaltKey || !postcode) return null;
+  API_USAGE.propaltCalls++;
+  const body = JSON.stringify({ postcode: postcode, udprn: 'y', limit: 100, page: 0 });
+  const resp = await apiFetch(CONFIG.propaltBase, '/property/get-properties', {
+    'Authorization': 'Bearer ' + CONFIG.propaltKey, 'Content-Type': 'application/json', 'Accept': 'application/json'
+  }, 25000, body);
+  if (!resp.ok) return null;
+  const items = Array.isArray(resp.json) ? resp.json : (resp.json && resp.json.data) || [];
+  return items;
+}
+
 module.exports = {
   PROVIDERS,
   HomedataProvider,
@@ -783,6 +798,7 @@ module.exports = {
   fetchNewListings,
   resolveAddress,
   postcoderVerifyUprn,
+  propaltGetPropertiesByPostcode,
   propaltResolveByPostcode,
   homedataResolveUprn,
   normalizePostcode,
