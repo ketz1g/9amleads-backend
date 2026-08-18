@@ -3125,6 +3125,9 @@ app.get('/api/leads', authMiddleware, (req, res) => {
 
   const nowIso = new Date().toISOString();
   const visible = leads.filter(function(l) {
+    // Hide rejected leads from the customer dashboard (they're queued for replacement).
+    var d0 = {}; try { d0 = JSON.parse(l.data || '{}'); } catch(e) {}
+    if (d0.rejected) return false;
     if (l.delivered || l.delivered_at) return true;
     return !(l.release_at && l.release_at > nowIso);
   });
@@ -3161,6 +3164,113 @@ app.get('/api/leads/today', authMiddleware, (req, res) => {
     return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
   }));
 });
+
+// POST /api/leads/reject — customer rejects a lead (incorrect/wrong address), so it's
+// removed from their view and queued for admin review + replacement.
+app.post('/api/leads/reject', authMiddleware, (req, res) => {
+  try {
+    var leadId = (req.body && req.body.lead_id) || '';
+    var reason = (req.body && req.body.reason) || 'wrong address';
+    if (!leadId) return res.status(400).json({ error: 'lead_id required' });
+    var lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(leadId, req.user.id);
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    var parsed = {}; try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
+    parsed.rejected = true;
+    parsed.rejected_at = new Date().toISOString();
+    parsed.reject_reason = reason;
+    db.prepare('UPDATE leads SET data = ?, status = ? WHERE id = ?').run(JSON.stringify(parsed), 'rejected', leadId);
+    res.json({ success: true, message: 'Lead rejected. We will send you a replacement.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/rejected-leads — admin review queue of all customer-rejected leads.
+app.get('/api/admin/rejected-leads', adminAuth, (req, res) => {
+  try {
+    var leads = db.prepare("SELECT * FROM leads WHERE status = 'rejected' ORDER BY updated_at DESC LIMIT 200").all();
+    var custs = db.prepare('SELECT id, email, company FROM customers').all();
+    var cmap = {}; custs.forEach(function(c){ cmap[c.id] = c; });
+    res.json({ success: true, count: leads.length, leads: leads.map(function(l){
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      var c = cmap[l.customer_id] || {};
+      return { lead_id: l.id, customer: c.email || l.customer_id, company: c.company || '', product: l.product || '', address: d.address || d.fullAddress || d.deceasedAddress || '', postcode: d.postcode || '', reject_reason: d.reject_reason || '', rejected_at: d.rejected_at || '', replaced: !!d.replaced };
+    }) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/rejected-leads/approve — admin approves a replacement for a rejected
+// lead: marks the old one replaced, and (optionally) adds a fresh lead to the customer
+// for their next delivery or sends it now.
+app.post('/api/admin/rejected-leads/approve', adminAuth, async (req, res) => {
+  try {
+    var leadId = (req.body && req.body.lead_id) || '';
+    var sendNow = !!(req.body && req.body.send_now);
+    if (!leadId) return res.status(400).json({ error: 'lead_id required' });
+    var lead = db.prepare('SELECT * FROM leads WHERE id = ?').get(leadId);
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    var parsed = {}; try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
+    parsed.replaced = true;
+    parsed.replaced_at = new Date().toISOString();
+    db.prepare('UPDATE leads SET data = ? WHERE id = ?').run(JSON.stringify(parsed), leadId);
+    var result = { success: true, message: 'Rejected lead marked as replaced.' };
+    // Add a fresh replacement lead to the customer's account (undelivered), so the
+    // next 9am delivery sends it. Optionally send now via the deliver endpoint.
+    try {
+      var cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(lead.customer_id);
+      if (cust) {
+        var repLead = await createReplacementLead(cust, lead.product || 'moving');
+        result.replacement = repLead ? { lead_id: repLead.id, address: repLead.address, postcode: repLead.postcode } : null;
+      }
+    } catch(rErr) { result.replacement_error = rErr.message; }
+    res.json(result);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Create a replacement lead for a customer from the moving pool — a fresh lead in
+// their chosen postcode areas with a PROPER address (door number / flat / named
+// building). Added as undelivered so the next 9am delivery sends it. Returns the
+// lead or null if none available.
+function hasProperAddressModule(addr, pc) {
+  var a = String(addr || '').replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
+  if (!a) return false;
+  a = a.replace(/^[,\s]+/, '');
+  if (/^\d{1,5}[A-Za-z]?\s+[A-Z][A-Za-z'-]+/.test(a)) return true;
+  if (/^(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d{1,5}[A-Za-z]?\b/i.test(a)) return true;
+  var bareStreet = /^[A-Za-z''\-]+(?:\s+[A-Za-z''\-]+){0,2}\s+(road|street|lane|drive|close|avenue|gardens|terrace|mews|way|walk|row|view|crescent|grove|park|yard|wharf|quay|gate|side)\b/i.test(a);
+  if (bareStreet) return false;
+  var words = a.split(/[\s,]+/).filter(Boolean);
+  return words.length >= 2;
+}
+async function createReplacementLead(cust, product) {
+  try {
+    var areas = [];
+    try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) {}
+    var poolPath = path.join(DATA_DIR, 'moving-leads.json');
+    var pool = [];
+    try { var raw = JSON.parse(fs.readFileSync(poolPath, 'utf-8')); if (Array.isArray(raw)) pool = raw; else if (raw && typeof raw==='object') { Object.keys(raw).forEach(function(k){ if(Array.isArray(raw[k])) pool = pool.concat(raw[k]); }); } } catch(e) {}
+    var cutoff = new Date(Date.now() - 48*3600000).toISOString();
+    var seen = {};
+    for (var i=0;i<pool.length;i++){
+      var fl = pool[i];
+      if (fl.commercial || seen[fl.id]) continue;
+      seen[fl.id]=1;
+      var fd = fl.firstVisibleDate || fl.addedOn || fl.updateDate || fl.scrapedAt || '';
+      if (fd && fd < cutoff) continue;
+      var fpc = String(fl.postcode||'').toUpperCase().trim();
+      // Must be in the customer's chosen areas (or all-uk for paid).
+      var ukwide = /all.?uk|uk.?wide/i.test((areas||[]).join(' '));
+      if (!ukwide && areas.length) { var areaCode = (fpc.match(/^[A-Z]{1,2}/)||[''])[0]; if (areas.indexOf(areaCode) === -1) continue; }
+      // Must have a PROPER address (door number / flat / named building), not a bare street.
+      var fAddr = fl.fullAddress || fl.address || '';
+      if (!fAddr) continue;
+      if (!hasProperAddressModule(fAddr, fpc)) continue;
+      var fld = Object.assign({}, fl, { id: fl.id, address: fAddr, postcode: fpc, product: product });
+      var nr = { id: 'lead_' + Date.now() + '_repl_' + Math.floor(Math.random()*1000), customer_id: cust.id, product: product, data: JSON.stringify(fld), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: new Date().toISOString().split('T')[0] + 'T09:00:00.000Z' };
+      db.prepare('INSERT INTO leads (id, customer_id, product, data, status, delivered, created_at, delivered_at, release_at) VALUES (?,?,?,?,?,?,?,?,?)').run(nr.id, cust.id, product, nr.data, 'new', 0, nr.created_at, null, nr.release_at);
+      return { id: nr.id, address: fAddr, postcode: fpc };
+    }
+    return null;
+  } catch(e) { return null; }
+}
 
 // PATCH /api/leads/:id/status
 app.patch('/api/leads/:id/status', authMiddleware, (req, res) => {
