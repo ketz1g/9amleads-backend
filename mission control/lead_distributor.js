@@ -470,6 +470,32 @@ function normaliseLead(rawLead, product, customerId) {
     // Preserve Rightmove freshness signals so delivery can enforce 24h/48h.
     base.firstVisibleDate = rawLead.firstVisibleDate || '';
     base.updateDate = rawLead.updateDate || '';
+    // UPRN-first property identity + verification (Phase 3/4/9).
+    base.uprn = rawLead.uprn || '';
+    base.udprn = rawLead.udprn || '';
+    base.usrn = rawLead.usrn || '';
+    base.listingId = rawLead.listingId || rawLead.id || '';
+    base.houseNumber = rawLead.houseNumber || rawLead.buildingNumber || '';
+    base.subBuilding = rawLead.subBuilding || '';
+    base.buildingName = rawLead.buildingName || '';
+    base.street = rawLead.street || '';
+    base.town = rawLead.town || '';
+    base.latitude = rawLead.latitude || rawLead.lat || null;
+    base.longitude = rawLead.longitude || rawLead.lng || null;
+    base.sourceProvider = rawLead.sourceProvider || 'rightmove';
+    base.sourcePropertyId = rawLead.sourcePropertyId || '';
+    base.sourceEventId = rawLead.sourceEventId || '';
+    base.listingEventType = rawLead.listingEventType || 'NEWLY_LISTED';
+    base.sourceAddress = rawLead.sourceAddress || '';
+    base.verifiedAddress = rawLead.verifiedAddress || '';
+    base.addressConfidence = rawLead.addressConfidence || 0;
+    base.addressVerificationStatus = rawLead.addressVerificationStatus || 'UNRESOLVED';
+    base.addressVerificationSource = rawLead.addressVerificationSource || '';
+    base.firstListedAt = rawLead.firstListedAt || rawLead.firstVisibleDate || '';
+    base.sourceDetectedAt = rawLead.sourceDetectedAt || new Date().toISOString();
+    base.ingestedAt = rawLead.ingestedAt || new Date().toISOString();
+    base.ageHours = rawLead.ageHours || 0;
+    base.rawSourceData = rawLead.rawSourceData || null;
   }
 
   // New Business specific fields

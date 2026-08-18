@@ -14981,6 +14981,28 @@ function syncCustomers(product) {
           try {
             var rmScraper = require('./rightmove_scraper_v2');
             var apifyKey = process.env.APIFY_API_KEY || '';
+            // ===== HOMEDATA TEST-MODE COLLECTION (Phase 2) =====
+            // When MOVING_LEADS_TEST_MODE=true, fetch + resolve Homedata listings but
+            // DO NOT deliver to customers. This lets us validate the new source and
+            // the 100-record comparison before switching production traffic. The
+            // existing Rightmove pipeline below still runs normally and stays live.
+            try {
+              if (String(process.env.MOVING_LEADS_TEST_MODE || '').toLowerCase() === 'true' && process.env.HOMEDATA_API_KEY) {
+                var msp = require('./moving_source_provider');
+                var hdRes = await msp.fetchNewListings({ limit: 60, sinceDate: new Date().toISOString().split('T')[0] });
+                var hdResolved = [];
+                var hdUnresolved = 0, hdDoor = 0;
+                for (var hdi = 0; hdi < (hdRes.records || []).length; hdi++) {
+                  var hdr = hdRes.records[hdi];
+                  var resolved = await msp.resolveAddress(hdr);
+                  if (resolved && resolved.uprn) { hdResolved.push(resolved); if (resolved.houseNumber) hdDoor++; }
+                  else { hdUnresolved++; }
+                }
+                console.log('[HOMEDATA-TEST] source=' + (hdRes.source||'?') + ' fetched=' + (hdRes.records||[]).length
+                  + ' resolved=' + hdResolved.length + ' doorNumbers=' + hdDoor + ' unresolved=' + hdUnresolved
+                  + ' usage=' + JSON.stringify(msp.API_USAGE));
+              }
+            } catch(hdErr) { console.log('[HOMEDATA-TEST] error: ' + hdErr.message); }
             // DEEP SCRAPE WORKER: launch the area-targeted Apify (Rightmove) worker
             // detached. It scrapes ONLY the postcode areas with active moving
             // accounts (residential + commercial) via the rented Rightmove actor.

@@ -115,6 +115,7 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
               if (p.auction) status = 'Auction';
               return {
                 id: 'RM_' + p.id,
+                listingId: p.id || p.listingId || '',
                 title: p.displayAddress || '',
                 address: p.displayAddress || '',
                 price: p.price ? (p.price.amount || 0) : 0,
@@ -128,7 +129,11 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
                 source: 'Rightmove',
                 scrapedAt: new Date().toISOString(),
                 city: typeof searchResults.location === 'object' ? (searchResults.location.name || locationName) : (searchResults.location || locationName),
-                postcode: (p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i) ? (p.displayAddress.match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i)[0].trim()) : ''
+                postcode: (p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i) ? (p.displayAddress.match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i)[0].trim()) : '',
+                // UPRN / coordinates / identity where Rightmove exposes them (Phase 5).
+                uprn: p.uprn || p.propertyUprn || (p.location && p.location.uprn) || '',
+                latitude: (p.location && p.location.latitude) || null,
+                longitude: (p.location && p.location.longitude) || null
               };
             });
             resolve(properties);
@@ -195,6 +200,7 @@ function fetchCommercialRightmovePage(locationId, locationName, pageIndex, isLet
             if (p.auction) status = 'Auction';
             return {
               id: 'RMC_' + p.id,
+              listingId: p.id || p.listingId || '',
               title: p.displayAddress || '',
               address: p.displayAddress || '',
               price: p.price ? (p.price.amount || 0) : 0,
@@ -211,7 +217,10 @@ function fetchCommercialRightmovePage(locationId, locationName, pageIndex, isLet
               source: 'Rightmove Commercial',
               scrapedAt: new Date().toISOString(),
               city: typeof searchResults.location === 'object' ? (searchResults.location.name || locationName) : (searchResults.location || locationName),
-              postcode: (p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i) ? (p.displayAddress.match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i)[0].trim()) : ''
+              postcode: (p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i) ? (p.displayAddress.match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i)[0].trim()) : '',
+              uprn: p.uprn || p.propertyUprn || (p.location && p.location.uprn) || '',
+              latitude: (p.location && p.location.latitude) || null,
+              longitude: (p.location && p.location.longitude) || null
             };
           });
           resolve(properties);
