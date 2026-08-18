@@ -15021,6 +15021,30 @@ function syncCustomers(product) {
                 console.log('[PROPALT-TEST] sample=' + propSample.length + ' resolved=' + propResolved + ' withDoor=' + propUprn + ' unresolved=' + propUnresolved + ' usage=' + JSON.stringify(msp2.API_USAGE));
               }
             } catch(pErr) { console.log('[PROPALT-TEST] error: ' + pErr.message); }
+            // ===== MOVING SHADOW COLLECTOR (Stage 23/24) =====
+            // In shadow/test mode, run the full cost-aware Propalt collection:
+            // build central demand -> expand to districts -> check inventory ->
+            // query only needed districts (ranked by yield, early-stop) via
+            // get-listings -> ingest into central inventory. Delivers NOTHING.
+            // Controlled by MOVING_LEADS_SHADOW_MODE=true and a district budget so
+            // testing stays cheap.
+            try {
+              if (String(process.env.MOVING_LEADS_SHADOW_MODE || process.env.MOVING_LEADS_TEST_MODE || 'false').toLowerCase() === 'true' && process.env.PROPALT_API_KEY) {
+                var mlc = require('./moving_lead_collector.js');
+                var mlcCustomers = (getDb().customers || []).filter(function(c){ return c.product === 'moving' || ((c.biz_field3||'').indexOf('moving') !== -1); });
+                var mlcCustomersMapped = mlcCustomers.map(function(c){ return { id: c.id || c.email, plan: c.plan || 'starter', moving_areas: (function(){ try { var cfg = JSON.parse(c.product_config || '{}'); return cfg.moving ? (cfg.moving.target_areas || cfg.moving.areas || []) : (c.target_areas || []); } catch(e){ return c.target_areas || []; } })() }; });
+                var providerInst = new msp2.PropaltProvider();
+                var shadowReport = await mlc.collect({
+                  customers: mlcCustomersMapped,
+                  existingInventory: [],
+                  existingAllocations: [],
+                  usageLog: [],
+                  districtYield: {},
+                  provider: { fetchListings: function(params){ return providerInst.fetchNewListings({ areas: [params.postcodeDistrict], maxPerArea: params.limit || 20, maxOutcodesPerArea: 1, maxPagesPerPostcode: 1 }); } }
+                });
+                console.log('[MOVING-SHADOW] report=' + JSON.stringify(shadowReport));
+              }
+            } catch(msErr) { console.log('[MOVING-SHADOW] error: ' + msErr.message); }
             // DEEP SCRAPE WORKER: launch the area-targeted Apify (Rightmove) worker
             // detached. It scrapes ONLY the postcode areas with active moving
             // accounts (residential + commercial) via the rented Rightmove actor.
