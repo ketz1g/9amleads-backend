@@ -7230,6 +7230,25 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     function hasPremiseNumber(addr, pc) {
       return hasUsablePremiseAddress(addr, pc);
     }
+    // PER-RUN POOL CACHE: the scrape pool files (e.g. moving-leads.json holds 1600+
+    // properties) are large. Reading + JSON.parse-ing them for EVERY customer on the
+    // 9am run would delay later customers' emails past 09:00. Read each product's
+    // pool ONCE per delivery run and reuse it — the loop then flies through the
+    // whole customer list and every email goes out at ~09:00 sharp.
+    var _deliveryPoolCache = {};
+    function getDeliveryPool(prod) {
+      if (_deliveryPoolCache[prod]) return _deliveryPoolCache[prod];
+      var f = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : 'moving-leads.json');
+      var raw = null;
+      try { raw = JSON.parse(fs.readFileSync(f, 'utf-8')); } catch(e2) { raw = null; }
+      var arr = [];
+      if (Array.isArray(raw)) arr = raw;
+      else if (raw && typeof raw === 'object') {
+        Object.keys(raw).forEach(function(k){ if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) arr = arr.concat(raw[k]); });
+      }
+      _deliveryPoolCache[prod] = arr;
+      return arr;
+    }
     _dbData = null;
     var db = getDb();
     var today = new Date().toISOString().split('T')[0];
@@ -7584,19 +7603,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             if (r2pool.length === 0) {
               if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: custAreas.slice(0,5) };
               try {
-                var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[r2prod] ? PRODUCT_LEAD_FILES[r2prod].file : 'moving-leads.json');
-                var poolRaw = null;
-                try { poolRaw = JSON.parse(fs.readFileSync(poolFile, 'utf-8')); } catch(e2) {}
-                var poolArr = [];
-                if (Array.isArray(poolRaw)) {
-                  poolArr = poolRaw;
-                } else if (poolRaw && typeof poolRaw === 'object') {
-                  Object.keys(poolRaw).forEach(function(k){
-                    if (k.indexOf('_') === 0) return;
-                    if (Array.isArray(poolRaw[k])) poolArr = poolArr.concat(poolRaw[k]);
-                  });
-                }
-                console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': file=' + poolFile + ' poolRaw=' + (poolRaw?Object.keys(poolRaw).length+'keys':'null') + ' flattened=' + poolArr.length);
+                var poolArr = getDeliveryPool(r2prod);
+                console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': file=' + (PRODUCT_LEAD_FILES[r2prod] ? PRODUCT_LEAD_FILES[r2prod].file : 'moving-leads.json') + ' flattened=' + poolArr.length);
                 if (Array.isArray(poolArr) && poolArr.length > 0) {
                   var existingKeys = {};
                   (db.leads || []).forEach(function(l){ if(l.product===r2prod){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); existingKeys[k]=1; }catch(e){} } });
@@ -7809,14 +7817,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           if (prodTaken[fgProd] >= prodDailyCap(fgProd)) continue;
           if (!canTakeProduct(fgProd, cust.plan, weekStart2, today, custLeads)) continue;
           try {
-            var fgPoolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[fgProd] ? PRODUCT_LEAD_FILES[fgProd].file : 'moving-leads.json');
-            var fgRaw = null;
-            try { fgRaw = JSON.parse(fs.readFileSync(fgPoolFile, 'utf-8')); } catch(e2) {}
-            var fgArr = [];
-            if (Array.isArray(fgRaw)) fgArr = fgRaw;
-            else if (fgRaw && typeof fgRaw === 'object') {
-              Object.keys(fgRaw).forEach(function(k){ if (k.indexOf('_') === 0) return; if (Array.isArray(fgRaw[k])) fgArr = fgArr.concat(fgRaw[k]); });
-            }
+            var fgArr = getDeliveryPool(fgProd);
             if (!Array.isArray(fgArr) || fgArr.length === 0) continue;
             var fgExisting = {};
             (db.leads || []).forEach(function(l){ if(l.product===fgProd){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); fgExisting[k]=1; }catch(e){} } });
@@ -7933,12 +7934,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             var tpProd = products[topupProdIdx % products.length];
             topupProdIdx++;
             if (prodTaken[tpProd] >= prodDailyCap(tpProd)) continue;
-            var tpPoolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[tpProd] ? PRODUCT_LEAD_FILES[tpProd].file : 'moving-leads.json');
-            var tpRaw = null;
-            try { tpRaw = JSON.parse(fs.readFileSync(tpPoolFile, 'utf-8')); } catch(e2) {}
-            var tpArr = [];
-            if (Array.isArray(tpRaw)) tpArr = tpRaw;
-            else if (tpRaw && typeof tpRaw === 'object') { Object.keys(tpRaw).forEach(function(k){ if (k.indexOf('_') === 0) return; if (Array.isArray(tpRaw[k])) tpArr = tpArr.concat(tpRaw[k]); }); }
+            var tpArr = getDeliveryPool(tpProd);
+            if (!Array.isArray(tpArr) || tpArr.length === 0) continue;
             var usedTopupAddrs = {};
             custLeads.forEach(function(cl2) { try { var cd2 = JSON.parse(cl2.data || '{}'); var k2 = (cd2.address || cd2.postcode || cl2.id || '').toLowerCase().trim(); if (k2) usedTopupAddrs[k2] = 1; } catch(e) {} });
             var tpPicked = null;
@@ -8295,12 +8292,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             if (prodTaken[fprod] >= prodDailyCap(fprod)) continue;
             if (!canTakeProduct(fprod, cust.plan, weekStart2, today, custLeads)) continue;
             try {
-              var fpoolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[fprod] ? PRODUCT_LEAD_FILES[fprod].file : 'moving-leads.json');
-              var fpoolRaw = null;
-              try { fpoolRaw = JSON.parse(fs.readFileSync(fpoolFile, 'utf-8')); } catch(e3) {}
-              var fpoolArr = [];
-              if (Array.isArray(fpoolRaw)) fpoolArr = fpoolRaw;
-              else if (fpoolRaw && typeof fpoolRaw === 'object') { Object.keys(fpoolRaw).forEach(function(k){ if(k.indexOf('_')===0) return; if(Array.isArray(fpoolRaw[k])) fpoolArr = fpoolArr.concat(fpoolRaw[k]); }); }
+              var fpoolArr = getDeliveryPool(fprod);
+              if (!Array.isArray(fpoolArr) || fpoolArr.length === 0) continue;
               var fcreated = [];
               for (var fc=0; fc<fpoolArr.length && fcreated.length < finalShort && custLeads.length < totalDailyLimit; fc++) {
                 var fl = fpoolArr[fc];
@@ -8406,11 +8399,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             // the exact entitlement is still met with confirmed-numbered leads.
             if (confirmedLeads.length < totalDailyLimit) {
               var ncShort = totalDailyLimit - confirmedLeads.length;
-              var ncPoolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
-              var ncPoolRaw = null; try { ncPoolRaw = JSON.parse(fs.readFileSync(ncPoolFile, 'utf-8')); } catch(e) {}
-              var ncPoolArr = [];
-              if (Array.isArray(ncPoolRaw)) ncPoolArr = ncPoolRaw;
-              else if (ncPoolRaw && typeof ncPoolRaw === 'object') { Object.keys(ncPoolRaw).forEach(function(k){ if(k.indexOf('_')===0) return; if(Array.isArray(ncPoolRaw[k])) ncPoolArr = ncPoolArr.concat(ncPoolRaw[k]); }); }
+              var ncPoolArr = getDeliveryPool('moving');
+              if (!Array.isArray(ncPoolArr) || ncPoolArr.length === 0) continue;
               var confirmedIds = {}; confirmedLeads.forEach(function(cl){ try { var cd=JSON.parse(cl.data||'{}'); confirmedIds[cd.url||cd.id]=1; } catch(e){} });
               var ncPicked = [];
               for (var ncp = 0; ncp < ncPoolArr.length && ncPicked.length < ncShort; ncp++) {
