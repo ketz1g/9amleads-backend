@@ -258,7 +258,7 @@ function updateMovingTypeLabel() {
 </div>
 
 <div class="form-group">
-<label>Where do you work? <span class="ml" id="s-area-label">(select your postcode areas)</span></label>
+<label>Where do you work? <span class="ml" id="s-area-label">(add 5 postcode areas — e.g. HA, EN, SW, B, CM)</span></label>
 <div id="s-postcode-tags" class="tags"></div>
 <div id="s-postcode-wrapper">
 <div class="quick-areas">
@@ -389,7 +389,7 @@ function updateMovingTypeLabel() {
 <button type="button" class="qa" onclick="addQuickArea('YO')">YO</button>
 <button type="button" class="qa" onclick="addQuickArea('ZE')">ZE</button>
 </div>
-<div class="ar"><input type="text" id="s-postcode-input" placeholder="e.g. London, Essex, Kent, Birmingham"       class="sf" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
+<div class="ar"><input type="text" id="s-postcode-input" placeholder="Type a postcode area and press Add — e.g. SW, EN, N, CM" class="sf" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
 <button type="button" class="btn-s" onclick="addSignupPostcode()">Add</button>
 <button type="button" class="btn-o" onclick="setAllUK()">All UK</button></div>
 <span id="s-postcode-count" class="ml"></span>
@@ -477,7 +477,7 @@ function setAllUK() { selectedCoverage = 'ukwide'; signupPostcodes = ['all-uk'];
    var area = (input?.value || '').trim();
    var err = document.getElementById('s-postcode-error');
    err.style.display = 'none';
-   if (!area || area.length < 1) { err.textContent = 'Please select or type an area'; err.style.display = 'block'; return; }
+   if (!area || area.length < 1) { err.textContent = 'Please type a postcode area (e.g. SW, EN, N, CM)'; err.style.display = 'block'; return; }
    // Reject "all of UK" style selections — customers must pick specific areas.
    if (/all.?uk|uk.?wide|nationwide|whole.?uk/i.test(area)) {
      err.textContent = 'Please pick specific postcode areas (e.g. HA, EN, SW, B, CM) — "All of UK" is not available.'; err.style.display = 'block'; return;
@@ -882,6 +882,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize area selectors
   setTimeout(function() {
     onLeadTypeChange();
+    updatePostcodeLimit();
     // Ensure specialist selector renders even if no specialist types checked
     var container = document.getElementById('coverage-selector-container');
     if (container && container.innerHTML.trim() === '') {
