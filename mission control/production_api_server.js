@@ -15031,9 +15031,10 @@ function syncCustomers(product) {
             try {
               if (String(process.env.MOVING_LEADS_SHADOW_MODE || process.env.MOVING_LEADS_TEST_MODE || 'false').toLowerCase() === 'true' && process.env.PROPALT_API_KEY) {
                 var mlc = require('./moving_lead_collector.js');
+                var mlcMsp = require('./moving_source_provider.js');
                 var mlcCustomers = (getDb().customers || []).filter(function(c){ return c.product === 'moving' || ((c.biz_field3||'').indexOf('moving') !== -1); });
                 var mlcCustomersMapped = mlcCustomers.map(function(c){ return { id: c.id || c.email, plan: c.plan || 'starter', moving_areas: (function(){ try { var cfg = JSON.parse(c.product_config || '{}'); return cfg.moving ? (cfg.moving.target_areas || cfg.moving.areas || []) : (c.target_areas || []); } catch(e){ return c.target_areas || []; } })() }; });
-                var providerInst = new msp2.PropaltProvider();
+                var providerInst = new mlcMsp.PropaltProvider();
                 var shadowReport = await mlc.collect({
                   customers: mlcCustomersMapped,
                   existingInventory: [],
