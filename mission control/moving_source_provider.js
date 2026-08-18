@@ -143,17 +143,17 @@ class HomedataProvider {
 // Resolve UPRN + verified address for a Homedata listing via postcode lookup,
 // then enrich with the property/base tier (full address + coords + type + beds).
 async function homedataResolveUprn(record) {
-  if (!CONFIG.homedataKey) return { uprn: null, confidence: 0, status: VERIFICATION_STATUS.UNRESOLVED };
+  if (!CONFIG.homedataKey) return { uprn: null, confidence: 0, addressVerificationStatus: VERIFICATION_STATUS.UNRESOLVED };
   // 1) Try a full postcode lookup to enumerate addresses + UPRNs in that postcode.
   const pc = (record.postcode || '').replace(/\s+/g, '');
-  if (!pc) return { uprn: null, confidence: 0, status: VERIFICATION_STATUS.POSTCODE_ONLY };
+  if (!pc) return { uprn: null, confidence: 0, addressVerificationStatus: VERIFICATION_STATUS.POSTCODE_ONLY };
   API_USAGE.homedataCalls++;
   const resp = await apiFetch(CONFIG.homedataBase, '/address/postcode/' + pc + '/', { 'Authorization': 'Api-Key ' + CONFIG.homedataKey, 'Accept': 'application/json' });
   if (!resp.ok || !resp.json || !resp.json.addresses) {
-    return { uprn: null, confidence: 0, status: VERIFICATION_STATUS.UNRESOLVED, error: 'postcode lookup failed' };
+    return { uprn: null, confidence: 0, addressVerificationStatus: VERIFICATION_STATUS.UNRESOLVED, error: 'postcode lookup failed' };
   }
   const addresses = resp.json.addresses || [];
-  if (addresses.length === 0) return { uprn: null, confidence: 0, status: VERIFICATION_STATUS.POSTCODE_ONLY };
+  if (addresses.length === 0) return { uprn: null, confidence: 0, addressVerificationStatus: VERIFICATION_STATUS.POSTCODE_ONLY };
 
   // Match the listing to a postcode address using street + house number evidence.
   const streetN = (record.street || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -176,7 +176,7 @@ async function homedataResolveUprn(record) {
   best = candidates[0];
 
   if (!best || best.score < 60) {
-    return { uprn: null, confidence: 0, status: VERIFICATION_STATUS.UNRESOLVED, error: 'no confident address match in postcode' };
+    return { uprn: null, confidence: 0, addressVerificationStatus: VERIFICATION_STATUS.UNRESOLVED, error: 'no confident address match in postcode' };
   }
 
   // 2) Enrich with the property base tier to confirm + get full verified address.
@@ -321,7 +321,7 @@ function buildListAddress(r) {
 // Homedata is unavailable or the record came from Rightmove with a UPRN.
 async function resolveAddress(record) {
   if (!record || !record.postcode) {
-    return { uprn: null, confidence: 0, status: VERIFICATION_STATUS.UNRESOLVED, error: 'no postcode' };
+    return { uprn: null, confidence: 0, addressVerificationStatus: VERIFICATION_STATUS.UNRESOLVED, error: 'no postcode' };
   }
   // 1) If the record already has a UPRN (Homedata or Rightmove), verify via Postcoder.
   if (record.uprn) {
@@ -354,7 +354,7 @@ async function resolveAddress(record) {
   // 3) Postcoder street match as a last resort (will only set a door number if
   //    PAF confirms it; otherwise UNRESOLVED).
   API_USAGE.failedResolutions++;
-  return { uprn: null, confidence: 0, status: VERIFICATION_STATUS.UNRESOLVED, error: 'could not resolve UPRN' };
+  return { uprn: null, confidence: 0, addressVerificationStatus: VERIFICATION_STATUS.UNRESOLVED, error: 'could not resolve UPRN' };
 }
 
 // Verify a UPRN against Postcoder AddressBase (official address validation).
