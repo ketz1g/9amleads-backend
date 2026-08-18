@@ -150,6 +150,45 @@ function extractPostcodeArea(postcode) {
 var ADDR_PREMISE = require('./address_premise');
 function hasUsablePremiseAddress(addr, pc) { return ADDR_PREMISE.hasUsablePremiseAddress(addr, pc); }
 
+// ---- Capacity / usage telemetry (exposed on /api/health) ----
+// Brevo daily send counter (1 email per customer per day). In-memory, reset on
+// the UTC date rollover; good enough to watch the free-tier 300/day ceiling.
+var _brevoSent = { date: '', count: 0 };
+function bumpBrevoSentToday() {
+  var d = new Date().toISOString().split('T')[0];
+  if (_brevoSent.date !== d) { _brevoSent.date = d; _brevoSent.count = 0; }
+  _brevoSent.count++;
+}
+function brevoSentToday() {
+  var d = new Date().toISOString().split('T')[0];
+  return _brevoSent.date === d ? _brevoSent.count : 0;
+}
+// Cached per-product fresh-pool supply (leads under 48h old), refreshed at most
+// every 5 minutes so Render health checks don't re-parse the large pool files.
+var _poolSupplyCache = { at: 0, data: null };
+function getPoolSupply() {
+  var now = Date.now();
+  if (_poolSupplyCache.data && (now - _poolSupplyCache.at) < 300000) return _poolSupplyCache.data;
+  var cutoff = new Date(Date.now() - 48 * 3600000).toISOString();
+  var out = {};
+  var prods = ['moving', 'probate', 'newbusiness', 'planning', 'tenders'];
+  for (var pi = 0; pi < prods.length; pi++) {
+    var prod = prods[pi];
+    var fn = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : (prod + '-leads.json'));
+    var arr = [];
+    try { var raw = JSON.parse(fs.readFileSync(fn, 'utf-8')); if (Array.isArray(raw)) arr = raw; else if (raw && typeof raw === 'object') Object.keys(raw).forEach(function(k){ if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) arr = arr.concat(raw[k]); }); } catch(e) {}
+    var fresh = 0;
+    for (var i = 0; i < arr.length; i++) {
+      var l = arr[i];
+      var d = l.firstVisibleDate || l.addedOn || l.publishedDate || l.receivedDate || l.grantDate || l.dateSubmitted || l.incorporationDate || l.updateDate || l.createdAt || l.created_at || l.scrapedAt || '';
+      if (d && d >= cutoff) fresh++;
+    }
+    out[prod] = { total: arr.length, fresh_48h: fresh };
+  }
+  _poolSupplyCache = { at: now, data: out };
+  return out;
+}
+
 function getMatchingArea(code, areas) {
   const upper = code.toUpperCase().replace(/[^A-Z]/g, '');
   if (areas[upper]) return upper;
@@ -4577,6 +4616,7 @@ async function sendBrevoEmail(to, subject, htmlContent) {
         res.on('data', c => body += c);
         res.on('end', () => {
           if (res.statusCode < 300) {
+            bumpBrevoSentToday();
             try { resolve(JSON.parse(body)); } catch(e) { resolve({}); }
           } else if ((res.statusCode === 429 || res.statusCode >= 500) && attemptNum < 4) {
             var delay = 1000 * Math.pow(2, attemptNum - 1);
@@ -11348,7 +11388,26 @@ app.get('/api/health', (req, res) => {
     postcoder_configured: (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') && !!process.env.POSTCODER_API_KEY,
     stripe_configured: !!STRIPE_SECRET_KEY,
     scheduler: 'Active (9:00 AM daily)',
-    campaign: 'Active (10 trial + 7 paid emails)'
+    campaign: 'Active (10 trial + 7 paid emails)',
+    capacity: {
+      postcoder: (function() {
+        try {
+          var pb = require('./postcoder_budget');
+          return {
+            enabled: pb.enabled(),
+            budget_today: pb.getDailyBudget(),
+            used_today: pb.usage(),
+            remaining_today: Math.max(0, pb.getDailyBudget() - pb.usage()),
+            rate_limit_per_5min: pb.RATE_LIMIT
+          };
+        } catch(e) { return { error: e.message }; }
+      })(),
+      brevo: {
+        configured: !!BREVO_API_KEY,
+        emails_sent_today: brevoSentToday()
+      },
+      supply_48h: getPoolSupply()
+    }
   });
 });
 
