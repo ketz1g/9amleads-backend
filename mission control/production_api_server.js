@@ -7960,7 +7960,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   if (hasNum || !ld.deceasedAddress) ld.deceasedAddress = e3Addr;
                 }
                 ld.address = (hasNum || !ld.address) ? e3Addr : ld.address;
-                ld.fullAddress = e3Addr;
+                // Only overwrite fullAddress with the PAF result if PAF gave a PROPER
+                // address (hasNum). Otherwise keep the original address — PAF can
+                // return a bare street (e.g. "Park Road") that would lose a good
+                // "Flat 12, Eaton Mansions" address and cause the gate to drop it.
+                ld.fullAddress = (hasNum || !ld.fullAddress) ? e3Addr : ld.fullAddress;
                 l.data = JSON.stringify(ld);
               }
             });
