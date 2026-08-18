@@ -3244,21 +3244,59 @@ async function createReplacementLead(cust, product) {
   try {
     var areas = [];
     try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) {}
-    var poolPath = path.join(DATA_DIR, 'moving-leads.json');
+    var file = (PRODUCT_LEAD_FILES[product] && PRODUCT_LEAD_FILES[product].file) || 'moving-leads.json';
+    var poolPath = path.join(DATA_DIR, file);
     var pool = [];
-    try { var raw = JSON.parse(fs.readFileSync(poolPath, 'utf-8')); if (Array.isArray(raw)) pool = raw; else if (raw && typeof raw==='object') { Object.keys(raw).forEach(function(k){ if(Array.isArray(raw[k])) pool = pool.concat(raw[k]); }); } } catch(e) {}
+    try {
+      var raw = JSON.parse(fs.readFileSync(poolPath, 'utf-8'));
+      if (Array.isArray(raw)) pool = raw;
+      else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k){ if (k.indexOf('_') === 0) return; if (Array.isArray(raw[k])) pool = pool.concat(raw[k]); }); }
+    } catch(e) {}
     var cutoff = new Date(Date.now() - 48*3600000).toISOString();
     var seen = {};
+    // County-aware matching (mirrors the main delivery loop). Set up only if needed.
+    var countyPostcodes = {
+      'essex': ['CM','CO','SS','IG'],'hertfordshire':['AL','EN','HP','SG','WD'],'kent':['CT','DA','ME','TN'],
+      'surrey':['CR','GU','KT','RH','SM','TW'],'sussex':['BN','RH','TN'],'hampshire':['GU','PO','SO','SP','RG'],
+      'berkshire':['RG','SL'],'buckinghamshire':['HP','MK','SL'],'oxfordshire':['OX'],'bedfordshire':['LU','MK'],
+      'cambridgeshire':['CB','PE'],'norfolk':['IP','NR','PE'],'suffolk':['CO','IP','NR'],
+      'london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
+      'greater-london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
+      'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
+      'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
+      'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
+      'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
+      'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
+      'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
+      'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
+      'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
+    };
+    var ukwide = /all.?uk|uk.?wide/i.test((areas||[]).join(' '));
     for (var i=0;i<pool.length;i++){
       var fl = pool[i];
       if (fl.commercial || seen[fl.id]) continue;
       seen[fl.id]=1;
-      var fd = fl.firstVisibleDate || fl.addedOn || fl.updateDate || fl.scrapedAt || '';
+      var fd = fl.firstVisibleDate || fl.addedOn || fl.updateDate || fl.scrapedAt || fl.publishedDate || fl.receivedDate || fl.grantDate || fl.incorporationDate || '';
       if (fd && fd < cutoff) continue;
-      var fpc = String(fl.postcode||'').toUpperCase().trim();
+      var fpc = String(fl.postcode || fl.location || '').toUpperCase().trim();
       // Must be in the customer's chosen areas (or all-uk for paid).
-      var ukwide = /all.?uk|uk.?wide/i.test((areas||[]).join(' '));
-      if (!ukwide && areas.length) { var areaCode = (fpc.match(/^[A-Z]{1,2}/)||[''])[0]; if (areas.indexOf(areaCode) === -1) continue; }
+      if (!ukwide && areas.length) {
+        var areaOfPool = extractPostcodeArea(fpc || fl.address || '');
+        if (!areaOfPool) continue;
+        var hit = false;
+        var areasAreCounties = areas.some(function(a){ return !/^[A-Z]{1,3}$/i.test(a); });
+        if (areasAreCounties) {
+          for (var _cc=0; _cc<areas.length; _cc++) {
+            var al = String(areas[_cc] || '').toLowerCase().replace(/[\s-]+/g,'-');
+            if ((countyPostcodes[al] || []).indexOf(areaOfPool) >= 0) { hit = true; break; }
+          }
+        } else {
+          hit = areas.some(function(a){ return extractPostcodeArea(a) === areaOfPool; });
+        }
+        // NATIONAL FALLBACK for tenders/probate: accept even if no area matched.
+        if (!hit && (product === 'tenders' || product === 'probate')) hit = true;
+        if (!hit) continue;
+      }
       // Must have a PROPER address (door number / flat / named building), not a bare street.
       var fAddr = fl.fullAddress || fl.address || '';
       if (!fAddr) continue;

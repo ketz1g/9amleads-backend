@@ -231,7 +231,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + biz + '</div>' +
         '<div class="meta">' + (d.address||'') + '</div>' +
         '<div class="meta">' + metaParts.join(' \u00b7 ') + (chLink ? ' \u00b7 ' + chLink : '') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + mailBtn(l.id, d) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div></div>';
     } else if (product === 'probate') {
       var pName = d.deceasedName || d.name || 'Probate Estate';
       var pAddr = d.deceasedAddress || d.address || '';
@@ -248,7 +248,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + pName + '</div>' +
         '<div class="meta">' + pFullAddr + '</div>' +
         '<div class="meta">' + pMeta.join(' \u00b7 ') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + mailBtn(l.id, d) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div></div>';
     } else if (product === 'planning') {
       var planTitle = d.address || (d.description||'').substring(0,40) || 'Planning Application';
       var planDate = d.dateSubmitted || d.receivedDate || d.date_received || l.created_at || '';
@@ -259,7 +259,7 @@ function renderLeadList(dayLeads, noGroup) {
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + planTitle + '</div>' +
         '<div class="meta">' + planMeta.join(' \u00b7 ') + '</div>' + planDesc + planApplicant + '</div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + mailBtn(l.id) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + mailBtn(l.id) + rejectBtn(l.id, null) + '</div></div>';
     } else if (product === 'tenders') {
       // Tenders are applied for ONLINE (portal/email), not via post, so show the
       // buyer contact + apply button instead of a Print & Post button.
@@ -312,8 +312,24 @@ function postBadge(d, leadId){
   }
   return '';
 }
+function rejectBtn(leadId, d){
+  // Only allow rejecting leads that haven't already been posted (printed/mailed).
+  if (d && (d.post_status === 'posted' || d.post_status === 'printed' || d.post_status === 'mailing')) return '';
+  // Customer can reject a lead (e.g. wrong address). It's removed and replaced.
+  return '<button onclick="rejectLead(\'' + leadId + '\')" title="This lead is wrong (e.g. address). Reject it and we\'ll send a replacement." class="mail-btn" style="background:#ef4444;color:#fff"><i class="fas fa-times"></i> Reject</button>';
+}
+function rejectLead(leadId){
+  if (!confirm('Reject this lead? We will remove it and send you a replacement lead.')) return;
+  fetch('/api/leads/reject', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token }, body: JSON.stringify({ lead_id: leadId, reason: 'wrong address' }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.success) { alert(d.message || 'Lead rejected. Replacement on its way.'); loadLeads(); }
+      else { alert(d.error || 'Could not reject lead'); }
+    })
+    .catch(function(e){ alert('Error: ' + e.message); });
+}
 function mailBtn(leadId, d){
-  // If already posted, show a "Post Again" button (for a follow-up letter after a
+   // If already posted, show a "Post Again" button (for a follow-up letter after a
   // few weeks). keeps the posted date visible via the badge above.
   if (d && d.post_status === 'posted') {
     return '<button onclick="sendPrintPost(\''+leadId+'\')" title="Send a follow-up letter or flyer to this lead" class="mail-btn"><i class="fas fa-redo-alt"></i> Post Again</button>';
