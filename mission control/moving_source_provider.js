@@ -192,15 +192,32 @@ async function homedataResolveUprn(record) {
   let status = VERIFICATION_STATUS.EXACT_UPRN;
   let confidence = 100;
   if (!exactUprn) {
+    // Extract a door number from the record address text if present (e.g. "46 Slade Road" -> "46").
+    const recNum = extractHouseNumber(record.address || record.street || '');
+    const verifiedNum = extractHouseNumber(addr.full_address || '');
+    const addrIsNumbered = !!(addr.building_number || (verifiedNum && /^\d+[A-Za-z]?$/.test(verifiedNum)));
+    // A genuine door number is a numeric premise (house/flat), NOT a land-parcel
+    // or building-name string like "Development Land..." or "Jordans".
+    const genuineNumber = (addr.building_number && /^\d+[A-Za-z]?$/.test(String(addr.building_number))) || (verifiedNum && /^\d+[A-Za-z]?$/.test(verifiedNum));
     if (addresses.length === 1) { status = VERIFICATION_STATUS.UNIQUE_POSTCODE; confidence = 90; }
-    else if (record.houseNumber && (addr.building_number || '') && String(addr.building_number).replace(/[^0-9A-Za-z]/g, '') === String(record.houseNumber).replace(/[^0-9A-Za-z]/g, '')) { status = VERIFICATION_STATUS.EXACT_ADDRESS; confidence = 98; }
+    else if (recNum && verifiedNum && recNum === verifiedNum) { status = VERIFICATION_STATUS.EXACT_ADDRESS; confidence = 98; }
+    else if (genuineNumber && addresses.length <= 5) { status = VERIFICATION_STATUS.EXACT_ADDRESS; confidence = 98; }
     else { status = VERIFICATION_STATUS.COORDINATE_MATCH; confidence = 95; }
   }
+
+  // Only expose a "door number" when it is a genuine numeric premise. Never expose
+  // a land-parcel / building-name string as a house number (e.g. "Development Land At Site").
+  let houseNumber = '';
+  const bnum = String(addr.building_number || '').trim();
+  if (/^\d+[A-Za-z]?$/.test(bnum)) houseNumber = bnum;
+  else if (/^\d+[A-Za-z]?$/.test(String(addr.sub_building || '').trim())) houseNumber = String(addr.sub_building).trim();
+  // If a numeric building number exists, the "premise" (e.g. "Flat 12") may sit in
+  // sub_building; keep building_name only as buildingName, never as the door number.
 
   return {
     uprn: best.address.uprn || null,
     udprn: addr.udprn || null,
-    houseNumber: addr.building_number || addr.building_name || '',
+    houseNumber: houseNumber,
     subBuilding: addr.sub_building || '',
     buildingName: addr.building_name || '',
     street: addr.street_name || addr.street || '',
@@ -218,6 +235,19 @@ async function homedataResolveUprn(record) {
     addressVerificationSource: 'homedata-addressbase',
     rawSourceData: prop
   };
+}
+
+// Extract a leading numeric house number from an address string (e.g. "46 Slade
+// Road, ..." -> "46", "Flat 12, 46 Slade Road" -> "46"). Returns '' if none.
+function extractHouseNumber(addr) {
+  if (!addr) return '';
+  // Prefer a number immediately before a street word: "46 Slade Road".
+  const m = String(addr).match(/\b(\d{1,5}[A-Za-z]?)\s+[A-Z][A-Za-z'-]+/);
+  if (m) return m[1].trim();
+  // Fallback: leading number "46, Slade Road".
+  const m2 = String(addr).match(/^\s*(\d{1,5}[A-Za-z]?)\b/);
+  if (m2) return m2[1].trim();
+  return '';
 }
 
 // ---------------------------------------------------------------------------
