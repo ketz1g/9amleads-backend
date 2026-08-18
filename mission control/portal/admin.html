@@ -284,7 +284,8 @@ async function loadData() {
       '<div class="stat-card"><div class="num" style="color:#a855f7">' + (stats.crm_connected||0) + '</div><div class="label">CRM Connected</div></div>' +
       '<div class="stat-card"><div class="num">' + (stats.total_leads||0) + '</div><div class="label">Total Leads</div></div>' +
       '<div class="stat-card"><div class="num" style="color:#22c55e">' + (stats.today_leads||0) + '</div><div class="label">Today\'s Leads</div></div>' +
-      '<div class="stat-card"><div class="num">' + (stats.deliveries_today||0) + '</div><div class="label">Deliveries Today</div></div>';
+      '<div class="stat-card"><div class="num">' + (stats.deliveries_today||0) + '</div><div class="label">Deliveries Today</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#ef4444">' + (stats.rejected_leads||0) + '</div><div class="label">Rejected Leads</div></div>';
 
     const custResp = await fetch(API + '/api/admin/customers', { headers: adminHeaders() });
     const custData = custResp.ok ? await custResp.json() : { customers: [] };

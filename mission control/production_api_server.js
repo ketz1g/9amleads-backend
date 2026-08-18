@@ -4358,6 +4358,7 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
   // (there is no populated 'deliveries' table), so count delivered leads today.
   const deliveriesToday = db.prepare('SELECT COUNT(*) as count FROM leads WHERE delivered = 1 AND date(delivered_at) = date(\'now\')').get();
   const bounced = db.prepare('SELECT COUNT(*) as count FROM customers WHERE bounced > 0').get();
+  const rejectedLeads = db.prepare("SELECT COUNT(*) as count FROM leads WHERE status = 'rejected'").get();
 
   const byProduct = (function() {
     var counts = {};
@@ -4394,6 +4395,7 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
     today_leads: todayLeads.count,
     deliveries_today: deliveriesToday.count,
     bounced_emails: bounced.count,
+    rejected_leads: rejectedLeads.count,
     by_product: byProduct,
     by_source: bySource,
     recent_signups: recentSignups
