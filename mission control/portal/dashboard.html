@@ -194,10 +194,16 @@ footer a{color:var(--accent);text-decoration:underline}
 <!-- Postcode Areas -->
 <div class="card">
 <div class="sect-title"><i class="fas fa-map-marker-alt"></i> My Postcode Areas</div>
+<div id="area-plan-note" style="font-size:12px;color:var(--text2);margin-bottom:8px"></div>
 <div class="tag-list" id="area-tags"></div>
-<div class="tag-input"><input type="text" class="input" id="area-input" placeholder="e.g. London, Essex, Kent" onkeydown="if(event.key==='Enter')addArea()"><button class="btn btn-outline btn-sm"                       onclick="addArea()">Add</button></div>
-<p style="font-size:11px;color:var(--muted);margin-top:4px">Leads matched to these postcode codes. Add more to increase volume.</p>
+<div id="area-picker" style="display:flex;flex-wrap:wrap;gap:4px;max-height:200px;overflow:auto;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px"></div>
+<div style="display:flex;gap:8px;align-items:center">
+<button class="btn" id="area-alluk-btn" onclick="pickAllUk()" style="display:none;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-size:12px"><i class="fas fa-globe-europe"></i> All of UK</button>
+<button class="btn btn-outline btn-sm" onclick="saveAreas()">Save Postcode Areas</button>
 </div>
+<p id="area-status" style="font-size:11px;color:var(--muted);margin-top:6px"></p>
+</div>
+
 
 <!-- Lead Filters -->
 <div class="card">
@@ -605,17 +611,101 @@ function renderMovingType(t) {
 }
 function saveAreas() {
   var codes = getAreas();
-  apiCall('PUT', '/api/postcodes/update', { postcodes: codes }, function(err, d) {
-    if (err || !d.success) { alert('Failed to save postcode areas'); return; }
-    document.getElementById('plan-areas').textContent = (codes.length ? codes.join(', ') : 'None set');
-    document.getElementById('settings-areas').value = codes.join(', ');
-  });
+  var st = document.getElementById('area-status');
+  // Enforce the plan limit client-side too.
+  var max = areaMaxLimit();
+  if (codes.length === 1 && codes[0] === 'ALL UK') { /* paid all-uk ok */ }
+  else if (codes.length > max) { if (st) { st.textContent = 'Maximum ' + max + ' postcode areas. Remove some before saving.'; st.style.color = '#ef4444'; } return; }
+  fetch('/api/auth/update-areas', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ areas: codes }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d && d.success) {
+        if (st) { st.textContent = 'Postcode areas saved: ' + d.areas.join(', '); st.style.color = '#22c55e'; }
+        var pa = document.getElementById('plan-areas'); if (pa) pa.textContent = (d.areas.length ? d.areas.join(', ') : 'None set');
+        var sa = document.getElementById('settings-areas'); if (sa) sa.value = d.areas.join(', ');
+        renderAreaPicker();
+      } else {
+        if (st) { st.textContent = (d && d.error) || 'Failed to save postcode areas'; st.style.color = '#ef4444'; }
+      }
+    })
+    .catch(function(e){ if (st) { st.textContent = 'Save error: ' + e.message; st.style.color = '#ef4444'; } });
 }
 function getAreas() {
   var tags = document.getElementById('area-tags');
   var codes = [];
   tags.querySelectorAll('.tag').forEach(function(t){codes.push(t.textContent.trim().split(' ')[0]);});
   return codes;
+}
+
+// ===== POSTCODE AREA SELECTOR (plan-aware) =====
+var _sessionPlanForAreas = '';
+function areaMaxLimit() {
+  // free_trial / starter -> 5; pro / enterprise -> unlimited
+  var p = String(_sessionPlanForAreas || '').toLowerCase();
+  return (p === 'pro' || p === 'enterprise') ? 999 : 5;
+}
+function loadPlanForAreas() {
+  apiCall('GET', '/api/subscription', {}, function(err, d) {
+    if (d && d.plan) { _sessionPlanForAreas = d.plan; }
+    else { _sessionPlanForAreas = 'free_trial'; }
+    renderAreaPlanNote();
+    renderAreaPicker();
+  });
+}
+function renderAreaPlanNote() {
+  var note = document.getElementById('area-plan-note');
+  var ukBtn = document.getElementById('area-alluk-btn');
+  if (!note) return;
+  if (areaMaxLimit() >= 999) {
+    note.innerHTML = 'Pro / Enterprise: choose as many postcode areas as you like, or select <strong>All of UK</strong>.';
+    if (ukBtn) ukBtn.style.display = 'inline-flex';
+  } else {
+    note.innerHTML = 'Pick up to <strong>5 postcode areas</strong> (e.g. E, NW, EN, SG, CM) for your daily leads.';
+    if (ukBtn) ukBtn.style.display = 'none';
+  }
+}
+function renderAreaPicker() {
+  var grid = document.getElementById('area-picker');
+  if (!grid) return;
+  var selected = getAreas();
+  grid.innerHTML = '';
+  DASH_POSTCODE_AREAS.forEach(function(code){
+    var on = selected.indexOf(code) !== -1;
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = code;
+    b.style.cssText = 'padding:5px 9px;border:1px solid ' + (on ? '#0ea5e9' : 'var(--border)') + ';border-radius:5px;font-size:11px;font-weight:600;background:' + (on ? 'rgba(14,165,233,0.18)' : 'var(--bg2)') + ';color:' + (on ? '#0ea5e9' : 'var(--text2)') + ';cursor:pointer';
+    b.onclick = function(){ toggleArea(code); };
+    grid.appendChild(b);
+  });
+}
+function toggleArea(code) {
+  var cur = getAreas();
+  var max = areaMaxLimit();
+  var idx = cur.indexOf(code);
+  if (idx !== -1) { cur.splice(idx, 1); }
+  else {
+    if (cur.length >= max) { var st = document.getElementById('area-status'); if (st) { st.textContent = 'Maximum ' + max + ' postcode areas reached.'; st.style.color = '#ef4444'; } return; }
+    cur.push(code);
+  }
+  // re-render tags + picker
+  var tags = document.getElementById('area-tags');
+  tags.innerHTML = '';
+  cur.forEach(function(c){
+    var t = document.createElement('span'); t.className = 'tag';
+    t.innerHTML = c + ' <button class="remove" onclick="this.parentElement.remove();renderAreaPicker()">&times;</button>';
+    tags.appendChild(t);
+  });
+  renderAreaPicker();
+  var st = document.getElementById('area-status'); if (st) { st.textContent = ''; }
+}
+function pickAllUk() {
+  var tags = document.getElementById('area-tags');
+  tags.innerHTML = '';
+  var t = document.createElement('span'); t.className = 'tag';
+  t.innerHTML = 'ALL UK <button class="remove" onclick="this.parentElement.remove();renderAreaPicker()">&times;</button>';
+  tags.appendChild(t);
+  renderAreaPicker();
 }
 
 // ===== LEAD FILTERS =====
@@ -895,6 +985,7 @@ function saveSettings() {
   });
 }
 function reloadPostcodes() {
+  loadPlanForAreas();
   apiCall('GET', '/api/postcodes/mine', {}, function(err, d) {
     if (d && d.areas) renderPostcodes(d.areas);
   });
@@ -982,9 +1073,12 @@ function renderPostcodes(areas) {
   codes.forEach(function(code){
     var tag = document.createElement('span');
     tag.className = 'tag';
-    tag.innerHTML = code + ' <button class="remove" onclick="this.parentElement.remove();saveAreas()">&times;</button>';
+    tag.innerHTML = code + ' <button class="remove" onclick="this.parentElement.remove();renderAreaPicker()">&times;</button>';
     tags.appendChild(tag);
   });
+  renderAreaPicker();
+  renderAreaPlanNote();
+}
   document.getElementById('plan-areas').textContent = (codes.length ? codes.join(', ') : 'None set');
 }
 

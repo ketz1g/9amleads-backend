@@ -2147,16 +2147,17 @@ app.post('/api/auth/signup', async (req, res) => {
 
     // Validate postcode areas — shared territories (non-exclusive)
     if (areas.length > 0 && coverage === 'postcode') {
-      // Enforce the postcode-area selection rules:
-      //  1. Customers must pick REAL postcode AREA codes (e.g. HA, EN, SW, B) — not
-      //     "all-uk"/"all of uk"/"uk-wide" (that would let any UK lead through).
-      //  2. Max 5 postcode areas per plan (business configurable via env).
+      // Enforce postcode-area selection rules by PLAN:
+      //  free_trial / starter -> exactly up to 5 specific areas (no "all of UK").
+      //  pro / enterprise     -> unlimited areas OR "all of UK".
+      var planKey = String(planName || plan || 'free_trial').toLowerCase();
+      var isPaidUnlimited = (planKey === 'pro' || planKey === 'enterprise');
       var maxAreas = parseInt(process.env.MAX_POSTCODE_AREAS_PER_PLAN || '5', 10);
-      var badArea = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
-      if (badArea) {
-        return res.status(400).json({ error: 'Please choose up to ' + maxAreas + ' specific postcode areas (e.g. HA, EN, SW). "All of UK" is not available for a postcode package.', invalid_area: true });
+      var allUk = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
+      if (allUk && !isPaidUnlimited) {
+        return res.status(400).json({ error: 'Please choose up to ' + maxAreas + ' specific postcode areas. "All of UK" is only available on Pro or Enterprise plans.', invalid_area: true });
       }
-      if (areas.length > maxAreas) {
+      if (!isPaidUnlimited && areas.length > maxAreas) {
         return res.status(400).json({ error: 'Please choose at most ' + maxAreas + ' postcode areas. You selected ' + areas.length + '.', too_many_areas: true, max_areas: maxAreas });
       }
     }
@@ -2428,10 +2429,13 @@ app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
   try {
     var areas = req.body && req.body.areas;
     if (!Array.isArray(areas)) return res.status(400).json({ error: 'areas must be an array' });
+    var me = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    var planKey = String((me && me.plan) || 'free_trial').toLowerCase();
+    var isPaidUnlimited = (planKey === 'pro' || planKey === 'enterprise');
     var maxAreas = parseInt(process.env.MAX_POSTCODE_AREAS_PER_PLAN || '5', 10);
-    var bad = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
-    if (bad) return res.status(400).json({ error: 'Please pick up to ' + maxAreas + ' specific postcode areas. "All of UK" is not available.', invalid_area: true });
-    if (areas.length > maxAreas) return res.status(400).json({ error: 'Please choose at most ' + maxAreas + ' postcode areas.', too_many_areas: true, max_areas: maxAreas });
+    var allUk = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
+    if (allUk && !isPaidUnlimited) return res.status(400).json({ error: 'All of UK is only available on Pro or Enterprise plans. Pick up to ' + maxAreas + ' areas.', invalid_area: true });
+    if (!isPaidUnlimited && areas.length > maxAreas) return res.status(400).json({ error: 'Please choose at most ' + maxAreas + ' postcode areas.', too_many_areas: true, max_areas: maxAreas });
     var clean = areas.map(function(a){ return String(a).toUpperCase().trim(); }).filter(Boolean);
     db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(JSON.stringify(clean), req.user.id);
     res.json({ success: true, areas: clean });
