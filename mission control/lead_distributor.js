@@ -442,7 +442,9 @@ function leadMatchesTarget(lead, customer, product) {
 function normaliseLead(rawLead, product, customerId) {
   const base = {
     id: rawLead.id || 'LD_' + uuidv4(),
-    address: rawLead.address || rawLead.name || rawLead.company || '',
+    address: rawLead.address || rawLead.fullAddress || rawLead.name || rawLead.company || '',
+    fullAddress: rawLead.fullAddress || rawLead.address || '',
+    buildingNumber: rawLead.buildingNumber || '',
     postcode: rawLead.postcode || rawLead.location || '',
     price: rawLead.price || rawLead.priceLabel || rawLead.estateValueLabel || '',
     bedrooms: rawLead.bedrooms || 0,
