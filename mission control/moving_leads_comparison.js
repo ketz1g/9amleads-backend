@@ -1,12 +1,13 @@
 // Moving Leads Provider Comparison Test
-// Compares Rightmove vs Homedata vs Postcoder verification across N properties,
-// producing objective statistics before switching Homedata to production.
+// Compares the production design: fresh Rightmove listings resolved to a UPRN +
+// exact address via the address resolver (Propalt primary, then Homedata, then
+// Postcoder), producing objective statistics before switching to Propalt resolution.
 //
 // Usage: node moving_leads_comparison.js [count]
-// Requires HOMEDATA_API_KEY + APIFY_API_KEY + POSTCODER_API_KEY in env.
+// Requires PROPALT_API_KEY + HOMEDATA_API_KEY + POSTCODER_API_KEY in env.
 
-process.env.MOVING_PRIMARY_SOURCE = process.env.MOVING_PRIMARY_SOURCE || 'homedata';
-process.env.MOVING_FALLBACK_SOURCE = process.env.MOVING_FALLBACK_SOURCE || 'rightmove';
+process.env.MOVING_PRIMARY_SOURCE = process.env.MOVING_PRIMARY_SOURCE || 'rightmove';
+process.env.MOVING_FALLBACK_SOURCE = process.env.MOVING_FALLBACK_SOURCE || 'propalt';
 
 const msp = require('./moving_source_provider.js');
 const fs = require('fs');
@@ -21,17 +22,27 @@ async function run(count) {
     fullDoorNumbersFound: 0,
     unresolved: 0,
     conflicts: 0,
-    homedataCoveragePercent: 0,
+    coveragePercent: 0,
     fullAddressSuccessPercent: 0,
     uprnMatchPercent: 0,
     errors: 0
   };
   const rows = [];
 
-  // 1) Fetch listings (Homedata primary).
+  // 1) Fetch fresh listings from the primary source (Rightmove for freshness).
   const res = await msp.fetchNewListings({ limit: count, sinceDate: new Date().toISOString().split('T')[0] });
-  const records = res.records || [];
+  let records = res.records || [];
   console.log('[COMPARE] Fetched ' + records.length + ' fresh listings from ' + res.source);
+
+  // 2) Enrich Rightmove list leads with FULL postcodes via their detail pages
+  //    (matches the production pipeline: enrichMovingLeads fetches the full
+  //    postcode that the list view hides). Resolution needs a full postcode.
+  const rm = require('./rightmove_scraper_v2.js');
+  if (res.source === 'rightmove') {
+    records = await rm.enrichMovingLeads(records.filter(function(l){ return l.url; }), 8);
+    const withFullPc = records.filter(function(l){ return l.postcode && /[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i.test(l.postcode); }).length;
+    console.log('[COMPARE] Enriched: ' + records.length + ' leads, ' + withFullPc + ' with full postcodes');
+  }
 
   for (let i = 0; i < records.length && i < count; i++) {
     const rec = records[i];
@@ -74,7 +85,7 @@ async function run(count) {
 
   // Compute percentages.
   const n = stats.totalRecords || 1;
-  stats.homedataCoveragePercent = Math.round((stats.exactUprnMatches / n) * 1000) / 10;
+  stats.coveragePercent = Math.round((stats.exactUprnMatches / n) * 1000) / 10;
   stats.fullAddressSuccessPercent = Math.round((stats.fullDoorNumbersFound / n) * 1000) / 10;
   stats.uprnMatchPercent = Math.round((stats.exactUprnMatches / n) * 1000) / 10;
 

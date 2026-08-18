@@ -688,14 +688,21 @@ async function propaltResolveByPostcode(record) {
   if (!resp.ok) return null;
   const items = Array.isArray(resp.json) ? resp.json : (resp.json && resp.json.data) || [];
   if (!items.length) return null;
-  const streetN = (record.street || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const recNum = String(record.houseNumber || record.building_number || '').replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+  // Derive the street from the full address if record.street is empty (Rightmove
+  // enriched leads put the address in record.address/fullAddress, not record.street).
+  const addrText = record.address || record.fullAddress || record.street || '';
+  // Strip the postcode + town from the address to isolate the street portion.
+  const addrN = addrText.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const streetN = (record.street || addrText).toLowerCase().replace(/[^a-z0-9]/g, '');
+  const recNum = String(record.houseNumber || record.building_number || extractHouseNumber(addrText) || '').replace(/[^0-9A-Za-z]/g, '').toUpperCase();
   let best = null, bestScore = 0;
   for (const p of items) {
     const pStreet = (p.thoroughfare || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const pNum = String(p.building_number || p.poan || '').replace(/[^0-9A-Za-z]/g, '').toUpperCase();
     let score = 0;
-    if (streetN && pStreet && (streetN.indexOf(pStreet) !== -1 || pStreet.indexOf(streetN) !== -1)) score += 60;
+    // Street match from the address text (covers empty record.street).
+    if (pStreet && (streetN.indexOf(pStreet) !== -1 || addrN.indexOf(pStreet) !== -1)) score += 60;
+    // Exact house number match is a strong signal.
     if (recNum && pNum && recNum === pNum) score += 40;
     else if (recNum && pNum && (recNum.indexOf(pNum) !== -1 || pNum.indexOf(recNum) !== -1)) score += 20;
     if (p.uprn) score += 10; // UPRN-backed property is a stronger candidate
