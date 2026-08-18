@@ -4,6 +4,11 @@
 
 const https = require('https');
 
+// Lightweight usage ledger (pages, searches, Apify runs, new/known props).
+function _usageInc(field, n) {
+  try { require('./scraper_usage').inc(field, n); } catch(e) {}
+}
+
 // Full-UK coverage: Rightmove's 12 official regions cover the ENTIRE UK
 // (England's 9 regions + Scotland, Wales, Northern Ireland). These are the
 // reliable REGION^ identifiers that resolve correctly (verified HTTP 200).
@@ -694,12 +699,6 @@ async function readDoorNumberFromPhoto(photoUrl) {
   try {
     const key = process.env.OPENAI_API_KEY;
     if (!key || !photoUrl) return '';
-const https = require('https');
-
-// Lightweight usage ledger (pages, searches, Apify runs, new/known props).
-function _usageInc(field, n) {
-  try { require('./scraper_usage').inc(field, n); } catch(e) {}
-}
     // Download the photo
     const imgBuf = await new Promise((resolve) => {
       const u = new URL(photoUrl);
