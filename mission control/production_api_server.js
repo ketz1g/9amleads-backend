@@ -5681,9 +5681,12 @@ app.post('/api/admin/audit/run', adminAuth, async (req, res) => {
 // ===== AUTO SEND DAILY JOB =====
 async function runAutoSend() {
   console.log('[AUTO-SEND] Starting...');
-  var db = getDb();
+  // dbJSON is the JSON data (for direct array access); db is a SQL-compatible shim
+  // so existing db.prepare(...).get()/run() calls map to the same JSON data.
+  var dbJSON = getDb();
+  var db = db_shim;
   var today = new Date().toISOString().split('T')[0];
-  var customers = (db.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
+  var customers = (dbJSON.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
   var results = { checked: 0, enabled: 0, skipped: 0, sent: 0, failed: 0, total_spend: 0 };
 
   for (var ci = 0; ci < customers.length; ci++) {
