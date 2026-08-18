@@ -7063,6 +7063,10 @@ app.get('/api/admin/test-zoopla-actor', adminAuth, (req, res) => {
     var area = (req.query.area || 'EN').toString().toUpperCase().replace(/[^A-Z0-9]/gi, '');
     var key = process.env.APIFY_API_KEY || '';
     if (!key) return res.json({ success: false, rented: false, error: 'No APIFY_API_KEY configured' });
+    // SAFETY GUARD: live Apify actor tests cost credits. Disabled unless explicitly
+    // enabled via ALLOW_LIVE_RIGHTMOVE_TESTS=true (see STAGE 28).
+    var allowLive = process.env.ALLOW_LIVE_RIGHTMOVE_TESTS === 'true' || process.env.ALLOW_LIVE_RIGHTMOVE_TESTS === '1';
+    if (!allowLive) return res.json({ success: false, rented: false, guarded: true, area: area, error: 'Live Rightmove/Apify test blocked — set ALLOW_LIVE_RIGHTMOVE_TESTS=true to enable. Use mock tests instead (test/optimisation_mock_test.js).' });
     // Region scrape (reliable) — the worker uses this. The returned leads carry
     // full outcodes/postcodes, so the delivery's exact-area filter keeps only the
     // customer's chosen postcode areas.
