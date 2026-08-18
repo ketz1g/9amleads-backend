@@ -787,6 +787,7 @@ module.exports = {
   homedataResolveUprn,
   normalizePostcode,
   ageHoursFrom,
+  expandAreaToOutcodes,
   VERIFICATION_STATUS,
   CONFIG,
   API_USAGE
