@@ -169,7 +169,7 @@ var _poolSupplyCache = { at: 0, data: null };
 function getPoolSupply() {
   var now = Date.now();
   if (_poolSupplyCache.data && (now - _poolSupplyCache.at) < 300000) return _poolSupplyCache.data;
-  var cutoff = new Date(Date.now() - 48 * 3600000).toISOString();
+  var cutoff = getFreshCutoffIso();
   var out = {};
   var prods = ['moving', 'probate', 'newbusiness', 'planning', 'tenders'];
   for (var pi = 0; pi < prods.length; pi++) {
@@ -253,6 +253,11 @@ function interleavePoolByAreas(poolArr, custAreas) {
   }
   return out;
 }
+
+// Freshness floor for the "fresh leads" promise (48h; Monday extends to Saturday
+// 00:00 so weekend-scraped leads fill Monday's accounts). See freshness.js.
+var FRESHNESS = require('./freshness');
+function getFreshCutoffIso(nowMs) { return FRESHNESS.getFreshCutoffIso(nowMs); }
 
 function getMatchingArea(code, areas) {
   const upper = code.toUpperCase().replace(/[^A-Z]/g, '');
@@ -3354,7 +3359,7 @@ async function createReplacementLead(cust, product) {
       if (Array.isArray(raw)) pool = raw;
       else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k){ if (k.indexOf('_') === 0) return; if (Array.isArray(raw[k])) pool = pool.concat(raw[k]); }); }
     } catch(e) {}
-    var cutoff = new Date(Date.now() - 48*3600000).toISOString();
+    var cutoff = getFreshCutoffIso();
     var seen = {};
     // County-aware matching (mirrors the main delivery loop). Set up only if needed.
     var countyPostcodes = {
@@ -7505,7 +7510,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // accumulated pool leads are ever used — the promise is "fresh within 24
       // hours", with a 48h fallback so quiet areas aren't starved. Delivery
       // prefers the freshest (24h) leads first via the sorting below.
-      var freshCutoffNow = new Date(Date.now() - 48 * 3600000).toISOString();
+      var freshCutoffNow = getFreshCutoffIso();
       var fresh24CutoffNow = new Date(Date.now() - 24 * 3600000).toISOString();
       function isLeadFresh24(l) {
         try {
@@ -15329,12 +15334,14 @@ app.post('/api/admin/run-scrapers', adminAuth, (req, res) => {
     function wasScrapedToday(product) { return lastScrape[product] === todayStr; }
     function markScrapedToday(product) { lastScrape[product] = todayStr; fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape)); }
 
-        // Tiered freshness filter: 0-24h primary, 24-48h fallback
+        // Tiered freshness filter: 0-24h primary, 24-48h fallback. On Mondays the
+        // reject floor extends to Saturday 00:00 so weekend-scraped leads are kept
+        // (they fill Monday's accounts — see getFreshCutoffIso).
     function filterFresh(leads, dateField) {
       if (!leads || !Array.isArray(leads)) return { fresh: [], fallback: [], rejected: 0 };
       var now = new Date();
       var cutoff24h = new Date(now - 24 * 3600000).toISOString();
-      var cutoff48h = new Date(now - 48 * 3600000).toISOString();
+      var cutoffFallback = getFreshCutoffIso(now.getTime());
       var result = { fresh: [], fallback: [], rejected: 0 };
       leads.forEach(function(l) {
         // Freshness is judged ONLY on the caller's chosen date field (e.g.
@@ -15342,7 +15349,7 @@ app.post('/api/admin/run-scrapers', adminAuth, (req, res) => {
         // mark a months-old listing as fresh just because we scraped it today.
         var dateVal = l[dateField] || '';
         if (dateVal >= cutoff24h) result.fresh.push(l);
-        else if (dateVal >= cutoff48h) result.fallback.push(l);
+        else if (dateVal >= cutoffFallback) result.fallback.push(l);
         else result.rejected++;
       });
       return result;
@@ -15397,7 +15404,9 @@ function syncCustomers(product) {
             // only get companies actually formed within 24h (fallback 48h).
             var nowMs = Date.now();
             var cutoff24hMs = nowMs - 24 * 3600000;
-            var cutoff48hMs = nowMs - 48 * 3600000;
+            // On Mondays the from-date extends to Saturday so weekend incorporations
+            // still fill Monday's new-business accounts (see getFreshCutoffIso).
+            var cutoff48hMs = new Date(getFreshCutoffIso(nowMs)).getTime();
             function chParseDate(ds) { if (!ds) return 0; var t = Date.parse(ds); return isNaN(t) ? 0 : t; }
             function chDateStr(ms) { return new Date(ms).toISOString().split('T')[0]; }
             function chFetchAdvancedPage(fromDate, startIndex, size, cb) {
@@ -15929,7 +15938,7 @@ function syncCustomers(product) {
                 var up = l.updateDate || '';
                 var now = new Date();
                 var t24 = new Date(now - 24 * 3600000).toISOString();
-                var t48 = new Date(now - 48 * 3600000).toISOString();
+                var t48 = getFreshCutoffIso(now.getTime());
                 var t7d = new Date(now - 7 * 86400000).toISOString();
                 // COMMERCIAL LEADS: commercial listings stay listed for years, so
                 // their firstVisibleDate is often old. Freshness = when WE scraped
@@ -16144,7 +16153,7 @@ function syncCustomers(product) {
         // within the last 48 hours, so no stale lead can ever be delivered.
         // Previous pool entries are kept ONLY if they still fall inside the 48h
         // window (covers a source being slow/flaky today).
-        var poolFreshCutoff = new Date(Date.now() - 48 * 3600000).toISOString();
+        var poolFreshCutoff = getFreshCutoffIso();
         function isPoolLeadFresh(l) {
           var d = l.scrapedAt || l.firstVisibleDate || l.updateDate || l.incorporationDate || l.publishedDate || l.receivedDate || l.createdAt || l.created_at || '';
           return !!d && d >= poolFreshCutoff;

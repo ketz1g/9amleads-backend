@@ -27,6 +27,11 @@ const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 const POSTCODE_ASSIGNMENTS_FILE = path.join(DATA_DIR, 'postcode-assignments.json');
 
+// Freshness floor for the "fresh leads" promise (48h; Monday extends to Saturday
+// 00:00 so weekend-scraped leads fill Monday's accounts). See freshness.js.
+const FRESHNESS = require('./freshness');
+function getFreshCutoffIso(nowMs) { return FRESHNESS.getFreshCutoffIso(nowMs); }
+
 // Per-product daily plan limits (mirrors production getPlanLimit).
 // keyed [product][plan][coverage] with 'default' fallback.
 const PRODUCT_PLAN_LIMITS = { moving: { free_trial:{default:5,postcode:5,county:5,region:5,ukwide:5}, starter:{default:5,postcode:5,county:5,region:5}, pro:{default:10,postcode:10,county:10,region:10}, enterprise:{default:15,postcode:15,county:15,region:15} }, probate: { free_trial:{default:2,county:2,region:2,ukwide:2}, starter:{default:2,county:2,region:2,ukwide:2}, pro:{default:5,county:5,region:5,ukwide:5}, enterprise:{default:10,county:10,region:10,ukwide:10} }, newbusiness:{ free_trial:{default:5,postcode:5,county:5,region:5}, starter:{default:5,postcode:5,county:5,region:5}, pro:{default:10,postcode:10,county:10,region:10}, enterprise:{default:15,postcode:15,county:15,region:15} }, planning: { free_trial:{default:1,county:1,region:1,ukwide:1}, starter:{default:1,county:1,region:1,ukwide:1}, pro:{default:3,county:3,region:3,ukwide:3}, enterprise:{default:5,county:5,region:5,ukwide:5} }, tenders: { free_trial:{default:1,county:1,region:1,ukwide:1}, starter:{default:1,county:1,region:1,ukwide:1}, pro:{default:3,county:3,region:3,ukwide:3}, enterprise:{default:5,county:5,region:5,ukwide:5} } };
@@ -668,9 +673,10 @@ async function distributeProduct(product) {
   // (firstVisibleDate / updateDate / incorporationDate / publishedDate) within
   // the last 48 hours are ever assigned (24h primary, 24-48h fallback). Old pool
   // leads are never reused — the customer promise is "fresh leads within 24 hours",
-  // with a 48h fallback so quiet areas aren't starved. If supply is thin, customers
-  // get fewer leads today rather than being topped up with stale ones.
-  var freshCutoff = new Date(Date.now() - 48 * 3600000).toISOString();
+  // with a 48h fallback so quiet areas aren't starved. On Mondays the floor
+  // extends to Saturday 00:00 so weekend-scraped leads still fill Monday's
+  // accounts (see getFreshCutoffIso).
+  var freshCutoff = getFreshCutoffIso();
   var fresh24Cutoff = new Date(Date.now() - 24 * 3600000).toISOString();
   function isFresh(l) {
     // COMMERCIAL LEADS: always treated as fresh (they were scraped in this run's

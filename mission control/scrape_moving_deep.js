@@ -252,8 +252,9 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
   }
   log('[DEEP-SCRAPE] Scraped ' + allLeads.length + ' total from ' + areas.length + ' areas (residential + commercial via Rightmove)');
 
-  // 3. Merge with existing fresh pool, dedupe, keep fresh (48h)
-  var poolFreshCutoff = new Date(Date.now() - 48 * 3600000).toISOString();
+  // 3. Merge with existing fresh pool, dedupe, keep fresh (48h; Monday extends
+  //    to Saturday 00:00 so weekend scrapes fill Monday's accounts)
+  var poolFreshCutoff = require('./freshness').getFreshCutoffIso();
   function isFresh(l) {
     var d = l.scrapedAt || l.firstVisibleDate || l.updateDate || l.incorporationDate || l.publishedDate || l.receivedDate || l.createdAt || l.created_at || '';
     return !!d && d >= poolFreshCutoff;
