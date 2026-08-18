@@ -694,7 +694,12 @@ async function readDoorNumberFromPhoto(photoUrl) {
   try {
     const key = process.env.OPENAI_API_KEY;
     if (!key || !photoUrl) return '';
-    const https = require('https');
+const https = require('https');
+
+// Lightweight usage ledger (pages, searches, Apify runs, new/known props).
+function _usageInc(field, n) {
+  try { require('./scraper_usage').inc(field, n); } catch(e) {}
+}
     // Download the photo
     const imgBuf = await new Promise((resolve) => {
       const u = new URL(photoUrl);
@@ -828,11 +833,13 @@ async function collectMovingLeads(config) {
 
   for (const loc of locations) {
     try {
+      _usageInc('searches', 1);
       var isAreaTargeted = !!(config.areas && Array.isArray(config.areas) && config.areas.length > 0 && / area$/.test(loc.name || ''));
       var maxPages = loc.pages || 2;
       for (var pi = 0; pi < maxPages; pi++) {
         var pg = await fetchRightmovePage(loc.id, loc.name, pi * 24);
-        if (pg.length === 0) break;
+        _usageInc('rightmove_pages', 1);
+        if (pg.length === 0) { _usageInc('failed_searches', 1); break; }
         if (isAreaTargeted) {
           var areaTag = String(loc.name).replace(' area', '').toUpperCase();
           pg.forEach(function(p) { p.areaTargeted = areaTag; });
@@ -854,6 +861,10 @@ async function collectMovingLeads(config) {
   var deduped = allProperties.filter(function(p) {
     if (seenIds[p.id]) return false;
     seenIds[p.id] = true;
+    // Count new vs already-known properties for cost/dedup visibility.
+    var known = false;
+    try { known = !!(require('./property_store').lookup(p.id)); } catch(e) {}
+    _usageInc(known ? 'known_props' : 'new_props', 1);
     return true;
   });
 

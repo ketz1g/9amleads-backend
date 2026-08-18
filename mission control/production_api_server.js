@@ -16200,7 +16200,20 @@ app.get('/api/admin/system-status', adminAuth, (req, res) => {
         used_today: pcBudgetMod.usage(),
         daily_budget: pcBudgetMod.getDailyBudget()
       };
+      // Postcoder cache hit visibility — how much reuse is avoiding paid lookups.
+      try {
+        var pcCacheMod = require('./postcoder_cache');
+        out.postcoder.cache = pcCacheMod.stats();
+      } catch(ce) { out.postcoder.cache = { postcodes_cached: 0, uprns_cached: 0, error: ce.message }; }
     } catch(pce) { out.postcoder = { enabled: false, used_today: 0, daily_budget: 0, error: pce.message }; }
+
+    // Scraper usage (Rightmove pages, Apify runs, new/known props) for cost tracking.
+    try {
+      var scrUsageMod = require('./scraper_usage');
+      out.scraper_usage = scrUsageMod.stats();
+      var propStoreMod = require('./property_store');
+      out.property_store = propStoreMod.stats();
+    } catch(sue) { out.scraper_usage = { error: sue.message }; }
 
     // Check for supply shortfalls (pool too small for active customers)
     out.warnings = [];
