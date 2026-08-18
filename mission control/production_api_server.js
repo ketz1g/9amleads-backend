@@ -3096,7 +3096,9 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     return !(l.release_at && l.release_at > nowIso);
   });
 
-  res.json(visible.map(l => {
+  res.json(visible
+    .filter(function(l) { return leadHasUsableAddress(l, customer ? customer.product : l.product); })
+    .map(l => {
     const parsed = JSON.parse(l.data || '{}');
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
     return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
@@ -3118,7 +3120,9 @@ app.get('/api/leads/today', authMiddleware, (req, res) => {
     return !(l.release_at && l.release_at > nowIso);
   });
 
-  res.json(visible.map(l => {
+  res.json(visible
+    .filter(function(l) { return leadHasUsableAddress(l, customer ? customer.product : l.product); })
+    .map(l => {
     const parsed = JSON.parse(l.data || '{}');
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
     return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
@@ -5219,6 +5223,29 @@ function formatLeadForCRM(lead) {
 }
 
 // ===== OPPORTUNITY SCORE ENGINE =====
+// Filter: only expose leads with a USABLE address in the customer dashboard.
+// For MOVING (and PROBATE) leads we require a full street address + postcode so the
+// customer never sees an incomplete/nameless lead. Business-type products
+// (newbusiness/tenders/planning) use a name/company + address and are always shown.
+function leadHasUsableAddress(l, product) {
+  try {
+    var p = JSON.parse(l.data || '{}');
+    var addr = '';
+    if (product === 'probate') addr = p.deceasedAddress || p.fullAddress || p.address || '';
+    else addr = p.fullAddress || p.address || '';
+    var pc = String(p.postcode || '').toUpperCase().replace(/\s+/g, '');
+    var pcOk = /^[A-Z]{1,2}\d[A-Z\d]?(\d[A-Z]{2})$/.test(pc);
+    // Business products don't need a numeric door number; require name/address+postcode.
+    if (product === 'newbusiness' || product === 'tenders' || product === 'planning') {
+      return !!(addr || p.name || p.company) && pcOk;
+    }
+    // Moving/probate: require a street address with a number + full postcode.
+    if (!pcOk) return false;
+    var stripped = String(addr).replace(new RegExp(pc, 'g'), '').trim();
+    return /^\s*\d+[A-Za-z]?\s+[A-Z][A-Za-z'-]+/.test(stripped);
+  } catch(e) { return false; }
+}
+
 function attachOpportunityScore(data, product) {
   if (!data) return { score: 0, category: 'cold', label: 'Cold Lead', reasons: ['No data available'] };
   product = product || 'moving';
