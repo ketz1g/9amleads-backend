@@ -202,12 +202,14 @@ function eventKey(id, eventType, dateStr) {
 }
 
 // Query eligible PRIMARY (0-24h) / FALLBACK (24-48h) inventory for a district set.
+// If districts is null/empty, consider ALL districts.
 function eligibleInventory(inventory, districts, nowMs) {
   const primary = [], fallback = [];
+  const all = !districts || districts.length === 0;
   const dcodes = {};
   (districts || []).forEach(function(d){ dcodes[d] = true; });
   for (const r of inventory || []) {
-    if (!dcodes[r.postcodeDistrict]) continue;
+    if (!all && !dcodes[r.postcodeDistrict]) continue;
     const cat = freshnessCat(r.firstListedAt, nowMs);
     if (cat === 'PRIMARY') primary.push(r);
     else if (cat === 'FALLBACK') fallback.push(r);
