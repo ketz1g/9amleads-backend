@@ -76,6 +76,14 @@ function expandAreaToDistricts(area) {
 // Ensures overlapping coverage does NOT create duplicate demand (one district =
 // one aggregate demand regardless of how many customers cover it).
 // ---------------------------------------------------------------------------
+function normalizeAreas(c) {
+  let areas = c.moving_areas || c.target_areas || c.coverage_areas;
+  if (Array.isArray(areas)) return areas.filter(Boolean);
+  if (typeof areas === 'string') return areas.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+  if (areas && typeof areas === 'object') return Object.values(areas).filter(Boolean);
+  return [];
+}
+
 function buildDemandRegistry(customers, inventoryByIdDistrict) {
   const areaDemand = {};      // area -> {area, eligible_customers[], total_daily_demand, unfulfilled}
   const districtDemand = {};  // district -> {district, parent_area, eligible_customers[], estimated_demand, inventory_available, ...}
@@ -84,7 +92,7 @@ function buildDemandRegistry(customers, inventoryByIdDistrict) {
   for (const c of customers || []) {
     const req = getDailyMovingLeadRequirement(c);
     if (req <= 0) continue;
-    const areas = (c.moving_areas || c.target_areas || c.coverage_areas || []).filter(Boolean);
+    const areas = normalizeAreas(c);
     for (const areaRaw of areas) {
       const area = String(areaRaw).toUpperCase().trim();
       if (!area) continue;
