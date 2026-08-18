@@ -171,6 +171,28 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 <th></th>
 </tr></thead><tbody id="rejectedTable"><tr><td colspan="7" class="loading">Loading rejected leads...</td></tr></tbody></table>
 </div>
+
+<!-- Daily fulfilment report -->
+<div class="card" style="margin-top:16px;padding:0;overflow:auto">
+<div style="padding:16px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700"><i class="fas fa-clipboard-check" style="color:#22c55e;margin-right:6px"></i> Daily Fulfilment Report</div>
+<span style="font-size:11px;color:#5c6480">Per customer + lead type: expected vs delivered. Over-delivery is a bug.</span>
+<div style="display:flex;align-items:center;gap:8px">
+<input type="date" id="fulfilmentDate" onchange="loadFulfilment()" style="padding:6px 10px;background:#0f111a;border:1px solid #2a2d42;border-radius:6px;font-size:12px;color:#e2e8f0">
+<button class="btn btn-sm btn-outline" onclick="loadFulfilment()"><i class="fas fa-sync"></i> Refresh</button>
+</div>
+</div>
+<div id="fulfilmentSummary" style="padding:0 16px 8px"></div>
+<table><thead><tr>
+<th>Customer</th>
+<th>Product</th>
+<th>Expected</th>
+<th>Actual</th>
+<th>Shortfall</th>
+<th>Fulfilment</th>
+<th>Status</th>
+</tr></thead><tbody id="fulfilmentTable"><tr><td colspan="7" class="loading">Loading fulfilment report...</td></tr></tbody></table>
+</div>
 </div>
 
 <script>
@@ -294,6 +316,7 @@ async function loadData() {
     renderPlanBreakdown(allCustomers);
     loadLeadMonitor();
     loadRejectedLeads();
+    loadFulfilment();
     loadHealth();
     loadAnalytics();
   } catch (e) {
@@ -696,6 +719,40 @@ async function approveRejectedLead(leadId) {
     if (r.ok && d.success) { alert(d.message || 'Replacement approved.'); loadRejectedLeads(); }
     else { alert(d.error || 'Could not approve replacement'); }
   } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function loadFulfilment() {
+  var tb = document.getElementById('fulfilmentTable');
+  var sm = document.getElementById('fulfilmentSummary');
+  if (!tb) return;
+  var dateEl = document.getElementById('fulfilmentDate');
+  var date = dateEl && dateEl.value ? dateEl.value : new Date().toISOString().split('T')[0];
+  if (dateEl && !dateEl.value) dateEl.value = date;
+  try {
+    var r = await fetch(API + '/api/admin/fulfilment-report?date=' + date, { headers: adminHeaders() });
+    if (!r.ok) { tb.innerHTML = '<tr><td colspan="7" class="empty" style="color:#ef4444">Could not load fulfilment report</td></tr>'; return; }
+    var d = await r.json();
+    if (sm) {
+      var s = d.summary || {};
+      sm.innerHTML = '<span style="font-size:12px;color:#8890a8">' + (s.total||0) + ' rows · <span style="color:#22c55e">' + (s.fulfilled||0) + ' fulfilled</span> · <span style="color:#eab308">' + (s.under||0) + ' under</span> · <span style="color:#ef4444">' + (s.over||0) + ' over (bug)</span></span>';
+    }
+    var rows = (d && d.rows) || [];
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">No fulfilment data for this date.</td></tr>'; return; }
+    var h = '';
+    rows.forEach(function(x) {
+      var pct = (x.fulfilment_pct || 0) + '%';
+      var col = x.status === 'FULFILLED' ? '#22c55e' : (x.status === 'OVER_DELIVERED' ? '#ef4444' : '#eab308');
+      var prodBadge = 'prod-moving';
+      if (x.product === 'probate') prodBadge = 'prod-probate';
+      else if (x.product === 'newbusiness') prodBadge = 'prod-newbusiness';
+      else if (x.product === 'planning') prodBadge = 'prod-planning';
+      else if (x.product === 'tenders') prodBadge = 'prod-tenders';
+      h += '<tr><td>' + x.email + '</td><td><span class="badge ' + prodBadge + '">' + (x.product||'').toUpperCase() + '</span></td>' +
+           '<td>' + x.expected + '</td><td>' + x.actual + '</td><td>' + x.shortfall + '</td>' +
+           '<td style="color:' + col + '">' + pct + '</td><td><span class="badge" style="background:rgba(255,255,255,0.08);color:' + col + '">' + x.status + '</span></td></tr>';
+    });
+    tb.innerHTML = h;
+  } catch (e) { tb.innerHTML = '<tr><td colspan="7" class="empty" style="color:#ef4444">Error: ' + e.message + '</td></tr>'; }
 }
 </script>
 </body></html>

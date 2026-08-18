@@ -8348,6 +8348,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         // customers, check EACH product's promised quota individually.
         try {
           var shortfallList = [];
+          var fulfilmentRows = [];
           products.forEach(function(pp) {
             var ppCfg = pcfg[pp] || {};
             var ppCov = ppCfg.coverage || cust.coverage || 'postcode';
@@ -8357,11 +8358,31 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               ppLim = Math.min(ppLim, Math.max(1, Math.ceil(ppRule.weekly_est[cust.plan] / 5)));
             }
             var ppCount = custLeads.filter(function(cl) { return cl.product === pp; }).length;
+            var shortfall = Math.max(0, ppLim - ppCount);
+            var pct = ppLim > 0 ? Math.round((ppCount / ppLim) * 100) : 0;
+            var fstatus = ppCount > ppLim ? 'OVER_DELIVERED' : (ppCount === ppLim ? 'FULFILLED' : 'UNDER_FULFILLED');
             if (ppCount < ppLim) shortfallList.push(pp + ': ' + ppCount + '/' + ppLim);
+            fulfilmentRows.push({ customer_id: cust.id, email: cust.email, product: pp, expected: ppLim, actual: ppCount, shortfall: shortfall, fulfilment_pct: pct, status: fstatus });
           });
           if (shortfallList.length > 0) {
             console.log('[DELIVER-GUARANTEE] WARNING: ' + cust.email + ' shortfall ' + shortfallList.join(', '));
             try { dmDashboardNotify(cust.id, 'delivery_shortfall', '⚠️ Fewer leads than promised today', 'You received fewer than your promised daily leads (' + shortfallList.join(', ') + '). Supply was low in your areas today — we\'re working to fill it.', ''); } catch(notifyErr) {}
+          }
+          // Persist per-customer+lead-type fulfilment rows to the daily fulfilment
+          // ledger (surfaced via /api/admin/fulfilment-report). Exact-count and
+          // over-delivery are both visible here (over-delivery is treated as a bug).
+          if (fulfilmentRows.length) {
+            try {
+              var fulDb = getDb();
+              if (!fulDb.fulfilment_ledger) fulDb.fulfilment_ledger = [];
+              fulfilmentRows.forEach(function(fr) {
+                var dateStr = today;
+                var existing = fulDb.fulfilment_ledger.find(function(e) { return e.date === dateStr && e.customer_id === fr.customer_id && e.product === fr.product; });
+                if (existing) Object.assign(existing, fr, { date: dateStr });
+                else fulDb.fulfilment_ledger.push(Object.assign({ date: dateStr }, fr));
+              });
+              if (fulDb.fulfilment_ledger.length > 3000) fulDb.fulfilment_ledger = fulDb.fulfilment_ledger.slice(-3000);
+            } catch(fulErr) { console.log('[DELIVER-FULFILMENT] ledger error:', fulErr.message); }
           }
         } catch(guaranteeErr) { console.log('[DELIVER-GUARANTEE] check error:', guaranteeErr.message); }
       } catch(ex) { errors++; console.log('[DELIVER] Error: ' + ex?.message); lastErr = ex?.message; }
@@ -16002,6 +16023,19 @@ app.get('/api/admin/delivery-audit', adminAuth, (req, res) => {
   try {
     var dbA = getDb();
     res.json({ success: true, records: dbA.delivery_audit || [] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// GET /api/admin/fulfilment-report — per customer+lead-type fulfilment ledger for a
+// day: expected, actual, shortfall, fulfilment %, status (FULFILLED / UNDER_FULFILLED
+// / OVER_DELIVERED). Over-delivery is surfaced here as a bug. Query: ?date=YYYY-MM-DD
+// (defaults to today) and optional &underonly=1.
+app.get('/api/admin/fulfilment-report', adminAuth, (req, res) => {
+  try {
+    var dbF = getDb();
+    var rows = (dbF.fulfilment_ledger || []).filter(function(e) { return e.date === (req.query.date || new Date().toISOString().split('T')[0]); });
+    if (req.query.underonly) rows = rows.filter(function(e) { return e.status === 'UNDER_FULFILLED'; });
+    var summary = { total: rows.length, fulfilled: rows.filter(function(e) { return e.status === 'FULFILLED'; }).length, under: rows.filter(function(e) { return e.status === 'UNDER_FULFILLED'; }).length, over: rows.filter(function(e) { return e.status === 'OVER_DELIVERED'; }).length };
+    res.json({ success: true, date: (req.query.date || new Date().toISOString().split('T')[0]), summary: summary, rows: rows });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 // POST /api/admin/backup — trigger a manual database backup (local + GitHub).
