@@ -11459,6 +11459,8 @@ app.get('/api/health', (req, res) => {
     stripe_configured: !!STRIPE_SECRET_KEY,
     scheduler: 'Active (9:00 AM daily)',
     campaign: 'Active (10 trial + 7 paid emails)',
+    node: process.version,
+    last_errors: (global.__lastErrors || []).slice(-3),
     capacity: {
       postcoder: (function() {
         try {
@@ -17527,9 +17529,15 @@ app.post('/api/admin/load-test-customers', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Global error handler
+// Global error handler. Persists the last N unhandled errors (with stack) so the
+// real cause can be read from /api/health (public) instead of guessing.
+global.__lastErrors = global.__lastErrors || [];
 app.use(function(err, req, res, next) {
-  console.error('[ERROR] Unhandled error:', err.message || err);
+  var msg = String((err && (err.message || err)) || 'unknown error');
+  var stack = String((err && err.stack) || msg);
+  global.__lastErrors.push({ at: new Date().toISOString(), url: (req && req.method + ' ' + (req.originalUrl || req.url || '')) || '', message: msg, stack: stack.substring(0, 1200) });
+  if (global.__lastErrors.length > 20) global.__lastErrors.shift();
+  console.error('[ERROR] Unhandled error:', msg, (err && err.stack ? '\n' + err.stack.substring(0, 800) : ''));
   res.status(500).json({ error: 'Internal server error' });
 });
 
