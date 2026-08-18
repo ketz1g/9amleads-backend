@@ -6905,6 +6905,47 @@ app.post('/api/admin/leads/add-moving', adminAuth, async (req, res) => {
     res.json({ success: true, lead_id: tpNew.id, address: detail.fullAddress, postcode: detail.postcode });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// GET /api/admin/moving-leads-log — review all Moving Leads across every customer
+// (admin error-checking sheet). Shows each customer's current leads with address,
+// postcode, door number, verification status, freshness, and the Rightmove URL.
+app.get('/api/admin/moving-leads-log', adminAuth, (req, res) => {
+  try {
+    var dbML = getDb();
+    var custs = (dbML.customers || []).filter(function(c) {
+      return c.product === 'moving' || ((c.biz_field3 || '').indexOf('moving') !== -1);
+    });
+    var out = [];
+    var freshCutoff = new Date(Date.now() - 24 * 3600000).toISOString();
+    custs.forEach(function(c) {
+      var leads = (dbML.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered === 0; });
+      leads.forEach(function(l) {
+        var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+        var fv = d.firstListedAt || d.firstVisibleDate || d.scrapedAt || d.updateDate || l.created_at || '';
+        var addr = d.fullAddress || d.address || '';
+        var pc = d.postcode || '';
+        // Door-number check: a number before a street name (postcode stripped).
+        var stripped = String(addr).replace(new RegExp(String(pc).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
+        var hasNum = /^\s*\d+[A-Za-z]?\s+[A-Z][A-Za-z'-]+/.test(stripped);
+        out.push({
+          customer: c.email, company: c.company || '', plan: c.plan || '',
+          target_areas: c.target_areas || '',
+          lead_id: l.id,
+          address: addr, postcode: pc,
+          has_door_number: hasNum,
+          building_number: d.buildingNumber || '',
+          uprn: d.uprn || '',
+          address_verified: (d.addressVerificationStatus && d.addressVerificationStatus !== 'UNRESOLVED') ? d.addressVerificationStatus : '',
+          listed: fv, fresh24: !!(fv && fv >= freshCutoff),
+          price: d.priceLabel || (d.price ? '\u00a3' + Number(d.price).toLocaleString() : ''),
+          bedrooms: d.bedrooms || 0, property_type: d.propertyType || d.property_type || '',
+          estate_agent: d.estateAgent || d.agent || '',
+          url: d.url || ''
+        });
+      });
+    });
+    res.json({ success: true, generated_at: new Date().toISOString(), count: out.length, leads: out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   // CONCURRENT-DELIVERY LOCK: never run two deliveries at once (e.g. the 09:00
   // cron + the 09:30 watchdog overlapping, or a manual run mid-flight). Without
