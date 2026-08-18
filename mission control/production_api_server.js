@@ -15087,13 +15087,19 @@ function syncCustomers(product) {
             try {
               leads = await rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: true });
               console.log('[SCRAPER] Moving: ' + (leads||[]).length + ' total (Rightmove fresh source)');
-              // Resolve via Propalt when the key is present (UPRN + exact address).
-              if (process.env.PROPALT_API_KEY) {
+              // Resolve via Propalt when enabled + key present. GUARDED by
+              // PROPALT_ENABLED so we can cut Propalt usage immediately if credits
+              // run low (each get-properties call = 6 credits). Rightmove addresses
+              // are always used as the baseline; Propalt only ADDS UPRN/exact address.
+              if (String(process.env.PROPALT_ENABLED || 'false').toLowerCase() === 'true' && process.env.PROPALT_API_KEY) {
                 try {
                   var hybridMsp = require('./moving_source_provider.js');
                   var resolvedCount = 0, uprnCount = 0;
+                  // COST CAP: resolve at most N leads per run so credits are never
+                  // over-spent. Default 10 (each get-properties = 6 credits => 60 max).
+                  var maxResolve = parseInt(process.env.MOVING_PROPALT_MAX_RESOLVE_PER_RUN || '10', 10);
                   // Resolve only leads with a full postcode + no confirmed UPRN yet.
-                  for (var hi = 0; hi < (leads||[]).length; hi++) {
+                  for (var hi = 0; hi < (leads||[]).length && resolvedCount < maxResolve; hi++) {
                     var hl = leads[hi];
                     if (hl.commercial) continue;
                     if (!hl.postcode || !/[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i.test(String(hl.postcode).trim())) continue;
