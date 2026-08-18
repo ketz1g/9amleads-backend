@@ -15546,16 +15546,21 @@ function syncCustomers(product) {
                   // collection time. Always leave a reserve (default 60) so the 09:00
                   // delivery can still PAF-enrich any sent lead that wasn't pre-numbered.
                   // This is what guarantees the customer's EXACT daily count is met.
-                  var pcReserve = parseInt(process.env.POSTCODER_DELIVERY_RESERVE || '60', 10);
+                  var pcReserve = parseInt(process.env.POSTCODER_DELIVERY_RESERVE || '80', 10);
                   var pcBud = require('./postcoder_budget');
                   var budgetLeft = (pcBud.getDailyBudget() || 0) - (pcBud.usage() || 0);
                   var allowAtScrape = Math.max(0, budgetLeft - pcReserve);
+                  // MINIMISE POSTCODER USE: cap the collection-time PAF batch low. The
+                  // free Rightmove detail-page enrichment already adds door numbers to
+                  // most leads; collection-PAF only fills gaps, so a small batch keeps
+                  // credits minimal while still stocking the pool for delivery.
+                  var collBatch = parseInt(process.env.POSTCODER_COLLECTION_BATCH || '40', 10);
                   var pafTargets = leads.filter(function(l) {
                     return !l.commercial && l.postcode && !/^\s*\d+[A-Za-z]?[\s,]/i.test((l.fullAddress || l.address || '').trim());
                   }).sort(function(a, b) {
                     function fms(l) { try { var d = l.firstVisibleDate || l.updateDate || l.scrapedAt || ''; return new Date(d || 0).getTime(); } catch(e) { return 0; } }
                     return fms(b) - fms(a);
-                  }).slice(0, Math.max(0, Math.min(130, allowAtScrape)));
+                  }).slice(0, Math.max(0, Math.min(collBatch, allowAtScrape)));
                   if (pafTargets.length > 0) {
                     // NOTE: enrichMovingLeadsPostcoder -> lookupPostcoderAddress spends
                     // through the shared budget guard internally, so we do NOT call
