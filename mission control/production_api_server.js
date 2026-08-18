@@ -2147,7 +2147,18 @@ app.post('/api/auth/signup', async (req, res) => {
 
     // Validate postcode areas — shared territories (non-exclusive)
     if (areas.length > 0 && coverage === 'postcode') {
-      // Just verify format, no exclusivity check
+      // Enforce the postcode-area selection rules:
+      //  1. Customers must pick REAL postcode AREA codes (e.g. HA, EN, SW, B) — not
+      //     "all-uk"/"all of uk"/"uk-wide" (that would let any UK lead through).
+      //  2. Max 5 postcode areas per plan (business configurable via env).
+      var maxAreas = parseInt(process.env.MAX_POSTCODE_AREAS_PER_PLAN || '5', 10);
+      var badArea = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
+      if (badArea) {
+        return res.status(400).json({ error: 'Please choose up to ' + maxAreas + ' specific postcode areas (e.g. HA, EN, SW). "All of UK" is not available for a postcode package.', invalid_area: true });
+      }
+      if (areas.length > maxAreas) {
+        return res.status(400).json({ error: 'Please choose at most ' + maxAreas + ' postcode areas. You selected ' + areas.length + '.', too_many_areas: true, max_areas: maxAreas });
+      }
     }
 
     var signupIp = req.ip || req.connection?.remoteAddress || '';
