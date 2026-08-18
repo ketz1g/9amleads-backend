@@ -15003,6 +15003,24 @@ function syncCustomers(product) {
                   + ' usage=' + JSON.stringify(msp.API_USAGE));
               }
             } catch(hdErr) { console.log('[HOMEDATA-TEST] error: ' + hdErr.message); }
+            // ===== PROPALT UPRN VERIFICATION TEST (Phase 2/4) =====
+            // In test mode, demonstrate the production design: fresh Rightmove leads
+            // get resolved to a UPRN + exact address via Propalt (which is UPRN-native
+            // and permits resold data on the Agency plan). Nothing is delivered.
+            try {
+              if (String(process.env.MOVING_LEADS_TEST_MODE || '').toLowerCase() === 'true' && process.env.PROPALT_API_KEY) {
+                var msp2 = require('./moving_source_provider');
+                var propResolved = 0, propUprn = 0, propUnresolved = 0;
+                // Pull a small sample of fresh Rightmove moving leads to resolve.
+                var propSample = (leads || []).filter(function(l){ return l && l.postcode && /[A-Z]{1,2}\d/.test(l.postcode); }).slice(0, 15);
+                for (var psi = 0; psi < propSample.length; psi++) {
+                  var psr = await msp2.resolveAddress({ address: propSample[psi].address || propSample[psi].fullAddress || '', street: propSample[psi].address || propSample[psi].fullAddress || '', postcode: propSample[psi].postcode || '', houseNumber: propSample[psi].buildingNumber || '', sourceProvider: 'rightmove' });
+                  if (psr && psr.uprn) { propResolved++; if (psr.houseNumber) propUprn++; }
+                  else propUnresolved++;
+                }
+                console.log('[PROPALT-TEST] sample=' + propSample.length + ' resolved=' + propResolved + ' withDoor=' + propUprn + ' unresolved=' + propUnresolved + ' usage=' + JSON.stringify(msp2.API_USAGE));
+              }
+            } catch(pErr) { console.log('[PROPALT-TEST] error: ' + pErr.message); }
             // DEEP SCRAPE WORKER: launch the area-targeted Apify (Rightmove) worker
             // detached. It scrapes ONLY the postcode areas with active moving
             // accounts (residential + commercial) via the rented Rightmove actor.
