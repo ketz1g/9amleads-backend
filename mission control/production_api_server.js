@@ -7631,6 +7631,20 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             // the right property.
             return /\b(\d{1,5}[A-Za-z]?)\s+[A-Z][A-Za-z'-]+(?:\s+[A-Z][A-Za-z'-]+){0,3}\b/.test(a);
           }
+          // Extract the door number already present in an address string (e.g.
+          // "3 Bollinder Place" -> "3", "Valencia Tower, 3 Bollinder Place" -> "3").
+          // Falls back to any leading number so the customer still sees a number
+          // where the address genuinely contains one.
+          function extractBuildingNumber(addr, pc) {
+            var a = String(addr || '').replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '');
+            // Prefer a number immediately before a street word: "12 High St", "3 Bollinder Place"
+            var m = a.match(/\b(\d{1,5}[A-Za-z]?)\s+[A-Z][A-Za-z'-]+/);
+            if (m) return m[1].trim();
+            // Fallback: a leading number in the address "67, Bondway" -> "67"
+            var m2 = a.match(/^\s*(\d{1,5}[A-Za-z]?)/);
+            if (m2) return m2[1].trim();
+            return '';
+          }
           var needPc = custLeads.filter(function(l) {
             var ld = null; try { ld = JSON.parse(l.data || ''); } catch(e) { ld = null; }
             if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '' };
@@ -7666,7 +7680,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 } else if (e3Addr) {
                   e3Addr = e3Addr.replace(/,\s*' + pc + '\s*$/i, '');
                 }
-                ld.buildingNumber = e3Num || ld.buildingNumber || '';
+                ld.buildingNumber = e3Num || ld.buildingNumber || extractBuildingNumber(e3Addr, ld.postcode);
                 ld.street = e3Street || ld.street || '';
                 ld.postcode = e3.postcode || ld.postcode;
                 ld.udprn = e3.udprn || '';
