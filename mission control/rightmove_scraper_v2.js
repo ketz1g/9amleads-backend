@@ -440,28 +440,52 @@ function matchPafAddress(addresses, cleanPc, streetHint, doorNumber) {
       console.log('[POSTCODER] Door number hint ' + dn + ' did not directly match PAF for ' + cleanPc + ' — using PAF building number.');
     }
     // STREET-NAME MATCH (no door number hint): Rightmove never publishes house
-    // numbers, so we match the lead's street name to a PAF address on that street.
-    // PAF is authoritative (Royal Mail), so every number we return is a real
-    // published address — we are NOT guessing. If the street name matches a single
-    // PAF address (or the first on a short street), that is a confirmed, postal
-    // number. If no street matches, reject (accuracy over count).
+    // numbers, so we match the lead's street name against the PAF addresses in the
+    // postcode. CRITICAL: we must NEVER assign a generic number (e.g. "1") when a
+    // street has multiple numbered properties — that would mail to the wrong house.
+    // We only accept the match when it is UNAMBIGUOUS:
+    //   - the street name appears for exactly ONE PAF address in the postcode, OR
+    //   - the property is a named building/flat (premise present) with no competing
+    //     numbered house on the same street in that postcode.
+    // If the street has several distinct door numbers, we cannot know which one, so
+    // we reject (return null) — accuracy over count. The customer gets only leads
+    // whose exact house number PAF confirms without ambiguity.
     const streetNorm = hint.replace(/[^a-z]/g, '');
-    const streetMatch = addresses.find(function(a) {
+    const streetMatches = addresses.filter(function(a) {
       const s = String(a.street || '').toLowerCase().replace(/[^a-z]/g, '');
       if (!s) return false;
       // Exact street match, or the hint is a full/partial prefix of the PAF street.
       return s === streetNorm || streetNorm.indexOf(s) === 0 || s.indexOf(streetNorm) === 0 || (s.indexOf(streetNorm) !== -1 && streetNorm.length >= 6);
     });
-    if (streetMatch && (streetMatch.number || streetMatch.premise)) {
+    // Deduplicate by number/premise — if the street resolves to a SINGLE distinct
+    // address we can confirm it; if it resolves to MULTIPLE, it is ambiguous and we
+    // must NOT guess a number.
+    const distinct = [];
+    const seenK = {};
+    streetMatches.forEach(function(a) {
+      const k = String(a.number || a.premise || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (!k) return;
+      if (seenK[k]) return;
+      seenK[k] = 1;
+      distinct.push(a);
+    });
+    // Exactly one distinct numbered/premise address on the street -> confirmed.
+    if (distinct.length === 1 && (distinct[0].number || distinct[0].premise)) {
+      const sm = distinct[0];
       return {
-        fullAddress: streetMatch.summaryline || streetMatch.addressline1 || '',
-        address1: streetMatch.addressline1 || '',
-        street: streetMatch.street || '',
-        buildingNumber: streetMatch.number || streetMatch.premise || '',
-        town: streetMatch.posttown || streetMatch.county || '',
-        postcode: streetMatch.postcode || cleanPc,
-        udprn: streetMatch.udprn || ''
+        fullAddress: sm.summaryline || sm.addressline1 || '',
+        address1: sm.addressline1 || '',
+        street: sm.street || '',
+        buildingNumber: sm.number || sm.premise || '',
+        town: sm.posttown || sm.county || '',
+        postcode: sm.postcode || cleanPc,
+        udprn: sm.udprn || ''
       };
+    }
+    // Multiple distinct numbers on this street in this postcode -> ambiguous, no guess.
+    if (distinct.length > 1) {
+      console.log('[POSTCODER] Ambiguous street match for ' + cleanPc + ' (' + streetNorm + '): ' + distinct.length + ' numbers — rejecting (never guess)');
+      return null;
     }
   }
   // No confirmable address -> reject (accuracy over count).

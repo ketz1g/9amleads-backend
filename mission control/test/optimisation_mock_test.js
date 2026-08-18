@@ -102,13 +102,30 @@ function deliverByType(products) {
 })();
 
 // ---------- STAGE 4: Postcode matching (no weak substring) ----------
-console.log('\n=== STAGE 4: Correct postcode area matching ===');
-function extractArea(pc) { const m = String(pc).toUpperCase().replace(/\s/g,'').match(/^([A-Z]{1,2})\d/); return m ? m[1] : ''; }
+console.log('\n=== STAGE 4: Correct postcode area matching ===');function extractArea(pc) { const m = String(pc).toUpperCase().replace(/\s/g,'').match(/^([A-Z]{1,2})\d/); return m ? m[1] : ''; }
 (function() {
   ok('B extracts area B, does NOT match BT', extractArea('B15 3AA') === 'B' && extractArea('BT1 1AA') === 'BT' && extractArea('B15 3AA') !== extractArea('BT1 1AA'));
   ok('N does NOT match NW/NE/NG', extractArea('N1 4AB') === 'N' && extractArea('NW10 2AA') === 'NW' && extractArea('NE1 1AA') === 'NE' && extractArea('NG1 1AA') === 'NG');
   ok('NW extracts as NW (two-letter exact)', extractArea('NW10 2AA') === 'NW');
   ok('HA1 2AB -> area HA', extractArea('HA1 2AB') === 'HA');
+})();
+
+// ---------- PAF street match: never guess a generic number ----------
+console.log('\n=== PAF street match (never generic "1") ===');
+(function() {
+  let m;
+  try { m = require('../rightmove_scraper_v2.js'); } catch(e) { m = null; }
+  if (!m || !m.matchPafAddress) { ok('matchPafAddress exported (skipped if unavailable)', false); return; }
+  const multi = [
+    { summaryline: '1 Winston Close, London, SW20 9NX', street: 'Winston Close', number: '1' },
+    { summaryline: '3 Winston Close, London, SW20 9NX', street: 'Winston Close', number: '3' },
+    { summaryline: '5 Winston Close, London, SW20 9NX', street: 'Winston Close', number: '5' }
+  ];
+  const r = m.matchPafAddress(multi, 'SW209NX', 'Winston Close, London, SW20', '');
+  ok('street with multiple numbers REJECTED (no generic "1")', r === null);
+  const single = [{ summaryline: '1 The Old Post House, SW20 9NX', street: 'Winston Close', number: '1' }];
+  const r2 = m.matchPafAddress(single, 'SW209NX', 'Winston Close, London, SW20', '');
+  ok('street with single number CONFIRMED (real number)', r2 && r2.buildingNumber === '1');
 })();
 
 // ---------- STAGE 27: Simulate ~100 customers, collapse to unique coverage ----------
