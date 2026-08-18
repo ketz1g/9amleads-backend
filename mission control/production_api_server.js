@@ -5737,6 +5737,10 @@ async function runAutoSend() {
   var results = { checked: 0, enabled: 0, skipped: 0, sent: 0, failed: 0, total_spend: 0 };
 
   for (var ci = 0; ci < customers.length; ci++) {
+    // DEFENSIVE: always ensure `db` is the SQL-compatible shim for this loop, so a
+    // stray `db = getDb()` can never leave db.prepare undefined (this previously
+    // broke AUTO-SEND with "db.prepare is not a function").
+    db = db_shim;
     var cust = customers[ci];
     results.checked++;
     try {
