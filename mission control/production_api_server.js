@@ -8380,6 +8380,101 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         } else {
           console.log('[DELIVERY] ' + cust.email + ': already emailed today — topping up ' + custLeads.length + ' leads silently (no second email)');
         }
+        // FINAL POSTCODER NUMBER-CONFIRMATION PASS (moving only): Rightmove never
+        // publishes house numbers, so just before delivery we confirm each moving
+        // lead's house/flat number + full address + full postcode via Postcoder PAF
+        // (Royal Mail's official address database). Cached per postcode, so repeat
+        // deliveries are free. Leads that already have a confirmed number pass
+        // through untouched (no spend). Any lead that cannot be confirmed is dropped
+        // and the count topped up from fresh pool candidates until we reach the exact
+        // entitlement. This guarantees every delivered moving lead is fully postal.
+        if (cust.product === 'moving' && (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1')) {
+          try {
+            var confirmedLeads = [];
+            for (var nci = 0; nci < custLeads.length; nci++) {
+              var ncLead = custLeads[nci];
+              var ncData = {}; try { ncData = JSON.parse(ncLead.data || '{}'); } catch(e) {}
+              var ncAddr = ncData.fullAddress || ncData.address || '';
+              var ncPc = ncData.postcode || ncLead.postcode || '';
+              // Already complete? Skip (no Postcoder spend).
+              if (hasPremiseNumber(ncAddr, ncPc) && /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(ncPc).trim()) && ncData.url) {
+                confirmedLeads.push(ncLead);
+                continue;
+              }
+              // Enrich via Postcoder (cached) to confirm the number.
+              try {
+                var ncObj = Object.assign({}, ncData, { id: ncLead.id, address: ncAddr, postcode: ncPc });
+                var ncEnr = await pcDeliver.enrichMovingLeadsPostcoder([ncObj]);
+                if (ncEnr && ncEnr[0]) {
+                  var nfe = ncEnr[0];
+                  var nfeAddr = nfe.fullAddress || nfe.address || ncAddr;
+                  var nfePc = nfe.postcode || ncPc;
+                  var nfeNum = hasPremiseNumber(nfeAddr, nfePc);
+                  var nfeFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(nfePc).trim());
+                  var nfeUrl = nfe.url || ncData.url || '';
+                  if (nfeNum && nfeFullPc && nfeUrl) {
+                    ncData.fullAddress = nfeAddr; ncData.address = nfeAddr;
+                    ncData.postcode = nfePc; ncData.buildingNumber = nfe.buildingNumber || '';
+                    ncData.street = nfe.street || ''; ncData.url = nfeUrl;
+                    ncLead.data = JSON.stringify(ncData);
+                    confirmedLeads.push(ncLead);
+                  } else {
+                    console.log('[DELIVERY] Final PAF pass: drop ' + ncLead.id + ' (no confirmable number) pc=' + nfePc + ' addr=' + (nfeAddr||'').substring(0,40));
+                  }
+                } else {
+                  console.log('[DELIVERY] Final PAF pass: no result for ' + ncLead.id);
+                }
+              } catch(nce) { console.log('[DELIVERY] Final PAF pass error:', nce.message); }
+            }
+            // If the confirmation pass dropped leads, top up from the fresh pool so
+            // the exact entitlement is still met with confirmed-numbered leads.
+            if (confirmedLeads.length < totalDailyLimit) {
+              var ncShort = totalDailyLimit - confirmedLeads.length;
+              var ncPoolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
+              var ncPoolRaw = null; try { ncPoolRaw = JSON.parse(fs.readFileSync(ncPoolFile, 'utf-8')); } catch(e) {}
+              var ncPoolArr = [];
+              if (Array.isArray(ncPoolRaw)) ncPoolArr = ncPoolRaw;
+              else if (ncPoolRaw && typeof ncPoolRaw === 'object') { Object.keys(ncPoolRaw).forEach(function(k){ if(k.indexOf('_')===0) return; if(Array.isArray(ncPoolRaw[k])) ncPoolArr = ncPoolArr.concat(ncPoolRaw[k]); }); }
+              var confirmedIds = {}; confirmedLeads.forEach(function(cl){ try { var cd=JSON.parse(cl.data||'{}'); confirmedIds[cd.url||cd.id]=1; } catch(e){} });
+              var ncPicked = [];
+              for (var ncp = 0; ncp < ncPoolArr.length && ncPicked.length < ncShort; ncp++) {
+                var ncl = ncPoolArr[ncp];
+                if (ncl.commercial) continue;
+                var nclD = ncl.firstVisibleDate || ncl.updateDate || ncl.scrapedAt || '';
+                if (nclD && nclD < freshCutoffNow) continue;
+                var nclArea = extractPostcodeArea(ncl.postcode || ncl.address || '');
+                if (!nclArea) continue;
+                var nclAreaHit = false;
+                if (custAreas.length === 0) nclAreaHit = true;
+                else nclAreaHit = custAreas.some(function(a){ return extractPostcodeArea(a) === nclArea; });
+                if (!nclAreaHit) continue;
+                var nclUrl = ncl.url || '';
+                if (!nclUrl || confirmedIds[nclUrl]) continue;
+                var nclAddr = ncl.fullAddress || ncl.address || '';
+                if (!(hasPremiseNumber(nclAddr, ncl.postcode || '') && /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(ncl.postcode||'').trim()))) {
+                  try {
+                    var nclEnr = await pcDeliver.enrichMovingLeadsPostcoder([Object.assign({}, ncl, { id: ncl.id, address: nclAddr, postcode: ncl.postcode || '' })]);
+                    if (nclEnr && nclEnr[0]) {
+                      var nce2 = nclEnr[0];
+                      var nceAddr = nce2.fullAddress || nce2.address || nclAddr;
+                      var ncePc = nce2.postcode || ncl.postcode || '';
+                      if (!(hasPremiseNumber(nceAddr, ncePc) && /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(ncePc).trim()))) continue;
+                      nclAddr = nceAddr; ncl.postcode = ncePc;
+                    } else { continue; }
+                  } catch(nce2) { continue; }
+                }
+                var ncNewLead = { id: uuidv4(), customer_id: cust.id, product: 'moving', data: JSON.stringify(Object.assign({}, ncl, { address: nclAddr, fullAddress: nclAddr, postcode: ncl.postcode || '', url: nclUrl })), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
+                db.leads.push(ncNewLead);
+                confirmedIds[nclUrl] = 1;
+                ncPicked.push(ncNewLead);
+              }
+              confirmedLeads = confirmedLeads.concat(ncPicked);
+              if (confirmedLeads.length > totalDailyLimit) confirmedLeads = confirmedLeads.slice(0, totalDailyLimit);
+            }
+            custLeads = confirmedLeads;
+            console.log('[DELIVERY] Final PAF pass: ' + cust.email + ' confirmed ' + custLeads.length + '/' + totalDailyLimit + ' moving leads');
+          } catch(pafErr) { console.log('[DELIVERY] Final PAF pass outer error:', pafErr.message); }
+        }
         // Send to CRM webhook if configured
         if (cust.crm_webhook_url) {
           try {
