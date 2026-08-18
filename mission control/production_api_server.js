@@ -7879,7 +7879,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // sequentially). Persist last_email_date immediately so a crash can
           // never cause a duplicate.
           try { cust.last_email_date = today; } catch(leErr) {}
-          emailQueue.push({ email: cust.email, name: cust.company || 'Customer', subject: '9amLeads \u2014 Your Daily Opportunities for ' + (cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area') + ' \u2014 ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), html: generateLeadEmailHTML(cust, custLeads) });
+          emailQueue.push({ email: cust.email, name: cust.company || 'Customer', subject: '9amLeads \u2022 Your Daily Opportunities for ' + (cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area') + ' \u2014 ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), html: generateLeadEmailHTML(cust, custLeads) });
           // Flush in parallel batches of 15 to keep Brevo well under rate limits
           // while ensuring all emails go out promptly.
           if (emailQueue.length >= 15) {
