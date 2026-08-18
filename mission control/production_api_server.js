@@ -15077,62 +15077,46 @@ function syncCustomers(product) {
               try { cAreas = prim.target_areas ? JSON.parse(prim.target_areas) : JSON.parse(c.target_areas || '[]'); } catch(e) { cAreas = []; }
               cAreas.forEach(function(a) { if (a && mvAreas.indexOf(a) === -1) mvAreas.push(a); });
             });
-            // PROVIDER-AWARE MOVING COLLECTION (Propalt primary when configured).
-            // Defaults to the existing Rightmove scrape; uses the Propalt demand-aware
-            // collector when MOVING_PRIMARY_PROVIDER=propalt. Results are mapped into
-            // the same lead shape the downstream freshness/allocation logic expects.
-            var movingPrimary = String(process.env.MOVING_PRIMARY_PROVIDER || 'rightmove').toLowerCase();
+            // MOVING COLLECTION — HYBRID (freshness + exact address):
+            //   Rightmove supplies the FRESH 0-24h listings (the business promise).
+            //   Propalt verifies each lead's UPRN + exact address (90% UPRN, 100%
+            //   full address, no guessed door numbers). Propalt is used as a pure
+            //   address resolver here because its feed lags ~4 days and cannot yet
+            //   supply same-day listings on its own.
             leads = [];
-            if (movingPrimary === 'propalt' && process.env.PROPALT_API_KEY) {
-              try {
-                var mlcMod = require('./moving_lead_collector.js');
-                var mlcMspMod = require('./moving_source_provider.js');
-                var propInst = new mlcMspMod.PropaltProvider();
-                var pRes = await mlcMod.collect({
-                  customers: (function(){ return (getDb().customers || []).filter(function(c){ return c.product === 'moving' || ((c.biz_field3||'').indexOf('moving') !== -1); }).map(function(c){ return { id: c.id || c.email, plan: c.plan || 'starter', moving_areas: mvAreas || ['N','HA'] }; }); })(),
-                  existingInventory: [],
-                  existingAllocations: [],
-                  usageLog: [],
-                  districtYield: {},
-                  provider: { fetchListings: function(params){ return propInst.fetchNewListings({ areas: [params.postcodeDistrict], maxPerArea: params.limit || 20, maxOutcodesPerArea: 1, maxPagesPerPostcode: 1 }); } }
-                });
-                var pInv = pRes.records || [];
-                // Map Propalt records into the lead shape the pipeline expects.
-                leads = pInv.map(function(pr) {
-                  return {
-                    id: pr.uprn ? ('UPRN_' + pr.uprn) : (pr.sourceEventId ? ('RM_' + pr.sourceEventId) : ('P_' + Math.random().toString(36).slice(2))),
-                    listingId: pr.sourceEventId || pr.listingId || '',
-                    address: pr.fullAddress || pr.address || '',
-                    fullAddress: pr.verifiedAddress || pr.fullAddress || pr.address || '',
-                    uprn: pr.uprn || '',
-                    buildingNumber: pr.houseNumber || '',
-                    street: pr.street || '',
-                    town: pr.town || '',
-                    postcode: pr.postcode || '',
-                    price: pr.price || pr.askingPrice || 0,
-                    bedrooms: pr.bedrooms || 0,
-                    propertyType: pr.propertyType || '',
-                    firstVisibleDate: pr.firstListedAt || '',
-                    updateDate: pr.firstListedAt || '',
-                    listingStatus: 'new',
-                    status: 'new',
-                    agent: pr.estateAgent || '',
-                    source: 'Propalt',
-                    sourceProvider: 'propalt',
-                    addressConfidence: pr.addressConfidence || 0,
-                    addressVerificationStatus: pr.addressVerificationStatus || 'UNRESOLVED',
-                    scrapedAt: new Date().toISOString(),
-                    url: pr.sourcePropertyId ? ('https://www.rightmove.co.uk/properties/' + pr.sourcePropertyId) : ''
-                  };
-                });
-                console.log('[SCRAPER] Moving (Propalt primary): ' + leads.length + ' residential leads from Propalt');
-              } catch(mpErr) {
-                console.log('[SCRAPER] Moving Propalt primary error, falling back to Rightmove:', mpErr.message);
-                leads = await rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: true });
-              }
-            } else {
+            try {
               leads = await rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: true });
-            }
+              console.log('[SCRAPER] Moving: ' + (leads||[]).length + ' total (Rightmove fresh source)');
+              // Resolve via Propalt when the key is present (UPRN + exact address).
+              if (process.env.PROPALT_API_KEY) {
+                try {
+                  var hybridMsp = require('./moving_source_provider.js');
+                  var resolvedCount = 0, uprnCount = 0;
+                  // Resolve only leads with a full postcode + no confirmed UPRN yet.
+                  for (var hi = 0; hi < (leads||[]).length; hi++) {
+                    var hl = leads[hi];
+                    if (hl.commercial) continue;
+                    if (!hl.postcode || !/[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i.test(String(hl.postcode).trim())) continue;
+                    if (hl.uprn) { uprnCount++; continue; }
+                    var hres = await hybridMsp.resolveAddress({
+                      address: hl.address || hl.fullAddress || '', street: hl.street || hl.address || hl.fullAddress || '',
+                      postcode: hl.postcode || '', houseNumber: hl.buildingNumber || '', sourceProvider: 'rightmove'
+                    });
+                    if (hres && hres.uprn) {
+                      hl.uprn = hres.uprn;
+                      if (hres.verifiedAddress || hres.fullAddress) { hl.address = hres.verifiedAddress || hres.fullAddress; hl.fullAddress = hres.verifiedAddress || hres.fullAddress; }
+                      if (hres.houseNumber) hl.buildingNumber = hres.houseNumber;
+                      hl.addressConfidence = hres.addressConfidence || 0;
+                      hl.addressVerificationStatus = hres.addressVerificationStatus || 'UNRESOLVED';
+                      hl.sourceProvider = 'rightmove+propalt';
+                      uprnCount++;
+                    }
+                    resolvedCount++;
+                  }
+                  console.log('[SCRAPER] Propalt hybrid resolved ' + resolvedCount + ' leads, UPRN matched ' + uprnCount);
+                } catch(hyErr) { console.log('[SCRAPER] Propalt hybrid resolve error (using Rightmove addresses): ' + hyErr.message); }
+              }
+            } catch(mErr) { console.log('[SCRAPER] Moving collection error: ' + mErr.message); }
             if (leads && leads.length > 0) {
               console.log('[SCRAPER] Moving: ' + leads.length + ' total, ' + leads.filter(function(l){return l.commercial;}).length + ' commercial, wantCommercial=' + mvWantCommercial);
               // Keep ALL live on-market listings — they are all real, current
