@@ -5446,6 +5446,25 @@ cron.schedule('0 9 * * 1-5', async () => {
   timezone: 'Europe/London'
 });
 
+// TEST DELIVERY CRON: periodically delivers to the TEST account (test.moving1)
+// ONLY — never real customers. This validates the full pipeline (fresh lead ->
+// door-number resolution -> exact count) without affecting production customers.
+// Enabled via MOVING_TEST_DELIVERY=true. Runs every 30 min during working hours.
+cron.schedule('*/30 9-17 * * 1-5', async () => {
+  if (String(process.env.MOVING_TEST_DELIVERY || 'false').toLowerCase() !== 'true') return;
+  const testEmail = process.env.MOVING_TEST_ACCOUNT || 'test.moving1@gmail.com';
+  console.log('[TEST-DELIVERY] Running test delivery to ' + testEmail + '...');
+  try {
+    const http = require('http');
+    var tbody = JSON.stringify({ customer_email: testEmail, force: true });
+    var treq = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(tbody) } }, function(tres) {
+      var tb = ''; tres.on('data', function(c) { tb += c; }); tres.on('end', function() { console.log('[TEST-DELIVERY] done:', tb.substring(0, 200)); });
+    });
+    treq.on('error', function(e) { console.log('[TEST-DELIVERY] error:', e.message); });
+    treq.write(tbody); treq.end();
+  } catch(e) { console.log('[TEST-DELIVERY] error:', e.message); }
+}, { timezone: 'Europe/London' });
+
 // DELIVERY WATCHDOG: Mon-Fri 09:35 UK — if the 09:00 delivery cron missed (deploy,
 // crash, race), re-trigger it so customers still get their daily leads. Checks the
 // date the delivery actually fired rather than a lifetime counter.
