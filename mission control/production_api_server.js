@@ -7653,7 +7653,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     if (rl.url && deliveredUrls[rl.url]) continue;
                     var poolLeadData = {
                       id: rl.id || ('LD_' + r2prod + '_' + pf),
-                      address: rl.address || rl.name || rl.company || '',
+                      address: rl.fullAddress || rl.address || rl.name || rl.company || '',
                       postcode: rl.postcode || rl.location || '',
                       price: rl.price || rl.priceLabel || rl.estateValueLabel || '',
                       bedrooms: rl.bedrooms || 0,
@@ -15599,6 +15599,26 @@ function syncCustomers(product) {
             try {
               leads = await rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: true });
               console.log('[SCRAPER] Moving: ' + (leads||[]).length + ' total (Rightmove fresh source)');
+              // COLLECTION-TIME ADDRESS ENRICHMENT (free): Rightmove's list view hides
+              // house numbers. Fetch each fresh lead's free Rightmove detail page to
+              // embed the numbered full address + full postcode into the pool, so every
+              // pool lead is complete (house/flat number + street + postcode + URL)
+              // BEFORE delivery. Runs only for leads that already have a URL and lack a
+              // confirmed number. Free — no Postcoder spend. Bounded concurrency.
+              try {
+                var mvNeedEnrich = (leads || []).filter(function(hl) {
+                  if (hl.commercial) return false;
+                  if (!hl.url) return false;
+                  var addr = hl.fullAddress || hl.address || '';
+                  var pc = hl.postcode || '';
+                  if (hasProperAddressModule(addr, pc) && /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc).trim())) return false;
+                  return true;
+                });
+                if (mvNeedEnrich.length > 0) {
+                  var mvEnriched = await rmScraper.enrichMovingLeads(mvNeedEnrich, 6);
+                  console.log('[SCRAPER] Moving: enriched ' + mvEnriched.length + '/' + mvNeedEnrich.length + ' leads with numbered full addresses');
+                }
+              } catch(mvEnrErr) { console.log('[SCRAPER] Moving enrich error:', mvEnrErr.message); }
               // Resolve via Propalt when enabled + key present. GUARDED by
               // PROPALT_ENABLED so we can cut Propalt usage immediately if credits
               // run low (each get-properties call = 6 credits). Rightmove addresses
