@@ -1603,7 +1603,7 @@ document.querySelectorAll('.modal').forEach(function(m){
         return;
       }
       loadSettings(data);
-      if (data.target_areas) renderPostcodes(data.target_areas);
+      if (data.target_areas) renderPostcodes(data.target_areas); loadPlanForAreas();
       if (data.plan) document.getElementById('plan-name').textContent = data.plan === 'free_trial' ? 'Free Trial' : data.plan.charAt(0).toUpperCase() + data.plan.slice(1);
       // Free-trial countdown timer: show a live countdown to trial end for free
       // trial users. Hide it entirely once the account is paid (starter/pro/
