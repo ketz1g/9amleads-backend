@@ -15710,8 +15710,15 @@ function syncCustomers(product) {
                   return true;
                 });
                 if (mvNeedEnrich.length > 0) {
-                  var mvEnriched = await rmScraper.enrichMovingLeads(mvNeedEnrich, 6);
-                  console.log('[SCRAPER] Moving: enriched ' + mvEnriched.length + '/' + mvNeedEnrich.length + ' leads with numbered full addresses');
+                  // BOUND: enrich only the freshest N leads per run to avoid fetching
+                  // hundreds of detail pages concurrently (memory + Rightmove load).
+                  // We already have full postcodes on the rest; this tops up numbers
+                  // on the newest leads most likely to be delivered today.
+                  mvNeedEnrich.sort(function(a, b) { return new Date(b.scrapedAt || b.firstVisibleDate || 0) - new Date(a.scrapedAt || a.firstVisibleDate || 0); });
+                  var mvEnrichMax = Math.min(mvNeedEnrich.length, parseInt(process.env.MOVING_ENRICH_MAX || '120', 10));
+                  var mvToEnrich = mvNeedEnrich.slice(0, mvEnrichMax);
+                  var mvEnriched = await rmScraper.enrichMovingLeads(mvToEnrich, 4);
+                  console.log('[SCRAPER] Moving: enriched ' + mvEnriched.length + '/' + mvToEnrich.length + ' leads with numbered full addresses (of ' + mvNeedEnrich.length + ' door-less)');
                 }
               } catch(mvEnrErr) { console.log('[SCRAPER] Moving enrich error:', mvEnrErr.message); }
               // Resolve via Propalt when enabled + key present. GUARDED by

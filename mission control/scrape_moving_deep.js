@@ -158,7 +158,8 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
       var b = '';
       res.on('data', function(c) { b += c; });
       res.on('end', function() {
-        try { require('./scraper_usage').inc('apify_props', (b ? (b.match(/"/g)||[]).length : 0)); } catch(e) {}
+        // Cheap apify property estimate (avoid building a huge match array).
+        try { var _pcnt = 0; for (var _pi = 0; _pi < b.length; _pi++) { if (b[_pi] === '"') _pcnt++; } require('./scraper_usage').inc('apify_props', _pcnt); } catch(e) {}
         console.log('[DEEP-SCRAPE] ' + areaCode + '[' + type + '] raw status=' + res.statusCode + ' body=' + b.substring(0, 200));
         try {
           var items = JSON.parse(b);
