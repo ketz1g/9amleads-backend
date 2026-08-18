@@ -8113,6 +8113,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 var farea = extractPostcodeArea(fl.postcode || fl.address || '');
                 if (!farea) continue;
                 var fAddr = fl.fullAddress || fl.address || '';
+                // SKIP bare-postcode pool entries: if the pool lead has NO street/name
+                // address (just a postcode or area code), it can never become a proper
+                // address — skip it rather than pull a useless bare-postcode lead.
+                if (!fAddr || !/[A-Za-z]/.test(fAddr.replace(/[0-9,\s-]+/g, ''))) continue;
                 var fld = Object.assign({}, fl, { id: fl.id, address: fAddr, postcode: fl.postcode || '', product: fprod });
                 // FREE detail-page enrich first: if the pool lead has a Rightmove URL,
                 // fetch its detail page (free, no Postcoder) to get the full door-numbered
