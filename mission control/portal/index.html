@@ -518,11 +518,13 @@ function isCountyBased() {
 }
 function getPostcodeAreaLimit() {
    var p = getSelectedPlan();
-   // All Moving plans are capped at 5 postcode areas (configurable). Pro/Enterprise
-   // previously returned 999 (unlimited), which let customers pick "all of UK".
+   // Pro / Enterprise: unlimited postcode areas (and counties/areas) — matches the
+   // backend POSTCODE_LIMITS (pro/enterprise = 999) and the plan cards.
+   if (p === 'pro' || p === 'enterprise') return 999;
+   // Free Trial / Starter: moving & new business are capped at 5 postcode areas
+   // (configurable via window.__postcodeAreaCap); specialist county-based products
+   // (planning/probate/tenders) need at least 3 counties/areas.
    var hardCap = parseInt(window.__postcodeAreaCap || '5', 10);
-   // Planning/Probate/Tenders use counties/areas with a 3-area minimum on
-   // free/starter. Moving/New Business use 5 postcode areas.
    return isCountyBased() ? 3 : hardCap;
  }
 function areaLabelText() {
@@ -533,7 +535,10 @@ function updatePostcodeLimit() {
    var limit = getPostcodeAreaLimit();
    if (label) label.textContent = limit >= 999 ? 'unlimited' : String(limit);
    var areaLabel = document.getElementById('s-area-label');
-   if (areaLabel) areaLabel.textContent = isCountyBased() ? '(select at least 3 counties/areas)' : '(pick exactly 5 postcode areas — e.g. HA, EN, SW, B, CM)';
+   if (areaLabel) {
+     if (limit >= 999) areaLabel.textContent = isCountyBased() ? '(unlimited counties/areas — add as many as you need)' : '(unlimited postcode areas — add the areas you cover or choose All UK)';
+     else areaLabel.textContent = isCountyBased() ? '(select at least 3 counties/areas)' : '(pick exactly 5 postcode areas — e.g. HA, EN, SW, B, CM)';
+   }
    renderSignupPostcodes();
    onLeadTypeChange();
  }
