@@ -35,7 +35,9 @@ const VERIFICATION_STATUS = {
 const CONFIG = {
   homedataKey: process.env.HOMEDATA_API_KEY || '',
   homedataBase: process.env.HOMEDATA_BASE_URL || 'https://api.homedata.co.uk',
-  primarySource: process.env.MOVING_PRIMARY_SOURCE || 'rightmove', // 'homedata' | 'rightmove'
+  propaltKey: process.env.PROPALT_API_KEY || '',
+  propaltBase: process.env.PROPALT_BASE_URL || 'https://api.propalt.io',
+  primarySource: process.env.MOVING_PRIMARY_SOURCE || 'propalt', // 'propalt' | 'homedata' | 'rightmove'
   fallbackSource: process.env.MOVING_FALLBACK_SOURCE || 'rightmove',
   testMode: String(process.env.MOVING_LEADS_TEST_MODE || 'false').toLowerCase() === 'true',
   maxHomedataCalls: parseInt(process.env.HOMEDATA_MAX_CALLS_PER_RUN || '150', 10)
@@ -44,22 +46,26 @@ const CONFIG = {
 // Simple API usage counters (reset each process run; could be persisted later).
 const API_USAGE = {
   homedataCalls: 0,
+  propaltCalls: 0,
   postcoderCalls: 0,
   successfulResolutions: 0,
   failedResolutions: 0,
   costEstimate: 0
 };
 
-function apiFetch(base, path, headers, timeoutMs) {
+function apiFetch(base, path, headers, timeoutMs, body) {
   return new Promise(function(resolve) {
     let url;
     try { url = new URL(base + path); } catch(e) { return resolve({ status: 0, body: '', ok: false, error: e.message }); }
-    const req = https.get({
+    const isPost = !!body;
+    const opts = {
       hostname: url.hostname,
       path: url.pathname + url.search,
       headers: headers || {},
       timeout: timeoutMs || 20000
-    }, function(res) {
+    };
+    if (isPost) opts.method = 'POST';
+    const req = https.request(opts, function(res) {
       let b = '';
       res.on('data', function(c) { b += c; });
       res.on('end', function() {
@@ -70,6 +76,7 @@ function apiFetch(base, path, headers, timeoutMs) {
     });
     req.on('error', function(e) { resolve({ status: 0, body: '', json: null, ok: false, error: e.message }); });
     req.setTimeout(timeoutMs || 20000, function() { req.destroy(); resolve({ status: 0, body: '', json: null, ok: false, error: 'timeout' }); });
+    if (isPost) req.write(body);
     req.end();
   });
 }
@@ -140,7 +147,138 @@ class HomedataProvider {
   }
 }
 
-// Resolve UPRN + verified address for a Homedata listing via postcode lookup,
+// ---------------------------------------------------------------------------
+// PropaltProvider (primary source)
+// ---------------------------------------------------------------------------
+// Propalt's POST /market-activity/get-listings returns property listing events
+// WITH the UPRN + full address (building/sub-building/street/town/postcode) +
+// coordinates + beds + price + agent + listed_date already matched in a single
+// call. This is far superior to Homedata (which required separate UPRN resolution)
+// and to Rightmove (which hides the house number). The Agency plan (£499/mo) is
+// explicitly for "client work & resold data", which permits selling leads.
+//
+// Base URL: https://api.propalt.io  ·  Auth: Authorization: Bearer <key>
+class PropaltProvider {
+  constructor() { this.name = 'propalt'; }
+
+  // Fetch NEWLY LISTED (for-sale) listings across the customer's postcode areas.
+  // Iterates each area's outward codes, filtered by listedat (freshness) + type=sale.
+  async fetchNewListings(params) {
+    const out = [];
+    if (!CONFIG.propaltKey) return { ok: false, records: out, error: 'PROPALT_API_KEY not set' };
+    const areas = (params.areas && Array.isArray(params.areas) && params.areas.length > 0) ? params.areas : ['N','NW','SW','SE','E','W','HA','EN','B','M'];
+    const since = params.sinceDate || new Date().toISOString().split('T')[0];
+    // listedat expects DDMMYYYY (single) or DDMMYYYY-DDMMYYYY (range). Use a 48h
+    // window so the 24h primary + 24-48h fallback both come through.
+    const d = new Date(since);
+    const twoDaysAgo = new Date(d.getTime() - 2 * 86400000);
+    function ddmm(dt) {
+      return String(dt.getDate()).padStart(2,'0') + String(dt.getMonth()+1).padStart(2,'0') + dt.getFullYear();
+    }
+    const dateRange = ddmm(twoDaysAgo) + '-' + ddmm(d);
+    const limit = Math.min(20, Math.max(5, params.limit || 20));
+    const maxPerArea = params.maxPerArea || 20;
+
+    for (const area of areas) {
+      const a = String(area).toUpperCase().replace(/\s+/g, '');
+      if (!a) continue;
+      let page = 0, got = 0;
+      while (got < maxPerArea && page < 3) {
+        API_USAGE.propaltCalls++;
+        const body = JSON.stringify({
+          first_postcode: a,
+          type: 'sale',
+          progress: 'for_sale',
+          listedat: dateRange,
+          matched: 1,          // only listings linked to a known property (UPRN-backed)
+          limit: limit,
+          page: page
+        });
+        const resp = await apiFetch(CONFIG.propaltBase, '/market-activity/get-listings', {
+          'Authorization': 'Bearer ' + CONFIG.propaltKey,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }, 25000, body);
+        if (!resp.ok) {
+          console.log('[PROPALT] area ' + a + ' page ' + page + ' HTTP ' + resp.status + ' ' + String((resp.json && resp.json.detail) || resp.body || '').substring(0,120));
+          break;
+        }
+        const items = Array.isArray(resp.json) ? resp.json : (resp.json && (resp.json.data || resp.json.results || []));
+        if (!items || items.length === 0) break;
+        for (const it of items) {
+          if (String(it.letting_type || it.listing_type || '').toLowerCase() === 'rent') continue;
+          if (!it.listed_date && !it.event_date) continue;
+          got++;
+          out.push(this.mapListing(it));
+        }
+        const count = resp.json && (resp.json.count != null ? resp.json.count : (Array.isArray(resp.json) ? items.length : (items && items.length)));
+        // stop if fewer than limit returned (no more pages)
+        if (items.length < limit) break;
+        page++;
+      }
+    }
+    // Freshness split: 0-24h primary, 24-48h fallback.
+    const primary = out.filter(function(l){ return l.ageHours <= 24; });
+    const fallback = out.filter(function(l){ return l.ageHours > 24 && l.ageHours <= 48; });
+    const chosen = primary.length >= (params.minRequired || 5) ? primary : primary.concat(fallback);
+    return { ok: true, records: chosen, primaryCount: primary.length, fallbackCount: fallback.length, total: out.length };
+  }
+
+  mapListing(it) {
+    const listed = it.listed_date || it.event_date || '';
+    const pc = it.postcode || '';
+    const num = String(it.building_number || it.poan || '').trim();
+    const sub = String(it.sub_building_name || it.soan || '').trim();
+    const bld = String(it.building_name || '').trim();
+    // Build a full address: Flat 2, 14 Belsize Park, LONDON, NW3 1AA (address_text style).
+    const parts = [];
+    if (sub) parts.push(sub);
+    if (num) parts.push(num + ' ' + (it.thoroughfare || ''));
+    else if (bld) parts.push(bld);
+    else if (it.thoroughfare) parts.push(it.thoroughfare);
+    if (it.town) parts.push(it.town);
+    if (pc) parts.push(pc);
+    const fullAddress = parts.join(', ');
+    return {
+      sourceProvider: 'propalt',
+      sourcePropertyId: it.property_id != null ? String(it.property_id) : '',
+      sourceEventId: it.listing_id != null ? String(it.listing_id) : '',
+      listingEventType: 'NEWLY_LISTED',
+      firstListedAt: new Date(listed).toISOString(),
+      sourceDetectedAt: new Date().toISOString(),
+      ingestedAt: new Date().toISOString(),
+      ageHours: ageHoursFrom(listed),
+      uprn: it.uprn != null ? String(it.uprn) : '',
+      udprn: it.udprn != null ? String(it.udprn) : '',
+      listingId: it.listing_id != null ? String(it.listing_id) : '',
+      houseNumber: num,
+      subBuilding: sub,
+      buildingName: bld,
+      street: it.thoroughfare || '',
+      town: it.town || '',
+      postcode: normalizePostcode(pc),
+      address: fullAddress,
+      fullAddress: fullAddress,
+      sourceAddress: fullAddress,
+      price: it.price || it.first_listed_price || 0,
+      bedrooms: it.num_beds || 0,
+      propertyType: it.property_type || '',
+      builtForm: it.built_form || '',
+      estateAgent: it.brand_name || it.branch_name || '',
+      latitude: it.lat || null,
+      longitude: it.lng || null,
+      listingStatus: it.listing_status || 'For sale',
+      frontImageUrl: it.front_image_url || '',
+      // Propalt returns UPRN-matched listings -> treat as high-confidence pre-verified.
+      addressConfidence: it.uprn ? 100 : 90,
+      addressVerificationStatus: it.uprn ? VERIFICATION_STATUS.EXACT_UPRN : VERIFICATION_STATUS.UNIQUE_POSTCODE,
+      addressVerificationSource: 'propalt-addressbase',
+      rawSourceData: it
+    };
+  }
+}
+
+
 // then enrich with the property/base tier (full address + coords + type + beds).
 async function homedataResolveUprn(record) {
   if (!CONFIG.homedataKey) return { uprn: null, confidence: 0, addressVerificationStatus: VERIFICATION_STATUS.UNRESOLVED };
@@ -281,7 +419,7 @@ class RightmoveProvider {
 // ---------------------------------------------------------------------------
 // Provider registry + source priority
 // ---------------------------------------------------------------------------
-const PROVIDERS = { homedata: HomedataProvider, rightmove: RightmoveProvider };
+const PROVIDERS = { propalt: PropaltProvider, homedata: HomedataProvider, rightmove: RightmoveProvider };
 
 function getSourcePriority() {
   // Read env live so tests and config changes take effect without a restart.
@@ -393,6 +531,7 @@ function postcoderVerifyUprn(uprn) {
 module.exports = {
   PROVIDERS,
   HomedataProvider,
+  PropaltProvider,
   RightmoveProvider,
   getSourcePriority,
   fetchNewListings,
