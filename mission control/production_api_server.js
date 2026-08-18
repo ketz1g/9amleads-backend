@@ -189,6 +189,71 @@ function getPoolSupply() {
   return out;
 }
 
+// Shared county → postcode-area map (single source of truth for area matching).
+var COUNTY_POSTCODE_MAP = {
+  'essex': ['CM','CO','SS','IG'],'hertfordshire':['AL','EN','HP','SG','WD'],'kent':['CT','DA','ME','TN'],
+  'surrey':['CR','GU','KT','RH','SM','TW'],'sussex':['BN','RH','TN'],'hampshire':['GU','PO','SO','SP','RG'],
+  'berkshire':['RG','SL'],'buckinghamshire':['HP','MK','SL'],'oxfordshire':['OX'],'bedfordshire':['LU','MK'],
+  'cambridgeshire':['CB','PE'],'norfolk':['IP','NR','PE'],'suffolk':['CO','IP','NR'],
+  'london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
+  'greater-london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
+  'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
+  'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
+  'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
+  'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
+  'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
+  'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
+  'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
+  'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
+};
+
+// Interleave a scrape pool round-robin across the customer's chosen areas, so a
+// customer with e.g. [SW, E, N] gets a MIX of all three areas — never a cluster
+// of leads from whichever area happens to come first in pool order. County-based
+// products (planning/probate/tenders) interleave across the chosen counties.
+// Returns a NEW array; the shared cached pool is never mutated.
+function interleavePoolByAreas(poolArr, custAreas) {
+  if (!poolArr || !poolArr.length || !custAreas || custAreas.length === 0) return poolArr;
+  var areasAreCounties = custAreas.some(function(a){ return !/^[A-Z]{1,3}$/i.test(a); });
+  var buckets = {};
+  var bucketOf = function(rl) {
+    var pcCode = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || '');
+    if (!pcCode) return '__none__';
+    if (areasAreCounties) {
+      for (var i = 0; i < custAreas.length; i++) {
+        var c = String(custAreas[i] || '').toLowerCase().replace(/[\s-]+/g, '-');
+        if (COUNTY_POSTCODE_MAP[c] && COUNTY_POSTCODE_MAP[c].indexOf(pcCode) >= 0) return c;
+      }
+      return '__none__';
+    }
+    return pcCode;
+  };
+  for (var bi = 0; bi < poolArr.length; bi++) {
+    var b = bucketOf(poolArr[bi]);
+    if (!buckets[b]) buckets[b] = [];
+    buckets[b].push(poolArr[bi]);
+  }
+  // Preferred bucket order: the customer's own areas first (in their chosen order),
+  // then any other areas the pool happens to contain.
+  var order = [];
+  custAreas.forEach(function(a){
+    var k = areasAreCounties ? String(a).toLowerCase().replace(/[\s-]+/g, '-') : extractPostcodeArea(a);
+    if (buckets[k] && order.indexOf(k) === -1) order.push(k);
+  });
+  Object.keys(buckets).forEach(function(k){ if (order.indexOf(k) === -1) order.push(k); });
+  var out = [];
+  var idx = {}; order.forEach(function(k){ idx[k] = 0; });
+  var progressed = true;
+  while (out.length < poolArr.length && progressed) {
+    progressed = false;
+    for (var oi = 0; oi < order.length; oi++) {
+      var k = order[oi];
+      if (idx[k] < buckets[k].length) { out.push(buckets[k][idx[k]++]); progressed = true; }
+    }
+  }
+  return out;
+}
+
 function getMatchingArea(code, areas) {
   const upper = code.toUpperCase().replace(/[^A-Z]/g, '');
   if (areas[upper]) return upper;
@@ -7643,7 +7708,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             if (r2pool.length === 0) {
               if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: custAreas.slice(0,5) };
               try {
-                var poolArr = getDeliveryPool(r2prod);
+                var poolArr = interleavePoolByAreas(getDeliveryPool(r2prod), custAreas);
                 console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': file=' + (PRODUCT_LEAD_FILES[r2prod] ? PRODUCT_LEAD_FILES[r2prod].file : 'moving-leads.json') + ' flattened=' + poolArr.length);
                 if (Array.isArray(poolArr) && poolArr.length > 0) {
                   var existingKeys = {};
@@ -7857,7 +7922,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           if (prodTaken[fgProd] >= prodDailyCap(fgProd)) continue;
           if (!canTakeProduct(fgProd, cust.plan, weekStart2, today, custLeads)) continue;
           try {
-            var fgArr = getDeliveryPool(fgProd);
+            var fgArr = interleavePoolByAreas(getDeliveryPool(fgProd), custAreas);
             if (!Array.isArray(fgArr) || fgArr.length === 0) continue;
             var fgExisting = {};
             (db.leads || []).forEach(function(l){ if(l.product===fgProd){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); fgExisting[k]=1; }catch(e){} } });
@@ -7974,7 +8039,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             var tpProd = products[topupProdIdx % products.length];
             topupProdIdx++;
             if (prodTaken[tpProd] >= prodDailyCap(tpProd)) continue;
-            var tpArr = getDeliveryPool(tpProd);
+            var tpArr = interleavePoolByAreas(getDeliveryPool(tpProd), topupAreas);
             if (!Array.isArray(tpArr) || tpArr.length === 0) continue;
             var usedTopupAddrs = {};
             custLeads.forEach(function(cl2) { try { var cd2 = JSON.parse(cl2.data || '{}'); var k2 = (cd2.address || cd2.postcode || cl2.id || '').toLowerCase().trim(); if (k2) usedTopupAddrs[k2] = 1; } catch(e) {} });
@@ -8332,7 +8397,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             if (prodTaken[fprod] >= prodDailyCap(fprod)) continue;
             if (!canTakeProduct(fprod, cust.plan, weekStart2, today, custLeads)) continue;
             try {
-              var fpoolArr = getDeliveryPool(fprod);
+              var fpoolArr = interleavePoolByAreas(getDeliveryPool(fprod), custAreas);
               if (!Array.isArray(fpoolArr) || fpoolArr.length === 0) continue;
               var fcreated = [];
               for (var fc=0; fc<fpoolArr.length && fcreated.length < finalShort && custLeads.length < totalDailyLimit; fc++) {
@@ -8439,7 +8504,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             // the exact entitlement is still met with confirmed-numbered leads.
             if (confirmedLeads.length < totalDailyLimit) {
               var ncShort = totalDailyLimit - confirmedLeads.length;
-              var ncPoolArr = getDeliveryPool('moving');
+              var ncPoolArr = interleavePoolByAreas(getDeliveryPool('moving'), custAreas);
               if (!Array.isArray(ncPoolArr) || ncPoolArr.length === 0) continue;
               var confirmedIds = {}; confirmedLeads.forEach(function(cl){ try { var cd=JSON.parse(cl.data||'{}'); confirmedIds[cd.url||cd.id]=1; } catch(e){} });
               var ncPicked = [];
