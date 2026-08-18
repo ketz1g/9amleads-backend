@@ -398,7 +398,7 @@ function renderCustomers(customers) {
       '<td style="font-size:11px">' + bookedVal + ' <span style="color:#5c6480">(' + convPct + '%)</span></td>' +
       '<td>' + hasCrm + '</td>' +
       '<td style="font-size:11px;color:#5c6480">' + signupDate + '</td>' +
-      '<td><div style="display:flex;gap:3px"><button class="btn btn-view btn-sm" onclick="loginAs(\'' + c.id + '\')" title="View details"><i class="fas fa-eye"></i></button><button class="btn btn-view btn-sm" onclick="impersonateCustomer(\'' + c.id + '\',\'' + (c.email || '').replace(/'/g,"\\'") + '\')" title="Login as customer" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i></button></div></td></tr>';
+      '<td><div style="display:flex;gap:3px"><button class="btn btn-view btn-sm" onclick="viewCustomerLeads(\'' + (c.email || '').replace(/'/g,"\\'") + '\')" title="View leads"><i class="fas fa-list"></i></button><button class="btn btn-view btn-sm" onclick="loginAs(\'' + c.id + '\')" title="View details"><i class="fas fa-eye"></i></button><button class="btn btn-view btn-sm" onclick="impersonateCustomer(\'' + c.id + '\',\'' + (c.email || '').replace(/'/g,"\\'") + '\')" title="Login as customer" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i></button></div></td></tr>';
   }).join('');
 }
 
@@ -604,6 +604,38 @@ function showImpersonationLogs() {
     h += '</table>';
     showModal('Impersonation Logs', h, '700px');
   });
+}
+async function viewCustomerLeads(email) {
+  function buildModal(title, content, width) {
+    var overlay = document.getElementById('leadViewOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'leadViewOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto';
+      document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = '<div style="background:#11131f;border:1px solid #1e2030;border-radius:14px;max-width:' + (width || '760px') + ';width:100%;padding:24px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="font-size:18px;font-family:Outfit,sans-serif;color:#f1f5f9">' + title + '</h2>' +
+      '<button onclick="document.getElementById(\'leadViewOverlay\').style.display=\'none\'" style="background:none;border:none;color:#5c6480;font-size:20px;cursor:pointer">&times;</button></div>' + content + '</div>';
+    overlay.style.display = 'flex';
+  }
+  try {
+    const r = await fetch(API + '/api/admin/customer-leads?email=' + encodeURIComponent(email), { headers: adminHeaders() });
+    if (!r.ok) { buildModal('Leads', '<div style="color:#ef4444">Could not load leads</div>'); return; }
+    const d = await r.json();
+    let h = '<div style="margin-bottom:10px;font-size:13px;color:#e2e8f0"><strong>' + email + '</strong> · ' + d.product + ' · plan: ' + d.plan + ' · undelivered: ' + d.undelivered_total + '</div>';
+    if (!d.leads || d.leads.length === 0) {
+      h += '<div style="color:#5c6480">No undelivered leads for this customer.</div>';
+    } else {
+      h += '<table style="width:100%;border-collapse:collapse"><tr style="background:rgba(148,163,184,0.1)"><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Address</th><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Postcode</th><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Fresh</th></tr>';
+      d.leads.forEach(function(l) {
+        var fresh = l.fresh24 ? '<span style="color:#22c55e">24h</span>' : '<span style="color:#eab308">48h</span>';
+        h += '<tr><td style="padding:6px;font-size:12px">' + (l.address || '-') + '</td><td style="padding:6px;font-size:12px">' + (l.postcode || '-') + '</td><td style="padding:6px;font-size:12px">' + fresh + '</td></tr>';
+      });
+      h += '</table>';
+    }
+    buildModal('Customer Leads', h);
+  } catch (e) { buildModal('Leads', '<div style="color:#ef4444">Error: ' + e.message + '</div>'); }
 }
 </script>
 </body></html>
