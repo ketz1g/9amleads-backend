@@ -7607,7 +7607,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             var ld = null; try { ld = JSON.parse(l.data || ''); } catch(e) { ld = null; }
             if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '' };
             var addr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
-            return ld.postcode && !hasPremiseNumber(addr, ld.postcode);
+            // Only PAF-enrich property products (moving/probate) — business products
+            // have company addresses, not house numbers, and would waste Postcoder
+            // credits (and get dropped) if run through the address pipeline.
+            var isProperty = l.product === 'moving' || l.product === 'probate';
+            return isProperty && ld.postcode && !hasPremiseNumber(addr, ld.postcode);
           });
           if (needPc.length > 0) {
             var pcNorm = needPc.map(function(l) {
@@ -7660,7 +7664,14 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // Postcoder enrich above, drop any lead that still lacks a confirmed premise
       // number — the customer gets only leads with real, usable addresses.
       var doorGatedBefore = custLeads.length;
+      // Door-number gate applies ONLY to property products that need a house
+      // number for Print & Post (moving, probate). Business-type products
+      // (newbusiness, tenders, planning) have company addresses, not house
+      // numbers, so they must NOT be gated — otherwise every business lead is
+      // dropped and customers get 0.
+      var needsDoorNumber = products.some(function(p){ return p === 'moving' || p === 'probate'; });
       custLeads = custLeads.filter(function(l) {
+        if (!needsDoorNumber) return true; // business products: keep all leads
         // Robust lead-data read: prefer l.data (JSON) but fall back to top-level
         // fields (postcode/address/scrapedAt) which some creation paths store.
         var ld = null;
