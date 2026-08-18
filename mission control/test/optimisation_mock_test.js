@@ -128,6 +128,37 @@ console.log('\n=== PAF street match (never generic "1") ===');
   ok('street with single number CONFIRMED (real number)', r2 && r2.buildingNumber === '1');
 })();
 
+// ---------- Premise-identifier gate: NEVER email a bare street/place name ----------
+console.log('\n=== Premise-identifier gate (no bare street/place names in emails) ===');
+(function() {
+  const ap = require('../address_premise.js');
+  const f = ap.hasUsablePremiseAddress;
+  // BARE street/place names with NO door number, flat number or house name -> REJECT
+  ok('St. Davids Square rejected (bare square, no number)', f('St. Davids Square, London, E area', 'E14 3WF') === false);
+  ok('Lamb Court rejected (bare court, no flat number)', f('Lamb Court, Limehouse, London, E area', 'E14 8EJ') === false);
+  ok('Cadogan Square rejected', f('Cadogan Square', 'SW3 3AA') === false);
+  ok('Collingham Place rejected', f('Collingham Place', 'SW7 3HQ') === false);
+  ok('Park Road rejected', f('Park Road', 'N11 2JD') === false);
+  ok('Winston Close rejected', f('Winston Close', 'SW20 9NX') === false);
+  ok('Bishops Avenue rejected', f('Bishops Avenue', 'N2 0BJ') === false);
+  // Door / flat / street numbers -> ACCEPT
+  ok('39 Achill Close accepted', f('39 Achill Close, E area', 'NW9 4EJ') === true);
+  ok('4 Ferndale Road accepted', f('4 Ferndale Road, E area', 'SW4 7SD') === true);
+  ok('39-47 Wedmore Street accepted (range)', f('39-47 Wedmore Street, E area', 'N19 4RT') === true);
+  ok('2A Fairbridge Road accepted (suffix letter)', f('2A Fairbridge Road, E area', 'N19 3HZ') === true);
+  ok('Flat 1, Sandgate House accepted', f('Flat 1, Sandgate House Queens Walk, E area', 'W5 1TN') === true);
+  ok('Landmark East Tower, 24 Marsh Wall accepted', f('Landmark East Tower, 24 Marsh Wall, E area', 'E14 9EG') === true);
+  ok('1 St. Gabriel Walk accepted', f('1 St. Gabriel Walk, E area', 'SE1 6FA') === true);
+  // Named houses/buildings (house name) -> ACCEPT
+  ok('Blandford House accepted (house name)', f('Blandford House, Chiswick, E area', 'W4 1SY') === true);
+  ok('Hazelwood House accepted (house name)', f('Hazelwood House, Deptford, E area', 'SE8 5RP') === true);
+  ok('The Old Rectory accepted', f('The Old Rectory', 'GU21 4PU') === true);
+  ok('Eaton Mansions accepted', f('Eaton Mansions', 'SW1W 8HF') === true);
+  // Empty / junk -> REJECT
+  ok('empty address rejected', f('', 'E14 3WF') === false);
+  ok('postcode-only rejected', f('E14 3WF', 'E14 3WF') === false);
+})();
+
 // ---------- STAGE 27: Simulate ~100 customers, collapse to unique coverage ----------
 console.log('\n=== STAGE 27: 100-customer shared-coverage simulation (ZERO live calls) ===');
 (function stage27() {

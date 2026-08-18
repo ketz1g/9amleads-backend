@@ -144,6 +144,12 @@ function extractPostcodeArea(postcode) {
   return out.length >= 1 && out.length <= 4 ? out : '';
 }
 
+// Shared premise-identifier logic (delivery gate + dashboard filter): guarantees
+// a delivered moving/probate lead always carries a door number, flat number,
+// street number or house name — never a bare street/place name. See address_premise.js.
+var ADDR_PREMISE = require('./address_premise');
+function hasUsablePremiseAddress(addr, pc) { return ADDR_PREMISE.hasUsablePremiseAddress(addr, pc); }
+
 function getMatchingArea(code, areas) {
   const upper = code.toUpperCase().replace(/[^A-Z]/g, '');
   if (areas[upper]) return upper;
@@ -3230,15 +3236,7 @@ app.post('/api/admin/rejected-leads/approve', adminAuth, async (req, res) => {
 // building). Added as undelivered so the next 9am delivery sends it. Returns the
 // lead or null if none available.
 function hasProperAddressModule(addr, pc) {
-  var a = String(addr || '').replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
-  if (!a) return false;
-  a = a.replace(/^[,\s]+/, '');
-  if (/^\d{1,5}[A-Za-z]?\s+[A-Z][A-Za-z'-]+/.test(a)) return true;
-  if (/^(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d{1,5}[A-Za-z]?\b/i.test(a)) return true;
-  var bareStreet = /^[A-Za-z''\-]+(?:\s+[A-Za-z''\-]+){0,2}\s+(road|street|lane|drive|close|avenue|gardens|terrace|mews|way|walk|row|view|crescent|grove|park|yard|wharf|quay|gate|side)\b/i.test(a);
-  if (bareStreet) return false;
-  var words = a.split(/[\s,]+/).filter(Boolean);
-  return words.length >= 2;
+  return hasUsablePremiseAddress(addr, pc);
 }
 async function createReplacementLead(cust, product) {
   try {
@@ -5425,13 +5423,7 @@ function leadHasUsableAddress(l, product) {
     // Moving/probate: require a PROPER address (door number, flat number, or named
     // property) + full postcode. Bare street names with no identifier are excluded.
     if (!pcOk) return false;
-    var stripped = String(addr).replace(new RegExp(pc, 'g'), '').trim();
-    if (/^\d{1,5}[A-Za-z]?\s+[A-Z][A-Za-z'-]+/.test(stripped)) return true;           // door number
-    if (/^(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d{1,5}[A-Za-z]?\b/i.test(stripped)) return true; // flat number
-    var bareStreet = /^[A-Za-z''\-]+(?:\s+[A-Za-z''\-]+){0,2}\s+(road|street|lane|drive|close|avenue|gardens|terrace|mews|way|walk|row|view|crescent|grove|park|yard|wharf|quay|gate|side)\b/i.test(stripped);
-    if (bareStreet) return false;
-    var w = stripped.split(/[\s,]+/).filter(Boolean);
-    return w.length >= 2; // named property
+    return hasUsablePremiseAddress(addr, p.postcode);
   } catch(e) { return false; }
 }
 
@@ -7231,6 +7223,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     var delivered = 0, errors = 0, lastErr = '';
     var _deliverDiag = {};
     var emailQueue = [];
+    // Premise-identifier gate shared by the whole delivery flow (pool fallback,
+    // Postcoder enrich, door-number gate, final PAF pass). Defined at route scope
+    // — NOT inside the POSTCODER-enabled block — so it is always available even
+    // when Postcoder is off (otherwise delivery 500s for every customer).
+    function hasPremiseNumber(addr, pc) {
+      return hasUsablePremiseAddress(addr, pc);
+    }
     _dbData = null;
     var db = getDb();
     var today = new Date().toISOString().split('T')[0];
@@ -7608,7 +7607,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     var rlD = rl.firstVisibleDate || rl.addedOn || rl.publishedDate || rl.receivedDate || rl.grantDate || rl.dateSubmitted || rl.dateReceived || rl.incorporationDate || rl.updateDate || rl.createdAt || rl.created_at || '';
                     if (!rlD || rlD < freshCutoffNow) continue;
                     var areaOfPoolLead = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || '');
-                    if (!areaOfPoolLead) continue;
+                    // Tenders/probate are national-fallback products: their leads often
+                    // carry no postcode (tenders are opportunities, probate gazette
+                    // notices may lack an address). Allow them through so they can be
+                    // accepted by the national fallback below instead of silently dropped.
+                    if (!areaOfPoolLead && !(r2prod === 'tenders' || r2prod === 'probate')) continue;
                     var custAreaHit = false;
                     if (custAreas.length > 0) {
                       // County-aware matching: if the customer's target areas are
@@ -7651,7 +7654,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     if (existingKeys[poolKey]) continue;
                     // Never re-create a property already delivered to this customer.
                     if (rl.url && deliveredUrls[rl.url]) continue;
-                    var poolLeadData = {
+                    // PRESERVE ALL POOL FIELDS: spread the raw pool lead first so
+                    // product-specific fields (deceasedName/deceasedAddress for probate,
+                    // companyName for newbusiness, reference/proposal for planning,
+                    // title/buyer/description for tenders) survive into the delivered
+                    // lead. Only the base fields below are normalised over it.
+                    var poolLeadData = Object.assign({}, rl, {
                       id: rl.id || ('LD_' + r2prod + '_' + pf),
                       address: rl.fullAddress || rl.address || rl.name || rl.company || '',
                       postcode: rl.postcode || rl.location || '',
@@ -7670,7 +7678,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                       listedDate: rl.listedDate || '',
                       company: rl.companyName || rl.name || rl.company || '',
                       companyNumber: rl.companyNumber || ''
-                    };
+                    });
                     // MOVING COMPLETENESS GATE: moving leads must carry a FULL
                     // postcode AND a confirmed house/door/flat number + street (so the
                     // customer can actually mail them) AND a listing URL. The pool
@@ -7820,7 +7828,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               var fgD = fgLead.firstVisibleDate || fgLead.addedOn || fgLead.publishedDate || fgLead.receivedDate || fgLead.grantDate || fgLead.dateSubmitted || fgLead.dateReceived || fgLead.incorporationDate || fgLead.updateDate || fgLead.createdAt || fgLead.created_at || '';
               if (!fgD || fgD < freshCutoffNow) continue;
               var fgArea = extractPostcodeArea(fgLead.postcode || fgLead.address || fgLead.location || fgLead.name || '');
-              if (!fgArea) continue;
+              // Tenders/probate are national-fallback products (no postcode on leads).
+              if (!fgArea && !(fgProd === 'tenders' || fgProd === 'probate')) continue;
               var fgAreaOk = false;
               if (custAreas.length > 0) {
                 var fgCounties = custAreas.some(function(a){ return !/^[A-Z]{1,3}$/i.test(a); });
@@ -7851,10 +7860,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   fgAreaOk = custAreas.some(function(a){ return extractPostcodeArea(a) === fgArea; }) || (expandedAreas && expandedAreas.indexOf(fgArea) !== -1);
                 }
               } else { fgAreaOk = true; }
+              // National fallback for tenders/probate (opportunities without a postcode).
+              if (!fgAreaOk && (fgProd === 'tenders' || fgProd === 'probate')) fgAreaOk = true;
               if (!fgAreaOk) continue;
               var fgKey = (fgLead.postcode||fgLead.address||fgLead.id||fgLead.url||'');
               if (fgExisting[fgKey]) continue;
-              var fgData = {
+              var fgData = Object.assign({}, fgLead, {
                 id: fgLead.id || ('LD_' + fgProd + '_' + fgi),
                 address: fgLead.address || fgLead.name || fgLead.company || '',
                 postcode: fgLead.postcode || fgLead.location || '',
@@ -7873,7 +7884,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 listedDate: fgLead.listedDate || '',
                 company: fgLead.companyName || fgLead.name || fgLead.company || '',
                 companyNumber: fgLead.companyNumber || ''
-              };
+              });
               var fgNew = { id: 'lead_' + Date.now() + '_' + fgi, customer_id: cust.id, product: fgProd, data: JSON.stringify(fgData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
               db.leads.push(fgNew);
               fgExisting[fgKey] = 1;
@@ -7936,7 +7947,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               var tlD = tl.firstVisibleDate || tl.addedOn || tl.publishedDate || tl.receivedDate || tl.grantDate || tl.dateSubmitted || tl.dateReceived || tl.incorporationDate || tl.updateDate || tl.createdAt || tl.created_at || '';
               if (!tlD || tlD < freshCutoffNow) continue;
               var tlArea = extractPostcodeArea(tl.postcode || tl.address || tl.location || tl.name || '');
-              if (!tlArea) continue;
+              // Tenders/probate are national-fallback products (no postcode on leads).
+              if (!tlArea && !(tpProd === 'tenders' || tpProd === 'probate')) continue;
               var tlAreaOk = false;
               if (topupAreas.length > 0) {
                 var tlCounties = topupAreas.some(function(a){ return !/^[A-Z]{1,3}$/i.test(a); });
@@ -7972,12 +7984,14 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   }
                 }
               } else { tlAreaOk = true; }
+              // National fallback for tenders/probate (opportunities without a postcode).
+              if (!tlAreaOk && (tpProd === 'tenders' || tpProd === 'probate')) tlAreaOk = true;
               if (!tlAreaOk) continue;
               var tlKey = (tl.postcode || tl.address || tl.id || tl.url || '').toLowerCase().trim();
               if (usedTopupAddrs[tlKey]) continue;
               var alreadyAssignedOther = (db.leads || []).some(function(l2) { return l2.product === tpProd && !l2.delivered && l2.customer_id !== cust.id && l2.data && l2.data.indexOf(tlKey) !== -1; });
               if (alreadyAssignedOther) continue;
-              var tlData = {
+              var tlData = Object.assign({}, tl, {
                 id: tl.id || ('TP_' + tpProd + '_' + tpi), address: tl.address || tl.name || tl.company || '',
                 postcode: tl.postcode || tl.location || '', price: tl.price || tl.priceLabel || tl.estateValueLabel || '',
                 bedrooms: tl.bedrooms || 0, propertyType: tl.propertyType || tl.type || '', status: tl.status || tl.listingStatus || 'new',
@@ -7985,7 +7999,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 scrapedAt: tl.scrapedAt || new Date().toISOString(), firstVisibleDate: tl.firstVisibleDate || tl.updateDate || '',
                 updateDate: tl.updateDate || '', priceLabel: tl.priceLabel || (tl.price ? '\u00a3' + Number(tl.price).toLocaleString() : ''),
                 listedDate: tl.listedDate || '', company: tl.companyName || tl.name || tl.company || '', companyNumber: tl.companyNumber || ''
-              };
+              });
               var tpNew = { id: 'lead_' + Date.now() + '_' + tp + '_' + tpi, customer_id: cust.id, product: tpProd, data: JSON.stringify(tlData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
               db.leads.push(tpNew);
               custLeads.push(tpNew);
@@ -8011,25 +8025,6 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // A premise number is a digit that forms part of the STREET address
           // (house/flat number), NOT a digit in the postcode (e.g. EN2, HA6). So
           // strip the postcode out before testing, then look for a real number.
-          function hasPremiseNumber(addr, pc) {
-            var a = String(addr || '').replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
-            if (!a) return false;
-            a = a.replace(/^[,\s]+/, '');
-            // A PROPER address must have a real identifier — a door number, a flat/
-            // apartment number, OR a named property (house name). It must NOT be a
-            // bare street name with no identifier (e.g. "Verdun Road", "St Julian's
-            // Farm Road"). This is what guarantees Print & Post reaches the right place.
-            // 1) Door number before a street: "12 High St", "1 Hogarth Hill"
-            if (/^\d{1,5}[A-Za-z]?\s+[A-Z][A-Za-z'-]+/.test(a)) return true;
-            // 2) Flat/apartment/unit + number: "Flat 12, Eaton Mansions", "Unit 5"
-            if (/^(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d{1,5}[A-Za-z]?\b/i.test(a)) return true;
-            // 3) BARE STREET: starts with a name then a street suffix, no number/flat/the
-            var bareStreet = /^[A-Za-z''\-]+(?:\s+[A-Za-z''\-]+){0,2}\s+(road|street|lane|drive|close|avenue|gardens|terrace|mews|way|walk|row|view|crescent|grove|park|yard|wharf|quay|gate|side)\b/i.test(a);
-            if (bareStreet) return false;
-            // 4) Named property (2+ words): "The Old Rectory", "Eaton Mansions", "Collingham Place"
-            var words = a.split(/[\s,]+/).filter(Boolean);
-            return words.length >= 2;
-          }
           // Extract the door number already present in an address string (e.g.
           // "3 Bollinder Place" -> "3", "Valencia Tower, 3 Bollinder Place" -> "3").
           // Falls back to any leading number so the customer still sees a number
@@ -8361,25 +8356,6 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         }
       } catch(fgErr) { console.log('[DELIVERY] Final guarantee pass outer error:', fgErr.message); }
       try {
-        // NO SPLIT EMAILS: if this customer already got their daily email, only
-        // mark the top-up leads as delivered — don't send a second email.
-        // (In test/force mode we DO send the email so we can verify output.)
-        if (!alreadyEmailedToday || forceFull) {
-          // Queue the email for bounded-parallel sending (so 1000 customers'
-          // emails all go out within a few minutes instead of 30-60 min
-          // sequentially). Persist last_email_date immediately so a crash can
-          // never cause a duplicate.
-          try { cust.last_email_date = today; } catch(leErr) {}
-          emailQueue.push({ email: cust.email, name: cust.company || 'Customer', subject: '9amLeads \u2022 Your Daily Opportunities for ' + (cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area') + ' \u2014 ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), html: generateLeadEmailHTML(cust, custLeads) });
-          // Flush in parallel batches of 15 to keep Brevo well under rate limits
-          // while ensuring all emails go out promptly.
-          if (emailQueue.length >= 15) {
-            var batchNow = emailQueue.splice(0, emailQueue.length);
-            await Promise.all(batchNow.map(function(m) { return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) { console.log('[DELIVERY] Email failed ' + m.email + ': ' + e.message); }); }));
-          }
-        } else {
-          console.log('[DELIVERY] ' + cust.email + ': already emailed today — topping up ' + custLeads.length + ' leads silently (no second email)');
-        }
         // FINAL POSTCODER NUMBER-CONFIRMATION PASS (moving only): Rightmove never
         // publishes house numbers, so just before delivery we confirm each moving
         // lead's house/flat number + full address + full postcode via Postcoder PAF
@@ -8474,6 +8450,28 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             custLeads = confirmedLeads;
             console.log('[DELIVERY] Final PAF pass: ' + cust.email + ' confirmed ' + custLeads.length + '/' + totalDailyLimit + ' moving leads');
           } catch(pafErr) { console.log('[DELIVERY] Final PAF pass outer error:', pafErr.message); }
+        }
+        // NO SPLIT EMAILS: if this customer already got their daily email, only
+        // mark the top-up leads as delivered — don't send a second email.
+        // (In test/force mode we DO send the email so we can verify output.)
+        // Runs AFTER the final Postcoder number-confirmation pass so the email
+        // reflects the CONFIRMED door-numbered addresses, never the pre-confirmation
+        // street-only addresses.
+        if (!alreadyEmailedToday || forceFull) {
+          // Queue the email for bounded-parallel sending (so 1000 customers'
+          // emails all go out within a few minutes instead of 30-60 min
+          // sequentially). Persist last_email_date immediately so a crash can
+          // never cause a duplicate.
+          try { cust.last_email_date = today; } catch(leErr) {}
+          emailQueue.push({ email: cust.email, name: cust.company || 'Customer', subject: '9amLeads \u2022 Your Daily Opportunities for ' + (cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area') + ' \u2014 ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), html: generateLeadEmailHTML(cust, custLeads) });
+          // Flush in parallel batches of 15 to keep Brevo well under rate limits
+          // while ensuring all emails go out promptly.
+          if (emailQueue.length >= 15) {
+            var batchNow = emailQueue.splice(0, emailQueue.length);
+            await Promise.all(batchNow.map(function(m) { return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) { console.log('[DELIVERY] Email failed ' + m.email + ': ' + e.message); }); }));
+          }
+        } else {
+          console.log('[DELIVERY] ' + cust.email + ': already emailed today — topping up ' + custLeads.length + ' leads silently (no second email)');
         }
         // Send to CRM webhook if configured
         if (cust.crm_webhook_url) {

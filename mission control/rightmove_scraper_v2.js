@@ -133,7 +133,12 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
                 agent: p.customer ? (p.customer.branchDisplayName || p.customer.branchName || '') : '',
                 source: 'Rightmove',
                 scrapedAt: new Date().toISOString(),
-                city: typeof searchResults.location === 'object' ? (searchResults.location.name || locationName) : (searchResults.location || locationName),
+                city: (function() {
+                  // Area-targeted regions are named like "E area", "NW area" — strip
+                  // the " area" suffix so it never leaks into the displayed town.
+                  var locN = typeof searchResults.location === 'object' ? (searchResults.location.name || locationName) : (searchResults.location || locationName);
+                  return String(locN || '').replace(/\s+area$/i, '').trim();
+                })(),
                 postcode: (p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i) ? (p.displayAddress.match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i)[0].trim()) : '',
                 // UPRN / coordinates / identity where Rightmove exposes them (Phase 5).
                 uprn: p.uprn || p.propertyUprn || (p.location && p.location.uprn) || '',
@@ -221,7 +226,10 @@ function fetchCommercialRightmovePage(locationId, locationName, pageIndex, isLet
               agent: p.customer ? (p.customer.branchDisplayName || p.customer.branchName || '') : '',
               source: 'Rightmove Commercial',
               scrapedAt: new Date().toISOString(),
-              city: typeof searchResults.location === 'object' ? (searchResults.location.name || locationName) : (searchResults.location || locationName),
+              city: (function() {
+                var locN = typeof searchResults.location === 'object' ? (searchResults.location.name || locationName) : (searchResults.location || locationName);
+                return String(locN || '').replace(/\s+area$/i, '').trim();
+              })(),
               postcode: (p.displayAddress || '').match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i) ? (p.displayAddress.match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i)[0].trim()) : '',
               uprn: p.uprn || p.propertyUprn || (p.location && p.location.uprn) || '',
               latitude: (p.location && p.location.latitude) || null,

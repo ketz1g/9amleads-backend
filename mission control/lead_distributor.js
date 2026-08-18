@@ -480,6 +480,10 @@ function normaliseLead(rawLead, product, customerId) {
     base.buildingName = rawLead.buildingName || '';
     base.street = rawLead.street || '';
     base.town = rawLead.town || '';
+    // Preserved so delivery-time Postcoder PAF can confirm the exact door number
+    // on ambiguous blocks — the vision AI read it from the photo at collection.
+    base.doorNumberHint = rawLead.doorNumberHint || '';
+    base.photo = rawLead.photo || '';
     base.latitude = rawLead.latitude || rawLead.lat || null;
     base.longitude = rawLead.longitude || rawLead.lng || null;
     base.sourceProvider = rawLead.sourceProvider || 'rightmove';
