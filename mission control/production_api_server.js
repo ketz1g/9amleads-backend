@@ -8107,10 +8107,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 var fenrPc = (fenr && fenr[0] && fenr[0].postcode) || fl.postcode || '';
                 var fenrAddr = (fenr && fenr[0] && (fenr[0].fullAddress || fenr[0].address)) || fAddr || fl.address || '';
                 var fenrFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(fenrPc).trim());
-                // STRICT: only accept a replacement lead that has a confirmed door
-                // number (house/flat number) so every delivered lead is printable/postable
-                // to the right property. Leads without a street number are skipped.
-                var fenrHasNum = hasPremiseNumber(fenrAddr, fenrPc) || !!(fenr && fenr[0] && (fenr[0].buildingNumber));
+                // STRICT: only accept a replacement lead that has a REAL street number
+                // in the address (e.g. "12 The Grange"). A named building with no
+                // street number (e.g. "Eaton Mansions", "FLAT 1, GREENWICH COURT") must
+                // NOT be added — otherwise we fill the count with un-postable leads.
+                var fenrHasNum = hasPremiseNumber(fenrAddr, fenrPc);
                 if (fenr && fenr[0] && fenrAddr && fenrFullPc && fenrHasNum) {
                   var fenrLead = fenr[0];
                   if (!fenrLead.postcode) fenrLead.postcode = fenrPc;
