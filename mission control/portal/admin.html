@@ -398,7 +398,7 @@ function renderCustomers(customers) {
       '<td style="font-size:11px">' + bookedVal + ' <span style="color:#5c6480">(' + convPct + '%)</span></td>' +
       '<td>' + hasCrm + '</td>' +
       '<td style="font-size:11px;color:#5c6480">' + signupDate + '</td>' +
-      '<td><div style="display:flex;gap:3px"><button class="btn btn-view btn-sm" onclick="viewCustomerLeads(\'' + (c.email || '').replace(/'/g,"\\'") + '\')" title="View leads"><i class="fas fa-list"></i></button><button class="btn btn-view btn-sm" onclick="loginAs(\'' + c.id + '\')" title="View details"><i class="fas fa-eye"></i></button><button class="btn btn-view btn-sm" onclick="impersonateCustomer(\'' + c.id + '\',\'' + (c.email || '').replace(/'/g,"\\'") + '\')" title="Login as customer" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i></button></div></td></tr>';
+      '<td><div style="display:flex;gap:3px"><button type="button" class="btn btn-view btn-sm" onclick="event.preventDefault();event.stopPropagation();viewCustomerLeads(\'' + (c.email || '').replace(/'/g,"\\'") + '\')" title="View leads"><i class="fas fa-list"></i></button><button type="button" class="btn btn-view btn-sm" onclick="loginAs(\'' + c.id + '\')" title="View details"><i class="fas fa-eye"></i></button><button type="button" class="btn btn-view btn-sm" onclick="impersonateCustomer(\'' + c.id + '\',\'' + (c.email || '').replace(/'/g,"\\'") + '\')" title="Login as customer" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i></button></div></td></tr>';
   }).join('');
 }
 
