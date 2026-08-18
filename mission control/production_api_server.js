@@ -6870,6 +6870,41 @@ app.post('/api/admin/leads/delete', adminAuth, (req, res) => {
     res.json({ success: true, removed: removed, lead_id: leadId });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// POST /api/admin/leads/add-moving — add a confirmed Moving Lead (by Rightmove URL)
+// to a customer's account (admin / manual confirmation flow). Fetches the property
+// detail page for the full door-numbered address + postcode, then pushes a lead
+// record into the customer's account exactly like the delivery path does.
+app.post('/api/admin/leads/add-moving', adminAuth, async (req, res) => {
+  try {
+    var email = (req.body && req.body.email) || '';
+    var url = (req.body && req.body.url) || '';
+    if (!email || !url) return res.status(400).json({ error: 'email and url required' });
+    var dbA = getDb();
+    var cust = (dbA.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email.toLowerCase(); });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var rmS = require('./rightmove_scraper_v2');
+    var detail = await rmS.fetchPropertyDetail(url);
+    if (!detail || !detail.postcode) return res.status(422).json({ error: 'Could not fetch property detail from ' + url });
+    var tlData = {
+      id: 'moving_' + url.replace(/[^0-9]/g, '').slice(0, 10),
+      address: detail.fullAddress || '',
+      fullAddress: detail.fullAddress || '',
+      postcode: detail.postcode || '',
+      firstVisibleDate: new Date().toISOString(),
+      updateDate: new Date().toISOString(),
+      priceLabel: (detail.price ? '\u00a3' + Number(detail.price).toLocaleString() : ''),
+      url: url,
+      source: 'Rightmove',
+      scrapedAt: new Date().toISOString(),
+      listedDate: new Date().toISOString()
+    };
+    var tpNew = { id: 'lead_' + Date.now() + '_moving_' + Math.floor(Math.random()*1000), customer_id: cust.id, product: 'moving', data: JSON.stringify(tlData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: new Date().toISOString().split('T')[0] + 'T09:00:00.000Z' };
+    dbA.leads = dbA.leads || [];
+    dbA.leads.push(tpNew);
+    saveDb();
+    res.json({ success: true, lead_id: tpNew.id, address: detail.fullAddress, postcode: detail.postcode });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   // CONCURRENT-DELIVERY LOCK: never run two deliveries at once (e.g. the 09:00
   // cron + the 09:30 watchdog overlapping, or a manual run mid-flight). Without
