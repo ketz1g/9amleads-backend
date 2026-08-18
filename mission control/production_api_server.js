@@ -7655,6 +7655,75 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             var isProperty = l.product === 'moving' || l.product === 'probate';
             return isProperty && ld.postcode && !hasPremiseNumber(addr, ld.postcode);
           });
+          // ===== DELIVERY-TIME PROPALT RESOLUTION (cheap, batched by postcode) =====
+          // Resolves the exact door number + UPRN for the leads ACTUALLY being
+          // delivered, using Propalt get-properties batched by postcode (6 credits /
+          // postcode returns ~0.3 credits/property — NOT per-lead). Gated by
+          // PROPALT_ENABLED and a daily credit cap so Propalt cost never spirals.
+          // Runs BEFORE Postcoder so PAF can then confirm the verified address.
+          var __propaltMonthlyUsed = __propaltMonthlyUsed || 0;
+          function monthlyUsedCredits() { return __propaltMonthlyUsed; }
+          try {
+            if (String(process.env.PROPALT_ENABLED || 'false').toLowerCase() === 'true' && process.env.PROPALT_API_KEY) {
+              var mspD = require('./moving_source_provider.js');
+              var pcGroupsD = {};
+              needPc.forEach(function(l) {
+                var ld = null; try { ld = JSON.parse(l.data || ''); } catch(e) { ld = null; }
+                if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '' };
+                var pc = String(ld.postcode || '').toUpperCase().trim();
+                if (!/[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i.test(pc)) return;
+                if (!pcGroupsD[pc]) pcGroupsD[pc] = [];
+                pcGroupsD[pc].push({ l: l, ld: ld });
+              });
+              var pcListD = Object.keys(pcGroupsD);
+              var pcBudgetD = parseInt(process.env.PROPALT_MAX_POSTCODES_PER_DELIVERY || '15', 10);
+              var dailyLimitD = parseInt(process.env.PROPALT_DAILY_CREDIT_LIMIT || '200', 10);
+              var monthlyLimitD = parseInt(process.env.PROPALT_MONTHLY_CREDIT_LIMIT || '0', 10);
+              var dailyUsedD = 0;
+              var dl = pcListD.slice(0, pcBudgetD);
+              for (var di = 0; di < dl.length; di++) {
+                if (dailyUsedD + 6 > dailyLimitD) break; // daily credit cap
+                if (monthlyLimitD > 0 && monthlyUsedCredits() + dailyUsedD + 6 > monthlyLimitD) break; // monthly hard cap
+                var props = await mspD.propaltGetPropertiesByPostcode(dl[di]);
+                dailyUsedD += 6;
+                __propaltMonthlyUsed += 6;
+                if (!props) continue;
+                pcGroupsD[dl[di]].forEach(function(item) {
+                  var hl = item.l, ld = item.ld;
+                  var addrN = (ld.fullAddress || ld.address || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                  var matched = props.find(function(p) {
+                    var st = (p.thoroughfare || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                    var num = String(p.building_number || p.poan || '');
+                    return st && addrN && addrN.indexOf(st) !== -1 && num && /\d/.test(num);
+                  }) || props.find(function(p) {
+                    var st = (p.thoroughfare || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                    return st && addrN && addrN.indexOf(st) !== -1;
+                  });
+                  if (matched && matched.uprn) {
+                    var numD = String(matched.building_number || matched.poan || '').trim();
+                    var partsD = [];
+                    if (matched.sub_building_name) partsD.push(matched.sub_building_name);
+                    if (numD && matched.thoroughfare) partsD.push(numD + ' ' + matched.thoroughfare);
+                    else if (matched.building_name) partsD.push(matched.building_name);
+                    else if (matched.thoroughfare) partsD.push(matched.thoroughfare);
+                    if (matched.town) partsD.push(matched.town);
+                    if (matched.postcode) partsD.push(matched.postcode);
+                    var fullD = partsD.join(', ');
+                    ld.uprn = String(matched.uprn);
+                    ld.udprn = matched.udprn != null ? String(matched.udprn) : '';
+                    if (numD) ld.buildingNumber = numD;
+                    if (fullD) { ld.address = fullD; ld.fullAddress = fullD; }
+                    ld.addressConfidence = 98;
+                    ld.addressVerificationStatus = 'EXACT_ADDRESS';
+                    ld.addressVerificationSource = 'propalt-addressbase';
+                    ld.sourceProvider = (ld.sourceProvider || 'rightmove') + '+propalt';
+                    hl.data = JSON.stringify(ld);
+                  }
+                });
+              }
+              console.log('[DELIVERY] Propalt delivery-time resolution: ' + dl.length + ' postcodes, ' + dailyUsedD + ' credits (capped ' + dailyLimitD + '/day)');
+            }
+          } catch(prErr) { console.log('[DELIVERY] Propalt delivery resolution error: ' + prErr.message); }
           if (needPc.length > 0) {
             var pcNorm = needPc.map(function(l) {
               var ld = null; try { ld = JSON.parse(l.data || ''); } catch(e) { ld = null; }
