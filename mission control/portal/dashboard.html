@@ -477,17 +477,17 @@ footer a{color:var(--accent);text-decoration:underline}
 </div>
 
 <div id="tab-areas" style="display:none">
-<p style="font-size:12px;color:var(--text2);margin-bottom:10px">Choose as many UK postcode areas as you like, or select <strong>All UK</strong> for maximum coverage. More areas = more leads. Your plan daily lead quota stays the same.</p>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-<button type="button" class="btn" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-size:12px" onclick="setDashAllUK()"><i class="fas fa-globe-europe"></i> All of UK</button>
-<button type="button" class="btn" style="background:transparent;border:1px solid var(--border);color:var(--text2);font-size:12px" onclick="clearDashAreas()"><i class="fas fa-times"></i> Clear</button>
-</div>
-<div style="display:flex;gap:8px;margin-bottom:10px">
-<input type="text" class="input" id="settings-areas" placeholder="e.g. E, NW, EN, SG, CM (or type 'All UK')">
-<button type="button" class="btn" style="background:rgba(14,165,233,0.1);color:#0ea5e9;border:1px solid rgba(14,165,233,0.2);font-size:12px" onclick="addDashArea()"><i class="fas fa-plus"></i> Add</button>
-</div>
-<div id="dash-area-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
-<div id="dash-quick-areas" style="display:flex;flex-wrap:wrap;gap:4px;max-height:140px;overflow:auto;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px"></div>
+ <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Pick exactly <strong>5 postcode areas</strong> for your daily leads (e.g. E, NW, EN, SG, CM). You can adjust these anytime.</p>
+ <div style="display:flex;gap:8px;margin-bottom:10px">
+ <input type="text" class="input" id="settings-areas" placeholder="e.g. E, NW, EN, SG, CM">
+ <button type="button" class="btn" style="background:rgba(14,165,233,0.1);color:#0ea5e9;border:1px solid rgba(14,165,233,0.2);font-size:12px" onclick="addDashArea()"><i class="fas fa-plus"></i> Add</button>
+ <button type="button" class="btn" style="background:transparent;border:1px solid var(--border);color:var(--text2);font-size:12px" onclick="clearDashAreas()"><i class="fas fa-times"></i> Clear</button>
+ </div>
+ <div id="dash-area-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+ <div id="dash-quick-areas" style="display:flex;flex-wrap:wrap;gap:4px;max-height:140px;overflow:auto;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px"></div>
+ <div id="dash-area-msg" style="font-size:12px;color:var(--muted);margin:8px 0"></div>
+ <button type="button" class="btn" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-size:12px;margin-top:8px" onclick="saveDashAreas()"><i class="fas fa-save"></i> Save Postcode Areas</button>
+
 <div style="margin-top:8px;font-size:11px;color:var(--muted)" id="settings-areas-count"></div>
 </div>
 <div id="moving-type-row" style="margin-top:12px;display:none">
@@ -902,28 +902,49 @@ function reloadPostcodes() {
 var dashboardAreas = [];
 var DASH_POSTCODE_AREAS = ['AB','AL','B','BA','BB','BD','BH','BL','BN','BR','BS','BT','CA','CB','CF','CH','CM','CO','CR','CT','CV','CW','DA','DD','DE','DG','DH','DL','DN','DT','DY','E','EC','EH','EN','EX','FK','FY','G','GL','GU','GY','HA','HD','HG','HP','HR','HS','HU','HX','IG','IM','IP','IV','JE','KA','KT','KW','KY','L','LA','LD','LE','LL','LN','LS','LU','M','ME','MK','ML','N','NE','NG','NN','NR','NW','OL','OX','PA','PE','PH','PL','PO','PR','RG','RH','RM','S','SA','SE','SG','SK','SL','SM','SN','SO','SP','SR','SS','ST','SW','SY','TA','TD','TF','TN','TQ','TR','TS','TW','UB','W','WA','WC','WD','WF','WN','WR','WS','WV','YO','ZE'];
 function setDashAllUK() {
-  dashboardAreas = ['All UK'];
-  renderDashAreas();
-  document.getElementById('settings-areas').value = 'All UK';
-}
-function clearDashAreas() {
-  dashboardAreas = [];
-  renderDashAreas();
-  document.getElementById('settings-areas').value = '';
-}
+   var m = document.getElementById('dash-area-msg');
+   if (m) m.textContent = '"All of UK" is not available. Please pick 5 specific postcode areas (e.g. E, NW, EN, SG, CM).';
+   m.style.color = '#ef4444';
+ }
+ function clearDashAreas() {
+   dashboardAreas = [];
+   renderDashAreas();
+   document.getElementById('settings-areas').value = '';
+ }
 function addDashArea() {
-  var input = document.getElementById('settings-areas');
-  var val = (input.value || '').trim().toUpperCase();
-  if (!val) return;
-  if (val === 'ALL UK' || val === 'ALL UK ') { setDashAllUK(); input.value=''; return; }
-  if (val.indexOf(',') !== -1) {
-    val.split(',').forEach(function(v){ v=v.trim().toUpperCase(); if(v && dashboardAreas.indexOf(v)===-1) dashboardAreas.push(v); });
-  } else if (dashboardAreas.indexOf(val) === -1) {
-    dashboardAreas.push(val);
-  }
-  input.value = '';
-  renderDashAreas();
-}
+   var input = document.getElementById('settings-areas');
+   var val = (input.value || '').trim().toUpperCase();
+   var msg = document.getElementById('dash-area-msg');
+   if (!val) return;
+   if (/ALL.?UK|UK.?WIDE|NATIONWIDE/.test(val)) { setDashAllUK(); input.value=''; return; }
+   if (val.indexOf(',') !== -1) {
+     val.split(',').forEach(function(v){ v=v.trim().toUpperCase(); if(v && dashboardAreas.indexOf(v)===-1) dashboardAreas.push(v); });
+   } else if (dashboardAreas.indexOf(val) === -1) {
+     dashboardAreas.push(val);
+   }
+   var cap = parseInt(window.__postcodeAreaCap || '5', 10);
+   if (dashboardAreas.length > cap) {
+     dashboardAreas = dashboardAreas.slice(0, cap);
+     if (msg) { msg.textContent = 'You can select a maximum of ' + cap + ' postcode areas.'; msg.style.color = '#ef4444'; }
+   } else if (msg) { msg.textContent = ''; }
+   input.value = '';
+   renderDashAreas();
+ }
+ function saveDashAreas() {
+   var msg = document.getElementById('dash-area-msg');
+   var cap = parseInt(window.__postcodeAreaCap || '5', 10);
+   if (dashboardAreas.length !== cap) {
+     if (msg) { msg.textContent = 'Please pick exactly ' + cap + ' postcode areas before saving (you have ' + dashboardAreas.length + ').'; msg.style.color = '#ef4444'; }
+     return;
+   }
+   fetch('/api/auth/update-areas', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }, body: JSON.stringify({ areas: dashboardAreas }) })
+     .then(function(r){ return r.json(); })
+     .then(function(d){
+       if (d.success) { if (msg) { msg.textContent = 'Postcode areas saved: ' + d.areas.join(', '); msg.style.color = '#22c55e'; } }
+       else { if (msg) { msg.textContent = (d.error || 'Could not save areas') + (d.max_areas ? ' (max ' + d.max_areas + ')' : ''); msg.style.color = '#ef4444'; } }
+     })
+     .catch(function(e){ if (msg) { msg.textContent = 'Save error: ' + e.message; msg.style.color = '#ef4444'; } });
+ }
 function removeDashArea(a) {
   dashboardAreas = dashboardAreas.filter(function(x){ return x !== a; });
   renderDashAreas();

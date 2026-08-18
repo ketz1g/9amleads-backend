@@ -2420,6 +2420,24 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
   });
 });
 
+// POST /api/auth/update-areas — customer updates their postcode areas from the
+// dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
+// These areas are what delivery uses to send leads, so keeping them correct here
+// is what guarantees the customer only receives leads from their chosen areas.
+app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
+  try {
+    var areas = req.body && req.body.areas;
+    if (!Array.isArray(areas)) return res.status(400).json({ error: 'areas must be an array' });
+    var maxAreas = parseInt(process.env.MAX_POSTCODE_AREAS_PER_PLAN || '5', 10);
+    var bad = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
+    if (bad) return res.status(400).json({ error: 'Please pick up to ' + maxAreas + ' specific postcode areas. "All of UK" is not available.', invalid_area: true });
+    if (areas.length > maxAreas) return res.status(400).json({ error: 'Please choose at most ' + maxAreas + ' postcode areas.', too_many_areas: true, max_areas: maxAreas });
+    var clean = areas.map(function(a){ return String(a).toUpperCase().trim(); }).filter(Boolean);
+    db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(JSON.stringify(clean), req.user.id);
+    res.json({ success: true, areas: clean });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== PASSWORD RESET =====
 
 // POST /api/auth/forgot-password — send reset link

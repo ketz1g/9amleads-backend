@@ -472,18 +472,22 @@ function isValidPostcodeArea(code) { return VALID_POSTCODE_AREAS.includes(code);
 function addQuickArea(area) { var inp = document.getElementById('s-postcode-input'); if (inp) inp.value = area; addSignupPostcode(); }
 function setAllUK() { selectedCoverage = 'ukwide'; signupPostcodes = ['all-uk']; specCounties = []; renderSignupPostcodes(); }
 
-async function addSignupPostcode() {
-  var input = document.getElementById('s-postcode-input');
-  var area = (input?.value || '').trim();
-  var err = document.getElementById('s-postcode-error');
-  err.style.display = 'none';
-  if (!area || area.length < 1) { err.textContent = 'Please select or type an area'; err.style.display = 'block'; return; }
-  if (signupPostcodes.some(function(a) { return a.toLowerCase() === area.toLowerCase(); })) { err.textContent = '"' + area + '" already added'; err.style.display = 'block'; return; }
-  var limit = getPostcodeAreaLimit();
-  if (signupPostcodes.length >= limit && limit < 999) {
-    err.textContent = 'Your ' + getSelectedPlan() + ' plan requires up to ' + limit + ' ' + areaLabelText() + (isCountyBased() ? ' (minimum 3).' : '.') + ' Upgrade to Pro or Enterprise for unlimited areas.';
-    err.style.display = 'block'; return;
-  }
+ async function addSignupPostcode() {
+   var input = document.getElementById('s-postcode-input');
+   var area = (input?.value || '').trim();
+   var err = document.getElementById('s-postcode-error');
+   err.style.display = 'none';
+   if (!area || area.length < 1) { err.textContent = 'Please select or type an area'; err.style.display = 'block'; return; }
+   // Reject "all of UK" style selections — customers must pick specific areas.
+   if (/all.?uk|uk.?wide|nationwide|whole.?uk/i.test(area)) {
+     err.textContent = 'Please pick specific postcode areas (e.g. HA, EN, SW, B, CM) — "All of UK" is not available.'; err.style.display = 'block'; return;
+   }
+   if (signupPostcodes.some(function(a) { return a.toLowerCase() === area.toLowerCase(); })) { err.textContent = '"' + area + '" already added'; err.style.display = 'block'; return; }
+   var limit = getPostcodeAreaLimit();
+   if (signupPostcodes.length >= limit && limit < 999) {
+     err.textContent = 'Your ' + getSelectedPlan() + ' plan includes ' + limit + ' ' + areaLabelText() + '. Please pick exactly ' + limit + '.';
+     err.style.display = 'block'; return;
+   }
   signupPostcodes.push(area);
   input.value = '';
   renderSignupPostcodes();
@@ -513,24 +517,26 @@ function isCountyBased() {
   return types.some(function(t) { return COUNTY_BASED.indexOf(t) !== -1; });
 }
 function getPostcodeAreaLimit() {
-  var p = getSelectedPlan();
-  if (p === 'pro' || p === 'enterprise') return 999;
-  // Planning/Probate/Tenders use counties/areas with a 3-area minimum on
-  // free/starter. Moving/New Business use 5 postcode areas.
-  return isCountyBased() ? 3 : 5;
-}
+   var p = getSelectedPlan();
+   // All Moving plans are capped at 5 postcode areas (configurable). Pro/Enterprise
+   // previously returned 999 (unlimited), which let customers pick "all of UK".
+   var hardCap = parseInt(window.__postcodeAreaCap || '5', 10);
+   // Planning/Probate/Tenders use counties/areas with a 3-area minimum on
+   // free/starter. Moving/New Business use 5 postcode areas.
+   return isCountyBased() ? 3 : hardCap;
+ }
 function areaLabelText() {
   return isCountyBased() ? 'counties/areas' : 'postcode areas';
 }
 function updatePostcodeLimit() {
-  var label = document.getElementById('s-postcode-limit-label');
-  var limit = getPostcodeAreaLimit();
-  if (label) label.textContent = limit >= 999 ? 'unlimited' : String(limit);
-  var areaLabel = document.getElementById('s-area-label');
-  if (areaLabel) areaLabel.textContent = isCountyBased() ? '(select at least 3 counties/areas)' : '(select your postcode areas)';
-  renderSignupPostcodes();
-  onLeadTypeChange();
-}
+   var label = document.getElementById('s-postcode-limit-label');
+   var limit = getPostcodeAreaLimit();
+   if (label) label.textContent = limit >= 999 ? 'unlimited' : String(limit);
+   var areaLabel = document.getElementById('s-area-label');
+   if (areaLabel) areaLabel.textContent = isCountyBased() ? '(select at least 3 counties/areas)' : '(pick exactly 5 postcode areas — e.g. HA, EN, SW, B, CM)';
+   renderSignupPostcodes();
+   onLeadTypeChange();
+ }
 
 function renderSignupPostcodes() {
   var tags = document.getElementById('s-postcode-tags');
