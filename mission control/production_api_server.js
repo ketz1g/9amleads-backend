@@ -5272,10 +5272,16 @@ function leadHasUsableAddress(l, product) {
     if (product === 'newbusiness' || product === 'tenders' || product === 'planning') {
       return !!(addr || p.name || p.company) && pcOk;
     }
-    // Moving/probate: require a street address with a number + full postcode.
+    // Moving/probate: require a PROPER address (door number, flat number, or named
+    // property) + full postcode. Bare street names with no identifier are excluded.
     if (!pcOk) return false;
     var stripped = String(addr).replace(new RegExp(pc, 'g'), '').trim();
-    return /^\s*\d+[A-Za-z]?\s+[A-Z][A-Za-z'-]+/.test(stripped);
+    if (/^\d{1,5}[A-Za-z]?\s+[A-Z][A-Za-z'-]+/.test(stripped)) return true;           // door number
+    if (/^(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d{1,5}[A-Za-z]?\b/i.test(stripped)) return true; // flat number
+    var bareStreet = /^[A-Za-z''\-]+(?:\s+[A-Za-z''\-]+){0,2}\s+(road|street|lane|drive|close|avenue|gardens|terrace|mews|way|walk|row|view|crescent|grove|park|yard|wharf|quay|gate|side)\b/i.test(stripped);
+    if (bareStreet) return false;
+    var w = stripped.split(/[\s,]+/).filter(Boolean);
+    return w.length >= 2; // named property
   } catch(e) { return false; }
 }
 
@@ -7807,14 +7813,23 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // (house/flat number), NOT a digit in the postcode (e.g. EN2, HA6). So
           // strip the postcode out before testing, then look for a real number.
           function hasPremiseNumber(addr, pc) {
-            var a = String(addr || '').replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '');
-            // A REAL door number is a number that forms part of the STREET address,
-            // i.e. a number immediately before a street name: "12 High St", "1
-            // Hogarth Hill", "6 Rainhill Way". A bare "Flat 1" or a lone number is
-            // NOT a door number (named buildings have no street number) and must
-            // NOT satisfy this gate. This is what guarantees Print & Post reaches
-            // the right property.
-            return /\b(\d{1,5}[A-Za-z]?)\s+[A-Z][A-Za-z'-]+(?:\s+[A-Z][A-Za-z'-]+){0,3}\b/.test(a);
+            var a = String(addr || '').replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
+            if (!a) return false;
+            a = a.replace(/^[,\s]+/, '');
+            // A PROPER address must have a real identifier — a door number, a flat/
+            // apartment number, OR a named property (house name). It must NOT be a
+            // bare street name with no identifier (e.g. "Verdun Road", "St Julian's
+            // Farm Road"). This is what guarantees Print & Post reaches the right place.
+            // 1) Door number before a street: "12 High St", "1 Hogarth Hill"
+            if (/^\d{1,5}[A-Za-z]?\s+[A-Z][A-Za-z'-]+/.test(a)) return true;
+            // 2) Flat/apartment/unit + number: "Flat 12, Eaton Mansions", "Unit 5"
+            if (/^(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d{1,5}[A-Za-z]?\b/i.test(a)) return true;
+            // 3) BARE STREET: starts with a name then a street suffix, no number/flat/the
+            var bareStreet = /^[A-Za-z''\-]+(?:\s+[A-Za-z''\-]+){0,2}\s+(road|street|lane|drive|close|avenue|gardens|terrace|mews|way|walk|row|view|crescent|grove|park|yard|wharf|quay|gate|side)\b/i.test(a);
+            if (bareStreet) return false;
+            // 4) Named property (2+ words): "The Old Rectory", "Eaton Mansions", "Collingham Place"
+            var words = a.split(/[\s,]+/).filter(Boolean);
+            return words.length >= 2;
           }
           // Extract the door number already present in an address string (e.g.
           // "3 Bollinder Place" -> "3", "Valencia Tower, 3 Bollinder Place" -> "3").
