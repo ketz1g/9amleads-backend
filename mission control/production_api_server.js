@@ -6178,6 +6178,10 @@ async function trialAutoChargeCustomer(cust, opts) {
   var dryRun = !!opts.dryRun;
   var res2 = { email: cust.email, company: cust.company || '', product: cust.product || '', plan: cust.plan || '', trial_ends: cust.trial_ends || '' };
   try {
+    // KILL-SWITCH (applies to the admin /run endpoint too, not just the cron).
+    if (String(process.env.TRIAL_AUTO_CHARGE_ENABLED || 'false').toLowerCase() !== 'true' && !opts.force) {
+      res2.status = 'skip_disabled'; res2.message = 'Auto-charge disabled (TRIAL_AUTO_CHARGE_ENABLED != true)'; return res2;
+    }
     // Prereq checks (same as the cron)
     if (cust.plan !== 'free_trial') { res2.status = 'skip_not_free_trial'; res2.message = 'Not a free trial account'; return res2; }
     if (cust.trial_cancelled) { res2.status = 'skip_cancelled'; res2.message = 'Trial cancelled by customer'; return res2; }
@@ -6280,6 +6284,12 @@ async function trialAutoChargeCustomer(cust, opts) {
 }
 
 cron.schedule('0 8 * * *', async () => {
+  // KILL-SWITCH: TRIAL_AUTO_CHARGE_ENABLED must be explicitly 'true' for the
+  // auto-charge to run. Default OFF prevents any accidental/repeated charges.
+  if (String(process.env.TRIAL_AUTO_CHARGE_ENABLED || 'false').toLowerCase() !== 'true') {
+    console.log('[TRIAL AUTO-CHARGE] Disabled (TRIAL_AUTO_CHARGE_ENABLED != true) — skipping.');
+    return;
+  }
   console.log('[TRIAL AUTO-CHARGE] Checking expired trials...');
   try {
     var db = getDb();
