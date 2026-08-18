@@ -4096,7 +4096,20 @@ app.get('/api/admin/customer-leads', adminAuth, (req, res) => {
     var rows = undelivered.map(function(l) {
       var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
       var fv = d.scrapedAt || d.firstVisibleDate || d.updateDate || d.incorporationDate || d.publishedDate || d.receivedDate || l.created_at || '';
-      return { id: l.id, product: l.product, created_at: l.created_at, release_at: l.release_at || '', postcode: d.postcode || '', address: (d.address || '').substring(0, 40), scrapedAt: (d.scrapedAt || ''), firstVisibleDate: (d.firstVisibleDate || ''), freshness: fv, fresh24: !!(fv && fv >= freshCutoff) };
+      // Product-appropriate address display:
+      //  probate   -> deceasedAddress (the deceased's registered address)
+      //  moving    -> fullAddress / address
+      //  newbusiness/tenders/planning -> name/company + address as available
+      var addr = '';
+      if (l.product === 'probate') addr = d.deceasedAddress || d.fullAddress || d.address || d.name || '';
+      else if (l.product === 'moving') addr = d.fullAddress || d.address || '';
+      else addr = d.address || d.name || d.company || d.title || '';
+      // Normalise postcode (add the inward-code space, e.g. "B783XA" -> "B78 3XA").
+      var pcRaw = String(d.postcode || '').toUpperCase().replace(/\s+/g, '');
+      var pc = pcRaw;
+      var pcM = pcRaw.match(/^([A-Z]{1,2}\d[A-Z\d]?)(\d[A-Z]{2})$/);
+      if (pcM) pc = pcM[1] + ' ' + pcM[2];
+      return { id: l.id, product: l.product, created_at: l.created_at, release_at: l.release_at || '', postcode: pc, address: (addr || '').replace(/\n+/g, ', ').substring(0, 60), scrapedAt: (d.scrapedAt || ''), firstVisibleDate: (d.firstVisibleDate || ''), freshness: fv, fresh24: !!(fv && fv >= freshCutoff) };
     }).sort(function(a, b) { return (b.freshness || '').localeCompare(a.freshness || ''); });
     res.json({ success: true, email: email, plan: cust.plan, product: cust.product, target_areas: cust.target_areas || '', undelivered_total: undelivered.length, fresh24_count: rows.filter(function(r) { return r.fresh24; }).length, leads: rows });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -6955,7 +6968,10 @@ app.get('/api/admin/moving-leads-log', adminAuth, (req, res) => {
         var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
         var fv = d.firstListedAt || d.firstVisibleDate || d.scrapedAt || d.updateDate || l.created_at || '';
         var addr = d.fullAddress || d.address || '';
-        var pc = d.postcode || '';
+        var pcRaw = String(d.postcode || '').toUpperCase().replace(/\s+/g, '');
+        var pc = pcRaw;
+        var pcM = pcRaw.match(/^([A-Z]{1,2}\d[A-Z\d]?)(\d[A-Z]{2})$/);
+        if (pcM) pc = pcM[1] + ' ' + pcM[2];
         // Door-number check: a number before a street name (postcode stripped).
         var stripped = String(addr).replace(new RegExp(String(pc).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
         var hasNum = /^\s*\d+[A-Za-z]?\s+[A-Z][A-Za-z'-]+/.test(stripped);
