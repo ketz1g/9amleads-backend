@@ -7253,11 +7253,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
       if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
       
-      // Use per-product limits based on lead type and coverage area
-      var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 15, enterprise: 40 };
-      // Probate-specific fallback (getPlanLimit reads LEAD_TYPE_RULES, but if that
-      // ever returns 0 for probate use these reduced counts that match supply).
-      if (cust.product === 'probate') dailyLimitByPlan = { free_trial: 2, starter: 2, pro: 5, enterprise: 10 };
+      // Use per-product limits based on lead type and coverage area.
+      // getPlanLimit() (LEAD_TYPE_RULES) is the single source of truth and always
+      // returns a value. This fallback only covers the impossible case where it
+      // returns 0/falsy; kept in sync with LEAD_TYPE_RULES so it can never diverge.
+      var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 10, enterprise: 15 };
       var totalDailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || dailyLimitByPlan[cust.plan] || 5;
       
       // Get all products for this customer (round-robin)
@@ -15616,7 +15616,11 @@ function syncCustomers(product) {
               // within 24-48h but an old firstVisibleDate is treated as fresh too
               // (recently updated = active marketing = likely to move soon).
               function leadFreshBucket(l) {
-                var fv = l.firstVisibleDate || '';
+                // Prefer Rightmove's own stable listing date. If the source didn't
+                // provide one, fall back to OUR first_seen_at (first sight of the
+                // property — never reset on re-sight), then scrapedAt. This guarantees
+                // a previously-seen property can never be re-bucketed as "new".
+                var fv = l.firstVisibleDate || l.first_seen_at || '';
                 var up = l.updateDate || '';
                 var now = new Date();
                 var t24 = new Date(now - 24 * 3600000).toISOString();
@@ -15848,6 +15852,15 @@ function syncCustomers(product) {
           if (k && !seenIds.has(k) && isPoolLeadFresh(l)) { seenIds.add(k); merged.push(l); }
         });
         leads = merged.filter(isPoolLeadFresh).slice(0, 5000);
+        // CENTRAL PROPERTY STORE: record each property id once and preserve its
+        // first_seen_at across runs (never reset when a property reappears). Attach
+        // first_seen_at/last_seen_at to each pool lead so freshness is always judged
+        // against the ORIGINAL first sight, not today's re-sight. Applies to all
+        // products; moving is the primary beneficiary.
+        try {
+          var propStore = require('./property_store');
+          leads = (leads || []).map(function(pl) { return propStore.enrichLead(pl); });
+        } catch(pe) { console.log('[SCRAPER] Property store error:', pe.message); }
         if (!leads || leads.length === 0) { leads = []; }
         fs.writeFileSync(poolPath, JSON.stringify(leads, null, 2));
         // Only mark "scraped today" if we actually got leads. If a source returns

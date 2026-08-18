@@ -336,6 +336,21 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
     if (process.env.POSTCODER_ENABLED !== 'true' && process.env.POSTCODER_ENABLED !== '1') {
       return resolve(null);
     }
+    const cleanPc = (postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!cleanPc) return resolve(null);
+
+    // CACHE-FIRST: if we've already validated this postcode, reuse the stored PAF
+    // address array. This avoids paying Postcoder for identical information.
+    let addresses = null;
+    try {
+      const pcCache = require('./postcoder_cache');
+      addresses = pcCache.get(cleanPc);
+    } catch(ce) { /* cache unavailable — fall through to live lookup */ }
+
+    if (addresses && Array.isArray(addresses) && addresses.length) {
+      return resolve(matchPafAddress(addresses, cleanPc, streetHint, doorNumber));
+    }
+
     // SHARED DAILY-CREDIT GUARD: spend through the single daily budget counter.
     // Without this, every path (scraper x2/day, distributor, delivery, admin)
     // spends up to POSTCODER_DAILY_BUDGET independently → credits burn 3-4x
@@ -349,8 +364,6 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
     } catch(pe) { console.log('[POSTCODER] Budget guard error:', pe.message); }
     const key = process.env.POSTCODER_API_KEY;
     if (!key) return resolve(null);
-    const cleanPc = (postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (!cleanPc) return resolve(null);
     const opts = {
       hostname: 'ws.postcoder.com',
       path: '/pcw/' + key + '/address/uk/' + cleanPc + '?format=json&lines=3&page=0',
@@ -369,46 +382,14 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
         }
         if (res.statusCode !== 200) { resolve(null); return; }
         try {
-          const addresses = JSON.parse(body);
-          if (!Array.isArray(addresses) || addresses.length === 0) { resolve(null); return; }
-          // Normalise the Rightmove street hint for matching
-          const hint = (streetHint || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-          if (hint) {
-          // If we know the exact door number (from the property photo via vision),
-          // we REQUIRE a PAF address whose building number matches it. The whole
-          // point is accuracy for Print & Post: we must never guess a number. So if
-          // PAF cannot confirm this exact number in this postcode, reject the lead
-          // (return null) rather than fall back to a wrong-numbered address.
-          if (doorNumber) {
-            const dn = String(doorNumber).toUpperCase().replace(/[^A-Z0-9]/g, '');
-            const numberMatch = addresses.find(function(a) {
-              const n = String(a.number || a.premise || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-              return n === dn || (n && dn && n.indexOf(dn) !== -1);
-            });
-            if (numberMatch) return resolve({
-              fullAddress: numberMatch.summaryline || numberMatch.addressline1 || '',
-              address1: numberMatch.addressline1 || '',
-              street: numberMatch.street || '',
-              buildingNumber: numberMatch.number || numberMatch.premise || '',
-              town: numberMatch.posttown || numberMatch.county || '',
-              postcode: numberMatch.postcode || cleanPc,
-              udprn: numberMatch.udprn || ''
-            });
-            // The vision hint didn't match a PAF building number directly (e.g. the
-            // hint read "Flat 1" but the building number is "52"). That's fine — the
-            // PAF address is authoritative, so fall through to pick a street match
-            // that HAS a real building number. We never guess: we only ever use a
-            // number that PAF publishes.
-            console.log('[POSTCODER] Door number hint ' + dn + ' did not directly match PAF for ' + cleanPc + ' — using PAF building number.');
-          }
-          // No door number known: we must NEVER guess. Picking the first numbered
-          // address on the street (e.g. "1 Moncrieff Close") would ship a WRONG
-          // address to print & post. So when we don't have a reliable number, we
-          // reject the lead — accuracy over count. The customer gets only leads
-          // whose exact house number we can confirm.
-          }
-          // No confirmable address -> reject (accuracy over count).
-          return resolve(null);
+          const parsed = JSON.parse(body);
+          if (!Array.isArray(parsed) || parsed.length === 0) { resolve(null); return; }
+          // Cache the successful result so the next lookup for this postcode is free.
+          try {
+            const pcCache = require('./postcoder_cache');
+            pcCache.set(cleanPc, parsed);
+          } catch(ce) {}
+          resolve(matchPafAddress(parsed, cleanPc, streetHint, doorNumber));
         } catch(e) { resolve(null); }
       });
     });
@@ -416,6 +397,51 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
     req.setTimeout(20000, () => { req.destroy(); resolve(null); });
     req.end();
   });
+}
+
+// Match a cleaned postcode + (optional) street hint / door number against a PAF
+// address array. Extracted from lookupPostcoderAddress so the same matching logic
+// runs identically on a cached result or a fresh Postcoder response.
+function matchPafAddress(addresses, cleanPc, streetHint, doorNumber) {
+  if (!Array.isArray(addresses) || addresses.length === 0) return null;
+  // Normalise the Rightmove street hint for matching
+  const hint = (streetHint || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (hint) {
+    // If we know the exact door number (from the property photo via vision),
+    // we REQUIRE a PAF address whose building number matches it. The whole
+    // point is accuracy for Print & Post: we must never guess a number. So if
+    // PAF cannot confirm this exact number in this postcode, reject the lead
+    // (return null) rather than fall back to a wrong-numbered address.
+    if (doorNumber) {
+      const dn = String(doorNumber).toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const numberMatch = addresses.find(function(a) {
+        const n = String(a.number || a.premise || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        return n === dn || (n && dn && n.indexOf(dn) !== -1);
+      });
+      if (numberMatch) return {
+        fullAddress: numberMatch.summaryline || numberMatch.addressline1 || '',
+        address1: numberMatch.addressline1 || '',
+        street: numberMatch.street || '',
+        buildingNumber: numberMatch.number || numberMatch.premise || '',
+        town: numberMatch.posttown || numberMatch.county || '',
+        postcode: numberMatch.postcode || cleanPc,
+        udprn: numberMatch.udprn || ''
+      };
+      // The vision hint didn't match a PAF building number directly (e.g. the
+      // hint read "Flat 1" but the building number is "52"). That's fine — the
+      // PAF address is authoritative, so fall through to pick a street match
+      // that HAS a real building number. We never guess: we only ever use a
+      // number that PAF publishes.
+      console.log('[POSTCODER] Door number hint ' + dn + ' did not directly match PAF for ' + cleanPc + ' — using PAF building number.');
+    }
+    // No door number known: we must NEVER guess. Picking the first numbered
+    // address on the street (e.g. "1 Moncrieff Close") would ship a WRONG
+    // address to print & post. So when we don't have a reliable number, we
+    // reject the lead — accuracy over count. The customer gets only leads
+    // whose exact house number we can confirm.
+  }
+  // No confirmable address -> reject (accuracy over count).
+  return null;
 }
 
 // Fetch a property's detail page to extract the full address and postcode

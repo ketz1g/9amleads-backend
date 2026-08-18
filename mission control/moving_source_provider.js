@@ -747,6 +747,13 @@ function postcoderVerifyUprn(uprn) {
     if (process.env.POSTCODER_ENABLED !== 'true' && process.env.POSTCODER_ENABLED !== '1') return resolve(null);
     const key = process.env.POSTCODER_API_KEY;
     if (!key || !uprn) return resolve(null);
+    // CACHE-FIRST: UPRNs are stable and immutable — never re-pay Postcoder for a
+    // UPRN we've already validated.
+    try {
+      const pcCache = require('./postcoder_cache');
+      const cached = pcCache.getUprn(uprn);
+      if (cached) return resolve(cached);
+    } catch(ce) {}
     API_USAGE.postcoderCalls++;
     const path = '/pcw/' + key + '/addressbase/uk/' + uprn + '?format=json&lines=1';
     https.get({ hostname: 'ws.postcoder.com', path: path, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 20000 }, function(res) {
@@ -758,7 +765,7 @@ function postcoderVerifyUprn(uprn) {
           const items = JSON.parse(b);
           if (!Array.isArray(items) || items.length === 0) return resolve(null);
           const a = items[0];
-          resolve({
+          const result = {
             fullAddress: a.summaryline || a.addressline1 || '',
             houseNumber: a.number || a.premise || a.buildingname || '',
             street: a.street || '',
@@ -767,7 +774,12 @@ function postcoderVerifyUprn(uprn) {
             udprn: a.udprn || null,
             latitude: a.latitude || null,
             longitude: a.longitude || null
-          });
+          };
+          try {
+            const pcCache = require('./postcoder_cache');
+            pcCache.setUprn(uprn, result);
+          } catch(ce) {}
+          resolve(result);
         } catch(e) { resolve(null); }
       });
     }).on('error', function() { resolve(null); });
