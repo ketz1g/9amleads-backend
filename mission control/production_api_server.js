@@ -8114,6 +8114,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 if (!farea) continue;
                 var fAddr = fl.fullAddress || fl.address || '';
                 var fld = Object.assign({}, fl, { id: fl.id, address: fAddr, postcode: fl.postcode || '', product: fprod });
+                // FREE detail-page enrich first: if the pool lead has a Rightmove URL,
+                // fetch its detail page (free, no Postcoder) to get the full door-numbered
+                // address + postcode. This is what gives pool leads real street numbers.
+                if (fl.url && !/^\s*\d+[A-Za-z]?[\s,]/i.test(fAddr)) {
+                  try { var fdDetail = await pcDeliver.fetchPropertyDetail(fl.url); if (fdDetail && fdDetail.fullAddress) { fld.address = fdDetail.fullAddress; fld.fullAddress = fdDetail.fullAddress; if (fdDetail.postcode) fld.postcode = fdDetail.postcode; } } catch(fde) {}
+                }
                 var fenr = await pcDeliver.enrichMovingLeadsPostcoder([fld]);
                 // Accept a lead if it has a valid postcode + address (deliverable).
                 // A confirmed buildingNumber is preferred but not required — the
@@ -15536,10 +15542,12 @@ function syncCustomers(product) {
             try {
               var noPcFirst = leads.filter(function(l) { return !l.postcode; });
               var hasPcThen = leads.filter(function(l) { return !!l.postcode; });
-              // Bounded Rightmove detail enrichment (free but slow) — 300 is enough
-              // to get postcodes for the freshest leads; Postcoder (below) handles
-              // the door-number guarantee efficiently and reliably for the rest.
-              var toEnrich = noPcFirst.concat(hasPcThen).slice(0, 300);
+              // Enrich ALL leads via the FREE Rightmove detail page (gives door number +
+              // street + postcode). This is free (no Postcoder credits), so we cover every
+              // fresh lead so the pool is fully address-complete and the final-guarantee
+              // pass never pulls a bare street-name lead. Bounded for runtime.
+              var enrichCap = parseInt(process.env.MOVING_ENRICH_CAP || '500', 10);
+              var toEnrich = noPcFirst.concat(hasPcThen).slice(0, enrichCap);
               var enrichedNow = await rmScraper.enrichMovingLeads(toEnrich, 8);
               var enrichedMap = {};
               enrichedNow.forEach(function(le) { enrichedMap[le.id] = le; });
