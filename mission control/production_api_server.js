@@ -7671,6 +7671,51 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                       company: rl.companyName || rl.name || rl.company || '',
                       companyNumber: rl.companyNumber || ''
                     };
+                    // MOVING COMPLETENESS GATE: moving leads must carry a FULL
+                    // postcode AND a confirmed house/door/flat number + street (so the
+                    // customer can actually mail them) AND a listing URL. The pool
+                    // usually only has outcode-level postcodes and bare street names,
+                    // so we fetch the free Rightmove detail page to get the numbered
+                    // address + full postcode, then PAF-verify the door number. If we
+                    // can't confirm all of this, skip the lead — the loop keeps going
+                    // until we find complete leads or fresh supply is exhausted.
+                    if (r2prod === 'moving') {
+                      var fRawAddr = poolLeadData.address || '';
+                      var fRawPc = poolLeadData.postcode || '';
+                      var fHasNum = hasPremiseNumber(fRawAddr, fRawPc);
+                      var fHasFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(fRawPc).trim());
+                      if (!(fHasNum && fHasFullPc) && rl.url) {
+                        try {
+                          var fdDetail = await pcDeliver.fetchPropertyDetail(rl.url);
+                          if (fdDetail && fdDetail.fullAddress) {
+                            poolLeadData.address = fdDetail.fullAddress;
+                            if (fdDetail.postcode) poolLeadData.postcode = fdDetail.postcode;
+                          }
+                        } catch(fde) {}
+                      }
+                      // If we still don't have a numbered full address, PAF-verify.
+                      var fCurrPc = poolLeadData.postcode || '';
+                      if (!(hasPremiseNumber(poolLeadData.address || '', fCurrPc) && /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(fCurrPc).trim()))) {
+                        try {
+                          var fenrArr = await pcDeliver.enrichMovingLeadsPostcoder([poolLeadData]);
+                          if (fenrArr && fenrArr[0]) {
+                            var fe = fenrArr[0];
+                            if (fe.fullAddress || fe.address) poolLeadData.address = fe.fullAddress || fe.address;
+                            if (fe.postcode) poolLeadData.postcode = fe.postcode;
+                            if (fe.buildingNumber) poolLeadData.buildingNumber = fe.buildingNumber;
+                            if (fe.street) poolLeadData.street = fe.street;
+                          }
+                        } catch(fe2) {}
+                      }
+                      // COMPLETENESS CHECK: must have number + street + full postcode + url.
+                      var finAddr = poolLeadData.address || '';
+                      var finPc = poolLeadData.postcode || '';
+                      var finNum = hasPremiseNumber(finAddr, finPc);
+                      var finFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(finPc).trim());
+                      if (!finNum || !finFullPc) { console.log('[DELIVERY] Pool fallback SKIP incomplete moving lead: pc=' + finPc + ' addr=' + (finAddr||'').substring(0,40)); continue; }
+                      // Listing link is required too.
+                      if (!rl.url && !poolLeadData.url) { console.log('[DELIVERY] Pool fallback SKIP moving lead without listing URL'); continue; }
+                    }
                     // NEVER create a duplicate of a property already assigned/delivered
                     // to this customer. Check by address/postcode/url, AND for
                     // newbusiness by company number (many companies share a registered
