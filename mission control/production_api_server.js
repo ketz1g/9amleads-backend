@@ -15089,7 +15089,7 @@ function syncCustomers(product) {
                 var mlcMspMod = require('./moving_source_provider.js');
                 var propInst = new mlcMspMod.PropaltProvider();
                 var pRes = await mlcMod.collect({
-                  customers: (function(){ return (getDb().customers || []).filter(function(c){ return c.product === 'moving' || ((c.biz_field3||'').indexOf('moving') !== -1); }).map(function(c){ return { id: c.id || c.email, plan: c.plan || 'starter', moving_areas: cAreas || mvAreas || ['N','HA'] }; }); })(),
+                  customers: (function(){ return (getDb().customers || []).filter(function(c){ return c.product === 'moving' || ((c.biz_field3||'').indexOf('moving') !== -1); }).map(function(c){ return { id: c.id || c.email, plan: c.plan || 'starter', moving_areas: mvAreas || ['N','HA'] }; }); })(),
                   existingInventory: [],
                   existingAllocations: [],
                   usageLog: [],
