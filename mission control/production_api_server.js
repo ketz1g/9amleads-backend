@@ -5847,7 +5847,26 @@ cron.schedule('0 9 * * 1-5', async () => {
   timezone: 'Europe/London'
 });
 
-// TEST DELIVERY CRON: periodically delivers to the TEST account (test.moving1)
+// TEMP TEST CRON (2026-08-19, remove after): fire once at 12:15 UK and deliver to
+// the TEST accounts + hello@9amleads.com ONLY - never real customers.
+cron.schedule('15 12 * * *', async () => {
+  console.log('[TEST-CRON] 12:15 test delivery to test accounts');
+  var testEmails = ['hello@9amleads.com', 'test.moving1@gmail.com', 'test.probate1@gmail.com', 'test.planning1@gmail.com', 'test.newbusiness1@gmail.com', 'test.tenders1@gmail.com'];
+  for (var tei = 0; tei < testEmails.length; tei++) {
+    try {
+      await new Promise(function(resolve) {
+        const http2 = require('http');
+        var b2 = JSON.stringify({ customer_email: testEmails[tei], force: true });
+        var rq2 = http2.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b2) } }, function(rp2) { var bb=''; rp2.on('data', function(c){ bb+=c; }); rp2.on('end', resolve); });
+        rq2.on('error', function(){ resolve(); });
+        rq2.write(b2); rq2.end();
+      });
+      console.log('[TEST-CRON] delivered to ' + testEmails[tei]);
+    } catch(e) { console.log('[TEST-CRON] error ' + testEmails[tei] + ': ' + e.message); }
+  }
+}, {
+  timezone: 'Europe/London'
+});
 // ONLY — never real customers. This validates the full pipeline (fresh lead ->
 // door-number resolution -> exact count) without affecting production customers.
 // Enabled via MOVING_TEST_DELIVERY=true. Runs every 30 min during working hours.
