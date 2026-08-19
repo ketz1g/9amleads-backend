@@ -662,21 +662,23 @@ async function viewCustomerLeads(email) {
     overlay.style.display = 'flex';
   }
   try {
-    const r = await fetch(API + '/api/admin/customer-leads?email=' + encodeURIComponent(email), { headers: adminHeaders() });
+    const r = await fetch(API + '/api/admin/customer-dashboard?email=' + encodeURIComponent(email), { headers: adminHeaders() });
     if (!r.ok) { buildModal('Leads', '<div style="color:#ef4444">Could not load leads</div>'); return; }
     const d = await r.json();
-    let h = '<div style="margin-bottom:10px;font-size:13px;color:#e2e8f0"><strong>' + email + '</strong> · ' + d.product + ' · plan: ' + d.plan + ' · undelivered: ' + d.undelivered_total + '</div>';
+    let h = '<div style="margin-bottom:10px;font-size:13px;color:#e2e8f0"><strong>' + email + '</strong> · ' + d.product + ' · plan: ' + d.plan + ' · areas: ' + (d.areas || '-') + ' · ' + d.delivered + ' delivered / ' + d.pending + ' pending</div>';
     if (!d.leads || d.leads.length === 0) {
-      h += '<div style="color:#5c6480">No undelivered leads for this customer.</div>';
+      h += '<div style="color:#5c6480">No leads for this customer.</div>';
     } else {
-      h += '<table style="width:100%;border-collapse:collapse"><tr style="background:rgba(148,163,184,0.1)"><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Address</th><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Postcode</th><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Fresh</th></tr>';
+      h += '<table style="width:100%;border-collapse:collapse"><tr style="background:rgba(148,163,184,0.1)"><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Status</th><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Address</th><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Postcode</th><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Door/Flat</th><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Full PC</th></tr>';
       d.leads.forEach(function(l) {
-        var fresh = l.fresh24 ? '<span style="color:#22c55e">24h</span>' : '<span style="color:#eab308">48h</span>';
-        h += '<tr><td style="padding:6px;font-size:12px">' + (l.address || '-') + '</td><td style="padding:6px;font-size:12px">' + (l.postcode || '-') + '</td><td style="padding:6px;font-size:12px">' + fresh + '</td></tr>';
+        var st = l.status === 'delivered' ? '<span style="color:#22c55e">delivered</span>' : '<span style="color:#eab308">pending</span>';
+        var ok = l.has_door_or_flat_number ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#ef4444">✗</span>';
+        var pc = l.full_postcode ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#ef4444">✗</span>';
+        h += '<tr><td style="padding:6px;font-size:12px">' + st + '</td><td style="padding:6px;font-size:12px">' + (l.address || '-').replace(/\n+/g, ', ') + '</td><td style="padding:6px;font-size:12px">' + (l.postcode || '-') + '</td><td style="padding:6px;font-size:12px">' + ok + '</td><td style="padding:6px;font-size:12px">' + pc + '</td></tr>';
       });
       h += '</table>';
     }
-    buildModal('Customer Leads', h);
+    buildModal('Customer Dashboard: ' + email, h);
   } catch (e) { buildModal('Leads', '<div style="color:#ef4444">Error: ' + e.message + '</div>'); }
 }
 
