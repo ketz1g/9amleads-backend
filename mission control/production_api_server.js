@@ -233,6 +233,19 @@ function interleavePoolByAreas(poolArr, custAreas) {
     if (!buckets[b]) buckets[b] = [];
     buckets[b].push(poolArr[bi]);
   }
+  // Sort each bucket: leads that ALREADY have a door number / single-premise
+  // building FIRST, then newest first. The final-guarantee + top-up passes pick
+  // from this interleaved list, and those leads can be confirmed WITHOUT spending
+  // Postcoder credits - maximising how many of the promised count actually deliver.
+  Object.keys(buckets).forEach(function(bk) {
+    buckets[bk].sort(function(a, b) {
+      function premise(l) { try { var dd = JSON.parse(l.data || '{}'); return hasPremiseNumber(dd.fullAddress || dd.address || dd.deceasedAddress || '', dd.postcode || '') ? 1 : 0; } catch(e) { return 0; } }
+      var pa = premise(a), pb = premise(b);
+      if (pa !== pb) return pb - pa;
+      function fresh(l) { try { var dd = JSON.parse(l.data || '{}'); return new Date(dd.firstVisibleDate || dd.updateDate || 0).getTime(); } catch(e) { return 0; } }
+      return fresh(b) - fresh(a);
+    });
+  });
   // Preferred bucket order: the customer's own areas first (in their chosen order),
   // then any other areas the pool happens to contain.
   var order = [];
