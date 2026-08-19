@@ -2,6 +2,9 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Admin | 9amLeads</title>
 <meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
@@ -440,7 +443,7 @@ function renderCustomers(customers) {
       '<td style="font-size:11px">' + bookedVal + ' <span style="color:#5c6480">(' + convPct + '%)</span></td>' +
       '<td>' + hasCrm + '</td>' +
       '<td style="font-size:11px;color:#5c6480">' + signupDate + '</td>' +
-      '<td><div style="display:flex;gap:3px"><button type="button" class="btn btn-view btn-sm" onclick="event.preventDefault();event.stopPropagation();window.open(\'/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '\', \'_blank\')" title="View leads (opens in new tab)"><i class="fas fa-list"></i></button><button type="button" class="btn btn-view btn-sm" onclick="loginAs(\'' + c.id + '\')" title="View details"><i class="fas fa-eye"></i></button><button type="button" class="btn btn-view btn-sm" onclick="impersonateCustomer(\'' + c.id + '\',\'' + (c.email || '').replace(/'/g,"\\'") + '\')" title="Login as customer" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i></button></div></td></tr>';
+      '<td><div style="display:flex;gap:3px"><button type="button" class="btn btn-view btn-sm" onclick="event.preventDefault();event.stopPropagation();window.open(\'/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '\', \'_blank\')" title="View leads (opens in new tab)"><i class="fas fa-list"></i></button><button type="button" class="btn btn-view btn-sm" onclick="event.preventDefault();event.stopPropagation();loginAs(\'' + c.id + '\')" title="View details (opens in new tab)"><i class="fas fa-eye"></i></button><button type="button" class="btn btn-view btn-sm" onclick="event.preventDefault();event.stopPropagation();impersonateCustomer(\'' + c.id + '\',\'' + (c.email || '').replace(/'/g,"\\'") + '\')" title="Login as customer (opens in new tab)" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i></button></div></td></tr>';
   }).join('');
 }
 

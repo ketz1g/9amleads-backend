@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Customer Dashboard | 9amLeads Admin</title>
 <meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -95,7 +98,9 @@ async function openCustomerDashboard() {
     var ij = await imp.json();
     if (!ij.token) { alert('Impersonation failed: ' + (ij.error || 'unknown')); return; }
     localStorage.setItem('mld_portal_session', JSON.stringify({ token: ij.token, clientId: cust.id, name: 'Admin', plan: cust.plan || 'free_trial', email: cust.email || '', product: cust.product || 'moving', admin_impersonating: true, impersonated_by: 'Admin' }));
-    window.location.href = '/portal/dashboard.html';
+    // ALWAYS open the customer dashboard in a NEW TAB - never navigate this page
+    // away (the admin/leads view stays open permanently).
+    window.open('/portal/dashboard.html', '_blank');
   } catch(e) { alert('Error: ' + e.message); }
 }
 load();
