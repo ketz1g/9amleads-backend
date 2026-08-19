@@ -482,6 +482,21 @@ function setAllUK() { selectedCoverage = 'ukwide'; signupPostcodes = ['all-uk'];
    if (/all.?uk|uk.?wide|nationwide|whole.?uk/i.test(area)) {
      err.textContent = 'Please pick specific postcode areas (e.g. HA, EN, SW, B, CM) — "All of UK" is not available.'; err.style.display = 'block'; return;
    }
+   // Must be a valid postcode AREA (e.g. L, SW, EN, CM) from the UK list — NOT a
+   // district (e.g. L36) or an arbitrary code. We match on the area's first 1-2
+   // letters against the official list so customers pick whole areas.
+   var areaNorm = area.toUpperCase();
+   var validArea = VALID_POSTCODE_AREAS.some(function(a) { return a === areaNorm || (areaNorm.length >= 3 && areaNorm.indexOf(a) === 0 && VALID_POSTCODE_AREAS.indexOf(areaNorm.substring(0, areaNorm.length <= 2 ? areaNorm.length : 2)) !== -1); });
+   var validExact = VALID_POSTCODE_AREAS.indexOf(areaNorm) !== -1;
+   if (!validExact) {
+     var two = areaNorm.substring(0, 2);
+     if (VALID_POSTCODE_AREAS.indexOf(two) !== -1) {
+       // "L36" -> area "L" — normalise to the AREA code
+       area = two;
+     } else {
+       err.textContent = '"' + area + '" is not a UK postcode area. Pick from the list (e.g. L for Liverpool, M for Manchester, SW, EN, CM).'; err.style.display = 'block'; return;
+     }
+   }
    if (signupPostcodes.some(function(a) { return a.toLowerCase() === area.toLowerCase(); })) { err.textContent = '"' + area + '" already added'; err.style.display = 'block'; return; }
    var limit = getPostcodeAreaLimit();
    if (signupPostcodes.length >= limit && limit < 999) {
