@@ -5906,10 +5906,10 @@ cron.schedule('0 9 * * 1-5', async () => {
   timezone: 'Europe/London'
 });
 
-// TEMP TEST CRON (2026-08-19, remove after): fire at 16:00 UK and deliver to
+// TEMP TEST CRON (2026-08-19, remove after): fire at 17:30 UK and deliver to
 // the TEST accounts + hello@9amleads.com ONLY - never real customers.
-cron.schedule('0 16 * * *', async () => {
-  console.log('[TEST-CRON] 16:00 test delivery to test accounts');
+cron.schedule('30 17 * * *', async () => {
+  console.log('[TEST-CRON] 17:30 test delivery to test accounts');
   var testEmails = ['hello@9amleads.com', 'test.moving1@gmail.com', 'test.probate1@gmail.com', 'test.planning1@gmail.com', 'test.newbusiness1@gmail.com', 'test.tenders1@gmail.com'];
   for (var tei = 0; tei < testEmails.length; tei++) {
     try {
