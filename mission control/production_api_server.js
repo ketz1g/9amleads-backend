@@ -16097,9 +16097,9 @@ function syncCustomers(product) {
               // street + postcode). This is free (no Postcoder credits), so we cover every
               // fresh lead so the pool is fully address-complete and the final-guarantee
               // pass never pulls a bare street-name lead. Bounded for runtime.
-              var enrichCap = parseInt(process.env.MOVING_ENRICH_CAP || '500', 10);
+              var enrichCap = parseInt(process.env.MOVING_ENRICH_CAP || '250', 10);
               var toEnrich = noPcFirst.concat(hasPcThen).slice(0, enrichCap);
-              var enrichedNow = await rmScraper.enrichMovingLeads(toEnrich, 8);
+              var enrichedNow = await rmScraper.enrichMovingLeads(toEnrich, 4);
               var enrichedMap = {};
               enrichedNow.forEach(function(le) { enrichedMap[le.id] = le; });
               leads = leads.map(function(l) { return enrichedMap[l.id] || l; });
