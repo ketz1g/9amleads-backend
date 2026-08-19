@@ -55,6 +55,14 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 .empty{text-align:center;padding:24px;color:#5c6480;font-size:13px}
 .pulse{animation:pulse 1.5s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* Sticky top nav — same structure as the customer dashboard so navigation never
+   depends on hovering table rows. */
+.top{background:#0d0f1a;border-bottom:1px solid #1e2030;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:8px}
+.top .logo{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:#f1f5f9}.top .logo span{color:#0ea5e9}
+.top .nav{display:flex;gap:4px;flex-wrap:wrap}
+.top .nav a{padding:8px 14px;font-size:13px;font-weight:500;color:#8890a8;text-decoration:none;border-radius:6px;transition:.2s;white-space:nowrap}
+.top .nav a:hover{color:#f1f5f9;background:rgba(255,255,255,0.05)}
+.top .nav a.active{color:#fff;background:rgba(14,165,233,0.15);font-weight:700}
 </style>
 </head>
 <body>
@@ -70,6 +78,18 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 </div>
 
 <div class="container" id="adminPage" style="display:none">
+<div class="top">
+<div class="logo">9am<span>Leads</span> <span style="font-size:12px;font-weight:600;color:#5c6480">Admin</span></div>
+<div class="nav">
+<a href="/portal/admin.html" class="active"><i class="fas fa-gauge-high"></i> Overview</a>
+<a href="/portal/admin.html#customerTable"><i class="fas fa-users"></i> Customers</a>
+<a href="/portal/admin.html#healthCard"><i class="fas fa-heart-pulse"></i> Health</a>
+<a href="/portal/admin.html#fulfilmentTable"><i class="fas fa-clipboard-check"></i> Fulfilment</a>
+<a href="/portal/seo.html"><i class="fas fa-magnifying-glass"></i> SEO</a>
+<a href="/portal/"><i class="fas fa-arrow-right-to-bracket"></i> Portal</a>
+<button class="btn btn-outline btn-sm" onclick="adminLogout()" style="margin-left:4px"><i class="fas fa-sign-out-alt"></i> Logout</button>
+</div>
+</div>
 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px">
 <div><div style="display:flex;align-items:center;gap:8px"><div style="width:32px;height:32px;background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;font-family:'Outfit',sans-serif">9</div><h1 style="margin-bottom:0">9am<span>Leads</span> Admin</h1></div><p class="sub" style="margin-bottom:0">Customer management &amp; system overview</p></div>
 <div style="display:flex;gap:8px">
