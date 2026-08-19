@@ -15909,9 +15909,12 @@ function syncCustomers(product) {
                   // We already have full postcodes on the rest; this tops up numbers
                   // on the newest leads most likely to be delivered today.
                   mvNeedEnrich.sort(function(a, b) { return new Date(b.scrapedAt || b.firstVisibleDate || 0) - new Date(a.scrapedAt || a.firstVisibleDate || 0); });
-                  var mvEnrichMax = Math.min(mvNeedEnrich.length, parseInt(process.env.MOVING_ENRICH_MAX || '120', 10));
+                  // Enrich the WHOLE fresh door-less pool so the promised daily count is
+                  // deliverable in every customer area (a bare street can't be mailed).
+                  // Standard instance (2GB) handles this easily; 8 concurrent detail fetches.
+                  var mvEnrichMax = Math.min(mvNeedEnrich.length, parseInt(process.env.MOVING_ENRICH_MAX || '500', 10));
                   var mvToEnrich = mvNeedEnrich.slice(0, mvEnrichMax);
-                  var mvEnriched = await rmScraper.enrichMovingLeads(mvToEnrich, 4);
+                  var mvEnriched = await rmScraper.enrichMovingLeads(mvToEnrich, 8);
                   console.log('[SCRAPER] Moving: enriched ' + mvEnriched.length + '/' + mvToEnrich.length + ' leads with numbered full addresses (of ' + mvNeedEnrich.length + ' door-less)');
                 }
               } catch(mvEnrErr) { console.log('[SCRAPER] Moving enrich error:', mvEnrErr.message); }
