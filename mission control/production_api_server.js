@@ -239,7 +239,7 @@ function interleavePoolByAreas(poolArr, custAreas) {
   // Postcoder credits - maximising how many of the promised count actually deliver.
   Object.keys(buckets).forEach(function(bk) {
     buckets[bk].sort(function(a, b) {
-      function premise(l) { try { var dd = JSON.parse(l.data || '{}'); return hasPremiseNumber(dd.fullAddress || dd.address || dd.deceasedAddress || '', dd.postcode || '') ? 1 : 0; } catch(e) { return 0; } }
+      function premise(l) { try { var dd = JSON.parse(l.data || '{}'); return hasUsablePremiseAddress(dd.fullAddress || dd.address || dd.deceasedAddress || '', dd.postcode || '') ? 1 : 0; } catch(e) { return 0; } }
       var pa = premise(a), pb = premise(b);
       if (pa !== pb) return pb - pa;
       function fresh(l) { try { var dd = JSON.parse(l.data || '{}'); return new Date(dd.firstVisibleDate || dd.updateDate || 0).getTime(); } catch(e) { return 0; } }
