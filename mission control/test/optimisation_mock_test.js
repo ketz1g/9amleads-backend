@@ -147,7 +147,8 @@ console.log('\n=== Premise-identifier gate (no bare street/place names in emails
   ok('39-47 Wedmore Street accepted (range)', f('39-47 Wedmore Street, E area', 'N19 4RT') === true);
   ok('2A Fairbridge Road accepted (suffix letter)', f('2A Fairbridge Road, E area', 'N19 3HZ') === true);
   ok('Flat 1, Sandgate House accepted', f('Flat 1, Sandgate House Queens Walk, E area', 'W5 1TN') === true);
-  ok('Landmark East Tower, 24 Marsh Wall accepted', f('Landmark East Tower, 24 Marsh Wall, E area', 'E14 9EG') === true);
+  ok('Landmark East Tower, 24 Marsh Wall rejected (tower block needs a flat number)', f('Landmark East Tower, 24 Marsh Wall, E area', 'E14 9EG') === false);
+  ok('Flat 1, Landmark East Tower, 24 Marsh Wall accepted (has flat number)', f('Flat 1, Landmark East Tower, 24 Marsh Wall', 'E14 9EG') === true);
   ok('1 St. Gabriel Walk accepted', f('1 St. Gabriel Walk, E area', 'SE1 6FA') === true);
   // Named houses/buildings (house name) -> ACCEPT
   ok('Blandford House accepted (house name)', f('Blandford House, Chiswick, E area', 'W4 1SY') === true);

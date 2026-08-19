@@ -21,10 +21,18 @@ function hasUsablePremiseAddress(addr, pc) {
   a = a.replace(/,?\s*[A-Z]{1,2}\s+area$/i, '').trim();
   a = a.replace(/^[,\s]+/, '').replace(/[\s,]+$/, '');
   if (!a) return false;
+  // Multi-unit building indicators: if the address names a block/tower/wharf/etc.
+  // the street number points to the BUILDING, not a specific flat — it must have a
+  // "Flat X"/"Apartment X" number to be mailable ("Landmark East Tower, 24 Marsh
+  // Wall" without a flat number cannot be posted to a specific flat).
+  var MULTI_UNIT_RE = /(?:tower|towers|apartments|block|court|courts|wharf|point|heights|mansions|residence|residences|quarters|villas|suites|studios|flats)\b/i;
   // 1) Door number before a street word (incl. ranges): "12 High St", "39-47 Wedmore St"
-  if (/\b\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s+[A-Z][A-Za-z'-]+\b/.test(a)) return true;
+  var hasDoorNumber = /\b\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s+[A-Z][A-Za-z'-]+\b/.test(a);
   // 2) Flat/apartment/unit/suite/maisonette/penthouse/room + number: "Flat 12, Eaton Mansions"
-  if (/^(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d{1,5}[A-Za-z]?\b/i.test(a)) return true;
+  var hasFlatNumber = /(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d{1,5}[A-Za-z]?\b/i.test(a);
+  if (hasFlatNumber) return true;
+  if (hasDoorNumber && MULTI_UNIT_RE.test(a)) return false;
+  if (hasDoorNumber) return true;
   // 3) BARE STREET: the first comma segment ends in a street suffix -> no premise
   //    identifier (the town/area after the comma must not mask it).
   var seg = a.split(',')[0].trim();
