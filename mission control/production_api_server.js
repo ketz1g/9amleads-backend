@@ -8574,8 +8574,15 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               var ncData = {}; try { ncData = JSON.parse(ncLead.data || '{}'); } catch(e) {}
               var ncAddr = ncData.fullAddress || ncData.address || '';
               var ncPc = ncData.postcode || ncLead.postcode || '';
-              // Already complete? Skip (no Postcoder spend).
-              if (hasPremiseNumber(ncAddr, ncPc) && /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(ncPc).trim()) && ncData.url) {
+              // SKIP PAF only when we already have proof: a confirmed udprn, or a
+              // clear DOOR NUMBER on a house from the source listing (Rightmove's
+              // detail page is authoritative for house numbers). Flat numbers and
+              // named properties WITHOUT a udprn are PAF-verified before delivery -
+              // a guessed 'Flat 1' must never reach Print & Post.
+              var ncIsFlat = /(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d/i.test(ncAddr);
+              var ncClearNumber = /\b\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s+[A-Z][A-Za-z'-]+\b/.test(ncAddr);
+              var ncFullPcOk = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(ncPc).trim());
+              if (ncData.udprn || (!ncIsFlat && ncClearNumber && ncFullPcOk && ncData.url)) {
                 confirmedLeads.push(ncLead);
                 continue;
               }
@@ -8593,7 +8600,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   if (nfeNum && nfeFullPc && nfeUrl) {
                     ncData.fullAddress = nfeAddr; ncData.address = nfeAddr;
                     ncData.postcode = nfePc; ncData.buildingNumber = nfe.buildingNumber || '';
-                    ncData.street = nfe.street || ''; ncData.url = nfeUrl;
+                    ncData.street = nfe.street || ''; ncData.udprn = nfe.udprn || ''; ncData.url = nfeUrl;
                     ncLead.data = JSON.stringify(ncData);
                     confirmedLeads.push(ncLead);
                   } else {
@@ -16486,6 +16493,7 @@ app.post('/api/admin/postcoder/enrich-pool', adminAuth, async (req, res) => {
         l.fullAddress = e.fullAddress || l.address;
         l.street = e.street || l.street || '';
         l.buildingNumber = e.buildingNumber || l.buildingNumber || '';
+        l.udprn = e.udprn || l.udprn || '';
         l.deceasedAddress = e.fullAddress || l.deceasedAddress;
         updated++;
       }
