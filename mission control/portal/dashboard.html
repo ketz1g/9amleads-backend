@@ -580,6 +580,16 @@ function addArea() {
   if (!countyBased && (code.length > 2 || code.length < 1 || !/^[A-Z]+$/.test(code))) {
     alert('Enter a valid UK postcode area code (1-2 letters, e.g. E, NW, EN)'); return;
   }
+  // MOVING/NEWBUSINESS: only accept valid UK postcode AREAS (normalise districts
+  // like L36 -> L). Customers adjust areas here so the same rules as signup apply.
+  if (!countyBased) {
+    var VALID = ['AB','AL','B','BA','BB','BD','BH','BL','BN','BR','BS','BT','CA','CB','CF','CH','CM','CO','CR','CT','CV','CW','DA','DD','DE','DG','DH','DL','DN','DT','DY','E','EC','EH','EN','EX','FK','FY','G','GL','GU','GY','HA','HD','HG','HP','HR','HS','HU','HX','IG','IM','IP','IV','JE','KA','KT','KW','KY','L','LA','LD','LE','LL','LN','LS','LU','M','ME','MK','ML','MS','N','NE','NG','NL','NN','NP','NR','NW','OL','OX','PA','PE','PH','PL','PO','PR','RG','RH','RM','S','SA','SE','SG','SK','SL','SM','SN','SO','SP','SR','SS','ST','SW','SY','TA','TD','TF','TN','TQ','TR','TS','TW','UB','W','WA','WC','WD','WF','WN','WR','WS','WV','YO','ZE'];
+    if (VALID.indexOf(code) === -1) {
+      var two = code.substring(0, 2);
+      if (VALID.indexOf(two) !== -1) { code = two; }
+      else { alert('"' + code + '" is not a UK postcode area. Pick from the list (e.g. L for Liverpool, SW, EN, CM).'); return; }
+    }
+  }
   var tag = document.createElement('span');
   tag.className = 'tag';
   tag.innerHTML = code + ' <button class="remove" onclick="this.parentElement.remove();saveAreas()">&times;</button>';
