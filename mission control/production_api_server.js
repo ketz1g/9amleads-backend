@@ -7619,7 +7619,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // NOT scrapedAt (when we scraped it). A listing that appeared months ago
           // is NOT fresh even if we only scraped it today. scrapedAt must not gate
           // freshness or old listings slip through as "fresh".
-          var fv = pickFreshDate(ld2);antDate || ld2.dateSubmitted || ld2.dateReceived || ld2.dateValidated || ld2.incorporationDate || ld2.updateDate || l.created_at || '';
+          var fv = pickFreshDate(ld2);
           if (!fv) return false;
           return fv >= freshCutoffNow;
         } catch(e) { return false; }
@@ -7811,7 +7811,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   for (var pf=0; pf<poolArr.length && createdFromPool.length < totalNeeded; pf++) {
                     var rl = poolArr[pf];
                     // FRESH-ONLY: never create a lead from a stale pool entry.
-                    var rlD = pickFreshDate(rl); rl.grantDate || rl.dateSubmitted || rl.dateReceived || rl.incorporationDate || rl.updateDate || rl.createdAt || rl.created_at || '';
+                    var rlD = pickFreshDate(rl);
                     if (!rlD || rlD < freshCutoffNow) continue;
                     var areaOfPoolLead = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || '');
                     // Tenders/probate are national-fallback products: their leads often
@@ -7944,7 +7944,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                         return edCo && String(edCo) === String(candCoNum2);
                       }
                       var edk = (ed.address || ed.name || ed.reference || ed.url || '') + '|' + (ed.postcode || '');
-                      return edk && (edk === poolKey || edk.indexOf((rl.address || '') + '|') === 0 || (rl.url && ed.url === rl.url));
+                      return edk && (edk === poolKey || (rl.address && edk.indexOf(rl.address + '|') === 0) || (rl.url && ed.url === rl.url));
                     });
                     if (dupExisting) { console.log('[DELIVERY] Pool fallback SKIP dup: ' + (r2prod==='newbusiness'?'coNum='+candCoNum2:poolKey)); continue; }
                     var newLead = { id: uuidv4(), customer_id: cust.id, product: r2prod, data: JSON.stringify(poolLeadData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
@@ -8025,7 +8025,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             for (var fgi = 0; fgi < fgArr.length && fgCreated < fgNeed; fgi++) {
               var fgLead = fgArr[fgi];
               // FRESH-ONLY: never create a lead from a stale pool entry.
-              var fgD = pickFreshDate(fgLead);vedDate || fgLead.grantDate || fgLead.dateSubmitted || fgLead.dateReceived || fgLead.incorporationDate || fgLead.updateDate || fgLead.createdAt || fgLead.created_at || '';
+              var fgD = pickFreshDate(fgLead);
               if (!fgD || fgD < freshCutoffNow) continue;
               var fgArea = extractPostcodeArea(fgLead.postcode || fgLead.address || fgLead.location || fgLead.name || '');
               // Tenders/probate are national-fallback products (no postcode on leads).
@@ -8140,7 +8140,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             var tpPicked = null;
             for (var tpi = 0; tpi < tpArr.length; tpi++) {
               var tl = tpArr[tpi];
-              var tlD = pickFreshDate(tl);antDate || tl.dateSubmitted || tl.dateReceived || tl.incorporationDate || tl.updateDate || tl.createdAt || tl.created_at || '';
+              var tlD = pickFreshDate(tl);;
               if (!tlD || tlD < freshCutoffNow) continue;
               var tlArea = extractPostcodeArea(tl.postcode || tl.address || tl.location || tl.name || '');
               // Tenders/probate are national-fallback products (no postcode on leads).
