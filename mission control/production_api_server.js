@@ -7497,7 +7497,16 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // DASHBOARD LEAD FILTERS (bedrooms / max price / property type): the customer
       // sets these in the dashboard, so the next 9am delivery must respect them.
       var custLeadFilters = { minBedrooms: 0, maxBedrooms: 99, maxPrice: 0, propertyType: '' };
-      try { var lf2 = JSON.parse(cust.biz_field2 || '{}'); custLeadFilters.minBedrooms = parseInt(lf2.minBedrooms) || 0; custLeadFilters.maxBedrooms = parseInt(lf2.maxBedrooms) || 99; custLeadFilters.maxPrice = parseInt(lf2.maxPrice) || 0; custLeadFilters.propertyType = String(lf2.propertyType || '').toLowerCase(); } catch(e) {}
+      try {
+        var lf2 = JSON.parse(cust.biz_field2 || '{}');
+        // Support flat {"f-minbeds":..} and nested {[product]:{...}} formats, plus the
+        // older f-bed-min / minBedrooms key variants.
+        var lfFlat = lf2[cust.product] || lf2;
+        custLeadFilters.minBedrooms = parseInt(lfFlat['f-minbeds'] || lfFlat['f-bed-min'] || lfFlat.minBedrooms) || 0;
+        custLeadFilters.maxBedrooms = parseInt(lfFlat['f-maxbeds'] || lfFlat['f-bed-max'] || lfFlat.maxBedrooms) || 99;
+        custLeadFilters.maxPrice = parseInt(lfFlat['f-maxprice'] || lfFlat.maxPrice) || 0;
+        custLeadFilters.propertyType = String(lfFlat['f-proptype'] || lfFlat['f-type'] || lfFlat.propertyType || '').toLowerCase();
+      } catch(e) {}
       function leadPassesFilters(ld2) {
         try {
           if (cust.product === 'moving') {
