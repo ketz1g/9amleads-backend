@@ -265,12 +265,18 @@ function getFreshCutoffIso(nowMs) { return FRESHNESS.getFreshCutoffIso(nowMs); }
 // to scrapedAt (also ISO) so leads scraped today stay fresh.
 function pickFreshDate(lead) {
   if (!lead) return '';
-  var fields = ['firstVisibleDate', 'addedOn', 'publishedDate', 'receivedDate', 'grantDate', 'dateSubmitted', 'incorporationDate', 'updateDate', 'createdAt', 'created_at', 'scrapedAt'];
+  // MOST-RECENT event date wins (not first-found). A property first listed months
+  // ago that was RE-LISTED or UPDATED (e.g. went Sold-STC / Under Offer) within the
+  // 24h/48h window is a FRESH moving lead - the update IS the event. Our own
+  // scrape/creation timestamps (scrapedAt/createdAt/created_at) must NOT count or
+  // every lead would look fresh regardless of when it actually appeared/updated.
+  var fields = ['firstVisibleDate', 'addedOn', 'publishedDate', 'receivedDate', 'grantDate', 'dateSubmitted', 'incorporationDate', 'updateDate'];
+  var latest = '';
   for (var fi = 0; fi < fields.length; fi++) {
     var v = lead[fields[fi]] || '';
-    if (v && /^\d{4}-\d{2}-\d{2}/.test(v)) return v;
+    if (v && /^\d{4}-\d{2}-\d{2}/.test(v) && (!latest || v > latest)) latest = v;
   }
-  return '';
+  return latest;
 }
 
 function getMatchingArea(code, areas) {
