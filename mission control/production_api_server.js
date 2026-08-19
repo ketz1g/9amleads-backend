@@ -4388,6 +4388,29 @@ app.get('/api/admin/leads-overview', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/delivered-leads?email=X&date=YYYY-MM-DD — list a customer's
+// DELIVERED leads for a date with the actual address data (so you can verify
+// moving/probate leads carry a door number + full postcode for Print & Post).
+app.get('/api/admin/delivered-leads', adminAuth, (req, res) => {
+  try {
+    var email = (req.query.email || '').toLowerCase();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var date = req.query.date || new Date().toISOString().split('T')[0];
+    var db3 = getDb();
+    var cust = (db3.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var leads = (db3.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(date) === 0; });
+    var rows = leads.map(function(l) {
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      var addr = d.fullAddress || d.address || d.deceasedAddress || '';
+      var pc = String(d.postcode || '').toUpperCase().replace(/\s+/g, '');
+      var pcFull = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(d.postcode || '').trim());
+      return { id: l.id, product: l.product, address: addr, postcode: d.postcode || '', has_door_or_flat_number: hasUsablePremiseAddress(addr, d.postcode), full_postcode: pcFull, url: d.url || '', price: d.price || '', bedrooms: d.bedrooms || 0, property_type: d.propertyType || '', agent: d.agent || '', delivered_at: l.delivered_at || '' };
+    });
+    res.json({ success: true, email: email, product: cust.product, date: date, delivered_total: rows.length, leads: rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/customer-leads?email=X — list a customer's undelivered leads with
 // freshness dates so we can see exactly what delivery sees (diagnostic for shortfalls).
 app.get('/api/admin/customer-leads', adminAuth, (req, res) => {
