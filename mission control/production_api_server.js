@@ -4455,7 +4455,7 @@ app.get('/api/admin/customer-dashboard', adminAuth, (req, res) => {
       var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
       var addr = d.fullAddress || d.address || d.deceasedAddress || '';
       var pc = d.postcode || l.postcode || '';
-      return { id: l.id, product: l.product, status: l.delivered ? 'delivered' : 'pending', delivered_at: l.delivered_at || '', created_at: l.created_at || '', address: addr, postcode: pc, url: d.url || '', price: d.price || '', bedrooms: d.bedrooms || 0, property_type: d.propertyType || '', agent: d.agent || '', has_door_or_flat_number: hasUsablePremiseAddress(addr, pc), full_postcode: /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()) };
+      return { id: l.id, product: l.product, status: l.delivered ? 'delivered' : 'pending', delivered_at: l.delivered_at || '', created_at: l.created_at || '', address: addr, postcode: pc, url: d.url || '', price: d.price || '', bedrooms: d.bedrooms || 0, property_type: d.propertyType || '', agent: d.agent || '', building_number: d.buildingNumber || '', street: d.street || '', udprn: d.udprn || '', paf_confirmed: !!(d.udprn), has_door_or_flat_number: hasUsablePremiseAddress(addr, pc), full_postcode: /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()) };
     });
     res.json({ success: true, email: email, plan: cust.plan, product: cust.product, areas: cust.target_areas || '', total: rows.length, delivered: rows.filter(function(r){ return r.status === 'delivered'; }).length, pending: rows.filter(function(r){ return r.status === 'pending'; }).length, leads: rows });
   } catch(e) { res.status(500).json({ error: e.message }); }
