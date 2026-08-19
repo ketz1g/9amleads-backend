@@ -197,6 +197,32 @@ function stripPartialPostcode(addr) {
   return String(addr || '').replace(/,\s*[A-Z]{1,2}[0-9][A-Z0-9]?\s*$/i, '').replace(/\s{2,}/g, ' ').trim();
 }
 
+// FINAL AUTO-REVIEW for a moving lead. Returns '' if the lead is complete and
+// mail-ready, otherwise the reason it failed. EVERY moving lead must pass ALL of
+// these before it can be emailed to a customer:
+//   - has a full UK postcode (outcode + inward)
+//   - has a door/flat number or single-premise building (premise gate)
+//   - has a real street name
+//   - has no wrong region tags (London, Wales / Battersea, Scotland / UK)
+//   - has no trailing partial postcode (London, SW2)
+//   - has no new-build unit/plot code (L-001226, Plot 12, Unit 12a)
+//   - has a listing URL
+//   - has no guessed "Flat 1" prefix
+function validateMovingLead(ld) {
+  var a = String(ld.fullAddress || ld.address || '').trim();
+  var pc = String(ld.postcode || '').trim().toUpperCase();
+  if (!a) return 'no-address';
+  if (!pc) return 'no-postcode';
+  if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return 'incomplete-postcode';
+  if (!hasUsablePremiseAddress(a, pc)) return 'no-premise-number';
+  if (!hasStreetName(a)) return 'no-street-name';
+  if (/,\s*(England|Scotland|Wales|Northern\s*Ireland|South\s*East\s*England|South\s*West\s*England|East\s*of\s*England|East\s*Midlands|West\s*Midlands|North\s*West\s*England|North\s*East\s*England|Greater\s*London|UK)(?=\s*,|\s*$)/i.test(a)) return 'wrong-region-tag';
+  if (/,\s*[A-Z]{1,2}[0-9][A-Z0-9]?\s*$/i.test(a)) return 'partial-postcode';
+  if (hasBadUnitCode(a)) return 'unit-code';
+  if (!ld.url) return 'no-listing-url';
+  return '';
+}
+
 // True when an address contains a real street name (a door number followed by a
 // street word, OR a street suffix like Road/Street/Avenue/Lane/Close/...). Moving
 // leads must carry street + number + area + postcode - a bare building name with
@@ -8895,6 +8921,50 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               if (confirmedLeads.length > totalDailyLimit) confirmedLeads = confirmedLeads.slice(0, totalDailyLimit);
             }
             custLeads = confirmedLeads;
+            // ===== FINAL AUTO-REVIEW (moving) =====
+            // Before ANY lead is emailed, validate every moving lead against the
+            // full quality checklist. Any lead that fails is DROPPED and replaced
+            // from the pool, so customers only ever receive complete, mail-ready
+            // addresses. If replacements run out, the exact-count guarantee holds
+            // the batch back rather than send anything incomplete.
+            if (cust.product === 'moving' && custLeads.length > 0) {
+              try {
+                var qvLeads = [];
+                var qvDropped = 0;
+                custLeads.forEach(function(cl) {
+                  var qd = cl.data ? (typeof cl.data === 'string' ? JSON.parse(cl.data) : cl.data) : cl;
+                  if (qd.address) {
+                    qd.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(qd.address)));
+                    qd.fullAddress = qd.address;
+                  }
+                  var qr = validateMovingLead(qd);
+                  if (qr) { qvDropped++; }
+                  else qvLeads.push(cl);
+                });
+                if (qvDropped > 0) console.log('[QUALITY-REVIEW] ' + cust.email + ': dropped ' + qvDropped + ' moving leads before email');
+                // Top-up replacements from the pool (validated + deduped).
+                if (qvLeads.length < totalNeeded) {
+                  var qPool = interleavePoolByAreas(getDeliveryPool('moving'), custAreas);
+                  for (var qi = 0; qi < qPool.length && qvLeads.length < totalNeeded; qi++) {
+                    var ql2 = qPool[qi];
+                    var qd2 = ql2.data ? (typeof ql2.data === 'string' ? JSON.parse(ql2.data) : ql2.data) : ql2;
+                    if (qd2.address) {
+                      qd2.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(qd2.address)));
+                      qd2.fullAddress = qd2.address;
+                    }
+                    if (validateMovingLead(qd2)) continue;
+                    var qKey = String((qd2.postcode || '') + '|' + String(qd2.address || '')).toLowerCase();
+                    var qDup = qvLeads.some(function(x) { var xd = x.data ? (typeof x.data === 'string' ? JSON.parse(x.data) : x.data) : x; return String((xd.postcode || '') + '|' + String(xd.address || '')).toLowerCase() === qKey; });
+                    if (qDup) continue;
+                    var qNew = { id: 'lead_' + Date.now() + '_' + qi, customer_id: cust.id, product: 'moving', data: JSON.stringify(Object.assign({}, ql2, { address: qd2.address, fullAddress: qd2.address, postcode: qd2.postcode || '' })), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null };
+                    db.leads.push(qNew);
+                    qvLeads.push(qNew);
+                  }
+                }
+                custLeads = qvLeads;
+                console.log('[QUALITY-REVIEW] ' + cust.email + ': final ' + custLeads.length + '/' + totalNeeded + ' validated moving leads');
+              } catch(qvErr) { console.log('[QUALITY-REVIEW] error for ' + cust.email + ': ' + qvErr.message); }
+            }
             console.log('[DELIVERY] Final PAF pass: ' + cust.email + ' confirmed ' + custLeads.length + '/' + totalDailyLimit + ' moving leads');
           } catch(pafErr) { console.log('[DELIVERY] Final PAF pass outer error:', pafErr.message); }
         }
