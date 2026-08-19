@@ -16236,13 +16236,13 @@ function syncCustomers(product) {
             // (nameOrNumber + postalCode null), so leads fail the premise gate; and
             // detail-mode crawls every property page (~1000/area) - too slow + expensive,
             // especially on US-only proxies. Moving supply = Rightmove + Postcoder PAF.
-            // ===== ONTHEMARKET SOURCE (free direct scrape, no paid credits) =====
-            // OTM publishes street + beds + price + freshness and its detail page
-            // exposes the FULL postcode (free). House numbers are hidden like
-            // Rightmove, so the delivery-time Postcoder PAF adds them for the exact
-            // sent leads. Adds candidate supply per area so the premise gate has more
-            // full-address leads to pick from. Cost controls: capped areas + detail
-            // fetches per run (env-tunable), runs inside the daily scrape.
+            // ===== ONTHEMARKET SOURCE (TEMPORARILY DISABLED 2026-08-19) =====
+            // OTM worked locally but stalled the full scrape twice from the Render
+            // IP (list/detail fetches hang long enough to stall the whole pipeline).
+            // Restored the proven Rightmove-only scrape for the customer delivery
+            // deadline. OTM is re-enabled ONLY via its own bounded step (not inside
+            // the blocking scrape) once the hang is root-caused.
+            /*
             try {
               var otmMaxAreas = parseInt(process.env.OTM_MAX_AREAS || '20', 10);
               var otmDetailCap = parseInt(process.env.OTM_DETAIL_CAP || '150', 10);
@@ -16265,6 +16265,7 @@ function syncCustomers(product) {
                 console.log('[SCRAPER] OnTheMarket: 0 leads (areas: ' + (mvAreas || []).join(',') + ')');
               }
             } catch(otmErr) { console.log('[SCRAPER] OnTheMarket error:', otmErr.message); }
+            */
             if (!leads || leads.length === 0) {  console.log('[SCRAPER] Rightmove: 0 real leads today'); }
           } catch(e) { console.log('[SCRAPER] Rightmove error:', e.message); leads = []; }
         } else if (product === 'probate') {
