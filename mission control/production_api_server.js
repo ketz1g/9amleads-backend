@@ -8061,7 +8061,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     createdFromPool.push(newLead);
                   }
                   r2pool = createdFromPool.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
-                                if (_deliverDiag[cust.email]) { _deliverDiag[cust.email].r2_created = createdFromPool.length; _deliverDiag[cust.email].r2_custleads = custLeads.length; }console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': created ' + createdFromPool.length + ' pool leads, r2pool=' + r2pool.length);
+                  console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': created ' + createdFromPool.length + ' pool leads, r2pool=' + r2pool.length);
                   _deliverDiag[cust.email].poolfile += createdFromPool.length;
                   _deliverDiag[cust.email].poolfile_total += 1;
                 } else {
@@ -8202,15 +8202,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               console.log('[FINAL-GUARANTEE] ' + cust.email + ' created pool lead: ' + fgArea + ' ' + (fgLead.postcode||fgLead.address||'').substring(0,40));
               if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: custAreas.slice(0,5) };
               
-              if (!_deliverDiag[cust.email].created) _deliverDiag[cust.email].created = [];
-              if (_deliverDiag[cust.email].created.length < 12) _deliverDiag[cust.email].created.push({ addr: String(fgLead.address || fgLead.fullAddress || '').substring(0, 45), pc: fgLead.postcode || '', url: !!fgLead.url, src: fgLead.source || '' });_deliverDiag[cust.email].poolfile++;
             }
           } catch(e4) { console.log('[DELIVERY] Final guarantee error:', e4.message); }
         }
       }
       
       if (custLeads.length === 0) {
-              if (_deliverDiag[cust.email]) { _deliverDiag[cust.email].at_zero_check = custLeads.length; }console.log('[DELIVERY] WARN: ' + cust.email + ' (' + cust.product + ') got 0 leads today — no undelivered leads in pool');
+        console.log('[DELIVERY] WARN: ' + cust.email + ' (' + cust.product + ') got 0 leads today — no undelivered leads in pool');
         errors++;
         lastErr = cust.email + ': no leads in pool';
         continue;
@@ -8717,12 +8715,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     ncLead.data = JSON.stringify(ncData);
                     confirmedLeads.push(ncLead);
                   } else {
-                                  if (_deliverDiag[cust.email]) { _deliverDiag[cust.email].paf_drop = (_deliverDiag[cust.email].paf_drop || 0) + 1; }console.log('[DELIVERY] Final PAF pass: drop ' + ncLead.id + ' (no confirmable number) pc=' + nfePc + ' addr=' + (nfeAddr||'').substring(0,40));
+                    console.log('[DELIVERY] Final PAF pass: drop ' + ncLead.id + ' (no confirmable number) pc=' + nfePc + ' addr=' + (nfeAddr||'').substring(0,40));
                   }
                 } else {
-                                if (_deliverDiag[cust.email]) { _deliverDiag[cust.email].paf_noresult = (_deliverDiag[cust.email].paf_noresult || 0) + 1; }console.log('[DELIVERY] Final PAF pass: no result for ' + ncLead.id);
+                  console.log('[DELIVERY] Final PAF pass: no result for ' + ncLead.id);
                 }
-              } catch(nce) {               if (_deliverDiag[cust.email]) { _deliverDiag[cust.email].paf_error = (_deliverDiag[cust.email].paf_error || 0) + 1; }console.log('[DELIVERY] Final PAF pass error:', nce.message); }
+              } catch(nce) { console.log('[DELIVERY] Final PAF pass error:', nce.message); }
             }
             // If the confirmation pass dropped leads, top up from the fresh pool so
             // the exact entitlement is still met with confirmed-numbered leads.
@@ -8767,7 +8765,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               if (confirmedLeads.length > totalDailyLimit) confirmedLeads = confirmedLeads.slice(0, totalDailyLimit);
             }
             custLeads = confirmedLeads;
-                        if (_deliverDiag[cust.email]) { _deliverDiag[cust.email].after_paf = custLeads.length; }console.log('[DELIVERY] Final PAF pass: ' + cust.email + ' confirmed ' + custLeads.length + '/' + totalDailyLimit + ' moving leads');
+            console.log('[DELIVERY] Final PAF pass: ' + cust.email + ' confirmed ' + custLeads.length + '/' + totalDailyLimit + ' moving leads');
           } catch(pafErr) { console.log('[DELIVERY] Final PAF pass outer error:', pafErr.message); }
         }
         // NO SPLIT EMAILS: if this customer already got their daily email, only
