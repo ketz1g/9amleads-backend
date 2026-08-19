@@ -5852,7 +5852,9 @@ cron.schedule('30 7 * * *', async () => {
     console.log('[SCRAPE-WATCHDOG] Moving pool NOT written today — auto re-triggering scrape');
     try {
       const http = require('http');
-      var swBody = JSON.stringify({ product: 'moving', force: true });
+      // No product filter: the re-triggered scrape covers ALL lead types (moving,
+      // probate, planning, newbusiness, tenders) so every pool is fresh for 09:00.
+      var swBody = JSON.stringify({});
       var swReq = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(swBody) } }, function(swRes) { var b=''; swRes.on('data', function(c){ b+=c; }); swRes.on('end', function(){ console.log('[SCRAPE-WATCHDOG] re-trigger result:', b.substring(0, 120)); }); });
       swReq.on('error', function(e){ console.log('[SCRAPE-WATCHDOG] re-trigger error:', e.message); });
       swReq.write(swBody); swReq.end();
