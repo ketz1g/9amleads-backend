@@ -25,12 +25,14 @@ function hasUsablePremiseAddress(addr, pc) {
   if (/\b\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s+[A-Z][A-Za-z'-]+\b/.test(a)) return true;
   // 2) Flat/apartment/unit/suite/maisonette/penthouse/room + number: "Flat 12, Eaton Mansions"
   if (/^(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d{1,5}[A-Za-z]?\b/i.test(a)) return true;
-  // 3) Named building that carries a house/building name (no street number needed).
-  //    "court" is NOT here: a bare "X Court" is an apartment block with no flat
-  //    number and must be rejected (or resolved to "Flat N, X Court" by PAF).
-  //    The building-type word must be the LAST word (not "Norfolk House Road",
-  //    which is a street containing 'House' and has no premise).
-  if (/^(?:the\s+)?[A-Za-z][A-Za-z''-]*(?:\s+[A-Za-z''&-]+){0,3}\s+(?:house|mansions|tower|towers|block|chambers|hall|grange|lodge|cottages?|villas)(?!\s+[A-Za-z]+)\b/i.test(a) && !/\s+(?:square|place|court)\b/i.test(a)) return true;
+  // 3) Named building that carries a SINGLE-PREMISE house/building name (no street
+  //    number needed): a house, cottage, lodge, grange, rectory, manor, farm, hall
+  //    or barn are specific premises a postman can deliver to. Multi-unit block
+  //    words (apartments, tower, mansions, block, court, chambers, villas) are NOT
+  //    accepted here — "Charrington Tower" or "Foxglove Apartments" without a flat
+  //    number cannot be mailed to a specific flat. The building-type word must be
+  //    the LAST word (not "Norfolk House Road", a street containing 'House').
+  if (/^(?:the\s+)?[A-Za-z][A-Za-z''-]*(?:\s+[A-Za-z''&-]+){0,3}\s+(?:house|cottage|cottages|lodge|grange|rectory|manor|farm|hall|barn|oast)(?!\s+[A-Za-z]+)\b/i.test(a) && !/\s+(?:square|place|court)\b/i.test(a)) return true;
   // 4) BARE STREET: the first comma segment ends in a street suffix -> no premise
   //    identifier (the town/area after the comma must not mask it).
   var seg = a.split(',')[0].trim();
@@ -38,7 +40,12 @@ function hasUsablePremiseAddress(addr, pc) {
   if (!words.length) return false;
   var last = words[words.length - 1].replace(/\.$/, '');
   if (STREET_SUFFIX_RE.test(last)) return false;
-  // 5) Named property (2+ words, not a bare street).
+  // 5) Named property (2+ words, not a bare street) — but NOT a multi-unit block
+  //    name with no flat number ("Foxglove Apartments", "Charrington Tower",
+  //    "Eaton Mansions"): those cannot be posted to a specific flat, so reject
+  //    them (PAF will resolve them to "Flat N, ..." instead).
+  var BLOCK_WORDS_RE = /^(?:apartments?|block|tower|towers|court|courts|mansions|flats|wharf|point|heights|residence|residences|villas|chambers|studios?|suites?)$/i;
+  if (BLOCK_WORDS_RE.test(last)) return false;
   return words.length >= 2;
 }
 

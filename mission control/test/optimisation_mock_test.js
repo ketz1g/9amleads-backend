@@ -153,7 +153,9 @@ console.log('\n=== Premise-identifier gate (no bare street/place names in emails
   ok('Blandford House accepted (house name)', f('Blandford House, Chiswick, E area', 'W4 1SY') === true);
   ok('Hazelwood House accepted (house name)', f('Hazelwood House, Deptford, E area', 'SE8 5RP') === true);
   ok('The Old Rectory accepted', f('The Old Rectory', 'GU21 4PU') === true);
-  ok('Eaton Mansions accepted', f('Eaton Mansions', 'SW1W 8HF') === true);
+  ok('Eaton Mansions rejected (mansion block, no flat number)', f('Eaton Mansions', 'SW1W 8HF') === false);
+  ok('Foxglove Apartments rejected (apartment block, no flat number)', f('Foxglove Apartments', 'NW7 1TG') === false);
+  ok('Charrington Tower rejected (tower block, no flat number)', f('Charrington Tower, Biscayne Avenue', 'E14 9BQ') === false);
   // Empty / junk -> REJECT
   ok('empty address rejected', f('', 'E14 3WF') === false);
   ok('postcode-only rejected', f('E14 3WF', 'E14 3WF') === false);
