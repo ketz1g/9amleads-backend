@@ -156,6 +156,9 @@ console.log('\n=== Premise-identifier gate (no bare street/place names in emails
   ok('Eaton Mansions rejected (mansion block, no flat number)', f('Eaton Mansions', 'SW1W 8HF') === false);
   ok('Foxglove Apartments rejected (apartment block, no flat number)', f('Foxglove Apartments', 'NW7 1TG') === false);
   ok('Charrington Tower rejected (tower block, no flat number)', f('Charrington Tower, Biscayne Avenue', 'E14 9BQ') === false);
+  ok('The HiLight rejected (development name, no flat number)', f('The HiLight, Battersea', 'SW11 3RD') === false);
+  ok('The Founding rejected (development name, no flat number)', f('The Founding, Canada Water', 'SE16 7AR') === false);
+  ok('Bendon Valley rejected (development name, no flat number)', f('Bendon Valley, Garratt Lane', 'SW18 4UQ') === false);
   // Empty / junk -> REJECT
   ok('empty address rejected', f('', 'E14 3WF') === false);
   ok('postcode-only rejected', f('E14 3WF', 'E14 3WF') === false);

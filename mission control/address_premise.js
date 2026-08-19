@@ -25,28 +25,27 @@ function hasUsablePremiseAddress(addr, pc) {
   if (/\b\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s+[A-Z][A-Za-z'-]+\b/.test(a)) return true;
   // 2) Flat/apartment/unit/suite/maisonette/penthouse/room + number: "Flat 12, Eaton Mansions"
   if (/^(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d{1,5}[A-Za-z]?\b/i.test(a)) return true;
-  // 3) Named building that carries a SINGLE-PREMISE house/building name (no street
-  //    number needed): a house, cottage, lodge, grange, rectory, manor, farm, hall
-  //    or barn are specific premises a postman can deliver to. Multi-unit block
-  //    words (apartments, tower, mansions, block, court, chambers, villas) are NOT
-  //    accepted here — "Charrington Tower" or "Foxglove Apartments" without a flat
-  //    number cannot be mailed to a specific flat. The building-type word must be
-  //    the LAST word (not "Norfolk House Road", a street containing 'House').
-  if (/^(?:the\s+)?[A-Za-z][A-Za-z''-]*(?:\s+[A-Za-z''&-]+){0,3}\s+(?:house|cottage|cottages|lodge|grange|rectory|manor|farm|hall|barn|oast)(?!\s+[A-Za-z]+)\b/i.test(a) && !/\s+(?:square|place|court)\b/i.test(a)) return true;
-  // 4) BARE STREET: the first comma segment ends in a street suffix -> no premise
+  // 3) BARE STREET: the first comma segment ends in a street suffix -> no premise
   //    identifier (the town/area after the comma must not mask it).
   var seg = a.split(',')[0].trim();
   var words = seg.split(/[\s,]+/).filter(Boolean);
   if (!words.length) return false;
   var last = words[words.length - 1].replace(/\.$/, '');
   if (STREET_SUFFIX_RE.test(last)) return false;
-  // 5) Named property (2+ words, not a bare street) — but NOT a multi-unit block
-  //    name with no flat number ("Foxglove Apartments", "Charrington Tower",
-  //    "Eaton Mansions"): those cannot be posted to a specific flat, so reject
-  //    them (PAF will resolve them to "Flat N, ..." instead).
-  var BLOCK_WORDS_RE = /^(?:apartments?|block|tower|towers|court|courts|mansions|flats|wharf|point|heights|residence|residences|villas|chambers|studios?|suites?)$/i;
+  // 4) NAMED PROPERTY — accepted ONLY when the last word is a SINGLE-PREMISE type
+  //    a postman can deliver to: a house, cottage, lodge, grange, rectory, manor,
+  //    farm, hall, barn, oast, school, church, hotel, inn, pub, bungalow, etc.
+  //    Multi-unit block words (apartments, tower, mansions, block, court, wharf,
+  //    point, heights, chambers, villas) and generic development names
+  //    ("The HiLight", "The Founding", "Bendon Valley") have NO flat number and are
+  //    rejected — PAF must resolve them to "Flat N, ..." or they're replaced.
+  var BLOCK_WORDS_RE = /^(?:apartments?|block|tower|towers|court|courts|mansions|flats|wharf|point|heights|residence|residences|villas|chambers|studios?|suites?|place|square)$/i;
   if (BLOCK_WORDS_RE.test(last)) return false;
-  return words.length >= 2;
+  var SINGLE_PREMISE_RE = /(?:house|cottage|cottages|lodge|grange|rectory|manor|farm|hall|barn|oast|school|church|chapel|hotel|inn|pub|bungalow|nursery|clinic|surgery|forge|bothy|stable|studio)$/i;
+  if (words.length >= 2 && SINGLE_PREMISE_RE.test(last)) return true;
+  // 5) Not a bare street, not a block, and not a single-premise name -> reject
+  //    (no usable premise identifier).
+  return false;
 }
 
 module.exports = { STREET_SUFFIX_RE: STREET_SUFFIX_RE, hasUsablePremiseAddress: hasUsablePremiseAddress };
