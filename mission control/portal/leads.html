@@ -281,17 +281,25 @@ function renderLeadList(dayLeads, noGroup) {
       // moving / default
       var addr = d.address || d.title || 'Property';
       var town = (d.town || d.city || '').replace(/\s+area$/i, '').trim();
+      // Never append a bare postcode-AREA code (e.g. "CM", "E") as a town name —
+      // the scraper can leave a stray area code in city/town, which would corrupt
+      // the displayed address (e.g. "Bow, London, CM, E3 4JB").
+      if (/^[A-Z]{1,2}$/i.test(town)) town = '';
       var fullAddr = addr;
       var addrNoPartial = addr.replace(/[, ]*[A-Z]{1,2}[0-9][A-Z0-9]?[\s,]*$/i, '').replace(/[\s,]+$/, '');
       if (addrNoPartial && pc && addrNoPartial !== addr) fullAddr = addrNoPartial;
       if (town && fullAddr.toLowerCase().indexOf(town.toLowerCase()) === -1) fullAddr += ', ' + town;
       if (pc && fullAddr.toLowerCase().indexOf(pc.toLowerCase()) === -1) fullAddr += ', ' + pc;
       var rmLink = d.url ? '<a href="' + d.url + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View on Rightmove</a>' : '';
+      // Show WHEN each lead was sent to the customer's inbox (delivered_at = the
+      // day the daily email went out with this lead; created_at = when it was added).
+      var sentOn = l.delivered_at ? 'Sent ' + new Date(l.delivered_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : (l.created_at ? 'Added ' + new Date(l.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '');
       var moveMeta = [(d.bedrooms ? d.bedrooms+' bed' : ''), d.propertyType||'', d.agent||'', rmLink].filter(Boolean);
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + fullAddr + '</div>' +
         '<div class="meta">' + moveMeta.join(' \u00b7 ') + '</div></div>' +
         '<div class="right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div><span class="badge ' + (status === 'newly listed' ? 'badge-new' : '') + '">' + status + '</span>' +
+        (sentOn ? '<div style="font-size:10px;color:var(--muted);margin-top:3px;text-align:right">' + sentOn + '</div>' : '') +
         postBadge(d, l.id) + mailBtn(l.id, d) + '</div></div>';
     }
   }

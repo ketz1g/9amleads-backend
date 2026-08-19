@@ -11759,7 +11759,9 @@ function generateLeadEmailHTML(customer, leads) {
       // isn't repeated next to the full postcode (e.g. "EN1, EN1 3HJ").
       var addrNoPartialPc = fullAddr.replace(/[, ]*[A-Z]{1,2}[0-9][A-Z0-9]?[\s,]*$/i, '').replace(/[\s,]+$/, '');
       if (addrNoPartialPc && postcode && addrNoPartialPc !== fullAddr) fullAddr = addrNoPartialPc;
-       var emailTown = (d.town || '').replace(/\s+area$/i, '').trim();
+      var emailTown = (d.town || d.city || '').replace(/\s+area$/i, '').trim();
+      // Never append a bare postcode-AREA code (e.g. "CM", "E") as a town name.
+      if (/^[A-Z]{1,2}$/i.test(emailTown)) emailTown = '';
        if (emailTown && fullAddr.toLowerCase().indexOf(emailTown.toLowerCase()) === -1) fullAddr += ', ' + emailTown;
       if (postcode && fullAddr.toLowerCase().indexOf(postcode.toLowerCase()) === -1) fullAddr += ', ' + postcode;
       title = fullAddr || 'Property';
@@ -11789,8 +11791,12 @@ function generateLeadEmailHTML(customer, leads) {
       subtitle = (d.council ? d.council + ' · ' : '') + appType + (d.status ? ' · ' + d.status : '');
     } else {
       title = d.tenderTitle || d.description || 'Opportunity';
-      subtitle = d.buyer || '';
+    subtitle = d.buyer || '';
     }
+
+    // Sent-date on every lead so recipients can see exactly when it landed in
+    // their inbox (the email IS the delivery, so the send date is today).
+    var emailSendOn = 'Sent ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
     body += '<div style="background:#181b28;border:1px solid rgba(255,255,255,0.06);border-radius:14px;margin-bottom:16px;overflow:hidden">';
     body += '<div style="height:3px;background-color:' + leadAccent + ';background-image:linear-gradient(90deg,' + leadAccent + ',rgba(99,102,241,0.4))"></div>';
@@ -11802,6 +11808,7 @@ function generateLeadEmailHTML(customer, leads) {
     body += '<td style="vertical-align:top;width:auto;padding-right:10px"><span style="display:inline-block;padding:4px 12px;border-radius:6px;background:linear-gradient(135deg,' + leadAccent + ',rgba(99,102,241,0.6));color:#fff;font-size:10px;font-weight:700;letter-spacing:0.8px">' + (leadProduct === 'moving' ? 'MOVING' : leadProduct === 'probate' ? 'PROBATE' : leadProduct === 'newbusiness' ? 'NEW BIZ' : leadProduct === 'planning' ? 'PLANNING' : 'TENDER') + '</span></td>';
     body += '<td style="vertical-align:top;width:100%"><div style="font-size:16px;font-weight:700;color:#f1f5f9;line-height:1.3">' + (title || 'Opportunity') + '</div>';
     if (subtitle) body += '<div style="font-size:13px;color:#e2e8f0;margin-top:4px">' + subtitle + '</div>';
+    if (emailSendOn) body += '<div style="font-size:11px;color:#94a3b8;margin-top:6px;font-weight:600">' + emailSendOn + '</div>';
     body += '</td></tr></table></div>';
 
     // Details as badge chips
