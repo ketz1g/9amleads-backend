@@ -11531,6 +11531,8 @@ app.get('/api/health', (req, res) => {
     campaign: 'Active (10 trial + 7 paid emails)',
     node: process.version,
     last_errors: (global.__lastErrors || []).slice(-3),
+    mem_peak_mb: Math.max.apply(null, (global.__memHistory || []).map(function(h){ return h.rssMB || 0; })) || 0,
+    mem_history: (global.__memHistory || []).slice(-12),
     capacity: {
       postcoder: (function() {
         try {
@@ -17604,6 +17606,30 @@ app.post('/api/admin/load-test-customers', adminAuth, (req, res) => {
 // Global error handler. Persists the last N unhandled errors (with stack) so the
 // real cause can be read from /api/health (public) instead of guessing.
 global.__lastErrors = global.__lastErrors || [];
+// Crash diagnostics: capture uncaught exceptions / rejections and track memory so
+// an OOM/SIGABRT crash can be diagnosed from /api/health (Render API has no logs).
+global.__memHistory = global.__memHistory || [];
+try {
+  process.on('uncaughtException', function(err) {
+    var msg = String((err && (err.message || err)) || 'uncaughtException');
+    global.__lastErrors.push({ at: new Date().toISOString(), url: 'PROCESS:uncaughtException', message: msg, stack: String((err && err.stack) || msg).substring(0, 1200) });
+    if (global.__lastErrors.length > 20) global.__lastErrors.shift();
+    console.error('[FATAL-EXCEPTION]', msg, (err && err.stack ? '\n' + err.stack.substring(0, 800) : ''));
+  });
+  process.on('unhandledRejection', function(reason) {
+    var msg = String((reason && (reason.message || reason)) || 'unhandledRejection');
+    global.__lastErrors.push({ at: new Date().toISOString(), url: 'PROCESS:unhandledRejection', message: msg, stack: String((reason && reason.stack) || msg).substring(0, 1200) });
+    if (global.__lastErrors.length > 20) global.__lastErrors.shift();
+    console.error('[UNHANDLED-REJECTION]', msg);
+  });
+  setInterval(function() {
+    try {
+      var m = process.memoryUsage();
+      global.__memHistory.push({ t: new Date().toISOString(), rssMB: Math.round(m.rss / 1048576), heapMB: Math.round(m.heapUsed / 1048576), extMB: Math.round(m.external / 1048576) });
+      if (global.__memHistory.length > 120) global.__memHistory.shift();
+    } catch(e) {}
+  }, 30000);
+} catch(e) { console.log('[CRASH-DIAG] monitor init error:', e.message); }
 app.use(function(err, req, res, next) {
   var msg = String((err && (err.message || err)) || 'unknown error');
   var stack = String((err && err.stack) || msg);
