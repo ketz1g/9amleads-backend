@@ -8060,7 +8060,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     createdFromPool.push(newLead);
                   }
                   r2pool = createdFromPool.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
-                  console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': created ' + createdFromPool.length + ' pool leads, r2pool=' + r2pool.length);
+                                if (_deliverDiag[cust.email]) { _deliverDiag[cust.email].r2_created = createdFromPool.length; _deliverDiag[cust.email].r2_custleads = custLeads.length; }console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': created ' + createdFromPool.length + ' pool leads, r2pool=' + r2pool.length);
                   _deliverDiag[cust.email].poolfile += createdFromPool.length;
                   _deliverDiag[cust.email].poolfile_total += 1;
                 } else {
@@ -8209,7 +8209,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       }
       
       if (custLeads.length === 0) {
-        console.log('[DELIVERY] WARN: ' + cust.email + ' (' + cust.product + ') got 0 leads today — no undelivered leads in pool');
+              if (_deliverDiag[cust.email]) { _deliverDiag[cust.email].at_zero_check = custLeads.length; }console.log('[DELIVERY] WARN: ' + cust.email + ' (' + cust.product + ') got 0 leads today — no undelivered leads in pool');
         errors++;
         lastErr = cust.email + ': no leads in pool';
         continue;
@@ -8766,7 +8766,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               if (confirmedLeads.length > totalDailyLimit) confirmedLeads = confirmedLeads.slice(0, totalDailyLimit);
             }
             custLeads = confirmedLeads;
-            console.log('[DELIVERY] Final PAF pass: ' + cust.email + ' confirmed ' + custLeads.length + '/' + totalDailyLimit + ' moving leads');
+                        if (_deliverDiag[cust.email]) { _deliverDiag[cust.email].after_paf = custLeads.length; }console.log('[DELIVERY] Final PAF pass: ' + cust.email + ' confirmed ' + custLeads.length + '/' + totalDailyLimit + ' moving leads');
           } catch(pafErr) { console.log('[DELIVERY] Final PAF pass outer error:', pafErr.message); }
         }
         // NO SPLIT EMAILS: if this customer already got their daily email, only
