@@ -1537,10 +1537,6 @@ function loadActivity() {
         if (pay.payment_method) {
           items.push({ icon:'💳', color:'#0ea5e9', title: (pay.payment_method.brand||'Card').charAt(0).toUpperCase() + ' ending ' + pay.payment_method.last4, sub:'Payment method on file', href:'/portal/dashboard.html' });
         }
-        if ((pay.invoices||[]).length > 0) {
-          var paid = (pay.invoices||[]).filter(function(i){ return i.status==='paid'; }).length;
-          items.push({ icon:'🧾', color:'#16a34a', title: paid + ' paid invoice' + (paid!==1?'s':''), sub: 'View full payment history in Settings', href:'/portal/dashboard.html' });
-        }
       }
       // Auto print & post status
       apiCall('GET', '/api/direct-mail/auto-status', null, function(err3, auto) {
