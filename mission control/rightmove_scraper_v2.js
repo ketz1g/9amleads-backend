@@ -519,9 +519,10 @@ function fetchPropertyDetail(propertyUrl) {
     };
     const req = https.get(opts, (res) => {
       let body = '';
-      res.on('data', (c) => body += c);
+      let tooBig = false;
+      res.on('data', (c) => { if (body.length > 1200000) { tooBig = true; res.destroy(); return; } body += c; });
       res.on('end', () => {
-        if (res.statusCode !== 200) return resolve(null);
+        if (tooBig || res.statusCode !== 200) return resolve(null);
         const result = {};
         // Full street address from the h1 (includes building name/number + street)
         const street = body.match(/itemProp="streetAddress">([^<]+)<\/h1>/);
@@ -579,7 +580,10 @@ async function enrichMovingLeads(leads, concurrency) {
         // real address. Instead store it ONLY as a hint (doorNumberHint) that the
         // delivery-time Postcoder/PAF lookup uses to disambiguate the exact address.
         // The address is only corrected with a number that PAF has confirmed.
-        if (lead.photo && !lead.doorNumberHint) {
+        // DISABLED BY DEFAULT (MOVING_VISION_ENABLED=true to enable): photo download
+        // + OpenAI + native image processing is slow and can crash the scraper
+        // (SIGABRT); the delivery-time PAF handles numbers without it.
+        if (lead.photo && !lead.doorNumberHint && (process.env.MOVING_VISION_ENABLED === 'true' || process.env.MOVING_VISION_ENABLED === '1')) {
           try {
             const dn = await readDoorNumberFromPhoto(lead.photo);
             if (dn && /^\s*\d+[A-Za-z]?/i.test(dn)) {
