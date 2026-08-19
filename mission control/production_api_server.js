@@ -3312,6 +3312,10 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     .filter(function(l) { return leadHasUsableAddress(l, customer ? customer.product : l.product); })
     .map(l => {
     const parsed = JSON.parse(l.data || '{}');
+    if (customer && customer.product === 'moving') {
+      if (parsed.address && isFlatAddress(parsed.address)) parsed.address = stripGuessedFlatPrefix(parsed.address);
+      if (parsed.fullAddress && isFlatAddress(parsed.fullAddress)) parsed.fullAddress = stripGuessedFlatPrefix(parsed.fullAddress);
+    }
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
     return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
   }));
@@ -7550,6 +7554,16 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // Zoopla dropped as a source (no house numbers/full postcodes in list mode).
       // Exclude any Zoopla-sourced pool entries so they can never be delivered.
       arr = arr.filter(function(l) { return !/zoopla/i.test(String(l.source || '')); });
+      // NORMALIZE FLAT ADDRESSES: strip the portal default "Flat 1" prefix from
+      // every moving pool lead so ALL customers (any source/path) get the accurate
+      // building-level address, not a guessed flat.
+      arr = arr.map(function(l) {
+        if (l && l.address && isFlatAddress(l.address)) {
+          l.address = stripGuessedFlatPrefix(l.address);
+          if (l.fullAddress) l.fullAddress = stripGuessedFlatPrefix(l.fullAddress);
+        }
+        return l;
+      });
       _deliveryPoolCache[prod] = arr;
       return arr;
     }

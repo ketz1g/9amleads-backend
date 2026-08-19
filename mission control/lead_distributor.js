@@ -35,6 +35,22 @@ function getFreshCutoffIso(nowMs) { return FRESHNESS.getFreshCutoffIso(nowMs); }
 // distributor never assigns bare-street leads that the delivery can't mail.
 const ADDR_PREMISE = require('./address_premise');
 function hasUsablePremiseAddress(addr, pc) { return ADDR_PREMISE.hasUsablePremiseAddress(addr, pc); }
+// Strip the portal default "Flat 1" prefix (Rightmove etc. default flat addresses
+// to "Flat 1, <Building>" when the real flat is unknown) so we never send/mail a
+// guessed flat. Genuine higher flats (Flat 3, 4a) are kept.
+function stripGuessedFlatPrefix(addr) {
+  return String(addr || '').replace(/^(?:Flat|Apartment|Unit|Maisonette|Penthouse)\s*1\b\s*[,.-]?\s*/i, '').replace(/^,\s*/, '').trim();
+}
+function isFlatAddress(addr) {
+  return /(?:^|[\s,])(flat|apartment|unit|maisonette|penthouse|room)\s*\d/i.test(String(addr || ''));
+}
+// Moving leads must carry a real street name (number + street + area + postcode).
+function hasStreetName(addr) {
+  var a = String(addr || '').trim();
+  if (!a) return false;
+  if (/^\s*\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s+[A-Z][A-Za-z'-]+/.test(a)) return true;
+  return /(?:Road|Street|Avenue|Lane|Drive|Close|Crescent|Gardens|Grove|Court|Terrace|Way|Walk|Hill|Place|Mews|Rise|Row|Park|Square|Green|Broadway|Path|View|Gate|End|Field|Fields|High\s?Street|\bSt\b|\bRd\b|\bAve\b|\bLn\b|\bDr\b|\bCl\b|\bCres\b|\bGdns\b|\bGv\b|\bCt\b|\bTce\b|\bWl\b|\bPl\b|\bMws\b|\bRse\b|\bPk\b|\bSq\b|\bBdwy\b)/i.test(a);
+}
 
 // Per-product daily plan limits (mirrors production getPlanLimit).
 // keyed [product][plan][coverage] with 'default' fallback.
@@ -618,6 +634,16 @@ function normaliseLead(rawLead, product, customerId) {
     }
   }
 
+  // MOVING NORMALISATION: strip the portal default "Flat 1" and require a real
+  // street name so every moving lead assigned to a customer is mail-ready.
+  if (base.product === 'moving') {
+    if (isFlatAddress(base.address || '')) {
+      base.address = stripGuessedFlatPrefix(base.address);
+      base.fullAddress = base.fullAddress ? stripGuessedFlatPrefix(base.fullAddress) : base.address;
+    }
+    if (!hasStreetName(base.address || '')) base.__noStreet = true;
+  }
+
   return base;
 }
 
@@ -957,6 +983,12 @@ async function distributeProduct(product) {
     if (product === 'moving' || product === 'probate') {
       var gAddr = String((rl && (rl.fullAddress || rl.address || rl.deceasedAddress)) || (nl && (nl.fullAddress || nl.address || nl.deceasedAddress)) || '').trim();
       var gPc = String((rl && rl.postcode) || (nl && nl.postcode) || '').trim();
+      // MOVING: never assign a lead without a real street name (number + street
+      // + area + postcode) - a bare building name is not mail-ready.
+      if (product === 'moving' && (!hasStreetName(gAddr) || (nl && nl.__noStreet))) {
+        if (bareSkipLogs < 6) { bareSkipLogs++; console.log('  [DISTRIBUTOR] Skipping no-street moving lead: ' + gAddr.substring(0, 60)); }
+        continue;
+      }
       if (!hasUsablePremiseAddress(gAddr, gPc)) {
         if (bareSkipLogs < 6) { bareSkipLogs++; console.log('  [DISTRIBUTOR] Skipping bare-address ' + product + ' lead: ' + gAddr.substring(0, 60)); }
         return;
