@@ -239,10 +239,11 @@ function interleavePoolByAreas(poolArr, custAreas) {
   // Postcoder credits - maximising how many of the promised count actually deliver.
   Object.keys(buckets).forEach(function(bk) {
     buckets[bk].sort(function(a, b) {
-      function premise(l) { try { var dd = JSON.parse(l.data || '{}'); return hasUsablePremiseAddress(dd.fullAddress || dd.address || dd.deceasedAddress || '', dd.postcode || '') ? 1 : 0; } catch(e) { return 0; } }
+      // Pool file leads are FLAT objects (no .data wrapper) - read the fields directly.
+      function premise(l) { return hasUsablePremiseAddress(l.fullAddress || l.address || l.deceasedAddress || '', l.postcode || '') ? 1 : 0; }
       var pa = premise(a), pb = premise(b);
       if (pa !== pb) return pb - pa;
-      function fresh(l) { try { var dd = JSON.parse(l.data || '{}'); return new Date(dd.firstVisibleDate || dd.updateDate || 0).getTime(); } catch(e) { return 0; } }
+      function fresh(l) { return new Date(l.firstVisibleDate || l.updateDate || 0).getTime(); }
       return fresh(b) - fresh(a);
     });
   });
