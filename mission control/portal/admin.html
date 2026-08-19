@@ -663,7 +663,7 @@ async function viewCustomerLeads(email) {
   }
   try {
     const r = await fetch(API + '/api/admin/customer-dashboard?email=' + encodeURIComponent(email), { headers: adminHeaders() });
-    if (!r.ok) { buildModal('Leads', '<div style="color:#ef4444">Could not load leads</div>'); return; }
+    if (!r.ok) { buildModal('Leads', '<div style="color:#ef4444">Could not load leads (HTTP ' + r.status + '). If this says 401, re-enter the admin password (top-right) and try again.</div>'); return; }
     const d = await r.json();
     let h = '<div style="margin-bottom:10px;font-size:13px;color:#e2e8f0"><strong>' + email + '</strong> · ' + d.product + ' · plan: ' + d.plan + ' · areas: ' + (d.areas || '-') + ' · ' + d.delivered + ' delivered / ' + d.pending + ' pending</div>';
     if (!d.leads || d.leads.length === 0) {
