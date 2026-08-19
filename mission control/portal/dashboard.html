@@ -153,7 +153,7 @@ footer a{color:var(--accent);text-decoration:underline}
 </div>
 <div class="stat-line">
 <div><strong id="plan-leads">5</strong> leads/day</div>
-<div><strong id="plan-areas">E, NW, EN</strong></div>
+<div><strong id="plan-areas">&mdash;</strong></div>
 <div id="trial-timer-wrap" style="display:none"><div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px"><i class="fas fa-hourglass-half" style="margin-right:4px"></i> Free Trial Ends In</div><div id="trial-timer" style="font-size:22px;font-weight:800;color:#d97706;font-family:var(--ff-h);letter-spacing:1px">--:--:--</div><div style="font-size:10px;color:var(--muted);margin-top:2px">days : hours : minutes : seconds</div></div>
 <div><strong id="plan-remaining">7 days</strong> remaining</div>
 </div>
@@ -1650,6 +1650,16 @@ document.querySelectorAll('.modal').forEach(function(m){
         } catch(cpErr) {}
       }
       if (data.leads_per_day) document.getElementById('plan-leads').textContent = data.leads_per_day;
+      // Account Summary areas must reflect the customer's ACTUAL target areas on
+      // load (the HTML starts with a placeholder, not a hardcoded list).
+      var paEl = document.getElementById('plan-areas');
+      if (paEl) {
+        if (data.target_areas && Array.isArray(data.target_areas) && data.target_areas.length) {
+          paEl.textContent = data.target_areas.join(', ');
+        } else if (data.target_areas && typeof data.target_areas === 'string') {
+          try { var tarr = JSON.parse(data.target_areas); if (Array.isArray(tarr) && tarr.length) paEl.textContent = tarr.join(', '); else if (tarr) paEl.textContent = String(tarr); } catch(e) { paEl.textContent = data.target_areas; }
+        }
+      }
       if (data.trial_ends) {
         var days = Math.ceil((new Date(data.trial_ends) - new Date()) / 86400000);
         document.getElementById('plan-remaining').textContent = (days > 0 ? days + ' days' : 'Expired') + ' remaining';
