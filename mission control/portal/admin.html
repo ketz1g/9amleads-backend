@@ -605,7 +605,7 @@ async function loginAs(customerId) {
       var session = { token: d.token, clientId: customerId, name: 'Admin', plan: d.customer?.plan || 'free_trial', email: d.customer?.email || '', product: d.customer?.product || 'moving', admin_impersonating: true, impersonated_by: d.admin_email || 'Admin' };
       try { var payload = JSON.parse(atob(d.token.split('.')[1])); if (payload) { session.admin_impersonating = payload.admin_impersonating || true; session.impersonated_by = payload.impersonated_by || session.impersonated_by; } } catch(e2) {}
       localStorage.setItem('mld_portal_session', JSON.stringify(session));
-      window.location.href = '/portal/dashboard.html';
+      window.open('/portal/dashboard.html', '_blank');
     } else { alert('Failed: ' + (d.error || 'unknown')); }
   } catch(e) { alert('Error: ' + e.message); }
 }
@@ -617,7 +617,7 @@ function impersonateCustomer(id, email) {
     if (d.token) {
       var session = { token: d.token, clientId: id, name: 'Admin', plan: d.customer?.plan || 'free_trial', email: d.customer?.email || '', product: d.customer?.product || 'moving', admin_impersonating: true, impersonated_by: d.admin_email || 'Admin', impersonation_reason: reason };
       localStorage.setItem('mld_portal_session', JSON.stringify(session));
-      window.location.href = '/portal/dashboard.html';
+      window.open('/portal/dashboard.html', '_blank');
     } else { alert('Failed: ' + (d.error || 'unknown')); }
   }).catch(function(e) { alert('Error: ' + e.message); });
 }
