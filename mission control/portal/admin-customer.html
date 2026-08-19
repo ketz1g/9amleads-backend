@@ -107,6 +107,10 @@ async function openCustomerDashboard() {
     window.open('/portal/dashboard.html', '_blank');
   } catch(e) { alert('Error: ' + e.message); }
 }
+// If the admin clicked "Login as" on the admin page, auto-open the dashboard in a
+// new tab after the leads view loads. This page itself never navigates away.
+var openDash = new URLSearchParams(window.location.search).get('action') === 'dashboard';
+if (openDash) { setTimeout(function() { openCustomerDashboard(); }, 1200); }
 load();
 </script>
 </body>
