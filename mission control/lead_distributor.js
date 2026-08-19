@@ -31,6 +31,10 @@ const POSTCODE_ASSIGNMENTS_FILE = path.join(DATA_DIR, 'postcode-assignments.json
 // 00:00 so weekend-scraped leads fill Monday's accounts). See freshness.js.
 const FRESHNESS = require('./freshness');
 function getFreshCutoffIso(nowMs) { return FRESHNESS.getFreshCutoffIso(nowMs); }
+// Full-address / premise gate (door number, flat number or named building) so the
+// distributor never assigns bare-street leads that the delivery can't mail.
+const ADDR_PREMISE = require('./address_premise');
+function hasUsablePremiseAddress(addr, pc) { return ADDR_PREMISE.hasUsablePremiseAddress(addr, pc); }
 
 // Per-product daily plan limits (mirrors production getPlanLimit).
 // keyed [product][plan][coverage] with 'default' fallback.
@@ -941,8 +945,23 @@ async function distributeProduct(product) {
     return extractPostcodeArea(pc);
   }
 
+  var bareSkipLogs = 0;
   function assignLead(leadData, rawLeadData, addrKeyData, tierFilter) {
     const { lead: rl, normalised: nl, addrKey: ak, customers, category } = leadData;
+    // FULL-ADDRESS GATE for property products (moving/probate): never assign a lead
+    // without a usable premise (door number / flat number / named building). A bare
+    // street like "Durham Road" has no door number so it can never be mailed, and
+    // assigning it just wastes the customer's quota (the delivery gate drops it and
+    // the customer gets a shortfall). Commercial leads are checked the same way
+    // ("Unit 5, Kings Wharf" passes because it has a unit number).
+    if (product === 'moving' || product === 'probate') {
+      var gAddr = String((rl && (rl.fullAddress || rl.address || rl.deceasedAddress)) || (nl && (nl.fullAddress || nl.address || nl.deceasedAddress)) || '').trim();
+      var gPc = String((rl && rl.postcode) || (nl && nl.postcode) || '').trim();
+      if (!hasUsablePremiseAddress(gAddr, gPc)) {
+        if (bareSkipLogs < 6) { bareSkipLogs++; console.log('  [DISTRIBUTOR] Skipping bare-address ' + product + ' lead: ' + gAddr.substring(0, 60)); }
+        return;
+      }
+    }
     const leadArea = getLeadPostcodeArea(leadData);
     const cat = category || '';
     // Filter customers by tier, then sort by per-category usage (fewest first)
