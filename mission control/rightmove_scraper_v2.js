@@ -90,9 +90,10 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
           return;
         }
         let body = '';
-        res.on('data', (c) => body += c);
+        let tooBig2 = false;
+        res.on('data', (c) => { if (body.length > 1500000) { tooBig2 = true; res.destroy(); return; } body += c; });
         res.on('end', () => {
-          if (res.statusCode !== 200) {
+          if (tooBig2 || res.statusCode !== 200) {
             console.log('[RIGHTMOVE] HTTP ' + res.statusCode + ' for ' + locationId + ' index=' + pageIndex);
             resolve([]);
             return;
