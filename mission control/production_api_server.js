@@ -8497,17 +8497,27 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               for (var fc=0; fc<fpoolArr.length && fcreated.length < finalShort && custLeads.length < totalDailyLimit; fc++) {
                 var fl = fpoolArr[fc];
                 if (fl.commercial) continue;
-                var flD = fl.firstVisibleDate || fl.addedOn || fl.publishedDate || fl.receivedDate || fl.updateDate || fl.created_at || '';
+                var flD = pickFreshDate(fl);
                 if (!flD || flD < freshCutoffNow) continue;
                 if (pickedIds.indexOf(fl.id) !== -1) continue;
                 var farea = extractPostcodeArea(fl.postcode || fl.address || '');
-                if (!farea) continue;
+                // Tenders/probate are national-fallback products (no postcode on leads).
+                if (!farea && !(fprod === 'tenders' || fprod === 'probate')) continue;
                 var fAddr = fl.fullAddress || fl.address || '';
                 // SKIP bare-postcode pool entries: if the pool lead has NO street/name
                 // address (just a postcode or area code), it can never become a proper
                 // address — skip it rather than pull a useless bare-postcode lead.
                 if (!fAddr || !/[A-Za-z]/.test(fAddr.replace(/[0-9,\s-]+/g, ''))) continue;
                 var fld = Object.assign({}, fl, { id: fl.id, address: fAddr, postcode: fl.postcode || '', product: fprod });
+                // TENDERS: opportunities, not postal addresses — accept directly (title/
+                // description/buyer is the identifier), no PAF/postcode required.
+                if (fprod === 'tenders' && (fl.title || fl.description || fl.buyer)) {
+                  fcreated.push(fld);
+                  custLeads.push(fld);
+                  pickedIds.push(fld.id);
+                  prodTaken[fprod]++;
+                  continue;
+                }
                 // FREE detail-page enrich first: if the pool lead has a Rightmove URL,
                 // fetch its detail page (free, no Postcoder) to get the full door-numbered
                 // address + postcode. This is what gives pool leads real street numbers.
