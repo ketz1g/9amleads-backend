@@ -15873,12 +15873,27 @@ function syncCustomers(product) {
             try {
               if (process.env.HOMEDATA_API_KEY) {
                 var msp = require('./moving_source_provider');
-                var hdRes = await msp.fetchNewListings({ limit: parseInt(process.env.HOMEDATA_MAX_CALLS_PER_RUN || '150', 10), sinceDate: new Date().toISOString().split('T')[0] });
+                var hdRes = await msp.fetchNewListings({ limit: parseInt(process.env.HOMEDATA_MAX_CALLS_PER_RUN || '100', 10), sinceDate: new Date().toISOString().split('T')[0] });
                 var hdResolved = [];
                 var hdUnresolved = 0, hdDoor = 0;
-                for (var hdi = 0; hdi < (hdRes.records || []).length; hdi++) {
-                  var hdr = hdRes.records[hdi];
-                  var resolved = await msp.resolveAddress(hdr);
+                // COST CONTROL: Homedata charges per UPRN postcode lookup. Dedup records
+                // by postcode+street so the SAME property never resolves twice, and cap
+                // total resolutions per run (HOMEDATA_RESOLVE_CAP, default 40) so a bad
+                // day can never burn budget. This is a supply BONUS on top of Rightmove.
+                var hdRecords = hdRes.records || [];
+                var hdKeySeen = {};
+                var hdDeduped = [];
+                var hdResolveCap = parseInt(process.env.HOMEDATA_RESOLVE_CAP || '40', 10);
+                for (var hdi = 0; hdi < hdRecords.length; hdi++) {
+                  var hdr = hdRecords[hdi];
+                  var hk = String((hdr.postcode || '') + '|' + (hdr.street || hdr.address || '')).toUpperCase().replace(/\s+/g, '');
+                  if (hk && hdKeySeen[hk]) continue;
+                  hdKeySeen[hk] = 1;
+                  if (hdDeduped.length >= hdResolveCap) break;
+                  hdDeduped.push(hdr);
+                }
+                for (var hdi2 = 0; hdi2 < hdDeduped.length; hdi2++) {
+                  var resolved = await msp.resolveAddress(hdDeduped[hdi2]);
                   if (resolved && resolved.uprn) { hdResolved.push(resolved); if (resolved.houseNumber) hdDoor++; }
                   else { hdUnresolved++; }
                 }
@@ -15895,7 +15910,7 @@ function syncCustomers(product) {
                     leads.push({ id: 'HD_' + (r.uprn || (Date.now() + '_' + hdAdded)), source: 'Homedata', address: rAddr, fullAddress: rAddr, street: r.street || '', postcode: r.postcode || '', buildingNumber: r.houseNumber || r.buildingNumber || '', udprn: '', price: r.price || r.estimatedValue || '', bedrooms: r.bedrooms || 0, propertyType: r.propertyType || 'House', scrapedAt: new Date().toISOString(), firstVisibleDate: new Date().toISOString(), updateDate: new Date().toISOString(), url: r.url || '' });
                     hdAdded++;
                   });
-                  console.log('[HOMEDATA] merged ' + hdAdded + ' UPRN-resolved leads into moving pool (fetched=' + (hdRes.records||[]).length + ' resolved=' + hdResolved.length + ' doorNumbers=' + hdDoor + ' unresolved=' + hdUnresolved + ')');
+                  console.log('[HOMEDATA] merged ' + hdAdded + ' UPRN-resolved leads into moving pool (fetched=' + hdRecords.length + ' deduped=' + hdDeduped.length + ' resolved=' + hdResolved.length + ' doorNumbers=' + hdDoor + ' unresolved=' + hdUnresolved + ')');
                 }
               }
             } catch(hdErr) { console.log('[HOMEDATA] error: ' + hdErr.message); }
