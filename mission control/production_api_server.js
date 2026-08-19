@@ -166,6 +166,17 @@ function isFlatAddress(addr) {
   return /(?:^|[\s,])(flat|apartment|unit|maisonette|penthouse|room)\s*\d/i.test(String(addr || ''));
 }
 
+// True when an address contains a real street name (a door number followed by a
+// street word, OR a street suffix like Road/Street/Avenue/Lane/Close/...). Moving
+// leads must carry street + number + area + postcode - a bare building name with
+// no street (e.g. "Hazelwood House, Deptford") is NOT deliverable.
+function hasStreetName(addr) {
+  var a = String(addr || '').trim();
+  if (!a) return false;
+  if (/^\s*\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s+[A-Z][A-Za-z'-]+/.test(a)) return true;
+  return /(?:Road|Street|Avenue|Lane|Drive|Close|Crescent|Gardens|Grove|Court|Terrace|Way|Walk|Hill|Place|Mews|Rise|Row|Park|Square|Green|Broadway|Path|View|Gate|End|Field|Fields|High\s?Street|St\b|Rd\b|Ave\b|Ln\b|Dr\b|Cl\b|Cres\b|Gdns\b|Gv\b|Ct\b|Tce\b|Wl\b|Pl\b|Mws\b|Rse\b|Pk\b|Sq\b|Bdwy\b)/i.test(a);
+}
+
 // ---- Capacity / usage telemetry (exposed on /api/health) ----
 // Brevo daily send counter (1 email per customer per day). In-memory, reset on
 // the UTC date rollover; good enough to watch the free-tier 300/day ceiling.
@@ -8058,7 +8069,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                       var finPc = poolLeadData.postcode || '';
                       var finNum = hasPremiseNumber(finAddr, finPc);
                       var finFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(finPc).trim());
-                      if (!finNum || !finFullPc) { console.log('[DELIVERY] Pool fallback SKIP incomplete moving lead: pc=' + finPc + ' addr=' + (finAddr||'').substring(0,40)); continue; }
+                      if (!finNum || !finFullPc || !hasStreetName(finAddr)) { console.log('[DELIVERY] Pool fallback SKIP incomplete moving lead: pc=' + finPc + ' addr=' + (finAddr||'').substring(0,40)); continue; }
                       // Listing link is required too.
                       if (!rl.url && !poolLeadData.url) { console.log('[DELIVERY] Pool fallback SKIP moving lead without listing URL'); continue; }
                     }
@@ -8736,7 +8747,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   var nfeNum = hasPremiseNumber(nfeAddr, nfePc);
                   var nfeFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(nfePc).trim());
                   var nfeUrl = nfe.url || ncData.url || '';
-                  if (nfeNum && nfeFullPc && nfeUrl) {
+                  if (nfeNum && nfeFullPc && nfeUrl && hasStreetName(nfeAddr)) {
                                   if (isFlatAddress(ncData.fullAddress || '')) { ncData.fullAddress = stripGuessedFlatPrefix(ncData.fullAddress); ncData.address = ncData.fullAddress; }ncData.fullAddress = nfeAddr; ncData.address = nfeAddr;
                     ncData.postcode = nfePc; ncData.buildingNumber = nfe.buildingNumber || '';
                     ncData.street = nfe.street || ''; ncData.udprn = nfe.udprn || ''; ncData.url = nfeUrl;
