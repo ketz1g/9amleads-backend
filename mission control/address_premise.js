@@ -28,7 +28,9 @@ function hasUsablePremiseAddress(addr, pc) {
   // 3) Named building that carries a house/building name (no street number needed).
   //    "court" is NOT here: a bare "X Court" is an apartment block with no flat
   //    number and must be rejected (or resolved to "Flat N, X Court" by PAF).
-  if (/^(?:the\s+)?[A-Za-z][A-Za-z''-]*(?:\s+[A-Za-z''&-]+){0,3}\s+(?:house|mansions|tower|towers|block|chambers|hall|grange|lodge|cottages?|villas)\b/i.test(a) && !/\s+(?:square|place|court)\b/i.test(a)) return true;
+  //    The building-type word must be the LAST word (not "Norfolk House Road",
+  //    which is a street containing 'House' and has no premise).
+  if (/^(?:the\s+)?[A-Za-z][A-Za-z''-]*(?:\s+[A-Za-z''&-]+){0,3}\s+(?:house|mansions|tower|towers|block|chambers|hall|grange|lodge|cottages?|villas)(?!\s+[A-Za-z]+)\b/i.test(a) && !/\s+(?:square|place|court)\b/i.test(a)) return true;
   // 4) BARE STREET: the first comma segment ends in a street suffix -> no premise
   //    identifier (the town/area after the comma must not mask it).
   var seg = a.split(',')[0].trim();
