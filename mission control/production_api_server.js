@@ -16371,6 +16371,74 @@ function syncCustomers(product) {
   }
   })();
 });
+// POST /api/admin/zoopla/refresh — run the Zoopla Apify actor for the moving pool
+// STANDALONE (decoupled from the slow Rightmove scrape so supply/verification is
+// fast). Cost controls: once per day (last-zoopla.json shared with the scrape), area
+// cap ZOOPLA_MAX_AREAS (default 4), property cap ZOOPLA_MAX_PROPERTIES (default 60).
+// force=true bypasses the once/day guard (used for verification/tests).
+app.post('/api/admin/zoopla/refresh', adminAuth, async (req, res) => {
+  try {
+    if (!process.env.APIFY_API_KEY || process.env.ENABLE_ZOOPLA !== 'true') {
+      return res.json({ success: false, error: 'Zoopla not enabled (set APIFY_API_KEY + ENABLE_ZOOPLA=true)' });
+    }
+    var zooplaMaxAreas = parseInt(process.env.ZOOPLA_MAX_AREAS || '4', 10);
+    var zooplaMaxProps = parseInt(process.env.ZOOPLA_MAX_PROPERTIES || '60', 10);
+    var forceRun = req.body && req.body.force === true;
+    var zooplaRunFile = path.join(DATA_DIR, 'last-zoopla.json');
+    var zooplaTodayStr = new Date().toISOString().split('T')[0];
+    var zooplaLastRun = {};
+    try { zooplaLastRun = JSON.parse(fs.readFileSync(zooplaRunFile, 'utf-8')); } catch(ze) {}
+    if (zooplaLastRun.lastRun === zooplaTodayStr && !forceRun) {
+      return res.json({ success: true, skipped: true, message: 'Zoopla already run today (cost control). Use force=true to override.' });
+    }
+    // Areas: body override, else moving customer areas (capped).
+    var areas = (req.body && req.body.areas && Array.isArray(req.body.areas)) ? req.body.areas : [];
+    if (areas.length === 0) {
+      var zDb = getDb();
+      var zSeen = {};
+      (zDb.customers || []).forEach(function(zc) {
+        if (zc.product !== 'moving') return;
+        var za = [];
+        try { za = JSON.parse(zc.target_areas || '[]'); } catch(ze2) {}
+        za.forEach(function(a) { var an = String(a).toUpperCase().replace(/[^A-Z0-9]/g, ''); if (an && !zSeen[an] && zSeen[an] !== 1 && Object.keys(zSeen).length < zooplaMaxAreas) { zSeen[an] = 1; areas.push(an); } });
+      });
+    }
+    areas = areas.map(function(a) { return String(a).toUpperCase().replace(/[^A-Z0-9]/g, ''); }).filter(Boolean);
+    areas = areas.slice(0, zooplaMaxAreas);
+    if (areas.length === 0) return res.json({ success: false, error: 'No areas to scrape' });
+    var maxProps = (req.body && req.body.maxProps) ? parseInt(req.body.maxProps, 10) : zooplaMaxProps;
+    var rmScraper = require('./rightmove_scraper_v2');
+    res.json({ success: true, started: true, areas: areas, maxProps: maxProps, message: 'Zoopla run started (async). Check the pool in ~5-10 min.' });
+    (async () => {
+      try {
+        var zLeads = await rmScraper.fetchZooplaApify(areas, maxProps);
+        try { fs.writeFileSync(zooplaRunFile, JSON.stringify({ lastRun: zooplaTodayStr, at: new Date().toISOString(), areas: areas, maxProps: maxProps })); } catch(zwe) {}
+        if (!zLeads || zLeads.length === 0) { console.log('[ZOOPLA-REFRESH] 0 leads returned'); return; }
+        var t7dZ = new Date(Date.now() - 7 * 86400000).toISOString();
+        zLeads = zLeads.filter(function(l) { return (l.firstVisibleDate || l.updateDate || '') >= t7dZ; });
+        var zPoolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
+        var zPool = [];
+        try { var zRaw = JSON.parse(fs.readFileSync(zPoolFile, 'utf-8')); if (Array.isArray(zRaw)) zPool = zRaw; else if (zRaw && typeof zRaw === 'object') Object.keys(zRaw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(zRaw[k])) zPool = zPool.concat(zRaw[k]); }); } catch(ze3) {}
+        var zSeen2 = {};
+        zPool.forEach(function(l) { if (l.postcode && l.address) zSeen2[String(l.postcode + '|' + l.address).toLowerCase()] = 1; });
+        var zAdded = 0;
+        zLeads.forEach(function(zl) {
+          var k2 = String((zl.postcode || '') + '|' + (zl.address || '')).toLowerCase();
+          if (k2 && !zSeen2[k2]) { zSeen2[k2] = 1; zPool.push(zl); zAdded++; }
+        });
+        if (zAdded > 0) {
+          fs.writeFileSync(zPoolFile, JSON.stringify(zPool, null, 2));
+          console.log('[ZOOPLA-REFRESH] added ' + zAdded + ' Zoopla leads to moving pool (total=' + zPool.length + ')');
+        } else {
+          console.log('[ZOOPLA-REFRESH] 0 new leads (all dupes/stale)');
+        }
+      } catch(zrErr) { console.log('[ZOOPLA-REFRESH] error: ' + zrErr.message); }
+    })();
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // POST /api/admin/test-ch — test Companies House API from Render
 // Stream worker status
 app.get('/api/admin/stream-status', adminAuth, function(req, res) {
