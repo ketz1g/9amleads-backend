@@ -129,8 +129,29 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
     var locId;
     if (outcodeId) locId = 'OUTCODE%5E' + outcodeId;
     else {
-      var regionId = '87490';
-      if (['LU','AL','SG','CM','CO','SS','IP','NR','CB','PE'].indexOf(areaCode) !== -1) regionId = '87495';
+      // Region fallback - the correct Rightmove region for the area. The old
+      // default of 87490 (London) sent Liverpool (L) / Manchester (M) / etc. to
+      // London and produced zero North-West supply. Map every area to its region:
+      //   87490 Greater London, 87491 West Midlands, 87492 Scotland, 87493 Wales,
+      //   87495 East, 87496 South East, 87497 South West, 87489 East Midlands,
+      //   87487 North West, 87488 Yorks & Humber, 87486 North East.
+      var REGION_MAP = {
+        'E':'87490','EC':'87490','N':'87490','NW':'87490','SE':'87490','SW':'87490','W':'87490','WC':'87490',
+        'EN':'87490','HA':'87490','BR':'87490','CR':'87490','DA':'87490','KT':'87496','RM':'87490','SM':'87490',
+        'TW':'87490','UB':'87490','IG':'87490','WD':'87490','SL':'87496','GU':'87496','RG':'87496',
+        'AL':'87495','SG':'87495','CM':'87495','SS':'87495','CO':'87495','HP':'87496','LU':'87495','MK':'87496',
+        'TN':'87496','ME':'87496','CT':'87496','BN':'87496','RH':'87496','SO':'87496','PO':'87496','SP':'87496','OX':'87496',
+        'BA':'87497','BS':'87497','GL':'87497','SN':'87497','TA':'87497','DT':'87497','BH':'87497','EX':'87497','PL':'87497','TQ':'87497','TR':'87497',
+        'B':'87491','CV':'87491','DY':'87491','HR':'87491','ST':'87491','SY':'87491','TF':'87491','WR':'87491','WS':'87491','WV':'87491',
+        'DE':'87489','DN':'87489','LE':'87489','LN':'87489','NG':'87489','NN':'87489','PE':'87489',
+        'CB':'87495','IP':'87495','NR':'87495',
+        'M':'87487','L':'87487','BL':'87487','CH':'87487','CW':'87487','FY':'87487','LA':'87487','OL':'87487','PR':'87487','SK':'87487','WA':'87487','WN':'87487','BB':'87487',
+        'HD':'87488','HG':'87488','HU':'87488','HX':'87488','LS':'87488','S':'87488','WF':'87488','YO':'87488','BD':'87488',
+        'DH':'87486','DL':'87486','NE':'87486','SR':'87486','TS':'87486',
+        'AB':'87492','DD':'87492','DG':'87492','EH':'87492','FK':'87492','G':'87492','HS':'87492','IV':'87492','KA':'87492','KW':'87492','KY':'87492','ML':'87492','PA':'87492','PH':'87492','TD':'87492','ZE':'87492',
+        'CF':'87493','LD':'87493','LL':'87493','NP':'87493','SA':'87493','SY':'87493'
+      };
+      var regionId = REGION_MAP[areaCode] || '87490';
       locId = 'REGION%5E' + regionId;
     }
     var url = 'https://www.rightmove.co.uk/' + section + '/find.html?searchType=SALE&locationIdentifier=' + locId + '&includeSSTC=true';
