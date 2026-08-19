@@ -8282,10 +8282,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 fgData.address = stripGuessedFlatPrefix(fgData.address);
                 fgData.fullAddress = fgData.address;
               }
-              // MOVING ONLY: a deliverable lead must carry a street name (number +
-              // street + area + postcode). A bare building name (e.g. "Hazelwood
-              // House, Deptford") is NOT mail-ready.
-              if (fgProd === 'moving' && !hasStreetName(fgData.address || '')) continue;
+              // MOVING ONLY: a deliverable lead must carry a door/flat number AND a
+              // real street name (number + street + area + postcode). A bare building
+              // name or street-only address is NOT mail-ready.
+              if (fgProd === 'moving' && (!hasStreetName(fgData.address || '') || !hasPremiseNumber(fgData.address || '', fgData.postcode || ''))) continue;
               var fgNew = { id: 'lead_' + Date.now() + '_' + fgi, customer_id: cust.id, product: fgProd, data: JSON.stringify(fgData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
               db.leads.push(fgNew);
               fgExisting[fgKey] = 1;
