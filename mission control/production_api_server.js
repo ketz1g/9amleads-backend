@@ -11804,7 +11804,7 @@ function generateLeadEmailHTML(customer, leads) {
     if (chips.length > 0) {
       body += '<div style="margin-bottom:8px">';
       for (var c = 0; c < chips.length; c++) {
-        body += '<span style="display:inline-block;padding:4px 10px;margin:0 4px 4px 0;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:8px;font-size:12px;color:#f1f5f9;white-space:nowrap">' + chips[c].icon + ' ' + chips[c].text + '</span>';
+        body += '<span style="display:inline-block;padding:4px 10px;margin:0 4px 4px 0;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:8px;font-size:12px;color:#f1f5f9;white-space:nowrap">' + chips[c].text + '</span>';
       }
       body += '</div>';
     }
@@ -11815,10 +11815,10 @@ function generateLeadEmailHTML(customer, leads) {
     var hasWebsite = d.website || d.url;
     if (d.contactName || contEmail || contPhone || hasWebsite) {
       body += '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;margin-top:8px">';
-      if (d.contactName) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\uD83D\uDC64 Contact: ' + d.contactName + '</div>';
-      if (contEmail) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\u2709\uFE0F <a href="mailto:' + contEmail + '" style="color:#38bdf8;text-decoration:none">' + contEmail + '</a></div>';
-      if (contPhone) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\uD83D\uDCDE ' + contPhone + '</div>';
-      if (hasWebsite) { var w = d.website || d.url || ''; body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">\uD83C\uDF10 <a href="http://' + w.replace(/^https?:\/\//, '') + '" style="color:#38bdf8;text-decoration:none" target="_blank">' + w + '</a></div>'; }
+      if (d.contactName) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">Contact: ' + d.contactName + '</div>';
+      if (contEmail) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px"><a href="mailto:' + contEmail + '" style="color:#38bdf8;text-decoration:none">' + contEmail + '</a></div>';
+      if (contPhone) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">Phone: ' + contPhone + '</div>';
+      if (hasWebsite) { var w = d.website || d.url || ''; body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">Website: <a href="http://' + w.replace(/^https?:\/\//, '') + '" style="color:#38bdf8;text-decoration:none" target="_blank">' + w + '</a></div>'; }
       body += '</div>';
     }
 
@@ -11849,7 +11849,7 @@ function generateLeadEmailHTML(customer, leads) {
     if (actionLinks.length > 0) {
       body += '<div style="margin-top:12px;display:flex;gap:8px">';
       for (var ai = 0; ai < actionLinks.length; ai++) {
-        body += '<a href="' + actionLinks[ai].url + '" target="_blank" style="flex:1;display:block;text-align:center;padding:10px 8px;background-color:' + accent + ';background-image:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:10px;font-size:12px;font-weight:600">\uD83D\uDD0D ' + actionLinks[ai].label + '</a>';
+        body += '<a href="' + actionLinks[ai].url + '" target="_blank" style="flex:1;display:block;text-align:center;padding:10px 8px;background-color:' + accent + ';background-image:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:10px;font-size:12px;font-weight:600">' + actionLinks[ai].label + '</a>';
       }
       body += '</div>';
     }
