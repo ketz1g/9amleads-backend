@@ -3687,6 +3687,16 @@ app.put('/api/settings', authMiddleware, (req, res) => {
     releasePostcodes(req.user.id);
     claimPostcodes(target_areas, req.user.id, customer.product);
     db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(JSON.stringify(target_areas), req.user.id);
+    // SYNC the per-product config too — the delivery reads product_config[<product>].target_areas
+    // FIRST (before the generic target_areas column), so a dashboard area change MUST update
+    // it or the next 9am delivery keeps using the customer's OLD areas.
+    try {
+      var pcSync = JSON.parse(customer.product_config || '{}');
+      var pcProd = customer.product;
+      if (pcSync[pcProd]) pcSync[pcProd].target_areas = JSON.stringify(target_areas);
+      else pcSync[pcProd] = Object.assign({}, pcSync[pcProd] || {}, { target_areas: JSON.stringify(target_areas), coverage: customer.coverage || 'postcode' });
+      db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(JSON.stringify(pcSync), req.user.id);
+    } catch(pcSyncErr) { console.log('[SETTINGS] product_config sync error:', pcSyncErr.message); }
     // Sync postcodes to scraper customer file
     try {
       var p2 = customer.product;
@@ -7484,6 +7494,26 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // Get all products for this customer (round-robin)
       var products = [cust.product];
       try { var extra = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
+      // DASHBOARD LEAD FILTERS (bedrooms / max price / property type): the customer
+      // sets these in the dashboard, so the next 9am delivery must respect them.
+      var custLeadFilters = { minBedrooms: 0, maxBedrooms: 99, maxPrice: 0, propertyType: '' };
+      try { var lf2 = JSON.parse(cust.biz_field2 || '{}'); custLeadFilters.minBedrooms = parseInt(lf2.minBedrooms) || 0; custLeadFilters.maxBedrooms = parseInt(lf2.maxBedrooms) || 99; custLeadFilters.maxPrice = parseInt(lf2.maxPrice) || 0; custLeadFilters.propertyType = String(lf2.propertyType || '').toLowerCase(); } catch(e) {}
+      function leadPassesFilters(ld2) {
+        try {
+          if (cust.product === 'moving') {
+            var b = parseInt(ld2.bedrooms) || 0;
+            if (custLeadFilters.minBedrooms && b < custLeadFilters.minBedrooms) return false;
+            if (custLeadFilters.maxBedrooms < 99 && b > custLeadFilters.maxBedrooms) return false;
+            var pr = parseFloat(String(ld2.price || '').replace(/[^0-9.]/g, '')) || 0;
+            if (custLeadFilters.maxPrice && pr && pr > custLeadFilters.maxPrice) return false;
+            if (custLeadFilters.propertyType && custLeadFilters.propertyType !== 'any') {
+              var pt = String(ld2.propertyType || ld2.type || '').toLowerCase();
+              if (pt && pt.indexOf(custLeadFilters.propertyType) === -1 && custLeadFilters.propertyType.indexOf(pt) === -1) return false;
+            }
+          }
+          return true;
+        } catch(e) { return true; }
+      }
       var debugUndelivered = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0; }).length;
       console.log('[DELIVER-DEBUG] ' + cust.email + ' products=' + products.join(',') + ' limit=' + totalDailyLimit + ' undelivered=' + debugUndelivered);
       
@@ -7666,6 +7696,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         var pool = (db.leads || []).filter(function(l) {
           if (l.customer_id !== cust.id || l.delivered !== 0 || l.product !== p) return false;
           if (!isLeadFresh24(l)) return false;
+          if (!leadPassesFilters(JSON.parse(l.data || '{}'))) return false;
           if (!notDeliveredBefore(l)) return false;
           return true;
         });
@@ -7813,6 +7844,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     // FRESH-ONLY: never create a lead from a stale pool entry.
                     var rlD = pickFreshDate(rl);
                     if (!rlD || rlD < freshCutoffNow) continue;
+                     // DASHBOARD FILTERS: respect the customer bedroom/price/type filters.
+                     if (!leadPassesFilters(rl)) continue;
                     var areaOfPoolLead = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || '');
                     // Tenders/probate are national-fallback products: their leads often
                     // carry no postcode (tenders are opportunities, probate gazette
@@ -8027,6 +8060,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               // FRESH-ONLY: never create a lead from a stale pool entry.
               var fgD = pickFreshDate(fgLead);
               if (!fgD || fgD < freshCutoffNow) continue;
+              if (!leadPassesFilters(fgLead)) continue;
               var fgArea = extractPostcodeArea(fgLead.postcode || fgLead.address || fgLead.location || fgLead.name || '');
               // Tenders/probate are national-fallback products (no postcode on leads).
               if (!fgArea && !(fgProd === 'tenders' || fgProd === 'probate')) continue;
@@ -8142,6 +8176,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               var tl = tpArr[tpi];
               var tlD = pickFreshDate(tl);;
               if (!tlD || tlD < freshCutoffNow) continue;
+              if (!leadPassesFilters(tl)) continue;
               var tlArea = extractPostcodeArea(tl.postcode || tl.address || tl.location || tl.name || '');
               // Tenders/probate are national-fallback products (no postcode on leads).
               if (!tlArea && !(tpProd === 'tenders' || tpProd === 'probate')) continue;
@@ -8499,6 +8534,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 if (fl.commercial) continue;
                 var flD = pickFreshDate(fl);
                 if (!flD || flD < freshCutoffNow) continue;
+                if (!leadPassesFilters(fl)) continue;
                 if (pickedIds.indexOf(fl.id) !== -1) continue;
                 var farea = extractPostcodeArea(fl.postcode || fl.address || '');
                 // Tenders/probate are national-fallback products (no postcode on leads).
@@ -11712,7 +11748,8 @@ function generateLeadEmailHTML(customer, leads) {
       // isn't repeated next to the full postcode (e.g. "EN1, EN1 3HJ").
       var addrNoPartialPc = fullAddr.replace(/[, ]*[A-Z]{1,2}[0-9][A-Z0-9]?[\s,]*$/i, '').replace(/[\s,]+$/, '');
       if (addrNoPartialPc && postcode && addrNoPartialPc !== fullAddr) fullAddr = addrNoPartialPc;
-      if (d.town && fullAddr.toLowerCase().indexOf((d.town || '').toLowerCase()) === -1) fullAddr += ', ' + d.town;
+       var emailTown = (d.town || '').replace(/\s+area$/i, '').trim();
+       if (emailTown && fullAddr.toLowerCase().indexOf(emailTown.toLowerCase()) === -1) fullAddr += ', ' + emailTown;
       if (postcode && fullAddr.toLowerCase().indexOf(postcode.toLowerCase()) === -1) fullAddr += ', ' + postcode;
       title = fullAddr || 'Property';
       subtitle = (d.bedrooms ? d.bedrooms + ' bed' : '') + (d.price ? ' · \u00a3' + Number(d.price).toLocaleString() : '');

@@ -280,7 +280,7 @@ function renderLeadList(dayLeads, noGroup) {
     } else {
       // moving / default
       var addr = d.address || d.title || 'Property';
-      var town = d.town || d.city || '';
+      var town = (d.town || d.city || '').replace(/\s+area$/i, '').trim();
       var fullAddr = addr;
       var addrNoPartial = addr.replace(/[, ]*[A-Z]{1,2}[0-9][A-Z0-9]?[\s,]*$/i, '').replace(/[\s,]+$/, '');
       if (addrNoPartial && pc && addrNoPartial !== addr) fullAddr = addrNoPartial;
