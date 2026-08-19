@@ -189,6 +189,14 @@ function hasBadUnitCode(addr) {
   return false;
 }
 
+// Remove a trailing PARTIAL postcode (outcode only, e.g. "London, WC2A" /
+// "London, SW17") from an address string. The full postcode is stored separately
+// in the postcode field - a bare outcode at the end of the address is redundant
+// and makes the lead look incomplete.
+function stripPartialPostcode(addr) {
+  return String(addr || '').replace(/,\s*[A-Z]{1,2}[0-9][A-Z0-9]?\s*$/i, '').replace(/\s{2,}/g, ' ').trim();
+}
+
 // True when an address contains a real street name (a door number followed by a
 // street word, OR a street suffix like Road/Street/Avenue/Lane/Close/...). Moving
 // leads must carry street + number + area + postcode - a bare building name with
@@ -3368,8 +3376,8 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     .map(l => {
     const parsed = JSON.parse(l.data || '{}');
     if (customer && customer.product === 'moving') {
-      if (parsed.address) parsed.address = stripRegionTags(stripGuessedFlatPrefix(parsed.address));
-      if (parsed.fullAddress) parsed.fullAddress = stripRegionTags(stripGuessedFlatPrefix(parsed.fullAddress));
+      if (parsed.address) parsed.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.address)));
+      if (parsed.fullAddress) parsed.fullAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.fullAddress)));
     }
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
     return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
@@ -7617,8 +7625,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // ("London, Wales", "Battersea, Scotland").
       arr = arr.map(function(l) {
         if (l && l.address) {
-          l.address = stripRegionTags(stripGuessedFlatPrefix(l.address));
-          if (l.fullAddress) l.fullAddress = stripRegionTags(stripGuessedFlatPrefix(l.fullAddress));
+          l.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.address)));
+          if (l.fullAddress) l.fullAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
         }
         return l;
       });
@@ -8137,7 +8145,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                       // displayAddress to "Flat 1, <building>" - never mail to a guessed
                       // flat. Keep the building-level address (accurate for Print & Post).
                                             if (poolLeadData.address) {
-                        poolLeadData.address = stripRegionTags(stripGuessedFlatPrefix(poolLeadData.address));
+                        poolLeadData.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(poolLeadData.address)));
                         poolLeadData.fullAddress = poolLeadData.address;
                       }
                       }
@@ -8309,7 +8317,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               // (London, Wales / Battersea, Scotland) so no mail-unready or wrong
               // address is ever delivered.
               if (fgData.address) {
-                fgData.address = stripRegionTags(stripGuessedFlatPrefix(fgData.address));
+                fgData.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(fgData.address)));
                 fgData.fullAddress = fgData.address;
               }
 // MOVING ONLY: a deliverable lead must carry a door/flat number AND a
