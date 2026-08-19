@@ -231,7 +231,8 @@ function hasStreetName(addr) {
   var a = String(addr || '').trim();
   if (!a) return false;
   if (/^\s*\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s+[A-Z][A-Za-z'-]+/.test(a)) return true;
-  return /(?:Road|Street|Avenue|Lane|Drive|Close|Crescent|Gardens|Grove|Court|Terrace|Way|Walk|Hill|Place|Mews|Rise|Row|Park|Square|Green|Broadway|Path|View|Gate|End|Field|Fields|High\s?Street|\bSt\b|\bRd\b|\bAve\b|\bLn\b|\bDr\b|\bCl\b|\bCres\b|\bGdns\b|\bGv\b|\bCt\b|\bTce\b|\bWl\b|\bPl\b|\bMws\b|\bRse\b|\bPk\b|\bSq\b|\bBdwy\b)/i.test(a);
+  // Word-boundary anchored so 'Court' never matches inside 'Courtenay'.
+  return /(?:\bRoad\b|\bStreet\b|\bAvenue\b|\bLane\b|\bDrive\b|\bClose\b|\bCrescent\b|\bGardens\b|\bGrove\b|\bCourt\b|\bTerrace\b|\bWay\b|\bWalk\b|\bHill\b|\bPlace\b|\bMews\b|\bRise\b|\bRow\b|\bPark\b|\bSquare\b|\bGreen\b|\bBroadway\b|\bPath\b|\bView\b|\bGate\b|\bEnd\b|\bField\b|\bFields\b|\bHigh\s?Street\b|\bSt\b|\bRd\b|\bAve\b|\bLn\b|\bDr\b|\bCl\b|\bCres\b|\bGdns\b|\bGv\b|\bCt\b|\bTce\b|\bWl\b|\bPl\b|\bMws\b|\bRse\b|\bPk\b|\bSq\b|\bBdwy\b)/i.test(a);
 }
 
 // ---- Capacity / usage telemetry (exposed on /api/health) ----
