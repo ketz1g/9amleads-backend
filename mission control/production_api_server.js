@@ -16106,15 +16106,14 @@ function syncCustomers(product) {
               var withRealPc = leads.filter(function(l) { return l.postcode && /[A-Z]{1,2}[0-9]/.test(l.postcode); }).length;
               var withDoorNum = leads.filter(function(l) { return (l.fullAddress || l.address || '').match(/\d/); }).length;
               console.log('[SCRAPER] Rightmove enriched ' + enrichedNow.length + ' leads; ' + withRealPc + '/' + leads.length + ' postcodes, ' + withDoorNum + '/' + leads.length + ' with door numbers');
-              // COLLECTION-TIME PAF (bounded): pre-resolve real door numbers on the
-              // freshest door-less leads so the pool is stocked with correctly-addressed
-              // leads BEFORE delivery. This is what lets customers get their EXACT daily
-              // count (e.g. 5/day) with accurate addresses: delivery only needs to pick
-              // from an already-numbered pool, so the door-number gate rarely drops a
-              // lead. Spend is bounded by the shared daily budget (canLookup), and we
-              // sort by freshness so the leads most likely to be delivered are enriched
-              // first. Any lead still lacking a number gets one more chance at delivery.
-              if (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') {
+              // COLLECTION-TIME PAF (OPT-IN, OFF BY DEFAULT): pre-resolving door numbers
+              // on POOL leads spends paid Postcoder credits on leads that may never be
+              // delivered. To keep costs low, Postcoder is used ONLY at delivery on the
+              // EXACT leads being emailed/posted. The free Rightmove detail-page
+              // enrichment above already adds door numbers to the fresh pool, and the
+              // delivery-time PAF enriches any remaining sent lead. Set
+              // MOVING_COLLECTION_PAF_ENABLED=true to re-enable this pool-time pass.
+              if ((process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') && (process.env.MOVING_COLLECTION_PAF_ENABLED === 'true' || process.env.MOVING_COLLECTION_PAF_ENABLED === '1')) {
                 try {
                   // RESERVE FOR DELIVERY: never spend the whole daily budget at
                   // collection time. Always leave a reserve (default 60) so the 09:00
