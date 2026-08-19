@@ -150,15 +150,16 @@ function extractPostcodeArea(postcode) {
 var ADDR_PREMISE = require('./address_premise');
 function hasUsablePremiseAddress(addr, pc) { return ADDR_PREMISE.hasUsablePremiseAddress(addr, pc); }
 
-// Strip a leading UNCONFIRMED flat/apartment/unit number from an address. UK
-// portals (Rightmove etc.) hide exact flat numbers and frequently default a flat
-// listing's displayAddress to "Flat 1, <Building>, <Street>" even when the real
-// flat is unknown. For Print & Post we must NEVER mail to a guessed flat, so we
-// strip that prefix and keep the building-level address (e.g. "Flat 1, Collcutt
-// Lodge, 4 Ferndale Road" -> "Collcutt Lodge, 4 Ferndale Road"), which is accurate
-// and still passes the premise gate via the building number/name.
+// Strip a leading DEFAULT/UNCONFIRMED "Flat 1" prefix from an address. UK portals
+// (Rightmove etc.) hide exact flat numbers and default a flat listing's
+// displayAddress to "Flat 1, <Building>, <Street>" when the real flat is unknown.
+// For Print & Post we must NEVER mail to a guessed flat, so we strip that default
+// and keep the accurate building-level address (e.g. "Flat 1, Collcutt Lodge, 4
+// Ferndale Road" -> "Collcutt Lodge, 4 Ferndale Road"), which still passes the
+// premise gate via the building number/name. Genuine higher flat numbers (Flat 3,
+// Flat 4a, ...) are kept - only the default first-unit "Flat 1" is removed.
 function stripGuessedFlatPrefix(addr) {
-  return String(addr || '').replace(/^(?:Flat|Apartment|Unit|Maisonette|Penthouse|Room|Studio)\s*\d+[A-Za-z]?\s*[,.-]?\s*/i, '').replace(/^,\s*/, '').trim();
+  return String(addr || '').replace(/^(?:Flat|Apartment|Unit|Maisonette|Penthouse)\s*1\b\s*[,.-]?\s*/i, '').replace(/^,\s*/, '').trim();
 }
 // True when the address is a flat/apartment (has a flat/unit/apt style identifier).
 function isFlatAddress(addr) {
@@ -8049,7 +8050,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                       // STRIP UNCONFIRMED FLAT NUMBER FIRST: portals default flat
                       // displayAddress to "Flat 1, <building>" - never mail to a guessed
                       // flat. Keep the building-level address (accurate for Print & Post).
-                      if (isFlatAddress(poolLeadData.address || '') && !poolLeadData.buildingNumber && !poolLeadData.udprn) {
+                      if (isFlatAddress(poolLeadData.address || '')) {
                         poolLeadData.address = stripGuessedFlatPrefix(poolLeadData.address);
                         poolLeadData.fullAddress = poolLeadData.address;
                       }
@@ -8217,7 +8218,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 companyNumber: fgLead.companyNumber || ''
               });
               // Strip any unconfirmed "Flat 1" default from portal displayAddress.
-              if (isFlatAddress(fgData.address || '') && !fgData.buildingNumber && !fgData.udprn) {
+              if (isFlatAddress(fgData.address || '')) {
                 fgData.address = stripGuessedFlatPrefix(fgData.address);
                 fgData.fullAddress = fgData.address;
               }
@@ -8736,7 +8737,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   var nfeFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(nfePc).trim());
                   var nfeUrl = nfe.url || ncData.url || '';
                   if (nfeNum && nfeFullPc && nfeUrl) {
-                                  if (isFlatAddress(ncData.fullAddress || '') && !ncData.buildingNumber && !ncData.udprn) { ncData.fullAddress = stripGuessedFlatPrefix(ncData.fullAddress); ncData.address = ncData.fullAddress; }ncData.fullAddress = nfeAddr; ncData.address = nfeAddr;
+                                  if (isFlatAddress(ncData.fullAddress || '')) { ncData.fullAddress = stripGuessedFlatPrefix(ncData.fullAddress); ncData.address = ncData.fullAddress; }ncData.fullAddress = nfeAddr; ncData.address = nfeAddr;
                     ncData.postcode = nfePc; ncData.buildingNumber = nfe.buildingNumber || '';
                     ncData.street = nfe.street || ''; ncData.udprn = nfe.udprn || ''; ncData.url = nfeUrl;
                     ncLead.data = JSON.stringify(ncData);
