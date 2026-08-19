@@ -166,6 +166,18 @@ function isFlatAddress(addr) {
   return /(?:^|[\s,])(flat|apartment|unit|maisonette|penthouse|room)\s*\d/i.test(String(addr || ''));
 }
 
+// Strip WRONG REGION/COUNTRY tags that leak into addresses (e.g. "London, Wales",
+// "Battersea, Scotland", "London, Greater London, SW11 3TY, Scotland"). A mail
+// address = premises, street, town, postcode - region/country names don't belong
+// and are frequently wrong (London is not in Wales). Removes standalone
+// England/Scotland/Wales/N.Ireland + the English region names + Greater London
+// + trailing "UK".
+function stripRegionTags(addr) {
+  return String(addr || '')
+    .replace(/(?:^|,\s*)(?:England|Scotland|Wales|Northern\s*Ireland|South\s*East\s*England|South\s*West\s*England|East\s*of\s*England|East\s*Midlands|West\s*Midlands|North\s*West\s*England|North\s*East\s*England|Yorkshire\s*and\s*the\s*Humber|Greater\s*London|UK)(?=\s*,|\s*$)/gi, '')
+    .replace(/,\s*,/g, ',').replace(/^\s*,/, '').replace(/\s*,\s*/g, ', ').replace(/\s{2,}/g, ' ').trim();
+}
+
 // True when an address contains a real street name (a door number followed by a
 // street word, OR a street suffix like Road/Street/Avenue/Lane/Close/...). Moving
 // leads must carry street + number + area + postcode - a bare building name with
@@ -3345,8 +3357,8 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     .map(l => {
     const parsed = JSON.parse(l.data || '{}');
     if (customer && customer.product === 'moving') {
-      if (parsed.address && isFlatAddress(parsed.address)) parsed.address = stripGuessedFlatPrefix(parsed.address);
-      if (parsed.fullAddress && isFlatAddress(parsed.fullAddress)) parsed.fullAddress = stripGuessedFlatPrefix(parsed.fullAddress);
+      if (parsed.address) parsed.address = stripRegionTags(stripGuessedFlatPrefix(parsed.address));
+      if (parsed.fullAddress) parsed.fullAddress = stripRegionTags(stripGuessedFlatPrefix(parsed.fullAddress));
     }
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
     return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
@@ -7588,11 +7600,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       arr = arr.filter(function(l) { return !/zoopla/i.test(String(l.source || '')); });
       // NORMALIZE FLAT ADDRESSES: strip the portal default "Flat 1" prefix from
       // every moving pool lead so ALL customers (any source/path) get the accurate
-      // building-level address, not a guessed flat.
+      // building-level address, not a guessed flat. Also strip wrong region tags
+      // ("London, Wales", "Battersea, Scotland").
       arr = arr.map(function(l) {
-        if (l && l.address && isFlatAddress(l.address)) {
-          l.address = stripGuessedFlatPrefix(l.address);
-          if (l.fullAddress) l.fullAddress = stripGuessedFlatPrefix(l.fullAddress);
+        if (l && l.address) {
+          l.address = stripRegionTags(stripGuessedFlatPrefix(l.address));
+          if (l.fullAddress) l.fullAddress = stripRegionTags(stripGuessedFlatPrefix(l.fullAddress));
         }
         return l;
       });
@@ -8110,9 +8123,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                       // STRIP UNCONFIRMED FLAT NUMBER FIRST: portals default flat
                       // displayAddress to "Flat 1, <building>" - never mail to a guessed
                       // flat. Keep the building-level address (accurate for Print & Post).
-                      if (isFlatAddress(poolLeadData.address || '')) {
-                        poolLeadData.address = stripGuessedFlatPrefix(poolLeadData.address);
+                                            if (poolLeadData.address) {
+                        poolLeadData.address = stripRegionTags(stripGuessedFlatPrefix(poolLeadData.address));
                         poolLeadData.fullAddress = poolLeadData.address;
+                      }
                       }
                       var finAddr = poolLeadData.address || '';
                       var finPc = poolLeadData.postcode || '';
@@ -8143,11 +8157,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     existingKeys[poolKey] = 1;
                     createdFromPool.push(newLead);
                   }
-                  r2pool = createdFromPool.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
-                  console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': created ' + createdFromPool.length + ' pool leads, r2pool=' + r2pool.length);
-                  _deliverDiag[cust.email].poolfile += createdFromPool.length;
-                  _deliverDiag[cust.email].poolfile_total += 1;
-                } else {
+                  if (createdFromPool.length > 0) {
+                    r2pool = createdFromPool.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+                    console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': created ' + createdFromPool.length + ' pool leads, r2pool=' + r2pool.length);
+                    _deliverDiag[cust.email].poolfile += createdFromPool.length;
+                    _deliverDiag[cust.email].poolfile_total += 1;
+                  } else {
                   console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': no pool leads to use');
                   _deliverDiag[cust.email].poolfile_total += 1;
                 }
@@ -8277,12 +8292,14 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 company: fgLead.companyName || fgLead.name || fgLead.company || '',
                 companyNumber: fgLead.companyNumber || ''
               });
-              // Strip any unconfirmed "Flat 1" default from portal displayAddress.
-              if (isFlatAddress(fgData.address || '')) {
-                fgData.address = stripGuessedFlatPrefix(fgData.address);
+                            // Clean the address: strip guessed "Flat 1" AND wrong region tags
+              // (London, Wales / Battersea, Scotland) so no mail-unready or wrong
+              // address is ever delivered.
+              if (fgData.address) {
+                fgData.address = stripRegionTags(stripGuessedFlatPrefix(fgData.address));
                 fgData.fullAddress = fgData.address;
               }
-              // MOVING ONLY: a deliverable lead must carry a door/flat number AND a
+// MOVING ONLY: a deliverable lead must carry a door/flat number AND a
               // real street name (number + street + area + postcode). A bare building
               // name or street-only address is NOT mail-ready.
               if (fgProd === 'moving' && (!hasStreetName(fgData.address || '') || !hasPremiseNumber(fgData.address || '', fgData.postcode || ''))) continue;
