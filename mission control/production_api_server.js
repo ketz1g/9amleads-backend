@@ -178,6 +178,17 @@ function stripRegionTags(addr) {
     .replace(/,\s*,/g, ',').replace(/^\s*,/, '').replace(/\s*,\s*/g, ', ').replace(/\s{2,}/g, ' ').trim();
 }
 
+// Reject new-build DEVELOPMENT UNIT CODES in addresses (e.g. "L-001226, 8 Circus
+// Road West", "N-0123, ...", "Plot 12, ...", "Unit 12a, ..."). These are plot/unit
+// references from new-build marketing, NOT real mail addresses - never deliver them.
+function hasBadUnitCode(addr) {
+  var a = String(addr || '').trim();
+  if (!a) return false;
+  if (/^\s*(?:plot\s+\d+[a-z]?|unit\s+\d+[a-z]?|[a-z]{1,4}-\d{3,})\b/i.test(a)) return true;
+  if (/,\s*(?:plot\s+\d+[a-z]?|unit\s+\d+[a-z]?|[a-z]{1,4}-\d{3,})\b/i.test(a)) return true;
+  return false;
+}
+
 // True when an address contains a real street name (a door number followed by a
 // street word, OR a street suffix like Road/Street/Avenue/Lane/Close/...). Moving
 // leads must carry street + number + area + postcode - a bare building name with
@@ -7598,6 +7609,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // Zoopla dropped as a source (no house numbers/full postcodes in list mode).
       // Exclude any Zoopla-sourced pool entries so they can never be delivered.
       arr = arr.filter(function(l) { return !/zoopla/i.test(String(l.source || '')); });
+      // Exclude new-build unit-code addresses (e.g. "L-001226, ...") - not real mail addresses.
+      arr = arr.filter(function(l) { return !hasBadUnitCode(l.address || l.fullAddress || ''); });
       // NORMALIZE FLAT ADDRESSES: strip the portal default "Flat 1" prefix from
       // every moving pool lead so ALL customers (any source/path) get the accurate
       // building-level address, not a guessed flat. Also strip wrong region tags
@@ -8132,7 +8145,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                       var finPc = poolLeadData.postcode || '';
                       var finNum = hasPremiseNumber(finAddr, finPc);
                       var finFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(finPc).trim());
-                      if (!finNum || !finFullPc || !hasStreetName(finAddr)) { console.log('[DELIVERY] Pool fallback SKIP incomplete moving lead: pc=' + finPc + ' addr=' + (finAddr||'').substring(0,40)); continue; }
+                      if (!finNum || !finFullPc || !hasStreetName(finAddr) || hasBadUnitCode(finAddr)) { console.log('[DELIVERY] Pool fallback SKIP incomplete moving lead: pc=' + finPc + ' addr=' + (finAddr||'').substring(0,40)); continue; }
                       // Listing link is required too.
                       if (!rl.url && !poolLeadData.url) { console.log('[DELIVERY] Pool fallback SKIP moving lead without listing URL'); continue; }
                     }
@@ -8302,7 +8315,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
 // MOVING ONLY: a deliverable lead must carry a door/flat number AND a
               // real street name (number + street + area + postcode). A bare building
               // name or street-only address is NOT mail-ready.
-              if (fgProd === 'moving' && (!hasStreetName(fgData.address || '') || !hasPremiseNumber(fgData.address || '', fgData.postcode || ''))) continue;
+              if (fgProd === 'moving' && (!hasStreetName(fgData.address || '') || !hasPremiseNumber(fgData.address || '', fgData.postcode || '') || hasBadUnitCode(fgData.address || ''))) continue;
               var fgNew = { id: 'lead_' + Date.now() + '_' + fgi, customer_id: cust.id, product: fgProd, data: JSON.stringify(fgData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
               db.leads.push(fgNew);
               fgExisting[fgKey] = 1;
