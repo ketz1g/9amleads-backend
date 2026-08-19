@@ -7703,7 +7703,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var weekStart2 = thisWeekStart2.toISOString().split('T')[0];
       // AREA-BROADENING: exact areas preferred; nearby-region areas used ONLY as a
       // fallback on quiet days so the customer always receives their full count.
-      var expandedAreas = expandedAreaFallback(custAreas);
+      // Expanded-area fallback: on quiet days so the customer always receives their
+      // full count. Disable via DISABLE_AREA_BROADENING=true to deliver ONLY within
+      // the customer's chosen postcode areas (exact match only).
+      var expandedAreas = (process.env.DISABLE_AREA_BROADENING === 'true') ? [] : expandedAreaFallback(custAreas);
       // Helper: count leads per area in current batch
       function areaCounts(leadsArr, areasArr) {
         var counts = {};
