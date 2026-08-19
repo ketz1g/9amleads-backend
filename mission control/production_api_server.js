@@ -8901,14 +8901,14 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 var nclUrl = ncl.url || '';
                 if (!nclUrl || confirmedIds[nclUrl]) continue;
                 var nclAddr = ncl.fullAddress || ncl.address || '';
-                if (!(hasPremiseNumber(nclAddr, ncl.postcode || '') && /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(ncl.postcode||'').trim()))) {
+                if (!(hasPremiseNumber(nclAddr, ncl.postcode || '') && hasStreetName(nclAddr) && !hasBadUnitCode(nclAddr) && /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(ncl.postcode||'').trim()))) {
                   try {
                     var nclEnr = await pcDeliver.enrichMovingLeadsPostcoder([Object.assign({}, ncl, { id: ncl.id, address: nclAddr, postcode: ncl.postcode || '' })]);
                     if (nclEnr && nclEnr[0]) {
                       var nce2 = nclEnr[0];
                       var nceAddr = nce2.fullAddress || nce2.address || nclAddr;
                       var ncePc = nce2.postcode || ncl.postcode || '';
-                      if (!(hasPremiseNumber(nceAddr, ncePc) && /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(ncePc).trim()))) continue;
+                      if (!(hasPremiseNumber(nceAddr, ncePc) && hasStreetName(nceAddr) && !hasBadUnitCode(nceAddr) && /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(ncePc).trim()))) continue;
                       nclAddr = nceAddr; ncl.postcode = ncePc;
                     } else { continue; }
                   } catch(nce2) { continue; }
