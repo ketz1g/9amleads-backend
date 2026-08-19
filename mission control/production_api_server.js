@@ -4388,6 +4388,33 @@ app.get('/api/admin/leads-overview', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/pool-quality?product=moving — show per-area pool supply and how
+// many leads actually pass the strict full-address gate (premise + full postcode),
+// so we can prove the promised daily count is deliverable in every customer area.
+app.get('/api/admin/pool-quality', adminAuth, (req, res) => {
+  try {
+    var prod = req.query.product || 'moving';
+    var poolArr = getDeliveryPool(prod);
+    var cutoff = getFreshCutoffIso();
+    var per = {};
+    for (var i = 0; i < poolArr.length; i++) {
+      var l = poolArr[i];
+      var d = pickFreshDate(l);
+      if (!d || d < cutoff) continue;
+      var area = extractPostcodeArea(l.postcode || l.address || l.location || l.name || '') || 'none';
+      if (!per[area]) per[area] = { total: 0, has_premise: 0, full_postcode: 0, both: 0, url: 0 };
+      per[area].total++;
+      var addr = l.fullAddress || l.address || l.deceasedAddress || '';
+      var pc = l.postcode || '';
+      if (hasUsablePremiseAddress(addr, pc)) per[area].has_premise++;
+      if (/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim())) per[area].full_postcode++;
+      if (hasUsablePremiseAddress(addr, pc) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim())) per[area].both++;
+      if (l.url) per[area].url++;
+    }
+    res.json({ success: true, product: prod, fresh_cutoff: cutoff, areas: per });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/delivered-leads?email=X&date=YYYY-MM-DD — list a customer's
 // DELIVERED leads for a date with the actual address data (so you can verify
 // moving/probate leads carry a door number + full postcode for Print & Post).
