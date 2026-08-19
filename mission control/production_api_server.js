@@ -5830,6 +5830,48 @@ cron.schedule('20 6 * * *', async () => {
     req2.write(body2); req2.end();
   } catch(e) { console.log('[06:05 UK] Distributor error:', e.message); }
 }, { timezone: 'Europe/London' });
+// SCRAPE WATCHDOG (07:30 UK) — if the 06:00 scrape never wrote today's moving pool
+// (stall/crash/block), auto re-trigger it so the 09:00 delivery still has fresh
+// supply. Alerts hello@9amleads.com so a silent failure never surprises anyone.
+cron.schedule('30 7 * * *', async () => {
+  try {
+    var swPoolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
+    var swMtime = 0;
+    try { swMtime = fs.statSync(swPoolFile).mtimeMs; } catch(e) {}
+    function ukDateStr(ms) { try { return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms)); } catch(e) { return new Date(ms).toISOString().split('T')[0]; } }
+    if (swMtime > 0 && ukDateStr(swMtime) === ukDateStr(Date.now())) {
+      console.log('[SCRAPE-WATCHDOG] Moving pool written today — OK');
+      return;
+    }
+    console.log('[SCRAPE-WATCHDOG] Moving pool NOT written today — auto re-triggering scrape');
+    try {
+      const http = require('http');
+      var swBody = JSON.stringify({ product: 'moving', force: true });
+      var swReq = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(swBody) } }, function(swRes) { var b=''; swRes.on('data', function(c){ b+=c; }); swRes.on('end', function(){ console.log('[SCRAPE-WATCHDOG] re-trigger result:', b.substring(0, 120)); }); });
+      swReq.on('error', function(e){ console.log('[SCRAPE-WATCHDOG] re-trigger error:', e.message); });
+      swReq.write(swBody); swReq.end();
+    } catch(sw2) { console.log('[SCRAPE-WATCHDOG] re-trigger call error:', sw2.message); }
+    try {
+      await sendBrevoEmail('hello@9amleads.com', '9amLeads alert: 06:00 scrape failed - auto re-triggered', '<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f59e0b;margin:0 0 10px;font-size:18px">The 06:00 lead scrape did not complete on time</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">The system <b>automatically re-triggered it</b> so your 09:00 delivery stays on track. No action needed unless you see this alert again tomorrow.</p></div>');
+    } catch(sw3) { console.log('[SCRAPE-WATCHDOG] alert error:', sw3.message); }
+  } catch(e) { console.log('[SCRAPE-WATCHDOG] error:', e.message); }
+}, { timezone: 'Europe/London' });
+// DELIVERY BACKSTOP (09:30 UK Mon-Fri) — if the 09:00 cron AND 09:02 watchdog both
+// missed (deploy/restart/race), run the delivery so customers never miss a day.
+cron.schedule('30 9 * * 1-5', async () => {
+  try {
+    var todayStr = new Date().toISOString().split('T')[0];
+    if (__lastDeliveryDate === todayStr) return; // already fired today
+    console.log('[BACKSTOP] 09:30 delivery did not fire today — re-triggering now (safety)');
+    try {
+      const http = require('http');
+      var bsBody = JSON.stringify({});
+      var bsReq = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bsBody) } }, function(bsRes) { var b=''; bsRes.on('data', function(c){ b+=c; }); bsRes.on('end', function(){ console.log('[BACKSTOP] delivery result:', b.substring(0, 150)); }); });
+      bsReq.on('error', function(e){ console.log('[BACKSTOP] delivery error:', e.message); });
+      bsReq.write(bsBody); bsReq.end();
+    } catch(bs2) { console.log('[BACKSTOP] delivery call error:', bs2.message); }
+  } catch(e) { console.log('[BACKSTOP] error:', e.message); }
+}, { timezone: 'Europe/London' });
 // ===== DELIVERY CRON: Runs directly (not via HTTP) to avoid timing issues =====
 // Pipeline: 06:00 UK scraper → 06:05 UK distributor → 09:00 UK delivery
 // Delivery runs Mon-Fri at 09:00 UK time (handles BST/GMT automatically via timezone).
