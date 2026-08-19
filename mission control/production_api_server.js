@@ -315,9 +315,29 @@ function pickFreshDate(lead) {
   var latest = '';
   for (var fi = 0; fi < fields.length; fi++) {
     var v = lead[fields[fi]] || '';
-    if (v && /^\d{4}-\d{2}-\d{2}/.test(v) && (!latest || v > latest)) latest = v;
+    var iso = toIsoDate(v);
+    if (iso && (!latest || iso > latest)) latest = iso;
   }
   return latest;
+}
+
+// Normalise a date string to ISO (YYYY-MM-DD...). Accepts ISO already, plus UK
+// display formats like "19 August 2026" (tenders/planning/gazette often publish
+// "d MMMM yyyy" instead of ISO). Non-date values return '' (excluded).
+function toIsoDate(v) {
+  if (!v) return '';
+  v = String(v).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v;
+  var m = v.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+  if (m) {
+    var months = { january:0, february:1, march:2, april:3, may:4, june:5, july:6, august:7, september:8, october:9, november:10, december:11, jan:0, feb:1, mar:2, apr:3, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
+    var mon = months[String(m[2]).toLowerCase()];
+    if (mon !== undefined) {
+      var d = new Date(Date.UTC(parseInt(m[3], 10), mon, parseInt(m[1], 10)));
+      if (!isNaN(d.getTime())) return d.toISOString();
+    }
+  }
+  return '';
 }
 
 function getMatchingArea(code, areas) {
