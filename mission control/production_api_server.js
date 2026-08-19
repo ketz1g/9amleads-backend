@@ -16237,11 +16237,14 @@ function syncCustomers(product) {
             // full-address leads to pick from. Cost controls: capped areas + detail
             // fetches per run (env-tunable), runs inside the daily scrape.
             try {
-              var otmMaxAreas = parseInt(process.env.OTM_MAX_AREAS || '12', 10);
-              var otmDetailCap = parseInt(process.env.OTM_DETAIL_CAP || '80', 10);
+              var otmMaxAreas = parseInt(process.env.OTM_MAX_AREAS || '20', 10);
+              var otmDetailCap = parseInt(process.env.OTM_DETAIL_CAP || '150', 10);
               var otmScraper = require('./onthemarket_scraper');
-              var otmAreas = mvAreas.slice(0, otmMaxAreas);
-              var otmLeads = await otmScraper.collectOnTheMarketLeads({ areas: otmAreas, maxPerArea: 30, maxDays: 7, detailCap: otmDetailCap });
+              // FRESHNESS MATCHES THE DELIVERY POLICY: 24h primary ("Added today"),
+              // 48h fallback ("Added today" + "Added yesterday"). Leads older than
+              // 48h are NOT added - the pool stays genuinely fresh so the exact-count
+              // guarantee is met with listings the customer can actually chase.
+              var otmLeads = await otmScraper.collectOnTheMarketLeads({ areas: mvAreas, maxPerArea: 30, maxDays: 1, detailCap: otmDetailCap });
               if (otmLeads && otmLeads.length > 0) {
                 var otmSeen = {};
                 (leads || []).forEach(function(l) { if (l.postcode && l.address) otmSeen[String((l.postcode + '|' + l.address)).toLowerCase().replace(/\s+/g, '')] = 1; });
@@ -16252,7 +16255,7 @@ function syncCustomers(product) {
                 });
                 console.log('[SCRAPER] OnTheMarket added ' + otmAdded + ' leads to moving pool (total=' + (leads ? leads.length : 0) + ')');
               } else {
-                console.log('[SCRAPER] OnTheMarket: 0 leads (areas: ' + (otmAreas || []).join(',') + ')');
+                console.log('[SCRAPER] OnTheMarket: 0 leads (areas: ' + (mvAreas || []).join(',') + ')');
               }
             } catch(otmErr) { console.log('[SCRAPER] OnTheMarket error:', otmErr.message); }
             if (!leads || leads.length === 0) {  console.log('[SCRAPER] Rightmove: 0 real leads today'); }
