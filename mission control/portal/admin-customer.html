@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Customer Dashboard | 9amLeads Admin</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#f1f5f9;min-height:100vh}
+.container{max-width:1100px;margin:0 auto;padding:24px}
+h1{font-size:24px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:2px}
+h1 span{color:#0ea5e9}
+.sub{color:#8890a8;font-size:13px;margin-bottom:20px}
+.card{background:#11131f;border:1px solid #1e2030;border-radius:14px;padding:20px;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 10px;color:#5c6480;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #1e2030;font-weight:600}
+td{padding:8px 10px;border-bottom:1px solid #1a1a1a;color:#c8cbd6;vertical-align:top}
+.ok{color:#22c55e}.no{color:#ef4444}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.badge-delivered{background:rgba(34,197,94,0.12);color:#22c55e}
+.badge-pending{background:rgba(234,179,8,0.12);color:#eab308}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid #1e2030;background:#0f111a;color:#f1f5f9;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:.15s}
+.btn:hover{border-color:#0ea5e9;transform:translateY(-1px)}
+.btn-primary{background:linear-gradient(135deg,#0ea5e9,#2563eb);border-color:transparent;color:#fff}
+.btn-outline{background:#fff;color:#334155;border:1px solid #e2e8f0}
+.meta{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;font-size:13px;color:#8890a8}
+.meta b{color:#f1f5f9}
+#statusLine{margin-bottom:14px;font-size:13px;color:#5c6480}
+a{color:#0ea5e9}
+</style>
+</head>
+<body>
+<div class="container">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+    <div><h1>Customer <span>Dashboard</span></h1><div class="sub">View a customer's leads exactly as delivery sees them</div></div>
+    <div style="display:flex;gap:8px">
+      <a href="/portal/admin.html" class="btn"><i class="fas fa-arrow-left"></i> Back to Admin</a>
+      <button class="btn btn-primary" id="openDashboardBtn" onclick="openCustomerDashboard()"><i class="fas fa-eye"></i> Open Customer Dashboard</button>
+    </div>
+  </div>
+  <div id="metaLine" class="meta"></div>
+  <div id="statusLine">Loading...</div>
+  <div class="card" style="padding:0;overflow:auto">
+    <table>
+      <thead><tr><th>Status</th><th>Address</th><th>Postcode</th><th>Door/Flat</th><th>Full PC</th><th>URL</th></tr></thead>
+      <tbody id="leadRows"><tr><td colspan="6" class="sub" style="padding:16px">Loading leads...</td></tr></tbody>
+    </table>
+  </div>
+  <div style="font-size:11px;color:#5c6480;margin-top:10px">Tip: use the admin page search or this URL directly: /portal/admin-customer.html?email=customer@example.com</div>
+</div>
+<script>
+var API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
+function getPass() {
+  var p = sessionStorage.getItem('9amAdminPass');
+  if (!p) { p = prompt('Enter admin password:'); if (p) sessionStorage.setItem('9amAdminPass', p); }
+  return p || '';
+}
+function headers() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getPass() }; }
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+var email = decodeURIComponent(new URLSearchParams(window.location.search).get('email') || '');
+async function load() {
+  if (!email) { document.getElementById('statusLine').innerHTML = '<span style="color:#ef4444">No customer email provided. Use ?email=...</span>'; return; }
+  document.getElementById('statusLine').textContent = 'Loading leads for ' + email + '...';
+  try {
+    var r = await fetch(API + '/api/admin/customer-dashboard?email=' + encodeURIComponent(email), { headers: headers() });
+    var d = await r.json();
+    if (!r.ok || !d.success) { document.getElementById('statusLine').innerHTML = '<span style="color:#ef4444">Could not load (HTTP ' + r.status + '): ' + esc(d.error || 'unknown') + ' — check the admin password.</span>'; return; }
+    document.getElementById('metaLine').innerHTML = '<span><b>Email:</b> ' + esc(email) + '</span><span><b>Product:</b> ' + esc(d.product) + '</span><span><b>Plan:</b> ' + esc(d.plan) + '</span><span><b>Areas:</b> ' + esc(d.areas || '-') + '</span><span><b>Delivered:</b> ' + d.delivered + '</span><span><b>Pending:</b> ' + d.pending + '</span><span><b>Total:</b> ' + d.total + '</span>';
+    var rows = '';
+    (d.leads || []).forEach(function(l) {
+      var st = l.status === 'delivered' ? '<span class="badge badge-delivered">delivered</span>' : '<span class="badge badge-pending">pending</span>';
+      var ok = l.has_door_or_flat_number ? '<span class="ok">&#10003;</span>' : '<span class="no">&#10007;</span>';
+      var pc = l.full_postcode ? '<span class="ok">&#10003;</span>' : '<span class="no">&#10007;</span>';
+      var url = l.url ? '<a href="' + esc(l.url) + '" target="_blank" rel="noopener">listing</a>' : '-';
+      rows += '<tr><td>' + st + '</td><td>' + esc((l.address || '-').replace(/\n+/g, ', ')) + '</td><td>' + esc(l.postcode || '-') + '</td><td>' + ok + '</td><td>' + pc + '</td><td>' + url + '</td></tr>';
+    });
+    if (!rows) rows = '<tr><td colspan="6" class="sub" style="padding:16px">No leads for this customer.</td></tr>';
+    document.getElementById('leadRows').innerHTML = rows;
+    document.getElementById('statusLine').innerHTML = '<span style="color:#22c55e">Loaded ' + (d.leads || []).length + ' leads.</span>';
+  } catch(e) {
+    document.getElementById('statusLine').innerHTML = '<span style="color:#ef4444">Error: ' + esc(e.message) + ' — check the admin password and try again.</span>';
+  }
+}
+async function openCustomerDashboard() {
+  if (!email) { alert('No customer email'); return; }
+  try {
+    var c = await fetch(API + '/api/admin/customers?limit=200', { headers: headers() });
+    var cj = await c.json();
+    var list = cj.customers || cj;
+    var cust = (Array.isArray(list) ? list : []).find(function(x){ return String(x.email||'').toLowerCase() === email.toLowerCase(); });
+    if (!cust) { alert('Customer not found'); return; }
+    var imp = await fetch(API + '/api/admin/impersonate', { method: 'POST', headers: headers(), body: JSON.stringify({ customer_id: cust.id, reason: 'Admin view from customer-dashboard page' }) });
+    var ij = await imp.json();
+    if (!ij.token) { alert('Impersonation failed: ' + (ij.error || 'unknown')); return; }
+    localStorage.setItem('mld_portal_session', JSON.stringify({ token: ij.token, clientId: cust.id, name: 'Admin', plan: cust.plan || 'free_trial', email: cust.email || '', product: cust.product || 'moving', admin_impersonating: true, impersonated_by: 'Admin' }));
+    window.location.href = '/portal/dashboard.html';
+  } catch(e) { alert('Error: ' + e.message); }
+}
+load();
+</script>
+</body>
+</html>
