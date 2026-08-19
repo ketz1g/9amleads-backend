@@ -7714,6 +7714,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         var globalPool = (db.leads || []).filter(function(l) {
           if (l.delivered !== 0 || l.product !== p) return false;
           if (!isLeadFresh24(l)) return false;
+          if (!leadPassesFilters(JSON.parse(l.data || '{}'))) return false;
           if (!notDeliveredBefore(l)) return false;
           return true;
         });
