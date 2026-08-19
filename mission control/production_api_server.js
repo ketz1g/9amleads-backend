@@ -15864,56 +15864,12 @@ function syncCustomers(product) {
           try {
             var rmScraper = require('./rightmove_scraper_v2');
             var apifyKey = process.env.APIFY_API_KEY || '';
-            // ===== HOMEDATA TEST-MODE COLLECTION (Phase 2) =====
-                        // ===== HOMEDATA SOURCE (moving pool supplement) =====
-            // Homedata publishes UK property market activity with UPRNs - a real,
-            // non-Rightmove source with full addresses. When HOMEDATA_API_KEY is set,
-            // fetch new listings and MERGE the UPRN-resolved leads into the moving pool
-            // (they carry a verified door number, no guessing).
-            try {
-              if (process.env.HOMEDATA_API_KEY) {
-                var msp = require('./moving_source_provider');
-                var hdRes = await msp.fetchNewListings({ limit: parseInt(process.env.HOMEDATA_MAX_CALLS_PER_RUN || '100', 10), sinceDate: new Date().toISOString().split('T')[0] });
-                var hdResolved = [];
-                var hdUnresolved = 0, hdDoor = 0;
-                // COST CONTROL: Homedata charges per UPRN postcode lookup. Dedup records
-                // by postcode+street so the SAME property never resolves twice, and cap
-                // total resolutions per run (HOMEDATA_RESOLVE_CAP, default 40) so a bad
-                // day can never burn budget. This is a supply BONUS on top of Rightmove.
-                var hdRecords = hdRes.records || [];
-                var hdKeySeen = {};
-                var hdDeduped = [];
-                var hdResolveCap = parseInt(process.env.HOMEDATA_RESOLVE_CAP || '40', 10);
-                for (var hdi = 0; hdi < hdRecords.length; hdi++) {
-                  var hdr = hdRecords[hdi];
-                  var hk = String((hdr.postcode || '') + '|' + (hdr.street || hdr.address || '')).toUpperCase().replace(/\s+/g, '');
-                  if (hk && hdKeySeen[hk]) continue;
-                  hdKeySeen[hk] = 1;
-                  if (hdDeduped.length >= hdResolveCap) break;
-                  hdDeduped.push(hdr);
-                }
-                for (var hdi2 = 0; hdi2 < hdDeduped.length; hdi2++) {
-                  var resolved = await msp.resolveAddress(hdDeduped[hdi2]);
-                  if (resolved && resolved.uprn) { hdResolved.push(resolved); if (resolved.houseNumber) hdDoor++; }
-                  else { hdUnresolved++; }
-                }
-                if (hdResolved.length > 0) {
-                  var hdAdded = 0;
-                  var hdSeen = {};
-                  (leads || []).forEach(function(l){ if (l.postcode) hdSeen[String(l.postcode).toUpperCase().replace(/\s+/g,'')] = 1; });
-                  hdResolved.forEach(function(r) {
-                    var rPc = String(r.postcode || '').toUpperCase().replace(/\s+/g, '');
-                    var rAddr = r.fullAddress || r.address || '';
-                    if (!rPc || !rAddr || !r.houseNumber) return;
-                    if (hdSeen[rPc]) return;
-                    hdSeen[rPc] = 1;
-                    leads.push({ id: 'HD_' + (r.uprn || (Date.now() + '_' + hdAdded)), source: 'Homedata', address: rAddr, fullAddress: rAddr, street: r.street || '', postcode: r.postcode || '', buildingNumber: r.houseNumber || r.buildingNumber || '', udprn: '', price: r.price || r.estimatedValue || '', bedrooms: r.bedrooms || 0, propertyType: r.propertyType || 'House', scrapedAt: new Date().toISOString(), firstVisibleDate: new Date().toISOString(), updateDate: new Date().toISOString(), url: r.url || '' });
-                    hdAdded++;
-                  });
-                  console.log('[HOMEDATA] merged ' + hdAdded + ' UPRN-resolved leads into moving pool (fetched=' + hdRecords.length + ' deduped=' + hdDeduped.length + ' resolved=' + hdResolved.length + ' doorNumbers=' + hdDoor + ' unresolved=' + hdUnresolved + ')');
-                }
-              }
-            } catch(hdErr) { console.log('[HOMEDATA] error: ' + hdErr.message); }
+                        // ===== HOMEDATA DISABLED =====
+            // Homedata removed as a pool source: at ~£40-48 for only 50 full
+            // addresses (~£0.80+/address) the credit cost is far too high, and it
+            // drained the account's 5,000 monthly credits in under a day previously.
+            // Moving supply = Rightmove (free) + Zoopla (flat-rate Apify actor, see
+            // ENABLE_ZOOPLA). Never re-enable Homedata without explicit approval.
 // ===== PROPALT UPRN VERIFICATION TEST (Phase 2/4) =====
             // In test mode, demonstrate the production design: fresh Rightmove leads
             // get resolved to a UPRN + exact address via Propalt (which is UPRN-native
