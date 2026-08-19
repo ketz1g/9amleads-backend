@@ -16229,6 +16229,32 @@ function syncCustomers(product) {
             // (nameOrNumber + postalCode null), so leads fail the premise gate; and
             // detail-mode crawls every property page (~1000/area) - too slow + expensive,
             // especially on US-only proxies. Moving supply = Rightmove + Postcoder PAF.
+            // ===== ONTHEMARKET SOURCE (free direct scrape, no paid credits) =====
+            // OTM publishes street + beds + price + freshness and its detail page
+            // exposes the FULL postcode (free). House numbers are hidden like
+            // Rightmove, so the delivery-time Postcoder PAF adds them for the exact
+            // sent leads. Adds candidate supply per area so the premise gate has more
+            // full-address leads to pick from. Cost controls: capped areas + detail
+            // fetches per run (env-tunable), runs inside the daily scrape.
+            try {
+              var otmMaxAreas = parseInt(process.env.OTM_MAX_AREAS || '12', 10);
+              var otmDetailCap = parseInt(process.env.OTM_DETAIL_CAP || '80', 10);
+              var otmScraper = require('./onthemarket_scraper');
+              var otmAreas = mvAreas.slice(0, otmMaxAreas);
+              var otmLeads = await otmScraper.collectOnTheMarketLeads({ areas: otmAreas, maxPerArea: 30, maxDays: 7, detailCap: otmDetailCap });
+              if (otmLeads && otmLeads.length > 0) {
+                var otmSeen = {};
+                (leads || []).forEach(function(l) { if (l.postcode && l.address) otmSeen[String((l.postcode + '|' + l.address)).toLowerCase().replace(/\s+/g, '')] = 1; });
+                var otmAdded = 0;
+                otmLeads.forEach(function(ol) {
+                  var ok = String((ol.postcode || '') + '|' + (ol.address || '')).toLowerCase().replace(/\s+/g, '');
+                  if (ok && !otmSeen[ok]) { otmSeen[ok] = 1; (leads || []).push(ol); otmAdded++; }
+                });
+                console.log('[SCRAPER] OnTheMarket added ' + otmAdded + ' leads to moving pool (total=' + (leads ? leads.length : 0) + ')');
+              } else {
+                console.log('[SCRAPER] OnTheMarket: 0 leads (areas: ' + (otmAreas || []).join(',') + ')');
+              }
+            } catch(otmErr) { console.log('[SCRAPER] OnTheMarket error:', otmErr.message); }
             if (!leads || leads.length === 0) {  console.log('[SCRAPER] Rightmove: 0 real leads today'); }
           } catch(e) { console.log('[SCRAPER] Rightmove error:', e.message); leads = []; }
         } else if (product === 'probate') {
