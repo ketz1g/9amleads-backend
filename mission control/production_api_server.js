@@ -4411,6 +4411,27 @@ app.get('/api/admin/delivered-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/customer-dashboard?email=X — view a customer's dashboard exactly
+// as the delivery sees it (authoritative JSON store): every lead with address,
+// postcode, URL, door/flat-number and full-postcode flags, delivered/pending.
+app.get('/api/admin/customer-dashboard', adminAuth, (req, res) => {
+  try {
+    var email = (req.query.email || '').toLowerCase();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var db4 = getDb();
+    var cust = (db4.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var leads = (db4.leads || []).filter(function(l) { return l.customer_id === cust.id; }).sort(function(a, b) { return String(b.delivered_at || b.created_at || '').localeCompare(String(a.delivered_at || a.created_at || '')); });
+    var rows = leads.map(function(l) {
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      var addr = d.fullAddress || d.address || d.deceasedAddress || '';
+      var pc = d.postcode || l.postcode || '';
+      return { id: l.id, product: l.product, status: l.delivered ? 'delivered' : 'pending', delivered_at: l.delivered_at || '', created_at: l.created_at || '', address: addr, postcode: pc, url: d.url || '', price: d.price || '', bedrooms: d.bedrooms || 0, property_type: d.propertyType || '', agent: d.agent || '', has_door_or_flat_number: hasUsablePremiseAddress(addr, pc), full_postcode: /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()) };
+    });
+    res.json({ success: true, email: email, plan: cust.plan, product: cust.product, areas: cust.target_areas || '', total: rows.length, delivered: rows.filter(function(r){ return r.status === 'delivered'; }).length, pending: rows.filter(function(r){ return r.status === 'pending'; }).length, leads: rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/customer-leads?email=X — list a customer's undelivered leads with
 // freshness dates so we can see exactly what delivery sees (diagnostic for shortfalls).
 app.get('/api/admin/customer-leads', adminAuth, (req, res) => {
@@ -4438,7 +4459,7 @@ app.get('/api/admin/customer-leads', adminAuth, (req, res) => {
       var pc = pcRaw;
       var pcM = pcRaw.match(/^([A-Z]{1,2}\d[A-Z\d]?)(\d[A-Z]{2})$/);
       if (pcM) pc = pcM[1] + ' ' + pcM[2];
-      return { id: l.id, product: l.product, created_at: l.created_at, release_at: l.release_at || '', postcode: pc, address: (addr || '').replace(/\n+/g, ', ').substring(0, 60), scrapedAt: (d.scrapedAt || ''), firstVisibleDate: (d.firstVisibleDate || ''), freshness: fv, fresh24: !!(fv && fv >= freshCutoff) };
+      return { id: l.id, product: l.product, created_at: l.created_at, release_at: l.release_at || '', postcode: pc, address: (addr || '').replace(/\n+/g, ', ').substring(0, 60), url: d.url || '', has_door_or_flat_number: hasUsablePremiseAddress(d.fullAddress || d.address || d.deceasedAddress || '', d.postcode || ''), scrapedAt: (d.scrapedAt || ''), firstVisibleDate: (d.firstVisibleDate || ''), freshness: fv, fresh24: !!(fv && fv >= freshCutoff) };
     }).sort(function(a, b) { return (b.freshness || '').localeCompare(a.freshness || ''); });
     res.json({ success: true, email: email, plan: cust.plan, product: cust.product, target_areas: cust.target_areas || '', undelivered_total: undelivered.length, fresh24_count: rows.filter(function(r) { return r.fresh24; }).length, leads: rows });
   } catch(e) { res.status(500).json({ error: e.message }); }
