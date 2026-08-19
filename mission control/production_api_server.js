@@ -180,7 +180,7 @@ function getPoolSupply() {
     var fresh = 0;
     for (var i = 0; i < arr.length; i++) {
       var l = arr[i];
-      var d = l.firstVisibleDate || l.addedOn || l.publishedDate || l.receivedDate || l.grantDate || l.dateSubmitted || l.incorporationDate || l.updateDate || l.createdAt || l.created_at || l.scrapedAt || '';
+      var d = pickFreshDate(l); // freshness dateteSubmitted || l.incorporationDate || l.updateDate || l.createdAt || l.created_at || l.scrapedAt || '';
       if (d && d >= cutoff) fresh++;
     }
     out[prod] = { total: arr.length, fresh_48h: fresh };
@@ -258,6 +258,20 @@ function interleavePoolByAreas(poolArr, custAreas) {
 // 00:00 so weekend-scraped leads fill Monday's accounts). See freshness.js.
 var FRESHNESS = require('./freshness');
 function getFreshCutoffIso(nowMs) { return FRESHNESS.getFreshCutoffIso(nowMs); }
+
+// Returns the first ISO-format date field on a lead. Skips human-readable dates
+// (e.g. probate grantDate "19 August 2026") which break ISO string comparisons and
+// made every probate lead look stale, so probate customers got 0 leads. Falls back
+// to scrapedAt (also ISO) so leads scraped today stay fresh.
+function pickFreshDate(lead) {
+  if (!lead) return '';
+  var fields = ['firstVisibleDate', 'addedOn', 'publishedDate', 'receivedDate', 'grantDate', 'dateSubmitted', 'incorporationDate', 'updateDate', 'createdAt', 'created_at', 'scrapedAt'];
+  for (var fi = 0; fi < fields.length; fi++) {
+    var v = lead[fields[fi]] || '';
+    if (v && /^\d{4}-\d{2}-\d{2}/.test(v)) return v;
+  }
+  return '';
+}
 
 function getMatchingArea(code, areas) {
   const upper = code.toUpperCase().replace(/[^A-Z]/g, '');
@@ -7513,7 +7527,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // NOT scrapedAt (when we scraped it). A listing that appeared months ago
           // is NOT fresh even if we only scraped it today. scrapedAt must not gate
           // freshness or old listings slip through as "fresh".
-          var fv = ld2.firstVisibleDate || ld2.addedOn || ld2.publishedDate || ld2.receivedDate || ld2.grantDate || ld2.dateSubmitted || ld2.dateReceived || ld2.dateValidated || ld2.incorporationDate || ld2.updateDate || l.created_at || '';
+          var fv = pickFreshDate(ld2);antDate || ld2.dateSubmitted || ld2.dateReceived || ld2.dateValidated || ld2.incorporationDate || ld2.updateDate || l.created_at || '';
           if (!fv) return false;
           return fv >= freshCutoffNow;
         } catch(e) { return false; }
@@ -7705,7 +7719,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   for (var pf=0; pf<poolArr.length && createdFromPool.length < totalNeeded; pf++) {
                     var rl = poolArr[pf];
                     // FRESH-ONLY: never create a lead from a stale pool entry.
-                    var rlD = rl.firstVisibleDate || rl.addedOn || rl.publishedDate || rl.receivedDate || rl.grantDate || rl.dateSubmitted || rl.dateReceived || rl.incorporationDate || rl.updateDate || rl.createdAt || rl.created_at || '';
+                    var rlD = pickFreshDate(rl); rl.grantDate || rl.dateSubmitted || rl.dateReceived || rl.incorporationDate || rl.updateDate || rl.createdAt || rl.created_at || '';
                     if (!rlD || rlD < freshCutoffNow) continue;
                     var areaOfPoolLead = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || '');
                     // Tenders/probate are national-fallback products: their leads often
@@ -7919,7 +7933,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             for (var fgi = 0; fgi < fgArr.length && fgCreated < fgNeed; fgi++) {
               var fgLead = fgArr[fgi];
               // FRESH-ONLY: never create a lead from a stale pool entry.
-              var fgD = fgLead.firstVisibleDate || fgLead.addedOn || fgLead.publishedDate || fgLead.receivedDate || fgLead.grantDate || fgLead.dateSubmitted || fgLead.dateReceived || fgLead.incorporationDate || fgLead.updateDate || fgLead.createdAt || fgLead.created_at || '';
+              var fgD = pickFreshDate(fgLead);vedDate || fgLead.grantDate || fgLead.dateSubmitted || fgLead.dateReceived || fgLead.incorporationDate || fgLead.updateDate || fgLead.createdAt || fgLead.created_at || '';
               if (!fgD || fgD < freshCutoffNow) continue;
               var fgArea = extractPostcodeArea(fgLead.postcode || fgLead.address || fgLead.location || fgLead.name || '');
               // Tenders/probate are national-fallback products (no postcode on leads).
@@ -8034,7 +8048,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             var tpPicked = null;
             for (var tpi = 0; tpi < tpArr.length; tpi++) {
               var tl = tpArr[tpi];
-              var tlD = tl.firstVisibleDate || tl.addedOn || tl.publishedDate || tl.receivedDate || tl.grantDate || tl.dateSubmitted || tl.dateReceived || tl.incorporationDate || tl.updateDate || tl.createdAt || tl.created_at || '';
+              var tlD = pickFreshDate(tl);antDate || tl.dateSubmitted || tl.dateReceived || tl.incorporationDate || tl.updateDate || tl.createdAt || tl.created_at || '';
               if (!tlD || tlD < freshCutoffNow) continue;
               var tlArea = extractPostcodeArea(tl.postcode || tl.address || tl.location || tl.name || '');
               // Tenders/probate are national-fallback products (no postcode on leads).

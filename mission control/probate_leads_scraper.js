@@ -95,12 +95,17 @@ function fetchProbateRegistry() {
                 const grantDate = clean(cols[3]);
                 const grantType = clean(cols[4]);
                 if (name && name.length > 3) {
+                  // publishedDate must be ISO (not the display string) or the 48h
+                  // freshness check treats every probate lead as stale.
+                  let pubIso = new Date().toISOString();
+                  try { const dd = new Date(grantDate); if (!isNaN(dd.getTime()) && dd.getFullYear() > 2000) pubIso = dd.toISOString(); } catch(e) {}
                   allResults.push({
                     id: 'PROB_' + Date.now() + '_' + completed + '_' + allResults.length,
                     name: name,
                     deceasedAddress: deceasedAddr,
                     dateOfDeath: dateOfDeath,
                     grantDate: grantDate,
+                    publishedDate: pubIso,
                     grantType: grantType || 'Probate Grant',
                     source: 'Gov.uk Probate Registry',
                     scrapedAt: new Date().toISOString()
@@ -162,6 +167,10 @@ function fetchGazetteHTML(maxItems, pageNum) {
             firstNames = parts.slice(1).join(' ').trim();
             deceasedName = (firstNames + ' ' + surname).trim();
           }
+          // publishedDate must be ISO (not the display string) or the 48h freshness
+          // check treats every probate lead as stale.
+          let pubIso = new Date().toISOString();
+          try { const dd = new Date(pubDate); if (!isNaN(dd.getTime()) && dd.getFullYear() > 2000) pubIso = dd.toISOString(); } catch(e) {}
           leads.push({
             id: 'GAZ_' + noticeId,
             name: deceasedName,
@@ -169,6 +178,7 @@ function fetchGazetteHTML(maxItems, pageNum) {
             deceasedAddress: deceasedAddress,
             dateOfDeath: '',
             grantDate: pubDate,
+            publishedDate: pubIso,
             claimExpiry: '',
             estateValue: 0,
             estateValueLabel: '',
