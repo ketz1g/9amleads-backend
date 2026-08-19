@@ -174,7 +174,7 @@ function hasStreetName(addr) {
   var a = String(addr || '').trim();
   if (!a) return false;
   if (/^\s*\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s+[A-Z][A-Za-z'-]+/.test(a)) return true;
-  return /(?:Road|Street|Avenue|Lane|Drive|Close|Crescent|Gardens|Grove|Court|Terrace|Way|Walk|Hill|Place|Mews|Rise|Row|Park|Square|Green|Broadway|Path|View|Gate|End|Field|Fields|High\s?Street|St\b|Rd\b|Ave\b|Ln\b|Dr\b|Cl\b|Cres\b|Gdns\b|Gv\b|Ct\b|Tce\b|Wl\b|Pl\b|Mws\b|Rse\b|Pk\b|Sq\b|Bdwy\b)/i.test(a);
+  return /(?:Road|Street|Avenue|Lane|Drive|Close|Crescent|Gardens|Grove|Court|Terrace|Way|Walk|Hill|Place|Mews|Rise|Row|Park|Square|Green|Broadway|Path|View|Gate|End|Field|Fields|High\s?Street|\bSt\b|\bRd\b|\bAve\b|\bLn\b|\bDr\b|\bCl\b|\bCres\b|\bGdns\b|\bGv\b|\bCt\b|\bTce\b|\bWl\b|\bPl\b|\bMws\b|\bRse\b|\bPk\b|\bSq\b|\bBdwy\b)/i.test(a);
 }
 
 // ---- Capacity / usage telemetry (exposed on /api/health) ----
