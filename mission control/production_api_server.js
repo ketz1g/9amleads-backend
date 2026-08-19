@@ -4394,7 +4394,9 @@ app.get('/api/admin/leads-overview', adminAuth, (req, res) => {
 app.get('/api/admin/pool-quality', adminAuth, (req, res) => {
   try {
     var prod = req.query.product || 'moving';
-    var poolArr = getDeliveryPool(prod);
+    var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : (prod + '-leads.json'));
+    var poolArr = [];
+    try { var raw = JSON.parse(fs.readFileSync(poolFile, 'utf-8')); if (Array.isArray(raw)) poolArr = raw; else if (raw && typeof raw === 'object') Object.keys(raw).forEach(function(k){ if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) poolArr = poolArr.concat(raw[k]); }); } catch(e2) {}
     var cutoff = getFreshCutoffIso();
     var per = {};
     for (var i = 0; i < poolArr.length; i++) {
