@@ -55,6 +55,10 @@ a{color:#0ea5e9}
 </div>
 <script>
 var API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
+// PERMANENT STALE-CACHE FIX: reload if restored from bfcache (old build).
+window.addEventListener('pageshow', function(psEv) {
+  if (psEv.persisted) { try { window.location.reload(); } catch(e) {} }
+});
 function getPass() {
   var p = sessionStorage.getItem('9amAdminPass');
   if (!p) { p = prompt('Enter admin password:'); if (p) sessionStorage.setItem('9amAdminPass', p); }

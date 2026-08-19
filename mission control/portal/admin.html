@@ -204,6 +204,14 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
 let allCustomers = [];
 
+// PERMANENT STALE-CACHE FIX: if this page is restored from the browser's
+// back-forward cache (bfcache) it would show an OLD build (the recurring "section
+// disappears" bug). Reload once whenever the page is restored from bfcache so the
+// admin page is ALWAYS the current version.
+window.addEventListener('pageshow', function(psEv) {
+  if (psEv.persisted) { try { window.location.reload(); } catch(e) {} }
+});
+
 function saveAdminAuth() { sessionStorage.setItem('9amAdminAuth', 'true'); }
 function getAdminAuth() { return sessionStorage.getItem('9amAdminAuth') === 'true'; }
 function getAdminPass() { return sessionStorage.getItem('9amAdminPass') || ''; }
