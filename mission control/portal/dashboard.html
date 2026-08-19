@@ -715,11 +715,8 @@ function renderFilters(product) {
   if (!container) return;
   var opts = {
     moving: [
-      { id:'f-movingtype', label:'Moving Type', type:'select', opts:['','residential','commercial'], labels:['Any','🏠 Residential','🏢 Commercial'] },
-      { id:'f-minbeds', label:'Min Bedrooms', type:'select', opts:['','1','2','3','4','5'], labels:['Any','1+','2+','3+','4+','5+'] },
-      { id:'f-maxbeds', label:'Max Bedrooms', type:'select', opts:['','1','2','3','4','5'], labels:['Any','1','2','3','4','5'] },
-      { id:'f-proptype', label:'Property Type', type:'select', opts:['','House','Flat','Bungalow','Maisonette','Office','Retail','Warehouse','Land'], labels:['Any','House','Flat','Bungalow','Maisonette','Office','Retail','Warehouse','Land'] },
-      { id:'f-maxprice', label:'Max Price', type:'select', opts:['','200000','350000','500000','750000','1000000','2000000'], labels:['Any','£200k','£350k','£500k','£750k','£1M','£2M'] }
+      { id:'f-movingtype', label:'Moving Type', type:'select', opts:['','residential','commercial'], labels:['Any','\uD83C\uDFE0 Residential','\uD83C\uDFE2 Commercial'] },
+      { id:'f-maxbeds', label:'Max Bedrooms', type:'select', opts:['','1','2','3','4','5','6','7','8','9','10'], labels:['Any','1','2','3','4','5','6','7','8','9','10'] }
     ],
     planning: [
       { id:'f-app-type', label:'Application Types', type:'multicheck', opts:['Householder','Full Planning','Outline Planning','Listed Building','Change of Use','Lawful Development','Permitted Development','Prior Approval'] }

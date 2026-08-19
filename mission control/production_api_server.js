@@ -7510,15 +7510,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       function leadPassesFilters(ld2) {
         try {
           if (cust.product === 'moving') {
+            // MOVING: only the optional MAX-BEDROOMS filter applies (a removal company
+            // may only move homes up to N beds). Min beds / max price / property type
+            // filters are NOT used for moving — removal companies move any size home,
+            // and extra filters shrink the deliverable pool and break the 5/day promise.
             var b = parseInt(ld2.bedrooms) || 0;
-            if (custLeadFilters.minBedrooms && b < custLeadFilters.minBedrooms) return false;
             if (custLeadFilters.maxBedrooms < 99 && b > custLeadFilters.maxBedrooms) return false;
-            var pr = parseFloat(String(ld2.price || '').replace(/[^0-9.]/g, '')) || 0;
-            if (custLeadFilters.maxPrice && pr && pr > custLeadFilters.maxPrice) return false;
-            if (custLeadFilters.propertyType && custLeadFilters.propertyType !== 'any') {
-              var pt = String(ld2.propertyType || ld2.type || '').toLowerCase();
-              if (pt && pt.indexOf(custLeadFilters.propertyType) === -1 && custLeadFilters.propertyType.indexOf(pt) === -1) return false;
-            }
           }
           return true;
         } catch(e) { return true; }
@@ -15867,14 +15864,15 @@ function syncCustomers(product) {
             var rmScraper = require('./rightmove_scraper_v2');
             var apifyKey = process.env.APIFY_API_KEY || '';
             // ===== HOMEDATA TEST-MODE COLLECTION (Phase 2) =====
-            // When MOVING_LEADS_TEST_MODE=true, fetch + resolve Homedata listings but
-            // DO NOT deliver to customers. This lets us validate the new source and
-            // the 100-record comparison before switching production traffic. The
-            // existing Rightmove pipeline below still runs normally and stays live.
+                        // ===== HOMEDATA SOURCE (moving pool supplement) =====
+            // Homedata publishes UK property market activity with UPRNs - a real,
+            // non-Rightmove source with full addresses. When HOMEDATA_API_KEY is set,
+            // fetch new listings and MERGE the UPRN-resolved leads into the moving pool
+            // (they carry a verified door number, no guessing).
             try {
-              if (String(process.env.MOVING_LEADS_TEST_MODE || '').toLowerCase() === 'true' && process.env.HOMEDATA_API_KEY) {
+              if (process.env.HOMEDATA_API_KEY) {
                 var msp = require('./moving_source_provider');
-                var hdRes = await msp.fetchNewListings({ limit: 60, sinceDate: new Date().toISOString().split('T')[0] });
+                var hdRes = await msp.fetchNewListings({ limit: parseInt(process.env.HOMEDATA_MAX_CALLS_PER_RUN || '150', 10), sinceDate: new Date().toISOString().split('T')[0] });
                 var hdResolved = [];
                 var hdUnresolved = 0, hdDoor = 0;
                 for (var hdi = 0; hdi < (hdRes.records || []).length; hdi++) {
@@ -15883,12 +15881,24 @@ function syncCustomers(product) {
                   if (resolved && resolved.uprn) { hdResolved.push(resolved); if (resolved.houseNumber) hdDoor++; }
                   else { hdUnresolved++; }
                 }
-                console.log('[HOMEDATA-TEST] source=' + (hdRes.source||'?') + ' fetched=' + (hdRes.records||[]).length
-                  + ' resolved=' + hdResolved.length + ' doorNumbers=' + hdDoor + ' unresolved=' + hdUnresolved
-                  + ' usage=' + JSON.stringify(msp.API_USAGE));
+                if (hdResolved.length > 0) {
+                  var hdAdded = 0;
+                  var hdSeen = {};
+                  (leads || []).forEach(function(l){ if (l.postcode) hdSeen[String(l.postcode).toUpperCase().replace(/\s+/g,'')] = 1; });
+                  hdResolved.forEach(function(r) {
+                    var rPc = String(r.postcode || '').toUpperCase().replace(/\s+/g, '');
+                    var rAddr = r.fullAddress || r.address || '';
+                    if (!rPc || !rAddr || !r.houseNumber) return;
+                    if (hdSeen[rPc]) return;
+                    hdSeen[rPc] = 1;
+                    leads.push({ id: 'HD_' + (r.uprn || (Date.now() + '_' + hdAdded)), source: 'Homedata', address: rAddr, fullAddress: rAddr, street: r.street || '', postcode: r.postcode || '', buildingNumber: r.houseNumber || r.buildingNumber || '', udprn: '', price: r.price || r.estimatedValue || '', bedrooms: r.bedrooms || 0, propertyType: r.propertyType || 'House', scrapedAt: new Date().toISOString(), firstVisibleDate: new Date().toISOString(), updateDate: new Date().toISOString(), url: r.url || '' });
+                    hdAdded++;
+                  });
+                  console.log('[HOMEDATA] merged ' + hdAdded + ' UPRN-resolved leads into moving pool (fetched=' + (hdRes.records||[]).length + ' resolved=' + hdResolved.length + ' doorNumbers=' + hdDoor + ' unresolved=' + hdUnresolved + ')');
+                }
               }
-            } catch(hdErr) { console.log('[HOMEDATA-TEST] error: ' + hdErr.message); }
-            // ===== PROPALT UPRN VERIFICATION TEST (Phase 2/4) =====
+            } catch(hdErr) { console.log('[HOMEDATA] error: ' + hdErr.message); }
+// ===== PROPALT UPRN VERIFICATION TEST (Phase 2/4) =====
             // In test mode, demonstrate the production design: fresh Rightmove leads
             // get resolved to a UPRN + exact address via Propalt (which is UPRN-native
             // and permits resold data on the Agency plan). Nothing is delivered.
