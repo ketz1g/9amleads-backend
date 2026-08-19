@@ -1068,65 +1068,106 @@ function fetchZooplaApify(areas, maxProperties) {
         const outcode = String(a).replace(/[^A-Z0-9]/gi, '').toLowerCase();
         return { url: 'https://www.zoopla.co.uk/for-sale/property/' + outcode + '/?results_sort=newest_listings&search_source=for-sale' };
       });
+      // COST CONTROL: this actor crawls EVERY page of each list URL (~1000 props per
+      // area) and there is no maxItems input, so cost scales with the NUMBER OF AREAS
+      // per run - not with maxProperties (which the actor ignores). Keep the area list
+      // small (ZOOPLA_MAX_AREAS in the caller) and run once per day. Proxy group is
+      // env-tunable (APIFY_PROXY_GROUP); BUYPROXIES94952 is the one available on this
+      // Apify account. Memory 1024 (256 OOMs Playwright) + generous wait time.
       const input = {
         listUrls: listUrls,
         fullPropertyDetails: false, // list view already has house numbers; keeps cost minimal
         monitoringMode: false,
         enableDelistingTracker: false,
-        proxy: { useApifyProxy: true, apifyProxyGroups: ['SHARED_DATACENTER_PROXIES'], apifyProxyCountry: 'GB' }
+        email: '',
+        proxy: { useApifyProxy: true, apifyProxyGroups: [process.env.APIFY_PROXY_GROUP || 'BUYPROXIES94952'], apifyProxyCountry: process.env.APIFY_PROXY_COUNTRY || 'US' }
       };
-      if (maxProperties) input.maxProperties = maxProperties;
       const body = JSON.stringify(input);
-      const req = https.request({
-        hostname: 'api.apify.com',
-        path: '/v2/acts/dhrumil~zoopla-scraper/run-sync-get-dataset-items?token=' + key + '&memory=256&timeout=120',
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'Accept': 'application/json' },
-        timeout: 150000
-      }, function(res) {
-        let b = '';
-        res.on('data', function(c) { b += c; });
-        res.on('end', function() {
-          try {
-            const items = JSON.parse(b);
-            if (!Array.isArray(items)) {
-              console.log('[ZOOPLA] non-array response: ' + b.substring(0, 120));
-              resolve([]); return;
-            }
-            const leads = items.map(function(p, i) {
-              const addr = (p.address || '').trim();
-              const num = (p.nameOrNumber || '').trim();
-              const fullAddr = [num, addr].filter(Boolean).join(', ').trim();
-              const priceMatch = String(p.price || '').match(/[0-9,]+/);
-              return {
-                id: 'ZOOPLA_' + (p.id || p.url || Date.now() + '_' + i),
-                address: fullAddr || addr,
-                fullAddress: fullAddr || addr,
-                street: addr,
-                buildingNumber: num,
-                postcode: p.postalCode || (p.outcode ? p.outcode + ' ' + (p.incode || '') : ''),
-                bedrooms: parseInt(p.bedrooms) || 0,
-                propertyType: p.propertyType || 'Unknown',
-                price: priceMatch ? parseInt(priceMatch[0].replace(/,/g, '')) : 0,
-                priceLabel: p.price || '',
-                status: 'available',
-                agent: p.agent || '',
-                url: p.url || '',
-                firstVisibleDate: p.listingUpdateDate || new Date().toISOString(),
-                updateDate: p.listingUpdateDate || '',
-                source: 'Zoopla (Apify)',
-                scrapedAt: new Date().toISOString()
-              };
-            });
-            console.log('[ZOOPLA] ' + leads.length + ' leads (areas: ' + areasList.join(',') + ')');
-            resolve(leads);
-          } catch(e) { console.log('[ZOOPLA] parse error: ' + e.message); resolve([]); }
+      // 1) Start the run (async, no sync timeout cap).
+      const startPath = '/v2/acts/dhrumil~zoopla-scraper/runs?token=' + key + '&memory=1024';
+      const runId = await new Promise(function(runResolve) {
+        const req = https.request({
+          hostname: 'api.apify.com', path: startPath, method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'Accept': 'application/json' },
+          timeout: 60000
+        }, function(res) {
+          let b = ''; res.on('data', function(c) { b += c; });
+          res.on('end', function() {
+            try {
+              const j = JSON.parse(b);
+              if (j.data && j.data.id) runResolve(j.data.id);
+              else { console.log('[ZOOPLA] start run failed: ' + b.substring(0, 160)); runResolve(''); }
+            } catch(e) { console.log('[ZOOPLA] start parse error: ' + b.substring(0, 160)); runResolve(''); }
+          });
         });
+        req.on('error', function(e) { console.log('[ZOOPLA] start request error: ' + e.message); runResolve(''); });
+        req.setTimeout(60000, function() { req.destroy(); runResolve(''); });
+        req.write(body); req.end();
       });
-      req.on('error', function(e) { console.log('[ZOOPLA] request error: ' + e.message); resolve([]); });
-      req.setTimeout(150000, function() { req.destroy(); resolve([]); });
-      req.write(body);
-      req.end();
+      if (!runId) { resolve([]); return; }
+      // 2) Wait for the run to finish (poll up to ~15 min).
+      let status = '';
+      let datasetId = '';
+      const startedAt = Date.now();
+      while (Date.now() - startedAt < 900000) {
+        await new Promise(function(r) { setTimeout(r, 20000); });
+        const st = await new Promise(function(stResolve) {
+          const req = https.get('https://api.apify.com/v2/actor-runs/' + runId + '?token=' + key, function(res) {
+            let b = ''; res.on('data', function(c) { b += c; });
+            res.on('end', function() {
+              try {
+                const j = JSON.parse(b);
+                if (j.data) { stResolve({ status: j.data.status, datasetId: j.data.defaultDatasetId || '' }); }
+                else stResolve({ status: 'ERROR', datasetId: '' });
+              } catch(e) { stResolve({ status: 'ERROR', datasetId: '' }); }
+            });
+          });
+          req.on('error', function() { stResolve({ status: 'ERROR', datasetId: '' }); });
+        });
+        status = st.status;
+        datasetId = st.datasetId;
+        if (status === 'SUCCEEDED' || status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') break;
+      }
+      console.log('[ZOOPLA] run ' + runId + ' status=' + status);
+      if (status !== 'SUCCEEDED' || !datasetId) { resolve([]); return; }
+      // 3) Fetch the dataset items (limit = maxProperties if set, else all).
+      const items = await new Promise(function(itemsResolve) {
+        const limitQ = maxProperties ? '&limit=' + maxProperties : '';
+        const req = https.get('https://api.apify.com/v2/datasets/' + datasetId + '/items?format=json' + limitQ + '&token=' + key, function(res) {
+          let b = ''; res.on('data', function(c) { b += c; });
+          res.on('end', function() {
+            try { itemsResolve(JSON.parse(b)); } catch(e) { console.log('[ZOOPLA] dataset parse error'); itemsResolve([]); }
+          });
+        });
+        req.on('error', function() { itemsResolve([]); });
+      });
+      const leads = (Array.isArray(items) ? items : []).map(function(p, i) {
+        const addr = (p.address || '').trim();
+        const num = (p.nameOrNumber || '').trim();
+        const fullAddr = [num, addr].filter(Boolean).join(', ').trim();
+        const priceMatch = String(p.price || '').match(/[0-9,]+/);
+        return {
+          id: 'ZOOPLA_' + (p.id || p.url || Date.now() + '_' + i),
+          address: fullAddr || addr,
+          fullAddress: fullAddr || addr,
+          street: addr,
+          buildingNumber: num,
+          postcode: p.postalCode || (p.outcode ? p.outcode + ' ' + (p.incode || '') : ''),
+          bedrooms: parseInt(p.bedrooms) || 0,
+          propertyType: p.propertyType || 'Unknown',
+          price: priceMatch ? parseInt(priceMatch[0].replace(/,/g, '')) : 0,
+          priceLabel: p.price || '',
+          status: 'available',
+          agent: p.agent || '',
+          url: p.url || '',
+          firstVisibleDate: p.listingUpdateDate || p.lastUpdatedDate || new Date().toISOString(),
+          updateDate: p.listingUpdateDate || p.lastUpdatedDate || '',
+          source: 'Zoopla (Apify)',
+          scrapedAt: new Date().toISOString()
+        };
+      });
+      console.log('[ZOOPLA] ' + leads.length + ' leads (areas: ' + areasList.join(',') + ')');
+      resolve(leads);
     } catch(e) { console.log('[ZOOPLA] error: ' + e.message); resolve([]); }
   });
 }

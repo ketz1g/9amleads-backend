@@ -16222,10 +16222,27 @@ function syncCustomers(product) {
             // $30/mo rental (set ENABLE_ZOOPLA=true in env).
             if (apifyKey && process.env.ENABLE_ZOOPLA === 'true') {
               try {
-                var mvAreasForZoopla = mvAreas.length ? mvAreas : (leads || []).map(function(l) { return extractPostcodeArea(l.postcode || ''); }).filter(Boolean);
-                if (mvAreasForZoopla.length > 0) {
-                  var zooplaLeads = await rmScraper.fetchZooplaApify(mvAreasForZoopla, 120);
-                  if (zooplaLeads && zooplaLeads.length > 0) {
+                // COST CONTROL: Zoopla is a PAID Apify actor - never over-use it.
+                // Cap the areas + properties per run (env-tunable, defaults keep it
+                // cheap) and run ONCE per day even if the scrape is force re-run, so
+                // manual re-scrapes can't double-bill. Raise the caps as we grow.
+                var zooplaMaxAreas = parseInt(process.env.ZOOPLA_MAX_AREAS || '4', 10);
+                var zooplaMaxProps = parseInt(process.env.ZOOPLA_MAX_PROPERTIES || '60', 10);
+                var zooplaRunFile = path.join(DATA_DIR, 'last-zoopla.json');
+                var zooplaTodayStr = new Date().toISOString().split('T')[0];
+                var zooplaLastRun = {};
+                try { zooplaLastRun = JSON.parse(fs.readFileSync(zooplaRunFile, 'utf-8')); } catch(ze) {}
+                if (zooplaLastRun.lastRun === zooplaTodayStr) {
+                  console.log('[ZOOPLA] already run today - skipped (actor cost control)');
+                } else {
+                  var mvAreasForZoopla = mvAreas.length ? mvAreas : (leads || []).map(function(l) { return extractPostcodeArea(l.postcode || ''); }).filter(Boolean);
+                  var zooplaAreaSeen = {};
+                  var zooplaAreas = [];
+                  mvAreasForZoopla.forEach(function(a) { var an = String(a).toUpperCase().replace(/[^A-Z0-9]/g, ''); if (an && !zooplaAreaSeen[an] && zooplaAreas.length < zooplaMaxAreas) { zooplaAreaSeen[an] = 1; zooplaAreas.push(an); } });
+                  if (zooplaAreas.length > 0) {
+                    var zooplaLeads = await rmScraper.fetchZooplaApify(zooplaAreas, zooplaMaxProps);
+                    try { fs.writeFileSync(zooplaRunFile, JSON.stringify({ lastRun: zooplaTodayStr, at: new Date().toISOString(), areas: zooplaAreas, maxProps: zooplaMaxProps })); } catch(zfErr) {}
+                    if (zooplaLeads && zooplaLeads.length > 0) {
                     // Keep only fresh (<7d) to match the moving freshness policy
                     var t7dZ = new Date(Date.now() - 7 * 86400000).toISOString();
                     zooplaLeads = zooplaLeads.filter(function(l) { return (l.firstVisibleDate || l.updateDate || '') >= t7dZ; });
@@ -16240,6 +16257,7 @@ function syncCustomers(product) {
                   } else {
                     console.log('[SCRAPER] Zoopla: 0 leads (actor may need renting)');
                   }
+                }
                 }
               } catch(zooplaErr) { console.log('[SCRAPER] Zoopla error:', zooplaErr.message); }
             }
