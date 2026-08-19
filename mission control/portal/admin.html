@@ -234,7 +234,7 @@ window.addEventListener('pageshow', function(psEv) {
 
 function saveAdminAuth() { sessionStorage.setItem('9amAdminAuth', 'true'); }
 function getAdminAuth() { return sessionStorage.getItem('9amAdminAuth') === 'true'; }
-function getAdminPass() { return sessionStorage.getItem('9amAdminPass') || ''; }
+function getAdminPass() { return sessionStorage.getItem('9amAdminPass') || localStorage.getItem('9amAdminPass') || ''; }
 function adminHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminPass() }; }
 
 async function verifyPass(pass) {
@@ -265,6 +265,9 @@ async function adminLogin() {
     return;
   }
   sessionStorage.setItem('9amAdminPass', pass);
+  // ALSO store in localStorage so NEW TABS (admin-customer.html, dashboard
+  // impersonation) inherit the admin credentials instantly without re-login.
+  try { localStorage.setItem('9amAdminPass', pass); } catch(e) {}
   saveAdminAuth();
   document.getElementById('loginPage').style.display = 'none';
   document.getElementById('adminPage').style.display = 'block';

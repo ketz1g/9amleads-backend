@@ -60,8 +60,10 @@ window.addEventListener('pageshow', function(psEv) {
   if (psEv.persisted) { try { window.location.reload(); } catch(e) {} }
 });
 function getPass() {
-  var p = sessionStorage.getItem('9amAdminPass');
-  if (!p) { p = prompt('Enter admin password:'); if (p) sessionStorage.setItem('9amAdminPass', p); }
+  // Read the admin password shared across tabs (localStorage is set by the admin
+  // page on login) so opening this page in a NEW tab never prompts for login.
+  var p = sessionStorage.getItem('9amAdminPass') || localStorage.getItem('9amAdminPass');
+  if (!p) { p = prompt('Enter admin password:'); if (p) { sessionStorage.setItem('9amAdminPass', p); try { localStorage.setItem('9amAdminPass', p); } catch(e) {} } }
   return p || '';
 }
 function headers() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getPass() }; }
