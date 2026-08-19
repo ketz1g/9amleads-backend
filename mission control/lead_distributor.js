@@ -987,7 +987,7 @@ async function distributeProduct(product) {
       // + area + postcode) - a bare building name is not mail-ready.
       if (product === 'moving' && (!hasStreetName(gAddr) || (nl && nl.__noStreet))) {
         if (bareSkipLogs < 6) { bareSkipLogs++; console.log('  [DISTRIBUTOR] Skipping no-street moving lead: ' + gAddr.substring(0, 60)); }
-        continue;
+        return;
       }
       if (!hasUsablePremiseAddress(gAddr, gPc)) {
         if (bareSkipLogs < 6) { bareSkipLogs++; console.log('  [DISTRIBUTOR] Skipping bare-address ' + product + ' lead: ' + gAddr.substring(0, 60)); }
