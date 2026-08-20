@@ -3331,6 +3331,28 @@ app.put('/api/leads/:id/note', authMiddleware, (req, res) => {
 });
 
 // GET /api/leads/:id — lead detail
+app.get('/api/leads/today', authMiddleware, (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  const leads = db.prepare(
+    'SELECT * FROM leads WHERE customer_id = ? AND date(created_at) = ? ORDER BY created_at DESC'
+  ).all(req.user.id, today);
+
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+
+  const nowIso = new Date().toISOString();
+  const visible = leads.filter(function(l) {
+    if (l.delivered || l.delivered_at) return true;
+    return !(l.release_at && l.release_at > nowIso);
+  });
+
+  res.json(visible
+    .filter(function(l) { return leadHasUsableAddress(l, customer ? customer.product : l.product); })
+    .map(l => {
+    const parsed = JSON.parse(l.data || '{}');
+    const scored = attachOpportunityScore(parsed, customer?.product || l.product);
+    return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
+  }));
+});
 app.get('/api/leads/:id', authMiddleware, (req, res) => {
   try {
     const db = getDb();
@@ -3443,28 +3465,7 @@ app.get('/api/leads', authMiddleware, (req, res) => {
 });
 
 // GET /api/leads/today
-app.get('/api/leads/today', authMiddleware, (req, res) => {
-  const today = new Date().toISOString().split('T')[0];
-  const leads = db.prepare(
-    'SELECT * FROM leads WHERE customer_id = ? AND date(created_at) = ? ORDER BY created_at DESC'
-  ).all(req.user.id, today);
 
-  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
-
-  const nowIso = new Date().toISOString();
-  const visible = leads.filter(function(l) {
-    if (l.delivered || l.delivered_at) return true;
-    return !(l.release_at && l.release_at > nowIso);
-  });
-
-  res.json(visible
-    .filter(function(l) { return leadHasUsableAddress(l, customer ? customer.product : l.product); })
-    .map(l => {
-    const parsed = JSON.parse(l.data || '{}');
-    const scored = attachOpportunityScore(parsed, customer?.product || l.product);
-    return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
-  }));
-});
 
 // POST /api/leads/reject — customer rejects a lead (incorrect/wrong address), so it's
 // removed from their view and queued for admin review + replacement.
