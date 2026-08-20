@@ -4859,6 +4859,21 @@ app.post('/api/admin/replace-customer-leads', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Temporary diagnostic: show a product pool's lead counts by postcode area /
+// county (used to verify supply for a customer's chosen areas).
+app.get('/api/admin/pool-counties', adminAuth, (req, res) => {
+  try {
+    var product = (req.query && req.query.product) || 'probate';
+    var pool = loadProductPool(product);
+    var byArea = {};
+    pool.forEach(function(l) {
+      var a = extractPostcodeArea(l.postcode || l.address || l.location || l.name || '');
+      byArea[a] = (byArea[a] || 0) + 1;
+    });
+    res.json({ product: product, total: pool.length, by_area: byArea });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/otm-scrape - direct OnTheMarket scrape (NO Apify credits).
 // Scrapes the given areas (or all active moving customers' areas), gets the full
 // postcode from each detail page (free), and appends fresh leads to the moving
@@ -8002,6 +8017,21 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           if (l.fullAddress) l.fullAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
         }
         return l;
+      });
+      // DEDUPE: the pool accumulates the same property/listing multiple times
+      // (Rightmove + OnTheMarket + re-scrapes create duplicate entries with
+      // different ids). Dedupe by normalized URL, falling back to normalized
+      // address + postcode, so a customer NEVER receives the same lead twice.
+      var seenPoolD = {};
+      arr = arr.filter(function(l) {
+        var u = String(l.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+        var a = String(l.address || l.fullAddress || l.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+        var pc = String(l.postcode || '').toUpperCase().replace(/\s+/g, '').trim();
+        var key = u ? 'u:' + u : ('a:' + a + (pc ? '|' + pc : ''));
+        if (!key || key === 'a:') return true;
+        if (seenPoolD[key]) return false;
+        seenPoolD[key] = true;
+        return true;
       });
       _deliveryPoolCache[prod] = arr;
       return arr;
