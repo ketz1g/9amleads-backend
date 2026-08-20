@@ -8938,6 +8938,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             // addresses. If replacements run out, the exact-count guarantee holds
             // the batch back rather than send anything incomplete.
             if (cust.product === 'moving' && custLeads.length > 0) {
+              _deliverDiag[cust.email].review = { candidates: custLeads.length, reasons: {}, samples: [] };
               try {
                 var qvLeads = [];
                 var qvDropped = 0;
