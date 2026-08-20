@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<script>if(location.hostname==="www.9amleads.com"){location.replace("https://9amleads.com"+location.pathname+location.search);}</script>
 <title>Customer Dashboard | 9amLeads Admin</title>
 <meta name="robots" content="noindex, nofollow">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -73,7 +74,7 @@ async function load() {
   if (!email) { document.getElementById('statusLine').innerHTML = '<span style="color:#ef4444">No customer email provided. Use ?email=...</span>'; return; }
   document.getElementById('statusLine').textContent = 'Loading leads for ' + email + '...';
   try {
-    var r = await fetch(API + '/api/admin/customer-dashboard?email=' + encodeURIComponent(email), { headers: headers() });
+    var r = await fetch(API + '/api/admin/customer-dashboard?email=' + encodeURIComponent(email) + '&t=' + Date.now(), { headers: headers() });
     var d = await r.json();
     if (!r.ok || !d.success) { document.getElementById('statusLine').innerHTML = '<span style="color:#ef4444">Could not load (HTTP ' + r.status + '): ' + esc(d.error || 'unknown') + ' — check the admin password.</span>'; return; }
     document.getElementById('metaLine').innerHTML = '<span><b>Email:</b> ' + esc(email) + '</span><span><b>Product:</b> ' + esc(d.product) + '</span><span><b>Plan:</b> ' + esc(d.plan) + '</span><span><b>Areas:</b> ' + esc(d.areas || '-') + '</span><span><b>Delivered:</b> ' + d.delivered + '</span><span><b>Pending:</b> ' + d.pending + '</span><span><b>Total:</b> ' + d.total + '</span>';
@@ -95,7 +96,7 @@ async function load() {
 async function openCustomerDashboard() {
   if (!email) { alert('No customer email'); return; }
   try {
-    var c = await fetch(API + '/api/admin/customers?limit=200', { headers: headers() });
+    var c = await fetch(API + '/api/admin/customers?limit=200&t=' + Date.now(), { headers: headers() });
     var cj = await c.json();
     var list = cj.customers || cj;
     var cust = (Array.isArray(list) ? list : []).find(function(x){ return String(x.email||'').toLowerCase() === email.toLowerCase(); });

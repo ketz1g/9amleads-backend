@@ -2120,6 +2120,10 @@ app.post('/api/direct-mail/tracking/sync', authMiddleware, async (req, res) => {
 // GET /api/direct-mail/tracking/calendar — group tracking by date for calendar/week views.
 
 app.use(cors({ origin: ['https://www.9amleads.com', 'https://9amleads.com', 'http://localhost:8012'], credentials: true }));
+// NEVER cache any /api response. Admin dashboards (customers/leads/stats) are live
+// data and Cloudflare/Netlify/browsers must not serve a stale snapshot (a cached
+// customers response made the admin page appear to show only one customer).
+app.use('/api', function(req, res, next) { res.setHeader('Cache-Control', 'no-store'); next(); });
 // Capture raw body for Stripe signature verification (preserve stream for express.json)
 // Raised from 2mb to 20mb so Print & Post leaflet/letter uploads (sent as base64)
 // don't fail with a body-too-large error when a customer saves their setup.

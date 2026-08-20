@@ -1,5 +1,6 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<script>if(location.hostname==="www.9amleads.com"){location.replace("https://9amleads.com"+location.pathname+location.search);}</script>
 <title>Admin | 9amLeads</title>
 <meta name="robots" content="noindex, nofollow">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -385,7 +386,7 @@ function planBadge(plan) {
 
 async function loadData() {
   try {
-    const statsResp = await fetch(API + '/api/admin/stats', { headers: adminHeaders() });
+    const statsResp = await fetch(API + '/api/admin/stats?t=' + Date.now(), { headers: adminHeaders() });
     const stats = await statsResp.json();
     if (!stats || stats.error || statsResp.status !== 200) {
       var badgeEl = document.getElementById('custCountBadge'); if (badgeEl) badgeEl.textContent = (stats.total_customers||0);
@@ -407,7 +408,7 @@ async function loadData() {
       '<div class="stat-card"><div class="num">' + (stats.deliveries_today||0) + '</div><div class="label">Deliveries Today</div></div>' +
       '<div class="stat-card"><div class="num" style="color:#ef4444">' + (stats.rejected_leads||0) + '</div><div class="label">Rejected Leads</div></div>';
 
-    const custResp = await fetch(API + '/api/admin/customers', { headers: adminHeaders() });
+    const custResp = await fetch(API + '/api/admin/customers?t=' + Date.now(), { headers: adminHeaders() });
     const custData = custResp.ok ? await custResp.json() : { customers: [] };
     allCustomers = custData.customers || [];
     renderCustomers(allCustomers);
@@ -427,7 +428,7 @@ async function loadData() {
 async function loadAnalytics() {
   try {
     var days = document.getElementById('analyticsRange') ? document.getElementById('analyticsRange').value : 30;
-    var r = await fetch(API + '/api/analytics/overview?days=' + days, { headers: adminHeaders() });
+    var r = await fetch(API + '/api/analytics/overview?days=' + days + '&t=' + Date.now(), { headers: adminHeaders() });
     if (!r.ok) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#ef4444">Could not load analytics</div>'; return; }
     var d = await r.json();
     if (!d || d.error) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#64748b">No analytics data yet</div>'; return; }
@@ -475,7 +476,7 @@ function renderPlanBreakdown(customers) {
 
 async function loadLeadMonitor() {
   try {
-    const r = await fetch(API + '/api/admin/leads-overview', { headers: adminHeaders() });
+    const r = await fetch(API + '/api/admin/leads-overview?t=' + Date.now(), { headers: adminHeaders() });
     const d = await r.json();
     var rows = d.customers || [];
     var tbody = document.getElementById('leadMonitorTable');
@@ -591,7 +592,7 @@ async function fixExtendTrial(customerId) {
 // ===== HEALTH DASHBOARD =====
 async function loadHealth() {
   try {
-    const r = await fetch(API + '/api/admin/health-report', { headers: adminHeaders() });
+    const r = await fetch(API + '/api/admin/health-report?t=' + Date.now(), { headers: adminHeaders() });
     if (!r.ok) return;
     const h = await r.json();
     const card = document.getElementById('healthCard');
@@ -791,7 +792,7 @@ async function loadRejectedLeads() {
   var tb = document.getElementById('rejectedTable');
   if (!tb) return;
   try {
-    var r = await fetch(API + '/api/admin/rejected-leads', { headers: adminHeaders() });
+    var r = await fetch(API + '/api/admin/rejected-leads?t=' + Date.now(), { headers: adminHeaders() });
     if (!r.ok) { tb.innerHTML = '<tr><td colspan="7" class="empty" style="color:#ef4444">Could not load rejected leads</td></tr>'; return; }
     var d = await r.json();
     var items = (d && d.leads) || [];
@@ -836,7 +837,7 @@ async function loadFulfilment() {
   var date = dateEl && dateEl.value ? dateEl.value : new Date().toISOString().split('T')[0];
   if (dateEl && !dateEl.value) dateEl.value = date;
   try {
-    var r = await fetch(API + '/api/admin/fulfilment-report?date=' + date, { headers: adminHeaders() });
+    var r = await fetch(API + '/api/admin/fulfilment-report?date=' + date + '&t=' + Date.now(), { headers: adminHeaders() });
     if (!r.ok) { tb.innerHTML = '<tr><td colspan="7" class="empty" style="color:#ef4444">Could not load fulfilment report</td></tr>'; return; }
     var d = await r.json();
     if (sm) {
