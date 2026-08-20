@@ -4758,8 +4758,9 @@ app.post('/api/admin/replace-customer-leads', adminAuth, async (req, res) => {
       if (!fd || fd < freshCut) { continue; }
       var reason = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
       if (reason) { skipped++; continue; }
-      if (used[l.id || l.url]) continue;
-      used[l.id || l.url] = 1;
+      var dedupeKey = String(l.address || l.fullAddress || l.id || l.url || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (used[l.id || l.url] || used['addr:' + dedupeKey]) continue;
+      used[l.id || l.url] = 1; used['addr:' + dedupeKey] = 1;
       var d = {
         address: l.address || l.fullAddress || '',
         fullAddress: l.fullAddress || l.address || '',
