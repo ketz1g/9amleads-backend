@@ -8680,8 +8680,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         console.log('[DELIVERY] Door-number gate: dropped ' + (doorGatedBefore - custLeads.length) + ' of ' + doorGatedBefore + ' leads for ' + cust.email + ' (no verified house number) — kept ' + custLeads.length);
       }
       if (custLeads.length === 0) {
-        console.log('[DELIVERY] ' + cust.email + ': all ' + doorGatedBefore + ' leads dropped by door-number gate — no email sent (avoid sending useless leads).');
-        continue;
+        console.log('[DELIVERY] ' + cust.email + ': all ' + doorGatedBefore + ' leads dropped by door-number gate - running top-up to replace them');
       }
       // DOOR-NUMBER TOP-UP: if the gate dropped leads and the customer is now
       // short of their promised count, pull REPLACEMENT leads from the pool and
@@ -8753,6 +8752,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           }
         }
       } catch(topErr) { console.log('[DELIVERY] Door-number top-up error:', topErr.message); }
+      // FINAL GATE CHECK: after the top-up, if we STILL have no deliverable moving
+      // leads, skip (exact-count guarantee holds back rather than send nothing).
+      if (custLeads.length === 0) {
+        console.log('[DELIVERY] ' + cust.email + ': 0 deliverable moving leads after top-up - skipping');
+        continue;
+      }
       // FINAL EXACT-COUNT GUARANTEE: if still short of the promised count, create
       // fresh leads from the scrape pool file and PAF-enrich them until we reach
       // EXACTLY totalDailyLimit confirmed-numbered leads. This guarantees the
