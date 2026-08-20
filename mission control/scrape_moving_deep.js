@@ -80,6 +80,12 @@ var AREA_TOWN = { 'EN':'Enfield', 'HA':'Harrow', 'LU':'Luton', 'E':'London', 'N'
 function resolveOutcodeId(areaCode) {
   return new Promise(function(resolve) {
     if (!APIFY_KEY) { resolve(null); return; }
+    var knownOutcodes = { E: 93917, N: 93917, NW: 93961, SE: 93917, SW: 93917, W: 93917, EC: 93917, WC: 93917, B: 94028, M: 94019, L: 94022, S: 94124, NE: 94100, BS: 93920 };
+    if (knownOutcodes[areaCode]) {
+      console.log('[DEEP-SCRAPE] ' + areaCode + ' -> known outcode ' + knownOutcodes[areaCode]);
+      resolve(knownOutcodes[areaCode]);
+      return;
+    }
     var town = AREA_TOWN[areaCode] || areaCode;
     var typeaheadUrl = 'https://www.rightmove.co.uk/typeAheadHtml/search?term=' + encodeURIComponent(town) + '&index=0&c=1&maxResults=10';
     var input = { listUrls: [{ url: typeaheadUrl }], fullPropertyDetails: false, monitoringMode: false, maxProperties: 1, proxy: { useApifyProxy: true } };
