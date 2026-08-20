@@ -9653,7 +9653,7 @@ app.post('/api/admin/upgrade', adminAuth, (req, res) => {
     if (!email || !plan) return res.status(400).json({ error: 'email and plan required' });
     const customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
     if (!customer) return res.status(404).json({ error: 'Customer not found' });
-    db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = ? WHERE id = ?').run(plan, leads_per_day || 15, req.body.trial_ends !== undefined ? req.body.trial_ends : (plan === 'free_trial' ? (customer.trial_ends || null) : null), customer.id);
+    db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = ? WHERE id = ?').run(plan, (leads_per_day !== undefined && leads_per_day) ? leads_per_day : getPlanLimit(customer.product || product || 'moving', plan, coverage || customer.coverage || 'postcode'), req.body.trial_ends !== undefined ? req.body.trial_ends : (plan === 'free_trial' ? (customer.trial_ends || null) : null), customer.id);
     if (product) db.prepare('UPDATE customers SET product = ? WHERE id = ?').run(product, customer.id);
     if (coverage) db.prepare('UPDATE customers SET coverage = ? WHERE id = ?').run(coverage, customer.id);
     if (target_areas) db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(target_areas, customer.id);
@@ -17167,7 +17167,10 @@ app.post('/api/admin/send-daily-email', adminAuth, async (req, res) => {
     _dbData = null; var dbS = getDb();
     var custS = (dbS.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
     if (!custS) return res.status(404).json({ error: 'Customer not found' });
-    var custLeads = (dbS.leads || []).filter(function(l) { return l.customer_id === custS.id && l.delivered; }).slice(0, 20);
+    // ONLY today's delivered leads - never the full history (a planning free_trial
+    // must see exactly 1 lead in the email, not all leads ever sent).
+    var todayStr = new Date().toISOString().split('T')[0];
+    var custLeads = (dbS.leads || []).filter(function(l) { return l.customer_id === custS.id && l.delivered && l.delivered_at && String(l.delivered_at).indexOf(todayStr) === 0; }).slice(0, 20);
     if (!custLeads.length) return res.json({ success: true, sent: false, reason: 'no delivered leads to email' });
     var parsedLeads = custLeads.map(function(l) {
       var p = {}; try { p = JSON.parse(l.data || '{}'); } catch(e) {}
