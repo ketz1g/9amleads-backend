@@ -136,11 +136,11 @@ async function collectFresh(freshnessHours) {
       validatedDate: validatedDate,
       status: a.status || '',
       stage: a.stage || '',
-      sourceUrl: a.links ? a.links.council || a.links.plota : '',
-      plotaUrl: a.links ? a.links.plota : '',
+      sourceUrl: a.links ? a.links.council || '' : '',
+      plotaUrl: '',
       trades: trades,
       freshnessBadge: freshnessBadge(receivedDate, validatedDate),
-      source: 'Plota',
+      source: 'Planning Portal',
       location: a.location || null,
       scrapedAt: new Date().toISOString()
     });

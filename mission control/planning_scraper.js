@@ -153,7 +153,7 @@ function fetchPlanningApify(postcodeArea) {
               reference: p.reference || p.applicationReference || '',
               estimatedValue: 0,
               valueLabel: '',
-              url: p.url || p.link || (p.links && (p.links.council || p.links.plota)) || p.applicationUrl || p.detailsUrl || p.detailUrl || p.webUrl || p.portalUrl || '',
+              url: p.url || p.link || (p.links && p.links.council) || p.applicationUrl || p.detailsUrl || p.detailUrl || p.webUrl || p.portalUrl || '',
               dateSubmitted: p.dateSubmitted || p.decisionDate || '',
               source: 'Planning Portal (Apify)',
               scrapedAt: new Date().toISOString()
@@ -274,11 +274,11 @@ function fetchPlotaPlanning(postcode, maxItems, category) {
             reference: p.reference || '',
             estimatedValue: 0,
             valueLabel: '',
-            url: (p.links && (p.links.plota || p.links.council)) || (p.url || '') || (p.id ? 'https://plota.co.uk/application/' + p.id : ''),
+            url: (p.links && p.links.council) || (p.url || '') || '',
             links: p.links || {},
             dateSubmitted: p.date_received || p.date_validated || '',
             locationPoint: p.location ? (p.location.lat + ',' + p.location.lng) : '',
-            source: 'Plota (Planning API)',
+            source: 'Planning Portal',
             scrapedAt: new Date().toISOString()
           }));
           console.log('    Plota returned ' + leads.length + ' planning applications');
@@ -327,11 +327,11 @@ function fetchPlotaPlanningFreeText(query, maxItems, category) {
             reference: p.reference || '',
             estimatedValue: 0,
             valueLabel: '',
-            url: (p.links && (p.links.plota || p.links.council)) || (p.url || '') || (p.id ? 'https://plota.co.uk/application/' + p.id : ''),
+            url: (p.links && p.links.council) || (p.url || '') || '',
             links: p.links || {},
             dateSubmitted: p.date_received || p.date_validated || '',
             locationPoint: p.location ? (p.location.lat + ',' + p.location.lng) : '',
-            source: 'Plota (Planning API)',
+            source: 'Planning Portal',
             scrapedAt: new Date().toISOString()
           }));
           console.log('    Plota(free "' + query + '") returned ' + leads.length + ' applications');
