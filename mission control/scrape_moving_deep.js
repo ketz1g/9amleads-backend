@@ -132,8 +132,12 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
     var section = type === 'commercial' ? 'commercial-property-for-sale' : 'property-for-sale';
     // Prefer a resolved OUTCODE (targeted to the exact area) when available; this
     // isolates EN/HA/LU specifically. Fall back to a region search otherwise.
-    var locId;
-    if (outcodeId) locId = 'OUTCODE%5E' + outcodeId;
+    // Correct Rightmove location IDs for the North West supply areas (the typeahead
+    // endpoint was retired and the old OUTCODE ids 404 for Liverpool/Manchester).
+    // REGION ids taken from Rightmove's own city pages (Liverpool/Manchester/etc).
+    var KNOWN_LOCATION = { L: 'REGION%5E813', M: 'REGION%5E904', WA: 'REGION%5E1403', CH: 'REGION%5E313', WN: 'REGION%5E1452' };
+    var locId = KNOWN_LOCATION[areaCode] || null;
+    if (!locId && outcodeId) locId = 'OUTCODE%5E' + outcodeId;
     else {
       // Region fallback - the correct Rightmove region for the area. The old
       // default of 87490 (London) sent Liverpool (L) / Manchester (M) / etc. to
