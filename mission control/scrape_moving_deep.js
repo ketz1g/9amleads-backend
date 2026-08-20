@@ -137,8 +137,9 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
     // REGION ids taken from Rightmove's own city pages (Liverpool/Manchester/etc).
     var KNOWN_LOCATION = { L: 'REGION%5E813', M: 'REGION%5E904', WA: 'REGION%5E1403', CH: 'REGION%5E313', WN: 'REGION%5E1452' };
     var locId = KNOWN_LOCATION[areaCode] || null;
-    if (!locId && outcodeId) locId = 'OUTCODE%5E' + outcodeId;
-    else {
+    if (!locId) {
+      if (outcodeId) locId = 'OUTCODE%5E' + outcodeId;
+      else {
       // Region fallback - the correct Rightmove region for the area. The old
       // default of 87490 (London) sent Liverpool (L) / Manchester (M) / etc. to
       // London and produced zero North-West supply. Map every area to its region:
@@ -161,8 +162,9 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
         'AB':'87492','DD':'87492','DG':'87492','EH':'87492','FK':'87492','G':'87492','HS':'87492','IV':'87492','KA':'87492','KW':'87492','KY':'87492','ML':'87492','PA':'87492','PH':'87492','TD':'87492','ZE':'87492',
         'CF':'87493','LD':'87493','LL':'87493','NP':'87493','SA':'87493','SY':'87493'
       };
-      var regionId = REGION_MAP[areaCode] || '87490';
-      locId = 'REGION%5E' + regionId;
+        var regionId = REGION_MAP[areaCode] || '87490';
+        locId = 'REGION%5E' + regionId;
+      }
     }
     var url = 'https://www.rightmove.co.uk/' + section + '/find.html?searchType=SALE&locationIdentifier=' + locId + '&includeSSTC=true';
     // NW areas (L/WA/CH/M/WN): list-mode displayAddress has no postcode, so we must

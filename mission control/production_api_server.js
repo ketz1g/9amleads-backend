@@ -4755,7 +4755,9 @@ app.post('/api/admin/replace-customer-leads', adminAuth, async (req, res) => {
       if (!areas.some(function(a) { return String(a).toUpperCase() === pcArea; })) { continue; }
       areaMatch++;
       var fd = pickFreshDate(l);
-      if (!fd || fd < freshCut) { continue; }
+      // 5/day promise MUST be met: allow in-area leads that pass validation even if
+      // they are not within the strict freshness window (fresh-first order preserved).
+      if (!fd) { continue; }
       var reason = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
       if (reason) { skipped++; continue; }
       var dedupeKey = String(l.address || l.fullAddress || l.id || l.url || '').toLowerCase().replace(/[^a-z0-9]/g, '');
