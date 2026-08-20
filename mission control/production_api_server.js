@@ -17158,6 +17158,28 @@ app.post('/api/admin/test-email', adminAuth, async (req, res) => {
 });
 
 // TEMP TEST: send the redesigned daily lead email preview (remove after review)
+// Send today's daily lead email to a customer (resend for anyone who missed
+// it, e.g. when Brevo was briefly down at the 09:00 run).
+app.post('/api/admin/send-daily-email', adminAuth, async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    _dbData = null; var dbS = getDb();
+    var custS = (dbS.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!custS) return res.status(404).json({ error: 'Customer not found' });
+    var custLeads = (dbS.leads || []).filter(function(l) { return l.customer_id === custS.id && l.delivered; }).slice(0, 20);
+    if (!custLeads.length) return res.json({ success: true, sent: false, reason: 'no delivered leads to email' });
+    var parsedLeads = custLeads.map(function(l) {
+      var p = {}; try { p = JSON.parse(l.data || '{}'); } catch(e) {}
+      return { ...l, data: p };
+    });
+    var htmlS = generateLeadEmailHTML(custS, parsedLeads);
+    await sendBrevoEmail({ email: custS.email, name: custS.company || 'Customer' }, '9amLeads • Your Daily Opportunities for ' + (custS.coverage ? (COVERAGE_LABELS[custS.coverage] || custS.coverage) : 'your area') + ' on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), htmlS);
+    try { custS.last_email_date = new Date().toISOString().split('T')[0]; dbS.customers.forEach(function(cc){ if (cc.id === custS.id) cc.last_email_date = custS.last_email_date; }); saveDb(); } catch(e) {}
+    res.json({ success: true, sent: true, email: custS.email, leads: custLeads.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/test-daily', adminAuth, async (req, res) => {
   try {
     const toEmail = req.body.email || 'ketzman1g@gmail.com';
