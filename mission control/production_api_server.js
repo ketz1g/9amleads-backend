@@ -6317,6 +6317,26 @@ cron.schedule('0 9 * * 1-5', async () => {
   timezone: 'Europe/London'
 });
 
+// BULLETPROOF DELIVERY TEST: fire EVERY 10 MINUTES and deliver ONLY to the
+// test.* accounts (never real customers). Gated by TEST_DELIVERY_CRON=true so
+// production is untouched unless the test is explicitly enabled. The exact-count
+// engine ensures: first run of the day delivers the promised number, later runs
+// deliver 0 (no more, no less). Set TEST_DELIVERY_CRON=false to stop.
+cron.schedule('*/10 * * * *', async () => {
+  if (String(process.env.TEST_DELIVERY_CRON || 'false').toLowerCase() !== 'true') return;
+  console.log('[TEST-DELIVERY-CRON] Fired at ' + new Date().toISOString());
+  try {
+    const httpT = require('http');
+    var bT = JSON.stringify({ test_only: true });
+    var rT = httpT.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bT) } }, function(s) {
+      var rb = ''; s.on('data', function(d) { rb += d; }); s.on('end', function() { console.log('[TEST-DELIVERY-CRON] done:', rb.substring(0, 250)); });
+    });
+    rT.on('error', function(e) { console.log('[TEST-DELIVERY-CRON] error:', e.message); });
+    rT.write(bT); rT.end();
+  } catch(e) { console.log('[TEST-DELIVERY-CRON] exception:', e.message); }
+}, { timezone: 'Europe/London' });
+
+
 // TEMP TEST CRON (2026-08-19, remove after): fire at 17:30 UK and deliver to
 // the TEST accounts + hello@9amleads.com ONLY - never real customers.
 
@@ -7990,7 +8010,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     // ONLY to that customer so we can verify a single account (e.g. door numbers)
     // without emailing everyone. Omitting it runs the normal full delivery.
     var onlyEmail = String((req.body && (req.body.customer_email || req.body.test_email)) || '').toLowerCase().trim();
-    var customers = (db.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && (!onlyEmail || String(c.email || '').toLowerCase() === onlyEmail); });
+    var testOnly = !!(req.body && req.body.test_only);
+    var customers = (db.customers || []).filter(function(c) {
+      if (!c.plan || c.plan === 'cancelled' || (c.bounced && c.bounced >= 3)) return false;
+      if (onlyEmail && String(c.email || '').toLowerCase() !== onlyEmail) return false;
+      if (testOnly && !/^test\./.test(String(c.email || '').toLowerCase())) return false;
+      return true;
+    });
     console.log('[DELIVERY] Running for ' + customers.length + ' customer(s)' + (onlyEmail ? ' (filtered to ' + onlyEmail + ')' : ''));
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
