@@ -16784,7 +16784,7 @@ app.post('/api/admin/test-daily', adminAuth, async (req, res) => {
       { data: JSON.stringify({ address: '17 Elm Grove, Wimbledon, London', fullAddress: '17 Elm Grove, Wimbledon, London', postcode: 'SW19 4HE', bedrooms: 4, price: 950000, propertyType: 'Semi-Detached', url: 'https://www.rightmove.co.uk/properties/125', agent: 'Third Agents', firstVisibleDate: now }) }
     ];
     const html = generateLeadEmailHTML(sampleCust, sampleLeads);
-    const result = await sendBrevoEmail({ email: toEmail, name: 'Test' }, '9amLeads - Daily Leads Preview (test)', html);
+    const result = await sendBrevoEmail({ email: toEmail, name: 'Test' }, '9amLeads Email v3 - NEW look, please check', html);
     res.json({ success: true, result });
   } catch(e) { res.status(500).json({ error: e.message, body: String(e.message).substring(0, 300) }); }
 });
