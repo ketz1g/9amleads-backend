@@ -4855,6 +4855,39 @@ app.post('/api/admin/otm-scrape', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Daily OnTheMarket supply run (NO Apify credits needed). Gathers every active
+// moving customer's postcode areas and appends fresh OTM leads to the moving pool,
+// so the 9am delivery always has supply even when the Apify/Rightmove worker fails.
+async function runOtmDailyScrape() {
+  try {
+    var areas = [];
+    var dbO2 = getDb();
+    (dbO2.customers || []).forEach(function(c) {
+      if (c.product !== 'moving' && !((c.biz_field3 || '').indexOf('moving') !== -1)) return;
+      var cAreas = [];
+      try { cAreas = JSON.parse(c.target_areas || '[]'); } catch(e) { cAreas = []; }
+      if (!cAreas.length) { try { var cfgO2 = JSON.parse(c.product_config || '{}'); cAreas = (cfgO2.moving && cfgO2.moving.target_areas) ? JSON.parse(cfgO2.moving.target_areas) : []; } catch(e2) {} }
+      cAreas.forEach(function(a) { var u = String(a).toUpperCase().replace(/[^A-Z].*$/, ''); if (/^[A-Z]{1,2}$/.test(u) && areas.indexOf(u) === -1) areas.push(u); });
+    });
+    if (!areas.length) { console.log('[OTM-DAILY] No moving customer areas to scrape'); return; }
+    var otmScraper2 = require('./onthemarket_scraper');
+    var leads = await otmScraper2.collectOnTheMarketLeads({ areas: areas, maxPerArea: 40, maxDays: 7, detailCap: 250 });
+    var fn2 = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving.file);
+    var prev = []; try { prev = JSON.parse(fs.readFileSync(fn2, 'utf-8')); } catch(e) { prev = []; }
+    if (!Array.isArray(prev)) prev = [];
+    var seen = {}; prev.forEach(function(l) { if (l.id) seen[l.id] = 1; });
+    var added = 0;
+    leads.forEach(function(l) {
+      if (!l.id || seen[l.id]) return;
+      var pcArea = extractPostcodeArea(l.postcode || l.address || '');
+      if (!pcArea || areas.indexOf(pcArea) === -1) return;
+      seen[l.id] = 1; prev.push(l); added++;
+    });
+    fs.writeFileSync(fn2, JSON.stringify(prev, null, 2));
+    console.log('[OTM-DAILY] areas=' + areas.join(',') + ' scraped=' + leads.length + ' added=' + added + ' pool=' + prev.length);
+  } catch(e) { console.log('[OTM-DAILY] error: ' + e.message); }
+}
+
 // POST /api/admin/lead/un-deliver — revert an over-delivered lead back to
 // undelivered (cleanup for exact-count compliance). Body: { lead_id, email? }.
 app.post('/api/admin/lead/un-deliver', adminAuth, (req, res) => {
@@ -6160,6 +6193,13 @@ cron.schedule('0 6 * * *', async () => {
     req.write(body); req.end();
   } catch(e) { console.log('[06:00 UK] Scraper error:', e.message); }
 }, { timezone: 'Europe/London' });
+
+// Daily OnTheMarket supply run (no Apify credits) - 05:45 so the moving pool is
+// fresh for the 9am delivery even when the Apify/Rightmove scraper is down.
+cron.schedule('45 5 * * *', async () => {
+  try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-DAILY-CRON] ' + e.message); }
+}, { timezone: 'Europe/London' });
+
 cron.schedule('20 6 * * *', async () => {
   console.log('[06:20 UK] Distributing...');
   try {
