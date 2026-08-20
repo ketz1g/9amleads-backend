@@ -8251,7 +8251,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // supply is small/spread - e.g. ~27 probate grants/day UK-wide). The pool
           // is iterated fresh-first, so this only fills gaps - never preferred.
           var backfillCutoff = cust.product === 'moving' ? freshCutoffNow : new Date(Date.now() - 14 * 86400000).toISOString();
-          return fv >= backfillCutoff;w;
+          return fv >= backfillCutoff;
         } catch(e) { return false; }
       }
       var availByProd = {};
