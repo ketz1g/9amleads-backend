@@ -8,162 +8,148 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
+:root{--accent:#0ea5e9;--bg:#f8fafc;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--text2:#64748b;--muted:#94a3b8;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#f1f5f9;min-height:100vh}
-.container{max-width:1200px;margin:0 auto;padding:24px}
-h1{font-size:26px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:4px}
-h1 span{color:#0ea5e9}
-.sub{color:#8890a8;font-size:13px;margin-bottom:20px}
-.card{background:#11131f;border:1px solid #1e2030;border-radius:14px;padding:20px;margin-bottom:16px}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px}
-.stat-card{background:#11131f;border:1px solid #1e2030;border-radius:12px;padding:16px;text-align:center}
-.stat-card .num{font-size:28px;font-weight:900;font-family:'Outfit',sans-serif;color:#fff}
-.stat-card .label{font-size:11px;color:#5c6480;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
-.search-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
-.search-bar input,.search-bar select{padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none}
-.search-bar input:focus,.search-bar select:focus{border-color:#0ea5e9}
-.search-bar input{flex:1;min-width:200px}
+a{text-decoration:none}
+body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.5}
+.container{max-width:1120px;margin:0 auto;padding:28px 24px}
+/* Top bar (matches customer dashboard) */
+.top{background:#fff;border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:8px}
+.top .logo{font-family:var(--ff-h);font-size:20px;font-weight:900;color:var(--text)}.top .logo span{color:var(--accent)}
+.top .nav{display:flex;gap:2px;flex-wrap:wrap;align-items:center}
+.top .nav a,.top .nav button{background:none;border:none;font-family:var(--ff-b);font-size:13px;font-weight:500;color:var(--text2);padding:8px 13px;border-radius:8px;cursor:pointer;transition:.2s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.top .nav a:hover,.top .nav button:hover{color:var(--text);background:#f1f5f9}
+.top .nav a.active,.top .nav button.active{color:var(--accent);background:#eff6ff;font-weight:600}
+/* Hero (matches customer dashboard) */
+.hero{background:linear-gradient(135deg,#eff6ff,#faf5ff);border:1px solid #e0e7ff;border-radius:16px;padding:28px 26px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.hero-text h1{font-family:var(--ff-h);font-size:22px;font-weight:800}
+.hero-text p{color:var(--text2);font-size:13px;line-height:1.6}
+.hero-actions{display:flex;gap:8px;flex-wrap:wrap}
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px}
+.card-title{font-size:14px;font-weight:700;font-family:var(--ff-h)}
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.stat-card .num{font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--text)}
+.stat-card .label{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+/* Inputs */
+.input{padding:10px 14px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);font-family:inherit;outline:none}
+.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(14,165,233,.12)}
+/* Tables */
+.table-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;padding:10px 12px;color:#5c6480;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #1e2030;font-weight:600;cursor:pointer;user-select:none}
-th:hover{color:#8890a8}
-th .sort-icon{font-size:8px;margin-left:4px;color:#3a4050}
-td{padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#c8cbd6}
-tr:hover td{background:rgba(255,255,255,0.02)}
-.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
-.badge-trial{background:rgba(14,165,233,0.1);color:#0ea5e9}
-.badge-paid{background:rgba(34,197,94,0.1);color:#22c55e}
-.badge-cancelled{background:rgba(239,68,68,0.1);color:#ef4444}
-.prod-moving{background:rgba(255,107,53,0.1);color:#ff6b35}
-.prod-probate{background:rgba(168,85,247,0.1);color:#a855f7}
-.prod-newbusiness{background:rgba(6,182,212,0.1);color:#06b6d4}
-.prod-planning{background:rgba(16,185,129,0.1);color:#10b981}
-.prod-tenders{background:rgba(99,102,241,0.1);color:#6366f1}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:.2s;font-family:inherit;text-decoration:none}
-.btn-primary{background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff}
-.btn-view{background:rgba(14,165,233,0.1);color:#0ea5e9;border:1px solid rgba(14,165,233,0.2)}
-.btn-view:hover{background:rgba(14,165,233,0.2)}
-.btn-outline{background:transparent;border:1px solid #1e2030;color:#8890a8}
-.btn-outline:hover{border-color:#2a2d42;color:#c8cbd6}
-.btn-sm{padding:5px 10px;font-size:11px}
-.login-box{max-width:400px;margin:80px auto;background:#11131f;border:1px solid #1e2030;border-radius:16px;padding:32px;text-align:center}
-.login-box input{width:100%;padding:12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:14px;color:#f1f5f9;margin:16px 0 12px;outline:none;font-family:inherit}
-.login-box input:focus{border-color:#0ea5e9}
-.login-box .logo{font-size:24px;font-weight:900;font-family:'Outfit',sans-serif}
-.login-box .logo span{color:#0ea5e9}
-.error{color:#ef4444;font-size:13px;display:none;margin-bottom:8px}
-.loading{text-align:center;padding:40px;color:#5c6480;font-size:14px}
-.empty{text-align:center;padding:24px;color:#5c6480;font-size:13px}
+th{text-align:left;padding:11px 14px;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;background:#fafbfc}
+th:hover{color:var(--text)}
+th .sort-icon{font-size:8px;margin-left:4px;color:var(--muted)}
+td{padding:11px 14px;border-bottom:1px solid #f1f5f9;color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#f8fafc}
+/* Badges */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.badge-trial{background:#eff6ff;color:#0ea5e9}
+.badge-paid{background:#f0fdf4;color:#16a34a}
+.badge-cancelled{background:#fef2f2;color:#dc2626}
+.prod-moving{background:#fff7ed;color:#ea580c}
+.prod-probate{background:#faf5ff;color:#9333ea}
+.prod-newbusiness{background:#ecfeff;color:#0891b2}
+.prod-planning{background:#ecfdf5;color:#059669}
+.prod-tenders{background:#eef2ff;color:#4f46e5}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:.2s;font-family:var(--ff-b)}
+.btn-primary{background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff}.btn-primary:hover{opacity:.92;transform:translateY(-1px)}
+.btn-outline{background:#fff;color:var(--text2);border:1px solid var(--border)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-view{background:#eff6ff;color:#0ea5e9}.btn-view:hover{background:#dbeafe}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:6px}
+/* Login */
+.login-box{max-width:400px;margin:60px auto;background:#fff;border:1px solid var(--border);border-radius:16px;padding:36px;text-align:center;box-shadow:0 10px 30px rgba(15,23,42,.06)}
+.login-box .logo{font-size:24px;font-weight:900;font-family:var(--ff-h)}
+.login-box .logo span{color:var(--accent)}
+.login-box input{width:100%;padding:12px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);margin:16px 0 12px;outline:none;font-family:inherit}
+.login-box input:focus{border-color:var(--accent)}
+/* Tabs */
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+/* Misc */
+.error{color:var(--danger);font-size:13px;display:none;margin-bottom:8px}
+.loading{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+.empty{text-align:center;padding:24px;color:var(--muted);font-size:13px}
 .pulse{animation:pulse 1.5s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-/* Sticky top nav — same structure as the customer dashboard so navigation never
-   depends on hovering table rows. */
-.top{background:#0d0f1a;border-bottom:1px solid #1e2030;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:8px}
-.top .logo{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:#f1f5f9}.top .logo span{color:#0ea5e9}
-.top .nav{display:flex;gap:4px;flex-wrap:wrap}
-.top .nav a{padding:8px 14px;font-size:13px;font-weight:500;color:#8890a8;text-decoration:none;border-radius:6px;transition:.2s;white-space:nowrap}
-.top .nav a:hover{color:#f1f5f9;background:rgba(255,255,255,0.05)}
-.top .nav a.active{color:#fff;background:rgba(14,165,233,0.15);font-weight:700}
 </style>
 </head>
 <body>
 <div class="container" id="loginPage">
 <div class="login-box">
-<div class="logo">9am<span>Leads</span> Admin</div>
-<div id="versionTag" style="text-align:center;color:#5c6480;font-size:11px;margin:-4px 0 8px;opacity:0.7">build v8 · same-origin API</div>
-<p style="color:#8890a8;font-size:13px;margin:8px 0">Enter admin password to continue</p>
+<div class="logo">9am<span>Leads</span></div>
+<div id="versionTag" style="text-align:center;color:#94a3b8;font-size:11px;margin:-4px 0 8px">Admin</div>
+<p style="color:#64748b;font-size:13px;margin:8px 0">Enter the admin password to continue</p>
 <input type="password" id="adminPass" placeholder="Admin password" onkeydown="if(event.key==='Enter')adminLogin()">
 <div id="loginError" class="error">Incorrect password</div>
 <button class="btn btn-primary" onclick="adminLogin()" style="width:100%;justify-content:center;padding:12px;font-size:14px"><i class="fas fa-lock"></i> Sign In</button>
 </div>
 </div>
 
-<div class="container" id="adminPage" style="display:none">
+<div id="adminPage" style="display:none">
 <div class="top">
-<div class="logo">9am<span>Leads</span> <span style="font-size:12px;font-weight:600;color:#5c6480">Admin</span></div>
+<div class="logo">9am<span>Leads</span><span style="font-size:12px;font-weight:600;color:#94a3b8;margin-left:6px">Admin</span></div>
 <div class="nav">
-<a href="/portal/admin.html" class="active"><i class="fas fa-gauge-high"></i> Overview</a>
-<a href="/portal/admin.html#customerTable"><i class="fas fa-users"></i> Customers</a>
-<a href="/portal/admin.html#healthCard"><i class="fas fa-heart-pulse"></i> Health</a>
-<a href="/portal/admin.html#fulfilmentTable"><i class="fas fa-clipboard-check"></i> Fulfilment</a>
+<button class="active" onclick="switchTab('overview')"><i class="fas fa-gauge-high"></i> Overview</button>
+<button onclick="switchTab('customers')"><i class="fas fa-users"></i> Customers</button>
+<button onclick="switchTab('health')"><i class="fas fa-heart-pulse"></i> Health</button>
+<button onclick="switchTab('fulfilment')"><i class="fas fa-clipboard-check"></i> Fulfilment</button>
+<button onclick="switchTab('rejected')"><i class="fas fa-times-circle"></i> Rejected</button>
+<button onclick="switchTab('analytics')"><i class="fas fa-chart-pie"></i> Analytics</button>
 <a href="/portal/seo.html"><i class="fas fa-magnifying-glass"></i> SEO</a>
 <a href="/portal/"><i class="fas fa-arrow-right-to-bracket"></i> Portal</a>
-<button class="btn btn-outline btn-sm" onclick="adminLogout()" style="margin-left:4px"><i class="fas fa-sign-out-alt"></i> Logout</button>
 </div>
-</div>
-<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px">
-<div><div style="display:flex;align-items:center;gap:8px"><div style="width:32px;height:32px;background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;font-family:'Outfit',sans-serif">9</div><h1 style="margin-bottom:0">9am<span>Leads</span> Admin</h1></div><p class="sub" style="margin-bottom:0">Customer management &amp; system overview</p></div>
-<div style="display:flex;gap:8px">
-<a href="/portal/" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Portal</a>
-<a href="/portal/seo.html" class="btn btn-outline btn-sm"><i class="fas fa-search"></i> SEO</a>
-<button class="btn btn-outline btn-sm" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
-</div>
+<button class="btn btn-outline btn-sm" onclick="adminLogout()" style="white-space:nowrap"><i class="fas fa-sign-out-alt"></i> Logout</button>
 </div>
 
-<div class="card" id="healthCard" style="margin-bottom:16px;display:none">
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-<div style="display:flex;align-items:center;gap:8px"><span id="healthIcon" style="width:10px;height:10px;border-radius:50%;display:inline-block"></span><strong style="font-size:15px">System Health</strong><span id="healthSummary" style="font-size:12px;color:#8890a8"></span></div>
-<div style="display:flex;align-items:center;gap:10px">
-<span id="healthTimestamp" style="font-size:11px;color:#5c6480"></span>
-<button class="btn btn-sm btn-outline" onclick="loadHealth(true)"><i class="fas fa-sync"></i> Refresh</button>
+<div class="container">
+
+<!-- ============ OVERVIEW ============ -->
+<div class="tab-panel active" id="tab-overview">
+<div class="hero">
+<div class="hero-text">
+<h1><span id="greeting">Good morning</span> <span style="font-size:18px">👋</span></h1>
+<p id="heroDate" style="margin-bottom:4px"></p>
+<p>Your 9amLeads system at a glance. Jump to any tool from the menu above or the shortcuts below.</p>
 </div>
+<div class="hero-actions">
+<button class="btn btn-primary" onclick="switchTab('customers')"><i class="fas fa-users"></i> Customers</button>
+<button class="btn btn-outline" onclick="switchTab('health')"><i class="fas fa-heart-pulse"></i> System Health</button>
+<button class="btn btn-outline" onclick="switchTab('fulfilment')"><i class="fas fa-clipboard-check"></i> Fulfilment</button>
+<button class="btn btn-outline" onclick="switchTab('rejected')"><i class="fas fa-times-circle"></i> Rejected Leads</button>
 </div>
-<div id="healthIssues"></div>
-<div id="healthSystem" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#8890a8"></div>
-<!-- Product supply grid -->
-<div id="healthProducts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:14px"></div>
 </div>
 
 <div class="stats-grid" id="statsGrid"><div class="loading">Loading stats...</div></div>
 
-<!-- Website analytics -->
-<div class="card" style="margin-bottom:16px">
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-<div style="font-size:14px;font-weight:700"><i class="fas fa-chart-pie" style="color:#0ea5e9;margin-right:6px"></i> Website Visitors</div>
-<div style="display:flex;align-items:center;gap:8px">
-<select id="analyticsRange" onchange="loadAnalytics()" style="padding:6px 10px;background:#0f111a;border:1px solid #2a2d42;border-radius:6px;font-size:12px;color:#e2e8f0"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select>
-<button class="btn btn-sm btn-outline" onclick="loadAnalytics()"><i class="fas fa-sync"></i> Refresh</button>
+<div class="card" style="margin-bottom:18px">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+<div style="display:flex;align-items:center;gap:10px">
+<span id="healthStripIcon" style="width:10px;height:10px;border-radius:50%;display:inline-block;background:#94a3b8"></span>
+<span style="font-weight:700;font-size:14px">System Health</span>
+<span id="healthStripText" style="font-size:12px;color:#64748b">Checking...</span>
+</div>
+<div style="display:flex;align-items:center;gap:10px">
+<button class="btn btn-outline btn-sm" onclick="switchTab('health')">View Details</button>
 </div>
 </div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">
-<div class="stat-card"><div class="num" id="anVisitors">-</div><div class="label">Unique Visitors</div></div>
-<div class="stat-card"><div class="num" id="anViews" style="color:#0ea5e9">-</div><div class="label">Page Views</div></div>
 </div>
-<div id="analyticsBody"><div class="empty" style="color:#5c6480">No analytics yet. Add the tracking snippet to see visitors.</div></div>
 </div>
 
-<!-- Plan breakdown -->
-<div class="card" style="margin-bottom:16px">
-<div style="font-size:14px;font-weight:700;margin-bottom:12px"><i class="fas fa-layer-group" style="color:#0ea5e9;margin-right:6px"></i> Customers by Plan</div>
-<div id="planBreakdown" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px"></div>
+<!-- ============ CUSTOMERS ============ -->
+<div class="tab-panel" id="tab-customers">
+<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+<input type="text" id="searchInput" placeholder="Search by name, email or company..." oninput="filterCustomers()" class="input" style="flex:1;min-width:200px">
+<select id="filterPlan" onchange="filterCustomers()" class="input"><option value="">All Plans</option><option value="free_trial">Free Trial</option><option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option><option value="cancelled">Cancelled</option></select>
+<select id="filterProduct" onchange="filterCustomers()" class="input"><option value="">All Products</option><option value="moving">Moving</option><option value="probate">Probate</option><option value="newbusiness">New Business</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select>
+<button class="btn btn-outline btn-sm" onclick="exportCsv()"><i class="fas fa-download"></i> Export CSV</button>
+<button class="btn btn-outline btn-sm" onclick="showImpersonationLogs()"><i class="fas fa-shield-alt"></i> Impersonation Logs</button>
 </div>
-
-<!-- Lead delivery monitor -->
-<div class="card" style="margin-bottom:16px;padding:0;overflow:auto">
-<div style="padding:16px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-<div style="font-size:14px;font-weight:700"><i class="fas fa-chart-line" style="color:#22c55e;margin-right:6px"></i> Lead Delivery Monitor</div>
-<span style="font-size:11px;color:#5c6480">Verify each customer gets their promised leads. today / this week / this month</span>
-</div>
-<table><thead><tr>
-<th>Customer</th>
-<th>Product</th>
-<th>Plan</th>
-<th>Promised/Day</th>
-<th>Today</th>
-<th>This Week</th>
-<th>This Month</th>
-<th>Status</th>
-</tr></thead><tbody id="leadMonitorTable"><tr><td colspan="8" class="loading">Loading lead monitor...</td></tr></tbody></table>
-</div>
-
-<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-<input type="text" id="searchInput" placeholder="Search by name, email or company..." oninput="filterCustomers()" style="flex:1;min-width:200px;padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none">
-<select id="filterPlan" onchange="filterCustomers()" style="padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none"><option value="">All Plans</option><option value="free_trial">Free Trial</option><option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option><option value="cancelled">Cancelled</option></select>
-<select id="filterProduct" onchange="filterCustomers()" style="padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none"><option value="">All Products</option><option value="moving">Moving</option><option value="probate">Probate</option><option value="newbusiness">New Business</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select>
-<button class="btn btn-outline btn-sm" onclick="exportCsv()" style="white-space:nowrap"><i class="fas fa-download"></i> Export CSV</button>
-<button class="btn btn-outline btn-sm" onclick="showImpersonationLogs()" style="white-space:nowrap"><i class="fas fa-shield-alt"></i> Impersonation Logs</button>
-</div>
-
-<div class="card" style="padding:0;overflow:auto">
+<div class="table-wrap" style="margin-bottom:18px">
 <table><thead><tr>
 <th onclick="sortBy('company')">Company<span class="sort-icon"></span></th>
 <th onclick="sortBy('email')">Email<span class="sort-icon"></span></th>
@@ -176,48 +162,87 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 <th>CRM</th>
 <th onclick="sortBy('created_at')">Signup<span class="sort-icon"></span></th>
 <th></th>
-</tr></thead><tbody id="customerTable"><tr><td colspan="11" class="loading">Loading customers...</td></tr></tbody></table></div>
-
-<!-- Rejected leads review queue -->
-<div class="card" style="margin-top:16px;padding:0;overflow:auto">
-<div style="padding:16px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-<div style="font-size:14px;font-weight:700"><i class="fas fa-times-circle" style="color:#ef4444;margin-right:6px"></i> Rejected Leads</div>
-<span style="font-size:11px;color:#5c6480">Customer-rejected leads waiting for a replacement. Review, then Approve to send them a fresh lead.</span>
+</tr></thead><tbody id="customerTable"><tr><td colspan="11" class="loading">Loading customers...</td></tr></tbody></table>
 </div>
-<table><thead><tr>
-<th>Customer</th>
-<th>Product</th>
-<th>Address</th>
-<th>Postcode</th>
-<th>Reason</th>
-<th>Rejected</th>
-<th></th>
-</tr></thead><tbody id="rejectedTable"><tr><td colspan="7" class="loading">Loading rejected leads...</td></tr></tbody></table>
+<div class="card">
+<div class="card-title" style="margin-bottom:12px"><i class="fas fa-layer-group" style="color:#0ea5e9;margin-right:6px"></i> Customers by Plan</div>
+<div id="planBreakdown" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px"></div>
+</div>
 </div>
 
-<!-- Daily fulfilment report -->
-<div class="card" style="margin-top:16px;padding:0;overflow:auto">
+<!-- ============ HEALTH ============ -->
+<div class="tab-panel" id="tab-health">
+<div class="card" id="healthCard" style="display:none;margin-bottom:16px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div style="display:flex;align-items:center;gap:8px"><span id="healthIcon" style="width:10px;height:10px;border-radius:50%;display:inline-block"></span><strong style="font-size:15px">System Health</strong><span id="healthSummary" style="font-size:12px;color:#64748b"></span></div>
+<div style="display:flex;align-items:center;gap:10px"><span id="healthTimestamp" style="font-size:11px;color:#94a3b8"></span><button class="btn btn-outline btn-sm" onclick="loadHealth(true)"><i class="fas fa-sync"></i> Refresh</button></div>
+</div>
+<div id="healthIssues"></div>
+<div id="healthSystem" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#64748b"></div>
+<div id="healthProducts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:14px"></div>
+</div>
+</div>
+
+<!-- ============ FULFILMENT ============ -->
+<div class="tab-panel" id="tab-fulfilment">
+<div class="card" style="margin-bottom:18px;padding:0">
 <div style="padding:16px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-<div style="font-size:14px;font-weight:700"><i class="fas fa-clipboard-check" style="color:#22c55e;margin-right:6px"></i> Daily Fulfilment Report</div>
-<span style="font-size:11px;color:#5c6480">Per customer + lead type: expected vs delivered. Over-delivery is a bug.</span>
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-chart-line" style="color:#22c55e;margin-right:6px"></i> Lead Delivery Monitor</div>
+<span style="font-size:11px;color:#64748b">Verify each customer gets their promised leads. today / week / month</span>
+</div>
+<div style="overflow:auto"><table><thead><tr>
+<th>Customer</th><th>Product</th><th>Plan</th><th>Promised/Day</th><th>Today</th><th>This Week</th><th>This Month</th><th>Status</th>
+</tr></thead><tbody id="leadMonitorTable"><tr><td colspan="8" class="loading">Loading lead monitor...</td></tr></tbody></table></div>
+</div>
+<div class="card" style="padding:0">
+<div style="padding:16px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-clipboard-check" style="color:#22c55e;margin-right:6px"></i> Daily Fulfilment Report</div>
+<span style="font-size:11px;color:#64748b">Per customer + lead type: expected vs delivered. Over-delivery is a bug.</span>
 <div style="display:flex;align-items:center;gap:8px">
-<input type="date" id="fulfilmentDate" onchange="loadFulfilment()" style="padding:6px 10px;background:#0f111a;border:1px solid #2a2d42;border-radius:6px;font-size:12px;color:#e2e8f0">
-<button class="btn btn-sm btn-outline" onclick="loadFulfilment()"><i class="fas fa-sync"></i> Refresh</button>
+<input type="date" id="fulfilmentDate" onchange="loadFulfilment()" class="input" style="padding:6px 10px;font-size:12px">
+<button class="btn btn-outline btn-sm" onclick="loadFulfilment()"><i class="fas fa-sync"></i> Refresh</button>
 </div>
 </div>
 <div id="fulfilmentSummary" style="padding:0 16px 8px"></div>
-<table><thead><tr>
-<th>Customer</th>
-<th>Product</th>
-<th>Expected</th>
-<th>Actual</th>
-<th>Shortfall</th>
-<th>Fulfilment</th>
-<th>Status</th>
-</tr></thead><tbody id="fulfilmentTable"><tr><td colspan="7" class="loading">Loading fulfilment report...</td></tr></tbody></table>
+<div style="overflow:auto"><table><thead><tr>
+<th>Customer</th><th>Product</th><th>Expected</th><th>Actual</th><th>Shortfall</th><th>Fulfilment</th><th>Status</th>
+</tr></thead><tbody id="fulfilmentTable"><tr><td colspan="7" class="loading">Loading fulfilment report...</td></tr></tbody></table></div>
 </div>
 </div>
 
+<!-- ============ REJECTED ============ -->
+<div class="tab-panel" id="tab-rejected">
+<div class="card" style="padding:0">
+<div style="padding:16px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-times-circle" style="color:#ef4444;margin-right:6px"></i> Rejected Leads</div>
+<span style="font-size:11px;color:#64748b">Customer-rejected leads waiting for a replacement. Review, then Approve to send them a fresh lead.</span>
+</div>
+<div style="overflow:auto"><table><thead><tr>
+<th>Customer</th><th>Product</th><th>Address</th><th>Postcode</th><th>Reason</th><th>Rejected</th><th></th>
+</tr></thead><tbody id="rejectedTable"><tr><td colspan="7" class="loading">Loading rejected leads...</td></tr></tbody></table></div>
+</div>
+</div>
+
+<!-- ============ ANALYTICS ============ -->
+<div class="tab-panel" id="tab-analytics">
+<div class="card">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-chart-pie" style="color:#0ea5e9;margin-right:6px"></i> Website Visitors</div>
+<div style="display:flex;align-items:center;gap:8px">
+<select id="analyticsRange" onchange="loadAnalytics()" class="input" style="padding:6px 10px;font-size:12px"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select>
+<button class="btn btn-outline btn-sm" onclick="loadAnalytics()"><i class="fas fa-sync"></i> Refresh</button>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">
+<div class="stat-card"><div class="num" id="anVisitors">-</div><div class="label">Unique Visitors</div></div>
+<div class="stat-card"><div class="num" id="anViews" style="color:#0ea5e9">-</div><div class="label">Page Views</div></div>
+</div>
+<div id="analyticsBody"><div class="empty">No analytics yet. Add the tracking snippet to see visitors.</div></div>
+</div>
+</div>
+
+</div>
+</div>
 <script>
 // Use SAME-ORIGIN relative paths: /api/* is proxied by Netlify to the backend.
 // No CORS/preflight. works reliably from 9amleads.com in any browser.
@@ -231,6 +256,40 @@ let allCustomers = [];
 window.addEventListener('pageshow', function(psEv) {
   if (psEv.persisted) { try { window.location.reload(); } catch(e) {} }
 });
+
+// Tab navigation (clean, dashboard-style)
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  var el = document.getElementById('tab-' + name);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.top .nav button').forEach(function(b){ b.classList.remove('active'); });
+  var btn = document.querySelector('.top .nav button[onclick*="switchTab(\'' + name + '\')"]');
+  if (btn) btn.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// Light modal helper (used by impersonation logs etc.)
+function showModal(title, content, width) {
+  var ov = document.getElementById('adminModalOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'adminModalOverlay';
+    ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.5);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;max-width:' + (width || '760px') + ';width:100%;padding:24px;box-shadow:0 20px 50px rgba(15,23,42,.15)">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="font-size:18px;font-family:Outfit,sans-serif;color:#1e293b">' + title + '</h2>' +
+    '<button onclick="document.getElementById(\'adminModalOverlay\').style.display=\'none\'" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer">&times;</button></div>' + content + '</div>';
+  ov.style.display = 'flex';
+}
+
+(function(){
+  var h = new Date().getHours();
+  var g = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  var gEl = document.getElementById('greeting'); if (gEl) gEl.textContent = g;
+  var dEl = document.getElementById('heroDate');
+  if (dEl) dEl.textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+})();
 
 function saveAdminAuth() { sessionStorage.setItem('9amAdminAuth', 'true'); }
 function getAdminAuth() { return sessionStorage.getItem('9amAdminAuth') === 'true'; }
@@ -364,7 +423,7 @@ async function loadAnalytics() {
     var r = await fetch(API + '/api/analytics/overview?days=' + days, { headers: adminHeaders() });
     if (!r.ok) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#ef4444">Could not load analytics</div>'; return; }
     var d = await r.json();
-    if (!d || d.error) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#5c6480">No analytics data yet</div>'; return; }
+    if (!d || d.error) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#64748b">No analytics data yet</div>'; return; }
     document.getElementById('anVisitors').textContent = d.unique_visitors || 0;
     document.getElementById('anViews').textContent = d.total_views || 0;
     var html = '';
@@ -382,14 +441,14 @@ async function loadAnalytics() {
     // Top pages
     if (d.top_pages && d.top_pages.length) {
       html += '<div style="font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:8px">Top Pages</div>';
-      html += '<div style="margin-bottom:16px">' + d.top_pages.slice(0,8).map(function(p){ return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1e2030;font-size:12px"><span style="color:#8890a8">' + (p.path||'/') + '</span><span style="font-weight:700">' + p.views + '</span></div>'; }).join('') + '</div>';
+      html += '<div style="margin-bottom:16px">' + d.top_pages.slice(0,8).map(function(p){ return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0;font-size:12px"><span style="color:#64748b">' + (p.path||'/') + '</span><span style="font-weight:700">' + p.views + '</span></div>'; }).join('') + '</div>';
     }
     // Top referrers
     if (d.top_referrers && d.top_referrers.length) {
       html += '<div style="font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:8px">Top Referrers</div>';
-      html += '<div>' + d.top_referrers.slice(0,8).map(function(p){ return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1e2030;font-size:12px"><span style="color:#8890a8">' + (p.referrer||'(direct)') + '</span><span style="font-weight:700">' + p.views + '</span></div>'; }).join('') + '</div>';
+      html += '<div>' + d.top_referrers.slice(0,8).map(function(p){ return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0;font-size:12px"><span style="color:#64748b">' + (p.referrer||'(direct)') + '</span><span style="font-weight:700">' + p.views + '</span></div>'; }).join('') + '</div>';
     }
-    document.getElementById('analyticsBody').innerHTML = html || '<div class="empty" style="color:#5c6480">No data for this period</div>';
+    document.getElementById('analyticsBody').innerHTML = html || '<div class="empty" style="color:#64748b">No data for this period</div>';
   } catch(e) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#ef4444">Failed: ' + e.message + '</div>'; }
 }
 
@@ -400,9 +459,9 @@ function renderPlanBreakdown(customers) {
   var html = '';
   Object.keys(plans).forEach(function(p) {
     var n = counts[p] || 0;
-    html += '<div style="border:1px solid #1e2030;border-radius:10px;padding:12px;text-align:center">' +
+    html += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center">' +
       '<div style="font-size:22px;font-weight:900;font-family:\'Outfit\',sans-serif;color:' + plans[p].color + '">' + n + '</div>' +
-      '<div style="font-size:11px;color:#5c6480;margin-top:2px">' + plans[p].label + '</div></div>';
+      '<div style="font-size:11px;color:#64748b;margin-top:2px">' + plans[p].label + '</div></div>';
   });
   document.getElementById('planBreakdown').innerHTML = html;
 }
@@ -423,7 +482,7 @@ async function loadLeadMonitor() {
           ? '<span style="color:#eab308;font-size:11px;font-weight:700"><i class="fas fa-exclamation-triangle"></i> Partial</span>'
           : '<span style="color:#ef4444;font-size:11px;font-weight:700"><i class="fas fa-times-circle"></i> None</span>';
       return '<tr>' +
-        '<td><strong>' + (c.company || c.email) + '</strong><div style="font-size:10px;color:#5c6480">' + c.email + '</div></td>' +
+        '<td><strong>' + (c.company || c.email) + '</strong><div style="font-size:10px;color:#64748b">' + c.email + '</div></td>' +
         '<td style="font-size:12px">' + (c.product || '-') + '</td>' +
         '<td><span class="badge ' + planBadge(c.plan) + '">' + (c.plan || 'free_trial') + '</span></td>' +
         '<td style="font-size:13px;font-weight:700">' + promised + '</td>' +
@@ -444,15 +503,15 @@ function renderCustomers(customers) {
   tbody.innerHTML = customers.map(c => {
     const areas = c.target_areas ? JSON.parse(c.target_areas).slice(0, 3).join(', ') + (JSON.parse(c.target_areas).length > 3 ? '...' : '') : '';
     // Trial end + days remaining
-    var trialHtml = '<span style="font-size:11px;color:#5c6480">-</span>';
+    var trialHtml = '<span style="font-size:11px;color:#64748b">-</span>';
     if (c.trial_ends) {
       var te = new Date(c.trial_ends);
       var days = Math.ceil((te - Date.now()) / 86400000);
-      var teColor = days < 0 ? '#ef4444' : days <= 2 ? '#eab308' : '#5c6480';
+      var teColor = days < 0 ? '#ef4444' : days <= 2 ? '#eab308' : '#64748b';
       var teLabel = days < 0 ? 'Expired' : days === 0 ? 'Today' : days + 'd';
       trialHtml = '<span style="font-size:11px;color:' + teColor + ';font-weight:' + (days<=2?'700':'400') + '">' + teLabel + ' (' + te.toLocaleDateString() + ')</span>';
     }
-    const hasCrm = c.crm_webhook_url ? '<span style="color:#22c55e;font-size:11px">Connected</span>' : '<span style="color:#5c6480;font-size:11px">No</span>';
+    const hasCrm = c.crm_webhook_url ? '<span style="color:#22c55e;font-size:11px">Connected</span>' : '<span style="color:#64748b;font-size:11px">No</span>';
     const signupDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
     // Multi-product: parse biz_field3 to show all products
     let productsHtml = '<span class="badge ' + badgeClass(c.product) + '">' + (c.lead_type || c.product) + '</span>';
@@ -465,15 +524,15 @@ function renderCustomers(customers) {
     var extendBtn = (c.plan === 'free_trial') ? '<button class="btn btn-sm" style="background:rgba(14,165,233,0.1);color:#0ea5e9;border:1px solid rgba(14,165,233,0.2);padding:3px 7px;font-size:10px;margin-left:4px" onclick="event.stopPropagation();fixExtendTrial(\'' + c.id + '\')" title="Extend trial"><i class="fas fa-clock"></i></button>' : '';
     return '<tr>' +
       '<td><strong>' + (c.company || '-') + '</strong>' + extendBtn + '</td>' +
-      '<td style="font-size:12px;color:#8890a8">' + c.email + '</td>' +
+      '<td style="font-size:12px;color:#64748b">' + c.email + '</td>' +
       '<td style="white-space:nowrap">' + productsHtml + '</td>' +
       '<td><span class="badge ' + planBadge(c.plan) + '">' + (c.plan || 'free_trial') + '</span></td>' +
       '<td>' + trialHtml + '</td>' +
-      '<td style="font-size:11px;color:#5c6480;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + areas + '</td>' +
-      '<td>' + leadsVal + ' <span style="color:#5c6480;font-size:10px">(' + (c.leads_per_day||0) + '/d)</span></td>' +
-      '<td style="font-size:11px">' + bookedVal + ' <span style="color:#5c6480">(' + convPct + '%)</span></td>' +
+      '<td style="font-size:11px;color:#64748b;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + areas + '</td>' +
+      '<td>' + leadsVal + ' <span style="color:#64748b;font-size:10px">(' + (c.leads_per_day||0) + '/d)</span></td>' +
+      '<td style="font-size:11px">' + bookedVal + ' <span style="color:#64748b">(' + convPct + '%)</span></td>' +
       '<td>' + hasCrm + '</td>' +
-      '<td style="font-size:11px;color:#5c6480">' + signupDate + '</td>' +
+      '<td style="font-size:11px;color:#64748b">' + signupDate + '</td>' +
       '<td><div style="display:flex;gap:4px"><a class="btn btn-view btn-sm" href="/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '" target="_blank" rel="noopener" title="View this customer\'s leads (new tab)"><i class="fas fa-list"></i> Leads</a><a class="btn btn-view btn-sm" href="/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '&action=dashboard" target="_blank" rel="noopener" title="Login as this customer - open their dashboard (new tab)" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i> Login as</a></div></td></tr>';
   }).join('');
 }
@@ -559,13 +618,13 @@ async function loadHealth() {
           if (d.days_overdue !== undefined) info += ' (' + d.days_overdue + 'd overdue)';
           if (d.fail_count !== undefined) info += ' (' + d.fail_count + ' attempts)';
           return '<div style="padding:2px 0;font-size:12px;display:flex;align-items:center;gap:6px">' +
-            '<span style="color:#5c6480;width:16px;font-size:10px">' + (d.bounced ? '\u2709\uFE0F' : d.fail_count ? '\U0001F4B3' : d.days_since !== undefined ? '\U0001F4E9' : '\u23F3') + '</span>' +
+            '<span style="color:#64748b;width:16px;font-size:10px">' + (d.bounced ? '\u2709\uFE0F' : d.fail_count ? '\U0001F4B3' : d.days_since !== undefined ? '\U0001F4E9' : '\u23F3') + '</span>' +
             '<span>' + info + '</span>' +
             '<a href="mailto:' + d.email + '" style="color:#0ea5e9;font-size:10px;text-decoration:none;margin-left:auto"><i class="fas fa-envelope"></i></a>' +
             '</div>';
         }).join('');
-        if (issue.details.length > 5) detailsHtml += '<div style="font-size:11px;color:#5c6480;padding:2px 0">+' + (issue.details.length - 5) + ' more</div>';
-        return '<div style="border-left:3px solid ' + color + ';padding:8px 12px;margin:6px 0;background:rgba(255,255,255,0.02);border-radius:0 6px 6px 0">' +
+        if (issue.details.length > 5) detailsHtml += '<div style="font-size:11px;color:#64748b;padding:2px 0">+' + (issue.details.length - 5) + ' more</div>';
+        return '<div style="border-left:3px solid ' + color + ';padding:8px 12px;margin:6px 0;background:#fafbfc;border-radius:0 6px 6px 0">' +
           '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">' +
           '<span><i class="fas ' + iconName + '" style="color:' + color + ';width:16px"></i> ' + issue.label + '</span>' +
           '<div style="display:flex;gap:6px">' + btnHtml + '</div></div>' +
@@ -579,6 +638,11 @@ async function loadHealth() {
     sysHtml += '<span><i class="fas fa-users" style="color:#0ea5e9"> ' + (h.system.customers||0) + ' customers</i></span>';
     sysHtml += '<span><i class="fas fa-envelope-open-text" style="color:#22c55e"> ' + (h.system.leads_today||0) + ' delivered today</i></span>';
     document.getElementById('healthSystem').innerHTML = sysHtml;
+    // Overview status strip (if visible)
+    var ovIcon = document.getElementById('healthStripIcon');
+    var ovTxt = document.getElementById('healthStripText');
+    if (ovIcon) ovIcon.style.background = h.status === 'green' ? '#22c55e' : h.status === 'yellow' ? '#eab308' : '#ef4444';
+    if (ovTxt) ovTxt.textContent = h.issues.length ? (h.summary.high_issues + ' high · ' + h.summary.total_issues + ' issues') : 'All systems operational';
     // Product supply grid
     var prods = h.system.products || {};
     var prodNames = {moving:'Moving',probate:'Probate',newbusiness:'New Business',planning:'Planning',tenders:'Tenders'};
@@ -587,13 +651,13 @@ async function loadHealth() {
       var pr = prods[p];
       var okColor = pr.customers > 0 && pr.pool === 0 ? '#ef4444' : pr.customers > 0 && pr.pool < pr.customers ? '#eab308' : '#22c55e';
       var okIcon = okColor === '#22c55e' ? 'fa-check-circle' : okColor === '#eab308' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle';
-      return '<div style="border:1px solid #1e2030;border-radius:10px;padding:12px">' +
+      return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px">' +
         '<div style="display:flex;align-items:center;justify-content:space-between">' +
         '<span style="font-size:11px;font-weight:700;color:' + (prodColors[p]||'#fff') + '">' + (prodNames[p]||p) + '</span>' +
         '<i class="fas ' + okIcon + '" style="color:' + okColor + ';font-size:11px"></i></div>' +
-        '<div style="font-size:20px;font-weight:900;font-family:\'Outfit\',sans-serif;color:#fff;margin-top:4px">' + pr.pool + '</div>' +
-        '<div style="font-size:10px;color:#5c6480">leads in pool' + (pr.customers ? ' · ' + pr.customers + ' cust' : '') + '</div>' +
-        '<div style="font-size:10px;color:' + (pr.fresh_today > 0 ? '#22c55e' : '#5c6480') + ';margin-top:2px">' + pr.fresh_today + ' fresh today</div>' +
+        '<div style="font-size:20px;font-weight:900;font-family:\'Outfit\',sans-serif;color:#1e293b;margin-top:4px">' + pr.pool + '</div>' +
+        '<div style="font-size:10px;color:#64748b">leads in pool' + (pr.customers ? ' · ' + pr.customers + ' cust' : '') + '</div>' +
+        '<div style="font-size:10px;color:' + (pr.fresh_today > 0 ? '#22c55e' : '#64748b') + ';margin-top:2px">' + pr.fresh_today + ' fresh today</div>' +
         '</div>';
     }).join('');
     document.getElementById('healthProducts').innerHTML = prodHtml;
@@ -687,23 +751,23 @@ async function viewCustomerLeads(email) {
     if (!overlay) {
       overlay = document.createElement('div');
       overlay.id = 'leadViewOverlay';
-      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.5);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto';
       document.body.appendChild(overlay);
     }
-    overlay.innerHTML = '<div style="background:#11131f;border:1px solid #1e2030;border-radius:14px;max-width:' + (width || '760px') + ';width:100%;padding:24px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="font-size:18px;font-family:Outfit,sans-serif;color:#f1f5f9">' + title + '</h2>' +
-      '<button onclick="document.getElementById(\'leadViewOverlay\').style.display=\'none\'" style="background:none;border:none;color:#5c6480;font-size:20px;cursor:pointer">&times;</button></div>' + content + '</div>';
+    overlay.innerHTML = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;max-width:' + (width || '760px') + ';width:100%;padding:24px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="font-size:18px;font-family:Outfit,sans-serif;color:#1e293b">' + title + '</h2>' +
+      '<button onclick="document.getElementById(\'leadViewOverlay\').style.display=\'none\'" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer">&times;</button></div>' + content + '</div>';
     overlay.style.display = 'flex';
   }
   try {
     const r = await fetch(API + '/api/admin/customer-dashboard?email=' + encodeURIComponent(email), { headers: adminHeaders() });
     if (!r.ok) { buildModal('Leads', '<div style="color:#ef4444">Could not load leads (HTTP ' + r.status + '). If this says 401, re-enter the admin password (top-right) and try again.</div>'); return; }
     const d = await r.json();
-    let h = '<div style="margin-bottom:10px;font-size:13px;color:#e2e8f0"><strong>' + email + '</strong> · ' + d.product + ' · plan: ' + d.plan + ' · areas: ' + (d.areas || '-') + ' · ' + d.delivered + ' delivered / ' + d.pending + ' pending</div>';
+    let h = '<div style="margin-bottom:10px;font-size:13px;color:#1e293b"><strong>' + email + '</strong> · ' + d.product + ' · plan: ' + d.plan + ' · areas: ' + (d.areas || '-') + ' · ' + d.delivered + ' delivered / ' + d.pending + ' pending</div>';
     if (!d.leads || d.leads.length === 0) {
-      h += '<div style="color:#5c6480">No leads for this customer.</div>';
+      h += '<div style="color:#64748b">No leads for this customer.</div>';
     } else {
-      h += '<table style="width:100%;border-collapse:collapse"><tr style="background:rgba(148,163,184,0.1)"><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Status</th><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Address</th><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Postcode</th><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Door/Flat</th><th style="padding:6px;font-size:11px;text-align:left;color:#94a3b8">Full PC</th></tr>';
+      h += '<table style="width:100%;border-collapse:collapse"><tr style="background:#f8fafc"><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Status</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Address</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Postcode</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Door/Flat</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Full PC</th></tr>';
       d.leads.forEach(function(l) {
         var st = l.status === 'delivered' ? '<span style="color:#22c55e">delivered</span>' : '<span style="color:#eab308">pending</span>';
         var ok = l.has_door_or_flat_number ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#ef4444">✗</span>';
@@ -770,7 +834,7 @@ async function loadFulfilment() {
     var d = await r.json();
     if (sm) {
       var s = d.summary || {};
-      sm.innerHTML = '<span style="font-size:12px;color:#8890a8">' + (s.total||0) + ' rows · <span style="color:#22c55e">' + (s.fulfilled||0) + ' fulfilled</span> · <span style="color:#eab308">' + (s.under||0) + ' under</span> · <span style="color:#ef4444">' + (s.over||0) + ' over (bug)</span></span>';
+      sm.innerHTML = '<span style="font-size:12px;color:#64748b">' + (s.total||0) + ' rows · <span style="color:#22c55e">' + (s.fulfilled||0) + ' fulfilled</span> · <span style="color:#eab308">' + (s.under||0) + ' under</span> · <span style="color:#ef4444">' + (s.over||0) + ' over (bug)</span></span>';
     }
     var rows = (d && d.rows) || [];
     if (!rows.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">No fulfilment data for this date.</td></tr>'; return; }
@@ -785,7 +849,7 @@ async function loadFulfilment() {
       else if (x.product === 'tenders') prodBadge = 'prod-tenders';
       h += '<tr><td>' + x.email + '</td><td><span class="badge ' + prodBadge + '">' + (x.product||'').toUpperCase() + '</span></td>' +
            '<td>' + x.expected + '</td><td>' + x.actual + '</td><td>' + x.shortfall + '</td>' +
-           '<td style="color:' + col + '">' + pct + '</td><td><span class="badge" style="background:rgba(255,255,255,0.08);color:' + col + '">' + x.status + '</span></td></tr>';
+           '<td style="color:' + col + '">' + pct + '</td><td><span class="badge" style="background:#f0fdf4;color:' + col + '">' + x.status + '</span></td></tr>';
     });
     tb.innerHTML = h;
   } catch (e) { tb.innerHTML = '<tr><td colspan="7" class="empty" style="color:#ef4444">Error: ' + e.message + '</td></tr>'; }
