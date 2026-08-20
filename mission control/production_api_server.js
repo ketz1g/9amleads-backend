@@ -5347,12 +5347,12 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
     '</td></tr>' +
     // Product insight card
     '<tr><td style="background:#12141e;padding:0 30px 16px"><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px">' +
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">' + insight.emoji + '</span><span style="font-size:12px;font-weight:700;color:#f1f5f9">' + prodLabel + ' Insight</span></div>' +
-    '<p style="font-size:13px;color:#cbd5e1;line-height:1.6;margin:0 0 6px">' + insight.tip + '</p>' +
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">' + insight.emoji + '</span><span style="font-size:12px;font-weight:700;color:#ffffff">' + prodLabel + ' Insight</span></div>' +
+    '<p style="font-size:13px;color:#ffffff;line-height:1.6;margin:0 0 6px">' + insight.tip + '</p>' +
     (insight.metric ? '<p style="font-size:11px;color:#0284c7;margin:0 0 8px"><strong>' + insight.metric + '</strong></p>' : '') +
     '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">' +
-'<p style="font-size:10px;color:#cbd5e1;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
-'<p style="font-size:9px;color:#94a3b8;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>' +
+'<p style="font-size:10px;color:#ffffff;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
+'<p style="font-size:9px;color:#cbd5e1;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>' +
     '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:26px;text-align:center;text-decoration:none;margin:0 3px;font-size:10px;font-weight:700;color:#cbd5e1">f</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:26px;text-align:center;text-decoration:none;margin:0 3px;font-size:10px;font-weight:700;color:#cbd5e1">t</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:26px;text-align:center;text-decoration:none;margin:0 3px;font-size:10px;font-weight:700;color:#cbd5e1">i</a></div>' +
     '</div></div></td></tr>' +
     // Premium separator
@@ -5675,11 +5675,11 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   // Product insight card
   '<tr><td style="background:#ffffff;padding:0 30px 16px"><div style="background:#f8fafc;border:1px solid #eef0f4;border-radius:10px;padding:14px 16px">' +
   '<div style="font-size:11px;font-weight:700;color:#334155;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">' + productName + ' Insight</div>' +
-  '<p style="font-size:13px;color:#cbd5e1;line-height:1.6;margin:0 0 6px">' + insight.tip + '</p>' +
+  '<p style="font-size:13px;color:#ffffff;line-height:1.6;margin:0 0 6px">' + insight.tip + '</p>' +
   (insight.metric ? '<p style="font-size:11px;color:#0284c7;margin:0 0 8px"><strong>' + insight.metric + '</strong></p>' : '') +
   '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">' +
-'<p style="font-size:10px;color:#cbd5e1;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
-'<p style="font-size:9px;color:#94a3b8;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>' +
+'<p style="font-size:10px;color:#ffffff;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
+'<p style="font-size:9px;color:#cbd5e1;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>' +
    '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">ig</a></div>' +
    '</div></div></td></tr>' +
   // Footer
@@ -12316,10 +12316,10 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<td style="padding:0 5px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">tt</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">ig</span></a></td>';
   body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 10px"><tr><td style="background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:8px;width:26px;height:26px;text-align:center;vertical-align:middle;line-height:26px;font-family:Outfit,Arial,Helvetica,sans-serif;font-size:14px;font-weight:900;color:#ffffff">9</td><td style="padding-left:8px;vertical-align:middle"><span style="font-family:Outfit,Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:#ffffff;letter-spacing:-0.2px">9am<span style="color:#38bdf8">Leads</span></span></td></tr></table>';
-  body += '<p style="color:#cbd5e1;font-size:9px;margin:0 0 8px;letter-spacing:.3px">Fresh exclusive business opportunities, delivered at 9am every morning</p>';
-  body += '<p style="color:#e2e8f0;font-size:10px;margin:0 0 4px;letter-spacing:.4px">9amLeads &middot; hello@9amleads.com</p>';
-  body += '<p style="color:#cbd5e1;font-size:9px;margin:0 0 12px;letter-spacing:.3px"><a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a></p>';
-  body += '<p style="color:#94a3b8;font-size:8px;margin:0;letter-spacing:.4px">You are receiving these opportunities because you subscribed to a 9amLeads plan &bull; <a href="{{ unsubscribe }}" style="color:#3f3f46;text-decoration:underline">Unsubscribe</a></p>';
+  body += '<p style="color:#ffffff;font-size:9px;margin:0 0 8px;letter-spacing:.3px">Fresh exclusive business opportunities, delivered at 9am every morning</p>';
+  body += '<p style="color:#ffffff;font-size:10px;margin:0 0 4px;letter-spacing:.4px">9amLeads &middot; hello@9amleads.com</p>';
+  body += '<p style="color:#ffffff;font-size:9px;margin:0 0 12px;letter-spacing:.3px"><a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a></p>';
+  body += '<p style="color:#cbd5e1;font-size:8px;margin:0;letter-spacing:.4px">You are receiving these opportunities because you subscribed to a 9amLeads plan &bull; <a href="{{ unsubscribe }}" style="color:#3f3f46;text-decoration:underline">Unsubscribe</a></p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
