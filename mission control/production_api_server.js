@@ -4747,6 +4747,9 @@ app.post('/api/admin/replace-customer-leads', adminAuth, async (req, res) => {
     // 2. Pull fresh in-area leads from the pool (exact area + freshness + full validation)
     var areas = [];
     try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
+    // Respect the customer's moving_type (residential/commercial/both) from product_config
+    var custMovingType = 'both';
+    try { var pcfg = JSON.parse(cust.product_config || '{}'); custMovingType = (pcfg.moving && pcfg.moving.moving_type) || cust.moving_type || 'both'; } catch(e) { custMovingType = cust.moving_type || 'both'; }
     var pool = loadProductPool(product);
     var poolForCust = interleavePoolByAreas(pool, areas);
     var freshCut = getFreshCutoffIso();
@@ -4758,6 +4761,12 @@ app.post('/api/admin/replace-customer-leads', adminAuth, async (req, res) => {
       var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
       if (!areas.some(function(a) { return String(a).toUpperCase() === pcArea; })) { continue; }
       areaMatch++;
+      // moving_type filter (residential/commercial/both) - same rule as delivery
+      if (product === 'moving') {
+        var lComm = !!(l.commercial || l.commercial_let);
+        if (custMovingType === 'residential' && lComm) continue;
+        if (custMovingType === 'commercial' && !lComm) continue;
+      }
       var fd = pickFreshDate(l);
       // 5/day promise MUST be met: allow in-area leads that pass validation even if
       // they are not within the strict freshness window (fresh-first order preserved).
@@ -4776,6 +4785,8 @@ app.post('/api/admin/replace-customer-leads', adminAuth, async (req, res) => {
         priceLabel: l.priceLabel || '',
         bedrooms: l.bedrooms || 0,
         propertyType: l.propertyType || '',
+        commercial: !!l.commercial,
+        commercial_let: !!l.commercial_let,
         agent: l.agent || '',
         street: l.street || '',
         buildingNumber: l.buildingNumber || '',
