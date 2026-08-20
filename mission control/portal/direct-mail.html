@@ -966,11 +966,57 @@ function createCampaign(){
   });
 }
 
-// ===== FLYER POSITION/CROP EDITOR (Vistaprint-style) =====
-// Uses a clean rectangle model (rx, ry, rw, rh in canvas coords) so stretching is
-// natural: dragging a handle resizes the rectangle and the OPPOSITE edge stays
-// fixed (like resizing a window). Drag the body to move, zoom scales from centre.
-var _flyerEditor = { id:'', matType:'', img:null, rx:0, ry:0, rw:0, rh:0, dragging:false, startX:0, startY:0, startRx:0, startRy:0, startRw:0, startRh:0, mode:'move', canvas:null, ctx:null, cw:360, ch:505, loaded:false, zoneH:0 };
+// ===== FLYER POSITION/CROP EDITOR (Vistaprint-style) with precise mm =====
+// Canvas shows an EXACT A5 page (148 x 210mm) with mm rulers + 5mm safe-zone
+// guide + address zone in mm. Position/size shown AND editable in MILLIMETRES,
+// and dragging snaps to page edges / centre / safe margin / address zone.
+var _flyerEditor = {
+  id:'', matType:'', img:null,
+  pageW:360, pageH:511,    // A5 page in editor px (148x210mm, uniform 0.4111 mm/px)
+  offX:30, offY:30,        // ruler band width/height in px
+  cw:390, ch:541,          // canvas size incl. ruler bands
+  rx:0, ry:0, rw:0, rh:0,
+  dragging:false, startX:0, startY:0, startRx:0, startRy:0, startRw:0, startRh:0,
+  mode:'move', canvas:null, ctx:null, loaded:false, zoneH:0
+};
+function _mm(){ return _flyerEditor.pageW / 148; }
+function feMmToPx(mm){ return mm * _mm(); }
+function fePxToMm(px){ return px / _mm(); }
+function feRound1(v){ return Math.round(v*10)/10; }
+function feSnap(v, guides, tol){ for(var g=0; g<guides.length; g++){ if(Math.abs(v-guides[g])<=tol) return guides[g]; } return v; }
+function feGuidesX(){
+  var w=_flyerEditor.pageW, m5=feMmToPx(5);
+  return [0, w, w/2, m5, w-m5];
+}
+function feGuidesY(){
+  var h=_flyerEditor.pageH, m5=feMmToPx(5);
+  var g=[0, h, h/2, m5, h-m5];
+  if(_flyerEditor.matType==='flyer_back') g.push(_flyerEditor.zoneH);
+  return g;
+}
+function feUpdateReadout(){
+  var e=document.getElementById('fe-readout');
+  if(e) e.innerHTML='<b>'+feRound1(fePxToMm(_flyerEditor.rw))+' x '+feRound1(fePxToMm(_flyerEditor.rh))+'mm</b> &middot; at X '+feRound1(fePxToMm(_flyerEditor.rx))+'mm, Y '+feRound1(fePxToMm(_flyerEditor.ry))+'mm &middot; A5 148x210mm &middot; 300 DPI';
+  var ids={x:'fe-x',y:'fe-y',w:'fe-w',h:'fe-h'};
+  var vals={x:_flyerEditor.rx,y:_flyerEditor.ry,w:_flyerEditor.rw,h:_flyerEditor.rh};
+  Object.keys(ids).forEach(function(k){
+    var inp=document.getElementById(ids[k]);
+    if(inp && document.activeElement!==inp) inp.value=feRound1(fePxToMm(vals[k]));
+  });
+  var zo=document.getElementById('flyer-editor-zoomlabel');
+  if(zo) zo.textContent=Math.round((_flyerEditor.rw/_flyerEditor.pageW)*100)+'%';
+}
+function feSetFromInputs(){
+  var x=parseFloat(document.getElementById('fe-x').value);
+  var y=parseFloat(document.getElementById('fe-y').value);
+  var w=parseFloat(document.getElementById('fe-w').value);
+  var h=parseFloat(document.getElementById('fe-h').value);
+  if(!isNaN(x)) _flyerEditor.rx=feMmToPx(x);
+  if(!isNaN(y)) _flyerEditor.ry=feMmToPx(y);
+  if(!isNaN(w) && w>0) _flyerEditor.rw=feMmToPx(w);
+  if(!isNaN(h) && h>0) _flyerEditor.rh=feMmToPx(h);
+  flyerEditorDraw();
+}
 function openFlyerEditor(id, name, matType){
   _flyerEditor.id=id; _flyerEditor.matType=matType||''; _flyerEditor.loaded=false;
   var modal=document.getElementById('flyer-editor-modal');
@@ -978,15 +1024,15 @@ function openFlyerEditor(id, name, matType){
   var canvas=document.getElementById('flyer-editor-canvas');
   _flyerEditor.canvas=canvas; _flyerEditor.ctx=canvas.getContext('2d');
   canvas.width=_flyerEditor.cw; canvas.height=_flyerEditor.ch;
-  _flyerEditor.zoneH=Math.round(_flyerEditor.ch*0.28);
+  _flyerEditor.zoneH=Math.round(_flyerEditor.pageH*0.28);
   document.getElementById('flyer-editor-save').disabled=false;
   document.getElementById('flyer-editor-save').innerHTML='<i class="fas fa-check"></i> Save Positioned Flyer';
   document.getElementById('flyer-editor-status').textContent='';
   document.getElementById('flyer-editor-zoomlabel').textContent='100%';
+  ['fe-x','fe-y','fe-w','fe-h'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   var img=new Image();
-  img.onload=function(){ _flyerEditor.img=img; _flyerEditor.loaded=true; _flyerEditor.reset(); flyerEditorDraw(); };
+  img.onload=function(){ _flyerEditor.img=img; _flyerEditor.loaded=true; flyerEditorReset(); flyerEditorDraw(); };
   img.src='/api/direct-mail/materials/'+id+'/file?token='+encodeURIComponent(_token)+'&v='+Date.now();
-  // mouse + touch handlers
   canvas.onmousedown=function(e){ flyerEditorStart(e.clientX,e.clientY); };
   window.onmousemove=function(e){ if(_flyerEditor.dragging)flyerEditorMove(e.clientX,e.clientY); };
   window.onmouseup=function(){ _flyerEditor.dragging=false; canvas.style.cursor='grab'; };
@@ -997,7 +1043,7 @@ function openFlyerEditor(id, name, matType){
 }
 function closeFlyerEditor(){ document.getElementById('flyer-editor-modal').style.display='none'; }
 function flyerEditorReset(){
-  var c=_flyerEditor.canvas, w=c.width, h=c.height;
+  var w=_flyerEditor.pageW, h=_flyerEditor.pageH;
   var iw=_flyerEditor.img? _flyerEditor.img.width:1, ih=_flyerEditor.img? _flyerEditor.img.height:1;
   var baseF=Math.min(w/iw,h/ih);
   _flyerEditor.rw=iw*baseF; _flyerEditor.rh=ih*baseF;
@@ -1005,25 +1051,24 @@ function flyerEditorReset(){
   flyerEditorDraw();
 }
 function flyerEditorPoint(cx,cy){
-  // Convert screen coords to canvas coords
   var c=_flyerEditor.canvas, r=c.getBoundingClientRect();
   return { x:(cx-r.left)*(c.width/r.width), y:(cy-r.top)*(c.height/r.height) };
 }
 function flyerEditorHit(cx,cy){
   var p=flyerEditorPoint(cx,cy), rect=_flyerEditor;
-  var x=rect.rx,y=rect.ry,w=rect.rw,h=rect.rh;
+  var x=rect.rx, y=rect.ry, w=rect.rw, h=rect.rh;
+  var px=p.x-rect.offX, py=p.y-rect.offY;
   var hw=10, d=8;
-  function near(tx,ty){ return Math.abs(p.x-tx)<=hw&&Math.abs(p.y-ty)<=hw; }
+  function near(tx,ty){ return Math.abs(px-tx)<=hw&&Math.abs(py-ty)<=hw; }
   if(near(x,y))return 'tl';
   if(near(x+w,y))return 'tr';
   if(near(x,y+h))return 'bl';
   if(near(x+w,y+h))return 'br';
-  if(Math.abs(p.x-x)<=d&&p.y>y+hw&&p.y<y+h-hw)return 'l';
-  if(Math.abs(p.x-(x+w))<=d&&p.y>y+hw&&p.y<y+h-hw)return 'r';
-  if(Math.abs(p.y-y)<=d&&p.x>x+hw&&p.x<x+w-hw)return 't';
-  if(Math.abs(p.y-(y+h))<=d&&p.x>x+hw&&p.x<x+w-hw)return 'b';
-  // inside the rect = move
-  if(p.x>=x&&p.x<=x+w&&p.y>=y&&p.y<=y+h)return 'move';
+  if(Math.abs(px-x)<=d&&py>y+hw&&py<y+h-hw)return 'l';
+  if(Math.abs(px-(x+w))<=d&&py>y+hw&&py<y+h-hw)return 'r';
+  if(Math.abs(py-y)<=d&&px>x+hw&&px<x+w-hw)return 't';
+  if(Math.abs(py-(y+h))<=d&&px>x+hw&&px<x+w-hw)return 'b';
+  if(px>=x&&px<=x+w&&py>=y&&py<=y+h)return 'move';
   return null;
 }
 function flyerEditorStart(cx,cy){
@@ -1039,94 +1084,107 @@ function flyerEditorMove(cx,cy){
   var dx=(cx-_flyerEditor.startX)*(c.width/r.width);
   var dy=(cy-_flyerEditor.startY)*(c.height/r.height);
   var m=_flyerEditor.mode, rx=_flyerEditor.startRx, ry=_flyerEditor.startRy, rw=_flyerEditor.startRw, rh=_flyerEditor.startRh;
-  var minS=20;
-  if(m==='move'){ _flyerEditor.rx=rx+dx; _flyerEditor.ry=ry+dy; }
+  var minS=feMmToPx(5);
+  if(m==='move'){ rx=rx+dx; ry=ry+dy; }
   else if(m){
-    // Resize keeping the OPPOSITE edge fixed
     if(m.indexOf('r')!==-1){ rw=Math.max(minS,rx+rw+dx-rx); }
     if(m.indexOf('l')!==-1){ var newW=Math.max(minS,rw-dx); rx=rx+(rw-newW); rw=newW; }
     if(m.indexOf('b')!==-1){ rh=Math.max(minS,ry+rh+dy-ry); }
     if(m.indexOf('t')!==-1){ var newH=Math.max(minS,rh-dy); ry=ry+(rh-newH); rh=newH; }
-    _flyerEditor.rx=rx; _flyerEditor.ry=ry; _flyerEditor.rw=rw; _flyerEditor.rh=rh;
-    var pct=Math.round((rw/_flyerEditor.cw)*100);
-    document.getElementById('flyer-editor-zoomlabel').textContent=pct+'%';
   }
+  var tol=feMmToPx(1), gx=feGuidesX(), gy=feGuidesY();
+  var left=feSnap(rx,gx,tol), right=feSnap(rx+rw,gx,tol);
+  var top=feSnap(ry,gy,tol), bottom=feSnap(ry+rh,gy,tol);
+  rx=Math.min(left,right); rw=Math.max(left,right)-Math.min(left,right);
+  ry=Math.min(top,bottom); rh=Math.max(top,bottom)-Math.min(top,bottom);
+  if(rw<minS) rw=minS; if(rh<minS) rh=minS;
+  _flyerEditor.rx=rx; _flyerEditor.ry=ry; _flyerEditor.rw=rw; _flyerEditor.rh=rh;
   flyerEditorDraw();
 }
 function flyerEditorZoom(dir){
   var cx=_flyerEditor.rx+_flyerEditor.rw/2, cy=_flyerEditor.ry+_flyerEditor.rh/2;
   var f=1+(dir*0.15);
-  _flyerEditor.rw=Math.max(20,_flyerEditor.rw*f);
-  _flyerEditor.rh=Math.max(20,_flyerEditor.rh*f);
+  _flyerEditor.rw=Math.max(feMmToPx(5),_flyerEditor.rw*f);
+  _flyerEditor.rh=Math.max(feMmToPx(5),_flyerEditor.rh*f);
   _flyerEditor.rx=cx-_flyerEditor.rw/2; _flyerEditor.ry=cy-_flyerEditor.rh/2;
-  document.getElementById('flyer-editor-zoomlabel').textContent=Math.round((_flyerEditor.rw/_flyerEditor.cw)*100)+'%';
   flyerEditorDraw();
 }
 function flyerEditorDraw(){
-  var c=_flyerEditor.canvas, ctx=_flyerEditor.ctx, w=_flyerEditor.cw, h=_flyerEditor.ch;
-  ctx.clearRect(0,0,w,h);
-  // White A5 canvas + darker outer border
-  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,w,h);
-  ctx.strokeStyle='#334155'; ctx.lineWidth=2; ctx.strokeRect(0,0,w,h);
-  // Draw the design (positioned + stretched rectangle)
-  if(_flyerEditor.img && _flyerEditor.loaded){
-    var dx=_flyerEditor.rx, dy=_flyerEditor.ry, dw=_flyerEditor.rw, dh=_flyerEditor.rh;
-    ctx.drawImage(_flyerEditor.img, dx, dy, dw, dh);
-    // solid selection border (darker)
+  var ed=_flyerEditor, ctx=ed.ctx, cw=ed.cw, ch=ed.ch;
+  var ox=ed.offX, oy=ed.offY, pw=ed.pageW, ph=ed.pageH;
+  ctx.clearRect(0,0,cw,ch);
+  ctx.fillStyle='#e2e8f0'; ctx.fillRect(0,0,cw,ch);
+  // RULERS (mm) along top + left
+  ctx.fillStyle='#f1f5f9';
+  ctx.fillRect(ox,0,pw,oy);
+  ctx.fillRect(0,oy,ox,ph);
+  ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1;
+  var mmp=feMmToPx(1);
+  ctx.fillStyle='#475569'; ctx.font='8px Arial'; ctx.textAlign='center';
+  for(var mm=0; mm<=148; mm+=5){
+    var x=ox+mm*mmp;
+    if(mm%10===0){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,oy); ctx.stroke(); ctx.fillText(mm+'',x,oy-3); }
+    else { ctx.beginPath(); ctx.moveTo(x,oy-6); ctx.lineTo(x,oy); ctx.stroke(); }
+  }
+  ctx.textAlign='right';
+  for(var mm2=0; mm2<=210; mm2+=10){
+    var y=oy+mm2*mmp;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(ox,y); ctx.stroke();
+    ctx.fillText(mm2+'',ox-3,y+3);
+  }
+  ctx.textAlign='left';
+  // A5 PAGE + border
+  ctx.fillStyle='#ffffff'; ctx.fillRect(ox,oy,pw,ph);
+  ctx.strokeStyle='#334155'; ctx.lineWidth=2; ctx.strokeRect(ox,oy,pw,ph);
+  // 5mm safe-zone guide (dashed)
+  var s5=feMmToPx(5);
+  ctx.strokeStyle='rgba(14,165,233,0.45)'; ctx.setLineDash([4,4]); ctx.lineWidth=1;
+  ctx.strokeRect(ox+s5,oy+s5,pw-s5*2,ph-s5*2);
+  ctx.setLineDash([]);
+  // DESIGN image (positioned + stretched rectangle)
+  if(ed.img && ed.loaded){
+    var dx=ox+ed.rx, dy=oy+ed.ry, dw=ed.rw, dh=ed.rh;
+    ctx.drawImage(ed.img, dx, dy, dw, dh);
     ctx.strokeStyle='#1e293b'; ctx.lineWidth=2; ctx.strokeRect(dx,dy,dw,dh);
-    // stretch handles. larger + darker (corners + edges)
     var hw=9;
     var pts=[{x:dx,y:dy},{x:dx+dw,y:dy},{x:dx,y:dy+dh},{x:dx+dw,y:dy+dh},{x:dx+dw/2,y:dy},{x:dx+dw/2,y:dy+dh},{x:dx,y:dy+dh/2},{x:dx+dw,y:dy+dh/2}];
     ctx.fillStyle='#0369a1'; ctx.strokeStyle='#0c4a6e'; ctx.lineWidth=2;
     pts.forEach(function(p){ ctx.beginPath(); ctx.rect(p.x-hw/2,p.y-hw/2,hw,hw); ctx.fill(); ctx.stroke(); });
   }
-  // Address zone overlay. DARK and clearly visible. Stannp prints the recipient
-  // address on the BACK at the TOP, so:
-  //   - BACK material: show the zone at the TOP.
-  //   - FRONT material: no zone (front is pure design).
-  var zoneH=_flyerEditor.zoneH;
-  var zoneTop;
-  if(_flyerEditor.matType==='flyer_back'){ zoneTop=0; } else { zoneTop=-1; } // -1 = don't draw
-  if(zoneTop>=0){
-    ctx.fillStyle='rgba(219,234,254,0.95)'; ctx.fillRect(0, zoneTop, w, zoneH);
-    ctx.strokeStyle='#0c4a6e'; ctx.lineWidth=4; ctx.strokeRect(0, zoneTop, w, zoneH);
-    ctx.strokeStyle='#0c4a6e'; ctx.setLineDash([8,5]); ctx.lineWidth=2; ctx.strokeRect(2, zoneTop+2, w-4, zoneH-4); ctx.setLineDash([]);
-    ctx.fillStyle='#0c4a6e'; ctx.fillRect(0, zoneTop, w, 26);
-    ctx.fillStyle='#ffffff'; ctx.font='bold 13px Arial'; ctx.textAlign='center';
-    ctx.fillText('ADDRESS ZONE. recipient address prints here', w/2, zoneTop+18);
-    ctx.fillStyle='#0c4a6e'; ctx.font='bold 12px Arial';
-    ctx.fillText('Keep this area plain (white)', w/2, zoneTop+42);
+  // ADDRESS ZONE (BACK only: top 28%, labelled in mm)
+  if(ed.matType==='flyer_back'){
+    var zoneH=ed.zoneH;
+    ctx.fillStyle='rgba(219,234,254,0.95)'; ctx.fillRect(ox,oy,pw,zoneH);
+    ctx.strokeStyle='#0c4a6e'; ctx.lineWidth=4; ctx.strokeRect(ox,oy,pw,zoneH);
+    ctx.strokeStyle='#0c4a6e'; ctx.setLineDash([8,5]); ctx.lineWidth=2; ctx.strokeRect(ox+2,oy+2,pw-4,zoneH-4); ctx.setLineDash([]);
+    ctx.fillStyle='#0c4a6e'; ctx.fillRect(ox,oy,pw,26);
+    ctx.fillStyle='#ffffff'; ctx.font='bold 12px Arial'; ctx.textAlign='center';
+    ctx.fillText('ADDRESS ZONE - '+feRound1(fePxToMm(zoneH))+'mm. recipient address prints here', ox+pw/2, oy+18);
+    ctx.fillStyle='#0c4a6e'; ctx.font='bold 11px Arial';
+    ctx.fillText('Keep this area plain (white)', ox+pw/2, oy+42);
+    ctx.textAlign='left';
   }
+  feUpdateReadout();
 }
 function saveFlyerEditor(){
   var btn=document.getElementById('flyer-editor-save');
   var status=document.getElementById('flyer-editor-status');
   btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Preparing full-quality print...'; status.textContent='';
-  // Render the positioned flyer at FULL A5 PRINT RESOLUTION (1819 x 2551 = 300 DPI)
-  // so the saved image is crisp and text stays readable when printed. We map the
-  // editor rectangle (rx/ry/rw/rh on the small canvas) to the full print canvas.
-  var PW=1819, PH=2551; // A5-PORT full print
+  var PW=1819, PH=2551;
   var zonePct=0.28, zoneH=Math.round(PH*zonePct);
   var outCanvas=document.createElement('canvas');
   outCanvas.width=PW; outCanvas.height=PH;
   var ctx=outCanvas.getContext('2d');
   ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,PW,PH);
-  // High-quality upscaling so text is sharp
   ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
   if(_flyerEditor.img && _flyerEditor.loaded){
-    // Scale factor from editor canvas to print canvas
-    var sxP=PW/_flyerEditor.cw, syP=PH/_flyerEditor.ch;
+    var sxP=PW/_flyerEditor.pageW, syP=PH/_flyerEditor.pageH;
     var dx=_flyerEditor.rx*sxP, dy=_flyerEditor.ry*syP;
     var dw=_flyerEditor.rw*sxP, dh=_flyerEditor.rh*syP;
     ctx.drawImage(_flyerEditor.img, dx, dy, dw, dh);
   }
-  // ADDRESS ZONE: Stannp prints the recipient address on the BACK at the TOP.
-  //   - BACK material: reserve the TOP 28% as a clean white zone (design stays
-  //     in the bottom 72%).
-  //   - FRONT material: NO white zone. the front is the pure design (Stannp
-  //     never prints the address on the front).
   if(_flyerEditor.matType === 'flyer_back'){
-    ctx.fillStyle='#ffffff'; ctx.fillRect(0, 0, PW, zoneH); // top zone
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0, 0, PW, zoneH);
   }
   var out=outCanvas.toDataURL('image/png');
   var base64=out.split(',')[1]||'';
@@ -1176,6 +1234,14 @@ function saveFlyerEditor(){
     <button class="btn btn-outline btn-sm" onclick="flyerEditorZoom(1)"><i class="fas fa-plus"></i></button>
     <button class="btn btn-outline btn-sm" onclick="flyerEditorReset()" style="margin-left:8px"><i class="fas fa-sync-alt"></i> Reset View</button>
   </div>
+  <div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:12px;flex-wrap:wrap;background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:8px 10px">
+    <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:.3px">POSITION (mm)</div>
+    <label style="font-size:11px;color:var(--text2)">X <input id="fe-x" type="number" min="0" max="148" step="0.5" oninput="feSetFromInputs()" style="width:62px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></label>
+    <label style="font-size:11px;color:var(--text2)">Y <input id="fe-y" type="number" min="0" max="210" step="0.5" oninput="feSetFromInputs()" style="width:62px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></label>
+    <label style="font-size:11px;color:var(--text2)">W <input id="fe-w" type="number" min="5" max="148" step="0.5" oninput="feSetFromInputs()" style="width:62px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></label>
+    <label style="font-size:11px;color:var(--text2)">H <input id="fe-h" type="number" min="5" max="210" step="0.5" oninput="feSetFromInputs()" style="width:62px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)"></label>
+  </div>
+  <div id="fe-readout" style="font-size:11px;color:var(--text2);text-align:center;margin-top:8px"></div>
   <div style="display:flex;gap:10px;margin-top:14px">
     <button class="btn btn-outline" onclick="closeFlyerEditor()" style="flex:1;justify-content:center"><i class="fas fa-times"></i> Cancel</button>
     <button class="btn btn-primary" onclick="saveFlyerEditor()" id="flyer-editor-save" style="flex:1;justify-content:center"><i class="fas fa-check"></i> Save Positioned Flyer</button>
