@@ -153,7 +153,7 @@ function fetchPlanningApify(postcodeArea) {
               reference: p.reference || p.applicationReference || '',
               estimatedValue: 0,
               valueLabel: '',
-              url: p.url || p.link || p.applicationUrl || p.detailsUrl || p.detailUrl || p.webUrl || p.portalUrl || '',
+              url: p.url || p.link || (p.links && (p.links.council || p.links.plota)) || p.applicationUrl || p.detailsUrl || p.detailUrl || p.webUrl || p.portalUrl || '',
               dateSubmitted: p.dateSubmitted || p.decisionDate || '',
               source: 'Planning Portal (Apify)',
               scrapedAt: new Date().toISOString()
