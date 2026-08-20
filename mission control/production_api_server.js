@@ -353,6 +353,16 @@ function interleavePoolByAreas(poolArr, custAreas) {
   return out;
 }
 
+// A lead is commercial if the scrape tagged it commercial, OR its property type /
+// address clearly indicates a commercial unit. Used by delivery + admin lead-swap
+// so residential-only customers never receive "Unit / Office / Land / Shop" leads.
+function isCommercialLead(ld) {
+  if (!ld) return false;
+  if (ld.commercial || ld.commercial_let) return true;
+  var s = String(ld.propertyType || ld.address || ld.fullAddress || ld.title || ld.name || '').toUpperCase();
+  return /\b(UNIT|LAND|OFFICE|WAREHOUSE|SHOP|FACTORY|INDUSTRIAL|STORAGE|SUITE|PREMISES|COMMERCIAL|RETAIL|WORKSHOP)\b/.test(s);
+}
+
 // Shared pool loader for a product (used by delivery + admin lead-swap).
 // Normalises addresses (strip guessed Flat 1, region tags, partial postcodes),
 // excludes Zoopla entries and new-build unit codes - same rules as delivery.
@@ -4763,7 +4773,7 @@ app.post('/api/admin/replace-customer-leads', adminAuth, async (req, res) => {
       areaMatch++;
       // moving_type filter (residential/commercial/both) - same rule as delivery
       if (product === 'moving') {
-        var lComm = !!(l.commercial || l.commercial_let);
+        var lComm = isCommercialLead(l);
         if (custMovingType === 'residential' && lComm) continue;
         if (custMovingType === 'commercial' && !lComm) continue;
       }
@@ -8073,7 +8083,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // COMMERCIAL FILTER (moving): only accept leads matching the customer's
           // moving_type (residential/commercial/both). Leads are tagged commercial:true.
           if (cust.product === 'moving') {
-            var leadIsCommercial = !!(ld2.commercial || ld2.commercial_let);
+            var leadIsCommercial = isCommercialLead(ld2);
             if (custMovingType === 'residential' && leadIsCommercial) return false;
             if (custMovingType === 'commercial' && !leadIsCommercial) return false;
           }
