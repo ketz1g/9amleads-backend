@@ -353,6 +353,30 @@ function interleavePoolByAreas(poolArr, custAreas) {
   return out;
 }
 
+// Shared pool loader for a product (used by delivery + admin lead-swap).
+// Normalises addresses (strip guessed Flat 1, region tags, partial postcodes),
+// excludes Zoopla entries and new-build unit codes - same rules as delivery.
+function loadProductPool(prod) {
+  var fn = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : (prod + '-leads.json'));
+  var raw = null;
+  try { raw = JSON.parse(fs.readFileSync(fn, 'utf-8')); } catch(e) { raw = null; }
+  var arr = [];
+  if (Array.isArray(raw)) arr = raw;
+  else if (raw && typeof raw === 'object') {
+    Object.keys(raw).forEach(function(k){ if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) arr = arr.concat(raw[k]); });
+  }
+  arr = arr.filter(function(l) { return !/zoopla/i.test(String(l.source || '')); });
+  arr = arr.filter(function(l) { return !hasBadUnitCode(l.address || l.fullAddress || ''); });
+  arr = arr.map(function(l) {
+    if (l && l.address) {
+      l.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.address)));
+      if (l.fullAddress) l.fullAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
+    }
+    return l;
+  });
+  return arr;
+}
+
 // Freshness floor for the "fresh leads" promise (48h; Monday extends to Saturday
 // 00:00 so weekend-scraped leads fill Monday's accounts). See freshness.js.
 var FRESHNESS = require('./freshness');
@@ -4698,6 +4722,67 @@ app.post('/api/admin/deep-scrape', adminAuth, (req, res) => {
     var childD = cpD.spawn(process.execPath, args, { detached: true, stdio: 'ignore', env: Object.assign({}, process.env, { MOVING_MAX_PROPS: String(maxProps), DEEP_SCRAPE_AREAS: areas }) });
     childD.unref();
     res.json({ success: true, message: 'Deep scrape started' + (areas ? ' for areas: ' + areas : ''), pid: childD.pid || null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/replace-customer-leads — remove a customer's current (e.g.
+// wrong-area) leads and replace them with fresh in-area leads from the pool.
+// Used when leads were delivered from the wrong areas (area override, fallback).
+app.post('/api/admin/replace-customer-leads', adminAuth, async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase();
+    var count = parseInt((req.body && req.body.count) || 5, 10);
+    var product = (req.body && req.body.product) || 'moving';
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var db5 = getDb();
+    var cust = (db5.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    // 1. Remove the customer's current leads
+    var before = (db5.leads || []).filter(function(l) { return l.customer_id === cust.id; }).length;
+    db5.leads = (db5.leads || []).filter(function(l) { return l.customer_id !== cust.id; });
+    // 2. Pull fresh in-area leads from the pool (exact area + freshness + full validation)
+    var areas = [];
+    try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
+    var pool = loadProductPool(product);
+    var poolForCust = interleavePoolByAreas(pool, areas);
+    var freshCut = getFreshCutoffIso();
+    var assigned = 0, skipped = 0, areaMatch = 0;
+    var used = {};
+    var today = new Date().toISOString().split('T')[0];
+    for (var i = 0; i < poolForCust.length && assigned < count; i++) {
+      var l = poolForCust[i];
+      var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
+      if (!areas.some(function(a) { return String(a).toUpperCase() === pcArea; })) { continue; }
+      areaMatch++;
+      var fd = pickFreshDate(l);
+      if (!fd || fd < freshCut) { continue; }
+      var reason = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
+      if (reason) { skipped++; continue; }
+      if (used[l.id || l.url]) continue;
+      used[l.id || l.url] = 1;
+      var d = {
+        address: l.address || l.fullAddress || '',
+        fullAddress: l.fullAddress || l.address || '',
+        postcode: l.postcode || '',
+        url: l.url || '',
+        price: l.price || 0,
+        priceLabel: l.priceLabel || '',
+        bedrooms: l.bedrooms || 0,
+        propertyType: l.propertyType || '',
+        agent: l.agent || '',
+        street: l.street || '',
+        buildingNumber: l.buildingNumber || '',
+        udprn: l.udprn || '',
+        source: l.source || 'Rightmove (Apify)',
+        scrapedAt: l.scrapedAt || new Date().toISOString(),
+        firstVisibleDate: l.firstVisibleDate || '',
+        updateDate: l.updateDate || ''
+      };
+      db5.leads.push({ id: uuidv4(), customer_id: cust.id, product: product, data: JSON.stringify(d), status: 'new', delivered: 1, created_at: new Date().toISOString(), delivered_at: new Date().toISOString(), release_at: null });
+      assigned++;
+    }
+    saveDb();
+    res.json({ success: true, email: email, product: product, removed: before, assigned: assigned, area_match_seen: areaMatch, skipped_invalid: skipped, areas: areas, message: 'Removed ' + before + ' leads, assigned ' + assigned + ' in-area leads' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
