@@ -204,7 +204,7 @@ footer a{color:var(--accent);text-decoration:underline}
 <div id="area-picker" style="display:flex;flex-wrap:wrap;gap:4px;max-height:200px;overflow:auto;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px"></div>
 <div style="display:flex;gap:8px;align-items:center">
 <button class="btn" id="area-alluk-btn" onclick="pickAllUk()" style="display:none;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-size:12px"><i class="fas fa-globe-europe"></i> All of UK</button>
-<button class="btn btn-outline btn-sm" onclick="saveAreas()">Save Postcode Areas</button>
+<button class="btn btn-outline btn-sm" onclick="saveAreas()">Save Areas</button>
 </div>
 <p id="area-status" style="font-size:11px;color:var(--muted);margin-top:6px"></p>
 </div>
@@ -656,7 +656,7 @@ function getAreas() {
 var _sessionPlanForAreas = '';
 var _myProduct = 'moving';
 var _myCoverage = 'postcode';
-var SPECIALIST_COUNTIES = ['Bedfordshire','Berkshire','Bristol','Buckinghamshire','Cambridgeshire','Cheshire','Cornwall','Cumbria','Derbyshire','Devon','Dorset','Durham','East Sussex','Essex','Gloucestershire','Greater London','Greater Manchester','Hampshire','Herefordshire','Hertfordshire','Isle of Wight','Kent','Lancashire','Leicestershire','Lincolnshire','Merseyside','Norfolk','North Yorkshire','Northamptonshire','Northumberland','Nottinghamshire','Oxfordshire','Rutland','Shropshire','Somerset','South Yorkshire','Staffordshire','Suffolk','Surrey','Tyne and Wear','Warwickshire','West Midlands','West Sussex','West Yorkshire','Wiltshire','Worcestershire'];
+var SPECIALIST_COUNTIES = ['Bedfordshire','Berkshire','Bristol','Buckinghamshire','Cambridgeshire','Cheshire','Cornwall','Cumbria','Derbyshire','Devon','Dorset','Durham','East Sussex','Essex','Gloucestershire','Greater London','Greater Manchester','Hampshire','Herefordshire','Hertfordshire','Isle of Wight','Kent','Lancashire','Leicestershire','Lincolnshire','Merseyside','Norfolk','North Yorkshire','Northamptonshire','Northumberland','Nottinghamshire','Oxfordshire','Rutland','Shropshire','Somerset','South Yorkshire','Staffordshire','Suffolk','Surrey','Tyne and Wear','Warwickshire','West Midlands','West Sussex','West Yorkshire','Wiltshire','Worcestershire','Birmingham','Manchester','Liverpool','Leeds','Sheffield','Nottingham','Leicester','Cardiff','Edinburgh','Glasgow','Belfast','London','East Midlands','North East','North West','Yorkshire','East of England','South East','South West','Wales','Scotland','Northern Ireland','Channel Islands']
 function areaMaxLimit() {
   // free_trial / starter -> 5; pro / enterprise -> unlimited
   var p = String(_sessionPlanForAreas || '').toLowerCase();
