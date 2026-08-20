@@ -8694,6 +8694,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           products.forEach(function(p) {
             (availByProd[p] || []).forEach(function(pl) { if (pickedIds.indexOf(pl.id) === -1) topUpPool.push(pl); });
             (availGlobalByProd[p] || []).forEach(function(pl) { if (pickedIds.indexOf(pl.id) === -1) topUpPool.push(pl); });
+            // Also pull scrape POOL FILE leads so the top-up always finds verified-numbered leads.
+            try { var tpPoolFile = getDeliveryPool('moving'); (tpPoolFile || []).forEach(function(pl) { if (pickedIds.indexOf(pl.id) === -1) topUpPool.push(pl); }); } catch(tpf) {}
           });
           // Dedupe by id, prefer freshest, and only door-less ones (those already
           // numbered in the pool can be added directly without PAF spend).
