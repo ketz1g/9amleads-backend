@@ -5352,7 +5352,7 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
     (insight.metric ? '<p style="font-size:11px;color:#0284c7;margin:0 0 8px"><strong>' + insight.metric + '</strong></p>' : '') +
     '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">' +
 '<p style="font-size:10px;color:#ffffff;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
-'<p style="font-size:9px;color:#cbd5e1;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>' +
+'<p style="font-size:9px;color:#ffffff;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>' +
     '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:26px;text-align:center;text-decoration:none;margin:0 3px;font-size:10px;font-weight:700;color:#cbd5e1">f</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:26px;text-align:center;text-decoration:none;margin:0 3px;font-size:10px;font-weight:700;color:#cbd5e1">t</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:26px;text-align:center;text-decoration:none;margin:0 3px;font-size:10px;font-weight:700;color:#cbd5e1">i</a></div>' +
     '</div></div></td></tr>' +
     // Premium separator
@@ -5365,7 +5365,7 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
     '<p style="color:#94a3b8;font-size:10px;margin:2px 0 0">Founder, 9amLeads</p>' +
     '</div></td></tr>' +
     // Footer
-    '<tr><td bgcolor="#0f111a" style="background-color:#0f111a;background-image:linear-gradient(135deg,#0f111a,#1a1b2e);padding:20px 30px 16px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">' +
+    '<tr><td bgcolor="#0f172a" style="background-color:#0f172a;background-image:linear-gradient(135deg,#0f172a,#1e293b);padding:20px 30px 16px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">' +
     '<p style="color:#94a3b8;font-size:10px;margin:0 0 6px">9am Leads Ltd</p>' +
     '<p style="color:#94a3b8;font-size:9px;margin:0 0 8px"><a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a>' +
      ' &bull; <a href="https://www.9amleads.com/privacy.html#unsubscribe" style="color:#38bdf8;text-decoration:underline">Unsubscribe</a></p>' +
@@ -5679,7 +5679,7 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   (insight.metric ? '<p style="font-size:11px;color:#0284c7;margin:0 0 8px"><strong>' + insight.metric + '</strong></p>' : '') +
   '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">' +
 '<p style="font-size:10px;color:#ffffff;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
-'<p style="font-size:9px;color:#cbd5e1;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>' +
+'<p style="font-size:9px;color:#ffffff;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>' +
    '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">ig</a></div>' +
    '</div></div></td></tr>' +
   // Footer
