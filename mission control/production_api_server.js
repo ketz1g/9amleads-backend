@@ -4682,6 +4682,25 @@ app.get('/api/admin/customer-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/deep-scrape — run the deep Rightmove (Apify) worker for SPECIFIC
+// postcode areas (e.g. areas=L,WA,CH,M,WN). Used when a customer's chosen areas have
+// no fresh supply (e.g. Liverpool/North West) — normal scrape skips areas with no supply.
+app.post('/api/admin/deep-scrape', adminAuth, (req, res) => {
+  try {
+    var areas = (req.body && req.body.areas) || '';
+    areas = String(areas).toUpperCase().replace(/[^A-Z,]/g, '');
+    var maxProps = (req.body && req.body.max) || process.env.MOVING_MAX_PROPS || '50';
+    var workerFileD = path.join(__dirname, 'scrape_moving_deep.js');
+    var args = [workerFileD];
+    if (areas) args.push(areas);
+    args.push(String(maxProps));
+    var cpD = require('child_process');
+    var childD = cpD.spawn(process.execPath, args, { detached: true, stdio: 'ignore', env: Object.assign({}, process.env, { MOVING_MAX_PROPS: String(maxProps), DEEP_SCRAPE_AREAS: areas }) });
+    childD.unref();
+    res.json({ success: true, message: 'Deep scrape started' + (areas ? ' for areas: ' + areas : ''), pid: childD.pid || null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/lead/un-deliver — revert an over-delivered lead back to
 // undelivered (cleanup for exact-count compliance). Body: { lead_id, email? }.
 app.post('/api/admin/lead/un-deliver', adminAuth, (req, res) => {

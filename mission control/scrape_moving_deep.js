@@ -161,11 +161,14 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
       locId = 'REGION%5E' + regionId;
     }
     var url = 'https://www.rightmove.co.uk/' + section + '/find.html?searchType=SALE&locationIdentifier=' + locId + '&includeSSTC=true';
+    // NW areas (L/WA/CH/M/WN): list-mode displayAddress has no postcode, so we must
+    // fetch FULL property details to capture the full postcode (delivery requires it).
+    var detailAreas = { L: 1, WA: 1, CH: 1, M: 1, WN: 1 };
     var input = {
       listUrls: [{ url: url }],
       propertyUrls: [],
       monitoringMode: false,
-      fullPropertyDetails: false,
+      fullPropertyDetails: detailAreas[areaCode] ? true : false,
       includePriceHistory: false,
       includeNearestSchools: false,
       enableDelistingTracker: false,
@@ -193,6 +196,7 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
           if (!Array.isArray(items)) { console.log('[DEEP-SCRAPE] ' + areaCode + ' non-array: ' + b.substring(0, 300)); resolve([]); return; }
           var leads = items.map(function(p, i) {
             var addr = (p.displayAddress || p.address || '').trim();
+            var ppc = (p.postcode || p.fullPostcode || '').trim();
             var out = (p.outcode || '').trim();
             var inc = (p.incode || '').trim();
             var pcMatch = addr.match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]?\s*\d?[A-Z]{0,2}/i);
@@ -213,7 +217,7 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
               agent: p.agent || p.customer ? (p.agent || (p.customer && (p.customer.branchDisplayName || p.customer.branchName)) || '') : '',
               source: 'Rightmove ' + (type === 'commercial' ? 'Commercial' : '') + ' (Apify)',
               scrapedAt: new Date().toISOString(),
-              postcode: (out && inc) ? (out + ' ' + inc) : (pcMatch ? pcMatch[0].trim() : '')
+              postcode: (ppc || ((out && inc) ? (out + ' ' + inc) : '')) || (pcMatch ? pcMatch[0].trim() : '')
             };
           });
           console.log('[DEEP-SCRAPE] ' + areaCode + '[' + type + ']: ' + leads.length + ' properties');
