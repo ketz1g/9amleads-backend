@@ -7693,6 +7693,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var cust = customers[ci];
       var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
       if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
+      if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: [], stage: 'start' };
       
       // Use per-product limits based on lead type and coverage area.
       // getPlanLimit() (LEAD_TYPE_RULES) is the single source of truth and always
