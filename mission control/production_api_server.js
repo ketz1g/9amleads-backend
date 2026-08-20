@@ -12066,7 +12066,7 @@ function generateLeadEmailHTML(customer, leads) {
     : productName === 'planning' ? 'Planning application details'
     : 'Tender opportunity details';
   const dashboardUrl = 'https://www.9amleads.com/portal/dashboard.html';
-  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>@media only screen and (max-width:480px){.card{padding:12px!important}.inner{padding:12px 14px!important}.chips span{font-size:10px!important;white-space:normal!important;word-break:break-word!important}.lead-card{margin-bottom:16px!important}.btn-group{display:block!important}.btn-group a{display:block!important;margin-bottom:6px!important}.resp-flex{display:block!important}.resp-flex a{display:block!important;margin-bottom:6px!important}}</style></head><body style="margin:0;padding:0;background-color:#1e293b;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#1e293b">';
+  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>@media only screen and (max-width:480px){.card{padding:12px!important}.inner{padding:12px 14px!important}.chips span{font-size:10px!important;white-space:normal!important;word-break:break-word!important}.lead-card{margin-bottom:16px!important}.btn-group{display:block!important}.btn-group a{display:block!important;margin-bottom:6px!important}.resp-flex{display:block!important}.resp-flex a{display:block!important;margin-bottom:6px!important}}</style></head><body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#1e293b">';
   body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px">';
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
@@ -12078,17 +12078,17 @@ function generateLeadEmailHTML(customer, leads) {
   body += '</tr></table>';
   var areasLabel = '';
   try { var custAreas = JSON.parse(customer.target_areas || '[]'); areasLabel = custAreas.length > 0 ? custAreas.join(', ') : ''; } catch(e) {}
-  if (areasLabel) body += '<p style="color:#1e293b;font-size:11px;margin:14px 0 0;text-transform:uppercase;letter-spacing:3px;font-weight:600">' + areasLabel + '</p>';
+  if (areasLabel) body += '<p style="color:#94a3b8;font-size:11px;margin:14px 0 0;text-transform:uppercase;letter-spacing:3px;font-weight:600">' + areasLabel + '</p>';
   body += '</td></tr>';
 
   // Greeting + count — dark card
   body += '<tr><td style="background:#12141e;padding:24px 30px 18px">';
   body += '<table cellpadding="0" cellspacing="0"><tr><td><span style="display:inline-block;padding:3px 12px;border-radius:6px;background-color:' + brand.color + ';background-image:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');color:#fff;font-size:9px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase">' + brand.short + '</span></td></tr></table>';
-  body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#1e293b;margin:10px 0 4px;letter-spacing:-0.3px">Good Morning, ' + (customer.company || 'there') + '</h2>';
-  body += '<p style="color:#1e293b;font-size:13px;margin:0 0 16px">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
+  body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#ffffff;margin:10px 0 4px;letter-spacing:-0.3px">Good Morning, ' + (customer.company || 'there') + '</h2>';
+  body += '<p style="color:#cbd5e1;font-size:13px;margin:0 0 16px">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
   body += '<div style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.05));border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:14px 20px;margin-bottom:16px">';
   body += '<table cellpadding="0" cellspacing="0"><tr><td style="vertical-align:middle"><span style="font-size:30px;font-weight:900;color:#10b981;line-height:1">' + leads.length + '</span></td><td style="padding-left:14px;vertical-align:middle"><span style="font-size:14px;color:#6ee7b7;font-weight:600">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' ready today</span></td></tr></table></div>';
-  body += '<p style="font-size:12px;color:#1e293b;line-height:1.6;margin:0;padding:12px 16px;background:rgba(255,255,255,0.03);border:1px solid #e2e8f0;border-radius:10px">' + aboutText + '</p>';
+  body += '<p style="font-size:12px;color:#cbd5e1;line-height:1.6;margin:0;padding:12px 16px;background:rgba(255,255,255,0.03);border:1px solid #e2e8f0;border-radius:10px">' + aboutText + '</p>';
   body += '</td></tr>';
 
   // Lead cards
