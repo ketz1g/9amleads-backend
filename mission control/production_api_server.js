@@ -2741,7 +2741,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    if (!customer.email_verified) {
+    if (customer.email_verified === 0) { // legacy accounts without the field (undefined) can log in
       return res.status(403).json({ error: 'Please verify your email first. Check your inbox for the verification link.', needsVerification: true, email: customer.email });
     }
 
