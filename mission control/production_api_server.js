@@ -12070,11 +12070,11 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px">';
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
-  // Header — branded with proper 9amLeads logo (compact, readable on dark bg)
-  body += '<tr><td bgcolor="#f1f5f9" style="background-color:#1e293b;background-image:linear-gradient(135deg,#0f111a,#ffffff);padding:22px 30px 16px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid #e2e8f0">';
+  // Header — clean white header with the 9amLeads logo badge + dark wordmark
+  body += '<tr><td style="background-color:#ffffff;background-image:linear-gradient(135deg,#ffffff,#f8fafc);padding:24px 30px 14px;border-radius:16px 16px 0 0;text-align:center;border-bottom:2px solid ' + brand.color + '">';
   body += '<table cellpadding="0" cellspacing="0" align="center"><tr>';
-  body += '<td bgcolor="' + brand.color + '" style="background-color:' + brand.color + ';background-image:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:9px;width:28px;height:28px;text-align:center;vertical-align:middle;line-height:28px;font-family:Georgia,serif;font-size:15px;font-weight:900;color:#ffffff">' + brand.logo + '</td>';
-  body += '<td style="padding-left:9px;vertical-align:middle;text-align:left"><div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:#ffffff;letter-spacing:-0.2px;line-height:1.2">9am<span style="color:' + brand.light + '">Leads</span></div><div style="font-size:8px;color:#3f3f46;letter-spacing:1.2px;text-transform:uppercase;margin-top:2px;font-weight:600">Fresh business leads &middot; Every morning</div></td>';
+  body += '<td bgcolor="' + brand.color + '" style="background-color:' + brand.color + ';background-image:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:10px;width:34px;height:34px;text-align:center;vertical-align:middle;line-height:34px;font-family:Georgia,serif;font-size:17px;font-weight:900;color:#ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.12)">' + brand.logo + '</td>';
+  body += '<td style="padding-left:10px;vertical-align:middle;text-align:left"><div style="font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:900;color:#0f172a;letter-spacing:-0.3px;line-height:1.2">9am<span style="color:' + brand.color + '">Leads</span></div><div style="font-size:9px;color:#64748b;letter-spacing:1.3px;text-transform:uppercase;margin-top:2px;font-weight:700">Fresh business leads &middot; Every morning</div></td>';
   body += '</tr></table>';
   var areasLabel = '';
   try { var custAreas = JSON.parse(customer.target_areas || '[]'); areasLabel = custAreas.length > 0 ? custAreas.join(', ') : ''; } catch(e) {}
