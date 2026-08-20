@@ -1524,13 +1524,14 @@ class StannpProvider extends DirectMailProvider {
         console.log('[STANNP] Artwork rejected for ' + (file.name || 'flyer') + ': ' + msg);
         return { error: msg, file: file, spec: spec };
       }
-      // Use 'contain' (fit whole image, pad with white) when the aspect is a
-      // little off so nothing important is ever cropped; 'cover' fills exactly
-      // when the aspect already matches. This guarantees no content is cut off.
+      // Use 'contain' (fit whole image, pad with white) so NOTHING is ever
+      // cropped — the generated flyer's bottom content must never be cut off.
+      // 'cover' previously cropped the bottom when the artwork ratio differed
+      // slightly from the target, which users saw as a cut-off flyer.
       var aspectRatio = meta.width / meta.height;
       var targetRatio = A5_W / A5_H;
       var ratioDelta = Math.abs(aspectRatio - targetRatio) / targetRatio;
-      var fitMode = ratioDelta > 0.03 ? 'contain' : 'cover';
+      var fitMode = ratioDelta > 0.03 ? 'contain' : 'contain';
       var outBuf;
       // Compress to JPEG (quality 82) — Stannp's API rejects large base64 bodies.
       // A 300 DPI A5 PNG can be 6-8MB (too big as form-encoded), but the same image
@@ -4427,8 +4428,11 @@ app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
     };
     var c = colors[style] || colors.professional;
 
-    var safeTop = 28, safeBottom = 28, safeLeft = 28, safeRight = 28;
+    var safeTop = 28, safeBottom = 45, safeLeft = 28, safeRight = 28;
     var pageW = 420, pageH = 595; // A5 in points (148mm x 210mm)
+    // Bottom safe margin raised to 45pt (~16mm): printers + the artwork prep
+    // (A5 cover-crop) previously clipped the bottom of the flyer. All bottom
+    // content (contact bar, slogan, QR, footer bar) must sit ABOVE this line.
 
     function generatePDF(side) {
       return new Promise(function(resolve, reject) {
@@ -4518,8 +4522,8 @@ app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
             doc.fontSize(8).font('Helvetica').fillColor('#475569');
             doc.text((data.qr_text || 'Scan for more info') + '  |  ' + (data.email || ''), safeLeft, qrY, { width: pageW - safeLeft - safeRight, align: 'center' });
 
-            // Bottom bar
-            doc.rect(0, pageH - 6, pageW, 6).fill(c.primary);
+            // Bottom bar (inside safe zone — was at the page edge, getting cut off)
+            doc.rect(0, pageH - safeBottom, pageW, 6).fill(c.primary);
           }
           doc.end();
         } catch(e) { reject(e); }
