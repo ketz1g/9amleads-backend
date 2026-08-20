@@ -384,6 +384,21 @@ function loadProductPool(prod) {
     }
     return l;
   });
+  // DEDUPE: the pool accumulates the same property/listing multiple times
+  // (Rightmove + OnTheMarket + re-scrapes create duplicate entries with
+  // different ids). Dedupe by normalized URL, falling back to normalized
+  // address + postcode, so a customer NEVER receives the same lead twice.
+  var seenPool = {};
+  arr = arr.filter(function(l) {
+    var u = String(l.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+    var a = String(l.address || l.fullAddress || l.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+    var pc = String(l.postcode || '').toUpperCase().replace(/\s+/g, '').trim();
+    var key = u ? 'u:' + u : ('a:' + a + (pc ? '|' + pc : ''));
+    if (!key || key === 'a:') return true;
+    if (seenPool[key]) return false;
+    seenPool[key] = true;
+    return true;
+  });
   return arr;
 }
 
@@ -8200,7 +8215,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // freshness or old listings slip through as "fresh".
           var fv = pickFreshDate(ld2);
           if (!fv) return false;
-          return fv >= freshCutoffNow;
+          // BACKFILL: moving stays strict (48h fresh). Other products (probate/
+          // planning/newbusiness/tenders) may backfill with leads up to 14 days old
+          // when needed, so the exact daily count is ALWAYS met (their national
+          // supply is small/spread - e.g. ~27 probate grants/day UK-wide). The pool
+          // is iterated fresh-first, so this only fills gaps - never preferred.
+          var backfillCutoff = cust.product === 'moving' ? freshCutoffNow : new Date(Date.now() - 14 * 86400000).toISOString();
+          return fv >= backfillCutoff;w;
         } catch(e) { return false; }
       }
       var availByProd = {};
