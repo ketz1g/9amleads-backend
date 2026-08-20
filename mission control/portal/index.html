@@ -260,6 +260,7 @@ function updateMovingTypeLabel() {
 <div class="form-group">
 <label>Where do you work? <span class="ml" id="s-area-label">(add 5 postcode areas — e.g. HA, EN, SW, B, CM)</span></label>
 <div id="s-postcode-tags" class="tags"></div>
+<div id="s-signup-overlap-note" style="display:none;margin-top:8px;padding:8px 12px;border-radius:6px;font-size:11px;line-height:1.5"></div>
 <div id="s-postcode-wrapper">
 <div class="quick-areas">
 <button type="button" class="qa" onclick="addQuickArea('AB')">AB</button>
@@ -568,6 +569,7 @@ function renderSignupPostcodes() {
   tags.innerHTML = html;
   var limit = getPostcodeAreaLimit();
   document.getElementById('s-postcode-count').textContent = signupPostcodes.length > 0 ? (signupPostcodes.length + ' / ' + (limit >= 999 ? 'unlimited' : limit) + ' ' + areaLabelText() + ' selected') : '';
+  checkSignupOverlap();
   // Also render the county tags (specialist lead types) into their own container
   renderCountyTags();
   // Update the visible area selector based on the selected lead types
@@ -688,8 +690,31 @@ fetch(API + '/api/lead-types').then(function(r) { return r.json(); }).then(funct
   updatePlanDescriptions();
 }).catch(function() {});
 
+function checkSignupOverlap() {
+  var note = document.getElementById('s-signup-overlap-note');
+  if (!note) return;
+  var checked = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
+  var prods = [];
+  checked.forEach(function(ch) { prods.push(ch.value); });
+  var relevant = prods.filter(function(p) { return p === 'tenders' || p === 'probate'; });
+  if (!relevant.length) { note.style.display = 'none'; return; }
+  var prod = relevant[0];
+  fetch('/api/auth/signup-overlap?product=' + encodeURIComponent(prod) + '&areas=' + encodeURIComponent(JSON.stringify(signupPostcodes)))
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.count > 0) {
+        note.style.display = 'block';
+        note.style.background = 'rgba(245,158,11,0.12)';
+        note.style.border = '1px solid rgba(245,158,11,0.35)';
+        note.style.color = '#92400e';
+        note.innerHTML = '<strong>Heads up:</strong> ' + d.note + (prod === 'tenders' ? ' in the tenders sector' : '') + '. Those accounts may receive some of the same leads (that is normal - buyers often get 2-3 quotes). You can still sign up today.';
+      } else { note.style.display = 'none'; }
+    })
+    .catch(function() { note.style.display = 'none'; });
+}
+
 function onLeadTypeChange() {
-  updateCoverageOptions();
+  updateCoverageOptions(); checkSignupOverlap();
   updatePlanDescriptions();
   var checked = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
   var hasSpecialist = false;
@@ -823,7 +848,7 @@ function selectCoverage(type) {
   selectedCoverage = type;
   var radios = document.querySelectorAll('#coverage-options input[type=radio]');
   for (var i = 0; i < radios.length; i++) { radios[i].checked = radios[i].value === type; }
-  updateCoverageOptions();
+  updateCoverageOptions(); checkSignupOverlap();
   updatePlanDescriptions();
 }
 
@@ -865,7 +890,7 @@ function goToStep(n) {
   }
   // Show the outer signup container
   document.getElementById('signup-form').style.display = 'block';
-  if (n === 2) { updateCoverageOptions(); }
+  if (n === 2) { updateCoverageOptions(); checkSignupOverlap(); }
   if (n === 3) { updatePlanDescriptions(); }
 }
 
@@ -899,7 +924,7 @@ async function checkAvailability() {
 
 // Coverage selector initialization
 document.addEventListener('DOMContentLoaded', function() {
-  updateCoverageOptions();
+  updateCoverageOptions(); checkSignupOverlap();
   // Initialize area selectors
   setTimeout(function() {
     onLeadTypeChange();

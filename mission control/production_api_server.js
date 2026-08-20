@@ -2400,6 +2400,35 @@ app.get(/^\/(?!api\/).*$/, (req, res) => {
 
 // ===== AUTH ENDPOINTS =====
 
+// GET /api/auth/signup-overlap - BEFORE signup, tell the person how many
+// existing accounts already cover their chosen areas/sector (tenders + probate).
+// This is informational only (non-blocking): they can still sign up, but they
+// know in advance whether leads may be shared (getting 2-3 quotes is normal).
+app.get('/api/auth/signup-overlap', (req, res) => {
+  try {
+    var product = String(req.query.product || '').toLowerCase();
+    var areas = [];
+    try { areas = JSON.parse(req.query.areas || '[]'); } catch(e) { areas = String(req.query.areas || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean); }
+    var dbO = getDb();
+    var count = 0, others = [];
+    if (product === 'tenders') {
+      (dbO.customers || []).forEach(function(c) {
+        if (c.product === 'tenders' && c.plan && c.plan !== 'cancelled') { count++; if (others.length < 5) others.push(c.company || c.email); }
+      });
+    } else if (product === 'probate') {
+      var normAreas = areas.map(function(a){ return String(a).toLowerCase().replace(/[\s-]+/g, '-'); });
+      (dbO.customers || []).forEach(function(c) {
+        if (c.product !== 'probate' || !c.plan || c.plan === 'cancelled') return;
+        var cAreas = [];
+        try { cAreas = JSON.parse(c.target_areas || '[]'); } catch(e) { cAreas = []; }
+        var overlap = cAreas.some(function(a){ return normAreas.indexOf(String(a).toLowerCase().replace(/[\s-]+/g, '-')) !== -1; });
+        if (overlap) { count++; if (others.length < 5) others.push(c.company || c.email); }
+      });
+    }
+    res.json({ success: true, product: product, count: count, others: others, note: count > 0 ? ('There ' + (count === 1 ? 'is 1 other account' : 'are ' + count + ' other accounts') + ' already covering this ' + (product === 'tenders' ? 'sector' : 'area')) : '' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
