@@ -2423,6 +2423,14 @@ app.post('/api/auth/signup', async (req, res) => {
       if (allUk && !isPaidUnlimited) {
         return res.status(400).json({ error: 'Please choose up to ' + maxAreas + ' specific postcode areas. "All of UK" is only available on Pro or Enterprise plans.', invalid_area: true });
       }
+      // MOVING: the promise is an exact daily count spread across the chosen areas,
+      // so a free_trial/starter MOVING customer MUST choose the FULL 5 postcode
+      // areas (fewer breaks the delivery guarantee). Other products (probate/
+      // planning/newbusiness/tenders) may pick 1+ areas.
+      var signupProduct = String(product || '').toLowerCase();
+      if (!isPaidUnlimited && signupProduct === 'moving' && areas.length < maxAreas) {
+        return res.status(400).json({ error: 'Please choose exactly ' + maxAreas + ' postcode areas for moving leads (you selected ' + areas.length + ').', too_few_areas: true, max_areas: maxAreas });
+      }
       if (!isPaidUnlimited && areas.length > maxAreas) {
         return res.status(400).json({ error: 'Please choose at most ' + maxAreas + ' postcode areas. You selected ' + areas.length + '.', too_many_areas: true, max_areas: maxAreas });
       }
