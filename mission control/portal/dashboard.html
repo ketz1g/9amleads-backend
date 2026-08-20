@@ -198,7 +198,7 @@ footer a{color:var(--accent);text-decoration:underline}
 
 <!-- Postcode Areas -->
 <div class="card">
-<div class="sect-title"><i class="fas fa-map-marker-alt"></i> My Postcode Areas</div>
+<div class="sect-title"><i class="fas fa-map-marker-alt"></i> My Areas</div>
 <div id="area-plan-note" style="font-size:12px;color:var(--text2);margin-bottom:8px"></div>
 <div class="tag-list" id="area-tags"></div>
 <div id="area-picker" style="display:flex;flex-wrap:wrap;gap:4px;max-height:200px;overflow:auto;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px"></div>
@@ -630,12 +630,12 @@ function saveAreas() {
   // Enforce the plan limit client-side too.
   var max = areaMaxLimit();
   if (codes.length === 1 && codes[0] === 'ALL UK') { /* paid all-uk ok */ }
-  else if (codes.length > max) { if (st) { st.textContent = 'Maximum ' + max + ' postcode areas. Remove some before saving.'; st.style.color = '#ef4444'; } return; }
+  else if (codes.length > max) { if (st) { st.textContent = 'Maximum ' + max + ' areas. Remove some before saving.'; st.style.color = '#ef4444'; } return; }
   fetch('/api/auth/update-areas', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ areas: codes }) })
     .then(function(r){ return r.json(); })
     .then(function(d){
       if (d && d.success) {
-        if (st) { st.textContent = 'Postcode areas saved: ' + d.areas.join(', '); st.style.color = '#22c55e'; }
+        if (st) { st.textContent = 'Areas saved: ' + d.areas.join(', '); st.style.color = '#22c55e'; }
         var pa = document.getElementById('plan-areas'); if (pa) pa.textContent = (d.areas.length ? d.areas.join(', ') : 'None set');
         var sa = document.getElementById('settings-areas'); if (sa) sa.value = d.areas.join(', ');
         renderAreaPicker();
@@ -652,8 +652,11 @@ function getAreas() {
   return codes;
 }
 
-// ===== POSTCODE AREA SELECTOR (plan-aware) =====
+// ===== POSTCODE AREA SELECTOR (plan + product aware) =====
 var _sessionPlanForAreas = '';
+var _myProduct = 'moving';
+var _myCoverage = 'postcode';
+var SPECIALIST_COUNTIES = ['Bedfordshire','Berkshire','Bristol','Buckinghamshire','Cambridgeshire','Cheshire','Cornwall','Cumbria','Derbyshire','Devon','Dorset','Durham','East Sussex','Essex','Gloucestershire','Greater London','Greater Manchester','Hampshire','Herefordshire','Hertfordshire','Isle of Wight','Kent','Lancashire','Leicestershire','Lincolnshire','Merseyside','Norfolk','North Yorkshire','Northamptonshire','Northumberland','Nottinghamshire','Oxfordshire','Rutland','Shropshire','Somerset','South Yorkshire','Staffordshire','Suffolk','Surrey','Tyne and Wear','Warwickshire','West Midlands','West Sussex','West Yorkshire','Wiltshire','Worcestershire'];
 function areaMaxLimit() {
   // free_trial / starter -> 5; pro / enterprise -> unlimited
   var p = String(_sessionPlanForAreas || '').toLowerCase();
@@ -671,12 +674,23 @@ function renderAreaPlanNote() {
   var note = document.getElementById('area-plan-note');
   var ukBtn = document.getElementById('area-alluk-btn');
   if (!note) return;
-  if (areaMaxLimit() >= 999) {
-    note.innerHTML = 'Pro / Enterprise: choose as many postcode areas as you like, or select <strong>All of UK</strong>.';
+  if (_myCoverage === 'ukwide' || _myProduct === 'tenders') {
+    note.innerHTML = 'Tenders are UK-wide - you receive opportunities from across the country.';
     if (ukBtn) ukBtn.style.display = 'inline-flex';
+    return;
+  }
+  if (_myProduct === 'moving') {
+    if (areaMaxLimit() >= 999) {
+      note.innerHTML = 'Pro / Enterprise: choose as many postcode areas as you like, or select <strong>All of UK</strong>.';
+      if (ukBtn) ukBtn.style.display = 'inline-flex';
+    } else {
+      note.innerHTML = 'Pick up to <strong>5 postcode areas</strong> (e.g. E, NW, EN, SG, CM) for your daily leads.';
+      if (ukBtn) ukBtn.style.display = 'none';
+    }
   } else {
-    note.innerHTML = 'Pick up to <strong>5 postcode areas</strong> (e.g. E, NW, EN, SG, CM) for your daily leads.';
-    if (ukBtn) ukBtn.style.display = 'none';
+    var lim = areaMaxLimit();
+    note.innerHTML = lim >= 999 ? 'Pick as many counties/regions as you like, or <strong>All of UK</strong>.' : 'Pick up to <strong>' + lim + ' counties/regions</strong> for your daily leads.';
+    if (ukBtn) ukBtn.style.display = lim >= 999 ? 'inline-flex' : 'none';
   }
 }
 function renderAreaPicker() {
@@ -684,14 +698,25 @@ function renderAreaPicker() {
   if (!grid) return;
   var selected = getAreas();
   grid.innerHTML = '';
-  var AREAS = ['AB','AL','B','BA','BB','BD','BH','BL','BN','BR','BS','BT','CA','CB','CF','CH','CM','CO','CR','CT','CV','CW','DA','DD','DE','DG','DH','DL','DN','DT','DY','E','EC','EH','EN','EX','FK','FY','G','GL','GU','GY','HA','HD','HG','HP','HR','HS','HU','HX','IG','IM','IP','IV','JE','KA','KT','KW','KY','L','LA','LD','LE','LL','LN','LS','LU','M','ME','MK','ML','N','NE','NG','NN','NR','NW','OL','OX','PA','PE','PH','PL','PO','PR','RG','RH','RM','S','SA','SE','SG','SH','SK','SL','SM','SN','SO','SP','SR','SS','ST','SW','SY','TA','TD','TF','TN','TQ','TR','TS','TW','UB','W','WA','WC','WD','WF','WN','WR','WS','WV','YO','ZE'];
-  AREAS.forEach(function(code){
-    var on = selected.indexOf(code) !== -1;
+  var ukBtn = document.getElementById('area-alluk-btn');
+  // Tenders are UK-wide: no area chips, just the "All of UK" option.
+  if (_myCoverage === 'ukwide' || _myProduct === 'tenders') {
+    if (ukBtn) ukBtn.style.display = 'inline-flex';
+    return;
+  }
+  var items;
+  if (_myProduct === 'moving') {
+    items = ['AB','AL','B','BA','BB','BD','BH','BL','BN','BR','BS','BT','CA','CB','CF','CH','CM','CO','CR','CT','CV','CW','DA','DD','DE','DG','DH','DL','DN','DT','DY','E','EC','EH','EN','EX','FK','FY','G','GL','GU','GY','HA','HD','HG','HP','HR','HS','HU','HX','IG','IM','IP','IV','JE','KA','KT','KW','KY','L','LA','LD','LE','LL','LN','LS','LU','M','ME','MK','ML','N','NE','NG','NN','NR','NW','OL','OX','PA','PE','PH','PL','PO','PR','RG','RH','RM','S','SA','SE','SG','SH','SK','SL','SM','SN','SO','SP','SR','SS','ST','SW','SY','TA','TD','TF','TN','TQ','TR','TS','TW','UB','W','WA','WC','WD','WF','WN','WR','WS','WV','YO','ZE'];
+  } else {
+    items = SPECIALIST_COUNTIES;
+  }
+  items.forEach(function(item){
+    var on = selected.indexOf(item) !== -1;
     var b = document.createElement('button');
     b.type = 'button';
-    b.textContent = code;
+    b.textContent = item;
     b.style.cssText = 'padding:5px 9px;border:1px solid ' + (on ? '#0ea5e9' : 'var(--border)') + ';border-radius:5px;font-size:11px;font-weight:600;background:' + (on ? 'rgba(14,165,233,0.18)' : 'var(--bg2)') + ';color:' + (on ? '#0ea5e9' : 'var(--text2)') + ';cursor:pointer';
-    b.onclick = function(){ toggleArea(code); };
+    b.onclick = function(){ toggleArea(item); };
     grid.appendChild(b);
   });
 }
@@ -1618,6 +1643,8 @@ document.querySelectorAll('.modal').forEach(function(m){
         return;
       }
       loadSettings(data);
+      _myProduct = data.product || ((data.products && data.products[0]) || 'moving');
+      _myCoverage = data.coverage || 'postcode';
       if (data.target_areas) renderPostcodes(data.target_areas); loadPlanForAreas();
       if (data.plan) document.getElementById('plan-name').textContent = data.plan === 'free_trial' ? 'Free Trial' : data.plan.charAt(0).toUpperCase() + data.plan.slice(1);
       // Free-trial countdown timer: show a live countdown to trial end for free
