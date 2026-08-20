@@ -2384,7 +2384,12 @@ app.get(/^\/(?!api\/).*$/, (req, res) => {
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { company, name, email, phone, password, product, products, plan, targetAreas, coverage, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl, movingType, acceptTerms } = req.body;
+    const { company, name, email, phone, password, product, products, plan, targetAreas, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl, movingType, acceptTerms } = req.body;
+    // Default coverage EARLY so the postcode-area validation below ALWAYS runs.
+    // (Previously the validation was gated on `coverage === 'postcode'` BEFORE this
+    // default existed, so a signup that omitted `coverage` skipped the "exactly 5
+    // postcode areas for moving" rule entirely.)
+    var coverage = req.body.coverage || 'postcode';
 
     if (!company || !email || !password) {
       return res.status(400).json({ error: 'Company, email and password are required' });
