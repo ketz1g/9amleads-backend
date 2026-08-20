@@ -1361,7 +1361,15 @@ class StannpProvider extends DirectMailProvider {
   //   pages = HTML letter body OR plain text (used when no letter PDF uploaded)
   // format: optional format id (e.g. 'flyer_a5_portrait') or Stannp size string
   //   ('A5-PORT','A5','A6','DL','A5-ENV') — defaults to A5-PORT for flyers.
-  async sendMailpiece(mailType, recipient, files, format) {
+    // Stannp's legacy API expects RAW base64 (no data:...;base64, prefix).
+  stripDataPrefix(data) {
+    var s = String(data || '');
+    var i = s.indexOf(',');
+    if (i !== -1 && s.indexOf(';base64,') !== -1) return s.substring(i + 1);
+    return s;
+  }
+
+async sendMailpiece(mailType, recipient, files, format) {
     var nameParts = (recipient.name || '').split(' ').filter(Boolean);
     var rcpt = {
       'recipient[firstname]': nameParts[0] || '',
@@ -1396,7 +1404,7 @@ class StannpProvider extends DirectMailProvider {
     if (isLetter || isBoth) {
       var letterParams = Object.assign({}, rcpt, { tags: rcpt.tags || '9amleads' });
       if (letterFile && letterFile.file_data) {
-        letterParams.file = letterFile.file_data;
+        letterParams.file = this.stripDataPrefix(letterFile.file_data);
       } else {
         letterParams.pages = pageBody;
       }
@@ -1450,8 +1458,8 @@ class StannpProvider extends DirectMailProvider {
         // white address zone at PRINT time (so the recipient address is
         // machine-readable) WITHOUT modifying the customer's design.
         var postcardParams = Object.assign({}, rcpt, { size: flyerSize, tags: rcpt.tags || '9amleads', padding: 0, clearzone: true });
-        if (front && front.file_data) postcardParams.front = front.file_data;
-        if (back && back.file_data) postcardParams.back = back.file_data;
+        if (front && front.file_data) postcardParams.front = this.stripDataPrefix(front.file_data);
+        if (back && back.file_data) postcardParams.back = this.stripDataPrefix(back.file_data);
         var res2 = await this.stannpRequest('/postcards/create', postcardParams);
         if (res2.success && res2.data && res2.data.id) {
           if (isBoth && letterResult) {
@@ -1574,7 +1582,7 @@ class StannpProvider extends DirectMailProvider {
       // is shown only in the preview, not baked into the sent file.
       outBuf = await sharp(inputBuf)
         .rotate()
-        .resize({ width: A5_W, height: A5_H, fit: 'cover', position: 'attention', background: { r: 255, g: 255, b: 255 } })
+        .resize({ width: A5_W, height: A5_H, fit: 'contain', position: 'attention', background: { r: 255, g: 255, b: 255 } })
         .extend({ top: 0, bottom: 0, left: 0, right: 0, background: { r: 255, g: 255, b: 255 } })
         .jpeg({ quality: 82 })
         .toBuffer();
