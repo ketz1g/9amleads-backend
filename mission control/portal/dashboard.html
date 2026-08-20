@@ -155,6 +155,11 @@ footer a{color:var(--accent);text-decoration:underline}
 <div><strong id="plan-leads">5</strong> leads/day</div>
 <div><strong id="plan-areas">&mdash;</strong></div>
 <div id="trial-timer-wrap" style="display:none"><div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px"><i class="fas fa-hourglass-half" style="margin-right:4px"></i> Free Trial Ends In</div><div id="trial-timer" style="font-size:22px;font-weight:800;color:#d97706;font-family:var(--ff-h);letter-spacing:1px">--:--:--</div><div style="font-size:10px;color:var(--muted);margin-top:2px">days : hours : minutes : seconds</div></div>
+<div id="trial-expired-banner" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:12px 14px;margin-top:10px;text-align:center">
+  <div style="font-size:13px;font-weight:800;color:#b91c1c"><i class="fas fa-exclamation-triangle" style="margin-right:4px"></i> Your free trial has ended</div>
+  <div style="font-size:11px;color:#7f1d1d;margin:4px 0 8px;line-height:1.5">New leads are paused until you upgrade. Upgrade to keep receiving fresh leads every morning at 9am.</div>
+  <a href="/pricing/" class="btn btn-primary btn-sm" style="color:#fff;text-decoration:none;padding:8px 18px"><i class="fas fa-arrow-up"></i> Upgrade Now</a>
+</div>
 <div><strong id="plan-remaining">7 days</strong> remaining</div>
 </div>
 <div class="actions">
@@ -873,13 +878,20 @@ function setupTrialTimer(plan, trialEnds) {
   var endTime = trialEnds ? new Date(trialEnds).getTime() : 0;
   // Only show for active free trials with a future end date. Hide for paid plans
   // (starter/pro/enterprise) and when the trial has ended.
-  if (!isFreeTrial || !endTime || endTime <= Date.now()) { wrap.style.display = 'none'; return; }
+  if (!isFreeTrial || !endTime || endTime <= Date.now()) {
+    wrap.style.display = 'none';
+    var exp0 = document.getElementById('trial-expired-banner');
+    if (exp0 && isFreeTrial && endTime && endTime <= Date.now()) exp0.style.display = 'block';
+    return;
+  }
   wrap.style.display = '';
   function update() {
     var diff = endTime - Date.now();
+    var banner = document.getElementById('trial-expired-banner');
     if (diff <= 0) {
-      // Trial has just ended. hide the timer.
+      // Trial has ended: hide the countdown, show the upgrade banner.
       wrap.style.display = 'none';
+      if (banner) banner.style.display = 'block';
       if (__trialTimerInt) { clearInterval(__trialTimerInt); __trialTimerInt = null; }
       return;
     }
