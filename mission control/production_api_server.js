@@ -6190,6 +6190,45 @@ cron.schedule('*/30 * * * *', async () => {
 }, { timezone: 'Europe/London' });
 
 
+// 09:15 DELIVERY VERIFICATION + AUTO-TOPUP (bullet-proof safety net)
+// After the 09:00 delivery + 09:02 watchdog, verify every active customer got
+// their promised daily count. If any customer is short, auto top-up from the pool
+// and alert hello@9amleads.com immediately - an under-delivery can NEVER go
+// unnoticed or unrepaired again.
+cron.schedule('15 9 * * 1-5', async () => {
+  try {
+    var vToday = new Date().toISOString().split('T')[0];
+    var vDb = getDb();
+    var vIssues = [];
+    (vDb.customers || []).forEach(function(c) {
+      if (!c.plan || c.plan === 'cancelled' || (c.bounced && parseInt(c.bounced) >= 3)) return;
+      var quota = getPlanLimit(c.product, c.plan, c.coverage) || 5;
+      var todayDelivered = (vDb.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(vToday); }).length;
+      if (todayDelivered < quota) {
+        vIssues.push({ email: c.email, company: c.company || c.email, quota: quota, delivered: todayDelivered, product: c.product, id: c.id });
+      }
+    });
+    if (vIssues.length === 0) {
+      console.log('[VERIFY-9AM] ' + vToday + ': all customers met their 9am promise');
+      return;
+    }
+    console.log('[VERIFY-9AM] ' + vToday + ': ' + vIssues.length + ' customer(s) short - auto top-up + alerting owner');
+    for (var vi = 0; vi < vIssues.length; vi++) {
+      try {
+        const http = require('http');
+        var vb = JSON.stringify({ customer_email: vIssues[vi].email, force: true });
+        var vreq = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(vb) } }, function(vres) { var b=''; vres.on('data', function(ch){ b+=ch; }); vres.on('end', function(){ console.log('[VERIFY-9AM] top-up ' + vIssues[vi].email + ' -> ' + b.substring(0, 80)); }); });
+        vreq.on('error', function(e){ console.log('[VERIFY-9AM] top-up error for ' + vIssues[vi].email + ': ' + e.message); });
+        vreq.write(vb); vreq.end();
+      } catch(vt) { console.log('[VERIFY-9AM] top-up call error: ' + vt.message); }
+    }
+    try {
+      var vRows = vIssues.map(function(i) { return '<tr><td style="padding:6px 10px;border-bottom:1px solid #eee">' + i.company + '</td><td style="padding:6px 10px;border-bottom:1px solid #eee">' + i.email + '</td><td style="padding:6px 10px;border-bottom:1px solid #eee">' + i.product + '</td><td style="padding:6px 10px;border-bottom:1px solid #eee">' + i.delivered + ' / ' + i.quota + '</td></tr>'; }).join('');
+      await sendBrevoEmail('hello@9amleads.com', '9amLeads alert: delivery verification - ' + vIssues.length + ' customer(s) short today', '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f59e0b;margin:0 0 10px">Delivery verification: ' + vIssues.length + ' customer(s) short of their 9am promise</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">The system has <b>automatically re-run the top-up</b> for these customers. Check their dashboards shortly.</p><table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:10px"><thead><tr style="background:rgba(255,255,255,0.06)"><th style="text-align:left;padding:6px 10px">Company</th><th style="text-align:left;padding:6px 10px">Email</th><th style="text-align:left;padding:6px 10px">Type</th><th style="text-align:left;padding:6px 10px">Delivered</th></tr></thead><tbody>' + vRows + '</tbody></table></div>');
+    } catch(ve) { console.log('[VERIFY-9AM] owner alert error: ' + ve.message); }
+  } catch(e) { console.log('[VERIFY-9AM] error: ' + e.message); }
+}, { timezone: 'Europe/London' });
+
 // Sequence processing every hour
 cron.schedule('0 * * * *', async () => {
   try {
