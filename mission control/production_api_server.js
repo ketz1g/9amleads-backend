@@ -8334,7 +8334,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       });
       function notDeliveredBefore(l) {
         try {
-          var dd = JSON.parse(l.data || '{}');
+          var dd = (l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {});
           var u = dd.url || '';
           if (u && deliveredUrls[u]) return false;
           // IN-RUN dedup: reject a property/listing already assigned this run.
@@ -8354,7 +8354,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         var pool = (db.leads || []).filter(function(l) {
           if (l.customer_id !== cust.id || l.delivered !== 0 || l.product !== p) return false;
           if (!isLeadFresh24(l)) return false;
-          if (!leadPassesFilters(JSON.parse(l.data || '{}'))) return false;
+          if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}))) return false;
           if (!notDeliveredBefore(l)) return false;
           return true;
         });
@@ -8366,7 +8366,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         var globalPool = (db.leads || []).filter(function(l) {
           if (l.delivered !== 0 || l.product !== p) return false;
           if (!isLeadFresh24(l)) return false;
-          if (!leadPassesFilters(JSON.parse(l.data || '{}'))) return false;
+          if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}))) return false;
           if (!notDeliveredBefore(l)) return false;
           return true;
         });
