@@ -1,736 +1,236 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pricing — 9amLeads | Starter £25/wk, Pro £49/wk, Enterprise £99/wk</title>
-<meta name="description" content="Simple weekly pricing for fresh UK business opportunities. Starter £25/wk (5/day), Pro £49/wk (15/day), Enterprise £99/wk (25/day). 7-day free trial. No card required.">
-<meta property="og:title" content="Pricing — 9amLeads | Plans for Every Business">
-<meta property="og:description" content="Simple weekly pricing for fresh UK business opportunities. Starter £25/wk, Pro £49/wk, Enterprise £99/wk. 7-day free trial. No card required.">
+<title>Pricing · 9amLeads | Starter £25/wk, Pro £49/wk, Enterprise £99/wk</title>
+<meta name="description" content="Weekly pricing for fresh UK business opportunities. Plans from £25/wk, with daily lead delivery Mon-Fri. 7-day free trial.">
+<meta property="og:title" content="Pricing · 9amLeads | Plans for Every Business">
+<meta property="og:description" content="Weekly pricing for fresh UK business opportunities. All 5 lead types: Moving, Probate, New Business, Planning, Tenders. Starter £25/wk.">
 <meta property="og:url" content="https://9amleads.com/pricing/">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://9amleads.com/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Pricing — 9am Leads">
-<meta name="twitter:description" content="Simple weekly pricing for exclusive business leads. Starter £25/wk, Pro £49/wk, Enterprise £99/wk.">
+<meta name="twitter:title" content="Pricing · 9amLeads">
+<meta name="twitter:description" content="Weekly pricing for exclusive business leads. Starter £25/wk, Pro £49/wk, Enterprise £99/wk.">
 <link rel="canonical" href="https://9amleads.com/pricing/">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-:root{--accent:#0ea5e9;--accent-subtle:rgba(14,165,233,0.12);--accent-glow:rgba(14,165,233,0.3);--bg:#050505;--bg-card:#0a0a0a;--border:#1a1a1a;--text:#f5f5f5;--text2:#999;--muted:#666;--success:#22c55e;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif;--max-w:1140px;--nav-h:68px}
+:root{--accent:#0ea5e9;--bg:#050505;--bg-card:#0a0a0a;--border:#1a1a1a;--text:#f5f5f5;--text2:#94a3b8;--muted:#64748b;--success:#22c55e;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif;--max-w:1140px}
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6}
+body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.6}
 .container{max-width:var(--max-w);margin:0 auto;padding:0 24px}
 .section{padding:80px 0}
 .section-title{font-size:clamp(28px,3.5vw,44px);font-weight:800;text-align:center;letter-spacing:-1px;line-height:1.15;font-family:var(--ff-h);margin-bottom:14px}
 .gradient{background:linear-gradient(135deg,var(--accent),#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .section-sub{text-align:center;color:var(--muted);font-size:16px;max-width:620px;margin:0 auto 44px;line-height:1.7}
 a{color:inherit;text-decoration:none}
-nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);z-index:200;background:rgba(11,15,26,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+nav{position:fixed;top:0;left:0;right:0;height:68px;z-index:200;background:rgba(5,5,5,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
 .nav-inner{display:flex;align-items:center;justify-content:space-between;height:100%;max-width:var(--max-w);margin:0 auto;padding:0 24px}
-.logo{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:900;font-family:var(--ff-h);letter-spacing:-.5px}
+.logo{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:900;font-family:var(--ff-h);letter-spacing:-.5px;color:var(--text)}
 .logo span{color:var(--accent)}
 .nav-links{display:flex;align-items:center;gap:4px}
 .nav-links a{padding:8px 14px;font-size:14px;font-weight:500;color:var(--text2);border-radius:6px;transition:.2s}
 .nav-links a:hover{color:var(--text)}
 .nav-links .btn-nav{padding:9px 20px;background:linear-gradient(135deg,var(--accent),#0284c7);color:#fff!important;font-weight:600;border-radius:8px}
 .btn-pill{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:50px;background:var(--accent);color:#fff!important;font-weight:700;font-size:14px;border:none;cursor:pointer;transition:.25s;font-family:var(--ff-b)}
-.btn-pill:hover{transform:translateY(-2px);box-shadow:0 8px 30px var(--accent-glow)}
+.btn-pill:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(14,165,233,0.3)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--accent);color:var(--text)}
 footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px}
 .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;max-width:var(--max-w);margin:0 auto;padding:0 24px}
 .footer-grid h4{font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px}
 .footer-grid a{display:block;color:var(--muted);font-size:13px;padding:5px 0;transition:.2s}
 .footer-grid a:hover{color:var(--accent)}
 .footer-bottom{text-align:center;padding:20px 24px 0;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:32px;max-width:var(--max-w);margin-left:auto;margin-right:auto}
-.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:960px;margin:32px auto 0}
-.plan-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:36px 28px;text-align:center;transition:.3s;position:relative;overflow:hidden}
-.plan-card:hover{transform:translateY(-4px);border-color:var(--accent)}
-.plan-card.featured{border-color:var(--accent);box-shadow:0 0 40px rgba(14,165,233,0.08)}
-.plan-badge{position:absolute;top:0;left:0;right:0;padding:6px;background:linear-gradient(135deg,var(--accent),#0284c7);color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
-.plan-name{font-size:14px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px}
-.plan-price{font-size:44px;font-weight:900;font-family:var(--ff-h);color:var(--text);margin:8px 0}
-.plan-price span{font-size:16px;font-weight:400;color:var(--muted)}
-.plan-leads{font-size:14px;color:var(--text2);margin-bottom:6px}
-.plan-leads strong{color:var(--text)}
-.plan-list{list-style:none;padding:0;margin:20px 0;text-align:left}
-.plan-list li{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border)}
-.plan-list li i{color:var(--accent);font-size:11px;width:16px;flex-shrink:0}
-.plan-btn{width:100%;justify-content:center;padding:14px}
-.lead-type-tabs{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:40px}
-.lead-type-tabs a{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;color:var(--text2);border:1px solid var(--border);transition:.2s}
-.lead-type-tabs a:hover,.lead-type-tabs a.active{color:var(--accent);border-color:var(--accent);background:var(--accent-subtle)}
-.payment-note{max-width:650px;margin:32px auto 0;padding:20px 24px;background:var(--accent-subtle);border:1px solid rgba(14,165,233,0.15);border-radius:12px;text-align:center}
-.payment-note p{font-size:14px;color:var(--text2);line-height:1.7}
-.payment-note strong{color:var(--text)}
-@media(max-width:768px){.plan-grid{grid-template-columns:1fr;max-width:400px}.footer-grid{grid-template-columns:1fr 1fr}.nav-links a{display:none}}
-.s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(14,165,233,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,0.06) 1px,transparent 1px);background-size:60px 60px}
-.s-bg{position:absolute;inset:0;pointer-events:none;background-size:cover;background-position:center;opacity:.15}
-.s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.12}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-30px)}}
+/* Pricing cards */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:860px;margin:0 auto 40px}
+.pricing-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;text-align:center;position:relative;transition:.2s}
+.pricing-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 0 40px rgba(14,165,233,0.04)}
+.pricing-card.featured{border-color:var(--accent);background:linear-gradient(180deg,rgba(14,165,233,0.04),var(--bg-card))}
+.pricing-badge{position:absolute;top:0;left:0;right:0;padding:5px;background:linear-gradient(135deg,var(--accent),#0284c7);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;border-radius:12px 12px 0 0}
+.pricing-name{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:4px}
+.pricing-price{font-size:38px;font-weight:900;font-family:var(--ff-h);color:var(--text);margin:4px 0 2px}
+.pricing-price span{font-size:14px;font-weight:400;color:var(--muted)}
+.pricing-leads{font-size:13px;color:var(--text2);margin-bottom:10px}
+.pricing-leads strong{color:var(--text)}
+.pricing-features{list-style:none;padding:0;margin:14px 0;text-align:left}
+.pricing-features li{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;color:var(--text2);border-bottom:1px solid rgba(255,255,255,0.03)}
+.pricing-features li i{color:var(--accent);font-size:11px;width:16px;flex-shrink:0}
+.pricing-btn{width:100%;justify-content:center;padding:10px;font-size:13px}
+/* Product selector tabs */
+.prod-tabs{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:32px}
+.prod-tab{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;color:var(--text2);border:1px solid var(--border);cursor:pointer;transition:.2s;background:transparent}
+.prod-tab:hover,.prod-tab.active{color:var(--accent);border-color:var(--accent);background:rgba(14,165,233,0.06)}
+/* Comparison table */
+.comp-table{width:100%;border-collapse:collapse;font-size:13px;max-width:800px;margin:0 auto 24px}
+.comp-table th{text-align:center;padding:12px 10px;font-weight:600;color:var(--muted);border-bottom:2px solid var(--border)}
+.comp-table th:first-child{text-align:left}
+.comp-table td{padding:10px;text-align:center;color:var(--text2);border-bottom:1px solid rgba(255,255,255,0.03)}
+.comp-table td:first-child{text-align:left;font-weight:600;color:var(--text)}
+.comp-table .price{color:var(--text);font-weight:700}
+@media(max-width:768px){
+  .pricing-grid{grid-template-columns:1fr;max-width:400px}
+  .footer-grid{grid-template-columns:1fr 1fr}
+  .nav-links a:not(.btn-nav){display:none}
+}
+@media(max-width:480px){
+  .footer-grid{grid-template-columns:1fr}
+  .pricing-card{padding:20px 16px}
+}
 </style>
-</head>
-<body>
+</head><body>
 <nav><div class="nav-inner">
 <a href="/" class="logo">9am<span>Leads</span></a>
 <div class="nav-links">
 <a href="/">Home</a>
 <a href="/pricing/" style="color:var(--text)">Pricing</a>
 <a href="/portal/#signup" class="btn-nav"><i class="fas fa-clock"></i> Start Free Trial</a>
-<a href="/portal/" style="font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;padding:8px 14px">Sign In</a>
-<a href="/portal/#signup" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:6px 16px;border-radius:8px;font-weight:600;font-size:13px;text-decoration:none;margin-left:4px">Sign Up</a>
+<a href="/portal/" style="font-size:13px;font-weight:600;color:var(--text2);padding:8px 14px">Sign In</a>
 </div>
 </div></nav>
 
-<section class="section" style="position:relative;overflow:hidden;padding-top:120px">
-<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1400&q=80')"></div>
-<div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<section class="section" style="padding-top:120px">
 <div class="container">
-<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px">Own Your Territory</div>
-<h1 class="section-title">Fresh UK Business Opportunities <span class="gradient">Delivered at 9am</span></h1>
-<p class="section-sub">Pick your lead type, choose your territory, and receive exclusive opportunities every morning — analysed with AI-generated outreach messages and CRM-ready exports. Weekly subscriptions. Cancel anytime.</p>
+<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px">Simple Weekly Pricing</div>
+<h1 class="section-title">Every Lead Type. <span class="gradient">One Price</span></h1>
+<p class="section-sub">All 5 products ,  Moving, Probate, New Business, Planning, Tenders ,  start at <strong style="color:var(--text)">£25/week</strong>. Choose your plan, pick your territory, and receive exclusive leads every morning at 9am.</p>
 
-<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;max-width:1000px;margin:0 auto 32px">
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
-<div style="font-size:10px;font-weight:700;color:#ff6b35;margin-bottom:4px">Moving Leads</div>
-<div style="font-size:20px;font-weight:900;font-family:var(--ff-h)">£1k–£3k</div>
-<div style="font-size:9px;color:var(--muted);margin-top:2px">per move won</div>
+<!-- Product selector tabs -->
+<div class="prod-tabs" id="prod-tabs">
+<button class="prod-tab active" data-prod="all" onclick="switchProduct('all')">All Products</button>
+<button class="prod-tab" data-prod="moving" onclick="switchProduct('moving')">Moving</button>
+<button class="prod-tab" data-prod="probate" onclick="switchProduct('probate')">Probate</button>
+<button class="prod-tab" data-prod="newbusiness" onclick="switchProduct('newbusiness')">New Business</button>
+<button class="prod-tab" data-prod="planning" onclick="switchProduct('planning')">Planning</button>
+<button class="prod-tab" data-prod="tenders" onclick="switchProduct('tenders')">Tenders</button>
 </div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
-<div style="font-size:10px;font-weight:700;color:#a855f7;margin-bottom:4px">Probate Leads</div>
-<div style="font-size:20px;font-weight:900;font-family:var(--ff-h)">£1k–£5k</div>
-<div style="font-size:9px;color:var(--muted);margin-top:2px">per estate won</div>
-</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
-<div style="font-size:10px;font-weight:700;color:#06b6d4;margin-bottom:4px">New Business</div>
-<div style="font-size:20px;font-weight:900;font-family:var(--ff-h)">£500–£5k</div>
-<div style="font-size:9px;color:var(--muted);margin-top:2px">per client won</div>
-</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
-<div style="font-size:10px;font-weight:700;color:#10b981;margin-bottom:4px">Planning</div>
-<div style="font-size:20px;font-weight:900;font-family:var(--ff-h)">£5k–£50k</div>
-<div style="font-size:9px;color:var(--muted);margin-top:2px">per project won</div>
-</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
-<div style="font-size:10px;font-weight:700;color:#6366f1;margin-bottom:4px">Tenders</div>
-<div style="font-size:20px;font-weight:900;font-family:var(--ff-h)">£50k–£500k</div>
-<div style="font-size:9px;color:var(--muted);margin-top:2px">per contract won</div>
-</div>
-</div>
-<p style="text-align:center;font-size:12px;color:var(--muted);margin-top:-24px;margin-bottom:28px">One single win covers your entire subscription for months or years. Win consistently and the numbers speak for themselves.</p>
 
-<div class="plan-grid">
-<div class="plan-card">
-<div class="plan-name">Starter</div>
-<div class="plan-price">£25<span>/wk</span></div>
-<div class="plan-leads"><strong>5 leads</strong> per day</div>
-<div class="plan-leads"><strong>25 leads</strong> per week</div>
-<div class="plan-leads"><strong>100 leads</strong> per month</div>
-<ul class="plan-list">
-<li><i class="fas fa-check"></i> Choose any 1 lead type</li>
+<!-- Pricing cards -->
+<div class="pricing-grid">
+<!-- Starter -->
+<div class="pricing-card">
+<div class="pricing-name">Starter</div>
+<div class="pricing-price">£25<span>/wk</span></div>
+<div class="pricing-leads" id="leads-starter"><strong>5</strong> leads/day · Mon-Fri</div>
+<ul class="pricing-features">
+<li><i class="fas fa-check"></i> <span id="feat-area-starter">3 postcode areas</span></li>
+<li><i class="fas fa-check"></i> Exclusive ,  no competition</li>
 <li><i class="fas fa-check"></i> Daily delivery at 9am</li>
-<li><i class="fas fa-check"></i> Exclusive no competition</li>
-<li><i class="fas fa-check"></i> Weekly payments</li>
-<li><i class="fas fa-check"></i> 7 day free trial</li>
+<li><i class="fas fa-check"></i> AI outreach messages included</li>
+<li><i class="fas fa-check"></i> 7-day free trial</li>
 </ul>
-<a href="/portal/#signup" class="btn-pill plan-btn">Start Free Trial</a>
+<a href="/portal/#signup" class="btn-pill pricing-btn">Start Free Trial</a>
 </div>
-
-<div class="plan-card featured">
-<div class="plan-badge">Most Popular</div>
-<div class="plan-name">Pro</div>
-<div class="plan-price">£49<span>/wk</span></div>
-<div class="plan-leads"><strong>15 leads</strong> per day</div>
-<div class="plan-leads"><strong>75 leads</strong> per week</div>
-<div class="plan-leads"><strong>300 leads</strong> per month</div>
-<ul class="plan-list">
-<li><i class="fas fa-check"></i> Choose any 1 lead type</li>
+<!-- Pro -->
+<div class="pricing-card featured">
+<div class="pricing-badge">Most Popular</div>
+<div class="pricing-name">Pro</div>
+<div class="pricing-price">£49<span>/wk</span></div>
+<div class="pricing-leads" id="leads-pro"><strong>15</strong> leads/day · Mon-Fri</div>
+<ul class="pricing-features">
+<li><i class="fas fa-check"></i> <span id="feat-area-pro">Unlimited areas</span></li>
+<li><i class="fas fa-check"></i> Exclusive ,  no competition</li>
 <li><i class="fas fa-check"></i> Daily delivery at 9am</li>
-<li><i class="fas fa-check"></i> Exclusive no competition</li>
-<li><i class="fas fa-check"></i> Weekly payments</li>
-<li><i class="fas fa-check"></i> 7 day free trial</li>
+<li><i class="fas fa-check"></i> AI outreach messages included</li>
 <li><i class="fas fa-check"></i> Priority support</li>
+</ul>
+<a href="/portal/#signup" class="btn-pill pricing-btn" style="background:linear-gradient(135deg,#6366f1,#0ea5e9)">Start Free Trial</a>
+</div>
+<!-- Enterprise -->
+<div class="pricing-card">
+<div class="pricing-name">Enterprise</div>
+<div class="pricing-price">£99<span>/wk</span></div>
+<div class="pricing-leads" id="leads-enterprise"><strong>25</strong> leads/day · Mon-Fri</div>
+<ul class="pricing-features">
+<li><i class="fas fa-check"></i> <span id="feat-area-enterprise">All UK coverage</span></li>
+<li><i class="fas fa-check"></i> Exclusive ,  no competition</li>
+<li><i class="fas fa-check"></i> Daily delivery at 9am</li>
+<li><i class="fas fa-check"></i> AI outreach messages included</li>
 <li><i class="fas fa-check"></i> CRM-ready exports</li>
 </ul>
-<a href="/portal/#signup" class="btn-pill plan-btn">Start Free Trial</a>
-</div>
-
-<div class="plan-card">
-<div class="plan-name">Enterprise</div>
-<div class="plan-price">£99<span>/wk</span></div>
-<div class="plan-leads"><strong>25 leads</strong> per day</div>
-<div class="plan-leads"><strong>175 leads</strong> per week</div>
-<div class="plan-leads"><strong>350 leads</strong> per month</div>
-<ul class="plan-list">
-<li><i class="fas fa-check"></i> Choose any 1 lead type</li>
-<li><i class="fas fa-check"></i> Daily delivery at 9am</li>
-<li><i class="fas fa-check"></i> Exclusive no competition</li>
-<li><i class="fas fa-check"></i> Weekly payments</li>
-<li><i class="fas fa-check"></i> 7 day free trial</li>
-<li><i class="fas fa-check"></i> Priority support</li>
-<li><i class="fas fa-check"></i> Multi-territory</li>
-<li><i class="fas fa-check"></i> CRM integration — HubSpot, Salesforce, Pipedrive, Zoho, Freshsales, Tradify, Clio + 100s more via Zapier</li>
-</ul>
-<a href="/portal/#signup" class="btn-pill plan-btn">Start Free Trial</a>
+<a href="/portal/#signup" class="btn-pill pricing-btn" style="background:linear-gradient(135deg,#a855f7,#6366f1)">Start Free Trial</a>
 </div>
 </div>
 
-<!-- LEAD TERRITORY CALCULATOR -->
-<div style="max-width:860px;margin:48px auto 0;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:36px 32px">
+<p style="text-align:center;font-size:12px;color:var(--muted);margin:-24px 0 40px">All prices are per week. Cancel anytime. 7-day free trial ,  No obligation.</p>
+
+<!-- Comparison table -->
+<h2 style="font-size:20px;font-weight:800;font-family:var(--ff-h);text-align:center;margin-bottom:16px">Leads per day by product</h2>
+<table class="comp-table">
+<tr><th></th><th>Starter<br><span style="font-size:11px;color:var(--accent)">£25/wk</span></th><th>Pro<br><span style="font-size:11px;color:var(--accent)">£49/wk</span></th><th>Enterprise<br><span style="font-size:11px;color:var(--accent)">£99/wk</span></th></tr>
+<tr><td>Moving (residential + commercial)</td><td class="price">5/day</td><td class="price">15/day</td><td class="price">30/day</td></tr>
+<tr><td>Probate</td><td class="price">2/day</td><td class="price">5/day</td><td class="price">10/day</td></tr>
+<tr><td>New Business</td><td class="price">5/day</td><td class="price">15/day</td><td class="price">40/day</td></tr>
+<tr><td>Planning</td><td class="price">3/day</td><td class="price">8/day</td><td class="price">15/day</td></tr>
+<tr><td>Tenders</td><td class="price">5/day</td><td class="price">15/day</td><td class="price">30/day</td></tr>
+</table>
+<p style="text-align:center;font-size:11px;color:var(--muted);margin:-16px 0 40px">Actual daily volume depends on real market data in your selected area. All leads are from live public sources.</p>
+
+<!-- Why 9amLeads -->
+<div style="max-width:800px;margin:48px auto 0;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:36px 32px">
 <div style="text-align:center;margin-bottom:24px">
-<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:6px">Lead Territory Calculator</div>
-<h3 style="font-size:20px;font-weight:800;font-family:var(--ff-h);color:var(--text)">Estimate Your <span style="color:var(--accent)">Weekly Lead Volume</span></h3>
-<p style="font-size:13px;color:var(--muted);margin-top:4px">Select your lead type, area, and plan to see estimated weekly delivery.</p>
+<h3 style="font-size:20px;font-weight:800;font-family:var(--ff-h);color:var(--text)">Why 9amLeads?</h3>
 </div>
-
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
-<div>
-<label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">1. Lead Type</label>
-<select id="calc-type" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer" onchange="updateCalcArea()">
-<option value="moving">Moving Leads</option>
-<option value="probate">Probate Leads</option>
-<option value="newbusiness">New Business Alerts</option>
-<option value="planning">Planning Permission</option>
-<option value="tenders">Public Sector Tenders</option>
-</select>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px 20px">
+<div style="font-size:20px;margin-bottom:8px;color:var(--accent)"><i class="fas fa-coins"></i></div>
+<h4 style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">One deal covers your year</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">A single converted lead can pay for your entire annual subscription. Most customers see 10x–50x ROI in their first month.</p>
 </div>
-<div>
-<label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px" id="calc-area-label">2. Postcode Area</label>
-<select id="calc-area" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer" onchange="updateCalculator()">
-<option value="london">London (E, EC, N, NW, SE, SW, W, WC)</option>
-<option value="south-east">South East (BN, CT, GU, KT, ME, RH, SM, TN, TW)</option>
-<option value="south-west">South West (BA, BH, BS, DT, EX, PL, PO, SO, SP, TA, TQ, TR)</option>
-<option value="midlands-east">Midlands East (B, CV, DE, DY, LE, LN, NG, NN, ST, WS, WV)</option>
-<option value="midlands-west">Midlands West (GL, HR, OX, SN, WR)</option>
-<option value="north-east">North East (DH, DL, DN, HU, NE, SR, TS, YO)</option>
-<option value="north-west">North West (BB, BD, BL, CA, CH, CW, FY, L, LA, M, OL, PR, SK, WA, WN)</option>
-<option value="east">East (AL, CB, CM, CO, HP, IP, LU, MK, NR, PE, SG, SS)</option>
-<option value="wales">Wales (CF, LD, LL, NP, SA, SY)</option>
-<option value="scotland">Scotland (AB, DD, EH, FK, G, IV, KA, KW, KY, ML, PA, PH, TD, ZE)</option>
-</select>
+<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px 20px">
+<div style="font-size:20px;margin-bottom:8px;color:var(--accent)"><i class="fas fa-shield-alt"></i></div>
+<h4 style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">No competition on your leads</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Every lead is exclusive to you ,  one business per industry per territory. You contact prospects first, every time.</p>
 </div>
-<div>
-<label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">3. Plan Size</label>
-<select id="calc-plan" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer" onchange="updateCalculator()">
-<option value="starter">Starter</option>
-<option value="growth">Pro</option>
-<option value="power">Enterprise</option>
-</select>
+<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px 20px">
+<div style="font-size:20px;margin-bottom:8px;color:var(--accent)"><i class="fas fa-robot"></i></div>
+<h4 style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">AI-powered intelligence</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Every lead comes with an opportunity score, AI-generated outreach message, and CRM-ready export. Complete sales system at 9am.</p>
+</div>
+<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px 20px">
+<div style="font-size:20px;margin-bottom:8px;color:var(--accent)"><i class="fas fa-ban"></i></div>
+<h4 style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Cancel anytime. No lock-in.</h4>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Weekly payments with no long-term contracts. Cancel from your dashboard in seconds. Try any lead type free for 7 days.</p>
+</div>
 </div>
 </div>
 
-<div id="calc-results" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px">
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center">
-<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Est. Leads/Day</div>
-<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--accent)" id="calc-leads">5</div>
-</div>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center">
-<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Weekly Price</div>
-<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--text)" id="calc-price">£25</div>
-<div style="font-size:11px;color:var(--muted)" id="calc-interval">/wk</div>
-</div>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center">
-<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Delivery</div>
-<div style="font-size:13px;font-weight:700;color:var(--success);margin-top:6px">Daily at 9am</div>
-<div style="font-size:11px;color:var(--muted);margin-top:2px">Exclusive to you</div>
-</div>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center">
-<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Exclusivity</div>
-<div style="font-size:12px;font-weight:700;color:var(--accent);margin-top:4px">No Competition</div>
-<div style="font-size:10px;color:var(--muted);margin-top:2px">Your leads are yours alone</div>
-</div>
-</div>
-
-<p style="font-size:11px;color:var(--muted);line-height:1.6;text-align:center;max-width:700px;margin:12px auto 0;border-top:1px solid var(--border);padding-top:16px">Estimated lead volumes are based on postcode area, lead type, recent public activity, and available data sources. Lead numbers may vary day to day. 9amLeads does not guarantee an exact number of leads every day, but we aim to deliver the freshest relevant opportunities available for your selected area or category.</p>
-</div>
-
-<!-- Lead Value Calculator -->
-<div style="max-width:860px;margin:48px auto 0;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:36px 32px">
-<div style="text-align:center;margin-bottom:24px">
-<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:6px">Lead Value Calculator</div>
-<h3 style="font-size:20px;font-weight:800;font-family:var(--ff-h);color:var(--text)">How Much Could <span style="color:var(--accent)">One Lead Be Worth?</span></h3>
-</div>
-<div style="margin-bottom:20px">
-<label style="display:flex;justify-content:space-between;font-size:14px;font-weight:600;margin-bottom:8px"><span>Estimated Profit Per Lead</span><span id="valueCalcProfit" style="color:var(--accent)">£500</span></label>
-<input type="range" id="valueCalcSlider" min="100" max="5000" value="500" step="50" style="width:100%;-webkit-appearance:none;height:5px;border-radius:3px;background:var(--border);outline:none;accent-color:var(--accent)">
-</div>
-<div style="text-align:center;padding:20px;background:var(--bg);border:1px solid var(--border);border-radius:10px">
-<p style="font-size:14px;color:var(--text2);line-height:1.7">At 5 leads/day, that could be <strong style="font-size:20px;color:var(--accent)" id="valueCalcResult">£17,500</strong> in additional revenue per week</p>
-</div>
-</div>
-
-<div class="payment-note">
-<p><i class="fas fa-credit-card" style="color:var(--accent);margin-right:6px"></i> <strong>Weekly payments.</strong> Start with a 7-day free trial — no charge. Upgrade after your trial and your first weekly payment is taken immediately via Stripe. Cancel anytime.</p>
-</div>
-
-<div style="max-width:650px;margin:16px auto 0;padding:20px 24px;background:var(--accent-subtle);border:1px solid rgba(14,165,233,0.15);border-radius:12px;text-align:center">
-<p style="font-size:13px;color:var(--text2);line-height:1.7"><i class="fas fa-shield-alt" style="color:var(--accent);margin-right:6px"></i> <strong style="color:var(--text)">Cancel anytime.</strong> You can cancel your subscription at any time from your dashboard. If you cancel, you'll continue to have access until the end of your current billing period. No hidden fees. No cancellation charges. Your data is yours to keep.</p>
-</div>
-
-<div class="lead-type-tabs" style="margin-top:48px">
-<span style="color:var(--muted);font-size:13px;display:flex;align-items:center;gap:6px"><i class="fas fa-check-circle" style="color:var(--accent)"></i> Available for: </span>
-<span style="padding:6px 12px;border-radius:6px;font-size:12px;background:rgba(255,107,53,0.1);color:#ff6b35;font-weight:600">Moving</span>
-<span style="padding:6px 12px;border-radius:6px;font-size:12px;background:rgba(168,85,247,0.1);color:#a855f7;font-weight:600">Probate</span>
-<span style="padding:6px 12px;border-radius:6px;font-size:12px;background:rgba(6,182,212,0.1);color:#06b6d4;font-weight:600">New Business</span>
-<span style="padding:6px 12px;border-radius:6px;font-size:12px;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600">Planning</span>
-<span style="padding:6px 12px;border-radius:6px;font-size:12px;background:rgba(99,102,241,0.1);color:#6366f1;font-weight:600">Tenders</span>
-</div>
-
-<div style="max-width:700px;margin:48px auto 0;text-align:center">
-<h3 style="font-size:18px;font-weight:700;font-family:var(--ff-h);margin-bottom:10px">Not sure which plan fits?</h3>
-<p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:20px">Try any plan free for 7 days no card required. You'll receive real, exclusive leads at 9am every morning. Cancel anytime.</p>
+<!-- CTA -->
+<div style="text-align:center;margin-top:48px">
+<h3 style="font-size:18px;font-weight:700;font-family:var(--ff-h);margin-bottom:10px">Ready to get started?</h3>
+<p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:20px">Try any lead type free for 7 days. No obligation. Real leads at 9am every morning.</p>
 <a href="/portal/#signup" class="btn-pill" style="font-size:16px;padding:16px 40px"><i class="fas fa-gift"></i> Start Your Free Trial</a>
 </div>
 
-<!-- EXCLUSIVITY SECTION -->
-<div style="max-width:860px;margin:48px auto 0;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:36px 32px">
-<div style="text-align:center;margin-bottom:20px">
-<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:8px">Territory Exclusivity</div>
-<h3 style="font-size:20px;font-weight:800;font-family:var(--ff-h);color:var(--text)">Are the leads <span style="color:var(--accent)">exclusive</span>?</h3>
-</div>
-<p style="font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:16px">We do not want multiple identical businesses all chasing the same local lead. That is why 9amLeads is designed around <strong style="color:var(--text)">territories and business categories</strong>.</p>
-<p style="font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:16px">For local lead types, we aim to offer <strong style="color:var(--text)">one business per industry per territory</strong>.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:16px">
-<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:6px"><i class="fas fa-check-circle" style="color:var(--accent);margin-right:6px"></i> If a removal company buys EN1 moving leads, we do not sell the same EN1 moving lead package to another removal company.</p>
-<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-top:6px">However, the same area may be available to a <strong style="color:var(--text)">different type of business</strong>.</p>
-</div>
-<p style="font-size:14px;color:var(--text2);line-height:1.8"><i class="fas fa-lightbulb" style="color:var(--accent);margin-right:6px"></i> A planning lead could be useful to one builder, one architect, and one kitchen company, but not ten builders all competing for the same job.</p>
-<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-top:16px;text-align:center;border-top:1px solid var(--border);padding-top:16px">This helps keep the service fair, valuable, and more useful for customers.</p>
-</div>
+</div></section>
 
-<div style="max-width:860px;margin:48px auto 0;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:36px 32px">
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:36px">
-<div>
-<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:14px">Why 9amLeads Is Different</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-clock" style="color:var(--accent);font-size:11px"></i> Daily delivery at 9am</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-fire" style="color:var(--accent);font-size:11px"></i> Opportunity scoring</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-robot" style="color:var(--accent);font-size:11px"></i> AI-generated outreach messages</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-file-export" style="color:var(--accent);font-size:11px"></i> CRM exports (CSV, Excel)</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-calendar-week" style="color:var(--accent);font-size:11px"></i> Weekly subscription</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-ban" style="color:var(--accent);font-size:11px"></i> Cancel anytime</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-database" style="color:var(--accent);font-size:11px"></i> Public data intelligence</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-map-marker-alt" style="color:var(--accent);font-size:11px"></i> Territory-based exclusivity</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-tags" style="color:var(--accent);font-size:11px"></i> Industry filtering</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-crosshairs" style="color:var(--accent);font-size:11px"></i> Postcode targeting</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-chart-line" style="color:var(--accent);font-size:11px"></i> Weekly reporting</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-headset" style="color:var(--accent);font-size:11px"></i> Priority support options</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-rocket" style="color:var(--accent);font-size:11px"></i> Automated follow-up campaigns (Day 1, 3, 5, 10)</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-star" style="color:var(--accent);font-size:11px"></i> Prospect research & value estimates</div>
-<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)"><i class="fas fa-users" style="color:var(--accent);font-size:11px"></i> Partner marketplace & white-label reports</div>
+<footer><div class="footer-grid">
+<div><h4>9amLeads</h4><p style="font-size:13px;color:var(--muted);line-height:1.6">Fresh UK business opportunities delivered to your inbox every morning at 9am. From official sources ,  Rightmove, Companies House, Gov.uk, and 350+ council portals.</p></div>
+<div><h4>Products</h4><a href="/movingleadsdaily/">Moving</a><a href="/probateleads/">Probate</a><a href="/newbusinessalert/">New Business</a><a href="/planningleads/">Planning</a><a href="/tenders/">Tenders</a></div>
+<div><h4>Company</h4><a href="/about/">About</a><a href="/pricing/">Pricing</a><a href="/blog/">Blog</a><a href="/contact/">Contact</a></div>
+<div><h4>Legal</h4><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/cookies.html">Cookies</a></div>
 </div>
-</div>
-<div>
-<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:14px">How It Works</div>
-<div style="display:flex;flex-direction:column;gap:10px">
-<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div><div><div style="font-size:13px;font-weight:600;color:var(--text)">Choose your lead type</div><div style="font-size:11px;color:var(--muted)">Moving, Probate, New Business, Planning or Tenders</div></div></div>
-<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div><div><div style="font-size:13px;font-weight:600;color:var(--text)">Choose your territory or category</div><div style="font-size:11px;color:var(--muted)">Select postcode region or tender industry</div></div></div>
-<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div><div><div style="font-size:13px;font-weight:600;color:var(--text)">Estimate your volume</div><div style="font-size:11px;color:var(--muted)">Use our calculator to estimate daily opportunities in your area</div></div></div>
-<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">4</div><div><div style="font-size:13px;font-weight:600;color:var(--text)">Subscribe weekly</div><div style="font-size:11px;color:var(--muted)">7 day free trial, then weekly payments — cancel anytime</div></div></div>
-<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">5</div><div><div style="font-size:13px;font-weight:600;color:var(--text)">Receive at 9am with AI tools</div><div style="font-size:11px;color:var(--muted)">Daily opportunities scored, with AI outreach messages and CRM exports</div></div></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- STAGE 34: INDUSTRY PACKAGES -->
-<div class="container" style="margin-top:48px">
-<div style="text-align:center;margin-bottom:28px">
-<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:8px">Industry Packages</div>
-<h2 style="font-size:24px;font-weight:800;font-family:var(--ff-h);color:var(--text)">Bundle <span style="color:var(--accent)">&amp; Save</span></h2>
-<p style="font-size:13px;color:var(--muted);margin-top:4px">Combine multiple lead types tailored to your industry. Save vs buying separately.</p>
-</div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;max-width:1000px;margin:0 auto">
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center;display:flex;flex-direction:column">
-<div style="font-size:28px;margin-bottom:8px">🏗️</div>
-<h3 style="font-size:16px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Builder Package</h3>
-<div style="font-size:11px;color:var(--muted);margin-bottom:10px">Planning + Probate + Tenders</div>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--text2);line-height:1.6">3 lead types combined for construction professionals looking for planning applications, probate estate work, and government contracts.</div>
-<div style="font-size:20px;font-weight:800;font-family:var(--ff-h);color:var(--accent);margin-bottom:2px">£139<span style="font-size:12px;color:var(--muted);font-weight:400">/wk</span></div>
-<div style="font-size:10px;color:var(--success);margin-bottom:14px">Save £18/week vs individual plans</div>
-<a href="/portal/?plan=builder-package" class="btn-pill" style="font-size:13px;padding:10px 24px">Start Free Trial</a>
-</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center;display:flex;flex-direction:column">
-<div style="font-size:28px;margin-bottom:8px">📈</div>
-<h3 style="font-size:16px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Marketing Package</h3>
-<div style="font-size:11px;color:var(--muted);margin-bottom:10px">New Business + Tenders</div>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--text2);line-height:1.6">Target new companies and government contracts. Ideal for agencies, consultants, and service providers.</div>
-<div style="font-size:20px;font-weight:800;font-family:var(--ff-h);color:var(--accent);margin-bottom:2px">£69<span style="font-size:12px;color:var(--muted);font-weight:400">/wk</span></div>
-<div style="font-size:10px;color:var(--success);margin-bottom:14px">Save £9/week vs individual plans</div>
-<a href="/portal/?plan=marketing-package" class="btn-pill" style="font-size:13px;padding:10px 24px">Start Free Trial</a>
-</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center;display:flex;flex-direction:column">
-<div style="font-size:28px;margin-bottom:8px">🏠</div>
-<h3 style="font-size:16px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Property Package</h3>
-<div style="font-size:11px;color:var(--muted);margin-bottom:10px">Probate + Planning + New Business</div>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--text2);line-height:1.6">Full property market coverage. Estate instructions, planning projects, and new business opportunities.</div>
-<div style="font-size:20px;font-weight:800;font-family:var(--ff-h);color:var(--accent);margin-bottom:2px">£109<span style="font-size:12px;color:var(--muted);font-weight:400">/wk</span></div>
-<div style="font-size:10px;color:var(--success);margin-bottom:14px">Save £18/week vs individual plans</div>
-<a href="/portal/?plan=property-package" class="btn-pill" style="font-size:13px;padding:10px 24px">Start Free Trial</a>
-</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center;display:flex;flex-direction:column">
-<div style="font-size:28px;margin-bottom:8px">🚚</div>
-<h3 style="font-size:16px;font-weight:700;font-family:var(--ff-h);margin-bottom:4px">Moving Package</h3>
-<div style="font-size:11px;color:var(--muted);margin-bottom:10px">Moving + Probate</div>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--text2);line-height:1.6">Moving leads plus probate estate work. For removal companies expanding into probate services.</div>
-<div style="font-size:20px;font-weight:800;font-family:var(--ff-h);color:var(--accent);margin-bottom:2px">£49<span style="font-size:12px;color:var(--muted);font-weight:400">/wk</span></div>
-<div style="font-size:10px;color:var(--success);margin-bottom:14px">Save £9/week vs individual plans</div>
-<a href="/portal/?plan=moving-package" class="btn-pill" style="font-size:13px;padding:10px 24px">Start Free Trial</a>
-</div>
-</div>
-</div>
-
-<!-- STAGE 35: 9AMLEADS PRO -->
-<div class="container" style="margin-top:48px">
-<div style="text-align:center;margin-bottom:28px">
-<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:8px">Premium Plan</div>
-<h2 style="font-size:24px;font-weight:800;font-family:var(--ff-h);color:var(--text)">9amLeads <span style="color:var(--accent)">Pro</span></h2>
-<p style="font-size:13px;color:var(--muted);margin-top:4px">Everything you need to dominate your market. All lead types, all features, unlimited potential.</p>
-</div>
-<div style="max-width:500px;margin:0 auto;background:linear-gradient(135deg,rgba(14,165,233,0.04),rgba(2,132,199,0.02));border:2px solid rgba(14,165,233,0.15);border-radius:16px;padding:36px;text-align:center">
-<div style="font-size:36px;margin-bottom:8px">⭐</div>
-<h3 style="font-size:20px;font-weight:800;font-family:var(--ff-h);margin-bottom:4px">9amLeads Pro</h3>
-<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5">All 5 lead types · Unlimited territories · Opportunity scoring · AI outreach · AI prospect research · CRM exports · Territory dashboard · ROI dashboard · Weekly reports · Priority delivery · Dedicated support</p>
-<div style="font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--accent);margin-bottom:2px">£249<span style="font-size:14px;color:var(--muted);font-weight:400">/wk</span></div>
-<div style="font-size:11px;color:var(--text2);margin-bottom:16px;line-height:1.5">Everything included. Unlimited postcode territories across all 5 lead types. Priority lead delivery. Dedicated account manager. Custom integrations available.</div>
-<a href="/portal/?plan=pro" class="btn-pill" style="font-size:15px;padding:14px 36px">Start Free Trial</a>
-</div>
-</div>
-
-<!-- TERRITORY OPPORTUNITY MAP -->
-<div class="container" style="margin-top:60px">
-<div style="text-align:center;margin-bottom:28px">
-<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:8px">Territory Opportunity Map</div>
-<h2 style="font-size:24px;font-weight:800;font-family:var(--ff-h);color:var(--text)">Postcode Area <span style="color:var(--accent)">Availability</span></h2>
-<p style="font-size:13px;color:var(--muted);margin-top:4px">Estimated daily lead volumes by territory and lead type. Check availability before subscribing.</p>
-</div>
-
-<div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--bg-card)">
-<table style="width:100%;border-collapse:collapse;font-size:11px">
-<thead>
-<tr style="background:var(--bg);border-bottom:1px solid var(--border)">
-<th style="padding:10px 12px;text-align:left;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-size:10px">Postcode Area</th>
-<th style="padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-size:10px">Moving</th>
-<th style="padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-size:10px">Probate</th>
-<th style="padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-size:10px">New Business</th>
-<th style="padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-size:10px">Planning</th>
-<th style="padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-size:10px">Tenders</th>
-<th style="padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-size:10px">Status</th>
-<th style="padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-size:10px">Starting Price</th>
-</tr>
-</thead>
-<tbody id="territory-table"></tbody>
-</table>
-</div>
-<p style="font-size:10px;color:var(--muted);text-align:center;margin-top:10px">* Estimated daily volumes are based on recent public data activity. Actual volumes may vary. Status is updated manually. Contact us to check current availability.</p>
-</div>
+<div class="footer-bottom"><p>&copy; 2026 9amLeads. All rights reserved.</p> <span style="display:block;margin-top:4px">9am Leads Ltd, Company No. 17402522 · 66 Paul Street, London EC2A 4NA</span></div></footer>
 
 <script>
-// Territory data with estimated daily lead volumes per type
-var TERRITORY_DATA = [
-  { code: 'London', postcodes: 'E, EC, N, NW, SE, SW, W, WC', moving: '5-10', probate: '2-5', newbiz: '5-15', planning: '3-8', tenders: '5-12', status: { moving: 'available', probate: 'reserved', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£25/wk' },
-  { code: 'South East', postcodes: 'BN, CT, GU, KT, ME, RH, SM, TN, TW', moving: '3-7', probate: '2-4', newbiz: '4-10', planning: '3-7', tenders: '3-8', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£25/wk' },
-  { code: 'South West', postcodes: 'BA, BH, BS, DT, EX, PL, PO, SO, SP, TA, TQ, TR', moving: '2-5', probate: '1-3', newbiz: '3-7', planning: '2-5', tenders: '2-5', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'sold', tenders: 'available' }, price: '£25/wk' },
-  { code: 'Midlands East', postcodes: 'B, CV, DE, DY, LE, LN, NG, NN, ST, WS, WV', moving: '3-7', probate: '2-4', newbiz: '4-8', planning: '2-5', tenders: '3-6', status: { moving: 'sold', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'reserved' }, price: '£25/wk' },
-  { code: 'Midlands West', postcodes: 'GL, HR, OX, SN, WR', moving: '2-5', probate: '1-3', newbiz: '3-6', planning: '2-4', tenders: '2-4', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£25/wk' },
-  { code: 'North East', postcodes: 'DH, DL, DN, HU, NE, SR, TS, YO', moving: '2-5', probate: '1-3', newbiz: '3-6', planning: '2-4', tenders: '3-6', status: { moving: 'available', probate: 'available', newbiz: 'reserved', planning: 'available', tenders: 'available' }, price: '£25/wk' },
-  { code: 'North West', postcodes: 'BB, BD, BL, CA, CH, CW, FY, L, LA, M, OL, PR, SK, WA, WN', moving: '3-7', probate: '2-4', newbiz: '4-8', planning: '2-5', tenders: '3-6', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£25/wk' },
-  { code: 'East of England', postcodes: 'AL, CB, CM, CO, HP, IP, LU, MK, NR, PE, SG, SS', moving: '3-6', probate: '2-4', newbiz: '4-8', planning: '2-5', tenders: '3-6', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£25/wk' },
-  { code: 'Wales', postcodes: 'CF, LD, LL, NP, SA, SY', moving: '1-4', probate: '1-2', newbiz: '2-5', planning: '1-3', tenders: '2-4', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£25/wk' },
-  { code: 'Scotland', postcodes: 'AB, DD, EH, FK, G, IV, KA, KW, KY, ML, PA, PH, TD, ZE', moving: '2-4', probate: '1-2', newbiz: '3-6', planning: '1-3', tenders: '3-5', status: { moving: 'available', probate: 'available', newbiz: 'available', planning: 'available', tenders: 'available' }, price: '£25/wk' }
-];
-
-var products = ['moving', 'probate', 'newbiz', 'planning', 'tenders'];
-var productLabels = { moving: 'Moving', probate: 'Probate', newbiz: 'New Biz', planning: 'Planning', tenders: 'Tenders' };
-
-// Load reservations from localStorage
-var reservations = JSON.parse(localStorage.getItem('mh_reservations') || '[]');
-function reserveTerritory(code, product) {
-  if (!confirm('Reserve ' + code + ' for ' + productLabels[product] + '? This holds your spot for 48 hours.')) return;
-  var key = code + '-' + product;
-  var existing = reservations.find(function(r) { return r.key === key; });
-  if (existing) { alert('Already reserved!'); return; }
-  reservations.push({ key: key, territory: code, product: product, reservedAt: new Date().toISOString(), email: prompt('Enter your email for reservation:') || '' });
-  localStorage.setItem('mh_reservations', JSON.stringify(reservations));
-  renderTerritoryTable();
-  alert('Territory reserved! We will contact you to confirm your subscription within 48 hours.');
-}
-
-function getStatus(code, product) {
-  var t = TERRITORY_DATA.find(function(x) { return x.code === code; });
-  if (!t) return 'available';
-  var base = t.status[product] || 'available';
-  var key = code + '-' + product;
-  var isReserved = reservations.some(function(r) { return r.key === key; });
-  if (isReserved) return 'yours';
-  return base;
-}
-
-function renderTerritoryTable() {
-  var tbody = document.getElementById('territory-table');
-  if (!tbody) return;
-  // Status column headers
-  var thead = tbody.closest('table').querySelector('thead');
-  if (thead) {
-    var statusHeader = '<th style="padding:10px 12px;text-align:left;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-size:10px">Status / Reserve</th>';
-    var oldStatus = thead.querySelector('th:nth-child(8)');
-    if (oldStatus) oldStatus.outerHTML = statusHeader;
-  }
-  tbody.innerHTML = TERRITORY_DATA.map(function(t) {
-    var statusCells = products.map(function(p) {
-      var s = getStatus(t.code, p);
-      var icon = s === 'available' ? '🟢' : s === 'yours' ? '🔵' : s === 'reserved' ? '🟡' : '🔴';
-      var label = s === 'available' ? 'Avail' : s === 'yours' ? 'Yours' : s === 'reserved' ? 'Held' : 'Sold';
-      var urgency = s === 'available' ? '<span style="font-size:7px;color:var(--warning);margin-left:2px">⏳</span>' : '';
-      var reserveBtn = s === 'available' ? '<br><button onclick="reserveTerritory(\'' + t.code + '\',\'' + p + '\')" style="padding:1px 6px;border-radius:3px;border:1px solid rgba(14,165,233,0.2);background:transparent;color:var(--accent);font-size:8px;cursor:pointer;margin-top:2px;font-family:inherit">Reserve</button>' : '';
-      return '<div style="font-size:9px;padding:2px 0">' + icon + ' ' + productLabels[p] + ' ' + label + urgency + reserveBtn + '</div>';
-    }).join('');
-    var heatClass = function(val) {
-      var nums = val.split('-').map(Number);
-      var avg = (nums[0] + nums[1]) / 2;
-      if (avg >= 5) return 'background:rgba(34,197,94,0.12);color:#22c55e;font-weight:700';
-      if (avg >= 3) return 'background:rgba(245,158,11,0.12);color:var(--warning);font-weight:600';
-      return 'color:var(--muted)';
-    };
-    return '<tr style="border-bottom:1px solid var(--border)">' +
-      '<td style="padding:6px 12px"><strong style="color:var(--text);font-size:12px">' + t.code + '</strong><br><span style="font-size:8px;color:var(--muted)">' + t.postcodes.substring(0,25) + '...</span></td>' +
-      '<td style="padding:6px;text-align:center;' + heatClass(t.moving) + ';font-size:11px">' + t.moving + '</td>' +
-      '<td style="padding:6px;text-align:center;' + heatClass(t.probate) + ';font-size:11px">' + t.probate + '</td>' +
-      '<td style="padding:6px;text-align:center;' + heatClass(t.newbiz) + ';font-size:11px">' + t.newbiz + '</td>' +
-      '<td style="padding:6px;text-align:center;' + heatClass(t.planning) + ';font-size:11px">' + t.planning + '</td>' +
-      '<td style="padding:6px;text-align:center;' + heatClass(t.tenders) + ';font-size:11px">' + t.tenders + '</td>' +
-      '<td style="padding:6px 12px;font-size:10px;line-height:1.5">' + statusCells + '</td>' +
-      '<td style="padding:6px;text-align:center;font-weight:700;color:var(--text);font-size:11px">' + t.price + '</td></tr>';
-  }).join('');
-}
-renderTerritoryTable();
-</script>
-
-</section>
-
-<!-- SOCIAL MEDIA SERVICES -->
-<section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
-<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=1400&q=80')"></div>
-<div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
-<div class="container">
-<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px">Done For You Services</div>
-<h2 class="section-title">Social Media <span class="gradient">Management</span></h2>
-<p class="section-sub" style="max-width:680px">We set up, automate, and manage your social media accounts so you stay visible while focusing on closing leads. Facebook, Instagram, TikTok, LinkedIn — we handle everything.</p>
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:900px;margin:0 auto">
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
-<div style="width:44px;height:44px;border-radius:10px;background:rgba(14,165,233,0.12);color:#0ea5e9;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px"><i class="fas fa-rocket"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px">Account Setup</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">We create and optimise your business profiles on Facebook, Instagram, TikTok, LinkedIn, and X (Twitter). Bio, branding, contact info, posting schedule — all set up for you.</p>
-</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
-<div style="width:44px;height:44px;border-radius:10px;background:rgba(168,85,247,0.12);color:#a855f7;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px"><i class="fas fa-clock"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px">Automated Posting</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Daily content scheduled and posted automatically. Lead generation tips, success stories, industry insights, and curated content — written, designed, and queued by us.</p>
-</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
-<div style="width:44px;height:44px;border-radius:10px;background:rgba(34,197,94,0.12);color:#22c55e;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px"><i class="fas fa-headset"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px">Ongoing Management</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Monthly content planning, engagement monitoring, follower growth tracking, and strategy adjustments. We maintain your presence so you don't have to think about it.</p>
-</div>
-</div>
-<div style="text-align:center;margin-top:28px">
-<div style="display:inline-flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center">
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 24px;text-align:center">
-<div style="font-size:24px;font-weight:900;font-family:var(--ff-h);color:var(--accent)">£25<span style="font-size:13px;color:var(--muted);font-weight:400">/wk</span></div>
-<div style="font-size:11px;color:var(--text2)">Ongoing management</div>
-</div>
-<div style="font-size:20px;color:var(--muted2);font-weight:300">+</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 24px;text-align:center">
-<div style="font-size:24px;font-weight:900;font-family:var(--ff-h);color:var(--accent)">£150<span style="font-size:13px;color:var(--muted);font-weight:400"> one-off</span></div>
-<div style="font-size:11px;color:var(--text2)">Setup fee</div>
-</div>
-</div>
-</div>
-<div style="text-align:center;margin-top:20px">
-<a href="/portal/enquiry.html" class="btn-pill" style="font-size:14px;padding:12px 28px"><i class="fas fa-paper-plane"></i> Enquire About Social Media Management</a>
-</div>
-<p style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted)">Cancel anytime. No long-term contract. First month's content strategy included in the setup fee.</p>
-</div>
-</section>
-
-<section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
-<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1557838923-2985c318be48?w=1400&q=80')"></div>
-<div class="s-grid"></div>
-<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
-<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
-<div class="container">
-<div style="text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px">Done For You Services</div>
-<h2 class="section-title">Need Marketing Materials? <span class="gradient">We Can Help.</span></h2>
-<p class="section-sub" style="max-width:680px">Got the leads but no time to design emails, flyers, or follow-up campaigns? We design and set up everything for you — branded, ready to send, tailored to your business.</p>
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:900px;margin:0 auto">
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
-<div style="width:44px;height:44px;border-radius:10px;background:rgba(14,165,233,0.12);color:#0ea5e9;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px"><i class="fas fa-envelope-open-text"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px">Email Campaigns &amp; Automation</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">We build your email templates, set up Day 1/3/5/10 follow-up sequences, and connect everything to your Brevo or email platform. You just hit send.</p>
-</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
-<div style="width:44px;height:44px;border-radius:10px;background:rgba(168,85,247,0.12);color:#a855f7;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px"><i class="fas fa-paint-brush"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px">Flyers, Letters &amp; Brochures</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Professional flyers, personal letterheads, and brochures designed for your business. Print-ready PDFs you can send with every lead or mail directly.</p>
-</div>
-<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center">
-<div style="width:44px;height:44px;border-radius:10px;background:rgba(34,197,94,0.12);color:#22c55e;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px"><i class="fas fa-palette"></i></div>
-<h4 style="font-size:14px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px">Branding &amp; Identity</h4>
-<p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Logos, colour schemes, fonts, and brand guidelines. Everything you need to look professional when prospects receive your outreach.</p>
-</div>
-</div>
-<div style="text-align:center;margin-top:28px">
-<a href="/portal/enquiry.html" class="btn-pill" style="font-size:14px;padding:12px 28px"><i class="fas fa-paper-plane"></i> Tell Us What You Need — Get a Quote</a>
-</div>
-<p style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted)">Every project is priced individually. Tell us what you need and we'll quote within 24 hours.</p>
-</div>
-</section>
-
-<footer>
-<div class="footer-grid">
-<div><div style="font-size:22px;font-weight:900;font-family:var(--ff-h);margin-bottom:12px">9am<span style="color:var(--accent)">Leads</span></div><p style="font-size:13px;color:var(--muted);line-height:1.7">Fresh UK business opportunities delivered daily at 9am. Opportunity intelligence platform with AI outreach, lead scoring, and CRM exports. One business per industry per territory.</p></div>
-<div><h4>Lead Types</h4><a href="/movingleadsdaily/">Moving Leads</a><a href="/probateleads/">Probate Leads</a><a href="/newbusinessalert/">New Business</a><a href="/planningleads/">Planning Permission</a><a href="/tenders/">Public Tenders</a></div>
-<div><h4>Company</h4><a href="/pricing/">Pricing</a><a href="/how-it-works/">How It Works</a><a href="/who-we-serve/">Who We Serve</a><a href="/founder/">Meet the Founder</a></div>
-<div><h4>Support</h4><a href="/terms.html">Terms of Service</a><a href="/privacy.html">Privacy Policy</a><a href="mailto:hello@9amleads.com">hello@9amleads.com</a></div>
-<div><h4>Get Started</h4><a href="/portal/">Sign In</a><a href="/portal/#signup">Sign Up Free</a></div>
-</div>
-<div class="footer-bottom">© 2026 9am Leads Ltd · Made in the UK</div>
-</footer>
-<script src="/pricing-config.js"></script>
-<script>
-// Lead Territory Calculator
-var CALC_DATA = {
-  moving: {
-    london: { starter: [1,3], growth: [3,8], power: [8,18] },
-    'south-east': { starter: [1,3], growth: [3,7], power: [7,16] },
-    'south-west': { starter: [1,2], growth: [2,5], power: [5,12] },
-    'midlands-east': { starter: [1,3], growth: [3,7], power: [7,15] },
-    'midlands-west': { starter: [1,2], growth: [2,5], power: [5,10] },
-    'north-east': { starter: [1,2], growth: [2,5], power: [5,10] },
-    'north-west': { starter: [1,3], growth: [3,7], power: [7,15] },
-    east: { starter: [1,3], growth: [3,7], power: [7,14] },
-    wales: { starter: [1,2], growth: [2,4], power: [4,8] },
-    scotland: { starter: [1,2], growth: [2,5], power: [5,10] }
-  },
-  probate: {
-    london: { starter: [1,2], growth: [2,5], power: [5,12] },
-    'south-east': { starter: [0,2], growth: [2,4], power: [4,10] },
-    'south-west': { starter: [0,2], growth: [2,4], power: [4,8] },
-    'midlands-east': { starter: [0,2], growth: [2,4], power: [4,8] },
-    'midlands-west': { starter: [0,1], growth: [1,3], power: [3,6] },
-    'north-east': { starter: [0,1], growth: [1,3], power: [3,6] },
-    'north-west': { starter: [0,2], growth: [2,4], power: [4,8] },
-    east: { starter: [0,2], growth: [2,4], power: [4,8] },
-    wales: { starter: [0,1], growth: [1,2], power: [2,5] },
-    scotland: { starter: [0,1], growth: [1,2], power: [2,5] }
-  },
-  newbusiness: {
-    london: { starter: [3,5], growth: [5,12], power: [12,30] },
-    'south-east': { starter: [2,4], growth: [4,10], power: [10,25] },
-    'south-west': { starter: [1,3], growth: [3,7], power: [7,15] },
-    'midlands-east': { starter: [2,4], growth: [4,8], power: [8,20] },
-    'midlands-west': { starter: [1,3], growth: [3,6], power: [6,14] },
-    'north-east': { starter: [1,3], growth: [3,6], power: [6,12] },
-    'north-west': { starter: [2,4], growth: [4,8], power: [8,18] },
-    east: { starter: [2,4], growth: [4,8], power: [8,18] },
-    wales: { starter: [1,2], growth: [2,5], power: [5,10] },
-    scotland: { starter: [1,3], growth: [3,6], power: [6,14] }
-  },
-  planning: {
-    london: { starter: [2,3], growth: [3,8], power: [8,20] },
-    'south-east': { starter: [1,3], growth: [3,7], power: [7,16] },
-    'south-west': { starter: [1,2], growth: [2,5], power: [5,12] },
-    'midlands-east': { starter: [1,3], growth: [3,7], power: [7,14] },
-    'midlands-west': { starter: [1,2], growth: [2,5], power: [5,10] },
-    'north-east': { starter: [1,2], growth: [2,5], power: [5,10] },
-    'north-west': { starter: [1,3], growth: [3,6], power: [6,14] },
-    east: { starter: [1,3], growth: [3,6], power: [6,14] },
-    wales: { starter: [1,2], growth: [2,4], power: [4,8] },
-    scotland: { starter: [1,2], growth: [2,4], power: [4,10] }
-  },
-  tenders: {
-    all: { starter: [3,5], growth: [5,12], power: [12,30] }
-  }
+var productData = {
+  all: { starter:'5', pro:'10', enterprise:'15', areaStarter:'3 postcode areas', areaPro:'Unlimited areas', areaEnterprise:'All UK coverage' },
+  moving: { starter:'5', pro:'10', enterprise:'15', areaStarter:'3 postcode areas', areaPro:'Unlimited areas', areaEnterprise:'All UK coverage' },
+  probate: { starter:'2', pro:'5', enterprise:'10', areaStarter:'County (3 areas)', areaPro:'County (unlimited)', areaEnterprise:'All UK' },
+  newbusiness: { starter:'5', pro:'10', enterprise:'15', areaStarter:'3 postcode areas', areaPro:'Unlimited areas', areaEnterprise:'All UK' },
+  planning: { starter:'1', pro:'3', enterprise:'5', areaStarter:'County (3 areas)', areaPro:'County (unlimited)', areaEnterprise:'All UK' },
+  tenders: { starter:'1', pro:'3', enterprise:'5', areaStarter:'Region (1 area)', areaPro:'Region (unlimited)', areaEnterprise:'All UK' }
 };
-
-var PRICE_MAP = {
-  moving: { starter: 29, growth: 59, power: 99 },
-  probate: { starter: 39, growth: 79, power: 149 },
-  newbusiness: { starter: 19, growth: 39, power: 79 },
-  planning: { starter: 29, growth: 59, power: 99 },
-  tenders: { starter: 29, growth: 59, power: 99 }
-};
-
-var TENDER_INDUSTRIES = [
-  { value: 'all', label: 'All Industries (IT, Construction, Cleaning, Security, FM, Healthcare, Training)' },
-  { value: 'it', label: 'IT & Technology' },
-  { value: 'construction', label: 'Construction & Engineering' },
-  { value: 'cleaning', label: 'Cleaning & Facilities Management' },
-  { value: 'security', label: 'Security Services' },
-  { value: 'healthcare', label: 'Healthcare & Medical' },
-  { value: 'training', label: 'Training & Education' },
-  { value: 'consultancy', label: 'Consultancy & Professional Services' }
-];
-
-function updateCalcArea() {
-  var type = document.getElementById('calc-type').value;
-  var areaSelect = document.getElementById('calc-area');
-  var label = document.getElementById('calc-area-label');
-
-  if (type === 'tenders') {
-    label.textContent = '2. Industry Category';
-    areaSelect.innerHTML = TENDER_INDUSTRIES.map(function(i) { return '<option value="' + i.value + '">' + i.label + '</option>'; }).join('');
-  } else {
-    label.textContent = '2. Postcode Area';
-    var postcodeAreas = [
-      { value: 'london', label: 'London (E, EC, N, NW, SE, SW, W, WC)' },
-      { value: 'south-east', label: 'South East (BN, CT, GU, KT, ME, RH, SM, TN, TW)' },
-      { value: 'south-west', label: 'South West (BA, BH, BS, DT, EX, PL, PO, SO, SP, TA, TQ, TR)' },
-      { value: 'midlands-east', label: 'Midlands East (B, CV, DE, DY, LE, LN, NG, NN, ST, WS, WV)' },
-      { value: 'midlands-west', label: 'Midlands West (GL, HR, OX, SN, WR)' },
-      { value: 'north-east', label: 'North East (DH, DL, DN, HU, NE, SR, TS, YO)' },
-      { value: 'north-west', label: 'North West (BB, BD, BL, CA, CH, CW, FY, L, LA, M, OL, PR, SK, WA, WN)' },
-      { value: 'east', label: 'East (AL, CB, CM, CO, HP, IP, LU, MK, NR, PE, SG, SS)' },
-      { value: 'wales', label: 'Wales (CF, LD, LL, NP, SA, SY)' },
-      { value: 'scotland', label: 'Scotland (AB, DD, EH, FK, G, IV, KA, KW, KY, ML, PA, PH, TD, ZE)' }
-    ];
-    areaSelect.innerHTML = postcodeAreas.map(function(a) { return '<option value="' + a.value + '">' + a.label + '</option>'; }).join('');
-  }
-  updateCalculator();
+function switchProduct(prod) {
+  document.querySelectorAll('.prod-tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelector('.prod-tab[data-prod="'+prod+'"]').classList.add('active');
+  var d = productData[prod] || productData.all;
+  document.getElementById('leads-starter').innerHTML = '<strong>'+d.starter+'</strong> leads/day &middot; Mon-Fri';
+  document.getElementById('leads-pro').innerHTML = '<strong>'+d.pro+'</strong> leads/day &middot; Mon-Fri';
+  document.getElementById('leads-enterprise').innerHTML = '<strong>'+d.enterprise+'</strong> leads/day &middot; Mon-Fri';
+  document.getElementById('feat-area-starter').textContent = d.areaStarter;
+  document.getElementById('feat-area-pro').textContent = d.areaPro;
+  document.getElementById('feat-area-enterprise').textContent = d.areaEnterprise;
 }
-
-function updateCalculator() {
-  var type = document.getElementById('calc-type').value;
-  var area = document.getElementById('calc-area').value;
-  var plan = document.getElementById('calc-plan').value;
-  var data = CALC_DATA[type];
-  var range = data ? (data[area] || data['london'] || { starter: [1,3], growth: [3,7], power: [7,15] })[plan] : [1,3];
-  var price = PRICE_MAP[type] ? PRICE_MAP[type][plan] : 29;
-  var planNames = { starter: 'Starter', growth: 'Growth', power: 'Power' };
-
-  document.getElementById('calc-leads').textContent = range[0] + '-' + range[1];
-  document.getElementById('calc-price').textContent = '\u00a3' + price;
-}
-
-updateCalcArea();
-
-// Lead value calculator
-(function() {
-  var slider = document.getElementById('valueCalcSlider');
-  var profitEl = document.getElementById('valueCalcProfit');
-  var resultEl = document.getElementById('valueCalcResult');
-  if (!slider || !profitEl || !resultEl) return;
-  function update() {
-    var val = parseInt(slider.value);
-    profitEl.textContent = '\u00a3' + val.toLocaleString();
-    var weekly = val * 5 * 7;
-    resultEl.textContent = '\u00a3' + weekly.toLocaleString();
-  }
-  slider.addEventListener('input', update);
-  update();
-})();
 </script>
-<script src="/chat.js"></script>
-<script src="/enhancements.js"></script>
 </body></html>
