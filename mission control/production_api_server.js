@@ -4874,6 +4874,41 @@ app.get('/api/admin/pool-counties', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/funeral-scrape - run the funeral-notices.co.uk scraper
+// (free, no Apify) for probate customer counties and merge the leads into the
+// probate pool. Adds supply well ahead of the Gazette.
+app.post('/api/admin/funeral-scrape', adminAuth, async (req, res) => {
+  try {
+    var countiesParam = String((req.body && req.body.counties) || '');
+    var counties = countiesParam ? countiesParam.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
+    if (counties.length === 0) {
+      var dbF = getDb();
+      (dbF.customers || []).forEach(function(c) {
+        if (c.product !== 'probate' && !((c.biz_field3 || '').indexOf('probate') !== -1)) return;
+        var ca = [];
+        try { ca = JSON.parse(c.target_areas || '[]'); } catch(e) { ca = []; }
+        if (!ca.length) { try { var cf2 = JSON.parse(c.product_config || '{}'); ca = (cf2.probate && cf2.probate.target_areas) ? JSON.parse(cf2.probate.target_areas) : []; } catch(e2) {} }
+        ca.forEach(function(a) { if (counties.indexOf(a) === -1) counties.push(a); });
+      });
+    }
+    if (!counties.length) return res.status(400).json({ error: 'No counties to scrape' });
+    var fnS = require('./funeral_notices_scraper');
+    var leads = await fnS.collectFuneralLeads({ counties: counties, maxPerCounty: 40 });
+    var pf = path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate.file);
+    var poolF = [];
+    try { poolF = JSON.parse(fs.readFileSync(pf, 'utf-8')); if (!Array.isArray(poolF)) poolF = []; } catch(e) { poolF = []; }
+    var seenF = {}; poolF.forEach(function(l) { var k = String(l.deceasedName || l.name || '').toLowerCase().replace(/[^a-z]/g, '') + '|' + String(l.county || '').toLowerCase(); if (k.length > 3) seenF[k] = 1; });
+    var added = 0;
+    leads.forEach(function(l) {
+      var k = String(l.deceasedName || l.name || '').toLowerCase().replace(/[^a-z]/g, '') + '|' + String(l.county || '').toLowerCase();
+      if (seenF[k]) return;
+      seenF[k] = 1; poolF.push(l); added++;
+    });
+    fs.writeFileSync(pf, JSON.stringify(poolF, null, 2));
+    res.json({ success: true, counties: counties, scraped: leads.length, added: added, pool_total: poolF.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/otm-scrape - direct OnTheMarket scrape (NO Apify credits).
 // Scrapes the given areas (or all active moving customers' areas), gets the full
 // postcode from each detail page (free), and appends fresh leads to the moving
@@ -6263,6 +6298,20 @@ cron.schedule('0 13 * * *', async () => {
 cron.schedule('0 18 * * *', async () => {
   try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-18-CRON] ' + e.message); }
 }, { timezone: 'Europe/London' });
+// Daily funeral-notices probate supply (free, no Apify) - tops up the probate
+// pool ahead of the Gazette. Runs after the main scrape.
+cron.schedule('15 5 * * *', async () => {
+  try {
+    const httpF = require('http');
+    var bF = JSON.stringify({});
+    var rF = httpF.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/funeral-scrape', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bF) } }, function(s) {
+      var rb = ''; s.on('data', function(d) { rb += d; }); s.on('end', function() { console.log('[FUNERAL-CRON] done:', rb.substring(0, 200)); });
+    });
+    rF.on('error', function(e) { console.log('[FUNERAL-CRON] error:', e.message); });
+    rF.write(bF); rF.end();
+  } catch(e) { console.log('[FUNERAL-CRON] exception:', e.message); }
+}, { timezone: 'Europe/London' });
+
 
 cron.schedule('20 6 * * *', async () => {
   console.log('[06:20 UK] Distributing...');
