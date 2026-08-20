@@ -4836,7 +4836,7 @@ app.post('/api/admin/otm-scrape', adminAuth, async (req, res) => {
     areas = areas.filter(function(a) { return /^[A-Z]{1,2}$/.test(a); });
     if (!areas.length) return res.status(400).json({ error: 'No areas to scrape' });
     var otmScraper = require('./onthemarket_scraper');
-    var leads = await otmScraper.collectOnTheMarketLeads({ areas: areas, maxPerArea: maxPerArea, maxDays: 7, detailCap: 250 });
+    var leads = await otmScraper.collectOnTheMarketLeads({ areas: areas, maxPerArea: maxPerArea, maxDays: 14, detailCap: 400 });
     var fn = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving.file);
     var prev = [];
     try { prev = JSON.parse(fs.readFileSync(fn, 'utf-8')); } catch(e) { prev = []; }
@@ -4871,7 +4871,7 @@ async function runOtmDailyScrape() {
     });
     if (!areas.length) { console.log('[OTM-DAILY] No moving customer areas to scrape'); return; }
     var otmScraper2 = require('./onthemarket_scraper');
-    var leads = await otmScraper2.collectOnTheMarketLeads({ areas: areas, maxPerArea: 40, maxDays: 7, detailCap: 250 });
+    var leads = await otmScraper2.collectOnTheMarketLeads({ areas: areas, maxPerArea: 60, maxDays: 14, detailCap: 400 });
     var fn2 = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving.file);
     var prev = []; try { prev = JSON.parse(fs.readFileSync(fn2, 'utf-8')); } catch(e) { prev = []; }
     if (!Array.isArray(prev)) prev = [];
@@ -6198,6 +6198,14 @@ cron.schedule('0 6 * * *', async () => {
 // fresh for the 9am delivery even when the Apify/Rightmove scraper is down.
 cron.schedule('45 5 * * *', async () => {
   try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-DAILY-CRON] ' + e.message); }
+}, { timezone: 'Europe/London' });
+// Extra free OnTheMarket runs through the day to catch newly-listed properties
+// (no Apify credits needed).
+cron.schedule('0 13 * * *', async () => {
+  try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-13-CRON] ' + e.message); }
+}, { timezone: 'Europe/London' });
+cron.schedule('0 18 * * *', async () => {
+  try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-18-CRON] ' + e.message); }
 }, { timezone: 'Europe/London' });
 
 cron.schedule('20 6 * * *', async () => {
