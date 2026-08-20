@@ -6912,12 +6912,13 @@ async function runAutoSend() {
       for (var li = 0; li < todaysLeads.length; li++) {
         var l = todaysLeads[li];
         var parsed = {}; try { parsed = JSON.parse(l.data || '{}'); } catch(e) {}
-        var leadAddress = parsed.address_line1 || parsed.address || parsed.street || '';
-        var leadPostcode = parsed.postcode || '';
+        var rcptFields = buildStannpRecipientFromLead(parsed);
+        var leadAddress = rcptFields.address_line1;
+        var leadPostcode = rcptFields.postcode;
         if (leadPostcode && leadAddress) {
           // Check suppression
           if (!isAddressSuppressed(cust.id, leadPostcode, leadAddress)) {
-            db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, parsed.name || parsed.address || 'Lead', '', leadAddress, parsed.city || parsed.town || '', leadPostcode, 'United Kingdom', l.id, 'pending', new Date().toISOString());
+            db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, rcptFields.name, rcptFields.company, rcptFields.address_line1, rcptFields.city, rcptFields.postcode, 'United Kingdom', l.id, 'pending', new Date().toISOString());
             validAddressCount++;
           }
         }
@@ -14515,6 +14516,30 @@ app.get('/api/direct-mail/leads', authMiddleware, (req, res) => {
 // POST /api/direct-mail/send-lead — ONE-CLICK print & post a single lead.
 // Creates a campaign, adds the lead as recipient, and returns a Stripe checkout
 // URL so the customer can pay and have it printed + posted immediately.
+// Build clean Stannp address fields from a lead's parsed data. Moving leads
+// store the address as ONE string ("37 Neptune Street, Kings Moat, Chester,
+// CH4 7FG") with no separate city - we split it so Stannp gets street / town /
+// postcode separately (Stannp rejects a single-line "everything" address).
+// Property leads never use the address as the recipient name -> "Homeowner".
+function buildStannpRecipientFromLead(parsed) {
+  parsed = parsed || {};
+  function splitAddress(full) {
+    var parts = String(full || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    var pc = String(parsed.postcode || '').toUpperCase().replace(/\s+/g, '');
+    if (parts.length && pc) {
+      var last = parts[parts.length - 1].toUpperCase().replace(/\s+/g, '');
+      if (last.indexOf(pc) !== -1 || pc.indexOf(last) !== -1) parts.pop();
+    }
+    return { line1: parts[0] || '', city: parts.length >= 3 ? parts[parts.length - 2] : (parts[1] || '') };
+  }
+  var spl = splitAddress(parsed.address || parsed.fullAddress || '');
+  var address_line1 = parsed.address_line1 || ((parsed.building_number ? parsed.building_number + ' ' : '') + (parsed.street || '')).trim() || spl.line1;
+  var city = parsed.city || parsed.town || spl.city;
+  var postcode = parsed.postcode || '';
+  var name = parsed.company || (parsed.name && parsed.name !== parsed.address ? parsed.name : '') || 'Homeowner';
+  return { address_line1: address_line1, city: city, postcode: postcode, name: name, company: parsed.company || '' };
+}
+
 app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
   try {
     var lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(req.body.lead_id, req.user.id);
@@ -14525,10 +14550,11 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
     var nowIso = new Date().toISOString();
     var parsed = {};
     try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
-    var addrLine1 = parsed.address_line1 || parsed.address || parsed.street || '';
-    var city = parsed.city || parsed.town || '';
-    var postcode = parsed.postcode || '';
-    var name = parsed.company || parsed.name || parsed.address || 'Homeowner';
+    var rcptFields = buildStannpRecipientFromLead(parsed);
+    var addrLine1 = rcptFields.address_line1;
+    var city = rcptFields.city;
+    var postcode = rcptFields.postcode;
+    var name = rcptFields.name;
     if (!addrLine1 || !postcode) return res.status(400).json({ error: 'This lead does not have a complete postal address yet.' });
 
     // Check if this lead was already mailed recently
@@ -14750,10 +14776,11 @@ app.post('/api/direct-mail/send-repeat', authMiddleware, async (req, res) => {
     var nowIso = new Date().toISOString();
     var parsed = {};
     try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
-    var addrLine1 = parsed.address_line1 || parsed.address || parsed.street || '';
-    var city = parsed.city || parsed.town || '';
-    var postcode = parsed.postcode || '';
-    var name = parsed.company || parsed.name || parsed.address || 'Homeowner';
+    var rcptFields = buildStannpRecipientFromLead(parsed);
+    var addrLine1 = rcptFields.address_line1;
+    var city = rcptFields.city;
+    var postcode = rcptFields.postcode;
+    var name = rcptFields.name;
     if (!addrLine1 || !postcode) return res.status(400).json({ error: 'This lead does not have a complete postal address yet.' });
 
     // Auto-select template (same as single send)
@@ -14946,15 +14973,16 @@ app.post('/api/direct-mail/send-bulk', authMiddleware, async (req, res) => {
       if (!lead) continue;
       var parsed = {};
       try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
-      var addrLine1 = parsed.address_line1 || parsed.address || parsed.street || '';
-      var city = parsed.city || parsed.town || '';
-      var postcode = parsed.postcode || '';
+      var rcptFields = buildStannpRecipientFromLead(parsed);
+      var addrLine1 = rcptFields.address_line1;
+      var city = rcptFields.city;
+      var postcode = rcptFields.postcode;
       if (!addrLine1 || !postcode) { skippedNoAddress.push(parsed.name || parsed.address || 'One lead'); continue; }
       var already = db.prepare('SELECT * FROM direct_mail_recipients WHERE customer_id = ? AND lead_id = ? AND created_at > datetime(\'now\', \'-7 days\')').get(req.user.id, lead.id);
       if (already) { skippedAlready.push(parsed.name || parsed.address || 'One lead'); continue; }
       recipients.push({
         lead_id: lead.id,
-        name: parsed.company || parsed.name || parsed.address || 'Homeowner',
+        name: (typeof rcptFields !== 'undefined' && rcptFields.name) ? rcptFields.name : (parsed.company || parsed.name || parsed.address || 'Homeowner'),
         company: parsed.company || '',
         address_line1: addrLine1,
         address_line2: parsed.address_line2 || '',
@@ -15111,15 +15139,16 @@ app.post('/api/direct-mail/send-bulk-repeat', authMiddleware, async (req, res) =
       if (!lead) continue;
       var parsed = {};
       try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
-      var addrLine1 = parsed.address_line1 || parsed.address || parsed.street || '';
-      var city = parsed.city || parsed.town || '';
-      var postcode = parsed.postcode || '';
+      var rcptFields = buildStannpRecipientFromLead(parsed);
+      var addrLine1 = rcptFields.address_line1;
+      var city = rcptFields.city;
+      var postcode = rcptFields.postcode;
       if (!addrLine1 || !postcode) { skippedNoAddress.push(parsed.name || parsed.address || 'One lead'); continue; }
       var already = db.prepare('SELECT * FROM direct_mail_recipients WHERE customer_id = ? AND lead_id = ? AND created_at > datetime(\'now\', \'-7 days\')').get(req.user.id, lead.id);
       if (already) { skippedAlready.push(parsed.name || parsed.address || 'One lead'); continue; }
       recipients.push({
         lead_id: lead.id,
-        name: parsed.company || parsed.name || parsed.address || 'Homeowner',
+        name: (typeof rcptFields !== 'undefined' && rcptFields.name) ? rcptFields.name : (parsed.company || parsed.name || parsed.address || 'Homeowner'),
         company: parsed.company || '',
         address_line1: addrLine1,
         address_line2: parsed.address_line2 || '',
@@ -19786,7 +19815,8 @@ app.post('/api/direct-mail/check-addresses', authMiddleware, (req, res) => {
         var lead = allLeads.find(function(l) { return l.id === lid; });
         if (!lead) return null;
         var parsed = {}; try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
-        return { id: lead.id, name: parsed.name || '', address_line1: parsed.address_line1 || parsed.address || parsed.street || '', city: parsed.city || parsed.town || '', postcode: parsed.postcode || '', company: parsed.company || '' };
+        var rcptF = buildStannpRecipientFromLead(parsed);
+        return { id: lead.id, name: rcptF.name, address_line1: rcptF.address_line1, city: rcptF.city, postcode: rcptF.postcode, company: rcptF.company };
       }).filter(Boolean);
     }
 
