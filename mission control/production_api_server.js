@@ -12650,7 +12650,7 @@ function generateLeadEmailHTML(customer, leads) {
       actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'tenders') {
       // Tenders are applied for ONLINE — the Apply Online button is the primary action
-      var tendApplyUrl = d.applyLink || d.pcsUrl || d.tenderUrl || d.portalUrl || (d.tenderNoticeId ? 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId : '');
+      var tendApplyUrl = d.applyLink || d.pcsUrl || d.tenderUrl || d.portalUrl || d.url || (d.tenderNoticeId ? 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId : '');
       if (tendApplyUrl && !d.generated) actionLinks.push({ url: tendApplyUrl, label: '\uD83D\uDCE8 Apply Online' });
       else if (d.pcsUrl && !d.generated) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' });
       else if (d.tenderNoticeId && !d.generated) actionLinks.push({ url: 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId, label: 'View Tender' });

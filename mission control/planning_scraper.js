@@ -153,7 +153,7 @@ function fetchPlanningApify(postcodeArea) {
               reference: p.reference || p.applicationReference || '',
               estimatedValue: 0,
               valueLabel: '',
-              url: p.url || p.link || '',
+              url: p.url || p.link || p.applicationUrl || p.detailsUrl || p.detailUrl || p.webUrl || p.portalUrl || '',
               dateSubmitted: p.dateSubmitted || p.decisionDate || '',
               source: 'Planning Portal (Apify)',
               scrapedAt: new Date().toISOString()
@@ -245,7 +245,7 @@ function fetchPlotaPlanning(postcode, maxItems, category) {
     const cleanPc = (postcode || '').replace(/[^A-Z0-9]/gi, '').toUpperCase();
     const q = cleanPc ? '?postcode=' + encodeURIComponent(cleanPc) : '?q=' + encodeURIComponent(postcode || 'London');
     const cat = category ? '&category=' + encodeURIComponent(category) : '';
-    const path = '/v1/applications' + q + cat + '&limit=' + (maxItems || 30);
+    const path = '/v1/applications' + q + cat + '&limit=' + (maxItems || 100);
     const options = {
       hostname: 'api.plota.co.uk',
       path: path,
@@ -298,7 +298,7 @@ function fetchPlotaPlanningFreeText(query, maxItems, category) {
     const key = process.env.PLOTA_API_KEY || '';
     if (!key) { resolve([]); return; }
     const cat = category ? '&category=' + encodeURIComponent(category) : '';
-    const path = '/v1/applications?q=' + encodeURIComponent(query) + cat + '&limit=' + (maxItems || 30);
+    const path = '/v1/applications?q=' + encodeURIComponent(query) + cat + '&limit=' + (maxItems || 100);
     const options = {
       hostname: 'api.plota.co.uk',
       path: path,
@@ -809,6 +809,58 @@ const PLOTA_CATEGORY_MAP = {
   'shopfronts': 'shopfronts'
 };
 
+// Fetch planning APPLICATIONS (not just brownfield) from planning.data.gov.uk —
+// the official OGL v3 source covering all UK councils/counties. This significantly
+// boosts per-county supply compared to PLOTA alone (which clusters in active areas).
+function fetchPlanningApplications(maxItems) {
+  return new Promise((resolve) => {
+    const query = 'dataset=planning-application&limit=' + (maxItems || 100) +
+      '&field=site-address&field=reference&field=description&field=application-type&field=decision&field=document-url&field=entry-date&field=point';
+    const options = {
+      hostname: 'www.planning.data.gov.uk',
+      path: '/entity.json?' + query,
+      method: 'GET',
+      headers: { 'Accept': 'application/json', 'User-Agent': '9amLeads/1.0 (planning lead generator)' },
+      timeout: 30000
+    };
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) { console.log('    planning.data.gov.uk applications HTTP ' + res.statusCode); resolve([]); return; }
+        try {
+          const j = JSON.parse(body);
+          const items = j.entities || [];
+          if (!items.length) { resolve([]); return; }
+          const leads = items.map(p => ({
+            id: 'PLAN_APP_' + (p.entity || p.reference || Date.now()),
+            address: (p['site-address'] || '').trim() || 'Site',
+            postcode: extractPostcode(p['site-address'] || ''),
+            description: (p.description || '').substring(0, 400),
+            applicantName: '',
+            applicationType: (p['application-type'] || 'Planning Application'),
+            status: (p.decision || 'pending').replace(/-/g, ' '),
+            council: p.organisation || '',
+            reference: p.reference || '',
+            estimatedValue: 0,
+            valueLabel: '',
+            url: p['document-url'] || '',
+            dateSubmitted: p['entry-date'] || '',
+            locationPoint: p.point || '',
+            source: 'planning.data.gov.uk (OGL v3)',
+            scrapedAt: new Date().toISOString()
+          }));
+          console.log('    planning.data.gov.uk returned ' + leads.length + ' planning applications');
+          resolve(leads);
+        } catch(e) { resolve([]); }
+      });
+    });
+    req.on('error', () => resolve([]));
+    req.setTimeout(30000, () => { req.destroy(); resolve([]); });
+    req.end();
+  });
+}
+
 // Exported function for the production server's run-scrapers flow.
 // Queries PLOTA per selected application type + area, then distributes evenly
 // across the filter types so no single type dominates (e.g. not all trees).
@@ -903,7 +955,13 @@ async function collectPlanningLeads(config) {
     }
   }
   console.log('    Planning PLOTA returned ' + results.length + ' applications across ' + catSlugs.length + ' categories');
-  // Fallback — free official UK planning data (brownfield sites, sparse addresses)
+  // ADDITIONAL SUPPLY: merge official planning.data.gov.uk APPLICATIONS (all
+  // councils/counties) to boost per-county volume — not just a low-result fallback.
+  try {
+    const apps = await fetchPlanningApplications(config.maxItems || 100);
+    if (apps && apps.length > 0) results = results.concat(apps);
+  } catch(e) { console.log('    Planning applications source error: ' + e.message); }
+  // Fallback — free official UK planning data (brownfield sites) if still thin
   if (results.length < 5) {
     console.log('    Planning PLOTA low/empty, using free planning.data.gov.uk...');
     try {
@@ -914,7 +972,7 @@ async function collectPlanningLeads(config) {
   return results;
 }
 
-module.exports = { collectPlanningLeads, fetchPlanningApify, fetchFreePlanningData, fetchPlotaPlanning };
+module.exports = { collectPlanningLeads, fetchPlanningApify, fetchFreePlanningData, fetchPlanningApplications, fetchPlotaPlanning };
 
 if (require.main === module) {
   main().catch(e => console.error('Error:', e.message));
