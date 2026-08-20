@@ -4744,6 +4744,31 @@ app.post('/api/admin/deep-scrape', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/extend-trial - add N days to a customer's free trial.
+app.post('/api/admin/extend-trial', adminAuth, (req, res) => {
+  try {
+    var customerId = (req.body && req.body.customer_id) || '';
+    var days = parseInt((req.body && req.body.days) || 7, 10);
+    if (!customerId || isNaN(days) || days <= 0) return res.status(400).json({ error: 'customer_id and days required' });
+    var cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var base = cust.trial_ends && new Date(cust.trial_ends).getTime() > Date.now() ? new Date(cust.trial_ends) : new Date();
+    var newEnd = new Date(base.getTime() + days * 86400000).toISOString();
+    db.prepare('UPDATE customers SET trial_ends = ?, plan = ? WHERE id = ?').run(newEnd, 'free_trial', customerId);
+    saveDb();
+    res.json({ success: true, message: 'Trial extended by ' + days + ' days (ends ' + newEnd.substring(0,10) + ')' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/clear-bounce - reset the bounce counter for all customers.
+app.post('/api/admin/clear-bounce', adminAuth, (req, res) => {
+  try {
+    var updated = db.prepare('UPDATE customers SET bounced = 0').run();
+    saveDb();
+    res.json({ success: true, message: 'Bounce counters cleared' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/replace-customer-leads — remove a customer's current (e.g.
 // wrong-area) leads and replace them with fresh in-area leads from the pool.
 // Used when leads were delivered from the wrong areas (area override, fallback).
@@ -5917,11 +5942,7 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
 }
 
 // ===== SCRAPER SCHEDULER: Daily at 5:30 AM =====
-cron.schedule('30 5 * * *', async () => {
-  console.log('[SCRAPER CRON] Starting daily lead generation...');
-  const http = require('http');
-  http.request({ hostname: 'localhost', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json' } }, function(res) {}).end();
-});
+
 
 // Generate realistic-looking demo leads for any product
 function generateDemoLeads(product, count) {
@@ -6298,41 +6319,7 @@ cron.schedule('0 9 * * 1-5', async () => {
 
 // TEMP TEST CRON (2026-08-19, remove after): fire at 17:30 UK and deliver to
 // the TEST accounts + hello@9amleads.com ONLY - never real customers.
-cron.schedule('30 17 * * *', async () => {
-  console.log('[TEST-CRON] 17:30 test delivery to test accounts');
-  var testEmails = ['hello@9amleads.com', 'test.moving1@gmail.com', 'test.probate1@gmail.com', 'test.planning1@gmail.com', 'test.newbusiness1@gmail.com', 'test.tenders1@gmail.com'];
-  for (var tei = 0; tei < testEmails.length; tei++) {
-    try {
-      await new Promise(function(resolve) {
-        const http2 = require('http');
-        var b2 = JSON.stringify({ customer_email: testEmails[tei], force: true });
-        var rq2 = http2.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b2) } }, function(rp2) { var bb=''; rp2.on('data', function(c){ bb+=c; }); rp2.on('end', resolve); });
-        rq2.on('error', function(){ resolve(); });
-        rq2.write(b2); rq2.end();
-      });
-      console.log('[TEST-CRON] delivered to ' + testEmails[tei]);
-    } catch(e) { console.log('[TEST-CRON] error ' + testEmails[tei] + ': ' + e.message); }
-  }
-}, {
-  timezone: 'Europe/London'
-});
-// ONLY — never real customers. This validates the full pipeline (fresh lead ->
-// door-number resolution -> exact count) without affecting production customers.
-// Enabled via MOVING_TEST_DELIVERY=true. Runs every 30 min during working hours.
-cron.schedule('*/30 9-17 * * 1-5', async () => {
-  if (String(process.env.MOVING_TEST_DELIVERY || 'false').toLowerCase() !== 'true') return;
-  const testEmail = process.env.MOVING_TEST_ACCOUNT || 'test.moving1@gmail.com';
-  console.log('[TEST-DELIVERY] Running test delivery to ' + testEmail + '...');
-  try {
-    const http = require('http');
-    var tbody = JSON.stringify({ customer_email: testEmail, force: true });
-    var treq = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(tbody) } }, function(tres) {
-      var tb = ''; tres.on('data', function(c) { tb += c; }); tres.on('end', function() { console.log('[TEST-DELIVERY] done:', tb.substring(0, 200)); });
-    });
-    treq.on('error', function(e) { console.log('[TEST-DELIVERY] error:', e.message); });
-    treq.write(tbody); treq.end();
-  } catch(e) { console.log('[TEST-DELIVERY] error:', e.message); }
-}, { timezone: 'Europe/London' });
+
 
 // DELIVERY WATCHDOG: Mon-Fri 09:35 UK — if the 09:00 delivery cron missed (deploy,
 // crash, race), re-trigger it so customers still get their daily leads. Checks the
@@ -10290,6 +10277,22 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     }
 
     if (event.type === 'checkout.session.completed') {
+      try {
+        var mSess = event.data.object || {};
+        var mMeta = mSess.metadata || {};
+        if (mMeta.type === 'extra_area' && mMeta.customer_id && mMeta.area) {
+          var eCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(mMeta.customer_id);
+          if (eCust) {
+            var extraList = [];
+            try { extraList = JSON.parse(eCust.extra_postcodes || '[]'); } catch(e2) { extraList = []; }
+            if (extraList.indexOf(mMeta.area) === -1) extraList.push(mMeta.area);
+            db.prepare('UPDATE customers SET extra_postcodes = ? WHERE id = ?').run(JSON.stringify(extraList), eCust.id);
+            saveDb();
+            console.log('[STRIPE] extra_area purchased for ' + eCust.email + ': ' + mMeta.area);
+          }
+        }
+      } catch(me) { console.log('[STRIPE] extra_area error:', me.message); }
+
       const session = event.data.object;
       const customerId = session.metadata?.customer_id;
       const type = session.metadata?.type || 'plan_upgrade';
@@ -12242,6 +12245,8 @@ app.get('/api/health', (req, res) => {
 // records path, referrer, user-agent (truncated) and a timestamp.
 
 // POST /api/track — log a pageview from the tracking snippet
+app.get('/api/track', (req, res) => { try { var dbG = getDb(); if (!dbG.pageviews) dbG.pageviews = []; var when = new Date().toISOString(); dbG.pageviews.push({ id: uuidv4(), visitor: String(req.query.v || req.query.p || '').substring(0,64), path: String(req.query.p || req.path || '/').substring(0,300), referrer: String(req.headers.referer || req.headers.referrer || '').substring(0,300), ua: String(req.headers['user-agent'] || '').substring(0,300), created_at: when }); if (dbG.pageviews.length > 200000) dbG.pageviews.splice(0, dbG.pageviews.length - 200000); saveDb(); } catch(e) {} res.set('Content-Type','image/gif'); res.send(Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7','base64')); });
+
 app.post('/api/track', (req, res) => {
   try {
     var dbA = getDb();
@@ -17822,6 +17827,8 @@ app.get('/api/admin/export', adminAuth, (req, res) => {
 
 // ===== WEBSITE ANALYTICS =====
 const analytics = { visits: [], pages: {} };
+
+app.get('/api/track', (req, res) => { try { var dbG = getDb(); if (!dbG.pageviews) dbG.pageviews = []; var when = new Date().toISOString(); dbG.pageviews.push({ id: uuidv4(), visitor: String(req.query.v || req.query.p || '').substring(0,64), path: String(req.query.p || req.path || '/').substring(0,300), referrer: String(req.headers.referer || req.headers.referrer || '').substring(0,300), ua: String(req.headers['user-agent'] || '').substring(0,300), created_at: when }); if (dbG.pageviews.length > 200000) dbG.pageviews.splice(0, dbG.pageviews.length - 200000); saveDb(); } catch(e) {} res.set('Content-Type','image/gif'); res.send(Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7','base64')); });
 
 app.post('/api/track', (req, res) => {
   const { page, referrer } = req.body;

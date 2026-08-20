@@ -1049,7 +1049,7 @@ function addDashArea() {
      if (msg) { msg.textContent = 'Please pick exactly ' + cap + ' postcode areas before saving (you have ' + dashboardAreas.length + ').'; msg.style.color = '#ef4444'; }
      return;
    }
-   fetch('/api/auth/update-areas', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }, body: JSON.stringify({ areas: dashboardAreas }) })
+   fetch('/api/auth/update-areas', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ areas: dashboardAreas }) })
      .then(function(r){ return r.json(); })
      .then(function(d){
        if (d.success) { if (msg) { msg.textContent = 'Postcode areas saved: ' + d.areas.join(', '); msg.style.color = '#22c55e'; } }

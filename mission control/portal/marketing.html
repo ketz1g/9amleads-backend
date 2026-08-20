@@ -151,6 +151,9 @@ function loadTemplates(){
   if(!sd){window.location.href='/portal/';return;}
   var sess=JSON.parse(sd);_token=sess.token;
   if(!_token){window.location.href='/portal/';return;}
+  // Brand tone for the letter + flyer templates (used when saving the business profile).
+  var tones = { letter: 'professional', flyer: 'professional' };
+  function setTone(type, tone) { if (tones && type) tones[type] = tone || 'professional'; }
   loadProfile();
   loadTemplates();
   setTone('letter','professional');
