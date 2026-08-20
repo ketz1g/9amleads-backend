@@ -97,8 +97,6 @@
 
 # Real 404 for unknown URLs (avoids soft-404s and homepage duplicate content)
 [[redirects]]
-  
-[[redirects]]
   from = "/about"
   to = "/how-it-works/"
   status = 301
@@ -123,8 +121,8 @@
   to = "/privacy.html"
   status = 301
 
-
-from = "/*"
+[[redirects]]
+  from = "/*"
   to = "/404.html"
   status = 404
 
