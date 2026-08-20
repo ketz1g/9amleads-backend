@@ -135,7 +135,15 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
     // Correct Rightmove location IDs for the North West supply areas (the typeahead
     // endpoint was retired and the old OUTCODE ids 404 for Liverpool/Manchester).
     // REGION ids taken from Rightmove's own city pages (Liverpool/Manchester/etc).
-    var KNOWN_LOCATION = { L: 'REGION%5E813', M: 'REGION%5E904', WA: 'REGION%5E1403', CH: 'REGION%5E313', WN: 'REGION%5E1452' };
+    // Exact Rightmove location IDs for EVERY postcode area customers sign up for.
+    // REGION ids come from Rightmove's own city pages (Liverpool/Ilford/Preston/etc)
+    // so each customer area is scraped DIRECTLY - no more missing supply for areas
+    // that fall back to a broad region and get deduped (IG/RM/DA/CM/AL/KT/CR/PR...).
+    var KNOWN_LOCATION = {
+      L: 'REGION%5E813', M: 'REGION%5E904', WA: 'REGION%5E1403', CH: 'REGION%5E313', WN: 'REGION%5E1452',
+      IG: 'REGION%5E674', RM: 'REGION%5E1138', DA: 'REGION%5E407', CM: 'REGION%5E307',
+      AL: 'REGION%5E1244', KT: 'REGION%5E746', CR: 'REGION%5E391', PR: 'REGION%5E1097'
+    };
     var locId = KNOWN_LOCATION[areaCode] || null;
     if (!locId) {
       if (outcodeId) locId = 'OUTCODE%5E' + outcodeId;
