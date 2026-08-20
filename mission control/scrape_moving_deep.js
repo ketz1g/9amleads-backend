@@ -167,14 +167,14 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
       }
     }
     var url = 'https://www.rightmove.co.uk/' + section + '/find.html?searchType=SALE&locationIdentifier=' + locId + '&includeSSTC=true';
-    // NW areas (L/WA/CH/M/WN): list-mode displayAddress has no postcode, so we must
-    // fetch FULL property details to capture the full postcode (delivery requires it).
-    var detailAreas = { L: 1, WA: 1, CH: 1, M: 1, WN: 1 };
+    // LIST mode (fast): full-property-detail mode is too slow for the 150s run-sync
+    // timeout and made the whole scrape hang. List mode completes in minutes per
+    // area and displayAddress usually includes the full postcode.
     var input = {
       listUrls: [{ url: url }],
       propertyUrls: [],
       monitoringMode: false,
-      fullPropertyDetails: detailAreas[areaCode] ? true : false,
+      fullPropertyDetails: false,
       includePriceHistory: false,
       includeNearestSchools: false,
       enableDelistingTracker: false,
@@ -242,7 +242,7 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
   var start = Date.now();
   // Log to a file too so we can debug the detached worker on the live server.
   var logLines = [];
-  function log(msg) { console.log(msg); try { logLines.push('[' + new Date().toISOString() + '] ' + msg); } catch(e) {} }
+  function log(msg) { console.log(msg); try { logLines.push('[' + new Date().toISOString() + '] ' + msg); } catch(e) {} try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.appendFileSync(path.join(DATA_DIR, 'deep-scrape.log'), '[' + new Date().toISOString() + '] ' + msg + '\n'); } catch(e) {} }
   // 1. Determine areas: from args, or gather active moving accounts
   var forceAreas = process.argv[2] || '';
   var areas = forceAreas ? forceAreas.split(',').map(function(a){return a.trim().toUpperCase();}).filter(Boolean) : [];
