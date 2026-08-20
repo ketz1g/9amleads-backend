@@ -8065,6 +8065,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     console.log('[DELIVERY] Running for ' + customers.length + ' customer(s)' + (onlyEmail ? ' (filtered to ' + onlyEmail + ')' : ''));
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
+      // IN-RUN DEDUP: never assign the same property/listing twice to this
+      // customer within a single delivery run (the pool can hold near-identical
+      // entries that differ only by id/formatting).
+      var _inRunSeen = {};
       var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
       if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
       if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: [], stage: 'start' };
@@ -8284,6 +8288,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           var dd = JSON.parse(l.data || '{}');
           var u = dd.url || '';
           if (u && deliveredUrls[u]) return false;
+          // IN-RUN dedup: reject a property/listing already assigned this run.
+          var normU = String(u).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+          var iKey = normU ? 'u:' + normU : ('a:' + String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
+          if (_inRunSeen && _inRunSeen[iKey]) return false;
+          if (_inRunSeen) _inRunSeen[iKey] = true;
           var aKey = String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
           var rKey = String(dd.reference || dd.companyNumber || dd.deceasedName || dd.tenderNoticeId || '').toLowerCase().trim();
           var pKey = String(dd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
