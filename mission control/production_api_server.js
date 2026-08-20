@@ -6222,6 +6222,32 @@ cron.schedule('15 9 * * 1-5', async () => {
         vreq.write(vb); vreq.end();
       } catch(vt) { console.log('[VERIFY-9AM] top-up call error: ' + vt.message); }
     }
+    // GOODWILL BONUS LEAD: issue resolved (top-up done) - add ONE extra full-address lead
+    for (var vi2 = 0; vi2 < vIssues.length; vi2++) {
+      try {
+        var gCust = (vDb.customers || []).find(function(c) { return c.id === vIssues[vi2].id; });
+        if (!gCust) continue;
+        var gAreas = [];
+        try { var gp = JSON.parse(gCust.product_config || '{}'); if (gp.moving && gp.moving.target_areas) gAreas = JSON.parse(gp.moving.target_areas); else gAreas = JSON.parse(gCust.target_areas || '[]'); } catch(e) {}
+        var gPool = interleavePoolByAreas(getDeliveryPool('moving'), gAreas);
+        var gLead = null, gData = null;
+        for (var gi = 0; gi < gPool.length; gi++) {
+          var gl = gPool[gi];
+          var gd = gl.data ? (typeof gl.data === 'string' ? JSON.parse(gl.data) : gl.data) : gl;
+          if (gd.address) { gd.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(gd.address))); gd.fullAddress = gd.address; }
+          if (validateMovingLead(gd)) { gLead = gl; gData = gd; break; }
+        }
+        if (gLead && gData) {
+          var gNew = { id: 'lead_' + Date.now() + '_goodwill_' + vi2, customer_id: gCust.id, product: 'moving', data: JSON.stringify(Object.assign({}, gLead, { address: gData.address, fullAddress: gData.address, postcode: gData.postcode || '' })), status: 'new', delivered: 1, created_at: new Date().toISOString(), delivered_at: new Date().toISOString() };
+          vDb.leads.push(gNew);
+          saveDb();
+          console.log('[VERIFY-9AM] goodwill bonus lead added to ' + vIssues[vi2].email + ' - ' + gData.postcode);
+          try {
+            await sendBrevoEmail(gCust.email, 'A free bonus lead from 9amLeads 🎉', '<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#22c55e;margin:0 0 10px">A free bonus lead for you</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">Thanks for your patience - as a <b>gesture of goodwill</b>, we have added a <b>free bonus lead</b> to your dashboard (on top of your usual daily leads). No extra charge.</p><div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:14px;margin:12px 0"><div style="font-size:15px;font-weight:700;color:#f1f5f9">' + esc(gData.fullAddress || gData.address) + '</div><div style="font-size:13px;color:#94a3b8;margin-top:4px">' + (gData.postcode || '') + '</div></div><p style="font-size:12px;color:#94a3b8">This lead is yours - review it in your dashboard. If you ever have any questions, just reply to this email.</p></div>');
+          } catch(gwe) { console.log('[VERIFY-9AM] goodwill email error: ' + gwe.message); }
+        }
+      } catch(gw) { console.log('[VERIFY-9AM] goodwill error: ' + gw.message); }
+    }
     try {
       var vRows = vIssues.map(function(i) { return '<tr><td style="padding:6px 10px;border-bottom:1px solid #eee">' + i.company + '</td><td style="padding:6px 10px;border-bottom:1px solid #eee">' + i.email + '</td><td style="padding:6px 10px;border-bottom:1px solid #eee">' + i.product + '</td><td style="padding:6px 10px;border-bottom:1px solid #eee">' + i.delivered + ' / ' + i.quota + '</td></tr>'; }).join('');
       await sendBrevoEmail('hello@9amleads.com', '9amLeads alert: delivery verification - ' + vIssues.length + ' customer(s) short today', '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f59e0b;margin:0 0 10px">Delivery verification: ' + vIssues.length + ' customer(s) short of their 9am promise</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">The system has <b>automatically re-run the top-up</b> for these customers. Check their dashboards shortly.</p><table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:10px"><thead><tr style="background:rgba(255,255,255,0.06)"><th style="text-align:left;padding:6px 10px">Company</th><th style="text-align:left;padding:6px 10px">Email</th><th style="text-align:left;padding:6px 10px">Type</th><th style="text-align:left;padding:6px 10px">Delivered</th></tr></thead><tbody>' + vRows + '</tbody></table></div>');
