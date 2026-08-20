@@ -391,9 +391,9 @@ function loadProductPool(prod) {
   var seenPool = {};
   arr = arr.filter(function(l) {
     var u = String(l.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
-    var a = String(l.address || l.fullAddress || l.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-    var pc = String(l.postcode || '').toUpperCase().replace(/\s+/g, '').trim();
-    var key = u ? 'u:' + u : ('a:' + a + (pc ? '|' + pc : ''));
+    var aRaw = String(l.address || l.fullAddress || l.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
+    var a = aRaw.replace(/\b([a-z]{1,2}\d[a-z0-9]?\s?\d[a-z]{2})\b/g, '').replace(/\s+/g, '').slice(0, 30);
+    var key = u ? 'u:' + u : 'a:' + a;
     if (!key || key === 'a:') return true;
     if (seenPool[key]) return false;
     seenPool[key] = true;
@@ -8025,9 +8025,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var seenPoolD = {};
       arr = arr.filter(function(l) {
         var u = String(l.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
-        var a = String(l.address || l.fullAddress || l.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-        var pc = String(l.postcode || '').toUpperCase().replace(/\s+/g, '').trim();
-        var key = u ? 'u:' + u : ('a:' + a + (pc ? '|' + pc : ''));
+        var aRaw = String(l.address || l.fullAddress || l.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
+        var a = aRaw.replace(/\b([a-z]{1,2}\d[a-z0-9]?\s?\d[a-z]{2})\b/g, '').replace(/\s+/g, '').slice(0, 30);
+        var key = u ? 'u:' + u : 'a:' + a;
         if (!key || key === 'a:') return true;
         if (seenPoolD[key]) return false;
         seenPoolD[key] = true;
