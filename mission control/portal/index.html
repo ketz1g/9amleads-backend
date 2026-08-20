@@ -425,6 +425,7 @@ function updateMovingTypeLabel() {
 </div>
 
 <label class="consent"><input type="checkbox" id="s-consent" checked> I agree to receive daily lead emails. <a href="/privacy.html">Privacy Policy</a></label>
+<label class="consent"><input type="checkbox" id="s-terms" required> I have read and agree to the <a href="/terms.html" target="_blank">Terms &amp; Conditions</a>.</label>
 
 <div class="status" id="signup-error"></div>
 <div class="success" id="signup-success">Account created! Redirecting...</div>
@@ -935,6 +936,7 @@ function doSignup() {
   var productCheckboxes = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
   var products = Array.from(productCheckboxes).map(function(cb) { return cb.value; });
   if (products.length === 0) { document.getElementById('signup-error').textContent = 'Please select at least one lead type'; document.getElementById('signup-error').style.display = 'block'; return; }
+  if (!document.getElementById('s-terms').checked) { document.getElementById('signup-error').textContent = 'Please tick the box to confirm you have read and agree to the Terms &amp; Conditions.'; document.getElementById('signup-error').style.display = 'block'; return; }
   var selectedPlan = document.querySelector('#s-plan-container input[type=radio]:checked');
   var planVal = selectedPlan ? selectedPlan.value : 'free_trial';
   var maxProducts = planVal === 'free_trial' ? 1 : planVal === 'starter' ? 2 : 99;
@@ -1001,7 +1003,7 @@ var pLimit = getPostcodeAreaLimit();
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
   fetch(API + '/api/auth/signup', {
     method:'POST', headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()), movingType:(document.querySelector('#s-moving-type input[type=radio]:checked')?.value || 'both') })
+    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', acceptTerms:document.getElementById('s-terms').checked, marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()), movingType:(document.querySelector('#s-moving-type input[type=radio]:checked')?.value || 'both') })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:plan, email:email, product:product, products:products }));

@@ -2325,10 +2325,13 @@ app.get(/^\/(?!api\/).*$/, (req, res) => {
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { company, name, email, phone, password, product, products, plan, targetAreas, coverage, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl, movingType } = req.body;
+    const { company, name, email, phone, password, product, products, plan, targetAreas, coverage, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl, movingType, acceptTerms } = req.body;
 
     if (!company || !email || !password) {
       return res.status(400).json({ error: 'Company, email and password are required' });
+    }
+    if (source === 'web' && !acceptTerms) {
+      return res.status(400).json({ error: 'Please accept the Terms & Conditions to create an account' });
     }
     if (!validateEmail(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
@@ -5352,7 +5355,7 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
     (insight.metric ? '<p style="font-size:11px;color:#0284c7;margin:0 0 8px"><strong>' + insight.metric + '</strong></p>' : '') +
     '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">' +
 '<p style="font-size:10px;color:#ffffff;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
-'<p style="font-size:9px;color:#ffffff;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>' +
+'' +
     '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:26px;text-align:center;text-decoration:none;margin:0 3px;font-size:10px;font-weight:700;color:#cbd5e1">f</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:26px;text-align:center;text-decoration:none;margin:0 3px;font-size:10px;font-weight:700;color:#cbd5e1">t</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:26px;text-align:center;text-decoration:none;margin:0 3px;font-size:10px;font-weight:700;color:#cbd5e1">i</a></div>' +
     '</div></div></td></tr>' +
     // Premium separator
@@ -5679,7 +5682,7 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   (insight.metric ? '<p style="font-size:11px;color:#0284c7;margin:0 0 8px"><strong>' + insight.metric + '</strong></p>' : '') +
   '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">' +
 '<p style="font-size:10px;color:#ffffff;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
-'<p style="font-size:9px;color:#ffffff;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>' +
+'' +
    '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">ig</a></div>' +
    '</div></div></td></tr>' +
   // Footer
@@ -12298,7 +12301,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += (insight2.metric ? '<p style="font-size:11px;color:#0284c7;margin:0 0 8px"><strong>' + insight2.metric + '</strong></p>' : '');
   body += '<div style="border-top:1px solid rgba(255,255,255,0.12);padding-top:8px;margin-top:4px">';
   body += '<p style="font-size:10px;color:#ffffff;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>';
-  body += '<p style="font-size:9px;color:#ffffff;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>';
+  body += '';
   body += '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#3f3f46">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#3f3f46">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#3f3f46">ig</a></div>';
   body += '</div></div></td></tr>';
 
