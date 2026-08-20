@@ -1662,6 +1662,26 @@ function getDirectMailProvider() {
 // ===== DIRECT MAIL NOTIFICATIONS =====
 var DM_NOTIFIED = {}; // In-memory dedup cache
 
+// Shared branded email header + footer (dark deep-navy with sky-blue 9amLeads wordmark).
+// Used by all customer-facing emails so every email matches the daily lead email design.
+function buildEmailHeader(tagline) {
+  return '<tr><td style="background-color:#0f172a;background-image:linear-gradient(135deg,#0f172a,#1e293b);padding:28px 30px 18px;border-radius:16px 16px 0 0;text-align:center;border-bottom:3px solid #0ea5e9">' +
+    '<table cellpadding="0" cellspacing="0" align="center"><tr>' +
+    '<td style="background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:12px;width:44px;height:44px;text-align:center;vertical-align:middle;line-height:44px;font-family:Outfit,Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#ffffff;box-shadow:0 2px 10px rgba(14,165,233,0.4)">9</td>' +
+    '<td style="padding-left:12px;vertical-align:middle;text-align:left"><div style="font-family:Outfit,Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#38bdf8;letter-spacing:-0.4px;line-height:1.1">9am<span style="color:#38bdf8">Leads</span></div><div style="font-size:9px;color:#94a3b8;letter-spacing:1.4px;text-transform:uppercase;margin-top:3px;font-weight:700">' + (tagline || 'Fresh business leads &middot; Every morning') + '</div></td>' +
+    '</tr></table></td></tr>';
+}
+
+function buildEmailFooter(opts) {
+  opts = opts || {};
+  var links = opts.links || '<a href="https://www.9amleads.com/privacy.html" style="color:#ffffff;text-decoration:underline">Privacy Policy</a> &bull; <a href="' + (opts.unsubUrl || 'https://www.9amleads.com/privacy.html#unsubscribe') + '" style="color:#ffffff;text-decoration:underline">Unsubscribe</a>';
+  return '<tr><td style="background:linear-gradient(135deg,#0f172a,#1e293b);padding:22px 30px 20px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid #0ea5e9">' +
+    '<div style="font-family:Outfit,Arial,Helvetica,sans-serif;font-size:17px;font-weight:900;color:#38bdf8;text-align:center;margin-bottom:12px"><span style="display:inline-block;width:26px;height:26px;border-radius:8px;text-align:center;line-height:26px;font-size:13px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;margin-right:6px;vertical-align:middle;font-family:Outfit,Arial,sans-serif">9</span><span style="vertical-align:middle">9amLeads</span></div>' +
+    '<p style="color:#cbd5e1;font-size:11px;margin:0 0 8px">' + links + '</p>' +
+    '<p style="color:#94a3b8;font-size:9px;margin:0;letter-spacing:.4px">Fresh exclusive opportunities at 9am every morning &bull; 9amLeads.com</p>' +
+    '</td></tr>';
+}
+
 function dmEmailHTML(title, body, ctaText, ctaUrl) {
   var accent = '#0ea5e9';
   // Email-safe layout: tables (no flexbox — flex misaligns in Outlook/Gmail).
@@ -1671,7 +1691,7 @@ function dmEmailHTML(title, body, ctaText, ctaUrl) {
     // Header with aligned logo
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:20px 24px;background:#0f1422;border-bottom:1px solid #151929"><table role="presentation" cellpadding="0" cellspacing="0"><tr>' +
     '<td style="width:34px;height:34px;background-color:#0ea5e9;border-radius:9px;text-align:center;vertical-align:middle;line-height:32px;font-family:Georgia,\'Times New Roman\',serif;font-size:18px;font-weight:900;color:#ffffff">9</td>' +
-    '<td style="padding-left:10px;vertical-align:middle"><div style="font-size:17px;font-weight:800;color:#dce2f0;font-family:Inter,Helvetica,Arial,sans-serif;line-height:1.1">9am<span style="color:' + accent + '">Leads</span></div><div style="font-size:9px;color:#8890b0;letter-spacing:1px;text-transform:uppercase;margin-top:2px;font-family:Inter,Helvetica,Arial,sans-serif">Print &amp; Post</div></td>' +
+    '<td style="padding-left:10px;vertical-align:middle"><div style="font-size:17px;font-weight:800;color:#38bdf8;font-family:Inter,Helvetica,Arial,sans-serif;line-height:1.1">9am<span style="color:' + accent + '">Leads</span></div><div style="font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-top:2px;font-family:Inter,Helvetica,Arial,sans-serif">Print &amp; Post</div></td>' +
     '</tr></table></td></tr></table>' +
     // Body
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:26px 28px">' +
@@ -1679,7 +1699,7 @@ function dmEmailHTML(title, body, ctaText, ctaUrl) {
     '<div style="font-size:13px;color:#8890b0;line-height:1.7;font-family:Inter,Helvetica,Arial,sans-serif">' + body + '</div>' +
     (ctaText && ctaUrl ? '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:22px 0 4px"><a href="' + ctaUrl + '" style="display:inline-block;padding:13px 32px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-size:13px;font-weight:700;font-family:Inter,Helvetica,Arial,sans-serif">' + ctaText + '</a></td></tr></table>' : '') +
     // Footer
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:20px 0 0;border-top:1px solid #151929;font-size:11px;color:#5a6280;text-align:center;font-family:Inter,Helvetica,Arial,sans-serif">9amLeads &middot; <a href="https://9amleads.com" style="color:' + accent + ';text-decoration:none">9amleads.com</a><br><span style="color:#3d4456">hello@9amleads.com &middot; Fresh business leads every morning at 9am</span></td></tr></table>' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:20px 0 0;border-top:1px solid #151929;font-size:11px;color:#94a3b8;text-align:center;font-family:Inter,Helvetica,Arial,sans-serif">9amLeads &middot; <a href="https://9amleads.com" style="color:' + accent + ';text-decoration:none">9amleads.com</a><br><span style="color:#64748b">hello@9amleads.com &middot; Fresh business leads every morning at 9am</span></td></tr></table>' +
     '</td></tr></table>' +
     '</td></tr></table></div>';
 }
@@ -2497,7 +2517,7 @@ app.post('/api/auth/signup', async (req, res) => {
         await sendBrevoEmail(
           { email: customer.email, name: customer.contact_name || customer.company },
         'Verify your 9amLeads account',
-        '<div style="font-family:Arial,Helvetica,sans-serif;background:#0f111a;color:#e2e8f0;padding:28px 20px"><div style="max-width:560px;margin:0 auto;background:#0f111a"><div style="text-align:center;margin-bottom:16px"><span style="display:inline-block;width:34px;height:34px;border-radius:9px;text-align:center;line-height:34px;font-size:15px;background-color:#0ea5e9;margin-right:5px;vertical-align:middle;color:#fff;font-weight:900">9</span><span style="vertical-align:middle;font-size:20px;font-weight:900;color:#f1f5f9">am Leads</span></div><h2 style="font-size:20px;font-weight:800;color:#ffffff;margin:0 0 12px;text-align:center">Welcome to 9am Leads!</h2><p style="font-size:14px;color:#ffffff;line-height:1.7;margin:0 0 16px;text-align:center">Please verify your email address by clicking the button below:</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 16px"><a href="' + verifyUrl + '" style="display:inline-block;padding:12px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700">Verify Email</a></td></tr></table><p style="font-size:13px;color:#ffffff;line-height:1.6;margin:0;text-align:center">Your free 7-day trial has started. You\'ll receive your first leads at 9am tomorrow.</p></div></div>'
+        '<div style="font-family:Inter,Arial,Helvetica,sans-serif;background:#f1f5f9;color:#1e293b;padding:28px 20px"><div style="max-width:600px;margin:0 auto"><table width="100%" cellpadding="0" cellspacing="0"><tbody>' + buildEmailHeader() + '<tr><td style="background:#ffffff;padding:28px 30px;color:#1e293b;text-align:center"><h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 12px;text-align:center">Welcome to 9am Leads!</h2><p style="font-size:14px;color:#475569;line-height:1.7;margin:0 0 16px;text-align:center">Please verify your email address by clicking the button below:</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 16px"><a href="' + verifyUrl + '" style="display:inline-block;padding:12px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700">Verify Email</a></td></tr></table><p style="font-size:13px;color:#334155;line-height:1.6;margin:0;text-align:center">Your free 7-day trial has started. You\'ll receive your first leads at 9am tomorrow.</p></td></tr>' + buildEmailFooter() + '</tbody></table></div></div>'
         );
         console.log('[VERIFY] Verification email sent to ' + customer.email);
       } catch (e) {
@@ -2743,7 +2763,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       await sendBrevoEmail(
         { email: customer.email, name: customer.contact_name || customer.company },
         'Reset your 9amLeads password',
-        '<div style="font-family:Arial,Helvetica,sans-serif;background:#ffffff;padding:28px;border-radius:12px"><div style="text-align:center;margin-bottom:16px"><span style="display:inline-block;width:34px;height:34px;border-radius:9px;text-align:center;line-height:34px;font-size:15px;background:linear-gradient(135deg,#0ea5e9,#6366f1);margin-right:5px;vertical-align:middle;color:#fff;font-weight:900">9</span><span style="vertical-align:middle;font-size:20px;font-weight:900;color:#1e293b">am Leads</span></div><h2 style="font-size:20px;font-weight:800;color:#1e293b;margin:0 0 12px;text-align:center">Password Reset</h2><p style="font-size:14px;color:#475569;line-height:1.7;margin:0 0 16px;text-align:center">Click the button below to reset your password. This link expires in 1 hour.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 16px"><a href="' + resetUrl + '" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700">Reset Password</a></td></tr></table><p style="font-size:13px;color:#64748b;line-height:1.6;margin:0;text-align:center">If you did not request this, please ignore this email.</p></div>'
+        '<div style="font-family:Inter,Arial,Helvetica,sans-serif;background:#f1f5f9;color:#1e293b;padding:28px 20px"><div style="max-width:600px;margin:0 auto"><table width="100%" cellpadding="0" cellspacing="0"><tbody>' + buildEmailHeader() + '<tr><td style="background:#ffffff;padding:28px 30px;color:#1e293b;text-align:center"><h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 12px;text-align:center">Password Reset</h2><p style="font-size:14px;color:#475569;line-height:1.7;margin:0 0 16px;text-align:center">Click the button below to reset your password. This link expires in 1 hour.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 16px"><a href="' + resetUrl + '" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700">Reset Password</a></td></tr></table><p style="font-size:13px;color:#64748b;line-height:1.6;margin:0;text-align:center">If you did not request this, please ignore this email.</p></td></tr>' + buildEmailFooter() + '</tbody></table></div></div>'
       );
     } catch (e) {
       console.log('[PASSWORD] Reset email failed:', e.message, '- Token stored for manual reset:', resetToken);
@@ -5333,15 +5353,10 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
   
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>' +
     '<body style="margin:0;padding:0;background:#0f111a;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#e2e8f0">' +
-    '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px">' +
+    '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px">' +
     '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">' +
     // Header
-    '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:32px 30px 20px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">' +
-    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#ffffff;text-align:center;margin-bottom:6px">' +
-    '<span style="display:inline-block;width:38px;height:38px;border-radius:10px;text-align:center;line-height:38px;font-size:18px;background:linear-gradient(135deg,#0ea5e9,#6366f1);margin-right:6px;vertical-align:middle">9</span>' +
-    '<span style="vertical-align:middle">am Leads</span></div>' +
-    '<p style="color:#f1f5f9;font-size:10px;margin:0;text-transform:uppercase;letter-spacing:2.5px;font-weight:600">' + campaign.name + '</p>' +
-    '</td></tr>' +
+    buildEmailHeader(campaign.name) +
     // Content
     '<tr><td style="background:#12141e;padding:28px 30px 24px">' +
     '<p style="color:#f1f5f9;font-size:14px;margin:0 0 6px">Hi ' + name + ',</p>' +
@@ -5368,11 +5383,7 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
     '<p style="color:#94a3b8;font-size:10px;margin:2px 0 0">Founder, 9amLeads</p>' +
     '</div></td></tr>' +
     // Footer
-    '<tr><td bgcolor="#0f172a" style="background-color:#0f172a;background-image:linear-gradient(135deg,#0f172a,#1e293b);padding:20px 30px 16px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">' +
-    '<p style="color:#94a3b8;font-size:10px;margin:0 0 6px">9am Leads Ltd</p>' +
-    '<p style="color:#94a3b8;font-size:9px;margin:0 0 8px"><a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a>' +
-     ' &bull; <a href="https://www.9amleads.com/privacy.html#unsubscribe" style="color:#38bdf8;text-decoration:underline">Unsubscribe</a></p>' +
-    '<p style="color:#475569;font-size:8px;margin:0;letter-spacing:.4px">Fresh exclusive opportunities at 9am every morning &bull; 9amLeads.com</p>' +
+    buildEmailFooter() +
     '</td></tr></table></td></tr></table></body></html>';
 }
 
@@ -5674,10 +5685,10 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   };
   var insight = insightCards[prod] || { emoji: '\uD83D\uDCA1', tip: 'Send a letter or flyer with Print &amp; Post and follow up in person to win the work.', metric: '', link: PUBLIC_URL + '/pricing' };
   
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%"><tr><td style="background:#ffffff;padding:26px 30px 20px;border-bottom:1px solid #eef0f4;text-align:center"><div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-0.3px"><span style="display:inline-block;width:34px;height:34px;border-radius:8px;text-align:center;line-height:32px;font-size:15px;background-color:#0ea5e9;color:#ffffff;margin-right:6px;vertical-align:middle">9</span><span style="vertical-align:middle">amLeads</span></div></td></tr><tr><td style="background:#ffffff;padding:20px 30px 26px">' + (templates[template] || templates.trial_day1) + '</td></tr>' +
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() + '<tr><td style="background:#ffffff;padding:20px 30px 26px">' + (templates[template] || templates.trial_day1) + '</td></tr>' +
   // Product insight card
-  '<tr><td style="background:#ffffff;padding:0 30px 16px"><div style="background:#f8fafc;border:1px solid #eef0f4;border-radius:10px;padding:14px 16px">' +
-  '<div style="font-size:11px;font-weight:700;color:#334155;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">' + productName + ' Insight</div>' +
+  '<tr><td style="background:#ffffff;padding:0 30px 16px"><div style="background:#12141e;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px 16px">' +
+  '<div style="font-size:11px;font-weight:700;color:#ffffff;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">' + productName + ' Insight</div>' +
   '<p style="font-size:13px;color:#ffffff;line-height:1.6;margin:0 0 6px">' + insight.tip + '</p>' +
   (insight.metric ? '<p style="font-size:11px;color:#0284c7;margin:0 0 8px"><strong>' + insight.metric + '</strong></p>' : '') +
   '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">' +
@@ -5686,7 +5697,7 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
    '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">ig</a></div>' +
    '</div></div></td></tr>' +
   // Footer
-  '<tr><td style="background:#ffffff;padding:16px 30px 26px;border-radius:0 0 16px 16px;border-top:1px solid #eef0f4;text-align:center"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:0 0 12px"><a href="' + pricingUrl + '" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">View Pricing</a> <a href="' + PUBLIC_URL + '/portal/dashboard.html" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,#6366f1,#0ea5e9);color:#fff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Sign In</a></td></tr></table><p style="color:#334155;font-size:12px;margin:0 0 4px;font-weight:600">9amLeads</p><p style="color:#64748b;font-size:11px;margin:0"><a href="https://www.9amleads.com/privacy.html" style="color:#0284c7;text-decoration:underline">Privacy Policy</a> &bull; <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>';
+  ' + buildEmailFooter() + </td></tr></table></td></tr></table></body></html>';
 }
 
 // ===== SCRAPER SCHEDULER: Daily at 5:30 AM =====
@@ -6252,7 +6263,7 @@ cron.schedule('15 9 * * 1-5', async () => {
           saveDb();
           console.log('[VERIFY-9AM] goodwill bonus lead added to ' + vIssues[vi2].email + ' - ' + gData.postcode + ' (trial +' + gExtendDays + 'd)');
           try {
-            await sendBrevoEmail(gCust.email, 'A free bonus lead from 9amLeads \u{1F389}', '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#ffffff;color:#1e293b;border:1px solid #e2e8f0;border-radius:12px"><div style="font-size:11px;color:#64748b;letter-spacing:1px;margin-bottom:6px">9amLeads \u2022 Customer Care</div><h2 style="color:#15803d;margin:0 0 12px;font-size:20px">A free bonus lead for you \u{1F389}</h2><p style="font-size:14px;line-height:1.7;color:#334155">Thanks for your patience \u2014 as a <b>gesture of goodwill</b> for the delivery delay, we have added a <b>free bonus lead</b> to your dashboard, plus <b>+2 days</b> on your trial. No extra charge.</p><div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin:14px 0"><div style="font-size:15px;font-weight:700;color:#1e293b">' + esc(gData.fullAddress || gData.address) + '</div><div style="font-size:13px;color:#64748b;margin-top:4px">' + (gData.postcode || '') + '</div></div><p style="font-size:13px;line-height:1.6;color:#475569">This bonus lead is yours to review in your dashboard \u2014 on top of your usual daily leads. If you have any questions, just reply to this email and we will help right away.</p><div style="margin-top:18px;padding-top:14px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8">9amLeads \u2022 Your daily leads, on time, every weekday at 9am</div></div>');
+            await sendBrevoEmail(gCust.email, 'A free bonus lead from 9amLeads \u{1F389}', '<div style="font-family:Inter,Arial,Helvetica,sans-serif;background:#f1f5f9;color:#1e293b;padding:28px 20px"><div style="max-width:600px;margin:0 auto"><table width="100%" cellpadding="0" cellspacing="0"><tbody>' + buildEmailHeader() + '<tr><td style="background:#ffffff;padding:28px 30px;color:#1e293b"><div style="font-size:11px;color:#64748b;letter-spacing:1px;margin-bottom:6px">9amLeads \u2022 Customer Care</div><h2 style="color:#15803d;margin:0 0 12px;font-size:20px">A free bonus lead for you \u{1F389}</h2><p style="font-size:14px;line-height:1.7;color:#334155">Thanks for your patience \u2014 as a <b>gesture of goodwill</b> for the delivery delay, we have added a <b>free bonus lead</b> to your dashboard, plus <b>+2 days</b> on your trial. No extra charge.</p><div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin:14px 0"><div style="font-size:15px;font-weight:700;color:#1e293b">' + esc(gData.fullAddress || gData.address) + '</div><div style="font-size:13px;color:#64748b;margin-top:4px">' + (gData.postcode || '') + '</div></div><p style="font-size:13px;line-height:1.6;color:#475569">This bonus lead is yours to review in your dashboard \u2014 on top of your usual daily leads. If you have any questions, just reply to this email and we will help right away.</p></td></tr>' + buildEmailFooter() + '</tbody></table></div></div>');
           } catch(gwe) { console.log('[VERIFY-9AM] goodwill email error: ' + gwe.message); }
         }
       } catch(gw) { console.log('[VERIFY-9AM] goodwill error: ' + gw.message); }
