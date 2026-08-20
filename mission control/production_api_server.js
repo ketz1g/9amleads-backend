@@ -12732,6 +12732,17 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#3f3f46">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#3f3f46">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#3f3f46">ig</a></div>';
   body += '</div></div></td></tr>';
 
+  // Print & Post promo — make the most of this lead
+  body += '<tr><td style="background:#ffffff;padding:0 30px 18px">' +
+    '<div style="background:linear-gradient(135deg,#eff6ff,#eef2ff);border:1px solid #e0e7ff;border-radius:12px;padding:16px 18px">' +
+    '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:6px">📬 Make the most of this lead</div>' +
+    '<div style="font-size:12px;color:#334155;line-height:1.6">' +
+    'Upload your <strong>flyer front &amp; back + letter</strong> in your dashboard and we will <strong>print &amp; post</strong> it directly to this lead - so your business reaches them in the post, not just their inbox. ' +
+    'Turn on <strong>Auto-Send</strong> and we do this for you automatically after every 9am delivery.' +
+    '</div>' +
+    '<a href="' + dashboardUrl + '" style="display:inline-block;margin-top:10px;padding:8px 18px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Open Print &amp; Post</a>' +
+    '</div></td></tr>';
+
   // Footer — dark navy (matches header)
   body += '<tr><td style="background:linear-gradient(135deg,#0f172a,#1e293b);padding:22px 30px 20px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid #0ea5e9">';
   body += '<div style="font-family:Outfit,Arial,Helvetica,sans-serif;font-size:17px;font-weight:900;color:#38bdf8;text-align:center;margin-bottom:12px"><span style="display:inline-block;width:26px;height:26px;border-radius:8px;text-align:center;line-height:26px;font-size:13px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;margin-right:6px;vertical-align:middle;font-family:Outfit,Arial,sans-serif">9</span><span style="vertical-align:middle">9amLeads</span></div>';
