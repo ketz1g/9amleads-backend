@@ -4814,6 +4814,47 @@ app.post('/api/admin/replace-customer-leads', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/otm-scrape - direct OnTheMarket scrape (NO Apify credits).
+// Scrapes the given areas (or all active moving customers' areas), gets the full
+// postcode from each detail page (free), and appends fresh leads to the moving
+// pool. Used when the Apify/Rightmove worker can't run (e.g. no credits).
+app.post('/api/admin/otm-scrape', adminAuth, async (req, res) => {
+  try {
+    var areasParam = String((req.body && req.body.areas) || '');
+    var areas = areasParam ? areasParam.split(',').map(function(a){ return a.trim().toUpperCase(); }).filter(Boolean) : [];
+    var maxPerArea = parseInt((req.body && req.body.max) || '40', 10);
+    if (areas.length === 0) {
+      var dbO = getDb();
+      (dbO.customers || []).forEach(function(c) {
+        if (c.product !== 'moving' && !((c.biz_field3 || '').indexOf('moving') !== -1)) return;
+        var cAreas = [];
+        try { cAreas = JSON.parse(c.target_areas || '[]'); } catch(e) { cAreas = []; }
+        if (!cAreas.length) { try { var cfgO = JSON.parse(c.product_config || '{}'); cAreas = (cfgO.moving && cfgO.moving.target_areas) ? JSON.parse(cfgO.moving.target_areas) : []; } catch(e2) {} }
+        cAreas.forEach(function(a) { var u = String(a).toUpperCase().replace(/[^A-Z].*$/, ''); if (/^[A-Z]{1,2}$/.test(u) && areas.indexOf(u) === -1) areas.push(u); });
+      });
+    }
+    areas = areas.filter(function(a) { return /^[A-Z]{1,2}$/.test(a); });
+    if (!areas.length) return res.status(400).json({ error: 'No areas to scrape' });
+    var otmScraper = require('./onthemarket_scraper');
+    var leads = await otmScraper.collectOnTheMarketLeads({ areas: areas, maxPerArea: maxPerArea, maxDays: 7, detailCap: 250 });
+    var fn = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving.file);
+    var prev = [];
+    try { prev = JSON.parse(fs.readFileSync(fn, 'utf-8')); } catch(e) { prev = []; }
+    if (!Array.isArray(prev)) prev = [];
+    var seen = {}; prev.forEach(function(l) { if (l.id) seen[l.id] = 1; });
+    var added = 0;
+    leads.forEach(function(l) {
+      if (!l.id || seen[l.id]) return;
+      var pcArea = extractPostcodeArea(l.postcode || l.address || '');
+      if (!pcArea || areas.indexOf(pcArea) === -1) return;
+      seen[l.id] = 1;
+      prev.push(l); added++;
+    });
+    fs.writeFileSync(fn, JSON.stringify(prev, null, 2));
+    res.json({ success: true, areas: areas, scraped: leads.length, added: added, pool_total: prev.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/lead/un-deliver — revert an over-delivered lead back to
 // undelivered (cleanup for exact-count compliance). Body: { lead_id, email? }.
 app.post('/api/admin/lead/un-deliver', adminAuth, (req, res) => {

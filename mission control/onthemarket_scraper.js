@@ -15,7 +15,11 @@ const OTM_SLUGS = {
   'SW': 'south-west-london', 'SE': 'south-east-london', 'E': 'east-london', 'N': 'north-london',
   'NW': 'north-west-london', 'W': 'west-london', 'EC': 'central-london', 'WC': 'central-london',
   'CR': 'croydon', 'EN': 'enfield', 'IG': 'ilford', 'RM': 'romford', 'DA': 'dartford',
-  'KT': 'kingston-upon-thames', 'TW': 'twickenham', 'HA': 'harrow', 'CM': 'chelmsford'
+  'KT': 'kingston-upon-thames', 'TW': 'twickenham', 'HA': 'harrow', 'CM': 'chelmsford',
+  'L': 'liverpool', 'WA': 'warrington', 'CH': 'chester', 'WN': 'wigan', 'PR': 'preston',
+  'AL': 'st-albans', 'M': 'manchester', 'BL': 'bolton', 'OL': 'oldham', 'SK': 'stockport',
+  'SM': 'sutton', 'BR': 'bromley', 'UB': 'uxbridge', 'WD': 'watford', 'SG': 'stevenage',
+  'SS': 'southend', 'CO': 'colchester', 'ME': 'medway', 'CT': 'canterbury', 'TN': 'tunbridge-wells'
 };
 
 function httpGet(host, path, timeoutMs) {
