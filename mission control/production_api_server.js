@@ -8717,7 +8717,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           for (var ti = 0; ti < alreadyNumbered.length && added < shortBy; ti++) {
             var al = alreadyNumbered[ti];
             if (pickedIds.indexOf(al.id) !== -1) continue;
-            if (!hasPremiseNumber((function(){ try { var ld = JSON.parse(al.data||'{}'); return ld.fullAddress||ld.address||ld.deceasedAddress||''; } catch(e){ return ''; } })(), (function(){ try { var ld = JSON.parse(al.data||'{}'); return ld.postcode||''; } catch(e){ return ''; } })())) continue;
+            if (!hasPremiseNumber((function(){ var ld = al.data ? (function(){ try { return JSON.parse(al.data); } catch(e) { return al; } })() : al; return ld.fullAddress||ld.address||ld.deceasedAddress||''; })(), (function(){ var ld = al.data ? (function(){ try { return JSON.parse(al.data); } catch(e) { return al; } })() : al; return ld.postcode||''; })())) continue;
             custLeads.push(al); pickedIds.push(al.id); added++;
           }
           // 2) Enrich remaining door-less candidates via PAF, keep only confirmed.
