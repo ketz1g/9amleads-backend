@@ -391,9 +391,13 @@ function loadProductPool(prod) {
   var seenPool = {};
   arr = arr.filter(function(l) {
     var u = String(l.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+    var ref = String(l.reference || l.companyNumber || l.deceasedName || l.tenderNoticeId || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
     var aRaw = String(l.address || l.fullAddress || l.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
     var a = aRaw.replace(/\b([a-z]{1,2}\d[a-z0-9]?\s?\d[a-z]{2})\b/g, '').replace(/\s+/g, '').slice(0, 30);
-    var key = u ? 'u:' + u : 'a:' + a;
+    // Address-based dedupe only for MOVING properties (same property listed twice).
+    // Other products (planning/probate/newbusiness/tenders) dedupe by URL or unique
+    // reference - never collapse distinct records that happen to share an address.
+    var key = u ? 'u:' + u : (ref && ref.length > 2 ? 'r:' + ref : (prod === 'moving' ? 'a:' + a : ('x' + l.id)));
     if (!key || key === 'a:') return true;
     if (seenPool[key]) return false;
     seenPool[key] = true;
@@ -8074,9 +8078,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var seenPoolD = {};
       arr = arr.filter(function(l) {
         var u = String(l.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+        var ref = String(l.reference || l.companyNumber || l.deceasedName || l.tenderNoticeId || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
         var aRaw = String(l.address || l.fullAddress || l.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
         var a = aRaw.replace(/\b([a-z]{1,2}\d[a-z0-9]?\s?\d[a-z]{2})\b/g, '').replace(/\s+/g, '').slice(0, 30);
-        var key = u ? 'u:' + u : 'a:' + a;
+        // Address-based dedupe only for MOVING properties. Other products dedupe by
+        // URL or unique reference - never collapse distinct records sharing an address.
+        var key = u ? 'u:' + u : (ref && ref.length > 2 ? 'r:' + ref : (prod === 'moving' ? 'a:' + a : ('x' + l.id)));
         if (!key || key === 'a:') return true;
         if (seenPoolD[key]) return false;
         seenPoolD[key] = true;
