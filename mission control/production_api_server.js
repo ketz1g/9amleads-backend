@@ -6240,10 +6240,16 @@ cron.schedule('15 9 * * 1-5', async () => {
         if (gLead && gData) {
           var gNew = { id: 'lead_' + Date.now() + '_goodwill_' + vi2, customer_id: gCust.id, product: 'moving', data: JSON.stringify(Object.assign({}, gLead, { address: gData.address, fullAddress: gData.address, postcode: gData.postcode || '' })), status: 'new', delivered: 1, created_at: new Date().toISOString(), delivered_at: new Date().toISOString() };
           vDb.leads.push(gNew);
+          // TRIAL EXTENSION: add 2 free days to the affected customer's trial.
+          var gExtendDays = 2;
+          if (gCust.plan === 'free_trial') {
+            var gTrialBase = gCust.trial_ends ? new Date(gCust.trial_ends) : new Date();
+            gCust.trial_ends = new Date(gTrialBase.getTime() + gExtendDays * 86400000).toISOString();
+          }
           saveDb();
-          console.log('[VERIFY-9AM] goodwill bonus lead added to ' + vIssues[vi2].email + ' - ' + gData.postcode);
+          console.log('[VERIFY-9AM] goodwill bonus lead added to ' + vIssues[vi2].email + ' - ' + gData.postcode + ' (trial +' + gExtendDays + 'd)');
           try {
-            await sendBrevoEmail(gCust.email, 'A free bonus lead from 9amLeads 🎉', '<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#22c55e;margin:0 0 10px">A free bonus lead for you</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">Thanks for your patience - as a <b>gesture of goodwill</b>, we have added a <b>free bonus lead</b> to your dashboard (on top of your usual daily leads). No extra charge.</p><div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:14px;margin:12px 0"><div style="font-size:15px;font-weight:700;color:#f1f5f9">' + esc(gData.fullAddress || gData.address) + '</div><div style="font-size:13px;color:#94a3b8;margin-top:4px">' + (gData.postcode || '') + '</div></div><p style="font-size:12px;color:#94a3b8">This lead is yours - review it in your dashboard. If you ever have any questions, just reply to this email.</p></div>');
+            await sendBrevoEmail(gCust.email, 'A free bonus lead from 9amLeads \u{1F389}', '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#ffffff;color:#1e293b;border:1px solid #e2e8f0;border-radius:12px"><div style="font-size:11px;color:#64748b;letter-spacing:1px;margin-bottom:6px">9amLeads \u2022 Customer Care</div><h2 style="color:#15803d;margin:0 0 12px;font-size:20px">A free bonus lead for you \u{1F389}</h2><p style="font-size:14px;line-height:1.7;color:#334155">Thanks for your patience \u2014 as a <b>gesture of goodwill</b> for the delivery delay, we have added a <b>free bonus lead</b> to your dashboard, plus <b>+2 days</b> on your trial. No extra charge.</p><div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin:14px 0"><div style="font-size:15px;font-weight:700;color:#1e293b">' + esc(gData.fullAddress || gData.address) + '</div><div style="font-size:13px;color:#64748b;margin-top:4px">' + (gData.postcode || '') + '</div></div><p style="font-size:13px;line-height:1.6;color:#475569">This bonus lead is yours to review in your dashboard \u2014 on top of your usual daily leads. If you have any questions, just reply to this email and we will help right away.</p><div style="margin-top:18px;padding-top:14px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8">9amLeads \u2022 Your daily leads, on time, every weekday at 9am</div></div>');
           } catch(gwe) { console.log('[VERIFY-9AM] goodwill email error: ' + gwe.message); }
         }
       } catch(gw) { console.log('[VERIFY-9AM] goodwill error: ' + gw.message); }
@@ -12060,29 +12066,29 @@ function generateLeadEmailHTML(customer, leads) {
     : productName === 'planning' ? 'Planning application details'
     : 'Tender opportunity details';
   const dashboardUrl = 'https://www.9amleads.com/portal/dashboard.html';
-  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>@media only screen and (max-width:480px){.card{padding:12px!important}.inner{padding:12px 14px!important}.chips span{font-size:10px!important;white-space:normal!important;word-break:break-word!important}.lead-card{margin-bottom:16px!important}.btn-group{display:block!important}.btn-group a{display:block!important;margin-bottom:6px!important}.resp-flex{display:block!important}.resp-flex a{display:block!important;margin-bottom:6px!important}}</style></head><body style="margin:0;padding:0;background-color:#0f111a;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#e2e8f0">';
-  body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px">';
+  let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>@media only screen and (max-width:480px){.card{padding:12px!important}.inner{padding:12px 14px!important}.chips span{font-size:10px!important;white-space:normal!important;word-break:break-word!important}.lead-card{margin-bottom:16px!important}.btn-group{display:block!important}.btn-group a{display:block!important;margin-bottom:6px!important}.resp-flex{display:block!important}.resp-flex a{display:block!important;margin-bottom:6px!important}}</style></head><body style="margin:0;padding:0;background-color:#1e293b;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#334155">';
+  body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px">';
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
   // Header — branded with proper 9amLeads logo (compact, readable on dark bg)
-  body += '<tr><td bgcolor="#0f111a" style="background-color:#0f111a;background-image:linear-gradient(135deg,#0f111a,#1a1b2e);padding:22px 30px 16px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
+  body += '<tr><td bgcolor="#f1f5f9" style="background-color:#1e293b;background-image:linear-gradient(135deg,#0f111a,#ffffff);padding:22px 30px 16px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid #e2e8f0">';
   body += '<table cellpadding="0" cellspacing="0" align="center"><tr>';
   body += '<td bgcolor="' + brand.color + '" style="background-color:' + brand.color + ';background-image:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:9px;width:28px;height:28px;text-align:center;vertical-align:middle;line-height:28px;font-family:Georgia,serif;font-size:15px;font-weight:900;color:#ffffff">' + brand.logo + '</td>';
-  body += '<td style="padding-left:9px;vertical-align:middle;text-align:left"><div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:#ffffff;letter-spacing:-0.2px;line-height:1.2">9am<span style="color:' + brand.light + '">Leads</span></div><div style="font-size:8px;color:#94a3b8;letter-spacing:1.2px;text-transform:uppercase;margin-top:2px;font-weight:600">Fresh business leads &middot; Every morning</div></td>';
+  body += '<td style="padding-left:9px;vertical-align:middle;text-align:left"><div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:#ffffff;letter-spacing:-0.2px;line-height:1.2">9am<span style="color:' + brand.light + '">Leads</span></div><div style="font-size:8px;color:#64748b;letter-spacing:1.2px;text-transform:uppercase;margin-top:2px;font-weight:600">Fresh business leads &middot; Every morning</div></td>';
   body += '</tr></table>';
   var areasLabel = '';
   try { var custAreas = JSON.parse(customer.target_areas || '[]'); areasLabel = custAreas.length > 0 ? custAreas.join(', ') : ''; } catch(e) {}
-  if (areasLabel) body += '<p style="color:#f1f5f9;font-size:11px;margin:14px 0 0;text-transform:uppercase;letter-spacing:3px;font-weight:600">' + areasLabel + '</p>';
+  if (areasLabel) body += '<p style="color:#1e293b;font-size:11px;margin:14px 0 0;text-transform:uppercase;letter-spacing:3px;font-weight:600">' + areasLabel + '</p>';
   body += '</td></tr>';
 
   // Greeting + count — dark card
   body += '<tr><td style="background:#12141e;padding:24px 30px 18px">';
   body += '<table cellpadding="0" cellspacing="0"><tr><td><span style="display:inline-block;padding:3px 12px;border-radius:6px;background-color:' + brand.color + ';background-image:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');color:#fff;font-size:9px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase">' + brand.short + '</span></td></tr></table>';
-  body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#f1f5f9;margin:10px 0 4px;letter-spacing:-0.3px">Good Morning, ' + (customer.company || 'there') + '</h2>';
-  body += '<p style="color:#cbd5e1;font-size:13px;margin:0 0 16px">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
+  body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#1e293b;margin:10px 0 4px;letter-spacing:-0.3px">Good Morning, ' + (customer.company || 'there') + '</h2>';
+  body += '<p style="color:#475569;font-size:13px;margin:0 0 16px">Your daily opportunities for ' + new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.</p>';
   body += '<div style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.05));border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:14px 20px;margin-bottom:16px">';
   body += '<table cellpadding="0" cellspacing="0"><tr><td style="vertical-align:middle"><span style="font-size:30px;font-weight:900;color:#10b981;line-height:1">' + leads.length + '</span></td><td style="padding-left:14px;vertical-align:middle"><span style="font-size:14px;color:#6ee7b7;font-weight:600">New ' + (leads.length === 1 ? 'opportunity' : 'opportunities') + ' ready today</span></td></tr></table></div>';
-  body += '<p style="font-size:12px;color:#e2e8f0;line-height:1.6;margin:0;padding:12px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px">' + aboutText + '</p>';
+  body += '<p style="font-size:12px;color:#334155;line-height:1.6;margin:0;padding:12px 16px;background:rgba(255,255,255,0.03);border:1px solid #e2e8f0;border-radius:10px">' + aboutText + '</p>';
   body += '</td></tr>';
 
   // Lead cards
@@ -12145,7 +12151,7 @@ function generateLeadEmailHTML(customer, leads) {
     // their inbox (the email IS the delivery, so the send date is today).
     var emailSendOn = 'Sent ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-    body += '<div style="background:#181b28;border:1px solid rgba(255,255,255,0.06);border-radius:14px;margin-bottom:16px;overflow:hidden">';
+    body += '<div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:16px;overflow:hidden">';
     body += '<div style="height:3px;background-color:' + leadAccent + ';background-image:linear-gradient(90deg,' + leadAccent + ',rgba(99,102,241,0.4))"></div>';
     body += '<div style="padding:18px 20px 16px">';
 
@@ -12153,9 +12159,9 @@ function generateLeadEmailHTML(customer, leads) {
     body += '<div style="margin-bottom:12px">';
     body += '<table cellpadding="0" cellspacing="0" width="100%"><tr>';
     body += '<td style="vertical-align:top;width:auto;padding-right:10px"><span style="display:inline-block;padding:4px 12px;border-radius:6px;background:linear-gradient(135deg,' + leadAccent + ',rgba(99,102,241,0.6));color:#fff;font-size:10px;font-weight:700;letter-spacing:0.8px">' + (leadProduct === 'moving' ? 'MOVING' : leadProduct === 'probate' ? 'PROBATE' : leadProduct === 'newbusiness' ? 'NEW BIZ' : leadProduct === 'planning' ? 'PLANNING' : 'TENDER') + '</span></td>';
-    body += '<td style="vertical-align:top;width:100%"><div style="font-size:16px;font-weight:700;color:#f1f5f9;line-height:1.3">' + (title || 'Opportunity') + '</div>';
-    if (subtitle) body += '<div style="font-size:13px;color:#e2e8f0;margin-top:4px">' + subtitle + '</div>';
-    if (emailSendOn) body += '<div style="font-size:11px;color:#94a3b8;margin-top:6px;font-weight:600">' + emailSendOn + '</div>';
+    body += '<td style="vertical-align:top;width:100%"><div style="font-size:16px;font-weight:700;color:#1e293b;line-height:1.3">' + (title || 'Opportunity') + '</div>';
+    if (subtitle) body += '<div style="font-size:13px;color:#334155;margin-top:4px">' + subtitle + '</div>';
+    if (emailSendOn) body += '<div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:600">' + emailSendOn + '</div>';
     body += '</td></tr></table></div>';
 
     // Details as badge chips
@@ -12223,7 +12229,7 @@ function generateLeadEmailHTML(customer, leads) {
     if (chips.length > 0) {
       body += '<div style="margin-bottom:8px">';
       for (var c = 0; c < chips.length; c++) {
-        body += '<span style="display:inline-block;padding:4px 10px;margin:0 4px 4px 0;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:8px;font-size:12px;color:#f1f5f9;white-space:nowrap">' + chips[c].text + '</span>';
+        body += '<span style="display:inline-block;padding:4px 10px;margin:0 4px 4px 0;background:rgba(255,255,255,0.04);border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#1e293b;white-space:nowrap">' + chips[c].text + '</span>';
       }
       body += '</div>';
     }
@@ -12233,11 +12239,11 @@ function generateLeadEmailHTML(customer, leads) {
     var contPhone = d.contactPhone || d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone || d.mobile;
     var hasWebsite = d.website || d.url;
     if (d.contactName || contEmail || contPhone || hasWebsite) {
-      body += '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;margin-top:8px">';
-      if (d.contactName) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">Contact: ' + d.contactName + '</div>';
-      if (contEmail) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px"><a href="mailto:' + contEmail + '" style="color:#38bdf8;text-decoration:none">' + contEmail + '</a></div>';
-      if (contPhone) body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">Phone: ' + contPhone + '</div>';
-      if (hasWebsite) { var w = d.website || d.url || ''; body += '<div style="font-size:12px;color:#e2e8f0;margin-bottom:3px">Website: <a href="http://' + w.replace(/^https?:\/\//, '') + '" style="color:#38bdf8;text-decoration:none" target="_blank">' + w + '</a></div>'; }
+      body += '<div style="border-top:1px solid #e2e8f0;padding-top:10px;margin-top:8px">';
+      if (d.contactName) body += '<div style="font-size:12px;color:#334155;margin-bottom:3px">Contact: ' + d.contactName + '</div>';
+      if (contEmail) body += '<div style="font-size:12px;color:#334155;margin-bottom:3px"><a href="mailto:' + contEmail + '" style="color:#38bdf8;text-decoration:none">' + contEmail + '</a></div>';
+      if (contPhone) body += '<div style="font-size:12px;color:#334155;margin-bottom:3px">Phone: ' + contPhone + '</div>';
+      if (hasWebsite) { var w = d.website || d.url || ''; body += '<div style="font-size:12px;color:#334155;margin-bottom:3px">Website: <a href="http://' + w.replace(/^https?:\/\//, '') + '" style="color:#38bdf8;text-decoration:none" target="_blank">' + w + '</a></div>'; }
       body += '</div>';
     }
 
@@ -12286,34 +12292,34 @@ function generateLeadEmailHTML(customer, leads) {
     tenders: { emoji: '\uD83D\uDCCB', tip: 'Send a printed capability pack with Print &amp; Post to stand out, and follow up before the deadline. Buyers notice the professional touch.', metric: '' }
   };
   var insight2 = insightCards2[customer.product] || { emoji: '\uD83D\uDCA1', tip: 'Send a letter or flyer with Print &amp; Post and follow up in person to win the work.', metric: '' };
-  body += '<tr><td style="background:#12141e;padding:0 28px 16px"><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px">';
-  body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">' + insight2.emoji + '</span><span style="font-size:12px;font-weight:700;color:#f1f5f9">' + getLeadTypeRule(customer.product).name + ' Insight</span></div>';
+  body += '<tr><td style="background:#12141e;padding:0 28px 16px"><div style="background:rgba(255,255,255,0.03);border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px">';
+  body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">' + insight2.emoji + '</span><span style="font-size:12px;font-weight:700;color:#1e293b">' + getLeadTypeRule(customer.product).name + ' Insight</span></div>';
   body += '<p style="font-size:13px;color:#475569;line-height:1.6;margin:0 0 6px">' + insight2.tip + '</p>';
   body += (insight2.metric ? '<p style="font-size:11px;color:#0284c7;margin:0 0 8px"><strong>' + insight2.metric + '</strong></p>' : '');
-  body += '<div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">';
-  body += '<p style="font-size:10px;color:#cbd5e1;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>';
-  body += '<p style="font-size:9px;color:#94a3b8;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>';
-  body += '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">ig</a></div>';
+  body += '<div style="border-top:1px solid #e2e8f0;padding-top:8px;margin-top:4px">';
+  body += '<p style="font-size:10px;color:#475569;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>';
+  body += '<p style="font-size:9px;color:#64748b;margin:0;line-height:1.5">Leads are sourced from public registries and listings and provided for legitimate business contact only. Use leads lawfully and in line with applicable privacy and marketing regulations.</p>';
+  body += '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#64748b">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#64748b">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#64748b">ig</a></div>';
   body += '</div></div></td></tr>';
 
   // Footer — dark sleek
-  body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#1a1b2e);padding:22px 30px 20px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)">';
-  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:#e2e8f0;text-align:center;margin-bottom:12px"><span style="display:inline-block;width:26px;height:26px;border-radius:7px;text-align:center;line-height:26px;font-size:13px;background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');margin-right:5px;vertical-align:middle">' + brand.logo + '</span><span style="vertical-align:middle">am Leads</span></div>';
+  body += '<tr><td style="background:linear-gradient(135deg,#0f111a,#ffffff);padding:22px 30px 20px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid #e2e8f0">';
+  body += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:#334155;text-align:center;margin-bottom:12px"><span style="display:inline-block;width:26px;height:26px;border-radius:7px;text-align:center;line-height:26px;font-size:13px;background:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');margin-right:5px;vertical-align:middle">' + brand.logo + '</span><span style="vertical-align:middle">am Leads</span></div>';
   var pricingLink = customer.product === 'planning' ? 'https://www.9amleads.com/planningleads' : customer.product === 'moving' ? 'https://www.9amleads.com/movingleadsdaily' : customer.product === 'probate' ? 'https://www.9amleads.com/probateleads' : customer.product === 'newbusiness' ? 'https://www.9amleads.com/newbusinessalert' : customer.product === 'tenders' ? 'https://www.9amleads.com/tenders' : 'https://www.9amleads.com/pricing';
   body += '<div style="margin-bottom:12px"><a href="' + dashboardUrl + '" style="display:inline-block;padding:12px 36px;background-color:' + accent + ';background-image:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px;letter-spacing:0.8px">VIEW DASHBOARD</a></div>';
-  body += '<a href="' + pricingLink + '" style="display:inline-block;padding:10px 30px;border:1px solid rgba(255,255,255,0.15);color:#f1f5f9;text-decoration:none;border-radius:50px;font-weight:600;font-size:12px">View ' + (customer.product ? getLeadTypeRule(customer.product).name : 'Pricing') + '</a>';
-  body += '<p style="color:#e2e8f0;font-size:11px;margin:14px 0 0"><a href="mailto:hello@9amleads.com?subject=Lead%20Issue" style="color:#f1f5f9;text-decoration:underline">Lead issue? Contact us &rarr;</a></p>';
+  body += '<a href="' + pricingLink + '" style="display:inline-block;padding:10px 30px;border:1px solid rgba(255,255,255,0.15);color:#1e293b;text-decoration:none;border-radius:50px;font-weight:600;font-size:12px">View ' + (customer.product ? getLeadTypeRule(customer.product).name : 'Pricing') + '</a>';
+  body += '<p style="color:#334155;font-size:11px;margin:14px 0 0"><a href="mailto:hello@9amleads.com?subject=Lead%20Issue" style="color:#1e293b;text-decoration:underline">Lead issue? Contact us &rarr;</a></p>';
   body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:14px 0 12px"><tr>';
   body += '<td style="padding:0 5px"><a href="' + PUBLIC_URL + '" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.9);font-size:12px">\uD83C\uDF10</span></a></td>';
   body += '<td style="padding:0 5px"><a href="' + dashboardUrl + '" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.9);font-size:12px">\uD83D\uDCC8</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">fb</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">tt</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.85);font-size:10px;font-weight:600">ig</span></a></td>';
-  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 8px"><tr><td style="background-color:' + brand.color + ';background-image:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:7px;width:22px;height:22px;text-align:center;vertical-align:middle;line-height:22px;font-family:Georgia,serif;font-size:12px;font-weight:900;color:#ffffff">' + brand.logo + '</td><td style="padding-left:7px;vertical-align:middle"><span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:900;color:#e2e8f0;letter-spacing:-0.2px">9am<span style="color:' + brand.light + '">Leads</span></span></td></tr></table>';
-  body += '<p style="color:#94a3b8;font-size:9px;margin:0 0 8px;letter-spacing:.3px">Fresh exclusive business opportunities, delivered at 9am every morning</p>';
-  body += '<p style="color:#e2e8f0;font-size:10px;margin:0 0 4px;letter-spacing:.4px">9amLeads &middot; hello@9amleads.com</p>';
-  body += '<p style="color:#e2e8f0;font-size:9px;margin:0 0 12px;letter-spacing:.3px"><a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a></p>';
-  body += '<p style="color:#94a3b8;font-size:8px;margin:0;letter-spacing:.4px">You are receiving these opportunities because you subscribed to a 9amLeads plan &bull; <a href="{{ unsubscribe }}" style="color:#94a3b8;text-decoration:underline">Unsubscribe</a></p>';
+  body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 8px"><tr><td style="background-color:' + brand.color + ';background-image:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');border-radius:7px;width:22px;height:22px;text-align:center;vertical-align:middle;line-height:22px;font-family:Georgia,serif;font-size:12px;font-weight:900;color:#ffffff">' + brand.logo + '</td><td style="padding-left:7px;vertical-align:middle"><span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:900;color:#334155;letter-spacing:-0.2px">9am<span style="color:' + brand.light + '">Leads</span></span></td></tr></table>';
+  body += '<p style="color:#64748b;font-size:9px;margin:0 0 8px;letter-spacing:.3px">Fresh exclusive business opportunities, delivered at 9am every morning</p>';
+  body += '<p style="color:#334155;font-size:10px;margin:0 0 4px;letter-spacing:.4px">9amLeads &middot; hello@9amleads.com</p>';
+  body += '<p style="color:#334155;font-size:9px;margin:0 0 12px;letter-spacing:.3px"><a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a></p>';
+  body += '<p style="color:#64748b;font-size:8px;margin:0;letter-spacing:.4px">You are receiving these opportunities because you subscribed to a 9amLeads plan &bull; <a href="{{ unsubscribe }}" style="color:#64748b;text-decoration:underline">Unsubscribe</a></p>';
   body += '</td></tr></table></td></tr></table></body></html>';
   return body;
 }
