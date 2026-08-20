@@ -106,7 +106,10 @@ async function collectOnTheMarketLeads(params) {
       if (p2.status === 200) listings = listings.concat(parseListPage(p2.body));
     }
     listings = listings.slice(0, maxPerArea);
-    const fresh = listings.filter(function(l) { return isFreshEnough(l.daysSinceAdded, maxDays); });
+    // Accept the FULL list (drop the portal-freshness gate). The pool already
+    // dedupes by id and the delivery applies its own 48h freshness, so this
+    // builds the whole ~60-lead-per-area OTM inventory as usable supply.
+    const fresh = listings;
     if (fresh.length === 0) { console.log('[OTM] ' + area + ': ' + listings.length + ' listings, 0 fresh'); continue; }
     // Fetch detail pages for the full postcode (free) - bounded.
     const freshToResolve = fresh.slice(0, Math.max(0, detailCap - detailFetches));
