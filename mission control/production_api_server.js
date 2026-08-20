@@ -16772,6 +16772,23 @@ app.post('/api/admin/test-email', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message, body: String(e.message).substring(0, 500) }); }
 });
 
+// TEMP TEST: send the redesigned daily lead email preview (remove after review)
+app.post('/api/admin/test-daily', adminAuth, async (req, res) => {
+  try {
+    const toEmail = req.body.email || 'ketzman1g@gmail.com';
+    const sampleCust = { email: toEmail, company: 'Test Customer', product: 'moving', plan: 'free_trial', target_areas: JSON.stringify(['SW','SE','E','NW','AL']) };
+    const now = new Date().toISOString();
+    const sampleLeads = [
+      { data: JSON.stringify({ address: '2 Harold Road, Sutton, Surrey', fullAddress: '2 Harold Road, Sutton, Surrey', postcode: 'SM1 4HZ', bedrooms: 3, price: 385000, propertyType: 'Terraced', url: 'https://www.rightmove.co.uk/properties/123', agent: 'Example Agents', firstVisibleDate: now }) },
+      { data: JSON.stringify({ address: 'Flat 4, The Mews, 12 High Street, Croydon', fullAddress: 'Flat 4, The Mews, 12 High Street, Croydon', postcode: 'CR0 1AA', bedrooms: 2, price: 275000, propertyType: 'Flat', url: 'https://www.rightmove.co.uk/properties/124', agent: 'Another Agents', firstVisibleDate: now }) },
+      { data: JSON.stringify({ address: '17 Elm Grove, Wimbledon, London', fullAddress: '17 Elm Grove, Wimbledon, London', postcode: 'SW19 4HE', bedrooms: 4, price: 950000, propertyType: 'Semi-Detached', url: 'https://www.rightmove.co.uk/properties/125', agent: 'Third Agents', firstVisibleDate: now }) }
+    ];
+    const html = generateLeadEmailHTML(sampleCust, sampleLeads);
+    const result = await sendBrevoEmail({ email: toEmail, name: 'Test' }, '9amLeads - Daily Leads Preview (test)', html);
+    res.json({ success: true, result });
+  } catch(e) { res.status(500).json({ error: e.message, body: String(e.message).substring(0, 300) }); }
+});
+
 // POST /api/admin/send-welcome — send the welcome (trial_day1) email to all
 // free-trial customers who haven't received it yet
 app.post('/api/admin/send-welcome', adminAuth, async (req, res) => {
