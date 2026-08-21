@@ -78,6 +78,21 @@ function isFreshEnough(daysLabel, maxDays) {
   return false;
 }
 
+// Map the OTM freshness label to the property's ACTUAL listing date, so the
+// delivery's 48h gate enforces true freshness (an OTM lead listed 3 days ago
+// gets a 3-day-old firstVisibleDate and is rejected).
+function otmListedDate(daysLabel) {
+  const s = String(daysLabel || '').toLowerCase();
+  let d = 0;
+  if (s.indexOf('added today') !== -1) d = 0;
+  else if (s.indexOf('added yesterday') !== -1) d = 1;
+  else {
+    const m = s.match(/added\s+(\d+)\s+days?\s+ago/);
+    if (m) d = parseInt(m[1], 10) || 0;
+  }
+  return new Date(Date.now() - d * 86400000).toISOString();
+}
+
 function extractPostcodeArea(pc) {
   if (!pc) return '';
   const m = String(pc).match(/^\s*([A-Z]{1,2})[0-9]/i);
@@ -106,10 +121,11 @@ async function collectOnTheMarketLeads(params) {
       if (p2.status === 200) listings = listings.concat(parseListPage(p2.body));
     }
     listings = listings.slice(0, maxPerArea);
-    // Accept the FULL list (drop the portal-freshness gate). The pool already
-    // dedupes by id and the delivery applies its own 48h freshness, so this
-    // builds the whole ~60-lead-per-area OTM inventory as usable supply.
-    const fresh = listings;
+    // Only genuinely fresh OTM listings (added within maxDays) - we promise
+    // customers fresh leads within 24-48h, so the portal's own freshness label
+    // is the gate (not our scrape time). maxDays=2 => only listings added
+    // today / yesterday / within 2 days are accepted.
+    const fresh = listings.filter(function(l) { return isFreshEnough(l.daysSinceAdded, maxDays); });
     if (fresh.length === 0) { console.log('[OTM] ' + area + ': ' + listings.length + ' listings, 0 fresh'); continue; }
     // Fetch detail pages for the full postcode (free) - bounded.
     const freshToResolve = fresh.slice(0, Math.max(0, detailCap - detailFetches));
@@ -141,7 +157,7 @@ async function collectOnTheMarketLeads(params) {
         url: 'https://www.onthemarket.com' + l.url,
         agent: l.agent,
         status: 'available',
-        firstVisibleDate: new Date().toISOString(),
+        firstVisibleDate: otmListedDate(l.daysSinceAdded),
         updateDate: new Date().toISOString(),
         daysSinceAdded: l.daysSinceAdded,
         source: 'OnTheMarket',

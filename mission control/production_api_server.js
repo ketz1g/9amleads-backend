@@ -4972,7 +4972,7 @@ app.post('/api/admin/otm-scrape', adminAuth, async (req, res) => {
     areas = areas.filter(function(a) { return /^[A-Z]{1,2}$/.test(a); });
     if (!areas.length) return res.status(400).json({ error: 'No areas to scrape' });
     var otmScraper = require('./onthemarket_scraper');
-    var leads = await otmScraper.collectOnTheMarketLeads({ areas: areas, maxPerArea: maxPerArea, maxDays: 14, detailCap: 400 });
+    var leads = await otmScraper.collectOnTheMarketLeads({ areas: areas, maxPerArea: maxPerArea, maxDays: 2, detailCap: 400 });
     var fn = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving.file);
     var prev = [];
     try { prev = JSON.parse(fs.readFileSync(fn, 'utf-8')); } catch(e) { prev = []; }
@@ -5007,7 +5007,7 @@ async function runOtmDailyScrape() {
     });
     if (!areas.length) { console.log('[OTM-DAILY] No moving customer areas to scrape'); return; }
     var otmScraper2 = require('./onthemarket_scraper');
-    var leads = await otmScraper2.collectOnTheMarketLeads({ areas: areas, maxPerArea: 60, maxDays: 14, detailCap: 400 });
+    var leads = await otmScraper2.collectOnTheMarketLeads({ areas: areas, maxPerArea: 60, maxDays: 2, detailCap: 400 });
     var fn2 = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving.file);
     var prev = []; try { prev = JSON.parse(fs.readFileSync(fn2, 'utf-8')); } catch(e) { prev = []; }
     if (!Array.isArray(prev)) prev = [];
