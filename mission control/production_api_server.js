@@ -244,15 +244,15 @@ function hasStreetName(addr) {
   return /(?:\bRoad\b|\bStreet\b|\bAvenue\b|\bLane\b|\bDrive\b|\bClose\b|\bCrescent\b|\bGardens\b|\bGrove\b|\bCourt\b|\bTerrace\b|\bWay\b|\bWalk\b|\bHill\b|\bPlace\b|\bMews\b|\bRise\b|\bRow\b|\bPark\b|\bSquare\b|\bGreen\b|\bBroadway\b|\bPath\b|\bView\b|\bGate\b|\bEnd\b|\bField\b|\bFields\b|\bHigh\s?Street\b|\bSt\b|\bRd\b|\bAve\b|\bLn\b|\bDr\b|\bCl\b|\bCres\b|\bGdns\b|\bGv\b|\bCt\b|\bTce\b|\bWl\b|\bPl\b|\bMws\b|\bRse\b|\bPk\b|\bSq\b|\bBdwy\b)/i.test(a);
 }
 
-// True when an address is COMPLETE for mailing: door/flat number + street name +
-// a town/area after the street + a full postcode. A bare "1 Caldwell Street"
-// (street + number but no town) is NOT a full, deliverable address.
+// True when an address is COMPLETE for mailing: door/flat/house/apartment number
+// + street name + a full postcode. A town/area is nice-to-have but NOT essential
+// ("1 Caldwell Street, SW9 0HD" is acceptable). A bare street or building name
+// with no number is NOT deliverable.
 function hasFullAddress(addr, pc) {
   var a = String(addr || '').replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
   if (!hasUsablePremiseAddress(a, pc)) return false;
   if (!hasStreetName(a)) return false;
-  var parts = a.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
-  return parts.length >= 2;
+  return /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim());
 }
 
 // ---- Capacity / usage telemetry (exposed on /api/health) ----
