@@ -566,8 +566,26 @@ function updateLetterPreviewLive(){
   if(!box||!bodyEl)return;
   if(box.style.display==='none')return; // only update if the preview is visible
   var text=document.getElementById('t-content')?document.getElementById('t-content').value:'';
-  bodyEl.textContent=text||'Your cover letter text appears here.';
+  bodyEl.textContent=cleanLetterPreviewText(text)||'Your cover letter text appears here.';
   checkLetterFit();
+}
+// Client-side mirror of the backend cleanMailText: strips markdown (*, **, #, links)
+// from the pasted letter so the preview shows exactly what will print (clean text,
+// with ✓ and other symbols preserved).
+function cleanLetterPreviewText(t){
+  var s=String(t||'');
+  s=s.replace(/\r\n?/g,'\n');
+  s=s.replace(/^\s*\*+\s+/gm,'• ');
+  s=s.replace(/^\s*(-\s+|\+\s+)/gm,'• ');
+  s=s.replace(/\*\*/g,'');
+  s=s.replace(/^\s*#{1,6}\s*/gm,'');
+  s=s.replace(/^\s*(---+|\*\*\*+|___+)\s*$/gm,'');
+  s=s.replace(/\*([^*\n]+)\*/g,'$1');
+  s=s.replace(/`/g,'');
+  s=s.replace(/\[([^\]]+)\]\([^)]+\)/g,'$1');
+  s=s.replace(/\*+/g,'');
+  s=s.replace(/\n{3,}/g,'\n\n');
+  return s.trim();
 }
 // Check whether the letter fits on one A4 page (compares body scroll height to the
 // page area, and a character estimate) and shows a clear status.
@@ -584,6 +602,21 @@ function checkLetterFit(){
   var wordCount = text.trim().split(/\s+/).filter(function(w){return w.length>0;}).length;
   var tooLong = charCount > 6200 || wordCount > 1000;
   var maxWords = 700, maxChars = 4500;
+  // AUTO-FIT: shrink the preview font so the whole letter is visible on the A4
+  // page (no scrollbar) whenever it genuinely fits one A4 side. Only letters that
+  // are over the limit keep scrolling + show the red warning.
+  if(!tooLong){
+    bodyEl.style.overflowY='hidden';
+    bodyEl.style.fontSize='9px';
+    var tries=10;
+    while(bodyEl.scrollHeight>bodyEl.clientHeight && tries>0 && parseFloat(bodyEl.style.fontSize||9)>5){
+      bodyEl.style.fontSize=(parseFloat(bodyEl.style.fontSize||9)-0.5)+'px';
+      tries--;
+    }
+  } else {
+    bodyEl.style.overflowY='auto';
+    bodyEl.style.fontSize='9px';
+  }
   if(tooLong){
     statusEl.textContent='✕ ' + wordCount + ' words / ' + charCount + ' chars — too long for one A4 page (max ' + maxWords + ' words / ' + maxChars + ' chars). Shorten it.';
     statusEl.style.color='#dc2626';
@@ -607,7 +640,7 @@ function loadLetterPreview(){
   var editorText=document.getElementById('t-content')?document.getElementById('t-content').value:'';
   var bodyEl=document.getElementById('lp-letter-body');
   var fromEl=document.getElementById('lp-letter-from');
-  if(bodyEl)bodyEl.textContent=editorText||'Loading your saved cover letter…';
+  if(bodyEl)bodyEl.textContent=cleanLetterPreviewText(editorText)||'Loading your saved cover letter…';
   checkLetterFit();
   // Fill the return address from the profile fields
   if(fromEl){
@@ -629,8 +662,8 @@ function loadLetterPreview(){
     if(d.default_template && d.default_template.ai_generated_text) saved=d.default_template.ai_generated_text;
     else if(d.cover_letter) saved=d.cover_letter;
     // If the editor has its own text, keep showing it (don't overwrite).
-    if(editorNow && editorNow.trim().length>0){ if(bodyEl)bodyEl.textContent=editorNow; }
-    else if(saved && bodyEl) bodyEl.textContent=saved;
+    if(editorNow && editorNow.trim().length>0){ if(bodyEl)bodyEl.textContent=cleanLetterPreviewText(editorNow); }
+    else if(saved && bodyEl) bodyEl.textContent=cleanLetterPreviewText(saved);
     checkLetterFit();
     // Prefer the setup's saved business info for the return address
     if(fromEl && d.profile && d.profile.company_name){
