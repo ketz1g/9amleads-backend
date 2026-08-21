@@ -1420,11 +1420,13 @@ class StannpProvider extends DirectMailProvider {
           doc.on('end', function() { resolve({ buffer: Buffer.concat(buffers), pages: pageCount }); });
           var headerFont = unicodeFont ? 'uni' : 'Helvetica-Bold';
           var bodyFont = unicodeFont ? 'uni' : 'Helvetica';
+          // RETURN ADDRESS (sender) — NOT the recipient. Stannp prints the
+          // recipient in the envelope window from the /letters/create params, so
+          // the letter PDF must not repeat it.
+          var senderObj = (recipient && recipient.sender) || {};
           var headerL = [];
-          if (recipient && recipient.name) headerL.push(recipient.name);
-          if (recipient && recipient.address_line1) headerL.push(recipient.address_line1);
-          if (recipient && recipient.city) headerL.push(recipient.city);
-          if (recipient && recipient.postcode) headerL.push(recipient.postcode);
+          if (senderObj.name) headerL.push(senderObj.name);
+          if (senderObj.address) headerL.push(senderObj.address);
           var dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
           doc.font(headerFont).fontSize(Math.min(fontSize, 10)).text((headerL.join('\n') || ' '), margin, margin, { width: 250, lineBreak: true });
           doc.font(bodyFont).fontSize(8).text(dateStr, 360, margin, { width: 140, lineBreak: true, align: 'right' });
@@ -14732,10 +14734,9 @@ async function sendDmCampaignInner(campaignId, customerId) {
       rcptWithPages.tags = '9amleads:' + String(rcpt.id).substring(0, 18) + (rcpt.lead_id ? ':' + String(rcpt.lead_id).substring(0, 18) : '');
       if (templateBody) {
         // Build a clean A4 letter. Stannp prints the RECIPIENT address itself in
-        // the envelope window, so we must NOT repeat it in the letter body. We
-        // only put the SENDER's return address (business profile) at the top-right,
-        // a date line, then the letter body. This avoids the repeated-address
-        // duplication.
+        // the envelope window, so we must NOT repeat it in the letter PDF. We only
+        // put the SENDER's return address (business profile) + a date line, then
+        // the letter body. This avoids the repeated-address duplication.
         var returnAddr = (template && template.ai_generated_text) ? '' : '';
         // Look up the customer's business profile for the return address
         var bizP = null;
@@ -14743,8 +14744,9 @@ async function sendDmCampaignInner(campaignId, customerId) {
         var senderName = (bizP && bizP.company_name) || (bizP && bizP.contact_name) || '9amLeads';
         var senderAddr = '';
         if (bizP) {
-          senderAddr = (bizP.address_line1 ? bizP.address_line1 + '<br>' : '') + (bizP.city ? bizP.city : '') + (bizP.postcode ? ' ' + bizP.postcode : '');
+          senderAddr = (bizP.address_line1 ? bizP.address_line1 : '') + (bizP.city ? ', ' + bizP.city : '') + (bizP.postcode ? ' ' + bizP.postcode : '');
         }
+        rcptWithPages.sender = { name: senderName, address: senderAddr };
         var todayLine = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         var letterHtml =
           '<html><body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#1e293b">' +
