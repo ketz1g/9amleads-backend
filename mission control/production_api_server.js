@@ -1385,8 +1385,15 @@ class StannpProvider extends DirectMailProvider {
   // Build a proper A4 PDF letter from the letter HTML/body text so Stannp never
   // clips the bottom (sending raw HTML without page sizing renders on a flyer-
   // sized page and cuts content off). pdfkit auto-wraps + paginates to A4.
+  // Uses the bundled DejaVu Sans TTF so symbols like ✓ and unicode render (the
+  // built-in Helvetica only supports Latin-1 and drops them).
   async buildA4LetterPdf(pageHtml, recipient) {
     var PDFDocument = require('pdfkit');
+    var fsL = require('fs');
+    var pathL = require('path');
+    var fontPath = pathL.join(__dirname, 'DejaVuSans.ttf');
+    var unicodeFont = false;
+    try { if (fsL.existsSync(fontPath)) unicodeFont = true; } catch(e) {}
     var text = String(pageHtml || '')
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/p>/gi, '\n')
@@ -1405,8 +1412,11 @@ class StannpProvider extends DirectMailProvider {
     return new Promise(function(resolve, reject) {
       try {
         var doc = new PDFDocument({ size: 'A4', layout: 'portrait', margin: 55, info: { Title: '9amLeads Letter', Creator: '9amLeads' } });
+        if (unicodeFont) doc.registerFont('uni', fontPath);
         doc.on('data', buffers.push.bind(buffers));
         doc.on('end', function() { resolve(Buffer.concat(buffers)); });
+        var headerFont = unicodeFont ? 'uni' : 'Helvetica-Bold';
+        var bodyFont = unicodeFont ? 'uni' : 'Helvetica';
         // Header: recipient address top-left, date top-right
         var headerL = [];
         if (recipient && recipient.name) headerL.push(recipient.name);
@@ -1414,12 +1424,12 @@ class StannpProvider extends DirectMailProvider {
         if (recipient && recipient.city) headerL.push(recipient.city);
         if (recipient && recipient.postcode) headerL.push(recipient.postcode);
         var dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        doc.font('Helvetica-Bold').fontSize(11).text((headerL.join('\n') || ' '), 55, 50, { width: 250, lineBreak: true });
-        doc.font('Helvetica').fontSize(10).text(dateStr, 390, 50, { width: 150, lineBreak: true, align: 'right' });
+        doc.font(headerFont).fontSize(11).text((headerL.join('\n') || ' '), 55, 50, { width: 250, lineBreak: true });
+        doc.font(bodyFont).fontSize(10).text(dateStr, 390, 50, { width: 150, lineBreak: true, align: 'right' });
         doc.moveDown(2);
         doc.moveTo(55, 100).lineTo(540, 100).lineWidth(1).strokeColor('#0ea5e9').stroke();
         doc.moveDown(1);
-        doc.font('Helvetica').fontSize(11).text(text, 55, 120, { width: 485, lineBreak: true, align: 'left', lineGap: 6 });
+        doc.font(bodyFont).fontSize(11).text(text, 55, 120, { width: 485, lineBreak: true, align: 'left', lineGap: 6 });
         doc.end();
       } catch(e) { reject(e); }
     });
