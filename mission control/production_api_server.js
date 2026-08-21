@@ -5192,6 +5192,13 @@ app.post('/api/admin/deep-scrape', adminAuth, (req, res) => {
     var areas = (req.body && req.body.areas) || '';
     areas = String(areas).toUpperCase().replace(/[^A-Z,]/g, '');
     var maxProps = (req.body && req.body.max) || process.env.MOVING_MAX_PROPS || '50';
+    // COST HARD-CAP: the Apify actor bills per property fetched. Never let an
+    // on-demand deep-scrape exceed the daily cap (DEEP_SCRAPE_MAX_PROPS, default
+    // 50) — a runaway max burns credits fast. The scheduled 06:00 run is also
+    // bounded by MOVING_MAX_PROPS.
+    var hardCap = parseInt(process.env.DEEP_SCRAPE_MAX_PROPS || '50', 10);
+    var maxPropsNum = parseInt(maxProps, 10) || 50;
+    if (maxPropsNum > hardCap) { maxProps = String(hardCap); console.log('[DEEP-SCRAPE] Cost cap: limited max to ' + hardCap + '/area'); }
     var workerFileD = path.join(__dirname, 'scrape_moving_deep.js');
     var args = [workerFileD];
     if (areas) args.push(areas);
@@ -8558,6 +8565,27 @@ cron.schedule('0 0 * * *', async () => {
     } catch(e) { console.log('[HEALTH] Alert email failed:', e.message); }
   }
 });
+// GET /api/admin/pool-leads — list moving pool leads for given postcode areas
+// (with url + address), so we can see exactly what numbered supply exists.
+app.get('/api/admin/pool-leads', adminAuth, (req, res) => {
+  try {
+    var areas = String(req.query.areas || '').toUpperCase().split(',').filter(Boolean);
+    var limit = parseInt(req.query.limit || '100', 10);
+    var pool = loadProductPool('moving');
+    var out = pool.filter(function(l) {
+      var pc = String(l.postcode || l.address || l.fullAddress || '');
+      var a = extractPostcodeArea(pc);
+      return a && areas.indexOf(a) !== -1;
+    }).map(function(l) {
+      var a = String(l.fullAddress || l.address || '');
+      var numbered = /^\s*\d+[A-Za-z]?[\s,]/.test(a) || /\b(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d/i.test(a);
+      return { address: a, postcode: l.postcode, url: l.url, source: l.source, commercial: !!l.commercial, numbered: numbered, fresh: (l.firstVisibleDate || l.scrapedAt || '') >= new Date(Date.now() - 48 * 3600000).toISOString() };
+    });
+    out.sort(function(a, b) { return (b.numbered ? 1 : 0) - (a.numbered ? 1 : 0); });
+    res.json({ success: true, areas: areas, total: out.length, numbered: out.filter(function(l) { return l.numbered; }).length, leads: out.slice(0, limit) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // DIAGNOSTIC: dump pool area distribution for a product
 app.get('/api/admin/pool-areas', adminAuth, (req, res) => {
   try {
