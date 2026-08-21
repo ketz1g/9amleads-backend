@@ -3252,24 +3252,35 @@ var __topUpInterval = setInterval(function() {
 }, 120 * 60000);
 setTimeout(function() { __topUpInterval.unref(); }, 1000);
 
-// POST /api/admin/backfill-towns — append a town/area to a customer's moving leads
-// that have door number + street + full postcode but no town (cached Postcoder).
+// POST /api/admin/backfill-towns — append a town/area to moving leads that have
+// door number + street + full postcode but no town (cached Postcoder). With no
+// email, runs across ALL moving customers (bulk catch-up for dashboards).
 app.post('/api/admin/backfill-towns', adminAuth, async (req, res) => {
   try {
     var email = String((req.body && req.body.email) || '').toLowerCase().trim();
-    if (!email) return res.status(400).json({ error: 'email required' });
     var dbB = getDb();
-    var cust = (dbB.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
-    if (!cust) return res.status(404).json({ error: 'Customer not found' });
     var rmB = require('./rightmove_scraper_v2');
-    var leads = (dbB.leads || []).filter(function(l) { return l.customer_id === cust.id && l.product === 'moving'; });
-    var dataArr = leads.map(function(l) { var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {} return d; });
-    var updated = await rmB.backfillLeadTowns(dataArr);
-    if (updated) {
-      dataArr.forEach(function(d, i) { if (d.fullAddress || d.address) leads[i].data = JSON.stringify(d); });
-      saveDb();
+    var customers = (dbB.customers || []).filter(function(c) {
+      if (c.plan === 'cancelled') return false;
+      if (email && String(c.email || '').toLowerCase() !== email) return false;
+      return c.product === 'moving' || ((c.biz_field3 || '').indexOf('moving') !== -1);
+    });
+    var totalUpdated = 0, totalChecked = 0;
+    var perCust = {};
+    for (var ci = 0; ci < customers.length; ci++) {
+      var cust = customers[ci];
+      var leads = (dbB.leads || []).filter(function(l) { return l.customer_id === cust.id && l.product === 'moving'; });
+      var dataArr = leads.map(function(l) { var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {} return d; });
+      var updated = await rmB.backfillLeadTowns(dataArr);
+      if (updated) {
+        dataArr.forEach(function(d, i) { if (d.fullAddress || d.address) leads[i].data = JSON.stringify(d); });
+        totalUpdated += updated;
+        perCust[cust.email] = updated;
+      }
+      totalChecked += leads.length;
     }
-    res.json({ success: true, email: email, checked: leads.length, updated: updated });
+    if (totalUpdated) saveDb();
+    res.json({ success: true, customers: customers.length, checked: totalChecked, updated: totalUpdated, per_customer: perCust });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
