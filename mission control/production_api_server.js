@@ -1510,6 +1510,10 @@ async sendMailpiece(mailType, recipient, files, format) {
       }
     }
 
+    // LETTER-ONLY: return the letter result here — previously this fell through to
+    // "Unknown mail type: letter" and failed every plain-letter order.
+    if (isLetter && !isBoth && letterResult) return letterResult;
+
     // Leaflet / postcard (A5 is the correct Stannp size for an A5 leaflet).
     // NOTE: Stannp requires a 'front' image or a 'template' for postcards —
     // it cannot print a leaflet from text alone.
