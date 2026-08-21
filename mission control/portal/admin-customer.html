@@ -1,3 +1,15 @@
+async function replacePendingLead(leadId) {
+  if (!confirm("Replace this pending lead with another valid lead in the customer's area?")) return;
+  try {
+    var r = await fetch(API + '/api/admin/replace-pending-lead', { method: 'POST', headers: headers(), body: JSON.stringify({ lead_id: leadId }) });
+    var d = await r.json();
+    if (d.success) {
+      alert(d.message);
+      loadCustomerLeads();
+    } else { alert('Replace failed: ' + (d.error || 'unknown')); }
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,8 +60,8 @@ a{color:#0ea5e9}
   <div id="statusLine">Loading...</div>
   <div class="card" style="padding:0;overflow:auto">
     <table>
-      <thead><tr><th>Status</th><th>Address</th><th>Postcode</th><th>Door/Flat</th><th>Full PC</th><th>URL</th></tr></thead>
-      <tbody id="leadRows"><tr><td colspan="6" class="sub" style="padding:16px">Loading leads...</td></tr></tbody>
+      <thead><tr><th>Status</th><th>Address</th><th>Postcode</th><th>Door/Flat</th><th>Full PC</th><th>URL</th><th>Action</th></tr></thead>
+      <tbody id="leadRows"><tr><td colspan="7" class="sub" style="padding:16px">Loading leads...</td></tr></tbody>
     </table>
   </div>
   <div style="font-size:11px;color:#5c6480;margin-top:10px">Tip: use the admin page search or this URL directly: /portal/admin-customer.html?email=customer@example.com</div>
@@ -84,9 +96,9 @@ async function load() {
       var ok = l.has_door_or_flat_number ? '<span class="ok">&#10003;</span>' : '<span class="no">&#10007;</span>';
       var pc = l.full_postcode ? '<span class="ok">&#10003;</span>' : '<span class="no">&#10007;</span>';
       var url = l.url ? '<a href="' + esc(l.url) + '" target="_blank" rel="noopener">listing</a>' : '-';
-      rows += '<tr><td>' + st + '</td><td>' + esc((l.address || '-').replace(/\n+/g, ', ')) + '</td><td>' + esc(l.postcode || '-') + '</td><td>' + ok + '</td><td>' + pc + '</td><td>' + url + '</td></tr>';
+      var act = l.delivered ? '' : '<button class=\'btn btn-outline btn-sm\' onclick=\'replacePendingLead(\'' + l.id + '\')\'>Replace</button>'; rows += '<tr><td>' + st + '</td><td>' + esc((l.address || '-').replace(/\n+/g, ', ')) + '</td><td>' + esc(l.postcode || '-') + '</td><td>' + ok + '</td><td>' + pc + '</td><td>' + url + '</td><td>' + act + '</td></tr>';
     });
-    if (!rows) rows = '<tr><td colspan="6" class="sub" style="padding:16px">No leads for this customer.</td></tr>';
+    if (!rows) rows = '<tr><td colspan="7" class="sub" style="padding:16px">No leads for this customer.</td></tr>';
     document.getElementById('leadRows').innerHTML = rows;
     document.getElementById('statusLine').innerHTML = '<span style="color:#22c55e">Loaded ' + (d.leads || []).length + ' leads.</span>';
   } catch(e) {

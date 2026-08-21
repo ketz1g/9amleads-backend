@@ -4886,6 +4886,77 @@ app.post('/api/admin/clear-bounce', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/replace-pending-lead - replace ONE pending (not-yet-delivered)
+// lead that has wrong/missing info with a fresh, fully-valid in-area lead from the
+// pool (same product + customer's areas + complete address + not already sent).
+app.post('/api/admin/replace-pending-lead', adminAuth, (req, res) => {
+  try {
+    var leadId = String((req.body && req.body.lead_id) || '').trim();
+    if (!leadId) return res.status(400).json({ error: 'lead_id required' });
+    var dbR2 = getDb();
+    var idx = (dbR2.leads || []).findIndex(function(l) { return l.id === leadId; });
+    if (idx === -1) return res.status(404).json({ error: 'Lead not found' });
+    var lead = dbR2.leads[idx];
+    if (lead.delivered) return res.status(400).json({ error: 'This lead has already been delivered - only pending leads can be replaced.' });
+    var cust = (dbR2.customers || []).find(function(c) { return c.id === lead.customer_id; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var product = lead.product || cust.product || 'moving';
+    var oldAddr = '';
+    try { var op = JSON.parse(lead.data || '{}'); oldAddr = op.address || op.fullAddress || ''; } catch(e) {}
+    // remove the pending lead
+    dbR2.leads.splice(idx, 1);
+    // customer areas
+    var areas = [];
+    try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
+    if (!areas.length) { try { var cfgX = JSON.parse(cust.product_config || '{}'); areas = (cfgX[product] && cfgX[product].target_areas) ? JSON.parse(cfgX[product].target_areas) : []; } catch(e2) { areas = []; } }
+    // delivered keys (avoid re-sending anything this customer already has)
+    var deliveredKeys = {};
+    (dbR2.leads || []).forEach(function(l) {
+      if (l.customer_id === cust.id && l.delivered) {
+        try { var dd = JSON.parse(l.data || '{}'); var u = dd.url || ''; if (u) deliveredKeys['u:' + u] = 1; var a = String(dd.fullAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0,30); if (a) deliveredKeys['a:' + a] = 1; } catch(e) {}
+      }
+    });
+    var pool = loadProductPool(product);
+    var interleaved = interleavePoolByAreas(pool, areas);
+    var freshCutoff = getFreshCutoffIso();
+    var movingType = 'both';
+    try { var cfgM = JSON.parse(cust.product_config || '{}'); movingType = (cfgM.moving && cfgM.moving.moving_type) || cust.moving_type || 'both'; } catch(e3) { movingType = cust.moving_type || 'both'; }
+    var replacement = null;
+    for (var i = 0; i < interleaved.length; i++) {
+      var l = interleaved[i];
+      var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
+      var matched = false;
+      if (product === 'moving') {
+        if (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l))) matched = true;
+      } else {
+        var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(l.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
+        var pcMatch = areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g,'-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
+        if (countyMatch || pcMatch) matched = true;
+      }
+      if (!matched) continue;
+      var fv = pickFreshDate(l);
+      if (!fv) continue;
+      if (product === 'moving') { if (fv < freshCutoff) continue; }
+      else { var bf = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < bf) continue; }
+      if (product === 'moving') {
+        var reason = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
+        if (reason) continue;
+      }
+      var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0,30));
+      if (deliveredKeys[key]) continue;
+      var nowIso = new Date().toISOString();
+      var d2 = { address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '', street: l.street || '', building_number: l.building_number || '', source: l.source || '', firstVisibleDate: l.firstVisibleDate || nowIso, scrapedAt: nowIso };
+      var newLead = { id: uuidv4(), customer_id: cust.id, product: product, data: JSON.stringify(d2), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: nowIso.split('T')[0] + 'T09:00:00.000Z' };
+      dbR2.leads.push(newLead);
+      replacement = { id: newLead.id, address: d2.address, postcode: d2.postcode, url: d2.url, source: d2.source };
+      break;
+    }
+    saveDb();
+    if (replacement) res.json({ success: true, replaced: oldAddr, replacement: replacement, message: 'Replaced pending lead with a fresh in-area lead.' });
+    else res.json({ success: true, replaced: oldAddr, replacement: null, message: 'Removed the pending lead, but no valid replacement was available in the pool right now.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/replace-customer-leads — remove a customer's current (e.g.
 // wrong-area) leads and replace them with fresh in-area leads from the pool.
 // Used when leads were delivered from the wrong areas (area override, fallback).
