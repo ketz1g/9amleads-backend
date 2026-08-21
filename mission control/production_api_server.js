@@ -360,7 +360,12 @@ function isCommercialLead(ld) {
   if (!ld) return false;
   if (ld.commercial || ld.commercial_let) return true;
   var s = String(ld.propertyType || ld.address || ld.fullAddress || ld.title || ld.name || '').toUpperCase();
-  return /\b(UNIT|LAND|OFFICE|WAREHOUSE|SHOP|FACTORY|INDUSTRIAL|STORAGE|SUITE|PREMISES|COMMERCIAL|RETAIL|WORKSHOP)\b/.test(s);
+  if (/\b(UNIT|LAND|PLOT|OFFICE|WAREHOUSE|SHOP|FACTORY|INDUSTRIAL|STORAGE|SUITE|PREMISES|COMMERCIAL|RETAIL|WORKSHOP)\b/.test(s)) return true;
+  // Investment / developer-marketing listings (e.g. "The Gateway, Liverpool
+  // Business District - 6%+ Returns", "offers above £X"), NOT home-movers.
+  if (/\b(?:RETURN|RETURNS|YIELD|INVESTMENT|INVESTOR|INVESTMENT? OPPORTUNIT|OPPORTUNITY)\b/i.test(s)) return true;
+  if (/\b(?:PLOT|DEVELOPMENT SITE|BUILDING PLOT|LAND FOR)\b/i.test(s)) return true;
+  return false;
 }
 
 // Shared pool loader for a product (used by delivery + admin lead-swap).
@@ -4914,6 +4919,7 @@ app.post('/api/admin/purge-bad-leads', adminAuth, (req, res) => {
       var ds = String(l.daysSinceAdded || '');
       if (otm.isDevelopmentListing({ address: a })) return true;
       if (MANUAL_BAD.some(function(u) { return (a.indexOf(u) !== -1) || ((l.listingId || '') === u) || ((l.url || '').indexOf(u) !== -1); })) return true;
+      if (isCommercialLead(l) || isCommercialLead({ address: a, fullAddress: a, propertyType: l.propertyType, title: l.title, name: l.name })) return true;
       if (ds && !/added\s+(today|yesterday|\d+)/i.test(ds)) return true;           // "Added > 14 days", "Reduced"
       var fv = l.firstVisibleDate;
       if (fv && new Date(fv).getTime() < new Date(stalePool).getTime()) return true;  // sat in pool > 2 days
@@ -4977,6 +4983,20 @@ app.post('/api/admin/dedupe-leads', adminAuth, (req, res) => {
     });
     saveDb();
     res.json({ success: true, duplicates_removed: removed });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/detail-enrich-test — one-time diagnostic: fetch ONE Rightmove
+// detail page from the Render IP and report whether the numbered full address is
+// reachable (list pages work; detail pages are sometimes bot-blocked from
+// datacenter IPs, which is why the pool stays street-only).
+app.post('/api/admin/detail-enrich-test', adminAuth, async (req, res) => {
+  try {
+    var url = (req.body && req.body.url) || 'https://www.rightmove.co.uk/properties/87727950#/?channel=RES_BUY';
+    var rmS = require('./rightmove_scraper_v2');
+    var t0 = Date.now();
+    var detail = await rmS.fetchPropertyDetail(url);
+    res.json({ success: true, took_ms: Date.now() - t0, url: url, detail: detail ? { fullAddress: detail.fullAddress, postcode: detail.postcode, photo: !!detail.photo } : null });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
