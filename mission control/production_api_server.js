@@ -5377,11 +5377,11 @@ app.post('/api/admin/purge-bad-leads', adminAuth, (req, res) => {
       if (MANUAL_BAD.some(function(u) { return (a.indexOf(u) !== -1) || ((l.listingId || '') === u) || ((l.url || '').indexOf(u) !== -1); })) return true;
       if (isCommercialLead(l) || isCommercialLead({ address: a, fullAddress: a, propertyType: l.propertyType, title: l.title, name: l.name })) return true;
       if (ds && !/added\s+(today|yesterday|\d+)/i.test(ds)) return true;           // "Added > 14 days", "Reduced"
-      // NOTE: no firstVisibleDate-age purge here. A lead whose LISTING date is older
-      // than 48h is still a real, current on-market property — with relaxed PAF it's
-      // exactly the lead we PAF-enrich (adds the door number) to fill a customer's
-      // count. Purging by listing age gutted the pool. Stale-remove happens at the
-      // scrapers (only fresh listings enter the pool) instead.
+      // NOTE: no firstVisibleDate-age purge here (see comment below).
+      // Incomplete postcodes can never be delivered (need door number + street +
+      // full postcode) — remove them from the pool so they don't keep resurfacing.
+      var pcBad = String(l.postcode || '');
+      if (pcBad && !/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pcBad.trim())) return true;
       if (/\b(?:hotel|hostel|guesthouse|inn|catering|pub\b|care\s+home)\b/i.test(a)) return true;
       if (/\b(?:land|plot|new\s+homes?|development)\b/i.test(a)) return true;
       return false;
