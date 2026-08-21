@@ -5028,6 +5028,12 @@ app.post('/api/admin/enrich-pool-details', adminAuth, async (req, res) => {
     var enriched = await rmS.enrichMovingLeads(toEnrich, concurrency);
     var map = {};
     enriched.forEach(function(e) { if (e && e.id) map[e.id] = e; });
+    // DIAGNOSTIC: surface what fetchPropertyDetail actually returned so we can see
+    // whether the Render IP is blocked (null) or addresses are just street-only.
+    var diagSamples = (toEnrich || []).slice(0, 3).map(function(l) {
+      var e = map[l.id];
+      return { url: String(l.url || '').substring(0, 60), had: !!e, returned: e ? String(e.fullAddress || e.postcode || '').substring(0, 45) : null };
+    });
     var updated = 0;
     pool = pool.map(function(l) {
       var e = map[l.id];
@@ -5042,7 +5048,7 @@ app.post('/api/admin/enrich-pool-details', adminAuth, async (req, res) => {
     });
     fs.writeFileSync(poolFile, JSON.stringify(pool, null, 2));
     var numbered = pool.filter(function(l) { return /^\s*\d+[A-Za-z]?[\s,]/.test(String(l.fullAddress || l.address || '').trim()); }).length;
-    res.json({ success: true, checked: toEnrich.length, updated_with_number: updated, pool_total: pool.length, pool_numbered: numbered, took_s: Math.round((Date.now() - t0) / 1000) });
+    res.json({ success: true, checked: toEnrich.length, updated_with_number: updated, pool_total: pool.length, pool_numbered: numbered, took_s: Math.round((Date.now() - t0) / 1000), diag: diagSamples });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
