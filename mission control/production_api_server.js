@@ -4808,6 +4808,8 @@ app.get('/api/admin/delivery-preview', adminAuth, (req, res) => {
         }
       });
       var pool = loadProductPool(cust.product);
+      var maxBedsF = 99;
+      try { var f2P = JSON.parse(cust.biz_field2 || '{}'); var fPP = f2P.moving || f2P; maxBedsF = parseInt(fPP['f-maxbeds'] || fPP['f-bed-max'] || fPP.maxBedrooms) || 99; } catch(e) { maxBedsF = 99; }
       var interleaved = interleavePoolByAreas(pool, areas);
       var selected = [];
       var seen = {};
@@ -4829,8 +4831,7 @@ app.get('/api/admin/delivery-preview', adminAuth, (req, res) => {
         if (!fv) continue;
         if (cust.product === 'moving') { if (fv < freshCutoff) continue; }
         else { var backfillCutoff = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < backfillCutoff) continue; }
-        var fld = (leadFilters[cust.product] || leadFilters);
-        if (!leadPassesFilters(fld)) continue;
+        if (cust.product === 'moving' && maxBedsF < 99 && (parseInt(l.bedrooms, 10) || 99) > maxBedsF) continue;
         var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
         if (deliveredKeys[key] || seen[key]) continue;
         seen[key] = 1;
