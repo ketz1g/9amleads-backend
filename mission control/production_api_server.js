@@ -214,17 +214,16 @@ function validateMovingLead(ld) {
   if (!a) return 'no-address';
   if (!pc) return 'no-postcode';
   if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return 'incomplete-postcode';
-  // PAF-RELAXED mode (PAF_RELAXED_PICK=true): a street-only lead with a full
-  // postcode is a PAF candidate — the delivery PAF step adds a door number
-  // (first-match on the street) to the EXACT leads being sent. So we accept it
-  // here instead of dropping it at selection.
   var pafRelaxed = process.env.PAF_RELAXED_PICK === 'true' || process.env.PAF_RELAXED_PICK === '1';
-  if (!hasUsablePremiseAddress(a, pc)) {
-    if (pafRelaxed && hasStreetName(a)) { /* street-only + street name = PAF-resolvable at delivery */ }
-    else return 'no-premise-number';
-  }
-  if (!hasStreetName(a)) return 'no-street-name';
-  if (!hasFullAddress(a, pc)) return 'incomplete-address';
+  var hasPremise = hasUsablePremiseAddress(a, pc);
+  var streetOk = hasStreetName(a);
+  if (!streetOk) return 'no-street-name';
+  // PAF-RELAXED (PAF_RELAXED_PICK=true): a street-only lead with a full postcode is
+  // a PAF candidate — the delivery PAF pass adds a door number to the EXACT leads
+  // being sent. So accept it here (the final PAF pass still drops it if PAF can't
+  // confirm a complete address).
+  if (!hasPremise && !(pafRelaxed && streetOk)) return 'no-premise-number';
+  if (hasPremise && !hasFullAddress(a, pc)) return 'incomplete-address';
   if (/,\s*(England|Scotland|Wales|Northern\s*Ireland|South\s*East\s*England|South\s*West\s*England|East\s*of\s*England|East\s*Midlands|West\s*Midlands|North\s*West\s*England|North\s*East\s*England|Greater\s*London|UK)(?=\s*,|\s*$)/i.test(a)) return 'wrong-region-tag';
   if (/,\s*[A-Z]{1,2}[0-9][A-Z0-9]?\s*$/i.test(a)) return 'partial-postcode';
   if (hasBadUnitCode(a)) return 'unit-code';
