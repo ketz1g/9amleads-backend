@@ -5951,7 +5951,7 @@ app.post('/api/admin/funeral-scrape', adminAuth, async (req, res) => {
     }
     if (!counties.length) return res.status(400).json({ error: 'No counties to scrape' });
     var fnS = require('./funeral_notices_scraper');
-    var leads = await fnS.collectFuneralLeads({ counties: counties, maxPerCounty: 40 });
+    var leads = await fnS.collectFuneralLeads({ counties: counties, maxPerCounty: parseInt(process.env.PROBATE_MAX_PER_COUNTY || '60', 10) });
     var pf = path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate.file);
     var poolF = [];
     try { poolF = JSON.parse(fs.readFileSync(pf, 'utf-8')); if (!Array.isArray(poolF)) poolF = []; } catch(e) { poolF = []; }
@@ -6026,7 +6026,7 @@ async function runOtmDailyScrape() {
     });
     if (!areas.length) { console.log('[OTM-DAILY] No moving customer areas to scrape'); return; }
     var otmScraper2 = require('./onthemarket_scraper');
-    var leads = await otmScraper2.collectOnTheMarketLeads({ areas: areas, maxPerArea: 60, maxDays: 2, detailCap: 400 });
+    var leads = await otmScraper2.collectOnTheMarketLeads({ areas: areas, maxPerArea: parseInt(process.env.OTM_MAX_PER_AREA || '100', 10), maxDays: 2, detailCap: parseInt(process.env.OTM_DETAIL_CAP || '600', 10) });
     var fn2 = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving.file);
     var prev = []; try { prev = JSON.parse(fs.readFileSync(fn2, 'utf-8')); } catch(e) { prev = []; }
     if (!Array.isArray(prev)) prev = [];
