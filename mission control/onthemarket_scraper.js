@@ -146,6 +146,7 @@ async function collectOnTheMarketLeads(params) {
     // today / yesterday / within 2 days are accepted.
     const fresh = listings.filter(function(l) {
       if (isDevelopmentListing(l)) return false;                 // new-build/dev marketing != home-mover
+      if (maxDays === 0) return true;                            // maxDays=0 => no freshness gate (one-off fills)
       return isFreshEnough(l.daysSinceAdded, maxDays);
     });
     if (fresh.length === 0) { console.log('[OTM] ' + area + ': ' + listings.length + ' listings, 0 fresh'); continue; }
@@ -165,8 +166,8 @@ async function collectOnTheMarketLeads(params) {
     freshToResolve.forEach(function(l, li) {
       const pc = resolved[li];
       if (!pc) return;
-      const fv = otmListedDate(l.daysSinceAdded);
-      if (!fv) return;                                            // ambiguous/stale label - drop
+      let fv = otmListedDate(l.daysSinceAdded);
+      if (!fv) { if (maxDays === 0) { fv = new Date().toISOString(); } else { return; } } // no-gate fill accepts ambiguous labels; otherwise drop
       const lead = {
         id: 'OTM_' + l.id,
         listingId: l.id,
