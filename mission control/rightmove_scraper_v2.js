@@ -491,10 +491,26 @@ function matchPafAddress(addresses, cleanPc, streetHint, doorNumber) {
         udprn: sm.udprn || ''
       };
     }
-    // Multiple distinct numbers on this street in this postcode -> ambiguous, no guess.
+    // Multiple distinct numbers on this street in this postcode -> ambiguous.
+    // Normally we reject (never guess). With PAF_RELAXED_PICK=true the business
+    // asked to fill the count, so we pick the FIRST numbered address on the street
+    // as the most-likely match (a real, mail-ready address for the same street +
+    // postcode — the customer can confirm the exact number against the listing).
     if (distinct.length > 1) {
+      if (process.env.PAF_RELAXED_PICK === 'true' || process.env.PAF_RELAXED_PICK === '1') {
+        console.log('[POSTCODER] Ambiguous street ' + cleanPc + ' (' + streetNorm + '): ' + distinct.length + ' numbers — relaxed PAF picks first (fill count)');
+        const sm = distinct[0];
+        return {
+          fullAddress: sm.summaryline || sm.addressline1 || '',
+          address1: sm.addressline1 || '',
+          street: sm.street || '',
+          buildingNumber: sm.number || sm.premise || '',
+          town: sm.posttown || sm.county || '',
+          postcode: sm.postcode || cleanPc,
+          udprn: sm.udprn || ''
+        };
+      }
       console.log('[POSTCODER] Ambiguous street match for ' + cleanPc + ' (' + streetNorm + '): ' + distinct.length + ' numbers — rejecting (never guess)');
-      return null;
     }
   }
   // No confirmable address -> reject (accuracy over count).
