@@ -183,6 +183,12 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </div>
 </div>
 
+<div class="form-group" style="margin-bottom:14px">
+<label>Affiliate name or code <span class="ml" style="color:#0ea5e9">(optional · get 14 days free trial instead of 7)</span></label>
+<input type="text" id="s-affiliate" placeholder="e.g. James or JAMES24" class="sf" style="margin-bottom:6px">
+<p style="font-size:10px;color:#6b7280;margin:0">Were you referred by a friend or partner? Enter their name or code and your free trial is extended to 14 days. Works for every lead type.</p>
+</div>
+
 <div class="form-group">
 <label>What lead types do you need? <span class="ml">(select all that apply)</span></label>
 <div id="s-products-container" style="display:grid;gap:4px;margin-bottom:6px">
@@ -433,6 +439,7 @@ function updateMovingTypeLabel() {
 
 <button class="btn-p" onclick="doSignup()" id="signup-btn"><i class="fas fa-rocket"></i> Start Free Trial</button>
 <button class="btn-s" onclick="showLogin()">Already have an account? Sign In</button>
+<p style="font-size:11px;color:#5c6480;text-align:center;margin-top:14px">Earn £25 for every customer you refer — <a href="/portal/affiliate.html" style="color:#0ea5e9">become an affiliate</a></p>
 
 </div><!-- LOGIN FORM -->
 <div id="login-form">
@@ -958,6 +965,7 @@ function doSignup() {
   var company = document.getElementById('s-company').value.trim();
   var email = document.getElementById('s-email').value.trim().toLowerCase();
   var password = document.getElementById('s-password').value;
+  var affiliateCode = (document.getElementById('s-affiliate') ? document.getElementById('s-affiliate').value.trim() : '');
   var productCheckboxes = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
   var products = Array.from(productCheckboxes).map(function(cb) { return cb.value; });
   if (products.length === 0) { document.getElementById('signup-error').textContent = 'Please select at least one lead type'; document.getElementById('signup-error').style.display = 'block'; return; }
@@ -1028,7 +1036,7 @@ var pLimit = getPostcodeAreaLimit();
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
   fetch(API + '/api/auth/signup', {
     method:'POST', headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', acceptTerms:document.getElementById('s-terms').checked, marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()), movingType:(document.querySelector('#s-moving-type input[type=radio]:checked')?.value || 'both') })
+    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', acceptTerms:document.getElementById('s-terms').checked, marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()), movingType:(document.querySelector('#s-moving-type input[type=radio]:checked')?.value || 'both'), affiliateCode:affiliateCode })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:plan, email:email, product:product, products:products }));

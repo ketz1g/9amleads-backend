@@ -735,6 +735,7 @@ function getDb() {
   }
   if (!_dbData.payments) _dbData.payments = [];
   if (!_dbData.pageviews) _dbData.pageviews = [];
+  if (!_dbData.affiliates) _dbData.affiliates = [];
   return _dbData;
 }
 function loadDb() {
@@ -1977,6 +1978,65 @@ function validateEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// ===== AFFILIATE PROGRAM =====
+// Referral terms (product-agnostic - works for every lead type):
+//   - A customer signs up using an affiliate's NAME or CODE -> gets 14 days free
+//     trial (standard is 7). The affiliate is credited with that signup.
+//   - The affiliate earns £25 per referred customer WHO saves a card and carries
+//     on (stripe_payment_method_id set). The payout is PAID one month after the
+//     signup, provided the customer is still active (not cancelled).
+// Payout lifecycle: pending (card saved, waiting out the month) -> due (month
+// reached + still active, ready to be paid) -> paid (admin marks it paid).
+var AFFILIATE_PAYOUT_RATE = 25;
+
+function resolveAffiliate(codeOrName) {
+  var q = String(codeOrName || '').trim();
+  if (!q) return null;
+  var affs = (getDb().affiliates || []);
+  var ql = q.toLowerCase();
+  return affs.find(function(a) {
+    if (a.status === 'paused') return false;
+    return String(a.code || '').toLowerCase() === ql || String(a.name || '').toLowerCase() === ql;
+  }) || null;
+}
+
+function affiliateToken(aff) {
+  return jwt.sign({ id: aff.id, email: aff.email, role: 'affiliate' }, JWT_SECRET, { expiresIn: '24h' });
+}
+
+function affiliateAuth(req, res, next) {
+  var auth = req.headers.authorization || '';
+  if (!auth.startsWith('Bearer ')) return res.status(401).json({ error: 'No token provided' });
+  try {
+    var tok = jwt.verify(auth.split(' ')[1], JWT_SECRET);
+    if (tok.role !== 'affiliate') return res.status(403).json({ error: 'Not an affiliate account' });
+    var aff = (getDb().affiliates || []).find(function(a) { return a.id === tok.id; });
+    if (!aff) return res.status(401).json({ error: 'Affiliate not found' });
+    req.affiliate = aff;
+    next();
+  } catch(e) { return res.status(401).json({ error: 'Invalid token' }); }
+}
+
+// Transition pending payouts to "due" once their month has passed and the
+// referred customer is still active. Runs daily from the 09:00 cron.
+function processAffiliatePayouts() {
+  try {
+    var now = new Date();
+    var changed = 0;
+    (getDb().customers || []).forEach(function(c) {
+      if (!c.affiliate_id) return;
+      if (c.affiliate_payout_status !== 'pending' && c.affiliate_payout_status !== 'due') return;
+      var due = c.affiliate_payout_due ? new Date(c.affiliate_payout_due) : null;
+      if (!due) return;
+      if (now < due) return;
+      if (c.plan === 'cancelled' || c.plan === 'revoked') { c.affiliate_payout_status = 'ineligible'; changed++; return; }
+      if (c.affiliate_payout_status !== 'due') { c.affiliate_payout_status = 'due'; changed++; }
+    });
+    if (changed) saveDb();
+    return changed;
+  } catch(e) { console.log('[AFFILIATE] Payout process error:', e.message); return 0; }
+}
+
 // ===== APP =====
 const app = express();
 
@@ -2498,7 +2558,14 @@ app.post('/api/auth/signup', async (req, res) => {
 
     const id = uuidv4();
     const password_hash = await bcrypt.hash(password, 10);
-    const trial_ends = new Date(Date.now() + 7 * 86400000).toISOString();
+    // AFFILIATE REFERRAL: if the signup used an affiliate's NAME or CODE, the
+    // customer gets 14 days free trial (standard 7) and the affiliate is credited.
+    var affRef = null;
+    try { affRef = resolveAffiliate(req.body.affiliateCode || req.body.referralCode); } catch(e) {}
+    var trialDays = affRef ? 14 : 7;
+    var trial_ends = new Date(Date.now() + trialDays * 86400000).toISOString();
+    var affiliateAppliedAt = affRef ? new Date().toISOString() : null;
+    var affiliatePayoutDue = affRef ? new Date(Date.now() + 30 * 86400000).toISOString() : null;
     const verification_token = require('crypto').randomBytes(32).toString('hex');
 
     const PRODUCT_MAP = {
@@ -2565,13 +2632,15 @@ app.post('/api/auth/signup', async (req, res) => {
     }
 
     var signupIp = req.ip || req.connection?.remoteAddress || '';
-    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, coverage, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url, campaign_sent, signup_ip)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, coverage, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url, campaign_sent, signup_ip, affiliate_id, affiliate_code, affiliate_applied_at, affiliate_trial_days, affiliate_payout_status, affiliate_payout_due)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, email.toLowerCase(), company, name || '', phone || '', password_hash,
       product, productInfo.lead_type, productInfo.business_type,
       JSON.stringify(targetAreas || []), coverage || 'postcode', leadFilters || bizField2 || '', bizField3 || JSON.stringify(products && Array.isArray(products) ? products : [product]),
       source || 'direct', plan || 'free_trial', plan === 'free_trial' ? trial_ends : null, marketingConsent ? 1 : 0,
-      new Date().toISOString(), '0', crmWebhookUrl || '', '[]', signupIp
+      new Date().toISOString(), '0', crmWebhookUrl || '', '[]', signupIp,
+      affRef ? affRef.id : null, affRef ? affRef.code : null, affiliateAppliedAt, affRef ? trialDays : null,
+      affRef ? 'referral_pending' : null, affRef ? affiliatePayoutDue : null
     );
 
     // Claim postcode areas only when coverage type is postcode
@@ -2622,7 +2691,7 @@ app.post('/api/auth/signup', async (req, res) => {
         await sendBrevoEmail(
           { email: customer.email, name: customer.contact_name || customer.company },
         'Verify your 9amLeads account',
-        '<div style="font-family:Inter,Arial,Helvetica,sans-serif;background:#f1f5f9;color:#1e293b;padding:28px 20px"><div style="max-width:600px;margin:0 auto"><table width="100%" cellpadding="0" cellspacing="0"><tbody>' + buildEmailHeader() + '<tr><td style="background:#ffffff;padding:28px 30px;color:#1e293b;text-align:center"><h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 12px;text-align:center">Welcome to 9am Leads!</h2><p style="font-size:14px;color:#475569;line-height:1.7;margin:0 0 16px;text-align:center">Please verify your email address by clicking the button below:</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 16px"><a href="' + verifyUrl + '" style="display:inline-block;padding:12px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700">Verify Email</a></td></tr></table><p style="font-size:13px;color:#334155;line-height:1.6;margin:0;text-align:center">Your free 7-day trial has started. You\'ll receive your first leads at 9am tomorrow.</p></td></tr>' + buildEmailFooter() + '</tbody></table></div></div>'
+        '<div style="font-family:Inter,Arial,Helvetica,sans-serif;background:#f1f5f9;color:#1e293b;padding:28px 20px"><div style="max-width:600px;margin:0 auto"><table width="100%" cellpadding="0" cellspacing="0"><tbody>' + buildEmailHeader() + '<tr><td style="background:#ffffff;padding:28px 30px;color:#1e293b;text-align:center"><h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 12px;text-align:center">Welcome to 9am Leads!</h2><p style="font-size:14px;color:#475569;line-height:1.7;margin:0 0 16px;text-align:center">Please verify your email address by clicking the button below:</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 16px"><a href="' + verifyUrl + '" style="display:inline-block;padding:12px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700">Verify Email</a></td></tr></table><p style="font-size:13px;color:#334155;line-height:1.6;margin:0;text-align:center">Your free ' + trialDays + '-day trial has started' + (affRef ? ' (referred by ' + affRef.name + ')' : '') + '. You\'ll receive your first leads at 9am tomorrow.</p></td></tr>' + buildEmailFooter() + '</tbody></table></div></div>'
         );
         console.log('[VERIFY] Verification email sent to ' + customer.email);
       } catch (e) {
@@ -2686,6 +2755,8 @@ app.post('/api/auth/signup', async (req, res) => {
         business_type: customer.business_type,
         plan: customer.plan,
         trial_ends: customer.trial_ends,
+        trial_days: trialDays,
+        affiliate_code: affRef ? affRef.code : '',
         target_areas: JSON.parse(customer.target_areas || '[]'),
         crm_webhook_url: customer.crm_webhook_url || '',
         email_verified: 0
@@ -2821,6 +2892,166 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
     crm_webhook_url: customer.crm_webhook_url || '',
     stripe_payment_method_id: customer.stripe_payment_method_id || ''
   });
+});
+
+// ===== AFFILIATE PROGRAM ENDPOINTS =====
+// POST /api/affiliate/register — an affiliate applies (name, code, email, password).
+// New affiliates are created as "pending" until admin activates them. Their code
+// (or name) is what customers type at signup to get the 14-day trial.
+app.post('/api/affiliate/register', async (req, res) => {
+  try {
+    var { name, email, password, code } = req.body;
+    if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password are required' });
+    if (!validateEmail(email)) return res.status(400).json({ error: 'Invalid email format' });
+    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    var affs = getDb().affiliates || [];
+    var em = String(email).toLowerCase().trim();
+    if (affs.some(function(a) { return String(a.email || '').toLowerCase() === em; })) return res.status(409).json({ error: 'An affiliate with this email already exists' });
+    var code2 = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || (String(name).replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 8));
+    if (affs.some(function(a) { return String(a.code || '').toLowerCase() === String(code2).toLowerCase(); })) return res.status(409).json({ error: 'That affiliate code is already taken. Pick another.' });
+    var passwordHash = await bcrypt.hash(password, 10);
+    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: 'pending', created_at: new Date().toISOString(), payouts: [] };
+    affs.push(aff);
+    saveDb();
+    res.status(201).json({ success: true, affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email, status: aff.status }, message: 'Application received. We\'ll activate your affiliate account shortly.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/affiliate/login — affiliate signs in to their earnings dashboard.
+app.post('/api/affiliate/login', async (req, res) => {
+  try {
+    var { email, password } = req.body;
+    var aff = (getDb().affiliates || []).find(function(a) { return String(a.email || '').toLowerCase() === String(email || '').toLowerCase().trim(); });
+    if (!aff) return res.status(401).json({ error: 'Invalid email or password' });
+    var ok = await bcrypt.compare(String(password || ''), aff.password_hash || '');
+    if (!ok) return res.status(401).json({ error: 'Invalid email or password' });
+    if (aff.status === 'pending') return res.status(403).json({ error: 'Your affiliate account is awaiting activation. Please check back shortly.', pending: true });
+    if (aff.status === 'paused') return res.status(403).json({ error: 'Your affiliate account is currently paused. Contact hello@9amleads.com.', paused: true });
+    res.json({ token: affiliateToken(aff), affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/affiliate/dashboard — the affiliate's earnings dashboard: referrals by
+// lead type, earnings split (pending / due / paid), and payout history. Works for
+// every lead type — moving, probate, planning, new business, tenders.
+app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate;
+    var rate = aff.payout_rate || AFFILIATE_PAYOUT_RATE;
+    var refs = (getDb().customers || []).filter(function(c) {
+      return c.affiliate_id === aff.id || String(c.affiliate_code || '').toLowerCase() === String(aff.code || '').toLowerCase();
+    });
+    var byProduct = {};
+    var pending = 0, due = 0, paid = 0, ineligible = 0;
+    var referralRows = [];
+    refs.forEach(function(c) {
+      var prod = c.product || 'moving';
+      byProduct[prod] = (byProduct[prod] || 0) + 1;
+      var st = c.affiliate_payout_status || 'referral_pending';
+      if (st === 'pending') pending++;
+      else if (st === 'due') due++;
+      else if (st === 'paid') paid++;
+      else if (st === 'ineligible') ineligible++;
+      referralRows.push({
+        id: c.id, company: c.company, email: c.email, product: prod, plan: c.plan,
+        signed_up: c.created_at, status: st, trial_days: c.affiliate_trial_days || 7,
+        card_saved: !!(c.stripe_payment_method_id), payout_due: c.affiliate_payout_due,
+        paid_at: c.affiliate_paid_at || null
+      });
+    });
+    referralRows.sort(function(a, b) { return String(b.signed_up).localeCompare(String(a.signed_up)); });
+    res.json({
+      success: true,
+      affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email },
+      rates: { per_referral: rate, paid_month_after: true },
+      totals: { referrals: refs.length, pending: pending, due: due, paid: paid, ineligible: ineligible },
+      earnings: {
+        pending: pending * rate,       // card saved, waiting out the month
+        due: due * rate,               // month passed + still active, ready to be paid
+        paid: paid * rate,             // already paid out
+        total_earned: (due + paid) * rate
+      },
+      by_product: byProduct,
+      referrals: referralRows,
+      payouts: aff.payouts || []
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== ADMIN AFFILIATE MANAGEMENT =====
+// GET /api/admin/affiliates — list every affiliate with referral + payout totals.
+app.get('/api/admin/affiliates', adminAuth, (req, res) => {
+  try {
+    var affs = getDb().affiliates || [];
+    var out = affs.map(function(a) {
+      var refs = (getDb().customers || []).filter(function(c) { return c.affiliate_id === a.id || String(c.affiliate_code || '').toLowerCase() === String(a.code || '').toLowerCase(); });
+      var rate = a.payout_rate || AFFILIATE_PAYOUT_RATE;
+      var counts = { referrals: refs.length, pending: 0, due: 0, paid: 0, ineligible: 0 };
+      refs.forEach(function(c) { var st = c.affiliate_payout_status || 'referral_pending'; if (counts[st] !== undefined) counts[st]++; });
+      return {
+        id: a.id, name: a.name, code: a.code, email: a.email, status: a.status, payout_rate: rate,
+        created_at: a.created_at, counts: counts,
+        earnings_pending: counts.pending * rate, earnings_due: counts.due * rate, earnings_paid: counts.paid * rate,
+        payout_history: a.payouts || []
+      };
+    });
+    res.json({ success: true, affiliates: out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/affiliates — create (or update) an affiliate. Body: {name, code, email, password?, status}.
+app.post('/api/admin/affiliates', adminAuth, async (req, res) => {
+  try {
+    var { name, code, email, password, status, payout_rate } = req.body;
+    var affs = getDb().affiliates || [];
+    if (!name || !email) return res.status(400).json({ error: 'Name and email are required' });
+    var existing = affs.find(function(a) { return a.id === (req.body.id || 'x'); });
+    var code2 = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!code2) code2 = String(name).replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 8);
+    if (affs.some(function(a) { return a !== existing && String(a.code || '').toLowerCase() === code2.toLowerCase(); })) return res.status(409).json({ error: 'That affiliate code is already in use.' });
+    if (existing) {
+      existing.name = String(name).trim(); existing.email = String(email).toLowerCase().trim(); existing.code = code2;
+      if (status) existing.status = status;
+      if (payout_rate) existing.payout_rate = parseInt(payout_rate, 10) || AFFILIATE_PAYOUT_RATE;
+      if (password && password.length >= 8) existing.password_hash = await bcrypt.hash(password, 10);
+      saveDb();
+      return res.json({ success: true, affiliate: existing });
+    }
+    var passwordHash = password ? await bcrypt.hash(password, 10) : await bcrypt.hash(uuidv4().slice(0, 8), 10);
+    var aff = { id: uuidv4(), name: String(name).trim(), email: String(email).toLowerCase().trim(), code: code2, password_hash: passwordHash, payout_rate: parseInt(payout_rate, 10) || AFFILIATE_PAYOUT_RATE, status: status || 'active', created_at: new Date().toISOString(), payouts: [] };
+    affs.push(aff);
+    saveDb();
+    res.status(201).json({ success: true, affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email, status: aff.status } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/affiliates/pay — pay an affiliate's DUE referrals. Body: { affiliate_id }
+// (or affiliate_email). Marks each due referral 'paid', records a payout line on the
+// affiliate, and returns the amount paid.
+app.post('/api/admin/affiliates/pay', adminAuth, (req, res) => {
+  try {
+    var q = (req.body && (req.body.affiliate_id || req.body.affiliate_email)) || '';
+    var aff = (getDb().affiliates || []).find(function(a) { return a.id === q || String(a.email || '').toLowerCase() === String(q || '').toLowerCase(); });
+    if (!aff) return res.status(404).json({ error: 'Affiliate not found' });
+    var rate = aff.payout_rate || AFFILIATE_PAYOUT_RATE;
+    var nowIso = new Date().toISOString();
+    var paidRefs = [];
+    var amount = 0;
+    (getDb().customers || []).forEach(function(c) {
+      if (c.affiliate_id !== aff.id && String(c.affiliate_code || '').toLowerCase() !== String(aff.code || '').toLowerCase()) return;
+      if (c.affiliate_payout_status !== 'due') return;
+      c.affiliate_payout_status = 'paid';
+      c.affiliate_paid_at = nowIso;
+      amount += rate;
+      paidRefs.push({ customer_id: c.id, company: c.company, email: c.email, amount: rate, paid_at: nowIso });
+    });
+    if (paidRefs.length) {
+      aff.payouts = aff.payouts || [];
+      aff.payouts.push({ id: uuidv4(), date: nowIso, amount: amount, referrals: paidRefs.length, refs: paidRefs });
+      saveDb();
+    }
+    res.json({ success: true, affiliate: aff.name, paid_referrals: paidRefs.length, amount_paid: amount, payout_id: paidRefs.length ? aff.payouts[aff.payouts.length - 1].id : null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // POST /api/auth/update-areas — customer updates their postcode areas from the
@@ -6793,6 +7024,9 @@ cron.schedule('0 9 * * 1-5', async () => {
   __lastDeliveryDate = new Date().toISOString().split('T')[0];
   console.log('[09:00 UK] Running delivery...');
   try {
+    // AFFILIATE PAYOUTS: transition referrals that have reached their month + are
+    // still active from "pending" to "due" (ready to be paid £25).
+    try { var _affPaid = processAffiliatePayouts(); if (_affPaid) console.log('[AFFILIATE] ' + _affPaid + ' payout(s) became due'); } catch(ape) { console.log('[AFFILIATE] Payout check error:', ape.message); }
     const http = require('http');
     var body = JSON.stringify({});
     var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
@@ -10300,6 +10534,17 @@ app.post('/api/stripe/webhook', async (req, res) => {
                 .run(si.payment_method, stripeCustId, customer.id);
               saveDb();
               console.log('[STRIPE] Saved card for ' + (customerEmail || customer.id) + ' (auto-billing ready, customer ' + stripeCustId + ')');
+              // AFFILIATE: the referred customer saved a card -> their referral is
+              // now earning. Payout becomes "pending" (paid one month after signup,
+              // provided the customer stays active).
+              if (customer.affiliate_id && (customer.affiliate_payout_status === 'referral_pending' || !customer.affiliate_payout_status)) {
+                db.prepare('UPDATE customers SET affiliate_payout_status = ?, affiliate_payout_due = ? WHERE id = ?')
+                  .run('pending',
+                    new Date(new Date(customer.created_at || Date.now()).getTime() + 30 * 86400000).toISOString(),
+                    customer.id);
+                saveDb();
+                console.log('[AFFILIATE] Referral from ' + (customer.affiliate_code || customer.affiliate_id) + ' earned — payout pending for ' + customer.email);
+              }
             }
           }
         }

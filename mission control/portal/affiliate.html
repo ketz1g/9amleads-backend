@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9amLeads Affiliate Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#0b0d14;color:#e2e8f0;min-height:100vh}
+a{color:#0ea5e9;text-decoration:none}
+.topbar{display:flex;align-items:center;gap:12px;padding:16px 28px;background:#0f111a;border-bottom:1px solid #1e2030}
+.logo{font-size:17px;font-weight:800;color:#0ea5e9;letter-spacing:-.3px}
+.logo span{color:#f1f5f9}
+.topbar .spacer{flex:1}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
+.hero{background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(14,165,233,.02));border:1px solid rgba(14,165,233,.25);border-radius:14px;padding:26px 28px;margin-bottom:24px}
+.hero h1{font-size:24px;font-weight:800;color:#f1f5f9;margin-bottom:6px}
+.hero p{font-size:13px;color:#94a3b8;line-height:1.6;max-width:720px}
+.hero .code{display:inline-flex;align-items:center;gap:8px;margin-top:12px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;padding:8px 14px}
+.hero .code b{color:#0ea5e9;font-size:15px;letter-spacing:1px}
+.hero .code button{background:#0ea5e9;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:26px}
+.card{background:#0f111a;border:1px solid #1e2030;border-radius:12px;padding:18px}
+.card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.card .val{font-size:26px;font-weight:800;color:#f1f5f9}
+.card .sub{font-size:11px;color:#6b7280;margin-top:4px}
+.card.blue .val{color:#0ea5e9}
+.card.green .val{color:#34d399}
+.card.amber .val{color:#fbbf24}
+.card.grey .val{color:#cbd5e1}
+.grid{display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:860px){.grid{grid-template-columns:1.6fr 1fr}}
+.panel{background:#0f111a;border:1px solid #1e2030;border-radius:12px;padding:20px}
+.panel h2{font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:14px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;text-align:left;padding:7px 8px;border-bottom:1px solid #1e2030}
+td{padding:9px 8px;border-bottom:1px solid rgba(30,32,48,.6);color:#cbd5e1;vertical-align:top}
+tr:last-child td{border-bottom:none}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700}
+.b-pending{background:rgba(251,191,36,.12);color:#fbbf24}
+.b-due{background:rgba(52,211,153,.14);color:#34d399}
+.b-paid{background:rgba(14,165,233,.14);color:#0ea5e9}
+.b-ref{background:rgba(148,163,184,.12);color:#94a3b8}
+.b-ineligible{background:rgba(248,113,113,.12);color:#f87171}
+.muted{color:#6b7280;font-size:11.5px}
+.login{max-width:400px;margin:60px auto;background:#0f111a;border:1px solid #1e2030;border-radius:14px;padding:32px}
+.login h1{font-size:19px;font-weight:800;color:#f1f5f9;margin-bottom:4px}
+.login p{font-size:12px;color:#94a3b8;margin-bottom:20px}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:11px;font-weight:600;color:#b0b8cc;margin-bottom:5px}
+.fg input{width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px}
+.fg input:focus{outline:none;border-color:#0ea5e9}
+.btn{width:100%;padding:12px;background:#0ea5e9;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+.btn:hover{background:#0284c7}
+.err{color:#f87171;font-size:12px;margin-top:10px;display:none}
+.tabs{display:flex;gap:6px;margin-bottom:16px}
+.tab{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;background:#0f111a;border:1px solid #1e2030;color:#94a3b8;cursor:pointer}
+.tab.on{background:rgba(14,165,233,.12);border-color:rgba(14,165,233,.4);color:#0ea5e9}
+.howto{font-size:12.5px;color:#cbd5e1;line-height:1.75}
+.howto b{color:#f1f5f9}
+.howto li{margin-bottom:8px}
+.btn-out{background:transparent;border:1px solid #1e2030;color:#94a3b8;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="topbar">
+<div class="logo">9am<span>Leads</span> <span style="font-weight:500;font-size:12px;color:#94a3b8">Affiliate</span></div>
+<div class="spacer"></div>
+<button class="btn-out" id="logout" style="display:none">Sign out</button>
+</div>
+
+<!-- LOGIN -->
+<div class="login" id="login-view">
+<h1>Affiliate sign in</h1>
+<p>Track your referrals, earnings and payouts.</p>
+<div class="fg"><label>Email</label><input type="email" id="a-email" placeholder="you@partner.com"></div>
+<div class="fg"><label>Password</label><input type="password" id="a-pass" placeholder="Your affiliate password"></div>
+<button class="btn" onclick="login()">Sign in</button>
+<div class="err" id="login-err"></div>
+<p style="font-size:11px;color:#6b7280;margin-top:16px;text-align:center">Not an affiliate yet? <a href="#" onclick="showRegister();return false">Apply to become an affiliate</a></p>
+</div>
+
+<!-- REGISTER -->
+<div class="login" id="register-view" style="display:none">
+<h1>Become an affiliate</h1>
+<p>Earn <b style="color:#34d399">£25</b> for every customer who signs up with your name or code and carries on. Works for every lead type.</p>
+<div class="fg"><label>Full name</label><input type="text" id="r-name" placeholder="Your name"></div>
+<div class="fg"><label>Email</label><input type="email" id="r-email" placeholder="you@partner.com"></div>
+<div class="fg"><label>Password</label><input type="password" id="r-pass" placeholder="Min 8 characters"></div>
+<div class="fg"><label>Your referral code <span class="muted">(optional — we'll make one for you)</span></label><input type="text" id="r-code" placeholder="e.g. JAMES24"></div>
+<button class="btn" onclick="register()">Apply</button>
+<div class="err" id="register-err"></div>
+<p style="font-size:11px;color:#6b7280;margin-top:16px;text-align:center"><a href="#" onclick="showLogin();return false">Back to sign in</a></p>
+</div>
+
+<!-- DASHBOARD -->
+<div class="wrap" id="dash-view" style="display:none">
+<div class="hero">
+<h1>Welcome back, <span id="a-name">Affiliate</span> 👋</h1>
+<p>Share your name or code below. Every customer who uses it for <b>any lead type</b> gets a <b>14-day free trial</b> (instead of 7). When they save a card and carry on, you earn <b>£25</b> — paid out the month after they signed up.</p>
+<div class="code"><span style="font-size:11px;color:#94a3b8">Your code:</span> <b id="a-code"></b> <button onclick="copyCode()">Copy</button></div>
+</div>
+
+<div class="cards">
+<div class="card"><div class="lbl">Referrals</div><div class="val" id="c-refs">0</div><div class="sub">people who signed up using your code</div></div>
+<div class="card amber"><div class="lbl">Pending</div><div class="val" id="c-pending">£0</div><div class="sub">card saved · waiting for payout date</div></div>
+<div class="card green"><div class="lbl">Ready to pay</div><div class="val" id="c-due">£0</div><div class="sub">month passed · being paid</div></div>
+<div class="card blue"><div class="lbl">Paid</div><div class="val" id="c-paid">£0</div><div class="sub">total you've earned</div></div>
+</div>
+
+<div class="grid">
+<div class="panel">
+<h2>Referrals</h2>
+<div id="refs-table-wrap"></div>
+</div>
+<div class="panel">
+<h2>How it works</h2>
+<ol class="howto" style="padding-left:18px">
+<li><b>Share your code</b> — give your name or code to anyone starting with 9amLeads.</li>
+<li><b>They get 14 days free</b> — used at signup for any lead type (moving, probate, planning, new business, tenders).</li>
+<li><b>You earn £25</b> — once they save a card and carry on after the trial.</li>
+<li><b>Paid monthly</b> — payouts are made the month after their signup date.</li>
+</ol>
+<h2 style="margin-top:22px">Payout history</h2>
+<div id="payouts-wrap"><div class="muted">No payouts yet.</div></div>
+</div>
+</div>
+</div>
+
+<script>
+var API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
+var TOKEN = localStorage.getItem('mld_affiliate_token') || '';
+function showLogin(){document.getElementById('login-view').style.display='block';document.getElementById('register-view').style.display='none';}
+function showRegister(){document.getElementById('login-view').style.display='none';document.getElementById('register-view').style.display='block';}
+function err(id,msg){var e=document.getElementById(id);e.textContent=msg;e.style.display='block';}
+function api(method,path,body){
+  return fetch(API+'/api'+path,{method:method,headers:{'Content-Type':'application/json','Authorization':TOKEN?'Bearer '+TOKEN:''},body:body?JSON.stringify(body):undefined}).then(function(r){return r.json();});
+}
+function login(){
+  var email=document.getElementById('a-email').value.trim(),pass=document.getElementById('a-pass').value;
+  fetch(API+'/api/affiliate/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.token){TOKEN=d.token;localStorage.setItem('mld_affiliate_token',d.token);document.getElementById('logout').style.display='inline-block';loadDash();}
+    else err('login-err',d.error||'Sign in failed');
+  }).catch(function(){err('login-err','Server is starting up. Please wait a few seconds and try again.');});
+}
+function register(){
+  var name=document.getElementById('r-name').value.trim(),email=document.getElementById('r-email').value.trim(),pass=document.getElementById('r-pass').value,code=document.getElementById('r-code').value.trim();
+  fetch(API+'/api/affiliate/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,password:pass,code:code})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.success){document.getElementById('register-err').style.color='#34d399';document.getElementById('register-err').style.display='block';document.getElementById('register-err').textContent='Application received! We\'ll activate your account shortly — check your email, then sign in.';}
+    else err('register-err',d.error||'Could not submit application');
+  }).catch(function(){err('register-err','Server is starting up. Please try again.');});
+}
+function badge(st){
+  var map={referral_pending:['b-ref','Signup'],pending:['b-pending','Card saved · waiting'],due:['b-due','Ready to pay'],paid:['b-blue','Paid'],ineligible:['b-ineligible','Not eligible']};
+  var m=map[st]||map.referral_pending;
+  return '<span class="badge '+m[0]+'">'+m[1]+'</span>';
+}
+function loadDash(){
+  api('GET','/affiliate/dashboard').then(function(d){
+    if(!d.success){localStorage.removeItem('mld_affiliate_token');showLogin();return;}
+    document.getElementById('dash-view').style.display='block';
+    document.getElementById('login-view').style.display='none';
+    document.getElementById('register-view').style.display='none';
+    document.getElementById('a-name').textContent=d.affiliate.name;
+    document.getElementById('a-code').textContent=d.affiliate.code;
+    document.getElementById('c-refs').textContent=d.totals.referrals;
+    document.getElementById('c-pending').textContent='£'+d.earnings.pending;
+    document.getElementById('c-due').textContent='£'+d.earnings.due;
+    document.getElementById('c-paid').textContent='£'+d.earnings.paid;
+    var w=document.getElementById('refs-table-wrap');
+    if(!d.referrals.length){w.innerHTML='<div class="muted">No referrals yet. Share your code to get started!</div>';}
+    else{
+      var h='<table><thead><tr><th>Company</th><th>Lead type</th><th>Signed up</th><th>Trial</th><th>Status</th></tr></thead><tbody>';
+      d.referrals.forEach(function(r){
+        h+='<tr><td>'+esc(r.company)+'<div class="muted">'+esc(r.email)+'</div></td><td>'+esc(r.product)+'</td><td>'+fmtDate(r.signed_up)+'</td><td>'+r.trial_days+' days</td><td>'+badge(r.status)+'</td></tr>';
+      });
+      h+='</tbody></table>';w.innerHTML=h;
+    }
+    var pw=document.getElementById('payouts-wrap');
+    if(d.payouts && d.payouts.length){
+      var ph='<table><thead><tr><th>Date</th><th>Referrals</th><th>Amount</th></tr></thead><tbody>';
+      d.payouts.forEach(function(p){ph+='<tr><td>'+fmtDate(p.date)+'</td><td>'+p.referrals+'</td><td><b style="color:#34d399">£'+p.amount+'</b></td></tr>';});
+      ph+='</tbody></table>';pw.innerHTML=ph;
+    }
+  }).catch(function(){}).then(function(){document.getElementById('logout').style.display='inline-block';});
+}
+function copyCode(){var t=document.getElementById('a-code').textContent;navigator.clipboard.writeText(t).then(function(){var b=document.querySelector('.code button');b.textContent='Copied!';setTimeout(function(){b.textContent='Copy';},1200);});}
+function esc(s){return String(s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function fmtDate(iso){if(!iso)return '-';try{return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch(e){return iso;}}
+document.getElementById('logout').onclick=function(){localStorage.removeItem('mld_affiliate_token');location.reload();};
+if(TOKEN){loadDash();}
+</script>
+</body>
+</html>

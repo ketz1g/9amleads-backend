@@ -101,6 +101,7 @@ tbody tr:hover td{background:#f8fafc}
 <button onclick="switchTab('fulfilment')"><i class="fas fa-clipboard-check"></i> Fulfilment</button>
 <button onclick="switchTab('rejected')"><i class="fas fa-times-circle"></i> Rejected</button>
 <button onclick="switchTab('analytics')"><i class="fas fa-chart-pie"></i> Analytics</button>
+<button onclick="switchTab('affiliates')"><i class="fas fa-handshake"></i> Affiliates</button>
 <button onclick="openDeliveryPreview()" title="See which leads each customer will get at the next 9am"><i class="fas fa-eye"></i> Delivery Preview</button> <a href="/portal/seo.html"><i class="fas fa-magnifying-glass"></i> SEO</a>
 <a href="/portal/"><i class="fas fa-arrow-right-to-bracket"></i> Portal</a>
 </div>
@@ -243,6 +244,18 @@ tbody tr:hover td{background:#f8fafc}
 </div>
 </div>
 
+<!-- ============ AFFILIATES ============ -->
+<div class="tab-panel" id="tab-affiliates">
+<div class="card" style="margin-bottom:16px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-handshake" style="color:#0ea5e9;margin-right:6px"></i> Affiliate Program</div>
+<button class="btn btn-primary btn-sm" onclick="createAffiliateForm()"><i class="fas fa-plus"></i> Add Affiliate</button>
+</div>
+<p style="font-size:12.5px;color:#475569;margin:0 0 10px">Referrals use an affiliate's name or code at signup → customer gets a <b>14-day trial</b> → affiliate earns <b>£25</b> when the customer saves a card and carries on, paid the month after signup.</p>
+<div class="table-wrap" id="affiliateTableWrap"><div class="loading">Loading affiliates...</div></div>
+</div>
+</div>
+
 </div>
 </div>
 <script>
@@ -292,8 +305,64 @@ function switchTab(name) {
   document.querySelectorAll('.top .nav button').forEach(function(b){ b.classList.remove('active'); });
   var btn = document.querySelector('.top .nav button[onclick*="switchTab(\'' + name + '\')"]');
   if (btn) btn.classList.add('active');
+  if (name === 'affiliates') loadAffiliates();
   window.scrollTo(0, 0);
 }
+
+// ===== AFFILIATES =====
+function loadAffiliates() {
+  var wrap = document.getElementById('affiliateTableWrap');
+  fetch(API + '/api/admin/affiliates?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.success || !d.affiliates) { wrap.innerHTML = '<div class="empty">Could not load affiliates.</div>'; return; }
+      if (!d.affiliates.length) { wrap.innerHTML = '<div class="empty">No affiliates yet. Click "Add Affiliate" to create one.</div>'; return; }
+      var h = '<table><thead><tr><th>Affiliate</th><th>Code</th><th>Status</th><th>Referrals</th><th>Pending</th><th>Ready to pay</th><th>Paid</th><th>Actions</th></tr></thead><tbody>';
+      d.affiliates.forEach(function(a) {
+        var st = a.status === 'pending' ? '<span class="badge badge-warn">Pending</span>' : a.status === 'paused' ? '<span class="badge">Paused</span>' : '<span class="badge badge-ok">Active</span>';
+        h += '<tr><td><b>' + esc(a.name) + '</b><div style="font-size:11px;color:#64748b">' + esc(a.email) + '</div></td>' +
+          '<td><code>' + esc(a.code) + '</code></td><td>' + st + '</td>' +
+          '<td>' + a.counts.referrals + '</td><td>£' + a.earnings_pending + ' (' + a.counts.pending + ')</td>' +
+          '<td style="color:#16a34a;font-weight:600">£' + a.earnings_due + ' (' + a.counts.due + ')</td>' +
+          '<td>£' + a.earnings_paid + ' (' + a.counts.paid + ')</td>' +
+          '<td>' + (a.counts.due ? '<button class="btn btn-outline btn-sm" onclick="payAffiliate(\'' + a.id + '\',\'' + esc(a.name) + '\')"><i class="fas fa-pound-sign"></i> Pay £' + a.earnings_due + '</button>' : '<span style="font-size:11px;color:#94a3b8">-</span>') + '</td></tr>';
+      });
+      h += '</tbody></table>'; wrap.innerHTML = h;
+    })
+    .catch(function(e) { wrap.innerHTML = '<div class="empty">Error: ' + e.message + '</div>'; });
+}
+function createAffiliateForm() {
+  var content = '<div style="display:grid;gap:10px">' +
+    '<div><label style="font-size:12px;color:#475569;font-weight:600">Full name</label><input class="input" id="af-name" style="width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px"></div>' +
+    '<div><label style="font-size:12px;color:#475569;font-weight:600">Email</label><input class="input" id="af-email" style="width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px"></div>' +
+    '<div><label style="font-size:12px;color:#475569;font-weight:600">Referral code</label><input class="input" id="af-code" placeholder="e.g. JAMES24" style="width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px"></div>' +
+    '<div><label style="font-size:12px;color:#475569;font-weight:600">Password (for affiliate sign-in, min 8 chars)</label><input class="input" id="af-pass" type="password" style="width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px"></div>' +
+    '<div style="display:flex;gap:8px;margin-top:6px"><button class="btn btn-primary btn-sm" onclick="createAffiliate()">Create</button><button class="btn btn-outline btn-sm" onclick="document.getElementById(\'adminModalOverlay\').style.display=\'none\'">Cancel</button></div>' +
+    '</div>';
+  showModal('Add Affiliate', content, 420);
+}
+function createAffiliate() {
+  var name = document.getElementById('af-name').value.trim();
+  var email = document.getElementById('af-email').value.trim();
+  var code = document.getElementById('af-code').value.trim();
+  var pass = document.getElementById('af-pass').value;
+  if (!name || !email || !pass) { alert('Name, email and password are required'); return; }
+  fetch(API + '/api/admin/affiliates', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ name: name, email: email, code: code, password: pass, status: 'active' }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) { document.getElementById('adminModalOverlay').style.display = 'none'; alert('Affiliate created! Code: ' + d.affiliate.code); loadAffiliates(); }
+      else alert(d.error || 'Could not create affiliate');
+    })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function payAffiliate(id, name) {
+  if (!confirm('Pay all ready-to-pay earnings for ' + name + '? This records the payout as paid.')) return;
+  fetch(API + '/api/admin/affiliates/pay', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ affiliate_id: id }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { alert('Paid £' + d.amount_paid + ' to ' + d.affiliate + ' (' + d.paid_referrals + ' referral' + (d.paid_referrals === 1 ? '' : 's') + ').'); loadAffiliates(); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 
 // Light modal helper (used by impersonation logs etc.)
 function showModal(title, content, width) {
