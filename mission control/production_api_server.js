@@ -224,6 +224,7 @@ function validateMovingLead(ld) {
     else return 'no-premise-number';
   }
   if (!hasStreetName(a)) return 'no-street-name';
+  if (!hasFullAddress(a, pc)) return 'incomplete-address';
   if (/,\s*(England|Scotland|Wales|Northern\s*Ireland|South\s*East\s*England|South\s*West\s*England|East\s*of\s*England|East\s*Midlands|West\s*Midlands|North\s*West\s*England|North\s*East\s*England|Greater\s*London|UK)(?=\s*,|\s*$)/i.test(a)) return 'wrong-region-tag';
   if (/,\s*[A-Z]{1,2}[0-9][A-Z0-9]?\s*$/i.test(a)) return 'partial-postcode';
   if (hasBadUnitCode(a)) return 'unit-code';
@@ -241,6 +242,17 @@ function hasStreetName(addr) {
   if (/^\s*\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s+[A-Z][A-Za-z'-]+/.test(a)) return true;
   // Word-boundary anchored so 'Court' never matches inside 'Courtenay'.
   return /(?:\bRoad\b|\bStreet\b|\bAvenue\b|\bLane\b|\bDrive\b|\bClose\b|\bCrescent\b|\bGardens\b|\bGrove\b|\bCourt\b|\bTerrace\b|\bWay\b|\bWalk\b|\bHill\b|\bPlace\b|\bMews\b|\bRise\b|\bRow\b|\bPark\b|\bSquare\b|\bGreen\b|\bBroadway\b|\bPath\b|\bView\b|\bGate\b|\bEnd\b|\bField\b|\bFields\b|\bHigh\s?Street\b|\bSt\b|\bRd\b|\bAve\b|\bLn\b|\bDr\b|\bCl\b|\bCres\b|\bGdns\b|\bGv\b|\bCt\b|\bTce\b|\bWl\b|\bPl\b|\bMws\b|\bRse\b|\bPk\b|\bSq\b|\bBdwy\b)/i.test(a);
+}
+
+// True when an address is COMPLETE for mailing: door/flat number + street name +
+// a town/area after the street + a full postcode. A bare "1 Caldwell Street"
+// (street + number but no town) is NOT a full, deliverable address.
+function hasFullAddress(addr, pc) {
+  var a = String(addr || '').replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
+  if (!hasUsablePremiseAddress(a, pc)) return false;
+  if (!hasStreetName(a)) return false;
+  var parts = a.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+  return parts.length >= 2;
 }
 
 // ---- Capacity / usage telemetry (exposed on /api/health) ----
@@ -3232,6 +3244,31 @@ app.post('/api/admin/clear-customer-leads', adminAuth, (req, res) => {
     dbC.leads = (dbC.leads || []).filter(function(l) { return l.customer_id !== cust.id; });
     saveDb();
     res.json({ success: true, email: email, removed: before });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/remove-incomplete-leads — remove a customer's moving leads that
+// DON'T have a full mailing address (door number + street + town/area + full
+// postcode). Keeps only complete, deliverable addresses.
+app.post('/api/admin/remove-incomplete-leads', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var dbI = getDb();
+    var cust = (dbI.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var removed = 0;
+    var kept = [];
+    dbI.leads = (dbI.leads || []).filter(function(l) {
+      if (l.customer_id !== cust.id || l.product !== 'moving') return true;
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) { d = {}; }
+      var addr = d.fullAddress || d.address || '';
+      var pc = d.postcode || '';
+      if (!hasFullAddress(addr, pc)) { removed++; return false; }
+      return true;
+    });
+    saveDb();
+    res.json({ success: true, email: email, removed: removed });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -10236,7 +10273,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   var nfeNum = hasPremiseNumber(nfeAddr, nfePc);
                   var nfeFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(nfePc).trim());
                   var nfeUrl = nfe.url || ncData.url || '';
-                  if (nfeNum && nfeFullPc && nfeUrl && hasStreetName(nfeAddr)) {
+                  // FULL ADDRESS ONLY: door number + street + town/area + full postcode.
+                  if (nfeNum && nfeFullPc && nfeUrl && hasStreetName(nfeAddr) && hasFullAddress(nfeAddr, nfePc)) {
                                   if (isFlatAddress(ncData.fullAddress || '')) { ncData.fullAddress = stripGuessedFlatPrefix(ncData.fullAddress); ncData.address = ncData.fullAddress; }ncData.fullAddress = nfeAddr; ncData.address = nfeAddr;
                     ncData.postcode = nfePc; ncData.buildingNumber = nfe.buildingNumber || '';
                     ncData.street = nfe.street || ''; ncData.udprn = nfe.udprn || ''; ncData.url = nfeUrl;
