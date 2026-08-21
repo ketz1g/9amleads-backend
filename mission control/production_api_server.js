@@ -4893,6 +4893,78 @@ app.post('/api/admin/clear-bounce', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/refresh-pending-leads - remove every customer's PENDING
+// (not-yet-delivered) leads that lack a door/flat number and replace them with
+// fresh, fully-valid in-area door-numbered leads from the pool (same rules as the
+// 9am delivery). Delivered leads are untouched.
+app.post('/api/admin/refresh-pending-leads', adminAuth, (req, res) => {
+  try {
+    var emailFilter = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var dbQ = getDb();
+    var customers = (dbQ.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!emailFilter || String(c.email||'').toLowerCase() === emailFilter); });
+    var freshCutoff = getFreshCutoffIso();
+    var summary = [];
+    customers.forEach(function(cust) {
+      var custEntry = { email: cust.email, product: cust.product, removed_doorless: 0, added_valid: 0, kept_delivered: 0 };
+      // customer areas
+      var areas = [];
+      try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
+      if (!areas.length) { try { var cfgQ = JSON.parse(cust.product_config || '{}'); areas = (cfgQ[cust.product] && cfgQ[cust.product].target_areas) ? JSON.parse(cfgQ[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
+      var limit = getPlanLimit(cust.product, cust.plan, cust.coverage) || 5;
+      var movingType = 'both';
+      try { var cfgM = JSON.parse(cust.product_config || '{}'); movingType = (cfgM.moving && cfgM.moving.moving_type) || cust.moving_type || 'both'; } catch(e3) { movingType = cust.moving_type || 'both'; }
+      // remove pending door-less leads (moving only - other products are name-based)
+      var before = (dbQ.leads || []).length;
+      dbQ.leads = (dbQ.leads || []).filter(function(l) {
+        if (l.customer_id !== cust.id) return true;
+        if (l.delivered) { custEntry.kept_delivered++; return true; }
+        if (cust.product === 'moving') {
+          try { var dq = JSON.parse(l.data || '{}'); var aq = dq.fullAddress || dq.address || ''; if (!hasUsablePremiseAddress(aq, dq.postcode || '')) { custEntry.removed_doorless++; return false; } } catch(e) { return true; }
+        }
+        return true;
+      });
+      // re-select valid door-numbered leads from the pool
+      var pool = loadProductPool(cust.product);
+      var interleaved = interleavePoolByAreas(pool, areas);
+      var deliveredKeys = {};
+      (dbQ.leads || []).forEach(function(l) { if (l.customer_id === cust.id && l.delivered) { try { var dd = JSON.parse(l.data || '{}'); var u = dd.url || ''; if (u) deliveredKeys['u:' + u] = 1; var a = String(dd.fullAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0,30); if (a) deliveredKeys['a:' + a] = 1; } catch(e) {} } });
+      var seen = {};
+      var nowIso = new Date().toISOString();
+      var assigned = 0;
+      for (var i = 0; i < interleaved.length && assigned < limit; i++) {
+        var l = interleaved[i];
+        var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
+        var matched = false;
+        if (cust.product === 'moving') {
+          if (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l))) matched = true;
+          if (matched) {
+            var vr = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
+            if (vr) { matched = false; }
+          }
+        } else {
+          var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(l.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
+          var pcMatch = areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g,'-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
+          if (countyMatch || pcMatch) matched = true;
+        }
+        if (!matched) continue;
+        var fv = pickFreshDate(l);
+        if (!fv) continue;
+        if (cust.product === 'moving') { if (fv < freshCutoff) continue; }
+        else { var bf = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < bf) continue; }
+        var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0,30));
+        if (deliveredKeys[key] || seen[key]) continue;
+        seen[key] = 1;
+        var dQ2 = { address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '', street: l.street || '', building_number: l.building_number || '', source: l.source || '', firstVisibleDate: l.firstVisibleDate || nowIso, scrapedAt: nowIso };
+        dbQ.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(dQ2), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: nowIso.split('T')[0] + 'T09:00:00.000Z' });
+        assigned++; custEntry.added_valid++;
+      }
+      summary.push(custEntry);
+    });
+    saveDb();
+    res.json({ success: true, customers: summary });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/replace-pending-lead - replace ONE pending (not-yet-delivered)
 // lead that has wrong/missing info with a fresh, fully-valid in-area lead from the
 // pool (same product + customer's areas + complete address + not already sent).
