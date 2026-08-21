@@ -4781,6 +4781,67 @@ app.get('/api/admin/customer-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/delivery-preview - show which leads each active customer
+// will receive at the next 9am delivery (same selection rules: exact areas,
+// moving_type, freshness 24-48h, lead filters, not-already-delivered, exact
+// count). READ-ONLY - nothing is delivered or emailed. Run after the 6am scrape
+// for the most accurate preview of the 9am delivery.
+app.get('/api/admin/delivery-preview', adminAuth, (req, res) => {
+  try {
+    var emailFilter = String((req.query && req.query.email) || '').toLowerCase().trim();
+    var dbP = getDb();
+    var customers = (dbP.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!emailFilter || String(c.email||'').toLowerCase() === emailFilter); });
+    var freshCutoff = getFreshCutoffIso();
+    var out = [];
+    customers.forEach(function(cust) {
+      var areas = [];
+      try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
+      if (!areas.length) { try { var cfgP = JSON.parse(cust.product_config || '{}'); areas = (cfgP[cust.product] && cfgP[cust.product].target_areas) ? JSON.parse(cfgP[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
+      var limit = getPlanLimit(cust.product, cust.plan, cust.coverage) || 5;
+      var movingType = 'both';
+      try { var cfgM = JSON.parse(cust.product_config || '{}'); movingType = (cfgM.moving && cfgM.moving.moving_type) || cust.moving_type || 'both'; } catch(e3) { movingType = cust.moving_type || 'both'; }
+      // already-delivered keys (same as delivery)
+      var deliveredKeys = {};
+      (dbP.leads || []).forEach(function(l) {
+        if (l.customer_id === cust.id && l.delivered) {
+          try { var dd = JSON.parse(l.data || '{}'); var u = dd.url || ''; if (u) deliveredKeys['u:' + u] = 1; var a = String(dd.fullAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30); if (a) deliveredKeys['a:' + a] = 1; } catch(e) {}
+        }
+      });
+      var pool = loadProductPool(cust.product);
+      var interleaved = interleavePoolByAreas(pool, areas);
+      var selected = [];
+      var seen = {};
+      var leadFilters = {};
+      try { leadFilters = JSON.parse(cust.biz_field2 || '{}'); } catch(e) { leadFilters = {}; }
+      for (var i = 0; i < interleaved.length && selected.length < limit; i++) {
+        var l = interleaved[i];
+        var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
+        var matched = false;
+        if (cust.product === 'moving') {
+          if (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l))) matched = true;
+        } else {
+          var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(l.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
+          var pcMatch = areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g,'-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
+          if (countyMatch || pcMatch) matched = true;
+        }
+        if (!matched) continue;
+        var fv = pickFreshDate(l);
+        if (!fv) continue;
+        if (cust.product === 'moving') { if (fv < freshCutoff) continue; }
+        else { var backfillCutoff = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < backfillCutoff) continue; }
+        var fld = (leadFilters[cust.product] || leadFilters);
+        if (!leadPassesFilters(fld)) continue;
+        var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
+        if (deliveredKeys[key] || seen[key]) continue;
+        seen[key] = 1;
+        selected.push({ address: l.address || l.fullAddress || '', postcode: l.postcode || '', url: l.url || '', county: l.county || '', source: l.source || '' });
+      }
+      out.push({ email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, preview_count: selected.length, leads: selected });
+    });
+    res.json({ success: true, generated_at: new Date().toISOString(), note: 'Preview based on the current pool - run after the 6am scrape for the most accurate 9am preview.', customers: out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/deep-scrape — run the deep Rightmove (Apify) worker for SPECIFIC
 // postcode areas (e.g. areas=L,WA,CH,M,WN). Used when a customer's chosen areas have
 // no fresh supply (e.g. Liverpool/North West) — normal scrape skips areas with no supply.
