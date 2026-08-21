@@ -3252,6 +3252,27 @@ var __topUpInterval = setInterval(function() {
 }, 120 * 60000);
 setTimeout(function() { __topUpInterval.unref(); }, 1000);
 
+// POST /api/admin/backfill-towns — append a town/area to a customer's moving leads
+// that have door number + street + full postcode but no town (cached Postcoder).
+app.post('/api/admin/backfill-towns', adminAuth, async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var dbB = getDb();
+    var cust = (dbB.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var rmB = require('./rightmove_scraper_v2');
+    var leads = (dbB.leads || []).filter(function(l) { return l.customer_id === cust.id && l.product === 'moving'; });
+    var dataArr = leads.map(function(l) { var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {} return d; });
+    var updated = await rmB.backfillLeadTowns(dataArr);
+    if (updated) {
+      dataArr.forEach(function(d, i) { if (d.fullAddress || d.address) leads[i].data = JSON.stringify(d); });
+      saveDb();
+    }
+    res.json({ success: true, email: email, checked: leads.length, updated: updated });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/clear-customer-leads — remove ALL of a customer's current leads
 // from their dashboard (no replacement). Used to strip bad/duplicate leads.
 app.post('/api/admin/clear-customer-leads', adminAuth, (req, res) => {
@@ -10427,6 +10448,21 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 console.log('[QUALITY-REVIEW] ' + cust.email + ': final ' + custLeads.length + '/' + totalNeeded + ' validated moving leads');
               } catch(qvErr) { console.log('[QUALITY-REVIEW] error for ' + cust.email + ': ' + qvErr.message); }
             }
+            // TOWN BACKFILL: append a town/area to any moving lead that has door
+            // number + street + full postcode but no town, using the cached
+            // Postcoder town for the postcode (free, cache-first). Print & Post
+            // needs the town for reliable Royal Mail routing.
+            if (custLeads && custLeads.length) {
+              try {
+                var _tbArr = custLeads.map(function(cl) { var d = {}; try { d = JSON.parse(cl.data || '{}'); } catch(e) {} return d; });
+                var _tbN = await rmScraper.backfillLeadTowns(_tbArr);
+                if (_tbN) {
+                  _tbArr.forEach(function(d, i) { if (d.fullAddress || d.address) custLeads[i].data = JSON.stringify(d); });
+                  saveDb();
+                  console.log('[DELIVERY] town backfill: +' + _tbN + ' towns for ' + cust.email);
+                }
+              } catch(tbE) { console.log('[DELIVERY] town backfill error:', tbE.message); }
+            }
             console.log('[DELIVERY] Final PAF pass: ' + cust.email + ' confirmed ' + custLeads.length + '/' + totalDailyLimit + ' moving leads');
           } catch(pafErr) { console.log('[DELIVERY] Final PAF pass outer error:', pafErr.message); }
         }
@@ -15535,8 +15571,14 @@ function buildStannpRecipientFromLead(parsed) {
   }
   var spl = splitAddress(parsed.address || parsed.fullAddress || '');
   var address_line1 = parsed.address_line1 || ((parsed.building_number ? parsed.building_number + ' ' : '') + (parsed.street || '')).trim() || spl.line1;
-  var city = parsed.city || parsed.town || spl.city;
   var postcode = parsed.postcode || '';
+  var city = parsed.city || parsed.town || spl.city;
+  // TOWN FALLBACK: if the address has no town/area, derive it from the postcode
+  // (cached Postcoder town — zero extra cost, reuses the PAF cache). Print & Post
+  // needs a town for reliable Royal Mail routing.
+  if (!city) {
+    try { var _rmT = require('./rightmove_scraper_v2'); city = _rmT.getTownForPostcode(postcode); } catch(e) {}
+  }
   var name = parsed.company || (parsed.name && parsed.name !== parsed.address ? parsed.name : '') || 'Homeowner';
   return { address_line1: address_line1, city: city, postcode: postcode, name: name, company: parsed.company || '' };
 }

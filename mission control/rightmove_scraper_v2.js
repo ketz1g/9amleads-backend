@@ -1188,7 +1188,53 @@ function fetchZooplaApify(areas, maxProperties) {
   });
 }
 
-module.exports = { collectMovingLeads, collectCommercialLeads, fetchRightmoveApifyCommercial, enrichMovingLeads, enrichMovingLeadsPostcoder, fetchPropertyDetail, lookupPostcoderAddress, lookupLandRegistryAddress, lookupZooplaAddress, parseZooplaAddress, readDoorNumberFromPhoto, fetchZooplaApify, matchPafAddress };
+// Town/city for a postcode, from the cached PAF address array (NO new Postcoder
+// spend — reuses what earlier lookups already cached). Returns '' when unknown.
+function getTownForPostcode(postcode) {
+  try {
+    var cleanPc = (postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!cleanPc) return '';
+    var pcCache = require('./postcoder_cache');
+    var addrs = pcCache.get(cleanPc);
+    if (addrs && Array.isArray(addrs) && addrs.length) {
+      var t = addrs.find(function(a) { return a.posttown; }) || addrs[0];
+      return String(t.posttown || t.county || t.postal_county || '').trim();
+    }
+  } catch(e) {}
+  return '';
+}
+
+// Backfill a town/area onto leads that have door number + street + full postcode
+// but no town (e.g. "1 Caldwell Street"). One cached Postcoder lookup per
+// postcode; the live lookup is budget-guarded so it never overspends. Returns the
+// number of leads updated.
+async function backfillLeadTowns(leads) {
+  if (!Array.isArray(leads) || !leads.length) return 0;
+  var updated = 0;
+  for (var i = 0; i < leads.length; i++) {
+    var ld = leads[i];
+    var addr = String(ld.fullAddress || ld.address || '');
+    var pc = String(ld.postcode || '');
+    if (!addr || !/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc.trim())) continue;
+    var parts = addr.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+    if (parts.length >= 2) continue; // already has a town/area
+    var town = getTownForPostcode(pc);
+    if (!town) {
+      await lookupPostcoderAddress(pc, '', ''); // populate the cache (budget-guarded, 1x per postcode)
+      town = getTownForPostcode(pc);
+    }
+    if (town) {
+      town = town.replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+      var base = addr.replace(/,\s*$/, '').trim();
+      ld.fullAddress = base + ', ' + town;
+      ld.address = ld.fullAddress;
+      updated++;
+    }
+  }
+  return updated;
+}
+
+module.exports = { collectMovingLeads, collectCommercialLeads, fetchRightmoveApifyCommercial, enrichMovingLeads, enrichMovingLeadsPostcoder, fetchPropertyDetail, lookupPostcoderAddress, lookupLandRegistryAddress, lookupZooplaAddress, parseZooplaAddress, readDoorNumberFromPhoto, fetchZooplaApify, matchPafAddress, getTownForPostcode, backfillLeadTowns };
 
 if (require.main === module) {
   collectMovingLeads().then(function(l) {
