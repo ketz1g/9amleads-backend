@@ -3137,6 +3137,75 @@ app.post('/api/admin/set-daily-cap', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/top-up-all — incremental backfill: every active moving customer
+// under their daily cap gets more valid numbered in-area leads added from the pool
+// (existing leads are KEPT, only new ones are added). Used to auto-top-up a
+// customer as fresh numbered supply arrives. The customer's daily cap can be
+// raised temporarily with /api/admin/set-daily-cap (e.g. 5 free leads today).
+app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
+  try {
+    var dbT = getDb();
+    var onlyEmail = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var todayStr = new Date().toISOString().split('T')[0];
+    var summary = [];
+    (dbT.customers || []).forEach(function(cust) {
+      if (cust.product !== 'moving' && !((cust.biz_field3 || '').indexOf('moving') !== -1)) return;
+      if (cust.plan === 'cancelled') return;
+      if (onlyEmail && String(cust.email || '').toLowerCase() !== onlyEmail) return;
+      var cap = parseInt(cust.leads_per_day, 10) || 5;
+      // current = leads already on the customer's dashboard today (delivered today or pending)
+      var cur = (dbT.leads || []).filter(function(l) { return l.customer_id === cust.id; }).length;
+      var need = cap - cur;
+      var entry = { email: cust.email, cap: cap, current: cur, need: Math.max(0, need), added: 0 };
+      if (need <= 0) { summary.push(entry); return; }
+      var areas = [];
+      try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
+      var custMovingType = 'both';
+      try { var pcfg = JSON.parse(cust.product_config || '{}'); custMovingType = (pcfg.moving && pcfg.moving.moving_type) || cust.moving_type || 'both'; } catch(e) { custMovingType = cust.moving_type || 'both'; }
+      var pool = loadProductPool('moving');
+      var poolForCust = interleavePoolByAreas(pool, areas);
+      var used = {};
+      // already-assigned to this customer (avoid re-adding)
+      (dbT.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var ld = JSON.parse(l.data || '{}'); var u = ld.url || ''; if (u) used['u:' + u] = 1; var a = String(ld.fullAddress || ld.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); if (a) used['a:' + a] = 1; } catch(e) {} } });
+      var assigned = 0;
+      for (var i = 0; i < poolForCust.length && assigned < need; i++) {
+        var l = poolForCust[i];
+        var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
+        if (!areas.some(function(a) { return String(a).toUpperCase() === pcArea; })) continue;
+        if (custMovingType === 'residential' && isCommercialLead(l)) continue;
+        if (custMovingType === 'commercial' && !isCommercialLead(l)) continue;
+        var fd = pickFreshDate(l);
+        if (!fd) continue;
+        var reason = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
+        if (reason) continue;
+        var uk = l.url ? 'u:' + String(l.url).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase() : 'a:' + String(l.fullAddress || l.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28);
+        if (used[uk]) continue;
+        used[uk] = 1;
+        var nowIso = new Date().toISOString();
+        var dT = { address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '', price: l.price || 0, priceLabel: l.priceLabel || '', bedrooms: l.bedrooms || 0, propertyType: l.propertyType || '', commercial: !!l.commercial, commercial_let: !!l.commercial_let, agent: l.agent || '', street: l.street || '', buildingNumber: l.buildingNumber || '', udprn: l.udprn || '', source: l.source || 'Rightmove (Apify)', firstVisibleDate: l.firstVisibleDate || nowIso, scrapedAt: nowIso };
+        dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: 'moving', data: JSON.stringify(dT), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: todayStr + 'T09:00:00.000Z' });
+        assigned++; entry.added++;
+      }
+      summary.push(entry);
+    });
+    saveDb();
+    res.json({ success: true, customers: summary });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Schedule top-up after each OTM daily supply run + a periodic catch-all, so a
+// customer under their cap is backfilled as soon as fresh numbered leads arrive.
+var __topUpInterval = setInterval(function() {
+  try {
+    var httpT2 = require('http');
+    var bT2 = JSON.stringify({});
+    var rT2 = httpT2.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/top-up-all', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bT2) } }, function(s) { s.resume(); });
+    rT2.on('error', function(e) { console.log('[TOP-UP] auto top-up error:', e.message); });
+    rT2.write(bT2); rT2.end();
+  } catch(e) {}
+}, 120 * 60000);
+setTimeout(function() { __topUpInterval.unref(); }, 1000);
+
 // POST /api/admin/clear-customer-leads — remove ALL of a customer's current leads
 // from their dashboard (no replacement). Used to strip bad/duplicate leads.
 app.post('/api/admin/clear-customer-leads', adminAuth, (req, res) => {
