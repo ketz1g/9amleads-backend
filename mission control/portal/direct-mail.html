@@ -111,39 +111,6 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <button class="btn btn-outline" onclick="downloadCoverLetter()" style="flex:1"><i class="fas fa-download"></i> Download Cover Letter</button>
 </div>
 
-<!-- Upload Materials -->
-<div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
-<div class="sect-title"><i class="fas fa-upload" style="color:var(--accent)"></i> Your Leaflet Design (PDF / PNG / JPG)</div>
-<div id="materials-list" style="margin-top:12px"></div>
-
-<!-- Final print preview with whited-out address zone + download -->
-<div id="final-print-preview" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#f8fafc">
-<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-print" style="color:var(--accent);margin-right:4px"></i> Your Print-Ready Leaflet <span style="color:var(--success);font-weight:700">(address zone on back top. no content lost)</span></div>
-<div style="padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;color:#15803d;line-height:1.6;margin-bottom:10px">
-<i class="fas fa-check-circle" style="margin-right:4px"></i><b>Nothing is cut off — but the white address zone sits at the TOP of the BACK.</b> Royal Mail needs a clean white area at the top of the back of the leaflet for the recipient's address. Your full design is preserved on the <b>front</b> and the <b>rest of the back</b>.
-</div>
-<p style="font-size:11px;color:var(--text2);margin-bottom:10px">Because the white zone is at the <b>top of the back</b>, you need to <b>edit the BACK flyer</b> to position your design so it sits below that white area and the whole leaflet is visible. Click <b>Edit</b> on the back preview (or the <b>Edit / Position</b> button in your materials) and drag/stretch the back design so it fills the area below the white strip — that way your entire back design shows on the printed leaflet.</p>
-<p style="font-size:11px;color:#0369a1;background:#eff6ff;border:1px solid #bae6fd;border-radius:8px;padding:8px 10px;margin-bottom:10px"><i class="fas fa-edit" style="margin-right:4px"></i><b>Tip:</b> Use the <b>Edit</b> button on the <b>Back. Print-Ready</b> preview above. In the editor, <b>drag</b> to move and <b>stretch the handles</b> so your whole back design fits in the printable area below the top white zone — the preview updates as you adjust it.</p>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-  <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
-    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Front. Print-Ready <span id="fp-front-label" style="font-weight:400;color:var(--muted)"></span> <button id="fp-front-edit" onclick="fpEditFront()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
-    <img id="fp-front-img" alt="Final print preview (front, full design)" style="max-width:100%;max-height:260px;border-radius:6px;border:1px solid #334155">
-    <div id="fp-front-specs" style="font-size:10px;color:var(--text2);margin-top:6px;line-height:1.5"></div>
-    <a class="btn btn-primary btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:8px;color:#fff" id="fp-download-final" target="_blank" rel="noopener"><i class="fas fa-download"></i> Download Print-Ready Version</a>
-    <a class="btn btn-outline btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:6px" id="fp-download-orig" target="_blank" rel="noopener"><i class="fas fa-file-image"></i> Download My Original</a>
-  </div>
-  <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
-    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Back. Print-Ready <span style="color:var(--success);font-weight:400">(address zone at top)</span> <button id="fp-back-edit" onclick="fpEditBack()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
-    <div style="border:2px solid #0c4a6e;border-radius:6px;padding:2px;display:inline-block">
-      <img id="fp-back-img" alt="Final print preview (back, address zone top)" style="max-width:100%;max-height:250px;border-radius:4px;display:block">
-    </div>
-    <div style="font-size:10px;color:var(--muted);margin-top:6px" id="fp-back-name"></div>
-    <a class="btn btn-outline btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:8px" id="fp-download-back" target="_blank" rel="noopener"><i class="fas fa-download"></i> Download My Back</a>
-  </div>
-</div>
-<div style="font-size:10px;color:var(--muted);margin-top:10px">Download Print-Ready = exactly what we send to print (white address zone on the top of the back). Download My Original = your uploaded design, untouched.</div>
-</div>
-
 <!-- Letter preview + guidelines (shows when letter / leaflet+letter format selected) -->
 <div id="letter-preview-box" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff">
 <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-envelope" style="color:var(--accent);margin-right:4px"></i> Your Letter Preview <span style="color:var(--success);font-weight:700">One-Sided A4 · Address Window Shown</span></div>
@@ -176,6 +143,38 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 </div>
 </div>
 
+<!-- Upload Materials -->
+<div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+<div class="sect-title"><i class="fas fa-upload" style="color:var(--accent)"></i> Your Leaflet Design (PDF / PNG / JPG)</div>
+<div id="materials-list" style="margin-top:12px"></div>
+
+<!-- Final print preview with whited-out address zone + download -->
+<div id="final-print-preview" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#f8fafc">
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-print" style="color:var(--accent);margin-right:4px"></i> Your Print-Ready Leaflet <span style="color:var(--success);font-weight:700">(address zone on back top. no content lost)</span></div>
+<div style="padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;color:#15803d;line-height:1.6;margin-bottom:10px">
+<i class="fas fa-check-circle" style="margin-right:4px"></i><b>Nothing is cut off — but the white address zone sits at the TOP of the BACK.</b> Royal Mail needs a clean white area at the top of the back of the leaflet for the recipient's address. Your full design is preserved on the <b>front</b> and the <b>rest of the back</b>.
+</div>
+<p style="font-size:11px;color:var(--text2);margin-bottom:10px">Because the white zone is at the <b>top of the back</b>, you need to <b>edit the BACK flyer</b> to position your design so it sits below that white area and the whole leaflet is visible. Click <b>Edit</b> on the back preview (or the <b>Edit / Position</b> button in your materials) and drag/stretch the back design so it fills the area below the white strip — that way your entire back design shows on the printed leaflet.</p>
+<p style="font-size:11px;color:#0369a1;background:#eff6ff;border:1px solid #bae6fd;border-radius:8px;padding:8px 10px;margin-bottom:10px"><i class="fas fa-edit" style="margin-right:4px"></i><b>Tip:</b> Use the <b>Edit</b> button on the <b>Back. Print-Ready</b> preview above. In the editor, <b>drag</b> to move and <b>stretch the handles</b> so your whole back design fits in the printable area below the top white zone — the preview updates as you adjust it.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+  <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
+    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Front. Print-Ready <span id="fp-front-label" style="font-weight:400;color:var(--muted)"></span> <button id="fp-front-edit" onclick="fpEditFront()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
+    <img id="fp-front-img" alt="Final print preview (front, full design)" style="max-width:100%;max-height:260px;border-radius:6px;border:1px solid #334155">
+    <div id="fp-front-specs" style="font-size:10px;color:var(--text2);margin-top:6px;line-height:1.5"></div>
+    <a class="btn btn-primary btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:8px;color:#fff" id="fp-download-final" target="_blank" rel="noopener"><i class="fas fa-download"></i> Download Print-Ready Version</a>
+    <a class="btn btn-outline btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:6px" id="fp-download-orig" target="_blank" rel="noopener"><i class="fas fa-file-image"></i> Download My Original</a>
+  </div>
+  <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
+    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Back. Print-Ready <span style="color:var(--success);font-weight:400">(address zone at top)</span> <button id="fp-back-edit" onclick="fpEditBack()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
+    <div style="border:2px solid #0c4a6e;border-radius:6px;padding:2px;display:inline-block">
+      <img id="fp-back-img" alt="Final print preview (back, address zone top)" style="max-width:100%;max-height:250px;border-radius:4px;display:block">
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:6px" id="fp-back-name"></div>
+    <a class="btn btn-outline btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:8px" id="fp-download-back" target="_blank" rel="noopener"><i class="fas fa-download"></i> Download My Back</a>
+  </div>
+</div>
+<div style="font-size:10px;color:var(--muted);margin-top:10px">Download Print-Ready = exactly what we send to print (white address zone on the top of the back). Download My Original = your uploaded design, untouched.</div>
+</div>
 
 <!-- Design tips + how the white space works -->
 <div id="flyer-tips" style="display:none;margin-top:14px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff">
