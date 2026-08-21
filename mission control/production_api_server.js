@@ -3386,6 +3386,38 @@ app.post('/api/admin/remove-incomplete-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/add-test-lead — create a lead for a customer so they can test
+// Print & Post against their own address. Body: { email, name, full_address, postcode, city, street, building_number }
+app.post('/api/admin/add-test-lead', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var dbL = getDb();
+    var cust = (dbL.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var fullAddress = String((req.body && req.body.full_address) || '').trim();
+    var postcode = String((req.body && req.body.postcode) || '').toUpperCase().trim();
+    if (!fullAddress || !postcode) return res.status(400).json({ error: 'full_address and postcode required' });
+    var today = new Date().toISOString().split('T')[0];
+    var nowIso = new Date().toISOString();
+    var data = {
+      fullAddress: fullAddress,
+      address: fullAddress,
+      postcode: postcode,
+      street: (req.body && req.body.street) || '',
+      buildingNumber: (req.body && req.body.building_number) || '',
+      city: (req.body && req.body.city) || '',
+      name: (req.body && req.body.name) || '',
+      company: (req.body && req.body.name) || '',
+      source: 'self-test',
+      url: (req.body && req.body.url) || 'https://www.rightmove.co.uk/'
+    };
+    dbL.leads.push({ id: uuidv4(), customer_id: cust.id, product: 'moving', data: JSON.stringify(data), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: today + 'T09:00:00.000Z' });
+    saveDb();
+    res.json({ success: true, email: email, lead_id: dbL.leads[dbL.leads.length - 1].id, address: fullAddress, postcode: postcode });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
