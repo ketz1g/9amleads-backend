@@ -83,7 +83,7 @@ tr:last-child td{border-bottom:none}
 <!-- REGISTER -->
 <div class="login" id="register-view" style="display:none">
 <h1>Become an affiliate</h1>
-<p>Earn <b style="color:#34d399">£25</b> for every customer who signs up with your name or code and carries on. Works for every lead type.</p>
+<p>Earn <b style="color:#34d399">£25</b> for every customer who signs up with your name or code and pays for their first package. Works for every lead type.</p>
 <div class="fg"><label>Full name</label><input type="text" id="r-name" placeholder="Your name"></div>
 <div class="fg"><label>Email</label><input type="email" id="r-email" placeholder="you@partner.com"></div>
 <div class="fg"><label>Password</label><input type="password" id="r-pass" placeholder="Min 8 characters"></div>
@@ -97,13 +97,13 @@ tr:last-child td{border-bottom:none}
 <div class="wrap" id="dash-view" style="display:none">
 <div class="hero">
 <h1>Welcome back, <span id="a-name">Affiliate</span> 👋</h1>
-<p>Share your name or code below. Every customer who uses it for <b>any lead type</b> gets a <b>14-day free trial</b> (instead of 7). When they save a card and carry on, you earn <b>£25</b> — paid out the month after they signed up.</p>
+<p>Share your name or code below. Every customer who uses it for <b>any lead type</b> gets a <b>14-day free trial</b> (instead of 7). When they <b>pay their first invoice</b> for a Starter, Pro or Enterprise package, you earn <b>£25</b> — paid out the month after they signed up.</p>
 <div class="code"><span style="font-size:11px;color:#94a3b8">Your code:</span> <b id="a-code"></b> <button onclick="copyCode()">Copy</button></div>
 </div>
 
 <div class="cards">
 <div class="card"><div class="lbl">Referrals</div><div class="val" id="c-refs">0</div><div class="sub">people who signed up using your code</div></div>
-<div class="card amber"><div class="lbl">Pending</div><div class="val" id="c-pending">£0</div><div class="sub">card saved · waiting for payout date</div></div>
+<div class="card amber"><div class="lbl">Pending</div><div class="val" id="c-pending">£0</div><div class="sub">first invoice paid · waiting for payout date</div></div>
 <div class="card green"><div class="lbl">Ready to pay</div><div class="val" id="c-due">£0</div><div class="sub">month passed · being paid</div></div>
 <div class="card blue"><div class="lbl">Paid</div><div class="val" id="c-paid">£0</div><div class="sub">total you've earned</div></div>
 </div>
@@ -118,7 +118,7 @@ tr:last-child td{border-bottom:none}
 <ol class="howto" style="padding-left:18px">
 <li><b>Share your code</b> — give your name or code to anyone starting with 9amLeads.</li>
 <li><b>They get 14 days free</b> — used at signup for any lead type (moving, probate, planning, new business, tenders).</li>
-<li><b>You earn £25</b> — once they save a card and carry on after the trial.</li>
+<li><b>You earn £25</b> — when they pay their first invoice for a Starter, Pro or Enterprise package.</li>
 <li><b>Paid monthly</b> — payouts are made the month after their signup date.</li>
 </ol>
 <h2 style="margin-top:22px">Payout history</h2>
@@ -153,7 +153,7 @@ function register(){
   }).catch(function(){err('register-err','Server is starting up. Please try again.');});
 }
 function badge(st){
-  var map={referral_pending:['b-ref','Signup'],pending:['b-pending','Card saved · waiting'],due:['b-due','Ready to pay'],paid:['b-blue','Paid'],ineligible:['b-ineligible','Not eligible']};
+  var map={referral_pending:['b-ref','Signed up'],pending:['b-pending','First invoice paid · waiting'],due:['b-green','Ready to pay'],paid:['b-blue','Paid'],ineligible:['b-ineligible','Not eligible']};
   var m=map[st]||map.referral_pending;
   return '<span class="badge '+m[0]+'">'+m[1]+'</span>';
 }

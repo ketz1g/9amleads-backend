@@ -10561,17 +10561,9 @@ app.post('/api/stripe/webhook', async (req, res) => {
                 .run(si.payment_method, stripeCustId, customer.id);
               saveDb();
               console.log('[STRIPE] Saved card for ' + (customerEmail || customer.id) + ' (auto-billing ready, customer ' + stripeCustId + ')');
-              // AFFILIATE: the referred customer saved a card -> their referral is
-              // now earning. Payout becomes "pending" (paid one month after signup,
-              // provided the customer stays active).
-              if (customer.affiliate_id && (customer.affiliate_payout_status === 'referral_pending' || !customer.affiliate_payout_status)) {
-                db.prepare('UPDATE customers SET affiliate_payout_status = ?, affiliate_payout_due = ? WHERE id = ?')
-                  .run('pending',
-                    new Date(new Date(customer.created_at || Date.now()).getTime() + 30 * 86400000).toISOString(),
-                    customer.id);
-                saveDb();
-                console.log('[AFFILIATE] Referral from ' + (customer.affiliate_code || customer.affiliate_id) + ' earned — payout pending for ' + customer.email);
-              }
+              // AFFILIATE NOTE: saving a card alone does NOT earn the affiliate.
+              // The referral only starts earning when the customer PAYS their first
+              // invoice for a paid package (starter/pro/enterprise) — see invoice.paid.
             }
           }
         }
@@ -10694,6 +10686,24 @@ app.post('/api/stripe/webhook', async (req, res) => {
         db.prepare('UPDATE customers SET auto_send_paused = 0, plan = COALESCE(plan, ?) WHERE id = ?').run('starter', invCustomer.id);
         saveDb();
         console.log('[STRIPE] Weekly renewal paid: ' + (invCustomer.email || invCustomer.id));
+        // AFFILIATE: a referred customer PAID their first invoice for a paid package
+        // (starter/pro/enterprise) -> the affiliate's referral is now EARNING. Paid
+        // one month after signup provided the customer stays active. Guarded so it
+        // only fires on the FIRST real (paid, non-zero) invoice — referral_pending
+        // -> pending. A saved card alone does not earn.
+        try {
+          var invPaidAmt = (inv.amount_paid || 0) > 0;
+          var invPaidPlan = String(invCustomer.plan || '').toLowerCase();
+          var invOnPaidPkg = invPaidPlan === 'starter' || invPaidPlan === 'pro' || invPaidPlan === 'enterprise';
+          if (invCustomer.affiliate_id && invCustomer.affiliate_payout_status === 'referral_pending' && invPaidAmt && invOnPaidPkg) {
+            db.prepare('UPDATE customers SET affiliate_payout_status = ?, affiliate_payout_due = ? WHERE id = ?')
+              .run('pending',
+                new Date(new Date(invCustomer.created_at || Date.now()).getTime() + 30 * 86400000).toISOString(),
+                invCustomer.id);
+            saveDb();
+            console.log('[AFFILIATE] Referral from ' + (invCustomer.affiliate_code || invCustomer.affiliate_id) + ' earned (first invoice £' + (inv.amount_paid / 100) + ' paid, plan ' + invPaidPlan + ') — payout pending for ' + invCustomer.email);
+          }
+        } catch(affErr) { console.log('[AFFILIATE] invoice.paid affiliate error:', affErr.message); }
         // Persist an "invoice paid" receipt + email the customer a receipt.
         try {
           await recordPaymentReceipt({
