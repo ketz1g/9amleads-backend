@@ -110,11 +110,12 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div style="display:flex;gap:10px;margin-top:12px">
 <button class="btn btn-primary" onclick="saveTemplate()" style="flex:1"><i class="fas fa-save"></i> Save Cover Letter</button>
 <button class="btn btn-outline" onclick="downloadCoverLetter()" style="flex:1"><i class="fas fa-download"></i> Download Cover Letter</button>
+<button class="btn btn-outline" onclick="clearCoverLetter()" style="flex:0 0 auto"><i class="fas fa-eraser"></i> Clear Text</button>
 </div>
 
 <!-- Letter preview + guidelines (shows when letter / leaflet+letter format selected) -->
 <div id="letter-preview-box" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff">
-<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-envelope" style="color:var(--accent);margin-right:4px"></i> Your Letter Preview <span style="color:var(--success);font-weight:700">One-Sided A4 · Address Window Shown</span></div>
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px"><span><i class="fas fa-envelope" style="color:var(--accent);margin-right:4px"></i> Your Letter Preview <span style="color:var(--success);font-weight:700">One-Sided A4 · Address Window Shown</span></span><button class="btn btn-outline btn-sm" onclick="deleteActiveLetter()" style="white-space:nowrap"><i class="fas fa-trash"></i> Delete Letter</button></div>
 <div style="display:flex;gap:14px;flex-wrap:wrap">
   <!-- The A4 page (portrait, fixed aspect) -->
   <div style="flex:0 0 360px">
@@ -461,10 +462,29 @@ function saveTemplate(){
     }
   });
 }
+// Clear the letter text in the editor (keeps the saved copy until you Save again).
+function clearCoverLetter(){
+  var t=document.getElementById('t-content');
+  if(t)t.value='';
+  updateLetterPreviewLive();
+  toast('Letter text cleared');
+}
+// Delete the ACTIVE saved letter (removes it from the Print & Post setup) + clears the editor.
+function deleteActiveLetter(){
+  if(!confirm('Delete this saved letter? It will be removed as your active Print & Post letter.'))return;
+  var fmtId=_selectedFormat||'flyer_a5_portrait';
+  var mt = fmtId==='letter_a4' ? 'letter' : (fmtId==='flyer_plus_letter' ? 'flyer_plus_letter' : 'flyer');
+  api('POST','/api/direct-mail/setup',{default_mail_type:mt,default_format:fmtId,cover_letter:''},function(err,d){
+    var t=document.getElementById('t-content');
+    if(t)t.value='';
+    updateLetterPreviewLive();
+    loadLetterPreview();
+    toast('Letter deleted');
+  });
+}
 // Download exactly the cover letter text shown in the editor (as saved. the
 // backend strips any markdown * / ** / # so what you see is what prints).
-function downloadCoverLetter(){
-  var text=document.getElementById('t-content').value||'';
+function downloadCoverLetter(){  var text=document.getElementById('t-content').value||'';
   if(!text.trim()){toast('Write a cover letter first');return;}
   var name=(document.getElementById('t-name').value||'cover-letter').trim().replace(/[^a-z0-9-_ ]/gi,'').replace(/\s+/g,'-').toLowerCase();
   var blob=new Blob([text],{type:'text/plain;charset=utf-8'});
