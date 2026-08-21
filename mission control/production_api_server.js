@@ -3165,8 +3165,9 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       var pool = loadProductPool('moving');
       var poolForCust = interleavePoolByAreas(pool, areas);
       var used = {};
-      // already-assigned to this customer (avoid re-adding)
-      (dbT.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var ld = JSON.parse(l.data || '{}'); var u = ld.url || ''; if (u) used['u:' + u] = 1; var a = String(ld.fullAddress || ld.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); if (a) used['a:' + a] = 1; } catch(e) {} } });
+      // already-assigned to this customer (avoid re-adding) — key on URL AND
+      // normalized address+postcode (URLs can vary between scrape passes).
+      (dbT.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var ld = JSON.parse(l.data || '{}'); var u = ld.url || ''; if (u) used['u:' + String(u).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase()] = 1; var a = String(ld.fullAddress || ld.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24); var pc = String(ld.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (a && pc) used['a:' + a + '|' + pc] = 1; } catch(e) {} } });
       var assigned = 0;
       for (var i = 0; i < poolForCust.length && assigned < need; i++) {
         var l = poolForCust[i];
@@ -3178,9 +3179,10 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
         if (!fd) continue;
         var reason = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
         if (reason) continue;
-        var uk = l.url ? 'u:' + String(l.url).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase() : 'a:' + String(l.fullAddress || l.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28);
-        if (used[uk]) continue;
-        used[uk] = 1;
+        var uk = l.url ? 'u:' + String(l.url).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase() : '';
+        var addrK = 'a:' + String(l.fullAddress || l.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24) + '|' + String(l.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (used[uk] || used[addrK]) continue;
+        used[uk] = 1; used[addrK] = 1;
         var nowIso = new Date().toISOString();
         var dT = { address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '', price: l.price || 0, priceLabel: l.priceLabel || '', bedrooms: l.bedrooms || 0, propertyType: l.propertyType || '', commercial: !!l.commercial, commercial_let: !!l.commercial_let, agent: l.agent || '', street: l.street || '', buildingNumber: l.buildingNumber || '', udprn: l.udprn || '', source: l.source || 'Rightmove (Apify)', firstVisibleDate: l.firstVisibleDate || nowIso, scrapedAt: nowIso };
         dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: 'moving', data: JSON.stringify(dT), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: todayStr + 'T09:00:00.000Z' });
