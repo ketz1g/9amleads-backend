@@ -303,6 +303,10 @@ var COUNTY_POSTCODE_MAP = {
   'greater-london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
   'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
   'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
+  'devon':['EX','PL','TQ'],'cornwall':['TR'],'east-sussex':['BN','RH','TN'],'west-sussex':['BN','RH','GU'],
+  'somerset':['TA','BS'],'dorset':['BH','DT'],'wiltshire':['SN','BA','SP'],'gloucestershire':['GL'],
+  'worcestershire':['WR'],'warwickshire':['CV','B'],'staffordshire':['ST','WS','WV'],'herefordshire':['HR'],
+  'shropshire':['SY'],'northumberland':['NE'],'cumbria':['CA','LA'],'devon-cornwall':['EX','PL','TQ','TR'],
   'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
   'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
   'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
@@ -3468,10 +3472,13 @@ app.post('/api/admin/remove-out-of-area', adminAuth, (req, res) => {
     try { var cfgO = JSON.parse(cust.product_config || '{}'); var primO = cfgO[cust.product] || {}; areas = primO.target_areas ? JSON.parse(primO.target_areas) : JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
     var areaPcCodes = [];
     areas.forEach(function(a) {
-      var c = extractPostcodeArea(a);
-      if (c) areaPcCodes.push(c);
-      var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g, '-')];
+      var norm = String(a).toLowerCase().replace(/[\s-]+/g, '-');
+      var m = COUNTY_POSTCODE_MAP[norm];
       if (m) m.forEach(function(pc) { if (areaPcCodes.indexOf(pc) === -1) areaPcCodes.push(pc); });
+      else {
+        var c = extractPostcodeArea(a);
+        if (c && c.length <= 3) { if (areaPcCodes.indexOf(c) === -1) areaPcCodes.push(c); }
+      }
     });
     var removed = 0;
     var kept = [];
