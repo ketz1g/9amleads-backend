@@ -9396,26 +9396,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             if (areaCode) { if (leadPcCode === areaCode) return allLeads[fi]; }
             // County/region target: match lead's postcode area against the county map
             else {
-              var fCountyMap = {
-                'essex': ['CM','CO','SS','IG'],'hertfordshire':['AL','EN','HP','SG','WD'],'kent':['CT','DA','ME','TN'],
-                'surrey':['CR','GU','KT','RH','SM','TW'],'sussex':['BN','RH','TN'],'hampshire':['GU','PO','SO','SP','RG'],
-                'berkshire':['RG','SL'],'buckinghamshire':['HP','MK','SL'],'oxfordshire':['OX'],'bedfordshire':['LU','MK'],
-                'cambridgeshire':['CB','PE'],'norfolk':['IP','NR','PE'],'suffolk':['CO','IP','NR'],
-                'london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
-                'greater-london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
-                'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
-                'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
-                'devon':['EX','PL','TQ'],'cornwall':['TR'],'east-sussex':['BN','RH','TN'],'west-sussex':['BN','RH','GU'],
-                'somerset':['TA','BS'],'dorset':['BH','DT'],'wiltshire':['SN','BA','SP'],'gloucestershire':['GL'],
-                'worcestershire':['WR'],'warwickshire':['CV','B'],'staffordshire':['ST','WS','WV'],'herefordshire':['HR'],
-                'shropshire':['SY'],'northumberland':['NE'],'cumbria':['CA','LA'],'devon-cornwall':['EX','PL','TQ','TR'],
-                'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
-                'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
-                'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
-                'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
-                'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
-                'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
-              };
+              var fCountyMap = COUNTY_POSTCODE_MAP;
               if (fCountyMap[areaNorm] && fCountyMap[areaNorm].indexOf(leadPcCode) !== -1) return allLeads[fi];
             }
           } catch(e) {}
@@ -9705,26 +9686,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                       // match the lead's postcode area against the county postcode map.
                       var areasAreCounties = custAreas.some(function(a){ return !/^[A-Z]{1,3}$/i.test(a); });
                       if (areasAreCounties) {
-                        var countyPostcodes = {
-                          'essex': ['CM','CO','SS','IG'],'hertfordshire':['AL','EN','HP','SG','WD'],'kent':['CT','DA','ME','TN'],
-                          'surrey':['CR','GU','KT','RH','SM','TW'],'sussex':['BN','RH','TN'],'hampshire':['GU','PO','SO','SP','RG'],
-                          'berkshire':['RG','SL'],'buckinghamshire':['HP','MK','SL'],'oxfordshire':['OX'],'bedfordshire':['LU','MK'],
-                          'cambridgeshire':['CB','PE'],'norfolk':['IP','NR','PE'],'suffolk':['CO','IP','NR'],
-                          'london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
-                          'greater-london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
-                          'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
-  'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
-  'devon':['EX','PL','TQ'],'cornwall':['TR'],'east-sussex':['BN','RH','TN'],'west-sussex':['BN','RH','GU'],
-  'somerset':['TA','BS'],'dorset':['BH','DT'],'wiltshire':['SN','BA','SP'],'gloucestershire':['GL'],
-  'worcestershire':['WR'],'warwickshire':['CV','B'],'staffordshire':['ST','WS','WV'],'herefordshire':['HR'],
-  'shropshire':['SY'],'northumberland':['NE'],'cumbria':['CA','LA'],'devon-cornwall':['EX','PL','TQ','TR'],
-                          'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
-                          'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
-                          'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
-                          'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
-                          'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
-                          'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
-                        };
+                        var countyPostcodes = COUNTY_POSTCODE_MAP;
                         // Check ALL the customer's chosen counties (not just the first),
                         // so a multi-county customer gets leads from every county they picked.
                         for (var _cc = 0; _cc < custAreas.length; _cc++) {
@@ -9931,20 +9893,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               if (custAreas.length > 0) {
                 var fgCounties = custAreas.some(function(a){ return !/^[A-Z]{1,3}$/i.test(a); });
                 if (fgCounties) {
-                  var fgCountyMap = {
-                    'essex': ['CM','CO','SS','IG'],'hertfordshire':['AL','EN','HP','SG','WD'],'kent':['CT','DA','ME','TN'],
-                    'surrey':['CR','GU','KT','RH','SM','TW'],'sussex':['BN','RH','TN'],'hampshire':['GU','PO','SO','SP','RG'],
-                    'london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
-                    'greater-london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
-                    'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
-                    'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
-                    'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
-                    'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
-                    'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
-                    'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
-                    'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
-                    'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
-                  };
+                  // Use the GLOBAL single-source-of-truth map (has devon/cornwall/
+                  // east-sussex/somerset/etc) instead of a duplicate inline map.
+                  var fgCountyMap = COUNTY_POSTCODE_MAP;
                   // Check ALL the customer's chosen counties (not just the first),
                   // so a multi-county customer gets leads from every county they picked.
                   var fgAreaOkLocal = false;
