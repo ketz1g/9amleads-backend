@@ -1382,11 +1382,11 @@ class StannpProvider extends DirectMailProvider {
     return { success: true, provider_campaign_id: providerCampaignId, status: 'processing', message: 'Campaign queued for Stannp' };
   }
 
-  // Build a proper A4 PDF letter from the letter HTML/body text so Stannp never
-  // clips the bottom and it ALWAYS fits on ONE A4 page (Stannp guidance). DejaVu
-  // Sans is wider than Arial, so we start compact and AUTO-SHRINK the font until
-  // the rendered letter is exactly one page — never a 2-page letter by surprise.
-  // Uses the bundled DejaVu Sans TTF so symbols like ✓ and unicode render.
+  // Build a proper A4 PDF letter. Stannp prints the RECIPIENT in the envelope
+  // window (top-left), so the PDF keeps the top-left CLEAR and puts the SENDER's
+  // return address at top-right + date, then the body. Auto-shrinks the font so
+  // the letter is exactly ONE A4 page. DejaVu Sans TTF is embedded for unicode
+  // symbols like ✓.
   async buildA4LetterPdf(pageHtml, recipient) {
     var PDFDocument = require('pdfkit');
     var fsL = require('fs');
@@ -1394,7 +1394,10 @@ class StannpProvider extends DirectMailProvider {
     var fontPath = pathL.join(__dirname, 'DejaVuSans.ttf');
     var unicodeFont = false;
     try { if (fsL.existsSync(fontPath)) unicodeFont = true; } catch(e) {}
-    var text = String(pageHtml || '')
+    // Use the clean letter BODY when provided (avoids repeating sender/date that
+    // the full HTML already carries).
+    var rawBody = (recipient && recipient.letter_body) || pageHtml || '';
+    var text = String(rawBody)
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/p>/gi, '\n')
       .replace(/<\/div>/gi, '\n')
@@ -1408,6 +1411,7 @@ class StannpProvider extends DirectMailProvider {
       .replace(/[ \t]+\n/g, '\n')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
+    var senderObj = (recipient && recipient.sender) || {};
     var renderAt = function(fontSize, lineGap, margin) {
       return new Promise(function(resolve, reject) {
         try {
@@ -1418,18 +1422,23 @@ class StannpProvider extends DirectMailProvider {
           doc.on('pageAdded', function() { pageCount++; });
           doc.on('data', buffers.push.bind(buffers));
           doc.on('end', function() { resolve({ buffer: Buffer.concat(buffers), pages: pageCount }); });
-          var headerFont = unicodeFont ? 'uni' : 'Helvetica-Bold';
           var bodyFont = unicodeFont ? 'uni' : 'Helvetica';
-          // NO header here: the pageBody HTML already carries the sender's return
-          // address + date + divider (Stannp prints the recipient in the envelope
-          // window from the /letters/create params). Rendering another header here
-          // duplicated the address. Just render the body text, auto-shrunk to fit.
-          doc.font(bodyFont).fontSize(fontSize).text(text, margin, margin + 40, { width: 595 - margin * 2, lineBreak: true, align: 'left', lineGap: lineGap });
+          // SENDER return address — top-right (top-left stays clear for the window).
+          var headerL = [];
+          if (senderObj.name) headerL.push(senderObj.name);
+          if (senderObj.address) headerL.push(senderObj.address);
+          var dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+          var rx = 595 - margin - 260; // right-aligned block width 260pt
+          if (headerL.length) doc.font(bodyFont).fontSize(Math.min(fontSize, 10)).text(headerL.join('\n'), rx, margin, { width: 260, lineBreak: true, align: 'right' });
+          doc.font(bodyFont).fontSize(8).text(dateStr, rx, margin + (headerL.length ? headerL.length * 12 + 4 : 0), { width: 260, lineBreak: true, align: 'right' });
+          // Divider (below the header, spans the page)
+          doc.moveTo(margin, margin + 46).lineTo(595 - margin, margin + 46).lineWidth(1).strokeColor('#0ea5e9').stroke();
+          // Body — starts below the header, top-left clear for the window
+          doc.font(bodyFont).fontSize(fontSize).text(text, margin, margin + 56, { width: 595 - margin * 2, lineBreak: true, align: 'left', lineGap: lineGap });
           doc.end();
         } catch(e) { reject(e); }
       });
     };
-    // Start readable, auto-shrink until it fits ONE page (down to 7.5pt).
     var attempts = [
       { f: 9.5, g: 1, m: 50 },
       { f: 9,   g: 1, m: 48 },
@@ -1442,7 +1451,7 @@ class StannpProvider extends DirectMailProvider {
       last = await renderAt(attempts[ai].f, attempts[ai].g, attempts[ai].m);
       if (last.pages <= 1) return last.buffer;
     }
-    return last.buffer; // extremely long letter - fall back (preview flags these red)
+    return last.buffer;
   }
 
   // Send a SINGLE mailpiece directly to Stannp (new API).
@@ -14756,6 +14765,8 @@ async function sendDmCampaignInner(campaignId, customerId) {
           .replace(/\[name\]/gi, rcpt.name || '')
           .replace(/\[address\]/gi, (rcpt.address_line1 || '') + ' ' + (rcpt.city || '') + ' ' + (rcpt.postcode || ''))
           .replace(/\[company\]/gi, rcpt.company || rcpt.name || '');
+        // The clean letter BODY (no sender/date) for the A4 PDF layout.
+        rcptWithPages.letter_body = cleanMailText(templateBody || '');
       }
       var pieceResult = await provider.sendMailpiece(mailType, rcptWithPages, pieceFiles, chosenFormat);
       if (pieceResult && pieceResult.success) {
