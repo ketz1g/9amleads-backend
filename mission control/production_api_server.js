@@ -2040,10 +2040,32 @@ function affiliateAuth(req, res, next) {
   } catch(e) { return res.status(401).json({ error: 'Invalid token' }); }
 }
 
+// Revert daily lead caps that were temporarily raised (e.g. "5 free leads today")
+// once they expire, so the customer returns to their normal plan limit. Runs
+// daily from the 09:00 cron BEFORE delivery so the promise count is correct.
+function revertExpiredCapOverrides() {
+  try {
+    var now = new Date();
+    var reverted = 0;
+    (getDb().customers || []).forEach(function(c) {
+      if (!c.cap_override_expires) return;
+      var exp = new Date(c.cap_override_expires);
+      if (now < exp) return;
+      var prev = parseInt(c.cap_override_prev, 10);
+      if (prev && prev > 0 && parseInt(c.leads_per_day, 10) !== prev) {
+        c.leads_per_day = prev;
+        reverted++;
+      }
+      c.cap_override_at = null; c.cap_override_prev = null; c.cap_override_expires = null;
+    });
+    if (reverted) saveDb();
+    return reverted;
+  } catch(e) { console.log('[CAP-OVERRIDE] revert error:', e.message); return 0; }
+}
+
 // Transition pending payouts to "due" once their month has passed and the
 // referred customer is still active. Runs daily from the 09:00 cron.
-function processAffiliatePayouts() {
-  try {
+function processAffiliatePayouts() {  try {
     var now = new Date();
     var changed = 0;
     (getDb().customers || []).forEach(function(c) {
@@ -4390,8 +4412,14 @@ app.put('/api/settings', authMiddleware, (req, res) => {
   if (name) db.prepare('UPDATE customers SET contact_name = ? WHERE id = ?').run(name, req.user.id);
   if (phone) db.prepare('UPDATE customers SET phone = ? WHERE id = ?').run(phone, req.user.id);
   if (password && password.length >= 8) { var pwHash = require('bcryptjs').hashSync(password, 10); db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?').run(pwHash, req.user.id); }
-  // moving_type: residential | commercial | both (moving product filter)
+  // moving_type: residential | commercial | both (moving product filter).
+  // BUSINESS RULE: customers CANNOT switch to commercial/both on their own — a
+  // commercial mix is only granted at signup or by us (admin). If a customer
+  // sends commercial/both, force it back to residential so the choice is locked.
   if (moving_type && ['residential','commercial','both'].indexOf(moving_type) !== -1) {
+    if (moving_type === 'commercial' || moving_type === 'both') {
+      moving_type = 'residential';
+    }
     var mtCfg = {}; try { mtCfg = JSON.parse(customer.product_config || '{}'); } catch(e) {}
     if (!mtCfg.moving) mtCfg.moving = {};
     // Commercial-only is NOT offered — every moving customer keeps a residential
@@ -7257,6 +7285,9 @@ cron.schedule('0 9 * * 1-5', async () => {
     // AFFILIATE PAYOUTS: transition referrals that have reached their month + are
     // still active from "pending" to "due" (ready to be paid £25).
     try { var _affPaid = processAffiliatePayouts(); if (_affPaid) console.log('[AFFILIATE] ' + _affPaid + ' payout(s) became due'); } catch(ape) { console.log('[AFFILIATE] Payout check error:', ape.message); }
+    // TEMP DAILY-CAP OVERRIDES (goodwill top-ups like "5 free leads today"):
+    // revert any that have expired back to the customer's normal plan limit.
+    try { var _capRev = revertExpiredCapOverrides(); if (_capRev) console.log('[CAP-OVERRIDE] reverted ' + _capRev + ' expired cap override(s)'); } catch(crE) { console.log('[CAP-OVERRIDE] revert error:', crE.message); }
     const http = require('http');
     var body = JSON.stringify({});
     var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
