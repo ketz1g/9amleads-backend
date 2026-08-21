@@ -8565,6 +8565,33 @@ cron.schedule('0 0 * * *', async () => {
     } catch(e) { console.log('[HEALTH] Alert email failed:', e.message); }
   }
 });
+// POST /api/admin/direct-scrape — run the FREE direct Rightmove scrape (no Apify)
+// for specific postcode areas and merge the leads into the moving pool. Rightmove's
+// list displayAddresses include door numbers for many properties, which is the
+// cheapest way to top up numbered supply in an area.
+app.post('/api/admin/direct-scrape', adminAuth, async (req, res) => {
+  try {
+    var areas = String((req.body && req.body.areas) || '').toUpperCase().split(',').map(function(a){ return a.trim(); }).filter(Boolean);
+    if (!areas.length) return res.status(400).json({ error: 'areas required (comma separated)' });
+    var rmS = require('./rightmove_scraper_v2');
+    var leads = await rmS.collectMovingLeads({ areas: areas, commercial: false });
+    var fn = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving.file);
+    var prev = [];
+    try { prev = JSON.parse(fs.readFileSync(fn, 'utf-8')); } catch(e) { prev = []; }
+    if (!Array.isArray(prev)) prev = [];
+    var seen = {}; prev.forEach(function(l) { if (l.id) seen[l.id] = 1; });
+    var added = 0;
+    leads.forEach(function(l) {
+      if (!l.id || seen[l.id]) return;
+      var pcA = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
+      if (!pcA || areas.indexOf(pcA) === -1) return;
+      seen[l.id] = 1; prev.push(l); added++;
+    });
+    fs.writeFileSync(fn, JSON.stringify(prev, null, 2));
+    res.json({ success: true, areas: areas, scraped: leads.length, added: added, pool_total: prev.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/pool-leads — list moving pool leads for given postcode areas
 // (with url + address), so we can see exactly what numbered supply exists.
 app.get('/api/admin/pool-leads', adminAuth, (req, res) => {
