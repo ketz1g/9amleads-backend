@@ -167,6 +167,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
   <div style="flex:1;min-width:240px;font-size:11px;color:var(--text2);line-height:1.7">
     <b style="color:#0ea5e9">The blue box (top-left)</b> is the <b>envelope window</b>. the recipient's address prints there. Keep it clear.<br><br>
     <b>Your letter fills one side of A4.</b> Keep your cover letter short enough to fit on one page. if it's too long it will spill onto a second side, which costs extra and looks unprofessional.<br><br>
+    <b style="color:var(--success)">One A4 page fits up to ~700 words / ~4,500 characters.</b> Watch the counter below the page — it shows your current <b>words / characters</b> and flags when you're getting close or too long.<br><br>
     <b style="color:var(--success)">The page preview updates live</b> as you write. Watch the status below the page: <b style="color:#15803d">"Fits on one A4 page"</b> = good, or <b style="color:#dc2626">"Letter is too long. shorten it"</b>.
   </div>
 </div>
@@ -582,14 +583,15 @@ function checkLetterFit(){
   var charCount = text.trim().length;
   var wordCount = text.trim().split(/\s+/).filter(function(w){return w.length>0;}).length;
   var tooLong = charCount > 6200 || wordCount > 1000;
+  var maxWords = 700, maxChars = 4500;
   if(tooLong){
-    statusEl.textContent='⚠ This is around ' + wordCount + ' words. probably too long for one A4 page. Consider shortening it.';
+    statusEl.textContent='✕ ' + wordCount + ' words / ' + charCount + ' chars — too long for one A4 page (max ' + maxWords + ' words / ' + maxChars + ' chars). Shorten it.';
     statusEl.style.color='#dc2626';
   } else if(charCount > 4500 || wordCount > 700){
-    statusEl.textContent='~' + wordCount + ' words. getting long for one A4 page. Shorten a little if you want it to sit comfortably.';
+    statusEl.textContent='~' + wordCount + ' words / ' + charCount + ' chars — getting long (max ' + maxWords + ' words / ' + maxChars + ' chars). Shorten a little to sit comfortably.';
     statusEl.style.color='#b45309';
   } else {
-    statusEl.textContent='✓ Fits on one A4 page (' + wordCount + ' words / ' + charCount + ' chars)';
+    statusEl.textContent='✓ Fits on one A4 page (' + wordCount + ' words / ' + charCount + ' chars — max ' + maxWords + ' words / ' + maxChars + ' chars)';
     statusEl.style.color='#15803d';
   }
 }
