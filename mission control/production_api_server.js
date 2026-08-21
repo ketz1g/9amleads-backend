@@ -3117,6 +3117,26 @@ app.post('/api/admin/affiliate-impersonate', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/set-daily-cap — set a customer's daily lead cap directly
+// (used for goodwill top-ups, e.g. "5 free leads today"). Resets to their plan's
+// normal limit after the specified day if an expiry date is given.
+app.post('/api/admin/set-daily-cap', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var cap = parseInt((req.body && req.body.leads_per_day), 10);
+    if (!email) return res.status(400).json({ error: 'email required' });
+    if (!cap || cap < 1 || cap > 100) return res.status(400).json({ error: 'leads_per_day must be between 1 and 100' });
+    var cust = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var prev = cust.leads_per_day;
+    var nowIso = new Date().toISOString();
+    db.prepare('UPDATE customers SET leads_per_day = ?, cap_override_at = ?, cap_override_prev = ?, cap_override_expires = ? WHERE id = ?')
+      .run(cap, nowIso, prev, req.body.expires || null, cust.id);
+    saveDb();
+    res.json({ success: true, email: email, leads_per_day: cap, previous: prev });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
