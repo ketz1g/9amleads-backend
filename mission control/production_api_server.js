@@ -10000,10 +10000,21 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 var e3Num = e3.buildingNumber || '';
                 // Rebuild a clean street address from door number + street when we
                 // have both, so the lead always shows "12 Albert Road" not "Albert Road".
+                // Then APPEND the town/county from the full PAF address when PAF
+                // supplied one (better for the customer) — "12 Albert Road, Wandsworth".
                 if (e3Num && e3Street) {
                   var cleanStreet = String(e3Street).replace(/,\s*$/,'').trim();
                   var streetPart = String(e3Num).replace(/,\s*$/,'').trim() + ' ' + cleanStreet;
                   e3Addr = streetPart + (ld.postcode ? '' : '');
+                  var e3FullA = String(e3.fullAddress || '').trim();
+                  if (e3FullA && e3FullA.toLowerCase().indexOf(streetPart.toLowerCase()) !== -1 && e3FullA.split(',').length >= 2) {
+                    // Everything after the street, before the postcode = town/county.
+                    var e3Town = e3FullA.replace(new RegExp('^[\\s\\S]*?' + streetPart.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*,?', 'i'), '').replace(new RegExp('\\s*,?\\s*' + String(e3.postcode || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*$', 'i'), '').trim();
+                    if (e3Town) {
+                      e3Town = e3Town.replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+                      e3Addr = streetPart + ', ' + e3Town;
+                    }
+                  }
                 } else if (e3Addr) {
                   e3Addr = e3Addr.replace(/,\s*' + pc + '\s*$/i, '');
                 }
