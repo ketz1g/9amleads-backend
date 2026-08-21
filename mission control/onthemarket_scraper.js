@@ -80,17 +80,36 @@ function isFreshEnough(daysLabel, maxDays) {
 
 // Map the OTM freshness label to the property's ACTUAL listing date, so the
 // delivery's 48h gate enforces true freshness (an OTM lead listed 3 days ago
-// gets a 3-day-old firstVisibleDate and is rejected).
+// gets a 3-day-old firstVisibleDate and is rejected). Returns null for labels
+// that don't prove a date (e.g. "Added > 14 days", "Reduced") so stale or
+// ambiguous listings can NEVER look freshly added - callers must drop those.
 function otmListedDate(daysLabel) {
   const s = String(daysLabel || '').toLowerCase();
-  let d = 0;
+  let d = -1;
   if (s.indexOf('added today') !== -1) d = 0;
   else if (s.indexOf('added yesterday') !== -1) d = 1;
   else {
     const m = s.match(/added\s+(\d+)\s+days?\s+ago/);
     if (m) d = parseInt(m[1], 10) || 0;
   }
+  if (d < 0) return null;
   return new Date(Date.now() - d * 86400000).toISOString();
+}
+
+// New-build / development marketing listings are NOT home-mover leads: OTM
+// titles them "2 Bedroom Apartment For Sale on Ashton Bank Way" (no real
+// street number, a developer marketing a block). Genuine resale listings have
+// real addresses ("15 New Market Street, Wigan"). Skip any listing whose
+// address is title-style or references a whole development/building.
+function isDevelopmentListing(l) {
+  const a = String(l.address || '');
+  if (/\bfor\s+(sale|rent|let)\s+on\b/i.test(a)) return true;               // "..Apartment For Sale on X"
+  if (/^\s*\d+\s*(?:bed(?:room)?s?|studio)\b/i.test(a)) return true;        // "2 Bedroom Apartment..."
+  if (/\b(?:development|new\s*homes?|new\s*build|off\s*plan|phase\s*\d)\b/i.test(a)) return true;
+  if (/^\s*[A-Z][A-Za-z '-]+\s+(?:at|on)\s+[A-Z]/i.test(a) && /\b(?:apartments?|flats?|homes?|residences?|courts?|wharf|waters)\b/i.test(a)) return true;
+  const t = String(l['humanised-property-type'] || '');
+  if (/land|new\s*homes?|development/i.test(t)) return true;
+  return false;
 }
 
 function extractPostcodeArea(pc) {
@@ -125,7 +144,10 @@ async function collectOnTheMarketLeads(params) {
     // customers fresh leads within 24-48h, so the portal's own freshness label
     // is the gate (not our scrape time). maxDays=2 => only listings added
     // today / yesterday / within 2 days are accepted.
-    const fresh = listings.filter(function(l) { return isFreshEnough(l.daysSinceAdded, maxDays); });
+    const fresh = listings.filter(function(l) {
+      if (isDevelopmentListing(l)) return false;                 // new-build/dev marketing != home-mover
+      return isFreshEnough(l.daysSinceAdded, maxDays);
+    });
     if (fresh.length === 0) { console.log('[OTM] ' + area + ': ' + listings.length + ' listings, 0 fresh'); continue; }
     // Fetch detail pages for the full postcode (free) - bounded.
     const freshToResolve = fresh.slice(0, Math.max(0, detailCap - detailFetches));
@@ -143,6 +165,8 @@ async function collectOnTheMarketLeads(params) {
     freshToResolve.forEach(function(l, li) {
       const pc = resolved[li];
       if (!pc) return;
+      const fv = otmListedDate(l.daysSinceAdded);
+      if (!fv) return;                                            // ambiguous/stale label - drop
       const lead = {
         id: 'OTM_' + l.id,
         listingId: l.id,
@@ -157,7 +181,7 @@ async function collectOnTheMarketLeads(params) {
         url: 'https://www.onthemarket.com' + l.url,
         agent: l.agent,
         status: 'available',
-        firstVisibleDate: otmListedDate(l.daysSinceAdded),
+        firstVisibleDate: fv,
         updateDate: new Date().toISOString(),
         daysSinceAdded: l.daysSinceAdded,
         source: 'OnTheMarket',
@@ -170,4 +194,4 @@ async function collectOnTheMarketLeads(params) {
   return out;
 }
 
-module.exports = { collectOnTheMarketLeads, OTM_SLUGS, extractPostcodeArea };
+module.exports = { collectOnTheMarketLeads, OTM_SLUGS, extractPostcodeArea, isDevelopmentListing, otmListedDate };

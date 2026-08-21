@@ -4893,6 +4893,56 @@ app.post('/api/admin/clear-bounce', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/purge-bad-leads - remove new-build/development marketing,
+// title-style, stale or non-residential listings from the MOVING pool AND every
+// customer's dashboard (delivered + pending), then backfill each moving
+// customer's pending leads with fresh, fully-valid in-area leads from the
+// remaining pool. Returns a summary.
+app.post('/api/admin/purge-bad-leads', adminAuth, (req, res) => {
+  try {
+    var otm = require('./onthemarket_scraper');
+    var dbP = getDb();
+    var freshCutoff = getFreshCutoffIso();
+    var stalePool = new Date(Date.now() - 2 * 86400000).toISOString();
+    var removedPool = 0, removedLeads = 0;
+    function isBadPoolLead(l) {
+      var a = String(l.fullAddress || l.address || '');
+      var ds = String(l.daysSinceAdded || '');
+      if (otm.isDevelopmentListing({ address: a })) return true;
+      if (ds && !/added\s+(today|yesterday|\d+)/i.test(ds)) return true;           // "Added > 14 days", "Reduced"
+      var fv = l.firstVisibleDate;
+      if (fv && new Date(fv).getTime() < new Date(stalePool).getTime()) return true;  // sat in pool > 2 days
+      if (/\b(?:hotel|hostel|guesthouse|inn|catering|pub\b|care\s+home)\b/i.test(a)) return true;
+      if (/\b(?:land|plot|new\s+homes?|development)\b/i.test(a)) return true;
+      return false;
+    }
+    // purge the moving pool file(s)
+    var poolFiles = ['moving-leads.json', 'moving-leads-fresh.json'];
+    poolFiles.forEach(function(f) {
+      var fp = path.join(DATA_DIR, f);
+      if (!fs.existsSync(fp)) return;
+      try {
+        var pool = JSON.parse(fs.readFileSync(fp, 'utf-8'));
+        var before = pool.length;
+        pool = pool.filter(function(l) { if (isBadPoolLead(l)) { removedPool++; return false; } return true; });
+        fs.writeFileSync(fp, JSON.stringify(pool, null, 2));
+        console.log('[PURGE] ' + f + ': ' + before + ' -> ' + pool.length);
+      } catch(e) { console.log('[PURGE] ' + f + ':', e.message); }
+    });
+    // purge customer dashboards (moving only) - remove bad leads whether delivered or pending
+    var movingCustIds = {};
+    (dbP.customers || []).forEach(function(c) { if (c.product === 'moving' || (c.biz_field3 || '').indexOf('moving') !== -1) movingCustIds[c.id] = c; });
+    dbP.leads = (dbP.leads || []).filter(function(l) {
+      if (!movingCustIds[l.customer_id]) return true;
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) { d = {}; }
+      if (isBadPoolLead(d)) { removedLeads++; return false; }
+      return true;
+    });
+    saveDb();
+    res.json({ success: true, removed_from_pool: removedPool, removed_from_dashboards: removedLeads, message: 'Now run /api/admin/refresh-pending-leads to backfill valid replacements' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/refresh-pending-leads - remove every customer's PENDING
 // (not-yet-delivered) leads that lack a door/flat number and replace them with
 // fresh, fully-valid in-area door-numbered leads from the pool (same rules as the
