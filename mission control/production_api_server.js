@@ -9365,6 +9365,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 'greater-london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
                 'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
                 'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
+                'devon':['EX','PL','TQ'],'cornwall':['TR'],'east-sussex':['BN','RH','TN'],'west-sussex':['BN','RH','GU'],
+                'somerset':['TA','BS'],'dorset':['BH','DT'],'wiltshire':['SN','BA','SP'],'gloucestershire':['GL'],
+                'worcestershire':['WR'],'warwickshire':['CV','B'],'staffordshire':['ST','WS','WV'],'herefordshire':['HR'],
+                'shropshire':['SY'],'northumberland':['NE'],'cumbria':['CA','LA'],'devon-cornwall':['EX','PL','TQ','TR'],
                 'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
                 'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
                 'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
@@ -9581,7 +9585,18 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               found = true; break;
             }
           }
-          if (!found) { custLeads.push(r1pool[0]); pickedIds.push(r1pool[0].id); prodTaken[r1prod]++; }
+          if (!found) {
+            // NEVER deliver an out-of-area lead to fill a slot. The fallback must
+            // only pick a pool lead that genuinely matches the customer's areas
+            // (via the county/postcode map) — otherwise a "Devon/Cornwall/E.Sussex"
+            // customer silently receives Harrogate/Liverpool/Bradford leads.
+            var fbLead = null;
+            for (var fbI = 0; fbI < r1pool.length && !fbLead; fbI++) {
+              if (pickedIds.indexOf(r1pool[fbI].id) !== -1) continue;
+              if (findLeadForProductAndArea(r1prod, sortedAreas[0], [r1pool[fbI]], pickedIds)) fbLead = r1pool[fbI];
+            }
+            if (fbLead) { custLeads.push(fbLead); pickedIds.push(fbLead.id); prodTaken[r1prod]++; }
+          }
         } else {
           custLeads.push(r1pool[0]); pickedIds.push(r1pool[0].id); prodTaken[r1prod]++;
         }
@@ -9962,6 +9977,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       }
       
       if (custLeads.length === 0) {
+        // Not an error if this customer ALREADY received their full daily count
+        // today — the re-run simply has nothing new to add.
+        var servedToday = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && String(l.delivered_at).startsWith(today); }).length;
+        if (servedToday >= totalDailyLimit) {
+          console.log('[DELIVERY] ' + cust.email + ': already served ' + servedToday + '/' + totalDailyLimit + ' today (nothing new needed)');
+          continue;
+        }
         console.log('[DELIVERY] WARN: ' + cust.email + ' (' + cust.product + ') got 0 leads today — no undelivered leads in pool');
         errors++;
         lastErr = cust.email + ': no leads in pool';
