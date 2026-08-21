@@ -5000,6 +5000,52 @@ app.post('/api/admin/detail-enrich-test', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/enrich-pool-details — one-off, RELIABLE alternative to the
+// flaky full direct scrape: fetch each door-less moving pool lead's Rightmove
+// DETAIL page (numbered full address, free, no Postcoder spend) so the pool
+// stops being street-only. Bounded concurrency + hard per-page timeouts so it
+// never hangs. Also drops investment/plot/land/development junk while here.
+app.post('/api/admin/enrich-pool-details', adminAuth, async (req, res) => {
+  try {
+    var rmS = require('./rightmove_scraper_v2');
+    var poolFile = path.join(DATA_DIR, 'moving-leads.json');
+    var pool = [];
+    try { pool = JSON.parse(fs.readFileSync(poolFile, 'utf-8')); if (!Array.isArray(pool)) pool = []; } catch(e) { pool = []; }
+    var max = parseInt((req.body && req.body.max) || '400', 10);
+    var concurrency = parseInt((req.body && req.body.concurrency) || '8', 10);
+    var candidates = pool.filter(function(l) {
+      if (isCommercialLead(l)) return false;
+      if (!l.url || !/rightmove\.co\.uk/i.test(String(l.url))) return false;
+      var a = String(l.fullAddress || l.address || '');
+      var pc = String(l.postcode || '');
+      if (hasUsablePremiseAddress(a, pc) && /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc.trim())) return false;
+      return true;
+    });
+    candidates.sort(function(a, b) { return new Date(b.scrapedAt || b.firstVisibleDate || 0) - new Date(a.scrapedAt || a.firstVisibleDate || 0); });
+    var toEnrich = candidates.slice(0, max);
+    console.log('[ENRICH-DETAILS] ' + toEnrich.length + ' leads to enrich (of ' + candidates.length + ' door-less)');
+    var t0 = Date.now();
+    var enriched = await rmS.enrichMovingLeads(toEnrich, concurrency);
+    var map = {};
+    enriched.forEach(function(e) { if (e && e.id) map[e.id] = e; });
+    var updated = 0;
+    pool = pool.map(function(l) {
+      var e = map[l.id];
+      if (e && (e.fullAddress || e.postcode)) {
+        var changed = false;
+        if (e.fullAddress && e.fullAddress !== l.fullAddress) { l.fullAddress = e.fullAddress; l.address = e.fullAddress; changed = true; }
+        if (e.postcode && e.postcode !== l.postcode) { l.postcode = e.postcode; changed = true; }
+        if (e.buildingNumber) { l.buildingNumber = e.buildingNumber; changed = true; }
+        if (changed) updated++;
+      }
+      return l;
+    });
+    fs.writeFileSync(poolFile, JSON.stringify(pool, null, 2));
+    var numbered = pool.filter(function(l) { return /^\s*\d+[A-Za-z]?[\s,]/.test(String(l.fullAddress || l.address || '').trim()); }).length;
+    res.json({ success: true, checked: toEnrich.length, updated_with_number: updated, pool_total: pool.length, pool_numbered: numbered, took_s: Math.round((Date.now() - t0) / 1000) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/refresh-pending-leads - remove every customer's PENDING
 // (not-yet-delivered) leads that lack a door/flat number and replace them with
 // fresh, fully-valid in-area door-numbered leads from the pool (same rules as the
