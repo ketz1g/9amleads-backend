@@ -1419,7 +1419,7 @@ class StannpProvider extends DirectMailProvider {
         doc.moveDown(2);
         doc.moveTo(55, 100).lineTo(540, 100).lineWidth(1).strokeColor('#0ea5e9').stroke();
         doc.moveDown(1);
-        doc.font('Helvetica').fontSize(11).leading(6).text(text, 55, 120, { width: 485, lineBreak: true, align: 'left' });
+        doc.font('Helvetica').fontSize(11).text(text, 55, 120, { width: 485, lineBreak: true, align: 'left', lineGap: 6 });
         doc.end();
       } catch(e) { reject(e); }
     });
