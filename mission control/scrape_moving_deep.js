@@ -182,7 +182,7 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
       listUrls: [{ url: url }],
       propertyUrls: [],
       monitoringMode: false,
-      fullPropertyDetails: true,
+      fullPropertyDetails: false,
       includePriceHistory: false,
       includeNearestSchools: false,
       enableDelistingTracker: false,
@@ -194,10 +194,10 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
     try { require('./scraper_usage').inc('apify_runs', 1); } catch(e) {}
     var req = https.request({
       hostname: 'api.apify.com',
-      path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + APIFY_KEY + '&memory=2048&timeout=600',
+      path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + APIFY_KEY + '&memory=256&timeout=180',
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'Accept': 'application/json' },
-      timeout: 650000
+      timeout: 210000
     }, function(res) {
       var b = '';
       res.on('data', function(c) { b += c; });
@@ -240,7 +240,7 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
       });
     });
     req.on('error', function(e) { console.log('[DEEP-SCRAPE] ' + areaCode + ' req error: ' + e.message); resolve([]); });
-    req.setTimeout(650000, function() { req.destroy(); resolve([]); });
+    req.setTimeout(210000, function() { req.destroy(); resolve([]); });
     req.write(body);
     req.end();
   });
@@ -280,8 +280,22 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
 
   // 2. Resolve each area's Rightmove OUTCODE id (via typeahead), then scrape both
   //    residential + commercial for that exact area (Rightmove actor handles both).
+  //    COST CONTROL: only scrape COMMERCIAL when at least one active moving account
+  //    wants commercial leads - otherwise we'd pay Apify 2x runs for data nobody
+  //    is subscribed to.
+  var wantCommercial = false;
+  try {
+    var dbC = loadJson(DB_FILE);
+    (dbC && dbC.customers || []).forEach(function(c) {
+      if (c.product !== 'moving' && !((c.biz_field3 || '').indexOf('moving') !== -1)) return;
+      var mt = c.moving_type;
+      try { var cfgC = JSON.parse(c.product_config || '{}'); mt = (cfgC.moving && cfgC.moving.moving_type) || mt; } catch(e) {}
+      if (mt === 'commercial' || mt === 'both') wantCommercial = true;
+    });
+  } catch(e) {}
   var allLeads = [];
-  var types = ['residential', 'commercial'];
+  var types = wantCommercial ? ['residential', 'commercial'] : ['residential'];
+  log('[DEEP-SCRAPE] commercial wanted: ' + wantCommercial + ' (types=' + types.join(',') + ')');
   for (var i = 0; i < areas.length; i++) {
     // Try to resolve the exact Rightmove outcode; if it fails, fall back to the
     // region scrape (which works and returns leads incl. some in the target area).
