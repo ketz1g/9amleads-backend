@@ -1382,6 +1382,49 @@ class StannpProvider extends DirectMailProvider {
     return { success: true, provider_campaign_id: providerCampaignId, status: 'processing', message: 'Campaign queued for Stannp' };
   }
 
+  // Build a proper A4 PDF letter from the letter HTML/body text so Stannp never
+  // clips the bottom (sending raw HTML without page sizing renders on a flyer-
+  // sized page and cuts content off). pdfkit auto-wraps + paginates to A4.
+  async buildA4LetterPdf(pageHtml, recipient) {
+    var PDFDocument = require('pdfkit');
+    var text = String(pageHtml || '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+    var buffers = [];
+    return new Promise(function(resolve, reject) {
+      try {
+        var doc = new PDFDocument({ size: 'A4', layout: 'portrait', margin: 55, info: { Title: '9amLeads Letter', Creator: '9amLeads' } });
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', function() { resolve(Buffer.concat(buffers)); });
+        // Header: recipient address top-left, date top-right
+        var headerL = [];
+        if (recipient && recipient.name) headerL.push(recipient.name);
+        if (recipient && recipient.address_line1) headerL.push(recipient.address_line1);
+        if (recipient && recipient.city) headerL.push(recipient.city);
+        if (recipient && recipient.postcode) headerL.push(recipient.postcode);
+        var dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        doc.font('Helvetica-Bold').fontSize(11).text((headerL.join('\n') || ' '), 55, 50, { width: 250, lineBreak: true });
+        doc.font('Helvetica').fontSize(10).text(dateStr, 390, 50, { width: 150, lineBreak: true, align: 'right' });
+        doc.moveDown(2);
+        doc.moveTo(55, 100).lineTo(540, 100).lineWidth(1).strokeColor('#0ea5e9').stroke();
+        doc.moveDown(1);
+        doc.font('Helvetica').fontSize(11).leading(6).text(text, 55, 120, { width: 485, lineBreak: true, align: 'left' });
+        doc.end();
+      } catch(e) { reject(e); }
+    });
+  }
+
   // Send a SINGLE mailpiece directly to Stannp (new API).
   // mailType: 'letter' | 'flyer' | 'flyer_plus_letter'
   // files: [{ name, file_data }] — artwork (flyer front/back / letter PDF)
@@ -1434,7 +1477,15 @@ async sendMailpiece(mailType, recipient, files, format) {
       if (letterFile && letterFile.file_data) {
         letterParams.file = this.stripDataPrefix(letterFile.file_data);
       } else {
-        letterParams.pages = pageBody;
+        // Generate a proper A4 PDF letter from the body text so the bottom is
+        // never cut off (raw HTML pages render on a flyer-sized page + clip).
+        try {
+          var letterPdfBuf = await this.buildA4LetterPdf(pageBody, recipient);
+          letterParams.file = letterPdfBuf.toString('base64');
+        } catch(pdfErr) {
+          console.log('[STANNP] Letter PDF generation failed, falling back to HTML pages:', pdfErr.message);
+          letterParams.pages = pageBody;
+        }
       }
       var res = await this.stannpRequest('/letters/create', letterParams);
       if (res.success && res.data && res.data.id) {
