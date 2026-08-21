@@ -3256,7 +3256,8 @@ app.post('/api/admin/set-daily-cap', adminAuth, (req, res) => {
     if (!cap || cap < 1 || cap > 100) return res.status(400).json({ error: 'leads_per_day must be between 1 and 100' });
     var cust = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
-    var prev = cust.leads_per_day;
+    var prev = req.body.previous !== undefined ? parseInt(req.body.previous, 10) : (cust.leads_per_day || 5);
+    if (prev && (prev < 1 || prev > 100)) prev = 5;
     var nowIso = new Date().toISOString();
     db.prepare('UPDATE customers SET leads_per_day = ?, cap_override_at = ?, cap_override_prev = ?, cap_override_expires = ? WHERE id = ?')
       .run(cap, nowIso, prev, req.body.expires || null, cust.id);
