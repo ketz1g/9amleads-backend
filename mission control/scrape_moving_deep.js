@@ -182,7 +182,7 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
       listUrls: [{ url: url }],
       propertyUrls: [],
       monitoringMode: false,
-      fullPropertyDetails: false,
+      fullPropertyDetails: true,
       includePriceHistory: false,
       includeNearestSchools: false,
       enableDelistingTracker: false,
@@ -194,10 +194,10 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
     try { require('./scraper_usage').inc('apify_runs', 1); } catch(e) {}
     var req = https.request({
       hostname: 'api.apify.com',
-      path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + APIFY_KEY + '&memory=256&timeout=120',
+      path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + APIFY_KEY + '&memory=2048&timeout=600',
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'Accept': 'application/json' },
-      timeout: 150000
+      timeout: 650000
     }, function(res) {
       var b = '';
       res.on('data', function(c) { b += c; });
@@ -240,7 +240,7 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
       });
     });
     req.on('error', function(e) { console.log('[DEEP-SCRAPE] ' + areaCode + ' req error: ' + e.message); resolve([]); });
-    req.setTimeout(150000, function() { req.destroy(); resolve([]); });
+    req.setTimeout(650000, function() { req.destroy(); resolve([]); });
     req.write(body);
     req.end();
   });
