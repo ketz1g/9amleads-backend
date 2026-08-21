@@ -102,9 +102,10 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div style="margin-top:12px">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
 <label class="label" style="margin-bottom:0">Cover Letter Text <span style="color:var(--muted);font-weight:400">(optional. leaflet-only sends don't need one)</span></label>
+<span id="letter-counter" style="font-size:11px;font-weight:700;color:var(--success);white-space:nowrap">0 / 3,600 characters · 0 / 600 words</span>
 </div>
 <textarea class="input" id="t-content" rows="8" oninput="updateLetterPreviewLive()" placeholder="Dear [name],&#10;&#10;We are your local removal specialists...&#10;&#10;Kind regards,&#10;[Your Company]"></textarea>
-<div style="font-size:10px;color:var(--muted);margin-top:4px">Tip: if you paste a letter that includes markdown formatting (*, **, #), we clean it automatically when you save and print.</div>
+<div style="font-size:10px;color:var(--muted);margin-top:4px">Tip: if you paste a letter that includes markdown formatting (*, **, #), we clean it automatically when you save and print. <b style="color:var(--text2)">One A4 page fits a max of ~600 words / ~3,600 characters.</b></div>
 </div>
 <div style="display:flex;gap:10px;margin-top:12px">
 <button class="btn btn-primary" onclick="saveTemplate()" style="flex:1"><i class="fas fa-save"></i> Save Cover Letter</button>
@@ -563,10 +564,17 @@ function renderFormatDetail(){
 function updateLetterPreviewLive(){
   var box=document.getElementById('letter-preview-box');
   var bodyEl=document.getElementById('lp-letter-body');
+  var text=document.getElementById('t-content')?document.getElementById('t-content').value:'';
+  var cEl=document.getElementById('letter-counter');
+  var clean=cleanLetterPreviewText(text);
+  var cc=clean.length, wc=clean?clean.split(/\s+/).filter(function(w){return w.length>0;}).length:0;
+  if(cEl){
+    cEl.textContent=cc+' / 3,600 characters · '+wc+' / 600 words';
+    cEl.style.color = (cc>3600||wc>600) ? '#dc2626' : ((cc>3000||wc>450) ? '#b45309' : '#15803d');
+  }
   if(!box||!bodyEl)return;
   if(box.style.display==='none')return; // only update if the preview is visible
-  var text=document.getElementById('t-content')?document.getElementById('t-content').value:'';
-  bodyEl.textContent=cleanLetterPreviewText(text)||'Your cover letter text appears here.';
+  bodyEl.textContent=clean||'Your cover letter text appears here.';
   checkLetterFit();
 }
 // Client-side mirror of the backend cleanMailText: strips markdown (*, **, #, links)
@@ -665,6 +673,7 @@ function loadLetterPreview(){
     if(editorNow && editorNow.trim().length>0){ if(bodyEl)bodyEl.textContent=cleanLetterPreviewText(editorNow); }
     else if(saved && bodyEl) bodyEl.textContent=cleanLetterPreviewText(saved);
     checkLetterFit();
+    updateLetterPreviewLive(); // refresh the character/word counter too
     // Prefer the setup's saved business info for the return address
     if(fromEl && d.profile && d.profile.company_name){
       var pb='';
