@@ -590,7 +590,7 @@ function updateLetterPreviewLive(){
   var cc=clean.length, wc=clean?clean.split(/\s+/).filter(function(w){return w.length>0;}).length:0;
   if(cEl){
     cEl.textContent=cc+' / 2,600 characters · '+wc+' / 420 words';
-    cEl.style.color = (cc>2600||wc>420) ? '#dc2626' : ((cc>2100||wc>340) ? '#b45309' : '#15803d');
+    cEl.style.color = (cc>2600||wc>420) ? '#dc2626' : ((cc>2400||wc>390) ? '#b45309' : '#15803d');
   }
   if(!box||!bodyEl)return;
   if(box.style.display==='none')return; // only update if the preview is visible
@@ -648,7 +648,7 @@ function checkLetterFit(){
   if(tooLong){
     statusEl.textContent='✕ ' + wordCount + ' words / ' + charCount + ' chars — too long for one A4 page (max ' + maxWords + ' words / ' + maxChars + ' chars). Shorten it.';
     statusEl.style.color='#dc2626';
-  } else if(charCount > 2100 || wordCount > 340){
+  } else if(charCount > 2400 || wordCount > 390){
     statusEl.textContent='~' + wordCount + ' words / ' + charCount + ' chars — getting long (max ' + maxWords + ' words / ' + maxChars + ' chars). Shorten a little to sit comfortably.';
     statusEl.style.color='#b45309';
   } else {
