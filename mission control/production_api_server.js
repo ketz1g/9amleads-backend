@@ -9622,9 +9622,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             var fgCreated = 0;
             for (var fgi = 0; fgi < fgArr.length && fgCreated < fgNeed; fgi++) {
               var fgLead = fgArr[fgi];
-              // FRESH-ONLY: never create a lead from a stale pool entry.
+              // FRESHNESS (this pass only runs when the customer is SHORT of their
+              // promised count): prefer leads with a listing date within 48h but
+              // don't hard-reject older real in-area listings — PAF confirms the
+              // exact door number at delivery, so we fill the count with real
+              // addresses rather than leave the customer short.
               var fgD = pickFreshDate(fgLead);
-              if (!fgD || fgD < freshCutoffNow) continue;
+              if (!fgD) continue;
               if (!leadPassesFilters(fgLead)) continue;
               var fgArea = extractPostcodeArea(fgLead.postcode || fgLead.address || fgLead.location || fgLead.name || '');
               // Tenders/probate are national-fallback products (no postcode on leads).
@@ -9693,8 +9697,18 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               }
 // MOVING ONLY: a deliverable lead must carry a door/flat number AND a
               // real street name (number + street + area + postcode). A bare building
-              // name or street-only address is NOT mail-ready.
-              if (fgProd === 'moving' && (!hasStreetName(fgData.address || '') || !hasPremiseNumber(fgData.address || '', fgData.postcode || '') || hasBadUnitCode(fgData.address || ''))) continue;
+              // name or street-only address is NOT mail-ready. With relaxed PAF
+              // (PAF_RELAXED_PICK=true) a street-only lead with a full postcode +
+              // street name is allowed through — the delivery PAF pass adds the door
+              // number to the EXACT lead being sent, and drops it if PAF can't.
+              if (fgProd === 'moving') {
+                var fgPafRelaxed = process.env.PAF_RELAXED_PICK === 'true' || process.env.PAF_RELAXED_PICK === '1';
+                var fgStreetOk = hasStreetName(fgData.address || '');
+                var fgFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(fgData.postcode || '').trim());
+                var fgNumOk = hasPremiseNumber(fgData.address || '', fgData.postcode || '');
+                if (!fgStreetOk || hasBadUnitCode(fgData.address || '')) continue;
+                if (!fgNumOk && !(fgPafRelaxed && fgFullPc && fgStreetOk)) continue;
+              }
               var fgNew = { id: 'lead_' + Date.now() + '_' + fgi, customer_id: cust.id, product: fgProd, data: JSON.stringify(fgData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
               db.leads.push(fgNew);
               fgExisting[fgKey] = 1;
