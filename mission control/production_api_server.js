@@ -3455,6 +3455,39 @@ app.get('/api/admin/dm-logs', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/remove-out-of-area — remove a customer's leads whose postcode
+// area doesn't match their chosen areas (postcode areas OR counties via the map).
+app.post('/api/admin/remove-out-of-area', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var dbO = getDb();
+    var cust = (dbO.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var areas = [];
+    try { var cfgO = JSON.parse(cust.product_config || '{}'); var primO = cfgO[cust.product] || {}; areas = primO.target_areas ? JSON.parse(primO.target_areas) : JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
+    var areaPcCodes = [];
+    areas.forEach(function(a) {
+      var c = extractPostcodeArea(a);
+      if (c) areaPcCodes.push(c);
+      var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g, '-')];
+      if (m) m.forEach(function(pc) { if (areaPcCodes.indexOf(pc) === -1) areaPcCodes.push(pc); });
+    });
+    var removed = 0;
+    var kept = [];
+    dbO.leads = (dbO.leads || []).filter(function(l) {
+      if (l.customer_id !== cust.id) return true;
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) { d = {}; }
+      var pcArea = extractPostcodeArea(d.postcode || d.location || d.deceasedAddress || d.address || '');
+      var ok = areaPcCodes.indexOf(pcArea) !== -1;
+      if (!ok) { removed++; return false; }
+      return true;
+    });
+    saveDb();
+    res.json({ success: true, email: email, areas: areas, area_codes: areaPcCodes, removed: removed });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
