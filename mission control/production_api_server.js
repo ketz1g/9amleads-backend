@@ -3137,6 +3137,22 @@ app.post('/api/admin/set-daily-cap', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/clear-customer-leads — remove ALL of a customer's current leads
+// from their dashboard (no replacement). Used to strip bad/duplicate leads.
+app.post('/api/admin/clear-customer-leads', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var dbC = getDb();
+    var cust = (dbC.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var before = (dbC.leads || []).filter(function(l) { return l.customer_id === cust.id; }).length;
+    dbC.leads = (dbC.leads || []).filter(function(l) { return l.customer_id !== cust.id; });
+    saveDb();
+    res.json({ success: true, email: email, removed: before });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
