@@ -120,12 +120,12 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
   <!-- The A4 page (portrait, fixed aspect) -->
   <div style="flex:0 0 360px">
     <div style="background:#fff;border:1px solid #cbd5e1;border-radius:4px;width:360px;height:520px;overflow:hidden;box-shadow:0 2px 12px rgba(15,23,42,0.10);padding:18px 24px;position:relative">
-      <!-- Address window (section across the top; 40mm tall per template) -->
-      <div style="background:#f1f5f9;border:1.5px solid #0ea5e9;border-radius:4px;width:210px;height:65px;position:absolute;top:20px;left:20px;display:flex;align-items:center;justify-content:center;font-size:6.5px;color:#0ea5e9;font-weight:700;text-align:center;z-index:2">RECIPIENT<br>ADDRESS<br>(printed here)</div>
+      <!-- Address window (section across the top; ~50mm tall) -->
+      <div style="background:#f1f5f9;border:1.5px solid #0ea5e9;border-radius:4px;width:210px;height:82px;position:absolute;top:20px;left:20px;display:flex;align-items:center;justify-content:center;font-size:6.5px;color:#0ea5e9;font-weight:700;text-align:center;z-index:2">RECIPIENT<br>ADDRESS<br>(printed here)</div>
       <!-- Return address top-right -->
       <div style="font-size:6.5px;color:#64748b;line-height:1.4;text-align:right;position:absolute;top:20px;right:20px" id="lp-letter-from"></div>
       <!-- Letter body (starts below the address window; fit judged by character count) -->
-      <div style="font-size:9px;line-height:1.5;color:#1e293b;white-space:pre-wrap;margin-top:88px;overflow-y:auto;max-height:400px" id="lp-letter-body">Your cover letter text appears here.</div>
+      <div style="font-size:9px;line-height:1.5;color:#1e293b;white-space:pre-wrap;margin-top:110px;overflow-y:auto;max-height:370px" id="lp-letter-body">Your cover letter text appears here.</div>
       <!-- Page edge indicator line -->
       <div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:#cbd5e1"></div>
     </div>
