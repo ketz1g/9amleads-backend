@@ -4821,6 +4821,12 @@ app.get('/api/admin/delivery-preview', adminAuth, (req, res) => {
         var matched = false;
         if (cust.product === 'moving') {
           if (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l))) matched = true;
+          // Same full-address gate as the real delivery: a moving lead without a
+          // door/flat number or named building is NOT shown as deliverable.
+          if (matched) {
+            var vReason = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
+            if (vReason) continue;
+          }
         } else {
           var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(l.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
           var pcMatch = areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g,'-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
