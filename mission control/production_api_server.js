@@ -373,6 +373,9 @@ function isCommercialLead(ld) {
   // Business District - 6%+ Returns", "offers above £X"), NOT home-movers.
   if (/\b(?:RETURN|RETURNS|YIELD|INVESTMENT|INVESTOR|INVESTMENT? OPPORTUNIT|OPPORTUNITY)\b/i.test(s)) return true;
   if (/\b(?:PLOT|DEVELOPMENT SITE|BUILDING PLOT|LAND FOR)\b/i.test(s)) return true;
+  // Trading businesses that are NOT home-mover leads (removal customers move
+  // homes, not shops): day nurseries, salons, gyms, restaurants, surgeries, etc.
+  if (/\b(?:DAY NURSER|NURSERY|SALON|HAIRDRESSER|BARBER|GYM\b|FITNESS|DENTIST|DENTAL|VET\b|VETERINARY|PHARMACY|CHEMIST|RESTAURANT|CAFE|TAKEAWAY|DAYCARE|CHILDCARE|SCHOOL\b|ACADEMY|CLINIC|SURGERY|PRACTICE|CHURCH|CHAPEL|MOT\b|GARAGE|STUDIO|OFFICES?|SERVICED)\b/i.test(s)) return true;
   return false;
 }
 
