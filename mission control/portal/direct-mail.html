@@ -119,13 +119,13 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div style="display:flex;gap:14px;flex-wrap:wrap">
   <!-- The A4 page (portrait, fixed aspect) -->
   <div style="flex:0 0 360px">
-    <div style="background:#fff;border:1px solid #cbd5e1;border-radius:4px;width:340px;height:480px;overflow:hidden;box-shadow:0 2px 12px rgba(15,23,42,0.10);padding:18px 24px;position:relative">
+    <div style="background:#fff;border:1px solid #cbd5e1;border-radius:4px;width:360px;height:520px;overflow:hidden;box-shadow:0 2px 12px rgba(15,23,42,0.10);padding:18px 24px;position:relative">
       <!-- Address window (section across the top; 40mm tall per template) -->
       <div style="background:#f1f5f9;border:1.5px solid #0ea5e9;border-radius:4px;width:210px;height:65px;position:absolute;top:20px;left:20px;display:flex;align-items:center;justify-content:center;font-size:6.5px;color:#0ea5e9;font-weight:700;text-align:center;z-index:2">RECIPIENT<br>ADDRESS<br>(printed here)</div>
       <!-- Return address top-right -->
       <div style="font-size:6.5px;color:#64748b;line-height:1.4;text-align:right;position:absolute;top:20px;right:20px" id="lp-letter-from"></div>
       <!-- Letter body (starts below the address window; fit judged by character count) -->
-      <div style="font-size:9px;line-height:1.5;color:#1e293b;white-space:pre-wrap;margin-top:92px;overflow-y:auto;max-height:350px" id="lp-letter-body">Your cover letter text appears here.</div>
+      <div style="font-size:9px;line-height:1.5;color:#1e293b;white-space:pre-wrap;margin-top:88px;overflow-y:auto;max-height:400px" id="lp-letter-body">Your cover letter text appears here.</div>
       <!-- Page edge indicator line -->
       <div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:#cbd5e1"></div>
     </div>
@@ -630,15 +630,15 @@ function checkLetterFit(){
   var wordCount = text.trim().split(/\s+/).filter(function(w){return w.length>0;}).length;
   var tooLong = charCount > 3200 || wordCount > 430;
   var maxWords = 430, maxChars = 3200;
-  // AUTO-FIT: shrink the preview font so the whole letter is visible on the A4
-  // page (no scrollbar) whenever it genuinely fits one A4 side. Only letters that
-  // are over the limit keep scrolling + show the red warning.
+  // AUTO-FIT: shrink the preview font so the WHOLE letter is visible on the A4
+  // page (no scrollbar / nothing cut off) whenever it fits one A4 side. Only
+  // letters that are over the limit keep scrolling + show the red warning.
   if(!tooLong){
     bodyEl.style.overflowY='hidden';
     bodyEl.style.fontSize='9px';
-    var tries=10;
-    while(bodyEl.scrollHeight>bodyEl.clientHeight && tries>0 && parseFloat(bodyEl.style.fontSize||9)>5){
-      bodyEl.style.fontSize=(parseFloat(bodyEl.style.fontSize||9)-0.5)+'px';
+    var tries=24;
+    while(bodyEl.scrollHeight>bodyEl.clientHeight && tries>0 && parseFloat(bodyEl.style.fontSize||9)>3){
+      bodyEl.style.fontSize=(parseFloat(bodyEl.style.fontSize||9)-0.4)+'px';
       tries--;
     }
   } else {
