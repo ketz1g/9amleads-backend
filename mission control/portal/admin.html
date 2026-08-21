@@ -325,7 +325,8 @@ function loadAffiliates() {
           '<td>' + a.counts.referrals + '</td><td>£' + a.earnings_pending + ' (' + a.counts.pending + ')</td>' +
           '<td style="color:#16a34a;font-weight:600">£' + a.earnings_due + ' (' + a.counts.due + ')</td>' +
           '<td>£' + a.earnings_paid + ' (' + a.counts.paid + ')</td>' +
-          '<td>' + (a.counts.due ? '<button class="btn btn-outline btn-sm" onclick="payAffiliate(\'' + a.id + '\',\'' + esc(a.name) + '\')"><i class="fas fa-pound-sign"></i> Pay £' + a.earnings_due + '</button>' : '<span style="font-size:11px;color:#94a3b8">-</span>') + '</td></tr>';
+          '<td>' + (a.counts.due ? '<button class="btn btn-outline btn-sm" onclick="payAffiliate(\'' + a.id + '\',\'' + esc(a.name) + '\')"><i class="fas fa-pound-sign"></i> Pay £' + a.earnings_due + '</button>' : '<span style="font-size:11px;color:#94a3b8">-</span>') + ' ' +
+          '<button class="btn btn-outline btn-sm" onclick="viewAffiliateDashboard(\'' + a.id + '\')" title="View this affiliate\'s dashboard"><i class="fas fa-eye"></i> View</button></td></tr>';
       });
       h += '</tbody></table>'; wrap.innerHTML = h;
     })
@@ -360,6 +361,15 @@ function payAffiliate(id, name) {
   fetch(API + '/api/admin/affiliates/pay', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ affiliate_id: id }) })
     .then(function(r) { return r.json(); })
     .then(function(d) { alert('Paid £' + d.amount_paid + ' to ' + d.affiliate + ' (' + d.paid_referrals + ' referral' + (d.paid_referrals === 1 ? '' : 's') + ').'); loadAffiliates(); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function viewAffiliateDashboard(id) {
+  fetch(API + '/api/admin/affiliate-impersonate', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ affiliate_id: id }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.token) { window.open('/portal/affiliate.html?token=' + encodeURIComponent(d.token), '_blank'); }
+      else alert(d.error || 'Could not view affiliate dashboard');
+    })
     .catch(function(e) { alert('Error: ' + e.message); });
 }
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}

@@ -129,7 +129,14 @@ tr:last-child td{border-bottom:none}
 
 <script>
 var API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
-var TOKEN = localStorage.getItem('mld_affiliate_token') || '';
+// Token: (1) from the URL (?token=... — admin viewing an affiliate's dashboard,
+// session-only so it never overwrites the affiliate's own remembered login),
+// (2) from sessionStorage, (3) from localStorage (remembered login).
+(function(){
+  var q = new URLSearchParams(window.location.search).get('token');
+  if (q) { sessionStorage.setItem('mld_affiliate_session', q); }
+})();
+var TOKEN = sessionStorage.getItem('mld_affiliate_session') || localStorage.getItem('mld_affiliate_token') || '';
 function showLogin(){document.getElementById('login-view').style.display='block';document.getElementById('register-view').style.display='none';}
 function showRegister(){document.getElementById('login-view').style.display='none';document.getElementById('register-view').style.display='block';}
 function err(id,msg){var e=document.getElementById(id);e.textContent=msg;e.style.display='block';}
@@ -159,7 +166,7 @@ function badge(st){
 }
 function loadDash(){
   api('GET','/affiliate/dashboard').then(function(d){
-    if(!d.success){localStorage.removeItem('mld_affiliate_token');showLogin();return;}
+    if(!d.success){sessionStorage.removeItem('mld_affiliate_session');localStorage.removeItem('mld_affiliate_token');showLogin();return;}
     document.getElementById('dash-view').style.display='block';
     document.getElementById('login-view').style.display='none';
     document.getElementById('register-view').style.display='none';
@@ -189,7 +196,7 @@ function loadDash(){
 function copyCode(){var t=document.getElementById('a-code').textContent;navigator.clipboard.writeText(t).then(function(){var b=document.querySelector('.code button');b.textContent='Copied!';setTimeout(function(){b.textContent='Copy';},1200);});}
 function esc(s){return String(s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function fmtDate(iso){if(!iso)return '-';try{return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch(e){return iso;}}
-document.getElementById('logout').onclick=function(){localStorage.removeItem('mld_affiliate_token');location.reload();};
+document.getElementById('logout').onclick=function(){sessionStorage.removeItem('mld_affiliate_session');localStorage.removeItem('mld_affiliate_token');location.reload();};
 if(TOKEN){loadDash();}
 </script>
 </body>

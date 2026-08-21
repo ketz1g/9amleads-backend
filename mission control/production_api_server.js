@@ -3100,6 +3100,23 @@ app.post('/api/admin/affiliates/delete', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/affiliate-impersonate — generate a token to view an affiliate's
+// dashboard (admin access, like customer impersonation).
+app.post('/api/admin/affiliate-impersonate', adminAuth, (req, res) => {
+  try {
+    var affId = req.body.affiliate_id;
+    if (!affId) return res.status(400).json({ error: 'Affiliate ID required' });
+    var aff = (getDb().affiliates || []).find(function(a) { return a.id === affId; });
+    if (!aff) return res.status(404).json({ error: 'Affiliate not found' });
+    var token = jwt.sign({ id: aff.id, email: aff.email, role: 'affiliate', admin_impersonating: true, impersonated_by: req.user.email || 'admin', impersonated_at: new Date().toISOString() }, JWT_SECRET, { expiresIn: '2h' });
+    var db2 = getDb();
+    if (!db2.impersonation_logs) db2.impersonation_logs = [];
+    db2.impersonation_logs.push({ id: uuidv4(), admin_email: req.user.email || 'admin', affiliate_id: aff.id, affiliate_email: aff.email, kind: 'affiliate', created_at: new Date().toISOString() });
+    saveDb();
+    res.json({ success: true, token: token, affiliate: { id: aff.id, email: aff.email, name: aff.name, code: aff.code } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
