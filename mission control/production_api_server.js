@@ -4905,10 +4905,15 @@ app.post('/api/admin/purge-bad-leads', adminAuth, (req, res) => {
     var freshCutoff = getFreshCutoffIso();
     var stalePool = new Date(Date.now() - 2 * 86400000).toISOString();
     var removedPool = 0, removedLeads = 0;
+    // Known new-build / non-home-mover listings (verified against the OTM page)
+    var MANUAL_BAD = [
+      '19938038'  // Molyneux Gardens, Higher End Park, Bootle - new-build
+    ];
     function isBadPoolLead(l) {
       var a = String(l.fullAddress || l.address || '');
       var ds = String(l.daysSinceAdded || '');
       if (otm.isDevelopmentListing({ address: a })) return true;
+      if (MANUAL_BAD.some(function(u) { return (a.indexOf(u) !== -1) || ((l.listingId || '') === u) || ((l.url || '').indexOf(u) !== -1); })) return true;
       if (ds && !/added\s+(today|yesterday|\d+)/i.test(ds)) return true;           // "Added > 14 days", "Reduced"
       var fv = l.firstVisibleDate;
       if (fv && new Date(fv).getTime() < new Date(stalePool).getTime()) return true;  // sat in pool > 2 days
