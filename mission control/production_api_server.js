@@ -3421,6 +3421,19 @@ app.post('/api/admin/add-test-lead', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/dm-logs — read direct-mail provider logs (debug failed sends).
+app.get('/api/admin/dm-logs', adminAuth, (req, res) => {
+  try {
+    var dbD2 = getDb();
+    var logs = (dbD2.direct_mail_provider_logs || []).slice(-20).reverse();
+    if (req.query.campaign_id) {
+      var cid = String(req.query.campaign_id || '');
+      logs = (dbD2.direct_mail_provider_logs || []).filter(function(l) { return String(l.campaign_id || '') === cid; }).slice(-5).reverse();
+    }
+    res.json({ success: true, logs: logs.map(function(l) { return { id: l.id, provider: l.provider, endpoint: l.endpoint, success: !!l.success, error: l.error_message || '', created_at: l.created_at, request_body: String(l.request_body || '').substring(0, 400), response_body: String(l.response_body || '').substring(0, 400) }; }) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
