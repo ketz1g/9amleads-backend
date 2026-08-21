@@ -9086,6 +9086,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // returns 0/falsy; kept in sync with LEAD_TYPE_RULES so it can never diverge.
       var dailyLimitByPlan = { free_trial: 5, starter: 5, pro: 10, enterprise: 15 };
       var totalDailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || dailyLimitByPlan[cust.plan] || 5;
+      // HONOUR A TEMP CAP OVERRIDE (set-daily-cap): if the customer's leads_per_day
+      // was raised (e.g. "5 free leads today"), deliver up to that higher count.
+      var capOverride = parseInt(cust.leads_per_day, 10);
+      if (capOverride && capOverride > totalDailyLimit) totalDailyLimit = capOverride;
       
       // Get all products for this customer (round-robin)
       var products = [cust.product];
