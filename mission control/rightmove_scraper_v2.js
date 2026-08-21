@@ -1204,10 +1204,10 @@ function getTownForPostcode(postcode) {
   return '';
 }
 
-// Backfill a town/area onto leads that have door number + street + full postcode
-// but no town (e.g. "1 Caldwell Street"). One cached Postcoder lookup per
-// postcode; the live lookup is budget-guarded so it never overspends. Returns the
-// number of leads updated.
+// Backfill a town/area AND county onto leads that have door number + street +
+// full postcode but are missing them (e.g. "1 Portsmouth Road"). One cached
+// Postcoder lookup per postcode; the live lookup is budget-guarded so it never
+// overspends. Returns the number of leads updated.
 async function backfillLeadTowns(leads) {
   if (!Array.isArray(leads) || !leads.length) return 0;
   var updated = 0;
@@ -1216,17 +1216,28 @@ async function backfillLeadTowns(leads) {
     var addr = String(ld.fullAddress || ld.address || '');
     var pc = String(ld.postcode || '');
     if (!addr || !/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc.trim())) continue;
-    var parts = addr.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
-    if (parts.length >= 2) continue; // already has a town/area
-    var town = getTownForPostcode(pc);
-    if (!town) {
+    var cleanPc = pc.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    var pcCache = require('./postcoder_cache');
+    var addrs = pcCache.get(cleanPc);
+    if ((!addrs || !addrs.length) && lookupPostcoderAddress) {
       await lookupPostcoderAddress(pc, '', ''); // populate the cache (budget-guarded, 1x per postcode)
-      town = getTownForPostcode(pc);
+      addrs = pcCache.get(cleanPc);
     }
-    if (town) {
-      town = town.replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+    if (!addrs || !Array.isArray(addrs) || !addrs.length) continue;
+    var town = '';
+    var county = '';
+    for (var ai = 0; ai < addrs.length; ai++) {
+      if (!town && addrs[ai].posttown) town = String(addrs[ai].posttown).trim();
+      if (!county && (addrs[ai].county || addrs[ai].postal_county)) county = String(addrs[ai].county || addrs[ai].postal_county).trim();
+      if (town && county) break;
+    }
+    var joined = addr.toUpperCase();
+    var additions = [];
+    if (town && joined.indexOf(town.toUpperCase()) === -1) additions.push(town.replace(/\b\w/g, function(c) { return c.toUpperCase(); }));
+    if (county && joined.indexOf(county.toUpperCase()) === -1) additions.push(county.replace(/\b\w/g, function(c) { return c.toUpperCase(); }));
+    if (additions.length) {
       var base = addr.replace(/,\s*$/, '').trim();
-      ld.fullAddress = base + ', ' + town;
+      ld.fullAddress = base + ', ' + additions.join(', ');
       ld.address = ld.fullAddress;
       updated++;
     }
