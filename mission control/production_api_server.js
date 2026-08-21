@@ -4948,6 +4948,38 @@ app.post('/api/admin/purge-bad-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/dedupe-leads - remove duplicate leads per customer (same
+// normalized address+postcode, or same URL) keeping the first. Applies to all
+// products. Returns how many duplicates were removed.
+app.post('/api/admin/dedupe-leads', adminAuth, (req, res) => {
+  try {
+    var dbD = getDb();
+    var seen = {};
+    var removed = 0;
+    var dedupKey = function(l) {
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) { d = {}; }
+      var u = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+      if (u) return 'u:' + u;
+      var a = String(d.fullAddress || d.deceasedAddress || d.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28);
+      var pc = String(d.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      var r = String(d.reference || d.companyNumber || d.deceasedName || d.tenderNoticeId || '').toLowerCase().trim();
+      if (r) return 'r:' + r;
+      if (a && pc) return 'a:' + a + '|' + pc;
+      return a;
+    };
+    dbD.leads = (dbD.leads || []).filter(function(l) {
+      var k = dedupKey(l);
+      var custKey = l.customer_id + '::' + k;
+      if (!k) return true;
+      if (seen[custKey]) { removed++; return false; }
+      seen[custKey] = true;
+      return true;
+    });
+    saveDb();
+    res.json({ success: true, duplicates_removed: removed });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/refresh-pending-leads - remove every customer's PENDING
 // (not-yet-delivered) leads that lack a door/flat number and replace them with
 // fresh, fully-valid in-area door-numbered leads from the pool (same rules as the
@@ -8653,6 +8685,15 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           var iKey = normU ? 'u:' + normU : ('a:' + String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
           if (_inRunSeen && _inRunSeen[iKey]) return false;
           if (_inRunSeen) _inRunSeen[iKey] = true;
+          // ADDRESS+POSTCODE in-run dedup: the same property scraped by multiple
+          // providers/runs has different URLs (e.g. Rightmove RES_BUY vs COM_BUY),
+          // so URL alone lets near-identical leads through 2-3x in one run. Collapse
+          // any duplicate property (same normalized address + same postcode).
+          var addrNorm = String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28);
+          var pcNorm = String(dd.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+          var addrKeyRun = addrNorm && pcNorm ? 'aa:' + addrNorm + '|' + pcNorm : '';
+          if (addrKeyRun && _inRunSeen && _inRunSeen[addrKeyRun]) return false;
+          if (addrKeyRun && _inRunSeen) _inRunSeen[addrKeyRun] = true;
           var aKey = String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
           var rKey = String(dd.reference || dd.companyNumber || dd.deceasedName || dd.tenderNoticeId || '').toLowerCase().trim();
           var pKey = String(dd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
