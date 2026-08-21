@@ -1420,18 +1420,11 @@ class StannpProvider extends DirectMailProvider {
           doc.on('end', function() { resolve({ buffer: Buffer.concat(buffers), pages: pageCount }); });
           var headerFont = unicodeFont ? 'uni' : 'Helvetica-Bold';
           var bodyFont = unicodeFont ? 'uni' : 'Helvetica';
-          // RETURN ADDRESS (sender) — NOT the recipient. Stannp prints the
-          // recipient in the envelope window from the /letters/create params, so
-          // the letter PDF must not repeat it.
-          var senderObj = (recipient && recipient.sender) || {};
-          var headerL = [];
-          if (senderObj.name) headerL.push(senderObj.name);
-          if (senderObj.address) headerL.push(senderObj.address);
-          var dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-          doc.font(headerFont).fontSize(Math.min(fontSize, 10)).text((headerL.join('\n') || ' '), margin, margin, { width: 250, lineBreak: true });
-          doc.font(bodyFont).fontSize(8).text(dateStr, 360, margin, { width: 140, lineBreak: true, align: 'right' });
-          doc.moveTo(margin, margin + 40).lineTo(595 - margin, margin + 40).lineWidth(1).strokeColor('#0ea5e9').stroke();
-          doc.font(bodyFont).fontSize(fontSize).text(text, margin, margin + 52, { width: 595 - margin * 2, lineBreak: true, align: 'left', lineGap: lineGap });
+          // NO header here: the pageBody HTML already carries the sender's return
+          // address + date + divider (Stannp prints the recipient in the envelope
+          // window from the /letters/create params). Rendering another header here
+          // duplicated the address. Just render the body text, auto-shrunk to fit.
+          doc.font(bodyFont).fontSize(fontSize).text(text, margin, margin + 40, { width: 595 - margin * 2, lineBreak: true, align: 'left', lineGap: lineGap });
           doc.end();
         } catch(e) { reject(e); }
       });
