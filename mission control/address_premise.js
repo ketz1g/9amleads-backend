@@ -40,19 +40,15 @@ function hasUsablePremiseAddress(addr, pc) {
   if (!words.length) return false;
   var last = words[words.length - 1].replace(/\.$/, '');
   if (STREET_SUFFIX_RE.test(last)) return false;
-  // 4) NAMED PROPERTY — accepted ONLY when the last word is a SINGLE-PREMISE type
-  //    a postman can deliver to: a house, cottage, lodge, grange, rectory, manor,
-  //    farm, hall, barn, oast, school, church, hotel, inn, pub, bungalow, etc.
-  //    Multi-unit block words (apartments, tower, mansions, block, court, wharf,
-  //    point, heights, chambers, villas) and generic development names
-  //    ("The HiLight", "The Founding", "Bendon Valley") have NO flat number and are
-  //    rejected — PAF must resolve them to "Flat N, ..." or they're replaced.
+  // 4) NAMED PROPERTY — must STILL have a door/flat/apartment number to be
+  //    deliverable. A bare building name ("Camille House, Beulah Hill",
+  //    "Prospect House, Coombe Wood Rd") does NOT identify a specific premise a
+  //    removals company can act on, so it is REJECTED unless a number appears
+  //    elsewhere in the address (sections 1-2 already accepted those).
+  //    (Business rule 2026-08-21: named building => needs door/flat/apartment number.)
   var BLOCK_WORDS_RE = /^(?:apartments?|block|tower|towers|court|courts|mansions|flats|wharf|point|heights|residence|residences|villas|chambers|studios?|suites?|place|square)$/i;
   if (BLOCK_WORDS_RE.test(last)) return false;
-  var SINGLE_PREMISE_RE = /(?:house|cottage|cottages|lodge|grange|rectory|manor|farm|hall|barn|oast|school|church|chapel|hotel|inn|pub|bungalow|nursery|clinic|surgery|forge|bothy|stable|studio)$/i;
-  if (words.length >= 2 && SINGLE_PREMISE_RE.test(last)) return true;
-  // 5) Not a bare street, not a block, and not a single-premise name -> reject
-  //    (no usable premise identifier).
+  // 5) No numeric premise identifier found anywhere -> reject (no usable premise).
   return false;
 }
 
