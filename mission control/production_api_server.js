@@ -17849,7 +17849,7 @@ function syncCustomers(product) {
               if (planFilt['f-app-type']) planFilters = planFilters.concat(planFilt['f-app-type']);
               else if (planFilt.applicationType) planFilters = planFilters.concat(planFilt.applicationType);
             });
-            leads = await planScraper.collectPlanningLeads({ postcodeAreas: planAreas.length ? planAreas : undefined, filters: planFilters, maxItems: 100 });
+            leads = await planScraper.collectPlanningLeads({ postcodeAreas: planAreas.length ? planAreas : undefined, filters: planFilters, maxItems: parseInt(process.env.PLANNING_MAX_ITEMS || '400', 10) });
             if (leads && leads.length > 0) {
               // Planning leads are freshly scraped — no additional freshness filter
               // (brownfield/application data is current at scrape time).
