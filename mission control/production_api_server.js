@@ -3054,6 +3054,33 @@ app.post('/api/admin/affiliates/pay', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/affiliates/card-saved — admin marks a referred customer's card as
+// saved (e.g. if the Stripe webhook missed it). Moves the referral to "pending"
+// (earning, waiting out the month). Optional payout_due overrides the date (support).
+app.post('/api/admin/affiliates/card-saved', adminAuth, (req, res) => {
+  try {
+    var cid = (req.body && req.body.customer_id) || '';
+    var c = (getDb().customers || []).find(function(x) { return x.id === cid; });
+    if (!c) return res.status(404).json({ error: 'Customer not found' });
+    if (!c.affiliate_id) return res.status(400).json({ error: 'This customer is not an affiliate referral' });
+    var due = req.body.payout_due || new Date(new Date(c.created_at || Date.now()).getTime() + 30 * 86400000).toISOString();
+    c.stripe_payment_method_id = c.stripe_payment_method_id || 'manual';
+    c.affiliate_payout_status = 'pending';
+    c.affiliate_payout_due = due;
+    saveDb();
+    res.json({ success: true, customer: c.email, status: 'pending', payout_due: due });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/affiliates/process — run the payout transition now (referrals past
+// their month + still active become "due"). Normally runs daily at 09:00.
+app.post('/api/admin/affiliates/process', adminAuth, (req, res) => {
+  try {
+    var changed = processAffiliatePayouts();
+    res.json({ success: true, became_due_or_ineligible: changed });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
