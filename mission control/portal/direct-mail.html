@@ -102,10 +102,10 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div style="margin-top:12px">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
 <label class="label" style="margin-bottom:0">Cover Letter Text <span style="color:var(--muted);font-weight:400">(optional. leaflet-only sends don't need one)</span></label>
-<span id="letter-counter" style="font-size:11px;font-weight:700;color:var(--success);white-space:nowrap">0 / 2,600 characters · 0 / 420 words</span>
+<span id="letter-counter" style="font-size:11px;font-weight:700;color:var(--success);white-space:nowrap">0 / 3,200 characters · 0 / 430 words</span>
 </div>
 <textarea class="input" id="t-content" rows="8" oninput="updateLetterPreviewLive()" placeholder="Dear [name],&#10;&#10;We are your local removal specialists...&#10;&#10;Kind regards,&#10;[Your Company]"></textarea>
-<div style="font-size:10px;color:var(--muted);margin-top:4px">Tip: if you paste a letter that includes markdown formatting (*, **, #), we clean it automatically when you save and print. <b style="color:var(--text2)">One A4 page fits a max of ~420 words / ~2,600 characters.</b></div>
+<div style="font-size:10px;color:var(--muted);margin-top:4px">Tip: if you paste a letter that includes markdown formatting (*, **, #), we clean it automatically when you save and print. <b style="color:var(--text2)">One A4 page fits a max of ~430 words / ~3,200 characters.</b></div>
 </div>
 <div style="display:flex;gap:10px;margin-top:12px">
 <button class="btn btn-primary" onclick="saveTemplate()" style="flex:1"><i class="fas fa-save"></i> Save Cover Letter</button>
@@ -136,7 +136,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
   <div style="flex:1;min-width:240px;font-size:11px;color:var(--text2);line-height:1.7">
     <b style="color:#0ea5e9">The blue box (top-left)</b> is the <b>envelope window</b>. the recipient's address prints there. Keep it clear.<br><br>
     <b>Your letter fills one side of A4.</b> Keep your cover letter short enough to fit on one page. if it's too long it will spill onto a second side, which costs extra and looks unprofessional.<br><br>
-    <b style="color:var(--success)">One A4 page fits up to ~420 words / ~2,600 characters</b> (the address window takes the top, so there's less room for text). Watch the counter — it shows your current <b>words / characters</b> and flags when you're getting close or too long.<br><br>
+    <b style="color:var(--success)">One A4 page fits up to ~430 words / ~3,200 characters</b> (the address window takes the top, so there's less room for text). Watch the counter — it shows your current <b>words / characters</b> and flags when you're getting close or too long.<br><br>
     <b>Symbols &amp; icons:</b> Checkmarks (✓), bullets (•), £ and other common symbols <b>print correctly</b>. Colour emojis (😀) can't be printed in a letter, so keep to symbols and plain text for a clean, professional result.<br><br>
     <b style="color:var(--success)">The page preview updates live</b> as you write. Watch the status below the page: <b style="color:#15803d">"Fits on one A4 page"</b> = good, or <b style="color:#dc2626">"Letter is too long. shorten it"</b>.
   </div>
@@ -589,8 +589,8 @@ function updateLetterPreviewLive(){
   var clean=cleanLetterPreviewText(text);
   var cc=clean.length, wc=clean?clean.split(/\s+/).filter(function(w){return w.length>0;}).length:0;
   if(cEl){
-    cEl.textContent=cc+' / 2,600 characters · '+wc+' / 420 words';
-    cEl.style.color = (cc>2600||wc>420) ? '#dc2626' : ((cc>2400||wc>390) ? '#b45309' : '#15803d');
+    cEl.textContent=cc+' / 3,200 characters · '+wc+' / 430 words';
+    cEl.style.color = (cc>3200||wc>430) ? '#dc2626' : ((cc>2900||wc>400) ? '#b45309' : '#15803d');
   }
   if(!box||!bodyEl)return;
   if(box.style.display==='none')return; // only update if the preview is visible
@@ -628,8 +628,8 @@ function checkLetterFit(){
   // unreliable. emojis/line-heights inflate it and cause false "too long").
   var charCount = text.trim().length;
   var wordCount = text.trim().split(/\s+/).filter(function(w){return w.length>0;}).length;
-  var tooLong = charCount > 2600 || wordCount > 420;
-  var maxWords = 420, maxChars = 2600;
+  var tooLong = charCount > 3200 || wordCount > 430;
+  var maxWords = 430, maxChars = 3200;
   // AUTO-FIT: shrink the preview font so the whole letter is visible on the A4
   // page (no scrollbar) whenever it genuinely fits one A4 side. Only letters that
   // are over the limit keep scrolling + show the red warning.
@@ -648,7 +648,7 @@ function checkLetterFit(){
   if(tooLong){
     statusEl.textContent='✕ ' + wordCount + ' words / ' + charCount + ' chars — too long for one A4 page (max ' + maxWords + ' words / ' + maxChars + ' chars). Shorten it.';
     statusEl.style.color='#dc2626';
-  } else if(charCount > 2400 || wordCount > 390){
+  } else if(charCount > 2900 || wordCount > 400){
     statusEl.textContent='~' + wordCount + ' words / ' + charCount + ' chars — getting long (max ' + maxWords + ' words / ' + maxChars + ' chars). Shorten a little to sit comfortably.';
     statusEl.style.color='#b45309';
   } else {
