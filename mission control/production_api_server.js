@@ -3081,6 +3081,25 @@ app.post('/api/admin/affiliates/process', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/affiliates/delete — remove an affiliate by id or email.
+app.post('/api/admin/affiliates/delete', adminAuth, (req, res) => {
+  try {
+    var q = (req.body && (req.body.affiliate_id || req.body.email)) || '';
+    var affs = getDb().affiliates || [];
+    var idx = affs.findIndex(function(a) { return a.id === q || String(a.email || '').toLowerCase() === String(q || '').toLowerCase(); });
+    if (idx === -1) return res.status(404).json({ error: 'Affiliate not found' });
+    var removed = affs.splice(idx, 1)[0];
+    // Detach referrals (keep customers, drop the affiliate credit)
+    (getDb().customers || []).forEach(function(c) {
+      if (c.affiliate_id === removed.id || String(c.affiliate_code || '').toLowerCase() === String(removed.code || '').toLowerCase()) {
+        c.affiliate_id = null; c.affiliate_code = null; c.affiliate_payout_status = null; c.affiliate_payout_due = null;
+      }
+    });
+    saveDb();
+    res.json({ success: true, deleted: removed.name });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
