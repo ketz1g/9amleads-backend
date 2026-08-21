@@ -1417,6 +1417,9 @@ class StannpProvider extends DirectMailProvider {
         doc.on('end', function() { resolve(Buffer.concat(buffers)); });
         var headerFont = unicodeFont ? 'uni' : 'Helvetica-Bold';
         var bodyFont = unicodeFont ? 'uni' : 'Helvetica';
+        // DejaVu Sans is wider than Arial/Helvetica, so we render the letter at
+        // 10pt with a tight line gap — this keeps a ~400-450 word letter on ONE
+        // A4 page (11pt DejaVu spilled to a 2nd page).
         // Header: recipient address top-left, date top-right
         var headerL = [];
         if (recipient && recipient.name) headerL.push(recipient.name);
@@ -1424,12 +1427,12 @@ class StannpProvider extends DirectMailProvider {
         if (recipient && recipient.city) headerL.push(recipient.city);
         if (recipient && recipient.postcode) headerL.push(recipient.postcode);
         var dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        doc.font(headerFont).fontSize(11).text((headerL.join('\n') || ' '), 55, 50, { width: 250, lineBreak: true });
-        doc.font(bodyFont).fontSize(10).text(dateStr, 390, 50, { width: 150, lineBreak: true, align: 'right' });
+        doc.font(headerFont).fontSize(10).text((headerL.join('\n') || ' '), 55, 50, { width: 250, lineBreak: true });
+        doc.font(bodyFont).fontSize(9).text(dateStr, 390, 50, { width: 150, lineBreak: true, align: 'right' });
         doc.moveDown(2);
         doc.moveTo(55, 100).lineTo(540, 100).lineWidth(1).strokeColor('#0ea5e9').stroke();
         doc.moveDown(1);
-        doc.font(bodyFont).fontSize(11).text(text, 55, 120, { width: 485, lineBreak: true, align: 'left', lineGap: 6 });
+        doc.font(bodyFont).fontSize(10).text(text, 55, 122, { width: 485, lineBreak: true, align: 'left', lineGap: 3 });
         doc.end();
       } catch(e) { reject(e); }
     });
