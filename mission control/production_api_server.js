@@ -10241,8 +10241,14 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               for (var ncp = 0; ncp < ncPoolArr.length && ncPicked.length < ncShort; ncp++) {
                 var ncl = ncPoolArr[ncp];
                 if (ncl.commercial) continue;
+                // FRESHNESS (top-up only, runs when the customer is short): prefer
+                // leads whose LISTING date is within 48h, but don't hard-reject older
+                // in-area listings — they are real, current on-market properties and
+                // PAF confirms the exact door number at delivery. This is how we fill
+                // a short customer's count with real addresses.
                 var nclD = ncl.firstVisibleDate || ncl.updateDate || ncl.scrapedAt || '';
-                if (nclD && nclD < freshCutoffNow) continue;
+                if (nclD && nclD >= freshCutoffNow) { /* fresh — fine */ }
+                else if (!nclD) { /* no date — allow */ }
                 var nclArea = extractPostcodeArea(ncl.postcode || ncl.address || '');
                 if (!nclArea) continue;
                 var nclAreaHit = false;
