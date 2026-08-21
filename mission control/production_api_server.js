@@ -5623,6 +5623,8 @@ app.post('/api/admin/otm-scrape', adminAuth, async (req, res) => {
     var areasParam = String((req.body && req.body.areas) || '');
     var areas = areasParam ? areasParam.split(',').map(function(a){ return a.trim().toUpperCase(); }).filter(Boolean) : [];
     var maxPerArea = parseInt((req.body && req.body.max) || '40', 10);
+    var maxDays = parseInt((req.body && req.body.maxDays) || '2', 10);
+    if (maxDays < 1) maxDays = 2;
     if (areas.length === 0) {
       var dbO = getDb();
       (dbO.customers || []).forEach(function(c) {
@@ -5636,7 +5638,7 @@ app.post('/api/admin/otm-scrape', adminAuth, async (req, res) => {
     areas = areas.filter(function(a) { return /^[A-Z]{1,2}$/.test(a); });
     if (!areas.length) return res.status(400).json({ error: 'No areas to scrape' });
     var otmScraper = require('./onthemarket_scraper');
-    var leads = await otmScraper.collectOnTheMarketLeads({ areas: areas, maxPerArea: maxPerArea, maxDays: 2, detailCap: 400 });
+    var leads = await otmScraper.collectOnTheMarketLeads({ areas: areas, maxPerArea: maxPerArea, maxDays: maxDays, detailCap: 400 });
     var fn = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving.file);
     var prev = [];
     try { prev = JSON.parse(fs.readFileSync(fn, 'utf-8')); } catch(e) { prev = []; }
