@@ -74,8 +74,12 @@ function extractEmails(html) {
   var m;
   while ((m = re.exec(html)) !== null) {
     var e = m[0].toLowerCase();
-    if (/\b(example|test|noreply|no-reply|sent|domain)\b/.test(e)) continue;
-    if (e.indexOf('.png') !== -1 || e.indexOf('.jpg') !== -1 || e.indexOf('@2x') !== -1) continue;
+    var local = e.split('@')[0], dom = e.split('@')[1];
+    // template/placeholder fakes that sites ship with
+    if (/\b(example|test|noreply|no-reply|sent|yourname|your@email|name@|email@|you@|info@google|contact@domain|your@domain)\b/.test(e)) continue;
+    if (local.length < 2 || /^[a-z]{1,2}$/.test(local)) continue;
+    if (/^([a-z0-9._%+-]+\.)?(google|facebook|twitter|youtube|microsoft|apple|adobe|wix|squarespace|godaddy)\.com$/i.test(dom)) continue;
+    if (/\.(png|jpg|jpeg|gif|svg|css|js)$/i.test(e)) continue;
     if (out.indexOf(e) === -1) out.push(e);
   }
   return out;
