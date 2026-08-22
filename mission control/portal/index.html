@@ -397,9 +397,10 @@ function updateMovingTypeLabel() {
 <button type="button" class="qa" onclick="addQuickArea('ZE')">ZE</button>
 </div>
 <div class="ar"><input type="text" id="s-postcode-input" placeholder="Type a postcode area and press Add — e.g. SW, EN, N, CM" class="sf" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
-<button type="button" class="btn-s" onclick="addSignupPostcode()">Add</button>
-<button type="button" class="btn-o" onclick="setAllUK()">All UK</button></div>
+<button type="button" class="btn-s" id="s-add-btn" onclick="addSignupPostcode()">Add</button>
+<button type="button" class="btn-o" id="s-alluk-btn" onclick="setAllUK()">All UK</button></div>
 <span id="s-postcode-count" class="ml"></span>
+<div id="s-alluk-note" style="display:none;margin-top:8px;padding:8px 12px;border-radius:6px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);font-size:11px;color:#7dd3fc;line-height:1.5"><b>All of UK selected</b> — you'll receive leads from across the whole country. The area list below is disabled so nothing else gets mixed in. Click the × on the "all-uk" tag to choose specific areas instead.</div>
 </div>
 <div id="s-postcode-error" class="err"></div>
 <div style="font-size:10px;color:#6b7280;line-height:1.6;margin-top:6px"><b>ℹ️ Quiet days:</b> On days when fewer fresh leads are available in your exact postcode areas, we send you the leads <b>closest to your chosen postcodes</b> so you still get your full daily count. Every lead is still unique to you. No competition.</div>
@@ -478,10 +479,28 @@ var API = window.location.hostname === 'localhost' || window.location.hostname =
 var signupPostcodes = [];
 var VALID_POSTCODE_AREAS = ['AB','AL','B','BA','BB','BD','BH','BL','BN','BR','BS','BT','CA','CB','CF','CH','CM','CO','CR','CT','CV','CW','DA','DD','DE','DG','DH','DL','DN','DT','DY','E','EC','EH','EN','EX','FK','FY','G','GL','GU','GY','HA','HD','HG','HP','HR','HS','HU','HX','IG','IM','IP','IV','JE','KA','KT','KW','KY','L','LA','LD','LE','LL','LN','LS','LU','M','ME','MK','ML','MN','MS','N','NE','NG','NL','NN','NP','NR','NW','OL','OX','PA','PE','PH','PL','PO','PR','RG','RH','RM','S','SA','SE','SG','SK','SL','SM','SN','SO','SP','SR','SS','ST','SW','SY','TA','TD','TF','TN','TQ','TR','TS','TW','UB','W','WA','WC','WD','WF','WN','WR','WS','WV','YO','ZE'];
 function isValidPostcodeArea(code) { return VALID_POSTCODE_AREAS.includes(code); }
-function addQuickArea(area) { var inp = document.getElementById('s-postcode-input'); if (inp) inp.value = area; addSignupPostcode(); }
-function setAllUK() { selectedCoverage = 'ukwide'; signupPostcodes = ['all-uk']; specCounties = []; renderSignupPostcodes(); }
+function isAllUKMode() { return selectedCoverage === 'ukwide' || signupPostcodes.some(function(c){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(c)); }); }
+// When "All of UK" is chosen, disable the single-area pickers so it can't be
+// mixed with specific postcodes/counties. Removing the all-uk tag re-enables them.
+function applyAllUKState() {
+  var on = isAllUKMode();
+  document.querySelectorAll('#s-postcode-wrapper .qa').forEach(function(b){ b.disabled = on; b.style.opacity = on ? '0.35' : ''; b.style.cursor = on ? 'not-allowed' : ''; });
+  var inp = document.getElementById('s-postcode-input');
+  if (inp) { inp.disabled = on; inp.style.opacity = on ? '0.5' : ''; inp.placeholder = on ? 'All of UK selected - pickers disabled' : 'Type a postcode area and press Add — e.g. SW, EN, N, CM'; }
+  var addBtn = document.getElementById('s-add-btn');
+  if (addBtn) { addBtn.disabled = on; addBtn.style.opacity = on ? '0.5' : ''; }
+  var allUkBtn = document.getElementById('s-alluk-btn');
+  if (allUkBtn) { allUkBtn.disabled = on; allUkBtn.style.opacity = on ? '0.7' : ''; }
+  var countySel = document.getElementById('s-county-select');
+  if (countySel) { countySel.disabled = on; countySel.style.opacity = on ? '0.5' : ''; }
+  var note = document.getElementById('s-alluk-note');
+  if (note) note.style.display = on ? 'block' : 'none';
+}
+function addQuickArea(area) { if (isAllUKMode()) return; var inp = document.getElementById('s-postcode-input'); if (inp) inp.value = area; addSignupPostcode(); }
+function setAllUK() { selectedCoverage = 'ukwide'; signupPostcodes = ['all-uk']; specCounties = []; renderSignupPostcodes(); applyAllUKState(); }
 
  async function addSignupPostcode() {
+   if (isAllUKMode()) return;
    var input = document.getElementById('s-postcode-input');
    var area = (input?.value || '').trim();
    var err = document.getElementById('s-postcode-error');
@@ -519,7 +538,10 @@ function setAllUK() { selectedCoverage = 'ukwide'; signupPostcodes = ['all-uk'];
 }
 function removeSignupPostcode(code) {
   signupPostcodes = signupPostcodes.filter(function(c) { return c !== code; });
+  // Removing the "all-uk" tag exits All-of-UK mode and re-enables the area pickers.
+  if (code === 'all-uk' && selectedCoverage === 'ukwide') selectedCoverage = 'postcode';
   renderSignupPostcodes();
+  applyAllUKState();
 }
 function getSelectedPlan() {
   var pr = document.querySelector('#s-plan-container input[type=radio]:checked');
@@ -584,6 +606,7 @@ function renderSignupPostcodes() {
   var postcodeWrap = document.getElementById('s-postcode-wrapper');
   if (countySel) countySel.style.display = isCountyBased() ? 'block' : 'none';
   if (postcodeWrap) postcodeWrap.style.display = isCountyBased() ? 'none' : 'block';
+  applyAllUKState();
 }
 
 // ===== FILTER SYSTEM =====
@@ -753,6 +776,7 @@ function selectSpecialistArea(type) {
     signupPostcodes = ['all-uk'];
     specCounties = [];
     renderSignupPostcodes();
+    applyAllUKState();
     return;
   }
   selectedCoverage = 'county';
@@ -771,6 +795,7 @@ function populateCountySelect() {
 function addSpecialistCounty(val) {
   var sel = document.getElementById('s-county-select');
   if (!val) { if (sel) sel.value = ''; return; }
+  if (isAllUKMode()) { if (sel) sel.value = ''; return; }
   if (val === 'all-uk') { selectSpecialistArea('ukwide'); if (sel) sel.value = ''; return; }
   if (specCounties.indexOf(val) === -1) {
     specCounties.push(val);
