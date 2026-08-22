@@ -1,3 +1,12 @@
+async function rejectLeadAdmin(leadId) {
+  if (!confirm('Reject this lead? It will be marked rejected and a replacement will be sent with the next delivery.')) return;
+  try {
+    var r = await fetch(API + '/api/admin/reject-lead', { method: 'POST', headers: headers(), body: JSON.stringify({ lead_id: leadId }) });
+    var d = await r.json();
+    if (d.success) { alert(d.message); loadCustomerLeads(); }
+    else { alert('Reject failed: ' + (d.error || 'unknown')); }
+  } catch(e) { alert('Error: ' + e.message); }
+}
 async function replacePendingLead(leadId) {
   if (!confirm("Replace this pending lead with another valid lead in the customer's area?")) return;
   try {
@@ -92,11 +101,13 @@ async function load() {
     document.getElementById('metaLine').innerHTML = '<span><b>Email:</b> ' + esc(email) + '</span><span><b>Product:</b> ' + esc(d.product) + '</span><span><b>Plan:</b> ' + esc(d.plan) + '</span><span><b>Areas:</b> ' + esc(d.areas || '-') + '</span><span><b>Delivered:</b> ' + d.delivered + '</span><span><b>Pending:</b> ' + d.pending + '</span><span><b>Total:</b> ' + d.total + '</span>';
     var rows = '';
     (d.leads || []).forEach(function(l) {
-      var st = l.status === 'delivered' ? '<span class="badge badge-delivered">delivered</span>' : '<span class="badge badge-pending">pending</span>';
-      var ok = l.has_door_or_flat_number ? '<span class="ok">&#10003;</span>' : '<span class="no">&#10007;</span>';
-      var pc = l.full_postcode ? '<span class="ok">&#10003;</span>' : '<span class="no">&#10007;</span>';
-      var url = l.url ? '<a href="' + esc(l.url) + '" target="_blank" rel="noopener">listing</a>' : '-';
-      var act = l.delivered ? '' : '<button class=\'btn btn-outline btn-sm\' onclick=\'replacePendingLead(\'' + l.id + '\')\'>Replace</button>'; rows += '<tr><td>' + st + '</td><td>' + esc((l.address || '-').replace(/\n+/g, ', ')) + '</td><td>' + esc(l.postcode || '-') + '</td><td>' + ok + '</td><td>' + pc + '</td><td>' + url + '</td><td>' + act + '</td></tr>';
+      var st = l.status === 'delivered' ? '<span class="badge badge-delivered">delivered</span>' : (l.rejected ? '<span class="badge badge-rejected" style="background:#f87171;color:#fff">rejected</span>' : '<span class="badge badge-pending">pending</span>');
+      var act = '';
+      if (!l.delivered) {
+        act += '<button class="btn btn-outline btn-sm" onclick="rejectLeadAdmin(\'' + l.id + '\')">Reject</button> ';
+        act += '<button class="btn btn-outline btn-sm" onclick="replacePendingLead(\'' + l.id + '\')">Replace</button>';
+      }
+      rows += '<tr><td>' + st + '</td><td>' + esc((l.address || '-').replace(/\n+/g, ', ')) + '</td><td>' + esc(l.postcode || '-') + '</td><td>' + ok + '</td><td>' + pc + '</td><td>' + url + '</td><td>' + act + '</td></tr>';
     });
     if (!rows) rows = '<tr><td colspan="7" class="sub" style="padding:16px">No leads for this customer.</td></tr>';
     document.getElementById('leadRows').innerHTML = rows;

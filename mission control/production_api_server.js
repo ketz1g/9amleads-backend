@@ -3618,6 +3618,27 @@ app.post('/api/admin/remove-leads-created-on', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/reject-lead — admin rejects a lead (wrong address etc.) + sends a
+// replacement, same as the customer's reject. Body: { lead_id, reason? }
+app.post('/api/admin/reject-lead', adminAuth, (req, res) => {
+  try {
+    var leadId = (req.body && req.body.lead_id) || '';
+    var reason = (req.body && req.body.reason) || 'rejected by admin';
+    if (!leadId) return res.status(400).json({ error: 'lead_id required' });
+    var dbR = getDb();
+    var lead = (dbR.leads || []).find(function(l) { return l.id === leadId; });
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    var d = {}; try { d = JSON.parse(lead.data || '{}'); } catch(e) {}
+    d.rejected = true;
+    d.rejected_at = new Date().toISOString();
+    d.reject_reason = reason;
+    lead.data = JSON.stringify(d);
+    saveDb();
+    // A replacement is picked by the next delivery (the pool has in-area leads).
+    res.json({ success: true, message: 'Lead rejected. A replacement will be sent with the next delivery.', lead_id: leadId });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
@@ -5576,7 +5597,7 @@ app.get('/api/admin/customer-dashboard', adminAuth, (req, res) => {
       var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
       var addr = d.fullAddress || d.address || d.deceasedAddress || '';
       var pc = d.postcode || l.postcode || '';
-      return { id: l.id, product: l.product, status: l.delivered ? 'delivered' : 'pending', delivered_at: l.delivered_at || '', created_at: l.created_at || '', address: addr, postcode: pc, url: d.url || '', price: d.price || '', bedrooms: d.bedrooms || 0, property_type: d.propertyType || '', agent: d.agent || '', building_number: d.buildingNumber || '', street: d.street || '', udprn: d.udprn || '', paf_confirmed: !!(d.udprn), has_door_or_flat_number: hasUsablePremiseAddress(addr, pc), full_postcode: /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()) };
+      return { id: l.id, product: l.product, status: l.delivered ? 'delivered' : 'pending', delivered_at: l.delivered_at || '', created_at: l.created_at || '', rejected: !!(d.rejected), reject_reason: d.reject_reason || '', rejected_at: d.rejected_at || '', address: addr, postcode: pc, url: d.url || '', price: d.price || '', bedrooms: d.bedrooms || 0, property_type: d.propertyType || '', agent: d.agent || '', building_number: d.buildingNumber || '', street: d.street || '', udprn: d.udprn || '', paf_confirmed: !!(d.udprn), has_door_or_flat_number: hasUsablePremiseAddress(addr, pc), full_postcode: /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()) };
     });
     res.json({ success: true, email: email, plan: cust.plan, product: cust.product, areas: cust.target_areas || '', total: rows.length, delivered: rows.filter(function(r){ return r.status === 'delivered'; }).length, pending: rows.filter(function(r){ return r.status === 'pending'; }).length, leads: rows });
   } catch(e) { res.status(500).json({ error: e.message }); }
