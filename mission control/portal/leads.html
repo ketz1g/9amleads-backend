@@ -264,7 +264,7 @@ function renderLeadList(dayLeads, noGroup) {
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + planTitle + '</div>' +
         '<div class="meta">' + planMeta.join(' \u00b7 ') + '</div>' + planDesc + planApplicant + '</div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + mailBtn(l.id) + rejectBtn(l.id, null) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id) + rejectBtn(l.id, null) + '</div>' + '</div></div>';
     } else if (product === 'tenders') {
       // Tenders are applied for ONLINE (portal/email), not via post, so show the
       // buyer contact + apply button instead of a Print & Post button.
@@ -281,7 +281,7 @@ function renderLeadList(dayLeads, noGroup) {
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + tendTitle + '</div>' +
         '<div class="meta">' + tendMeta.join(' \u00b7 ') + (tendLink ? ' \u00b7 ' + tendLink : '') + '</div>' + tendDesc + tendContactHtml + '</div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + applyBtn + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + applyBtn + rejectBtn(l.id, d) + '</div>' + '</div></div>';
     } else {
       // moving / default
       var addr = d.address || d.title || 'Property';
@@ -305,7 +305,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="meta">' + moveMeta.join(' \u00b7 ') + '</div></div>' +
         '<div class="right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div><span class="badge ' + (status === 'newly listed' ? 'badge-new' : '') + '">' + status + '</span>' +
         (sentOn ? '<div style="font-size:10px;color:var(--muted);margin-top:3px;text-align:right">' + sentOn + '</div>' : '') +
-        postBadge(d, l.id) + mailBtn(l.id, d) + '</div></div>';
+        postBadge(d, l.id) + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + '</div></div>';
     }
   }
   return html;
