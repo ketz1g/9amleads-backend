@@ -7976,6 +7976,26 @@ cron.schedule('0 0 * * *', async () => {
   } catch(e) { console.log('[AUDIT] Error:', e.message); }
 });
 
+// POST /api/admin/dm-campaign-status — set a direct-mail campaign's status
+// (admin override, e.g. cancel a failed order). Body: { campaign_id, status, note? }
+app.post('/api/admin/dm-campaign-status', adminAuth, (req, res) => {
+  try {
+    var cid = (req.body && req.body.campaign_id) || '';
+    var status = String((req.body && req.body.status) || '').toLowerCase();
+    if (!cid || !['cancelled','refunded','failed','paid','queued'].includes(status)) return res.status(400).json({ error: 'campaign_id + status (cancelled/refunded/failed/paid/queued) required' });
+    var dbD = getDb();
+    var cam = (dbD.direct_mail_campaigns || []).find(function(c) { return c.id === cid; });
+    if (!cam) return res.status(404).json({ error: 'Campaign not found' });
+    cam.status = status;
+    if (status === 'cancelled' || status === 'refunded') cam.stripe_payment_status = 'refunded';
+    if (req.body && req.body.note) { cam.notes = req.body.note; }
+    dbD.direct_mail_status_history = dbD.direct_mail_status_history || [];
+    dbD.direct_mail_status_history.push({ id: uuidv4(), customer_id: cam.customer_id, campaign_id: cid, from_status: 'failed', to_status: status, changed_by: 'admin', notes: (req.body && req.body.note) || 'Admin override', created_at: new Date().toISOString() });
+    saveDb();
+    res.json({ success: true, campaign_id: cid, status: status });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/audit/reports — Get audit reports
 app.get('/api/admin/audit/reports', adminAuth, (req, res) => {
   try {
