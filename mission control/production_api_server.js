@@ -7267,8 +7267,13 @@ function leadHasUsableAddress(l, product) {
     var pc = String(p.postcode || '').toUpperCase().replace(/\s+/g, '');
     var pcOk = /^[A-Z]{1,2}\d[A-Z\d]?(\d[A-Z]{2})$/.test(pc);
     // Business products don't need a numeric door number; require name/address+postcode.
-    if (product === 'newbusiness' || product === 'tenders' || product === 'planning') {
+    if (product === 'newbusiness' || product === 'planning') {
       return !!(addr || p.name || p.company) && pcOk;
+    }
+    // TENDERS are national opportunities with no postcode — require a title/buyer
+    // only, never a postcode (that's why they were disappearing from the dashboard).
+    if (product === 'tenders') {
+      return !!(p.title || p.name || p.company || p.description || p.buyer);
     }
     // Moving/probate: require a PROPER address (door number, flat number, or named
     // property) + full postcode. Bare street names with no identifier are excluded.
