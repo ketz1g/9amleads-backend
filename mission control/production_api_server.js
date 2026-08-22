@@ -189,6 +189,33 @@ function hasBadUnitCode(addr) {
   return false;
 }
 
+// EXACT-DATA GUARANTEE: reject placeholder/mock pool entries so a customer can
+// never receive a fake lead (e.g. a leftover seed file with "Tender 0"/"Buyer"/
+// "Works" rows, or an address-less stub). Applied at pool-load time, so EVERY
+// delivery pass (round 1/2, pool-file fallback, final-guarantee, top-ups) only
+// ever sees real data. Conservative on purpose — a real lead with a URL and a
+// title/name/address/reference always passes.
+function isPlaceholderLead(l) {
+  if (!l || typeof l !== 'object') return true;
+  var s = JSON.stringify(l).toLowerCase();
+  if (/placeholder|lorem ipsum|mock data|\btest\s+street\b|\b123\s+test\b|\bexample\.com\b|fake\s+lead|sample\s+data/.test(s)) return true;
+  var id = String(l.id || l.url || '').toLowerCase();
+  if (/^(tenders|probate|planning|newbusiness|moving)_\d+$/.test(id)) return true;
+  // Generic seeded titles ("Tender 0", "Buyer", bare "Works") with no URL =
+  // generated stub, not a real opportunity.
+  var url = String(l.url || '').trim();
+  var title = String(l.title || l.name || l.buyer || '').toLowerCase().trim();
+  if (/^tender\s?\d+$/.test(title)) return true;
+  if (title === 'buyer' || title === 'works' || title === 'tender') return !url;
+  // A lead with NO url, NO title, NO address, NO reference and NO company is not
+  // real data — it has nothing to show or verify.
+  if (!url) {
+    var reference = String(l.reference || l.proposal || l.applicationRef || l.tenderNoticeId || l.deceasedName || l.companyNumber || '').trim();
+    if (!title && !reference && !l.address && !l.fullAddress && !l.deceasedAddress && !l.company && !l.name) return true;
+  }
+  return false;
+}
+
 // Remove a trailing PARTIAL postcode (outcode only, e.g. "London, WC2A" /
 // "London, SW17") from an address string. The full postcode is stored separately
 // in the postcode field - a bare outcode at the end of the address is redundant
@@ -408,6 +435,7 @@ function loadProductPool(prod) {
   }
   arr = arr.filter(function(l) { return !/zoopla/i.test(String(l.source || '')); });
   arr = arr.filter(function(l) { return !hasBadUnitCode(l.address || l.fullAddress || ''); });
+  arr = arr.filter(function(l) { return !isPlaceholderLead(l); });
   arr = arr.map(function(l) {
     if (l && l.address) {
       l.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.address)));
@@ -9482,6 +9510,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       arr = arr.filter(function(l) { return !/zoopla/i.test(String(l.source || '')); });
       // Exclude new-build unit-code addresses (e.g. "L-001226, ...") - not real mail addresses.
       arr = arr.filter(function(l) { return !hasBadUnitCode(l.address || l.fullAddress || ''); });
+      // EXACT-DATA GUARANTEE: never deliver placeholder/mock pool entries (e.g. a
+      // leftover seed file with "Tender 0"/"Buyer"/"Works" rows). Filter them at
+      // pool-load so every delivery pass only ever sees real leads.
+      arr = arr.filter(function(l) { return !isPlaceholderLead(l); });
       // NORMALIZE FLAT ADDRESSES: strip the portal default "Flat 1" prefix from
       // every moving pool lead so ALL customers (any source/path) get the accurate
       // building-level address, not a guessed flat. Also strip wrong region tags

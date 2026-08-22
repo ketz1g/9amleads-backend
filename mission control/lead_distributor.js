@@ -697,6 +697,27 @@ async function distributeProduct(product) {
       }
     }
   }
+  // EXACT-DATA GUARANTEE: never pre-assign placeholder/mock pool entries (e.g. a
+  // leftover seed with "Tender 0"/"Buyer"/"Works" rows). Mirrors
+  // isPlaceholderLead in the API server so the 06:20 distributor + 09:00 delivery
+  // both only ever assign real leads.
+  function isPlaceholderLead(l) {
+    if (!l || typeof l !== 'object') return true;
+    const s = JSON.stringify(l).toLowerCase();
+    if (/placeholder|lorem ipsum|mock data|\btest\s+street\b|\b123\s+test\b|\bexample\.com\b|fake\s+lead|sample\s+data/.test(s)) return true;
+    const id = String(l.id || l.url || '').toLowerCase();
+    if (/^(tenders|probate|planning|newbusiness|moving)_\d+$/.test(id)) return true;
+    const url = String(l.url || '').trim();
+    const title = String(l.title || l.name || l.buyer || '').toLowerCase().trim();
+    if (/^tender\s?\d+$/.test(title)) return true;
+    if (title === 'buyer' || title === 'works' || title === 'tender') return !url;
+    if (!url) {
+      const reference = String(l.reference || l.proposal || l.applicationRef || l.tenderNoticeId || l.deceasedName || l.companyNumber || '').trim();
+      if (!title && !reference && !l.address && !l.fullAddress && !l.deceasedAddress && !l.company && !l.name) return true;
+    }
+    return false;
+  }
+  allScrapedLeads = allScrapedLeads.filter(l => !isPlaceholderLead(l));
 
   console.log(`  Total scraped leads available: ${allScrapedLeads.length}`);
 
