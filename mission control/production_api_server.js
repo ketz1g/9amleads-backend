@@ -2762,18 +2762,24 @@ app.post('/api/auth/signup', async (req, res) => {
       // MOVING: the promise is an exact daily count spread across the chosen areas,
       // so a free_trial/starter MOVING customer MUST choose the FULL 5 postcode
       // areas (fewer breaks the delivery guarantee).
-      // OTHER products: must choose at least 3 areas/counties so delivery has
-      // enough supply (unless they're all-uk / unlimited-plan).
       var signupProduct = String(product || '').toLowerCase();
       if (!isPaidUnlimited && signupProduct === 'moving' && areas.length < maxAreas) {
         return res.status(400).json({ error: 'Please choose exactly ' + maxAreas + ' postcode areas for moving leads (you selected ' + areas.length + ').', too_few_areas: true, max_areas: maxAreas });
       }
-      if (!isPaidUnlimited && signupProduct !== 'moving' && areas.length > 0 && areas.length < 3 && !allUk) {
-        return res.status(400).json({ error: 'Please choose at least 3 areas or counties for your ' + signupProduct + ' leads (you selected ' + areas.length + ').', too_few_areas: true, min_areas: 3 });
-      }
       if (!isPaidUnlimited && areas.length > maxAreas) {
         return res.status(400).json({ error: 'Please choose at most ' + maxAreas + ' postcode areas. You selected ' + areas.length + '.', too_many_areas: true, max_areas: maxAreas });
       }
+    }
+
+    // OTHER lead types (probate/planning/newbusiness/tenders), ANY coverage
+    // (postcode or county): must choose at least 3 areas/counties so delivery has
+    // enough supply — unless they're all-uk or on an unlimited plan.
+    var signupProdOther = String(product || '').toLowerCase();
+    var planKeyOther = String(planName || plan || 'free_trial').toLowerCase();
+    var isUnlimitedOther = (planKeyOther === 'pro' || planKeyOther === 'enterprise');
+    var allUkOther = (areas || []).some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
+    if (!isUnlimitedOther && signupProdOther !== 'moving' && (areas || []).length > 0 && (areas || []).length < 3 && !allUkOther) {
+      return res.status(400).json({ error: 'Please choose at least 3 areas or counties for your ' + signupProdOther + ' leads (you selected ' + (areas || []).length + ').', too_few_areas: true, min_areas: 3 });
     }
 
     var signupIp = req.ip || req.connection?.remoteAddress || '';
