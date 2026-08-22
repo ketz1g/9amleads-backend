@@ -10278,7 +10278,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': file=' + (PRODUCT_LEAD_FILES[r2prod] ? PRODUCT_LEAD_FILES[r2prod].file : 'moving-leads.json') + ' flattened=' + poolArr.length);
                 if (Array.isArray(poolArr) && poolArr.length > 0) {
                   var existingKeys = {};
-                  (db.leads || []).forEach(function(l){ if(l.product===r2prod){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); existingKeys[k]=1; }catch(e){} } });
+                  // PER-CUSTOMER dedup (was product-level — a pool lead delivered to
+                  // one customer was blocked from filling a different customer).
+                  (db.leads || []).forEach(function(l){ if(l.product===r2prod && l.customer_id === cust.id){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); existingKeys[k]=1; }catch(e){} } });
                   var createdFromPool = [];
                   for (var pf=0; pf<poolArr.length && createdFromPool.length < totalNeeded; pf++) {
                     var rl = poolArr[pf];
@@ -10500,7 +10502,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             }
             if (!Array.isArray(fgArr) || fgArr.length === 0) continue;
             var fgExisting = {};
-            (db.leads || []).forEach(function(l){ if(l.product===fgProd){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); fgExisting[k]=1; }catch(e){} } });
+            // PER-CUSTOMER dedup (was product-level — a pool lead delivered to one
+            // customer was being blocked from filling a DIFFERENT customer, which
+            // shrank usable supply at scale and caused false "no leads in pool").
+            (db.leads || []).forEach(function(l){ if(l.product===fgProd && l.customer_id === cust.id){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); fgExisting[k]=1; }catch(e){} } });
             var fgNeed = totalNeeded - custLeads.length;
             var fgCreated = 0;
             for (var fgi = 0; fgi < fgArr.length && fgCreated < fgNeed; fgi++) {
