@@ -517,10 +517,14 @@ function setAllUK() { selectedCoverage = 'ukwide'; signupPostcodes = ['all-uk'];
    var validArea = VALID_POSTCODE_AREAS.some(function(a) { return a === areaNorm || (areaNorm.length >= 3 && areaNorm.indexOf(a) === 0 && VALID_POSTCODE_AREAS.indexOf(areaNorm.substring(0, areaNorm.length <= 2 ? areaNorm.length : 2)) !== -1); });
    var validExact = VALID_POSTCODE_AREAS.indexOf(areaNorm) !== -1;
    if (!validExact) {
+     // Normalise a district/postcode to its AREA code: try the 2-letter prefix
+     // first ("SW1A" -> "SW"), then the 1-letter prefix ("L36" -> "L", "M25" -> "M").
      var two = areaNorm.substring(0, 2);
+     var one = areaNorm.substring(0, 1);
      if (VALID_POSTCODE_AREAS.indexOf(two) !== -1) {
-       // "L36" -> area "L" — normalise to the AREA code
        area = two;
+     } else if (VALID_POSTCODE_AREAS.indexOf(one) !== -1) {
+       area = one;
      } else {
        err.textContent = '"' + area + '" is not a UK postcode area. Pick from the list (e.g. L for Liverpool, M for Manchester, SW, EN, CM).'; err.style.display = 'block'; return;
      }

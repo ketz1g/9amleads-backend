@@ -2721,7 +2721,12 @@ app.post('/api/auth/signup', async (req, res) => {
     // "All of UK" is available to EVERY customer now (any plan). Normalise it to
     // ukwide coverage so the delivery knows to skip area matching on the next run.
     var ukAreas = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
-    if (ukAreas) { areas = ['All UK']; coverage = 'ukwide'; }
+    if (ukAreas || String(coverage || '').toLowerCase() === 'ukwide') { areas = ['All UK']; coverage = 'ukwide'; }
+    else if (areas.length === 0) {
+      // Zero areas + no All of UK = nothing to deliver against. Block it so a
+      // customer never signs up with no coverage (matches the frontend check).
+      return res.status(400).json({ error: 'Please choose at least one area or county, or select All of UK.' });
+    }
 
     // Validate product count by plan
     var productsList = req.body.products || [product];
@@ -3684,6 +3689,7 @@ app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
       saveDb();
       return res.json({ success: true, areas: ['All UK'], coverage: 'ukwide' });
     }
+    if (areas.length === 0) return res.status(400).json({ error: 'Please choose at least one area or county, or select All of UK.', too_few_areas: true });
     if (!isPaidUnlimited && areas.length > maxAreas) return res.status(400).json({ error: 'Please choose at most ' + maxAreas + ' postcode areas.', too_many_areas: true, max_areas: maxAreas });
     var clean = areas.map(function(a){ return String(a).toUpperCase().trim(); }).filter(Boolean);
     // PER-PRODUCT MINIMUMS (same rules as signup): moving must keep exactly the
