@@ -4306,11 +4306,19 @@ app.post('/api/support', authMiddleware, async (req, res) => {
 
 // GET /api/leads
 app.get('/api/leads', authMiddleware, (req, res) => {
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+  // TRIAL-GATE: an expired free trial's leads are HIDDEN until the customer pays
+  // for a package (Starter/Pro/Enterprise). Once they pay, plan != free_trial and
+  // their previous + new leads show again. This stops a trial account that ended
+  // from continuing to use the dashboard's lead history for free.
+  var now = new Date();
+  var trialGated = customer && customer.plan === 'free_trial' && customer.trial_ends && new Date(customer.trial_ends) < now;
+  if (trialGated) {
+    return res.json({ gated: true, trial_ended: true, message: 'Your free trial has ended. Upgrade to a Starter, Pro or Enterprise package to unlock your leads again.', leads: [] });
+  }
   const leads = db.prepare(
     'SELECT * FROM leads WHERE customer_id = ? ORDER BY created_at DESC LIMIT 50'
   ).all(req.user.id);
-
-  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
 
   const nowIso = new Date().toISOString();
   const visible = leads.filter(function(l) {

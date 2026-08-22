@@ -116,6 +116,11 @@ footer a{color:var(--accent);text-decoration:underline}
 </div>
 
 <div class="loading" id="leads-loading"><i class="fas fa-spinner fa-spin"></i>&nbsp; Loading your leads...</div>
+<div id="trial-gate" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:26px 22px;text-align:center;margin:10px 0">
+  <div style="font-size:18px;font-weight:800;color:#b91c1c;margin-bottom:6px"><i class="fas fa-lock" style="margin-right:6px"></i>Your free trial has ended</div>
+  <div style="font-size:13px;color:#7f1d1d;line-height:1.6;margin-bottom:16px">Your leads are locked until you upgrade to a Starter, Pro or Enterprise package. Once you pay, your previous leads come back and you'll get your fresh leads every weekday morning at 9am.</div>
+  <a href="/pricing/" class="btn btn-primary btn-sm" style="color:#fff;text-decoration:none;padding:10px 24px"><i class="fas fa-arrow-up"></i> Upgrade Now</a>
+</div>
 <div id="leads-container"></div>
 <div class="empty" id="no-leads" style="display:none"><i class="fas fa-inbox"></i><h3 style="font-size:16px;font-weight:700;margin-bottom:4px">No leads yet</h3><p style="font-size:13px">Your first leads will arrive at 9am tomorrow.</p></div>
 </div>
@@ -775,8 +780,17 @@ var _token = '';
   x.onload = function() {
     try {
       var leads = JSON.parse(x.responseText);
+      // TRIAL-GATE: expired free trial -> show the upgrade prompt + hide leads.
+      if (leads && leads.gated) {
+        document.getElementById('leads-loading').style.display = 'none';
+        var gc = document.getElementById('leads-container'); if (gc) gc.innerHTML = '';
+        var gn = document.getElementById('no-leads'); if (gn) gn.style.display = 'none';
+        var gg = document.getElementById('trial-gate'); if (gg) gg.style.display = 'block';
+        return;
+      }
       if (!Array.isArray(leads)) return;
       document.getElementById('leads-loading').style.display = 'none';
+      document.getElementById('trial-gate').style.display = 'none';
       allLeads = leads.sort(function(a,b){return(b.created_at||'').localeCompare(a.created_at||'');});
       var today = new Date().toISOString().split('T')[0];
       // Count DELIVERED leads (the actual plan promise). created_at includes
