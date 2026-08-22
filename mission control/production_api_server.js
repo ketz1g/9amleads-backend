@@ -1892,22 +1892,22 @@ function dmEmailHTML(title, body, ctaText, ctaUrl) {
   var accent = '#0ea5e9';
   // Email-safe layout: tables (no flexbox — flex misaligns in Outlook/Gmail).
   // Logo: "9" box centered via line-height + text-align, not flex.
-  return '<div style="background:#07090f;padding:32px 20px;font-family:Inter,Helvetica,Arial,sans-serif">' +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto"><tr><td style="background:#0c0f1a;border-radius:16px;border:1px solid #151929;overflow:hidden">' +
+  return '<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><style>:root{color-scheme:dark}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobv{padding:18px 16px!important}}</style></head><body style="margin:0;padding:0"><div style="background:#07090f;padding:32px 20px;font-family:Inter,Helvetica,Arial,sans-serif">' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto"><tr><td bgcolor="#0c0f1a" style="background:#0c0f1a;border-radius:16px;border:1px solid #151929;overflow:hidden">' +
     // Header with aligned logo
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:20px 24px;background:#0f1422;border-bottom:1px solid #151929"><table role="presentation" cellpadding="0" cellspacing="0"><tr>' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td bgcolor="#0f1422" class="mob" style="padding:20px 24px;background:#0f1422;border-bottom:1px solid #151929"><table role="presentation" cellpadding="0" cellspacing="0"><tr>' +
     '<td style="width:34px;height:34px;background-color:#0ea5e9;border-radius:9px;text-align:center;vertical-align:middle;line-height:32px;font-family:Georgia,\'Times New Roman\',serif;font-size:18px;font-weight:900;color:#ffffff">9</td>' +
     '<td style="padding-left:10px;vertical-align:middle"><div style="font-size:17px;font-weight:800;color:#38bdf8;font-family:Inter,Helvetica,Arial,sans-serif;line-height:1.1">9am<span style="color:' + accent + '">Leads</span></div><div style="font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-top:2px;font-family:Inter,Helvetica,Arial,sans-serif">Print &amp; Post</div></td>' +
     '</tr></table></td></tr></table>' +
     // Body
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:26px 28px">' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td class="mobv" style="padding:26px 28px">' +
     '<h2 style="font-size:20px;font-weight:800;color:#dce2f0;margin:0 0 10px;font-family:Inter,Helvetica,Arial,sans-serif">' + title + '</h2>' +
     '<div style="font-size:13px;color:#8890b0;line-height:1.7;font-family:Inter,Helvetica,Arial,sans-serif">' + body + '</div>' +
     (ctaText && ctaUrl ? '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:22px 0 4px"><a href="' + ctaUrl + '" style="display:inline-block;padding:13px 32px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-size:13px;font-weight:700;font-family:Inter,Helvetica,Arial,sans-serif">' + ctaText + '</a></td></tr></table>' : '') +
     // Footer
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:20px 0 0;border-top:1px solid #151929;font-size:11px;color:#94a3b8;text-align:center;font-family:Inter,Helvetica,Arial,sans-serif">9amLeads &middot; <a href="https://9amleads.com" style="color:' + accent + ';text-decoration:none">9amleads.com</a><br><span style="color:#64748b">hello@9amleads.com &middot; Fresh business leads every morning at 9am</span></td></tr></table>' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td class="mob" style="padding:20px 0 0;border-top:1px solid #151929;font-size:11px;color:#94a3b8;text-align:center;font-family:Inter,Helvetica,Arial,sans-serif">9amLeads &middot; <a href="https://9amleads.com" style="color:' + accent + ';text-decoration:none">9amleads.com</a><br><span style="color:#64748b">hello@9amleads.com &middot; Fresh business leads every morning at 9am</span></td></tr></table>' +
     '</td></tr></table>' +
-    '</td></tr></table></div>';
+    '</td></tr></table></div></body></html>';
 }
 
 function dmDashboardNotify(customerId, type, title, message, link) {
@@ -9287,17 +9287,17 @@ cron.schedule('30 8 * * 1', async () => {
       var leadCount = weekLeads.length;
       var leadTypeLabel = cc.lead_type || 'opportunities';
 
-      var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head><body style="margin:0;padding:0;background:#0f111a;font-family:Inter,Arial,Helvetica,sans-serif;color:#e2e8f0">';
+      var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><style>:root{color-scheme:dark}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobv{padding:20px 16px!important}.mobstat{display:block!important;width:100%!important;margin-bottom:10px!important}}</style></head><body style="margin:0;padding:0;background:#0f111a;font-family:Inter,Arial,Helvetica,sans-serif;color:#e2e8f0">';
       html += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px">';
       html += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
       html += '<tr><td bgcolor="#0f111a" style="background-color:#0f111a;background-image:linear-gradient(135deg,#0f111a,#1a1b2e);padding:22px 30px 16px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
       html += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:#fff">9am<span style="color:' + brand.light + '">Leads</span></div>';
       html += '<div style="font-size:9px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;font-weight:600">Your Weekly Performance Summary</div></td></tr>';
-      html += '<tr><td style="background:#12141e;padding:26px 30px 22px">';
+      html += '<tr><td class="mobv" bgcolor="#12141e" style="background:#12141e;padding:26px 30px 22px">';
       html += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#f1f5f9;margin:0 0 6px">Here\'s your week, ' + (cc.company || 'there') + '</h2>';
       html += '<p style="color:#cbd5e1;font-size:13px;margin:0 0 18px">Your daily ' + leadTypeLabel.toLowerCase() + ' from ' + new Date(weekAgo).toLocaleDateString('en-GB', { day:'numeric', month:'short' }) + ' to today.</p>';
       html += '<table cellpadding="0" cellspacing="0" width="100%"><tr>';
-      html += '<td style="width:50%;vertical-align:top;padding:16px 18px;background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.04));border:1px solid rgba(16,185,129,0.2);border-radius:12px;text-align:center"><div style="font-size:30px;font-weight:900;color:#10b981;line-height:1">' + leadCount + '</div><div style="font-size:11px;color:#6ee7b7;margin-top:4px;font-weight:600">LEADS THIS WEEK</div></td>';
+      html += '<td class="mobstat" style="width:50%;vertical-align:top;padding:16px 18px;background-color:rgba(16,185,129,0.08);background-image:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.04));border:1px solid rgba(16,185,129,0.2);border-radius:12px;text-align:center"><div style="font-size:30px;font-weight:900;color:#10b981;line-height:1">' + leadCount + '</div><div style="font-size:11px;color:#6ee7b7;margin-top:4px;font-weight:600">LEADS THIS WEEK</div></td>';
       html += '<td style="width:4%"></td>';
       html += '<td style="width:46%;vertical-align:top;padding:16px 18px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;text-align:center"><div style="font-size:30px;font-weight:900;color:#818cf8;line-height:1">' + totalLeads + '</div><div style="font-size:11px;color:#a5b4fc;margin-top:4px;font-weight:600">TOTAL LEADS ALL TIME</div></td>';
       html += '</tr></table>';
