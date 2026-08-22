@@ -3632,10 +3632,11 @@ app.post('/api/admin/set-plan', adminAuth, (req, res) => {
     if (plan === 'free_trial') {
       // Restore a test/refunded account to a fresh free trial (admin/test tool).
       var newTrialEnd = new Date(Date.now() + 7 * 86400000).toISOString();
+      var ftLpd = parseInt(cust.leads_per_day, 10) > 0 ? parseInt(cust.leads_per_day, 10) : 5;
       db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = ?, leads_paused = 0, auto_send_paused = 0 WHERE id = ?')
-        .run('free_trial', cust.leads_per_day || 5, newTrialEnd, cust.id);
+        .run('free_trial', ftLpd, newTrialEnd, cust.id);
       saveDb();
-      return res.json({ success: true, email: email, plan: 'free_trial', leads_per_day: cust.leads_per_day || 5, trial_ends: newTrialEnd });
+      return res.json({ success: true, email: email, plan: 'free_trial', leads_per_day: ftLpd, trial_ends: newTrialEnd });
     }
     applyPlan(cust, plan, cust.product);
     saveDb();
