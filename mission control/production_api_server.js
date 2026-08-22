@@ -11326,7 +11326,10 @@ app.post('/api/stripe/webhook', async (req, res) => {
       var invCustomer = inv.customer ? db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(inv.customer) : null;
       if (!invCustomer && invCustEmail) invCustomer = db.prepare('SELECT * FROM customers WHERE email = ?').get(invCustEmail);
       if (invCustomer) {
-        db.prepare('UPDATE customers SET auto_send_paused = 0, leads_paused = 0, plan = COALESCE(plan, ?) WHERE id = ?').run('starter', invCustomer.id);
+        // No COALESCE — the JSON DB shim doesn't support it, which silently broke
+        // this UPDATE and left leads_paused stuck at 1 after a recovery.
+        var invKeepPlan = invCustomer.plan || 'starter';
+        db.prepare('UPDATE customers SET auto_send_paused = 0, leads_paused = 0, plan = ? WHERE id = ?').run(invKeepPlan, invCustomer.id);
         saveDb();
         console.log('[STRIPE] Weekly renewal paid: ' + (invCustomer.email || invCustomer.id));
         // AFFILIATE: a referred customer PAID their first invoice for a paid package
