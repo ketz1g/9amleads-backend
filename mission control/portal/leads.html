@@ -231,7 +231,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + biz + '</div>' +
         '<div class="meta">' + (d.address||'') + '</div>' +
         '<div class="meta">' + metaParts.join(' \u00b7 ') + (chLink ? ' \u00b7 ' + chLink : '') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + mailBtn(l.id, d) + rejectBtn(l.id, d) + outcomeBtn(l.id, d) + '</div></div>';
     } else if (product === 'probate') {
       var pName = d.deceasedName || d.name || 'Probate Estate';
       var pAddr = d.deceasedAddress || d.address || '';
@@ -248,7 +248,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + pName + '</div>' +
         '<div class="meta">' + pFullAddr + '</div>' +
         '<div class="meta">' + pMeta.join(' \u00b7 ') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + mailBtn(l.id, d) + rejectBtn(l.id, d) + outcomeBtn(l.id, d) + '</div></div>';
     } else if (product === 'planning') {
       var planTitle = d.address || (d.description||'').substring(0,40) || 'Planning Application';
       var planDate = d.dateSubmitted || d.receivedDate || d.date_received || l.created_at || '';
@@ -335,6 +335,26 @@ function rejectLead(leadId){
       else { alert(d.error || 'Could not reject lead'); }
     })
     .catch(function(e){ alert('Error: ' + e.message); });
+}
+// Track the outcome of a lead (Contacted / Quoted / Won).
+function outcomeBtn(leadId, d){
+  var cur = (d && d.lead_status) || 'new';
+  var lbls = { new: '#64748b', contacted: '#f59e0b', quoted: '#0ea5e9', won: '#16a34a' };
+  function btn(st, label){
+    var active = cur === st;
+    var col = lbls[st] || '#64748b';
+    return '<button onclick="setLeadStatus(\'' + leadId + '\',\'' + st + '\')" title="Mark as ' + label + '" style="padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid ' + col + ';background:' + (active ? col : '#fff') + ';color:' + (active ? '#fff' : col) + ';margin-right:4px">' + label + '</button>';
+  }
+  return '<div style="margin-top:5px;display:flex;align-items:center;gap:2px;flex-wrap:wrap">' +
+    '<span style="font-size:9px;color:var(--muted);margin-right:2px">Outcome:</span>' +
+    btn('contacted','Contacted') + btn('quoted','Quoted') + btn('won','Won') +
+    '</div>';
+}
+function setLeadStatus(leadId, status){
+  fetch('/api/leads/' + leadId + '/status', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token }, body: JSON.stringify({ status: status }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if(d.success){ loadLeads(); } else { alert(d.error || 'Could not update status'); } })
+    .catch(function(){ alert('Server error'); });
 }
 function mailBtn(leadId, d){
    // If already posted, show a "Post Again" button (for a follow-up letter after a
