@@ -3515,6 +3515,15 @@ cron.schedule('30 9 * * *', async () => {
   } catch(wce) { console.log('[WARMUP] cron error:', wce.message); }
 }, { timezone: 'Europe/London' });
 
+// GET /api/admin/trade-state — read the trade-email scraper's last run state.
+app.get('/api/admin/trade-state', adminAuth, (req, res) => {
+  try {
+    var tf = path.join(DATA_DIR, 'trade_emails_state.json');
+    var st = fs.existsSync(tf) ? JSON.parse(fs.readFileSync(tf, 'utf-8')) : {};
+    res.json(st);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/trade-scrape — scrape the newest UK companies (Companies House-
 // backed newbusiness pool), classify them by SIC into trades, find each company's
 // email from its website, and (optionally) import them into Brevo lists per trade.
@@ -3534,7 +3543,7 @@ app.post('/api/admin/trade-scrape', adminAuth, async (req, res) => {
 cron.schedule('0 11 * * *', async () => {
   try {
     var tradeC = require('./trade_email_scraper');
-    var tcr = await tradeC.collectTradeEmails(300, true);
+    var tcr = await tradeC.collectTradeEmails(100, true);
     console.log('[TRADE-EMAIL] daily:', JSON.stringify(tcr).substring(0, 250));
   } catch(tce) { console.log('[TRADE-EMAIL] cron error:', tce.message); }
 }, { timezone: 'Europe/London' });
