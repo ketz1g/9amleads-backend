@@ -5754,70 +5754,106 @@ app.get('/api/admin/customer-leads', adminAuth, (req, res) => {
 // moving_type, freshness 24-48h, lead filters, not-already-delivered, exact
 // count). READ-ONLY - nothing is delivered or emailed. Run after the 6am scrape
 // for the most accurate preview of the 9am delivery.
-app.get('/api/admin/delivery-preview', adminAuth, (req, res) => {
+app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
   try {
     var emailFilter = String((req.query && req.query.email) || '').toLowerCase().trim();
     var dbP = getDb();
     var customers = (dbP.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!emailFilter || String(c.email||'').toLowerCase() === emailFilter); });
-    var freshCutoff = getFreshCutoffIso();
     var out = [];
-    customers.forEach(function(cust) {
-      var areas = [];
-      try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
-      if (!areas.length) { try { var cfgP = JSON.parse(cust.product_config || '{}'); areas = (cfgP[cust.product] && cfgP[cust.product].target_areas) ? JSON.parse(cfgP[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
-      var limit = getPlanLimit(cust.product, cust.plan, cust.coverage) || 5;
-      var movingType = 'both';
-      try { var cfgM = JSON.parse(cust.product_config || '{}'); movingType = (cfgM.moving && cfgM.moving.moving_type) || cust.moving_type || 'both'; } catch(e3) { movingType = cust.moving_type || 'both'; }
-      // already-delivered keys (same as delivery)
-      var deliveredKeys = {};
-      (dbP.leads || []).forEach(function(l) {
-        if (l.customer_id === cust.id && l.delivered) {
-          try { var dd = JSON.parse(l.data || '{}'); var u = dd.url || ''; if (u) deliveredKeys['u:' + u] = 1; var a = String(dd.fullAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30); if (a) deliveredKeys['a:' + a] = 1; } catch(e) {}
-        }
-      });
-      var pool = loadProductPool(cust.product);
-      var maxBedsF = 99;
-      try { var f2P = JSON.parse(cust.biz_field2 || '{}'); var fPP = f2P.moving || f2P; maxBedsF = parseInt(fPP['f-maxbeds'] || fPP['f-bed-max'] || fPP.maxBedrooms) || 99; } catch(e) { maxBedsF = 99; }
-      var interleaved = interleavePoolByAreas(pool, areas);
-      var selected = [];
-      var seen = {};
-      var leadFilters = {};
-      try { leadFilters = JSON.parse(cust.biz_field2 || '{}'); } catch(e) { leadFilters = {}; }
-      for (var i = 0; i < interleaved.length && selected.length < limit; i++) {
-        var l = interleaved[i];
-        var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
-        var matched = false;
-        var ukwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas||[]).join(' '));
-        if (cust.product === 'moving') {
-          if (ukwide || (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l)))) matched = true;
-          // Same full-address gate as the real delivery: a moving lead without a
-          // door/flat number or named building is NOT shown as deliverable.
-          if (matched) {
-            var vReason = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
-            if (vReason) continue;
-          }
-        } else {
-          if (ukwide) matched = true;
-          else {
-            var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(l.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
-            var pcMatch = areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g,'-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
-            if (countyMatch || pcMatch) matched = true;
-          }
-        }
-        if (!matched) continue;
-        var fv = pickFreshDate(l);
-        if (!fv) continue;
-        if (cust.product === 'moving') { if (fv < freshCutoff) continue; }
-        else { var backfillCutoff = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < backfillCutoff) continue; }
-        if (cust.product === 'moving' && maxBedsF < 99 && (parseInt(l.bedrooms, 10) || 99) > maxBedsF) continue;
-        var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
-        if (deliveredKeys[key] || seen[key]) continue;
-        seen[key] = 1;
-        selected.push({ address: l.address || l.fullAddress || '', postcode: l.postcode || '', url: l.url || '', county: l.county || '', source: l.source || '' });
-      }
-      out.push({ email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, preview_count: selected.length, leads: selected });
-    });
+    for (var pi = 0; pi < customers.length; pi++) {
+      var pv = await deliveryPreviewForCustomer(customers[pi]);
+      out.push({ email: pv.email, company: pv.company, product: pv.product, plan: pv.plan, areas: pv.areas, promised: pv.promised, preview_count: pv.count, leads: pv.leads, error: pv.error || '' });
+    }
     res.json({ success: true, generated_at: new Date().toISOString(), note: 'Preview based on the current pool - run after the 6am scrape for the most accurate 9am preview.', customers: out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// deliveryPreviewForCustomer(cust) — the per-customer pool preview used by both
+// /api/admin/delivery-preview and /api/admin/readiness. Returns how many valid,
+// in-area, fresh leads the customer would receive at 9am with the current pool.
+async function deliveryPreviewForCustomer(cust) {
+  var areas = [];
+  try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
+  if (!areas.length) { try { var cfgP = JSON.parse(cust.product_config || '{}'); areas = (cfgP[cust.product] && cfgP[cust.product].target_areas) ? JSON.parse(cfgP[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
+  var limit = getPlanLimit(cust.product, cust.plan, cust.coverage) || 5;
+  var movingType = 'both';
+  try { var cfgM = JSON.parse(cust.product_config || '{}'); movingType = (cfgM.moving && cfgM.moving.moving_type) || cust.moving_type || 'both'; } catch(e3) { movingType = cust.moving_type || 'both'; }
+  var dbV = getDb();
+  var freshCutoff = getFreshCutoffIso();
+  var deliveredKeys = {};
+  (dbV.leads || []).forEach(function(l) {
+    if (l.customer_id === cust.id && l.delivered) {
+      try { var dd = JSON.parse(l.data || '{}'); var u = dd.url || ''; if (u) deliveredKeys['u:' + u] = 1; var a = String(dd.fullAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30); if (a) deliveredKeys['a:' + a] = 1; } catch(e) {}
+    }
+  });
+  var pool = loadProductPool(cust.product);
+  var maxBedsF = 99;
+  try { var f2P = JSON.parse(cust.biz_field2 || '{}'); var fPP = f2P.moving || f2P; maxBedsF = parseInt(fPP['f-maxbeds'] || fPP['f-bed-max'] || fPP.maxBedrooms) || 99; } catch(e) { maxBedsF = 99; }
+  var interleaved = interleavePoolByAreas(pool, areas);
+  var selected = [];
+  var seen = {};
+  var leadFilters = {};
+  try { leadFilters = JSON.parse(cust.biz_field2 || '{}'); } catch(e) { leadFilters = {}; }
+  for (var i = 0; i < interleaved.length && selected.length < limit; i++) {
+    var l = interleaved[i];
+    var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
+    var matched = false;
+    var ukwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas||[]).join(' '));
+    if (cust.product === 'moving') {
+      if (ukwide || (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l)))) matched = true;
+      if (matched) {
+        var vReason = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
+        if (vReason) continue;
+      }
+    } else {
+      if (ukwide) matched = true;
+      else {
+        var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(l.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
+        var pcMatch = areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g,'-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
+        if (countyMatch || pcMatch) matched = true;
+      }
+    }
+    if (!matched) continue;
+    var fv = pickFreshDate(l);
+    if (!fv) continue;
+    if (cust.product === 'moving') { if (fv < freshCutoff) continue; }
+    else { var backfillCutoff = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < backfillCutoff) continue; }
+    if (cust.product === 'moving' && maxBedsF < 99 && (parseInt(l.bedrooms, 10) || 99) > maxBedsF) continue;
+    var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
+    if (deliveredKeys[key] || seen[key]) continue;
+    seen[key] = 1;
+    selected.push({ address: l.address || l.fullAddress || '', postcode: l.postcode || '', url: l.url || '', county: l.county || '', source: l.source || '' });
+  }
+  return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: selected.length, leads: selected, error: selected.length < limit ? 'supply low in ' + areas.join(', ') : '' };
+}
+
+// GET /api/admin/readiness — run the delivery preview for EVERY real customer and
+// report which would be fulfilled at 9am. This is the pre-delivery safety check:
+// run it after the 6am scrape (or at 07:45 via the cron below) so any customer
+// whose areas would shortfall is flagged BEFORE the 9am delivery, giving time to
+// deep-scrape their areas or top up.
+app.get('/api/admin/readiness', adminAuth, async (req, res) => {
+  try {
+    var dbR = getDb();
+    var custs = (dbR.customers || []).filter(function(c) {
+      if (c.plan === 'cancelled') return false;
+      if (c.leads_paused) return false;
+      var te = c.trial_ends ? new Date(c.trial_ends) : null;
+      if (c.plan === 'free_trial' && te && new Date() > te) return false;
+      return true;
+    });
+    var rows = [];
+    for (var ri = 0; ri < custs.length; ri++) {
+      var cc = custs[ri];
+      try {
+        var prev = await deliveryPreviewForCustomer(cc);
+        var promised = parseInt(cc.leads_per_day, 10) > 0 ? parseInt(cc.leads_per_day, 10) : (getPlanLimit(cc.product, cc.plan, cc.coverage) || 5);
+        var short = prev.count < promised;
+        rows.push({ email: cc.email, product: cc.product, plan: cc.plan, promised: promised, available: prev.count, status: short ? 'SHORT' : 'OK', areas: prev.areas, last_error: prev.error || '' });
+      } catch(e) { rows.push({ email: cc.email, product: cc.product, plan: cc.plan, status: 'ERROR', last_error: e.message }); }
+    }
+    var shorts = rows.filter(function(r){ return r.status === 'SHORT'; });
+    res.json({ success: true, generated_at: new Date().toISOString(), checked: rows.length, short_count: shorts.length, customers: rows });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -8016,6 +8052,35 @@ cron.schedule('*/10 * * * *', async () => {
     rT.on('error', function(e) { console.log('[TEST-DELIVERY-CRON] error:', e.message); });
     rT.write(bT); rT.end();
   } catch(e) { console.log('[TEST-DELIVERY-CRON] exception:', e.message); }
+}, { timezone: 'Europe/London' });
+
+
+// MONDAY-READINESS CHECK: Mon-Fri 07:45 UK (after the 6am scrape, before the 9am
+// delivery) — preview EVERY real customer and log a loud warning if any would
+// shortfall at 9am, so the admin can deep-scrape the affected areas or top up
+// before customers are due their leads.
+cron.schedule('45 7 * * 1-5', async () => {
+  try {
+    var rdDb = getDb();
+    var rdCusts = (rdDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !c.leads_paused; });
+    var rdShort = [];
+    for (var rdi = 0; rdi < rdCusts.length; rdi++) {
+      try {
+        var rdc = rdCusts[rdi];
+        var rdp = await deliveryPreviewForCustomer(rdc);
+        var rdpromised = parseInt(rdc.leads_per_day, 10) > 0 ? parseInt(rdc.leads_per_day, 10) : (getPlanLimit(rdc.product, rdc.plan, rdc.coverage) || 5);
+        if (rdp.count < rdpromised) rdShort.push(rdc.email + ' (' + rdc.product + '): only ' + rdp.count + '/' + rdpromised + ' in ' + (rdp.areas || []).join(','));
+      } catch(re) {}
+    }
+    if (rdShort.length) {
+      console.log('[READINESS] ⚠ ' + rdShort.length + ' customer(s) would SHORTFALL at 9am: ' + rdShort.join(' | '));
+      // also record so it surfaces in health.last_errors
+      if (__lastErrors) __lastErrors.push({ at: new Date().toISOString(), kind: 'readiness', message: rdShort.join(' | ') });
+      if (__lastErrors && __lastErrors.length > 20) __lastErrors.splice(0, __lastErrors.length - 20);
+    } else {
+      console.log('[READINESS] All ' + rdCusts.length + ' customers look fulfilled for today (' + new Date().toISOString() + ')');
+    }
+  } catch(e) { console.log('[READINESS] error:', e.message); }
 }, { timezone: 'Europe/London' });
 
 
