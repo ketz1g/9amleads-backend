@@ -3584,7 +3584,27 @@ app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
     if (allUk && !isPaidUnlimited) return res.status(400).json({ error: 'All of UK is only available on Pro or Enterprise plans. Pick up to ' + maxAreas + ' areas.', invalid_area: true });
     if (!isPaidUnlimited && areas.length > maxAreas) return res.status(400).json({ error: 'Please choose at most ' + maxAreas + ' postcode areas.', too_many_areas: true, max_areas: maxAreas });
     var clean = areas.map(function(a){ return String(a).toUpperCase().trim(); }).filter(Boolean);
+    // PER-PRODUCT MINIMUMS (same rules as signup): moving must keep exactly the
+    // full 5 postcode areas; other products must keep at least 3 areas/counties —
+    // otherwise delivery under-supplies and the customer's daily promise breaks.
+    var prodKey = String((me && me.product) || '').toLowerCase();
+    if (!isPaidUnlimited && prodKey === 'moving' && clean.length < maxAreas) {
+      return res.status(400).json({ error: 'Moving leads require exactly ' + maxAreas + ' postcode areas (you selected ' + clean.length + ').', too_few_areas: true, max_areas: maxAreas });
+    }
+    if (!isPaidUnlimited && prodKey !== 'moving' && clean.length > 0 && clean.length < 3 && !allUk) {
+      return res.status(400).json({ error: 'Please keep at least 3 areas or counties for your ' + prodKey + ' leads (you selected ' + clean.length + ').', too_few_areas: true, min_areas: 3 });
+    }
     db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(JSON.stringify(clean), req.user.id);
+    // Keep product_config in sync so the delivery + dashboard read the SAME areas.
+    try {
+      var pcfg = {}; try { pcfg = JSON.parse(me.product_config || '{}'); } catch(e) {}
+      if (pcfg[prodKey]) {
+        pcfg[prodKey].target_areas = JSON.stringify(clean);
+        pcfg[prodKey].coverage = me.coverage || 'postcode';
+        db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(JSON.stringify(pcfg), req.user.id);
+      }
+    } catch(e2) {}
+    saveDb();
     res.json({ success: true, areas: clean });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
