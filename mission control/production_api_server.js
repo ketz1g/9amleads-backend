@@ -18831,6 +18831,29 @@ app.post('/api/admin/send-reminder', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/send-campaign-email — send ANY campaign template (trial_day7,
+// trial_day9, etc.) to a specific email so you can review what customers receive
+// at trial-end. Uses that email's customer record for personalisation.
+app.post('/api/admin/send-campaign-email', adminAuth, async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var template = String((req.body && req.body.template) || '').trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    if (!template) return res.status(400).json({ error: 'template required' });
+    var knownTemplates = {};
+    CAMPAIGN_EMAILS.forEach(function(e){ knownTemplates[e.template] = e.subject; });
+    if (!knownTemplates[template]) return res.status(400).json({ error: 'Unknown template "' + template + '". Known: ' + Object.keys(knownTemplates).join(', ') });
+    var dbT = getDb();
+    var cust = (dbT.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'No customer record for ' + email });
+    var subject = getEditedCampaignSubject(template, knownTemplates[template]);
+    var html = getCampaignEmailHTMLWithEdits(cust, template);
+    await sendBrevoEmail({ email: cust.email, name: cust.company || cust.contact_name || 'Customer' }, subject, html);
+    console.log('[SEND-CAMPAIGN] Sent ' + template + ' to ' + cust.email);
+    res.json({ success: true, email: cust.email, template: template, subject: subject });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/cron-status — report delivery cron fire count and server time
 app.get('/api/admin/cron-status', adminAuth, (req, res) => {  res.json({
     server_time: new Date().toISOString(),
