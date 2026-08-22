@@ -328,10 +328,10 @@ function postBadge(d, leadId){
 function rejectBtn(leadId, d){
   // Show the Reject button on EVERY lead (under Print & Post), so the customer can
   // flag any lead as wrong and receive a replacement. It works for posted leads too.
-  return '<button onclick="rejectLead(\'' + leadId + '\')" title="This lead is wrong (e.g. address). Reject it and we\'ll send a replacement." class="mail-btn" style="background:#ef4444;color:#fff"><i class="fas fa-times"></i> Reject</button>';
+  return '<button onclick="rejectLead(\'' + leadId + '\')" title="This lead is wrong (e.g. address). Reject it and we\'ll send a replacement." class="mail-btn" style="background:#ef4444;color:#fff"><i class="fas fa-times"></i> Reject &amp; Replace</button>';
 }
 function rejectLead(leadId){
-  if (!confirm('Reject this lead? We will remove it and send you a replacement lead.')) return;
+  if (!confirm('Reject &amp; Replace this lead? We will remove it and send you a replacement lead.')) return;
   fetch('/api/leads/reject', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token }, body: JSON.stringify({ lead_id: leadId, reason: 'wrong address' }) })
     .then(function(r){ return r.json(); })
     .then(function(d){

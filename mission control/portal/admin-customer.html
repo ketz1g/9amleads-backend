@@ -1,5 +1,5 @@
 async function rejectLeadAdmin(leadId) {
-  if (!confirm('Reject this lead? It will be marked rejected and a replacement will be sent with the next delivery.')) return;
+  if (!confirm('Reject &amp; Replace this lead? It will be marked rejected and a replacement will be sent with the next delivery.')) return;
   try {
     var r = await fetch(API + '/api/admin/reject-lead', { method: 'POST', headers: headers(), body: JSON.stringify({ lead_id: leadId }) });
     var d = await r.json();
@@ -104,7 +104,7 @@ async function load() {
       var st = l.status === 'delivered' ? '<span class="badge badge-delivered">delivered</span>' : (l.rejected ? '<span class="badge badge-rejected" style="background:#f87171;color:#fff">rejected</span>' : '<span class="badge badge-pending">pending</span>');
       var act = '';
       if (!l.delivered) {
-        act += '<button class="btn btn-outline btn-sm" onclick="rejectLeadAdmin(\'' + l.id + '\')">Reject</button> ';
+act += '<button class="btn btn-outline btn-sm" onclick="rejectLeadAdmin(\'' + l.id + '\')">Reject &amp; Replace</button> '; 
         act += '<button class="btn btn-outline btn-sm" onclick="replacePendingLead(\'' + l.id + '\')">Replace</button>';
       }
       rows += '<tr><td>' + st + '</td><td>' + esc((l.address || '-').replace(/\n+/g, ', ')) + '</td><td>' + esc(l.postcode || '-') + '</td><td>' + ok + '</td><td>' + pc + '</td><td>' + url + '</td><td>' + act + '</td></tr>';
