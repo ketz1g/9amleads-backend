@@ -3568,6 +3568,35 @@ cron.schedule('0 11 * * *', async () => {
   } catch(tce) { console.log('[TRADE-EMAIL] cron error:', tce.message); }
 }, { timezone: 'Europe/London' });
 
+// POST /api/admin/trial-expire — backdate a customer's trial_ends to yesterday so
+// the trial-gate engages (support/testing). The real expiry happens naturally.
+app.post('/api/admin/trial-expire', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var cust = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    db.prepare('UPDATE customers SET trial_ends = ? WHERE id = ?').run(new Date(Date.now() - 86400000).toISOString(), cust.id);
+    saveDb();
+    res.json({ success: true, email: email, trial_ended: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/set-plan — apply a paid plan (calls applyPlan: sets plan +
+// leads_per_day + clears trial_ends). Mirrors the post-payment webhook.
+app.post('/api/admin/set-plan', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var plan = String((req.body && req.body.plan) || '').toLowerCase();
+    if (!['starter','pro','enterprise'].includes(plan)) return res.status(400).json({ error: 'plan must be starter, pro or enterprise' });
+    var cust = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    applyPlan(cust, plan, cust.product);
+    saveDb();
+    var after = db.prepare('SELECT * FROM customers WHERE id = ?').get(cust.id);
+    res.json({ success: true, email: email, plan: after.plan, leads_per_day: after.leads_per_day, trial_ends: after.trial_ends });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
