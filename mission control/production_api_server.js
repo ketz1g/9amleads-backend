@@ -3524,18 +3524,19 @@ app.get('/api/admin/trade-state', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/trade-scrape — scrape the newest UK companies (Companies House-
-// backed newbusiness pool), classify them by SIC into trades, find each company's
-// email from its website, and (optionally) import them into Brevo lists per trade.
-// { max: 300, brevo: true }
+// POST /api/admin/trade-scrape — starts the trade-email scrape in the BACKGROUND
+// (returns immediately; the daily cron also runs it). Free sources only.
 app.post('/api/admin/trade-scrape', adminAuth, async (req, res) => {
-  try {
-    var tradeM = require('./trade_email_scraper');
-    var max = parseInt((req.body && req.body.max) || '300', 10);
-    var useBrevo = !!(req.body && req.body.brevo);
-    var tr = await tradeM.collectTradeEmails(max, useBrevo);
-    res.json(tr);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  var max = parseInt((req.body && req.body.max) || '100', 10);
+  var useBrevo = !!(req.body && req.body.brevo);
+  res.json({ success: true, started: true, note: 'Running in background (see /api/admin/trade-state)' });
+  setImmediate(async function() {
+    try {
+      var tradeM = require('./trade_email_scraper');
+      var tr = await tradeM.collectTradeEmails(max, useBrevo);
+      console.log('[TRADE-EMAIL] background run done:', JSON.stringify(tr).substring(0, 200));
+    } catch(tre) { console.log('[TRADE-EMAIL] background error:', tre.message); }
+  });
 });
 
 // Daily trade-email scrape (11:00 UK) — top up the Brevo trade lists with the

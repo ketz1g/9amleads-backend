@@ -186,34 +186,37 @@ async function importToBrevo(trade, contacts) {
 }
 
 // Main entry: newest pool companies -> classify -> find emails -> Brevo lists.
+var _running = false;
 async function collectTradeEmails(maxCompanies, useBrevo) {
-  var companies = await loadNewestPoolCompanies(maxCompanies || 300);
-  var webCache = {};
-  var found = [];
-  for (var i = 0; i < companies.length; i++) {
-    var c = companies[i];
-    var name = c.companyName || c.name || c.company || '';
-    var sic = c.sicCode || c.sic_codes || '';
-    var trade = classifyTrade(sic);
-    var res = await findCompanyEmail(name, webCache);
-    res.forEach(function(r) { found.push({ company: name, trade: trade, email: r.email, website: r.website, sic: sic }); });
-    if (i % 20 === 0) console.log('[TRADE-EMAIL] checked ' + i + '/' + companies.length + ' found ' + found.length);
-  }
-  // Dedupe
-  var seen = {}; var deduped = [];
-  found.forEach(function(f) { if (f.email && !seen[f.email]) { seen[f.email] = 1; deduped.push(f); } });
-  console.log('[TRADE-EMAIL] total found emails: ' + deduped.length);
-  // Import to Brevo per trade
-  if (useBrevo) {
-    var byTrade = {};
-    deduped.forEach(function(f) { (byTrade[f.trade] = byTrade[f.trade] || []).push(f); });
-    for (var t in byTrade) {
-      var n = await importToBrevo(t, byTrade[t]);
-      console.log('[TRADE-EMAIL] Brevo import ' + t + ': ' + n);
+  if (_running) return { success: true, skipped: true, note: 'A run is already in progress' };
+  _running = true;
+  try {
+    var companies = await loadNewestPoolCompanies(maxCompanies || 100);
+    var webCache = {};
+    var found = [];
+    for (var i = 0; i < companies.length; i++) {
+      var c = companies[i];
+      var name = c.companyName || c.name || c.company || '';
+      var sic = c.sicCode || c.sic_codes || '';
+      var trade = classifyTrade(sic);
+      var res = await findCompanyEmail(name, webCache);
+      res.forEach(function(r) { found.push({ company: name, trade: trade, email: r.email, website: r.website, sic: sic }); });
+      if (i % 20 === 0) console.log('[TRADE-EMAIL] checked ' + i + '/' + companies.length + ' found ' + found.length);
     }
-  }
-  fs.writeFileSync(STATE_FILE, JSON.stringify({ last_run: new Date().toISOString(), companies_checked: companies.length, emails_found: deduped.length }, null, 2));
-  return { success: true, checked: companies.length, emails_found: deduped.length, samples: deduped.slice(0, 10) };
+    var seen = {}; var deduped = [];
+    found.forEach(function(f) { if (f.email && !seen[f.email]) { seen[f.email] = 1; deduped.push(f); } });
+    console.log('[TRADE-EMAIL] total found emails: ' + deduped.length);
+    if (useBrevo) {
+      var byTrade = {};
+      deduped.forEach(function(f) { (byTrade[f.trade] = byTrade[f.trade] || []).push(f); });
+      for (var t in byTrade) {
+        var n = await importToBrevo(t, byTrade[t]);
+        console.log('[TRADE-EMAIL] Brevo import ' + t + ': ' + n);
+      }
+    }
+    fs.writeFileSync(STATE_FILE, JSON.stringify({ last_run: new Date().toISOString(), companies_checked: companies.length, emails_found: deduped.length, by_trade: deduped.reduce(function(o, f) { o[f.trade] = (o[f.trade] || 0) + 1; return o; }, {}) }, null, 2));
+    return { success: true, checked: companies.length, emails_found: deduped.length, samples: deduped.slice(0, 10) };
+  } finally { _running = false; }
 }
 
 module.exports = { collectTradeEmails, classifyTrade };
