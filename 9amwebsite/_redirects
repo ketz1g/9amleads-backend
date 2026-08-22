@@ -1,0 +1,14 @@
+/api/*  https://nineamleads-backend.onrender.com/api/:splat  200
+/portal/*  https://nineamleads-backend.onrender.com/portal/:splat  200
+/portal  https://nineamleads-backend.onrender.com/portal/  200
+/blog/*  https://nineamleads-backend.onrender.com/blog/:splat  200
+/blog  https://nineamleads-backend.onrender.com/blog  200
+/sitemap.xml  https://nineamleads-backend.onrender.com/sitemap.xml  200
+/robots.txt  https://nineamleads-backend.onrender.com/robots.txt  200
+/founder/*  /founder/:splat  200
+/movingleadsdaily/*  /movingleadsdaily/:splat  200
+/probateleads/*  /probateleads/:splat  200
+/newbusinessalert/*  /newbusinessalert/:splat  200
+/planningleads/*  /planningleads/:splat  200
+/tenders/*  /tenders/:splat  200
+/*  /404.html  404
