@@ -3755,6 +3755,30 @@ app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/auth/reactivate-trial — claim the "fresh 1-week free trial" offered
+// after ~3 months. Resets trial_ends (+7 days), restarts the campaign sequence
+// (so they get the full trial journey again) and resumes delivery. Capped by
+// MAX_TRIAL_RESETS (default 2) so the funnel converts, not freeloads.
+app.post('/api/auth/reactivate-trial', authMiddleware, (req, res) => {
+  try {
+    var cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!cust) return res.status(404).json({ error: 'User not found' });
+    if (cust.plan !== 'free_trial') {
+      return res.json({ success: true, already_active: true, message: 'Your account is already active \u2014 no need to reactivate.' });
+    }
+    var maxResets = parseInt(process.env.MAX_TRIAL_RESETS || '2', 10);
+    var resets = parseInt(cust.trial_resets || '0', 10);
+    if (resets >= maxResets) {
+      return res.status(400).json({ error: 'You\u2019ve already used your free reactivations. Your package options are in your dashboard.', limit_reached: true, resets_used: resets, max_resets: maxResets });
+    }
+    var newEnd = new Date(Date.now() + 7 * 86400000).toISOString();
+    db.prepare('UPDATE customers SET trial_ends = ?, trial_cancelled = NULL, campaign_sent = ?, trial_resets = ? WHERE id = ?')
+      .run(newEnd, '[]', resets + 1, req.user.id);
+    saveDb();
+    res.json({ success: true, message: 'Your 1-week free trial has been reactivated. Your leads resume at 9am tomorrow.', trial_ends: newEnd, resets_used: resets + 1, max_resets: maxResets });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== PASSWORD RESET =====
 
 // POST /api/auth/forgot-password — send reset link
@@ -6586,20 +6610,40 @@ async function addBrevoContact(customer) {
   });
 }
 
-async function sendBrevoEmail(to, subject, htmlContent) {
+async function stripHtmlToText(html) {
+  return String(html || '')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|tr|h1|h2|h3|li|table)>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n\s*\n+/g, '\n\n')
+    .trim();
+}
+
+function sendBrevoEmail(to, subject, htmlContent) {
   if (!BREVO_API_KEY) return;
   const https = require('https');
-  // Sender: hello@9amleads.com is the only registered Brevo sender.
-  // Domain authentication is in progress (can take up to 48h); once verified,
-  // emails will reliably reach inboxes. Until then delivery may be filtered.
+  // Sender: hello@9amleads.com is the registered Brevo sender with SPF/DKIM/DMARC
+  // published (9amleads.com). A plain-text version + reply-to improve deliverability
+  // (spam filters reward text alternatives; a reply address builds sender trust).
   var senderFrom = 'hello@9amleads.com';
   var senderName = '9amLeads';
   const data = JSON.stringify({
     sender: { name: senderName, email: senderFrom },
+    replyTo: { email: 'hello@9amleads.com', name: '9amLeads Support' },
     to: [{ email: to.email, name: to.name }],
     subject,
     htmlContent,
+    textContent: stripHtmlToText(htmlContent),
     headers: {
+      'X-Brevo-Tag': '9amleads',
       'X-Mailgun-Tag': '9amleads',
       'List-Unsubscribe': '<mailto:hello@9amleads.com?subject=unsubscribe>'
     }
@@ -6966,7 +7010,8 @@ const CAMPAIGN_EMAILS = [
   { day: 12, subject: 'Still not sure? Let us help.', template: 'trial_day12' },
   { day: 16, subject: '3 businesses that transformed their pipeline', template: 'trial_day16' },
   { day: 21, subject: 'It has been a few weeks. Your leads are still waiting for you', template: 'trial_day21' },
-  { day: 30, subject: 'Your exclusive offer expires soon', template: 'trial_day30' },
+  { day: 30, subject: 'A personal invite to restart your leads', template: 'trial_day30' },
+  { day: 91, subject: 'A fresh 1-week free trial \u2014 on us', template: 'trial_month3' },
 ];
 // WEEKLY FOLLOW-UPS: after day 30, keep one email per week for up to 6 months
 // (weeks 5-26) so the account stays warm and they can restart whenever ready.
@@ -6992,7 +7037,7 @@ var WEEKLY_FOLLOWUP_SUBJECTS = {
   21: '5 months in \u2014 it\u2019s not too late to restart',
   22: 'The leads keep coming. The opportunity is yours to take.',
   23: 'Your final weeks \u2014 don\u2019t let your leads slip away',
-  24: 'Last chance to catch this month\u2019s fresh leads',
+  24: 'This month\u2019s fresh leads are ready for you',
   25: '6 months \u2014 keep your account ready for the busy season',
   26: 'Your account stays on hold for you \u2014 restart any time'
 };
@@ -7080,6 +7125,36 @@ function buildWhyBestBlock(product, accent) {
     '</div></td></tr>';
 }
 
+// Shared value block: how the service works (3 steps). Injected into EVERY
+// campaign email shell so follow-ups always remind people how easy it is.
+function buildHowItWorksBlock(product, accent) {
+  var steps = {
+    moving: ['Pick up to 5 postcode areas (e.g. SW, NW, EN, CM)', 'Fresh home-mover leads arrive in your dashboard at 9am every weekday', 'Contact them first \u2014 or use Print &amp; Post to send a brochure the same morning'],
+    planning: ['Pick your counties', 'New planning applications in your area land in your dashboard each morning', 'Send your building services flyer to the applicant while they\u2019re choosing quotes'],
+    probate: ['Pick your counties', 'New probate/estate leads arrive each morning', 'Send a compassionate introduction letter to the executor via Print &amp; Post'],
+    newbusiness: ['Pick your counties or areas', 'Newly incorporated companies land in your dashboard each morning', 'Be the first to introduce your services \u2014 before they have a website'],
+    tenders: ['Pick UK-wide or your regions', 'New public tenders land in your dashboard each morning', 'Submit your capability statement before the deadline']
+  }[product] || ['Choose your areas', 'Fresh leads arrive at 9am every weekday', 'Contact them first \u2014 or Print &amp; Post a letter the same morning'];
+  var items = '';
+  steps.forEach(function(s2, idx){ items += '<tr><td style="padding:5px 0;vertical-align:top;width:26px;color:' + accent + ';font-weight:900;font-size:13px">' + (idx + 1) + '.</td><td style="padding:5px 0;font-size:12.5px;color:#334155;line-height:1.65;vertical-align:top">' + s2 + '</td></tr>'; });
+  return '<tr><td style="background:#ffffff;padding:0 30px 18px">' +
+    '<div style="background:linear-gradient(135deg,#eff6ff,#eef2ff);border:1px solid #e0e7ff;border-radius:12px;padding:16px 18px">' +
+    '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:6px">\u2699\uFE0F How ' + productName + ' work</div>' +
+    '<table role="presentation" cellpadding="0" cellspacing="0" width="100%">' + items + '</table>' +
+    '</div></td></tr>';
+}
+
+// MONTH-3 REACTIVATION OFFER: a fresh 1-week free trial, account resets on claim.
+function buildMonth3OfferTemplate(customer, productName, accent, product) {
+  var claimUrl = PUBLIC_URL + '/portal/dashboard.html?reactivate=1';
+  return '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">A fresh 1-week free trial \u2014 on us</h2>' +
+    '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">It\u2019s been 3 months \u2014 we\u2019d love to have you back</p>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Thank you for giving 9amLeads a try earlier this year. Your leads have stayed saved, and to make it as easy as possible to come back, here\u2019s a <strong style="color:' + accent + '">fresh 1-week free trial \u2014 completely on us</strong>:</p>' +
+    '<div style="background:#f8fafc;border:1px solid #eef0f4;border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#1e293b;font-size:13px;line-height:1.8;margin:0"><strong style="color:#0f172a">What happens when you claim it:</strong><br>1. Your account resets and your <strong>' + productName + '</strong> resume <strong style="color:' + accent + '">at 9am tomorrow</strong><br>2. You get another <strong style="color:' + accent + '">full 7 days</strong> of fresh, exclusive leads<br>3. Print &amp; Post and Auto Send are ready to use from day one<br>4. No commitment \u2014 if you love it, upgrade; if not, pause again</p></div>' +
+    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center"><a href="' + claimUrl + '" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Claim My Free Week</a></td></tr></table>' +
+    '<p style="color:#94a3b8;font-size:11px;text-align:center;margin:18px 0 0">Just sign in to your dashboard and click \u201cActivate my free week\u201d. Your areas, leads and settings are all saved.</p>';
+}
+
 // Paid customer email series (sent weekly after subscription starts)
 const PAID_EMAIL_SERIES = [
   { week: 0, subject: 'Welcome to 9amLeads \u2014 Your opportunities arrive tomorrow at 9am!', template: 'paid_welcome' },
@@ -7130,6 +7205,11 @@ function getCampaignEmailHTML(customer, template) {
 for (var _wt = 5; _wt <= 26; _wt++) {
   templates['trial_wk' + _wt] = buildWeeklyTrialTemplate(customer, _wt, productName, accent, allProds[0]);
 }
+// MONTH-3 REACTIVATION OFFER: after ~3 months offer a fresh 1-week free trial;
+// accepting it resets the account (trial timer + sequence) so they get another
+// full trial. CTA goes to the dashboard where they click "activate" (the
+// reactivate-trial endpoint does the reset).
+templates['trial_month3'] = buildMonth3OfferTemplate(customer, productName, accent, allProds[0]);
 
 // ===== BREVO OUTBOUND CAMPAIGN UPLOAD INFRASTRUCTURE =====
 // Master HTML template matching existing 9am Leads email design
@@ -7491,6 +7571,8 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   buildPrintPostValueBlock(allProds[0] || 'moving', accent) +
   // Why 9amLeads is the best leads service (shared, all campaign emails)
   buildWhyBestBlock(allProds[0] || 'moving', accent) +
+  // How it works (shared, all campaign emails)
+  buildHowItWorksBlock(allProds[0] || 'moving', accent) +
   // Product insight card
   '<tr><td style="background:#ffffff;padding:0 30px 16px"><div style="background:#12141e;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px 16px">' +
   '<div style="font-size:11px;font-weight:700;color:#ffffff;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">' + productName + ' Insight</div>' +
@@ -9134,6 +9216,8 @@ cron.schedule('0 10 * * *', async () => {
           // misleading "ends tomorrow" after the trial has already ended.
           for (var ei = 0; ei < CAMPAIGN_EMAILS.length; ei++) {
             var e = CAMPAIGN_EMAILS[ei];
+            // Don't offer the month-3 reactivation once the free-reset cap is used.
+            if (e.template === 'trial_month3' && parseInt(cust.trial_resets || '0', 10) >= parseInt(process.env.MAX_TRIAL_RESETS || '2', 10)) continue;
             if (e.day > 7 && daysSinceTrialEnd >= (e.day - 7) && !campaignSent.includes(e.template)) {
               campaignSent.push(e.template);
               await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, getEditedCampaignSubject(e.template, e.subject), getCampaignEmailHTMLWithEdits(cust, e.template));
