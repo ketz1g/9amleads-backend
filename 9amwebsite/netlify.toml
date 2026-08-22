@@ -7,6 +7,48 @@
   status = 200
 
 [[redirects]]
+  from = "/blog"
+  to = "https://nineamleads-backend.onrender.com/blog"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/blog/*"
+  to = "https://nineamleads-backend.onrender.com/blog/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/success-centre"
+  to = "/blog"
+  status = 301
+
+[[redirects]]
+  from = "/success-centre/*"
+  to = "/blog"
+  status = 301
+
+[[redirects]]
+  from = "/how-it-works"
+  to = "/how-it-works/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/how-it-works/*"
+  to = "/how-it-works/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/who-we-serve"
+  to = "/who-we-serve/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/who-we-serve/*"
+  to = "/who-we-serve/:splat"
+  status = 200
+
+[[redirects]]
   from = "/founder"
   to = "/founder/index.html"
   status = 200
