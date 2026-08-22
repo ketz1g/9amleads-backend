@@ -102,6 +102,7 @@ tbody tr:hover td{background:#f8fafc}
 <button onclick="switchTab('rejected')"><i class="fas fa-times-circle"></i> Rejected</button>
 <button onclick="switchTab('analytics')"><i class="fas fa-chart-pie"></i> Analytics</button>
 <button onclick="switchTab('affiliates')"><i class="fas fa-handshake"></i> Affiliates</button>
+<button onclick="switchTab('rejected')"><i class="fas fa-ban"></i> Rejected Leads</button>
 <button onclick="openDeliveryPreview()" title="See which leads each customer will get at the next 9am"><i class="fas fa-eye"></i> Delivery Preview</button> <a href="/portal/seo.html"><i class="fas fa-magnifying-glass"></i> SEO</a>
 <a href="/portal/"><i class="fas fa-arrow-right-to-bracket"></i> Portal</a>
 </div>
@@ -245,6 +246,14 @@ tbody tr:hover td{background:#f8fafc}
 </div>
 
 <!-- ============ AFFILIATES ============ -->
+<div class="tab-panel" id="tab-rejected">
+<div class="card" style="margin-bottom:16px">
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif;margin-bottom:12px"><i class="fas fa-ban" style="color:#ef4444;margin-right:6px"></i> Rejected Leads</div>
+<p style="font-size:12.5px;color:#475569;margin:0 0 10px">Leads that customers (or you) have rejected. Review them below — the customer + address + reason are shown — then click <b>Replace</b> to swap each with a valid in-area lead.</p>
+<div class="table-wrap" id="rejectedLeadsWrap"><div class="loading">Loading rejected leads...</div></div>
+</div>
+</div>
+
 <div class="tab-panel" id="tab-affiliates">
 <div class="card" style="margin-bottom:16px">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
@@ -306,7 +315,36 @@ function switchTab(name) {
   var btn = document.querySelector('.top .nav button[onclick*="switchTab(\'' + name + '\')"]');
   if (btn) btn.classList.add('active');
   if (name === 'affiliates') loadAffiliates();
+  if (name === 'rejected') loadRejected();
   window.scrollTo(0, 0);
+}
+
+// ===== REJECTED LEADS =====
+function loadRejected() {
+  var wrap = document.getElementById('rejectedLeadsWrap');
+  fetch(API + '/api/admin/rejected-leads?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.success) { wrap.innerHTML = '<div class="empty">Could not load rejected leads.</div>'; return; }
+      if (!d.count) { wrap.innerHTML = '<div class="empty">No rejected leads. When a customer rejects a lead, it appears here for review before replacement.</div>'; return; }
+      var h = '<table><thead><tr><th>Customer</th><th>Address</th><th>Reason</th><th>Rejected</th><th>Action</th></tr></thead><tbody>';
+      d.leads.forEach(function(l) {
+        h += '<tr><td><b>' + esc(l.customer_company || l.customer_email) + '</b><div style="font-size:11px;color:#64748b">' + esc(l.customer_email) + ' · ' + esc(l.product) + '</div></td>' +
+          '<td>' + esc(l.address) + '<div style="font-size:11px;color:#64748b">' + esc(l.postcode) + '</div></td>' +
+          '<td>' + esc(l.reason) + '</td>' +
+          '<td>' + fmtDate(l.rejected_at) + '</td>' +
+          '<td><button class="btn btn-outline btn-sm" onclick="replaceRejectedLead(\'' + l.lead_id + '\')"><i class="fas fa-sync"></i> Replace</button></td></tr>';
+      });
+      h += '</tbody></table>'; wrap.innerHTML = h;
+    })
+    .catch(function(e) { wrap.innerHTML = '<div class="empty">Error: ' + e.message + '</div>'; });
+}
+function replaceRejectedLead(leadId) {
+  if (!confirm('Replace this rejected lead with a valid in-area lead?')) return;
+  fetch(API + '/api/admin/replace-pending-lead', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ lead_id: leadId }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { alert(d.success ? 'Replaced! A valid in-area lead has been assigned.' : 'Replace failed: ' + (d.error || 'unknown')); loadRejected(); })
+    .catch(function(e) { alert('Error: ' + e.message); });
 }
 
 // ===== AFFILIATES =====
@@ -373,6 +411,7 @@ function viewAffiliateDashboard(id) {
     .catch(function(e) { alert('Error: ' + e.message); });
 }
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function fmtDate(iso){ if(!iso) return '-'; try { return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) + ' ' + new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); } catch(e){ return iso; } }
 
 // Light modal helper (used by impersonation logs etc.)
 function showModal(title, content, width) {

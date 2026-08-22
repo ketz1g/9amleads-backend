@@ -3639,6 +3639,23 @@ app.post('/api/admin/reject-lead', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/rejected-leads — all rejected leads across customers (with the
+// customer + address + reason) so admin can review before replacing.
+app.get('/api/admin/rejected-leads', adminAuth, (req, res) => {
+  try {
+    var dbR = getDb();
+    var custMap = {};
+    (dbR.customers || []).forEach(function(c) { custMap[c.id] = c; });
+    var rows = (dbR.leads || []).map(function(l) {
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      if (!d.rejected) return null;
+      var cust = custMap[l.customer_id] || {};
+      return { lead_id: l.id, customer_id: l.customer_id, customer_email: cust.email || '', customer_company: cust.company || '', product: l.product || cust.product || '', address: d.fullAddress || d.address || d.deceasedAddress || '', postcode: d.postcode || '', url: d.url || '', reason: d.reject_reason || 'rejected', rejected_at: d.rejected_at || l.created_at || '', delivered: !!l.delivered };
+    }).filter(Boolean).sort(function(a, b) { return String(b.rejected_at).localeCompare(String(a.rejected_at)); });
+    res.json({ success: true, count: rows.length, leads: rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here

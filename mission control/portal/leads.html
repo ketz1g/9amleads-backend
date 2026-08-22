@@ -236,7 +236,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + biz + '</div>' +
         '<div class="meta">' + (d.address||'') + '</div>' +
         '<div class="meta">' + metaParts.join(' \u00b7 ') + (chLink ? ' \u00b7 ' + chLink : '') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + mailBtn(l.id, d) + rejectBtn(l.id, d) + outcomeBtn(l.id, d) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, d) + '</div></div>';
     } else if (product === 'probate') {
       var pName = d.deceasedName || d.name || 'Probate Estate';
       var pAddr = d.deceasedAddress || d.address || '';
@@ -253,7 +253,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + pName + '</div>' +
         '<div class="meta">' + pFullAddr + '</div>' +
         '<div class="meta">' + pMeta.join(' \u00b7 ') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + mailBtn(l.id, d) + rejectBtn(l.id, d) + outcomeBtn(l.id, d) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, d) + '</div></div>';
     } else if (product === 'planning') {
       var planTitle = d.address || (d.description||'').substring(0,40) || 'Planning Application';
       var planDate = d.dateSubmitted || d.receivedDate || d.date_received || l.created_at || '';
