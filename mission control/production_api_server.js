@@ -8707,7 +8707,7 @@ cron.schedule('0 8 * * *', async () => {
     saveDb();
     console.log('[TRIAL AUTO-CHARGE] Complete: ' + charged + ' customers charged');
   } catch(e) { console.log('[TRIAL AUTO-CHARGE] Error:', e.message); }
-});
+}, { timezone: 'Europe/London' });
 
 // GET /api/admin/trial-charge/preview — dry-run the trial→starter auto-charge for
 // every expired-trial customer (or one email) so we can verify the cron WILL
@@ -8812,7 +8812,7 @@ cron.schedule('0 7 * * *', async () => {
     if (dispatched > 0) saveDb();
     console.log('[REPEAT-MAIL] Complete: ' + dispatched + ' follow-ups dispatched');
   } catch(e) { console.log('[REPEAT-MAIL] Error:', e.message); }
-});
+}, { timezone: 'Europe/London' });
 
 // ===== LIVE POST TRACKING POLLER =====
 // Syncs in-flight campaigns from Stannp every 30 minutes so customers see live
@@ -8995,7 +8995,7 @@ cron.schedule('0 10 * * *', async () => {
     } catch(e) { console.log('[CAMPAIGN] Error for', cust.email, e.message); }
   }
   console.log('[CAMPAIGN] Sent ' + sent + ' campaign emails');
-});
+}, { timezone: 'Europe/London' });
 
 // ===== WEEKLY MONDAY DIGEST =====
 // Every Monday 08:30 UK, send active customers a weekly performance summary of
