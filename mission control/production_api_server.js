@@ -2761,11 +2761,15 @@ app.post('/api/auth/signup', async (req, res) => {
       }
       // MOVING: the promise is an exact daily count spread across the chosen areas,
       // so a free_trial/starter MOVING customer MUST choose the FULL 5 postcode
-      // areas (fewer breaks the delivery guarantee). Other products (probate/
-      // planning/newbusiness/tenders) may pick 1+ areas.
+      // areas (fewer breaks the delivery guarantee).
+      // OTHER products: must choose at least 3 areas/counties so delivery has
+      // enough supply (unless they're all-uk / unlimited-plan).
       var signupProduct = String(product || '').toLowerCase();
       if (!isPaidUnlimited && signupProduct === 'moving' && areas.length < maxAreas) {
         return res.status(400).json({ error: 'Please choose exactly ' + maxAreas + ' postcode areas for moving leads (you selected ' + areas.length + ').', too_few_areas: true, max_areas: maxAreas });
+      }
+      if (!isPaidUnlimited && signupProduct !== 'moving' && areas.length > 0 && areas.length < 3 && !allUk) {
+        return res.status(400).json({ error: 'Please choose at least 3 areas or counties for your ' + signupProduct + ' leads (you selected ' + areas.length + ').', too_few_areas: true, min_areas: 3 });
       }
       if (!isPaidUnlimited && areas.length > maxAreas) {
         return res.status(400).json({ error: 'Please choose at most ' + maxAreas + ' postcode areas. You selected ' + areas.length + '.', too_many_areas: true, max_areas: maxAreas });

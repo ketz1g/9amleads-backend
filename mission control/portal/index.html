@@ -1009,11 +1009,16 @@ var pLimit = getPostcodeAreaLimit();
   if (selectedCoverage === 'postcode' && targetAreas.length > pLimit && pLimit < 999) {
     document.getElementById('signup-error').textContent = 'Your ' + planVal + ' plan allows up to ' + pLimit + ' postcode areas. You selected ' + targetAreas.length + '. Upgrade to Pro or Enterprise for unlimited areas.'; document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
   }
-  // MOVING/NEW BUSINESS: the promise is an exact daily count across the chosen areas,
-  // so postcode customers MUST pick the full 5 areas (free trial & starter are capped
-  // at exactly 5). Fewer areas means fewer leads delivered and breaks the promise.
-  if (selectedCoverage === 'postcode' && pLimit < 999 && targetAreas.length < pLimit) {
-    document.getElementById('signup-error').textContent = 'Please add exactly ' + pLimit + ' postcode areas (you selected ' + targetAreas.length + '). More areas = more daily leads delivered.'; document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
+  // MOVING: the promise is an exact daily count across the chosen areas, so
+  // postcode customers MUST pick the full 5 areas (free trial & starter are capped
+  // at exactly 5). Other products: at least 3 areas.
+  if (selectedCoverage === 'postcode' && pLimit < 999) {
+    var curProd = typeof product === 'string' ? product : (document.getElementById('s-product') ? document.getElementById('s-product').value : 'moving');
+    var needAreas = curProd === 'moving' ? pLimit : 3;
+    if (targetAreas.length < needAreas) {
+      document.getElementById('signup-error').textContent = curProd === 'moving' ? 'Please add exactly ' + pLimit + ' postcode areas (you selected ' + targetAreas.length + '). More areas = more daily leads delivered.' : 'Please add at least 3 postcode areas (you selected ' + targetAreas.length + ').';
+      document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
+    }
   }
   // Enforce the county/area minimum (3) for planning/probate/tenders on
   // free/starter. these products use counties/areas, not postcodes.
