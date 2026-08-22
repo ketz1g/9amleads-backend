@@ -2717,7 +2717,11 @@ app.post('/api/auth/signup', async (req, res) => {
       tenders: { lead_type: 'Public Tenders', business_type: 'IT, Construction, Cleaning & More' },
     };
     const productInfo = PRODUCT_MAP[product] || PRODUCT_MAP.moving;
-    const areas = Array.isArray(targetAreas) ? targetAreas : [];
+    var areas = Array.isArray(targetAreas) ? targetAreas.slice() : [];
+    // "All of UK" is available to EVERY customer now (any plan). Normalise it to
+    // ukwide coverage so the delivery knows to skip area matching on the next run.
+    var ukAreas = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
+    if (ukAreas) { areas = ['All UK']; coverage = 'ukwide'; }
 
     // Validate product count by plan
     var productsList = req.body.products || [product];
@@ -2755,15 +2759,12 @@ app.post('/api/auth/signup', async (req, res) => {
       var planKey = String(planName || plan || 'free_trial').toLowerCase();
       var isPaidUnlimited = (planKey === 'pro' || planKey === 'enterprise');
       var maxAreas = parseInt(process.env.MAX_POSTCODE_AREAS_PER_PLAN || '5', 10);
-      var allUk = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
-      if (allUk && !isPaidUnlimited) {
-        return res.status(400).json({ error: 'Please choose up to ' + maxAreas + ' specific postcode areas. "All of UK" is only available on Pro or Enterprise plans.', invalid_area: true });
-      }
+      var allUk = ukAreas;
       // MOVING: the promise is an exact daily count spread across the chosen areas,
       // so a free_trial/starter MOVING customer MUST choose the FULL 5 postcode
-      // areas (fewer breaks the delivery guarantee).
+      // areas (fewer breaks the delivery guarantee) — UNLESS they picked All of UK.
       var signupProduct = String(product || '').toLowerCase();
-      if (!isPaidUnlimited && signupProduct === 'moving' && areas.length < maxAreas) {
+      if (!isPaidUnlimited && signupProduct === 'moving' && areas.length < maxAreas && !allUk) {
         return res.status(400).json({ error: 'Please choose exactly ' + maxAreas + ' postcode areas for moving leads (you selected ' + areas.length + ').', too_few_areas: true, max_areas: maxAreas });
       }
       if (!isPaidUnlimited && areas.length > maxAreas) {
@@ -2787,7 +2788,7 @@ app.post('/api/auth/signup', async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, email.toLowerCase(), company, name || '', phone || '', password_hash,
       product, productInfo.lead_type, productInfo.business_type,
-      JSON.stringify(targetAreas || []), coverage || 'postcode', leadFilters || bizField2 || '', bizField3 || JSON.stringify(products && Array.isArray(products) ? products : [product]),
+      JSON.stringify(areas || []), coverage || 'postcode', leadFilters || bizField2 || '', bizField3 || JSON.stringify(products && Array.isArray(products) ? products : [product]),
       source || 'direct', plan || 'free_trial', plan === 'free_trial' ? trial_ends : null, marketingConsent ? 1 : 0,
       new Date().toISOString(), '0', crmWebhookUrl || '', '[]', signupIp,
       affRef ? affRef.id : null, affRef ? affRef.code : null, affiliateAppliedAt, affRef ? trialDays : null,
@@ -2809,9 +2810,9 @@ app.post('/api/auth/signup', async (req, res) => {
       // somehow sends 'commercial' alone.
       signupCfg[product].moving_type = (movingType === 'commercial') ? 'both' : movingType;
     }
-    if (targetAreas && targetAreas.length) {
+    if (areas && areas.length) {
       if (!signupCfg[product]) signupCfg[product] = {};
-      signupCfg[product].target_areas = JSON.stringify(targetAreas);
+      signupCfg[product].target_areas = JSON.stringify(areas);
       signupCfg[product].coverage = coverage || 'postcode';
     }
     if (Object.keys(signupCfg).length) {
@@ -2866,7 +2867,7 @@ app.post('/api/auth/signup', async (req, res) => {
       var scraperFile = path.join(scraperDir, scraperProduct + '-leads-customers.json');
       var scraperCustomers = {};
       try { scraperCustomers = JSON.parse(fs.readFileSync(scraperFile, 'utf-8')); } catch(e) { scraperCustomers = {}; }
-      var targetAreasParsed = targetAreas || [];
+      var targetAreasParsed = areas || [];
       var filters = {};
       try { filters = JSON.parse(leadFilters || '{}'); } catch(e) {}
       scraperCustomers[customer.id] = {
@@ -3669,7 +3670,20 @@ app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
     var isPaidUnlimited = (planKey === 'pro' || planKey === 'enterprise');
     var maxAreas = parseInt(process.env.MAX_POSTCODE_AREAS_PER_PLAN || '5', 10);
     var allUk = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
-    if (allUk && !isPaidUnlimited) return res.status(400).json({ error: 'All of UK is only available on Pro or Enterprise plans. Pick up to ' + maxAreas + ' areas.', invalid_area: true });
+    if (allUk) {
+      // "All of UK" is available to EVERY customer now — no specific postcode
+      // areas needed. Coverage becomes ukwide so the delivery skips area matching.
+      db.prepare('UPDATE customers SET coverage = ?, target_areas = ? WHERE id = ?').run('ukwide', JSON.stringify(['All UK']), req.user.id);
+      try {
+        var pcfgU = {}; try { pcfgU = JSON.parse(me.product_config || '{}'); } catch(e) {}
+        var pProdU = String((me && me.product) || '').toLowerCase();
+        if (pcfgU[pProdU]) { pcfgU[pProdU].target_areas = JSON.stringify(['All UK']); pcfgU[pProdU].coverage = 'ukwide'; }
+        else pcfgU[pProdU] = { target_areas: JSON.stringify(['All UK']), coverage: 'ukwide' };
+        db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(JSON.stringify(pcfgU), req.user.id);
+      } catch(e2) {}
+      saveDb();
+      return res.json({ success: true, areas: ['All UK'], coverage: 'ukwide' });
+    }
     if (!isPaidUnlimited && areas.length > maxAreas) return res.status(400).json({ error: 'Please choose at most ' + maxAreas + ' postcode areas.', too_many_areas: true, max_areas: maxAreas });
     var clean = areas.map(function(a){ return String(a).toUpperCase().trim(); }).filter(Boolean);
     // PER-PRODUCT MINIMUMS (same rules as signup): moving must keep exactly the
@@ -3679,7 +3693,7 @@ app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
     if (!isPaidUnlimited && prodKey === 'moving' && clean.length < maxAreas) {
       return res.status(400).json({ error: 'Moving leads require exactly ' + maxAreas + ' postcode areas (you selected ' + clean.length + ').', too_few_areas: true, max_areas: maxAreas });
     }
-    if (!isPaidUnlimited && prodKey !== 'moving' && clean.length > 0 && clean.length < 3 && !allUk) {
+    if (!isPaidUnlimited && prodKey !== 'moving' && clean.length > 0 && clean.length < 3) {
       return res.status(400).json({ error: 'Please keep at least 3 areas or counties for your ' + prodKey + ' leads (you selected ' + clean.length + ').', too_few_areas: true, min_areas: 3 });
     }
     db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(JSON.stringify(clean), req.user.id);
@@ -5691,8 +5705,9 @@ app.get('/api/admin/delivery-preview', adminAuth, (req, res) => {
         var l = interleaved[i];
         var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
         var matched = false;
+        var ukwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas||[]).join(' '));
         if (cust.product === 'moving') {
-          if (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l))) matched = true;
+          if (ukwide || (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l)))) matched = true;
           // Same full-address gate as the real delivery: a moving lead without a
           // door/flat number or named building is NOT shown as deliverable.
           if (matched) {
@@ -5700,9 +5715,12 @@ app.get('/api/admin/delivery-preview', adminAuth, (req, res) => {
             if (vReason) continue;
           }
         } else {
-          var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(l.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
-          var pcMatch = areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g,'-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
-          if (countyMatch || pcMatch) matched = true;
+          if (ukwide) matched = true;
+          else {
+            var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(l.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
+            var pcMatch = areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g,'-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
+            if (countyMatch || pcMatch) matched = true;
+          }
         }
         if (!matched) continue;
         var fv = pickFreshDate(l);
@@ -5971,16 +5989,20 @@ app.post('/api/admin/refresh-pending-leads', adminAuth, (req, res) => {
         var l = interleaved[i];
         var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
         var matched = false;
+        var ukwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas||[]).join(' '));
         if (cust.product === 'moving') {
-          if (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l))) matched = true;
+          if (ukwide || (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l)))) matched = true;
           if (matched) {
             var vr = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
             if (vr) { matched = false; }
           }
         } else {
-          var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(l.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
-          var pcMatch = areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g,'-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
-          if (countyMatch || pcMatch) matched = true;
+          if (ukwide) matched = true;
+          else {
+            var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(l.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
+            var pcMatch = areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g,'-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
+            if (countyMatch || pcMatch) matched = true;
+          }
         }
         if (!matched) continue;
         var fv = pickFreshDate(l);
@@ -6041,12 +6063,16 @@ app.post('/api/admin/replace-pending-lead', adminAuth, (req, res) => {
       var l = interleaved[i];
       var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
       var matched = false;
+      var ukwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas||[]).join(' '));
       if (product === 'moving') {
-        if (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l))) matched = true;
+        if (ukwide || (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l)))) matched = true;
       } else {
-        var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(l.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
-        var pcMatch = areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g,'-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
-        if (countyMatch || pcMatch) matched = true;
+        if (ukwide) matched = true;
+        else {
+          var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(l.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
+          var pcMatch = areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g,'-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
+          if (countyMatch || pcMatch) matched = true;
+        }
       }
       if (!matched) continue;
       var fv = pickFreshDate(l);
@@ -9827,7 +9853,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         });
         if (r1pool.length === 0) continue;
         // Try least-represented area first (works for any coverage type with specific areas)
-        if (custAreas.length > 0) {
+        if (custAreas.length > 0 && !/all.?uk|uk.?wide|nationwide|whole.?uk/i.test((custAreas||[]).join(' '))) {
           var counts = areaCounts(custLeads, custAreas);
           var sortedAreas = custAreas.slice().sort(function(a, b) { return (counts[a] || 0) - (counts[b] || 0); });
           var found = false;
@@ -9913,7 +9939,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     // accepted by the national fallback below instead of silently dropped.
                     if (!areaOfPoolLead && !(r2prod === 'tenders' || r2prod === 'probate')) continue;
                     var custAreaHit = false;
-                    if (custAreas.length > 0) {
+                    var ukwideAreas = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((custAreas||[]).join(' '));
+                    if (ukwideAreas) {
+                      // "All of UK": every lead in the pool is in the customer's area.
+                      custAreaHit = true;
+                    } else if (custAreas.length > 0) {
                       // County-aware matching: if the customer's target areas are
                       // county/region names (e.g. "greater-london", "kent", "essex"),
                       // match the lead's postcode area against the county postcode map.
@@ -10050,7 +10080,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               } catch(e3) { console.log('[DELIVERY] Pool-file fallback error:', e3.message); }
             }
             if (r2pool.length === 0) continue;
-          if (custAreas.length > 0) {
+          if (custAreas.length > 0 && !/all.?uk|uk.?wide|nationwide|whole.?uk/i.test((custAreas||[]).join(' '))) {
             var counts2 = areaCounts(custLeads, custAreas);
               var sortedAreas2 = custAreas.slice().sort(function(a, b) { return (counts2[a] || 0) - (counts2[b] || 0); });
               var found2 = false;
@@ -10123,7 +10153,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               // Tenders/probate are national-fallback products (no postcode on leads).
               if (!fgArea && !(fgProd === 'tenders' || fgProd === 'probate')) continue;
               var fgAreaOk = false;
-              if (custAreas.length > 0) {
+              if (custAreas.length > 0 && !/all.?uk|uk.?wide|nationwide|whole.?uk/i.test((custAreas||[]).join(' '))) {
                 var fgCounties = custAreas.some(function(a){ return !/^[A-Z]{1,3}$/i.test(a); });
                 if (fgCounties) {
                   // Use the GLOBAL single-source-of-truth map (has devon/cornwall/
@@ -10763,7 +10793,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 var nclArea = extractPostcodeArea(ncl.postcode || ncl.address || '');
                 if (!nclArea) continue;
                 var nclAreaHit = false;
-                if (custAreas.length === 0) nclAreaHit = true;
+                if (custAreas.length === 0 || /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((custAreas||[]).join(' '))) nclAreaHit = true;
                 else nclAreaHit = custAreas.some(function(a){ return extractPostcodeArea(a) === nclArea; });
                 if (!nclAreaHit) continue;
                 var nclUrl = ncl.url || '';
