@@ -7135,11 +7135,12 @@ function buildHowItWorksBlock(product, accent) {
     newbusiness: ['Pick your counties or areas', 'Newly incorporated companies land in your dashboard each morning', 'Be the first to introduce your services \u2014 before they have a website'],
     tenders: ['Pick UK-wide or your regions', 'New public tenders land in your dashboard each morning', 'Submit your capability statement before the deadline']
   }[product] || ['Choose your areas', 'Fresh leads arrive at 9am every weekday', 'Contact them first \u2014 or Print &amp; Post a letter the same morning'];
+  var prodLabel = { moving: 'Moving Leads', planning: 'Planning Permissions', probate: 'Probate Leads', newbusiness: 'New Business Alerts', tenders: 'Public Tenders' }[product] || 'Your leads';
   var items = '';
   steps.forEach(function(s2, idx){ items += '<tr><td style="padding:5px 0;vertical-align:top;width:26px;color:' + accent + ';font-weight:900;font-size:13px">' + (idx + 1) + '.</td><td style="padding:5px 0;font-size:12.5px;color:#334155;line-height:1.65;vertical-align:top">' + s2 + '</td></tr>'; });
   return '<tr><td style="background:#ffffff;padding:0 30px 18px">' +
     '<div style="background:linear-gradient(135deg,#eff6ff,#eef2ff);border:1px solid #e0e7ff;border-radius:12px;padding:16px 18px">' +
-    '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:6px">\u2699\uFE0F How ' + productName + ' work</div>' +
+    '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:6px">\u2699\uFE0F How ' + prodLabel + ' work</div>' +
     '<table role="presentation" cellpadding="0" cellspacing="0" width="100%">' + items + '</table>' +
     '</div></td></tr>';
 }
