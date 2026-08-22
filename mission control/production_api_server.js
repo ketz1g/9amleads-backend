@@ -3495,6 +3495,26 @@ app.post('/api/admin/remove-out-of-area', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/warmup — run the Brevo sender warm-up (small growing daily
+// batches of the campaign instead of one cold blast). { force:true } runs even if
+// already done today.
+app.post('/api/admin/warmup', adminAuth, async (req, res) => {
+  try {
+    var warmupM = require('./warmup');
+    var wr = await warmupM.runWarmup(!!(req.body && req.body.force));
+    res.json(wr);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Sender warm-up daily cron (09:30 UTC = 10:30 UK) — sends the next growing batch.
+cron.schedule('30 9 * * *', async () => {
+  try {
+    var warmupC = require('./warmup');
+    var wcr = await warmupC.runWarmup(false);
+    console.log('[WARMUP] daily run:', JSON.stringify(wcr).substring(0, 200));
+  } catch(wce) { console.log('[WARMUP] cron error:', wce.message); }
+}, { timezone: 'Europe/London' });
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
