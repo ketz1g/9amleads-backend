@@ -2088,6 +2088,15 @@ function validateEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// HANG-GUARD for the standalone daily scrapers (OTM, funeral): aborts after ms so
+// a blocked source can never stall supply.
+function moduleWithTimeout(promise, ms, label) {
+  return new Promise(function(resolve) {
+    var t = setTimeout(function() { console.log('[SCRAPER] TIMEOUT ' + label + ' exceeded ' + ms + 'ms - skipping'); resolve([]); }, ms);
+    Promise.resolve(promise).then(function(v) { clearTimeout(t); resolve(v); }).catch(function(e) { clearTimeout(t); console.log('[SCRAPER] ' + label + ' error:', e.message); resolve([]); });
+  });
+}
+
 // ===== AFFILIATE PROGRAM =====
 // Referral terms (product-agnostic - works for every lead type):
 //   - A customer signs up using an affiliate's NAME or CODE -> gets 14 days free
@@ -6046,7 +6055,7 @@ app.post('/api/admin/funeral-scrape', adminAuth, async (req, res) => {
     }
     if (!counties.length) return res.status(400).json({ error: 'No counties to scrape' });
     var fnS = require('./funeral_notices_scraper');
-    var leads = await fnS.collectFuneralLeads({ counties: counties, maxPerCounty: parseInt(process.env.PROBATE_MAX_PER_COUNTY || '60', 10) });
+    var leads = await moduleWithTimeout(fnS.collectFuneralLeads({ counties: counties, maxPerCounty: parseInt(process.env.PROBATE_MAX_PER_COUNTY || '60', 10) }), 8 * 60000, 'Funeral scrape');
     var pf = path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate.file);
     var poolF = [];
     try { poolF = JSON.parse(fs.readFileSync(pf, 'utf-8')); if (!Array.isArray(poolF)) poolF = []; } catch(e) { poolF = []; }
@@ -6121,7 +6130,7 @@ async function runOtmDailyScrape() {
     });
     if (!areas.length) { console.log('[OTM-DAILY] No moving customer areas to scrape'); return; }
     var otmScraper2 = require('./onthemarket_scraper');
-    var leads = await otmScraper2.collectOnTheMarketLeads({ areas: areas, maxPerArea: parseInt(process.env.OTM_MAX_PER_AREA || '100', 10), maxDays: 2, detailCap: parseInt(process.env.OTM_DETAIL_CAP || '600', 10) });
+    var leads = await moduleWithTimeout(otmScraper2.collectOnTheMarketLeads({ areas: areas, maxPerArea: parseInt(process.env.OTM_MAX_PER_AREA || '100', 10), maxDays: 2, detailCap: parseInt(process.env.OTM_DETAIL_CAP || '600', 10) }), 8 * 60000, 'OTM daily scrape');
     var fn2 = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving.file);
     var prev = []; try { prev = JSON.parse(fs.readFileSync(fn2, 'utf-8')); } catch(e) { prev = []; }
     if (!Array.isArray(prev)) prev = [];
@@ -17548,6 +17557,17 @@ app.post('/api/admin/run-scrapers', adminAuth, (req, res) => {
     const todayStr = new Date().toISOString().split('T')[0];
     var bgTasks = [];
 
+    // HANG-GUARD: no scraper may block the daily run forever. Each scrape is
+    // wrapped so a hung region/provider (Rightmove direct, OTM, etc.) aborts after
+    // its budget and the run moves on — yesterday's pool + the other sources keep
+    // the delivery supplied.
+    function withTimeout(promise, ms, label) {
+      return new Promise(function(resolve) {
+        var t = setTimeout(function() { console.log('[SCRAPER] TIMEOUT ' + label + ' exceeded ' + ms + 'ms - skipping'); resolve([]); }, ms);
+        Promise.resolve(promise).then(function(v) { clearTimeout(t); resolve(v); }).catch(function(e) { clearTimeout(t); console.log('[SCRAPER] ' + label + ' error:', e.message); resolve([]); });
+      });
+    }
+
     // Load last scrape dates (persisted to JSON file, resets daily)
     var lastScrapeFile = path.join(DATA_DIR, 'last-scrape.json');
     var lastScrape = {};
@@ -17728,7 +17748,7 @@ function syncCustomers(product) {
           // PRIMARY: Contracts Finder (free, paginated, ~150-240 live notices).
           try {
             var tendersScraper = require('./tenders_scraper');
-            var cfLeads = await tendersScraper.collectTendersLeads({ keywords: '', location: '', maxCount: 500 });
+            var cfLeads = await withTimeout(tendersScraper.collectTendersLeads({ keywords: '', location: '', maxCount: 500 }), 8 * 60000, 'Tenders scrape');
             if (cfLeads && cfLeads.length > 0) {
               leads = cfLeads;
               console.log('[SCRAPER] Contracts Finder + FTS returned ' + cfLeads.length + ' tenders');
@@ -17917,7 +17937,7 @@ function syncCustomers(product) {
               if (planFilt['f-app-type']) planFilters = planFilters.concat(planFilt['f-app-type']);
               else if (planFilt.applicationType) planFilters = planFilters.concat(planFilt.applicationType);
             });
-            leads = await planScraper.collectPlanningLeads({ postcodeAreas: planAreas.length ? planAreas : undefined, filters: planFilters, maxItems: parseInt(process.env.PLANNING_MAX_ITEMS || '400', 10) });
+            leads = await withTimeout(planScraper.collectPlanningLeads({ postcodeAreas: planAreas.length ? planAreas : undefined, filters: planFilters, maxItems: parseInt(process.env.PLANNING_MAX_ITEMS || '400', 10) }), 8 * 60000, 'Planning scrape');
             if (leads && leads.length > 0) {
               // Planning leads are freshly scraped — no additional freshness filter
               // (brownfield/application data is current at scrape time).
@@ -18019,7 +18039,7 @@ function syncCustomers(product) {
             //   supply same-day listings on its own.
             leads = [];
             try {
-              leads = await rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: true });
+              leads = await withTimeout(rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: true }), 10 * 60000, 'Rightmove moving scrape');
               console.log('[SCRAPER] Moving: ' + (leads||[]).length + ' total (Rightmove fresh source)');
               // COLLECTION-TIME ADDRESS ENRICHMENT (free): Rightmove's list view hides
               // house numbers. Fetch each fresh lead's free Rightmove detail page to
