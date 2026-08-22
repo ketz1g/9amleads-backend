@@ -6641,7 +6641,6 @@ function sendBrevoEmail(to, subject, htmlContent) {
     to: [{ email: to.email, name: to.name }],
     subject,
     htmlContent,
-    textContent: stripHtmlToText(htmlContent),
     headers: {
       'X-Brevo-Tag': '9amleads',
       'X-Mailgun-Tag': '9amleads',
