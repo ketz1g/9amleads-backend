@@ -3626,9 +3626,17 @@ app.post('/api/admin/set-plan', adminAuth, (req, res) => {
   try {
     var email = String((req.body && req.body.email) || '').toLowerCase().trim();
     var plan = String((req.body && req.body.plan) || '').toLowerCase();
-    if (!['starter','pro','enterprise'].includes(plan)) return res.status(400).json({ error: 'plan must be starter, pro or enterprise' });
+    if (!['free_trial','starter','pro','enterprise'].includes(plan)) return res.status(400).json({ error: 'plan must be free_trial, starter, pro or enterprise' });
     var cust = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    if (plan === 'free_trial') {
+      // Restore a test/refunded account to a fresh free trial (admin/test tool).
+      var newTrialEnd = new Date(Date.now() + 7 * 86400000).toISOString();
+      db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = ?, leads_paused = 0, auto_send_paused = 0 WHERE id = ?')
+        .run('free_trial', cust.leads_per_day || 5, newTrialEnd, cust.id);
+      saveDb();
+      return res.json({ success: true, email: email, plan: 'free_trial', leads_per_day: cust.leads_per_day || 5, trial_ends: newTrialEnd });
+    }
     applyPlan(cust, plan, cust.product);
     saveDb();
     var after = db.prepare('SELECT * FROM customers WHERE id = ?').get(cust.id);
@@ -11765,9 +11773,12 @@ app.post('/api/stripe/webhook', async (req, res) => {
     }
 
     // Subscription cancelled
-    else if (evType === 'customer.subscription.deleted') {
+    else     if (evType === 'customer.subscription.deleted') {
       var sub = event.data.object;
       var subCustomer = sub.customer ? db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(sub.customer) : null;
+      // Fallback to email match (same as invoice handlers) so a cancellation is
+      // never missed when the stored stripe_customer_id doesn't line up.
+      if (!subCustomer && sub.customer_email) subCustomer = db.prepare('SELECT * FROM customers WHERE email = ?').get(sub.customer_email);
       if (subCustomer) {
         db.prepare('UPDATE customers SET plan = ?, leads_per_day = 0, auto_send_paused = 1, leads_paused = 1 WHERE id = ?').run('cancelled', subCustomer.id);
         saveDb();
