@@ -1881,7 +1881,7 @@ function buildEmailHeader(tagline) {
 function buildEmailFooter(opts) {
   opts = opts || {};
   var links = opts.links || '<a href="https://www.9amleads.com/privacy.html" style="color:#ffffff;text-decoration:underline">Privacy Policy</a> &bull; <a href="' + (opts.unsubUrl || 'https://www.9amleads.com/privacy.html#unsubscribe') + '" style="color:#ffffff;text-decoration:underline">Unsubscribe</a>';
-  return '<tr><td style="background:linear-gradient(135deg,#0f172a,#1e293b);padding:22px 30px 20px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid #0ea5e9">' +
+  return '<tr><td class="mob" style="background:linear-gradient(135deg,#0f172a,#1e293b);padding:22px 30px 20px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid #0ea5e9">' +
     '<div style="font-family:Outfit,Arial,Helvetica,sans-serif;font-size:17px;font-weight:900;color:#38bdf8;text-align:center;margin-bottom:12px"><span style="display:inline-block;width:26px;height:26px;border-radius:8px;text-align:center;line-height:26px;font-size:13px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;margin-right:6px;vertical-align:middle;font-family:Outfit,Arial,sans-serif">9</span><span style="vertical-align:middle">9amLeads</span></div>' +
     '<p style="color:#cbd5e1;font-size:11px;margin:0 0 8px">' + links + '</p>' +
     '<p style="color:#94a3b8;font-size:9px;margin:0;letter-spacing:.4px">Fresh exclusive opportunities at 9am every morning &bull; 9amLeads.com</p>' +
@@ -7094,7 +7094,7 @@ function buildPrintPostValueBlock(product, accent) {
   ];
   var items = '';
   postReasons.forEach(function(r){ items += '<tr><td style="padding:5px 0;vertical-align:top;width:22px;color:' + accent + ';font-weight:900;font-size:12px">\u2713</td><td style="padding:5px 0;font-size:12.5px;color:#334155;line-height:1.65;vertical-align:top">' + r + '</td></tr>'; });
-  return '<tr><td style="background:#ffffff;padding:0 30px 18px">' +
+  return '<tr><td class="mob" style="background:#ffffff;padding:0 30px 18px">' +
     '<div style="background:linear-gradient(135deg,#fff7ed,#fff1f2);border:1px solid #fee2e2;border-radius:12px;padding:16px 18px">' +
     '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:6px">\uD83D\uDCE8 We print &amp; post for you \u2014 Print &amp; Post and Auto Send</div>' +
     '<p style="font-size:12.5px;color:#334155;line-height:1.65;margin:0 0 8px">Upload your <strong>flyer, leaflet or introduction letter</strong> once (or pick one of our ready-made templates) and we\u2019ll <strong>print it, address it and post it</strong> to each lead through Royal Mail. You never touch a stamp. Turn on <strong>Auto Send</strong> and we post to every new lead automatically after your 9am delivery \u2014 so even your busiest days still get followed up.</p>' +
@@ -7117,7 +7117,7 @@ function buildWhyBestBlock(product, accent) {
   ];
   var items = '';
   benefits.forEach(function(b){ items += '<tr><td style="padding:5px 0;vertical-align:top;width:22px;color:#10b981;font-weight:900;font-size:12px">\u2713</td><td style="padding:5px 0;font-size:12.5px;color:#334155;line-height:1.65;vertical-align:top">' + b + '</td></tr>'; });
-  return '<tr><td style="background:#ffffff;padding:0 30px 18px">' +
+  return '<tr><td class="mob" style="background:#ffffff;padding:0 30px 18px">' +
     '<div style="background:linear-gradient(135deg,#ecfdf5,#f0fdf4);border:1px solid #bbf7d0;border-radius:12px;padding:16px 18px">' +
     '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:6px">\uD83C\uDF1F Why businesses choose 9amLeads</div>' +
     '<table role="presentation" cellpadding="0" cellspacing="0" width="100%">' + items + '</table>' +
@@ -7137,7 +7137,7 @@ function buildHowItWorksBlock(product, accent) {
   var prodLabel = { moving: 'Moving Leads', planning: 'Planning Permissions', probate: 'Probate Leads', newbusiness: 'New Business Alerts', tenders: 'Public Tenders' }[product] || 'Your leads';
   var items = '';
   steps.forEach(function(s2, idx){ items += '<tr><td style="padding:5px 0;vertical-align:top;width:26px;color:' + accent + ';font-weight:900;font-size:13px">' + (idx + 1) + '.</td><td style="padding:5px 0;font-size:12.5px;color:#334155;line-height:1.65;vertical-align:top">' + s2 + '</td></tr>'; });
-  return '<tr><td style="background:#ffffff;padding:0 30px 18px">' +
+  return '<tr><td class="mob" style="background:#ffffff;padding:0 30px 18px">' +
     '<div style="background:linear-gradient(135deg,#eff6ff,#eef2ff);border:1px solid #e0e7ff;border-radius:12px;padding:16px 18px">' +
     '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:6px">\u2699\uFE0F How ' + prodLabel + ' work</div>' +
     '<table role="presentation" cellpadding="0" cellspacing="0" width="100%">' + items + '</table>' +
@@ -7232,14 +7232,14 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
     ? '<a href="' + (email.cta || 'https://www.9amleads.com') + '" target="_blank" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,' + accent + ',#6366f1);color:#fff;text-decoration:none;border-radius:50px;font-size:13px;font-weight:700">' + email.cta + '</a>'
     : '<p style="color:#e2e8f0;font-size:13px;line-height:1.6;margin:0">' + email.cta + '</p>';
   
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head>' +
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><style>@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobbtn{display:block!important;width:100%!important;box-sizing:border-box!important;margin:6px 0!important}}</style></head>' +
     '<body style="margin:0;padding:0;background:#0f111a;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#e2e8f0">' +
-    '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px">' +
+    '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px">' +
     '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">' +
     // Header
     buildEmailHeader(campaign.name) +
     // Content
-    '<tr><td style="background:#12141e;padding:28px 30px 24px">' +
+    '<tr><td class="mob" style="background:#12141e;padding:28px 30px 24px">' +
     '<p style="color:#f1f5f9;font-size:14px;margin:0 0 6px">Hi ' + name + ',</p>' +
     '<div style="font-size:14px;color:#e2e8f0;line-height:1.8">' + bodyText + '</div>' +
     '<div style="margin-top:20px;text-align:center">' + ctaBtn + '</div>' +
@@ -7566,7 +7566,7 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   };
   var insight = insightCards[prod] || { emoji: '\uD83D\uDCA1', tip: 'Send a letter or flyer with Print &amp; Post and follow up in person to win the work.', metric: '', link: PUBLIC_URL + '/pricing' };
   
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() + '<tr><td bgcolor="#ffffff" style="background:#ffffff;padding:20px 30px 26px">' + (  templates[template] || templates.trial_day1) + '</td></tr>' +
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobbtn{display:block!important;width:100%!important;box-sizing:border-box!important;margin:6px 0!important}}</style></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() + '<tr><td bgcolor="#ffffff" class="mob" style="background:#ffffff;padding:20px 30px 26px">' + (  templates[template] || templates.trial_day1) + '</td></tr>' +
   // Print & Post / Auto Send / postal-marketing value block (shared, all campaign emails)
   buildPrintPostValueBlock(allProds[0] || 'moving', accent) +
   // Why 9amLeads is the best leads service (shared, all campaign emails)
@@ -7574,7 +7574,7 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   // How it works (shared, all campaign emails)
   buildHowItWorksBlock(allProds[0] || 'moving', accent) +
   // Product insight card
-  '<tr><td style="background:#ffffff;padding:0 30px 16px"><div style="background:#12141e;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px 16px">' +
+  '<tr><td class="mob" style="background:#ffffff;padding:0 30px 16px"><div style="background:#12141e;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px 16px">' +
   '<div style="font-size:11px;font-weight:700;color:#ffffff;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">' + productName + ' Insight</div>' +
   '<p style="font-size:13px;color:#ffffff;line-height:1.6;margin:0 0 6px">' + insight.tip + '</p>' +
   (insight.metric ? '<p style="font-size:11px;color:#0284c7;margin:0 0 8px"><strong>' + insight.metric + '</strong></p>' : '') +
