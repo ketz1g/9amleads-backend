@@ -326,9 +326,8 @@ function postBadge(d, leadId){
   return '';
 }
 function rejectBtn(leadId, d){
-  // Only allow rejecting leads that haven't already been posted (printed/mailed).
-  if (d && (d.post_status === 'posted' || d.post_status === 'printed' || d.post_status === 'mailing')) return '';
-  // Customer can reject a lead (e.g. wrong address). It's removed and replaced.
+  // Show the Reject button on EVERY lead (under Print & Post), so the customer can
+  // flag any lead as wrong and receive a replacement. It works for posted leads too.
   return '<button onclick="rejectLead(\'' + leadId + '\')" title="This lead is wrong (e.g. address). Reject it and we\'ll send a replacement." class="mail-btn" style="background:#ef4444;color:#fff"><i class="fas fa-times"></i> Reject</button>';
 }
 function rejectLead(leadId){
