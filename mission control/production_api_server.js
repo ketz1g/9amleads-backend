@@ -3515,6 +3515,30 @@ cron.schedule('30 9 * * *', async () => {
   } catch(wce) { console.log('[WARMUP] cron error:', wce.message); }
 }, { timezone: 'Europe/London' });
 
+// POST /api/admin/trade-scrape — scrape the newest UK companies (Companies House-
+// backed newbusiness pool), classify them by SIC into trades, find each company's
+// email from its website, and (optionally) import them into Brevo lists per trade.
+// { max: 300, brevo: true }
+app.post('/api/admin/trade-scrape', adminAuth, async (req, res) => {
+  try {
+    var tradeM = require('./trade_email_scraper');
+    var max = parseInt((req.body && req.body.max) || '300', 10);
+    var useBrevo = !!(req.body && req.body.brevo);
+    var tr = await tradeM.collectTradeEmails(max, useBrevo);
+    res.json(tr);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Daily trade-email scrape (11:00 UK) — top up the Brevo trade lists with the
+// newest companies' contact emails.
+cron.schedule('0 11 * * *', async () => {
+  try {
+    var tradeC = require('./trade_email_scraper');
+    var tcr = await tradeC.collectTradeEmails(300, true);
+    console.log('[TRADE-EMAIL] daily:', JSON.stringify(tcr).substring(0, 250));
+  } catch(tce) { console.log('[TRADE-EMAIL] cron error:', tce.message); }
+}, { timezone: 'Europe/London' });
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
