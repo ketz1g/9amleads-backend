@@ -8074,7 +8074,25 @@ cron.schedule('45 7 * * 1-5', async () => {
     }
     if (rdShort.length) {
       console.log('[READINESS] ⚠ ' + rdShort.length + ' customer(s) would SHORTFALL at 9am: ' + rdShort.join(' | '));
-      // also record so it surfaces in health.last_errors
+      // AUTO-REMEDIATE: trigger the FREE scrapes for the affected products so the
+      // pool is refreshed before the 9am delivery (OTM/Companies House/funeral/
+      // tenders/PLOTA are all no-cost). The delivery's guaranteed-fill fallback is
+      // then a last line of defence if any area is still dry.
+      try {
+        var rdProds = {};
+        rdShort.forEach(function(s2){ var p = /\(([^)]+)\)/.exec(s2); if (p) rdProds[p[1]] = 1; });
+        var rdDb2 = getDb();
+        Object.keys(rdProds).forEach(function(prod) {
+          try {
+            var pcfg = {}; try { pcfg = JSON.parse(rdDb2.product_config || '{}'); } catch(e){}
+            console.log('[READINESS] Auto-refreshing ' + prod + ' pool before 9am');
+            var scrPath = '/api/admin/run-scrapers';
+            var scrBody = JSON.stringify({ product: prod, force: true });
+            var scrReq = require('https').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: scrPath, headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(scrBody) } }, function(scrRes) { scrRes.resume(); });
+            scrReq.on('error', function(){}); scrReq.write(scrBody); scrReq.end();
+          } catch(se) { console.log('[READINESS] auto-scrape error ' + prod + ':', se.message); }
+        });
+      } catch(re2) { console.log('[READINESS] auto-remediate error:', re2.message); }
       if (__lastErrors) __lastErrors.push({ at: new Date().toISOString(), kind: 'readiness', message: rdShort.join(' | ') });
       if (__lastErrors && __lastErrors.length > 20) __lastErrors.splice(0, __lastErrors.length - 20);
     } else {
@@ -10471,6 +10489,15 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           if (!canTakeProduct(fgProd, cust.plan, weekStart2, today, custLeads)) continue;
           try {
             var fgArr = interleavePoolByAreas(getDeliveryPool(fgProd), custAreas);
+            // GUARANTEED-FILL (last resort): if the customer's exact areas have NO
+            // leads in the pool, broaden to the FULL pool so the promised count is
+            // still met rather than shortfalling. Gated by GUARANTEED_FILL (default
+            // on). Leads are still real + validated (fresh, full address, deduped).
+            if (!Array.isArray(fgArr) || fgArr.length === 0) {
+              if (String(process.env.GUARANTEED_FILL || 'true').toLowerCase() === 'false') continue;
+              console.log('[FINAL-GUARANTEE] ' + cust.email + ': areas ' + JSON.stringify(custAreas.slice(0,5)) + ' dry - broadening to full pool for ' + fgProd + ' (guaranteed fill)');
+              fgArr = getDeliveryPool(fgProd);
+            }
             if (!Array.isArray(fgArr) || fgArr.length === 0) continue;
             var fgExisting = {};
             (db.leads || []).forEach(function(l){ if(l.product===fgProd){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); fgExisting[k]=1; }catch(e){} } });
