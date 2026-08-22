@@ -2770,7 +2770,12 @@ app.post('/api/auth/signup', async (req, res) => {
     // produces. This guarantees every customer's "exactly what's promised" daily
     // count stays deliverable. Sources: moving ~3,000, newbusiness ~1,500,
     // probate ~27 (UK Gazette), planning ~2,000 (Plota), tenders ~300 fresh/day.
-    var supplyCeilingMap = { moving: 3000, newbusiness: 1500, probate: 27, planning: 2000, tenders: 300 };
+    // REALISTIC supply ceilings (fresh/day the scrapers actually collect today),
+    // NOT optimistic market estimates — so sales can never over-commit beyond what
+    // the pool can deliver. moving/planning/tenders reflect current measured yield
+    // (they scale as more areas/accounts + scrapers grow); newbusiness/probate are
+    // comfortably above current committed demand.
+    var supplyCeilingMap = { moving: 300, newbusiness: 1500, probate: 300, planning: 100, tenders: 100 };
     var _dailyLimitForCap = (planName === 'pro' ? 15 : planName === 'enterprise' ? 30 : planName === 'free_trial' ? 5 : 5);
     var _existingCommitted = db.prepare('SELECT COALESCE(SUM(leads_per_day), 0) AS total FROM customers WHERE product = ? AND plan != ?').get(product, 'cancelled');
     var _currentCommitted = (_existingCommitted && _existingCommitted.total) ? _existingCommitted.total : 0;
@@ -6697,7 +6702,7 @@ app.post('/api/check-availability', async (req, res) => {
     // daily-lead capacity than the source can physically produce. The cap keeps
     // a safety margin so every customer's full promise is always deliverable.
     var supplyCeiling = {
-      moving: 3000, newbusiness: 1500, probate: 100, planning: 2000, tenders: 300
+      moving: 300, newbusiness: 1500, probate: 300, planning: 100, tenders: 100
     };
     var ceiling = supplyCeiling[product] || 100;
     // After this signup, committed demand would be totalCommitted + dailyLimit.
@@ -18020,7 +18025,12 @@ function syncCustomers(product) {
               }
             } catch(e) { console.log('[SCRAPER] Apify Tenders error:', e.message); }
           }
-            if (!leads || leads.length < 3) {
+          // PCS Scotland + Sell2Wales + data.gov.uk ALWAYS run (not just as a
+          // fallback) to maximise daily tender supply — Contracts Finder alone can
+          // return as few as 6 notices on a quiet day. Each source adds genuinely
+          // different notices; running all of them keeps the pool full enough to
+          // deliver every customer's promised count.
+          if (true) {
             try {
               async function fetchPCS() {
                 return new Promise(function(resolve) {
@@ -18175,7 +18185,7 @@ function syncCustomers(product) {
               if (planFilt['f-app-type']) planFilters = planFilters.concat(planFilt['f-app-type']);
               else if (planFilt.applicationType) planFilters = planFilters.concat(planFilt.applicationType);
             });
-            leads = await withTimeout(planScraper.collectPlanningLeads({ postcodeAreas: planAreas.length ? planAreas : undefined, filters: planFilters, maxItems: parseInt(process.env.PLANNING_MAX_ITEMS || '400', 10) }), 8 * 60000, 'Planning scrape');
+            leads = await withTimeout(planScraper.collectPlanningLeads({ postcodeAreas: planAreas.length ? planAreas : undefined, filters: planFilters, maxItems: parseInt(process.env.PLANNING_MAX_ITEMS || '1000', 10) }), 8 * 60000, 'Planning scrape');
             if (leads && leads.length > 0) {
               // Planning leads are freshly scraped — no additional freshness filter
               // (brownfield/application data is current at scrape time).
