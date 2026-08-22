@@ -9430,6 +9430,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var _inRunSeen = {};
       var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
       if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
+      // PAYMENT GATE: a customer whose subscription payment failed (leads_paused)
+      // stops receiving leads until they recover payment (invoice.paid / re-subscribe).
+      if (cust.leads_paused) continue;
       if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: [], stage: 'start' };
       
       // Use per-product limits based on lead type and coverage area.
@@ -11213,6 +11216,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
         var customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(customerEmail);
         if (customer) {
           applyPlan(customer, plan, product);
+          db.prepare('UPDATE customers SET leads_paused = 0 WHERE id = ?').run(customer.id);
           if (session.customer) db.prepare('UPDATE customers SET stripe_customer_id = ? WHERE id = ?').run(session.customer, customer.id);
           if (session.subscription) db.prepare('UPDATE customers SET stripe_subscription_id = ? WHERE id = ?').run(session.subscription, customer.id);
           saveDb();
@@ -11322,7 +11326,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
       var invCustomer = inv.customer ? db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(inv.customer) : null;
       if (!invCustomer && invCustEmail) invCustomer = db.prepare('SELECT * FROM customers WHERE email = ?').get(invCustEmail);
       if (invCustomer) {
-        db.prepare('UPDATE customers SET auto_send_paused = 0, plan = COALESCE(plan, ?) WHERE id = ?').run('starter', invCustomer.id);
+        db.prepare('UPDATE customers SET auto_send_paused = 0, leads_paused = 0, plan = COALESCE(plan, ?) WHERE id = ?').run('starter', invCustomer.id);
         saveDb();
         console.log('[STRIPE] Weekly renewal paid: ' + (invCustomer.email || invCustomer.id));
         // AFFILIATE: a referred customer PAID their first invoice for a paid package
@@ -11367,13 +11371,15 @@ app.post('/api/stripe/webhook', async (req, res) => {
     }
 
     // Payment failed — pause auto-charge + notify
-    else if (evType === 'invoice.payment_failed') {
+      else if (evType === 'invoice.payment_failed') {
       var invF = event.data.object;
       var fCustEmail = invF.customer_email || '';
       var fCustomer = invF.customer ? db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(invF.customer) : null;
       if (!fCustomer && fCustEmail) fCustomer = db.prepare('SELECT * FROM customers WHERE email = ?').get(fCustEmail);
       if (fCustomer) {
-        db.prepare('UPDATE customers SET auto_send_paused = 1 WHERE id = ?').run(fCustomer.id);
+        // Payment failed -> pause daily leads too (no free ride) until the customer
+        // recovers (invoice.paid / re-subscribe clears leads_paused).
+        db.prepare('UPDATE customers SET auto_send_paused = 1, leads_paused = 1 WHERE id = ?').run(fCustomer.id);
         saveDb();
         try { dmDashboardNotify(fCustomer.id, 'payment_failed', '⚠️ Payment failed', 'Your weekly subscription payment failed. Update your payment method to keep your leads and Print & Post running.', ''); } catch(ne) {}
         // Also email the customer so they know to update their card
@@ -11390,7 +11396,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
       var sub = event.data.object;
       var subCustomer = sub.customer ? db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(sub.customer) : null;
       if (subCustomer) {
-        db.prepare('UPDATE customers SET plan = ?, auto_send_paused = 1 WHERE id = ?').run('cancelled', subCustomer.id);
+        db.prepare('UPDATE customers SET plan = ?, leads_per_day = 0, auto_send_paused = 1, leads_paused = 1 WHERE id = ?').run('cancelled', subCustomer.id);
         saveDb();
         console.log('[STRIPE] Subscription cancelled for ' + (subCustomer.email || subCustomer.id));
       }
