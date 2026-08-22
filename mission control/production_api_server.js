@@ -18281,18 +18281,32 @@ function syncCustomers(product) {
               // Sell2Wales (Welsh government tender portal) — the missing UK portal.
               async function fetchSell2Wales() {
                 return new Promise(function(resolve) {
-                  var req = require('https').request({ hostname: 'sell2wales.gov.wales', path: '/walesapi/Contract/All?limit=100&offset=0', method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 20000 }, function(res) {
+                  // Official Sell2Wales OCDS Web API (public, no key): the API docs at
+                  // api.sell2wales.gov.wales/v1 specify /v1/Notices?dateFrom=MM-YYYY&noticeType=2&outputType=0&locale=2057
+                  // for contract notices as OCDS JSON. (The old /walesapi/Contract/All
+                  // path was wrong — it only ever returned "Bad Page parameters".)
+                  var now = new Date();
+                  var mm = ('0' + (now.getMonth() + 1)).slice(-2);
+                  var yyyy = now.getFullYear();
+                  var path = '/v1/Notices?dateFrom=' + mm + '-' + yyyy + '&noticeType=2&outputType=0&locale=2057';
+                  var req = require('https').request({ hostname: 'api.sell2wales.gov.wales', path: path, method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 25000 }, function(res) {
                     var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
                       try {
                         var data = JSON.parse(body);
-                        var arr = Array.isArray(data) ? data : (data.results || data.data || []);
+                        var arr = Array.isArray(data) ? data : (data.releases || data.results || data.data || []);
                         resolve(arr.slice(0, 100).map(function(t) {
-                          return { id: t.id || t.noticeId || 'SW_' + Date.now(), title: t.title || t.description || t.name || '', buyer: t.buyerName || t.contractingAuthority || '', contractValue: t.value || t.estimatedValue || 0, description: (t.description || '').substring(0, 500), closingDate: t.closingDate || t.endDate || '', publishedDate: t.publishedDate || t.creationDate || new Date().toISOString(), tenderNoticeId: t.id || t.noticeId || '', url: t.url || (t.noticeId ? 'https://www.sell2wales.gov.wales/search/show/search_view.aspx?ID=' + t.noticeId : ''), source: 'Sell2Wales', scrapedAt: new Date().toISOString() };
+                          var tn = t.tender || t;
+                          var buyer = (t.buyer && (t.buyer.name || (t.buyer.identifier && t.buyer.identifier.id))) || '';
+                          var val = (tn.value && tn.value.amount) || tn.value || 0;
+                          var closing = (tn.tenderPeriod && tn.tenderPeriod.endDate) || tn.closingDate || tn.endDate || '';
+                          var published = (t.date || tn.date || tn.publishedDate || t.publishedDate || new Date().toISOString());
+                          var noticeId = t.id || tn.id || t.ocid || '';
+                          return { id: noticeId || 'SW_' + Date.now(), title: tn.title || tn.description || t.title || '', buyer: buyer, contractValue: val, description: (tn.description || '').substring(0, 500), closingDate: closing, publishedDate: published, tenderNoticeId: noticeId, url: noticeId ? 'https://www.sell2wales.gov.wales/search/show/search_view.aspx?ID=' + encodeURIComponent(noticeId) : 'https://www.sell2wales.gov.wales/search/Search_MainPage.aspx', source: 'Sell2Wales', scrapedAt: new Date().toISOString() };
                         }));
                       } catch(e) { resolve([]); }
                     });
                   });
-                  req.on('error', function() { resolve([]); }); req.setTimeout(20000, function() { req.destroy(); resolve([]); }); req.end();
+                  req.on('error', function() { resolve([]); }); req.setTimeout(25000, function() { req.destroy(); resolve([]); }); req.end();
                 });
               }
               // Fetch from multiple sources in parallel
