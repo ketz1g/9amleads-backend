@@ -3597,6 +3597,27 @@ app.post('/api/admin/set-plan', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/remove-leads-created-on — remove a customer's leads created on a
+// specific date (admin cleanup of test-delivery artifacts). Body: { email, date: 'YYYY-MM-DD' }
+app.post('/api/admin/remove-leads-created-on', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var date = String((req.body && req.body.date) || '').substring(0, 10);
+    if (!email || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'email + date (YYYY-MM-DD) required' });
+    var dbR = getDb();
+    var cust = (dbR.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var removed = 0;
+    dbR.leads = (dbR.leads || []).filter(function(l) {
+      if (l.customer_id !== cust.id) return true;
+      if (l.created_at && l.created_at.substring(0, 10) === date) { removed++; return false; }
+      return true;
+    });
+    saveDb();
+    res.json({ success: true, email: email, date: date, removed: removed });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/update-areas — customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
