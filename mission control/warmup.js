@@ -86,13 +86,27 @@ async function runWarmup(force) {
   const cRes = await req('GET', '/v3/emailCampaigns/' + SOURCE_CAMPAIGN_ID);
   let src; try { src = JSON.parse(cRes.body); } catch(e) { log('campaign fetch failed: ' + cRes.body.substring(0,200)); return { success: false, error: cRes.body }; }
   // 4. Create a campaign to the temp list.
+  // IMPROVED CONTENT (engagement-focused): short, value-first, one CTA — far less
+  // likely to be spam-filtered than the original all-caps marketing wall.
+  var warmSubject = 'Fresh removals leads in your area - 1 week free';
+  var warmHtml =
+    '<div style="font-family:Arial,Helvetica,sans-serif;background:#f1f5f9;color:#1e293b;padding:24px 16px">' +
+    '<div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:10px;padding:26px 28px">' +
+    '<div style="font-size:15px;font-weight:800;color:#0ea5e9;margin-bottom:14px">9amLeads</div>' +
+    '<p style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 12px">Hi,</p>' +
+    '<p style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 12px">Finding new customers is the hardest part of running a removals business.</p>' +
+    '<p style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 12px">9amLeads delivers <b>fresh, verified home-moving leads</b> from your chosen postcode areas to your inbox every morning at 9am - so you can contact homeowners <b>within hours of a listing, before your competitors</b>.</p>' +
+    '<p style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 18px">Try it <b>free for 1 week</b>. No card needed. Cancel anytime.</p>' +
+    '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px"><tr><td style="border-radius:8px;background:#0ea5e9"><a href="https://www.9amleads.com" style="display:inline-block;padding:12px 26px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700">Start my free week</a></td></tr></table>' +
+    '<p style="font-size:13px;color:#64748b;margin:0">www.9amleads.com</p>' +
+    '</div></div>';
   const campRes = await req('POST', '/v3/emailCampaigns', {
     name: '9am moving leads - warmup day ' + state.day,
-    subject: src.subject,
-    previewText: src.previewText || '',
+    subject: warmSubject,
+    previewText: 'Fresh, verified home-moving leads in your area every morning.',
     sender: { email: src.sender.email, name: src.sender.name || '9am Leads', id: src.sender.id },
     replyTo: src.replyTo || src.sender.email,
-    htmlContent: src.htmlContent,
+    htmlContent: warmHtml,
     recipients: { lists: [listId] },
     tag: src.tag || '9amleads'
   });
