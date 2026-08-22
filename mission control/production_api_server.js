@@ -11069,15 +11069,11 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     const successUrl = baseUrl + '/portal/dashboard.html?checkout=success&session_id={CHECKOUT_SESSION_ID}';
     const cancelUrl = baseUrl + '/portal/dashboard.html?checkout=cancel';
 
-    // If customer is on free trial with remaining trial days, apply trial period to subscription
-    // so they are NOT charged until the free trial ends. If they upgrade before the
-    // trial ends, the first charge lands on the trial-end date (remaining days preserved).
-    var trialEnds = customer.trial_ends ? new Date(customer.trial_ends) : null;
-    var hasTrialRemaining = trialEnds && trialEnds > new Date();
+    // CHARGE IMMEDIATELY: every subscription checkout takes payment RIGHT AWAY.
+    // No free-trial carryover — when a customer pays for a Starter/Pro/Enterprise
+    // package (even mid-trial) the first weekly charge lands immediately and the
+    // paid plan + lead count activate at once.
     var trialDays = 0;
-    if (hasTrialRemaining && customer.plan === 'free_trial') {
-      trialDays = Math.max(1, Math.ceil((trialEnds.getTime() - Date.now()) / 86400000));
-    }
 
     var sessionBody = {
       mode: 'subscription',
@@ -11091,8 +11087,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
       'metadata[plan]': plan
     };
 
-    // Add trial period if customer still has trial days remaining. For Checkout
-    // Sessions the trial must be under subscription_data, not top-level.
+    // No trial period — the first weekly charge is taken immediately on checkout.
     if (trialDays > 0) {
       sessionBody['subscription_data[trial_period_days]'] = trialDays;
     }
