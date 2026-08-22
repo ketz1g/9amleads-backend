@@ -19058,6 +19058,9 @@ app.post('/api/admin/send-campaign-email', adminAuth, async (req, res) => {
     if (!cust) return res.status(404).json({ error: 'No customer record for ' + email });
     var subject = getEditedCampaignSubject(template, knownTemplates[template]);
     var html = getCampaignEmailHTMLWithEdits(cust, template);
+    if (req.body && req.body.preview) {
+      return res.json({ success: true, preview: true, email: cust.email, template: template, subject: subject, html: html });
+    }
     await sendBrevoEmail({ email: cust.email, name: cust.company || cust.contact_name || 'Customer' }, subject, html);
     console.log('[SEND-CAMPAIGN] Sent ' + template + ' to ' + cust.email);
     res.json({ success: true, email: cust.email, template: template, subject: subject });
