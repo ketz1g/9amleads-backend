@@ -81,35 +81,51 @@ function extractEmails(html) {
   return out;
 }
 
-// Find a company's website via Bing search, then scrape it (home + contact) for emails.
+// Find a company's email: try (1) a direct domain guess, (2) DuckDuckGo results
+// including directory pages (Endole etc. sometimes list the contact email).
 // Returns [{ email, website }].
 async function findCompanyEmail(companyName, webCache) {
-  var name = String(companyName || '').replace(/[^a-zA-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
-  if (!name) return [];
-  try {
-    var search = await httpGet('https://www.bing.com/search?q=' + encodeURIComponent('"' + name + '" company website'));
-    var urls = (search.match(/<a href="https?:\/\/([^"]+)"/g) || []).slice(0, 6).map(function(a) {
-      var m = a.match(/href="(https?:\/\/[^"]+)"/);
-      if (!m) return '';
-      var u = m[1];
-      if (/bing\.com|microsoft\.com|go\.micro|wikipedia|linkedin|facebook|twitter|companieshouse/.test(u)) return '';
-      return u;
-    }).filter(Boolean);
-    for (var i = 0; i < urls.length && urls.length > 0; i++) {
+  var name = String(companyName || '').replace(/[^a-zA-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!name || name.length < 4) return [];
+  var found = [];
+  // 1) Direct domain guess from the name.
+  var slug = name.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/ltd|limited|co$|com$|uk$|llp$/g, '').replace(/[^a-z0-9]/g, '');
+  if (slug.length >= 4) {
+    for (var gi = 0; gi < 3 && !found.length; gi++) {
+      var gHost = gi === 0 ? ('www.' + slug + '.co.uk') : gi === 1 ? ('www.' + slug + '.com') : (slug + '.co.uk');
+      var gUrl = 'https://' + gHost;
+      var g = await httpGet(gUrl);
+      if (g && g.length > 800 && !/404|not found/i.test(g.substring(0, 500))) {
+        var gEmails = extractEmails(g);
+        if (!gEmails.length) { var gc = await httpGet(gUrl + '/contact'); gEmails = extractEmails(gc); }
+        if (gEmails.length) found = gEmails.map(function(e) { return { email: e, website: gUrl }; });
+        break;
+      }
+      await new Promise(function(r) { setTimeout(r, 250); });
+    }
+  }
+  // 2) DuckDuckGo search (including directory results which sometimes list emails).
+  if (!found.length) {
+    var q = encodeURIComponent(name + ' contact email');
+    var search = await httpGet('https://html.duckduckgo.com/html/?q=' + q);
+    var raw = search.match(/uddg=([^"&]+)/g) || [];
+    var urls = raw.map(function(x) { try { return decodeURIComponent(x.replace('uddg=', '')); } catch(e) { return ''; } }).filter(function(u) {
+      if (!u || !/^https?:\/\//.test(u)) return false;
+      if (/duckduckgo|youtube|facebook|linkedin|twitter|x\.com|instagram|find-and-update|companieshouse/.test(u)) return false;
+      return true;
+    });
+    for (var i = 0; i < urls.length && i < 5 && !found.length; i++) {
       var site = urls[i].split('/').slice(0, 3).join('/');
       if (webCache[site]) continue;
       var home = await httpGet(urls[i]);
       var emails = extractEmails(home);
-      if (!emails.length) {
-        var contact = await httpGet(urls[i].replace(/\/$/, '') + '/contact');
-        emails = extractEmails(contact);
-      }
-      if (emails.length) return emails.map(function(e) { return { email: e, website: site }; });
+      if (!emails.length) { var c2 = await httpGet(urls[i].replace(/\/$/, '') + '/contact'); emails = extractEmails(c2); }
+      if (emails.length) found = emails.map(function(e) { return { email: e, website: site }; });
       webCache[site] = true;
       await new Promise(function(r) { setTimeout(r, 300); });
     }
-  } catch(e) {}
-  return [];
+  }
+  return found.slice(0, 2);
 }
 
 // Load the newest companies from the newbusiness pool (Companies House-backed).
