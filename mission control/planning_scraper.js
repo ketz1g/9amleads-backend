@@ -260,7 +260,9 @@ function fetchPlotaPlanning(postcode, maxItems, category) {
         if (res.statusCode !== 200) { console.log('    Plota HTTP ' + res.statusCode); resolve([]); return; }
         try {
           const j = JSON.parse(body);
-          const items = j.data || [];
+          // PLOTA returns items under "results" (was "data" — a bug that silently
+          // returned zero leads from the main postcode source). Accept both.
+          const items = j.results || j.applications || j.data || (Array.isArray(j) ? j : []);
           if (!items.length) { console.log('    Plota returned no applications'); resolve([]); return; }
           const leads = items.map(p => ({
             id: 'PLOTA_' + (p.id || p.reference || Date.now()),
@@ -277,6 +279,7 @@ function fetchPlotaPlanning(postcode, maxItems, category) {
             url: (p.links && p.links.council) || (p.url || '') || '',
             links: p.links || {},
             dateSubmitted: p.date_received || p.date_validated || '',
+            firstVisibleDate: p.date_validated || p.date_received || new Date().toISOString(),
             locationPoint: p.location ? (p.location.lat + ',' + p.location.lng) : '',
             source: 'Planning Portal',
             scrapedAt: new Date().toISOString()
@@ -313,7 +316,7 @@ function fetchPlotaPlanningFreeText(query, maxItems, category) {
         if (res.statusCode !== 200) { console.log('    Plota(free) HTTP ' + res.statusCode); resolve([]); return; }
         try {
           const j = JSON.parse(body);
-          const items = j.data || [];
+          const items = j.results || j.applications || j.data || (Array.isArray(j) ? j : []);
           if (!items.length) { resolve([]); return; }
           const leads = items.map(p => ({
             id: 'PLOTA_' + (p.id || p.reference || Date.now()),
