@@ -7037,6 +7037,49 @@ function buildWeeklyTrialTemplate(customer, wk, productName, accent, product) {
     '<p style="color:#94a3b8;font-size:11px;text-align:center;margin:18px 0 0">You can pause, restart or change your package any time from your dashboard. Your leads stay saved either way.</p>';
 }
 
+// Shared value block: Print & Post + Auto Send + why posting leaflets/letters wins
+// business. Injected into EVERY campaign email shell so the whole follow-up funnel
+// constantly reinforces the services that make 9amLeads different.
+function buildPrintPostValueBlock(product, accent) {
+  var postReasons = [
+    'A letter on the kitchen table gets read \u2014 while emails get deleted. Your flyer is seen by the whole household, not just the inbox.',
+    'Direct mail gets a far higher response rate than email, and people trust physical post far more than another marketing email.',
+    'In a world of inbox spam, a printed letter stands out, gets opened and gets kept.',
+    'It\u2019s perfect for local services \u2014 removals, builders, solicitors, trades \u2014 where people choose a business they trust and remember.',
+    'Two letters beat one: your first letter opens the conversation, and the follow-up arrives just as they\u2019re ready to choose.'
+  ];
+  var items = '';
+  postReasons.forEach(function(r){ items += '<tr><td style="padding:5px 0;vertical-align:top;width:22px;color:' + accent + ';font-weight:900;font-size:12px">\u2713</td><td style="padding:5px 0;font-size:12.5px;color:#334155;line-height:1.65;vertical-align:top">' + r + '</td></tr>'; });
+  return '<tr><td style="background:#ffffff;padding:0 30px 18px">' +
+    '<div style="background:linear-gradient(135deg,#fff7ed,#fff1f2);border:1px solid #fee2e2;border-radius:12px;padding:16px 18px">' +
+    '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:6px">\uD83D\uDCE8 We print &amp; post for you \u2014 Print &amp; Post and Auto Send</div>' +
+    '<p style="font-size:12.5px;color:#334155;line-height:1.65;margin:0 0 8px">Upload your <strong>flyer, leaflet or introduction letter</strong> once (or pick one of our ready-made templates) and we\u2019ll <strong>print it, address it and post it</strong> to each lead through Royal Mail. You never touch a stamp. Turn on <strong>Auto Send</strong> and we post to every new lead automatically after your 9am delivery \u2014 so even your busiest days still get followed up.</p>' +
+    '<table role="presentation" cellpadding="0" cellspacing="0" width="100%">' + items + '</table>' +
+    '<div style="margin-top:10px"><a href="' + PUBLIC_URL + '/portal/dashboard.html?page=direct-mail" style="display:inline-block;padding:8px 18px;background:linear-gradient(135deg,' + accent + ',#0284c7);color:#fff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Set Up Print &amp; Post</a></div>' +
+    '</div></td></tr>';
+}
+
+// Shared value block: why 9amLeads is the best lead service. Injected into EVERY
+// campaign email shell to reinforce the differentiators that justify the price.
+function buildWhyBestBlock(product, accent) {
+  var benefits = [
+    'Fresh leads every morning at 9am \u2014 never recycled, never re-sold.',
+    'Exactly what you\u2019re promised \u2014 the exact number of leads for your package, no more, no less.',
+    'Only your chosen areas \u2014 no wasted, out-of-area leads.',
+    'Real addresses and real data \u2014 verified, ready to contact.',
+    'Exclusive to you \u2014 your leads aren\u2019t shared with your competitors.',
+    'Print &amp; Post and Auto Send so you can follow up without lifting a finger.',
+    'Pause, restart or switch your package any time \u2014 no lock-in.'
+  ];
+  var items = '';
+  benefits.forEach(function(b){ items += '<tr><td style="padding:5px 0;vertical-align:top;width:22px;color:#10b981;font-weight:900;font-size:12px">\u2713</td><td style="padding:5px 0;font-size:12.5px;color:#334155;line-height:1.65;vertical-align:top">' + b + '</td></tr>'; });
+  return '<tr><td style="background:#ffffff;padding:0 30px 18px">' +
+    '<div style="background:linear-gradient(135deg,#ecfdf5,#f0fdf4);border:1px solid #bbf7d0;border-radius:12px;padding:16px 18px">' +
+    '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:6px">\uD83C\uDF1F Why businesses choose 9amLeads</div>' +
+    '<table role="presentation" cellpadding="0" cellspacing="0" width="100%">' + items + '</table>' +
+    '</div></td></tr>';
+}
+
 // Paid customer email series (sent weekly after subscription starts)
 const PAID_EMAIL_SERIES = [
   { week: 0, subject: 'Welcome to 9amLeads \u2014 Your opportunities arrive tomorrow at 9am!', template: 'paid_welcome' },
@@ -7443,7 +7486,11 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   };
   var insight = insightCards[prod] || { emoji: '\uD83D\uDCA1', tip: 'Send a letter or flyer with Print &amp; Post and follow up in person to win the work.', metric: '', link: PUBLIC_URL + '/pricing' };
   
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() + '<tr><td bgcolor="#ffffff" style="background:#ffffff;padding:20px 30px 26px">' + (templates[template] || templates.trial_day1) + '</td></tr>' +
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() + '<tr><td bgcolor="#ffffff" style="background:#ffffff;padding:20px 30px 26px">' + (  templates[template] || templates.trial_day1) + '</td></tr>' +
+  // Print & Post / Auto Send / postal-marketing value block (shared, all campaign emails)
+  buildPrintPostValueBlock(allProds[0] || 'moving', accent) +
+  // Why 9amLeads is the best leads service (shared, all campaign emails)
+  buildWhyBestBlock(allProds[0] || 'moving', accent) +
   // Product insight card
   '<tr><td style="background:#ffffff;padding:0 30px 16px"><div style="background:#12141e;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px 16px">' +
   '<div style="font-size:11px;font-weight:700;color:#ffffff;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">' + productName + ' Insight</div>' +
