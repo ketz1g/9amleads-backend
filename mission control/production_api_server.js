@@ -2428,12 +2428,14 @@ app.use(express.json({
   verify: function(req, res, buf) { req.rawBody = buf.toString('utf-8'); }
 }));
 
-// Rate limiting
+// Rate limiting — signup gets a much higher ceiling than login so a launch burst
+// isn't blocked (the 60/min global API limiter still protects the server).
 const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: 'Too many requests. Please slow down.' } });
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'Too many login attempts. Try again in 15 minutes.' } });
+const signupLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: { error: 'Too many signups right now. Please try again in a few minutes.' } });
 app.use('/api/', apiLimiter);
 app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/signup', authLimiter);
+app.use('/api/auth/signup', signupLimiter);
 
 // Direct Mail notification routes
 app.get('/api/direct-mail/notifications', authMiddleware, (req, res) => {
