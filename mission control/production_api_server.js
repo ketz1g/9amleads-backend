@@ -14160,15 +14160,20 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#3f3f46">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#3f3f46">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#3f3f46">ig</a></div>';
   body += '</div></div></td></tr>';
 
-  // Print & Post promo — make the most of this lead
+  // Tips section — Reject & Replace, Print & Post, upload flyer/intro letter
   body += '<tr><td style="background:#ffffff;padding:0 30px 18px">' +
     '<div style="background:linear-gradient(135deg,#eff6ff,#eef2ff);border:1px solid #e0e7ff;border-radius:12px;padding:16px 18px">' +
-    '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:6px">📬 Make the most of this lead</div>' +
-    '<div style="font-size:12px;color:#334155;line-height:1.6">' +
-    'Upload your <strong>flyer front &amp; back + letter</strong> in your dashboard and we will <strong>print &amp; post</strong> it directly to this lead - so your business reaches them in the post, not just their inbox. ' +
-    'Turn on <strong>Auto-Send</strong> and we do this for you automatically after every 9am delivery.' +
-    '</div>' +
-    '<a href="' + dashboardUrl + '" style="display:inline-block;margin-top:10px;padding:8px 18px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Open Print &amp; Post</a>' +
+    '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:8px">💡 Make the most of today\'s leads</div>' +
+    '<table role="presentation" cellpadding="0" cellspacing="0" width="100%">' +
+    '<tr><td style="padding:5px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">1.</td>' +
+    '<td style="padding:5px 0;font-size:12px;color:#334155;line-height:1.6;vertical-align:top"><strong>Reject &amp; Replace</strong> &mdash; is a lead wrong or outside your area? Click <strong>Reject &amp; Replace</strong> on it in <a href="' + dashboardUrl + '" style="color:#2563eb">My Leads</a> and we\'ll instantly swap it for a fresh in-area lead.</td></tr>' +
+    '<tr><td style="padding:5px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">2.</td>' +
+    '<td style="padding:5px 0;font-size:12px;color:#334155;line-height:1.6;vertical-align:top"><strong>Print &amp; Post</strong> &mdash; send this lead a physical letter through Royal Mail so your business reaches them in the post, not just their inbox. Use <strong>Print &amp; Post</strong> on the lead, or turn on <strong>Auto-Send</strong> and we mail every new lead for you automatically after the 9am delivery.</td></tr>' +
+    '<tr><td style="padding:5px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">3.</td>' +
+    '<td style="padding:5px 0;font-size:12px;color:#334155;line-height:1.6;vertical-align:top"><strong>Upload your flyer + intro letter</strong> &mdash; add your flyer (front &amp; back) and a short intro letter once in <strong>Print &amp; Post</strong> settings. They\'re used for every mailing, so your business always arrives looking professional.</td></tr>' +
+    '</table>' +
+    '<div style="margin-top:10px"><a href="' + dashboardUrl + '" style="display:inline-block;margin-right:6px;margin-bottom:6px;padding:8px 18px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Open My Leads</a>' +
+    '<a href="' + dashboardUrl + '?page=direct-mail" style="display:inline-block;padding:8px 18px;background:#ffffff;border:1px solid #2563eb;color:#2563eb;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Print &amp; Post</a></div>' +
     '</div></td></tr>';
 
   // Footer — dark navy (matches header)
