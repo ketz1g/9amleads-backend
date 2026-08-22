@@ -444,7 +444,7 @@ function loadProfile(){
 function saveTemplate(){
   var name=document.getElementById('t-name').value||('Cover Letter '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}));
   var body={name:name,type:document.getElementById('t-type').value,ai_generated_text:document.getElementById('t-content').value};
-  if(!body.ai_generated_text){toast('Write or generate a cover letter first');return;}
+  if(!body.ai_generated_text){toast('Write a cover letter first');return;}
   api('POST','/api/direct-mail/templates',body,function(err,d){
     if(d&&d.success){
       toast('Cover letter saved');
@@ -511,7 +511,7 @@ function loadTemplates(){
       var delBtn = isSetup ? '' : '<button onclick="deleteTemplate(\''+t.id+'\',\''+String(t.name||'').replace(/'/g,"\\'")+'\')" style="margin-left:10px;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;color:#dc2626;border:1px solid #fecaca;background:#fff;cursor:pointer"><i class="fas fa-trash"></i> Delete</button>';
       html+='<div class="recipient" style="display:flex;align-items:center"><div style="flex:1;cursor:pointer" onclick="editTemplate(\''+t.id+'\')"><div class="addr">'+t.name+'</div><div class="meta">'+t.template_type+' · click to load into editor'+(isSetup?' · your active setup':'')+'</div></div><span class="tag">Saved</span>'+delBtn+'</div>';
     });
-    list.innerHTML=html||'<div class="empty"><i class="fas fa-file-alt"></i>No cover letters yet. Write one or generate with AI above</div>';
+    list.innerHTML=html||'<div class="empty"><i class="fas fa-file-alt"></i>No cover letters yet. Write one above</div>';
   });
 }
 // Delete a saved cover letter / template.
