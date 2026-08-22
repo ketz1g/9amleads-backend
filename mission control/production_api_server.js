@@ -3702,18 +3702,23 @@ app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
     if (!isPaidUnlimited && prodKey !== 'moving' && clean.length > 0 && clean.length < 3) {
       return res.status(400).json({ error: 'Please keep at least 3 areas or counties for your ' + prodKey + ' leads (you selected ' + clean.length + ').', too_few_areas: true, min_areas: 3 });
     }
-    db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(JSON.stringify(clean), req.user.id);
+    // Coverage: infer from the chosen areas. Postcode-area codes (1-2 letters)
+    // => 'postcode'; anything else (county/region names) => 'county'. This also
+    // resets a stale 'ukwide' coverage when a customer switches back from All of
+    // UK to specific areas — otherwise the dashboard keeps showing All of UK.
+    var newCov = clean.every(function(a){ return /^[A-Z]{1,3}$/i.test(a); }) ? 'postcode' : (me.coverage === 'region' ? 'region' : 'county');
+    db.prepare('UPDATE customers SET target_areas = ?, coverage = ? WHERE id = ?').run(JSON.stringify(clean), newCov, req.user.id);
     // Keep product_config in sync so the delivery + dashboard read the SAME areas.
     try {
       var pcfg = {}; try { pcfg = JSON.parse(me.product_config || '{}'); } catch(e) {}
       if (pcfg[prodKey]) {
         pcfg[prodKey].target_areas = JSON.stringify(clean);
-        pcfg[prodKey].coverage = me.coverage || 'postcode';
+        pcfg[prodKey].coverage = newCov;
         db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(JSON.stringify(pcfg), req.user.id);
       }
     } catch(e2) {}
     saveDb();
-    res.json({ success: true, areas: clean });
+    res.json({ success: true, areas: clean, coverage: newCov });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -4851,7 +4856,9 @@ app.put('/api/settings', authMiddleware, (req, res) => {
     }
     releasePostcodes(req.user.id);
     claimPostcodes(target_areas, req.user.id, customer.product);
-    db.prepare('UPDATE customers SET target_areas = ? WHERE id = ?').run(JSON.stringify(target_areas), req.user.id);
+    // Reset a stale 'ukwide' coverage back to 'postcode' so a customer who
+    // switches from All of UK to specific areas doesn't keep UK-wide state.
+    db.prepare('UPDATE customers SET target_areas = ?, coverage = ? WHERE id = ?').run(JSON.stringify(target_areas), 'postcode', req.user.id);
     // SYNC the per-product config too — the delivery reads product_config[<product>].target_areas
     // FIRST (before the generic target_areas column), so a dashboard area change MUST update
     // it or the next 9am delivery keeps using the customer's OLD areas.
@@ -4859,7 +4866,8 @@ app.put('/api/settings', authMiddleware, (req, res) => {
       var pcSync = JSON.parse(customer.product_config || '{}');
       var pcProd = customer.product;
       if (pcSync[pcProd]) pcSync[pcProd].target_areas = JSON.stringify(target_areas);
-      else pcSync[pcProd] = Object.assign({}, pcSync[pcProd] || {}, { target_areas: JSON.stringify(target_areas), coverage: customer.coverage || 'postcode' });
+      else pcSync[pcProd] = Object.assign({}, pcSync[pcProd] || {}, { target_areas: JSON.stringify(target_areas), coverage: 'postcode' });
+      pcSync[pcProd].coverage = 'postcode';
       db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(JSON.stringify(pcSync), req.user.id);
     } catch(pcSyncErr) { console.log('[SETTINGS] product_config sync error:', pcSyncErr.message); }
     // Sync postcodes to scraper customer file
