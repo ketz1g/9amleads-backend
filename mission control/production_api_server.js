@@ -6808,6 +6808,22 @@ function getPlanLimit(product, plan, coverage) {
   return planLimits[coverageKey] || planLimits.default || Object.values(planLimits)[0] || 5;
 }
 
+// Apply a paid plan: set plan + the per-product daily lead limit, clear the trial
+// timer so the trial-gate lifts and delivery resumes at the paid count. Called by
+// the Stripe checkout webhook AND the admin set-plan tool.
+function applyPlan(cust, plan, product) {
+  var leadsPerDay = 5;
+  try {
+    var rule = getLeadTypeRule(product || cust.product || 'moving');
+    var planKey = plan === 'essential' ? 'starter' : (plan || 'starter');
+    var cov = cust.coverage || 'postcode';
+    leadsPerDay = getPlanLimit(product || cust.product || 'moving', planKey, cov) || leadsPerDay;
+  } catch(e) {}
+  db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = NULL WHERE id = ?').run(plan, leadsPerDay, cust.id);
+  if (product) db.prepare('UPDATE customers SET product = ? WHERE id = ?').run(product, cust.id);
+  saveDb();
+}
+
 // ===== TRIAL / CAMPAIGN CAMPAIGN EMAIL TEMPLATES =====
 const CAMPAIGN_EMAILS = [
   { day: 1, subject: 'Your opportunities start tomorrow at 9am \u2705', template: 'trial_day1' },
@@ -11153,20 +11169,6 @@ app.post('/api/stripe/webhook', async (req, res) => {
 
     var event = req.body;
     var evType = event.type || '';
-
-    // Helper: set the customer's plan + per-product daily limit from lead rules
-    function applyPlan(cust, plan, product) {
-      var leadsPerDay = 5;
-      try {
-        var rule = getLeadTypeRule(product || cust.product || 'moving');
-        var planKey = plan === 'essential' ? 'starter' : (plan || 'starter');
-        var cov = cust.coverage || 'postcode';
-        leadsPerDay = getPlanLimit(product || cust.product || 'moving', planKey, cov) || leadsPerDay;
-      } catch(e) {}
-      db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = NULL WHERE id = ?').run(plan, leadsPerDay, cust.id);
-      if (product) db.prepare('UPDATE customers SET product = ? WHERE id = ?').run(product, cust.id);
-      saveDb();
-    }
 
     if (evType === 'checkout.session.completed') {
       var session = event.data.object;
