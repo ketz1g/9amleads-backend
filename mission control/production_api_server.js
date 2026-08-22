@@ -9052,8 +9052,14 @@ cron.schedule('0 10 * * *', async () => {
       var daysSinceTrialEnd = trialEnds ? Math.floor((new Date() - trialEnds) / 86400000) : -1;
       var createdDate = cust.created_at ? new Date(cust.created_at) : null;
       var accountAge = createdDate ? Math.floor((new Date() - createdDate) / 86400000) : 0;
+      // STOP-FOLLOW-UPS GUARANTEE: the moment a customer pays, the trial/nurture
+      // emails must stop. A customer is "effectively paid" if their plan is no
+      // longer free_trial OR they have an active Stripe subscription (covers any
+      // async lag between payment and the plan update). Paid customers get the
+      // paid welcome/tips series instead — never more trial follow-ups.
+      var isPaidNow = cust.plan !== 'free_trial' || !!cust.stripe_subscription_id;
 
-      if (cust.plan === 'free_trial' && trialEnds) {
+      if (!isPaidNow && cust.plan === 'free_trial' && trialEnds) {
         if (new Date() <= trialEnds) {
           // Active trial: send onboarding emails at days 1, 3, 5 (after signup)
           for (var ei = 0; ei < CAMPAIGN_EMAILS.length; ei++) {
@@ -9089,7 +9095,7 @@ cron.schedule('0 10 * * *', async () => {
             }
           }
         }
-      } else if (cust.plan !== 'free_trial') {
+      } else if (isPaidNow) {
         // Paid customer: send paid email series weekly
         var subAgeWeeks = Math.floor(accountAge / 7);
         for (var pi = 0; pi < PAID_EMAIL_SERIES.length; pi++) {
