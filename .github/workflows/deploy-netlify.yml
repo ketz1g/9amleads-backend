@@ -20,7 +20,16 @@ jobs:
         with:
           node-version: 20
 
+      - name: Verify secret is set
+        run: |
+          if [ -z "${{ secrets.NETLIFY_AUTH_TOKEN }}" ]; then
+            echo "::error::The NETLIFY_AUTH_TOKEN secret is EMPTY. Please create it in Settings -> Secrets and variables -> Actions -> New repository secret. Name must be exactly NETLIFY_AUTH_TOKEN."
+            exit 1
+          fi
+          echo "Secret is set."
+
       - name: Deploy 9amwebsite to Netlify
         run: npx --yes netlify-cli deploy --prod --dir=9amwebsite --site lucent-lolly-e82191
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: lucent-lolly-e82191
