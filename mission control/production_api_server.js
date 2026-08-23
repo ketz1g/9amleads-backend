@@ -4012,13 +4012,16 @@ app.get('/api/affiliate/resources', affiliateAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/affiliate/leads — the affiliate's referral inbox: every customer who signed
-// up with their code, with business type, trial status and where they are in the funnel.
+// GET /api/affiliate/leads — the affiliate's CRM inbox: every customer who signed
+// up with their code, PLUS any leads they added manually, with comments & reminders.
 app.get('/api/affiliate/leads', affiliateAuth, (req, res) => {
   try {
     var aff = req.affiliate;
     var dbc = getDb();
     var commissions = (dbc.partner_commissions || []).filter(function(cm) { return cm.partner_id === aff.id; });
+    var extras = (dbc.affiliate_leads || []).filter(function(l) { return l.affiliate_id === aff.id; });
+    var manual = extras.filter(function(l) { return l.source === 'manual'; });
+    var custExtras = extras.filter(function(l) { return l.source === 'referral'; });
     var refs = (dbc.customers || []).filter(function(c) {
       return c.affiliate_id === aff.id || String(c.affiliate_code || '').toLowerCase() === String(aff.code || '').toLowerCase();
     }).map(function(c) {
@@ -4031,14 +4034,118 @@ app.get('/api/affiliate/leads', affiliateAuth, (req, res) => {
       var created = c.created_at ? new Date(c.created_at).getTime() : 0;
       var days = created ? Math.max(0, Math.floor((Date.now() - created) / 86400000)) : 0;
       var stage = st === 'paid' ? 'Paid' : st === 'approved' ? 'Ready to pay' : st === 'earning' ? 'Earning · recurring' : 'Just signed up · in trial';
+      var ex = custExtras.find(function(x) { return x.customer_id === c.id; });
       return {
-        id: c.id, company: c.company || '', email: c.email || '', phone: c.phone || '',
-        product: c.product || 'moving', plan: c.plan || '', signed_up: c.created_at,
-        days_since: days, trial_days: c.affiliate_trial_days || 14, card_saved: !!(c.stripe_payment_method_id),
-        status: st, stage: stage, paid_at: c.affiliate_paid_at || null, earned: earned
+        id: c.id, company: (ex && ex.company) || c.company || '', email: (ex && ex.email) || c.email || '',
+        phone: (ex && ex.phone) || c.phone || '', product: c.product || 'moving', plan: c.plan || '',
+        signed_up: c.created_at, days_since: days, trial_days: c.affiliate_trial_days || 14,
+        card_saved: !!(c.stripe_payment_method_id), status: st, stage: stage, earned: earned,
+        lead_status: (ex && ex.status) || 'new', manual: false, source: 'referral',
+        comments: (ex && ex.comments) || [], reminders: (ex && ex.reminders) || [],
+        extra_id: ex ? ex.id : null
       };
-    }).sort(function(a, b) { return String(b.signed_up).localeCompare(String(a.signed_up)); });
-    res.json({ success: true, leads: refs });
+    });
+    var out = refs.concat(manual.map(function(l) {
+      return { id: l.id, company: l.company, email: l.email, phone: l.phone, product: l.lead_type || 'general',
+        plan: '', signed_up: l.created_at, days_since: 0, trial_days: 0, card_saved: false,
+        status: 'manual', stage: 'My lead', earned: 0, lead_status: l.status || 'new', manual: true,
+        source: 'manual', comments: l.comments || [], reminders: l.reminders || [], extra_id: l.id };
+    }));
+    out.sort(function(a, b) { return String(b.signed_up || '').localeCompare(String(a.signed_up || '')); });
+    res.json({ success: true, leads: out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Find or create the affiliate's CRM record for a lead (manual id or referral customer id).
+function ensureAffiliateLead(aff, dbc, id) {
+  if (!dbc.affiliate_leads) dbc.affiliate_leads = [];
+  var ex = dbc.affiliate_leads.find(function(l) { return l.affiliate_id === aff.id && (l.id === id || l.customer_id === id); });
+  if (ex) return ex;
+  var rec = { id: uuidv4(), affiliate_id: aff.id, customer_id: String(id), source: 'referral',
+    company: '', email: '', phone: '', lead_type: '', status: 'new', notes: '',
+    comments: [], reminders: [], created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+  dbc.affiliate_leads.push(rec); saveDb();
+  return rec;
+}
+
+// POST /api/affiliate/leads — add a lead manually (their own prospect).
+app.post('/api/affiliate/leads', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate, dbc = getDb();
+    var { company, email, phone, lead_type, notes } = req.body;
+    if (!company || !String(company).trim()) return res.status(400).json({ error: 'Company name is required' });
+    if (!dbc.affiliate_leads) dbc.affiliate_leads = [];
+    var rec = { id: uuidv4(), affiliate_id: aff.id, source: 'manual', customer_id: null,
+      company: String(company).trim(), email: String(email || '').trim(), phone: String(phone || '').trim(),
+      lead_type: String(lead_type || 'general'), status: 'new', notes: String(notes || '').trim(),
+      comments: [], reminders: [], created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    dbc.affiliate_leads.push(rec); saveDb();
+    res.status(201).json({ success: true, lead: rec });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/affiliate/leads/:id — update lead details (company, email, phone, type, status, notes).
+app.put('/api/affiliate/leads/:id', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate, dbc = getDb();
+    var rec = ensureAffiliateLead(aff, dbc, req.params.id);
+    ['company', 'email', 'phone', 'lead_type', 'status', 'notes'].forEach(function(k) {
+      if (req.body[k] !== undefined) rec[k] = String(req.body[k]).trim();
+    });
+    rec.updated_at = new Date().toISOString(); saveDb();
+    res.json({ success: true, lead: rec });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/affiliate/leads/:id/comments — add a comment to a lead.
+app.post('/api/affiliate/leads/:id/comments', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate, dbc = getDb();
+    var rec = ensureAffiliateLead(aff, dbc, req.params.id);
+    var text = String(req.body.text || '').trim();
+    if (!text) return res.status(400).json({ error: 'Comment is required' });
+    if (!rec.comments) rec.comments = [];
+    rec.comments.push({ id: uuidv4(), text: text, at: new Date().toISOString() });
+    rec.updated_at = new Date().toISOString(); saveDb();
+    res.json({ success: true, comments: rec.comments });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/affiliate/leads/:id/reminders — set a follow-up reminder on a lead.
+app.post('/api/affiliate/leads/:id/reminders', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate, dbc = getDb();
+    var rec = ensureAffiliateLead(aff, dbc, req.params.id);
+    var note = String(req.body.note || '').trim();
+    var remind_at = String(req.body.remind_at || '');
+    if (!note || !remind_at) return res.status(400).json({ error: 'Note and reminder date are required' });
+    if (!rec.reminders) rec.reminders = [];
+    rec.reminders.push({ id: uuidv4(), note: note, remind_at: remind_at, done: false, done_at: null });
+    rec.updated_at = new Date().toISOString(); saveDb();
+    res.json({ success: true, reminders: rec.reminders });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/affiliate/leads/:id/reminders/:rid/done — mark a reminder complete.
+app.post('/api/affiliate/leads/:id/reminders/:rid/done', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate, dbc = getDb();
+    var rec = ensureAffiliateLead(aff, dbc, req.params.id);
+    var r = (rec.reminders || []).find(function(x) { return x.id === req.params.rid; });
+    if (!r) return res.status(404).json({ error: 'Reminder not found' });
+    r.done = true; r.done_at = new Date().toISOString(); saveDb();
+    res.json({ success: true, reminders: rec.reminders });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/affiliate/leads/:id — delete a manual lead.
+app.delete('/api/affiliate/leads/:id', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate, dbc = getDb();
+    var idx = (dbc.affiliate_leads || []).findIndex(function(l) { return l.affiliate_id === aff.id && l.id === req.params.id && l.source === 'manual'; });
+    if (idx === -1) return res.status(404).json({ error: 'Lead not found' });
+    dbc.affiliate_leads.splice(idx, 1); saveDb();
+    res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

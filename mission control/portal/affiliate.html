@@ -117,6 +117,37 @@ tr:last-child td{border-bottom:none}
 .m-msg.ok{color:#34d399}.m-msg.bad{color:#f87171}
 .m-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;line-height:1}
 .modal-box{position:relative}
+/* lead CRM */
+.leadhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.leadhead h2{font-size:15px;font-weight:700;color:#f1f5f9}
+.lead-form{background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:14px;padding:18px;margin-bottom:18px}
+.lf-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:640px){.lf-row{grid-template-columns:1fr}}
+.lf-field{margin-bottom:10px}
+.lf-field label{display:block;font-size:11px;font-weight:600;color:#b0b8cc;margin-bottom:5px}
+.lf-field input,.lf-field select,.lf-field textarea{width:100%;padding:10px 12px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px;font-family:inherit}
+.lf-field textarea{min-height:60px;resize:vertical}
+.ld-tabs{display:flex;gap:6px;margin:6px 0 14px;flex-wrap:wrap}
+.ld-tab{padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;background:rgba(255,255,255,.05);border:1px solid #1e2030;color:#94a3b8;cursor:pointer}
+.ld-tab.on{background:rgba(14,165,233,.14);border-color:rgba(14,165,233,.45);color:#0ea5e9}
+.ld-pane{display:none}
+.ld-pane.on{display:block}
+.cm{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+.cm .av{width:28px;height:28px;border-radius:50%;background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.35);color:#38bdf8;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cm .b{flex:1;background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:9px 12px}
+.cm .b .t{font-size:12.5px;color:#e2e8f0;line-height:1.5}
+.cm .b .d{font-size:10.5px;color:#6b7280;margin-top:4px}
+.rm{display:flex;align-items:center;gap:10px;background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:9px 12px;margin-bottom:8px}
+.rm .n{font-size:12.5px;color:#e2e8f0;flex:1}
+.rm .w{font-size:11px;color:#fbbf24;white-space:nowrap}
+.rm.done{opacity:.5}
+.rm.done .n{text-decoration:line-through;color:#6b7280}
+.rm .btn-mini{flex-shrink:0}
+.addline{display:flex;gap:8px;flex-wrap:wrap}
+.addline input{flex:1;min-width:150px;padding:9px 12px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:12.5px}
+.addline input[type=datetime-local]{min-width:auto}
+.ld-save{display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.ld-save .msg{font-size:12px;color:#34d399;display:none}
 </style>
 </head>
 <body>
@@ -204,7 +235,20 @@ tr:last-child td{border-bottom:none}
 <!-- LEADS INBOX -->
 <section id="view-leads" style="display:none">
 <div class="panel">
-<h2>Leads inbox <span class="hint">everyone who signed up with your code — monitor and follow up</span></h2>
+<div class="leadhead">
+<h2>Leads <span class="hint">your CRM — referrals + your own leads, with comments &amp; reminders</span></h2>
+<button class="btn-mini" onclick="toggleAddLead()">+ Add lead</button>
+</div>
+<div class="lead-form" id="lead-form" style="display:none">
+<div class="lf-row">
+<div class="lf-field"><label>Company</label><input type="text" id="nl-company" placeholder="Company name"></div>
+<div class="lf-field"><label>Lead type</label><select id="nl-type"><option value="moving">Moving</option><option value="probate">Probate</option><option value="newbusiness">New business</option><option value="planning">Planning</option><option value="tenders">Tenders</option><option value="general">General</option></select></div>
+<div class="lf-field"><label>Email</label><input type="email" id="nl-email" placeholder="you@company.com"></div>
+<div class="lf-field"><label>Phone</label><input type="text" id="nl-phone" placeholder="020 0000 0000"></div>
+</div>
+<div class="lf-field"><label>Notes</label><textarea id="nl-notes" placeholder="Anything about this lead..."></textarea></div>
+<div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn-out" onclick="toggleAddLead()">Cancel</button><button class="btn" style="width:auto;padding:10px 20px" onclick="addLead()">Add lead</button></div>
+</div>
 <div id="leads-list"></div>
 </div>
 </section>
@@ -302,6 +346,38 @@ tr:last-child td{border-bottom:none}
 <button class="btn" onclick="sendHelp()" id="h-btn">Send message</button>
 <div class="m-msg" id="h-msg-out"></div>
 <div class="a" style="margin-top:10px;text-align:center">Or email us directly: <a href="mailto:hello@9amleads.com" style="color:#0ea5e9">hello@9amleads.com</a></div>
+</div>
+</div>
+</div>
+
+<!-- LEAD DETAIL MODAL -->
+<div class="modal" id="lead-modal">
+<div class="modal-box" style="max-width:620px">
+<button class="m-close" onclick="closeLeadModal()">&times;</button>
+<h2 id="ld-title">Lead</h2>
+<div class="sub" id="ld-sub"></div>
+<div class="ld-tabs">
+<div class="ld-tab on" data-p="details" onclick="ldTab('details')">Details</div>
+<div class="ld-tab" data-p="comments" onclick="ldTab('comments')">Comments <span id="ld-cm-count" style="color:#0ea5e9"></span></div>
+<div class="ld-tab" data-p="reminders" onclick="ldTab('reminders')">Reminders <span id="ld-rm-count" style="color:#fbbf24"></span></div>
+</div>
+<div class="ld-pane on" id="pane-details">
+<div class="lf-row">
+<div class="lf-field"><label>Company</label><input type="text" id="ld-company"></div>
+<div class="lf-field"><label>Email</label><input type="email" id="ld-email"></div>
+<div class="lf-field"><label>Phone</label><input type="text" id="ld-phone"></div>
+<div class="lf-field"><label>Status</label><select id="ld-status"><option value="new">New</option><option value="contacted">Contacted</option><option value="trial">In trial</option><option value="paying">Paying customer</option><option value="closed">Closed / lost</option></select></div>
+</div>
+<div class="lf-field"><label>Notes</label><textarea id="ld-notes"></textarea></div>
+<div class="ld-save"><span class="msg" id="ld-save-msg">Saved</span><button class="btn-mini" id="ld-del" onclick="delLead()">Delete lead</button><button class="btn" style="width:auto;padding:10px 20px" onclick="saveLead()">Save changes</button></div>
+</div>
+<div class="ld-pane" id="pane-comments">
+<div id="ld-comments"></div>
+<div class="addline"><input type="text" id="ld-cm-in" placeholder="Add a comment..."><button class="btn-mini" onclick="addComment()">Add</button></div>
+</div>
+<div class="ld-pane" id="pane-reminders">
+<div id="ld-reminders"></div>
+<div class="addline"><input type="text" id="ld-rm-note" placeholder="e.g. Follow up re: trial"><input type="datetime-local" id="ld-rm-when"><button class="btn-mini" onclick="addReminder()">Set</button></div>
 </div>
 </div>
 </div>
@@ -412,9 +488,10 @@ function loadLeads(){
     if(!LEADS.length){w.innerHTML='<div class="empty"><b>No leads in your inbox yet.</b><br>Share your code — every customer who signs up with it appears here so you can follow up and monitor them.</div>';return;}
     var h='';
     LEADS.forEach(function(r){
+      var pendRms=(r.reminders||[]).filter(function(x){return !x.done;}).length;
       h+='<div class="lead"><div class="ico">'+(EMOJI[r.product]||'📈')+'</div><div class="main"><div class="co">'+esc(r.company||r.email)+'</div><div class="em">'+esc(r.email)+(r.phone?' · '+esc(r.phone):'')+'</div>'+
-      '<div class="meta"><span>'+esc(r.product)+'</span><span>'+(r.plan?esc(r.plan):'Trial')+'</span><span>'+r.days_since+'d ago</span>'+(r.card_saved?'<span style="color:#34d399">💳 card saved</span>':'<span style="color:#94a3b8">no card yet</span>')+'</div></div>'+
-      '<div class="act">'+stageBadge(r.stage)+'<button class="btn-mini" onclick="openTools(\''+esc(r.product)+'\')">Open tools</button></div></div>';
+      '<div class="meta"><span>'+esc(r.product)+'</span>'+(r.plan?'<span>'+esc(r.plan)+'</span>':'')+(r.manual?'<span style="color:#38bdf8">my lead</span>':'<span>'+r.days_since+'d ago</span>')+(r.card_saved?'<span style="color:#34d399">💳 card saved</span>':'')+(pendRms?'<span style="color:#fbbf24">⏰ '+pendRms+' reminder'+(pendRms>1?'s':'')+'</span>':'')+'</div></div>'+
+      '<div class="act">'+stageBadge(r.stage)+(r.manual?'<button class="btn-mini" onclick="openLeadModal(\''+esc(r.id)+'\')">View</button>':'<button class="btn-mini" onclick="openLeadModal(\''+esc(r.id)+'\')">View</button>')+'<button class="btn-mini" onclick="openTools(\''+esc(r.product)+'\')">Tools</button></div></div>';
     });
     w.innerHTML=h;
   }).catch(function(){});
@@ -511,6 +588,90 @@ function sendHelp(){
     document.getElementById('h-name').value='';document.getElementById('h-email').value='';document.getElementById('h-msg').value='';
   }).catch(function(){out.className='m-msg bad';out.style.display='block';out.textContent='Could not send right now — please email hello@9amleads.com.';})
   .then(function(){btn.disabled=false;btn.textContent='Send message';});
+}
+/* ---- LEAD CRM ---- */
+var curLead=null;
+function toggleAddLead(){var f=document.getElementById('lead-form');f.style.display=(f.style.display==='none')?'block':'none';}
+function addLead(){
+  var company=document.getElementById('nl-company').value.trim();
+  var type=document.getElementById('nl-type').value;
+  var email=document.getElementById('nl-email').value.trim();
+  var phone=document.getElementById('nl-phone').value.trim();
+  var notes=document.getElementById('nl-notes').value.trim();
+  if(!company){alert('Please enter a company name.');return;}
+  api('POST','/affiliate/leads',{company:company,email:email,phone:phone,lead_type:type,notes:notes}).then(function(d){
+    if(d.success){document.getElementById('nl-company').value='';document.getElementById('nl-email').value='';document.getElementById('nl-phone').value='';document.getElementById('nl-notes').value='';toggleAddLead();loadLeads();}
+    else alert(d.error||'Could not add lead');
+  });
+}
+function openLeadModal(id){
+  curLead=(LEADS||[]).find(function(l){return String(l.id)===String(id);});
+  if(!curLead)return;
+  document.getElementById('ld-title').textContent=(curLead.company||curLead.email||'Lead');
+  document.getElementById('ld-sub').textContent=(curLead.manual?'My lead':'Referral')+' · '+esc(curLead.product);
+  document.getElementById('ld-company').value=curLead.company||'';
+  document.getElementById('ld-email').value=curLead.email||'';
+  document.getElementById('ld-phone').value=curLead.phone||'';
+  document.getElementById('ld-status').value=curLead.lead_status||'new';
+  document.getElementById('ld-notes').value=curLead.notes||'';
+  document.getElementById('ld-save-msg').style.display='none';
+  document.getElementById('ld-del').style.display=curLead.manual?'inline-block':'none';
+  document.getElementById('lead-modal').classList.add('open');
+  renderComments();renderReminders();ldTab('details');
+}
+function closeLeadModal(){document.getElementById('lead-modal').classList.remove('open');}
+function ldTab(p){document.querySelectorAll('.ld-tab').forEach(function(t){t.classList.toggle('on',t.dataset.p===p);});document.querySelectorAll('.ld-pane').forEach(function(x){x.classList.toggle('on',x.id==='pane-'+p);});}
+function saveLead(){
+  var body={company:document.getElementById('ld-company').value.trim(),email:document.getElementById('ld-email').value.trim(),phone:document.getElementById('ld-phone').value.trim(),status:document.getElementById('ld-status').value,notes:document.getElementById('ld-notes').value.trim()};
+  api('PUT','/affiliate/leads/'+encodeURIComponent(curLead.id),body).then(function(d){
+    if(d.success){var m=document.getElementById('ld-save-msg');m.style.display='block';setTimeout(function(){m.style.display='none';},1600);loadLeads();}
+    else alert(d.error||'Could not save');
+  });
+}
+function addComment(){
+  var t=document.getElementById('ld-cm-in').value.trim();
+  if(!t)return;
+  api('POST','/affiliate/leads/'+encodeURIComponent(curLead.id)+'/comments',{text:t}).then(function(d){
+    if(d.success){document.getElementById('ld-cm-in').value='';curLead.comments=d.comments||[];renderComments();loadLeads();}
+  });
+}
+function renderComments(){
+  var w=document.getElementById('ld-comments');
+  document.getElementById('ld-cm-count').textContent=curLead.comments.length?'('+curLead.comments.length+')':'';
+  if(!curLead.comments.length){w.innerHTML='<div class="muted" style="margin-bottom:10px">No comments yet.</div>';return;}
+  var h='';curLead.comments.forEach(function(c){h+='<div class="cm"><div class="av">M</div><div class="b"><div class="t">'+esc(c.text)+'</div><div class="d">'+fmtDate(c.at)+'</div></div></div>';});
+  w.innerHTML=h;
+}
+function addReminder(){
+  var note=document.getElementById('ld-rm-note').value.trim();
+  var when=document.getElementById('ld-rm-when').value;
+  if(!note||!when){alert('Add a note and a date/time.');return;}
+  api('POST','/affiliate/leads/'+encodeURIComponent(curLead.id)+'/reminders',{note:note,remind_at:when}).then(function(d){
+    if(d.success){document.getElementById('ld-rm-note').value='';document.getElementById('ld-rm-when').value='';curLead.reminders=d.reminders||[];renderReminders();loadLeads();}
+  });
+}
+function markReminder(rid){
+  api('POST','/affiliate/leads/'+encodeURIComponent(curLead.id)+'/reminders/'+encodeURIComponent(rid)+'/done').then(function(d){
+    if(d.success){curLead.reminders=d.reminders||[];renderReminders();loadLeads();}
+  });
+}
+function renderReminders(){
+  var w=document.getElementById('ld-reminders');
+  var pend=(curLead.reminders||[]).filter(function(x){return !x.done;});
+  document.getElementById('ld-rm-count').textContent=pend.length?'('+pend.length+')':'';
+  if(!curLead.reminders.length){w.innerHTML='<div class="muted" style="margin-bottom:10px">No reminders yet — set one to follow up on this lead.</div>';return;}
+  var h='';curLead.reminders.forEach(function(r){
+    var when=fmtWhen(r.remind_at);
+    h+='<div class="rm'+(r.done?' done':'')+'"><div class="n">'+esc(r.note)+'</div><div class="w">'+(r.done?'done':'⏰ '+when)+'</div>'+(r.done?'':'<button class="btn-mini" onclick="markReminder(\''+esc(r.id)+'\')">Done</button>')+'</div>';
+  });
+  w.innerHTML=h;
+}
+function fmtWhen(v){if(!v)return'';var d=new Date(v);if(isNaN(d))return String(v);return d.toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
+function delLead(){
+  if(!confirm('Delete this lead?'))return;
+  api('DELETE','/affiliate/leads/'+encodeURIComponent(curLead.id)).then(function(d){
+    if(d.success){closeLeadModal();loadLeads();}else alert(d.error||'Could not delete');
+  });
 }
 document.getElementById('logout').onclick=function(){sessionStorage.removeItem('mld_affiliate_session');localStorage.removeItem('mld_affiliate_token');location.reload();};
 if(TOKEN){init();}else if(location.hash==='#register'){showRegister();}
