@@ -149,6 +149,7 @@ function extractPostcodeArea(postcode) {
 // street number or house name — never a bare street/place name. See address_premise.js.
 var ADDR_PREMISE = require('./address_premise');
 var CURATED_BLOG = require('./curated_blog_posts');
+var AFFILIATE_TOOLKIT = require('./affiliate_resources');
 function hasUsablePremiseAddress(addr, pc) { return ADDR_PREMISE.hasUsablePremiseAddress(addr, pc); }
 
 // Strip a leading DEFAULT/UNCONFIRMED "Flat 1" prefix from an address. UK portals
@@ -3945,44 +3946,92 @@ app.post('/api/affiliate/login', async (req, res) => {
 app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
   try {
     var aff = req.affiliate;
+    var dbc = getDb();
     var rate = aff.payout_rate || AFFILIATE_PAYOUT_RATE;
-    var refs = (getDb().customers || []).filter(function(c) {
+    var refs = (dbc.customers || []).filter(function(c) {
       return c.affiliate_id === aff.id || String(c.affiliate_code || '').toLowerCase() === String(aff.code || '').toLowerCase();
     });
+    var commissions = (dbc.partner_commissions || []).filter(function(cm) { return cm.partner_id === aff.id; });
+    var now = new Date();
+    var curMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    var thisMonth = 0, pending = 0, cleared = 0, paid = 0, lifetime = 0;
+    commissions.forEach(function(cm) {
+      var amt = Number(cm.commission_amount || 0);
+      lifetime += amt;
+      if (cm.commission_period === curMonth && cm.commission_type === 'recurring') thisMonth += amt;
+      if (cm.status === 'pending') pending += amt;
+      else if (cm.status === 'approved') cleared += amt;
+      else if (cm.status === 'paid') paid += amt;
+    });
     var byProduct = {};
-    var pending = 0, due = 0, paid = 0, ineligible = 0;
     var referralRows = [];
     refs.forEach(function(c) {
       var prod = c.product || 'moving';
       byProduct[prod] = (byProduct[prod] || 0) + 1;
-      var st = c.affiliate_payout_status || 'referral_pending';
-      if (st === 'pending') pending++;
-      else if (st === 'due') due++;
-      else if (st === 'paid') paid++;
-      else if (st === 'ineligible') ineligible++;
+      var custComms = commissions.filter(function(cm) { return cm.customer_id === c.id; });
+      var cSt = 'referral_pending';
+      if (custComms.some(function(cm) { return cm.status === 'paid'; })) cSt = 'paid';
+      else if (custComms.some(function(cm) { return cm.status === 'approved'; })) cSt = 'approved';
+      else if (custComms.length) cSt = 'earning';
+      else if (customerIsPaying(c)) cSt = 'earning';
+      else if (c.affiliate_payout_status === 'paid') cSt = 'paid';
       referralRows.push({
         id: c.id, company: c.company, email: c.email, product: prod, plan: c.plan,
-        signed_up: c.created_at, status: st, trial_days: c.affiliate_trial_days || 7,
-        card_saved: !!(c.stripe_payment_method_id), payout_due: c.affiliate_payout_due,
-        paid_at: c.affiliate_paid_at || null
+        signed_up: c.created_at, status: cSt, trial_days: c.affiliate_trial_days || 14,
+        card_saved: !!(c.stripe_payment_method_id),
+        monthly_earned: custComms.filter(function(cm) { return cm.status === 'paid' || cm.status === 'approved'; }).reduce(function(a, cm) { return a + Number(cm.commission_amount || 0); }, 0)
       });
     });
     referralRows.sort(function(a, b) { return String(b.signed_up).localeCompare(String(a.signed_up)); });
+    var payouts = (dbc.partner_payouts || []).filter(function(p) { return p.partner_id === aff.id; });
     res.json({
       success: true,
       affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email },
-      rates: { per_referral: rate, paid_month_after: true },
-      totals: { referrals: refs.length, pending: pending, due: due, paid: paid, ineligible: ineligible },
-      earnings: {
-        pending: pending * rate,       // card saved, waiting out the month
-        due: due * rate,               // month passed + still active, ready to be paid
-        paid: paid * rate,             // already paid out
-        total_earned: (due + paid) * rate
-      },
+      rates: { per_referral: rate, recurring_monthly: rate, recurring: true, customer_trial_days: 14 },
+      totals: { referrals: refs.length, this_month: thisMonth, pending: pending, cleared: cleared, paid: paid, lifetime: lifetime },
+      earnings: { this_month: thisMonth, pending: pending, cleared: cleared, paid: paid, lifetime: lifetime },
       by_product: byProduct,
       referrals: referralRows,
-      payouts: aff.payouts || []
+      payouts: payouts
     });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/affiliate/resources — the affiliate sales toolkit (phone scripts, emails,
+// SMS, social posts and follow-up sequences) for every lead type.
+app.get('/api/affiliate/resources', affiliateAuth, (req, res) => {
+  try {
+    res.json({ success: true, resources: AFFILIATE_TOOLKIT || [] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/affiliate/leads — the affiliate's referral inbox: every customer who signed
+// up with their code, with business type, trial status and where they are in the funnel.
+app.get('/api/affiliate/leads', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate;
+    var dbc = getDb();
+    var commissions = (dbc.partner_commissions || []).filter(function(cm) { return cm.partner_id === aff.id; });
+    var refs = (dbc.customers || []).filter(function(c) {
+      return c.affiliate_id === aff.id || String(c.affiliate_code || '').toLowerCase() === String(aff.code || '').toLowerCase();
+    }).map(function(c) {
+      var custComms = commissions.filter(function(cm) { return cm.customer_id === c.id; });
+      var earned = custComms.filter(function(cm) { return cm.status === 'paid' || cm.status === 'approved'; }).reduce(function(a, cm) { return a + Number(cm.commission_amount || 0); }, 0);
+      var st = 'referral_pending';
+      if (custComms.some(function(cm) { return cm.status === 'paid'; })) st = 'paid';
+      else if (custComms.some(function(cm) { return cm.status === 'approved'; })) st = 'approved';
+      else if (custComms.length || customerIsPaying(c)) st = 'earning';
+      var created = c.created_at ? new Date(c.created_at).getTime() : 0;
+      var days = created ? Math.max(0, Math.floor((Date.now() - created) / 86400000)) : 0;
+      var stage = st === 'paid' ? 'Paid' : st === 'approved' ? 'Ready to pay' : st === 'earning' ? 'Earning · recurring' : 'Just signed up · in trial';
+      return {
+        id: c.id, company: c.company || '', email: c.email || '', phone: c.phone || '',
+        product: c.product || 'moving', plan: c.plan || '', signed_up: c.created_at,
+        days_since: days, trial_days: c.affiliate_trial_days || 14, card_saved: !!(c.stripe_payment_method_id),
+        status: st, stage: stage, paid_at: c.affiliate_paid_at || null, earned: earned
+      };
+    }).sort(function(a, b) { return String(b.signed_up).localeCompare(String(a.signed_up)); });
+    res.json({ success: true, leads: refs });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

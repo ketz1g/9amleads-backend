@@ -8,19 +8,28 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#0b0d14;color:#e2e8f0;min-height:100vh}
 a{color:#0ea5e9;text-decoration:none}
-.topbar{display:flex;align-items:center;gap:12px;padding:16px 28px;background:#0f111a;border-bottom:1px solid #1e2030}
+button{font-family:inherit}
+.topbar{display:flex;align-items:center;gap:12px;padding:14px 24px;background:#0f111a;border-bottom:1px solid #1e2030;position:sticky;top:0;z-index:20}
 .logo{font-size:17px;font-weight:800;color:#0ea5e9;letter-spacing:-.3px}
 .logo span{color:#f1f5f9}
 .topbar .spacer{flex:1}
-.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
-.hero{background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(14,165,233,.02));border:1px solid rgba(14,165,233,.25);border-radius:14px;padding:26px 28px;margin-bottom:24px}
+.topbar .who{font-size:12px;color:#94a3b8;text-align:right;line-height:1.4}
+.topbar .who b{display:block;color:#e2e8f0;font-size:13px}
+.wrap{max-width:1120px;margin:0 auto;padding:24px 20px 80px}
+.hero{background:linear-gradient(135deg,rgba(14,165,233,.14),rgba(14,165,233,.03));border:1px solid rgba(14,165,233,.28);border-radius:16px;padding:26px 28px;margin-bottom:22px;position:relative;overflow:hidden}
 .hero h1{font-size:24px;font-weight:800;color:#f1f5f9;margin-bottom:6px}
-.hero p{font-size:13px;color:#94a3b8;line-height:1.6;max-width:720px}
-.hero .code{display:inline-flex;align-items:center;gap:8px;margin-top:12px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;padding:8px 14px}
-.hero .code b{color:#0ea5e9;font-size:15px;letter-spacing:1px}
-.hero .code button{background:#0ea5e9;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:26px}
-.card{background:#0f111a;border:1px solid #1e2030;border-radius:12px;padding:18px}
+.hero p{font-size:13px;color:#94a3b8;line-height:1.6;max-width:760px}
+.hero .code{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:#0b0d14;border:1px solid rgba(14,165,233,.35);border-radius:10px;padding:10px 14px}
+.hero .code .lbl{font-size:11px;color:#94a3b8;margin-right:2px}
+.hero .code b{color:#0ea5e9;font-size:16px;letter-spacing:1px}
+.hero .code button{background:#0ea5e9;color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer}
+.tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.tab{padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;background:#0f111a;border:1px solid #1e2030;color:#94a3b8;cursor:pointer;transition:.15s}
+.tab:hover{color:#e2e8f0;border-color:#2a2d42}
+.tab.on{background:rgba(14,165,233,.14);border-color:rgba(14,165,233,.45);color:#0ea5e9}
+.tab .n{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:rgba(14,165,233,.2);color:#0ea5e9;font-size:10px;font-weight:800;margin-left:6px;padding:0 5px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:24px}
+.card{background:#0f111a;border:1px solid #1e2030;border-radius:14px;padding:18px}
 .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
 .card .val{font-size:26px;font-weight:800;color:#f1f5f9}
 .card .sub{font-size:11px;color:#6b7280;margin-top:4px}
@@ -29,12 +38,13 @@ a{color:#0ea5e9;text-decoration:none}
 .card.amber .val{color:#fbbf24}
 .card.grey .val{color:#cbd5e1}
 .grid{display:grid;grid-template-columns:1fr;gap:20px}
-@media(min-width:860px){.grid{grid-template-columns:1.6fr 1fr}}
-.panel{background:#0f111a;border:1px solid #1e2030;border-radius:12px;padding:20px}
-.panel h2{font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:14px}
+@media(min-width:900px){.grid.two{grid-template-columns:1.7fr 1fr}}
+.panel{background:#0f111a;border:1px solid #1e2030;border-radius:14px;padding:20px}
+.panel h2{font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.panel h2 .hint{font-size:11px;color:#6b7280;font-weight:500}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
 th{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;text-align:left;padding:7px 8px;border-bottom:1px solid #1e2030}
-td{padding:9px 8px;border-bottom:1px solid rgba(30,32,48,.6);color:#cbd5e1;vertical-align:top}
+td{padding:9px 8px;border-bottom:1px solid rgba(30,32,48,.6);color:#cbd5e1;vertical-align:middle}
 tr:last-child td{border-bottom:none}
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700}
 .b-pending{background:rgba(251,191,36,.12);color:#fbbf24}
@@ -42,37 +52,65 @@ tr:last-child td{border-bottom:none}
 .b-paid{background:rgba(14,165,233,.14);color:#0ea5e9}
 .b-ref{background:rgba(148,163,184,.12);color:#94a3b8}
 .b-ineligible{background:rgba(248,113,113,.12);color:#f87171}
+.b-trial{background:rgba(14,165,233,.10);color:#38bdf8}
+.b-new{background:rgba(52,211,153,.12);color:#34d399}
 .muted{color:#6b7280;font-size:11.5px}
-.login{max-width:400px;margin:60px auto;background:#0f111a;border:1px solid #1e2030;border-radius:14px;padding:32px}
+.login{max-width:400px;margin:60px auto;background:#0f111a;border:1px solid #1e2030;border-radius:16px;padding:32px}
 .login h1{font-size:19px;font-weight:800;color:#f1f5f9;margin-bottom:4px}
 .login p{font-size:12px;color:#94a3b8;margin-bottom:20px}
 .fg{margin-bottom:14px}
 .fg label{display:block;font-size:11px;font-weight:600;color:#b0b8cc;margin-bottom:5px}
-.fg input{width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px}
+.fg input{width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px}
 .fg input:focus{outline:none;border-color:#0ea5e9}
-.btn{width:100%;padding:12px;background:#0ea5e9;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+.btn{width:100%;padding:12px;background:#0ea5e9;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer}
 .btn:hover{background:#0284c7}
+.btn-out{background:transparent;border:1px solid #1e2030;color:#94a3b8;padding:8px 14px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-out:hover{color:#e2e8f0;border-color:#2a2d42}
+.btn-mini{background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.4);color:#0ea5e9;padding:5px 11px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-mini:hover{background:rgba(14,165,233,.24)}
 .err{color:#f87171;font-size:12px;margin-top:10px;display:none}
-.tabs{display:flex;gap:6px;margin-bottom:16px}
-.tab{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;background:#0f111a;border:1px solid #1e2030;color:#94a3b8;cursor:pointer}
-.tab.on{background:rgba(14,165,233,.12);border-color:rgba(14,165,233,.4);color:#0ea5e9}
-.howto{font-size:12.5px;color:#cbd5e1;line-height:1.75}
+.howto{font-size:12.5px;color:#cbd5e1;line-height:1.8}
 .howto b{color:#f1f5f9}
-.howto li{margin-bottom:8px}
-.btn-out{background:transparent;border:1px solid #1e2030;color:#94a3b8;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer}
+.howto li{margin-bottom:9px}
+/* type chips */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.chip{padding:9px 16px;border-radius:50px;font-size:12.5px;font-weight:600;background:#0f111a;border:1px solid #1e2030;color:#94a3b8;cursor:pointer}
+.chip.on{background:rgba(14,165,233,.14);border-color:rgba(14,165,233,.5);color:#0ea5e9}
+/* tool sections */
+.tool-sec{background:#0f111a;border:1px solid #1e2030;border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.tool-sec h3{font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.step{background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:11px 14px;margin-bottom:8px;font-size:12.5px;color:#cbd5e1;line-height:1.6}
+.step b{color:#0ea5e9;font-size:11px;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px}
+.tpl{background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:13px 14px;margin-bottom:10px}
+.tpl .subj{font-weight:700;color:#f1f5f9;font-size:12.5px;margin-bottom:5px}
+.tpl pre{font-family:inherit;white-space:pre-wrap;font-size:12.5px;color:#a3adc2;line-height:1.65;margin:0}
+.post-card{background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:12.5px;color:#cbd5e1;line-height:1.6}
+/* leads inbox */
+.lead{display:flex;align-items:flex-start;gap:14px;background:#0f111a;border:1px solid #1e2030;border-radius:14px;padding:16px;margin-bottom:12px}
+.lead .ico{width:44px;height:44px;border-radius:12px;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.lead .main{flex:1;min-width:0}
+.lead .main .co{font-weight:700;color:#f1f5f9;font-size:14px}
+.lead .main .em{font-size:12px;color:#94a3b8;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lead .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.lead .meta span{font-size:10.5px;color:#94a3b8;background:#0b0d14;border:1px solid #1e2030;padding:3px 9px;border-radius:20px}
+.lead .act{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.empty{background:#0f111a;border:1px dashed #2a2d42;border-radius:14px;padding:40px;text-align:center;color:#6b7280;font-size:13px;line-height:1.8}
+.empty b{color:#94a3b8}
+@media(max-width:640px){.lead{flex-wrap:wrap}.lead .act{flex-direction:row;align-items:center;width:100%}}
 </style>
 </head>
 <body>
 <div class="topbar">
 <div class="logo">9am<span>Leads</span> <span style="font-weight:500;font-size:12px;color:#94a3b8">Affiliate</span></div>
 <div class="spacer"></div>
+<div class="who" id="who-box" style="display:none"><b id="tb-name"></b><span id="tb-code"></span></div>
 <button class="btn-out" id="logout" style="display:none">Sign out</button>
 </div>
 
 <!-- LOGIN -->
 <div class="login" id="login-view">
 <h1>Affiliate sign in</h1>
-<p>Track your referrals, earnings and payouts.</p>
+<p>Track your referrals, leads and earnings.</p>
 <div class="fg"><label>Email</label><input type="email" id="a-email" placeholder="you@partner.com"></div>
 <div class="fg"><label>Password</label><input type="password" id="a-pass" placeholder="Your affiliate password"></div>
 <button class="btn" onclick="login()">Sign in</button>
@@ -97,57 +135,97 @@ tr:last-child td{border-bottom:none}
 <div class="wrap" id="dash-view" style="display:none">
 <div class="hero">
 <h1>Welcome back, <span id="a-name">Affiliate</span> 👋</h1>
-<p>Share your name or code below. Every customer who uses it for <b>any lead type</b> gets a <b>14-day free trial</b> (instead of 7). When they <b>pay their first invoice</b> for a Starter, Pro or Enterprise package, you earn <b>£25</b> — paid out the month after they signed up.</p>
-<div class="code"><span style="font-size:11px;color:#94a3b8">Your code:</span> <b id="a-code"></b> <button onclick="copyCode()">Copy</button></div>
+<p>Share your code below. Every customer who uses it for <b>any lead type</b> gets a <b>14-day free trial</b>. You earn <b>£25</b> when they pay their first invoice, then <b>£25 every month for life</b> as long as they stay a customer. Use the <b>Tools</b> tab for ready-made phone scripts, emails, SMS and social posts to help your referrals start the free trial.</p>
+<div class="code"><span class="lbl">Your code:</span> <b id="a-code"></b> <button onclick="copyCode()">Copy</button></div>
 </div>
 
+<div class="tabs">
+<div class="tab on" data-t="overview" onclick="go('overview')">Overview</div>
+<div class="tab" data-t="leads" onclick="go('leads')">Leads <span class="n" id="leads-count">0</span></div>
+<div class="tab" data-t="tools" onclick="go('tools')">Tools</div>
+<div class="tab" data-t="refs" onclick="go('refs')">Referrals</div>
+<div class="tab" data-t="payouts" onclick="go('payouts')">Payouts</div>
+</div>
+
+<!-- OVERVIEW -->
+<section id="view-overview">
 <div class="cards">
-<div class="card"><div class="lbl">Referrals</div><div class="val" id="c-refs">0</div><div class="sub">people who signed up using your code</div></div>
-<div class="card amber"><div class="lbl">Pending</div><div class="val" id="c-pending">£0</div><div class="sub">first invoice paid · waiting for payout date</div></div>
-<div class="card green"><div class="lbl">Ready to pay</div><div class="val" id="c-due">£0</div><div class="sub">month passed · being paid</div></div>
-<div class="card blue"><div class="lbl">Paid</div><div class="val" id="c-paid">£0</div><div class="sub">total you've earned</div></div>
+<div class="card"><div class="lbl">Referrals</div><div class="val" id="c-refs">0</div><div class="sub">customers who signed up with your code</div></div>
+<div class="card blue"><div class="lbl">This month</div><div class="val" id="c-month">£0</div><div class="sub">recurring earnings so far this month</div></div>
+<div class="card amber"><div class="lbl">Pending</div><div class="val" id="c-pending">£0</div><div class="sub">clearing · pays after ~30 days</div></div>
+<div class="card green"><div class="lbl">Lifetime</div><div class="val" id="c-lifetime">£0</div><div class="sub">total earned all-time</div></div>
 </div>
-
-<div class="grid">
-<div class="panel">
-<h2>Referrals</h2>
-<div id="refs-table-wrap"></div>
-</div>
-<div class="panel">
-<h2>How it works</h2>
+<div class="grid two">
+<div class="panel"><h2>How it works</h2>
 <ol class="howto" style="padding-left:18px">
 <li><b>Share your code</b> — give your name or code to anyone starting with 9amLeads.</li>
-<li><b>They get 14 days free</b> — used at signup for any lead type (moving, probate, planning, new business, tenders).</li>
+<li><b>They get a 14-day free trial</b> — instead of the standard 7 days, used at signup for any lead type.</li>
 <li><b>You earn £25</b> — when they pay their first invoice for a Starter, Pro or Enterprise package.</li>
-<li><b>Paid monthly</b> — payouts are made the month after their signup date.</li>
+<li><b>Then £25 every month</b> — for as long as they stay a paying customer. A customer who stays a year is worth £300 to you.</li>
+<li><b>Paid monthly</b> — commissions clear after ~30 days and are paid out on a monthly cycle.</li>
 </ol>
-<h2 style="margin-top:22px">Payout history</h2>
-<div id="payouts-wrap"><div class="muted">No payouts yet.</div></div>
+<p style="font-size:12px;color:#94a3b8;margin-top:14px">Tip: open the <a href="#" onclick="go('tools');return false" style="color:#0ea5e9">Tools tab</a> for phone scripts, emails, SMS and social posts for every lead type — ready to copy and use.</p>
+</div>
+<div class="panel"><h2>Recent leads <span class="hint">your inbox</span></h2><div id="recent-leads"></div>
+<p style="font-size:12px;color:#0ea5e9;margin-top:10px"><a href="#" onclick="go('leads');return false">View all leads →</a></p>
 </div>
 </div>
+</section>
+
+<!-- LEADS INBOX -->
+<section id="view-leads" style="display:none">
+<div class="panel">
+<h2>Leads inbox <span class="hint">everyone who signed up with your code — monitor and follow up</span></h2>
+<div id="leads-list"></div>
+</div>
+</section>
+
+<!-- TOOLS -->
+<section id="view-tools" style="display:none">
+<div class="panel" style="margin-bottom:16px">
+<h2>Sales toolkit</h2>
+<p style="font-size:12px;color:#94a3b8;margin-bottom:14px">Ready-made scripts to help your referrals start their free trial. Pick the business type, then copy any template. Placeholders like <b style="color:#cbd5e1">[name]</b> are where you fill in the lead's details.</p>
+<div class="chips" id="type-chips"></div>
+</div>
+<div id="tool-content"></div>
+</section>
+
+<!-- REFERRALS -->
+<section id="view-refs" style="display:none">
+<div class="panel"><h2>All referrals</h2><div id="refs-table-wrap"></div></div>
+</section>
+
+<!-- PAYOUTS -->
+<section id="view-payouts" style="display:none">
+<div class="panel"><h2>Payout history</h2><div id="payouts-wrap"><div class="muted">No payouts yet.</div></div></div>
+</section>
 </div>
 
 <script>
 var API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
-// Token: (1) from the URL (?token=... — admin viewing an affiliate's dashboard,
-// session-only so it never overwrites the affiliate's own remembered login),
-// (2) from sessionStorage, (3) from localStorage (remembered login).
 (function(){
   var q = new URLSearchParams(window.location.search).get('token');
   if (q) { sessionStorage.setItem('mld_affiliate_session', q); }
 })();
 var TOKEN = sessionStorage.getItem('mld_affiliate_session') || localStorage.getItem('mld_affiliate_token') || '';
+var D = null, RES = null, LEADS = null, curType = 'moving';
+
 function showLogin(){document.getElementById('login-view').style.display='block';document.getElementById('register-view').style.display='none';}
 function showRegister(){document.getElementById('login-view').style.display='none';document.getElementById('register-view').style.display='block';}
 function err(id,msg){var e=document.getElementById(id);e.textContent=msg;e.style.display='block';}
 function api(method,path,body){
   return fetch(API+'/api'+path,{method:method,headers:{'Content-Type':'application/json','Authorization':TOKEN?'Bearer '+TOKEN:''},body:body?JSON.stringify(body):undefined}).then(function(r){return r.json();});
 }
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function fmtDate(iso){if(!iso)return '-';try{return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch(e){return iso;}}
+function copyText(txt,btn){var b=btn||document.querySelector('.code button');navigator.clipboard.writeText(txt).then(function(){var o=b.textContent;b.textContent='Copied!';setTimeout(function(){b.textContent=o;},1300);});}
+function copyCode(){copyText(document.getElementById('a-code').textContent);}
+
 function login(){
   var email=document.getElementById('a-email').value.trim(),pass=document.getElementById('a-pass').value;
   fetch(API+'/api/affiliate/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.token){TOKEN=d.token;localStorage.setItem('mld_affiliate_token',d.token);document.getElementById('logout').style.display='inline-block';loadDash();}
+    if(d.token){TOKEN=d.token;localStorage.setItem('mld_affiliate_token',d.token);init();}
     else err('login-err',d.error||'Sign in failed');
   }).catch(function(){err('login-err','Server is starting up. Please wait a few seconds and try again.');});
 }
@@ -155,49 +233,155 @@ function register(){
   var name=document.getElementById('r-name').value.trim(),email=document.getElementById('r-email').value.trim(),pass=document.getElementById('r-pass').value,code=document.getElementById('r-code').value.trim();
   fetch(API+'/api/affiliate/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,password:pass,code:code})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.success){document.getElementById('register-err').style.color='#34d399';document.getElementById('register-err').style.display='block';document.getElementById('register-err').textContent='Application received! We\'ll activate your account shortly — check your email, then sign in.';}
+    if(d.success){var e=document.getElementById('register-err');e.style.color='#34d399';e.textContent='Application received and your account is active — you can sign in now.';e.style.display='block';}
     else err('register-err',d.error||'Could not submit application');
   }).catch(function(){err('register-err','Server is starting up. Please try again.');});
 }
+
 function badge(st){
-  var map={referral_pending:['b-ref','Signed up'],pending:['b-pending','First invoice paid · waiting'],due:['b-green','Ready to pay'],paid:['b-blue','Paid'],ineligible:['b-ineligible','Not eligible']};
+  var map={referral_pending:['b-ref','Signed up'],earning:['b-trial','Earning £25/mo'],approved:['b-due','Ready to pay'],paid:['b-paid','Paid'],pending:['b-pending','Clearing'],due:['b-due','Ready to pay'],ineligible:['b-ineligible','Not eligible']};
   var m=map[st]||map.referral_pending;
   return '<span class="badge '+m[0]+'">'+m[1]+'</span>';
 }
-function loadDash(){
+function stageBadge(s){
+  var map={'Just signed up · in trial':['b-new','Just signed up · in trial'],'Earning · recurring':['b-trial','Earning · recurring'],'Ready to pay':['b-due','Ready to pay'],'Paid':['b-paid','Paid']};
+  var m=map[s]||['b-ref',s];
+  return '<span class="badge '+m[0]+'">'+m[1]+'</span>';
+}
+var EMOJI={moving:'🚚',probate:'⚖️',newbusiness:'💼',planning:'🏗️',tenders:'📋',general:'📈'};
+
+function go(t){
+  document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('on',x.dataset.t===t);});
+  ['overview','leads','tools','refs','payouts'].forEach(function(v){document.getElementById('view-'+v).style.display=(v===t)?'block':'none';});
+  if(t==='tools'&&!RES)loadResources();
+  if(t==='leads'&&!LEADS)loadLeads();
+}
+
+function init(){
+  document.getElementById('dash-view').style.display='block';
+  document.getElementById('login-view').style.display='none';
+  document.getElementById('register-view').style.display='none';
+  document.getElementById('logout').style.display='inline-block';
   api('GET','/affiliate/dashboard').then(function(d){
-    if(!d.success){sessionStorage.removeItem('mld_affiliate_session');localStorage.removeItem('mld_affiliate_token');showLogin();return;}
-    document.getElementById('dash-view').style.display='block';
-    document.getElementById('login-view').style.display='none';
-    document.getElementById('register-view').style.display='none';
+    if(!d.success){sessionStorage.removeItem('mld_affiliate_session');localStorage.removeItem('mld_affiliate_token');location.reload();return;}
+    D=d;
     document.getElementById('a-name').textContent=d.affiliate.name;
     document.getElementById('a-code').textContent=d.affiliate.code;
+    document.getElementById('tb-name').textContent=d.affiliate.name;
+    document.getElementById('tb-code').textContent='code: '+d.affiliate.code;
+    document.getElementById('who-box').style.display='block';
     document.getElementById('c-refs').textContent=d.totals.referrals;
+    document.getElementById('c-month').textContent='£'+d.earnings.this_month;
     document.getElementById('c-pending').textContent='£'+d.earnings.pending;
-    document.getElementById('c-due').textContent='£'+d.earnings.due;
-    document.getElementById('c-paid').textContent='£'+d.earnings.paid;
-    var w=document.getElementById('refs-table-wrap');
-    if(!d.referrals.length){w.innerHTML='<div class="muted">No referrals yet. Share your code to get started!</div>';}
-    else{
-      var h='<table><thead><tr><th>Company</th><th>Lead type</th><th>Signed up</th><th>Trial</th><th>Status</th></tr></thead><tbody>';
-      d.referrals.forEach(function(r){
-        h+='<tr><td>'+esc(r.company)+'<div class="muted">'+esc(r.email)+'</div></td><td>'+esc(r.product)+'</td><td>'+fmtDate(r.signed_up)+'</td><td>'+r.trial_days+' days</td><td>'+badge(r.status)+'</td></tr>';
-      });
-      h+='</tbody></table>';w.innerHTML=h;
-    }
-    var pw=document.getElementById('payouts-wrap');
-    if(d.payouts && d.payouts.length){
-      var ph='<table><thead><tr><th>Date</th><th>Referrals</th><th>Amount</th></tr></thead><tbody>';
-      d.payouts.forEach(function(p){ph+='<tr><td>'+fmtDate(p.date)+'</td><td>'+p.referrals+'</td><td><b style="color:#34d399">£'+p.amount+'</b></td></tr>';});
-      ph+='</tbody></table>';pw.innerHTML=ph;
-    }
-  }).catch(function(){}).then(function(){document.getElementById('logout').style.display='inline-block';});
+    document.getElementById('c-lifetime').textContent='£'+d.earnings.lifetime;
+    renderRecent(d.referrals.slice(0,5));
+    renderRefs(d.referrals);
+    renderPayouts(d.payouts);
+  }).catch(function(){});
+  loadLeads();
 }
-function copyCode(){var t=document.getElementById('a-code').textContent;navigator.clipboard.writeText(t).then(function(){var b=document.querySelector('.code button');b.textContent='Copied!';setTimeout(function(){b.textContent='Copy';},1200);});}
-function esc(s){return String(s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-function fmtDate(iso){if(!iso)return '-';try{return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch(e){return iso;}}
+
+function renderRecent(list){
+  var w=document.getElementById('recent-leads');
+  if(!list.length){w.innerHTML='<div class="muted">No leads yet. Share your code to get started!</div>';return;}
+  var h='';
+  list.forEach(function(r){h+='<div style="padding:9px 0;border-bottom:1px solid rgba(30,32,48,.5)"><div style="font-size:12.5px;color:#f1f5f9;font-weight:600">'+(EMOJI[r.product]||'')+' '+esc(r.company||r.email)+'</div><div style="font-size:11px;color:#6b7280;margin-top:2px">'+esc(r.product)+' · '+fmtDate(r.signed_up)+' '+badge(r.status)+'</div></div>';});
+  w.innerHTML=h;
+}
+
+function loadLeads(){
+  api('GET','/affiliate/leads').then(function(d){
+    LEADS=d.leads||[];
+    document.getElementById('leads-count').textContent=LEADS.length;
+    var w=document.getElementById('leads-list');
+    if(!LEADS.length){w.innerHTML='<div class="empty"><b>No leads in your inbox yet.</b><br>Share your code — every customer who signs up with it appears here so you can follow up and monitor them.</div>';return;}
+    var h='';
+    LEADS.forEach(function(r){
+      h+='<div class="lead"><div class="ico">'+(EMOJI[r.product]||'📈')+'</div><div class="main"><div class="co">'+esc(r.company||r.email)+'</div><div class="em">'+esc(r.email)+(r.phone?' · '+esc(r.phone):'')+'</div>'+
+      '<div class="meta"><span>'+esc(r.product)+'</span><span>'+(r.plan?esc(r.plan):'Trial')+'</span><span>'+r.days_since+'d ago</span>'+(r.card_saved?'<span style="color:#34d399">💳 card saved</span>':'<span style="color:#94a3b8">no card yet</span>')+'</div></div>'+
+      '<div class="act">'+stageBadge(r.stage)+'<button class="btn-mini" onclick="openTools(\''+esc(r.product)+'\')">Open tools</button></div></div>';
+    });
+    w.innerHTML=h;
+  }).catch(function(){});
+}
+
+function loadResources(){
+  api('GET','/affiliate/resources').then(function(d){
+    if(!d.success)return;
+    RES=d.resources||[];
+    var cw=document.getElementById('type-chips');
+    var ch='';
+    RES.forEach(function(r){ch+='<div class="chip'+(r.key===curType?' on':'')+'" data-key="'+r.key+'" onclick="pickType(\''+r.key+'\')">'+(EMOJI[r.key]||'')+' '+esc(r.name)+'</div>';});
+    cw.innerHTML=ch;
+    renderTools();
+  }).catch(function(){});
+}
+function pickType(k){curType=k;document.querySelectorAll('.chip').forEach(function(c){c.classList.toggle('on',c.dataset.key===k);});renderTools();}
+function openTools(k){curType=k;go('tools');loadResources();}
+function renderTools(){
+  var r=(RES||[]).find(function(x){return x.key===curType;});
+  if(!r)return;
+  var h='';
+  // phone script
+  h+='<div class="tool-sec"><h3>📞 Cold-call script — '+esc(r.name)+' <button class="btn-mini" onclick="copyScript(\''+r.key+'\')">Copy all</button></h3>';
+  r.phone.forEach(function(s,i){
+    var b=s.indexOf('] ');
+    var label=b>-1?s.slice(1,b):('Step '+(i+1));
+    var txt=b>-1?s.slice(b+2):s;
+    h+='<div class="step"><b>'+esc(label)+'</b>'+esc(txt)+'</div>';
+  });
+  h+='</div>';
+  // emails
+  h+='<div class="tool-sec"><h3>📧 Email templates <button class="btn-mini" onclick="copyEmails(\''+r.key+'\')">Copy all</button></h3>';
+  r.emails.forEach(function(e,i){
+    h+='<div class="tpl"><div class="subj">Subject: '+esc(e.subject)+'</div><pre>'+esc(e.body)+'</pre><div style="text-align:right;margin-top:8px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'email\')">Copy</button></div></div>';
+  });
+  h+='</div>';
+  // sms
+  h+='<div class="tool-sec"><h3>💬 Text / SMS messages <button class="btn-mini" onclick="copySms(\''+r.key+'\')">Copy all</button></h3>';
+  r.sms.forEach(function(s,i){
+    h+='<div class="post-card">'+esc(s)+'<div style="text-align:right;margin-top:6px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'sms\')">Copy</button></div></div>';
+  });
+  h+='</div>';
+  // social
+  h+='<div class="tool-sec"><h3>📱 Social media posts <button class="btn-mini" onclick="copySocial(\''+r.key+'\')">Copy all</button></h3>';
+  r.social.forEach(function(s,i){
+    h+='<div class="post-card">'+esc(s)+'<div style="text-align:right;margin-top:6px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'social\')">Copy</button></div></div>';
+  });
+  h+='</div>';
+  // followup
+  h+='<div class="tool-sec"><h3>📅 Follow-up plan</h3>';
+  h+='<table><thead><tr><th>When</th><th>Action</th></tr></thead><tbody>';
+  r.followup.forEach(function(f){h+='<tr><td style="white-space:nowrap;font-weight:700;color:#0ea5e9">'+esc(f.day)+'</td><td>'+esc(f.action)+'</td></tr>';});
+  h+='</tbody></table></div>';
+  document.getElementById('tool-content').innerHTML=h;
+  document.getElementById('tool-content')._r=r;
+}
+function copyTxt(btn,idx,kind){var r=document.getElementById('tool-content')._r;var txt='';if(kind==='email'){var e=r.emails[idx];txt='Subject: '+e.subject+'\n\n'+e.body;}else if(kind==='sms'){txt=r.sms[idx];}else if(kind==='social'){txt=r.social[idx];}copyText(txt,btn);}
+function copyScript(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText('COLD CALL — '+r.name+'\n\n'+r.phone.join('\n\n'));}
+function copyEmails(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.emails.map(function(e){return 'SUBJECT: '+e.subject+'\n'+e.body;}).join('\n\n------------------\n\n'));}
+function copySms(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.sms.join('\n\n'));}
+function copySocial(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.social.join('\n\n'));}
+
+function renderRefs(refs){
+  var w=document.getElementById('refs-table-wrap');
+  if(!refs.length){w.innerHTML='<div class="muted">No referrals yet. Share your code to get started!</div>';return;}
+  var h='<table><thead><tr><th>Company</th><th>Lead type</th><th>Signed up</th><th>Trial</th><th>Status</th></tr></thead><tbody>';
+  refs.forEach(function(r){
+    h+='<tr><td>'+esc(r.company)+'<div class="muted">'+esc(r.email)+'</div></td><td>'+esc(r.product)+'</td><td>'+fmtDate(r.signed_up)+'</td><td>'+r.trial_days+' days</td><td>'+badge(r.status)+'</td></tr>';
+  });
+  h+='</tbody></table>';w.innerHTML=h;
+}
+function renderPayouts(p){
+  var w=document.getElementById('payouts-wrap');
+  if(p&&p.length){
+    var h='<table><thead><tr><th>Date</th><th>Referrals</th><th>Amount</th></tr></thead><tbody>';
+    p.forEach(function(p){h+='<tr><td>'+fmtDate(p.date)+'</td><td>'+p.referrals+'</td><td><b style="color:#34d399">£'+p.amount+'</b></td></tr>';});
+    h+='</tbody></table>';w.innerHTML=h;
+  }
+}
 document.getElementById('logout').onclick=function(){sessionStorage.removeItem('mld_affiliate_session');localStorage.removeItem('mld_affiliate_token');location.reload();};
-if(TOKEN){loadDash();}else if(location.hash==='#register'){showRegister();}
+if(TOKEN){init();}else if(location.hash==='#register'){showRegister();}
 </script>
 </body>
 </html>
