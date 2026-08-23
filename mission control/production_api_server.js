@@ -19037,13 +19037,13 @@ function writeSitemap() {
 }
 
 // Remove thin auto-generated template filler posts so only quality content remains.
-// Keeps hand-written / curated posts. Reversible (posts are flagged, not deleted when possible).
+// Matches every template-generated post (auto_generated flag, template_key, or numeric template_index).
 function sanitizeBlogPosts() {
   try {
     var dbData = getDb();
     if (!dbData.blog_posts) dbData.blog_posts = [];
     var before = dbData.blog_posts.length;
-    var kept = dbData.blog_posts.filter(function(p) { return !(p.auto_generated === true || (p.template_key && p.template_key.indexOf('var_') === 0)); });
+    var kept = dbData.blog_posts.filter(function(p) { return !(p.auto_generated === true || p.template_key || typeof p.template_index === 'number'); });
     var removed = before - kept.length;
     dbData.blog_posts = kept;
     return removed;
