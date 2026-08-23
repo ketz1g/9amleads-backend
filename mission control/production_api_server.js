@@ -6400,7 +6400,7 @@ async function runOtmDailyScrape() {
     });
     if (!areas.length) { console.log('[OTM-DAILY] No moving customer areas to scrape'); return; }
     var otmScraper2 = require('./onthemarket_scraper');
-    var leads = await moduleWithTimeout(otmScraper2.collectOnTheMarketLeads({ areas: areas, maxPerArea: parseInt(process.env.OTM_MAX_PER_AREA || '100', 10), maxDays: 2, detailCap: parseInt(process.env.OTM_DETAIL_CAP || '600', 10) }), 8 * 60000, 'OTM daily scrape');
+    var     leads = await moduleWithTimeout(otmScraper2.collectOnTheMarketLeads({ areas: areas, maxPerArea: parseInt(process.env.OTM_MAX_PER_AREA || '100', 10), maxDays: FRESHNESS.isMondayUK() ? 3 : 2, detailCap: parseInt(process.env.OTM_DETAIL_CAP || '600', 10) }), 8 * 60000, 'OTM daily scrape');
     var fn2 = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving.file);
     var prev = []; try { prev = JSON.parse(fs.readFileSync(fn2, 'utf-8')); } catch(e) { prev = []; }
     if (!Array.isArray(prev)) prev = [];
