@@ -3020,6 +3020,21 @@ app.post('/api/admin/partners/:id/type', adminAuth, (req, res) => {
     res.json({ success: true, partner: partnerDashboardSafe(p) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// DELETE partner (admin, audited) - for cleaning test records / removing invalid partners
+app.post('/api/admin/partners/:id/delete', adminAuth, (req, res) => {
+  try {
+    var dbc = getDb();
+    var p = (dbc.affiliates || []).find(function(x){ return x.id === req.params.id; });
+    if (!p) return res.status(404).json({ error: 'Partner not found' });
+    dbc.affiliates = (dbc.affiliates || []).filter(function(x){ return x.id !== req.params.id; });
+    // keep commission history (never delete financial records); unlink attribution
+    (dbc.partner_attribution || []).forEach(function(a){ if (a.partner_id === req.params.id) a.partner_id = ''; });
+    saveDb();
+    partnerAudit('partner_deleted', { partner_id: req.params.id, email: p.email, admin: (req.user && req.user.email) || 'admin' });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Reassign customer attribution (admin, audited)
 app.post('/api/admin/partner/reassign', adminAuth, (req, res) => {
   try {
