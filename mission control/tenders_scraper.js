@@ -278,12 +278,13 @@ async function collectTendersLeads(config) {
   const location = config.location || '';
   const maxCount = config.maxCount || 250;
   // Paginate Contracts Finder (empty keyword = ALL live notices). ~20 per page.
-  // Loop up to 12 pages (~240 notices) or until a page returns fewer than 10
-  // (end of results) — captures the full daily supply.
+  // Loop up to 15 pages (~300 notices) or until a page returns fewer than 10
+  // (end of results) — captures the full daily supply across every UK council
+  // and government department.
   async function paginate() {
     let all = [];
     const seenIds = new Set();
-    for (let p = 1; p <= 12; p++) {
+    for (let p = 1; p <= 15; p++) {
       let page = await fetchTendersFromHTML(keywords, location, maxCount, p);
       if (!page || page.length === 0) break;
       all = all.concat(page);
@@ -294,14 +295,15 @@ async function collectTendersLeads(config) {
     }
     // ADD Find a Tender (FTS) — the UK's high-value contract portal. Complements
     // Contracts Finder with a separate supply stream (different notices). Run up
-    // to 10 pages so high-value notices add meaningful volume to the pool.
-    for (let f = 1; f <= 10; f++) {
+    // to 12 pages so high-value notices add meaningful volume to the pool.
+    for (let f = 1; f <= 12; f++) {
       let fts = await fetchFindATender(maxCount, f);
       if (!fts || fts.length === 0) break;
       let added = 0;
       fts.forEach(function(l){ if (l.id && !seenIds.has(l.id)) { seenIds.add(l.id); all.push(l); added++; } });
       if (added === 0 || all.length >= maxCount) break;
-      await new Promise(r => setTimeout(r, 400));
+      // FTS rate-limits aggressively (429 on rapid requests) — pace the pages out.
+      await new Promise(r => setTimeout(r, 2500));
     }
     return all;
   }

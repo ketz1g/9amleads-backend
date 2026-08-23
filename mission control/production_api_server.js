@@ -18312,7 +18312,7 @@ function syncCustomers(product) {
           // PRIMARY: Contracts Finder (free, paginated, ~150-240 live notices).
           try {
             var tendersScraper = require('./tenders_scraper');
-            var cfLeads = await withTimeout(tendersScraper.collectTendersLeads({ keywords: '', location: '', maxCount: 500 }), 8 * 60000, 'Tenders scrape');
+            var           cfLeads = await withTimeout(tendersScraper.collectTendersLeads({ keywords: '', location: '', maxCount: 800 }), 8 * 60000, 'Tenders scrape');
             if (cfLeads && cfLeads.length > 0) {
               leads = cfLeads;
               console.log('[SCRAPER] Contracts Finder + FTS returned ' + cfLeads.length + ' tenders');
@@ -18408,23 +18408,22 @@ function syncCustomers(product) {
                   req.on('error', function() { resolve([]); }); req.setTimeout(25000, function() { req.destroy(); resolve([]); }); req.end();
                 });
               }
-              // Fetch from multiple sources in parallel
+              // Fetch from multiple sources in parallel. data.gov.uk is NOT included:
+              // its package_search returns dataset metadata (e.g. "Contracts Finder
+              // API" — a page ABOUT contracts), not actual tender opportunities, so
+              // it only ever pollutes the pool. PCS (real Scottish notices) +
+              // Sell2Wales (Welsh) add genuine volume.
               var pcsPromise = fetchPCS();
               var sell2WalesPromise = fetchSell2Wales();
-              var dguPromises = ['tenders','construction','contracts','procurement','building','cleaning','security','consulting','maintenance','furniture','healthcare','transport','IT+services','training','catering','logistics','waste','solar','painting','design','roads','civil','grounds','facilities','engineering','surveying','architectural','planning','events','catering','printing','vehicles'].map(function(q) { return fetchDataGovUK(q); });
-              var allResults = await Promise.all([pcsPromise, sell2WalesPromise, Promise.all(dguPromises)]);
+              var allResults = await Promise.all([pcsPromise, sell2WalesPromise]);
               var pcsLeads = allResults[0] || [];
               var sell2WalesLeads = allResults[1] || [];
-              var dgResults = allResults[2] || [];
-              // MERGE PCS + Sell2Wales + data.gov.uk into the existing supply
+              // MERGE PCS + Sell2Wales into the existing supply
               var extraTenders = pcsLeads.slice();
               extraTenders = extraTenders.concat(sell2WalesLeads);
-              for (var dgi = 0; dgi < dgResults.length; dgi++) {
-                if (dgResults[dgi] && dgResults[dgi].length > 0) extraTenders = extraTenders.concat(dgResults[dgi]);
-              }
               if (extraTenders.length > 0) {
                 leads = (leads || []).concat(extraTenders);
-                console.log('[SCRAPER] PCS + Sell2Wales + data.gov.uk added ' + extraTenders.length + ' (total ' + leads.length + ')');
+                console.log('[SCRAPER] PCS + Sell2Wales added ' + extraTenders.length + ' (total ' + leads.length + ')');
               }
               // Deduplicate by title
               if (leads.length > 0) {
