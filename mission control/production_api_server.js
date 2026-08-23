@@ -6808,6 +6808,15 @@ app.post('/api/admin/paf-postscrape', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/quiet-areas — manually run the quiet-area check now (flags chosen
+// areas with no delivered leads for QUIET_AREA_DAYS and notifies the customer).
+app.post('/api/admin/quiet-areas', adminAuth, (req, res) => {
+  try {
+    var qa = checkQuietAreas();
+    res.json({ success: true, alerted: qa });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // deliveryPreviewForCustomer(cust) — the per-customer pool preview used by both
 // /api/admin/delivery-preview and /api/admin/readiness. Returns how many valid,
 // in-area, fresh leads the customer would receive at 9am with the current pool.
@@ -6916,9 +6925,13 @@ async function deliveryPreviewForCustomer(cust) {
       var pcFull = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim());
       pafCandidate = pcFull && hasStreetName(addr);
     }
-    return { address: c.address || c.fullAddress || '', postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed };
+    var leadArea = extractPostcodeArea(pc || addr);
+    var inArea = areas.some(function(a) { return extractPostcodeArea(a) === leadArea; });
+    return { address: c.address || c.fullAddress || '', postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed, in_area: inArea };
   });
-  return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: out.length, leads: out, error: out.length < limit ? 'supply low in ' + areas.join(', ') : '' };
+  var fallbackCount = out.filter(function(o) { return !o.in_area; }).length;
+  var fallbackNote = fallbackCount ? (fallbackCount + ' lead' + (fallbackCount > 1 ? 's' : '') + ' from closest postcode' + (fallbackCount > 1 ? 's' : '') + ' (your chosen areas were short this morning)') : '';
+  return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: out.length, leads: out, fallback_count: fallbackCount, fallback_note: fallbackNote, error: out.length < limit ? 'supply low in ' + areas.join(', ') : '' };
 }
 
 // ===== POST-SCRAPE PAF ENRICHMENT =====
@@ -6998,6 +7011,56 @@ async function runMovingPafPostScrape() {
   else fs.writeFileSync(file, JSON.stringify(arr, null, 2));
   console.log('[PAF-POSTSCRAPE] Enriched ' + enriched + ', failed ' + failed + ' of ' + need.length + ' door-less moving leads');
   return { enriched: enriched, failed: failed };
+}
+
+// ===== QUIET-AREA ALERTS =====
+// If a customer's chosen postcode area has produced ZERO delivered leads for
+// QUIET_AREA_DAYS (default 4, i.e. 3-5 days), email them + post a dashboard
+// notification telling them to update their postcode/area. Once per area per 7
+// days to avoid nagging. This keeps the "daily leads in YOUR areas" promise real.
+function quietAreaAlertedDate(cust, areaCode) {
+  try { var m = JSON.parse(cust.area_alerts || '{}'); return m[areaCode] || ''; } catch(e) { return ''; }
+}
+function setQuietAreaAlerted(cust, areaCode, dateStr) {
+  try { var m = JSON.parse(cust.area_alerts || '{}'); m[areaCode] = dateStr; cust.area_alerts = JSON.stringify(m); } catch(e) {}
+}
+function checkQuietAreas() {
+  try {
+    var dbq = getDb();
+    var days = parseInt(process.env.QUIET_AREA_DAYS || '4', 10);
+    var since = new Date(Date.now() - days * 86400000).toISOString();
+    var alerted = [];
+    (dbq.customers || []).forEach(function(c) {
+      if (!c.plan || c.plan === 'cancelled' || c.leads_paused) return;
+      var areas = [];
+      try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) { areas = []; }
+      if (!areas.length) { try { var pcq = JSON.parse(c.product_config || '{}'); areas = JSON.parse((pcq[c.product] || {}).target_areas || '[]'); } catch(e) { areas = []; } }
+      if (!areas.length) return;
+      // Per-area delivered counts since the quiet window began.
+      var perArea = {};
+      (dbq.leads || []).forEach(function(l) {
+        if (l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at >= since) {
+          try { var d = JSON.parse(l.data || '{}'); var a = extractPostcodeArea(d.postcode || d.address || d.deceasedAddress || ''); if (a) perArea[a] = (perArea[a] || 0) + 1; } catch(e) {}
+        }
+      });
+      areas.forEach(function(a) {
+        var code = extractPostcodeArea(a);
+        if (!code || (perArea[code] || 0) > 0) return;
+        var last = quietAreaAlertedDate(c, code);
+        if (last && (Date.now() - new Date(last + 'T00:00:00Z').getTime()) < 7 * 86400000) return;
+        setQuietAreaAlerted(c, code, new Date().toISOString().split('T')[0]);
+        alerted.push({ email: c.email, area: code, days: days });
+        try {
+          sendDMNotification(c.id, 'quiet-area', 'Update your postcode areas',
+            'No leads in ' + code + ' for ' + days + ' days',
+            'We haven\u2019t been able to source new leads in <b>' + escHtml(code) + '</b> for the last ' + days + ' days. To keep your daily leads coming, open Settings and update your postcode areas — try adding a nearby postcode or a busier area. Your other areas are unaffected.',
+            'Update my areas', '/portal/dashboard.html');
+        } catch(e) { console.log('[QUIET-AREA] notify error:', e.message); }
+      });
+    });
+    if (alerted.length) saveDb();
+    return alerted;
+  } catch(e) { return []; }
 }
 
 // GET /api/admin/readiness — run the delivery preview for EVERY real customer and
@@ -9593,6 +9656,15 @@ cron.schedule('30 9 * * 1-5', async () => {
       bsReq.write(bsBody); bsReq.end();
     } catch(bs2) { console.log('[BACKSTOP] delivery call error:', bs2.message); }
   } catch(e) { console.log('[BACKSTOP] error:', e.message); }
+}, { timezone: 'Europe/London' });
+// QUIET-AREA ALERTS (11:00 UK weekdays): after the morning delivery, check every
+// customer's chosen areas for postcodes that have produced no leads for 3-5 days,
+// and notify them (email + dashboard) to update their postcode areas.
+cron.schedule('0 11 * * 1-5', async () => {
+  try {
+    var qa = checkQuietAreas();
+    if (qa.length) console.log('[QUIET-AREA] alerted ' + qa.length + ': ' + qa.map(function(x) { return x.email + ' (' + x.area + ')'; }).join(', '));
+  } catch(e) { console.log('[QUIET-AREA] cron error:', e.message); }
 }, { timezone: 'Europe/London' });
 // ===== DELIVERY CRON: Runs directly (not via HTTP) to avoid timing issues =====
 // Pipeline: 06:00 UK scraper → 06:05 UK distributor → 09:00 UK delivery
