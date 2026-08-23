@@ -6790,9 +6790,10 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
     var dbP = getDb();
     var customers = (dbP.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!emailFilter || String(c.email||'').toLowerCase() === emailFilter); });
     var out = [];
+    var _previewSeen = {};
     for (var pi = 0; pi < customers.length; pi++) {
-      var pv = await deliveryPreviewForCustomer(customers[pi]);
-      out.push({ email: pv.email, company: pv.company, product: pv.product, plan: pv.plan, areas: pv.areas, promised: pv.promised, preview_count: pv.count, leads: pv.leads, error: pv.error || '' });
+      var pv = await deliveryPreviewForCustomer(customers[pi], _previewSeen);
+      out.push({ email: pv.email, company: pv.company, product: pv.product, plan: pv.plan, areas: pv.areas, promised: pv.promised, preview_count: pv.count, fallback_count: pv.fallback_count, fallback_note: pv.fallback_note, leads: pv.leads, error: pv.error || '' });
     }
     res.json({ success: true, generated_at: new Date().toISOString(), note: 'Preview based on the current pool - run after the 6am scrape for the most accurate 9am preview.', customers: out });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -6820,7 +6821,7 @@ app.post('/api/admin/quiet-areas', adminAuth, (req, res) => {
 // deliveryPreviewForCustomer(cust) — the per-customer pool preview used by both
 // /api/admin/delivery-preview and /api/admin/readiness. Returns how many valid,
 // in-area, fresh leads the customer would receive at 9am with the current pool.
-async function deliveryPreviewForCustomer(cust) {
+async function deliveryPreviewForCustomer(cust, sharedSeen) {
   var areas = [];
   try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
   if (!areas.length) { try { var cfgP = JSON.parse(cust.product_config || '{}'); areas = (cfgP[cust.product] && cfgP[cust.product].target_areas) ? JSON.parse(cfgP[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
@@ -6843,6 +6844,7 @@ async function deliveryPreviewForCustomer(cust) {
   var interleaved = interleavePoolByAreas(pool, areas);
   var candidates = [];
   var seen = {};
+  var _sharedSeen = sharedSeen || {};
   var leadFilters = {};
   try { leadFilters = JSON.parse(cust.biz_field2 || '{}'); } catch(e) { leadFilters = {}; }
   var candCap = Math.max(limit * 4, 30);
@@ -6872,8 +6874,9 @@ async function deliveryPreviewForCustomer(cust) {
     else { var backfillCutoff = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < backfillCutoff) continue; }
     if (cust.product === 'moving' && maxBedsF < 99 && (parseInt(l.bedrooms, 10) || 99) > maxBedsF) continue;
     var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
-    if (deliveredKeys[key] || seen[key]) continue;
+    if (deliveredKeys[key] || seen[key] || _sharedSeen[key]) continue;
     seen[key] = 1;
+    if (_sharedSeen !== seen) _sharedSeen[key] = 1;
     candidates.push(l);
   }
   // SELECTION: maximise postcode variety so a customer never gets the same
@@ -11735,12 +11738,30 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       return true;
     });
     console.log('[DELIVERY] Running for ' + customers.length + ' customer(s)' + (onlyEmail ? ' (filtered to ' + onlyEmail + ')' : ''));
+    // GLOBAL EXCLUSIVITY: a lead delivered to ANY customer is never delivered to a
+    // different customer. Build one set of delivered keys (URL + address+postcode +
+    // reference) from ALL customers' delivered leads, and one shared in-run set, so
+    // overlapping-area customers never receive the same property/listing.
+    var globalDeliveredUrls = {};
+    var globalDeliveredKeys = {};
+    (db.leads || []).forEach(function(l) {
+      if (!l.delivered) return;
+      try {
+        var gdd = JSON.parse(l.data || '{}');
+        var gu = gdd.url || '';
+        if (gu) globalDeliveredUrls[gu] = true;
+        var gAddr = String(gdd.fullAddress || gdd.deceasedAddress || gdd.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        var gRef = String(gdd.reference || gdd.companyNumber || gdd.deceasedName || gdd.tenderNoticeId || '').toLowerCase().trim();
+        var gPc = String(gdd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
+        if (gAddr && gPc) globalDeliveredKeys[gAddr + '|' + gPc] = true;
+        else if (gRef) globalDeliveredKeys[gRef] = true;
+      } catch(e) {}
+    });
+    // SHARED IN-RUN SET: once any customer is assigned a lead this run, later
+    // customers skip it (exclusive allocation within the same delivery).
+    var _inRunSeen = {};
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
-      // IN-RUN DEDUP: never assign the same property/listing twice to this
-      // customer within a single delivery run (the pool can hold near-identical
-      // entries that differ only by id/formatting).
-      var _inRunSeen = {};
       var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
       if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
       // PAYMENT GATE: a customer whose subscription payment failed (leads_paused)
@@ -11952,7 +11973,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         try {
           var dd = (l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {});
           var u = dd.url || '';
-          if (u && deliveredUrls[u]) return false;
+          // Never deliver a lead already delivered to THIS customer OR ANY customer
+          // (global exclusivity) — shared leads between overlapping areas are prevented.
+          if (u && (deliveredUrls[u] || globalDeliveredUrls[u])) return false;
           // IN-RUN dedup: reject a property/listing already assigned this run.
           var normU = String(u).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
           var iKey = normU ? 'u:' + normU : ('a:' + String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
@@ -11970,8 +11993,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           var aKey = String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
           var rKey = String(dd.reference || dd.companyNumber || dd.deceasedName || dd.tenderNoticeId || '').toLowerCase().trim();
           var pKey = String(dd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
-          if (aKey && pKey && deliveredKeys[aKey + '|' + pKey]) return false;
-          if (rKey && deliveredKeys[rKey]) return false;
+          if (aKey && pKey && (deliveredKeys[aKey + '|' + pKey] || globalDeliveredKeys[aKey + '|' + pKey])) return false;
+          if (rKey && (deliveredKeys[rKey] || globalDeliveredKeys[rKey])) return false;
           return true;
         } catch(e) { return true; }
       }
@@ -12206,8 +12229,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     if (!custAreaHit && r2prod !== 'moving') continue;
                     var poolKey = (rl.postcode||rl.address||rl.id||rl.url||'');
                     if (existingKeys[poolKey]) continue;
-                    // Never re-create a property already delivered to this customer.
-                    if (rl.url && deliveredUrls[rl.url]) continue;
+                    // Never re-create a property already delivered to this customer
+                    // OR any customer (global exclusivity), or already taken this run.
+                    var poolUrl = rl.url || '';
+                    var poolUrlKey = poolUrl ? ('u:' + String(poolUrl).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim()) : '';
+                    if (rl.url && (deliveredUrls[rl.url] || globalDeliveredUrls[rl.url])) continue;
+                    if (poolUrlKey && _inRunSeen[poolUrlKey]) continue;
                     // PRESERVE ALL POOL FIELDS: spread the raw pool lead first so
                     // product-specific fields (deceasedName/deceasedAddress for probate,
                     // companyName for newbusiness, reference/proposal for planning,
@@ -12305,6 +12332,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     var newLead = { id: uuidv4(), customer_id: cust.id, product: r2prod, data: JSON.stringify(poolLeadData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
                     db.leads.push(newLead);
                     existingKeys[poolKey] = 1;
+                    // Reserve it for the whole run so another overlapping customer
+                    // never picks the same pool lead in this delivery (exclusive).
+                    if (poolUrlKey) _inRunSeen[poolUrlKey] = true;
+                    if (addrKeyRun) _inRunSeen[addrKeyRun] = true;
                     createdFromPool.push(newLead);
                   }
                   if (createdFromPool.length > 0) {
