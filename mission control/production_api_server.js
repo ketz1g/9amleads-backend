@@ -8511,17 +8511,22 @@ cron.schedule('30 9 * * 1-5', async () => {
     var cap = { postcoder: 0, stannp: 0 };
     try { var _pb = require('./postcoder_budget'); cap.postcoder = Math.max(0, _pb.getDailyBudget() - _pb.usage()); } catch(e) {}
     try { var _dm = getDirectMailProvider(); cap.stannp = _dm.getBalance ? await _dm.getBalance() : 'n/a'; } catch(e) {}
-    var pcLow = (typeof cap.postcoder === 'number' && cap.postcoder < 50) ? ' ⚠ LOW' : '';
-    var stLow = (typeof cap.stannp === 'number' && cap.stannp < 20) ? ' ⚠ LOW' : '';
     var errs = (global.__lastErrors || []).slice(-3).map(function(e){ return e.message || e.kind || ''; }).filter(Boolean);
-    var errHtml = errs.length ? '<li>' + errs.join('</li><li>') + '</li>' : '<li>None</li>';
-    sendAdminAlert('📊 9amLeads daily digest — ' + todayD, '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">' +
+    var pcLow = (typeof cap.postcoder === 'number' && cap.postcoder < 50);
+    var stLow = (typeof cap.stannp === 'number' && cap.stannp < 20);
+    // ONLY-ACTION DIGEST: a healthy day sends no email. We only message the founder
+    // when something genuinely needs a manual decision (delivery errors, low
+    // budgets, shortfalls). Everything else is auto-healed silently.
+    var hasIssue = errs.length > 0 || pcLow || stLow || delToday === 0;
+    if (!hasIssue) { console.log('[DIGEST] Healthy day — no action email needed'); return; }
+    var errHtml = errs.length ? '<li>' + errs.join('</li><li>') + '</li>' : '<li>None recorded (may need a check)</li>';
+    sendAdminAlert('⚠ 9amLeads needs your attention — ' + todayD, '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">' +
       '<b style="color:#38bdf8">Active customers:</b> ' + activeC + '<br>' +
       '<b style="color:#38bdf8">Leads delivered today:</b> ' + delToday + '<br>' +
-      '<b style="color:#38bdf8">Postcoder budget remaining:</b> ' + (cap.postcoder || 'n/a') + pcLow + '<br>' +
-      '<b style="color:#38bdf8">Stannp balance:</b> ' + (cap.stannp || 'n/a') + stLow + '<br><br>' +
-      '<b style="color:#38bdf8">Supply (fresh/total):</b><ul style="margin:4px 0;padding-left:18px">' + (supplyHtml || '<li>n/a</li>') + '</ul><br>' +
-      '<b style="color:#38bdf8">Recent errors:</b><ul style="margin:4px 0;padding-left:18px">' + errHtml + '</ul></div>');
+      '<b style="color:#38bdf8">Postcoder budget:</b> ' + (cap.postcoder || 'n/a') + (pcLow ? ' ⚠ LOW' : '') + '<br>' +
+      '<b style="color:#38bdf8">Stannp balance:</b> ' + (cap.stannp || 'n/a') + (stLow ? ' ⚠ LOW' : '') + '<br><br>' +
+      '<b style="color:#38bdf8">Recent errors:</b><ul style="margin:4px 0;padding-left:18px">' + errHtml + '</ul><br>' +
+      '<div style="font-size:12px;color:#94a3b8">Only issues needing a manual decision are emailed — healthy days are silent.</div></div>');
   } catch(e) { console.log('[DIGEST] error:', e.message); }
 }, { timezone: 'Europe/London' });
 
@@ -22580,13 +22585,6 @@ app.listen(PORT, () => {
   seedMarketplaceTemplates();
   seedSeasonalCampaigns();
   seedKnowledgeArticles();
-  // STARTUP ALERT: if the server restarted unexpectedly (crash/OOM/disk reset),
-  // the founder is notified immediately so nothing runs unattended for long.
-  try {
-    setTimeout(function() {
-      sendAdminAlert('9amLeads server restarted', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">The server came back online at ' + new Date().toISOString() + '.<br>If this was unexpected (crash / memory / disk reset), check the pool + delivery are healthy via <code>/api/health</code>.<br>Normal restarts (deploys) are expected.</div>');
-    }, 5000);
-  } catch(e) { console.log('[STARTUP-ALERT] err:', e.message); }
   console.log('\n========================================');
   console.log('  9amLeads Production API Server');
   console.log('  Domain: www.9amleads.com');
