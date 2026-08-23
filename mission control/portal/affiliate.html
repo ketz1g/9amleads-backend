@@ -97,6 +97,26 @@ tr:last-child td{border-bottom:none}
 .empty{background:#0f111a;border:1px dashed #2a2d42;border-radius:14px;padding:40px;text-align:center;color:#6b7280;font-size:13px;line-height:1.8}
 .empty b{color:#94a3b8}
 @media(max-width:640px){.lead{flex-wrap:wrap}.lead .act{flex-direction:row;align-items:center;width:100%}}
+/* help modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal.open{display:flex}
+.modal-box{background:rgba(15,17,26,.97);border:1px solid rgba(14,165,233,.35);border-radius:18px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;padding:26px}
+.modal-box h2{font-size:18px;font-weight:800;color:#f1f5f9;margin-bottom:4px}
+.modal-box .sub{font-size:12.5px;color:#94a3b8;margin-bottom:18px}
+.m-sec{background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:12px;padding:16px;margin-bottom:12px}
+.m-sec h3{font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.m-sec ol{font-size:12.5px;color:#a3adc2;line-height:1.7;padding-left:18px}
+.m-sec ol li{margin-bottom:5px}
+.m-sec .q{font-size:13px;font-weight:600;color:#e2e8f0;margin:10px 0 3px}
+.m-sec .a{font-size:12.5px;color:#94a3b8;line-height:1.6}
+.m-field{margin-bottom:12px}
+.m-field label{display:block;font-size:11px;font-weight:600;color:#b0b8cc;margin-bottom:5px}
+.m-field input,.m-field textarea{width:100%;padding:10px 12px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px;font-family:inherit}
+.m-field textarea{min-height:90px;resize:vertical}
+.m-msg{font-size:12.5px;margin-top:8px;display:none;font-weight:600}
+.m-msg.ok{color:#34d399}.m-msg.bad{color:#f87171}
+.m-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;line-height:1}
+.modal-box{position:relative}
 </style>
 </head>
 <body>
@@ -104,6 +124,7 @@ tr:last-child td{border-bottom:none}
 <div class="logo">9am<span>Leads</span> <span style="font-weight:500;font-size:12px;color:#94a3b8">Affiliate</span></div>
 <div class="spacer"></div>
 <div class="who" id="who-box" style="display:none"><b id="tb-name"></b><span id="tb-code"></span></div>
+<button class="btn-out" id="help-btn" style="display:none;margin-right:6px" onclick="openHelp()">Help</button>
 <button class="btn-out" id="logout" style="display:none">Sign out</button>
 </div>
 
@@ -251,6 +272,40 @@ tr:last-child td{border-bottom:none}
 </section>
 </div>
 
+<!-- HELP MODAL -->
+<div class="modal" id="help-modal">
+<div class="modal-box">
+<button class="m-close" onclick="closeHelp()">&times;</button>
+<h2>Help &amp; support</h2>
+<div class="sub">How it works, common questions, and how to reach us.</div>
+<div class="m-sec">
+<h3>📖 How it works</h3>
+<ol>
+<li>Share your code — every customer who signs up with it gets a <b style="color:#e2e8f0">14-day free trial</b>.</li>
+<li>You earn <b style="color:#e2e8f0">£25/month</b> for every paying customer, for as long as they stay.</li>
+<li>Track everyone in the <b style="color:#e2e8f0">Leads</b> tab and convert them with the <b style="color:#e2e8f0">Tools</b> and <b style="color:#e2e8f0">Playbook</b>.</li>
+<li>Commissions are paid out on a monthly cycle.</li>
+</ol>
+</div>
+<div class="m-sec">
+<h3>❓ Common questions</h3>
+<div class="q">When do I start earning?</div><div class="a">As soon as a customer who used your code becomes a paying subscriber — tracked live in your dashboard.</div>
+<div class="q">How much do I earn?</div><div class="a">£25 a month per paying customer, for as long as they stay subscribed. No cap.</div>
+<div class="q">Do my referrals really get 14 days free?</div><div class="a">Yes — any customer who uses your code gets 14 days free instead of the standard 7.</div>
+<div class="q">Where are my scripts and templates?</div><div class="a">Open the Tools tab and pick a lead type. Everything is ready to copy.</div>
+</div>
+<div class="m-sec">
+<h3>✉️ Contact us</h3>
+<div class="m-field"><label>Your name</label><input type="text" id="h-name" placeholder="Your name"></div>
+<div class="m-field"><label>Your email</label><input type="email" id="h-email" placeholder="you@email.com"></div>
+<div class="m-field"><label>Message</label><textarea id="h-msg" placeholder="How can we help? Sign-ups, commissions, dashboard — anything."></textarea></div>
+<button class="btn" onclick="sendHelp()" id="h-btn">Send message</button>
+<div class="m-msg" id="h-msg-out"></div>
+<div class="a" style="margin-top:10px;text-align:center">Or email us directly: <a href="mailto:hello@9amleads.com" style="color:#0ea5e9">hello@9amleads.com</a></div>
+</div>
+</div>
+</div>
+
 <script>
 var API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
 (function(){
@@ -320,6 +375,7 @@ function init(){
   document.getElementById('login-view').style.display='none';
   document.getElementById('register-view').style.display='none';
   document.getElementById('logout').style.display='inline-block';
+  document.getElementById('help-btn').style.display='inline-block';
   api('GET','/affiliate/dashboard').then(function(d){
     if(!d.success){sessionStorage.removeItem('mld_affiliate_session');localStorage.removeItem('mld_affiliate_token');location.reload();return;}
     D=d;
@@ -438,6 +494,23 @@ function renderPayouts(p){
     p.forEach(function(p){h+='<tr><td>'+fmtDate(p.date)+'</td><td>'+p.referrals+'</td><td><b style="color:#34d399">£'+p.amount+'</b></td></tr>';});
     h+='</tbody></table>';w.innerHTML=h;
   }
+}
+function openHelp(){document.getElementById('help-modal').classList.add('open');}
+function closeHelp(){document.getElementById('help-modal').classList.remove('open');}
+function sendHelp(){
+  var name=document.getElementById('h-name').value.trim();
+  var email=document.getElementById('h-email').value.trim();
+  var msg=document.getElementById('h-msg').value.trim();
+  var out=document.getElementById('h-msg-out');
+  var btn=document.getElementById('h-btn');
+  if(!name||!email||!msg){out.className='m-msg bad';out.style.display='block';out.textContent='Please fill in your name, email and message.';return;}
+  btn.disabled=true;btn.textContent='Sending...';
+  fetch(API+'/api/send-enquiry',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:'hello@9amleads.com',subject:'Affiliate help request - '+name,name:name,fromEmail:email,details:msg})})
+  .then(function(r){return r.json();}).then(function(d){
+    out.className='m-msg ok';out.style.display='block';out.textContent='Thanks '+name+' — your message has been sent. We\'ll reply to '+email+' shortly.';
+    document.getElementById('h-name').value='';document.getElementById('h-email').value='';document.getElementById('h-msg').value='';
+  }).catch(function(){out.className='m-msg bad';out.style.display='block';out.textContent='Could not send right now — please email hello@9amleads.com.';})
+  .then(function(){btn.disabled=false;btn.textContent='Send message';});
 }
 document.getElementById('logout').onclick=function(){sessionStorage.removeItem('mld_affiliate_session');localStorage.removeItem('mld_affiliate_token');location.reload();};
 if(TOKEN){init();}else if(location.hash==='#register'){showRegister();}
