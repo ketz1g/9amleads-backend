@@ -36,6 +36,98 @@
   status = 200
   force = true
 
+# Legacy single-product sub-sites now live under the main 9amLeads brand
+[[redirects]]
+  from = "/movingleadsdaily"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/movingleadsdaily/*"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/probateleads"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/probateleads/*"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/newbusinessalert"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/newbusinessalert/*"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/planningleads"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/planningleads/*"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/tenders"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/tenders/*"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/planningpermission"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/planningpermission/*"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/newbusiness"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/newbusiness/*"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/9amleads"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/9amleads/*"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/9amleadsmc"
+  to = "/who-we-serve/"
+  status = 301
+[[redirects]]
+  from = "/9amleadsmc/*"
+  to = "/who-we-serve/"
+  status = 301
+
+# About Us page
+[[redirects]]
+  from = "/about-us"
+  to = "/about-us/"
+  status = 301
+[[redirects]]
+  from = "/about-us/index.html"
+  to = "/about-us/"
+  status = 301
+[[redirects]]
+  from = "/about"
+  to = "/about-us/"
+  status = 301
+[[redirects]]
+  from = "/about/"
+  to = "/about-us/"
+  status = 301
+
 [[headers]]
   for = "/*"
   [headers.values]
