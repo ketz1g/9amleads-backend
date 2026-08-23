@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <script>
-function trackEvent(event, props){ try { if (typeof props !== 'object' || props === null) props = {}; fetch('/api/analytics/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event: event, props: props }) }).catch(function(){}); } catch(e){} }
+function getAid(){ try { if (window.__aid) return window.__aid; var v = localStorage.getItem('9am_aid'); if (!v) { v = 'u' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('9am_aid', v); } window.__aid = v; return v; } catch(e){ return 'u' + Date.now().toString(36); } } function trackEvent(event, props){ try { if (typeof props !== 'object' || props === null) props = {}; fetch('/api/analytics/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event: event, uid: getAid(), props: props }) }).catch(function(){}); } catch(e){} }
 
 /* 9amLeads anonymous analytics (cookie-free, GDPR-friendly) */
 (function(){
@@ -1054,6 +1054,7 @@ function doSignup() {
   var button = document.getElementById('signup-btn');
   var error = document.getElementById('signup-error');
   var success = document.getElementById('signup-success');
+  try { trackEvent('signup_started', {}); } catch(e) {}
   var name = document.getElementById('s-name').value.trim();
   var company = document.getElementById('s-company').value.trim();
   var email = document.getElementById('s-email').value.trim().toLowerCase();
@@ -1138,7 +1139,7 @@ var pLimit = getPostcodeAreaLimit();
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
   fetch(API + '/api/auth/signup', {
     method:'POST', headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', acceptTerms:document.getElementById('s-terms').checked, marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()), movingType:(document.querySelector('#s-moving-type input[type=radio]:checked')?.value || 'both'), affiliateCode:affiliateCode })
+    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', analytics_id:getAid(), acceptTerms:document.getElementById('s-terms').checked, marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()), movingType:(document.querySelector('#s-moving-type input[type=radio]:checked')?.value || 'both'), affiliateCode:affiliateCode })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:plan, email:email, product:product, products:products }));

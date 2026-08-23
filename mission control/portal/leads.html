@@ -176,7 +176,7 @@ footer a{color:var(--accent);text-decoration:underline}
 </div>
 
 <script>
-function trackEvent(event, props){ try { if (typeof props !== 'object' || props === null) props = {}; fetch('/api/analytics/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event: event, props: props }) }).catch(function(){}); } catch(e){} }
+function getAid(){ try { if (window.__aid) return window.__aid; var v = localStorage.getItem('9am_aid'); if (!v) { v = 'u' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('9am_aid', v); } window.__aid = v; return v; } catch(e){ return 'u' + Date.now().toString(36); } } function trackEvent(event, props){ try { if (typeof props !== 'object' || props === null) props = {}; fetch('/api/analytics/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event: event, uid: getAid(), props: props }) }).catch(function(){}); } catch(e){} }
 
 var allLeads = [];
 function exportLeads() {

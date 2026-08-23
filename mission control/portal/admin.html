@@ -227,23 +227,21 @@ tbody tr:hover td{background:#f8fafc}
 </div>
 </div>
 
-<!-- ============ ANALYTICS ============ -->
+<!-- ============ ANALYTICS (CONVERSION) ============ -->
 <div class="tab-panel" id="tab-analytics">
 <div class="card">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-chart-pie" style="color:#0ea5e9;margin-right:6px"></i> Website Visitors</div>
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-chart-pie" style="color:#0ea5e9;margin-right:6px"></i> Conversion Funnel</div>
 <div style="display:flex;align-items:center;gap:8px">
-<select id="analyticsRange" onchange="loadAnalytics()" class="input" style="padding:6px 10px;font-size:12px"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select>
+<select id="analyticsRange" onchange="loadAnalytics()" class="input" style="padding:6px 10px;font-size:12px"><option value="1">Today</option><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="0">All time</option></select>
 <button class="btn btn-outline btn-sm" onclick="loadAnalytics()"><i class="fas fa-sync"></i> Refresh</button>
 </div>
 </div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">
-<div class="stat-card"><div class="num" id="anVisitors">-</div><div class="label">Unique Visitors</div></div>
-<div class="stat-card"><div class="num" id="anViews" style="color:#0ea5e9">-</div><div class="label">Page Views</div></div>
-</div>
-<div id="analyticsBody"><div class="empty">No analytics yet. Add the tracking snippet to see visitors.</div></div>
+<div id="analyticsWarnings" style="margin-bottom:12px"></div>
+<div id="analyticsBody"><div class="empty">Loading conversion data...</div></div>
 </div>
 </div>
+
 
 <!-- ============ AFFILIATES ============ -->
 <div class="tab-panel" id="tab-rejected">
@@ -316,6 +314,7 @@ function switchTab(name) {
   if (btn) btn.classList.add('active');
   if (name === 'affiliates') loadAffiliates();
   if (name === 'rejected') loadRejected();
+  if (name === 'analytics') loadAnalytics();
   window.scrollTo(0, 0);
 }
 
@@ -571,37 +570,90 @@ async function loadData() {
 async function loadAnalytics() {
   try {
     var days = document.getElementById('analyticsRange') ? document.getElementById('analyticsRange').value : 30;
-    var r = await fetch(API + '/api/analytics/overview?days=' + days + '&t=' + Date.now(), { headers: adminHeaders() });
+    var r = await fetch(API + '/api/admin/analytics?days=' + days + '&t=' + Date.now(), { headers: adminHeaders() });
     if (!r.ok) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#ef4444">Could not load analytics</div>'; return; }
     var d = await r.json();
-    if (!d || d.error) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#64748b">No analytics data yet</div>'; return; }
-    document.getElementById('anVisitors').textContent = d.unique_visitors || 0;
-    document.getElementById('anViews').textContent = d.total_views || 0;
+    if (!d || d.error) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#64748b">No conversion data yet. Analytics events accumulate as visitors use the site.</div>'; return; }
+
+    // Warnings
+    var warnHtml = '';
+    (d.warnings || []).forEach(function(w) {
+      var col = w.level === 'red' ? '#ef4444' : (w.level === 'amber' ? '#f59e0b' : '#22c55e');
+      var ic = w.level === 'red' ? '🔴' : (w.level === 'amber' ? '🟠' : '🟢');
+      warnHtml += '<div style="display:inline-flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px 12px;font-size:12px;margin-right:8px;margin-bottom:6px">' + ic + ' <strong style="color:' + col + '">' + w.label + ': ' + w.pct + '%</strong> <span style="color:#64748b">(' + w.note + ')</span></div>';
+    });
+    var wEl = document.getElementById('analyticsWarnings');
+    if (wEl) wEl.innerHTML = warnHtml;
+
+    var F = { homepage_viewed: 'Website Visitors', trial_cta_clicked: 'Trial CTA Clicked', signup_started: 'Signup Started', signup_completed: 'Signup Completed', trial_activated: 'Trial Activated', lead_viewed: 'First Lead Viewed', lead_contacted: 'Lead Contacted', pricing_viewed: 'Pricing Viewed', checkout_started: 'Checkout Started', subscription_started: 'Subscription Started' };
     var html = '';
-    // Daily series
-    if (d.daily && d.daily.length) {
-      var maxV = Math.max.apply(null, d.daily.map(function(x){return x.views;})) || 1;
-      html += '<div style="font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:8px">Daily Page Views</div>';
-      html += '<div style="display:flex;align-items:flex-end;gap:2px;height:80px;margin-bottom:16px">';
-      d.daily.forEach(function(day){
-        var h = Math.max(3, Math.round((day.views / maxV) * 74));
-        html += '<div title="' + day.date + ': ' + day.views + ' views" style="flex:1;background:#0ea5e9;border-radius:3px 3px 0 0;height:' + h + 'px;opacity:0.85"></div>';
+
+    // Funnel
+    html += '<div style="font-size:13px;font-weight:800;font-family:\'Outfit\',sans-serif;margin-bottom:10px">Visitor → Paid Funnel</div>';
+    html += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:16px">';
+    (d.funnel || []).forEach(function(f, i) {
+      var label = F[f.event] || f.event;
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid #eef2f7">' +
+        '<span style="width:14px;height:14px;border-radius:50%;background:' + (i === d.funnel.length - 1 ? '#22c55e' : '#0ea5e9') + ';flex-shrink:0"></span>' +
+        '<span style="flex:1;font-size:12px;color:#334155;font-weight:600">' + label + '</span>' +
+        (f.fromPrevPct !== null ? '<span style="font-size:11px;color:#0ea5e9;font-weight:700">' + f.fromPrevPct + '%</span>' : '') +
+        '<span style="font-size:12px;color:#64748b;width:40px;text-align:right"><strong>' + f.unique + '</strong></span>' +
+        '<span style="font-size:10px;color:#94a3b8;width:46px;text-align:right">' + f.raw + ' raw</span>' +
+        '</div>';
+    });
+    html += '<div style="padding-top:8px;font-size:12px;font-weight:800;color:#0c4a6e">Overall Visitor → Paid: <span style="color:#0ea5e9">' + (d.overall_pct !== null ? d.overall_pct + '%' : 'n/a') + '</span></div>';
+    html += '</div>';
+
+    // Trial performance
+    var t = d.trials || {};
+    html += '<div style="font-size:13px;font-weight:800;font-family:\'Outfit\',sans-serif;margin-bottom:10px">Trial Performance</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px">' +
+      statCard(t.started || 0, 'Trials Started') + statCard(t.active || 0, 'Active Now') + statCard(t.expired || 0, 'Expired') +
+      statCard(t.converted || 0, 'Converted to Paid') + statCard((t.conversion_pct !== null ? t.conversion_pct + '%' : 'n/a'), 'Trial → Paid') +
+      statCard((t.avg_received || 0), 'Avg Leads Delivered') + statCard((t.avg_contacted || 0), 'Avg Contacted') +
+      '<div style="border:1px solid ' + ((t.zero_lead_count || 0) > 0 ? '#f59e0b' : '#e2e8f0') + ';border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:900;font-family:\'Outfit\',sans-serif;color:' + ((t.zero_lead_count || 0) > 0 ? '#d97706' : '#22c55e') + '">' + (t.zero_lead_count || 0) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">Zero-Lead Trials</div></div>' +
+      '</div>';
+
+    // Zero-lead trials list
+    if (t.zero_lead && t.zero_lead.length) {
+      html += '<div style="font-size:13px;font-weight:800;font-family:\'Outfit\',sans-serif;margin:14px 0 8px;color:#b45309">⚠️ Trials With Zero Leads</div>';
+      html += '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;margin-bottom:16px;max-height:220px;overflow:auto">';
+      html += '<table style="width:100%;font-size:11px;border-collapse:collapse"><tr style="color:#92400e;text-align:left"><th style="padding:4px 6px">Customer</th><th>Type</th><th>Areas</th><th>Trial End</th><th>Days Left</th><th>Allocation</th></tr>';
+      t.zero_lead.forEach(function(z) {
+        html += '<tr style="border-top:1px solid #fde68a"><td style="padding:4px 6px;color:#334155">' + escHtml(z.email) + '</td><td>' + escHtml(z.product || '') + '</td><td style="color:#64748b">' + escHtml(z.areas || '') + '</td><td>' + (z.trial_end ? new Date(z.trial_end).toLocaleDateString() : '-') + '</td><td>' + (z.days_remaining || 0) + '</td><td>' + (z.allocation || 0) + '/day</td></tr>';
       });
-      html += '</div>';
+      html += '</table></div>';
     }
-    // Top pages
-    if (d.top_pages && d.top_pages.length) {
-      html += '<div style="font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:8px">Top Pages</div>';
-      html += '<div style="margin-bottom:16px">' + d.top_pages.slice(0,8).map(function(p){ return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0;font-size:12px"><span style="color:#64748b">' + (p.path||'/') + '</span><span style="font-weight:700">' + p.views + '</span></div>'; }).join('') + '</div>';
-    }
-    // Top referrers
-    if (d.top_referrers && d.top_referrers.length) {
-      html += '<div style="font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:8px">Top Referrers</div>';
-      html += '<div>' + d.top_referrers.slice(0,8).map(function(p){ return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0;font-size:12px"><span style="color:#64748b">' + (p.referrer||'(direct)') + '</span><span style="font-weight:700">' + p.views + '</span></div>'; }).join('') + '</div>';
-    }
-    document.getElementById('analyticsBody').innerHTML = html || '<div class="empty" style="color:#64748b">No data for this period</div>';
+
+    // Lead-type performance
+    html += '<div style="font-size:13px;font-weight:800;font-family:\'Outfit\',sans-serif;margin:14px 0 8px">Lead Type Performance</div>';
+    var bp = d.by_product || {};
+    html += '<table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:16px"><tr style="color:#64748b;text-align:left;border-bottom:1px solid #e2e8f0"><th style="padding:6px">Lead Type</th><th>Trials</th><th>Converted</th><th>Conv %</th><th>Avg Delivered</th><th>Avg Contacted</th></tr>';
+    Object.keys(bp).forEach(function(p) {
+      var b = bp[p];
+      html += '<tr style="border-bottom:1px solid #eef2f7"><td style="padding:6px;font-weight:600;color:#334155">' + p + '</td><td>' + (b.trials || 0) + '</td><td>' + (b.converted || 0) + '</td><td>' + (b.conversion_pct !== null ? b.conversion_pct + '%' : 'n/a') + '</td><td>' + (b.avg_received || 0) + '</td><td>' + (b.avg_contacted || 0) + '</td></tr>';
+    });
+    html += '</table>';
+
+    // Plan conversion
+    html += '<div style="font-size:13px;font-weight:800;font-family:\'Outfit\',sans-serif;margin:14px 0 8px">Plan Conversion</div>';
+    var plans = { starter: { label: 'Starter', price: 25 }, pro: { label: 'Pro', price: 49 }, enterprise: { label: 'Enterprise', price: 99 } };
+    var bp2 = d.by_plan || {};
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px">';
+    Object.keys(plans).forEach(function(p) {
+      var b = bp2[p] || { count: 0 };
+      html += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center"><div style="font-size:11px;color:#64748b;font-weight:700">' + plans[p].label + ' · £' + plans[p].price + '/wk</div><div style="font-size:24px;font-weight:900;font-family:\'Outfit\',sans-serif;color:#0ea5e9">' + (b.count || 0) + '</div><div style="font-size:11px;color:#64748b">' + (b.pct !== null ? b.pct + '% of paid' : 'n/a') + '</div></div>';
+    });
+    html += '</div>';
+    html += '<div style="font-size:11px;color:#64748b">Estimated current weekly subscription value (paid plan count × price): <strong style="color:#0c4a6e">£' + (d.weekly_value_est || 0) + '/week</strong> — based on plan counts, not recognised accounting revenue.</div>';
+
+    document.getElementById('analyticsBody').innerHTML = html;
   } catch(e) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#ef4444">Failed: ' + e.message + '</div>'; }
 }
+function statCard(num, label) {
+  return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:900;font-family:\'Outfit\',sans-serif;color:#0c4a6e">' + num + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">' + label + '</div></div>';
+}
+function escHtml(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function renderPlanBreakdown(customers) {
   var plans = { free_trial: { label: 'Free Trial', color: '#0ea5e9' }, starter: { label: 'Starter', color: '#22c55e' }, pro: { label: 'Pro', color: '#a855f7' }, enterprise: { label: 'Enterprise', color: '#f59e0b' }, cancelled: { label: 'Cancelled', color: '#ef4444' } };

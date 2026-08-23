@@ -1806,12 +1806,19 @@ document.addEventListener('DOMContentLoaded', function() {
 <div itemscope itemtype="https://schema.org/Blog"><h3>9amLeads Blog</h3></div>
 </section>
 <script>
-function trackEvent(event, props){ try { if (typeof props !== 'object' || props === null) props = {}; fetch('/api/analytics/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event: event, props: props }) }).catch(function(){}); } catch(e){} }
+function trackEvent(event, props){ try { if (typeof props !== 'object' || props === null) props = {}; var uid = window.__aid || ''; if (!uid) { uid = 'u' + Math.random().toString(36).slice(2) + Date.now().toString(36); try { window.__aid = uid; localStorage.setItem('9am_aid', uid); } catch(e){} } fetch('/api/analytics/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event: event, uid: uid, props: props }) }).catch(function(){}); } catch(e){} }
 document.addEventListener('DOMContentLoaded', function(){
+  try { trackEvent('homepage_viewed', {}); } catch(e) {}
   var signupLinks = document.querySelectorAll('a[href*="/portal/"]');
   for (var i = 0; i < signupLinks.length; i++) { (function(a){ a.addEventListener('click', function(){ trackEvent('trial_cta_clicked', { placement: 'signup' }); }); })(signupLinks[i]); }
   var pricingLinks = document.querySelectorAll('a[href*="/pricing/"]');
   for (var j = 0; j < pricingLinks.length; j++) { (function(a){ a.addEventListener('click', function(){ trackEvent('pricing_viewed', {}); }); })(pricingLinks[j]); }
 });
 </script>
+<!-- Mobile sticky CTA (small screens only) -->
+<div class="msticky" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:10px 14px;background:rgba(255,255,255,0.97);border-top:1px solid #e2e8f0;box-shadow:0 -4px 20px rgba(0,0,0,.08);text-align:center">
+<a href="/portal/#signup" onclick="trackEvent('trial_cta_clicked',{placement:'sticky'})" style="display:inline-block;width:100%;max-width:420px;padding:13px 20px;border-radius:50px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;font-size:15px;font-weight:800;text-decoration:none;font-family:'Outfit',sans-serif"><i class="fas fa-gift"></i> Start Your 7-Day Free Trial</a>
+<div style="font-size:10px;color:#6b7280;margin-top:5px;font-weight:600">No card required &bull; Cancel anytime</div>
+</div>
+<style>@media(max-width:768px){.msticky{display:block!important}.hero{padding-bottom:80px!important}}</style>
 </body></html>

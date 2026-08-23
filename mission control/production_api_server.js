@@ -2971,8 +2971,10 @@ app.post('/api/auth/signup', async (req, res) => {
         saveDb();
         console.log('[SIGNUP] Welcome email sent to ' + customer.email);
       }
-      trackAnalytics('signup_completed', { product: customer.product, plan: customer.plan });
-      trackAnalytics('trial_activated', { product: customer.product });
+      var _aid = String(req.body.analytics_id || req.body.uid || '').substring(0, 80) || '';
+      if (_aid) { try { var dbm = getDb(); if (!dbm.uidMap) dbm.uidMap = {}; dbm.uidMap[customer.id] = _aid; saveDb(); } catch(umErr) {} }
+      trackAnalytics('signup_completed', { product: customer.product, plan: customer.plan, _uid: _aid, customer_id: customer.id });
+      trackAnalytics('trial_activated', { product: customer.product, _uid: _aid, customer_id: customer.id });
     } catch (welcomeErr) {
       console.log('[SIGNUP] Welcome email failed:', welcomeErr.message);
     }
@@ -7876,6 +7878,8 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   var insight = insightCards[prod] || { emoji: '\uD83D\uDCA1', tip: 'Send a letter or flyer with Print &amp; Post and follow up in person to win the work.', metric: '', link: PUBLIC_URL + '/pricing' };
   
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root{color-scheme:light}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobbtn{display:block!important;width:100%!important;box-sizing:border-box!important;margin:6px 0!important}}</style></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() + '<tr><td bgcolor="#ffffff" class="mob" style="background:#ffffff;padding:20px 30px 26px">' + (  templates[template] || templates.trial_day1) + '</td></tr>' +
+  // Personalised trial block: welcome summary OR real-usage metrics with CTAs.
+  buildTrialPersonalBlock(customer, template) +
   // Print & Post / Auto Send / postal-marketing value block (shared, all campaign emails)
   buildPrintPostValueBlock(allProds[0] || 'moving', accent) +
   // Why 9amLeads is the best leads service (shared, all campaign emails)
@@ -7902,6 +7906,117 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
 // Generate realistic-looking demo leads for any product
 function generateDemoLeads(product, count) {
   return [];
+}
+
+// ===== PERSONALISED TRIAL EMAIL BLOCKS =====
+// Real recorded usage injected into the welcome + trial lifecycle emails.
+// Fallbacks: zero metrics are omitted (never shown as 0), and a zero-lead trial
+// switches to customer-service messaging instead of an upgrade push.
+function getTrialMetrics(customer) {
+  var out = { received: -1, viewed: -1, contacted: -1, quoted: -1, won: -1 };
+  try {
+    if (!customer || !customer.id) return out;
+    out.received = (db.prepare('SELECT COUNT(*) AS c FROM leads WHERE customer_id = ?').get(customer.id) || {}).c || 0;
+    out.contacted = (db.prepare("SELECT COUNT(*) AS c FROM leads WHERE customer_id = ? AND status IN ('contacted','quoted','won')").get(customer.id) || {}).c || 0;
+    out.quoted = (db.prepare("SELECT COUNT(*) AS c FROM leads WHERE customer_id = ? AND status = 'quoted'").get(customer.id) || {}).c || 0;
+    out.won = (db.prepare("SELECT COUNT(*) AS c FROM leads WHERE customer_id = ? AND status = 'won'").get(customer.id) || {}).c || 0;
+  } catch(e) {}
+  return out;
+}
+function fmtTrialEnd(customer) {
+  try { if (!customer.trial_ends) return ''; var d = new Date(customer.trial_ends); return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); } catch(e) { return ''; }
+}
+function trialAreasLabel(customer) {
+  try {
+    var a = customer.target_areas;
+    if (Array.isArray(a)) return a.slice(0, 6).join(', ') + (a.length > 6 ? ' +' + (a.length - 6) : '');
+    if (typeof a === 'string') { try { var p = JSON.parse(a); if (Array.isArray(p)) return p.slice(0, 6).join(', ') + (p.length > 6 ? ' +' + (p.length - 6) : ''); } catch(e) {} return a; }
+  } catch(e) {}
+  return 'your selected areas';
+}
+function buildCtaBtn(label, url, color) {
+  color = color || '#0ea5e9';
+  return '<div style="text-align:center;margin:14px 0 4px"><a href="' + url + '" style="display:inline-block;padding:12px 28px;border-radius:50px;background-color:' + color + ';background-image:linear-gradient(135deg,' + color + ',#6366f1);color:#ffffff;text-decoration:none;font-size:13px;font-weight:700">' + label + '</a></div>';
+}
+function buildTrialPersonalBlock(customer, template) {
+  try {
+    var dashboardUrl = PUBLIC_URL + '/portal/dashboard.html';
+    var leadsUrl = PUBLIC_URL + '/portal/leads.html';
+    var pricingUrl = PUBLIC_URL + '/pricing/';
+    var prodNames = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permissions', tenders: 'Public Tenders' };
+    var prod = customer.product || 'moving';
+    var prodName = prodNames[prod] || (customer.lead_type || 'your selected');
+    var alloc = customer.leads_per_day || (customer.plan ? 'your' : 'your');
+    var metrics = getTrialMetrics(customer);
+    var noCardLine = '<p style="color:#64748b;font-size:11px;text-align:center;margin:8px 0 0;line-height:1.6">No card required. Nothing will be charged automatically at the end of your trial.</p>';
+
+    if (template === 'trial_day1') {
+      // Welcome summary
+      var rows = '<tr><td style="padding:4px 0;font-size:12px;color:#475569;width:120px">Lead Type</td><td style="padding:4px 0;font-size:12px;font-weight:700;color:#1e293b">' + prodName + '</td></tr>';
+      rows += '<tr><td style="padding:4px 0;font-size:12px;color:#475569">Selected Areas</td><td style="padding:4px 0;font-size:12px;font-weight:700;color:#1e293b">' + trialAreasLabel(customer) + '</td></tr>';
+      rows += '<tr><td style="padding:4px 0;font-size:12px;color:#475569">Daily Allocation</td><td style="padding:4px 0;font-size:12px;font-weight:700;color:#1e293b">' + alloc + ' per day</td></tr>';
+      rows += '<tr><td style="padding:4px 0;font-size:12px;color:#475569">Trial Ends</td><td style="padding:4px 0;font-size:12px;font-weight:700;color:#1e293b">' + (fmtTrialEnd(customer) || '7 days') + '</td></tr>';
+      rows += '<tr><td style="padding:4px 0;font-size:12px;color:#475569">Next Delivery</td><td style="padding:4px 0;font-size:12px;font-weight:700;color:#1e293b">9am (Mon\u2013Fri)</td></tr>';
+      return '<tr><td class="mob" bgcolor="#eff6ff" style="background-color:#eff6ff;padding:0 30px 16px"><div style="border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px">' +
+        '<div style="font-size:13px;font-weight:800;color:#0c4a6e;font-family:Outfit,Arial,sans-serif;margin-bottom:4px">\u2705 Welcome to 9amLeads \u2014 your 7-day free trial is active</div>' +
+        '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:6px 0 8px">' + rows + '</table>' +
+        '<p style="font-size:12.5px;color:#334155;line-height:1.7;margin:0 0 4px">We\u2019ll prepare fresh matching opportunities based on your selected lead type and areas, and deliver them to your account at 9am.</p>' +
+        buildCtaBtn('View My Leads', leadsUrl) +
+        noCardLine +
+        '</div></td></tr>';
+    }
+    if (template === 'trial_day5' || template === 'trial_day7' || template === 'trial_day9') {
+      if (metrics.received > 0) {
+        // Show real usage metrics. Omit metrics that are 0 (never show "0 viewed").
+        var lines = '<div style="font-size:13px;font-weight:800;color:#0c4a6e;font-family:Outfit,Arial,sans-serif;margin-bottom:6px">' +
+          (template === 'trial_day9' ? 'Your trial in numbers' : 'Your 9amLeads trial so far') + '</div>';
+        lines += '<p style="font-size:12.5px;color:#334155;line-height:1.9;margin:0"><strong style="color:#0f172a">' + metrics.received + '</strong> ' + (metrics.received === 1 ? 'opportunity' : 'opportunities') + ' received';
+        if (metrics.contacted > 0) lines += '<br><strong style="color:#0f172a">' + metrics.contacted + '</strong> contacted';
+        if (metrics.quoted > 0) lines += '<br><strong style="color:#0f172a">' + metrics.quoted + '</strong> quote' + (metrics.quoted === 1 ? '' : 's') + ' recorded';
+        if (metrics.won > 0) lines += '<br><strong style="color:#0f172a">' + metrics.won + '</strong> won';
+        lines += '</p>';
+        if (template === 'trial_day5') {
+          lines += '<p style="font-size:11.5px;color:#475569;margin:8px 0 0">Your free trial has 2 days remaining.</p>';
+          return '<tr><td class="mob" bgcolor="#eff6ff" style="background-color:#eff6ff;padding:0 30px 16px"><div style="border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px">' + lines +
+            buildCtaBtn('View My Leads', leadsUrl) +
+            '<div style="text-align:center;margin-top:4px"><a href="' + pricingUrl + '" style="color:#0ea5e9;font-size:11px;font-weight:700;text-decoration:underline">Compare Plans</a></div>' +
+            noCardLine + '</div></td></tr>';
+        }
+        if (template === 'trial_day7') {
+          lines += '<p style="font-size:11.5px;color:#475569;margin:8px 0 0">Your lead delivery will pause when your trial ends. Continue receiving fresh opportunities every morning at 9am by choosing your plan.</p>';
+          return '<tr><td class="mob" bgcolor="#eff6ff" style="background-color:#eff6ff;padding:0 30px 16px"><div style="border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px">' + lines +
+            buildCtaBtn('Continue My 9am Leads', pricingUrl) +
+            '<div style="text-align:center;margin-top:4px"><a href="' + leadsUrl + '" style="color:#0ea5e9;font-size:11px;font-weight:700;text-decoration:underline">View Plans</a></div>' +
+            noCardLine + '</div></td></tr>';
+        }
+        // trial_day9 (expired)
+        lines += '<p style="font-size:11.5px;color:#475569;margin:8px 0 0">Your account and existing leads remain available \u2014 only new 9am deliveries are paused.</p>';
+        return '<tr><td class="mob" bgcolor="#eff6ff" style="background-color:#eff6ff;padding:0 30px 16px"><div style="border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px">' + lines +
+          buildCtaBtn('Restart My Leads', pricingUrl) +
+          '<div style="text-align:center;margin-top:4px"><a href="' + leadsUrl + '" style="color:#0ea5e9;font-size:11px;font-weight:700;text-decoration:underline">View My Leads</a></div>' +
+          noCardLine + '</div></td></tr>';
+      } else {
+        // Zero-lead trial: customer-service messaging, no upgrade push. Flag for admin.
+        try {
+          var dbz = getDb();
+          if (!dbz.zeroLeadFlags) dbz.zeroLeadFlags = [];
+          var already = (dbz.zeroLeadFlags || []).some(function(f){ return f.customer_id === customer.id && f.template === template; });
+          if (!already) { dbz.zeroLeadFlags.push({ customer_id: customer.id, product: prod, template: template, ts: new Date().toISOString() }); if (dbz.zeroLeadFlags.length > 5000) dbz.zeroLeadFlags = dbz.zeroLeadFlags.slice(-5000); saveDb(); }
+        } catch(zlErr) {}
+        var msg = template === 'trial_day9'
+          ? 'Your trial has ended. Fresh opportunities for your selected areas are still being prepared, and you can restart your delivery at any time.'
+          : 'We\u2019re still preparing fresh opportunities for your selected areas. Fresh data appears every day, and your 9am delivery runs on weekdays.';
+        var ctaLabel = template === 'trial_day9' ? 'Restart My Leads' : 'View My Leads';
+        var ctaUrl = template === 'trial_day9' ? pricingUrl : leadsUrl;
+        return '<tr><td class="mob" bgcolor="#eff6ff" style="background-color:#eff6ff;padding:0 30px 16px"><div style="border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px">' +
+          '<div style="font-size:13px;font-weight:800;color:#0c4a6e;font-family:Outfit,Arial,sans-serif;margin-bottom:6px">' + (template === 'trial_day9' ? 'Your 9amLeads delivery is paused' : 'Your trial is active \u2014 here\u2019s what happens next') + '</div>' +
+          '<p style="font-size:12.5px;color:#334155;line-height:1.7;margin:0 0 4px">' + msg + '</p>' +
+          buildCtaBtn(ctaLabel, ctaUrl) +
+          noCardLine + '</div></td></tr>';
+      }
+    }
+  } catch(e) {}
+  return '';
 }
 
 // ===== CRM HELPER: Format lead for CRM webhook =====
@@ -12183,7 +12298,9 @@ app.post('/api/stripe/webhook', async (req, res) => {
           if (session.subscription) db.prepare('UPDATE customers SET stripe_subscription_id = ? WHERE id = ?').run(session.subscription, customer.id);
           saveDb();
           console.log('[STRIPE] Upgraded ' + customerEmail + ' to ' + plan);
-          trackAnalytics('subscription_started', { plan: plan, product: product });
+          var _paidAid = '';
+          try { var dbm2 = getDb(); if (dbm2 && dbm2.uidMap && customer) _paidAid = dbm2.uidMap[customer.id] || ''; } catch(paErr) {}
+          trackAnalytics('subscription_started', { plan: plan, product: product, _uid: _paidAid, customer_id: customer ? customer.id : '' });
         }
       }
 
@@ -20393,30 +20510,152 @@ app.post('/api/analytics/event', async (req, res) => {
   try {
     var ev = String(req.body.event || '').substring(0, 60);
     var props = req.body.props || {};
+    var uid = String(req.body.uid || '').substring(0, 80) || '';
     // Never accept PII; strip anything that looks like contact data.
     var clean = {};
     Object.keys(props).forEach(function(k) {
       var v = String(props[k] || '').substring(0, 80);
       if (!/email|name|phone|address|postcode/i.test(k)) clean[k] = v;
     });
+    if (uid) clean._uid = uid;
     trackAnalytics(ev, clean);
     res.json({ ok: true });
   } catch(e) { res.json({ ok: true }); }
 });
-// GET /api/admin/analytics — summary of the conversion funnel
+// GET /api/admin/analytics — conversion funnel dashboard (unique users + rates +
+// trial/lead-type/plan performance + zero-lead trials). Supports ?days=1|7|30|0.
 app.get('/api/admin/analytics', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
-    var events = db2.analytics || [];
-    var byEvent = {};
-    var byDay = {};
+    var allEvents = db2.analytics || [];
+    var days = parseInt(req.query.days, 10);
+    if (isNaN(days) || days < 0) days = 30;
+    var cutoff = days > 0 ? Date.now() - days * 86400000 : 0;
+    var events = allEvents.filter(function(e) { return !cutoff || new Date(e.ts || 0).getTime() >= cutoff; });
+
+    var byEvent = {}, byDay = {}, rawCount = {};
+    var uidFor = function(e) { return (e.props && (e.props._uid || e.props.uid)) || (e.props && e.props.customer_id) || ''; };
+    var unique = {};
     events.forEach(function(e) {
+      rawCount[e.event] = (rawCount[e.event] || 0) + 1;
       byEvent[e.event] = (byEvent[e.event] || 0) + 1;
       var d = (e.ts || '').substring(0, 10);
-      byDay[d] = byDay[d] || {};
-      byDay[d][e.event] = (byDay[d][e.event] || 0) + 1;
+      byDay[d] = byDay[d] || {}; byDay[d][e.event] = (byDay[d][e.event] || 0) + 1;
+      var k = uidFor(e); if (k) { if (!unique[e.event]) unique[e.event] = {}; unique[e.event][k] = true; }
     });
-    res.json({ success: true, total: events.length, by_event: byEvent, by_day: byDay, recent: events.slice(-50).reverse() });
+    var uniqueCount = function(ev) { return unique[ev] ? Object.keys(unique[ev]).length : 0; };
+
+    var funnelOrder = ['homepage_viewed','trial_cta_clicked','signup_started','signup_completed','trial_activated','lead_viewed','lead_contacted','pricing_viewed','checkout_started','subscription_started'];
+    var funnel = [];
+    var prevCount = null;
+    funnelOrder.forEach(function(ev) {
+      var u = uniqueCount(ev);
+      var pct = (prevCount !== null && prevCount > 0) ? Math.round((u / prevCount) * 1000) / 10 : null;
+      funnel.push({ event: ev, unique: u, raw: rawCount[ev] || 0, fromPrevPct: pct });
+      if (u > 0) prevCount = u;
+    });
+    var overallPct = null;
+    var visitors = uniqueCount('homepage_viewed');
+    var paid = uniqueCount('subscription_started');
+    if (visitors > 0 && paid > 0) overallPct = Math.round((paid / visitors) * 1000) / 10;
+
+    // Trial performance from the customers table
+    var customers = [];
+    try { customers = db.prepare('SELECT * FROM customers').all() || []; } catch(c2) { customers = []; }
+    var now = Date.now();
+    var prodNames = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Tenders' };
+    var paidPlans = ['starter', 'pro', 'enterprise'];
+    var trialStats = { started: 0, active: 0, expired: 0, converted: 0, receivedTotal: 0, viewedTotal: 0, contactedTotal: 0, zeroLead: [] };
+    var byProduct = {};
+    var byPlan = { starter: { count: 0 }, pro: { count: 0 }, enterprise: { count: 0 } };
+    var weeklyValue = { starter: 25, pro: 49, enterprise: 99 };
+
+    customers.forEach(function(c) {
+      var trialEnd = c.trial_ends ? new Date(c.trial_ends).getTime() : 0;
+      var isTrial = c.plan === 'free_trial';
+      var isPaid = paidPlans.indexOf(c.plan) !== -1;
+      // Trials started: ever signed up in this window (created_at) — approximate via events.
+      var inWindow = !cutoff || (c.created_at ? new Date(c.created_at).getTime() >= cutoff : true);
+      var p = c.product || 'moving';
+      if (!byProduct[p]) byProduct[p] = { trials: 0, converted: 0, receivedTotal: 0, viewedTotal: 0, contactedTotal: 0 };
+      // Trials currently active / expired / converted
+      if (isTrial) {
+        if (trialEnd > now) trialStats.active++; else trialStats.expired++;
+        trialStats.started++;
+        if (inWindow) byProduct[p].trials++;
+      }
+      if (isPaid) {
+        trialStats.converted++;
+        if (byPlan[c.plan]) byPlan[c.plan].count++;
+        if (inWindow) { byProduct[p].converted++; }
+      }
+      // Average leads delivered during trial (all leads for the account)
+      var rec = 0, con = 0;
+      try {
+        var r1 = db.prepare('SELECT COUNT(*) AS c FROM leads WHERE customer_id = ?').get(c.id);
+        rec = (r1 && r1.c) || 0;
+        var r2 = db.prepare("SELECT COUNT(*) AS c FROM leads WHERE customer_id = ? AND status IN ('contacted','quoted','won')").get(c.id);
+        con = (r2 && r2.c) || 0;
+      } catch(le) {}
+      if (isTrial || isPaid) { trialStats.receivedTotal += rec; trialStats.contactedTotal += con; }
+      if (inWindow && isTrial) { byProduct[p].receivedTotal += rec; byProduct[p].contactedTotal += con; }
+      // Zero-lead trials: trial accounts (active or expired recently) with no leads
+      if (isTrial && rec === 0) {
+        trialStats.zeroLead.push({
+          id: c.id, email: c.email, product: prodNames[p] || p,
+          areas: (function(){ try { var a = c.target_areas; if (Array.isArray(a)) return a.join(', '); if (typeof a === 'string') { var j = JSON.parse(a); return Array.isArray(j) ? j.join(', ') : a; } return a || ''; } catch(e) { return ''; } })(),
+          trial_start: c.created_at || '', trial_end: c.trial_ends || '',
+          days_remaining: trialEnd > now ? Math.ceil((trialEnd - now) / 86400000) : 0,
+          allocation: c.leads_per_day || 0
+        });
+      }
+    });
+
+    var trialPct = trialStats.started > 0 ? Math.round((trialStats.converted / trialStats.started) * 1000) / 10 : null;
+    // Lead-type breakdown (trials from signup_completed events, converted from subscription_started)
+    Object.keys(byProduct).forEach(function(p) {
+      var b = byProduct[p];
+      b.conversion_pct = b.trials > 0 ? Math.round((b.converted / b.trials) * 1000) / 10 : null;
+      b.avg_received = b.trials > 0 ? Math.round((b.receivedTotal / b.trials) * 10) / 10 : 0;
+      b.avg_contacted = b.trials > 0 ? Math.round((b.contactedTotal / b.trials) * 10) / 10 : 0;
+    });
+
+    // Plan conversion + est weekly subscription value
+    var paidTotal = trialStats.converted;
+    var weeklyEst = 0;
+    Object.keys(byPlan).forEach(function(p) { byPlan[p].pct = paidTotal > 0 ? Math.round((byPlan[p].count / paidTotal) * 1000) / 10 : null; weeklyEst += byPlan[p].count * weeklyValue[p]; });
+
+    // Lightweight warnings (only actual percentages; no invented benchmarks)
+    var warnings = [];
+    if (trialStats.started >= 10) {
+      var signupC = uniqueCount('signup_completed'), signupS = uniqueCount('signup_started');
+      if (signupS > 0) {
+        var sc = Math.round((signupC / signupS) * 1000) / 10;
+        warnings.push({ level: sc < 60 ? 'red' : (sc < 80 ? 'amber' : 'green'), label: 'Signup Completion', pct: sc, note: 'unique users completing signup after starting' });
+      }
+      if (trialStats.started > 0) {
+        var lv = uniqueCount('lead_viewed');
+        var le = Math.round((lv / trialStats.started) * 1000) / 10;
+        warnings.push({ level: le < 40 ? 'red' : (le < 65 ? 'amber' : 'green'), label: 'Lead Engagement', pct: le, note: 'unique users who viewed leads vs trials started' });
+      }
+      if (trialPct !== null) {
+        warnings.push({ level: trialPct < 5 ? 'red' : (trialPct < 12 ? 'amber' : 'green'), label: 'Trial Conversion', pct: trialPct, note: 'paid / trials started' });
+      }
+    }
+
+    res.json({
+      success: true, total: events.length, days: days, by_event: byEvent, by_day: byDay,
+      funnel: funnel, overall_pct: overallPct,
+      trials: {
+        started: trialStats.started, active: trialStats.active, expired: trialStats.expired,
+        converted: trialStats.converted, conversion_pct: trialPct,
+        avg_received: trialStats.started > 0 ? Math.round((trialStats.receivedTotal / trialStats.started) * 10) / 10 : 0,
+        avg_contacted: trialStats.started > 0 ? Math.round((trialStats.contactedTotal / trialStats.started) * 10) / 10 : 0,
+        zero_lead_count: trialStats.zeroLead.length, zero_lead: trialStats.zeroLead.slice(0, 100)
+      },
+      by_product: byProduct, by_plan: byPlan, weekly_value_est: weeklyEst,
+      warnings: warnings, recent: events.slice(-50).reverse()
+    });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
