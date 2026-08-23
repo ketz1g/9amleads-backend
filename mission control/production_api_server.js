@@ -6738,6 +6738,21 @@ function sendBrevoEmail(to, subject, htmlContent) {
   });
 }
 
+// ===== ADMIN ALERTS =====
+// Email the founder (ketzman1g@gmail.com) when something needs attention so issues
+// are caught BEFORE they affect customers. Used for delivery errors, readiness
+// shortfalls, low budgets, low Stannp balance and server restarts.
+function sendAdminAlert(subject, bodyHtml) {
+  try {
+    var to = { email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: 'Admin' };
+    var html = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px">' +
+      '<div style="font-size:17px;font-weight:800;color:#fbbf24;margin-bottom:12px">⚠ 9amLeads Alert</div>' +
+      bodyHtml +
+      '<div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);font-size:11px;color:#94a3b8">Sent automatically by the 9amLeads system at ' + new Date().toISOString() + '</div></div>';
+    sendBrevoEmail(to, subject, html);
+  } catch(e) { console.log('[ALERT] send error:', e.message); }
+}
+
 // ===== 9AM DAILY DELIVERY SCHEDULER =====
 // Runs at 9:00 AM every day to prepare and send lead sheets
 // ===== LEAD LIMITS PER PLAN PER PRODUCT =====
@@ -8196,6 +8211,9 @@ cron.schedule('45 7 * * 1-5', async () => {
     }
     if (rdShort.length) {
       console.log('[READINESS] ⚠ ' + rdShort.length + ' customer(s) would SHORTFALL at 9am: ' + rdShort.join(' | '));
+      // ALERT the founder so the shortfall is seen BEFORE the 9am delivery (the
+      // auto-scrape below also runs, but the admin gets a heads-up).
+      try { sendAdminAlert('⚠ ' + rdShort.length + ' customer(s) may shortfall at 9am', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">The 07:45 readiness check found ' + rdShort.length + ' customer(s) that may not get their full daily count at 9am:<br><br><ul style="margin:0;padding-left:18px">' + rdShort.map(function(s2){ return '<li>' + s2 + '</li>'; }).join('') + '</ul><br>An automatic re-scrape has been triggered for the affected products. Check /api/admin/readiness after 08:30.</div>'); } catch(aE2) { console.log('[READINESS] alert err:', aE2.message); }
       // AUTO-REMEDIATE: trigger the FREE scrapes for the affected products so the
       // pool is refreshed before the 9am delivery (OTM/Companies House/funeral/
       // tenders/PLOTA are all no-cost). The delivery's guaranteed-fill fallback is
@@ -8221,6 +8239,40 @@ cron.schedule('45 7 * * 1-5', async () => {
       console.log('[READINESS] All ' + rdCusts.length + ' customers look fulfilled for today (' + new Date().toISOString() + ')');
     }
   } catch(e) { console.log('[READINESS] error:', e.message); }
+}, { timezone: 'Europe/London' });
+
+
+// DAILY HEALTH DIGEST: every weekday at 09:30 UK (after the 9am delivery) email
+// the founder a short summary — customers served, delivery errors, supply levels
+// and budget heads-up — so the day's health is visible without logging in.
+cron.schedule('30 9 * * 1-5', async () => {
+  try {
+    var ddDb = getDb();
+    var todayD = new Date().toISOString().substring(0, 10);
+    var activeC = (ddDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled'; }).length;
+    var delToday = (ddDb.leads || []).filter(function(l) { return l.delivered && l.delivered_at && String(l.delivered_at).startsWith(todayD); }).length;
+    var sup = {};
+    try { sup = getPoolSupply(); } catch(e) {}
+    var supplyHtml = '';
+    (sup || {}).forEach ? null : null;
+    if (sup && sup.moving) {
+      Object.keys(sup).forEach(function(k){ supplyHtml += '<li>' + k + ': ' + (sup[k].fresh_48h || 0) + ' fresh / ' + (sup[k].total || 0) + ' total</li>'; });
+    }
+    var cap = { postcoder: 0, stannp: 0 };
+    try { var _pb = require('./postcoder_budget'); cap.postcoder = Math.max(0, _pb.getDailyBudget() - _pb.usage()); } catch(e) {}
+    try { var _dm = getDirectMailProvider(); cap.stannp = _dm.getBalance ? await _dm.getBalance() : 'n/a'; } catch(e) {}
+    var pcLow = (typeof cap.postcoder === 'number' && cap.postcoder < 50) ? ' ⚠ LOW' : '';
+    var stLow = (typeof cap.stannp === 'number' && cap.stannp < 20) ? ' ⚠ LOW' : '';
+    var errs = (global.__lastErrors || []).slice(-3).map(function(e){ return e.message || e.kind || ''; }).filter(Boolean);
+    var errHtml = errs.length ? '<li>' + errs.join('</li><li>') + '</li>' : '<li>None</li>';
+    sendAdminAlert('📊 9amLeads daily digest — ' + todayD, '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">' +
+      '<b style="color:#38bdf8">Active customers:</b> ' + activeC + '<br>' +
+      '<b style="color:#38bdf8">Leads delivered today:</b> ' + delToday + '<br>' +
+      '<b style="color:#38bdf8">Postcoder budget remaining:</b> ' + (cap.postcoder || 'n/a') + pcLow + '<br>' +
+      '<b style="color:#38bdf8">Stannp balance:</b> ' + (cap.stannp || 'n/a') + stLow + '<br><br>' +
+      '<b style="color:#38bdf8">Supply (fresh/total):</b><ul style="margin:4px 0;padding-left:18px">' + (supplyHtml || '<li>n/a</li>') + '</ul><br>' +
+      '<b style="color:#38bdf8">Recent errors:</b><ul style="margin:4px 0;padding-left:18px">' + errHtml + '</ul></div>');
+  } catch(e) { console.log('[DIGEST] error:', e.message); }
 }, { timezone: 'Europe/London' });
 
 
@@ -10732,6 +10784,22 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         console.log('[DELIVERY] WARN: ' + cust.email + ' (' + cust.product + ') got 0 leads today — no undelivered leads in pool');
         errors++;
         lastErr = cust.email + ': no leads in pool';
+        // ALERT the founder (throttled to ~2/day per email so a repeated failure
+        // doesn't spam) so a delivery shortfall is caught BEFORE the customer notices.
+        try {
+          var _alertK = cust.email + '|' + today;
+          var _alertDb = getDb();
+          if (!_alertDb.__delivery_alerted) _alertDb.__delivery_alerted = {};
+          var _cnt = _alertDb.__delivery_alerted[_alertK] || 0;
+          if (_cnt < 2) {
+            _alertDb.__delivery_alerted[_alertK] = _cnt + 1;
+            saveDb();
+            sendAdminAlert('⚠ Delivery shortfall: ' + cust.email, '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">' +
+              '<b style="color:#fbbf24">' + cust.email + '</b> (' + cust.product + ') received <b>0 leads</b> today but is promised ' + totalDailyLimit + '.<br><br>' +
+              'Areas: ' + (custAreas || []).join(', ') + '<br>' +
+              'This is usually a supply shortfall in their areas — run the readiness check or deep-scrape their areas to top up.</div>');
+          }
+        } catch(alE) { console.log('[DELIVERY] alert err:', alE.message); }
         continue;
       }
       // Deduplicate leads by address within batch
@@ -22226,6 +22294,13 @@ app.listen(PORT, () => {
   seedMarketplaceTemplates();
   seedSeasonalCampaigns();
   seedKnowledgeArticles();
+  // STARTUP ALERT: if the server restarted unexpectedly (crash/OOM/disk reset),
+  // the founder is notified immediately so nothing runs unattended for long.
+  try {
+    setTimeout(function() {
+      sendAdminAlert('9amLeads server restarted', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">The server came back online at ' + new Date().toISOString() + '.<br>If this was unexpected (crash / memory / disk reset), check the pool + delivery are healthy via <code>/api/health</code>.<br>Normal restarts (deploys) are expected.</div>');
+    }, 5000);
+  } catch(e) { console.log('[STARTUP-ALERT] err:', e.message); }
   console.log('\n========================================');
   console.log('  9amLeads Production API Server');
   console.log('  Domain: www.9amleads.com');
