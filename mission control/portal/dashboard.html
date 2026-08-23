@@ -88,6 +88,7 @@ footer a{color:var(--accent);text-decoration:underline}
 
 </style></head><body>
 <div id="reactivate-banner" class="reactivate-banner" style="display:none;max-width:900px;margin:12px auto 0;padding:12px 16px;border-radius:10px;font-size:13px;line-height:1.6"></div>
+<div id="area-health-banner" style="display:none;max-width:900px;margin:12px auto 0;padding:12px 16px;border-radius:10px;font-size:13px;line-height:1.6;background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12"></div>
 <div class="top">
 <div class="logo">9am<span>Leads</span></div>
 <div class="nav">
@@ -1608,6 +1609,20 @@ function loadActivity() {
     document.getElementById('act-leads-today').textContent = todayN;
     document.getElementById('act-leads-week').textContent = weekN;
     document.getElementById('act-leads-month').textContent = monthN;
+
+    // AREA-HEALTH BANNER: if the last 7 days delivered well below the promised
+    // daily count, suggest the customer update their areas/postcodes for a better
+    // mix (keeps them getting full value + reduces churn).
+    try {
+      var lpd = parseInt((typeof _myUser !== 'undefined' && _myUser.leads_per_day) || (typeof window.__userLpd !== 'undefined' && window.__userLpd) || 5, 10);
+      var weekDelivered = leads.filter(function(l){ return l.delivered_at && l.delivered_at >= weekStart.toISOString(); }).length;
+      var expected = lpd * 7;
+      var banner = document.getElementById('area-health-banner');
+      if (banner && expected > 0 && weekDelivered < Math.round(expected * 0.8)) {
+        banner.style.display = 'block';
+        banner.innerHTML = '<b>Getting fewer leads than promised?</b> Your areas may be quieter than usual this week (' + weekDelivered + ' of ' + expected + ' expected). Adding nearby postcode areas / counties gives you a fuller daily mix. <a href="#areas" onclick="switchSection(\'settings\');return false;" style="color:#b45309;font-weight:700">Update your areas</a> \u2014 it takes under a minute.';
+      } else if (banner) { banner.style.display = 'none'; }
+    } catch(e) {}
 
     // Build recent activity feed
     var items = [];
