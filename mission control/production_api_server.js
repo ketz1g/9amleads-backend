@@ -6753,6 +6753,144 @@ function sendAdminAlert(subject, bodyHtml) {
   } catch(e) { console.log('[ALERT] send error:', e.message); }
 }
 
+// ===== NEAREST-AREA FALLBACK =====
+// When a customer's exact areas are dry, the delivery broadens to the NEAREST
+// neighbouring areas first (geographically close) before the full pool. This keeps
+// fallback leads near the customer's chosen area. Keyed by postcode area code and
+// county name -> nearby areas.
+var POSTCODE_AREA_NEIGHBORS = {
+  'SW': ['SE','W','TW','KT','CR','UB','HA'], 'SE': ['SW','E','BR','DA','TN','ME','CR','W'],
+  'W': ['SW','NW','TW','UB','HA','EN'], 'NW': ['W','N','EN','HA','WD','UB'],
+  'N': ['NW','E','EN','IG'], 'E': ['N','SE','IG','RM','EN'],
+  'EC': ['WC','N','E','SE'], 'WC': ['EC','W','NW','SW'],
+  'EN': ['N','NW','AL','SG','HA','WD'], 'IG': ['E','RM','CM','EN'],
+  'RM': ['IG','E','CM','SS','DA'], 'DA': ['SE','BR','ME','TN','CR'],
+  'BR': ['SE','DA','TN','ME','CR'], 'KT': ['SW','TW','CR','GU','RH'],
+  'CR': ['SW','SE','KT','RH','TN','BR','DA'], 'TW': ['SW','W','KT','UB','SL','HA'],
+  'UB': ['W','TW','HA','WD','NW'], 'HA': ['NW','UB','EN','WD'],
+  'WD': ['HA','EN','NW','UB'], 'AL': ['EN','SG','LU','HP'],
+  'SG': ['EN','AL','CM','CB','LU'], 'CM': ['IG','RM','SG','CB','CO','SS'],
+  'SS': ['RM','CM','CO','DA','ME'], 'CO': ['CM','SS','IP','CB'],
+  'CB': ['SG','CM','IP','PE','LU'], 'IP': ['CB','CO','NR'],
+  'NR': ['IP','PE'], 'LU': ['AL','SG','MK','HP'],
+  'MK': ['LU','NN','HP','OX'], 'HP': ['AL','LU','MK','OX','RG','SL','WD'],
+  'SL': ['TW','UB','HP','RG','OX'], 'OX': ['HP','MK','RG','SN','SP','GL'],
+  'RG': ['SL','OX','GU','SN','HP'], 'GU': ['KT','RH','RG','PO','BN'],
+  'RH': ['CR','KT','GU','TN','BN'], 'TN': ['SE','CR','RH','BN','ME'],
+  'BN': ['RH','TN','GU','PO','ME'], 'ME': ['SE','DA','TN','CT','SS'],
+  'CT': ['ME','TN'],
+  'B': ['CV','WS','WV','DY','WR','LE'], 'CV': ['B','LE','NN','WR','SP'],
+  'WS': ['B','WV','ST','DY'], 'WV': ['B','WS','DY','WR','ST'],
+  'DY': ['B','WV','WS','WR','HR'], 'WR': ['B','DY','CV','GL','HR','SP'],
+  'ST': ['WS','SY','TF','WV'], 'LE': ['B','CV','NN','NG','DE'],
+  'NN': ['LE','CV','MK','PE','OX'], 'NG': ['LE','DE','LN','PE','S'],
+  'DE': ['LE','NG','S','SK','LN'], 'LN': ['NG','PE','DN','HU'],
+  'S': ['NG','DE','DN','HD','BD','LS'], 'DN': ['S','LN','HU','HD','WF'],
+  'TF': ['ST','SY','WV'], 'SY': ['ST','TF','LL','HR'],
+  'M': ['SK','BL','OL','WA','WN','L'], 'SK': ['M','DE','S','HD','OL','ST'],
+  'BL': ['M','OL','PR','WN','BB'], 'OL': ['M','SK','BL','HD','HX'],
+  'WA': ['L','M','WN','CH','PR'], 'WN': ['M','WA','PR','BL','BB'],
+  'L': ['WA','CH','WN','PR','M'], 'CH': ['L','WA','LL','CW'],
+  'CW': ['CH','WA','ST','SY'], 'PR': ['L','WN','BL','BB','FY'],
+  'BB': ['BL','PR','BD','HX','OL'], 'BD': ['BB','HX','LS','WF','HD'],
+  'HD': ['SK','OL','BD','HX','S'], 'HX': ['HD','BD','BB','OL'],
+  'LS': ['BD','WF','HD','S','DN'], 'WF': ['BD','LS','DN','HD'],
+  'HU': ['DN','LN','YO'], 'YO': ['HU','DN','HG','TS'],
+  'HG': ['YO','LS','BD'], 'TS': ['YO','SR','DL'],
+  'SR': ['TS','DH','NE'], 'DL': ['TS','DH','CA'],
+  'NE': ['SR','DH','TD','CA'], 'DH': ['SR','NE','DL'],
+  'BS': ['SN','BA','GL','TA'], 'SN': ['OX','SP','BA','GL','BS'],
+  'BA': ['SN','BS','TA','SP'], 'TA': ['BA','BS','EX','DT'],
+  'EX': ['TA','DT','PL','TQ'], 'PL': ['EX','TQ','TR'],
+  'TQ': ['PL','EX','TR'], 'TR': ['PL','TQ'],
+  'DT': ['TA','EX','PO','BH'], 'BH': ['DT','PO','SP'],
+  'PO': ['BH','DT','GU','BN'], 'SP': ['SN','BA','RG','PO','BH'],
+  'GL': ['BS','SN','OX','WR','HR'],
+  'LL': ['CH','SY','LD','SA'], 'LD': ['LL','SY','HR','NP'],
+  'SA': ['LL','NP','CF','HR'], 'CF': ['SA','NP','HR','SN'],
+  'NP': ['CF','SA','LD','HR','GL'], 'HR': ['LD','NP','WR','GL','SY'],
+  'TD': ['NE','EH'], 'DG': ['CA','TD'], 'CA': ['DL','LA','DG'],
+  'LA': ['CA','PR','FY'], 'FY': ['LA','PR','BB'],
+  'EH': ['TD','FK','ML','KY'], 'FK': ['EH','G','ML','KY'],
+  'G': ['FK','ML','PA','KA'], 'ML': ['G','EH','FK'],
+  'PA': ['G','FK'], 'KA': ['G','PA'], 'KY': ['EH','FK','DD'],
+  'DD': ['KY','PH','AB'], 'PH': ['DD','AB','IV'], 'AB': ['DD','PH','IV'],
+  'IV': ['AB','PH','KW'], 'KW': ['IV'], 'HS': ['IV','KW'], 'ZE': ['KW']
+};
+var COUNTY_NEIGHBORS = {
+  'essex': ['greater-london','hertfordshire','cambridgeshire','suffolk','kent'],
+  'greater-london': ['essex','hertfordshire','kent','surrey','berkshire','buckinghamshire'],
+  'hertfordshire': ['greater-london','essex','cambridgeshire','buckinghamshire','bedfordshire'],
+  'kent': ['greater-london','east-sussex','surrey','essex'],
+  'surrey': ['greater-london','kent','east-sussex','west-sussex','hampshire','berkshire'],
+  'east-sussex': ['kent','surrey','west-sussex'],
+  'west-sussex': ['surrey','east-sussex','hampshire'],
+  'hampshire': ['surrey','west-sussex','berkshire','wiltshire','dorset'],
+  'berkshire': ['greater-london','surrey','hampshire','oxfordshire','buckinghamshire','wiltshire'],
+  'buckinghamshire': ['hertfordshire','greater-london','berkshire','oxfordshire','bedfordshire'],
+  'oxfordshire': ['buckinghamshire','berkshire','wiltshire','gloucestershire','warwickshire','northamptonshire'],
+  'bedfordshire': ['hertfordshire','cambridgeshire','buckinghamshire','northamptonshire'],
+  'cambridgeshire': ['hertfordshire','essex','suffolk','norfolk','lincolnshire','northamptonshire','bedfordshire'],
+  'suffolk': ['essex','cambridgeshire','norfolk'],
+  'norfolk': ['suffolk','cambridgeshire','lincolnshire'],
+  'lincolnshire': ['norfolk','cambridgeshire','nottinghamshire','south-yorkshire','east-riding-of-yorkshire','leicestershire'],
+  'northamptonshire': ['bedfordshire','cambridgeshire','buckinghamshire','oxfordshire','warwickshire','leicestershire','lincolnshire'],
+  'leicestershire': ['northamptonshire','warwickshire','derbyshire','nottinghamshire','lincolnshire'],
+  'warwickshire': ['oxfordshire','northamptonshire','leicestershire','staffordshire','west-midlands','worcestershire','gloucestershire'],
+  'west-midlands': ['warwickshire','staffordshire','worcestershire'],
+  'staffordshire': ['west-midlands','warwickshire','worcestershire','shropshire','cheshire','derbyshire'],
+  'worcestershire': ['west-midlands','warwickshire','staffordshire','herefordshire','gloucestershire'],
+  'herefordshire': ['worcestershire','gloucestershire','shropshire','powys','monmouthshire'],
+  'gloucestershire': ['worcestershire','herefordshire','oxfordshire','wiltshire','somerset','monmouthshire'],
+  'shropshire': ['staffordshire','worcestershire','herefordshire','powys','cheshire'],
+  'cheshire': ['shropshire','staffordshire','derbyshire','merseyside','greater-manchester','flintshire','wrexham'],
+  'merseyside': ['cheshire','greater-manchester','lancashire'],
+  'greater-manchester': ['cheshire','merseyside','lancashire','west-yorkshire','derbyshire','staffordshire'],
+  'lancashire': ['merseyside','greater-manchester','west-yorkshire','north-yorkshire','cumbria'],
+  'derbyshire': ['cheshire','staffordshire','greater-manchester','south-yorkshire','west-yorkshire','nottinghamshire','leicestershire'],
+  'nottinghamshire': ['derbyshire','leicestershire','lincolnshire','south-yorkshire'],
+  'south-yorkshire': ['derbyshire','nottinghamshire','lincolnshire','west-yorkshire','east-riding-of-yorkshire'],
+  'west-yorkshire': ['south-yorkshire','lancashire','greater-manchester','north-yorkshire','derbyshire'],
+  'north-yorkshire': ['west-yorkshire','lancashire','cumbria','county-durham','east-riding-of-yorkshire'],
+  'east-riding-of-yorkshire': ['north-yorkshire','south-yorkshire','lincolnshire'],
+  'county-durham': ['north-yorkshire','cumbria','tyne-and-wear','northumberland'],
+  'tyne-and-wear': ['county-durham','northumberland'],
+  'northumberland': ['tyne-and-wear','county-durham','scottish-borders'],
+  'cumbria': ['north-yorkshire','lancashire','county-durham','northumberland','dumfries-and-galloway'],
+  'devon': ['cornwall','somerset','dorset'], 'cornwall': ['devon'],
+  'somerset': ['devon','dorset','wiltshire','gloucestershire','bristol'],
+  'dorset': ['devon','somerset','wiltshire','hampshire'],
+  'wiltshire': ['hampshire','berkshire','oxfordshire','gloucestershire','somerset','dorset'],
+  'bristol': ['somerset','gloucestershire'],
+  'flintshire': ['cheshire','wrexham','denbighshire'], 'wrexham': ['cheshire','flintshire','shropshire','denbighshire','powys'],
+  'denbighshire': ['flintshire','wrexham','conwy'], 'conwy': ['denbighshire','gwynedd'],
+  'gwynedd': ['conwy','powys','anglesey'], 'anglesey': ['gwynedd'],
+  'powys': ['wrexham','gwynedd','herefordshire','shropshire','carmarthenshire','monmouthshire'],
+  'carmarthenshire': ['powys','pembrokeshire','swansea','monmouthshire'], 'pembrokeshire': ['carmarthenshire'],
+  'swansea': ['carmarthenshire','neath-port-talbot','powys'], 'neath-port-talbot': ['swansea','bridgend','powys'],
+  'bridgend': ['neath-port-talbot','cardiff','vale-of-glamorgan'], 'cardiff': ['bridgend','vale-of-glamorgan','monmouthshire'],
+  'vale-of-glamorgan': ['cardiff','bridgend'], 'monmouthshire': ['cardiff','powys','herefordshire','gloucestershire'],
+  'scottish-borders': ['northumberland','east-lothian','midlothian'],
+  'dumfries-and-galloway': ['cumbria','south-lanarkshire','scottish-borders'],
+  'city-of-edinburgh': ['midlothian','west-lothian','fife'], 'fife': ['city-of-edinburgh','perth-and-kinross','clackmannanshire'],
+  'south-lanarkshire': ['west-lothian','dumfries-and-galloway','east-ayrshire','north-lanarkshire'],
+  'city-of-glasgow': ['east-renfrewshire','east-dunbartonshire','west-dunbartonshire','north-lanarkshire','south-lanarkshire'],
+  'highland': ['argyll-and-bute','aberdeenshire','moray'],
+  'aberdeenshire': ['angus','highland','moray'], 'moray': ['highland','aberdeenshire'],
+  'western-isles': ['highland']
+};
+// Build the broadened area set for a customer: chosen areas + nearest neighbours.
+function broadenAreas(areas) {
+  var out = [];
+  (areas || []).forEach(function(a) {
+    if (out.indexOf(a) === -1) out.push(a);
+    var k = String(a).toLowerCase().replace(/[\s-]+/g, '-');
+    var nbr = /^[A-Z]{1,3}$/i.test(String(a)) ? POSTCODE_AREA_NEIGHBORS[String(a).toUpperCase()] : COUNTY_NEIGHBORS[k];
+    (nbr || []).forEach(function(n) { if (out.indexOf(n) === -1) out.push(n); });
+  });
+  return out;
+}
+
 // ===== 9AM DAILY DELIVERY SCHEDULER =====
 // Runs at 9:00 AM every day to prepare and send lead sheets
 // ===== LEAD LIMITS PER PLAN PER PRODUCT =====
@@ -10742,8 +10880,16 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             // on). Leads are still real + validated (fresh, full address, deduped).
             if (!Array.isArray(fgArr) || fgArr.length === 0) {
               if (String(process.env.GUARANTEED_FILL || 'true').toLowerCase() === 'false') continue;
-              console.log('[FINAL-GUARANTEE] ' + cust.email + ': areas ' + JSON.stringify(custAreas.slice(0,5)) + ' dry - broadening to full pool for ' + fgProd + ' (guaranteed fill)');
-              fgArr = getDeliveryPool(fgProd);
+              // NEAREST-AREA fallback: broaden to the customer's chosen areas + their
+              // geographically closest neighbours FIRST (so fallback leads are still
+              // near where they work), then the full pool as a last resort.
+              var _bArea = broadenAreas(custAreas);
+              console.log('[FINAL-GUARANTEE] ' + cust.email + ': areas ' + JSON.stringify(custAreas.slice(0, 5)) + ' dry - broadening to nearest areas for ' + fgProd + ' (guaranteed fill)');
+              fgArr = interleavePoolByAreas(getDeliveryPool(fgProd), _bArea);
+              if (!Array.isArray(fgArr) || fgArr.length === 0) {
+                console.log('[FINAL-GUARANTEE] ' + cust.email + ': nearest areas also dry - broadening to full pool');
+                fgArr = getDeliveryPool(fgProd);
+              }
             }
             if (!Array.isArray(fgArr) || fgArr.length === 0) continue;
             var fgExisting = {};
