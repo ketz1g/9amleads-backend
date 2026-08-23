@@ -2164,6 +2164,285 @@ function affiliateAuth(req, res, next) {
   } catch(e) { return res.status(401).json({ error: 'Invalid token' }); }
 }
 
+
+
+// Revert daily lead caps that were temporarily raised (e.g. "5 free leads today")
+
+// Revert daily lead caps that were temporarily raised (e.g. "5 free leads today")
+// once they expire, so the customer returns to their normal plan limit. Runs
+// daily from the 09:00 cron BEFORE delivery so the promise count is correct.
+function revertExpiredCapOverrides() {
+  try {
+    var now = new Date();
+    var reverted = 0;
+    (getDb().customers || []).forEach(function(c) {
+      if (!c.cap_override_expires) return;
+      var exp = new Date(c.cap_override_expires);
+      if (now < exp) return;
+      var prev = parseInt(c.cap_override_prev, 10);
+      if (prev && prev > 0 && parseInt(c.leads_per_day, 10) !== prev) {
+        c.leads_per_day = prev;
+        reverted++;
+      }
+      c.cap_override_at = null; c.cap_override_prev = null; c.cap_override_expires = null;
+    });
+    if (reverted) saveDb();
+    return reverted;
+  } catch(e) { console.log('[CAP-OVERRIDE] revert error:', e.message); return 0; }
+}
+
+// Transition pending payouts to "due" once their month has passed and the
+// referred customer is still active. Runs daily from the 09:00 cron.
+function processAffiliatePayouts() {  try {
+    var now = new Date();
+    var changed = 0;
+    (getDb().customers || []).forEach(function(c) {
+      if (!c.affiliate_id) return;
+      if (c.affiliate_payout_status !== 'pending' && c.affiliate_payout_status !== 'due') return;
+      var due = c.affiliate_payout_due ? new Date(c.affiliate_payout_due) : null;
+      if (!due) return;
+      if (now < due) return;
+      if (c.plan === 'cancelled' || c.plan === 'revoked') { c.affiliate_payout_status = 'ineligible'; changed++; return; }
+      if (c.affiliate_payout_status !== 'due') { c.affiliate_payout_status = 'due'; changed++; }
+    });
+    if (changed) saveDb();
+    return changed;
+  } catch(e) { console.log('[AFFILIATE] Payout process error:', e.message); return 0; }
+}
+
+// ===== APP =====
+const app = express();
+
+// ===== LIVE POST TRACKING (Stannp) =====
+// Map a Stannp mailpiece status to our friendly status + label + step index.
+var STANNP_STATUS_MAP = [
+  { match: ['accepted', 'queued', 'received'], status: 'queued', label: 'Accepted', step: 1, emoji: '\u2705', desc: 'Order accepted by the print house' },
+  { match: ['processing', 'printing', 'in_progress', 'produced', 'producing'], status: 'printing', label: 'Printing', step: 2, emoji: '\uD83D\uDD27', desc: 'Your mail is being printed' },
+  { match: ['dispatched', 'posted', 'handed_over'], status: 'dispatched', label: 'Dispatched', step: 3, emoji: '\uD83D\uDE9A', desc: 'Handed to Royal Mail' },
+  { match: ['local_delivery', 'out_for_delivery'], status: 'out_for_delivery', label: 'Out for delivery', step: 4, emoji: '\uD83D\uDEE3\uFE0F', desc: 'At the local delivery office' },
+  { match: ['delivered', 'completed'], status: 'delivered', label: 'Delivered', step: 5, emoji: '\uD83D\uDCEB', desc: 'Delivered to the address' },
+  { match: ['returned'], status: 'returned', label: 'Returned', step: 6, emoji: '\u21A9\uFE0F', desc: 'Returned to sender' },
+  { match: ['cancelled', 'canceled', 'failed', 'rejected'], status: 'cancelled', label: 'Cancelled / Failed', step: 6, emoji: '\u26D4', desc: 'This item was not posted' }
+];
+function mapStannpStatus(rawStatus) {
+  var s = String(rawStatus || '').toLowerCase().trim();
+  for (var i = 0; i < STANNP_STATUS_MAP.length; i++) {
+    var m = STANNP_STATUS_MAP[i];
+    for (var j = 0; j < m.match.length; j++) { if (s === m.match[j]) return m; }
+  }
+  // Fallback: keep raw but treat unknown as queued
+  return { status: 'unknown', label: s || 'Unknown', step: 0, emoji: '\uD83D\uDD0D', desc: s || 'Unknown status' };
+}
+
+// Record a tracking update for a recipient + its campaign (idempotent, preserves timeline).
+function recordMailpieceTracking(customerId, campaignId, recipientId, mailpieceId, rawStatus, eventTime) {
+  try {
+    var dbT = getDb();
+    var mapped = mapStannpStatus(rawStatus);
+    var when = eventTime || new Date().toISOString();
+    // Only move forward (don't downgrade a delivered item back to printing on late webhooks)
+    var rcpt = (dbT.direct_mail_recipients || []).find(function(r) { return r.id === recipientId && r.customer_id === customerId; });
+    if (rcpt) {
+      var curStep = rcpt.tracking_step || 0;
+      if (mapped.step >= curStep || mapped.status === 'cancelled' || mapped.status === 'returned') {
+        rcpt.provider_status = mapped.status;
+        rcpt.provider_status_label = mapped.label;
+        rcpt.tracking_step = mapped.step;
+        rcpt.provider_updated_at = when;
+        rcpt.provider_emoji = mapped.emoji;
+        if (!rcpt.tracking_history) rcpt.tracking_history = [];
+        var lastEvt = rcpt.tracking_history.length ? rcpt.tracking_history[rcpt.tracking_history.length - 1] : null;
+        if (!lastEvt || lastEvt.status !== mapped.status) {
+          rcpt.tracking_history.push({ status: mapped.status, label: mapped.label, at: when, desc: mapped.desc });
+        }
+      }
+    }
+    // Campaign-level: aggregate status from recipients
+    var camp = (dbT.direct_mail_campaigns || []).find(function(c) { return c.id === campaignId && c.customer_id === customerId; });
+    if (camp) {
+      camp.provider_status = mapped.status;
+      camp.provider_status_label = mapped.label;
+      camp.provider_updated_at = when;
+      var campRcpts = (dbT.direct_mail_recipients || []).filter(function(r) { return r.campaign_id === campaignId && r.customer_id === customerId; });
+      if (campRcpts.length) {
+        var deliv = campRcpts.filter(function(r) { return r.provider_status === 'delivered'; }).length;
+        var disp = campRcpts.filter(function(r) { return r.provider_status === 'dispatched' || r.provider_status === 'out_for_delivery'; }).length;
+        var print = campRcpts.filter(function(r) { return r.provider_status === 'printing' || r.provider_status === 'queued'; }).length;
+        camp.tracking_summary = { total: campRcpts.length, delivered: deliv, dispatched: disp, printing: print };
+        camp.provider_status = deliv === campRcpts.length ? 'delivered' : (deliv > 0 || disp > 0 ? 'dispatched' : 'printing');
+        camp.provider_status_label = camp.provider_status === 'delivered' ? 'Delivered' : camp.provider_status === 'dispatched' ? 'Dispatched' : 'Printing';
+      }
+      if (!camp.tracking_history) camp.tracking_history = [];
+      var lastCampEvt = camp.tracking_history.length ? camp.tracking_history[camp.tracking_history.length - 1] : null;
+      if (!lastCampEvt || lastCampEvt.status !== camp.provider_status) {
+        camp.tracking_history.push({ status: camp.provider_status, label: camp.provider_status_label, at: when, desc: mapped.desc, delivered_count: deliv || 0, total: campRcpts.length || 0 });
+      }
+    }
+    saveDb();
+    return { success: true, mapped: mapped.status };
+  } catch(e) { console.log('[DM-TRACKING] recordMailpieceTracking error:', e.message); return { success: false, error: e.message }; }
+}
+
+// REAL-DATA RECONCILE: refresh recipient tracking from Stannp's reporting API.
+// This is the authoritative source — it only ever reflects what Stannp reports,
+// never mock/guessed values. Called by the poller as a fallback and manually.
+async function reconcileTrackingFromStannp(daysBack) {
+  try {
+    var provider = getDirectMailProvider();
+    if (provider.name !== 'stannp' || typeof provider.getReportingStatuses !== 'function') return { success: false, error: 'Stannp provider not active' };
+    var rep = await provider.getReportingStatuses(daysBack || 14);
+    if (!rep.success || !rep.statuses) return { success: false, error: 'Reporting lookup failed' };
+    var dbR = getDb();
+    var statusMap = rep.statuses;
+    var updated = 0;
+    // Match by exact numeric mailpiece id
+    (dbR.direct_mail_recipients || []).forEach(function(r) {
+      var mid = String(r.provider_mailpiece_id || '');
+      if (!/^\d+$/.test(mid)) return;
+      var real = statusMap[mid];
+      if (!real) return;
+      // Only move forward (delivered stays delivered)
+      var curStep = r.tracking_step || 0;
+      var mapped = mapStannpStatus(real);
+      if (mapped.step >= curStep || mapped.status === 'cancelled' || mapped.status === 'returned') {
+        recordMailpieceTracking(r.customer_id, r.campaign_id, r.id, mid, real, new Date().toISOString());
+        updated++;
+      }
+    });
+    if (updated) saveDb();
+    return { success: true, reported: Object.keys(statusMap).length, updated: updated };
+  } catch(e) { return { success: false, error: e.message }; }
+}
+
+// POST /api/webhooks/stannp — Stannp real-time mailpiece_status webhook.
+// Payload: { webhook_id, event: "mailpiece_status" | "test_url", created, retries, mailpieces: [...] }
+app.post('/api/webhooks/stannp', express.raw({ type: 'application/json' }), (req, res) => {
+  var rawBody = req.rawBody || req.body.toString('utf-8');
+  var body = {};
+  try { body = JSON.parse(rawBody || '{}'); } catch(e) { body = req.body || {}; }
+  // Signature verification (optional but recommended) — X-Stannp-Signature = HMAC-SHA256(secret, rawBody)
+  if (STANNP_WEBHOOK_SECRET) {
+    try {
+      var sig = req.headers['x-stannp-signature'] || '';
+      var expected = require('crypto').createHmac('sha256', STANNP_WEBHOOK_SECRET).update(rawBody).digest('hex');
+      var ok = sig && sig.length > 10 && expected === sig;
+      // Fall back to timing-safe compare
+      if (sig) {
+        var buf1 = Buffer.from(String(expected));
+        var buf2 = Buffer.from(String(sig));
+        ok = buf1.length === buf2.length && require('crypto').timingSafeEqual(buf1, buf2);
+      }
+      if (!ok) { console.log('[DM-WEBHOOK] Stannp signature mismatch'); return res.status(401).json({ success: false, error: 'Invalid signature' }); }
+    } catch(sigErr) { console.log('[DM-WEBHOOK] signature check error:', sigErr.message); }
+  }
+  // Test URL validation — Stannp sends this when the webhook is first created.
+  if (body.event === 'test_url') { return res.status(200).json({ success: true }); }
+  if (body.event === 'mailpiece_status' || (body.mailpieces && body.mailpieces.length)) {
+    var mailpieces = Array.isArray(body.mailpieces) ? body.mailpieces : [];
+    var dbW = getDb();
+    var updated = 0;
+    for (var wi = 0; wi < mailpieces.length; wi++) {
+      var mp = mailpieces[wi] || {};
+      var mpId = String(mp.id || '');
+      if (!mpId) continue;
+      // Find the recipient with this provider_mailpiece_id
+      var rcpt = (dbW.direct_mail_recipients || []).find(function(r) { return String(r.provider_mailpiece_id || '') === mpId; });
+      if (!rcpt) { console.log('[DM-WEBHOOK] No recipient for mailpiece ' + mpId); continue; }
+      recordMailpieceTracking(rcpt.customer_id, rcpt.campaign_id, rcpt.id, mpId, mp.status || '', mp.timestamp || new Date().toISOString());
+      updated++;
+    }
+    console.log('[DM-WEBHOOK] Stannp mailpiece_status: ' + updated + ' recipients updated (' + mailpieces.length + ' in payload)');
+    return res.status(200).json({ success: true, updated: updated });
+  }
+  res.status(200).json({ success: true, received: true, event: body.event || 'unknown' });
+});
+
+// GET /api/direct-mail/tracking — customer dashboard: live post tracking for their campaigns.
+app.get('/api/direct-mail/tracking', authMiddleware, async (req, res) => {
+  try {
+    backfillMailpieceIds();
+    var dbT = getDb();
+    var all = (dbT.direct_mail_campaigns || []).filter(function(c) { return c.customer_id === req.user.id && c.status !== 'draft'; });
+    var out = [];
+    var demos = [];
+    all.forEach(function(c) {
+      var rcpts = (dbT.direct_mail_recipients || []).filter(function(r) { return r.campaign_id === c.id && r.customer_id === req.user.id; });
+      var record = {
+        id: c.id, name: c.name, description: c.description, status: c.status, provider_status: c.provider_status || '',
+        provider_status_label: c.provider_status_label || '', provider_updated_at: c.provider_updated_at || '',
+        created_at: c.created_at, sent_count: c.sent_count || rcpts.length, tracking_summary: c.tracking_summary || null,
+        tracking_history: c.tracking_history || [], proof_url: c.proof_url || '',
+        recipients: rcpts.map(function(r) { return { id: r.id, name: r.name, address: (r.address_line1 || '') + (r.city ? ', ' + r.city : '') + (r.postcode ? ', ' + r.postcode : ''), provider_status: r.provider_status || 'pending', provider_status_label: r.provider_status_label || 'Pending', tracking_step: r.tracking_step || 0, provider_emoji: r.provider_emoji || '\uD83D\uDD0D', provider_updated_at: r.provider_updated_at || '', tracking_history: r.tracking_history || [], lead_id: r.lead_id || '', mailpiece_type: r.mailpiece_type || '' }; })
+      };
+      if (isRealTrackingCampaign(c, rcpts)) out.push(record);
+      else if (c.notes === 'DEMO_TRACKING') { record.is_demo = true; demos.push(record); }
+      // else: legacy/mock records are dropped entirely from customer view
+    });
+    res.json({ success: true, count: out.length, campaigns: out, demo_count: demos.length, demos: demos, synced_at: new Date().toISOString() });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/tracking/sync — force a live refresh of campaign statuses from Stannp.
+app.post('/api/direct-mail/tracking/sync', authMiddleware, async (req, res) => {
+  try {
+    var dbS = getDb();
+    var provider = getDirectMailProvider();
+    var syncable = (dbS.direct_mail_recipients || []).filter(function(r) {
+      if (r.customer_id !== req.user.id || !r.provider_mailpiece_id) return false;
+      if (!/^\d+$/.test(String(r.provider_mailpiece_id)) || String(r.provider_mailpiece_id).length < 4) return false;
+      var cRow = (dbS.direct_mail_campaigns || []).find(function(c) { return c.id === r.campaign_id; });
+      if (cRow && cRow.notes === 'DEMO_TRACKING') return false;
+      if (cRow && String(cRow.provider || '').toLowerCase() !== 'stannp') return false;
+      return (!r.provider_status || ['queued','printing','dispatched','out_for_delivery','processing','accepted'].indexOf(r.provider_status) !== -1);
+    });
+    var seen = {}; var ids = [];
+    syncable.forEach(function(r) { var mid = String(r.provider_mailpiece_id); if (!seen[mid]) { seen[mid] = 1; ids.push(mid); } });
+    var updated = 0;
+    for (var ci = 0; ci < ids.length; ci++) {
+      try {
+        var st = await provider.getCampaignStatus(ids[ci]);
+        if (st && st.success && st.status) {
+          var rcpt = (dbS.direct_mail_recipients || []).find(function(r) { return String(r.provider_mailpiece_id || '') === ids[ci]; });
+          if (rcpt) { recordMailpieceTracking(rcpt.customer_id, rcpt.campaign_id, rcpt.id, ids[ci], st.status, new Date().toISOString()); updated++; }
+        }
+      } catch(syncErr) {}
+    }
+    res.json({ success: true, updated: updated });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/tracking/bulk-delete — bulk delete tracking records.
+// Body: { campaign_ids?: string[], delete_older_than?: '7d'|'30d'|'90d'|'180d' }
+// Removes the campaigns, their recipients and status history. Demo campaigns are
+// always excluded unless explicitly in campaign_ids.
+
+
+// GET /api/direct-mail/tracking/calendar — group tracking by date for calendar/week views.
+
+app.use(cors({ origin: ['https://www.9amleads.com', 'https://9amleads.com', 'http://localhost:8012'], credentials: true }));
+// NEVER cache any /api response. Admin dashboards (customers/leads/stats) are live
+// data and Cloudflare/Netlify/browsers must not serve a stale snapshot (a cached
+// customers response made the admin page appear to show only one customer).
+app.use('/api', function(req, res, next) { res.setHeader('Cache-Control', 'no-store'); next(); });
+// Capture raw body for Stripe signature verification (preserve stream for express.json)
+// Raised from 2mb to 20mb so Print & Post leaflet/letter uploads (sent as base64)
+// don't fail with a body-too-large error when a customer saves their setup.
+app.use(express.json({
+  limit: '20mb',
+  verify: function(req, res, buf) { req.rawBody = buf.toString('utf-8'); }
+}));
+
+// Rate limiting — signup gets a much higher ceiling than login so a launch burst
+// isn't blocked (the 60/min global API limiter still protects the server).
+const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: 'Too many requests. Please slow down.' } });
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message:
+
+ { error: 'Too many login attempts. Try again in 15 minutes.' } });
+const signupLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: { error: 'Too many signups right now. Please try again in a few minutes.' } });
+app.use('/api/', apiLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/signup', signupLimiter);
+
 // ============================================================
 // ===== 9amLeads PARTNER PROGRAMME ============================
 // Extends the existing affiliate system into a full partner
@@ -2827,280 +3106,6 @@ app.post('/api/partner/click', async (req, res) => {
 // Scheduled partner jobs (daily) - wire into the existing 10-min loop or cron
 // (added to the delivery cron chain below)
 
-// Revert daily lead caps that were temporarily raised (e.g. "5 free leads today")
-
-// Revert daily lead caps that were temporarily raised (e.g. "5 free leads today")
-// once they expire, so the customer returns to their normal plan limit. Runs
-// daily from the 09:00 cron BEFORE delivery so the promise count is correct.
-function revertExpiredCapOverrides() {
-  try {
-    var now = new Date();
-    var reverted = 0;
-    (getDb().customers || []).forEach(function(c) {
-      if (!c.cap_override_expires) return;
-      var exp = new Date(c.cap_override_expires);
-      if (now < exp) return;
-      var prev = parseInt(c.cap_override_prev, 10);
-      if (prev && prev > 0 && parseInt(c.leads_per_day, 10) !== prev) {
-        c.leads_per_day = prev;
-        reverted++;
-      }
-      c.cap_override_at = null; c.cap_override_prev = null; c.cap_override_expires = null;
-    });
-    if (reverted) saveDb();
-    return reverted;
-  } catch(e) { console.log('[CAP-OVERRIDE] revert error:', e.message); return 0; }
-}
-
-// Transition pending payouts to "due" once their month has passed and the
-// referred customer is still active. Runs daily from the 09:00 cron.
-function processAffiliatePayouts() {  try {
-    var now = new Date();
-    var changed = 0;
-    (getDb().customers || []).forEach(function(c) {
-      if (!c.affiliate_id) return;
-      if (c.affiliate_payout_status !== 'pending' && c.affiliate_payout_status !== 'due') return;
-      var due = c.affiliate_payout_due ? new Date(c.affiliate_payout_due) : null;
-      if (!due) return;
-      if (now < due) return;
-      if (c.plan === 'cancelled' || c.plan === 'revoked') { c.affiliate_payout_status = 'ineligible'; changed++; return; }
-      if (c.affiliate_payout_status !== 'due') { c.affiliate_payout_status = 'due'; changed++; }
-    });
-    if (changed) saveDb();
-    return changed;
-  } catch(e) { console.log('[AFFILIATE] Payout process error:', e.message); return 0; }
-}
-
-// ===== APP =====
-const app = express();
-
-// ===== LIVE POST TRACKING (Stannp) =====
-// Map a Stannp mailpiece status to our friendly status + label + step index.
-var STANNP_STATUS_MAP = [
-  { match: ['accepted', 'queued', 'received'], status: 'queued', label: 'Accepted', step: 1, emoji: '\u2705', desc: 'Order accepted by the print house' },
-  { match: ['processing', 'printing', 'in_progress', 'produced', 'producing'], status: 'printing', label: 'Printing', step: 2, emoji: '\uD83D\uDD27', desc: 'Your mail is being printed' },
-  { match: ['dispatched', 'posted', 'handed_over'], status: 'dispatched', label: 'Dispatched', step: 3, emoji: '\uD83D\uDE9A', desc: 'Handed to Royal Mail' },
-  { match: ['local_delivery', 'out_for_delivery'], status: 'out_for_delivery', label: 'Out for delivery', step: 4, emoji: '\uD83D\uDEE3\uFE0F', desc: 'At the local delivery office' },
-  { match: ['delivered', 'completed'], status: 'delivered', label: 'Delivered', step: 5, emoji: '\uD83D\uDCEB', desc: 'Delivered to the address' },
-  { match: ['returned'], status: 'returned', label: 'Returned', step: 6, emoji: '\u21A9\uFE0F', desc: 'Returned to sender' },
-  { match: ['cancelled', 'canceled', 'failed', 'rejected'], status: 'cancelled', label: 'Cancelled / Failed', step: 6, emoji: '\u26D4', desc: 'This item was not posted' }
-];
-function mapStannpStatus(rawStatus) {
-  var s = String(rawStatus || '').toLowerCase().trim();
-  for (var i = 0; i < STANNP_STATUS_MAP.length; i++) {
-    var m = STANNP_STATUS_MAP[i];
-    for (var j = 0; j < m.match.length; j++) { if (s === m.match[j]) return m; }
-  }
-  // Fallback: keep raw but treat unknown as queued
-  return { status: 'unknown', label: s || 'Unknown', step: 0, emoji: '\uD83D\uDD0D', desc: s || 'Unknown status' };
-}
-
-// Record a tracking update for a recipient + its campaign (idempotent, preserves timeline).
-function recordMailpieceTracking(customerId, campaignId, recipientId, mailpieceId, rawStatus, eventTime) {
-  try {
-    var dbT = getDb();
-    var mapped = mapStannpStatus(rawStatus);
-    var when = eventTime || new Date().toISOString();
-    // Only move forward (don't downgrade a delivered item back to printing on late webhooks)
-    var rcpt = (dbT.direct_mail_recipients || []).find(function(r) { return r.id === recipientId && r.customer_id === customerId; });
-    if (rcpt) {
-      var curStep = rcpt.tracking_step || 0;
-      if (mapped.step >= curStep || mapped.status === 'cancelled' || mapped.status === 'returned') {
-        rcpt.provider_status = mapped.status;
-        rcpt.provider_status_label = mapped.label;
-        rcpt.tracking_step = mapped.step;
-        rcpt.provider_updated_at = when;
-        rcpt.provider_emoji = mapped.emoji;
-        if (!rcpt.tracking_history) rcpt.tracking_history = [];
-        var lastEvt = rcpt.tracking_history.length ? rcpt.tracking_history[rcpt.tracking_history.length - 1] : null;
-        if (!lastEvt || lastEvt.status !== mapped.status) {
-          rcpt.tracking_history.push({ status: mapped.status, label: mapped.label, at: when, desc: mapped.desc });
-        }
-      }
-    }
-    // Campaign-level: aggregate status from recipients
-    var camp = (dbT.direct_mail_campaigns || []).find(function(c) { return c.id === campaignId && c.customer_id === customerId; });
-    if (camp) {
-      camp.provider_status = mapped.status;
-      camp.provider_status_label = mapped.label;
-      camp.provider_updated_at = when;
-      var campRcpts = (dbT.direct_mail_recipients || []).filter(function(r) { return r.campaign_id === campaignId && r.customer_id === customerId; });
-      if (campRcpts.length) {
-        var deliv = campRcpts.filter(function(r) { return r.provider_status === 'delivered'; }).length;
-        var disp = campRcpts.filter(function(r) { return r.provider_status === 'dispatched' || r.provider_status === 'out_for_delivery'; }).length;
-        var print = campRcpts.filter(function(r) { return r.provider_status === 'printing' || r.provider_status === 'queued'; }).length;
-        camp.tracking_summary = { total: campRcpts.length, delivered: deliv, dispatched: disp, printing: print };
-        camp.provider_status = deliv === campRcpts.length ? 'delivered' : (deliv > 0 || disp > 0 ? 'dispatched' : 'printing');
-        camp.provider_status_label = camp.provider_status === 'delivered' ? 'Delivered' : camp.provider_status === 'dispatched' ? 'Dispatched' : 'Printing';
-      }
-      if (!camp.tracking_history) camp.tracking_history = [];
-      var lastCampEvt = camp.tracking_history.length ? camp.tracking_history[camp.tracking_history.length - 1] : null;
-      if (!lastCampEvt || lastCampEvt.status !== camp.provider_status) {
-        camp.tracking_history.push({ status: camp.provider_status, label: camp.provider_status_label, at: when, desc: mapped.desc, delivered_count: deliv || 0, total: campRcpts.length || 0 });
-      }
-    }
-    saveDb();
-    return { success: true, mapped: mapped.status };
-  } catch(e) { console.log('[DM-TRACKING] recordMailpieceTracking error:', e.message); return { success: false, error: e.message }; }
-}
-
-// REAL-DATA RECONCILE: refresh recipient tracking from Stannp's reporting API.
-// This is the authoritative source — it only ever reflects what Stannp reports,
-// never mock/guessed values. Called by the poller as a fallback and manually.
-async function reconcileTrackingFromStannp(daysBack) {
-  try {
-    var provider = getDirectMailProvider();
-    if (provider.name !== 'stannp' || typeof provider.getReportingStatuses !== 'function') return { success: false, error: 'Stannp provider not active' };
-    var rep = await provider.getReportingStatuses(daysBack || 14);
-    if (!rep.success || !rep.statuses) return { success: false, error: 'Reporting lookup failed' };
-    var dbR = getDb();
-    var statusMap = rep.statuses;
-    var updated = 0;
-    // Match by exact numeric mailpiece id
-    (dbR.direct_mail_recipients || []).forEach(function(r) {
-      var mid = String(r.provider_mailpiece_id || '');
-      if (!/^\d+$/.test(mid)) return;
-      var real = statusMap[mid];
-      if (!real) return;
-      // Only move forward (delivered stays delivered)
-      var curStep = r.tracking_step || 0;
-      var mapped = mapStannpStatus(real);
-      if (mapped.step >= curStep || mapped.status === 'cancelled' || mapped.status === 'returned') {
-        recordMailpieceTracking(r.customer_id, r.campaign_id, r.id, mid, real, new Date().toISOString());
-        updated++;
-      }
-    });
-    if (updated) saveDb();
-    return { success: true, reported: Object.keys(statusMap).length, updated: updated };
-  } catch(e) { return { success: false, error: e.message }; }
-}
-
-// POST /api/webhooks/stannp — Stannp real-time mailpiece_status webhook.
-// Payload: { webhook_id, event: "mailpiece_status" | "test_url", created, retries, mailpieces: [...] }
-app.post('/api/webhooks/stannp', express.raw({ type: 'application/json' }), (req, res) => {
-  var rawBody = req.rawBody || req.body.toString('utf-8');
-  var body = {};
-  try { body = JSON.parse(rawBody || '{}'); } catch(e) { body = req.body || {}; }
-  // Signature verification (optional but recommended) — X-Stannp-Signature = HMAC-SHA256(secret, rawBody)
-  if (STANNP_WEBHOOK_SECRET) {
-    try {
-      var sig = req.headers['x-stannp-signature'] || '';
-      var expected = require('crypto').createHmac('sha256', STANNP_WEBHOOK_SECRET).update(rawBody).digest('hex');
-      var ok = sig && sig.length > 10 && expected === sig;
-      // Fall back to timing-safe compare
-      if (sig) {
-        var buf1 = Buffer.from(String(expected));
-        var buf2 = Buffer.from(String(sig));
-        ok = buf1.length === buf2.length && require('crypto').timingSafeEqual(buf1, buf2);
-      }
-      if (!ok) { console.log('[DM-WEBHOOK] Stannp signature mismatch'); return res.status(401).json({ success: false, error: 'Invalid signature' }); }
-    } catch(sigErr) { console.log('[DM-WEBHOOK] signature check error:', sigErr.message); }
-  }
-  // Test URL validation — Stannp sends this when the webhook is first created.
-  if (body.event === 'test_url') { return res.status(200).json({ success: true }); }
-  if (body.event === 'mailpiece_status' || (body.mailpieces && body.mailpieces.length)) {
-    var mailpieces = Array.isArray(body.mailpieces) ? body.mailpieces : [];
-    var dbW = getDb();
-    var updated = 0;
-    for (var wi = 0; wi < mailpieces.length; wi++) {
-      var mp = mailpieces[wi] || {};
-      var mpId = String(mp.id || '');
-      if (!mpId) continue;
-      // Find the recipient with this provider_mailpiece_id
-      var rcpt = (dbW.direct_mail_recipients || []).find(function(r) { return String(r.provider_mailpiece_id || '') === mpId; });
-      if (!rcpt) { console.log('[DM-WEBHOOK] No recipient for mailpiece ' + mpId); continue; }
-      recordMailpieceTracking(rcpt.customer_id, rcpt.campaign_id, rcpt.id, mpId, mp.status || '', mp.timestamp || new Date().toISOString());
-      updated++;
-    }
-    console.log('[DM-WEBHOOK] Stannp mailpiece_status: ' + updated + ' recipients updated (' + mailpieces.length + ' in payload)');
-    return res.status(200).json({ success: true, updated: updated });
-  }
-  res.status(200).json({ success: true, received: true, event: body.event || 'unknown' });
-});
-
-// GET /api/direct-mail/tracking — customer dashboard: live post tracking for their campaigns.
-app.get('/api/direct-mail/tracking', authMiddleware, async (req, res) => {
-  try {
-    backfillMailpieceIds();
-    var dbT = getDb();
-    var all = (dbT.direct_mail_campaigns || []).filter(function(c) { return c.customer_id === req.user.id && c.status !== 'draft'; });
-    var out = [];
-    var demos = [];
-    all.forEach(function(c) {
-      var rcpts = (dbT.direct_mail_recipients || []).filter(function(r) { return r.campaign_id === c.id && r.customer_id === req.user.id; });
-      var record = {
-        id: c.id, name: c.name, description: c.description, status: c.status, provider_status: c.provider_status || '',
-        provider_status_label: c.provider_status_label || '', provider_updated_at: c.provider_updated_at || '',
-        created_at: c.created_at, sent_count: c.sent_count || rcpts.length, tracking_summary: c.tracking_summary || null,
-        tracking_history: c.tracking_history || [], proof_url: c.proof_url || '',
-        recipients: rcpts.map(function(r) { return { id: r.id, name: r.name, address: (r.address_line1 || '') + (r.city ? ', ' + r.city : '') + (r.postcode ? ', ' + r.postcode : ''), provider_status: r.provider_status || 'pending', provider_status_label: r.provider_status_label || 'Pending', tracking_step: r.tracking_step || 0, provider_emoji: r.provider_emoji || '\uD83D\uDD0D', provider_updated_at: r.provider_updated_at || '', tracking_history: r.tracking_history || [], lead_id: r.lead_id || '', mailpiece_type: r.mailpiece_type || '' }; })
-      };
-      if (isRealTrackingCampaign(c, rcpts)) out.push(record);
-      else if (c.notes === 'DEMO_TRACKING') { record.is_demo = true; demos.push(record); }
-      // else: legacy/mock records are dropped entirely from customer view
-    });
-    res.json({ success: true, count: out.length, campaigns: out, demo_count: demos.length, demos: demos, synced_at: new Date().toISOString() });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/direct-mail/tracking/sync — force a live refresh of campaign statuses from Stannp.
-app.post('/api/direct-mail/tracking/sync', authMiddleware, async (req, res) => {
-  try {
-    var dbS = getDb();
-    var provider = getDirectMailProvider();
-    var syncable = (dbS.direct_mail_recipients || []).filter(function(r) {
-      if (r.customer_id !== req.user.id || !r.provider_mailpiece_id) return false;
-      if (!/^\d+$/.test(String(r.provider_mailpiece_id)) || String(r.provider_mailpiece_id).length < 4) return false;
-      var cRow = (dbS.direct_mail_campaigns || []).find(function(c) { return c.id === r.campaign_id; });
-      if (cRow && cRow.notes === 'DEMO_TRACKING') return false;
-      if (cRow && String(cRow.provider || '').toLowerCase() !== 'stannp') return false;
-      return (!r.provider_status || ['queued','printing','dispatched','out_for_delivery','processing','accepted'].indexOf(r.provider_status) !== -1);
-    });
-    var seen = {}; var ids = [];
-    syncable.forEach(function(r) { var mid = String(r.provider_mailpiece_id); if (!seen[mid]) { seen[mid] = 1; ids.push(mid); } });
-    var updated = 0;
-    for (var ci = 0; ci < ids.length; ci++) {
-      try {
-        var st = await provider.getCampaignStatus(ids[ci]);
-        if (st && st.success && st.status) {
-          var rcpt = (dbS.direct_mail_recipients || []).find(function(r) { return String(r.provider_mailpiece_id || '') === ids[ci]; });
-          if (rcpt) { recordMailpieceTracking(rcpt.customer_id, rcpt.campaign_id, rcpt.id, ids[ci], st.status, new Date().toISOString()); updated++; }
-        }
-      } catch(syncErr) {}
-    }
-    res.json({ success: true, updated: updated });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/direct-mail/tracking/bulk-delete — bulk delete tracking records.
-// Body: { campaign_ids?: string[], delete_older_than?: '7d'|'30d'|'90d'|'180d' }
-// Removes the campaigns, their recipients and status history. Demo campaigns are
-// always excluded unless explicitly in campaign_ids.
-
-
-// GET /api/direct-mail/tracking/calendar — group tracking by date for calendar/week views.
-
-app.use(cors({ origin: ['https://www.9amleads.com', 'https://9amleads.com', 'http://localhost:8012'], credentials: true }));
-// NEVER cache any /api response. Admin dashboards (customers/leads/stats) are live
-// data and Cloudflare/Netlify/browsers must not serve a stale snapshot (a cached
-// customers response made the admin page appear to show only one customer).
-app.use('/api', function(req, res, next) { res.setHeader('Cache-Control', 'no-store'); next(); });
-// Capture raw body for Stripe signature verification (preserve stream for express.json)
-// Raised from 2mb to 20mb so Print & Post leaflet/letter uploads (sent as base64)
-// don't fail with a body-too-large error when a customer saves their setup.
-app.use(express.json({
-  limit: '20mb',
-  verify: function(req, res, buf) { req.rawBody = buf.toString('utf-8'); }
-}));
-
-// Rate limiting — signup gets a much higher ceiling than login so a launch burst
-// isn't blocked (the 60/min global API limiter still protects the server).
-const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: 'Too many requests. Please slow down.' } });
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'Too many login attempts. Try again in 15 minutes.' } });
-const signupLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: { error: 'Too many signups right now. Please try again in a few minutes.' } });
-app.use('/api/', apiLimiter);
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/signup', signupLimiter);
 
 // Direct Mail notification routes
 app.get('/api/direct-mail/notifications', authMiddleware, (req, res) => {
