@@ -8192,7 +8192,62 @@ cron.schedule('*/10 * * * *', async () => {
 }, { timezone: 'Europe/London' });
 
 
-// MONDAY-READINESS CHECK: Mon-Fri 07:45 UK (after the 6am scrape, before the 9am
+// STALE-POOL MONITOR: 08:15 UK — if any product's fresh (48h) supply has dropped
+// dangerously low (a sign the scrapes have been failing for days), auto-scrape it
+// and alert the founder. Catches silent multi-day scrape failures before customers
+// shortfall.
+cron.schedule('15 8 * * 1-5', async () => {
+  try {
+    var sp = getPoolSupply();
+    var spThresholds = { moving: 60, probate: 20, newbusiness: 60, planning: 20, tenders: 10 };
+    var spLow = [];
+    Object.keys(spThresholds).forEach(function(prod) {
+      var fresh = sp && sp[prod] ? (sp[prod].fresh_48h || 0) : 0;
+      if (fresh < spThresholds[prod]) spLow.push(prod + ': ' + fresh + ' fresh (min ' + spThresholds[prod] + ')');
+    });
+    if (spLow.length) {
+      console.log('[STALE-POOL] Low supply: ' + spLow.join(' | '));
+      // AUTO-FIX: trigger a scrape for the low products.
+      spLow.forEach(function(lbl) {
+        var prod = lbl.split(':')[0].trim();
+        try {
+          var spBody = JSON.stringify({ product: prod, force: true });
+          var spReq = require('https').request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(spBody) } }, function(res) { res.resume(); });
+          spReq.on('error', function(){}); spReq.write(spBody); spReq.end();
+        } catch(se) {}
+      });
+      sendAdminAlert('⚠ Low lead supply — auto-scraping', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">The 08:15 monitor found low fresh supply (possible multi-day scrape failure):<br><ul style="margin:4px 0;padding-left:18px">' + spLow.map(function(l){ return '<li>' + l + '</li>'; }).join('') + '</ul><br>An automatic re-scrape has been triggered for each. The 09:00 delivery should be fine once they refresh.</div>');
+    } else {
+      console.log('[STALE-POOL] All products have healthy supply');
+    }
+  } catch(e) { console.log('[STALE-POOL] error:', e.message); }
+}, { timezone: 'Europe/London' });
+
+// FAILED-EMAIL CATCH-UP: re-send delivery emails that failed at 9am (after the
+// initial 4 retries). Runs at 10:30 + 15:00 UK so a customer never permanently
+// misses their lead notification. Clears the queue on success.
+cron.schedule('30 10 * * 1-5', async () => { await resendFailedEmails(); }, { timezone: 'Europe/London' });
+cron.schedule('0 15 * * 1-5', async () => { await resendFailedEmails(); }, { timezone: 'Europe/London' });
+async function resendFailedEmails() {
+  try {
+    var feDb = getDb();
+    var q = (feDb.failed_emails || []).slice();
+    if (!q.length) return;
+    var sent = 0, stillFailing = [];
+    for (var fi = 0; fi < q.length; fi++) {
+      var m = q[fi];
+      try {
+        await sendBrevoEmail({ email: m.email, name: m.name || 'Customer' }, m.subject, m.html);
+        sent++;
+      } catch(e) { m.attempts = (m.attempts || 0) + 1; stillFailing.push(m); }
+    }
+    feDb.failed_emails = stillFailing;
+    saveDb();
+    if (sent > 0) console.log('[EMAIL-CATCHUP] Re-sent ' + sent + ' failed delivery emails' + (stillFailing.length ? ' (' + stillFailing.length + ' still failing)' : ''));
+  } catch(e) { console.log('[EMAIL-CATCHUP] error:', e.message); }
+}
+
+// ===== MONDAY-READINESS CHECK: Mon-Fri 07:45 UK (after the 6am scrape, before the 9am
 // delivery) — preview EVERY real customer and log a loud warning if any would
 // shortfall at 9am, so the admin can deep-scrape the affected areas or top up
 // before customers are due their leads.
@@ -11475,7 +11530,19 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // while ensuring all emails go out promptly.
           if (emailQueue.length >= 15) {
             var batchNow = emailQueue.splice(0, emailQueue.length);
-            await Promise.all(batchNow.map(function(m) { return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) { console.log('[DELIVERY] Email failed ' + m.email + ': ' + e.message); }); }));
+            await             Promise.all(batchNow.map(function(m) { return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) {
+              console.log('[DELIVERY] Email failed ' + m.email + ': ' + e.message);
+              // SELF-HEAL: queue the failed delivery email so a catch-up cron can
+              // re-send it — the customer's leads are in-dashboard but they'd
+              // otherwise never know they arrived.
+              try {
+                var _feDb = getDb();
+                if (!_feDb.failed_emails) _feDb.failed_emails = [];
+                _feDb.failed_emails.push({ email: m.email, name: m.name, subject: m.subject, html: m.html, at: new Date().toISOString(), attempts: 1 });
+                if (_feDb.failed_emails.length > 200) _feDb.failed_emails.splice(0, _feDb.failed_emails.length - 200);
+                saveDb();
+              } catch(fe) { console.log('[DELIVERY] failed-email queue error:', fe.message); }
+            }); }));
           }
         } else {
           console.log('[DELIVERY] ' + cust.email + ': already emailed today — topping up ' + custLeads.length + ' leads silently (no second email)');
