@@ -1,6 +1,8 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
 <script>
+function trackEvent(event, props){ try { if (typeof props !== 'object' || props === null) props = {}; fetch('/api/analytics/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event: event, props: props }) }).catch(function(){}); } catch(e){} }
+
 /* 9amLeads anonymous analytics (cookie-free, GDPR-friendly) */
 (function(){
   var trackKey='9am_visitor_id';
@@ -134,6 +136,25 @@ footer a{color:var(--accent);text-decoration:underline}
 <div class="card stat"><div class="icon" style="background:#faf5ff;color:#8b5cf6">📈</div><div class="num" id="kpi-month">0</div><div class="lbl">This Month</div></div>
 </div>
 
+<!-- TRIAL STATUS (shown during an active 7-day free trial) -->
+<div class="card" id="trial-status-card" style="display:none;border:1px solid #bfdbfe;background:linear-gradient(135deg,#eff6ff,#f0f9ff);margin-bottom:16px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+<div style="flex:1;min-width:230px">
+<div style="font-size:12px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px"><i class="fas fa-hourglass-half" style="margin-right:4px"></i> Your Free Trial</div>
+<div style="font-size:22px;font-weight:900;font-family:var(--ff-h);color:#0c4a6e"><span id="trial-day">Day 1 of 7</span> <span style="font-size:13px;font-weight:600;color:#0369a1">· <span id="trial-days-left">7 days remaining</span></span></div>
+<div style="font-size:12px;color:#0369a1;margin-top:6px;line-height:1.7">
+<div><strong>Lead type:</strong> <span id="trial-leadtype">Loading...</span></div>
+<div><strong>Areas:</strong> <span id="trial-areas">—</span></div>
+<div><strong>Next delivery:</strong> <span id="trial-next-delivery">9am tomorrow</span></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;align-items:stretch">
+<a href="/portal/leads.html" class="btn btn-primary"><i class="fas fa-list"></i> View My Leads</a>
+<a href="#" onclick="openPlanSelect();return false" class="btn btn-outline btn-sm" style="text-align:center"><i class="fas fa-arrow-up"></i> See Plans</a>
+</div>
+</div>
+</div>
+
 <!-- Print & Post tip banner -->
 <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-bottom:16px;flex-wrap:wrap">
 <i class="fas fa-mail-bulk" style="color:#16a34a;font-size:18px"></i>
@@ -192,9 +213,9 @@ footer a{color:var(--accent);text-decoration:underline}
 <div class="sect-title"><i class="fas fa-credit-card" style="color:#d97706"></i> Secure Your Trial <span style="margin-left:auto;font-size:10px;font-weight:700;color:#92400e;background:#fef3c7;padding:2px 10px;border-radius:20px;border:1px solid #fde68a">NO CHARGE YET</span></div>
 <p style="font-size:12px;color:#92400e;line-height:1.6;margin-bottom:10px">Choose the plan you'll be billed for when the trial ends. <strong>No charge today</strong>. Your card is charged <strong>weekly</strong> for the package you pick, starting when the free trial ends. unless you upgrade or cancel before then.</p>
 <div style="margin-bottom:12px">
-  <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid #fde68a;border-radius:8px;margin-bottom:6px;cursor:pointer"><input type="radio" name="trial-plan" value="starter" checked style="accent-color:#d97706"><span style="font-size:13px;font-weight:700;color:#92400e">Starter</span><span style="margin-left:auto;font-size:12px;color:#92400e;text-align:right">£25/week<br><b>5 leads/day</b></span></label>
-  <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid #0ea5e9;border-radius:8px;margin-bottom:6px;cursor:pointer"><input type="radio" name="trial-plan" value="pro" style="accent-color:#0ea5e9"><span style="font-size:13px;font-weight:700;color:#0369a1">Pro <span style="font-size:10px;background:#0ea5e9;color:#fff;padding:1px 6px;border-radius:10px;margin-left:3px">POPULAR</span></span><span style="margin-left:auto;font-size:12px;color:#0369a1;text-align:right">£49/week<br><b>10 leads/day</b></span></label>
-  <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid #fde68a;border-radius:8px;cursor:pointer"><input type="radio" name="trial-plan" value="enterprise" style="accent-color:#d97706"><span style="font-size:13px;font-weight:700;color:#92400e">Enterprise</span><span style="margin-left:auto;font-size:12px;color:#92400e;text-align:right">£99/week<br><b>15 leads/day</b></span></label>
+  <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid #fde68a;border-radius:8px;margin-bottom:6px;cursor:pointer"><input type="radio" name="trial-plan" value="starter" checked style="accent-color:#d97706"><span style="font-size:13px;font-weight:700;color:#92400e">Starter</span><span style="margin-left:auto;font-size:12px;color:#92400e;text-align:right">£25/week<br><b id="pay-quota-starter">5 leads/day</b></span></label>
+  <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid #0ea5e9;border-radius:8px;margin-bottom:6px;cursor:pointer"><input type="radio" name="trial-plan" value="pro" style="accent-color:#0ea5e9"><span style="font-size:13px;font-weight:700;color:#0369a1">Pro <span style="font-size:10px;background:#0ea5e9;color:#fff;padding:1px 6px;border-radius:10px;margin-left:3px">POPULAR</span></span><span style="margin-left:auto;font-size:12px;color:#0369a1;text-align:right">£49/week<br><b id="pay-quota-pro">10 leads/day</b></span></label>
+  <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid #fde68a;border-radius:8px;cursor:pointer"><input type="radio" name="trial-plan" value="enterprise" style="accent-color:#d97706"><span style="font-size:13px;font-weight:700;color:#92400e">Enterprise</span><span style="margin-left:auto;font-size:12px;color:#92400e;text-align:right">£99/week<br><b id="pay-quota-enterprise">15 leads/day</b></span></label>
 </div>
 <button class="btn btn-primary btn-sm" onclick="setupPayment()" id="setup-payment-btn" style="background:#d97706;border-color:#d97706"><i class="fas fa-credit-card"></i> Add Card, Free Trial Continues</button>
 <div id="payment-status" style="font-size:11px;color:#92400e;margin-top:6px"></div>
@@ -962,6 +983,32 @@ function setupTrialTimer(plan, trialEnds) {
   __trialTimerInt = setInterval(update, 1000);
 }
 
+function renderTrialStatus(data) {
+  var card = document.getElementById('trial-status-card');
+  if (!card) return;
+  var isFreeTrial = data.plan === 'free_trial';
+  var endTime = data.trial_ends ? new Date(data.trial_ends).getTime() : 0;
+  if (!isFreeTrial || !endTime || endTime <= Date.now()) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  var daysRemaining = Math.max(1, Math.ceil((endTime - Date.now()) / 86400000));
+  var dayX = Math.min(7, 8 - daysRemaining);
+  document.getElementById('trial-day').textContent = 'Day ' + dayX + ' of 7';
+  document.getElementById('trial-days-left').textContent = daysRemaining + (daysRemaining === 1 ? ' day' : ' days') + ' remaining';
+  var names = { moving: 'Moving leads', newbusiness: 'New Business leads', probate: 'Probate leads', planning: 'Planning leads', tenders: 'Public tender leads' };
+  document.getElementById('trial-leadtype').textContent = names[data.product] || (data.product || 'your selected');
+  var areasEl = document.getElementById('trial-areas');
+  if (data.target_areas && Array.isArray(data.target_areas) && data.target_areas.length) areasEl.textContent = data.target_areas.join(' • ');
+  else if (data.target_areas && typeof data.target_areas === 'string') { try { var a = JSON.parse(data.target_areas); areasEl.textContent = Array.isArray(a) ? a.join(' • ') : data.target_areas; } catch(e) { areasEl.textContent = data.target_areas; } }
+  else areasEl.textContent = '—';
+  var d = new Date();
+  var today = d.getDay();
+  if (today === 6) document.getElementById('trial-next-delivery').textContent = 'Monday at 9am';
+  else if (today === 0) document.getElementById('trial-next-delivery').textContent = 'Monday at 9am';
+  else if (today === 5 && d.getHours() >= 9) document.getElementById('trial-next-delivery').textContent = 'Monday at 9am';
+  else if (d.getHours() < 9) document.getElementById('trial-next-delivery').textContent = 'Today at 9am';
+  else document.getElementById('trial-next-delivery').textContent = 'Tomorrow at 9am';
+}
+
 function loadSettings(data) {
   if (!data) return;
   if (data.company) document.getElementById('settings-company').value = data.company;
@@ -987,7 +1034,7 @@ function loadSubscription() {
     document.getElementById('sub-plan-status').textContent = d.subscription ? d.subscription.status : 'Active';
     document.getElementById('sub-leads').textContent = d.leads_per_day || 0;
     document.getElementById('sub-areas-count').textContent = (d.coverage_areas || []).length;
-    document.getElementById('sub-max-areas').textContent = d.plan === 'free_trial' ? '3' : 'Unlimited';
+    document.getElementById('sub-max-areas').textContent = (d.plan === 'free_trial' || d.plan === 'starter') ? (areaMaxLimit() >= 999 ? 'Unlimited' : areaMaxLimit()) : 'Unlimited';
     if (d.trial_ends) {
       var days = Math.ceil((new Date(d.trial_ends) - new Date()) / 86400000);
       document.getElementById('sub-trial-end').textContent = (days > 0 ? days + ' days left' : 'Expired');
@@ -1189,7 +1236,32 @@ function testCrm() {
 function setCardSkipped() { try { localStorage.setItem('card_prompt_skipped', '1'); } catch(e) {} }
 // Plan selection modal. opens the Starter/Pro/Enterprise chooser before payment.
 function openPlanSelect() {
+  updatePlanQuotaLabels();
   showModal('plan-select-modal');
+}
+
+var PLAN_QUOTAS = {
+  moving:     { starter: '5 leads/day', pro: '10 leads/day', enterprise: '15 leads/day', aStarter: '5 postcode areas', aPro: 'unlimited areas', aEnt: 'all UK areas' },
+  newbusiness:{ starter: '5 leads/day', pro: '10 leads/day', enterprise: '15 leads/day', aStarter: '5 postcode areas', aPro: 'unlimited areas', aEnt: 'all UK areas' },
+  probate:    { starter: '2 leads/day', pro: '5 leads/day',  enterprise: '10 leads/day', aStarter: '3 areas', aPro: 'unlimited areas', aEnt: 'all UK areas' },
+  planning:   { starter: '1 lead/day',  pro: '3 leads/day',  enterprise: '5 leads/day',  aStarter: '3 areas', aPro: 'unlimited areas', aEnt: 'all UK areas' },
+  tenders:    { starter: '1 lead/day',  pro: '3 leads/day',  enterprise: '5 leads/day',  aStarter: '3 areas', aPro: 'unlimited areas', aEnt: 'all UK areas' }
+};
+function updatePlanQuotaLabels() {
+  try {
+    var p = PLAN_QUOTAS[_sessionProduct || 'moving'] || PLAN_QUOTAS.moving;
+    function set(id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; }
+    set('plan-line-starter', p.starter + ' \u00b7 ' + p.aStarter);
+    set('plan-line-pro', p.pro + ' \u00b7 ' + p.aPro);
+    set('plan-line-enterprise', p.enterprise + ' \u00b7 ' + p.aEnt);
+    set('pay-quota-starter', p.starter);
+    set('pay-quota-pro', p.pro);
+    set('pay-quota-enterprise', p.enterprise);
+  } catch(e) {}
+}
+// Set the plan-options quota labels to the customer's lead type once loaded.
+function applyPlanQuotasForProduct() {
+  updatePlanQuotaLabels();
 }
 // Send the chosen plan to Stripe Checkout. If the user is on a free trial, the
 // backend applies the remaining trial period so the card is only charged when the
@@ -1717,10 +1789,12 @@ document.querySelectorAll('.modal').forEach(function(m){
       // trial users. Hide it entirely once the account is paid (starter/pro/
       // enterprise) or once the trial has ended (so it never shows stale time).
       setupTrialTimer(data.plan, data.trial_ends);
+      renderTrialStatus(data);
       var prodNames = { moving:'Moving leads', newbusiness:'New Business leads', probate:'Probate leads', tenders:'Tenders', planning:'Planning leads' };
       var psEl = document.getElementById('plan-sub');
       if (psEl && data.product) psEl.textContent = prodNames[data.product] || (data.product + ' leads');
       if (data.product) { _sessionProduct = data.product; renderFilters(data.product); }
+      updatePlanQuotaLabels();
       if (data.plan) {
         // FULL ACCESS for all active accounts (free trial, starter, pro, enterprise).
         // Only cancelled accounts lose access. their dashboard cards stay dimmed
@@ -1811,6 +1885,21 @@ document.querySelectorAll('.modal').forEach(function(m){
       try { history.replaceState(null, '', window.location.pathname + window.location.search.replace(/[?&](dm_payment|campaign_id)=[^&]*/g, '').replace(/^&/, '?')); } catch(hErr) {}
     }
   } catch(e) { console.log('payment-verify init err', e); }
+  // Subscription upgrade success (?checkout=success after Stripe). Show a clear
+  // "You're Upgraded" confirmation so the customer knows their plan is live.
+  try {
+    var cq = new URLSearchParams(window.location.search);
+    if (cq.get('checkout') === 'success' && _token) {
+      setTimeout(function(){
+        var ub = document.createElement('div');
+        ub.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;background:#0ea5e9;color:#fff;padding:16px 24px;border-radius:14px;font-size:14px;font-weight:800;box-shadow:0 10px 40px rgba(0,0,0,.35);max-width:92%;text-align:center';
+        ub.innerHTML = '🎉 You\u2019re Upgraded<div style="font-weight:400;font-size:12px;margin-top:4px">Your 9amLeads subscription is now active. Your daily leads continue at 9am.</div>';
+        document.body.appendChild(ub);
+        setTimeout(function(){ ub.style.transition='opacity .5s'; ub.style.opacity='0'; setTimeout(function(){ ub.remove(); }, 600); }, 8000);
+      }, 1200);
+      try { history.replaceState(null, '', window.location.pathname + window.location.search.replace(/[?&](checkout|session_id)=[^&]*/g, '').replace(/^&/, '?')); } catch(hErr2) {}
+    }
+  } catch(e) {}
 })();
 </script>
 
@@ -1839,15 +1928,15 @@ setTimeout(function(){
 <p style="font-size:12px;color:var(--muted);margin-bottom:20px">Pick your package. If you're still in your free trial, you won't be charged until the trial ends. then your chosen plan is billed weekly.</p>
 <div id="plan-options" style="display:flex;flex-direction:column;gap:12px">
   <button type="button" onclick="choosePlan('starter')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#fff;border:1px solid var(--border);border-radius:10px;cursor:pointer;font-family:inherit;text-align:left;transition:.15s">
-    <div><div style="font-weight:800;font-size:14px;color:var(--text)">Starter</div><div style="font-size:11px;color:var(--muted);margin-top:2px">5 leads/day · 5 postcode areas</div></div>
+    <div><div style="font-weight:800;font-size:14px;color:var(--text)">Starter</div><div style="font-size:11px;color:var(--muted);margin-top:2px" id="plan-line-starter">5 leads/day · 5 postcode areas</div></div>
     <div style="font-weight:800;font-size:16px;color:var(--text)">£25<span style="font-size:11px;color:var(--muted)">/week</span></div>
   </button>
   <button type="button" onclick="choosePlan('pro')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#eff6ff;border:2px solid #0ea5e9;border-radius:10px;cursor:pointer;font-family:inherit;text-align:left;transition:.15s">
-    <div><div style="font-weight:800;font-size:14px;color:var(--text)">Pro <span style="font-size:10px;background:#0ea5e9;color:#fff;padding:2px 8px;border-radius:12px;margin-left:4px">MOST POPULAR</span></div><div style="font-size:11px;color:var(--muted);margin-top:2px">10 leads/day · unlimited areas</div></div>
+    <div><div style="font-weight:800;font-size:14px;color:var(--text)">Pro <span style="font-size:10px;background:#0ea5e9;color:#fff;padding:2px 8px;border-radius:12px;margin-left:4px">MOST POPULAR</span></div><div style="font-size:11px;color:var(--muted);margin-top:2px" id="plan-line-pro">10 leads/day · unlimited areas</div></div>
     <div style="font-weight:800;font-size:16px;color:var(--text)">£49<span style="font-size:11px;color:var(--muted)">/week</span></div>
   </button>
   <button type="button" onclick="choosePlan('enterprise')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#fff;border:1px solid var(--border);border-radius:10px;cursor:pointer;font-family:inherit;text-align:left;transition:.15s">
-    <div><div style="font-weight:800;font-size:14px;color:var(--text)">Enterprise</div><div style="font-size:11px;color:var(--muted);margin-top:2px">15 leads/day · all UK areas</div></div>
+    <div><div style="font-weight:800;font-size:14px;color:var(--text)">Enterprise</div><div style="font-size:11px;color:var(--muted);margin-top:2px" id="plan-line-enterprise">15 leads/day · all UK areas</div></div>
     <div style="font-weight:800;font-size:16px;color:var(--text)">£99<span style="font-size:11px;color:var(--muted)">/week</span></div>
   </button>
 </div>

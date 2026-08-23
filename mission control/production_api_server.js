@@ -2971,6 +2971,8 @@ app.post('/api/auth/signup', async (req, res) => {
         saveDb();
         console.log('[SIGNUP] Welcome email sent to ' + customer.email);
       }
+      trackAnalytics('signup_completed', { product: customer.product, plan: customer.plan });
+      trackAnalytics('trial_activated', { product: customer.product });
     } catch (welcomeErr) {
       console.log('[SIGNUP] Welcome email failed:', welcomeErr.message);
     }
@@ -12181,6 +12183,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
           if (session.subscription) db.prepare('UPDATE customers SET stripe_subscription_id = ? WHERE id = ?').run(session.subscription, customer.id);
           saveDb();
           console.log('[STRIPE] Upgraded ' + customerEmail + ' to ' + plan);
+          trackAnalytics('subscription_started', { plan: plan, product: product });
         }
       }
 
@@ -20371,6 +20374,50 @@ app.post('/api/admin/cleanup', adminAuth, (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+// ===== LIGHTWEIGHT CONVERSION ANALYTICS =====
+// Self-hosted event log (no external platform, no PII). Used to understand the
+// visitor → signup → trial → paid funnel. Logged events are capped + viewable
+// via the admin analytics endpoint.
+function trackAnalytics(event, props) {
+  try {
+    var db2 = getDb();
+    if (!db2.analytics) db2.analytics = [];
+    db2.analytics.push({ ts: new Date().toISOString(), event: String(event || '').substring(0, 60), props: props || {} });
+    if (db2.analytics.length > 20000) db2.analytics = db2.analytics.slice(-20000);
+    saveDb();
+  } catch(e) {}
+}
+app.post('/api/analytics/event', async (req, res) => {
+  try {
+    var ev = String(req.body.event || '').substring(0, 60);
+    var props = req.body.props || {};
+    // Never accept PII; strip anything that looks like contact data.
+    var clean = {};
+    Object.keys(props).forEach(function(k) {
+      var v = String(props[k] || '').substring(0, 80);
+      if (!/email|name|phone|address|postcode/i.test(k)) clean[k] = v;
+    });
+    trackAnalytics(ev, clean);
+    res.json({ ok: true });
+  } catch(e) { res.json({ ok: true }); }
+});
+// GET /api/admin/analytics — summary of the conversion funnel
+app.get('/api/admin/analytics', adminAuth, (req, res) => {
+  try {
+    var db2 = getDb();
+    var events = db2.analytics || [];
+    var byEvent = {};
+    var byDay = {};
+    events.forEach(function(e) {
+      byEvent[e.event] = (byEvent[e.event] || 0) + 1;
+      var d = (e.ts || '').substring(0, 10);
+      byDay[d] = byDay[d] || {};
+      byDay[d][e.event] = (byDay[d][e.event] || 0) + 1;
+    });
+    res.json({ success: true, total: events.length, by_event: byEvent, by_day: byDay, recent: events.slice(-50).reverse() });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // POST /api/admin/delete-customer — remove a customer by email for fresh signup

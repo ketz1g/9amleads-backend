@@ -1,6 +1,8 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <script>
+function trackEvent(event, props){ try { if (typeof props !== 'object' || props === null) props = {}; fetch('/api/analytics/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event: event, props: props }) }).catch(function(){}); } catch(e){} }
+
 /* 9amLeads anonymous analytics (cookie-free, GDPR-friendly) */
 (function(){
   var trackKey='9am_visitor_id';
@@ -441,6 +443,7 @@ function updateMovingTypeLabel() {
 <div class="success" id="signup-success">Account created! Redirecting...</div>
 
 <button class="btn-p" onclick="doSignup()" id="signup-btn"><i class="fas fa-rocket"></i> Start Free Trial</button>
+<p style="font-size:11px;color:#6b7280;text-align:center;margin-top:8px;line-height:1.7"><i class="fas fa-check-circle" style="color:#22c55e"></i> 7 days free &nbsp;·&nbsp; <i class="fas fa-check-circle" style="color:#22c55e"></i> No card required &nbsp;·&nbsp; <i class="fas fa-check-circle" style="color:#22c55e"></i> Cancel anytime &nbsp;·&nbsp; <i class="fas fa-check-circle" style="color:#22c55e"></i> Choose your areas</p>
 <button class="btn-s" onclick="showLogin()">Already have an account? Sign In</button>
 <p style="font-size:11px;color:#5c6480;text-align:center;margin-top:14px">Earn £25 for every customer you refer — <a href="/portal/affiliate.html" style="color:#0ea5e9">become an affiliate</a></p>
 
@@ -1142,6 +1145,7 @@ var pLimit = getPostcodeAreaLimit();
       success.style.display = 'block'; button.innerHTML = '<i class="fas fa-check"></i> Redirecting...';
       // For paid plans, redirect to Stripe checkout immediately (weekly subscription)
       if (plan === 'starter' || plan === 'pro' || plan === 'enterprise') {
+        try { trackEvent('checkout_started', { plan: plan }); } catch(e) {}
         fetch(API + '/api/create-checkout', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + d.token }, body:JSON.stringify({ plan:plan }) })
         .then(function(r) { return r.json(); })
         .then(function(cd) { if (cd.url) window.location.href = cd.url; else window.location.href = '/portal/dashboard.html?onboard=1'; })

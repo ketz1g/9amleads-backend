@@ -122,7 +122,7 @@ footer a{color:var(--accent);text-decoration:underline}
   <a href="/pricing/" class="btn btn-primary btn-sm" style="color:#fff;text-decoration:none;padding:10px 24px"><i class="fas fa-arrow-up"></i> Upgrade Now</a>
 </div>
 <div id="leads-container"></div>
-<div class="empty" id="no-leads" style="display:none"><i class="fas fa-inbox"></i><h3 style="font-size:16px;font-weight:700;margin-bottom:4px">No leads yet</h3><p style="font-size:13px">Your first leads will arrive at 9am tomorrow.</p></div>
+<div class="empty" id="no-leads" style="display:none"><div style="font-size:44px;margin-bottom:8px">🎉</div><h3 style="font-size:17px;font-weight:700;margin-bottom:6px">You're All Set</h3><p style="font-size:13px;line-height:1.6;max-width:420px;margin:0 auto 12px">Your 9amLeads trial is active. We're preparing fresh opportunities matching your selected lead type and areas.</p><div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:14px">Your first delivery is scheduled for <span id="no-leads-time">9am tomorrow</span>.</div><div id="no-leads-details" style="display:inline-block;text-align:left;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 18px;font-size:12px;color:var(--text2);line-height:1.9;margin-bottom:16px"></div><div><a href="/portal/dashboard.html" class="btn btn-primary" style="text-decoration:none"><i class="fas fa-th-large"></i> Explore Your Dashboard</a></div></div>
 </div>
 
 <!-- Bulk Print & Post action bar -->
@@ -176,6 +176,8 @@ footer a{color:var(--accent);text-decoration:underline}
 </div>
 
 <script>
+function trackEvent(event, props){ try { if (typeof props !== 'object' || props === null) props = {}; fetch('/api/analytics/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event: event, props: props }) }).catch(function(){}); } catch(e){} }
+
 var allLeads = [];
 function exportLeads() {
   if (!allLeads.length) { alert('No leads to export'); return; }
@@ -188,7 +190,7 @@ function exportLeads() {
 }
 function renderLeads(leads) {
   var container = document.getElementById('leads-container');
-  if (!leads.length) { container.innerHTML = ''; document.getElementById('no-leads').style.display = 'block'; return; }
+  if (!leads.length) { container.innerHTML = ''; document.getElementById('no-leads').style.display = 'block'; populateNoLeads(); return; }
   document.getElementById('no-leads').style.display = 'none';
   // Group by day (only group for week/month/all views; today is one group)
   var groups = {};
@@ -354,7 +356,37 @@ function outcomeBtn(leadId, d){
     btn('contacted','Contacted') + btn('quoted','Quoted') + btn('won','Won') +
     '</div>';
 }
+function populateNoLeads() {
+  try {
+    var det = document.getElementById('no-leads-details');
+    if (!det) return;
+    var timeEl = document.getElementById('no-leads-time');
+    var x = new XMLHttpRequest();
+    x.open('GET', '/api/auth/me', true);
+    x.setRequestHeader('Authorization', 'Bearer ' + _token);
+    x.onload = function() {
+      try {
+        var data = JSON.parse(x.responseText);
+        if (!data) return;
+        var names = { moving: 'Moving leads', newbusiness: 'New Business leads', probate: 'Probate leads', planning: 'Planning leads', tenders: 'Public tender leads' };
+        var lt = names[data.product] || (data.product || 'your selected');
+        var areas = '';
+        if (data.target_areas && Array.isArray(data.target_areas)) areas = data.target_areas.join(' \u00b7 ');
+        else if (data.target_areas && typeof data.target_areas === 'string') { try { var a = JSON.parse(data.target_areas); areas = Array.isArray(a) ? a.join(' \u00b7 ') : data.target_areas; } catch(e) { areas = data.target_areas; } }
+        var alloc = (data.leads_per_day || 'your') + ' per day';
+        det.innerHTML = '<div><strong>Lead type:</strong> ' + lt + '</div><div><strong>Areas:</strong> ' + (areas || '\u2014') + '</div><div><strong>Daily allocation:</strong> ' + alloc + '</div>';
+        var d = new Date(); var today = d.getDay();
+        var nxt = '9am tomorrow';
+        if (today === 6 || today === 0 || (today === 5 && d.getHours() >= 9)) nxt = '9am Monday';
+        else if (d.getHours() < 9) nxt = '9am today';
+        if (timeEl) timeEl.textContent = nxt;
+      } catch(e) {}
+    };
+    x.send();
+  } catch(e) {}
+}
 function setLeadStatus(leadId, status){
+  try { trackEvent('lead_' + status, {}); } catch(e) {}
   fetch('/api/leads/' + leadId + '/status', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token }, body: JSON.stringify({ status: status }) })
     .then(function(r){ return r.json(); })
     .then(function(d){ if(d.success){ loadLeads(); } else { alert(d.error || 'Could not update status'); } })
@@ -773,6 +805,7 @@ var _token = '';
   if (!token) { window.location.href = '/portal/'; return; }
   _token = token;
   document.addEventListener('keydown', closeOnEsc);
+  try { trackEvent('lead_viewed', {}); } catch(e) {}
   var x = new XMLHttpRequest();
   x.open('GET', '/api/leads', true);
   x.setRequestHeader('Authorization', 'Bearer ' + token);
