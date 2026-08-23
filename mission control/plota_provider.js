@@ -87,18 +87,26 @@ async function collectFresh(freshnessHours) {
   // Fetch applications from Plota across multiple categories
   // We search all categories and filter server-side
   var allApps = [];
-  // Reduced categories to avoid rate limiting (demo key: 20 req/h)
-  // Combined categories for broader results with fewer requests.
-  // Fetch up to 5 pages of 100 (500 apps) so a real PLOTA key captures the full
-  // daily supply across the councils PLOTA covers.
-  var maxPages = 5;
-  for (var pg = 0; pg < maxPages; pg++) {
-    var dataPage = await apiRequest('/v1/applications?date_from=' + dateFrom + '&limit=100&offset=' + (pg * 100));
+  // PLOTA Starter returns up to 50 results per call and IGNORES the offset param
+  // (offset 0/50/100 return the same 50), so offset pagination can't collect more
+  // than 50/run. Instead we query UK postcode areas individually (50 per area),
+  // which multiplies the yield: 80 areas x 50 = up to 4,000 planning applications
+  // per run for ~80 requests/month-friendly calls. The freshness date filter still
+  // applies (date_received/date_validated >= dateFrom).
+  var PLOTA_AREAS = [
+    'B','BA','BB','BD','BH','BL','BN','BR','BS','CA','CB','CF','CH','CM','CO','CR','CT','CV','CW',
+    'DA','DE','DG','DH','DL','DN','DT','DY','E','EC','EH','EN','EX','FK','FY','G','GL','GU','HA',
+    'HD','HG','HP','HR','HS','HU','HX','IG','IP','IV','KA','KT','KW','KY','L','LA','LD','LE','LL',
+    'LN','LS','LU','M','ME','MK','ML','N','NE','NG','NN','NP','NR','NW','OL','OX','PA','PE','PH',
+    'PL','PO','PR','RG','RH','RM','S','SA','SE','SG','SK','SL','SM','SN','SO','SP','SR','SS','ST',
+    'SW','SY','TA','TD','TF','TN','TQ','TR','TS','TW','UB','W','WA','WC','WD','WF','WN','WR','WS',
+    'WV','YO','ZE'
+  ];
+  for (var ari = 0; ari < PLOTA_AREAS.length; ari++) {
+    var dataPage = await apiRequest('/v1/applications?postcode=' + PLOTA_AREAS[ari] + '&date_from=' + dateFrom + '&limit=50');
     if (dataPage && dataPage.data && dataPage.data.length > 0) {
       allApps = allApps.concat(dataPage.data);
-      if (pg < maxPages - 1) await new Promise(function(r) { setTimeout(r, 1000); });
-    } else {
-      break;
+      if (ari < PLOTA_AREAS.length - 1) await new Promise(function(r) { setTimeout(r, 350); });
     }
   }
 
