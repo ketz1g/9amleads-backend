@@ -104,7 +104,7 @@ tbody tr:hover td{background:#f8fafc}
 <button onclick="switchTab('partners')"><i class="fas fa-handshake"></i> Partners</button>
 <button onclick="switchTab('affiliates')"><i class="fas fa-handshake"></i> Affiliates</button>
 <button onclick="switchTab('rejected')"><i class="fas fa-ban"></i> Rejected Leads</button>
-<button onclick="openDeliveryPreview()" title="See which leads each customer will get at the next 9am"><i class="fas fa-eye"></i> Delivery Preview</button> <a href="/portal/seo.html"><i class="fas fa-magnifying-glass"></i> SEO</a>
+<button onclick="openDeliveryPreview()" title="See which leads each customer will get at the next 9am"><i class="fas fa-eye"></i> Delivery Preview</button> <button onclick="openQuietAreas()" title="Which chosen postcode areas have had no leads for 3-5 days"><i class="fas fa-exclamation-triangle"></i> Quiet Areas</button> <a href="/portal/seo.html"><i class="fas fa-magnifying-glass"></i> SEO</a>
 <a href="/portal/"><i class="fas fa-arrow-right-to-bracket"></i> Portal</a>
 </div>
 <button class="btn btn-outline btn-sm" onclick="adminLogout()" style="white-space:nowrap"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -335,6 +335,30 @@ function openDeliveryPreview() {
       document.getElementById('dp-content').innerHTML = html;
     })
     .catch(function(e) { document.getElementById('dp-content').innerHTML = '<span style="color:#dc2626">Error: ' + e.message + '</span>'; });
+}
+
+// Quiet areas report: which chosen postcode areas have produced no leads recently.
+function openQuietAreas() {
+  var ov = document.getElementById('adminModalOverlay');
+  ov.style.display = 'flex';
+  ov.innerHTML = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;max-width:900px;width:100%;padding:22px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="font-size:18px;font-family:Outfit,sans-serif;color:#1e293b">Quiet Areas - no leads recently</h2><button onclick="this.closest(\'#adminModalOverlay\').style.display=\'none\'" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer">&times;</button></div><div id="qa-content" style="font-size:13px;color:#1e293b">Loading...</div></div>';
+  fetch(API + '/api/admin/quiet-areas-report?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.error) { document.getElementById('qa-content').innerHTML = '<span style="color:#dc2626">' + d.error + '</span>'; return; }
+      var html = '<p style="font-size:11px;color:#64748b;margin-bottom:10px">Chosen postcode areas with <b>0 delivered leads in the last ' + d.days + ' days</b> — customers are auto-notified (email + dashboard) once per area per 7 days.</p>';
+      var quiet = (d.areas || []).filter(function(a) { return a.delivered === 0; });
+      if (!quiet.length) { html += '<div style="padding:16px;background:#dcfce7;color:#15803d;border-radius:8px">No quiet areas — every chosen postcode has had leads recently.</div>'; }
+      else {
+        html += '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Customer</th><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Product</th><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Area</th><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Delivered</th><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Last alerted</th></tr></thead><tbody>';
+        quiet.forEach(function(a) {
+          html += '<tr><td style="padding:7px;border-bottom:1px solid #f1f5f9">' + a.email + (a.company ? '<div style="font-size:11px;color:#94a3b8">' + a.company + '</div>' : '') + '</td><td style="padding:7px;border-bottom:1px solid #f1f5f9">' + a.product + '</td><td style="padding:7px;border-bottom:1px solid #f1f5f9"><b style="color:#b45309">' + a.area + '</b></td><td style="padding:7px;border-bottom:1px solid #f1f5f9">' + a.delivered + ' in ' + a.days + 'd</td><td style="padding:7px;border-bottom:1px solid #f1f5f9">' + (a.last_alerted || '<span style="color:#64748b">not yet</span>') + '</td></tr>';
+        });
+        html += '</tbody></table>';
+      }
+      document.getElementById('qa-content').innerHTML = html;
+    })
+    .catch(function(e) { document.getElementById('qa-content').innerHTML = '<span style="color:#dc2626">Error: ' + e.message + '</span>'; });
 }
 
 // Tab navigation (clean, dashboard-style)

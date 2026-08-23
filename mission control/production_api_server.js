@@ -6818,6 +6818,39 @@ app.post('/api/admin/quiet-areas', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/quiet-areas-report — for each active customer, list their chosen
+// postcode areas that have produced ZERO leads in the last QUIET_AREA_DAYS days,
+// with the last-alerted date. READ-ONLY (no emails sent).
+app.get('/api/admin/quiet-areas-report', adminAuth, (req, res) => {
+  try {
+    var dbq = getDb();
+    var days = parseInt(process.env.QUIET_AREA_DAYS || '4', 10);
+    var since = new Date(Date.now() - days * 86400000).toISOString();
+    var rows = [];
+    (dbq.customers || []).forEach(function(c) {
+      if (!c.plan || c.plan === 'cancelled' || c.leads_paused) return;
+      var areas = [];
+      try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) { areas = []; }
+      if (!areas.length) { try { var pcq = JSON.parse(c.product_config || '{}'); areas = JSON.parse((pcq[c.product] || {}).target_areas || '[]'); } catch(e) { areas = []; } }
+      var perOut = {}, perLtr = {};
+      (dbq.leads || []).forEach(function(l) {
+        if (l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at >= since) {
+          try { var d = JSON.parse(l.data || '{}'); var pcS = d.postcode || d.address || d.deceasedAddress || ''; var oc = extractPostcodeArea(pcS); if (oc) perOut[oc] = (perOut[oc] || 0) + 1; var lt = postcodeAreaLetters(pcS); if (lt) perLtr[lt] = (perLtr[lt] || 0) + 1; } catch(e) {}
+        }
+      });
+      areas.forEach(function(a) {
+        if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?/i.test(String(a))) return;
+        var hasDigit = /\d/.test(String(a));
+        var code = extractPostcodeArea(a);
+        var got = hasDigit ? (perOut[code] || 0) : (perLtr[postcodeAreaLetters(a)] || 0);
+        rows.push({ email: c.email, company: c.company || '', product: c.product || '', plan: c.plan || '', area: code || a, chosen: a, days: days, delivered: got, last_alerted: quietAreaAlertedDate(c, code || a) || '' });
+      });
+    });
+    rows.sort(function(a, b) { return a.delivered - b.delivered || String(a.email).localeCompare(String(b.email)); });
+    res.json({ success: true, days: days, since: since, areas: rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // deliveryPreviewForCustomer(cust) — the per-customer pool preview used by both
 // /api/admin/delivery-preview and /api/admin/readiness. Returns how many valid,
 // in-area, fresh leads the customer would receive at 9am with the current pool.
