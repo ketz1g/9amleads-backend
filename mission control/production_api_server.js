@@ -7036,16 +7036,31 @@ function checkQuietAreas() {
       try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) { areas = []; }
       if (!areas.length) { try { var pcq = JSON.parse(c.product_config || '{}'); areas = JSON.parse((pcq[c.product] || {}).target_areas || '[]'); } catch(e) { areas = []; } }
       if (!areas.length) return;
-      // Per-area delivered counts since the quiet window began.
-      var perArea = {};
+      // Per-area delivered counts since the quiet window began. Record BOTH the
+      // full outward code (SW18) and the area letters (SW) so area-level choices
+      // (e.g. "SW" or "L") match leads from any outward code in that area.
+      var perOut = {}, perLtr = {};
       (dbq.leads || []).forEach(function(l) {
         if (l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at >= since) {
-          try { var d = JSON.parse(l.data || '{}'); var a = extractPostcodeArea(d.postcode || d.address || d.deceasedAddress || ''); if (a) perArea[a] = (perArea[a] || 0) + 1; } catch(e) {}
+          try {
+            var d = JSON.parse(l.data || '{}');
+            var pcS = d.postcode || d.address || d.deceasedAddress || '';
+            var oc = extractPostcodeArea(pcS);
+            if (oc) perOut[oc] = (perOut[oc] || 0) + 1;
+            var lt = postcodeAreaLetters(pcS);
+            if (lt) perLtr[lt] = (perLtr[lt] || 0) + 1;
+          } catch(e) {}
         }
       });
       areas.forEach(function(a) {
         var code = extractPostcodeArea(a);
-        if (!code || (perArea[code] || 0) > 0) return;
+        // Only alert on real postcode-AREA targets (e.g. L, SW, CH2). Skip
+        // region/county names ("EAST", "ALL UK") — those aren't changeable to a
+        // "closer" postcode and would be misleading.
+        if (!code || !/^[A-Z]{1,2}[0-9][A-Z0-9]?/i.test(String(a))) return;
+        var hasDigit = /\d/.test(String(a));
+        var got = hasDigit ? (perOut[code] || 0) : (perLtr[postcodeAreaLetters(a)] || 0);
+        if (got > 0) return;
         var last = quietAreaAlertedDate(c, code);
         if (last && (Date.now() - new Date(last + 'T00:00:00Z').getTime()) < 7 * 86400000) return;
         setQuietAreaAlerted(c, code, new Date().toISOString().split('T')[0]);
