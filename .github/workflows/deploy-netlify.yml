@@ -29,7 +29,7 @@ jobs:
           echo "Secret is set."
 
       - name: Deploy 9amwebsite to Netlify
-        run: npx --yes netlify-cli deploy --prod --dir=9amwebsite --site lucent-lolly-e82191
+        run: npx --yes netlify-cli deploy --prod --dir=9amwebsite
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: lucent-lolly-e82191
+          NETLIFY_SITE_ID: ecdfca23-68e0-476b-a93d-7efb21b1f3c7
