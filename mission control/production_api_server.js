@@ -19100,6 +19100,7 @@ function seedCuratedPosts() {
 }
 
 // Publish any scheduled draft posts whose publish_at time has passed (checks hourly).
+// Also emails the owner when the blog queue runs low so more posts can be queued.
 function publishScheduledPosts() {
   var dbData = getDb();
   if (!dbData.blog_posts) return 0;
@@ -19112,7 +19113,34 @@ function publishScheduledPosts() {
   try { var http = require('http'); http.get('http://www.google.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(gres) { gres.resume(); }); } catch(e1) {}
   try { var https = require('https'); https.get('https://www.bing.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(bres) { bres.resume(); }).on('error', function(){}); } catch(e2) {}
   console.log('[SEO] Published ' + due.length + ' scheduled posts: ' + due.map(function(p) { return p.slug; }).join(', '));
+  checkBlogQueueLow();
   return due.length;
+}
+
+// Email the owner when the scheduled blog queue is nearly empty (at most once per day)
+// so new posts can be queued before the daily cadence runs out.
+function checkBlogQueueLow() {
+  try {
+    var dbData = getDb();
+    if (!dbData.blog_posts || !BREVO_API_KEY) return;
+    var remaining = dbData.blog_posts.filter(function(p) { return p.published === false && p.publish_at; }).length;
+    if (remaining > 2) return;
+    var today = new Date().toISOString().split('T')[0];
+    if (dbData.seo_queue_notified === today) return;
+    var html = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+      '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 8px">Blog queue nearly empty</h1>' +
+      '<p style="color:#ccc;line-height:1.7">The scheduled blog queue has <strong style="color:#fff">' + remaining + ' post' + (remaining === 1 ? '' : 's') + ' left</strong>.</p>' +
+      '<p style="color:#ccc;line-height:1.7">When it runs out, no new posts will go live automatically. Ask your assistant to "top up the blog queue" to keep the daily cadence going.</p>' +
+      '<p style="color:#888;font-size:13px">Live blog: <a href="https://9amleads.com/blog/" style="color:#0ea5e9">9amleads.com/blog</a></p>' +
+      '</div>';
+    sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, '9amLeads: Blog queue nearly empty (' + remaining + ' posts left)', html).then(function() {
+      dbData.seo_queue_notified = today;
+      fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+      console.log('[SEO] Queue-low notification sent (' + remaining + ' remaining)');
+    }).catch(function(e) { console.log('[SEO] Queue-low email failed: ' + (e && e.message || e)); });
+  } catch(e) {
+    console.log('[SEO] Queue-low check error: ' + (e && e.message || e));
+  }
 }
 
 // GET /api/admin/blog/posts - List all blog posts
@@ -23930,6 +23958,7 @@ cron.schedule('23 * * * *', () => {
   try {
     var n = publishScheduledPosts();
     if (n > 0) console.log('[SEO] Scheduled publish ran: ' + n + ' posts live');
+    checkBlogQueueLow();
   } catch(e) {
     console.log('[SEO] Scheduled publish error: ' + (e && e.message || e));
   }
