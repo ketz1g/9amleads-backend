@@ -151,6 +151,7 @@ tr:last-child td{border-bottom:none}
 <div class="tab on" data-t="overview" onclick="go('overview')">Overview</div>
 <div class="tab" data-t="leads" onclick="go('leads')">Leads <span class="n" id="leads-count">0</span></div>
 <div class="tab" data-t="tools" onclick="go('tools')">Tools</div>
+<div class="tab" data-t="playbook" onclick="go('playbook')">Playbook</div>
 <div class="tab" data-t="refs" onclick="go('refs')">Referrals</div>
 <div class="tab" data-t="payouts" onclick="go('payouts')">Payouts</div>
 </div>
@@ -195,6 +196,48 @@ tr:last-child td{border-bottom:none}
 <div class="chips" id="type-chips"></div>
 </div>
 <div id="tool-content"></div>
+</section>
+
+<!-- PLAYBOOK -->
+<section id="view-playbook" style="display:none">
+<div class="panel" style="margin-bottom:16px">
+<h2>Conversion playbook</h2>
+<p style="font-size:12.5px;color:#94a3b8;margin-bottom:6px">Proven steps to turn every referral into a paying customer — and keep them subscribed so your <b style="color:#e2e8f0">£25/month</b> keeps coming. Everything here is tailored to how 9amLeads works.</p>
+</div>
+<div class="tool-sec">
+<h3>1. Win the sign-up — the first 24 hours</h3>
+<div class="step"><b>Contact the moment they sign up</b>Your dashboard <b>Leads</b> tab shows every customer who used your code. Message them the same day — a personal welcome makes them take the 14-day trial seriously.</div>
+<div class="step"><b>Send a welcome text</b>"Thanks for starting your 9amLeads trial! Your first leads arrive tomorrow at 9am — I'll check in to see how they look." Set the expectation that leads arrive every morning.</div>
+<div class="step"><b>Never let a sign-up go cold</b>Every customer who started a trial but never got a follow-up is a £25/month you walked away from. The trial is only valuable if they actually use it.</div>
+</div>
+<div class="tool-sec">
+<h3>2. Nurture the 14-day trial</h3>
+<div class="step"><b>Day 1 — "How did your first batch look?"</b>Check in after their first 9am delivery. Seeing real leads arrive is what makes the trial feel valuable.</div>
+<div class="step"><b>Day 3–4 — share one tailored tip</b>Open the <b>Tools</b> tab and send the tip that fits their lead type. For a removal company: "call within the hour, the first company to call usually wins the move." For a solicitor: "contact executors within 48 hours."</div>
+<div class="step"><b>Day 7 — halfway nudge</b>"Halfway through your free trial — have the leads been useful? Want me to help you start converting them?"</div>
+<div class="step"><b>Day 10–11 — the trial is ending</b>"Your 14-day trial finishes soon — want to make sure you don't lose your daily leads?" This is your best conversion moment.</div>
+</div>
+<div class="tool-sec">
+<h3>3. Convert at the end of the trial</h3>
+<div class="step"><b>Ask on day 11–13</b>They've seen daily value by now. The best time to ask is while it's front of mind — not after it ends.</div>
+<div class="step"><b>Remind them of the deal</b>"You got 14 days free instead of the standard 7 — keep the leads going with a plan. Most start with Starter (£25/week) and upgrade later."</div>
+<div class="step"><b>Handle the price objection</b>"One extra job usually covers a month of leads." If they're a removal company, one move covers it; a solicitor, one probate file covers it.</div>
+<div class="step"><b>Offer help choosing</b>Starter £25/wk, Pro £49/wk, Enterprise £99/wk — all lead types at the same price. Suggest based on how many leads they need.</div>
+</div>
+<div class="tool-sec">
+<h3>4. Keep them subscribed — that's your £25/month</h3>
+<div class="step"><b>Your income = retention</b>You only earn while they stay. A customer who churns costs you £25/month forever. Protecting retention is half the job.</div>
+<div class="step"><b>Check in monthly</b>A quick "Still getting value from the leads?" message every 4–6 weeks dramatically cuts churn and keeps your recurring income safe.</div>
+<div class="step"><b>Fix problems fast</b>If they say leads aren't working: suggest a different lead type, better postcode areas, or point them to the outreach toolkit. A small fix keeps them subscribed.</div>
+<div class="step"><b>Congratulate their wins</b>"Glad the leads are working!" Referrals who feel your support stay longer — and refer more customers to you.</div>
+</div>
+<div class="tool-sec">
+<h3>5. Outreach best practice</h3>
+<div class="step"><b>Speed beats everything</b>Contact referrals the same day they sign up. The customer who hears from you first trusts you first.</div>
+<div class="step"><b>Call, don't just text</b>Calls convert far better than texts or emails. Use the phone scripts in <b>Tools</b> — they're written to get the trial started.</div>
+<div class="step"><b>Best times to call businesses</b>Mid-morning (10–11am) and mid-afternoon (2–4pm), Tuesday to Thursday. Avoid Monday mornings and Friday afternoons.</div>
+<div class="step"><b>Use the toolkit end-to-end</b>Phone script → email → SMS → follow-up plan. One tool alone works; the full sequence converts.</div>
+</div>
 </section>
 
 <!-- REFERRALS -->
@@ -267,7 +310,7 @@ var EMOJI={moving:'🚚',probate:'⚖️',newbusiness:'💼',planning:'🏗️',
 
 function go(t){
   document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('on',x.dataset.t===t);});
-  ['overview','leads','tools','refs','payouts'].forEach(function(v){document.getElementById('view-'+v).style.display=(v===t)?'block':'none';});
+  ['overview','leads','tools','playbook','refs','payouts'].forEach(function(v){document.getElementById('view-'+v).style.display=(v===t)?'block':'none';});
   if(t==='tools'&&!RES)loadResources();
   if(t==='leads'&&!LEADS)loadLeads();
 }
