@@ -8015,14 +8015,29 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
 cron.schedule('0 6 * * *', async () => {
   console.log('[06:00 UK] Running scraper...');
   global.__lastScrapeCronFire = new Date().toISOString();
-  try {
-    const http = require('http');
-    var body = JSON.stringify({});
-    var req = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
-      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[06:00 UK] Scraper done:', b.substring(0, 100)); });
-    });
-    req.write(body); req.end();
-  } catch(e) { console.log('[06:00 UK] Scraper error:', e.message); }
+  // BACKUP/RE-TRY: the scrape runs in the background, so if the trigger fails
+  // (deploy/restart race, connection hiccup) we retry a couple of times so the
+  // pool is still refreshed before the 07:45 readiness check + 09:00 delivery.
+  for (var _scRetry = 0; _scRetry < 3; _scRetry++) {
+    try {
+      const http = require('http');
+      var body = JSON.stringify({});
+      var ok = await new Promise(function(resolve) {
+        var req = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+          var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { resolve(res.statusCode === 200 && b.indexOf('success') !== -1); });
+        });
+        req.on('error', function() { resolve(false); });
+        req.setTimeout(30000, function() { req.destroy(); resolve(false); });
+        req.write(body); req.end();
+      });
+      if (ok) { console.log('[06:00 UK] Scraper started (attempt ' + (_scRetry + 1) + ')'); break; }
+      console.log('[06:00 UK] Scraper trigger failed (attempt ' + (_scRetry + 1) + ') — retrying');
+      await new Promise(function(r){ setTimeout(r, 120000); });
+    } catch(e) {
+      console.log('[06:00 UK] Scraper error:', e.message);
+      await new Promise(function(r){ setTimeout(r, 120000); });
+    }
+  }
 }, { timezone: 'Europe/London' });
 
 // Daily OnTheMarket supply run (no Apify credits) - 05:45 so the moving pool is
