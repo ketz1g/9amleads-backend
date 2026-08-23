@@ -6993,7 +6993,8 @@ async function runMovingPafPostScrape() {
     Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push({ _key: k, _item: x }); }); });
   }
   if (!arr || !arr.length) return { enriched: 0, failed: 0 };
-  var cap = parseInt(process.env.MOVING_PAF_POSTSCRAPE_MAX || '80', 10);
+  var cap = parseInt(process.env.MOVING_PAF_POSTSCRAPE_MAX || '40', 10);
+  var reserve = parseInt(process.env.POSTCODER_DELIVERY_RESERVE || '60', 10);
   var cut48 = new Date(Date.now() - 48 * 3600000).toISOString();
   var need = [];
   arr.forEach(function(e) {
@@ -7017,6 +7018,19 @@ async function runMovingPafPostScrape() {
   // adds the door number to fresh door-less leads so the pool is ready before 9am.
   for (var pi2 = 0; pi2 < need.length; pi2++) {
     var e = need[pi2]; var l = e._item || e;
+    // BUDGET RESERVE: never spend the Postcoder budget the 9am delivery needs.
+    // If we're within `reserve` of the daily budget, stop — the delivery's
+    // door-number gate + exact-count fill must always have budget to guarantee
+    // every sent lead has a verified door number.
+    try {
+      var pcBudget2 = require('./postcoder_budget');
+      var usedNow = pcBudget2.usage ? pcBudget2.usage() : 0;
+      var budgetNow = pcBudget2.getDailyBudget ? pcBudget2.getDailyBudget() : 0;
+      if (budgetNow > 0 && usedNow >= budgetNow - reserve) {
+        console.log('[PAF-POSTSCRAPE] Stopping early at ' + usedNow + '/' + budgetNow + ' — reserving ' + reserve + ' lookups for the 9am delivery');
+        break;
+      }
+    } catch(be) {}
     try {
       var addr0 = l.fullAddress || l.address || '';
       var pc0 = String(l.postcode || '').toUpperCase().trim();
