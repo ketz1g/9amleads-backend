@@ -6857,11 +6857,12 @@ app.get('/api/signup/competition-areas', (req, res) => {
     });
     // For tenders, all-uk customers compete in EVERY area, so add them to each.
     var list = [];
-    var allCounties = Object.keys(KNOWN_COUNTIES || {});
+    var allCounties = KNOWN_COUNTIES || [];
     allCounties.forEach(function(cnty) {
-      var k = cnty.toLowerCase().replace(/[\s-]+/g,'-');
+      var name = cnty.replace(/-/g, ' ').replace(/\b\w/g, function(m){ return m.toUpperCase(); });
+      var k = String(cnty).toLowerCase().replace(/[\s-]+/g,'-');
       var count = (perArea[k] || 0) + (product === 'tenders' ? allUkCount : 0);
-      if (count > 0) list.push({ name: cnty, count: count });
+      if (count > 0) list.push({ name: name, count: count });
     });
     list.sort(function(a,b){ return b.count - a.count; });
     res.json({ success: true, product: product, total_active: totalActive, all_uk_customers: allUkCount, areas: list });
