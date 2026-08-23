@@ -137,6 +137,14 @@ tr:last-child td{border-bottom:none}
 <h1>Welcome back, <span id="a-name">Affiliate</span> 👋</h1>
 <p>Share your code below. Every customer who uses it for <b>any lead type</b> gets a <b>14-day free trial</b>. You earn <b>£25</b> when they pay their first invoice, then <b>£25 every month for life</b> as long as they stay a customer. Use the <b>Tools</b> tab for ready-made phone scripts, emails, SMS and social posts to help your referrals start the free trial.</p>
 <div class="code"><span class="lbl">Your code:</span> <b id="a-code"></b> <button onclick="copyCode()">Copy</button></div>
+<div class="code" style="margin-top:10px"><span class="lbl">Your share link:</span> <b id="a-link" style="font-size:12px;color:#38bdf8"></b> <button onclick="copyLink()">Copy</button></div>
+<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn-mini" onclick="share('wa')">WhatsApp</button>
+<button class="btn-mini" onclick="share('li')">LinkedIn</button>
+<button class="btn-mini" onclick="share('fb')">Facebook</button>
+<button class="btn-mini" onclick="share('x')">X</button>
+<button class="btn-mini" onclick="share('mail')">Email</button>
+</div>
 </div>
 
 <div class="tabs">
@@ -220,6 +228,14 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return
 function fmtDate(iso){if(!iso)return '-';try{return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch(e){return iso;}}
 function copyText(txt,btn){var b=btn||document.querySelector('.code button');navigator.clipboard.writeText(txt).then(function(){var o=b.textContent;b.textContent='Copied!';setTimeout(function(){b.textContent=o;},1300);});}
 function copyCode(){copyText(document.getElementById('a-code').textContent);}
+var shareUrl='';
+function setLink(code){shareUrl='https://9amleads.com/portal/?ref='+encodeURIComponent(code)+'#signup';var el=document.getElementById('a-link');if(el)el.textContent=shareUrl;}
+function copyLink(){copyText(shareUrl,document.querySelectorAll('.code button')[1]);}
+function share(ch){
+  var u=encodeURIComponent(shareUrl),t=encodeURIComponent('Get 14 days of FREE UK business leads delivered every morning at 9am with my code \u2014 try 9amLeads!');
+  var m={wa:'https://wa.me/?text='+t+'%20'+u,li:'https://www.linkedin.com/sharing/share-offsite/?url='+u,fb:'https://www.facebook.com/sharer/sharer.php?u='+u,x:'https://twitter.com/intent/tweet?text='+t+'&url='+u,mail:'mailto:?subject='+encodeURIComponent('14 days free business leads')+'&body='+t+'%20'+u};
+  window.open(m[ch],'_blank');
+}
 
 function login(){
   var email=document.getElementById('a-email').value.trim(),pass=document.getElementById('a-pass').value;
@@ -267,6 +283,7 @@ function init(){
     D=d;
     document.getElementById('a-name').textContent=d.affiliate.name;
     document.getElementById('a-code').textContent=d.affiliate.code;
+    setLink(d.affiliate.code);
     document.getElementById('tb-name').textContent=d.affiliate.name;
     document.getElementById('tb-code').textContent='code: '+d.affiliate.code;
     document.getElementById('who-box').style.display='block';
