@@ -6863,12 +6863,12 @@ app.get('/api/signup/competition', (req, res) => {
     var message;
     if (product === 'tenders') {
       message = totalActive === 0
-        ? 'You will be the first ' + 'business receiving these tender opportunities UK-wide.'
-        : 'Tenders are shared UK-wide — ' + totalActive + ' other business' + (totalActive === 1 ? '' : 'es') + ' currently receive the same opportunities. Whoever responds first with the strongest bid wins.';
+        ? 'You will be the first business receiving these tender opportunities UK-wide.'
+        : 'Tenders are shared UK-wide — ' + totalActive + ' other business' + (totalActive === 1 ? '' : 'es') + ' currently receive' + (totalActive === 1 ? 's' : '') + ' the same opportunities. Whoever responds first with the strongest bid wins.';
     } else if (inArea === 0) {
       message = 'No other businesses currently receive these leads in your chosen areas — you have the first pick.';
     } else {
-      message = inArea + ' other business' + (inArea === 1 ? '' : 'es') + ' currently receive these leads in your chosen areas. We deliver fresh leads daily, and whoever contacts them first typically wins the work.';
+      message = inArea + ' other business' + (inArea === 1 ? '' : 'es') + ' currently receive' + (inArea === 1 ? 's' : '') + ' these leads in your chosen areas. We deliver fresh leads daily, and whoever contacts them first typically wins the work.';
     }
     res.json({ success: true, product: product, shared: shared, total_active: totalActive, in_area: inArea, message: message });
   } catch (e) {
