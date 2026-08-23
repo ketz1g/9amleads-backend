@@ -19051,6 +19051,8 @@ function sanitizeBlogPosts() {
 }
 
 // Insert or refresh curated quality posts (idempotent by slug) and refresh the sitemap.
+// Posts with publish_delay_days are created as drafts (published:false + publish_at)
+// and go live automatically via the publishScheduledPosts cron.
 function seedCuratedPosts() {
   var dbData = getDb();
   if (!dbData.blog_posts) dbData.blog_posts = [];
@@ -19073,22 +19075,44 @@ function seedCuratedPosts() {
         existing.word_count = wordCount;
         existing.reading_time = p.reading_time;
         existing.curated = true;
-        existing.published = true;
         refreshed++;
       }
       continue;
     }
-    dbData.blog_posts.push({
+    var post = {
       id: 'curated_' + p.slug, title: p.title, slug: p.slug, description: p.description,
       category: p.category, product_name: p.product_name, keywords: p.keywords,
       html: html, word_count: wordCount, reading_time: p.reading_time,
-      created_at: new Date(p.date + 'T06:00:00Z').toISOString(), published: true, curated: true
-    });
+      created_at: new Date(p.date + 'T06:00:00Z').toISOString(), curated: true
+    };
+    if (typeof p.publish_delay_days === 'number') {
+      post.publish_at = new Date(Date.now() + p.publish_delay_days * 86400000).toISOString();
+      post.published = false;
+    } else {
+      post.published = true;
+    }
+    dbData.blog_posts.push(post);
     added++;
   }
   fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
   writeSitemap();
   return { added: added, refreshed: refreshed };
+}
+
+// Publish any scheduled draft posts whose publish_at time has passed (checks hourly).
+function publishScheduledPosts() {
+  var dbData = getDb();
+  if (!dbData.blog_posts) return 0;
+  var now = Date.now();
+  var due = dbData.blog_posts.filter(function(p) { return p.published === false && p.publish_at && new Date(p.publish_at).getTime() <= now; });
+  if (!due.length) return 0;
+  due.forEach(function(p) { p.published = true; });
+  fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+  writeSitemap();
+  try { var http = require('http'); http.get('http://www.google.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(gres) { gres.resume(); }); } catch(e1) {}
+  try { var https = require('https'); https.get('https://www.bing.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(bres) { bres.resume(); }).on('error', function(){}); } catch(e2) {}
+  console.log('[SEO] Published ' + due.length + ' scheduled posts: ' + due.map(function(p) { return p.slug; }).join(', '));
+  return due.length;
 }
 
 // GET /api/admin/blog/posts - List all blog posts
@@ -23896,6 +23920,18 @@ cron.schedule('0 4 * * *', async () => {
     console.log('[SEO] Pipeline done: ' + seoLog.join(' | '));
   } catch(e) {
     console.log('[SEO] Cron error: ' + (e && e.message || e));
+  }
+});
+
+// ===== SCHEDULED BLOG PUBLISHING =====
+// Publishes draft posts from the curated queue as their publish_at time passes
+// (1-2/day cadence). Keeps the blog growing steadily without sacrificing quality.
+cron.schedule('23 * * * *', () => {
+  try {
+    var n = publishScheduledPosts();
+    if (n > 0) console.log('[SEO] Scheduled publish ran: ' + n + ' posts live');
+  } catch(e) {
+    console.log('[SEO] Scheduled publish error: ' + (e && e.message || e));
   }
 });
 

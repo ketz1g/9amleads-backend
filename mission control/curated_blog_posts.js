@@ -1106,6 +1106,285 @@ var CURATED_POSTS = [
         'The companies that win with lead generation are not the ones with the fanciest tools. They are the ones that measure the funnel, improve the weak step, and put next month\'s money where the jobs actually come from.'
       ]}
     ]
+  },
+  {
+    slug: 'get-more-removal-customers-without-ads',
+    title: 'How to Get More Removal Customers Without Spending on Ads',
+    description: 'Seven proven ways removal companies can fill their calendar without paying for advertising — referrals, reviews, local visibility, partnerships and daily moving leads.',
+    category: 'moving', product_name: 'Moving Leads', categoryLabel: 'Moving Leads',
+    keywords: ['get removal customers', 'removal company marketing', 'fill removal calendar', 'removals without ads', 'removal company growth'],
+    date: '2026-09-06', reading_time: '8 min read', publish_delay_days: 1,
+    faqs: [
+      { q: 'Can a removal company grow without ads?', a: 'Yes. Referrals, reviews, repeat clients, local visibility, estate agent partnerships and a fast daily-lead routine generate work without a single ad pound. Most companies win more from these channels than from advertising — they just never measure it.' },
+      { q: 'What is the fastest channel to fill the calendar?', a: 'Speed on daily moving leads. When a property goes under offer, the removal company that calls within the hour wins far more often. For a fraction of ad spend, a daily lead feed puts you in front of homeowners at the exact moment they need you.' },
+      { q: 'How do I get estate agents to send me work?', a: 'Agents recommend removal companies they trust because it protects the sale process. Build the relationship with a named contact, do flawless moves, and offer agents a simple referral arrangement — leave cards, attend launches, and follow up after every move.' },
+      { q: 'Why do reviews matter so much for removals?', a: 'Moving is high-trust, and most homeowners start with Google reviews. A strong review profile converts more enquiries than any ad, and it compounds — each happy move produces the next. Make a review request part of your completion process.' }
+    ],
+    sections: [
+      { h: 'The ad-free growth engine', body: [
+        'Removal companies that grow profitably rarely depend on ads. They build a repeatable engine: referrals from every move, reviews that make the phone ring, local visibility when people search, agent partnerships that send steady work, and a fast routine on fresh moving leads.',
+        'Each channel feeds the others. A great move earns a review, the review earns a referral, and the referral becomes another move to earn another review. Ads are not the only way to start the loop.',
+        { cta: 'Get moving leads in your postcode delivered daily — start your free 7-day trial.' }
+      ]},
+      { h: 'Make every move generate the next one', body: [
+        'The cheapest customer is the one you already have. Ask every customer on the day for feedback, fix anything that was less than perfect, and request a Google review at the moment of happiness — straight after a well-done completion.',
+        'Add a simple "moved by us" card to your completion pack, and run a six-month reminder for the next move. A homeowner who moved well with you is your best salesperson and your next client.',
+        { ul: ['Request a review at completion, not a week later', 'Send a thank-you and ask for one referral', 'Keep a six-month "moving again?" reminder list', 'Track referrals so you know your true cost per job'] }
+      ]},
+      { h: 'Dominate your local search', body: [
+        'When homeowners search "removal companies near me", the businesses with complete, reviewed Google Business Profiles win. Fill every field, add photos of your vans and crews, and answer questions promptly. Consistent positive reviews are the biggest ranking and trust factor you control.',
+        'Local visibility compounds quietly. You do not pay per click — you simply become the obvious choice in your postcode areas.',
+        { cta: 'Choose the right postcode areas for your moving leads — start your free trial.' }
+      ]},
+      { h: 'Partner with estate agents', body: [
+        'Estate agents want their sales to complete smoothly, which makes a reliable removal company a genuine asset to them. Introduce yourself to local agents, leave a clean stack of cards, attend their property launches, and deliver a flawless move every time.',
+        'Agents only recommend companies they trust, so consistency is everything. One great agent relationship can quietly feed you work for years.',
+        { ul: ['Identify the top 5–10 local agents by volume', 'Meet them personally with a simple offer', 'Give them cards and a reliable named contact', 'Follow up after every move they refer'] }
+      ]},
+      { h: 'The 9am daily-lead routine', body: [
+        'Advertising shows you to people who may be moving someday. A daily moving lead feed shows you to people who are moving right now. When a property goes SSTC or under offer, contact matters more than brand.',
+        'Build the habit: review leads at 9am, call the strongest within the hour, quote on the day, follow up after 48 hours. A removal company that runs this routine reliably converts a steady stream of fresh leads into bookings — without a single ad pound.'
+      ]}
+    ]
+  },
+  {
+    slug: 'probate-vs-administration-guide',
+    title: 'Probate vs Estate Administration: What Executors Need to Know',
+    description: 'The difference between getting probate (the court grant) and administering the estate (everything after it) — explained in plain English for executors, with what each step involves.',
+    category: 'probate', product_name: 'Probate Leads', categoryLabel: 'Probate Leads',
+    keywords: ['probate vs administration', 'estate administration explained', 'what does an executor do', 'probate explained UK', 'executor duties'],
+    date: '2026-09-07', reading_time: '7 min read', publish_delay_days: 2,
+    faqs: [
+      { q: 'What is the difference between probate and estate administration?', a: 'Probate is the legal grant from the court that lets you deal with the estate. Estate administration is everything that happens after — collecting assets, paying debts and tax, distributing to beneficiaries and dealing with the property. Probate is one step in the wider job.' },
+      { q: 'Does every estate need probate?', a: 'No. Small estates, jointly-owned assets passing to a spouse, or estates held in trust may not need a grant. A probate specialist can confirm whether your estate requires one before you spend time or money.' },
+      { q: 'What are the executor\'s duties?', a: 'An executor must protect the estate\'s assets, collect everything the deceased owned, pay debts and taxes (including inheritance tax), deal with any property sale, and distribute the remainder to beneficiaries in line with the will.' },
+      { q: 'How long does estate administration take?', a: 'Typically six to twelve months for a straightforward estate with a property, and longer where inheritance tax or complex assets are involved. The grant itself usually takes a few weeks to a few months once the application is made.' }
+    ],
+    sections: [
+      { h: 'Two jobs, one phrase', body: [
+        '"Probate" is often used to mean the whole process, but there are really two distinct jobs. Probate is the court grant — the legal authority to act. Estate administration is the months of work that follow: collecting, valuing, paying, selling and distributing. Executors carry out both, and understanding the difference is the first step to managing either well.',
+        'For a family dealing with an estate, the difference matters because it shapes who does what and what it costs. A solicitor may charge separately for the grant application and the administration.',
+        { cta: 'Get probate leads from the official register — start your free trial.' }
+      ]},
+      { h: 'What probate (the grant) involves', body: [
+        'The grant of probate is the court document confirming the will is valid and the executors are authorised. Getting it involves submitting the will, the death certificate, an inventory of the estate\'s value, and an inheritance tax account where needed.',
+        'The court checks the paperwork and issues the grant. From that point the executors can access bank accounts, sell property and deal with investments. Without the grant, most institutions will not release assets.',
+        { ul: ['Complete the IHT form and calculate any inheritance tax', 'Gather valuations of property, savings and shares', 'Submit the probate application with the will and death certificate', 'Pay any inheritance tax due (even before the grant is issued)', 'Wait for the grant before dealing with most institutions'] }
+      ]},
+      { h: 'What estate administration involves', body: [
+        'Administration is the bigger job. The executor must register the death with relevant bodies, close or transfer accounts, sell or transfer property, collect debts owed to the estate, pay the deceased\'s debts and taxes, and prepare estate accounts.',
+        'Only then comes distribution: passing the remaining assets to beneficiaries, obtaining receipts, and confirming the estate can be closed. Each step has deadlines, and getting tax or distribution wrong carries personal liability for the executor.',
+        { cta: 'See how solicitors manage estates end to end — start your free probate leads trial.' }
+      ]},
+      { h: 'When you might not need a grant', body: [
+        'Not every estate needs probate. If the estate is small, if assets were held jointly and pass automatically to the survivor, or if everything passes under a trust or nomination, a grant may not be required.',
+        'Banks have their own thresholds and rules, so the practical answer depends on the institutions involved. A quick check with the bank or a probate professional settles it without wasted effort.',
+        { ul: ['Small estates below the bank\'s threshold', 'Jointly-owned property and accounts passing to the survivor', 'Assets in trust or paid under nomination', 'Estates where everything is already distributed'] }
+      ]},
+      { h: 'Get the process right from day one', body: [
+        'The estates that run smoothly are the ones planned properly from the start: a clear inventory, a realistic timeline, and one person accountable for each step. Whether the family does it themselves or appoints a professional, the same discipline applies.',
+        'For solicitors and probate specialists, a newly published grant is the signal that a family has just entered this process — and the executor who needs help is usually open to a respectful, well-timed introduction.'
+      ]}
+    ]
+  },
+  {
+    slug: 'what-new-company-needs-first-month',
+    title: 'What a New Company Needs in Its First Month: A Founder\'s Checklist',
+    description: 'The practical list of everything a newly registered UK company must set up in its first month — from bank accounts and accounting to insurance, tax, website and compliance.',
+    category: 'newbusiness', product_name: 'New Business Leads', categoryLabel: 'New Business Leads',
+    keywords: ['new company checklist', 'startup first month UK', 'new business setup UK', 'what new companies need', 'Companies House after incorporation'],
+    date: '2026-09-08', reading_time: '8 min read', publish_delay_days: 3,
+    faqs: [
+      { q: 'What is the most urgent thing after incorporating?', a: 'Setting up a business bank account and registering for any tax you need (VAT if applicable, and PAYE if you have staff). These have practical deadlines and every other step depends on them.' },
+      { q: 'When is the first filing deadline?', a: 'Your first confirmation statement is due within a year of incorporation, and accounts are due nine months after your first accounting reference date. Pay attention from day one — penalties for late filings are automatic.' },
+      { q: 'Does a new company need insurance?', a: 'Some insurance is legally required (employers\' liability if you have staff) and some is sensible protection (public liability, professional indemnity, directors\' and officers\'). Check what applies to your sector before trading.' },
+      { q: 'What can I do myself and what needs a professional?', a: 'You can handle admin, a website and bookkeeping discipline yourself. Accounting, tax and compliance are where a professional pays for itself — mistakes cost more than the fees.' }
+    ],
+    sections: [
+      { h: 'The first month sets the tone', body: [
+        'The weeks after incorporation are when a business is most fragile and most busy. Directors are juggling setup, first sales and a mountain of admin. Getting the essentials done early avoids penalties, stress and costly rework.',
+        'This checklist covers the first month in the order it matters. Tick off each item and the company starts on a solid foundation.',
+        { cta: 'See what B2B services new companies are buying — start your free trial.' }
+      ]},
+      { h: 'Week one: the legal essentials', body: [
+        'Start with the foundations: open a business bank account (separating company and personal money from day one), register for Corporation Tax with HMRC (you normally get a letter with your UTR), and set up your registered office and Companies House correspondence.',
+        'If you employ anyone from the start, register as an employer for PAYE. If your turnover will exceed the VAT threshold, register for VAT when you expect to cross it.',
+        { ul: ['Business bank account', 'Corporation Tax registration with HMRC', 'VAT registration if required', 'PAYE registration if you employ staff', 'Registered office and digital correspondence confirmed'] }
+      ]},
+      { h: 'Week two: structure and safety', body: [
+        'Now the business basics: a simple accounting method (a spreadsheet or accounting software from day one), any licences or permissions your sector needs, and insurance. Employers\' liability is legally required with staff; public liability and professional indemnity protect your reputation.',
+        'Set up a business phone, email and domain so customers and suppliers deal with a business identity, not a personal one.',
+        { ul: ['Accounting method and bookkeeping habit', 'Sector licences and permissions', 'Insurance (liability, professional indemnity as needed)', 'Business email and phone', 'Domain and website in progress'] }
+      ]},
+      { h: 'Weeks three to four: presence and process', body: [
+        'Build the basics customers will judge you on: a website or professional profile, clear terms and a simple invoicing process. Set up a bookkeeping routine (set aside time weekly) so your first accounts are painless.',
+        'Decide who helps with what. Most founders handle admin and selling; an accountant manages tax and compliance. The professional advice is almost always worth the fee when it prevents a penalty or a missed claim.',
+        { cta: 'Win new company clients with daily business leads — start your free trial.' }
+      ]},
+      { h: 'Mark your first filing deadlines', body: [
+        'Put the dates in your calendar now: your confirmation statement is due within a year of incorporation, and your first accounts nine months after the accounting reference date. HMRC deadlines for Corporation Tax and any VAT follow from your registration.',
+        'Late filings trigger automatic penalties, so set reminders early. A company that treats deadlines as non-negotiable from month one is a company that grows.'
+      ]}
+    ]
+  },
+  {
+    slug: 'rear-extension-planning-permission',
+    title: 'Do I Need Planning Permission for a Rear Extension? A 2026 Guide',
+    description: 'When rear extensions are permitted development and when they need planning permission — with the size limits, neighbour conditions and building regs every homeowner should know.',
+    category: 'planning', product_name: 'Planning Permission Leads', categoryLabel: 'Planning Permission Leads',
+    keywords: ['rear extension planning permission', 'permitted development rear extension', 'single storey extension rules', 'two storey extension permission', 'extension building regs'],
+    date: '2026-09-09', reading_time: '8 min read', publish_delay_days: 4,
+    faqs: [
+      { q: 'Do I need planning permission for a single-storey rear extension?', a: 'Often not — single-storey rear extensions are usually permitted development if they stay within the limits: no more than 3m deep on a terraced house or 4m on a detached/semi-detached house, and within 4m of the rear wall in height. But always check your specific property.' },
+      { q: 'What is the permitted development size limit for a rear extension?', a: 'The maximum depth is 3m for a terraced house and 4m for detached and semi-detached houses. A single-storey extension must not be higher than 4m or extend beyond the rear wall by more than those depths. Two-storey extensions have tighter rules.' },
+      { q: 'Do two-storey rear extensions need planning permission?', a: 'Usually yes. A two-storey rear extension is permitted development only if it is within the depth limits, is more than 7m from the rear boundary, and the roof pitch matches the existing roof — in practice most two-storey extensions need an application.' },
+      { q: 'Do I need building regulations as well?', a: 'Yes. Planning permission and building regulations are separate. A rear extension almost always needs building regulations approval for foundations, structural work, insulation, glazing, drainage and fire safety.' }
+    ],
+    sections: [
+      { h: 'The short answer', body: [
+        'A single-storey rear extension on a UK house is usually permitted development and needs no planning application — provided it stays within the size limits. Two-storey rear extensions are a different story and generally need planning permission.',
+        'The rules are technical, and local conditions can remove permitted development rights entirely. Always confirm your specific situation before spending on design work.',
+        { cta: 'Spot extension projects before competitors — start your free planning leads trial.' }
+      ]},
+      { h: 'The permitted development limits for rear extensions', body: [
+        'The size limits are the crux of the rules. For a single-storey rear extension under permitted development:',
+        { ul: ['Maximum depth: 3m for a terraced house, 4m for a detached or semi-detached house', 'Maximum height: 4m at the eaves of the extension', 'Must not extend beyond the rear wall of the original house by more than the depth limit', 'Must not be within the boundary setback the rules require for two-storey work', 'Materials must be of a similar appearance to the existing house'] },
+        'Extensions on the side of the house have separate, stricter rules, and conservation areas or listed status removes the rights entirely.'
+      ]},
+      { h: 'When a rear extension needs planning permission', body: [
+        'You will need planning permission if the extension exceeds the depth or height limits, it covers more than half the garden, it is on the side where the rules apply differently, or the property is in a conservation area, is listed, or has had permitted development rights removed.',
+        'Two-storey rear extensions are generally not permitted development unless they are well within the limits and meet strict conditions on roof pitch and boundary distance. For most two-storey projects, assume an application is required.',
+        { cta: 'Win rear-extension projects from fresh planning leads — start your free trial.' }
+      ]},
+      { h: 'Neighbour consultation and party wall matters', body: [
+        'Some larger permitted development extensions need a neighbour consultation scheme (prior approval). Separate from planning, the Party Wall Act may require a party wall agreement when work affects a shared wall or boundary.',
+        'Building regulations approval is always required for the structure itself — foundations, walls, roof, insulation, glazing, drainage and fire safety. A building control body must approve the design and inspect the work.',
+        { ul: ['Check prior approval / neighbour consultation requirements', 'Confirm party wall arrangements with neighbours', 'Secure building regulations approval for the structure', 'Get the extension designed to comply from the start'] }
+      ]},
+      { h: 'Get the design right before you build', body: [
+        'The cheapest way to comply is to design within the rules from the start — an architect or structural engineer who knows the permitted development limits saves you an application you did not need. Where permission is required, a good planning consultant makes the application smooth.',
+        'For builders and tradespeople, a rear-extension planning application in the pipeline is a strong signal of a homeowner ready to spend. Contact them early with knowledge of the rules and you win the project before competitors quote.'
+      ]}
+    ]
+  },
+  {
+    slug: 'framework-agreement-guide',
+    title: 'What is a Framework Agreement? A Plain English Guide for SMEs',
+    description: 'What public sector framework agreements are, how they work, how SMEs get onto them, and whether they are the right route to government work for your business.',
+    category: 'tenders', product_name: 'Tender Opportunities', categoryLabel: 'Tender Opportunities',
+    keywords: ['framework agreement explained', 'public sector frameworks', 'get on a framework', 'CCS frameworks SMEs', 'framework vs tender'],
+    date: '2026-09-10', reading_time: '7 min read', publish_delay_days: 5,
+    faqs: [
+      { q: 'What is a framework agreement?', a: 'A framework agreement is a pre-agreed list of approved suppliers that public bodies can buy from without running a full tender every time. It is a standing arrangement, not a contract for a fixed amount of work.' },
+      { q: 'How do SMEs get onto a framework?', a: 'Frameworks are awarded through a competition — you apply when the framework opens, answer the capability and quality questions, and if you are accepted you join the approved supplier list for its lifetime (usually up to four years).' },
+      { q: 'Does being on a framework guarantee work?', a: 'No. It guarantees eligibility — public buyers can call off work from the framework, but they are not obliged to give you any. You still compete for call-offs against other approved suppliers.' },
+      { q: 'Should a small business join a framework?', a: 'If your sector has relevant frameworks (cleaning, IT, construction, FM, consultancy) and you can evidence the capability, yes — it is one of the best ways to open up recurring public sector work. Choose frameworks where you can genuinely compete.' }
+    ],
+    sections: [
+      { h: 'Frameworks in plain English', body: [
+        'A framework agreement is like an approved-supplier list. A public body runs a competition once, picks a set of capable suppliers, and then buys from that list for the next few years without running a full tender for every small job.',
+        'Being on a framework is not a contract and guarantees no work. It guarantees eligibility. When a buyer needs a service, they can go straight to the framework and run a simple call-off — and you, as an approved supplier, can be invited.',
+        { cta: 'Get tender and framework opportunities matched to your business — start your free trial.' }
+      ]},
+      { h: 'How the framework process works', body: [
+        'The framework itself is procured through a competition. The buyer publishes the opportunity, suppliers apply with capability and quality answers, and the winners are appointed to the framework for its term — commonly two to four years.',
+        'Work then comes in two ways: direct award (the buyer picks one approved supplier for a small job) or mini-competition (approved suppliers bid against each other for a specific call-off). Being on the framework is the ticket to both.',
+        { ul: ['Apply when the framework competition opens', 'Answer capability and quality questions with evidence', 'Meet the compliance and insurance requirements', 'Wait for appointment, then register for call-offs', 'Bid well on mini-competitions to win the work'] }
+      ]},
+      { h: 'Popular frameworks for SMEs', body: [
+        'Crown Commercial Service (CCS) frameworks cover IT, facilities management, cleaning, construction, professional services and more, and many are open to SMEs. Local authorities and schools operate their own framework agreements for regional suppliers.',
+        'The value of a framework for a small business is access: you stop chasing each opportunity cold and become a recognised, compliant supplier that buyers call on. For the right sector, it is the single best door into public sector work.',
+        { table: [['Sector', 'Typical framework route'], ['Cleaning / FM', 'CCS FM and local authority frameworks'], ['IT / digital', 'CCS technology frameworks'], ['Construction', 'Scape, CCS and regional frameworks'], ['Professional services', 'CCS RM6166 and similar']] }
+      ]},
+      { h: 'Frameworks vs one-off tenders', body: [
+        'A one-off tender is a single contract with a defined outcome. A framework is a standing arrangement that can feed you many smaller pieces of work over years. Frameworks suit businesses that can deliver recurring, repeatable services; one-off tenders suit project-based work.',
+        'Many SMEs use both: framework membership for steady recurring work, plus targeted tenders for larger single contracts. The two together smooth out the workload.',
+        { cta: 'Compare tenders and frameworks for your sector — start your free trial.' }
+      ]},
+      { h: 'Getting on your first framework', body: [
+        'Find frameworks relevant to your sector, register your interest when they open, and prepare your evidence: capability statements, relevant contracts, insurance and compliance documents. Apply to the ones you can genuinely compete on, and answer the quality questions fully.',
+        'A framework is a long-term asset — a compliant, approved status that keeps you eligible for years. For SMEs serious about public sector work, it is worth the effort of getting on.'
+      ]}
+    ]
+  },
+  {
+    slug: 'lead-scoring-prioritise-daily-leads',
+    title: 'Lead Scoring: How to Prioritise Your Daily Leads',
+    description: 'A simple lead scoring system for daily business leads — how to rank leads by value, fit and urgency so your team always contacts the right prospects first.',
+    category: 'general', product_name: 'Business Leads', categoryLabel: 'Business Leads',
+    keywords: ['lead scoring', 'prioritise leads', 'lead ranking', 'sales lead prioritisation', 'daily lead management'],
+    date: '2026-09-11', reading_time: '7 min read', publish_delay_days: 6,
+    faqs: [
+      { q: 'What is lead scoring?', a: 'Lead scoring is ranking your leads by how likely they are to become valuable customers, so your team contacts the best ones first. It stops you wasting time on low-quality leads while strong ones go cold.' },
+      { q: 'How simple can lead scoring be?', a: 'Very. A simple score out of 10 — value and fit, urgency, and how quickly you can respond — beats no system at all. You can start with pen and paper and refine it as you learn what converts.' },
+      { q: 'What makes a lead high-scoring?', a: 'High value, strong fit with your service, evidence of urgency, and something that makes it winnable — low competition or a personal advantage. A lead that scores well on all three gets contacted first.' },
+      { q: 'How often should I review my scoring?', a: 'Revisit your scoring criteria monthly against your conversion data. As you learn which leads actually convert, adjust the weights so your scoring matches reality rather than assumption.' }
+    ],
+    sections: [
+      { h: 'Why scoring beats random contact', body: [
+        'Every morning you face a list of leads and a limited number of calls. Without a system, teams contact the easy or obvious ones and let the best ones sit. Lead scoring turns that gut feel into a repeatable rule: contact the highest-value, best-fit, most-urgent leads first.',
+        'Scoring does not need to be complicated. A simple ranking that is consistent beats a clever one that nobody uses.',
+        { cta: 'Get a structured daily lead feed to score — start your free 7-day trial.' }
+      ]},
+      { h: 'The three factors that matter', body: [
+        'Score every lead on three things, each out of 10, and take the total:',
+        { ul: ['Value — how much is this job worth? (property size, estate value, contract size)', 'Fit — how well does it match what you do and where you work?', 'Urgency — how soon must the prospect decide? (fresh listing, short window)'] },
+        'Add a small bonus for winnability — low competition or a personal advantage. The total is your priority score: 27+ call immediately, 20+ call within the hour, below that batch later.'
+      ]},
+      { h: 'Build a scoring table for your trade', body: [
+        'Create a simple scoring sheet for your industry so the system is consistent across your team. For a removal company:',
+        { table: [['Signal', 'Score'], ['3+ bed house / high-value property', '3'], ['Move date within 2–4 weeks', '3'], ['Your core postcode area', '2'], ['Large furniture / long-distance', '2'], ['Little sign of competition', '2']] },
+        'Weight the signals by what actually converts for you, and update the sheet monthly from your results.'
+      ]},
+      { h: 'Act on the score, then measure', body: [
+        'A score only matters if it changes behaviour. Agree the thresholds with your team — who gets called first, who gets called later, who gets skipped — and follow it every day.',
+        'Then close the loop: track which leads actually converted and refine your scoring. If the leads you scored highest never win, your weights are wrong. Scoring is a learning system, not a fixed rule.',
+        { cta: 'See how a daily workflow + scoring lifts conversion — start your free trial.' }
+      ]},
+      { h: 'Start today, refine next month', body: [
+        'The perfect scoring model does not exist on day one — but a simple one does. Start with value, fit and urgency, contact in score order every morning, and review the weights monthly. Within a quarter you will have a system tuned to how your business actually converts, and your first-contact time will be spent where it makes money.'
+      ]}
+    ]
+  },
+  {
+    slug: 'gdpr-buying-using-b2b-leads',
+    title: 'GDPR and B2B Leads: A Compliance Guide for UK Businesses',
+    description: 'How to buy and use B2B leads legally under UK GDPR — legitimate interest, lawful bases, data sources, opt-outs and the record-keeping that keeps you safe.',
+    category: 'general', product_name: 'Business Leads', categoryLabel: 'Business Leads',
+    keywords: ['GDPR B2B leads', 'buying leads legal UK', 'legitimate interest marketing', 'B2B data protection', 'cold email legal UK'],
+    date: '2026-09-12', reading_time: '9 min read', publish_delay_days: 7,
+    faqs: [
+      { q: 'Is it legal to buy B2B leads under UK GDPR?', a: 'Yes, if you have a lawful basis. For corporate prospects, legitimate interest is usually the appropriate basis for first contact — provided you have collected the data lawfully, carried out a legitimate interest assessment, and honour opt-outs.' },
+      { q: 'Can I cold-email business leads?', a: 'Under PECR, cold email to corporate addresses (like info@ or a named business contact) is allowed if you meet the conditions: relevant marketing, an honest sender identity, a clear unsubscribe route, and no advertising of individual consumer emails without consent.' },
+      { q: 'What records should I keep for GDPR?', a: 'A legitimate interest assessment, the source of the data, when and how it was obtained, your privacy notice, and a clear record of opt-outs and suppression. Good records are the difference between a complaint and a fine.' },
+      { q: 'What is the difference between consumer and business leads under GDPR?', a: 'Consumer (personal) data needs consent or a different lawful basis, and cold marketing to individuals requires consent under PECR. Business leads — company data and named corporate contacts — fall under legitimate interest and the corporate cold-email rules. Treat the two very differently.' }
+    ],
+    sections: [
+      { h: 'The rules for business data are not the consumer rules', body: [
+        'A lot of GDPR fear comes from conflating consumer and business marketing. Cold marketing to consumers needs consent; contacting a company about a relevant business service uses a different basis — legitimate interest — with conditions attached. Understand which rules apply to which contact and most of the anxiety disappears.',
+        'This guide covers buying and using B2B leads. If you market to consumers, seek consent and take specialist advice.',
+        { cta: 'See how compliant B2B lead feeds work — start your free 7-day trial.' }
+      ]},
+      { h: 'The lawful basis: legitimate interest', body: [
+        'For corporate prospects, legitimate interest is usually the right basis for a relevant first contact. It requires three things: a genuine purpose (offering a relevant service), the necessity of the processing (you cannot market without it), and a balance of interests (your purpose outweighs the individual\'s expectations, or the contact is so relevant that it does not intrude).',
+        'Document it with a quick legitimate interest assessment so you can demonstrate your reasoning if challenged.',
+        { ul: ['State your purpose clearly', 'Confirm the processing is necessary for it', 'Weigh the individual\'s interests and privacy expectations', 'Balance in favour of your purpose, or adjust the approach'] }
+      ]},
+      { h: 'Where your data comes from matters', body: [
+        'The data source determines how you may use it. Public registers like Companies House, official probate and planning data, and records the prospect gave you directly are different from third-party lists. Make sure any lead supplier has the right to provide the data and that the data was collected lawfully.',
+        'Keep a record of the source for every lead. If you can show where the data came from and that it was lawfully obtained, you are in a far stronger position than a business that cannot explain its list.'
+      ]},
+      { h: 'PECR and the cold-email rules', body: [
+        'Alongside GDPR, PECR governs electronic marketing. Cold email to a corporate address is permitted if: it is genuinely relevant to the recipient\'s business role, your sender identity is real and accurate, and every message carries a clear, working opt-out. Do not send cold email to individual consumers, and do not hide behind a no-reply address.',
+        'Always provide a suppression route and honour it immediately. A clean, up-to-date suppression list is your best defence.',
+        { cta: 'Build a compliant outreach routine — start your free trial.' }
+      ]},
+      { h: 'Practical habits that keep you safe', body: [
+        'Compliance is a set of habits, not a one-off document:',
+        { ul: ['Buy from reputable sources with clear data rights', 'Record the lawful basis and source for each lead', 'Identify yourself honestly in every message', 'Give a clear opt-out and process it without delay', 'Maintain a suppression list and check it before sending', 'Re-train your team so everyone follows the same rules'] },
+        'Done consistently, these habits make a complaint the rare exception — and give you the records to handle it confidently if one comes.'
+      ]}
+    ]
   }
 ];
 
