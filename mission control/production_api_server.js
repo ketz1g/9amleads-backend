@@ -8361,6 +8361,63 @@ cron.schedule('15 8 * * 1-5', async () => {
   } catch(e) { console.log('[STALE-POOL] error:', e.message); }
 }, { timezone: 'Europe/London' });
 
+// AREA-HEALTH RETENTION: weekly (Tuesday 10:00 UK) — for customers active 14+ days,
+// compute their recent fill rate (delivered vs promised). If their chosen areas are
+// consistently under-delivering (fill < 80% over the last 7 days), email them a
+// helpful, psychology-aware nudge suggesting nearby areas/postcodes with more
+// supply — so they keep getting their full daily count and stay subscribed.
+cron.schedule('0 10 * * 2', async () => {
+  try {
+    var ahDb = getDb();
+    var now = new Date();
+    var cutoff7 = new Date(now - 7 * 86400000).toISOString();
+    var cutoff14 = new Date(now - 14 * 86400000).toISOString();
+    var custs = (ahDb.customers || []).filter(function(c) {
+      if (c.plan === 'cancelled' || c.leads_paused) return false;
+      if (!c.created_at || c.created_at > cutoff14) return false; // only customers 2+ weeks in
+      if (String(c.email || '').indexOf('test.') === 0) return false;
+      return true;
+    });
+    var sent = 0;
+    for (var ai = 0; ai < custs.length; ai++) {
+      var c = custs[ai];
+      try {
+        var promised = parseInt(c.leads_per_day, 10) || 5;
+        var myLeads = (ahDb.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered_at && l.delivered_at >= cutoff7; });
+        var delivered = myLeads.length;
+        var expected = promised * 7;
+        var fillRate = expected > 0 ? Math.round((delivered / expected) * 100) : 100;
+        if (fillRate >= 80) continue;
+        // Low fill -> suggest nearby areas + reassure the exact-count guarantee.
+        var areas = [];
+        try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) { areas = []; }
+        var broad = broadenAreas(areas);
+        var better = broad.filter(function(a) { return areas.indexOf(a) === -1; }).slice(0, 4);
+        var areasHtml = areas.map(function(a){ return String(a).toUpperCase(); }).join(', ');
+        var suggestHtml = better.length ? '<li><b>' + better.map(function(a){ return String(a).toUpperCase(); }).join('</b> or <b>') + '</b></li>' : '';
+        var emailHtml = '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">Hi ' + (c.contact_name || c.company || 'there') + ',<br><br>' +
+          'Your daily 9am leads are guaranteed \u2014 <b style="color:#38bdf8">' + promised + ' every morning</b> \u2014 but over the last week you received ' + delivered + ' of the ' + expected + ' expected. That\u2019s usually because <b style="color:#fbbf24">' + areasHtml + '</b> are quieter than usual right now, not because there\u2019s a problem with your plan.<br><br>' +
+          'The good news: nearby areas have more supply. Adding any of these to your areas usually fills you to the full daily count every day:<br><ul style="margin:6px 0;padding-left:18px">' + (suggestHtml || '<li>adding a couple of neighbouring postcode areas / counties</li>') + '</ul>' +
+          'You can update your areas in <a href="https://www.9amleads.com/portal/dashboard.html" style="color:#38bdf8">your dashboard in under a minute</a> \u2014 we\u2019ll start delivering from the new mix the very next morning.<br><br>' +
+          'We want you getting the full value every single day. Happy to help adjust anything \u2014 just reply to this email.<br><br>Team 9amLeads</div>';
+        sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'Your daily leads are guaranteed \u2014 let\u2019s top up your areas', buildAdminStyleEmail(emailHtml));
+        // mark so we don't nag weekly
+        if (!ahDb.__area_health_notified) ahDb.__area_health_notified = {};
+        ahDb.__area_health_notified[c.id] = new Date().toISOString();
+        saveDb();
+        sent++;
+      } catch(ae) { console.log('[AREA-HEALTH] error for', c.email, ae.message); }
+    }
+    console.log('[AREA-HEALTH] Sent ' + sent + ' area-top-up suggestions');
+  } catch(e) { console.log('[AREA-HEALTH] error:', e.message); }
+}, { timezone: 'Europe/London' });
+
+// Wrap admin-style emails (reuse for the area-health note).
+function buildAdminStyleEmail(bodyHtml) {
+  return '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px">' +
+    '<div style="font-size:17px;font-weight:800;color:#38bdf8;margin-bottom:12px">9am<span style="color:#0ea5e9">Leads</span></div>' + bodyHtml + '</div>';
+}
+
 // FAILED-EMAIL CATCH-UP: re-send delivery emails that failed at 9am (after the
 // initial 4 retries). Runs at 10:30 + 15:00 UK so a customer never permanently
 // misses their lead notification. Clears the queue on success.
