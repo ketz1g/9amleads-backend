@@ -46,6 +46,14 @@ label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bot
 .follow-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;font-size:12px;flex-wrap:wrap}
 .alert{background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:11px;color:#92400e;margin-bottom:12px;line-height:1.6}
 .banner{background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:12px;color:#1e3a5f;line-height:1.7}
+@media(max-width:640px){
+  .grid-3{grid-template-columns:repeat(2,1fr)}
+  table{display:block;overflow-x:auto;white-space:nowrap}
+  .nav-in{padding:0 12px}
+  .stat .n{font-size:20px}
+  .btn{padding:8px 12px;font-size:11px}
+  .tab-btn{padding:7px 10px;font-size:11px}
+}
 </style>
 </head><body>
 
@@ -130,6 +138,41 @@ function render(db){
     '<div class="stat"><div class="n">' + fmt(db.paid_commission || 0) + '</div><div class="l">Paid</div></div>' +
     '<div class="stat"><div class="n">' + fmt(db.lifetime_earnings || 0) + '</div><div class="l">Lifetime Earnings</div></div>' +
     '</div>';
+  // Notifications (cancellations, payment failures, paid customers)
+  var notifs = db.notifications || [];
+  var unread = notifs.filter(function(n){ return !n.read; });
+  if (unread.length) {
+    var wIcon = { cancelled:'🚨', payment_failed:'⚠️', paid:'🎉' };
+    html += '<div class="card"><div class="sect-title">Notifications</div>';
+    unread.forEach(function(n){ html += '<div class="fb-item" style="background:#fffbeb;border-color:#fde68a"><b>' + (wIcon[n.type]||'🔔') + ' ' + esc(n.type.replace('_',' ')) + '</b> — ' + esc(n.message) + '</div>'; });
+    html += '</div>';
+  }
+  // Customer portfolio (payment status + leads so the partner can support/retain)
+  var portfolio = db.portfolio || [];
+  html += '<div class="card"><div class="sect-title">Your Customers</div>';
+  if (!portfolio.length) html += '<p class="muted">No referred customers yet. Share your referral link to get started.</p>';
+  else {
+    html += '<div class="grid-2" style="display:grid;gap:8px">';
+    portfolio.forEach(function(c){
+      var stMap = { active:['Active','t-green'], trial:['Free Trial','t-blue'], trial_expired:['Trial Ended','t-amber'], cancelled:['Cancelled','t-red'], inactive:['Not Paying','t-gray'] };
+      var st = stMap[c.payment_status] || stMap.inactive;
+      var followBadge = c.followup_due && (c.payment_status === 'active' || c.payment_status === 'trial') ? ' <span class="tag t-amber">check-in due</span>' : '';
+      html += '<div class="card" style="margin-bottom:0"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap"><b style="font-size:13px">' + esc(c.company || 'Customer') + '</b> <span><span class="tag ' + st[1] + '">' + st[0] + '</span>' + followBadge + '</span></div>' +
+        '<p class="muted" style="margin-top:4px">' + esc(c.product || '') + ' · ' + esc(c.email || '') + '</p>' +
+        '<p style="font-size:11px;margin-top:4px;color:#334155">📥 ' + c.leads_received + ' received · ✉️ ' + c.leads_contacted + ' contacted</p>' +
+        '<button class="btn btn-o" style="font-size:10px;padding:5px 10px;margin-top:6px" onclick="togglePortfolioLeads(\'' + c.customer_id + '\')">View recent leads</button>' +
+        '<div id="pf-' + c.customer_id + '" class="hidden" style="margin-top:8px;font-size:11px;color:#475569">' +
+        (c.recent_leads && c.recent_leads.length ? c.recent_leads.map(function(l){ return '<div style="padding:4px 0;border-bottom:1px solid #f1f5f9">' + esc(l.address || 'Lead') + (l.town ? ', ' + esc(l.town) : '') + ' <span class="tag t-gray">' + esc(l.status) + '</span>' + (l.source ? ' <a href="' + esc(l.source) + '" target="_blank" style="color:#0369a1">source</a>' : '') + '</div>'; }).join('') : '<p class="muted">No leads yet</p>') +
+        '</div>' +
+        '<div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap"><button class="btn btn-o" style="font-size:10px;padding:5px 10px" onclick="logCustomerCheckin(\'' + c.customer_id + '\',\'' + esc(c.company || '') + '\')">Log check-in</button><button class="btn btn-o" style="font-size:10px;padding:5px 10px" onclick="logCustomerFeedback(\'' + c.customer_id + '\')">Log feedback</button></div>' +
+        '</div>';
+    });
+    html += '</div>';
+    if (portfolio.some(function(c){ return c.followup_due && (c.payment_status === 'active' || c.payment_status === 'trial'); })) {
+      html += '<div class="alert" style="margin-top:10px"><b>Retention reminder:</b> you have customers due for a check-in (every 2 weeks keeps them on board). Reach out, see how they\u2019re using 9amLeads, and flag any issues.</div>';
+    }
+  }
+  html += '</div>';
   if (isSales) {
     var s = db.sales;
     html += '<div class="card"><div class="sect-title">Your Portfolio</div><div class="grid grid-3">' +
@@ -250,6 +293,27 @@ function renderFollowups(db){
 }
 function markContacted(id){
   api('PUT', '/api/partner/prospects/' + id, { contacted: true }, function(){ loadDash(); });
+}
+function togglePortfolioLeads(id){
+  var el = document.getElementById('pf-' + id);
+  if (el) el.classList.toggle('hidden');
+}
+function logCustomerCheckin(id, company){
+  var html = '<div class="card"><div class="sect-title">Log Check-In' + (company ? ' — ' + esc(company) : '') + '</div>' +
+    '<input class="inp" id="ck-cust" type="hidden" value="' + esc(id) + '">' +
+    '<label>What did you discuss / how are they doing?</label><textarea class="inp" id="ck-note" rows="3" placeholder="e.g. Happy with leads, wants more probate coverage..."></textarea>' +
+    '<label>Schedule next check-in</label><input class="inp" id="ck-next" type="date">' +
+    '<button class="btn btn-p" onclick="saveCheckin()">Save Check-In</button> <button class="btn btn-o" onclick="closeModal()">Close</button></div>';
+  showModal(html);
+}
+function saveCheckin(){
+  api('POST', '/api/partner/notes', { customer_id: document.getElementById('ck-cust').value, note: document.getElementById('ck-note').value, next_follow_up_at: document.getElementById('ck-next').value, outcome: 'contacted' }, function(d){ closeModal(); loadDash(); });
+}
+function logCustomerFeedback(id){
+  // Switch to the feedback tab + pre-fill the customer id
+  showTab('feedback', document.querySelector('#tab-feedback'));
+  if (id) { var el = document.getElementById('fb-cust'); if (el) el.value = id; }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function renderFeedbackForm(){
   var html = '<div class="card"><div class="sect-title">Log Customer Feedback</div>';

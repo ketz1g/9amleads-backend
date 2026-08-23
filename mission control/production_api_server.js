@@ -2474,7 +2474,9 @@ function partnerConfig() {
       sales_partner_commission_duration_months: null,
       affiliate_qualifying_payment_count: 1,
       partners_open: true,
-      attribution_first_click_wins: true
+      attribution_first_click_wins: true,
+      affiliate_commission_model: 'monthly',
+      retention_followup_days: 14
     };
   }
   return dbc.partner_config;
@@ -2487,6 +2489,25 @@ function partnerAudit(action, data) {
     if (dbc.partner_audit_log.length > 10000) dbc.partner_audit_log = dbc.partner_audit_log.slice(-10000);
     saveDb();
   } catch(e) {}
+}
+// Partner notification: alerts the partner who owns a customer's attribution
+// about payment/cancellation/commission-relevant events (retention support).
+function partnerNotify(partnerId, type, message, customerId) {
+  try {
+    if (!partnerId) return;
+    var dbc = getDb();
+    if (!dbc.partner_notifications) dbc.partner_notifications = [];
+    dbc.partner_notifications.push({ id: uuidv4(), partner_id: partnerId, customer_id: customerId || '', type: String(type || ''), message: String(message || '').substring(0, 500), read: false, created_at: new Date().toISOString() });
+    if (dbc.partner_notifications.length > 5000) dbc.partner_notifications = dbc.partner_notifications.slice(-5000);
+    saveDb();
+  } catch(e) {}
+}
+function partnerForCustomer(customerId) {
+  try {
+    var a = partnerAttributionForCustomer(customerId);
+    if (!a || !a.partner_id) return null;
+    return (getDb().affiliates || []).find(function(p){ return p.id === a.partner_id; }) || null;
+  } catch(e) { return null; }
 }
 function partnerRefCode(existing) {
   var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -2622,22 +2643,38 @@ function processPartnerCommissions() {
           created.push(cm);
         });
       } else {
-        // Affiliate: one-off £25 after the referred customer converts + clears qualification
-        var oneOff = Number(p.commission_amount) || Number(cfg.affiliate_one_off_amount) || 25;
+        // Affiliate: commission model is configurable. Default is MONTHLY (the
+        // affiliate is responsible for helping retain the customer, so they earn
+        // £X/month for as long as the customer remains a paying subscriber). The
+        // 'one_off' option keeps the original £25 single referral payment.
+        var affMonthly = String(cfg.affiliate_commission_model || 'monthly') === 'monthly';
+        var affAmount = Number(p.commission_amount) || Number(cfg.affiliate_one_off_amount) || 25;
         attr.filter(function(a){ return a.partner_id === p.id; }).forEach(function(a) {
           var c = custs.find(function(x){ return x.id === a.customer_id; });
           if (!c || !customerIsPaying(c) || customerRefunded(c)) return;
-          if (commissionExists(p.id, c.id, 'ONEOFF', 'one_off')) return;
           var conv = a.converted_at || a.signup_at;
           if (!conv) return;
-          var qDays = Number(cfg.affiliate_qualifying_payment_count || 1) > 0 ? Number(cfg.commission_qualification_days) || 30 : 0;
+          var qDays = Number(cfg.commission_qualification_days) || 30;
           if ((now.getTime() - new Date(conv).getTime()) < qDays * 86400000) return;
-          var cm = { id: uuidv4(), partner_id: p.id, customer_id: c.id, commission_period: 'ONEOFF',
-            commission_type: 'one_off', commission_amount: oneOff, currency: 'GBP', status: 'pending',
-            qualifying_date: conv, created_at: now.toISOString() };
-          if (!dbc.partner_commissions) dbc.partner_commissions = [];
-          dbc.partner_commissions.push(cm);
-          created.push(cm);
+          if (affMonthly) {
+            var period = commissionPeriodKey(conv, now);
+            if (!period) return;
+            if (commissionExists(p.id, c.id, period.key, 'recurring')) return;
+            var cm = { id: uuidv4(), partner_id: p.id, customer_id: c.id, commission_period: period.key,
+              commission_type: 'recurring', commission_amount: affAmount, currency: 'GBP', status: 'pending',
+              qualifying_date: period.date, created_at: now.toISOString() };
+            if (!dbc.partner_commissions) dbc.partner_commissions = [];
+            dbc.partner_commissions.push(cm);
+            created.push(cm);
+          } else {
+            if (commissionExists(p.id, c.id, 'ONEOFF', 'one_off')) return;
+            var cm2 = { id: uuidv4(), partner_id: p.id, customer_id: c.id, commission_period: 'ONEOFF',
+              commission_type: 'one_off', commission_amount: affAmount, currency: 'GBP', status: 'pending',
+              qualifying_date: conv, created_at: now.toISOString() };
+            if (!dbc.partner_commissions) dbc.partner_commissions = [];
+            dbc.partner_commissions.push(cm2);
+            created.push(cm2);
+          }
         });
       }
     });
@@ -2810,6 +2847,36 @@ app.get('/api/partner/dashboard', requirePartner, (req, res) => {
         feedback_recent: feedback.slice().sort(function(a,b){ return String(a.created_at) < String(b.created_at) ? 1 : -1; }).slice(0, 10).map(function(f){ return { id: f.id, customer_id: f.customer_id, feedback_type: f.feedback_type, category: f.category, status: f.status, created_at: f.created_at }; })
       };
     }
+    // Notifications + portfolio with payment status + recent leads + retention check-ins
+    var notifs = (dbc.partner_notifications || []).filter(function(n){ return n.partner_id === p.id; }).slice().sort(function(a,b){ return String(a.created_at) < String(b.created_at) ? 1 : -1; }).slice(0, 20);
+    var payStatus = function(c) {
+      if (String(c.plan || '') === 'cancelled') return 'cancelled';
+      if (['starter', 'pro', 'enterprise'].indexOf(c.plan) !== -1) return 'active';
+      if (String(c.plan || '') === 'free_trial') {
+        var _te = c.trial_ends ? new Date(c.trial_ends) : null;
+        return (_te && _te < new Date()) ? 'trial_expired' : 'trial';
+      }
+      return 'inactive';
+    };
+    var followupDue = function(c) {
+      var days = Number(partnerConfig().retention_followup_days) || 14;
+      var lastContact = null;
+      (dbc.partner_notes || []).forEach(function(n){ if (n.partner_id === p.id && n.customer_id === c.id && n.created_at) { if (!lastContact || n.created_at > lastContact) lastContact = n.created_at; } });
+      var since = lastContact ? (Date.now() - new Date(lastContact).getTime()) / 86400000 : 999;
+      return since >= days;
+    };
+    out.notifications = notifs.map(function(n){ return { id: n.id, type: n.type, message: n.message, customer_id: n.customer_id, read: !!n.read, created_at: n.created_at }; });
+    out.portfolio = referred.map(function(c) {
+      var leads = [];
+      try { leads = db.prepare('SELECT id, data, status, created_at FROM leads WHERE customer_id = ? ORDER BY created_at DESC LIMIT 6').all(c.id) || []; } catch(le) { leads = []; }
+      var received = leads.length, contacted = leads.filter(function(l){ return l.status && String(l.status).toLowerCase() !== 'new'; }).length;
+      return {
+        customer_id: c.id, company: c.company || '', email: c.email, product: c.product, plan: c.plan,
+        payment_status: payStatus(c), followup_due: followupDue(c),
+        leads_received: received, leads_contacted: contacted,
+        recent_leads: leads.map(function(l){ try { var d = typeof l.data === 'string' ? JSON.parse(l.data) : (l.data || {}); return { address: d.address || d.title || d.company_name || '', town: d.town || d.city || '', source: d.source || d.source_url || '', status: l.status || 'new', created_at: l.created_at }; } catch(e) { return { address: '', status: l.status, created_at: l.created_at }; } })
+      };
+    });
     res.json({ success: true, dashboard: out });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -3099,7 +3166,7 @@ app.get('/api/admin/partner/config', adminAuth, (req, res) => { try { res.json({
 app.post('/api/admin/partner/config', adminAuth, (req, res) => {
   try {
     var cfg = partnerConfig();
-    var allowed = ['affiliate_one_off_amount','sales_partner_monthly_amount','affiliate_trial_days','sales_partner_trial_days','standard_trial_days','attribution_window_days','commission_clearance_days','commission_qualification_days','sales_partner_commission_duration_months','affiliate_qualifying_payment_count','partners_open','attribution_first_click_wins'];
+    var allowed = ['affiliate_one_off_amount','sales_partner_monthly_amount','affiliate_trial_days','sales_partner_trial_days','standard_trial_days','attribution_window_days','commission_clearance_days','commission_qualification_days','sales_partner_commission_duration_months','affiliate_qualifying_payment_count','partners_open','attribution_first_click_wins','affiliate_commission_model','retention_followup_days'];
     var prev = JSON.stringify(cfg);
     allowed.forEach(function(k) { if (req.body[k] !== undefined) cfg[k] = req.body[k]; });
     saveDb();
@@ -13044,12 +13111,13 @@ app.post('/api/stripe/webhook', async (req, res) => {
             var att = (attDb.partner_attribution || []).filter(function(a){ return a.customer_id === customer.id; })[0];
             if (att && !att.converted_at) {
               att.converted_at = new Date().toISOString(); att.attribution_status = 'active'; saveDb();
-              var attPartner = (attDb.affiliates || []).find(function(x){ return x.id === att.partner_id; });
-              if (attPartner) {
-                try { db.prepare('UPDATE customers SET affiliate_payout_status = ? WHERE id = ?').run('converted', customer.id); } catch(cv1) {}
-                partnerAudit('customer_converted', { partner_id: att.partner_id, customer_id: customer.id });
-                trackAnalytics('partner_referral_converted', { code: att.referral_code, partner_id: att.partner_id, src: partnerTypeOf(attPartner) });
-              }
+            var attPartner = (attDb.affiliates || []).find(function(x){ return x.id === att.partner_id; });
+            if (attPartner) {
+              try { db.prepare('UPDATE customers SET affiliate_payout_status = ? WHERE id = ?').run('converted', customer.id); } catch(cv1) {}
+              partnerAudit('customer_converted', { partner_id: att.partner_id, customer_id: customer.id });
+              partnerNotify(att.partner_id, 'paid', 'Great news — a customer you referred is now a paying customer: ' + (customer.company || customerEmail) + '. Your monthly commission starts after the qualifying period.', customer.id);
+              trackAnalytics('partner_referral_converted', { code: att.referral_code, partner_id: att.partner_id, src: partnerTypeOf(attPartner) });
+            }
             }
           } catch(attErr) {}
         }
@@ -13215,6 +13283,8 @@ app.post('/api/stripe/webhook', async (req, res) => {
         // recovers (invoice.paid / re-subscribe clears leads_paused).
         db.prepare('UPDATE customers SET auto_send_paused = 1, leads_paused = 1 WHERE id = ?').run(fCustomer.id);
         saveDb();
+        // Tell the owning partner: a referred customer has a payment problem (retention risk)
+        try { var _pf = partnerForCustomer(fCustomer.id); if (_pf) partnerNotify(_pf.id, 'payment_failed', 'A customer you referred has a failed payment: ' + (fCustomer.company || fCustomer.email) + '. Their leads are paused until they update payment. Reach out to help keep them on board.', fCustomer.id); } catch(pfE) {}
         try { dmDashboardNotify(fCustomer.id, 'payment_failed', '⚠️ Payment failed', 'Your weekly subscription payment failed. Update your payment method to keep your leads and Print & Post running.', ''); } catch(ne) {}
         // Also email the customer so they know to update their card
         try {
@@ -13236,6 +13306,9 @@ app.post('/api/stripe/webhook', async (req, res) => {
         db.prepare('UPDATE customers SET plan = ?, leads_per_day = 0, auto_send_paused = 1, leads_paused = 1 WHERE id = ?').run('cancelled', subCustomer.id);
         saveDb();
         console.log('[STRIPE] Subscription cancelled for ' + (subCustomer.email || subCustomer.id));
+        // Tell the owning partner so they know the customer cancelled (commission stops).
+        var _pc = partnerForCustomer(subCustomer.id);
+        if (_pc) partnerNotify(_pc.id, 'cancelled', 'A customer you referred has cancelled their subscription: ' + (subCustomer.company || subCustomer.email) + '. Their commission has stopped. Consider reaching out to see if we can help retain them.', subCustomer.id);
       }
     }
 
