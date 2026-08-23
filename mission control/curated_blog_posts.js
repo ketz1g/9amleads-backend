@@ -865,6 +865,247 @@ var CURATED_POSTS = [
         'Start with the channel that matches your strongest trigger, prove your numbers, then add the second. Let the data decide where the next pound goes — and you will be spending where you win.'
       ]}
     ]
+  },
+  {
+    slug: 'removals-quote-cost-uk',
+    title: 'How Much Does a Removals Quote Cost in the UK? A 2026 Price Guide',
+    description: 'What UK removal companies actually charge in 2026 — price ranges by property size and distance, what the quote includes, the extras that surprise people, and how to get a fair price.',
+    category: 'moving', product_name: 'Moving Leads', categoryLabel: 'Moving Leads',
+    keywords: ['how much do removals cost UK', 'removal quote price', 'removal company prices', 'cost of moving house UK', 'removals price guide'],
+    date: '2026-09-05', reading_time: '8 min read',
+    faqs: [
+      { q: 'How much does a local house move cost in the UK?', a: 'For a typical 3-bedroom house moved within the same area, expect roughly £450–£950 in 2026. A one-bed flat is usually £200–£500, and a four-bed house £700–£1,500. London and the South East sit at the top of each range.' },
+      { q: 'Why are removals quotes so different between companies?', a: 'Quotes differ because the inputs differ: crew size, van size, travel distance, packing materials, parking and access, and insurance levels. A company quoting significantly lower may be excluding things like VAT, parking permits or insurance — always compare what is included, not just the number.' },
+      { q: 'What adds extra to a removal quote?', a: 'Common extras include parking permits, meter feeding, long carrying distances, stairs, packing materials and packing/unpacking services, disconnecting appliances, and short-notice or weekend moves. Ask for a written list of what is and is not included.' },
+      { q: 'How do I get an accurate removal quote?', a: 'Give the company an accurate picture of the property — number of bedrooms, amount of furniture, access constraints and the move date. A video walkthrough or photos let a good company quote accurately without an in-person visit.' }
+    ],
+    sections: [
+      { h: 'What the market really charges in 2026', body: [
+        'Removal pricing in the UK is driven by property size, distance and time of year, and the ranges are fairly predictable. Use the table below as a starting point, then remember that London and the South East sit at the top of every range while northern regions sit at the bottom.',
+        { table: [['Move type', 'Typical 2026 price'], ['1-bed flat, local move', '£200 – £500'], ['2-bed house, local move', '£350 – £700'], ['3-bed house, local move', '£450 – £950'], ['4-bed house, local move', '£700 – £1,500'], ['3-bed house, long-distance', '£1,000 – £1,800'], ['Packing service (per crew)', '£200 – £400 extra']] },
+        'These are guide prices for a midweek move. Fridays, weekends and the summer peak season command a premium, and demand for short-notice dates can push prices up.',
+        { cta: 'See what moving leads could bring your removal business — start your free trial.' }
+      ]},
+      { h: 'Why no two quotes are the same', body: [
+        'A removal quote is built from the same inputs every time: crew hours, van size, mileage, materials and overheads. But companies estimate them differently. One firm assumes a two-man crew for a full day; another quotes a three-man crew for half a day. One includes parking permits and VAT; another adds them later.',
+        'When quotes differ by hundreds of pounds, the difference is almost always scope, not greed. Compare line by line: crew size, hours, what is packed, what is covered, and what happens if the move overruns.',
+        { ul: ['Number of crew and vans included', 'Hours of work covered before overtime', 'Packing materials and labour included', 'Parking permits, fees and VAT included', 'Insurance level and excess', 'Travel and mileage included', 'Policy for stairs, lifts and access'] }
+      ]},
+      { h: 'The extras that catch people out', body: [
+        'The biggest source of quoted-vs-actual pain is extras that were never mentioned. Parking permits for the van, meter feeding, carrying furniture from a third-floor flat with no lift, packing materials, and disconnecting appliances can each add £50–£200.',
+        'Before you sign, ask for everything that could add a pound to be listed in writing. A reputable company itemises these upfront; a vague quote is a red flag that extras will appear later.',
+        { cta: 'Learn how removal companies price winning quotes — start your free trial.' }
+      ]},
+      { h: 'How to get an accurate quote in one call', body: [
+        'An accurate quote starts with accurate information. Prepare: number of bedrooms and rooms, approximate furniture, any large items (pianos, hot tubs, safes), access details (parking, stairs, lift), the move date, and the distance. A short video walkthrough lets a good company quote confidently without a visit.',
+        'Then compare apples with apples — ask each company for the same scope in writing. The goal is not the lowest number; it is a price you can rely on on the day.'
+      ]},
+      { h: 'When to book to get the best price', body: [
+        'Midweek moves outside the school holidays and summer peak are cheaper and easier to book. If you can move on a Tuesday or Wednesday in late autumn or winter, you will pay less and have more availability. For peak dates, book four to six weeks ahead and lock in the price.',
+        'A written quote that fixes the price and scope — signed before the day — protects you from surprises and protects the company from scope creep. That is what a fair removals price looks like on both sides.'
+      ]}
+    ]
+  },
+  {
+    slug: 'probate-solicitor-fees-guide',
+    title: 'How Much Do Probate Solicitors Charge? A Fees Guide for Executors',
+    description: 'What UK probate solicitors charge in 2026 — hourly rates, percentage-based fees, fixed fees and disbursements, plus how to read a quote so you are not surprised.',
+    category: 'probate', product_name: 'Probate Leads', categoryLabel: 'Probate Leads',
+    keywords: ['probate solicitor fees', 'how much does probate cost', 'probate fees UK', 'probate solicitor costs', 'executor legal fees'],
+    date: '2026-09-04', reading_time: '8 min read',
+    faqs: [
+      { q: 'How much does a probate solicitor cost in the UK?', a: 'In 2026, expect roughly £2,000–£6,000 plus disbursements for a typical estate. Small or simple estates may be handled for under £2,000, while complex or high-value estates with IHT work can cost £6,000+. Some firms offer fixed fees for straightforward administrations.' },
+      { q: 'How do probate solicitors charge?', a: 'Three common models: a fixed fee for a defined scope, an hourly rate (typically £150–£300 an hour), or a percentage of the estate value (commonly 1–3%). Percentage fees are less common and can be poor value on large estates — always ask for a breakdown.' },
+      { q: 'What are probate disbursements?', a: 'Disbursements are costs paid to third parties — the probate court fee, advertising fees for the London Gazette and local papers, professional valuations, land registry fees and bankruptcy searches. These are passed on at cost and can add several hundred pounds.' },
+      { q: 'Can I do probate without a solicitor?', a: 'Yes — personal representatives can apply for a grant themselves using the Gov.uk probate service, which is free. Many families use a solicitor only for complex estates, IHT advice or property sales. Compare the fee against the hours it will save you.' }
+    ],
+    sections: [
+      { h: 'What probate actually costs in 2026', body: [
+        'Probate fees vary with the size and complexity of the estate, but the 2026 ranges are reasonably predictable. The figures below are for solicitor-managed estate administration and exclude disbursements unless stated:',
+        { table: [['Estate complexity', 'Typical legal fees'], ['Simple, low-value estate', '£1,500 – £3,000'], ['Typical estate with property', '£3,000 – £5,500'], ['Complex estate (IHT, trusts)', '£6,000 – £12,000'], ['Disbursements (court, adverts, searches)', '£500 – £1,000 extra']] },
+        'The largest single task is usually dealing with the property sale, which is often billed separately from the core administration.',
+        { cta: 'Find out how solicitors win probate instructions — start your free trial.' }
+      ]},
+      { h: 'The three ways solicitors charge', body: [
+        'Before comparing fees, make sure you are comparing like with like. The three charging models are:',
+        { ul: ['Fixed fee — a set price for a defined scope, safest for a straightforward estate', 'Hourly rate — typically £150–£300 per hour, flexible but open-ended', 'Percentage of estate value — commonly 1–3%, simple but often poor value on large estates'] },
+        'Always ask for a written breakdown of what is included, what is billed separately, and an estimate of total cost. A firm that refuses to estimate is a warning sign.'
+      ]},
+      { h: 'Disbursements: the costs that add up', body: [
+        'Disbursements are not the solicitor\'s fee — they are costs passed through at cost. The main ones are the probate court fee (fixed for applications), the compulsory advertisements in the London Gazette and a local newspaper, valuations, land registry fees and bankruptcy searches.',
+        'These typically add £500–£1,000 to the total. Make sure your quote states whether disbursements are included or separate, and ask for receipts.',
+        { cta: 'Build a probate pipeline for your firm — start your free trial.' }
+      ]},
+      { h: 'How to read a probate quote', body: [
+        'A transparent quote names the fee model, the scope, and the disbursements. Ask four questions: what exactly is included (grant application, estate administration, property sale, IHT forms?), what is billed separately, what the realistic total estimate is, and what happens if the estate turns out to be complex.',
+        'The cheapest headline number can be the most expensive outcome if the scope is narrow and everything else is an extra. Value comes from clarity and reliability, not the lowest estimate.'
+      ]},
+      { h: 'Compare the cost of DIY vs professional help', body: [
+        'Applying for probate yourself through Gov.uk is free and many executors manage straightforward estates fine. The case for a solicitor is time, confidence and avoiding costly errors — mistakes in IHT or asset collection can cost far more than the fee.',
+        'For a typical estate with a property, most families find the fee worthwhile for the certainty alone. For a simple estate with modest assets, a fixed-fee small-estate service can be excellent value. Choose based on complexity, not default.'
+      ]}
+    ]
+  },
+  {
+    slug: 'companies-house-search-new-companies',
+    title: 'Companies House Search: How to Find New Companies to Sell To',
+    description: 'How to use Companies House search and free tools to find newly registered companies in your target sector and location — a step-by-step guide for accountants, web designers and B2B providers.',
+    category: 'newbusiness', product_name: 'New Business Leads', categoryLabel: 'New Business Leads',
+    keywords: ['companies house search', 'find new companies', 'companies house newly incorporated', 'new company list UK', 'B2B company data'],
+    date: '2026-09-03', reading_time: '7 min read',
+    faqs: [
+      { q: 'Can I search Companies House for new companies?', a: 'Yes. The Companies House service offers a public search, and the register includes the date of incorporation, company type, registered office and industry SIC codes. You can also use filters like the advanced search on the GOV.UK website.' },
+      { q: 'Is Companies House data free?', a: 'The core register is free to search. Bulk and API access is available via Companies House, and third-party services (including 9amLeads) package the data with SIC, location and contact filters for faster targeting.' },
+      { q: 'How do I find new companies in my sector?', a: 'Use the advanced search on the GOV.UK Companies House service, filter by SIC code and incorporation date (e.g. the last 7 or 30 days), and export or shortlist the results by location and company type.' },
+      { q: 'How do I know which new companies are worth contacting?', a: 'Look for companies with an active-looking profile: a real registered office, a relevant SIC code, and multiple directors or a credible capital figure. Skip dormant or obviously shell companies and focus on businesses set up to trade.' }
+    ],
+    sections: [
+      { h: 'Why newly incorporated companies are gold for B2B', body: [
+        'A newly registered company has no incumbent suppliers. In its first weeks the director must choose an accountant, a bank, a website provider, insurance, IT and more — and whoever makes first contact usually gets the business. The register is public, free and updated daily, which makes it the best B2B lead source many providers never use.',
+        'The skill is not finding the companies — the search is easy. It is filtering them to the ones that will actually trade and need your service.',
+        { cta: 'Get Companies House new company data matched to your sector — start your free trial.' }
+      ]},
+      { h: 'Step by step: find new companies on the register', body: [
+        'The Companies House advanced search makes this straightforward:',
+        { ul: ['Go to the Companies House service and open the advanced company search', 'Set incorporation date to the last 7 or 30 days', 'Add the SIC codes for the sectors you serve', 'Filter by location if you only work locally', 'Review the list and shortlist companies that look set up to trade', 'Use the registered office and any public director info to build your prospect list'] },
+        'The SIC code filter is the most powerful lever — it turns a generic list of new companies into a list of your ideal clients.'
+      ]},
+      { h: 'Use SIC codes to find your ideal client', body: [
+        'SIC codes classify what a company does, and they let you target precisely. An accountant might target all new professional-services firms; a web designer might target retail and e-commerce registrations; an IT provider might target legal and financial services.',
+        'Familiarise yourself with the codes that match your best customers and build a saved search around them, so finding new companies takes minutes rather than an afternoon.',
+        { table: [['Your service', 'SIC codes to watch'], ['Accountancy', '69 (legal & accounting), 47 (retail), all services'], ['Web design / marketing', '47 (e-commerce), 70 (consultancy), 74 (design)'], ['IT / telecoms', '62 (software), 63 (information services), 66 (finance)'], ['Insurance / compliance', '41 (construction), 49 (transport), 86 (health)']] }
+      ]},
+      { h: 'Filter out the companies not worth chasing', body: [
+        'Not every registration is a business about to trade. Skip dormant companies, shell registrations and businesses set up for a purpose you cannot serve. Signals of a real business include a genuine registered office (not just an accountant\'s address), a specific and relevant SIC code, and founders who have registered for the services they need.',
+        'Checking the incorporation details takes seconds and saves you from calling companies that will never become customers.',
+        { cta: 'Automate the search — get new company leads daily — start your free trial.' }
+      ]},
+      { h: 'Turn the list into a follow-up system', body: [
+        'A list of new companies is only valuable if you contact them in the first weeks. Build a simple cadence: a first email referencing the company by name, a follow-up a few days later, and a call the following week. The companies you contact in the first fortnight are the ones you win.',
+        'Whether you search manually or use a daily feed like 9amLeads, the advantage is the same — you are first to a brand new company with no incumbent supplier. That is the cheapest, highest-converting B2B lead there is.'
+      ]}
+    ]
+  },
+  {
+    slug: 'loft-conversion-planning-permission',
+    title: 'Do I Need Planning Permission for a Loft Conversion? A 2026 Guide',
+    description: 'When a loft conversion needs planning permission and when it falls under permitted development — with the rules, conditions, building regs and the trades who should be contacted first.',
+    category: 'planning', product_name: 'Planning Permission Leads', categoryLabel: 'Planning Permission Leads',
+    keywords: ['loft conversion planning permission', 'do I need permission for loft conversion', 'permitted development loft', 'loft conversion regulations UK', 'loft conversion rules'],
+    date: '2026-09-02', reading_time: '8 min read',
+    faqs: [
+      { q: 'Do I need planning permission for a loft conversion?', a: 'Often not. Most loft conversions fall under permitted development rights, provided they stay within the volume, height and other limits. But permissions can be removed by a prior approval or a condition on the house, so always check your specific situation.' },
+      { q: 'What are the permitted development rules for loft conversions?', a: 'The rules limit the additional volume to 40 cubic metres for terraced houses and 50 cubic metres for detached or semi-detached houses, require the extension to be set back from the eaves, and restrict rear extensions above the ridge line. Materials must match and the house must not be in a protected area.' },
+      { q: 'Do I always need building regulations?', a: 'Yes — planning permission and building regulations are separate. A loft conversion almost always needs building regulations approval for structural work, insulation, fire safety, escape routes and window sizing, even when no planning permission is needed.' },
+      { q: 'When does a loft conversion need planning permission?', a: 'If it exceeds the permitted development volume limits, adds a balcony, raised platform or veranda, is in a conservation area or on designated land, or if permitted development rights have been removed for the property.' }
+    ],
+    sections: [
+      { h: 'The short answer', body: [
+        'For most UK homes, a loft conversion is covered by permitted development rights and does not need a planning application. But there are limits, exceptions and the ever-important separate requirement of building regulations.',
+        'The phrase "permitted development" means you can proceed without a planning application — it does not mean you can skip approvals entirely. Building regulations approval is still required for the structural and safety work.',
+        { cta: 'Spot high-value projects before competitors — start your free planning leads trial.' }
+      ]},
+      { h: 'The permitted development limits for lofts', body: [
+        'The key limits for a loft conversion under permitted development are:',
+        { ul: ['Additional volume: up to 40m³ for terraced houses, 50m³ for detached or semi-detached houses', 'The loft must be set back from the original eaves (typically 20cm)', 'No part above the ridge line of the original roof', 'Materials must be of a similar appearance', 'The house must not be in a conservation area or other protected land', 'Permitted development rights must not have been removed for the property'] },
+        'Exceed any of these and a full planning application is required.'
+      ]},
+      { h: 'When you definitely need planning permission', body: [
+        'Planning permission is required if: the conversion exceeds the volume limits, it includes a balcony, raised platform or veranda, it changes the roof shape significantly, or the property is a listed building, in a conservation area, or on designated land such as an Area of Outstanding Natural Beauty.',
+        'A quick check with your local planning portal or a planning consultant removes the guesswork — and a pre-application opinion from the council can confirm whether your loft needs permission before you spend on design.',
+        { cta: 'Get planning leads matched to your trade — start your free trial.' }
+      ]},
+      { h: 'Building regulations are non-negotiable', body: [
+        'Planning permission and building regulations are separate approvals. A loft conversion almost always needs building regulations approval for:',
+        { ul: ['Structural work — floor joists, beams, roof structure', 'Insulation and thermal performance', 'Fire safety, smoke alarms and escape windows', 'Staircase design and headroom', 'Glazing and window standards'] },
+        'Building control must approve the design before work starts and inspect the work as it progresses. Skipping it risks a future buyer\'s mortgage and the property being flagged on the land registry.'
+      ]},
+      { h: 'Who homeowners should contact first', body: [
+        'Before any loft conversion, a homeowner should speak to a structural engineer or architect to confirm the design, then an approved building control body. A builder with loft experience can advise on feasibility and cost — typically £35,000–£60,000 for a standard conversion.',
+        'For builders and tradespeople, a planning application in the pipeline for an extension or conversion is a strong buying signal. Homeowners who have started the process are ready to spend, and the firm that contacts them early wins the project.',
+        { cta: 'Win loft and extension projects from fresh planning leads — start your free trial.' }
+      ]}
+    ]
+  },
+  {
+    slug: 'tenders-for-cleaning-companies',
+    title: 'How to Find Tenders for Cleaning Companies: A Practical Guide',
+    description: 'Where cleaning and facilities management companies can find public sector cleaning tenders, how to filter them, and how to write a cleaning bid that actually wins contracts.',
+    category: 'tenders', product_name: 'Tender Opportunities', categoryLabel: 'Tender Opportunities',
+    keywords: ['cleaning tenders UK', 'cleaning contracts public sector', 'FM cleaning tenders', 'cleaning company government contracts', 'find cleaning tenders'],
+    date: '2026-09-01', reading_time: '7 min read',
+    faqs: [
+      { q: 'Where are cleaning tenders published?', a: 'Public sector cleaning and FM contracts are published on Contracts Finder, Find a Tender, PCS and eTendersNI, plus local authority and NHS portals. Many are also advertised on procurement frameworks like CCS (Crown Commercial Service).' },
+      { q: 'Are cleaning contracts realistic for small companies?', a: 'Yes. Many cleaning and FM tenders are deliberately sized and weighted for SMEs — local authority and school contracts often suit small teams, and buyers value local, specialist suppliers. Winning your first contract is mostly about picking the right one and answering the questions fully.' },
+      { q: 'What do cleaning tenders ask for?', a: 'Expect questions on your cleaning schedules and methodology, staffing and supervision, training and security checks (DBS), insurances and compliance, health and safety, and evidence of similar contracts. Compliance documents like insurance and disclosure forms are mandatory.' },
+      { q: 'How do I get onto cleaning frameworks?', a: 'Frameworks like CCS RM6316 (or the current FM equivalents) and local authority framework agreements let you be invited to future work. Getting listed is an application in itself — complete the capability and compliance questions thoroughly.' }
+    ],
+    sections: [
+      { h: 'The public sector market for cleaning', body: [
+        'Councils, schools, NHS trusts and other public bodies buy cleaning services on long, recurring contracts. That recurring revenue is attractive — but the barrier for most cleaning companies is simply not seeing the right opportunities or not knowing how the scoring works.',
+        'Both are solvable. Cleaning and FM tenders follow a predictable pattern, and the same process wins them: find the right contract, answer the quality questions completely, evidence your claims, and price realistically.',
+        { cta: 'Get cleaning tenders matched to your sector delivered at 9am — start your free trial.' }
+      ]},
+      { h: 'Where to find cleaning and FM tenders', body: [
+        'The main sources are: Contracts Finder and Find a Tender for England and Wales, Public Contracts Scotland for Scotland, and eTendersNI for Northern Ireland. Local authority portals and the NHS Supply Chain advertise FM opportunities too.',
+        'Use keyword filters like "cleaning", "catering cleaning", "facilities management" and "window cleaning", combined with your region and contract value. A daily tender feed does this filtering for you, so you only see contracts worth bidding on.',
+        { table: [['Platform', 'What it covers', 'Search tip'], ['Contracts Finder', 'England & Wales', 'Filter "cleaning" + your region'], ['Find a Tender', 'Higher value UK', 'Set value threshold'], ['PCS', 'Scotland', 'Filter FM & cleaning'], ['eTendersNI', 'Northern Ireland', 'Filter cleaning']] }
+      ]},
+      { h: 'Choosing the cleaning contract to win', body: [
+        'Your first public sector cleaning contract should be one you are almost certain to deliver well — a school, a small council building or a local authority site near your existing teams. Small, local contracts are exactly where SMEs win.',
+        'Avoid the temptation to bid on everything. Responding excellently to two or three opportunities a month beats chasing twenty poorly. Each completed bid also improves your evidence bank for the next one.',
+        { cta: 'Find winnable cleaning tenders — start your free trial.' }
+      ]},
+      { h: 'What buyers want in a cleaning bid', body: [
+        'Cleaning tenders are scored on quality more than price. Buyers want: a clear cleaning schedule and methodology, staff supervision and management, training and DBS checks, robust health and safety, insurances at the required level, and evidence of similar work.',
+        'Answer each question directly, evidence every claim with a named contract, and keep the response tidy. A compliant, complete submission that proves you can deliver is what wins — not the longest response.',
+        { ul: ['Methodology: your cleaning schedule and frequency', 'Staffing: who works on the site and who supervises', 'Compliance: DBS, training, insurance, H&S', 'Evidence: similar contracts with results', 'Price: realistic, aligned to the specification'] }
+      ]},
+      { h: 'Build a cleaning contract pipeline', body: [
+        'One won cleaning contract usually leads to the next: buyers re-tender, add sites, and award extensions to suppliers who deliver. Deliver reliably, ask for feedback, and keep watching the same buyers\' new opportunities.',
+        'With a steady flow of matched tender opportunities, cleaning work stops being feast-and-famine and becomes a pipeline you can plan around.'
+      ]}
+    ]
+  },
+  {
+    slug: 'measure-lead-generation-roi',
+    title: 'How to Measure Lead Generation ROI: The Numbers That Matter',
+    description: 'A practical framework for measuring whether your lead generation is actually making money — cost per lead, cost per closed job, conversion tracking and the simple spreadsheet that ties it together.',
+    category: 'general', product_name: 'Business Leads', categoryLabel: 'Business Leads',
+    keywords: ['lead generation ROI', 'measure lead ROI', 'cost per lead', 'cost per acquisition', 'lead conversion tracking'],
+    date: '2026-08-30', reading_time: '8 min read',
+    faqs: [
+      { q: 'What is a good cost per lead?', a: 'There is no universal number — what matters is cost per closed job relative to the value of a job. If you convert 1 in 5 leads and your job is worth £800, a £40 lead is breakeven even if it sounds expensive. Always measure the full funnel, not the lead price.' },
+      { q: 'How do I measure ROI if jobs come from referrals and leads mixed?', a: 'Track the source of every job — ask on the phone or add a source field to your CRM. Even a rough 80/20 split beats guessing. Over time, attributing jobs to their source tells you which channels actually pay.' },
+      { q: 'What is the minimum tracking I need?', a: 'Three numbers: leads received, quotes sent, jobs won. Add the value of each job and the cost of each channel, and you have ROI. A spreadsheet with these columns is enough to start — precision matters less than consistency.' },
+      { q: 'How often should I review ROI?', a: 'Weekly for the operational numbers (leads, contacts, quotes) and monthly for ROI and channel decisions. Weekly reviews catch problems fast; monthly reviews tell you where to spend next month\'s money.' }
+    ],
+    sections: [
+      { h: 'The funnel, not the lead price', body: [
+        'Most businesses judge lead generation by the wrong number — the price of a lead. A cheap lead you never convert is worthless; an expensive lead you win is priceless. ROI lives in the full funnel: leads, contacts, quotes, jobs, and the value of each job.',
+        'Once you track the funnel, decisions become obvious. You stop asking "is this lead source cheap?" and start asking "which source produces a job for the least total cost?"',
+        { cta: 'Track leads properly with a daily feed — start your free 7-day trial.' }
+      ]},
+      { h: 'The three numbers to track first', body: [
+        'Start with the minimum viable tracking. Record three numbers every week:',
+        { ul: ['Leads received — from each channel', 'Quotes sent — how many become actual proposals', 'Jobs won — and the average value of each job'] },
+        'Add the cost you paid for each channel and you can calculate everything else: contact rate, quote-to-win rate, cost per lead, and cost per closed job.'
+      ]},
+      { h: 'The simple ROI spreadsheet', body: [
+        'A one-page spreadsheet is all you need to run the numbers. Each channel gets a row; each column is a stage of the funnel:',
+        { table: [['Channel', 'Leads', 'Quotes', 'Jobs', 'Job value', 'Cost', 'Cost per job'], ['Moving leads', '20', '12', '4', '£700', '£100', '£25'], ['PPC', '30', '10', '3', '£700', '£450', '£150'], ['Directory', '8', '3', '1', '£700', '£80', '£80']] },
+        'The channel with the lowest cost per closed job is where the next pound goes. The example shows a cheap channel (moving leads) winning on the only number that matters.'
+      ]},
+      { h: 'Speed is part of the ROI equation', body: [
+        'The same channel converts very differently depending on how fast you respond. A lead contacted within the hour wins at a far higher rate than one contacted tomorrow — which means your ROI improves by changing your process, not just your spend.',
+        'Track contact time as a metric. If you notice leads sitting for hours, the fix is workflow, not a different lead source. Faster contact is often the cheapest improvement to ROI you will ever make.',
+        { cta: 'Build a fast morning workflow — start your free trial.' }
+      ]},
+      { h: 'Review weekly, decide monthly', body: [
+        'Review the operational numbers weekly — leads, contacts, quotes — so problems are caught in days, not months. Make channel decisions monthly, when you have enough jobs to judge ROI meaningfully. A single week\'s data is noise; a month is a signal.',
+        'The companies that win with lead generation are not the ones with the fanciest tools. They are the ones that measure the funnel, improve the weak step, and put next month\'s money where the jobs actually come from.'
+      ]}
+    ]
   }
 ];
 
