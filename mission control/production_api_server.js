@@ -18380,32 +18380,47 @@ function syncCustomers(product) {
               // Sell2Wales (Welsh government tender portal) — the missing UK portal.
               async function fetchSell2Wales() {
                 return new Promise(function(resolve) {
-                  // Official Sell2Wales OCDS Web API (public, no key): the API docs at
-                  // api.sell2wales.gov.wales/v1 specify /v1/Notices?dateFrom=MM-YYYY&noticeType=2&outputType=0&locale=2057
-                  // for contract notices as OCDS JSON. (The old /walesapi/Contract/All
-                  // path was wrong — it only ever returned "Bad Page parameters".)
-                  var now = new Date();
-                  var mm = ('0' + (now.getMonth() + 1)).slice(-2);
-                  var yyyy = now.getFullYear();
-                  var path = '/v1/Notices?dateFrom=' + mm + '-' + yyyy + '&noticeType=2&outputType=0&locale=2057';
-                  var req = require('https').request({ hostname: 'api.sell2wales.gov.wales', path: path, method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }, timeout: 25000 }, function(res) {
-                    var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
-                      try {
-                        var data = JSON.parse(body);
-                        var arr = Array.isArray(data) ? data : (data.releases || data.results || data.data || []);
-                        resolve(arr.slice(0, 100).map(function(t) {
-                          var tn = t.tender || t;
-                          var buyer = (t.buyer && (t.buyer.name || (t.buyer.identifier && t.buyer.identifier.id))) || '';
-                          var val = (tn.value && tn.value.amount) || tn.value || 0;
-                          var closing = (tn.tenderPeriod && tn.tenderPeriod.endDate) || tn.closingDate || tn.endDate || '';
-                          var published = (t.date || tn.date || tn.publishedDate || t.publishedDate || new Date().toISOString());
-                          var noticeId = t.id || tn.id || t.ocid || '';
-                          return { id: noticeId || 'SW_' + Date.now(), title: tn.title || tn.description || t.title || '', buyer: buyer, contractValue: val, description: (tn.description || '').substring(0, 500), closingDate: closing, publishedDate: published, tenderNoticeId: noticeId, url: noticeId ? 'https://www.sell2wales.gov.wales/search/show/search_view.aspx?ID=' + encodeURIComponent(noticeId) : 'https://www.sell2wales.gov.wales/search/Search_MainPage.aspx', source: 'Sell2Wales', scrapedAt: new Date().toISOString() };
-                        }));
-                      } catch(e) { resolve([]); }
+                  // Sell2Wales's OCDS Web API (api.sell2wales.gov.wales/v1) is currently
+                  // down on THEIR side ("Error converting data type nvarchar to float").
+                  // The public search page (no key, no login) still works, so scrape it:
+                  // ~10 results/page sorted by latest publication date, paginate a few
+                  // pages to capture the recent Welsh tender notices.
+                  var total = [];
+                  var seen = {};
+                  var page = 0;
+                  function next() {
+                    var path = '/Search/Search_MainPage.aspx?searchString=&projectType=Contract&startIndex=' + (page * 10);
+                    var req = require('https').request({ hostname: 'www.sell2wales.gov.wales', path: path, method: 'GET', rejectUnauthorized: false, headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0' }, timeout: 30000 }, function(res) {
+                      var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
+                        if (res.statusCode !== 200) { resolve(total); return; }
+                        var items = body.split('class="search-result"').slice(1);
+                        var added = 0;
+                        for (var i = 0; i < items.length; i++) {
+                          var blk = items[i];
+                          var tMatch = blk.match(/class="notice-title" href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/);
+                          var refMatch = blk.match(/Reference no:<\/span>\s*<span>\s*([^<]+)</);
+                          var buyerMatch = blk.match(/Published by:<\/span>\s*<span>\s*([^<]+)</);
+                          var pubMatch = blk.match(/Publication date:<\/span>\s*<span>\s*([^<]+)</);
+                          var deadMatch = blk.match(/Deadline date:<\/span>\s*<span>\s*([^<]+)</);
+                          var descMatch = blk.match(/notice-abstract">[\s\S]*?<span[^>]*>\s*([\s\S]*?)<\/span>/);
+                          var title = tMatch ? tMatch[2].replace(/\s+/g, ' ').trim() : '';
+                          var url = tMatch ? 'https://www.sell2wales.gov.wales' + tMatch[1] : '';
+                          var ref = refMatch ? refMatch[1].trim() : '';
+                          var id = ref || url;
+                          if (!id || seen[id]) continue;
+                          seen[id] = 1;
+                          total.push({ id: 'S2W_' + id, title: title, buyer: buyerMatch ? buyerMatch[1].trim() : '', contractValue: 0, description: descMatch ? descMatch[1].replace(/\s+/g, ' ').trim().substring(0, 500) : '', closingDate: deadMatch ? deadMatch[1].trim() : '', publishedDate: pubMatch ? pubMatch[1].trim() : '', tenderNoticeId: ref, url: url, source: 'Sell2Wales', scrapedAt: new Date().toISOString() });
+                          added++;
+                        }
+                        console.log('[SCRAPER] Sell2Wales page ' + (page + 1) + ': +' + added + ' (total ' + total.length + ')');
+                        page++;
+                        if (added > 0 && page < 8) { setTimeout(next, 1500); }
+                        else resolve(total);
+                      });
                     });
-                  });
-                  req.on('error', function() { resolve([]); }); req.setTimeout(25000, function() { req.destroy(); resolve([]); }); req.end();
+                    req.on('error', function() { resolve(total); }); req.setTimeout(30000, function() { req.destroy(); resolve(total); }); req.end();
+                  }
+                  next();
                 });
               }
               // Fetch from multiple sources in parallel. data.gov.uk is NOT included:
