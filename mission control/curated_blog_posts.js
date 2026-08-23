@@ -28,8 +28,8 @@ function buildPostHTML(p) {
   var headTitle = p.title + ' | 9amLeads Blog';
   var canonical = 'https://9amleads.com/blog/' + p.slug;
   var pageUrl = (p.ctaUrl || CAT_PAGE[p.category] || 'https://9amleads.com/');
-  var heroImg = 'https://9amleads.com/blog/img/' + p.slug + '.png';
-  var ogImg = 'https://9amleads.com/blog/og/' + p.slug + '.png';
+  var heroImg = p.heroImg || 'https://9amleads.com/blog/img/' + p.slug + '.png';
+  var ogImg = p.ogImg || 'https://9amleads.com/blog/og/' + p.slug + '.png';
 
   var body = '';
   for (var i = 0; i < p.sections.length; i++) {

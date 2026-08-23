@@ -19113,6 +19113,7 @@ function publishScheduledPosts() {
   try { var http = require('http'); http.get('http://www.google.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(gres) { gres.resume(); }); } catch(e1) {}
   try { var https = require('https'); https.get('https://www.bing.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(bres) { bres.resume(); }).on('error', function(){}); } catch(e2) {}
   console.log('[SEO] Published ' + due.length + ' scheduled posts: ' + due.map(function(p) { return p.slug; }).join(', '));
+  submitIndexNow(due.map(function(p) { return 'https://9amleads.com/blog/' + p.slug; }));
   checkBlogQueueLow();
   return due.length;
 }
@@ -19141,6 +19142,108 @@ function checkBlogQueueLow() {
   } catch(e) {
     console.log('[SEO] Queue-low check error: ' + (e && e.message || e));
   }
+}
+
+// ===== AUTOMATED BLOG CONTENT GENERATION (OpenAI) =====
+var BLOG_CATEGORIES = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads (Companies House)', planning: 'planning permission leads', tenders: 'public sector tender opportunities', general: 'UK business leads' };
+var INDEXNOW_KEY = 'eff5ce1d06f4a9203c8710870a9bf024';
+
+function callOpenAIChat(messages) {
+  return new Promise(function(resolve, reject) {
+    var key = process.env.OPENAI_API_KEY;
+    if (!key) return reject(new Error('OPENAI_API_KEY not set'));
+    var https = require('https');
+    var body = JSON.stringify({ model: 'gpt-4o-mini', messages: messages, temperature: 0.8, response_format: { type: 'json_object' } });
+    var req = https.request({ hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key, 'Content-Length': Buffer.byteLength(body) } }, function(r) {
+      var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() {
+        if (r.statusCode < 300) { try { resolve(JSON.parse(b)); } catch(e) { reject(new Error('bad response json')); } }
+        else reject(new Error('OpenAI ' + r.statusCode + ': ' + b.substring(0, 200)));
+      });
+    });
+    req.on('error', function(e) { reject(e); });
+    req.write(body); req.end();
+  });
+}
+
+function normalizeBodyPart(part) {
+  if (typeof part === 'string') {
+    var t = part.trim();
+    if (t.charAt(0) === '{' || t.charAt(0) === '[') {
+      try { var o = JSON.parse(t); if (o && typeof o === 'object') return o; } catch(e) {}
+    }
+    return part;
+  }
+  return part;
+}
+
+// Generate one high-quality post via OpenAI and queue it as a draft.
+async function generateAutoBlogPost(category) {
+  var typeLabel = BLOG_CATEGORIES[category] || 'business leads';
+  var system = 'You write high-quality, genuinely useful UK business blog posts for 9amLeads, a service that delivers fresh UK business leads every morning at 9am across moving, probate, new business (Companies House), planning permission and public sector tenders. Write like an experienced practitioner: specific, actionable, UK-focused, no fluff, no hype. Return ONLY valid JSON.';
+  var user = 'Write a long-form blog post (900-1100 words) about "' + typeLabel + '". Choose a specific, practical angle a UK business would search for and find genuinely useful. Return strict JSON matching exactly this schema: {"title": string, "description": string (a 1-2 sentence meta description), "category": "' + category + '", "keywords": array of 5 strings, "faqs": array of exactly 4 objects {"q": string, "a": string of 2-3 sentences}, "sections": array of 5-6 objects {"h": string (H2 heading), "body": array where each element is either a plain string paragraph OR an object with exactly one key from {"ul": [strings]}, {"table": [[strings]]}, {"cta": string}}}. Make paragraphs 60-100 words. Include at least one table or list. Do not use markdown, backticks or literal newlines inside strings; escape quotes properly.';
+  var res = await callOpenAIChat([{ role: 'system', content: system }, { role: 'user', content: user }]);
+  var content = (res.choices && res.choices[0] && res.choices[0].message && res.choices[0].message.content) || '';
+  var parsed = JSON.parse(content);
+  if (!parsed.title || !parsed.sections || !Array.isArray(parsed.sections) || !parsed.sections.length) throw new Error('invalid generated post');
+  for (var i = 0; i < parsed.sections.length; i++) {
+    parsed.sections[i].body = (parsed.sections[i].body || []).map(normalizeBodyPart);
+  }
+  if (!Array.isArray(parsed.faqs)) parsed.faqs = [];
+  if (!Array.isArray(parsed.keywords)) parsed.keywords = [];
+  return parsed;
+}
+
+// Top up the draft queue so there are always posts ready to publish (keeps 1-2/day cadence).
+async function topUpBlogQueue() {
+  var dbData = getDb();
+  if (!dbData.blog_posts) dbData.blog_posts = [];
+  var remaining = dbData.blog_posts.filter(function(p) { return p.published === false && p.publish_at; }).length;
+  if (remaining >= 5) { console.log('[SEO] Queue healthy (' + remaining + ' queued), no generation needed'); return 0; }
+  var categories = Object.keys(BLOG_CATEGORIES);
+  var now = Date.now();
+  var created = 0;
+  for (var i = 0; i < 2; i++) {
+    try {
+      var cat = categories[Math.floor(Math.random() * categories.length)];
+      var gen = await generateAutoBlogPost(cat);
+      var slug = String(gen.title).toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80) || ('blog-' + Date.now());
+      var uniq = slug, n = 2;
+      while (dbData.blog_posts.some(function(p) { return p.slug === uniq; })) { uniq = slug + '-' + n; n++; }
+      slug = uniq;
+      var postObj = {
+        slug: slug, title: gen.title, description: gen.description, category: cat,
+        keywords: gen.keywords, faqs: gen.faqs, sections: gen.sections,
+        date: new Date().toISOString().split('T')[0], reading_time: '7 min read',
+        heroImg: 'https://9amleads.com/blog/img/' + cat + '.png',
+        ogImg: 'https://9amleads.com/blog/og/' + cat + '.png'
+      };
+      var html = CURATED_BLOG.buildPostHTML(postObj);
+      var wordCount = html.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(function(w) { return /[a-zA-Z0-9]/.test(w); }).length;
+      dbData.blog_posts.push({
+        id: 'ai_' + Date.now() + '_' + i, title: gen.title, slug: slug, description: gen.description,
+        category: cat, product_name: PRODCAT[cat] || 'Business Leads', keywords: gen.keywords,
+        html: html, word_count: wordCount, reading_time: '7 min read',
+        created_at: new Date().toISOString(), published: false,
+        publish_at: new Date(now + (created + 2) * 86400000).toISOString(),
+        curated: true, generated_by: 'openai'
+      });
+      created++;
+    } catch(e) { console.log('[SEO] Auto-generate error: ' + (e && e.message || e)); }
+  }
+  if (created > 0) fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+  console.log('[SEO] Queue top-up: created ' + created + ' posts');
+  return created;
+}
+
+// Submit URLs to IndexNow for near-instant indexing (Bing, etc.).
+function submitIndexNow(urls) {
+  try {
+    if (!urls || !urls.length) return;
+    var https = require('https');
+    var body = JSON.stringify({ host: '9amleads.com', key: INDEXNOW_KEY, keyLocation: 'https://9amleads.com/9amleads-indexnow.txt', urlList: urls });
+    var req = https.request({ hostname: 'api.indexnow.org', path: '/indexnow', method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(body) } }, function(r) { r.resume(); });
+    req.on('error', function() {}); req.write(body); req.end();
+  } catch(e) {}
 }
 
 // GET /api/admin/blog/posts - List all blog posts
@@ -23962,6 +24065,15 @@ cron.schedule('23 * * * *', () => {
   } catch(e) {
     console.log('[SEO] Scheduled publish error: ' + (e && e.message || e));
   }
+});
+
+// ===== AUTOMATED CONTENT TOP-UP =====
+// Daily: if the draft queue runs low, generate high-quality posts via OpenAI
+// and schedule them for publishing (keeps the 1-2/day cadence running forever).
+cron.schedule('0 3 * * *', () => {
+  topUpBlogQueue().then(function() {}).catch(function(e) {
+    console.log('[SEO] Top-up cron error: ' + (e && e.message || e));
+  });
 });
 
 // ===== EMAIL TEMPLATE MANAGEMENT (Admin) =====
