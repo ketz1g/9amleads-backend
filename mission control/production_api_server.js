@@ -6822,6 +6822,54 @@ app.post('/api/check-availability', async (req, res) => {
   }
 });
 
+// GET /api/signup/competition-areas — per-area competition counts for the signup
+// picker. For tenders (and county products) it returns, for EVERY county, how many
+// active businesses are already signed up there, so the picker can label each area
+// as "shared with N" and the customer agrees before committing.
+app.get('/api/signup/competition-areas', (req, res) => {
+  try {
+    var product = String((req.query && req.query.product) || '').toLowerCase().trim();
+    if (!product || !['moving','probate','planning','newbusiness','tenders'].includes(product)) return res.status(400).json({ error: 'Valid product required' });
+    var dbA = getDb();
+    var now = new Date();
+    var custs = (dbA.customers || []).filter(function(c) {
+      if (String(c.product || '').toLowerCase() !== product) return false;
+      if (c.plan === 'cancelled') return false;
+      if (c.leads_paused) return false;
+      var te = c.trial_ends ? new Date(c.trial_ends) : null;
+      if (c.plan === 'free_trial' && te && now > te) return false;
+      return true;
+    });
+    var totalActive = custs.length;
+    var areasFor = function(c) {
+      var a = [];
+      try { a = JSON.parse(c.target_areas || '[]'); } catch(e) { a = []; }
+      if (!a.length) { try { var cfg = JSON.parse(c.product_config || '{}'); a = (cfg[product] && cfg[product].target_areas) ? JSON.parse(cfg[product].target_areas) : []; } catch(e2) {} }
+      return a;
+    };
+    var perArea = {};
+    var allUkCount = 0;
+    custs.forEach(function(c) {
+      var ca = areasFor(c);
+      var isAllUk = ca.some(function(x){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(x)); });
+      if (isAllUk) { allUkCount++; return; }
+      ca.forEach(function(x) { var k = String(x).toLowerCase().replace(/[\s-]+/g,'-'); perArea[k] = (perArea[k]||0)+1; });
+    });
+    // For tenders, all-uk customers compete in EVERY area, so add them to each.
+    var list = [];
+    var allCounties = Object.keys(KNOWN_COUNTIES || {});
+    allCounties.forEach(function(cnty) {
+      var k = cnty.toLowerCase().replace(/[\s-]+/g,'-');
+      var count = (perArea[k] || 0) + (product === 'tenders' ? allUkCount : 0);
+      if (count > 0) list.push({ name: cnty, count: count });
+    });
+    list.sort(function(a,b){ return b.count - a.count; });
+    res.json({ success: true, product: product, total_active: totalActive, all_uk_customers: allUkCount, areas: list });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/signup/competition — honest lead-sharing disclosure for the signup form.
 // Counts how many OTHER active businesses currently receive the same leads for the
 // chosen product + areas, so a customer knows up-front how much competition they
@@ -6863,8 +6911,8 @@ app.get('/api/signup/competition', (req, res) => {
     var message;
     if (product === 'tenders') {
       message = totalActive === 0
-        ? 'You will be the first business receiving these tender opportunities UK-wide.'
-        : 'Tenders are shared UK-wide — ' + totalActive + ' other business' + (totalActive === 1 ? '' : 'es') + ' currently receive' + (totalActive === 1 ? 's' : '') + ' the same opportunities. Whoever responds first with the strongest bid wins.';
+        ? 'Your tender leads are not re-sold or shared. Tenders are public opportunities by nature — every supplier can see them on the official portals. What we give you is a curated feed of the ones relevant to your business, delivered early so you can respond first. Note: some areas and sectors have fewer tenders than others.'
+        : 'Your tender leads are not re-sold or shared with you. Tenders are public opportunities by nature — ' + totalActive + ' other business' + (totalActive === 1 ? '' : 'es') + ' can also see them on the official portals. What we give you is a curated feed of the ones relevant to your business, delivered early so you can respond first. Note: some areas and sectors have fewer tenders than others.';
     } else if (inArea === 0) {
       message = 'No other businesses currently receive these leads in your chosen areas — you have the first pick.';
     } else {
@@ -7208,12 +7256,15 @@ function buildPrintPostValueBlock(product, accent) {
 // Shared value block: why 9amLeads is the best lead service. Injected into EVERY
 // campaign email shell to reinforce the differentiators that justify the price.
 function buildWhyBestBlock(product, accent) {
+  var exclusivity = product === 'tenders'
+    ? 'Public opportunities curated early — we spot the relevant tenders and deliver them before the crowd, so you can respond first.'
+    : 'Exclusive to you \u2014 your leads aren\u2019t re-sold or shared with competitors.';
   var benefits = [
     'Fresh leads every morning at 9am \u2014 never recycled, never re-sold.',
     'Exactly what you\u2019re promised \u2014 the exact number of leads for your package, no more, no less.',
     'Only your chosen areas \u2014 no wasted, out-of-area leads.',
     'Real addresses and real data \u2014 verified, ready to contact.',
-    'Exclusive to you \u2014 your leads aren\u2019t shared with your competitors.',
+    exclusivity,
     'Print &amp; Post and Auto Send so you can follow up without lifting a finger.',
     'Pause, restart or switch your package any time \u2014 no lock-in.'
   ];
@@ -14610,8 +14661,12 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<td style="padding:0 5px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:#ffffff;font-size:11px;font-weight:700">fb</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:#ffffff;font-size:11px;font-weight:700">tt</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:#ffffff;font-size:11px;font-weight:700">ig</span></a></td>';
+  // Honest tenders note (public by nature + volume reality)
+  if (customer.product === 'tenders') {
+    body += '<tr><td style="background:#ffffff;padding:0 30px 16px;color:#64748b;font-size:11px;line-height:1.7;text-align:center">Tender opportunities are public by law \u2014 other businesses can see the same notices on the official portals. Your 9amLeads feed is curated to your business and never re-sold; responding first with a strong submission is how you win. Note: some areas publish fewer tenders than others.</td></tr>';
+  }
   body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 10px"><tr><td style="background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:8px;width:26px;height:26px;text-align:center;vertical-align:middle;line-height:26px;font-family:Outfit,Arial,Helvetica,sans-serif;font-size:14px;font-weight:900;color:#ffffff">9</td><td style="padding-left:8px;vertical-align:middle"><span style="font-family:Outfit,Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:#38bdf8;letter-spacing:-0.2px">9am<span style="color:#38bdf8">Leads</span></span></td></tr></table>';
-  body += '<p style="color:#ffffff;font-size:9px;margin:0 0 8px;letter-spacing:.3px">Fresh exclusive business opportunities, delivered at 9am every morning</p>';
+  body += '<p style="color:#ffffff;font-size:9px;margin:0 0 8px;letter-spacing:.3px">' + (customer.product === 'tenders' ? 'Fresh curated business opportunities, delivered at 9am every morning' : 'Fresh exclusive business opportunities, delivered at 9am every morning') + '</p>';
   body += '<p style="color:#ffffff;font-size:10px;margin:0 0 4px;letter-spacing:.4px">9amLeads &middot; hello@9amleads.com</p>';
   body += '<p style="color:#ffffff;font-size:9px;margin:0 0 12px;letter-spacing:.3px"><a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amleads.com</a> &bull; <a href="https://www.9amleads.com/privacy.html" style="color:#38bdf8;text-decoration:underline">Privacy Policy</a></p>';
   body += '<p style="color:#cbd5e1;font-size:8px;margin:0;letter-spacing:.4px">You are receiving these opportunities because you subscribed to a 9amLeads plan &bull; <a href="{{ unsubscribe }}" style="color:#3f3f46;text-decoration:underline">Unsubscribe</a></p>';

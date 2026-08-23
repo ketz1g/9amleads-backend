@@ -435,6 +435,7 @@ function updateMovingTypeLabel() {
 
 <label class="consent"><input type="checkbox" id="s-consent" checked> I agree to receive daily lead emails. <a href="/privacy.html">Privacy Policy</a></label>
 <label class="consent"><input type="checkbox" id="s-terms" required> I have read and agree to the <a href="/terms.html" target="_blank">Terms &amp; Conditions</a>.</label>
+<label class="consent" id="s-tender-share-row" style="display:none"><input type="checkbox" id="s-tender-share"> I understand that tender leads are public opportunities shared with other businesses in my chosen areas, and I agree to receive leads on that basis. <a href="/tenders/#faq" target="_blank">Learn more</a></label>
 
 <div class="status" id="signup-error"></div>
 <div class="success" id="signup-success">Account created! Redirecting...</div>
@@ -613,6 +614,7 @@ function renderSignupPostcodes() {
   if (postcodeWrap) postcodeWrap.style.display = isCountyBased() ? 'none' : 'block';
   applyAllUKState();
   updateCompetitionNote();
+  updateTenderCompetition();
 }
 
 // Honest lead-sharing disclosure: shows the customer how many other businesses
@@ -820,10 +822,40 @@ function selectSpecialistArea(type) {
 }
 var specCounties = [];
 var SPECIALIST_COUNTIES = ['Bedfordshire','Berkshire','Bristol','Buckinghamshire','Cambridgeshire','Cheshire','Cornwall','Cumbria','Derbyshire','Devon','Dorset','Durham','East Sussex','Essex','Gloucestershire','Greater London','Greater Manchester','Hampshire','Herefordshire','Hertfordshire','Isle of Wight','Kent','Lancashire','Leicestershire','Lincolnshire','Merseyside','Norfolk','North Yorkshire','Northamptonshire','Northumberland','Nottinghamshire','Oxfordshire','Rutland','Shropshire','Somerset','South Yorkshire','Staffordshire','Suffolk','Surrey','Tyne and Wear','Warwickshire','West Midlands','West Sussex','West Yorkshire','Wiltshire','Worcestershire'];
+var _competitionAreas = {};
 function populateCountySelect() {
   var sel = document.getElementById('s-county-select');
   if (!sel) return;
-  sel.innerHTML = '<option value="">Choose a county or area...</option>' + SPECIALIST_COUNTIES.map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('') + '<option value="all-uk">All UK</option>';
+  var prod = getSelectedLeadTypes()[0];
+  sel.innerHTML = '<option value="">Choose a county or area...</option>' + SPECIALIST_COUNTIES.map(function(c) {
+    var count = _competitionAreas[c] || 0;
+    var shared = count > 0 ? '  · shared with ' + count : '';
+    return '<option value="' + c + '">' + c + shared + '</option>';
+  }).join('') + '<option value="all-uk">All UK</option>';
+}
+// For tenders: fetch per-area competition counts + annotate the county picker and
+// show the shared-agreement checkbox. Called when the product/areas change.
+function updateTenderCompetition() {
+  var prod = getSelectedLeadTypes()[0];
+  var shareRow = document.getElementById('s-tender-share-row');
+  if (prod === 'tenders') { if (shareRow) shareRow.style.display = 'inline-flex'; }
+  else { if (shareRow) shareRow.style.display = 'none'; return; }
+  fetch('/api/signup/competition-areas?product=tenders&t=' + Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d && d.success) {
+        _competitionAreas = {};
+        (d.areas || []).forEach(function(a){ _competitionAreas[a.name] = a.count; });
+        populateCountySelect();
+        var note = document.getElementById('s-competition-note');
+        if (note) {
+          var selAreas = specCounties.length ? specCounties.length + ' area' + (specCounties.length === 1 ? '' : 's') : 'the whole of the UK';
+          note.innerHTML = '<b>Before you sign up:</b> Tender leads are public opportunities shared with other businesses. ' + (d.total_active ? d.total_active + ' other business' + (d.total_active === 1 ? '' : 'es') + ' currently receive' + (d.total_active === 1 ? 's' : '') + ' tender leads in ' + selAreas + '. Whoever responds first with the strongest bid wins.' : 'You will be one of the first businesses receiving these tender leads.');
+          note.style.display = 'block';
+        }
+      }
+    })
+    .catch(function(){});
 }
 function addSpecialistCounty(val) {
   var sel = document.getElementById('s-county-select');
@@ -1028,6 +1060,10 @@ function doSignup() {
   var products = Array.from(productCheckboxes).map(function(cb) { return cb.value; });
   if (products.length === 0) { document.getElementById('signup-error').textContent = 'Please select at least one lead type'; document.getElementById('signup-error').style.display = 'block'; return; }
   if (!document.getElementById('s-terms').checked) { document.getElementById('signup-error').textContent = 'Please tick the box to confirm you have read and agree to the Terms &amp; Conditions.'; document.getElementById('signup-error').style.display = 'block'; return; }
+  if (getSelectedLeadTypes().indexOf('tenders') !== -1) {
+    var tShare = document.getElementById('s-tender-share');
+    if (!tShare || !tShare.checked) { document.getElementById('signup-error').textContent = 'For tenders, please tick the box confirming you understand tender leads are shared with other businesses.'; document.getElementById('signup-error').style.display = 'block'; return; }
+  }
   var selectedPlan = document.querySelector('#s-plan-container input[type=radio]:checked');
   var planVal = selectedPlan ? selectedPlan.value : 'free_trial';
   var maxProducts = planVal === 'free_trial' ? 1 : planVal === 'starter' ? 2 : 99;
