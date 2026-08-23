@@ -19147,6 +19147,12 @@ function checkBlogQueueLow() {
 // ===== AUTOMATED BLOG CONTENT GENERATION (OpenAI) =====
 var BLOG_CATEGORIES = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads (Companies House)', planning: 'planning permission leads', tenders: 'public sector tender opportunities', general: 'UK business leads' };
 var INDEXNOW_KEY = 'eff5ce1d06f4a9203c8710870a9bf024';
+// Cadence: how many posts go live per day (2 = ~2 posts every 24h). The queue is
+// topped up automatically so there is always roughly 5 days of posts scheduled.
+var BLOG_POSTS_PER_DAY = 2;
+var BLOG_QUEUE_TARGET = BLOG_POSTS_PER_DAY * 5;          // keep ~5 days queued
+var BLOG_QUEUE_TOPUP = BLOG_POSTS_PER_DAY * 2;           // generate 2 days of posts per run
+var BLOG_PUBLISH_GAP_MS = Math.floor(24 * 60 * 60 * 1000 / BLOG_POSTS_PER_DAY); // 12h for 2/day
 
 function callOpenAIChat(messages) {
   return new Promise(function(resolve, reject) {
@@ -19193,16 +19199,16 @@ async function generateAutoBlogPost(category) {
   return parsed;
 }
 
-// Top up the draft queue so there are always posts ready to publish (keeps 1-2/day cadence).
+// Top up the draft queue so there are always posts ready to publish (keeps 2/day cadence).
 async function topUpBlogQueue() {
   var dbData = getDb();
   if (!dbData.blog_posts) dbData.blog_posts = [];
   var remaining = dbData.blog_posts.filter(function(p) { return p.published === false && p.publish_at; }).length;
-  if (remaining >= 5) { console.log('[SEO] Queue healthy (' + remaining + ' queued), no generation needed'); return 0; }
+  if (remaining >= BLOG_QUEUE_TARGET) { console.log('[SEO] Queue healthy (' + remaining + ' queued), no generation needed'); return 0; }
   var categories = Object.keys(BLOG_CATEGORIES);
   var now = Date.now();
   var created = 0;
-  for (var i = 0; i < 2; i++) {
+  for (var i = 0; i < BLOG_QUEUE_TOPUP; i++) {
     try {
       var cat = categories[Math.floor(Math.random() * categories.length)];
       var gen = await generateAutoBlogPost(cat);
@@ -19224,14 +19230,14 @@ async function topUpBlogQueue() {
         category: cat, product_name: PRODCAT[cat] || 'Business Leads', keywords: gen.keywords,
         html: html, word_count: wordCount, reading_time: '7 min read',
         created_at: new Date().toISOString(), published: false,
-        publish_at: new Date(now + (created + 2) * 86400000).toISOString(),
+        publish_at: new Date(now + (created + 1) * BLOG_PUBLISH_GAP_MS).toISOString(),
         curated: true, generated_by: 'openai'
       });
       created++;
     } catch(e) { console.log('[SEO] Auto-generate error: ' + (e && e.message || e)); }
   }
   if (created > 0) fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
-  console.log('[SEO] Queue top-up: created ' + created + ' posts');
+  console.log('[SEO] Queue top-up: created ' + created + ' posts (2/day cadence)');
   return created;
 }
 
