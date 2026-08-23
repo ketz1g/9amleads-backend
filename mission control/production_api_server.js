@@ -19153,7 +19153,7 @@ function callOpenAIChat(messages) {
     var key = process.env.OPENAI_API_KEY;
     if (!key) return reject(new Error('OPENAI_API_KEY not set'));
     var https = require('https');
-    var body = JSON.stringify({ model: 'gpt-4o-mini', messages: messages, temperature: 0.8, response_format: { type: 'json_object' } });
+    var body = JSON.stringify({ model: 'gpt-4o-mini', messages: messages, temperature: 0.8, max_tokens: 3800, response_format: { type: 'json_object' } });
     var req = https.request({ hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key, 'Content-Length': Buffer.byteLength(body) } }, function(r) {
       var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() {
         if (r.statusCode < 300) { try { resolve(JSON.parse(b)); } catch(e) { reject(new Error('bad response json')); } }
@@ -19180,7 +19180,7 @@ function normalizeBodyPart(part) {
 async function generateAutoBlogPost(category) {
   var typeLabel = BLOG_CATEGORIES[category] || 'business leads';
   var system = 'You write high-quality, genuinely useful UK business blog posts for 9amLeads, a service that delivers fresh UK business leads every morning at 9am across moving, probate, new business (Companies House), planning permission and public sector tenders. Write like an experienced practitioner: specific, actionable, UK-focused, no fluff, no hype. Return ONLY valid JSON.';
-  var user = 'Write a long-form blog post (900-1100 words) about "' + typeLabel + '". Choose a specific, practical angle a UK business would search for and find genuinely useful. Return strict JSON matching exactly this schema: {"title": string, "description": string (a 1-2 sentence meta description), "category": "' + category + '", "keywords": array of 5 strings, "faqs": array of exactly 4 objects {"q": string, "a": string of 2-3 sentences}, "sections": array of 5-6 objects {"h": string (H2 heading), "body": array where each element is either a plain string paragraph OR an object with exactly one key from {"ul": [strings]}, {"table": [[strings]]}, {"cta": string}}}. Make paragraphs 60-100 words. Include at least one table or list. Do not use markdown, backticks or literal newlines inside strings; escape quotes properly.';
+  var user = 'Write a long-form blog post about "' + typeLabel + '". Choose a specific, practical angle a UK business would search for and find genuinely useful. The article body MUST be at least 950 words — count the words carefully and write enough detailed, specific content. Return strict JSON matching exactly this schema: {"title": string, "description": string (a 1-2 sentence meta description), "category": "' + category + '", "keywords": array of 5 strings, "faqs": array of exactly 4 objects {"q": string, "a": string of 2-3 sentences}, "sections": array of 6-7 objects {"h": string (H2 heading), "body": array where each element is either a plain string paragraph OR an object with exactly one key from {"ul": [strings]}, {"table": [[strings]]}, {"cta": string}}}. Write paragraphs of 70-110 words so the article is genuinely in-depth. Include at least one table AND at least one list. Do not use markdown, backticks or literal newlines inside strings; escape quotes properly.';
   var res = await callOpenAIChat([{ role: 'system', content: system }, { role: 'user', content: user }]);
   var content = (res.choices && res.choices[0] && res.choices[0].message && res.choices[0].message.content) || '';
   var parsed = JSON.parse(content);
