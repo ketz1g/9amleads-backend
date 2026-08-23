@@ -14,7 +14,7 @@
 })();
 </script>
 <title>Sign Up | 9amLeads Customer Portal</title>
-<meta name="description" content="Start your free 7-day trial. Get exclusive business leads delivered to your inbox at 9am every morning. No obligation.">
+<meta name="description" content="Start your free 7-day trial. Get fresh UK business opportunities delivered to your inbox at 9am every morning. No obligation.">
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -197,7 +197,7 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <span style="text-align:right"><span style="font-size:11px;color:#f59e0b;font-weight:700">from £25</span><span style="font-size:9px;color:#6b7280">/wk</span></span>
 </label>
 <label class="prod-cb" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer">
-<input type="checkbox" value="planning" onchange="calcTotal()"> <span style="flex:1"><strong style="color:#f1f5f9">🔨 Planning</strong><br><span style="font-size:9px;color:#6b7280">Official planning data · up to 5/day</span></span>
+<input type="checkbox" value="planning" onchange="calcTotal()"> <span style="flex:1"><strong style="color:#f1f5f9">🔨 Planning</strong><br><span style="font-size:9px;color:#6b7280">Official planning data · from 1/day</span></span>
 <span style="text-align:right"><span style="font-size:11px;color:#f59e0b;font-weight:700">from £25</span><span style="font-size:9px;color:#6b7280">/wk</span></span>
 </label>
 <label class="prod-cb" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer">
@@ -209,7 +209,7 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <span style="text-align:right"><span style="font-size:11px;color:#f59e0b;font-weight:700">£25</span><span style="font-size:9px;color:#6b7280">/wk</span></span>
 </label>
 <label class="prod-cb" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer">
-<input type="checkbox" value="tenders" onchange="calcTotal()"> <span style="flex:1"><strong style="color:#f1f5f9">📋 Tenders</strong><br><span style="font-size:9px;color:#6b7280">PCS + data.gov.uk · up to 5/day</span></span>
+<input type="checkbox" value="tenders" onchange="calcTotal()"> <span style="flex:1"><strong style="color:#f1f5f9">📋 Tenders</strong><br><span style="font-size:9px;color:#6b7280">PCS + data.gov.uk · from 1/day</span></span>
 <span style="text-align:right"><span style="font-size:11px;color:#f59e0b;font-weight:700">£25</span><span style="font-size:9px;color:#6b7280">/wk</span></span>
 </label>
 </div>
@@ -256,10 +256,10 @@ function updateMovingTypeLabel() {
 <div class="form-group">
 <label>Your Plan</label>
 <div class="grid-2" id="s-plan-container">
-<label class="plan-opt plan-sel" id="plan-free_trial"><input type="radio" name="plan" value="free_trial" checked onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Free Trial</div><div class="plan-d">Up to 25/week · 7-day trial · 5 postcode areas · any 1 type</div></div><div class="plan-p">Free</div></label>
-<label class="plan-opt" id="plan-starter"><input type="radio" name="plan" value="starter" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Starter</div><div class="plan-d">Up to 25/week · any 1 lead type · 5 postcode areas</div></div><div class="plan-p">£25<span class="pw">/wk</span></div></label>
-<label class="plan-opt" id="plan-pro"><input type="radio" name="plan" value="pro" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Pro</div><div class="plan-d">Up to 75/week · any types · unlimited areas</div></div><div class="plan-p">£49<span class="pw">/wk</span></div></label>
-<label class="plan-opt" id="plan-enterprise"><input type="radio" name="plan" value="enterprise" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Enterprise</div><div class="plan-d">Up to 125/week · any types · All UK unlimited</div></div><div class="plan-p">£99<span class="pw">/wk</span></div></label>
+<label class="plan-opt plan-sel" id="plan-free_trial"><input type="radio" name="plan" value="free_trial" checked onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Free Trial</div><div class="plan-d">Up to 5 leads/day · 7-day trial · 5 postcode areas · any 1 type</div></div><div class="plan-p">Free</div></label>
+<label class="plan-opt" id="plan-starter"><input type="radio" name="plan" value="starter" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Starter</div><div class="plan-d">Up to 5 leads/day · any 1 lead type · 5 postcode areas</div></div><div class="plan-p">£25<span class="pw">/wk</span></div></label>
+<label class="plan-opt" id="plan-pro"><input type="radio" name="plan" value="pro" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Pro</div><div class="plan-d">Up to 10 leads/day · any types · unlimited areas</div></div><div class="plan-p">£49<span class="pw">/wk</span></div></label>
+<label class="plan-opt" id="plan-enterprise"><input type="radio" name="plan" value="enterprise" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Enterprise</div><div class="plan-d">Up to 15 leads/day · any types · All UK unlimited</div></div><div class="plan-p">£99<span class="pw">/wk</span></div></label>
 </div>
 </div>
 
@@ -404,7 +404,7 @@ function updateMovingTypeLabel() {
 <div id="s-alluk-note" style="display:none;margin-top:8px;padding:8px 12px;border-radius:6px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);font-size:11px;color:#7dd3fc;line-height:1.5"><b>All of UK selected</b> — you'll receive leads from across the whole country. The area list below is disabled so nothing else gets mixed in. Click the × on the "all-uk" tag to choose specific areas instead.</div>
 </div>
 <div id="s-postcode-error" class="err"></div>
-<div style="font-size:10px;color:#6b7280;line-height:1.6;margin-top:6px"><b>ℹ️ Quiet days:</b> On days when fewer fresh leads are available in your exact postcode areas, we send you the leads <b>closest to your chosen postcodes</b> so you still get your full daily count. Every lead is still unique to you. No competition.</div>
+<div style="font-size:10px;color:#6b7280;line-height:1.6;margin-top:6px"><b>ℹ️ Quiet days:</b> On days when fewer fresh leads are available in your exact postcode areas, we send you the leads <b>closest to your chosen postcodes</b> so you still get your full daily count. You are never sent the same opportunity twice.</div>
 </div>
 
 <!-- County/area selector for specialist lead types (planning, probate, tenders).
@@ -458,7 +458,7 @@ function updateMovingTypeLabel() {
 <span style="font-size:9px;color:#6b7280;padding:3px 8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:8px;margin-right:2px"></i> 7 days free</span>
 <span style="font-size:9px;color:#6b7280;padding:3px 8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:8px;margin-right:2px"></i> Card saved, no charge</span>
 <span style="font-size:9px;color:#6b7280;padding:3px 8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:8px;margin-right:2px"></i> Cancel anytime</span>
-<span style="font-size:9px;color:#6b7280;padding:3px 8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:8px;margin-right:2px"></i> Exclusive leads</span>
+<span style="font-size:9px;color:#6b7280;padding:3px 8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:4px"><i class="fas fa-check-circle" style="color:#22c55e;font-size:8px;margin-right:2px"></i> Fresh daily opportunities</span>
 </div>
 
 <div style="margin-top:10px;padding:8px 10px;background:rgba(14,165,233,0.02);border:1px solid rgba(14,165,233,0.06);border-radius:6px;text-align:center">
@@ -1124,7 +1124,7 @@ var pLimit = getPostcodeAreaLimit();
   var plan = planRadio ? planRadio.value : 'free_trial';
   // Show upgrade recommendation if multiple products on free trial
   if (plan === 'free_trial' && products.length > 1) {
-    if (!confirm('You selected ' + products.length + ' lead types but the Free Trial only gives you 5 leads/day total (about 1-2 per type). Upgrade to Pro for 15 leads/day or Enterprise for 40 leads/day to get more from each lead type. Click Cancel to upgrade, OK to continue with Free Trial.')) {
+    if (!confirm('You selected ' + products.length + ' lead types but the Free Trial gives you up to 5 leads/day per selected type. Upgrade to Pro for up to 10 leads/day or Enterprise for up to 15 leads/day to get more from each lead type. Click Cancel to upgrade, OK to continue with Free Trial.')) {
       document.querySelector('#s-plan-container input[value="pro"]')?.click();
       plan = 'pro';
     }
