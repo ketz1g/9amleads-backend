@@ -7022,7 +7022,22 @@ app.get('/api/signup/competition-areas', (req, res) => {
       if (count > 0) list.push({ name: name, count: count });
     });
     list.sort(function(a,b){ return b.count - a.count; });
-    res.json({ success: true, product: product, total_active: totalActive, all_uk_customers: allUkCount, areas: list });
+    // Area-specific overlap: how many OTHER active businesses compete in the
+    // CUSTOMER'S chosen areas (union of any selected area). Tenders are public,
+    // so a business competes in every area it covers (or all-uk = everywhere).
+    var reqAreas = String(req.query.areas || '').split(',').map(function(x){ return String(x).trim().toLowerCase().replace(/[\s-]+/g,'-'); }).filter(Boolean);
+    var overlapCount = 0;
+    if (reqAreas.length) {
+      custs.forEach(function(c) {
+        var ca = areasFor(c);
+        var isAllUk = ca.some(function(x){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(x)); });
+        if (isAllUk) { overlapCount++; return; }
+        var norm = ca.map(function(x){ return String(x).toLowerCase().replace(/[\s-]+/g,'-'); });
+        var hits = reqAreas.filter(function(r){ return norm.indexOf(r) !== -1; });
+        if (hits.length) overlapCount++;
+      });
+    }
+    res.json({ success: true, product: product, total_active: totalActive, all_uk_customers: allUkCount, areas: list, overlap_count: overlapCount });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
