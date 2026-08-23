@@ -5,6 +5,7 @@
   from = "/api/*"
   to = "https://nineamleads-backend.onrender.com/api/:splat"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/portal/*"
@@ -41,92 +42,114 @@
   from = "/movingleadsdaily"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/movingleadsdaily/*"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/probateleads"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/probateleads/*"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/newbusinessalert"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/newbusinessalert/*"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/planningleads"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/planningleads/*"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/tenders"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/tenders/*"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/planningpermission"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/planningpermission/*"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/newbusiness"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/newbusiness/*"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/9amleads"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/9amleads/*"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/9amleadsmc"
   to = "/who-we-serve/"
   status = 301
+  force = true
 [[redirects]]
   from = "/9amleadsmc/*"
   to = "/who-we-serve/"
   status = 301
+  force = true
 
 # About Us page
 [[redirects]]
   from = "/about-us"
   to = "/about-us/"
   status = 301
+  force = true
 [[redirects]]
   from = "/about-us/index.html"
   to = "/about-us/"
   status = 301
+  force = true
 [[redirects]]
   from = "/about"
   to = "/about-us/"
   status = 301
+  force = true
 [[redirects]]
   from = "/about/"
   to = "/about-us/"
   status = 301
+  force = true
 
 [[headers]]
   for = "/*"
