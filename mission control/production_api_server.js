@@ -2662,10 +2662,10 @@ function processPartnerCommissions() {
           created.push(cm);
         });
       } else {
-        // Affiliate: commission model is configurable. Default is MONTHLY (the
-        // affiliate is responsible for helping retain the customer, so they earn
-        // £X/month for as long as the customer remains a paying subscriber). The
-        // 'one_off' option keeps the original £25 single referral payment.
+        // Affiliate: commission model is configurable. Default is MONTHLY:
+        // £25 one-off when the customer first pays + £25/month for as long as
+        // they stay a paying subscriber. The 'one_off' option keeps only the
+        // single £25 referral payment.
         var affMonthly = String(cfg.affiliate_commission_model || 'monthly') === 'monthly';
         var affAmount = Number(p.commission_amount) || Number(cfg.affiliate_one_off_amount) || 25;
         attr.filter(function(a){ return a.partner_id === p.id; }).forEach(function(a) {
@@ -2675,24 +2675,30 @@ function processPartnerCommissions() {
           if (!conv) return;
           var qDays = Number(cfg.commission_qualification_days) || 30;
           if ((now.getTime() - new Date(conv).getTime()) < qDays * 86400000) return;
+          if (!dbc.partner_commissions) dbc.partner_commissions = [];
           if (affMonthly) {
+            // 1) One-off £25 "sign-up" commission (created once per customer).
+            if (!commissionExists(p.id, c.id, 'ONEOFF', 'one_off')) {
+              var cm0 = { id: uuidv4(), partner_id: p.id, customer_id: c.id, commission_period: 'ONEOFF',
+                commission_type: 'one_off', commission_amount: affAmount, currency: 'GBP', status: 'pending',
+                qualifying_date: conv, created_at: now.toISOString() };
+              dbc.partner_commissions.push(cm0); created.push(cm0);
+            }
+            // 2) Monthly recurring £25 for the current period (idempotent).
             var period = commissionPeriodKey(conv, now);
-            if (!period) return;
-            if (commissionExists(p.id, c.id, period.key, 'recurring')) return;
-            var cm = { id: uuidv4(), partner_id: p.id, customer_id: c.id, commission_period: period.key,
-              commission_type: 'recurring', commission_amount: affAmount, currency: 'GBP', status: 'pending',
-              qualifying_date: period.date, created_at: now.toISOString() };
-            if (!dbc.partner_commissions) dbc.partner_commissions = [];
-            dbc.partner_commissions.push(cm);
-            created.push(cm);
+            if (period && !commissionExists(p.id, c.id, period.key, 'recurring')) {
+              var cm = { id: uuidv4(), partner_id: p.id, customer_id: c.id, commission_period: period.key,
+                commission_type: 'recurring', commission_amount: affAmount, currency: 'GBP', status: 'pending',
+                qualifying_date: period.date, created_at: now.toISOString() };
+              dbc.partner_commissions.push(cm); created.push(cm);
+            }
           } else {
-            if (commissionExists(p.id, c.id, 'ONEOFF', 'one_off')) return;
-            var cm2 = { id: uuidv4(), partner_id: p.id, customer_id: c.id, commission_period: 'ONEOFF',
-              commission_type: 'one_off', commission_amount: affAmount, currency: 'GBP', status: 'pending',
-              qualifying_date: conv, created_at: now.toISOString() };
-            if (!dbc.partner_commissions) dbc.partner_commissions = [];
-            dbc.partner_commissions.push(cm2);
-            created.push(cm2);
+            if (!commissionExists(p.id, c.id, 'ONEOFF', 'one_off')) {
+              var cm2 = { id: uuidv4(), partner_id: p.id, customer_id: c.id, commission_period: 'ONEOFF',
+                commission_type: 'one_off', commission_amount: affAmount, currency: 'GBP', status: 'pending',
+                qualifying_date: conv, created_at: now.toISOString() };
+              dbc.partner_commissions.push(cm2); created.push(cm2);
+            }
           }
         });
       }
@@ -3958,7 +3964,8 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
     commissions.forEach(function(cm) {
       var amt = Number(cm.commission_amount || 0);
       lifetime += amt;
-      if (cm.commission_period === curMonth && cm.commission_type === 'recurring') thisMonth += amt;
+      var cmMonth = String(cm.created_at || '').substring(0, 7);
+      if (cmMonth === curMonth) thisMonth += amt;
       if (cm.status === 'pending') pending += amt;
       else if (cm.status === 'approved') cleared += amt;
       else if (cm.status === 'paid') paid += amt;
