@@ -340,9 +340,60 @@ var COUNTY_POSTCODE_MAP = {
   'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
   'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
   'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
-  'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
+  'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],  'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
   'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
 };
+
+// Approximate UK postcode-AREA centroids (lat, lng). Used ONLY to rank the delivery
+// fallback so it pulls leads from the postcode areas CLOSEST to a customer's chosen
+// areas when their exact areas are short — never to drop or reject a lead.
+var POSTCODE_AREA_GEO = {
+  'AB':[57.15,-2.1],'AL':[51.78,0.28],'B':[52.6,0.0],'BA':[51.3,-2.5],'BB':[53.7,-2.3],'BD':[53.8,-1.78],
+  'BH':[50.72,-1.9],'BL':[53.6,-2.4],'BN':[50.85,-0.15],'BR':[51.41,0.0],'BS':[51.45,-2.59],'BT':[54.6,-5.8],
+  'CA':[54.8,-2.9],'CB':[52.2,0.12],'CF':[51.48,-3.2],'CH':[53.2,-2.9],'CM':[51.76,0.5],'CO':[51.88,0.9],
+  'CR':[51.37,-0.09],'CT':[51.3,1.1],'CV':[52.4,-1.5],'CW':[53.15,-2.5],'DA':[51.45,0.19],'DD':[56.47,-2.97],
+  'DE':[52.9,-1.5],'DG':[55.0,-3.6],'DH':[54.8,-1.6],'DL':[54.5,-1.6],'DN':[53.5,-1.1],'DT':[50.72,-2.6],
+  'DY':[52.5,-2.1],'E':[51.55,0.02],'EC':[51.52,-0.08],'EH':[55.95,-3.2],'EN':[51.65,-0.07],'EX':[50.7,-3.5],
+  'FK':[56.1,-3.8],'FY':[53.8,-3.0],'G':[55.86,-4.25],'GL':[51.86,-2.24],'GU':[51.24,-0.7],'HA':[51.58,0.3],
+  'HD':[53.65,-1.78],'HG':[54.0,-1.5],'HP':[51.75,-0.75],'HR':[52.1,-2.7],'HU':[53.75,-0.3],'HX':[53.72,-1.87],
+  'IG':[51.58,0.08],'IP':[52.2,1.2],'IV':[57.5,-4.2],'KA':[55.6,-4.6],'KT':[51.38,-0.3],'KY':[56.1,-3.2],
+  'L':[53.4,-2.98],'LA':[54.1,-2.7],'LD':[52.2,-3.2],'LE':[52.63,-1.13],'LL':[53.0,-4.0],'LN':[53.23,-0.55],
+  'LS':[53.8,-1.5],'LU':[51.9,-0.4],'M':[53.48,-2.24],'ME':[51.35,0.5],'MK':[52.05,-0.75],'ML':[55.8,-3.9],
+  'N':[51.58,-0.13],'NE':[54.97,-1.6],'NG':[52.95,-1.15],'NN':[52.25,-0.9],'NP':[51.7,-3.0],'NR':[52.63,1.3],
+  'NW':[51.55,-0.22],'OL':[53.54,-2.1],'OX':[51.75,-1.25],'PA':[56.0,-5.0],'PE':[52.75,0.35],'PH':[56.5,-3.8],
+  'PL':[50.37,-4.14],'PO':[50.85,-1.1],'PR':[53.77,-2.6],'RG':[51.45,-1.0],'RH':[51.1,-0.3],'RM':[51.55,0.19],
+  'S':[53.38,-1.47],'SA':[51.7,-4.0],'SE':[51.44,-0.03],'SG':[51.9,-0.2],'SK':[53.4,-2.1],'SL':[51.55,-0.6],
+  'SM':[51.36,-0.19],'SN':[51.55,-1.8],'SO':[50.9,-1.4],'SP':[51.05,-1.7],'SR':[54.9,-1.4],'SS':[51.55,0.65],
+  'ST':[52.9,-2.2],'SW':[51.46,-0.19],'SY':[52.6,-2.7],'TA':[51.0,-3.0],'TD':[55.6,-2.8],'TF':[52.7,-2.5],
+  'TN':[51.05,-0.35],'TQ':[50.45,-3.6],'TR':[50.3,-5.0],'TS':[54.57,-1.2],'TW':[51.43,-0.34],'UB':[51.53,0.37],
+  'W':[51.51,-0.16],'WA':[53.35,-2.6],'WC':[51.51,-0.13],'WD':[51.65,-0.4],'WF':[53.68,-1.6],'WN':[53.55,-2.6],
+  'WR':[52.2,-2.2],'WS':[52.6,-2.0],'WV':[52.6,-2.1],'YO':[53.96,-1.08]
+};
+// Alphabetic prefix of a postcode (area letters): "L21"->"L", "SW18"->"SW", "CH2"->"CH".
+function postcodeAreaLetters(code) {
+  var m = String(code || '').match(/^([A-Z]{1,2})[0-9]/i);
+  return m ? m[1].toUpperCase() : String(code || '').replace(/[^A-Z]/gi, '').toUpperCase().slice(0, 2);
+}
+function haversineKm(lat1, lng1, lat2, lng2) {
+  var R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+// Minimum distance (km) from a lead's postcode area to any of the customer's chosen
+// areas. Returns a large number when unknown so unknown-area leads rank last.
+function leadClosestKm(leadPc, custAreas) {
+  var lA = postcodeAreaLetters(leadPc);
+  var c = POSTCODE_AREA_GEO[lA];
+  if (!c) return 9999;
+  var best = 9999;
+  (custAreas || []).forEach(function(a) {
+    var g = POSTCODE_AREA_GEO[postcodeAreaLetters(a)];
+    if (!g) return;
+    var d = haversineKm(c[0], c[1], g[0], g[1]);
+    if (d < best) best = d;
+  });
+  return best;
+}
 
 // Interleave a scrape pool round-robin across the customer's chosen areas, so a
 // customer with e.g. [SW, E, N] gets a MIX of all three areas — never a cluster
@@ -6769,6 +6820,8 @@ async function deliveryPreviewForCustomer(cust) {
   try { var cfgM = JSON.parse(cust.product_config || '{}'); movingType = (cfgM.moving && cfgM.moving.moving_type) || cust.moving_type || 'both'; } catch(e3) { movingType = cust.moving_type || 'both'; }
   var dbV = getDb();
   var freshCutoff = getFreshCutoffIso();
+  var freshCutoff48p = new Date(Date.now() - 48 * 3600000).toISOString();
+  var movingFallback48 = true;
   var deliveredKeys = {};
   (dbV.leads || []).forEach(function(l) {
     if (l.customer_id === cust.id && l.delivered) {
@@ -6806,7 +6859,7 @@ async function deliveryPreviewForCustomer(cust) {
     if (!matched) continue;
     var fv = pickFreshDate(l);
     if (!fv) continue;
-    if (cust.product === 'moving') { if (fv < freshCutoff) continue; }
+    if (cust.product === 'moving') { if (fv < (movingFallback48 ? freshCutoff48p : freshCutoff)) continue; }
     else { var backfillCutoff = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < backfillCutoff) continue; }
     if (cust.product === 'moving' && maxBedsF < 99 && (parseInt(l.bedrooms, 10) || 99) > maxBedsF) continue;
     var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
@@ -6828,6 +6881,29 @@ async function deliveryPreviewForCustomer(cust) {
     if (selected.length >= limit) return;
     if (selected.indexOf(c) === -1) selected.push(c);
   });
+  // CLOSEST-POSTCODE FALLBACK (moving): if the customer's exact areas are still
+  // short of the promised count, pull additional pool leads from OUTSIDE their
+  // areas ranked by closest postcode (24-48h old allowed) — mirrors the delivery.
+  if (selected.length < limit && cust.product === 'moving') {
+    var pcSeen2 = {};
+    candidates.forEach(function(c) { var k = String(c.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (k) pcSeen2[k] = 1; });
+    var fallbackPool = interleaved.slice().sort(function(a, b) {
+      var da = leadClosestKm(a.postcode || a.address || a.fullAddress || '', areas);
+      var db = leadClosestKm(b.postcode || b.address || b.fullAddress || '', areas);
+      return da - db;
+    });
+    for (var fbi = 0; fbi < fallbackPool.length && selected.length < limit; fbi++) {
+      var fl = fallbackPool[fbi];
+      var fAddr = fl.fullAddress || fl.address || '';
+      var fPc = fl.postcode || '';
+      if (hasUsablePremiseAddress(fAddr, fPc)) {
+        var pk2 = String(fPc).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (usedPostcode[pk2] || pcSeen2[pk2]) continue;
+        usedPostcode[pk2] = 1;
+        selected.push(fl);
+      }
+    }
+  }
   var out = selected.map(function(c) {
     var addr = c.fullAddress || c.address || '';
     var pc = c.postcode || '';
@@ -11730,7 +11806,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // prefers the freshest (24h) leads first via the sorting below.
       var freshCutoffNow = getFreshCutoffIso();
       var fresh24CutoffNow = new Date(Date.now() - 24 * 3600000).toISOString();
-      function isLeadFresh24(l) {
+      var freshCutoff48 = new Date(Date.now() - 48 * 3600000).toISOString();
+      function isLeadFresh24(l, cut) {
         try {
           var ld2 = JSON.parse(l.data || '{}');
           // NEVER deliver manual-test / user-created test leads to customers —
@@ -11755,7 +11832,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // when needed, so the exact daily count is ALWAYS met (their national
           // supply is small/spread - e.g. ~27 probate grants/day UK-wide). The pool
           // is iterated fresh-first, so this only fills gaps - never preferred.
-          var backfillCutoff = cust.product === 'moving' ? freshCutoffNow : new Date(Date.now() - 14 * 86400000).toISOString();
+          var backfillCutoff = cut || (cust.product === 'moving' ? freshCutoffNow : new Date(Date.now() - 14 * 86400000).toISOString());
           return fv >= backfillCutoff;
         } catch(e) { return false; }
       }
@@ -11820,16 +11897,29 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           return true;
         });
         availByProd[p] = pool;
-        // GLOBAL-POOL fallback stays strict on freshness — if this customer's
-        // pre-assigned fresh pool is short, we can still meet the promise from
-        // ANY other undelivered FRESH lead in this product+area, but NEVER from
-        // a stale lead.
+        // GLOBAL-POOL fallback: if this customer's pre-assigned pool is short, pull
+        // from ANY undelivered lead in this product. For moving this allows 24-48h
+        // leads as a fallback, and ranks them by how CLOSE their postcode area is to
+        // the customer's chosen areas (closest first) so the promise is always met.
         var globalPool = (db.leads || []).filter(function(l) {
           if (l.delivered !== 0 || l.product !== p) return false;
-          if (!isLeadFresh24(l)) return false;
+          if (p === 'moving' ? !isLeadFresh24(l, freshCutoff48) : !isLeadFresh24(l)) return false;
           if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}))) return false;
           if (!notDeliveredBefore(l)) return false;
           return true;
+        });
+        globalPool.sort(function(a, b) {
+          function confirmed(l2) { try { var dd = JSON.parse(l2.data || '{}'); return hasPremiseNumber(dd.fullAddress || dd.address || dd.deceasedAddress || '', dd.postcode || ''); } catch(e) { return false; } }
+          var ca = confirmed(a), cb = confirmed(b);
+          if (ca !== cb) return ca ? -1 : 1;
+          var da = 0, db = 0;
+          try { da = leadClosestKm(JSON.parse(a.data || '{}').postcode || '', custAreas); } catch(e) {}
+          try { db = leadClosestKm(JSON.parse(b.data || '{}').postcode || '', custAreas); } catch(e) {}
+          if (da !== db) return da - db;
+          var fa = 0, fb = 0;
+          try { var dA = JSON.parse(a.data || '{}'); fa = new Date(dA.firstVisibleDate || 0).getTime(); } catch(e) {}
+          try { var dB = JSON.parse(b.data || '{}'); fb = new Date(dB.firstVisibleDate || 0).getTime(); } catch(e) {}
+          return fb - fa;
         });
         availGlobalByProd[p] = globalPool;
       });
@@ -11948,14 +12038,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             });
             // GLOBAL-POOL FALLBACK: if this customer's pre-assigned pool is empty
             // but supply exists elsewhere in their product+area, pull from the
-            // global undelivered pool so we ALWAYS meet the promised count.
+            // global undelivered pool so we ALWAYS meet the promised count. The
+            // global pool is already ranked (confirmed-number first, then closest
+            // postcode, then freshest) — take it in that order, never re-sorted.
             if (r2pool.length === 0) {
-              r2pool = (availGlobalByProd[r2prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; }).sort(function(a,b){
-                var fa=0,fb=0;
-                try{var da=JSON.parse(a.data||'{}');fa=new Date(da.firstVisibleDate||0).getTime();}catch(e){}
-                try{var db2=JSON.parse(b.data||'{}');fb=new Date(db2.firstVisibleDate||0).getTime();}catch(e){}
-                return fb-fa;
-              });
+              r2pool = (availGlobalByProd[r2prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
             }
             // POOL-FILE FALLBACK: still short and no undelivered DB leads for this
             // product+area? Load fresh leads from the scrape pool file (which holds
@@ -11965,6 +12052,17 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
               if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: custAreas.slice(0,5) };
               try {
                 var poolArr = interleavePoolByAreas(getDeliveryPool(r2prod), custAreas);
+                // CLOSEST-POSTCODE ORDER: rank the fallback pool so leads in (or near)
+                // the customer's chosen areas come first — exact-area leads are 0km,
+                // so they naturally lead; adjacent areas follow. Used only when the
+                // customer's own area supply is short, so out-of-area is a last resort.
+                if (cust.product === 'moving') {
+                  poolArr = poolArr.slice().sort(function(a, b) {
+                    var da = leadClosestKm(a.postcode || a.address || a.location || a.name || '', custAreas);
+                    var db = leadClosestKm(b.postcode || b.address || b.location || b.name || '', custAreas);
+                    return da - db;
+                  });
+                }
                 console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': file=' + (PRODUCT_LEAD_FILES[r2prod] ? PRODUCT_LEAD_FILES[r2prod].file : 'moving-leads.json') + ' flattened=' + poolArr.length);
                 if (Array.isArray(poolArr) && poolArr.length > 0) {
                   var existingKeys = {};
@@ -11974,9 +12072,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                   var createdFromPool = [];
                   for (var pf=0; pf<poolArr.length && createdFromPool.length < totalNeeded; pf++) {
                     var rl = poolArr[pf];
-                    // FRESH-ONLY: never create a lead from a stale pool entry.
+                    // FRESH-ONLY: never create a lead from a stale pool entry. Moving
+                    // allows 24-48h leads as a FALLBACK (exact areas first, then closest
+                    // postcodes), so the promised count is met even in quiet areas.
                     var rlD = pickFreshDate(rl);
-                    if (!rlD || rlD < freshCutoffNow) continue;
+                    var poolCutoff = cust.product === 'moving' ? freshCutoff48 : freshCutoffNow;
+                    if (!rlD || rlD < poolCutoff) continue;
                      // DASHBOARD FILTERS: respect the customer bedroom/price/type filters.
                      if (!leadPassesFilters(rl)) continue;
                     var areaOfPoolLead = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || '');
@@ -12011,7 +12112,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                     // opportunities, so accept them even if no county matched (strict
                     // county matching under-delivers). Other products stay strict.
                     if (!custAreaHit && (r2prod === 'tenders' || r2prod === 'probate')) custAreaHit = true;
-                    if (!custAreaHit) continue;
+                    // MOVING CLOSEST-POSTCODE FALLBACK: when a moving customer's own
+                    // areas are short, accept leads from OUTSIDE their areas (ranked by
+                    // closest postcode via the sort above) so the promised count is
+                    // always met — never deliver a shortfall when supply exists nearby.
+                    if (!custAreaHit && r2prod !== 'moving') continue;
                     var poolKey = (rl.postcode||rl.address||rl.id||rl.url||'');
                     if (existingKeys[poolKey]) continue;
                     // Never re-create a property already delivered to this customer.
