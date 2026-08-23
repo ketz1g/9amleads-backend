@@ -12105,23 +12105,24 @@ app.post('/api/setup-checkout', authMiddleware, async (req, res) => {
 // Processes: checkout.session.completed (new subscription), invoice.paid
 // (successful weekly renewal), invoice.payment_failed (dunning),
 // customer.subscription.deleted (cancellation).
-// Optional signature verification when STRIPE_WEBHOOK_SECRET is set; falls back
-// to processing events without verification so the payment flow keeps working
-// even before the secret is configured.
+// Signature verification is REQUIRED when a signing secret is configured. In test
+// mode the test signing secret is used so real test-mode events can be validated.
 app.post('/api/stripe/webhook', async (req, res) => {
   try {
-    // Optional signature verification (enables when secret configured)
+    var isTestMode = process.env.STRIPE_TEST_MODE === 'true' || process.env.STRIPE_TEST_MODE === '1';
+    var whSecret = isTestMode ? (process.env.STRIPE_TEST_WEBHOOK_SECRET || '') : (process.env.STRIPE_WEBHOOK_SECRET || '');
     var rawBody = req.rawBody;
     var sig = req.headers['stripe-signature'];
-    if (STRIPE_WEBHOOK_SECRET && sig && rawBody) {
+    if (whSecret) {
+      if (!sig || !rawBody) { return res.status(400).json({ error: 'Missing Stripe signature' }); }
       try {
         var crypto = require('crypto');
         var parts = {};
         sig.split(',').forEach(function(p) { var kv = p.trim().split('='); parts[kv[0]] = kv[1]; });
         var signed = parts['t'] + '.' + rawBody;
-        var expected = crypto.createHmac('sha256', STRIPE_WEBHOOK_SECRET).update(signed).digest('hex');
-        if (expected !== parts['v1']) { return res.status(400).json({ error: 'Invalid signature' }); }
-      } catch(sigErr) { console.error('[STRIPE] Signature error:', sigErr.message); }
+        var expected = crypto.createHmac('sha256', whSecret).update(signed).digest('hex');
+        if (!parts['t'] || !parts['v1'] || expected !== parts['v1']) { return res.status(400).json({ error: 'Invalid signature' }); }
+      } catch(sigErr) { return res.status(400).json({ error: 'Signature error' }); }
     }
 
     var event = req.body;
