@@ -2479,6 +2479,16 @@ function partnerConfig() {
       retention_followup_days: 14
     };
   }
+  // Backfill any keys added in newer versions so existing configs stay complete.
+  var defaults = {
+    affiliate_one_off_amount: 25, sales_partner_monthly_amount: 25, affiliate_trial_days: 14,
+    sales_partner_trial_days: 14, standard_trial_days: 7, attribution_window_days: 30,
+    commission_clearance_days: 30, commission_qualification_days: 30,
+    sales_partner_commission_duration_months: null, affiliate_qualifying_payment_count: 1,
+    partners_open: true, attribution_first_click_wins: true,
+    affiliate_commission_model: 'monthly', retention_followup_days: 14
+  };
+  for (var k in defaults) { if (dbc.partner_config[k] === undefined) dbc.partner_config[k] = defaults[k]; }
   return dbc.partner_config;
 }
 function partnerAudit(action, data) {
