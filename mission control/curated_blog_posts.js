@@ -9,9 +9,27 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
+var CAT_PAGE = { moving: 'https://9amleads.com/who-we-serve/', probate: 'https://9amleads.com/who-we-serve/', newbusiness: 'https://9amleads.com/who-we-serve/', planning: 'https://9amleads.com/who-we-serve/', tenders: 'https://9amleads.com/who-we-serve/', general: 'https://9amleads.com/how-it-works/' };
+var CAT_NAME = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Leads', planning: 'Planning Permission Leads', tenders: 'Tender Opportunities', general: 'Business Leads' };
+var CAT_COLOR = { moving: '#FF6B35', probate: '#A855F7', newbusiness: '#06B6D4', planning: '#10B981', tenders: '#6366F1', general: '#0EA5E9' };
+
+function relatedPosts(p, max) {
+  if (!CURATED_POSTS || !CURATED_POSTS.length) return '';
+  var same = CURATED_POSTS.filter(function(x) { return x.slug !== p.slug && x.category === p.category; });
+  var other = CURATED_POSTS.filter(function(x) { return x.slug !== p.slug && x.category !== p.category; });
+  var picks = same.concat(other).slice(0, max || 3);
+  if (!picks.length) return '';
+  return '<h2>Related Guides</h2>' + picks.map(function(x) {
+    return '<p style="margin:10px 0"><a href="https://9amleads.com/blog/' + x.slug + '" style="color:#0ea5e9;font-weight:600;text-decoration:none">' + esc(x.title) + '</a></p>';
+  }).join('');
+}
+
 function buildPostHTML(p) {
   var headTitle = p.title + ' | 9amLeads Blog';
   var canonical = 'https://9amleads.com/blog/' + p.slug;
+  var pageUrl = (p.ctaUrl || CAT_PAGE[p.category] || 'https://9amleads.com/');
+  var heroImg = 'https://9amleads.com/blog/img/' + p.slug + '.png';
+  var ogImg = 'https://9amleads.com/blog/og/' + p.slug + '.png';
 
   var body = '';
   for (var i = 0; i < p.sections.length; i++) {
@@ -28,7 +46,8 @@ function buildPostHTML(p) {
         }).join('');
         body += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px">' + rows + '</table></div>';
       } else if (part.cta) {
-        body += '<div style="background:rgba(14,165,233,0.07);border:1px solid rgba(14,165,233,0.18);border-radius:12px;padding:20px 22px;margin:24px 0"><strong style="color:#fff">' + part.cta + '</strong></div>';
+        var href = part.href || pageUrl;
+        body += '<p style="margin:28px 0;text-align:center"><a href="' + href + '" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;box-shadow:0 4px 20px rgba(14,165,233,.3)">' + esc(part.cta) + '</a></p>';
       } else {
         body += '<p>' + part + '</p>';
       }
@@ -47,11 +66,23 @@ function buildPostHTML(p) {
     }).join('');
   }
 
+  var color = CAT_COLOR[p.category] || '#0ea5e9';
+  var productName = p.product_name || CAT_NAME[p.category] || 'Business Leads';
+
   var articleJson = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":' +
     JSON.stringify(p.title) + ',"description":' + JSON.stringify(p.description) + ',"datePublished":"' + p.date + '"' +
-    ',"dateModified":"' + p.date + '","author":{"@type":"Organization","name":"9amLeads","url":"https://9amleads.com"}' +
+    ',"dateModified":"' + p.date + '","image":"' + ogImg + '","author":{"@type":"Organization","name":"9amLeads","url":"https://9amleads.com"}' +
     ',"publisher":{"@type":"Organization","name":"9am Leads","url":"https://9amleads.com","logo":{"@type":"ImageObject","url":"https://9amleads.com/og-image.png"}}' +
     ',"mainEntityOfPage":"' + canonical + '","keywords":' + JSON.stringify(p.keywords.join(', ')) + ',"wordCount":' + p.word_count + '}</script>';
+
+  var finalCta = '<div style="background:linear-gradient(135deg,' + color + '1a,rgba(14,165,233,.06));border:1px solid ' + color + '44;border-radius:16px;padding:28px;margin:36px 0;text-align:center">' +
+    '<h2 style="margin:0 0 8px;font-size:24px">Try ' + esc(productName) + ' for free</h2>' +
+    '<p style="margin:0 0 18px;color:#aaa;font-size:15px">Get fresh UK leads delivered every morning at 9am, matched to your trade and postcode areas. No card required.</p>' +
+    '<a href="https://9amleads.com/portal/#signup" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;text-decoration:none;padding:14px 30px;border-radius:10px;font-weight:700;margin:0 6px;box-shadow:0 4px 20px rgba(14,165,233,.3)">Start your free 7-day trial</a>' +
+    '<a href="' + pageUrl + '" style="display:inline-block;border:1px solid #333;color:#fff;text-decoration:none;padding:13px 26px;border-radius:10px;font-weight:600;margin:6px">Explore ' + esc(CAT_NAME[p.category] || 'lead types') + '</a>' +
+    '</div>';
+
+  var related = relatedPosts(p, 3);
 
   return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<title>' + esc(headTitle) + '</title>' +
@@ -61,22 +92,23 @@ function buildPostHTML(p) {
     '<meta property="og:url" content="' + canonical + '">' +
     '<meta property="og:type" content="article">' +
     '<meta property="og:site_name" content="9amLeads">' +
-    '<meta property="og:image" content="https://9amleads.com/blog/og/' + p.slug + '.png">' +
+    '<meta property="og:image" content="' + ogImg + '">' +
     '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">' +
     '<meta name="twitter:card" content="summary_large_image">' +
     '<meta name="twitter:title" content="' + esc(p.title) + '">' +
     '<meta name="twitter:description" content="' + esc(p.description) + '">' +
-    '<meta name="twitter:image" content="https://9amleads.com/blog/og/' + p.slug + '.png">' +
+    '<meta name="twitter:image" content="' + ogImg + '">' +
     '<link rel="canonical" href="' + canonical + '">' +
     articleJson + faqJson +
     '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">' +
-    '<style>body{font-family:Inter,sans-serif;background:#000;color:#ccc;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}h1,h2,h3{font-family:Outfit,sans-serif;color:#fff}h1{font-size:30px;font-weight:800;line-height:1.25}h2{font-size:22px;font-weight:700;margin-top:36px}p{color:#ccc;font-size:16px}a{color:#0ea5e9}ul{color:#ccc}table{border:1px solid #262626}th,td{border:1px solid #262626;padding:10px;text-align:left}th{background:#0d0d0d;color:#fff}strong{color:#fff}</style>' +
+    '<style>body{font-family:Inter,sans-serif;background:#000;color:#ccc;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}h1,h2,h3{font-family:Outfit,sans-serif;color:#fff}h1{font-size:30px;font-weight:800;line-height:1.25}h2{font-size:22px;font-weight:700;margin-top:36px}p{color:#ccc;font-size:16px}a{color:#0ea5e9}ul{color:#ccc}table{border:1px solid #262626}th,td{border:1px solid #262626;padding:10px;text-align:left}th{background:#0d0d0d;color:#fff}strong{color:#fff}img{max-width:100%;height:auto;border-radius:12px}</style>' +
     '</head><body><h1>' + esc(p.title) + '</h1>' +
     '<p style="color:#888;font-size:14px;margin-top:-8px">' + esc(p.categoryLabel || '') + ' &middot; ' + esc(p.date) + ' &middot; ' + p.reading_time + '</p>' +
     '<p style="font-size:17px;color:#ddd">' + esc(p.description) + '</p>' +
-    body + faqSection +
+    '<img src="' + heroImg + '" alt="' + esc(p.title) + '" width="1200" height="630" loading="lazy" style="width:100%;height:auto;border-radius:14px;margin:8px 0 20px">' +
+    body + finalCta + related + faqSection +
     '<hr style="border:none;border-top:1px solid #222;margin:36px 0">' +
-    '<div style="font-size:13px;color:#666"><strong style="color:#aaa">About 9amLeads</strong> — We deliver fresh, exclusive UK business leads every morning at 9am across moving, probate, new business, planning permission and public sector tender opportunities. <a href="https://9amleads.com" style="color:#0ea5e9">Visit 9amLeads.com</a> to start your free 7-day trial.</div>' +
+    '<div style="font-size:13px;color:#666"><strong style="color:#aaa">About 9amLeads</strong> — We deliver fresh, exclusive UK business leads every morning at 9am across moving, probate, new business, planning permission and public sector tender opportunities. <a href="https://9amleads.com" style="color:#0ea5e9">Visit 9amLeads.com</a> to start your free 7-day trial. <a href="https://9amleads.com/pricing/" style="color:#0ea5e9">See pricing</a> · <a href="https://9amleads.com/how-it-works/" style="color:#0ea5e9">How it works</a>.</div>' +
     '</body></html>';
 }
 
