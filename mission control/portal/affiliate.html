@@ -6,7 +6,7 @@
 <title>9amLeads Affiliate Dashboard</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#0b0d14;color:#e2e8f0;min-height:100vh}
+body{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(1000px 600px at 85% -10%,rgba(14,165,233,.12),transparent 55%),radial-gradient(800px 500px at 8% 20%,rgba(99,102,241,.09),transparent 55%),radial-gradient(900px 600px at 50% 115%,rgba(6,182,212,.09),transparent 55%),#070a11;color:#e2e8f0;min-height:100vh}
 a{color:#0ea5e9;text-decoration:none}
 button{font-family:inherit}
 .topbar{display:flex;align-items:center;gap:12px;padding:14px 24px;background:#0f111a;border-bottom:1px solid #1e2030;position:sticky;top:0;z-index:20}
@@ -29,7 +29,7 @@ button{font-family:inherit}
 .tab.on{background:rgba(14,165,233,.14);border-color:rgba(14,165,233,.45);color:#0ea5e9}
 .tab .n{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:rgba(14,165,233,.2);color:#0ea5e9;font-size:10px;font-weight:800;margin-left:6px;padding:0 5px}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:24px}
-.card{background:#0f111a;border:1px solid #1e2030;border-radius:14px;padding:18px}
+.card{background:rgba(255,255,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:14px;padding:18px}
 .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
 .card .val{font-size:26px;font-weight:800;color:#f1f5f9}
 .card .sub{font-size:11px;color:#6b7280;margin-top:4px}
@@ -39,7 +39,7 @@ button{font-family:inherit}
 .card.grey .val{color:#cbd5e1}
 .grid{display:grid;grid-template-columns:1fr;gap:20px}
 @media(min-width:900px){.grid.two{grid-template-columns:1.7fr 1fr}}
-.panel{background:#0f111a;border:1px solid #1e2030;border-radius:14px;padding:20px}
+.panel{background:rgba(255,255,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:14px;padding:20px}
 .panel h2{font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
 .panel h2 .hint{font-size:11px;color:#6b7280;font-weight:500}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -55,7 +55,7 @@ tr:last-child td{border-bottom:none}
 .b-trial{background:rgba(14,165,233,.10);color:#38bdf8}
 .b-new{background:rgba(52,211,153,.12);color:#34d399}
 .muted{color:#6b7280;font-size:11.5px}
-.login{max-width:400px;margin:60px auto;background:#0f111a;border:1px solid #1e2030;border-radius:16px;padding:32px}
+.login{max-width:400px;margin:60px auto;background:rgba(255,255,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:16px;padding:32px}
 .login h1{font-size:19px;font-weight:800;color:#f1f5f9;margin-bottom:4px}
 .login p{font-size:12px;color:#94a3b8;margin-bottom:20px}
 .fg{margin-bottom:14px}
@@ -77,16 +77,16 @@ tr:last-child td{border-bottom:none}
 .chip{padding:9px 16px;border-radius:50px;font-size:12.5px;font-weight:600;background:#0f111a;border:1px solid #1e2030;color:#94a3b8;cursor:pointer}
 .chip.on{background:rgba(14,165,233,.14);border-color:rgba(14,165,233,.5);color:#0ea5e9}
 /* tool sections */
-.tool-sec{background:#0f111a;border:1px solid #1e2030;border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.tool-sec{background:rgba(255,255,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:14px;padding:18px 20px;margin-bottom:16px}
 .tool-sec h3{font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.step{background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:11px 14px;margin-bottom:8px;font-size:12.5px;color:#cbd5e1;line-height:1.6}
+.step{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:11px 14px;margin-bottom:8px;font-size:12.5px;color:#cbd5e1;line-height:1.6}
 .step b{color:#0ea5e9;font-size:11px;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px}
-.tpl{background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:13px 14px;margin-bottom:10px}
+.tpl{background:rgba(255,255,255,.035);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:10px;padding:13px 14px;margin-bottom:10px}
 .tpl .subj{font-weight:700;color:#f1f5f9;font-size:12.5px;margin-bottom:5px}
 .tpl pre{font-family:inherit;white-space:pre-wrap;font-size:12.5px;color:#a3adc2;line-height:1.65;margin:0}
-.post-card{background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:12.5px;color:#cbd5e1;line-height:1.6}
+.post-card{background:rgba(255,255,255,.035);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:12.5px;color:#cbd5e1;line-height:1.6}
 /* leads inbox */
-.lead{display:flex;align-items:flex-start;gap:14px;background:#0f111a;border:1px solid #1e2030;border-radius:14px;padding:16px;margin-bottom:12px}
+.lead{display:flex;align-items:flex-start;gap:14px;background:rgba(255,255,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:14px;padding:16px;margin-bottom:12px}
 .lead .ico{width:44px;height:44px;border-radius:12px;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .lead .main{flex:1;min-width:0}
 .lead .main .co{font-weight:700;color:#f1f5f9;font-size:14px}
