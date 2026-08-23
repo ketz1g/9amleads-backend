@@ -6839,7 +6839,7 @@ app.get('/api/admin/quiet-areas-report', adminAuth, (req, res) => {
         }
       });
       areas.forEach(function(a) {
-        if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?/i.test(String(a))) return;
+        if (!isPostcodeAreaTarget(a)) return;
         var hasDigit = /\d/.test(String(a));
         var code = extractPostcodeArea(a);
         var got = hasDigit ? (perOut[code] || 0) : (perLtr[postcodeAreaLetters(a)] || 0);
@@ -7054,6 +7054,11 @@ async function runMovingPafPostScrape() {
 // QUIET_AREA_DAYS (default 4, i.e. 3-5 days), email them + post a dashboard
 // notification telling them to update their postcode/area. Once per area per 7
 // days to avoid nagging. This keeps the "daily leads in YOUR areas" promise real.
+// True for a real postcode-AREA target (L, SW, CH2, CR0). False for region/county
+// names ("ALL", "EAST", "KENT") which aren't changeable to a closer postcode.
+function isPostcodeAreaTarget(s) {
+  return /^[A-Z]{1,2}([0-9]|$)/i.test(String(s || '').trim());
+}
 function quietAreaAlertedDate(cust, areaCode) {
   try { var m = JSON.parse(cust.area_alerts || '{}'); return m[areaCode] || ''; } catch(e) { return ''; }
 }
@@ -7093,7 +7098,7 @@ function checkQuietAreas() {
         // Only alert on real postcode-AREA targets (e.g. L, SW, CH2). Skip
         // region/county names ("EAST", "ALL UK") — those aren't changeable to a
         // "closer" postcode and would be misleading.
-        if (!code || !/^[A-Z]{1,2}[0-9][A-Z0-9]?/i.test(String(a))) return;
+        if (!code || !isPostcodeAreaTarget(a)) return;
         var hasDigit = /\d/.test(String(a));
         var got = hasDigit ? (perOut[code] || 0) : (perLtr[postcodeAreaLetters(a)] || 0);
         if (got > 0) return;
