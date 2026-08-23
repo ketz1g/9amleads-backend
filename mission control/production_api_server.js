@@ -6867,7 +6867,7 @@ async function runMovingPafPostScrape() {
     Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push({ _key: k, _item: x }); }); });
   }
   if (!arr || !arr.length) return { enriched: 0, failed: 0 };
-  var cap = parseInt(process.env.MOVING_PAF_POSTSCRAPE_MAX || '200', 10);
+  var cap = parseInt(process.env.MOVING_PAF_POSTSCRAPE_MAX || '25', 10);
   var cut48 = new Date(Date.now() - 48 * 3600000).toISOString();
   var need = [];
   arr.forEach(function(e) {
@@ -6885,25 +6885,38 @@ async function runMovingPafPostScrape() {
   need = need.slice(0, cap);
   if (!need.length) return { enriched: 0, failed: 0 };
   var pcDeliver = require('./rightmove_scraper_v2');
-  var norm = need.map(function(e) { var l = e._item || e; return Object.assign({}, l, { id: (l.url || l.id || l.reference || Math.random().toString(36).slice(2)) }); });
-  var out = [];
-  try { out = await pcDeliver.enrichMovingLeadsPostcoder(norm); } catch(e) { console.log('[PAF-POSTSCRAPE] enrich error: ' + e.message); return { error: e.message }; }
   var enriched = 0, failed = 0;
-  out.forEach(function(en, idx) {
-    var e = need[idx]; var l = e._item || e;
+  // POSTCODER PAF ONLY — fast + cheap (~4.5p/lookup, ~250ms each). No Land
+  // Registry/Zoopla fallbacks here: those stay at delivery time. This pass just
+  // adds the door number to fresh door-less leads so the pool is ready before 9am.
+  for (var pi2 = 0; pi2 < need.length; pi2++) {
+    var e = need[pi2]; var l = e._item || e;
+    try {
+      var addr0 = l.fullAddress || l.address || '';
+      var pc0 = String(l.postcode || '').toUpperCase().trim();
+      if (pi2 > 0) await new Promise(function(r) { setTimeout(r, 250); });
+      var hint = l.doorNumberHint || '';
+      var full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint);
+      if (full && full.rateLimited) {
+        await new Promise(function(r) { setTimeout(r, 30000); });
+        full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint);
+      }
+      if (full && !full.rateLimited) {
+        var nAddr = full.fullAddress || full.address1 || '';
+        if (hasUsablePremiseAddress(nAddr || addr0, full.postcode || pc0)) {
+          l.address = nAddr || addr0;
+          l.fullAddress = nAddr || l.fullAddress || addr0;
+          l.street = full.street || l.street || '';
+          l.buildingNumber = full.buildingNumber || hint || l.buildingNumber || '';
+          l.postcode = (full.postcode || pc0).toUpperCase();
+          l.udprn = full.udprn || l.udprn || '';
+          l.paf_failed = false;
+          enriched++;
+        } else { l.paf_failed = true; failed++; }
+      } else { l.paf_failed = true; failed++; }
+    } catch(pe) { l.paf_failed = true; failed++; }
     l.paf_done = true;
-    var numOk = hasUsablePremiseAddress(en.fullAddress || en.address || '', en.postcode || l.postcode || '');
-    if (numOk) {
-      l.address = en.fullAddress || en.address || l.address;
-      l.fullAddress = en.fullAddress || l.address || l.fullAddress;
-      l.street = en.street || l.street || '';
-      l.buildingNumber = en.buildingNumber || l.buildingNumber || '';
-      l.postcode = (en.postcode || l.postcode || '').toUpperCase();
-      l.udprn = en.udprn || l.udprn || '';
-      l.paf_failed = false;
-      enriched++;
-    } else { l.paf_failed = true; failed++; }
-  });
+  }
   if (container) fs.writeFileSync(file, JSON.stringify(container, null, 2));
   else fs.writeFileSync(file, JSON.stringify(arr, null, 2));
   console.log('[PAF-POSTSCRAPE] Enriched ' + enriched + ', failed ' + failed + ' of ' + need.length + ' door-less moving leads');
