@@ -197,7 +197,7 @@ function copyCode(){var t=document.getElementById('a-code').textContent;navigato
 function esc(s){return String(s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function fmtDate(iso){if(!iso)return '-';try{return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch(e){return iso;}}
 document.getElementById('logout').onclick=function(){sessionStorage.removeItem('mld_affiliate_session');localStorage.removeItem('mld_affiliate_token');location.reload();};
-if(TOKEN){loadDash();}
+if(TOKEN){loadDash();}else if(location.hash==='#register'){showRegister();}
 </script>
 </body>
 </html>
