@@ -1,0 +1,26 @@
+name: Deploy marketing site to Netlify
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '9amwebsite/**'
+      - 'netlify.toml'
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Deploy 9amwebsite to Netlify
+        run: npx --yes netlify-cli deploy --prod --dir=9amwebsite --site lucent-lolly-e82191
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
