@@ -7912,14 +7912,22 @@ function generateDemoLeads(product, count) {
 // Real recorded usage injected into the welcome + trial lifecycle emails.
 // Fallbacks: zero metrics are omitted (never shown as 0), and a zero-lead trial
 // switches to customer-service messaging instead of an upgrade push.
+function countLeadStatuses(customerId) {
+  var out = { received: 0, engaged: 0 };
+  try {
+    var leads = db.prepare('SELECT status FROM leads WHERE customer_id = ?').all(customerId) || [];
+    out.received = leads.length;
+    leads.forEach(function(l) { if (l && l.status && String(l.status).toLowerCase() !== 'new') out.engaged++; });
+  } catch(e) {}
+  return out;
+}
 function getTrialMetrics(customer) {
   var out = { received: -1, viewed: -1, contacted: -1, quoted: -1, won: -1 };
   try {
     if (!customer || !customer.id) return out;
-    out.received = (db.prepare('SELECT COUNT(*) as count FROM leads WHERE customer_id = ?').get(customer.id) || {}).count || 0;
-    out.contacted = (db.prepare("SELECT COUNT(*) as count FROM leads WHERE customer_id = ? AND status IN ('contacted','quoted','won')").get(customer.id) || {}).count || 0;
-    out.quoted = (db.prepare("SELECT COUNT(*) as count FROM leads WHERE customer_id = ? AND status = 'quoted'").get(customer.id) || {}).count || 0;
-    out.won = (db.prepare("SELECT COUNT(*) as count FROM leads WHERE customer_id = ? AND status = 'won'").get(customer.id) || {}).count || 0;
+    var c = countLeadStatuses(customer.id);
+    out.received = c.received;
+    out.contacted = c.engaged;
   } catch(e) {}
   return out;
 }
@@ -20592,10 +20600,8 @@ app.get('/api/admin/analytics', adminAuth, (req, res) => {
       // Average leads delivered during trial (all leads for the account)
       var rec = 0, con = 0;
       try {
-        var r1 = db.prepare('SELECT COUNT(*) as count FROM leads WHERE customer_id = ?').get(c.id);
-        rec = (r1 && r1.count) || 0;
-        var r2 = db.prepare("SELECT COUNT(*) as count FROM leads WHERE customer_id = ? AND status IN ('contacted','quoted','won')").get(c.id);
-        con = (r2 && r2.count) || 0;
+        var cs = countLeadStatuses(c.id);
+        rec = cs.received; con = cs.engaged;
       } catch(le) {}
       if (isTrial || isPaid) { trialStats.receivedTotal += rec; trialStats.contactedTotal += con; }
       if (inWindow && isTrial) { byProduct[p].receivedTotal += rec; byProduct[p].contactedTotal += con; }
