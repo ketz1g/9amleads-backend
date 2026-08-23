@@ -6769,11 +6769,12 @@ async function deliveryPreviewForCustomer(cust) {
   var maxBedsF = 99;
   try { var f2P = JSON.parse(cust.biz_field2 || '{}'); var fPP = f2P.moving || f2P; maxBedsF = parseInt(fPP['f-maxbeds'] || fPP['f-bed-max'] || fPP.maxBedrooms) || 99; } catch(e) { maxBedsF = 99; }
   var interleaved = interleavePoolByAreas(pool, areas);
-  var selected = [];
+  var candidates = [];
   var seen = {};
   var leadFilters = {};
   try { leadFilters = JSON.parse(cust.biz_field2 || '{}'); } catch(e) { leadFilters = {}; }
-  for (var i = 0; i < interleaved.length && selected.length < limit; i++) {
+  var candCap = Math.max(limit * 4, 30);
+  for (var i = 0; i < interleaved.length && candidates.length < candCap; i++) {
     var l = interleaved[i];
     var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
     var matched = false;
@@ -6801,9 +6802,36 @@ async function deliveryPreviewForCustomer(cust) {
     var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
     if (deliveredKeys[key] || seen[key]) continue;
     seen[key] = 1;
-    selected.push({ address: l.address || l.fullAddress || '', postcode: l.postcode || '', url: l.url || '', county: l.county || '', source: l.source || '' });
+    candidates.push(l);
   }
-  return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: selected.length, leads: selected, error: selected.length < limit ? 'supply low in ' + areas.join(', ') : '' };
+  // SELECTION: maximise postcode variety so a customer never gets the same
+  // postcode repeated across their daily batch when supply allows. Only falls
+  // back to same-postcode leads to honour the promised quota (never below it).
+  var selected = [];
+  var usedPostcode = {};
+  candidates.forEach(function(c) {
+    if (selected.length >= limit) return;
+    var pk = String(c.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!usedPostcode[pk]) { usedPostcode[pk] = 1; selected.push(c); }
+  });
+  candidates.forEach(function(c) {
+    if (selected.length >= limit) return;
+    if (selected.indexOf(c) === -1) selected.push(c);
+  });
+  var out = selected.map(function(c) {
+    var addr = c.fullAddress || c.address || '';
+    var pc = c.postcode || '';
+    var hasDoor = hasUsablePremiseAddress(addr, pc);
+    var pafCandidate = false;
+    if (!hasDoor) {
+      // PAF-relaxed: a full postcode + street name means the paid PAF pass will add
+      // the door number at delivery (drops it only if PAF can't confirm it).
+      var pcFull = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim());
+      pafCandidate = pcFull && hasStreetName(addr);
+    }
+    return { address: c.address || c.fullAddress || '', postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate };
+  });
+  return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: out.length, leads: out, error: out.length < limit ? 'supply low in ' + areas.join(', ') : '' };
 }
 
 // GET /api/admin/readiness — run the delivery preview for EVERY real customer and
