@@ -8642,6 +8642,22 @@ async function runAutoSend() {
   var customers = (dbJSON.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
   var results = { checked: 0, enabled: 0, skipped: 0, sent: 0, failed: 0, total_spend: 0 };
 
+  // SELF-HEAL: if the Stannp balance is too low to mail, auto-pause Auto-Send for
+  // everyone (so no print jobs fail mid-send) + alert the founder to top up.
+  try {
+    var asProvider = getDirectMailProvider();
+    var asBal = (asProvider && typeof asProvider.getBalance === 'function') ? asProvider.getBalance() : null;
+    if (asBal && typeof asBal === 'object' && typeof asBal.balance === 'number' && asBal.balance < 15) {
+      var paused = db.prepare('SELECT COUNT(*) as c FROM direct_mail_automation_settings WHERE enable_auto_send = 1').get().c;
+      if (paused > 0) {
+        db.prepare('UPDATE direct_mail_automation_settings SET enable_auto_send = 0, auto_paused_reason = ? WHERE enable_auto_send = 1').run('Low Stannp balance (£' + asBal.balance.toFixed(2) + ')');
+        saveDb();
+        sendAdminAlert('⚠ Auto-Send paused — Stannp balance low', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">Print &amp; Post balance is <b style="color:#fbbf24">£' + asBal.balance.toFixed(2) + '</b>. Auto-Send has been <b>auto-paused</b> for all customers so no print jobs fail mid-send.<br><br>Please top up your Stannp balance. When it\u2019s healthy, I can re-enable Auto-Send for everyone.</div>');
+      }
+      return { checked: customers.length, enabled: 0, skipped: customers.length, sent: 0, failed: 0, total_spend: 0, balance: asBal.balance, auto_paused: true };
+    }
+  } catch(e) { console.log('[AUTO-SEND] balance check error:', e.message); }
+
   for (var ci = 0; ci < customers.length; ci++) {
     // DEFENSIVE: always ensure `db` is the SQL-compatible shim for this loop, so a
     // stray `db = getDb()` can never leave db.prepare undefined (this previously
