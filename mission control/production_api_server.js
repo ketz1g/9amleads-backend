@@ -6993,7 +6993,7 @@ async function runMovingPafPostScrape() {
     Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push({ _key: k, _item: x }); }); });
   }
   if (!arr || !arr.length) return { enriched: 0, failed: 0 };
-  var cap = parseInt(process.env.MOVING_PAF_POSTSCRAPE_MAX || '25', 10);
+  var cap = parseInt(process.env.MOVING_PAF_POSTSCRAPE_MAX || '80', 10);
   var cut48 = new Date(Date.now() - 48 * 3600000).toISOString();
   var need = [];
   arr.forEach(function(e) {
