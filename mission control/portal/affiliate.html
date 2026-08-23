@@ -548,7 +548,7 @@ function renderTools(){
   }
   // quick facts
   if(r.facts&&r.facts.length){
-    h+='<div class="facts">'+r.facts.map(function(f){return '<div class="fact"><span class="fi">✓</span><span>'+esc(f)+'</span></div>';}).join('')+'</div>';
+    h+='<div class="flow"><h3>✨ Key selling points</h3><div class="facts">'+r.facts.map(function(f){return '<div class="fact"><span class="fi">✓</span><span>'+esc(f)+'</span></div>';}).join('')+'</div></div>';
   }
   // phone script
   h+='<div class="flow"><h3>📞 Cold-call script — '+esc(r.name)+' <button class="btn-mini" onclick="copyScript(\''+r.key+'\')">Copy all</button></h3>';
