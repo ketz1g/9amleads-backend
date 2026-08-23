@@ -148,6 +148,7 @@ function extractPostcodeArea(postcode) {
 // a delivered moving/probate lead always carries a door number, flat number,
 // street number or house name — never a bare street/place name. See address_premise.js.
 var ADDR_PREMISE = require('./address_premise');
+var CURATED_BLOG = require('./curated_blog_posts');
 function hasUsablePremiseAddress(addr, pc) { return ADDR_PREMISE.hasUsablePremiseAddress(addr, pc); }
 
 // Strip a leading DEFAULT/UNCONFIRMED "Flat 1" prefix from an address. UK portals
@@ -3332,20 +3333,13 @@ app.get('/sitemap.xml', (req, res) => {
     var urls = [
       '<url><loc>https://9amleads.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/pricing/</loc><priority>0.9</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/movingleadsdaily/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/probateleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/newbusinessalert/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/planningleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/tenders/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/how-it-works/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/who-we-serve/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/how-it-works/</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/who-we-serve/</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/about-us/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/blog/</loc><priority>0.7</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/founder/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/invest/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/about.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/contact.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/terms.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-      '<url><loc>https://9amleads.com/privacy.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>'
+      '<url><loc>https://9amleads.com/privacy.html</loc><priority>0.3</priority><changefreq>yearly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/terms.html</loc><priority>0.3</priority><changefreq>yearly</changefreq><lastmod>' + today + '</lastmod></url>'
     ];
     for (var pi = 0; pi < posts.length; pi++) {
       urls.push('<url><loc>https://9amleads.com/blog/' + posts[pi].slug + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + (posts[pi].created_at ? posts[pi].created_at.split('T')[0] : today) + '</lastmod></url>');
@@ -19011,6 +19005,75 @@ function blogRenderTitle(template, variation) {
 }
 var LEAD_TYPE_PAGES = { moving: '/movingleadsdaily/', probate: '/probateleads/', newbusiness: '/newbusinessalert/', planning: '/planningleads/', tenders: '/tenders/', general: '/pricing/' };
 
+// Write a clean, canonical sitemap (no 301 redirect URLs, no noindex pages).
+function writeSitemap() {
+  try {
+    var dbData = getDb();
+    var posts = (dbData.blog_posts || []).filter(function(p) { return p.published; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    var today = new Date().toISOString().split('T')[0];
+    var urls = [
+      '<url><loc>https://9amleads.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/pricing/</loc><priority>0.9</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/how-it-works/</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/who-we-serve/</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/about-us/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/blog/</loc><priority>0.7</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/founder/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/privacy.html</loc><priority>0.3</priority><changefreq>yearly</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/terms.html</loc><priority>0.3</priority><changefreq>yearly</changefreq><lastmod>' + today + '</lastmod></url>'
+    ];
+    for (var pi = 0; pi < posts.length; pi++) {
+      urls.push('<url><loc>https://9amleads.com/blog/' + posts[pi].slug + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + (posts[pi].created_at ? posts[pi].created_at.split('T')[0] : today) + '</lastmod></url>');
+    }
+    var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    for (var ui = 0; ui < urls.length; ui++) xml += '  ' + urls[ui] + '\n';
+    xml += '</urlset>';
+    var pathMod = require('path');
+    try { fs.writeFileSync(pathMod.join(__dirname, '..', 'publish', 'sitemap.xml'), xml); } catch(e1) {}
+    try { fs.writeFileSync(pathMod.join(__dirname, '..', 'sitemap.xml'), xml); } catch(e2) {}
+    try { fs.writeFileSync(pathMod.join(__dirname, '..', '9amleads', 'sitemap.xml'), xml); } catch(e3) {}
+    return { ok: true, count: urls.length };
+  } catch(e) { return { ok: false, error: (e && e.message) || String(e) }; }
+}
+
+// Remove thin auto-generated template filler posts so only quality content remains.
+// Keeps hand-written / curated posts. Reversible (posts are flagged, not deleted when possible).
+function sanitizeBlogPosts() {
+  try {
+    var dbData = getDb();
+    if (!dbData.blog_posts) dbData.blog_posts = [];
+    var before = dbData.blog_posts.length;
+    var kept = dbData.blog_posts.filter(function(p) { return !(p.auto_generated === true || (p.template_key && p.template_key.indexOf('var_') === 0)); });
+    var removed = before - kept.length;
+    dbData.blog_posts = kept;
+    return removed;
+  } catch(e) { return 0; }
+}
+
+// Insert curated quality posts (idempotent by slug) and refresh the sitemap.
+function seedCuratedPosts() {
+  var dbData = getDb();
+  if (!dbData.blog_posts) dbData.blog_posts = [];
+  var added = 0;
+  var posts = CURATED_BLOG.CURATED_POSTS || [];
+  for (var i = 0; i < posts.length; i++) {
+    var p = posts[i];
+    if (dbData.blog_posts.some(function(x) { return x.slug === p.slug; })) continue;
+    var wordCount = String(p.description + ' ' + p.sections.map(function(s) { return s.h + ' ' + s.body.map(function(b) { return typeof b === 'string' ? b : (b.ul ? b.ul.join(' ') : (b.table ? b.table.join(' ') : b.cta || '')); }).join(' '); }).join(' ')).split(/\s+/).length;
+    var html = CURATED_BLOG.buildPostHTML(p);
+    dbData.blog_posts.push({
+      id: 'curated_' + p.slug, title: p.title, slug: p.slug, description: p.description,
+      category: p.category, product_name: p.product_name, keywords: p.keywords,
+      html: html, word_count: wordCount, reading_time: p.reading_time,
+      created_at: new Date(p.date + 'T06:00:00Z').toISOString(), published: true, curated: true
+    });
+    added++;
+  }
+  fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+  writeSitemap();
+  return added;
+}
+
 // GET /api/admin/blog/posts - List all blog posts
 app.get('/api/admin/blog/posts', adminAuth, function(req, res) {
   try {
@@ -23704,6 +23767,13 @@ app.listen(PORT, () => {
   seedMarketplaceTemplates();
   seedSeasonalCampaigns();
   seedKnowledgeArticles();
+  try {
+    var removedAuto = sanitizeBlogPosts();
+    var seededCurated = seedCuratedPosts();
+    console.log('[SEO] Startup: removed ' + removedAuto + ' auto-generated posts, seeded ' + seededCurated + ' curated posts');
+  } catch(e) {
+    console.log('[SEO] Startup blog seed error: ' + (e && e.message || e));
+  }
   console.log('\n========================================');
   console.log('  9amLeads Production API Server');
   console.log('  Domain: www.9amleads.com');
@@ -23786,111 +23856,24 @@ app.get('/api/admin/brevo-templates', adminAuth, async function(req, res) {
 });
 
 // ===== AUTO-SEO CRON =====
-// Runs daily: generates new blog posts automatically, refreshes the sitemap,
-// pings Google/Bing, and cross-links new posts to existing content + product pages.
-// Stops automatically once all templates are used (no more posts to create).
+// Runs daily: refreshes the sitemap and pings search engines.
+// NOTE: thin auto-generated template posts are no longer produced. Content quality
+// is maintained via curated, hand-written posts (see seedCuratedPosts / curated_blog_posts.js).
 cron.schedule('0 4 * * *', async () => {
   try {
     console.log('[SEO] Running automated SEO pipeline...');
     var seoLog = [];
     var dbData = getDb();
-    if (!dbData.blog_posts) dbData.blog_posts = [];
 
-    // 1. Auto-generate 6-8 posts per day (random each day for natural cadence)
-    var dailyTarget = 6 + Math.floor(Math.random() * 3); // 6, 7 or 8
-    var available = blogAvailableTemplates(dbData);
-    var types = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads', planning: 'planning leads', tenders: 'tender opportunities', general: 'business leads' };
-    var generated = [];
-    for (var bi = 0; bi < Math.min(dailyTarget, available.length); bi++) {
-      var tIndex = available[bi];
-      var template = tIndex.template;
-      var templateKey = tIndex.key;
-      var variationIdx = tIndex.varIndex;
-      var productName = PRODCAT[template.category] || 'Business Leads';
-      var type = types[template.category] || 'leads';
-      var title = blogRenderTitle(template, variationIdx).replace(/{type}/g, type);
-      var desc = template.desc.replace(/{type}/g, type) + (variationIdx !== -1 ? BLOG_VARIATIONS[variationIdx].desc : '');
-      var kw = template.keywords.map(function(k) { return k.replace(/{type}/g, type); });
-      if (variationIdx !== -1) kw = kw.concat(BLOG_VARIATIONS[variationIdx].kw);
-      var slug = title.toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
-      if (dbData.blog_posts.some(function(p) { return p.slug === slug; })) continue;
-      var paraPool = [
-        'In today\'s market, businesses need every advantage. ' + title + ' is one of the most effective ways to stay ahead.',
-        productName + ' provide a stream of exclusive opportunities your competitors don\'t have access to.',
-        'Consistency is key with ' + type + '. Fresh opportunities every morning builds a daily outreach habit.',
-        'The businesses that win with ' + type + ' are the ones that act fast. A structured morning workflow increases conversion.',
-        productName + ' are sourced from official registers and updated daily. The data is accurate, fresh, and actionable.',
-        'The cost of ' + type + ' is predictable and fixed. No auction dynamics or rising CPCs.',
-        'First contact wins. Studies show contacting a prospect within 30 minutes increases conversion by 400%.',
-        productName + ' are exclusive. No other business in your territory has the same lead.'
-      ];
-      var sections = '';
-      sections += '<h2>Why ' + title.split(' ').slice(0,3).join(' ') + ' Matters</h2><p>' + paraPool[0] + '</p><p>' + paraPool[1] + '</p>';
-      sections += '<h2>What Are ' + type.charAt(0).toUpperCase() + type.slice(1) + '?</h2><p>' + paraPool[2] + '</p><p>' + paraPool[3] + '</p>';
-      sections += '<div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);border-radius:10px;padding:20px;margin:20px 0"><h3 style="font-size:15px;margin-bottom:8px;color:#0ea5e9">Key Benefits</h3><ul style="padding-left:20px;line-height:1.8"><li>Exclusive leads - only your business receives them</li><li>Fixed weekly pricing with no auction dynamics</li><li>Daily morning delivery - always first to contact</li><li>Free 7-day trial with no credit card required</li></ul></div>';
-      sections += '<h2>The Benefits of Consistent ' + type.charAt(0).toUpperCase() + type.slice(1) + '</h2><p>' + paraPool[4] + '</p><p>' + paraPool[5] + '</p>';
-      sections += '<h2>How to Get Started with ' + type.charAt(0).toUpperCase() + type.slice(1) + '</h2><p>' + paraPool[6] + '</p><p>' + paraPool[7] + '</p>';
-      // Internal cross-linking: link back to the relevant product page (builds internal links = mini backlinks)
-      var productLink = 'https://9amleads.com/' + (template.category === 'newbusiness' ? 'newbusinessalert/' : template.category === 'planning' ? 'planningleads/' : template.category === 'tenders' ? 'tenders/' : template.category === 'probate' ? 'probateleads/' : 'movingleadsdaily/');
-      sections += '<h2>Get Started with 9amLeads</h2><p>Ready to put these strategies into practice? <a href="' + productLink + '" style="color:#0ea5e9">Explore ' + productName + '</a> and start receiving fresh ' + type + ' every morning. Start your free 7-day trial today.</p>';
-      var wordCount = sections.replace(/<[^>]+>/g, '').split(/\s+/).length;
-      var jsonLd = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"' + title.replace(/"/g, '\\"') + '","description":"' + desc.replace(/"/g, '\\"') + '","datePublished":"' + new Date().toISOString() + '","author":{"@type":"Organization","name":"9amLeads","url":"https://9amleads.com"},"publisher":{"@type":"Organization","name":"9amLeads","url":"https://9amleads.com"},"mainEntityOfPage":"https://9amleads.com/blog/' + slug + '","keywords":"' + kw.join(', ') + '"}</script>';
-      var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + title + ' | 9amLeads Blog</title><meta name="description" content="' + desc + '"><meta name="keywords" content="' + kw.join(', ') + '"><meta property="og:title" content="' + title + '"><meta property="og:description" content="' + desc + '"><meta property="og:url" content="https://9amleads.com/blog/' + slug + '"><meta property="og:type" content="article"><meta property="og:site_name" content="9amLeads"><link rel="canonical" href="https://9amleads.com/blog/' + slug + '">' + jsonLd + '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:Inter,sans-serif;background:#000;color:#fff;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}h1{font-size:28px;font-weight:800;font-family:Outfit,sans-serif}h2{font-size:20px;font-weight:700;margin-top:32px;color:#f5f5f5}p{color:#ccc}a{color:#0ea5e9}</style></head><body><h1>' + title + '</h1><p style="color:#888">' + desc + '</p>' + sections + '<hr style="border:none;border-top:1px solid #222;margin:32px 0"><div style="font-size:12px;color:#666"><strong>About 9amLeads</strong> - We deliver fresh, exclusive business leads every morning at 9am. <a href="https://9amleads.com" style="color:#0ea5e9">Visit 9amLeads.com</a> to learn more.</div></body></html>';
-      var post = { id: 'blog_' + Date.now() + '_' + bi, title: title, slug: slug, description: desc, category: template.category, product_name: productName, keywords: kw, html: html, template_key: templateKey, template_index: variationIdx, word_count: wordCount, reading_time: Math.ceil(wordCount / 200) + ' min read', created_at: new Date().toISOString(), published: true, auto_generated: true };
-      dbData.blog_posts.push(post);
-      generated.push(post);
-      seoLog.push('Generated: ' + slug);
-    }
+    // Refresh the sitemap (canonical URLs only, includes all published blog posts)
+    var sitemapRes = writeSitemap();
+    seoLog.push(sitemapRes.ok ? 'Sitemap refreshed: ' + sitemapRes.count + ' URLs' : 'Sitemap error: ' + (sitemapRes.error || ''));
 
-    // 2. Refresh the sitemap if anything changed
-    if (generated.length > 0 || true) {
-      try {
-        var posts = (dbData.blog_posts || []).filter(function(p) { return p.published; });
-        var today = new Date().toISOString().split('T')[0];
-        var urls = [
-          '<url><loc>https://9amleads.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/pricing/</loc><priority>0.9</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/movingleadsdaily/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/probateleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/newbusinessalert/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/planningleads/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/tenders/</loc><priority>0.8</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/how-it-works/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/who-we-serve/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/blog/</loc><priority>0.7</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/founder/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/invest/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/about.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/contact.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/terms.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
-          '<url><loc>https://9amleads.com/privacy.html</loc><priority>0.3</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>'
-        ];
-        for (var pi = 0; pi < posts.length; pi++) {
-          urls.push('<url><loc>https://9amleads.com/blog/' + posts[pi].slug + '</loc><priority>0.6</priority><changefreq>weekly</changefreq><lastmod>' + (posts[pi].created_at ? posts[pi].created_at.split('T')[0] : today) + '</lastmod></url>');
-        }
-        var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
-        for (var ui = 0; ui < urls.length; ui++) xml += '  ' + urls[ui] + '\n';
-        xml += '</urlset>';
-        var pathMod = require('path');
-        fs.writeFileSync(pathMod.join(__dirname, '..', 'publish', 'sitemap.xml'), xml);
-        fs.writeFileSync(pathMod.join(__dirname, '..', 'sitemap.xml'), xml);
-        try { fs.writeFileSync(pathMod.join(__dirname, '..', '9amleads', 'sitemap.xml'), xml); } catch(e2) {}
-        seoLog.push('Sitemap refreshed: ' + urls.length + ' URLs');
-        // Ping search engines
-        try { var http = require('http'); http.get('http://www.google.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(gres) { gres.resume(); }); } catch(e3) {}
-        try { var https = require('https'); https.get('https://www.bing.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(bres) { bres.resume(); }).on('error', function(){}); } catch(e4) {}
-        // Bing IndexNow (no key needed for small sites - best-effort)
-        try {
-          var newSlugs = generated.map(function(g) { return 'https://9amleads.com/blog/' + g.slug; });
-          if (newSlugs.length > 0) {
-            var body = JSON.stringify({ host: '9amleads.com', key: '9amleads-indexnow', keyLocation: 'https://9amleads.com/9amleads-indexnow.txt', urlList: newSlugs });
-            var req = https.request({ hostname: 'api.indexnow.org', path: '/indexnow', method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(body) } }, function(ires) { ires.resume(); });
-            req.on('error', function(){}); req.write(body); req.end();
-          }
-        } catch(e5) {}
-        seoLog.push('Search engines pinged');
-      } catch(e6) { seoLog.push('Sitemap error: ' + (e6 && e6.message || '')); }
-    }
+    // Ping search engines so new/updated content is picked up promptly
+    try { var http = require('http'); http.get('http://www.google.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(gres) { gres.resume(); }); } catch(e1) {}
+    try { var https = require('https'); https.get('https://www.bing.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(bres) { bres.resume(); }).on('error', function(){}); } catch(e2) {}
+    seoLog.push('Search engines pinged');
+
     dbData.seo_last_run = new Date().toISOString();
     fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
     console.log('[SEO] Pipeline done: ' + seoLog.join(' | '));
