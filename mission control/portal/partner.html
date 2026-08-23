@@ -1,0 +1,304 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>9amLeads Partner Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕘</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{--accent:#0ea5e9;--bg:#f1f5f9;--card:#fff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--ff-h:'Outfit',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.55;-webkit-font-smoothing:antialiased}
+.container{max-width:1040px;margin:0 auto;padding:0 16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px}
+h1,h2,h3{font-family:var(--ff-h)}
+.grid{display:grid;gap:10px}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.stat{border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;background:#fff}
+.stat .n{font-size:24px;font-weight:900;font-family:var(--ff-h);color:#0c4a6e}
+.stat .l{font-size:11px;color:var(--muted);margin-top:2px}
+.sect-title{font-size:15px;font-weight:800;font-family:var(--ff-h);margin-bottom:10px;color:#0c4a6e}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:7px 6px;border-bottom:2px solid var(--border);color:var(--muted);font-weight:700}
+td{padding:7px 6px;border-bottom:1px solid #f1f5f9;color:#334155}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:9px 16px;border-radius:9px;border:none;cursor:pointer;font-weight:700;font-size:12px;font-family:inherit;text-decoration:none}
+.btn-p{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff}
+.btn-o{background:#fff;border:1px solid var(--border);color:var(--text)}
+.btn-s{background:#22c55e;color:#fff}
+.btn-danger{background:#ef4444;color:#fff}
+.inp{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;margin-bottom:8px}
+select.inp{padding:9px 8px}
+label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px}
+.muted{color:var(--muted);font-size:11px}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.t-green{background:#dcfce7;color:#166534}.t-amber{background:#fef3c7;color:#92400e}.t-red{background:#fee2e2;color:#991b1b}.t-blue{background:#dbeafe;color:#1e40af}.t-gray{background:#f1f5f9;color:#475569}
+.nav{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);z-index:10;padding:10px 0}
+.nav-in{display:flex;align-items:center;justify-content:space-between;max-width:1040px;margin:0 auto;padding:0 16px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;background:#eff6ff;color:#0369a1;font-size:10px;font-weight:800;margin-left:6px;text-transform:uppercase}
+.hidden{display:none}
+.tab-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tab-btn{padding:8px 14px;border-radius:9px;border:1px solid var(--border);background:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.tab-btn.active{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
+.copy-btn{cursor:pointer;color:#0369a1;font-size:11px;font-weight:700;background:none;border:none;font-family:inherit}
+.link-box{background:#f8fafc;border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:12px;word-break:break-all;color:#0369a1}
+.fb-item{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12px}
+.pr-row{display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid #f1f5f9;font-size:12px;flex-wrap:wrap}
+.follow-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;font-size:12px;flex-wrap:wrap}
+.alert{background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:11px;color:#92400e;margin-bottom:12px;line-height:1.6}
+.banner{background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:12px;color:#1e3a5f;line-height:1.7}
+</style>
+</head><body>
+
+<div class="nav"><div class="nav-in">
+<div style="font-size:18px;font-weight:900;font-family:var(--ff-h)">9am<span style="color:var(--accent)">Leads</span> <span class="badge">Partner</span></div>
+<div style="display:flex;align-items:center;gap:10px" id="nav-right"></div>
+</div></div>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div id="login-view" style="max-width:420px;margin:40px auto">
+<div class="card" style="text-align:center">
+<h1 style="font-size:22px;margin-bottom:4px">Partner Login</h1>
+<p class="muted" style="margin-bottom:16px">Affiliates and Sales Partners log in here.</p>
+<input class="inp" id="p-email" type="email" placeholder="Email">
+<input class="inp" id="p-pass" type="password" placeholder="Password">
+<button class="btn btn-p" style="width:100%;justify-content:center" onclick="partnerLogin()">Log In</button>
+<div id="p-login-msg" style="margin-top:10px;font-size:12px;color:#dc2626"></div>
+<p class="muted" style="margin-top:14px">Not a partner? <a href="/portal/partner-join.html" style="color:#0369a1;font-weight:700">Apply to join →</a></p>
+</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dash-view" class="hidden">
+<div id="dash-body"></div>
+</div>
+
+</div>
+
+<script>
+var API = 'https://nineamleads-backend.onrender.com';
+function getToken(){ try { return localStorage.getItem('partner_token') || ''; } catch(e){ return ''; } }
+function setToken(t){ try { localStorage.setItem('partner_token', t); } catch(e){} }
+function logout(){ try { localStorage.removeItem('partner_token'); } catch(e){} window.location.reload(); }
+function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt(n){ return '£' + (Number(n) || 0).toFixed(2); }
+function statusTag(st){ var m = { pending:'t-amber', approved:'t-blue', paid:'t-green', held:'t-gray', voided:'t-red', draft:'t-gray', active:'t-green', new:'t-blue', contacted:'t-amber', interested:'t-blue', follow_up:'t-amber', trial_started:'t-blue', paid2:'t-green', lost:'t-red', do_not_contact:'t-gray' }; return '<span class="tag ' + (m[st] || 't-gray') + '">' + esc(st) + '</span>'; }
+function copyText(txt, btn){
+  try { navigator.clipboard.writeText(txt); } catch(e) { var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  if (btn) { var o = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(function(){ btn.textContent = o; }, 1500); }
+}
+function hdr(){ return { 'Content-Type':'application/json', 'Authorization': 'Bearer ' + getToken() }; }
+function api(method, path, body, cb){
+  var x = new XMLHttpRequest(); x.open(method, API + path, true);
+  x.setRequestHeader('Authorization', 'Bearer ' + getToken());
+  if (body) x.setRequestHeader('Content-Type', 'application/json');
+  x.onload = function(){ var d = null; try { d = JSON.parse(x.responseText); } catch(e) {} cb(d, x.status); };
+  x.onerror = function(){ cb(null, 0); };
+  x.send(body ? JSON.stringify(body) : null);
+}
+function partnerLogin(){
+  var email = document.getElementById('p-email').value.trim();
+  var pass = document.getElementById('p-pass').value;
+  var msg = document.getElementById('p-login-msg');
+  api('POST', '/api/partner/login', { email: email, password: pass }, function(d, st){
+    if (d && d.token) { setToken(d.token); loadDash(); }
+    else { msg.textContent = (d && d.error) || 'Login failed'; }
+  });
+}
+function loadDash(){
+  var tv = document.getElementById('login-view'), dv = document.getElementById('dash-view');
+  tv.classList.add('hidden'); dv.classList.remove('hidden');
+  api('GET', '/api/partner/dashboard', null, function(d, st){
+    if (!d || !d.success) { if (st === 401 || st === 403) { logout(); return; } document.getElementById('dash-body').innerHTML = '<div class="card">Could not load dashboard.</div>'; return; }
+    render(d.dashboard);
+  });
+}
+function render(db){
+  var p = db.partner;
+  document.getElementById('nav-right').innerHTML = '<span style="font-size:12px;font-weight:700">' + esc(p.full_name || p.email) + '</span> <span class="tag t-blue">' + esc(p.partner_type.replace('_',' ')) + '</span> <button class="btn btn-o btn-ghost" style="font-size:11px" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>';
+  var isSales = p.partner_type === 'sales_partner';
+  var html = '';
+  // Banner
+  html += '<div class="banner"><strong>Your referral link</strong> — share this and anyone who signs up through it gets an extended 14-day free trial.<br><div class="link-box" style="margin-top:6px">' + esc(db.referral_link) + ' <button class="copy-btn" onclick="copyText(\'' + esc(db.referral_link) + '\', this)">Copy</button></div></div>';
+  html += '<div class="grid grid-3" style="margin-bottom:14px">' +
+    '<div class="stat"><div class="n">' + (db.clicks || 0) + '</div><div class="l">Referral Clicks</div></div>' +
+    '<div class="stat"><div class="n">' + (db.trials || 0) + '</div><div class="l">Trials</div></div>' +
+    '<div class="stat"><div class="n">' + (db.paid || 0) + '</div><div class="l">Paying Customers</div></div>' +
+    '<div class="stat"><div class="n">' + fmt(db.pending_commission || 0) + '</div><div class="l">Pending</div></div>' +
+    '<div class="stat"><div class="n">' + fmt(db.approved_commission || 0) + '</div><div class="l">Approved</div></div>' +
+    '<div class="stat"><div class="n">' + fmt(db.paid_commission || 0) + '</div><div class="l">Paid</div></div>' +
+    '<div class="stat"><div class="n">' + fmt(db.lifetime_earnings || 0) + '</div><div class="l">Lifetime Earnings</div></div>' +
+    '</div>';
+  if (isSales) {
+    var s = db.sales;
+    html += '<div class="card"><div class="sect-title">Your Portfolio</div><div class="grid grid-3">' +
+      '<div class="stat"><div class="n">' + (s.active_paying_customers || 0) + '</div><div class="l">Active Paying</div></div>' +
+      '<div class="stat"><div class="n">' + (s.active_trials || 0) + '</div><div class="l">Active Trials</div></div>' +
+      '<div class="stat"><div class="n">' + fmt(s.monthly_commission_est || 0) + '</div><div class="l">Current Monthly Commission</div></div>' +
+      '</div></div>';
+    html += '<div class="tab-row">' +
+      '<button class="tab-btn active" onclick="showTab(\'prospects\', this)">Prospects</button>' +
+      '<button class="tab-btn" onclick="showTab(\'followups\', this)">Today\u2019s Follow-Ups</button>' +
+      '<button class="tab-btn" onclick="showTab(\'feedback\', this)">Log Feedback</button>' +
+      '<button class="tab-btn" onclick="showTab(\'earnings\', this)">Earnings</button>' +
+      '<button class="tab-btn" onclick="showTab(\'resources\', this)">Resources</button>' +
+      '</div>';
+    html += '<div id="tab-prospects"></div><div id="tab-followups" class="hidden"></div><div id="tab-feedback" class="hidden"></div><div id="tab-earnings" class="hidden"></div><div id="tab-resources" class="hidden"></div>';
+  } else {
+    html += '<div class="tab-row"><button class="tab-btn active" onclick="showTab(\'referrals\', this)">Referrals</button><button class="tab-btn" onclick="showTab(\'earnings\', this)">Earnings</button><button class="tab-btn" onclick="showTab(\'resources\', this)">Resources</button></div>';
+    html += '<div id="tab-referrals"></div><div id="tab-earnings" class="hidden"></div><div id="tab-resources" class="hidden"></div>';
+  }
+  document.getElementById('dash-body').innerHTML = html;
+  window._db = db;
+  window._isSales = isSales;
+  if (isSales) { renderProspects(db); renderFollowups(db); renderFeedbackForm(db); renderEarnings(db); renderResources(); }
+  else { renderReferrals(db); renderEarnings(db); renderResources(); }
+}
+function showTab(name, btn){
+  var tabs = ['prospects','followups','feedback','earnings','resources','referrals'];
+  tabs.forEach(function(t){ var el = document.getElementById('tab-' + t); if (el) el.classList.add('hidden'); });
+  var el = document.getElementById('tab-' + name); if (el) el.classList.remove('hidden');
+  var btns = btn.parentElement.querySelectorAll('.tab-btn'); btns.forEach(function(b){ b.classList.remove('active'); }); if (btn) btn.classList.add('active');
+}
+function renderReferrals(db){
+  var html = '<div class="card"><div class="sect-title">Your Referrals</div>';
+  if (!db.referrals || !db.referrals.length) html += '<p class="muted">No referrals yet. Share your link to get started.</p>';
+  else {
+    html += '<table><thead><tr><th>Referral</th><th>Lead Type</th><th>Plan</th><th>Signed Up</th><th>Converted</th></tr></thead><tbody>';
+    db.referrals.forEach(function(r){ html += '<tr><td>' + esc(r.company || 'Business') + '</td><td>' + esc(r.product) + '</td><td>' + esc(r.plan) + '</td><td>' + (r.signup_at ? new Date(r.signup_at).toLocaleDateString() : '-') + '</td><td>' + (r.converted_at ? '✓' : '-') + '</td></tr>'; });
+    html += '</tbody></table>';
+  }
+  html += '</div>';
+  document.getElementById('tab-referrals').innerHTML = html;
+}
+function renderEarnings(db){
+  var html = '<div class="card"><div class="sect-title">Earnings</div>';
+  var comms = db.earnings || [];
+  if (!comms.length) html += '<p class="muted">No commissions yet. Commissions are created once a referred customer is paying and the qualifying period has passed.</p>';
+  else {
+    html += '<table><thead><tr><th>Period</th><th>Customer Ref</th><th>Type</th><th>Amount</th><th>Status</th><th>Paid Date</th></tr></thead><tbody>';
+    comms.forEach(function(c){ html += '<tr><td>' + esc(c.period) + '</td><td>' + esc(c.customer_ref) + '</td><td>' + esc(c.type) + '</td><td>' + fmt(c.amount) + '</td><td>' + statusTag(c.status) + '</td><td>' + (c.paid_at ? new Date(c.paid_at).toLocaleDateString() : '-') + '</td></tr>'; });
+    html += '</tbody></table>';
+  }
+  html += '</div>';
+  var el = document.getElementById('tab-earnings'); if (el) el.innerHTML = html;
+}
+function renderProspects(db){
+  var s = db.sales; var prospects = s.prospects || [];
+  var html = '<div class="card"><div class="sect-title">Sales Pipeline <button class="btn btn-p" style="float:right;font-size:11px" onclick="openProspectModal()"><i class="fas fa-plus"></i> Add Prospect</button></div>';
+  if (!prospects.length) html += '<p class="muted">No prospects yet. Add businesses you are contacting.</p>';
+  else {
+    html += '<div class="grid-2" style="display:grid;gap:8px">';
+    prospects.forEach(function(pr){
+      var st = pr.status || 'new';
+      html += '<div class="card" style="margin-bottom:0"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><b style="font-size:13px">' + esc(pr.business_name || 'Business') + '</b>' + statusTag(st) + '</div>' +
+        '<p class="muted" style="margin-top:4px">' + esc([pr.desired_lead_type, pr.postcode_area].filter(Boolean).join(' · ')) + '</p>' +
+        '<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">' +
+        '<select class="inp" style="width:auto;padding:4px 6px;font-size:10px;margin:0" onchange="setProspectStatus(\'' + pr.id + '\', this.value)">' +
+        ['new','contacted','no_answer','interested','follow_up','trial_started','paid','lost','do_not_contact'].map(function(o){ return '<option value="' + o + '"' + (st === o ? ' selected' : '') + '>' + o.replace('_',' ') + '</option>'; }).join('') +
+        '</select>' +
+        '<button class="btn btn-o" style="font-size:10px;padding:5px 10px" onclick="openProspectModal(\'' + pr.id + '\')">Edit</button>' +
+        '<button class="btn btn-o" style="font-size:10px;padding:5px 10px" onclick="promptNote(\'' + pr.id + '\')">Note / Follow-up</button>' +
+        '</div></div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  document.getElementById('tab-prospects').innerHTML = html;
+  window._prospects = prospects;
+}
+function openProspectModal(id){
+  var pr = (window._prospects || []).find(function(x){ return x.id === id; });
+  var html = '<div class="card"><div class="sect-title">' + (pr ? 'Edit Prospect' : 'Add Prospect') + '</div>';
+  html += '<input class="inp" id="pr-biz" placeholder="Business name" value="' + esc(pr ? pr.business_name : '') + '">';
+  html += '<input class="inp" id="pr-contact" placeholder="Contact name" value="' + esc(pr ? pr.contact_name : '') + '">';
+  html += '<input class="inp" id="pr-email" placeholder="Email" value="' + esc(pr ? pr.email : '') + '">';
+  html += '<input class="inp" id="pr-phone" placeholder="Phone" value="' + esc(pr ? pr.phone : '') + '">';
+  html += '<input class="inp" id="pr-type" placeholder="Lead type (e.g. moving)" value="' + esc(pr ? pr.desired_lead_type : '') + '">';
+  html += '<input class="inp" id="pr-area" placeholder="Postcode area (e.g. EN)" value="' + esc(pr ? pr.postcode_area : '') + '">';
+  html += '<input class="inp" id="pr-follow" type="date" placeholder="Next follow-up" value="' + (pr && pr.next_follow_up_at ? pr.next_follow_up_at.split('T')[0] : '') + '">';
+  html += '<textarea class="inp" id="pr-notes" rows="3" placeholder="Notes">' + esc(pr ? pr.notes : '') + '</textarea>';
+  html += '<button class="btn btn-p" onclick="saveProspect(\'' + (id || '') + '\')">Save</button> <button class="btn btn-o" onclick="closeModal()">Close</button>';
+  html += '</div>';
+  showModal(html);
+}
+function saveProspect(id){
+  var body = { business_name: document.getElementById('pr-biz').value, contact_name: document.getElementById('pr-contact').value, email: document.getElementById('pr-email').value, phone: document.getElementById('pr-phone').value, desired_lead_type: document.getElementById('pr-type').value, postcode_area: document.getElementById('pr-area').value, next_follow_up_at: document.getElementById('pr-follow').value, notes: document.getElementById('pr-notes').value };
+  api(id ? 'PUT' : 'POST', id ? '/api/partner/prospects/' + id : '/api/partner/prospects', body, function(d){ closeModal(); loadDash(); });
+}
+function setProspectStatus(id, st){
+  api('PUT', '/api/partner/prospects/' + id, { status: st }, function(){ loadDash(); });
+}
+function promptNote(id){
+  var html = '<div class="card"><div class="sect-title">Add Note / Schedule Follow-Up</div><input class="inp" id="nt-prospect" type="hidden" value="' + id + '"><textarea class="inp" id="nt-note" rows="3" placeholder="What happened?"></textarea><input class="inp" id="nt-next" type="date"><button class="btn btn-p" onclick="saveNote()">Save</button> <button class="btn btn-o" onclick="closeModal()">Close</button></div>';
+  showModal(html);
+}
+function saveNote(){
+  api('POST', '/api/partner/notes', { prospect_id: document.getElementById('nt-prospect').value, note: document.getElementById('nt-note').value, next_follow_up_at: document.getElementById('nt-next').value }, function(){ closeModal(); loadDash(); });
+}
+function renderFollowups(db){
+  var s = db.sales; var html = '<div class="card"><div class="sect-title">Today\u2019s Follow-Ups</div>';
+  var fu = s.follow_ups_today || [];
+  if (!fu.length) html += '<p class="muted">No follow-ups due today. Great work!</p>';
+  else fu.forEach(function(f){
+    html += '<div class="follow-item"><div><b>' + esc(f.business_name) + '</b> <span class="tag t-amber">' + esc(f.status) + '</span><br><span class="muted">Follow-up due ' + new Date(f.next_follow_up_at).toLocaleDateString() + '</span></div>' +
+      '<div style="display:flex;gap:5px"><button class="btn btn-o" style="font-size:10px;padding:5px 10px" onclick="markContacted(\'' + f.id + '\')">Contacted</button><button class="btn btn-o" style="font-size:10px;padding:5px 10px" onclick="promptNote(\'' + f.id + '\')">Add note</button></div></div>';
+  });
+  html += '</div>';
+  document.getElementById('tab-followups').innerHTML = html;
+}
+function markContacted(id){
+  api('PUT', '/api/partner/prospects/' + id, { contacted: true }, function(){ loadDash(); });
+}
+function renderFeedbackForm(){
+  var html = '<div class="card"><div class="sect-title">Log Customer Feedback</div>';
+  html += '<label>Feedback Type</label><select class="inp" id="fb-type"><option value="positive">😊 Positive</option><option value="neutral">😐 Neutral</option><option value="negative">😟 Negative</option><option value="feature_request">💡 Feature Request</option><option value="problem">⚠️ Problem</option><option value="cancellation_risk">🚨 Cancellation Risk</option><option value="potential_testimonial">⭐ Potential Testimonial</option></select>';
+  html += '<label>Category</label><select class="inp" id="fb-cat"><option value="lead_quality">Lead Quality</option><option value="lead_quantity">Lead Quantity</option><option value="freshness">Freshness</option><option value="postcode_coverage">Postcode Coverage</option><option value="pricing">Pricing</option><option value="dashboard">Dashboard</option><option value="print_and_post">Print &amp; Post</option><option value="billing">Billing</option><option value="support">Support</option><option value="feature_request">Feature Request</option><option value="other">Other</option></select>';
+  html += '<label>Customer ID (from your portfolio)</label><input class="inp" id="fb-cust" placeholder="Customer id (optional)">';
+  html += '<label>What did the customer say?</label><textarea class="inp" id="fb-comment" rows="3"></textarea>';
+  html += '<label>Your notes</label><textarea class="inp" id="fb-notes" rows="2"></textarea>';
+  html += '<label>Action required</label><select class="inp" id="fb-action"><option value="none">No action</option><option value="follow_up">Follow up</option><option value="support_required">Support required</option><option value="technical_issue">Technical issue</option><option value="owner_review">Owner review</option><option value="urgent">Urgent</option></select>';
+  html += '<button class="btn btn-s" onclick="saveFeedback()"><i class="fas fa-paper-plane"></i> Submit Feedback</button>';
+  html += '</div>';
+  document.getElementById('tab-feedback').innerHTML = html;
+}
+function saveFeedback(){
+  api('POST', '/api/partner/feedback', {
+    customer_id: document.getElementById('fb-cust').value,
+    feedback_type: document.getElementById('fb-type').value,
+    category: document.getElementById('fb-cat').value,
+    customer_comment: document.getElementById('fb-comment').value,
+    partner_notes: document.getElementById('fb-notes').value,
+    requested_action: document.getElementById('fb-action').value
+  }, function(d){ if (d && d.success) { document.getElementById('tab-feedback').innerHTML = '<div class="card" style="text-align:center;padding:24px">✅ <b>Feedback submitted.</b> Thank you — it goes straight to the 9amLeads team.</div>'; } else alert('Could not submit feedback'); });
+}
+function renderResources(){
+  api('GET', '/api/partner/resources', null, function(d){
+    var list = (d && d.resources) || [];
+    var html = '<div class="card"><div class="sect-title">Sales Resources</div>';
+    if (!list.length) html += '<p class="muted">No resources published yet.</p>';
+    else {
+      html += '<div class="grid-2" style="display:grid;gap:8px">';
+      list.forEach(function(r){ html += '<div class="card" style="margin-bottom:0"><b style="font-size:13px">' + esc(r.title) + '</b><span class="tag t-blue" style="margin-left:6px">' + esc(r.category) + '</span><p class="muted" style="margin-top:4px">' + esc((r.content || '').substring(0, 180)) + '</p>' + (r.url ? '<a href="' + esc(r.url) + '" target="_blank" class="btn btn-o" style="font-size:11px;padding:5px 12px;margin-top:6px">Open</a>' : '') + '</div>'; });
+      html += '</div>';
+    }
+    html += '</div>';
+    var el = document.getElementById('tab-resources'); if (el) el.innerHTML = html;
+  });
+}
+function showModal(html){
+  var m = document.createElement('div');
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:30px 14px;overflow:auto';
+  var c = document.createElement('div'); c.style.cssText = 'max-width:520px;width:100%'; c.innerHTML = html;
+  m.appendChild(c); m.addEventListener('click', function(e){ if (e.target === m) m.remove(); });
+  document.body.appendChild(m);
+  window._modal = m;
+}
+function closeModal(){ try { if (window._modal) window._modal.remove(); } catch(e) {} }
+(function init(){
+  if (getToken()) { loadDash(); }
+  else { document.getElementById('login-view').classList.remove('hidden'); }
+})();
+</script>
+</body></html>

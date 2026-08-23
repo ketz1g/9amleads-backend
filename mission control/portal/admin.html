@@ -101,6 +101,7 @@ tbody tr:hover td{background:#f8fafc}
 <button onclick="switchTab('fulfilment')"><i class="fas fa-clipboard-check"></i> Fulfilment</button>
 <button onclick="switchTab('rejected')"><i class="fas fa-times-circle"></i> Rejected</button>
 <button onclick="switchTab('analytics')"><i class="fas fa-chart-pie"></i> Analytics</button>
+<button onclick="switchTab('partners')"><i class="fas fa-handshake"></i> Partners</button>
 <button onclick="switchTab('affiliates')"><i class="fas fa-handshake"></i> Affiliates</button>
 <button onclick="switchTab('rejected')"><i class="fas fa-ban"></i> Rejected Leads</button>
 <button onclick="openDeliveryPreview()" title="See which leads each customer will get at the next 9am"><i class="fas fa-eye"></i> Delivery Preview</button> <a href="/portal/seo.html"><i class="fas fa-magnifying-glass"></i> SEO</a>
@@ -252,6 +253,23 @@ tbody tr:hover td{background:#f8fafc}
 </div>
 </div>
 
+<div class="tab-panel" id="tab-partners">
+<div class="card" style="margin-bottom:16px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-handshake" style="color:#0ea5e9;margin-right:6px"></i> Partner Programme</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<button class="btn btn-outline btn-sm" onclick="loadPartnerAdmin('partners')">Partners</button>
+<button class="btn btn-outline btn-sm" onclick="loadPartnerAdmin('commissions')">Commissions</button>
+<button class="btn btn-outline btn-sm" onclick="loadPartnerAdmin('payouts')">Payouts</button>
+<button class="btn btn-outline btn-sm" onclick="loadPartnerAdmin('feedback')">Voice of Customer</button>
+<button class="btn btn-outline btn-sm" onclick="loadPartnerAdmin('config')">Settings</button>
+<button class="btn btn-outline btn-sm" onclick="loadPartnerAdmin('resources')">Resources</button>
+</div>
+</div>
+<div id="partnerAdminBody"><div class="empty">Loading partner data...</div></div>
+</div>
+</div>
+
 <div class="tab-panel" id="tab-affiliates">
 <div class="card" style="margin-bottom:16px">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
@@ -313,9 +331,159 @@ function switchTab(name) {
   var btn = document.querySelector('.top .nav button[onclick*="switchTab(\'' + name + '\')"]');
   if (btn) btn.classList.add('active');
   if (name === 'affiliates') loadAffiliates();
+  if (name === 'partners') loadPartnerAdmin('partners');
   if (name === 'rejected') loadRejected();
   if (name === 'analytics') loadAnalytics();
   window.scrollTo(0, 0);
+}
+
+// ===== PARTNER PROGRAMME ADMIN =====
+function pEsc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function pStatusTag(st){ var m = { pending:'#f59e0b', approved:'#0ea5e9', paid:'#22c55e', held:'#94a3b8', voided:'#ef4444', active:'#22c55e', suspended:'#ef4444', rejected:'#ef4444', closed:'#94a3b8' }; return '<span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:' + (m[st]||'#e2e8f0') + '22;color:' + (m[st]||'#475569') + '">' + pEsc(st) + '</span>'; }
+function loadPartnerAdmin(section){
+  var body = document.getElementById('partnerAdminBody');
+  if (!body) return;
+  if (section === 'config') return loadPartnerConfig();
+  if (section === 'resources') return loadPartnerResources();
+  if (section === 'commissions') {
+    fetch(API + '/api/admin/partner/commissions?t=' + Date.now(), { headers: adminHeaders() }).then(function(r){ return r.json(); }).then(function(d){
+      var list = d.commissions || [];
+      var html = '<div style="font-size:12px;font-weight:700;margin-bottom:8px">Commissions (' + list.length + ')</div><table style="width:100%;font-size:11px;border-collapse:collapse"><thead><tr style="text-align:left;color:#64748b"><th style="padding:5px">Period</th><th>Type</th><th>Amount</th><th>Status</th><th>Customer</th><th>Actions</th></tr></thead><tbody>';
+      list.slice(0, 100).forEach(function(c){
+        html += '<tr style="border-top:1px solid #eef2f7"><td style="padding:5px">' + pEsc(c.commission_period) + '</td><td>' + pEsc(c.commission_type) + '</td><td>£' + (Number(c.commission_amount)||0) + '</td><td>' + pStatusTag(c.status) + '</td><td>' + pEsc((c.customer_id||'').substring(0,8)) + '</td><td>' +
+          (c.status === 'pending' ? '<button class="btn btn-sm" style="font-size:10px" onclick="setCommissionStatus(\'' + c.id + '\',\'approved\')">Approve</button> <button class="btn btn-sm btn-outline" style="font-size:10px" onclick="setCommissionStatus(\'' + c.id + '\',\'held\')">Hold</button> <button class="btn btn-sm btn-outline" style="font-size:10px" onclick="setCommissionStatus(\'' + c.id + '\',\'voided\')">Void</button>' : '') + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      body.innerHTML = html;
+    });
+    return;
+  }
+  if (section === 'payouts') {
+    fetch(API + '/api/admin/partner/payouts?t=' + Date.now(), { headers: adminHeaders() }).then(function(r){ return r.json(); }).then(function(d){
+      var list = d.payouts || [];
+      var html = '<div style="font-size:12px;font-weight:700;margin-bottom:8px">Payouts (' + list.length + ')</div>';
+      if (!list.length) html += '<div class="empty">No payouts yet. Approve commissions, then create a payout batch.</div>';
+      else {
+        html += '<table style="width:100%;font-size:11px;border-collapse:collapse"><thead><tr style="text-align:left;color:#64748b"><th style="padding:5px">Period</th><th>Amount</th><th>Status</th><th>Reference</th><th>Actions</th></tr></thead><tbody>';
+        list.forEach(function(p){ html += '<tr style="border-top:1px solid #eef2f7"><td style="padding:5px">' + pEsc(p.payout_period || '-') + '</td><td>£' + (Number(p.total_amount)||0) + '</td><td>' + pStatusTag(p.status) + '</td><td>' + pEsc(p.payment_reference || '') + '</td><td>' + (p.status === 'draft' || p.status === 'approved' ? '<button class="btn btn-sm" style="font-size:10px" onclick="setPayoutStatus(\'' + p.id + '\',\'paid\')">Mark Paid</button>' : '') + '</td></tr>'; });
+        html += '</tbody></table>';
+      }
+      html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0"><div style="font-size:12px;font-weight:700;margin-bottom:8px">Create Payout Batch</div>' +
+        '<input class="input" id="po-partner" placeholder="Partner ID" style="margin-bottom:6px">' +
+        '<input class="input" id="po-period" placeholder="Period e.g. 2026-11" style="margin-bottom:6px">' +
+        '<input class="input" id="po-commissions" placeholder="Commission IDs, comma-separated" style="margin-bottom:6px">' +
+        '<button class="btn btn-primary btn-sm" onclick="createPayout()">Create Payout</button></div>';
+      body.innerHTML = html;
+    });
+    return;
+  }
+  if (section === 'feedback') {
+    fetch(API + '/api/admin/partner/feedback?t=' + Date.now(), { headers: adminHeaders() }).then(function(r){ return r.json(); }).then(function(d){
+      var list = d.feedback || [];
+      var types = { positive:'😊', neutral:'😐', negative:'😟', feature_request:'💡', problem:'⚠️', cancellation_risk:'🚨', potential_testimonial:'⭐' };
+      var html = '<div style="font-size:12px;font-weight:700;margin-bottom:8px">Voice of Customer (' + list.length + ')</div>';
+      if (!list.length) html += '<div class="empty">No customer feedback logged yet.</div>';
+      list.slice(0, 80).forEach(function(f){
+        var urgent = f.feedback_type === 'cancellation_risk' || f.requested_action === 'urgent';
+        html += '<div style="border:1px solid ' + (urgent ? '#fca5a5' : '#e2e8f0') + ';border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12px">' +
+          '<div style="font-weight:700">' + (types[f.feedback_type] || '•') + ' ' + pEsc(f.feedback_type) + ' <span style="color:#64748b;font-weight:400">· ' + pEsc(f.category) + ' · ' + new Date(f.created_at).toLocaleDateString() + '</span> ' + pStatusTag(f.status) + '</div>' +
+          (f.customer_comment ? '<p style="margin:6px 0 0;color:#334155">“' + pEsc(f.customer_comment) + '”</p>' : '') +
+          (f.partner_notes ? '<p style="margin:4px 0 0;color:#64748b;font-size:11px">Partner: ' + pEsc(f.partner_notes) + '</p>' : '') +
+          '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">' + (f.status !== 'resolved' ? '<button class="btn btn-sm" style="font-size:10px" onclick="resolveFeedback(\'' + f.id + '\')">Resolve</button>' : '') + '<button class="btn btn-sm btn-outline" style="font-size:10px" onclick="promptFeedbackNote(\'' + f.id + '\')">Add note</button></div>' +
+          '</div>';
+      });
+      body.innerHTML = html;
+    });
+    return;
+  }
+  // default: partners list
+  fetch(API + '/api/admin/partners?t=' + Date.now(), { headers: adminHeaders() }).then(function(r){ return r.json(); }).then(function(d){
+    var list = d.partners || [];
+    var html = '<input class="input" id="partnerSearch" placeholder="Search by name/email/code..." style="margin-bottom:10px" onkeyup="filterPartners()">';
+    html += '<table style="width:100%;font-size:11px;border-collapse:collapse"><thead><tr style="text-align:left;color:#64748b"><th style="padding:6px">Partner</th><th>Type</th><th>Status</th><th>Code</th><th>Commission</th><th>Actions</th></tr></thead><tbody id="partnerRows">';
+    list.forEach(function(p){
+      html += '<tr class="p-row" data-q="' + pEsc((p.full_name||'') + ' ' + (p.email||'') + ' ' + (p.referral_code||'')) + '" style="border-top:1px solid #eef2f7"><td style="padding:6px"><b>' + pEsc(p.full_name || p.email) + '</b><br><span style="color:#64748b">' + pEsc(p.email) + '</span></td><td>' + pEsc(p.partner_type) + '</td><td>' + pStatusTag(p.status) + '</td><td>' + pEsc(p.referral_code) + '</td><td>' + (p.commission_type === 'recurring' ? '£' + (p.commission_amount||25) + '/mo' : '£' + (p.commission_amount||25) + ' once') + '</td><td>' +
+        '<select style="font-size:10px;padding:3px 6px" onchange="setPartnerStatus(\'' + p.id + '\', this.value)">' + ['active','pending','suspended','rejected','closed'].map(function(o){ return '<option value="' + o + '"' + (p.status === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select> ' +
+        '<select style="font-size:10px;padding:3px 6px" onchange="setPartnerType(\'' + p.id + '\', this.value)">' + ['affiliate','sales_partner'].map(function(o){ return '<option value="' + o + '"' + (p.partner_type === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>' +
+        '</td></tr>';
+    });
+    html += '</tbody></table>';
+    body.innerHTML = html;
+  });
+}
+function filterPartners(){
+  var q = (document.getElementById('partnerSearch').value || '').toLowerCase();
+  document.querySelectorAll('#partnerRows .p-row').forEach(function(r){ r.style.display = r.getAttribute('data-q').toLowerCase().indexOf(q) !== -1 ? '' : 'none'; });
+}
+function setPartnerStatus(id, st){
+  if (!confirm('Set partner status to ' + st + '?')) return;
+  fetch(API + '/api/admin/partners/' + id + '/status', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ status: st }) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerAdmin('partners'); });
+}
+function setPartnerType(id, t){
+  if (!confirm('Change partner type to ' + t + '? This changes their commission model.')) return;
+  fetch(API + '/api/admin/partners/' + id + '/type', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ partner_type: t }) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerAdmin('partners'); });
+}
+function setCommissionStatus(id, st){
+  fetch(API + '/api/admin/partner/commissions/' + id + '/status', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ status: st, reason: prompt('Reason (for audit log):') || '' }) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerAdmin('commissions'); });
+}
+function setPayoutStatus(id, st){
+  var ref = st === 'paid' ? prompt('Payment reference (e.g. bank transfer ref):') || '' : '';
+  fetch(API + '/api/admin/partner/payouts/' + id + '/status', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ status: st, payment_reference: ref }) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerAdmin('payouts'); });
+}
+function createPayout(){
+  var partner_id = document.getElementById('po-partner').value.trim();
+  var period = document.getElementById('po-period').value.trim();
+  var ids = document.getElementById('po-commissions').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+  if (!partner_id || !ids.length) { alert('Partner ID + commission IDs required'); return; }
+  fetch(API + '/api/admin/partner/payouts', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ partner_id: partner_id, payout_period: period, commission_ids: ids }) }).then(function(r){ return r.json(); }).then(function(d){ alert(d.success ? 'Payout created: £' + d.payout.total_amount : (d.error || 'Error')); loadPartnerAdmin('payouts'); });
+}
+function resolveFeedback(id){
+  fetch(API + '/api/admin/partner/feedback/' + id, { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ status: 'resolved' }) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerAdmin('feedback'); });
+}
+function promptFeedbackNote(id){
+  var note = prompt('Admin note:');
+  if (note === null) return;
+  fetch(API + '/api/admin/partner/feedback/' + id, { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ admin_notes: note }) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerAdmin('feedback'); });
+}
+function loadPartnerConfig(){
+  var body = document.getElementById('partnerAdminBody');
+  fetch(API + '/api/admin/partner/config?t=' + Date.now(), { headers: adminHeaders() }).then(function(r){ return r.json(); }).then(function(d){
+    var c = d.config || {};
+    var fields = [['affiliate_one_off_amount','Affiliate one-off commission (£)', c.affiliate_one_off_amount], ['sales_partner_monthly_amount','Sales Partner monthly commission (£)', c.sales_partner_monthly_amount], ['affiliate_trial_days','Affiliate referral trial (days)', c.affiliate_trial_days], ['sales_partner_trial_days','Sales Partner referral trial (days)', c.sales_partner_trial_days], ['standard_trial_days','Standard trial (days)', c.standard_trial_days], ['attribution_window_days','Attribution window (days)', c.attribution_window_days], ['commission_clearance_days','Commission clearance (days)', c.commission_clearance_days], ['commission_qualification_days','First-commission qualification (days)', c.commission_qualification_days], ['sales_partner_commission_duration_months','Sales commission duration (months, empty = indefinite)', c.sales_partner_commission_duration_months === null ? '' : c.sales_partner_commission_duration_months]];
+    var html = '<div style="font-size:12px;font-weight:700;margin-bottom:8px">Partner Programme Settings</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">';
+    fields.forEach(function(f){ html += '<div><label style="font-size:11px;font-weight:700;color:#64748b">' + f[1] + '</label><input class="input" id="cfg-' + f[0] + '" value="' + pEsc(f[2]) + '"></div>'; });
+    html += '</div><div style="margin-top:12px;display:flex;gap:10px;align-items:center"><label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#64748b"><input type="checkbox" id="cfg-partners_open" ' + (c.partners_open ? 'checked' : '') + '> Applications open</label><button class="btn btn-primary btn-sm" onclick="savePartnerConfig()">Save Settings</button></div>';
+    html += '<p style="font-size:10px;color:#94a3b8;margin-top:10px">Every config change is audit-logged. Commission amounts are never read from the frontend.</p>';
+    body.innerHTML = html;
+  });
+}
+function savePartnerConfig(){
+  var cfg = {};
+  ['affiliate_one_off_amount','sales_partner_monthly_amount','affiliate_trial_days','sales_partner_trial_days','standard_trial_days','attribution_window_days','commission_clearance_days','commission_qualification_days','sales_partner_commission_duration_months'].forEach(function(k){
+    var el = document.getElementById('cfg-' + k); if (!el) return;
+    var v = el.value.trim(); if (v === '') cfg[k] = null; else cfg[k] = isNaN(Number(v)) ? v : Number(v);
+  });
+  cfg.partners_open = document.getElementById('cfg-partners_open').checked;
+  fetch(API + '/api/admin/partner/config', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify(cfg) }).then(function(r){ return r.json(); }).then(function(d){ alert(d.success ? 'Settings saved' : (d.error || 'Error')); loadPartnerConfig(); });
+}
+function loadPartnerResources(){
+  var body = document.getElementById('partnerAdminBody');
+  fetch(API + '/api/admin/partner/resources?t=' + Date.now(), { headers: adminHeaders() }).then(function(r){ return r.json(); }).then(function(d){
+    var list = d.resources || [];
+    var html = '<div style="font-size:12px;font-weight:700;margin-bottom:8px">Sales Resources (' + list.length + ')</div>';
+    list.forEach(function(r){ html += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12px;display:flex;justify-content:space-between;gap:8px"><div><b>' + pEsc(r.title) + '</b> <span style="color:#64748b">· ' + pEsc(r.category) + '</span><br><span style="color:#64748b;font-size:11px">' + pEsc((r.content||'').substring(0,120)) + '</span></div><button class="btn btn-sm btn-outline" style="font-size:10px" onclick="deleteResource(\'' + r.id + '\')">Delete</button></div>'; });
+    html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0"><div style="font-size:12px;font-weight:700;margin-bottom:8px">Add Resource</div>' +
+      '<input class="input" id="rs-title" placeholder="Title" style="margin-bottom:6px"><input class="input" id="rs-cat" placeholder="Category (e.g. call_script, training)" style="margin-bottom:6px"><textarea class="input" id="rs-content" rows="3" placeholder="Content / notes"></textarea><input class="input" id="rs-url" placeholder="URL / file link (optional)" style="margin-bottom:6px"><button class="btn btn-primary btn-sm" onclick="addResource()">Add Resource</button></div>';
+    body.innerHTML = html;
+  });
+}
+function addResource(){
+  var b = { title: document.getElementById('rs-title').value, category: document.getElementById('rs-cat').value, content: document.getElementById('rs-content').value, url: document.getElementById('rs-url').value };
+  fetch(API + '/api/admin/partner/resources', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify(b) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerResources(); });
+}
+function deleteResource(id){
+  if (!confirm('Delete resource?')) return;
+  fetch(API + '/api/admin/partner/resources/' + id, { method: 'DELETE', headers: adminHeaders() }).then(function(){ loadPartnerResources(); });
 }
 
 // ===== REJECTED LEADS =====

@@ -187,7 +187,8 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 
 <div class="form-group" style="margin-bottom:14px">
 <label>Affiliate name or code <span class="ml" style="color:#0ea5e9">(optional · get 14 days free trial instead of 7)</span></label>
-<input type="text" id="s-affiliate" placeholder="e.g. James or JAMES24" class="sf" style="margin-bottom:6px">
+<input type="text" id="s-affiliate" placeholder="e.g. James or JAMES24 (referral code, optional)" class="sf" style="margin-bottom:6px">
+<div id="partner-trial-note" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;font-size:12px;color:#1e40af;line-height:1.6;margin-bottom:6px">🎁 <strong>Partner Extended Trial</strong> — You've arrived via a 9amLeads partner. Your free trial is extended to <strong>14 days</strong>. No card required. Nothing is charged automatically.</div>
 <p style="font-size:10px;color:#6b7280;margin:0">Were you referred by a friend or partner? Enter their name or code and your free trial is extended to 14 days. Works for every lead type.</p>
 </div>
 
@@ -1215,6 +1216,15 @@ function showSignup() { document.getElementById('signup-form').style.display='bl
   showFormByHash();
   window.addEventListener('hashchange', showFormByHash);
   var params = new URLSearchParams(window.location.search);
+  var refParam = params.get('ref');
+  if (refParam) {
+    try {
+      var affField = document.getElementById('s-affiliate');
+      if (affField && !affField.value) { affField.value = refParam; }
+      var ptn = document.getElementById('partner-trial-note');
+      if (ptn) ptn.style.display = 'block';
+    } catch(e) {}
+  }
   if (params.get('verified') === 'true') {
     showLogin();
     var el = document.getElementById('login-error');

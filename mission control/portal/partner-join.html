@@ -1,0 +1,105 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Join the 9amLeads Partner Programme</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕘</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--accent:#0ea5e9;--bg:#f1f5f9;--card:#fff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.container{max-width:640px;margin:0 auto;padding:24px 16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px}
+h1,h2{font-family:'Outfit',sans-serif}
+.inp{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;margin-bottom:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 20px;border-radius:10px;border:none;cursor:pointer;font-weight:700;font-size:13px;font-family:inherit;width:100%}
+.btn-p{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff}
+.muted{color:var(--muted);font-size:12px}
+.pick{display:flex;gap:10px;margin-bottom:14px}
+.pick button{flex:1;padding:14px;border:2px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:800;font-size:14px}
+.pick button.active{border-color:var(--accent);background:#eff6ff;color:#0369a1}
+label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px}
+.hidden{display:none}
+.terms{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:11px;color:#475569;margin-bottom:10px}
+.msg{font-size:12px;margin-top:10px;padding:10px;border-radius:8px}
+.ok{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.err{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+</style>
+</head><body>
+<div class="container">
+<h1 style="font-size:24px;margin-bottom:4px">Join the 9amLeads <span style="color:var(--accent)">Partner Programme</span></h1>
+<p class="muted" style="margin-bottom:18px">Earn by referring businesses to 9amLeads. Two ways to partner:</p>
+
+<div class="pick">
+<button type="button" id="pk-aff" class="active" onclick="pick('affiliate')">Affiliate<br><span style="font-weight:400;font-size:11px;color:var(--muted)">£25 per paying referral</span></button>
+<button type="button" id="pk-sales" onclick="pick('sales_partner')">Sales Partner<br><span style="font-weight:400;font-size:11px;color:var(--muted)">£25/month per active customer</span></button>
+</div>
+
+<div class="card">
+<div id="desc-aff">
+<p style="font-size:13px;margin-bottom:10px"><b>Become an Affiliate</b> — perfect for customers, contacts and content creators. You simply refer businesses. When a referred business becomes a paying customer, you earn a <b>£25 one-off</b> commission (after the qualifying period). Referred customers get an extended <b>14-day free trial</b>. No support responsibilities.</p>
+</div>
+<div id="desc-sales" class="hidden">
+<p style="font-size:13px;margin-bottom:10px"><b>Become a Sales Partner</b> — an independent, commission-based opportunity. Find businesses, contact them, help them onto trial and support them as customers. You earn a <b>£25 monthly recurring commission</b> per qualifying active paying customer (under current programme terms), with full sales resources and a partner dashboard.</p>
+<ul style="font-size:12px;color:var(--muted);margin:10px 0;padding-left:18px">
+<li>Remote / flexible — your own time and effort</li>
+<li>Build a portfolio + recurring monthly income</li>
+<li>Full sales resources, approved outreach copy + customer dashboard</li>
+<li>No guaranteed income — commission is performance-based</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<h2 style="font-size:16px;margin-bottom:12px">Application</h2>
+<input class="inp" id="f-name" placeholder="Full name">
+<input class="inp" id="f-email" type="email" placeholder="Email">
+<input class="inp" id="f-phone" placeholder="Phone (optional)">
+<input class="inp" id="f-biz" placeholder="Business name (optional)">
+<input class="inp" id="f-pass" type="password" placeholder="Password (min 8 characters)">
+<div id="sales-fields" class="hidden">
+<label>Sales / relevant experience</label>
+<textarea class="inp" id="f-exp" rows="3" placeholder="Tell us about your sales experience"></textarea>
+<label>Preferred lead sectors</label>
+<input class="inp" id="f-sectors" placeholder="e.g. removals, probate, planning, new business, tenders">
+</div>
+<div id="terms-block" class="hidden">
+<div class="terms"><b>Partner Terms (v1 — summary for your application)</b><br>
+Independent relationship · No guaranteed income · Commission only on qualifying paying customers · Customer attribution rules apply · Payment timing subject to clearance + admin payout · Cancellation/refund rules apply · You agree to comply with UK direct-marketing laws, use approved business outreach practices, respect do-not-contact requests, make no misleading claims (no guaranteed leads/jobs/results), not misrepresent yourself as an employee, use only approved product/pricing information, and not spam. Full terms wording is being finalised and will be provided before activation.
+</div>
+<label style="display:flex;align-items:flex-start;gap:6px;margin-bottom:8px"><input type="checkbox" id="f-terms"> <span>I have read and accept the Partner Terms.</span></label>
+<label style="display:flex;align-items:flex-start;gap:6px;margin-bottom:8px"><input type="checkbox" id="f-compliance"> <span>I acknowledge the compliance rules (UK direct-marketing laws, approved outreach, no misleading claims, no spam).</span></label>
+</div>
+<button class="btn btn-p" onclick="apply()">Submit Application</button>
+<div id="msg" class="hidden"></div>
+<p class="muted" style="margin-top:12px;text-align:center">Already a partner? <a href="/portal/partner.html" style="color:#0369a1;font-weight:700">Log in →</a></p>
+</div>
+</div>
+
+<script>
+var partner_type = 'affiliate';
+function pick(t){
+  partner_type = t;
+  document.getElementById('pk-aff').classList.toggle('active', t === 'affiliate');
+  document.getElementById('pk-sales').classList.toggle('active', t === 'sales_partner');
+  document.getElementById('desc-aff').classList.toggle('hidden', t !== 'affiliate');
+  document.getElementById('desc-sales').classList.toggle('hidden', t !== 'sales_partner');
+  document.getElementById('sales-fields').classList.toggle('hidden', t !== 'sales_partner');
+  document.getElementById('terms-block').classList.toggle('hidden', t !== 'sales_partner');
+}
+function msg(m, ok){ var el = document.getElementById('msg'); el.className = 'msg ' + (ok ? 'ok' : 'err'); el.textContent = m; el.classList.remove('hidden'); }
+function apply(){
+  var body = { partner_type: partner_type, full_name: document.getElementById('f-name').value.trim(), email: document.getElementById('f-email').value.trim(), phone: document.getElementById('f-phone').value.trim(), business_name: document.getElementById('f-biz').value.trim(), password: document.getElementById('f-pass').value };
+  if (partner_type === 'sales_partner') {
+    body.sales_experience = document.getElementById('f-exp').value;
+    body.preferred_sectors = document.getElementById('f-sectors').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    body.terms_accepted = document.getElementById('f-terms').checked;
+    body.compliance_acknowledged = document.getElementById('f-compliance').checked;
+    body.terms_version = 'v1';
+    if (!body.terms_accepted || !body.compliance_acknowledged) { msg('Please tick the Terms and Compliance boxes to apply as a Sales Partner.', false); return; }
+  }
+  var x = new XMLHttpRequest(); x.open('POST', '/api/partner/apply', true); x.setRequestHeader('Content-Type', 'application/json');
+  x.onload = function(){ var d = null; try { d = JSON.parse(x.responseText); } catch(e) {} if (d && d.success) { msg(d.message || 'Application received.', true); document.querySelector('.card:last-of-type .btn').style.display = 'none'; } else { msg((d && d.error) || 'Something went wrong.', false); } };
+  x.send(JSON.stringify(body));
+}
+</script>
+</body></html>
