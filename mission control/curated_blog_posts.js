@@ -61,6 +61,12 @@ function buildPostHTML(p) {
     '<meta property="og:url" content="' + canonical + '">' +
     '<meta property="og:type" content="article">' +
     '<meta property="og:site_name" content="9amLeads">' +
+    '<meta property="og:image" content="https://9amleads.com/blog/og/' + p.slug + '.png">' +
+    '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">' +
+    '<meta name="twitter:card" content="summary_large_image">' +
+    '<meta name="twitter:title" content="' + esc(p.title) + '">' +
+    '<meta name="twitter:description" content="' + esc(p.description) + '">' +
+    '<meta name="twitter:image" content="https://9amleads.com/blog/og/' + p.slug + '.png">' +
     '<link rel="canonical" href="' + canonical + '">' +
     articleJson + faqJson +
     '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">' +
@@ -588,6 +594,243 @@ var CURATED_POSTS = [
         'You cannot improve what you do not measure. Track three numbers every week:',
         { table: [['Metric', 'What it tells you', 'What to do if it is low'], ['Leads received', 'Pipeline volume', 'Review your postcode areas and lead type'], ['First contacts made', 'How fast you act', 'Tighten the morning routine'], ['Conversions', 'How well you convert', 'Improve your call, quote or follow-up']] },
         'Once you know your conversion rate, forecasting becomes easy: if 10 leads become 2 jobs, you know exactly how many leads you need each week for your target. That is the number that turns lead buying from a cost into an investment.'
+      ]}
+    ]
+  },
+  {
+    slug: 'seasonal-guide-to-moving-leads-uk',
+    title: 'The Seasonal Guide to Moving Leads in the UK: When the Market Peaks (and How to Plan Around It)',
+    description: 'UK house moves follow a predictable seasonal rhythm. Understand when moving leads peak, why, and how removal companies can plan staffing, pricing and marketing around the cycle.',
+    category: 'moving', product_name: 'Moving Leads', categoryLabel: 'Moving Leads',
+    keywords: ['seasonal moving leads UK', 'moving leads trends', 'UK removals season', 'when do people move house UK', 'removal company planning'],
+    date: '2026-08-28', reading_time: '8 min read',
+    faqs: [
+      { q: 'When is the peak season for moving leads in the UK?', a: 'Late spring and summer — roughly April to September — are the busiest, peaking in June, July and August. School holidays, weather and the traditional rhythm of buying and selling all push families to move in the warmer months.' },
+      { q: 'Is the winter completely quiet?', a: 'No, but it is quieter and more predictable. January is the slowest month for transactions. However, listing activity still happens, and businesses moving premises, downsizers and chain-free buyers often move in winter with less competition.' },
+      { q: 'Should I change my pricing by season?', a: 'Yes. In peak season demand exceeds supply, so firm pricing and even premium rates for short-notice moves are justified. In quiet months, consider offers, minimum-hours packages and smaller-move specialisms to keep crews busy.' },
+      { q: 'How do I smooth out seasonal dips?', a: 'Diversify into segments that move in winter — downsizing, probate and deceased estates, commercial moves and corporate relocations — and build a pipeline of long-distance moves that are booked further ahead.' }
+    ],
+    sections: [
+      { h: 'The rhythm of the UK moving year', body: [
+        'UK house moves are strongly seasonal, and the pattern is consistent enough to plan around. Transactions climb through spring, peak in the summer months, and fall back sharply after September, with January typically the quietest.',
+        'The seasonal cycle is driven by practical decisions: families want to move during school holidays, buyers want the garden to look its best, and chains prefer to complete in daylight hours and good weather. None of this is news to experienced removal firms — the value is in planning for it deliberately.',
+        { cta: 'Receive moving leads in your postcode all year round — start your free 7-day trial.' }
+      ]},
+      { h: 'What the seasonal curve looks like', body: [
+        'The transaction calendar tells you where the work is. While any individual year shifts, the shape is reliable:',
+        { table: [['Season', 'Transaction activity', 'What it means for removals'], ['Jan – Feb', 'Slowest', 'Quiet month, prepare and market'], ['Mar – Apr', 'Building', 'Listings rise, quoting season starts'], ['May – Aug', 'Peak', 'Highest volume, firm pricing, waitlists'], ['Sep – Nov', 'Tapering', 'Still active, chain completions'], ['Dec', 'Sharp dip', 'Planning and maintenance time']] },
+        'Plan your capacity, pricing and marketing around this curve rather than reacting to it month by month.'
+      ]},
+      { h: 'Use peak season to build your year', body: [
+        'Peak months are your revenue engine and your reputation builder. Run organised operations, deliver on time, and collect reviews aggressively — the goodwill you build in summer is what fills the phone in winter.',
+        'Consider premium pricing for short-notice and weekend moves during peak demand, and offer early-booking discounts for summer dates to lock in work ahead of time. A full calendar is a strong position; do not discount from strength.',
+        { cta: 'Plan your peak season around fresh moving leads — start your free trial.' }
+      ]},
+      { h: 'Fill the quiet months deliberately', body: [
+        'Instead of chasing volume in a quiet market, specialise in the segments that move all year round:',
+        { ul: ['Probate and deceased estate moves — no school holiday constraints', 'Downsizing moves for older clients, often early in the week', 'Commercial and office moves, driven by lease dates not seasons', 'Long-distance moves, which are booked weeks ahead and smooth the pipeline'] },
+        'Business moves in particular follow commercial calendars rather than the housing cycle, so they can fill otherwise quiet weeks.'
+      ]},
+      { h: 'The 12-month marketing rhythm', body: [
+        'Match your marketing to the cycle. In late winter, publish content and offers aimed at spring movers. Through summer, focus on reviews, referral incentives and rapid response. In autumn, target the business-moving and downsizing segments for winter.',
+        'A seasonal plan turns a cyclical industry into a managed one. The companies that plan around the curve win more moves at every point of the year — and know exactly when to push hardest.'
+      ]}
+    ]
+  },
+  {
+    slug: 'scalable-probate-lead-pipeline',
+    title: 'How to Build a Scalable Probate Lead Pipeline for Your Law Firm',
+    description: 'How solicitors move from sporadic probate work to a steady, repeatable pipeline — volume planning, workflow design, team roles, and the numbers that tell you your pipeline is working.',
+    category: 'probate', product_name: 'Probate Leads', categoryLabel: 'Probate Leads',
+    keywords: ['probate pipeline', 'probate leads for solicitors', 'scalable probate work', 'probate workflow', 'probate lead generation for law firms'],
+    date: '2026-08-27', reading_time: '8 min read',
+    faqs: [
+      { q: 'How many probate leads does a firm need each week?', a: 'Work backwards from your target. If you win 1 in 4 instructions you contact and you want 4 new files a month, you need around 16 qualifying leads a month — roughly 4 a week. Start there and adjust as your conversion rate improves.' },
+      { q: 'Do I need a dedicated team to scale probate work?', a: 'Not at first. One person owning the intake and first contact, supported by a defined process, is enough to handle a steady flow. You add a file-handler or trainee when your conversion outpaces your capacity.' },
+      { q: 'What makes a probate pipeline scalable?', a: 'A repeatable process that does not depend on one person\'s memory: clear intake steps, standard first-contact templates, a single tracking list, and weekly numbers reviewed by the practice. Process is what makes volume manageable.' },
+      { q: 'How long until probate leads become fees?', a: 'A contact this week can become an instruction within days, but the full file — grant, estate work, property sale — may take six to eighteen months to conclude. Keep your pipeline visible and your intake consistent, and the fee flow smooths out.' }
+    ],
+    sections: [
+      { h: 'From sporadic work to a managed pipeline', body: [
+        'Many probate teams operate reactively: work arrives when referrals come in, and the pipeline is whatever happens to be open this month. A scalable pipeline replaces that with a predictable flow — consistent intake, a clear process, and numbers you can plan around.',
+        'The shift is not about working harder. It is about making intake reliable enough that your team always has files to work, and your forecast is based on data rather than hope.',
+        { cta: 'Receive probate leads from the official register daily — start your free 7-day trial.' }
+      ]},
+      { h: 'Design the pipeline backwards', body: [
+        'Build the pipeline from the number you need. If one probate instruction averages a certain fee and your contact-to-instruction rate is around 25%, you can calculate the intake required for any revenue target.',
+        { ul: ['Target fees per month', 'Average fee per instruction', 'Required instructions (target ÷ average fee)', 'Required contacts (instructions ÷ conversion rate)', 'Required leads (contacts ÷ contact rate)'] },
+        'Once the intake number is clear, everyone knows what "enough" looks like — and the pipeline has a target instead of an ambition.'
+      ]},
+      { h: 'Standardise the workflow', body: [
+        'Scale comes from process, not heroics. Write down the steps every file passes through — lead received, first contact, first meeting or call, instruction, file opened — and make them standard. Templates for first contact and follow-up remove the friction of writing fresh each time.',
+        'Assign one owner for intake so no lead is missed, and keep a single live list of open opportunities. A lead that is not on the list is a lead that will be lost.',
+        { cta: 'Build a repeatable first-contact workflow with daily probate leads — start your free trial.' }
+      ]},
+      { h: 'Make your team structure match your volume', body: [
+        'At low volume, one fee earner can own intake and files. As volume grows, split the roles: someone owns intake and first contact, someone owns file progression, and later a paralegal handles the routine steps. Match the structure to the flow, and add capacity only when conversion proves demand.',
+        'The pipeline should never be blocked by one person being unavailable. Document the process so anyone can step in.'
+      ]},
+      { h: 'The numbers that tell you it is working', body: [
+        'Review three numbers weekly: leads received, first contacts made, and instructions won. Watch the ratios, not just the counts.',
+        { table: [['Metric', 'Healthy benchmark', 'If it drops'], ['First contact within 24h', '80%+ of leads', 'Tighten intake ownership'], ['Contact to instruction', '20–30%', 'Improve first-contact quality'], ['Leads per week', 'Enough to meet target', 'Expand postcode areas or channels']] },
+        'A pipeline you can measure is a pipeline you can grow. The moment the numbers are visible, the debate about whether probate work "is there" ends — you know exactly what it takes to hit your target.'
+      ]}
+    ]
+  },
+  {
+    slug: 'automate-new-business-lead-follow-ups',
+    title: 'How to Automate Your New Business Lead Follow-Ups (Without Sounding Like a Robot)',
+    description: 'A practical automation system for new business leads — triggered email sequences, a simple CRM, and the human touches that keep automation from killing the relationship.',
+    category: 'newbusiness', product_name: 'New Business Leads', categoryLabel: 'New Business Leads',
+    keywords: ['automate lead follow-up', 'new business leads email automation', 'Companies House leads follow-up', 'lead nurturing automation', 'B2B follow-up sequences'],
+    date: '2026-08-26', reading_time: '7 min read',
+    faqs: [
+      { q: 'Is automated follow-up off-putting for new business owners?', a: 'Only when it reads like a robot. Short, personal, value-first messages spaced a few days apart are welcomed by busy directors — most new companies never receive a follow-up at all, so a well-timed one stands out.' },
+      { q: 'What tools do I need to automate follow-ups?', a: 'A CRM or a simple spreadsheet with status tracking, plus email sequences from your own inbox or a lightweight tool. You do not need a complex marketing platform — a personal, human sequence beats a polished impersonal one.' },
+      { q: 'How long should an automated sequence run?', a: 'Three touches over about ten days is enough for a cold new-business lead. After that, stop unless they respond. Long, relentless sequences do more damage than good.' },
+      { q: 'What makes an automated message feel human?', a: 'Reference the specific company by name, keep it short, offer something genuinely useful, and write like a person rather than a template. Personalisation and brevity are what separate automation from spam.' }
+    ],
+    sections: [
+      { h: 'Why new business leads need a follow-up system', body: [
+        'Newly registered companies are deciding who to work with in the first weeks, and most providers contact them once and then go quiet. The firm that follows up systematically is the one that stays in front of the director when the decision gets made.',
+        'A simple, triggered follow-up sequence means no lead slips through because someone got busy — and the director gets the impression of a provider who is organised and genuinely interested.',
+        { cta: 'Get new business leads from Companies House daily and test your follow-up system — start your free trial.' }
+      ]},
+      { h: 'Design the sequence before you automate', body: [
+        'Map the touches on paper first. A sequence that works for new business leads looks like this:',
+        { ul: ['Touch 1 (day 1): short email referencing the company by name, one value-add', 'Touch 2 (day 3–4): a useful resource or a relevant example, no hard sell', 'Touch 3 (day 7–10): a brief follow-up asking how it is going, then stop'] },
+        'The goal is to be helpful and persistent, not pushy. Three spaced touches convert; twenty automated pings alienate.'
+      ]},
+      { h: 'Keep the automation personal', body: [
+        'Automation fails when it replaces personality. Every message should be short, reference the actual company, and sound like the person who will deliver the service. Personalise the first line with the company name and a detail from the lead, and keep the body to a few sentences.',
+        'Use your real sending address rather than a generic "no-reply", and sign off with a real name. The moment a message reads like a mail-merge, the director stops reading.',
+        { cta: 'Build a personal automated follow-up that wins — start your free new business leads trial.' }
+      ]},
+      { h: 'Make it easy to track who replied', body: [
+        'Automation only works if the follow-through does. Keep a simple status list — new, contacted, replied, meeting booked, closed, lost — and update it daily. When someone replies, a person must take over immediately. That human handoff is what turns the sequence into clients.',
+        'A lightweight CRM or even a well-organised spreadsheet is enough at small scale. The process matters more than the platform.'
+      ]},
+      { h: 'Let the sequence scale your outreach', body: [
+        'Once the sequence runs, your capacity to handle new business leads stops being limited by how many emails you remember to send. You can receive more leads, respond faster, and keep every conversation moving — which is exactly what a scalable new business pipeline needs.'
+      ]}
+    ]
+  },
+  {
+    slug: 'price-planning-works-profitably',
+    title: 'How to Price Planning Works Profitably: A Builder\'s Estimating Guide',
+    description: 'Pricing building work so you win the job and protect your margin — building an estimate from first principles, handling the price conversation, and the mistakes that quietly destroy builder margins.',
+    category: 'planning', product_name: 'Planning Permission Leads', categoryLabel: 'Planning Permission Leads',
+    keywords: ['price building work', 'builder estimating', 'planning works pricing', 'construction margins', 'quote building projects'],
+    date: '2026-08-25', reading_time: '8 min read',
+    faqs: [
+      { q: 'How do I price a building job I have never done before?', a: 'Break it into known parts — labour, materials, plant, subbies, overheads, contingency — and price each from your records. Unknown tasks deserve a line item and a contingency, not a hopeful number. If you cannot price a part, that is a reason to get a quote, not a guess.' },
+      { q: 'What is a healthy margin on building work?', a: 'Net profit of 15–25% on well-run projects is a realistic target after all costs and overheads. Many builders quote on cost-plus-a-small-markup and discover too late that overheads and variations ate the margin. Price the job to make the business sustainable.' },
+      { q: 'How do I handle "the other builder is cheaper"?', a: 'Stay calm, explain what your price includes, and ask what theirs covers. Quality builders win on clarity and completeness, not on matching the lowest number. Offer to adjust scope rather than price if needed.' },
+      { q: 'What should I always include in a quote?', a: 'Labour, materials with a small allowance for waste, plant hire, skip and waste removal, statutory fees, access and protection, and a contingency. Itemise clearly so the customer sees value — and so variations are easy to agree later.' }
+    ],
+    sections: [
+      { h: 'The estimate is the business plan for the job', body: [
+        'A building estimate is not a number you hope will cover the job — it is a plan for how you will make money on it. Every line item represents a cost you have priced, a risk you have considered, and margin you have protected. The builders who go bust usually do so on profitable-looking jobs that were underestimated.',
+        'Pricing well is what lets you win planning leads confidently: when you know exactly what a job costs, you can quote fast and stand behind the number.',
+        { cta: 'Receive planning leads matched to your trade and price them with confidence — start your free trial.' }
+      ]},
+      { h: 'Build the estimate from first principles', body: [
+        'Start from the drawings and specification, not from last time. Break the job into its real parts and price each one from your records:',
+        { ul: ['Labour — real crew days at your full cost, not a daily rate that excludes overheads', 'Materials — with a sensible waste allowance', 'Plant, hire and delivery', 'Subcontractors — priced from written quotes', 'Skip, waste and access', 'Statutory fees and insurance', 'Contingency — typically 5–10%', 'Your overheads and target profit'] },
+        'The discipline of itemising every part is what catches the costs that quietly destroy margins.'
+      ]},
+      { h: 'Use benchmarks to quote faster', body: [
+        'Track your own benchmarks so future quotes are faster and more accurate. After each job, note the price per square metre, per crew day, and per project type. Over time you build a reliable reference for extensions, conversions and new builds that lets you estimate in minutes, not days.',
+        { table: [['Project type', 'Typical price per m² (rough build)', 'Key cost drivers'], ['Single-storey extension', '£2,000 – £3,500 / m²', 'Groundworks, roof, finishes'], ['Two-storey extension', '£2,200 – £3,800 / m²', 'Structure, scaffolding, services'], ['Loft conversion', '£35,000 – £60,000 fixed', 'Dormer, stairs, fire safety'], ['Kitchen extension / refurb', '£1,800 – £2,800 / m²', 'Fittings, plumbing, electrics']] },
+        'Benchmarks are a starting point — every job is priced from its own details.'
+      ]},
+      { h: 'Handle the price conversation with confidence', body: [
+        'Present the quote clearly and stand behind it. Explain what is included, what is not, and how variations will be handled. When a customer pushes back, invite comparison rather than discounting: "what did the other quote include?" More often than not, the difference is scope, not price.',
+        'A confident, transparent price is a competitive advantage. It signals a professional who has thought the job through — exactly the builder a homeowner wants on their extension.',
+        { cta: 'Quote the right planning projects with confidence — start your free planning leads trial.' }
+      ]},
+      { h: 'Protect your margin through the project', body: [
+        'The estimate sets the price, but margin is protected during delivery. Agree variations in writing before doing extra work, keep a change log, and invoice against a clear schedule. The builders who lose margin rarely lose it at pricing — they lose it on uncontrolled extras and variations.',
+        'Combine disciplined pricing with disciplined delivery and the projects you win on planning leads become the projects that grow your business.'
+      ]}
+    ]
+  },
+  {
+    slug: 'common-mistakes-tender-submissions',
+    title: 'Common Mistakes in Tender Submissions (and How to Avoid Them)',
+    description: 'The repeated errors that disqualify SME tender bids — and the simple checks that stop them. From compliance slips to generic answers, here is what loses bids and how to fix it.',
+    category: 'tenders', product_name: 'Tender Opportunities', categoryLabel: 'Tender Opportunities',
+    keywords: ['tender submission mistakes', 'tender errors', 'why tenders get rejected', 'bid disqualification', 'tender response tips'],
+    date: '2026-08-24', reading_time: '8 min read',
+    faqs: [
+      { q: 'Why are most SME tender bids rejected?', a: 'Rarely because the bidder could not do the work. The most common reasons are missing mandatory documents, answers that do not address the question, non-compliance with the specification, and late or malformed submissions.' },
+      { q: 'How do I avoid missing a mandatory requirement?', a: 'Build a compliance matrix before you write anything: list every requirement in the specification, mark whether you meet it, and evidence it. Cross off each one as the document is included. This single habit eliminates most disqualifications.' },
+      { q: 'How short should my answers be?', a: 'As long as they fully answer the question and no longer. Buyers score against the question, and word count does not score points. Focused, evidenced answers outperform padded ones.' },
+      { q: 'Can I reuse answers between tenders?', a: 'Reuse your evidence bank, not your answers. The same example can prove different capabilities, but every answer must address the specific question the buyer asked. A pasted answer that ignores the question is a classic losing mistake.' }
+    ],
+    sections: [
+      { h: 'Tenders are lost in the details', body: [
+        'Most SME bids do not lose because the business could not do the work. They lose because of errors that had nothing to do with capability — a missing document, a misunderstood question, a specification requirement that was never addressed.',
+        'The good news is that these errors are almost entirely preventable. They are process failures, and process can be fixed.',
+        { cta: 'Find tender opportunities matched to your business — start your free trial.' }
+      ]},
+      { h: 'The compliance slip that ends the bid', body: [
+        'The most common fatal error is non-compliance. Mandatory documents missing, insurances not at the required level, a question skipped, or a specification deviation that was never flagged. Buyers are not allowed to waive mandatory requirements — a non-compliant bid is rejected regardless of quality.',
+        'Before writing a word, build a compliance matrix. Every requirement becomes a checklist item, and nothing is submitted until every item is confirmed. Compliance is not a detail; it is the price of admission.',
+        { ul: ['List every mandatory requirement from the specification', 'Confirm you meet each one and note the evidence', 'Check insurances, accreditations and financial thresholds', 'Verify the entity name matches your legal registration', 'Leave time for a final compliance pass before deadline'] }
+      ]},
+      { h: 'Answers that miss the question', body: [
+        'Buyers score against the exact question and its weighting. A polished answer to a slightly different question scores near zero. Restate the question in your own words at the top of your answer, then address every part of it explicitly.',
+        'Generic answers are the second most common killer. "We deliver high-quality services" scores nothing without evidence. Every claim needs a named example, your specific role, and a measurable result.',
+        { cta: 'See which tenders are worth your time — start your free trial.' }
+      ]},
+      { h: 'Pricing mistakes that disqualify', body: [
+        'Outliers are rejected on both ends. An unrealistically low bid signals a misunderstanding of the scope or a future loss; an inflated bid fails value for money. Price every element of the schedule realistically, and make sure your numbers add up exactly — arithmetic errors in a pricing schedule are an instant red flag.',
+        'Read the pricing instructions carefully. Some tenders require a breakdown, others a fixed figure. Format exactly as asked.'
+      ]},
+      { h: 'The submission-day checklist', body: [
+        'The final pass is where quality bids become winners. Run the checklist before you click submit:',
+        { ul: ['Every question answered, every form completed', 'Mandatory documents attached in the required format', 'Compliance matrix fully confirmed', 'Pricing verified and in the required format', 'Submitted before the deadline, never at it', 'A second person has reviewed the whole response'] },
+        'A complete, compliant, on-time submission is a professional standard in its own right. Get the process right and the quality of your actual work does the winning.'
+      ]}
+    ]
+  },
+  {
+    slug: 'business-leads-vs-ppc-vs-directories',
+    title: 'Business Leads vs PPC vs Directories: Choosing the Right Channel for Your Business',
+    description: 'How UK businesses should choose between buying business leads, pay-per-click advertising and directory listings — comparing costs, control and conversion so you spend where you win.',
+    category: 'general', product_name: 'Business Leads', categoryLabel: 'Business Leads',
+    keywords: ['business leads vs PPC', 'lead generation channels', 'buy leads vs advertise', 'directory vs PPC vs leads', 'marketing channel comparison'],
+    date: '2026-08-23', reading_time: '8 min read',
+    faqs: [
+      { q: 'What is the difference between buying leads, PPC and directories?', a: 'Directories list you where prospects browse; PPC puts you in front of people actively searching; buying leads delivers you specific fresh opportunities from public data before competitors see them. They solve different problems and can be combined.' },
+      { q: 'Which is cheapest?', a: 'Cost per lead varies by market, but directories often charge listing or per-lead fees with unpredictable quality, and PPC costs rise with competition. Fixed-price lead feeds are predictable but require you to act on them. Cheapest depends on your conversion, not the sticker price.' },
+      { q: 'Should I run all three at once?', a: 'Most successful businesses use one channel to build a pipeline and one to capture on-demand demand. Start with the channel that fits how you win work today, prove the numbers, then add a second channel rather than spreading thin.' },
+      { q: 'How do I know which channel is working?', a: 'Track cost, leads, and — critically — jobs won per channel. A channel that brings cheap leads you never convert is worthless. Measure the full funnel, not just the lead price.' }
+    ],
+    sections: [
+      { h: 'Three channels, three different jobs', body: [
+        'Directories, PPC and bought leads all generate enquiries, but they do different work. Choosing between them is not about which is "best" — it is about which matches how your customers find you.',
+        'Directories put your listing in front of people browsing for a service. PPC captures people searching right now. A business lead feed surfaces a specific fresh event — a property under offer, a grant, an incorporation, an application — before most competitors know it exists.',
+        { cta: 'See if daily business leads fit your marketing mix — start your free 7-day trial.' }
+      ]},
+      { h: 'How the three channels really compare', body: [
+        'The differences show up in control, cost and conversion:',
+        { table: [['Channel', 'Who you reach', 'Cost model', 'Control'], ['Directories', 'People browsing', 'Listing / per-lead fees', 'Low — you compete on price'], ['PPC', 'Active searchers', 'Auction, rising CPCs', 'Medium — budget and targeting'], ['Business leads', 'Fresh public opportunities', 'Fixed weekly price', 'High — you choose the leads']] },
+        'Directories put you in a price comparison; PPC puts you in a bidding war; a data feed gives you opportunities nobody else has been shown yet.'
+      ]},
+      { h: 'When each channel makes sense', body: [
+        'Directories work when customers actively compare providers and your reviews and pricing win. PPC works when there is clear search demand and you can convert traffic efficiently. Business leads work when your service follows a public event — a move, a grant, an incorporation, an application, a tender.',
+        'For most trade and B2B services, the last category is a strong fit: your ideal customer has a predictable trigger, and being first to that trigger beats being best positioned in a listing.',
+        { cta: 'Match a data feed to your trade — start your free trial.' }
+      ]},
+      { h: 'The real cost is cost-per-closed-job', body: [
+        'Lead price is vanity; cost per closed job is the number that matters. A £3 directory lead that converts at 2% costs £150 per job. A £25 business lead that converts at 20% costs £125 per job. Judge every channel on the full funnel: cost, leads, contacts, quotes, jobs.',
+        'Track each channel separately, including how fast you contacted the lead — the same channel converts differently depending on your response time.'
+      ]},
+      { h: 'Build a mix that fits how you win', body: [
+        'Most winning businesses combine one pipeline channel with one on-demand channel. A removal company might run daily moving leads for the pipeline and a small PPC budget for peak-season demand. An accountant might run new business leads for steady intake and rely on referrals for the rest.',
+        'Start with the channel that matches your strongest trigger, prove your numbers, then add the second. Let the data decide where the next pound goes — and you will be spending where you win.'
       ]}
     ]
   }

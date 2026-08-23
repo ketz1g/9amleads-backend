@@ -19050,17 +19050,34 @@ function sanitizeBlogPosts() {
   } catch(e) { return 0; }
 }
 
-// Insert curated quality posts (idempotent by slug) and refresh the sitemap.
+// Insert or refresh curated quality posts (idempotent by slug) and refresh the sitemap.
 function seedCuratedPosts() {
   var dbData = getDb();
   if (!dbData.blog_posts) dbData.blog_posts = [];
   var added = 0;
+  var refreshed = 0;
   var posts = CURATED_BLOG.CURATED_POSTS || [];
   for (var i = 0; i < posts.length; i++) {
     var p = posts[i];
-    if (dbData.blog_posts.some(function(x) { return x.slug === p.slug; })) continue;
     var wordCount = String(p.description + ' ' + p.sections.map(function(s) { return s.h + ' ' + s.body.map(function(b) { return typeof b === 'string' ? b : (b.ul ? b.ul.join(' ') : (b.table ? b.table.join(' ') : b.cta || '')); }).join(' '); }).join(' ')).split(/\s+/).length;
     var html = CURATED_BLOG.buildPostHTML(p);
+    var existing = dbData.blog_posts.find(function(x) { return x.slug === p.slug; });
+    if (existing) {
+      if (existing.html !== html || existing.curated !== true) {
+        existing.html = html;
+        existing.title = p.title;
+        existing.description = p.description;
+        existing.keywords = p.keywords;
+        existing.category = p.category;
+        existing.product_name = p.product_name;
+        existing.word_count = wordCount;
+        existing.reading_time = p.reading_time;
+        existing.curated = true;
+        existing.published = true;
+        refreshed++;
+      }
+      continue;
+    }
     dbData.blog_posts.push({
       id: 'curated_' + p.slug, title: p.title, slug: p.slug, description: p.description,
       category: p.category, product_name: p.product_name, keywords: p.keywords,
@@ -19071,7 +19088,7 @@ function seedCuratedPosts() {
   }
   fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
   writeSitemap();
-  return added;
+  return { added: added, refreshed: refreshed };
 }
 
 // GET /api/admin/blog/posts - List all blog posts
@@ -23769,8 +23786,8 @@ app.listen(PORT, () => {
   seedKnowledgeArticles();
   try {
     var removedAuto = sanitizeBlogPosts();
-    var seededCurated = seedCuratedPosts();
-    console.log('[SEO] Startup: removed ' + removedAuto + ' auto-generated posts, seeded ' + seededCurated + ' curated posts');
+    var seeded = seedCuratedPosts();
+    console.log('[SEO] Startup: removed ' + removedAuto + ' auto-generated posts, seeded ' + seeded.added + ' + refreshed ' + seeded.refreshed + ' curated posts');
   } catch(e) {
     console.log('[SEO] Startup blog seed error: ' + (e && e.message || e));
   }
