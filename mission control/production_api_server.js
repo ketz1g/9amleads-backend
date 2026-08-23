@@ -2136,6 +2136,13 @@ function moduleWithTimeout(promise, ms, label) {
 // Payout lifecycle: pending (card saved, waiting out the month) -> due (month
 // reached + still active, ready to be paid) -> paid (admin marks it paid).
 var AFFILIATE_PAYOUT_RATE = 25;
+// New affiliate sign-ups are activated immediately (true) so they can log in right
+// away. Set AFFILIATE_AUTO_ACTIVATE=false in env to require manual admin approval.
+var AFFILIATE_AUTO_ACTIVATE = process.env.AFFILIATE_AUTO_ACTIVATE !== 'false';
+
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 function resolveAffiliate(codeOrName) {
   var q = String(codeOrName || '').trim();
@@ -3889,10 +3896,32 @@ app.post('/api/affiliate/register', async (req, res) => {
     var code2 = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || (String(name).replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 8));
     if (affs.some(function(a) { return String(a.code || '').toLowerCase() === String(code2).toLowerCase(); })) return res.status(409).json({ error: 'That affiliate code is already taken. Pick another.' });
     var passwordHash = await bcrypt.hash(password, 10);
-    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: 'pending', created_at: new Date().toISOString(), payouts: [] };
+    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: AFFILIATE_AUTO_ACTIVATE ? 'active' : 'pending', created_at: new Date().toISOString(), payouts: [] };
     affs.push(aff);
     saveDb();
-    res.status(201).json({ success: true, affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email, status: aff.status }, message: 'Application received. We\'ll activate your affiliate account shortly.' });
+    // Confirmation email to the affiliate (so they know their application arrived).
+    try {
+      var welcomeHtml = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+        '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Welcome to the 9amLeads Affiliate Programme</h1>' +
+        '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(name).trim()) + ',</p>' +
+        '<p style="color:#ccc;line-height:1.7">Your affiliate application has been received' + (AFFILIATE_AUTO_ACTIVATE ? ' and your account is now <strong style="color:#fff">active</strong>' : ' and is being reviewed') + '.</p>' +
+        '<p style="color:#ccc;line-height:1.7">Your unique referral code is <strong style="color:#0ea5e9">' + escHtml(code2) + '</strong> — customers enter this at signup and you earn <strong style="color:#fff">&pound;' + (aff.payout_rate || 25) + '</strong> for every qualifying referral.</p>' +
+        '<p style="color:#ccc;line-height:1.7">Log in to your dashboard to track referrals and earnings: <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">9amleads.com/portal/affiliate.html</a></p>' +
+        '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p>' +
+        '</div>';
+      sendBrevoEmail({ email: em, name: String(name).trim() }, 'Welcome to the 9amLeads Affiliate Programme', welcomeHtml).catch(function() {});
+    } catch(eW) {}
+    // Alert the owner so they know a new affiliate joined.
+    try {
+      var adminHtml = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+        '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">New affiliate application</h1>' +
+        '<p style="color:#ccc;line-height:1.7"><strong style="color:#fff">' + escHtml(String(name).trim()) + '</strong> (' + escHtml(em) + ') applied with code <strong style="color:#0ea5e9">' + escHtml(code2) + '</strong>.</p>' +
+        '<p style="color:#ccc;line-height:1.7">Status: <strong style="color:#fff">' + (AFFILIATE_AUTO_ACTIVATE ? 'active (auto)' : 'pending') + '</strong>.' + (AFFILIATE_AUTO_ACTIVATE ? '' : ' Review and activate them from the admin dashboard when ready.') + '</p>' +
+        '<p style="color:#888;font-size:13px;margin-top:24px">Admin: ' + (AFFILIATE_AUTO_ACTIVATE ? 'no action needed' : 'activate via Admin &rarr; Affiliates') + '</p>' +
+        '</div>';
+      sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, 'New affiliate application: ' + String(name).trim(), adminHtml).catch(function() {});
+    } catch(eA) {}
+    res.status(201).json({ success: true, affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email, status: aff.status }, message: 'Application received' + (AFFILIATE_AUTO_ACTIVATE ? ' and your account is now active. You can sign in immediately.' : '. We\'ll activate your affiliate account shortly.') });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
