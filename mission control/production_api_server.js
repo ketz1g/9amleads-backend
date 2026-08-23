@@ -6747,6 +6747,16 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/paf-postscrape — manually run the post-scrape PAF enrichment on the
+// moving pool now (adds door numbers + full addresses to door-less leads early, flags
+// paf_failed ones so delivery drops them). Run after any scrape to top up the pool.
+app.post('/api/admin/paf-postscrape', adminAuth, async (req, res) => {
+  try {
+    var r = await runMovingPafPostScrape();
+    res.json({ success: true, result: r });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // deliveryPreviewForCustomer(cust) — the per-customer pool preview used by both
 // /api/admin/delivery-preview and /api/admin/readiness. Returns how many valid,
 // in-area, fresh leads the customer would receive at 9am with the current pool.
@@ -6832,6 +6842,72 @@ async function deliveryPreviewForCustomer(cust) {
     return { address: c.address || c.fullAddress || '', postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate };
   });
   return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: out.length, leads: out, error: out.length < limit ? 'supply low in ' + areas.join(', ') : '' };
+}
+
+// ===== POST-SCRAPE PAF ENRICHMENT =====
+// Royal Mail PAF / Postcoder is paid per lookup (~4.5p). Running it only at 9am
+// means door-less leads are fixed minutes before delivery. Instead, run PAF right
+// after the morning scrape so the moving pool already holds full, numbered
+// addresses. Because the delivery skips Postcoder for any lead that already has a
+// confirmed premise number, pre-enriching the pool is cost-neutral — each lead is
+// looked up at most once (at scrape time), never again at 9am. Leads PAF can't
+// resolve are flagged paf_failed so delivery drops/replaces them early.
+async function runMovingPafPostScrape() {
+  if (!(process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') || !process.env.POSTCODER_API_KEY) {
+    console.log('[PAF-POSTSCRAPE] Postcoder disabled — skipping');
+    return { enriched: 0, failed: 0 };
+  }
+  var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
+  var raw = null;
+  try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) { console.log('[PAF-POSTSCRAPE] pool unreadable: ' + e.message); return { error: 'pool unreadable' }; }
+  var container = null, arr = null;
+  if (Array.isArray(raw)) arr = raw;
+  else if (raw && typeof raw === 'object') {
+    container = raw; arr = [];
+    Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push({ _key: k, _item: x }); }); });
+  }
+  if (!arr || !arr.length) return { enriched: 0, failed: 0 };
+  var cap = parseInt(process.env.MOVING_PAF_POSTSCRAPE_MAX || '200', 10);
+  var cut48 = new Date(Date.now() - 48 * 3600000).toISOString();
+  var need = [];
+  arr.forEach(function(e) {
+    var l = e._item || e;
+    if (l.paf_done || l.paf_failed) return;
+    var addr = l.fullAddress || l.address || '';
+    var pc = String(l.postcode || '').toUpperCase().trim();
+    if (hasUsablePremiseAddress(addr, pc)) { l.paf_done = true; return; } // already numbered — no paid lookup
+    if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return;      // no full postcode → not resolvable
+    if (!hasStreetName(addr)) return;                                       // no street → PAF can't match
+    var d = pickFreshDate(l) || '';
+    if (d && d < cut48) return;                                             // only fresh candidates (likely to be delivered)
+    need.push(e);
+  });
+  need = need.slice(0, cap);
+  if (!need.length) return { enriched: 0, failed: 0 };
+  var pcDeliver = require('./rightmove_scraper_v2');
+  var norm = need.map(function(e) { var l = e._item || e; return Object.assign({}, l, { id: (l.url || l.id || l.reference || Math.random().toString(36).slice(2)) }); });
+  var out = [];
+  try { out = await pcDeliver.enrichMovingLeadsPostcoder(norm); } catch(e) { console.log('[PAF-POSTSCRAPE] enrich error: ' + e.message); return { error: e.message }; }
+  var enriched = 0, failed = 0;
+  out.forEach(function(en, idx) {
+    var e = need[idx]; var l = e._item || e;
+    l.paf_done = true;
+    var numOk = hasUsablePremiseAddress(en.fullAddress || en.address || '', en.postcode || l.postcode || '');
+    if (numOk) {
+      l.address = en.fullAddress || en.address || l.address;
+      l.fullAddress = en.fullAddress || l.address || l.fullAddress;
+      l.street = en.street || l.street || '';
+      l.buildingNumber = en.buildingNumber || l.buildingNumber || '';
+      l.postcode = (en.postcode || l.postcode || '').toUpperCase();
+      l.udprn = en.udprn || l.udprn || '';
+      l.paf_failed = false;
+      enriched++;
+    } else { l.paf_failed = true; failed++; }
+  });
+  if (container) fs.writeFileSync(file, JSON.stringify(container, null, 2));
+  else fs.writeFileSync(file, JSON.stringify(arr, null, 2));
+  console.log('[PAF-POSTSCRAPE] Enriched ' + enriched + ', failed ' + failed + ' of ' + need.length + ' door-less moving leads');
+  return { enriched: enriched, failed: failed };
 }
 
 // GET /api/admin/readiness — run the delivery preview for EVERY real customer and
@@ -9344,6 +9420,16 @@ cron.schedule('45 5 * * *', async () => {
 // (no Apify credits needed).
 cron.schedule('0 13 * * *', async () => {
   try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-13-CRON] ' + e.message); }
+}, { timezone: 'Europe/London' });
+// POST-SCRAPE PAF: enrich the moving pool with door numbers right after the 6am
+// scrape (07:15) and again after the 7:30 watchdog re-trigger (08:00), so the pool
+// holds full numbered addresses BEFORE the 9am delivery. The delivery then skips
+// paid PAF for pre-enriched leads (cost-neutral) and drops paf_failed ones early.
+cron.schedule('15 7 * * *', async () => {
+  try { await runMovingPafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 07:15 error: ' + e.message); }
+}, { timezone: 'Europe/London' });
+cron.schedule('0 8 * * *', async () => {
+  try { await runMovingPafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 08:00 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
 cron.schedule('0 18 * * *', async () => {
   try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-18-CRON] ' + e.message); }
@@ -12366,6 +12452,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             // have company addresses, not house numbers, and would waste Postcoder
             // credits (and get dropped) if run through the address pipeline.
             var isProperty = l.product === 'moving' || l.product === 'probate';
+            // Skip leads the post-scrape PAF pass already tried and failed — never
+            // re-pay for a lead PAF has already rejected (it's dropped by the gate).
+            if (l.paf_failed || ld.paf_failed) return false;
             return isProperty && ld.postcode && !hasPremiseNumber(addr, ld.postcode);
           });
           // ===== DELIVERY-TIME PROPALT RESOLUTION (cheap, batched by postcode) =====
