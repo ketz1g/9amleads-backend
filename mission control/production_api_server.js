@@ -2776,8 +2776,9 @@ app.post('/api/auth/signup', async (req, res) => {
     // NOT optimistic market estimates — so sales can never over-commit beyond what
     // the pool can deliver. moving/planning/tenders reflect current measured yield
     // (they scale as more areas/accounts + scrapers grow); newbusiness/probate are
-    // comfortably above current committed demand.
-    var supplyCeilingMap = { moving: 300, newbusiness: 1500, probate: 300, planning: 100, tenders: 100 };
+    // comfortably above current committed demand. Planning raised after the PLOTA
+    // Starter boost (455 apps/run vs 50 before).
+    var supplyCeilingMap = { moving: 300, newbusiness: 1500, probate: 300, planning: 400, tenders: 100 };
     var _dailyLimitForCap = (planName === 'pro' ? 15 : planName === 'enterprise' ? 30 : planName === 'free_trial' ? 5 : 5);
     var _existingCommitted = db.prepare('SELECT COALESCE(SUM(leads_per_day), 0) AS total FROM customers WHERE product = ? AND plan != ?').get(product, 'cancelled');
     var _currentCommitted = (_existingCommitted && _existingCommitted.total) ? _existingCommitted.total : 0;
@@ -6792,7 +6793,7 @@ app.post('/api/check-availability', async (req, res) => {
     // daily-lead capacity than the source can physically produce. The cap keeps
     // a safety margin so every customer's full promise is always deliverable.
     var supplyCeiling = {
-      moving: 300, newbusiness: 1500, probate: 300, planning: 100, tenders: 100
+      moving: 300, newbusiness: 1500, probate: 300, planning: 400, tenders: 100
     };
     var ceiling = supplyCeiling[product] || 100;
     // After this signup, committed demand would be totalCommitted + dailyLimit.
