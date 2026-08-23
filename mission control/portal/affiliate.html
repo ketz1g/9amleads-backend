@@ -148,6 +148,32 @@ tr:last-child td{border-bottom:none}
 .addline input[type=datetime-local]{min-width:auto}
 .ld-save{display:flex;gap:8px;justify-content:flex-end;align-items:center}
 .ld-save .msg{font-size:12px;color:#34d399;display:none}
+/* tools v2 */
+.tool-hero{display:flex;gap:16px;align-items:flex-start;background:linear-gradient(135deg,rgba(14,165,233,.10),rgba(37,99,235,.04));border:1px solid rgba(14,165,233,.25);border-radius:14px;padding:20px;margin-bottom:18px}
+.tool-hero .em{width:52px;height:52px;border-radius:14px;background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.35);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.tool-hero h3{font-size:18px;font-weight:800;color:#f1f5f9}
+.tool-hero .tg{font-size:12px;color:#94a3b8;margin-top:3px}
+.pc{background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.pc h3{font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.pc li{list-style:none;display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:#c6cfdd;line-height:1.6;margin-bottom:8px}
+.pc li:last-child{margin-bottom:0}
+.pc li .ck{width:16px;height:16px;border-radius:5px;border:1px solid rgba(14,165,233,.5);flex-shrink:0;margin-top:2px}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.fact{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:10px;padding:9px 13px;font-size:12px;color:#c6cfdd;line-height:1.45;max-width:100%}
+.fact .fi{color:#34d399;font-weight:800;flex-shrink:0}
+.flow{background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.flow h3{font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.step2{display:flex;gap:12px;margin-bottom:10px;position:relative}
+.step2:last-child{margin-bottom:0}
+.step2 .lab{flex:0 0 96px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#0ea5e9;background:rgba(14,165,233,.10);border:1px solid rgba(14,165,233,.25);border-radius:7px;padding:7px 8px;height:fit-content;text-align:center}
+.step2 .txt{flex:1;background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:11px 13px;font-size:12.5px;color:#cbd5e1;line-height:1.6}
+.tl{position:relative;padding-left:22px}
+.tl:before{content:'';position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:rgba(14,165,233,.25)}
+.tl-item{position:relative;padding:0 0 14px 8px}
+.tl-item:last-child{padding-bottom:0}
+.tl-item:before{content:'';position:absolute;left:-22px;top:5px;width:12px;height:12px;border-radius:50%;background:#0ea5e9;border:2px solid #0b0d14}
+.tl-item .d{font-size:11px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:.4px}
+.tl-item .a{font-size:12.5px;color:#c6cfdd;line-height:1.55;margin-top:2px}
 </style>
 </head>
 <body>
@@ -514,43 +540,54 @@ function renderTools(){
   var r=(RES||[]).find(function(x){return x.key===curType;});
   if(!r)return;
   var h='';
+  // header
+  h+='<div class="tool-hero"><div class="em">'+(r.emoji||'📈')+'</div><div><h3>'+esc(r.name)+'</h3><div class="tg">For: '+esc(r.target||'')+'</div></div></div>';
+  // pre-call checklist
+  if(r.precall&&r.precall.length){
+    h+='<div class="pc"><h3>📋 Pre-call checklist</h3><ul>'+r.precall.map(function(p){return '<li><span class="ck"></span><span>'+esc(p)+'</span></li>';}).join('')+'</ul></div>';
+  }
+  // quick facts
+  if(r.facts&&r.facts.length){
+    h+='<div class="facts">'+r.facts.map(function(f){return '<div class="fact"><span class="fi">✓</span><span>'+esc(f)+'</span></div>';}).join('')+'</div>';
+  }
   // phone script
-  h+='<div class="tool-sec"><h3>📞 Cold-call script — '+esc(r.name)+' <button class="btn-mini" onclick="copyScript(\''+r.key+'\')">Copy all</button></h3>';
+  h+='<div class="flow"><h3>📞 Cold-call script — '+esc(r.name)+' <button class="btn-mini" onclick="copyScript(\''+r.key+'\')">Copy all</button></h3>';
   r.phone.forEach(function(s,i){
     var b=s.indexOf('] ');
     var label=b>-1?s.slice(1,b):('Step '+(i+1));
     var txt=b>-1?s.slice(b+2):s;
-    h+='<div class="step"><b>'+esc(label)+'</b>'+esc(txt)+'</div>';
+    h+='<div class="step2"><div class="lab">'+esc(label)+'</div><div class="txt">'+esc(txt)+'</div></div>';
   });
   h+='</div>';
   // emails
-  h+='<div class="tool-sec"><h3>📧 Email templates <button class="btn-mini" onclick="copyEmails(\''+r.key+'\')">Copy all</button></h3>';
+  h+='<div class="flow"><h3>📧 Email templates <button class="btn-mini" onclick="copyEmails(\''+r.key+'\')">Copy all</button></h3>';
   r.emails.forEach(function(e,i){
     h+='<div class="tpl"><div class="subj">Subject: '+esc(e.subject)+'</div><pre>'+esc(e.body)+'</pre><div style="text-align:right;margin-top:8px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'email\')">Copy</button></div></div>';
   });
   h+='</div>';
   // sms
-  h+='<div class="tool-sec"><h3>💬 Text / SMS messages <button class="btn-mini" onclick="copySms(\''+r.key+'\')">Copy all</button></h3>';
+  h+='<div class="flow"><h3>💬 Text / SMS messages <button class="btn-mini" onclick="copySms(\''+r.key+'\')">Copy all</button></h3>';
   r.sms.forEach(function(s,i){
     h+='<div class="post-card">'+esc(s)+'<div style="text-align:right;margin-top:6px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'sms\')">Copy</button></div></div>';
   });
   h+='</div>';
   // social
-  h+='<div class="tool-sec"><h3>📱 Social media posts <button class="btn-mini" onclick="copySocial(\''+r.key+'\')">Copy all</button></h3>';
+  h+='<div class="flow"><h3>📱 Social media posts <button class="btn-mini" onclick="copySocial(\''+r.key+'\')">Copy all</button></h3>';
   r.social.forEach(function(s,i){
     h+='<div class="post-card">'+esc(s)+'<div style="text-align:right;margin-top:6px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'social\')">Copy</button></div></div>';
   });
   h+='</div>';
-  // followup
-  h+='<div class="tool-sec"><h3>📅 Follow-up plan</h3>';
-  h+='<table><thead><tr><th>When</th><th>Action</th></tr></thead><tbody>';
-  r.followup.forEach(function(f){h+='<tr><td style="white-space:nowrap;font-weight:700;color:#0ea5e9">'+esc(f.day)+'</td><td>'+esc(f.action)+'</td></tr>';});
-  h+='</tbody></table></div>';
+  // follow-up timeline
+  h+='<div class="flow"><h3>📅 Follow-up plan</h3><div class="tl">';
+  r.followup.forEach(function(f){
+    h+='<div class="tl-item"><div class="d">'+esc(f.day)+'</div><div class="a">'+esc(f.action)+'</div></div>';
+  });
+  h+='</div></div>';
   document.getElementById('tool-content').innerHTML=h;
   document.getElementById('tool-content')._r=r;
 }
 function copyTxt(btn,idx,kind){var r=document.getElementById('tool-content')._r;var txt='';if(kind==='email'){var e=r.emails[idx];txt='Subject: '+e.subject+'\n\n'+e.body;}else if(kind==='sms'){txt=r.sms[idx];}else if(kind==='social'){txt=r.social[idx];}copyText(txt,btn);}
-function copyScript(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText('COLD CALL — '+r.name+'\n\n'+r.phone.join('\n\n'));}
+function copyScript(k){var r=(RES||[]).find(function(x){return x.key===k;});var parts=[];if(r.precall&&r.precall.length)parts.push('PRE-CALL CHECKLIST\n'+r.precall.map(function(p){return '- '+p;}).join('\n'));if(r.facts&&r.facts.length)parts.push('KEY SELLING POINTS\n'+r.facts.map(function(f){return '- '+f;}).join('\n'));parts.push('COLD CALL — '+r.name+'\n'+r.phone.join('\n\n'));copyText(parts.join('\n\n------------------\n\n'));}
 function copyEmails(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.emails.map(function(e){return 'SUBJECT: '+e.subject+'\n'+e.body;}).join('\n\n------------------\n\n'));}
 function copySms(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.sms.join('\n\n'));}
 function copySocial(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.social.join('\n\n'));}

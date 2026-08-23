@@ -1,199 +1,299 @@
-// Affiliate sales toolkit: ready-to-use scripts and templates per business type.
-// Served to affiliates via /api/affiliate/resources so they can promote 9amLeads
-// and convert their referrals into trial sign-ups.
+// Affiliate sales toolkit: ready-to-use, professional scripts and templates per
+// business type. Served to affiliates via /api/affiliate/resources.
 
 module.exports = [
   {
     key: 'moving', name: 'Moving Leads', emoji: '🚚',
     target: 'Removal companies & estate agents',
+    precall: [
+      'Know the lead: company name, area, and what they do (local moves / long-distance) before you dial.',
+      'Set your goal: get them to START the 14-day free trial on this call — nothing more.',
+      'Get them talking early — ask about their vans and how busy they are before you pitch.'
+    ],
+    facts: [
+      'Moving leads arrive every morning at 9am — homes that just went under offer or SSTC.',
+      'The first company to call the homeowner usually wins the move.',
+      'One won local move typically covers a month of leads (from £25/week).',
+      'Their referral gets a 14-day free trial — no card needed, so starting is easy.'
+    ],
     phone: [
-      '[Opener] "Hi [name], it\u2019s [your name] here from 9amLeads. I\u2019m calling removal companies in the [area] area \u2014 do you have two minutes, or is now a bad time?"',
-      '[Qualify] "How busy are your vans at the moment? Do you mostly work local moves or long distance?"',
-      '[Pitch \u2014 1-week free trial] "The reason I\u2019m calling: every morning at 9am we send removal companies fresh moving leads for properties that have just gone under offer or SSTC \u2014 the exact moment homeowners are comparing removal quotes. We\u2019re giving removal companies a free 1-week trial to try it, no card needed. I can set yours up in about 30 seconds."',
-      '[Objection \u2014 \u201cWe already get leads\u201d] "Great \u2014 most companies have a mix. These are daily, in your postcode, and you\u2019re not paying per lead. The trial is free, so you can just see how many real moving jobs come through before deciding."',
-      '[Objection \u2014 \u201cHow much?\u201d] "The trial is completely free for a week. After that it\u2019s from £25 a week \u2014 roughly the price of one small local move, and one won job usually covers months of leads."',
-      '[Objection \u2014 \u201cI\u2019m too busy\u201d] "That\u2019s exactly why it works \u2014 it takes minutes each morning. Start the free trial now and you can cancel in one click if it\u2019s not for you."',
-      '[Close] "Let me get you set up. What\u2019s the best email to send your login to? I\u2019ll have your first batch ready for 9am tomorrow."'
+      '[Opener] "Hi [name], it\u2019s [your name] here from 9amLeads. I\u2019m calling removal companies in [area] — am I catching you at a bad time, or have you got two minutes?"',
+      '[Hook] "The reason I\u2019m calling: every morning at 9am we send removal companies moving leads — homes that have literally just gone under offer in their postcode, which is the exact moment homeowners are comparing removal quotes."',
+      '[Qualify] "Before I explain — how busy are your vans at the moment, and do you mostly do local moves or long-distance?"',
+      '[Pitch] "Here\u2019s what we\u2019re offering: a 14-day free trial, no card needed. Every morning at 9am you get fresh moving leads in your chosen postcode areas. The first company to call usually wins the job — so you\u2019d be getting there before your competitors."',
+      '[Objection — "We get enough work from referrals"] "That\u2019s great — most successful removal companies run referrals AND a daily lead feed. This is extra, on top, and it\u2019s free for 14 days. You can see exactly what it brings you before spending a penny."',
+      '[Objection — "How much does it cost?"] "The 14-day trial is completely free, no card required. After that it\u2019s from £25 a week — roughly the price of one small local move. If one extra booking covers a month of leads, that\u2019s a no-brainer."',
+      '[Objection — "I\u2019m too busy to try it"] "That\u2019s exactly why it works — it takes five minutes each morning. You open your leads at 9am, call the strongest two, and you\u2019re done. I can have you set up right now, and you can cancel in one click if it\u2019s not for you."',
+      '[Close] "Let me get you set up — it takes 30 seconds. What email should I send your login to? I\u2019ll have your first batch of moving leads ready for 9am tomorrow."'
     ],
     emails: [
-      { subject: 'Fresh moving leads in [area] — free 1-week trial', body: 'Hi [name],\n\nI noticed [company] handles moves across [area]. I\u2019m with 9amLeads, and every morning at 9am we send removal companies moving leads for homes that have just gone under offer or SSTC in their chosen postcodes.\n\nThe timing is everything \u2014 that\u2019s the moment homeowners are comparing removal quotes, and the first company to call usually wins the job.\n\nYou can try it free for 1 week, no card required:\n\n\u2192 https://9amleads.com/portal/#signup\n\nIf it\u2019s not a fit, cancel in one click. Want me to set up your free week now?' },
-      { subject: 'Reminder: your free moving-leads week', body: 'Hi [name],\n\nJust following up on the free 1-week trial of daily moving leads for [area]. It takes about 30 seconds to start, and your first batch would land at 9am tomorrow:\n\n\u2192 https://9amleads.com/portal/#signup\n\nNo card needed, cancel anytime. If a single new booking pays for months of leads, it\u2019s worth a look. Reply if you\u2019d like me to talk you through it.' }
+      { subject: 'Fresh moving leads in [area] — 14 days free', body: 'Hi [name],\n\nI\u2019m [your name] from 9amLeads. Every morning at 9am we send removal companies moving leads — homes that have just gone under offer or SSTC in their chosen postcode areas.\n\nThat timing is everything. It\u2019s the moment homeowners are comparing removal quotes, and the first company to call usually wins the move.\n\nYou can try it completely free for 14 days, no card required:\n\n\u2192 https://9amleads.com/portal/#signup\n\nA single extra booking usually covers a month of leads. Want me to set up your free 14 days now?' },
+      { subject: 'Your free 14-day moving-leads trial', body: 'Hi [name],\n\nQuick follow-up on the free 14-day trial of daily moving leads for [area]. It takes about 30 seconds to start, and your first batch would land at 9am tomorrow:\n\n\u2192 https://9amleads.com/portal/#signup\n\nNo card needed, cancel anytime in one click. If one new move covers a month of leads, it\u2019s worth the two minutes to try.\n\nHappy to answer any questions — just reply to this email.' },
+      { subject: 'Your trial is waiting — first leads at 9am', body: 'Hi [name],\n\nJust making sure you didn\u2019t miss it — your free 14-day trial of daily moving leads is still waiting:\n\n\u2192 https://9amleads.com/portal/#signup\n\nSet it up now and your first batch arrives tomorrow morning. First to the homeowner wins the move — don\u2019t let another removal company get there first.' }
     ],
     sms: [
-      'Hi [name] \u2014 9amLeads here. We send removal companies fresh moving leads every morning (homes just gone under offer in [area]). Free 1-week trial, no card: https://9amleads.com/portal/#signup',
-      'Quick one [name] \u2014 your free week of daily moving leads is waiting: https://9amleads.com/portal/#signup. One new booking usually covers months. Happy to answer any questions.'
+      'Hi [name] — 9amLeads here. We send removal companies fresh moving leads every morning (homes just gone under offer in [area]). 14-day free trial, no card: https://9amleads.com/portal/#signup',
+      'Quick one [name] — your free 14 days of daily moving leads is waiting: https://9amleads.com/portal/#signup. First to call usually wins the move. Happy to answer any questions.',
+      'Reminder [name]: your free 14-day moving-leads trial — first batch tomorrow at 9am. https://9amleads.com/portal/#signup'
     ],
     social: [
-      'Every morning at 9am, removal companies on our list get fresh moving leads \u2014 homes that just went under offer in their postcode. 🚚 First to call usually wins the job. Free 1-week trial, no card: https://9amleads.com/portal/#signup #movingleads #removals',
-      'The #1 reason removal quotes get won? Speed. ⏱️ We deliver moving leads the moment they\u2019re hot. Try 1 week free \u2192 https://9amleads.com/portal/#signup #removalcompany #moving',
-      'Want more removals without spending on ads? Daily moving leads + a good morning routine = a fuller calendar. 📅 Free week: https://9amleads.com/portal/#signup'
+      'Every morning at 9am, removal companies on our list get fresh moving leads — homes that just went under offer in their postcode. 🚚 First to call usually wins the job. 14-day free trial, no card: https://9amleads.com/portal/#signup #movingleads #removals',
+      'The #1 reason removal quotes get won? Speed. ⏱️ We deliver moving leads the moment they\u2019re hot. Try 14 days free \u2192 https://9amleads.com/portal/#signup #removalcompany #moving',
+      'Want more removals without spending on ads? Daily moving leads + a fast morning routine = a fuller calendar. 📅 14 days free: https://9amleads.com/portal/#signup',
+      'Most moves go to the FIRST removal company that calls. Be first \u2192 https://9amleads.com/portal/#signup 🚚 #removals #leads'
     ],
     followup: [
-      { day: 'Day 0', action: 'Call with the script above. Goal: get them to start the free trial on the call.' },
-      { day: 'Day 1', action: 'If no trial yet, send email #1 or the first SMS. If they trialed, check it landed at 9am.' },
-      { day: 'Day 3', action: 'Send email #2 or second SMS as a light follow-up.' },
-      { day: 'Day 7', action: 'Call once more. Ask what they thought of the week\u2019s leads \u2014 most who used it sign up.' },
-      { day: 'Day 14', action: 'Final touch: ask if they want to keep the leads going before the trial/conversation ends.' }
+      { day: 'Day 0', action: 'Call using the script. Goal: start the 14-day free trial on the call.' },
+      { day: 'Day 1', action: 'No trial yet? Send email #1 or the first SMS. If they trialed, check their first 9am batch landed.' },
+      { day: 'Day 3', action: 'Send email #2 / second SMS — a light, value-led nudge.' },
+      { day: 'Day 7', action: 'Call again. Ask how the week\u2019s leads looked — most who used it stay.' },
+      { day: 'Day 12', action: 'Trial is ending — email #3: "your trial is waiting / first leads at 9am." Strongest conversion moment.' },
+      { day: 'Day 14', action: 'Final call: help them pick a plan (£25/£49/£99 per week) before they lose the daily leads.' }
     ]
   },
   {
     key: 'probate', name: 'Probate Leads', emoji: '⚖️',
     target: 'Solicitors & probate practitioners',
+    precall: [
+      'Know the lead: firm name, size, and whether they already do probate/estate work.',
+      'Set your goal: get the 14-day free trial started on this call.',
+      'Position yourself as adding a steady stream of work, not selling them something.'
+    ],
+    facts: [
+      'Probate leads come from the official Gov.uk register — newly granted probate, daily.',
+      'The firms that contact executors within 48 hours win most instructions.',
+      'One estate instruction usually covers many months of leads (from £25/week).',
+      'Their referrals get a 14-day free trial — no card, easy to start.'
+    ],
     phone: [
-      '[Opener] "Hi [name], it\u2019s [your name] from 9amLeads. I\u2019m calling probate practitioners in [area] \u2014 do you have two minutes, or is now a bad time?"',
-      '[Qualify] "How does your firm currently find probate and estate work \u2014 referrals, or do you market for it?"',
-      '[Pitch \u2014 1-week free trial] "Every morning at 9am we send probate practitioners notifications of newly granted probate from the official register \u2014 the moment a family needs estate help. First contact within 48 hours wins most instructions. We\u2019re giving firms a free 1-week trial, no card. I can set it up in 30 seconds."',
-      '[Objection \u2014 \u201cWe rely on referrals\u201d] "Referrals are great \u2014 this adds to them. It\u2019s daily, from the official register, and the trial is free. See how many new files it surfaces in a week."',
-      '[Objection \u2014 \u201cHow much?\u201d] "Free for the first week. After that it\u2019s from £25 a week \u2014 and one estate instruction usually covers many months."',
-      '[Close] "What email should I send the login to? I\u2019ll have your first probate leads ready for 9am tomorrow."'
+      '[Opener] "Hi [name], it\u2019s [your name] from 9amLeads. I\u2019m calling probate practitioners in [area] — have you got two minutes, or should I call back?"',
+      '[Hook] "The reason I\u2019m calling: every morning at 9am we send probate practitioners notifications of newly granted probate from the official register — in the postcode areas they choose."',
+      '[Qualify] "How does your firm currently find probate and estate work — is it mostly referrals, or do you actively market for it?"',
+      '[Pitch] "We\u2019re offering a 14-day free trial, no card needed. Every morning you\u2019d receive new grants — the exact moment a family needs estate help. First contact within 48 hours wins most instructions, so you\u2019d be ahead of firms that wait for referrals."',
+      '[Objection — "We rely on referrals"] "Referrals are brilliant — this adds to them. It\u2019s daily, from the official register, and it\u2019s free for 14 days. You\u2019ll see exactly how many new probate files it surfaces before you decide."',
+      '[Objection — "How much does it cost?"] "The 14-day trial is free, no card. After that it\u2019s from £25 a week — and one estate instruction typically covers many months of that."',
+      '[Objection — "I\u2019m worried about volume"] "Start with the free trial and choose postcode areas to match your capacity. You can set it to exactly the volume you can handle — no pressure."',
+      '[Close] "Let me get you set up — 30 seconds. What email should I use for your login? Your first probate leads will be ready at 9am tomorrow."'
     ],
     emails: [
-      { subject: 'New probate leads in your area \u2014 free week', body: 'Hi [name],\n\nI\u2019m with 9amLeads. Every morning at 9am we send probate practitioners notifications of newly granted probate from the official Gov.uk register \u2014 in the postcodes they choose.\n\nThe firms that contact executors within 48 hours win most instructions. It\u2019s a simple way to add a steady stream of new probate files alongside referrals.\n\nTry it free for 1 week, no card:\n\n\u2192 https://9amleads.com/portal/#signup\n\nWant me to set up your free week?' },
-      { subject: 'Your free week of probate leads', body: 'Hi [name],\n\nQuick follow-up on the free 1-week trial of daily probate leads for [area]. Takes 30 seconds to start and your first batch lands at 9am tomorrow:\n\n\u2192 https://9amleads.com/portal/#signup\n\nNo card, cancel anytime. If one instruction covers months of leads, it\u2019s worth the week to find out.' }
+      { subject: 'New probate leads in [area] — 14 days free', body: 'Hi [name],\n\nI\u2019m [your name] from 9amLeads. Every morning at 9am we send probate practitioners notifications of newly granted probate from the official Gov.uk register, in the postcodes they choose.\n\nThe firms that contact executors within 48 hours win most instructions. It\u2019s a simple way to add a steady stream of new files alongside referrals.\n\nTry it free for 14 days, no card:\n\n\u2192 https://9amleads.com/portal/#signup\n\nWant me to set up your free weeks now?' },
+      { subject: 'Your free 14-day probate-leads trial', body: 'Hi [name],\n\nQuick follow-up on the free 14-day trial of daily probate leads for [area]. It takes 30 seconds to start, and your first batch lands at 9am tomorrow:\n\n\u2192 https://9amleads.com/portal/#signup\n\nNo card, cancel anytime. If one instruction covers months of leads, it\u2019s worth the week to see for yourself.' },
+      { subject: 'Still open: your 14 days of probate leads', body: 'Hi [name],\n\nYour free 14-day trial of daily probate leads is still waiting:\n\n\u2192 https://9amleads.com/portal/#signup\n\nStart today and your first notifications arrive tomorrow at 9am. Being early to the executor is the difference between winning the file and missing it.' }
     ],
     sms: [
-      'Hi [name] \u2014 9amLeads here. We send probate practitioners daily notifications of new grants from the official register (your postcode areas). Free 1-week trial, no card: https://9amleads.com/portal/#signup',
-      'Your free week of daily probate leads is ready, [name]: https://9amleads.com/portal/#signup. First contact within 48h wins most instructions. Any questions, just reply.'
+      'Hi [name] — 9amLeads here. We send probate practitioners daily notifications of new grants from the official register (your areas). 14-day free trial, no card: https://9amleads.com/portal/#signup',
+      'Your free 14 days of daily probate leads is ready, [name]: https://9amleads.com/portal/#signup. First contact within 48h wins most instructions. Reply with any questions.',
+      'Reminder [name]: free 14-day probate-leads trial — first batch tomorrow 9am. https://9amleads.com/portal/#signup'
     ],
     social: [
-      'Probate instructions usually go to the first firm that contacts the executor. ⚖️ We deliver daily notifications of newly granted probate \u2014 try 1 week free: https://9amleads.com/portal/#signup #probate #solicitors',
-      'Referrals are great. So is a daily stream of new probate opportunities from the official register. Free week \u2192 https://9amleads.com/portal/#signup #probateleads #legal',
-      'How solicitors fill their pipeline without cold-calling: daily probate leads + a fast, respectful first contact. 📩 Free 1-week trial: https://9amleads.com/portal/#signup'
+      'Probate instructions usually go to the first firm that contacts the executor. ⚖️ We deliver daily notifications of newly granted probate — 14 days free: https://9amleads.com/portal/#signup #probate #solicitors',
+      'Referrals are great. So is a daily stream of new probate opportunities from the official register. 14 days free \u2192 https://9amleads.com/portal/#signup #probateleads #legal',
+      'How solicitors fill their pipeline without cold-calling: daily probate leads + a fast, respectful first contact. 📩 14-day free trial: https://9amleads.com/portal/#signup',
+      'New grants are published every day. Be the firm that calls first \u2192 https://9amleads.com/portal/#signup ⚖️ #probate'
     ],
     followup: [
       { day: 'Day 0', action: 'Call using the script. Goal: start the free trial on the call.' },
-      { day: 'Day 1', action: 'Send email #1 or first SMS if no trial yet. If trialed, confirm the 9am batch arrived.' },
-      { day: 'Day 3', action: 'Light follow-up with email #2 or second SMS.' },
-      { day: 'Day 7', action: 'Call: ask how many new probate enquiries the week surfaced.' },
-      { day: 'Day 14', action: 'Final touch \u2014 ask if they want to keep the daily probate feed going.' }
+      { day: 'Day 1', action: 'No trial? Email #1 or first SMS. If trialed, confirm the 9am batch arrived.' },
+      { day: 'Day 3', action: 'Light follow-up — email #2 or second SMS.' },
+      { day: 'Day 7', action: 'Call: how many new probate enquiries did the week surface?' },
+      { day: 'Day 12', action: 'Email #3 — trial ending, keep the daily feed going.' },
+      { day: 'Day 14', action: 'Final call — help them choose a plan.' }
     ]
   },
   {
     key: 'newbusiness', name: 'New Business Leads', emoji: '💼',
     target: 'Accountants, web designers & B2B services',
+    precall: [
+      'Know the lead: what they sell, who their ideal client is, and the sector (SIC) they serve.',
+      'Set your goal: start the 14-day free trial on this call.',
+      'Emphasise "brand-new companies with no supplier yet" — that\u2019s the killer point.'
+    ],
+    facts: [
+      'New business leads are freshly registered Companies House companies — daily.',
+      'A new company has no incumbent supplier — the first to call usually wins the account.',
+      'One new retained client usually pays for a year of leads (from £25/week).',
+      'Their referrals get a 14-day free trial — no card needed.'
+    ],
     phone: [
-      '[Opener] "Hi [name], it\u2019s [your name] from 9amLeads. I\u2019m calling accountancy/B2B firms in [area] \u2014 have you got two minutes, or should I call back?"',
-      '[Qualify] "How do you currently find new clients \u2014 referrals, or are you actively prospecting?"',
-      '[Pitch \u2014 1-week free trial] "Every morning at 9am we send firms newly registered companies from Companies House \u2014 businesses that incorporated in the last 24 hours and need an accountant/website/IT before anyone else talks to them. First contact in the first fortnight wins most of these. Free 1-week trial, no card \u2014 I can set you up in 30 seconds."',
-      '[Objection \u2014 \u201cWe have enough clients\u201d] "Then this is free growth. The trial is a week, no card \u2014 see how many brand-new companies in your sector appear that you\u2019d never have seen otherwise."',
-      '[Objection \u2014 \u201cHow much?\u201d] "Free for the first week, then from £25 a week \u2014 one new retained client usually pays for a year."',
-      '[Close] "Best email for your login? Your first new-company leads will be there at 9am tomorrow."'
+      '[Opener] "Hi [name], it\u2019s [your name] from 9amLeads. I\u2019m calling [accountancy/B2B] firms in [area] — have you got two minutes, or should I call back?"',
+      '[Hook] "The reason I\u2019m calling: every morning at 9am we send B2B firms newly registered companies from Companies House — filtered by the exact sectors and locations they choose."',
+      '[Qualify] "How do you currently find new clients — is it referrals, or are you actively prospecting?"',
+      '[Pitch] "Here\u2019s what we\u2019re offering: a 14-day free trial, no card. Every morning you\u2019d see brand-new companies in your sector — businesses that incorporated in the last 24 hours and need an accountant / website / IT before anyone else talks to them. There\u2019s no incumbent supplier yet, so the first firm to make contact usually wins."',
+      '[Objection — "We have enough clients"] "That\u2019s the best position to be in — this is free growth. Take the 14-day trial and just see how many brand-new companies in your sector appear that you\u2019d never have known about."',
+      '[Objection — "How much does it cost?"] "Free for 14 days, no card. After that from £25 a week — one new retained client usually pays for a year of it."',
+      '[Objection — "I\u2019m too busy prospecting"] "Then let the leads come to you. Five minutes each morning, contact the strongest two, done. I can have you set up right now."',
+      '[Close] "What email should I send your login to? I\u2019ll have your first new-company leads ready at 9am tomorrow."'
     ],
     emails: [
-      { subject: 'New companies in [sector] every morning \u2014 free week', body: 'Hi [name],\n\nI\u2019m with 9amLeads. Every morning at 9am we send B2B firms newly registered companies from Companies House \u2014 filtered by the SIC codes and locations they choose.\n\nA company incorporated today needs an accountant, a website, insurance and IT within weeks \u2014 and whoever contacts them first usually wins the account. There\u2019s no incumbent supplier yet.\n\nTry it free for 1 week, no card:\n\n\u2192 https://9amleads.com/portal/#signup\n\nSet up your free week?' },
-      { subject: 'Your free week of new-business leads', body: 'Hi [name],\n\nFollowing up on the free 1-week trial of daily new company leads. 30 seconds to start, first batch at 9am tomorrow:\n\n\u2192 https://9amleads.com/portal/#signup\n\nNo card, cancel anytime. One new client usually covers a year of it \u2014 worth a week to find out.' }
+      { subject: 'New companies in [sector] every morning — 14 days free', body: 'Hi [name],\n\nI\u2019m [your name] from 9amLeads. Every morning at 9am we send B2B firms newly registered companies from Companies House — filtered by the SIC codes and locations they choose.\n\nA company incorporated today needs an accountant, a website, insurance and IT within weeks — and whoever contacts them first usually wins the account, because there\u2019s no incumbent supplier yet.\n\nTry it free for 14 days, no card:\n\n\u2192 https://9amleads.com/portal/#signup\n\nSet up your free weeks now?' },
+      { subject: 'Your free 14-day new-business-leads trial', body: 'Hi [name],\n\nQuick follow-up on the free 14-day trial of daily new-company leads. 30 seconds to start, first batch at 9am tomorrow:\n\n\u2192 https://9amleads.com/portal/#signup\n\nNo card, cancel anytime. One new client usually covers a year of it — worth a fortnight to find out.' },
+      { subject: 'Your new-business leads are ready', body: 'Hi [name],\n\nJust making sure you didn\u2019t miss it — your free 14-day trial of new company leads is still waiting:\n\n\u2192 https://9amleads.com/portal/#signup\n\nStart now and your first batch of brand-new companies arrives at 9am tomorrow. First to a new company means no competition.' }
     ],
     sms: [
-      'Hi [name] \u2014 9amLeads here. We send B2B firms newly registered companies from Companies House every morning (filtered to your sector). Free 1-week trial, no card: https://9amleads.com/portal/#signup',
-      'Your free week of daily new-company leads is ready: https://9amleads.com/portal/#signup. First to a brand-new company = no incumbent supplier. Reply with any questions.'
+      'Hi [name] — 9amLeads here. We send B2B firms newly registered Companies House companies every morning (your sector). 14-day free trial, no card: https://9amleads.com/portal/#signup',
+      'Your free 14 days of daily new-company leads is ready, [name]: https://9amleads.com/portal/#signup. New company = no supplier yet. First contact usually wins.',
+      'Reminder [name]: free 14-day new-business-leads trial — first batch tomorrow 9am. https://9amleads.com/portal/#signup'
     ],
     social: [
-      'A company incorporated today needs an accountant, a website, insurance \u2014 and whoever contacts them first usually wins. 💼 Get new Companies House registrations daily, free week: https://9amleads.com/portal/#signup #b2bleads #accountants',
-      'Why chase established firms with loyal suppliers? New companies have none. Fresh registrations, delivered daily \u2192 https://9amleads.com/portal/#signup #newwords #businessgrowth',
-      'The B2B lead nobody is paying attention to: newly registered companies. Try 1 week free: https://9amleads.com/portal/#signup #companieshouse'
+      'A company incorporated today needs an accountant, a website, insurance — and whoever contacts them first usually wins. 💼 Get new Companies House registrations daily, 14 days free: https://9amleads.com/portal/#signup #b2bleads #accountants',
+      'Why chase established firms with loyal suppliers? New companies have none. Fresh registrations, delivered daily \u2192 https://9amleads.com/portal/#signup #businessgrowth',
+      'The B2B lead nobody\u2019s paying attention to: newly registered companies. 14 days free: https://9amleads.com/portal/#signup #companieshouse',
+      'Your next client might have incorporated this morning. Get them before anyone else \u2192 https://9amleads.com/portal/#signup 💼'
     ],
     followup: [
-      { day: 'Day 0', action: 'Call using the script \u2014 get the free trial started.' },
+      { day: 'Day 0', action: 'Call using the script — get the free trial started.' },
       { day: 'Day 1', action: 'Email #1 or first SMS if no trial yet. Confirm the 9am batch if trialed.' },
       { day: 'Day 3', action: 'Follow up with email #2 or second SMS.' },
       { day: 'Day 7', action: 'Call: how many new company enquiries did they get in a week?' },
-      { day: 'Day 14', action: 'Final check \u2014 keep the daily feed going?' }
+      { day: 'Day 12', action: 'Email #3 — trial ending, keep the daily feed going.' },
+      { day: 'Day 14', action: 'Final check — keep the feed going?' }
     ]
   },
   {
     key: 'planning', name: 'Planning Permission Leads', emoji: '🏗️',
     target: 'Builders, architects & trades',
+    precall: [
+      'Know the lead: are they builders, architects, or a specific trade? What area do they cover?',
+      'Set your goal: start the 14-day free trial on this call.',
+      'Lead with "a planning application means a homeowner is ready to spend."'
+    ],
+    facts: [
+      'Planning leads are newly submitted planning applications — daily, in their postcode areas.',
+      'A homeowner who has applied is ready to spend on the build.',
+      'Contacting them while the application is being decided means you quote before other builders.',
+      'Their referrals get a 14-day free trial — no card needed.'
+    ],
     phone: [
-      '[Opener] "Hi [name], it\u2019s [your name] from 9amLeads. I\u2019m calling builders/trades in [area] \u2014 do you have two minutes, or is now a bad time?"',
-      '[Qualify] "How\u2019s the order book looking? Do you mainly do extensions, conversions, or new builds?"',
-      '[Pitch \u2014 1-week free trial] "Every morning at 9am we send builders newly submitted planning applications \u2014 homeowners in their postcode areas who\u2019ve just applied for an extension or conversion and are ready to spend. Contacting them while it\u2019s being decided means you quote before another builder. Free 1-week trial, no card \u2014 set it up in 30 seconds."',
-      '[Objection \u2014 \u201cWe work on referrals\u201d] "This adds to referrals \u2014 it\u2019s a daily stream of local homeowners who are actively planning a build. Try the free week and see the pipeline it adds."',
-      '[Objection \u2014 \u201cHow much?\u201d] "Free for the first week, then from £25 a week \u2014 one extension job covers it for months."',
-      '[Close] "What email should I use for the login? First planning leads at 9am tomorrow."'
+      '[Opener] "Hi [name], it\u2019s [your name] from 9amLeads. I\u2019m calling builders and trades in [area] — have you got two minutes, or should I call back?"',
+      '[Hook] "The reason I\u2019m calling: every morning at 9am we send builders newly submitted planning applications — homeowners in their postcode who have just applied for an extension, conversion or new build and are ready to spend."',
+      '[Qualify] "How\u2019s the order book looking at the moment — do you mainly do extensions, conversions, or new builds?"',
+      '[Pitch] "We\u2019re offering a 14-day free trial, no card. Every morning you\u2019d get fresh planning applications in your areas. A homeowner who\u2019s applied for planning is ready to spend — and if you contact them while it\u2019s being decided, you quote before another builder even knows about it."',
+      '[Objection — "We work on referrals"] "Referrals are great — this adds to them. It\u2019s a daily stream of local homeowners actively planning a build. Try the free 14 days and see the pipeline it adds."',
+      '[Objection — "How much does it cost?"] "Free for 14 days, no card. After that from £25 a week — one extension job usually covers it for months."',
+      '[Objection — "I don\u2019t have time to chase"] "That\u2019s the point — it takes five minutes a morning. You pick the applications that fit your trade, contact the ones worth quoting, done."',
+      '[Close] "Let me get you set up — what email should I use? Your first planning leads will be there at 9am tomorrow."'
     ],
     emails: [
-      { subject: 'Local planning leads \u2014 free 1-week trial', body: 'Hi [name],\n\nI\u2019m with 9amLeads. Every morning at 9am we send builders newly submitted planning applications in their chosen postcode areas \u2014 homeowners who\u2019ve just applied for an extension, loft conversion or new build.\n\nA planning application is a homeowner ready to spend. Contact them while it\u2019s being decided and you quote before the competition.\n\nFree for 1 week, no card:\n\n\u2192 https://9amleads.com/portal/#signup\n\nWant me to set up your free week?' },
-      { subject: 'Your free week of planning leads', body: 'Hi [name],\n\nQuick follow-up on the free 1-week trial of daily planning leads for [area]. 30 seconds to start, first batch at 9am tomorrow:\n\n\u2192 https://9amleads.com/portal/#signup\n\nNo card, cancel anytime. One extension job covers it for months.' }
+      { subject: 'Local planning leads — 14 days free', body: 'Hi [name],\n\nI\u2019m [your name] from 9amLeads. Every morning at 9am we send builders newly submitted planning applications in their chosen postcode areas — homeowners who have just applied for an extension, loft conversion or new build.\n\nA planning application is a homeowner ready to spend. Contact them while it\u2019s being decided and you quote before the competition.\n\nFree for 14 days, no card:\n\n\u2192 https://9amleads.com/portal/#signup\n\nWant me to set up your free weeks now?' },
+      { subject: 'Your free 14-day planning-leads trial', body: 'Hi [name],\n\nQuick follow-up on the free 14-day trial of daily planning leads for [area]. 30 seconds to start, first batch at 9am tomorrow:\n\n\u2192 https://9amleads.com/portal/#signup\n\nNo card, cancel anytime. One extension job usually covers it for months.' },
+      { subject: 'Applications are waiting for you', body: 'Hi [name],\n\nYour free 14-day trial of planning leads is still waiting:\n\n\u2192 https://9amleads.com/portal/#signup\n\nStart today and you\u2019ll see new applications tomorrow morning — homeowners ready to spend on their build. Be the builder who quotes first.' }
     ],
     sms: [
-      'Hi [name] \u2014 9amLeads here. We send builders newly submitted planning applications every morning (your postcode areas). Free 1-week trial, no card: https://9amleads.com/portal/#signup',
-      'Your free week of daily planning leads is ready, [name]: https://9amleads.com/portal/#signup. Applications = homeowners ready to spend. Any questions, just reply.'
+      'Hi [name] — 9amLeads here. We send builders newly submitted planning applications every morning (your postcode areas). 14-day free trial, no card: https://9amleads.com/portal/#signup',
+      'Your free 14 days of daily planning leads is ready, [name]: https://9amleads.com/portal/#signup. Applications = homeowners ready to spend. Reply with questions.',
+      'Reminder [name]: free 14-day planning-leads trial — first batch tomorrow 9am. https://9amleads.com/portal/#signup'
     ],
     social: [
-      'A planning application means a homeowner is ready to spend. 🏗️ We deliver newly submitted applications every morning \u2014 free 1-week trial: https://9amleads.com/portal/#signup #planningleads #builders',
+      'A planning application means a homeowner is ready to spend. 🏗️ We deliver newly submitted applications every morning — 14 days free: https://9amleads.com/portal/#signup #planningleads #builders',
       'Quote before the other builders: daily planning leads for your postcodes. Try it free \u2192 https://9amleads.com/portal/#signup #extensions #construction',
-      'Your next extension job is on the planning portal right now. Get it delivered at 9am daily \u2192 https://9amleads.com/portal/#signup #tradesmen'
+      'Your next extension job is on the planning portal right now. Get it delivered at 9am daily \u2192 https://9amleads.com/portal/#signup #tradesmen',
+      'Homeowners who apply for planning are ready to spend. Be the builder who calls first \u2192 https://9amleads.com/portal/#signup 🏗️'
     ],
     followup: [
-      { day: 'Day 0', action: 'Call using the script \u2014 start the free trial.' },
+      { day: 'Day 0', action: 'Call using the script — start the free trial.' },
       { day: 'Day 1', action: 'Email #1 or first SMS if no trial. Confirm 9am batch if trialed.' },
       { day: 'Day 3', action: 'Follow up with email #2 or second SMS.' },
       { day: 'Day 7', action: 'Call: how many quotes have they sent from planning leads?' },
-      { day: 'Day 14', action: 'Final check \u2014 keep the pipeline going?' }
+      { day: 'Day 12', action: 'Email #3 — applications are waiting, keep the pipeline going.' },
+      { day: 'Day 14', action: 'Final check — keep the pipeline going?' }
     ]
   },
   {
     key: 'tenders', name: 'Tender Opportunities', emoji: '📋',
     target: 'Cleaning, IT, construction & FM firms',
+    precall: [
+      'Know the lead: what sector they\u2019re in and whether they\u2019ve bid for public sector work before.',
+      'Set your goal: start the 14-day free trial on this call.',
+      'Lead with "public buyers pay reliably and often prefer local SMEs."'
+    ],
+    facts: [
+      'Tender opportunities are matched to their sector and region, delivered daily.',
+      'Public sector buyers pay reliably and prefer local, specialist suppliers.',
+      'One won contract usually covers years of leads (from £25/week).',
+      'Their referrals get a 14-day free trial — no card needed.'
+    ],
     phone: [
-      '[Opener] "Hi [name], it\u2019s [your name] from 9amLeads. I\u2019m calling companies in [sector] that work with public sector clients \u2014 have you got two minutes?"',
+      '[Opener] "Hi [name], it\u2019s [your name] from 9amLeads. I\u2019m calling [sector] companies that could win public sector work — have you got two minutes, or should I call back?"',
+      '[Hook] "The reason I\u2019m calling: every morning at 9am we send firms public sector tender opportunities matched to their sector and region — from Contracts Finder and the official platforms."',
       '[Qualify] "Do you currently bid for public sector or council work, or is that something you\u2019d like to grow?"',
-      '[Pitch \u2014 1-week free trial] "Every morning at 9am we send firms public sector tender opportunities matched to their sector and region \u2014 cleaning, IT, construction, whatever they do. One won contract usually covers years of leads. Free 1-week trial, no card \u2014 30 seconds to set up."',
-      '[Objection \u2014 \u201cBidding is too hard\u201d] "It gets easier with practice, and these are matched to your sector. Start with the free week \u2014 you\u2019ll see the opportunities that are out there."',
-      '[Objection \u2014 \u201cHow much?\u201d] "Free for the first week, then from £25 a week \u2014 a fraction of one public sector contract."',
-      '[Close] "Best email for the login? Your first matched tenders will be there tomorrow."'
+      '[Pitch] "We\u2019re offering a 14-day free trial, no card. Every morning you\u2019d see the tender opportunities that actually fit your business — cleaning, IT, construction, whatever you do. One won contract usually covers years of leads, and public buyers genuinely prefer local SMEs."',
+      '[Objection — "Bidding is too complicated"] "It gets easier with practice, and these are matched to your sector so you\u2019re not wading through hundreds of irrelevant notices. Start with the free 14 days — you\u2019ll see the opportunities that are out there."',
+      '[Objection — "How much does it cost?"] "Free for 14 days, no card. After that from £25 a week — a fraction of one public sector contract."',
+      '[Objection — "We\u2019re too small"] "Some of the best public sector success stories are small local firms — buyers are often required to consider them. The trial is free; just see what\u2019s out there."',
+      '[Close] "What email should I send your login to? Your first matched tenders will be there tomorrow morning."'
     ],
     emails: [
-      { subject: 'Public sector tenders matched to [sector] \u2014 free week', body: 'Hi [name],\n\nI\u2019m with 9amLeads. Every morning at 9am we send firms public sector tender opportunities matched to their sector and region \u2014 from Contracts Finder and the other official platforms.\n\nPublic buyers pay reliably and often prefer small, local suppliers. One won contract usually covers years of the subscription.\n\nFree for 1 week, no card:\n\n\u2192 https://9amleads.com/portal/#signup\n\nSet up your free week?' },
-      { subject: 'Your free week of matched tenders', body: 'Hi [name],\n\nQuick follow-up on the free 1-week trial of daily tender opportunities for [sector]. 30 seconds to start:\n\n\u2192 https://9amleads.com/portal/#signup\n\nNo card, cancel anytime. Worth a week to see what\u2019s out there.' }
+      { subject: 'Public sector tenders matched to [sector] — 14 days free', body: 'Hi [name],\n\nI\u2019m [your name] from 9amLeads. Every morning at 9am we send firms public sector tender opportunities matched to their sector and region — from Contracts Finder and the other official platforms.\n\nPublic buyers pay reliably, and they often prefer small, local suppliers. One won contract usually covers years of the subscription.\n\nFree for 14 days, no card:\n\n\u2192 https://9amleads.com/portal/#signup\n\nSet up your free weeks now?' },
+      { subject: 'Your free 14-day matched-tenders trial', body: 'Hi [name],\n\nQuick follow-up on the free 14-day trial of daily tender opportunities for [sector]. 30 seconds to start:\n\n\u2192 https://9amleads.com/portal/#signup\n\nNo card, cancel anytime. Worth a fortnight to see what\u2019s actually out there for your business.' },
+      { subject: 'Tenders are waiting for you', body: 'Hi [name],\n\nYour free 14-day trial of matched tender opportunities is still waiting:\n\n\u2192 https://9amleads.com/portal/#signup\n\nStart today and your first matched opportunities arrive tomorrow morning. The right contract can cover years of leads.' }
     ],
     sms: [
-      'Hi [name] \u2014 9amLeads here. We send public sector tenders matched to your sector every morning. Free 1-week trial, no card: https://9amleads.com/portal/#signup',
-      'Your free week of matched tenders is ready, [name]: https://9amleads.com/portal/#signup. One contract can cover years. Reply with questions.'
+      'Hi [name] — 9amLeads here. We send public sector tenders matched to your sector every morning. 14-day free trial, no card: https://9amleads.com/portal/#signup',
+      'Your free 14 days of matched tenders is ready, [name]: https://9amleads.com/portal/#signup. One contract can cover years. Reply with questions.',
+      'Reminder [name]: free 14-day tender trial — matched opportunities tomorrow 9am. https://9amleads.com/portal/#signup'
     ],
     social: [
-      'Public sector buyers pay reliably and prefer local SMEs. 📋 Get tenders matched to your sector delivered daily \u2014 free week: https://9amleads.com/portal/#signup #tenders #sme',
-      'The opportunities are out there \u2014 most firms just never see them. Daily matched tenders \u2192 https://9amleads.com/portal/#signup #publicsector #cleaning #it',
-      'Win your first public sector contract with tenders you actually fit. Free 1-week trial: https://9amleads.com/portal/#signup #bids'
+      'Public sector buyers pay reliably and prefer local SMEs. 📋 Get tenders matched to your sector delivered daily — 14 days free: https://9amleads.com/portal/#signup #tenders #sme',
+      'The opportunities are out there — most firms just never see them. Daily matched tenders \u2192 https://9amleads.com/portal/#signup #publicsector #cleaning #it',
+      'Win your first public sector contract with tenders you actually fit. 14-day free trial: https://9amleads.com/portal/#signup #bids',
+      'Your next public sector contract might be published today. See it first \u2192 https://9amleads.com/portal/#signup 📋'
     ],
     followup: [
-      { day: 'Day 0', action: 'Call using the script \u2014 start the free trial.' },
+      { day: 'Day 0', action: 'Call using the script — start the free trial.' },
       { day: 'Day 1', action: 'Email #1 or first SMS if no trial. Confirm batch if trialed.' },
       { day: 'Day 3', action: 'Follow up with email #2 or second SMS.' },
       { day: 'Day 7', action: 'Call: which opportunities did they see that fit their business?' },
-      { day: 'Day 14', action: 'Final check \u2014 keep the tender feed going?' }
+      { day: 'Day 12', action: 'Email #3 — tenders are waiting, don\u2019t miss them.' },
+      { day: 'Day 14', action: 'Final check — keep the tender feed going?' }
     ]
   },
   {
     key: 'general', name: 'Any Business / General', emoji: '📈',
     target: 'Anyone who needs more customers',
+    precall: [
+      'Know the lead: what they do and where their work comes from today.',
+      'Set your goal: match them to the right lead type and start the free trial.',
+      'Keep it consultative — you\u2019re solving "we need more customers", not selling a product.'
+    ],
+    facts: [
+      'Fresh business leads delivered every morning at 9am, matched to their trade and area.',
+      'Choose the lead type that fits how they win work — moving, probate, planning, new business or tenders.',
+      'Fixed weekly price from £25 — no paying per lead, no auctions.',
+      'Their referrals get a 14-day free trial — no card needed.'
+    ],
     phone: [
-      '[Opener] "Hi [name], it\u2019s [your name] from 9amLeads. I\u2019m calling businesses in [area] that want more customers \u2014 do you have two minutes?"',
-      '[Qualify] "What does your business do, and where does most of your work come from at the moment?"',
-      '[Pitch \u2014 1-week free trial] "9amLeads sends fresh business leads every morning \u2014 moving, probate, new business, planning or tenders, matched to your trade and area. Every lead type has a free 1-week trial, no card. I can set you up in 30 seconds."',
-      '[Objection \u2014 \u201cWhat type of leads do I get?\u201d] "You pick the type that fits how you win work \u2014 e.g. moving leads for removals, planning leads for builders, tenders for cleaning/IT. We\u2019ll match it to your business."',
-      '[Objection \u2014 \u201cHow much?\u201d] "Free for the first week, then from £25 a week. One extra customer usually covers it."',
-      '[Close] "What email should I use? I\u2019ll match your lead type and have it ready at 9am tomorrow."'
+      '[Opener] "Hi [name], it\u2019s [your name] from 9amLeads. I\u2019m calling businesses in [area] that want more customers — do you have two minutes?"',
+      '[Qualify] "First — what does your business do, and where does most of your work come from at the moment?"',
+      '[Match] "Based on that, we\u2019d set you up with [moving/probate/new business/planning/tenders] leads — delivered every morning at 9am in your postcode areas."',
+      '[Pitch] "Here\u2019s what we\u2019re offering: a 14-day free trial, no card. Every morning you\u2019d get fresh leads matched to your trade. You\u2019re not paying per lead — it\u2019s a fixed weekly price, and one extra customer usually covers it."',
+      '[Objection — "What type of leads do I get?"] "You pick the type that fits how you win work — for example moving leads for removals, planning leads for builders, tenders for cleaning or IT. We\u2019ll match it to your business on the call."',
+      '[Objection — "How much does it cost?"] "Free for 14 days, no card. After that from £25 a week. One extra customer usually pays for the whole month."',
+      '[Objection — "I\u2019ll think about it"] "Completely understand — the free trial is the easiest way to see it with zero risk. Let me set you up now so you can look at real leads tomorrow at 9am, and if it\u2019s not for you, cancel in one click."',
+      '[Close] "What email should I use? I\u2019ll match your lead type and have your first batch ready at 9am tomorrow."'
     ],
     emails: [
-      { subject: 'Fresh leads for [business] \u2014 free 1-week trial', body: 'Hi [name],\n\nI\u2019m with 9amLeads. We deliver fresh business leads every morning at 9am \u2014 moving, probate, new business, planning or tenders \u2014 matched to your trade and chosen postcode areas.\n\nYou\u2019re not paying per lead, and there\u2019s a free 1-week trial with no card:\n\n\u2192 https://9amleads.com/portal/#signup\n\nWant me to match the right lead type for your business?' },
-      { subject: 'Your free week of leads is ready', body: 'Hi [name],\n\nQuick follow-up on the free 1-week trial of daily business leads. 30 seconds to start, first batch at 9am tomorrow:\n\n\u2192 https://9amleads.com/portal/#signup\n\nNo card, cancel anytime. One extra customer usually covers it.' }
+      { subject: 'Fresh leads for [business] — 14 days free', body: 'Hi [name],\n\nI\u2019m [your name] from 9amLeads. We deliver fresh business leads every morning at 9am — moving, probate, new business, planning or tenders — matched to your trade and chosen postcode areas.\n\nYou\u2019re not paying per lead, and there\u2019s a free 14-day trial with no card:\n\n\u2192 https://9amleads.com/portal/#signup\n\nWant me to match the right lead type for your business?' },
+      { subject: 'Your free 14-day leads trial', body: 'Hi [name],\n\nQuick follow-up on the free 14-day trial of daily business leads. 30 seconds to start, first batch at 9am tomorrow:\n\n\u2192 https://9amleads.com/portal/#signup\n\nNo card, cancel anytime. One extra customer usually covers it.' },
+      { subject: 'Still open: your free 14 days of leads', body: 'Hi [name],\n\nYour free 14-day trial of daily business leads is still waiting:\n\n\u2192 https://9amleads.com/portal/#signup\n\nStart now and your first batch arrives at 9am tomorrow — matched to how you win work.' }
     ],
     sms: [
-      'Hi [name] \u2014 9amLeads here. Fresh business leads delivered every morning, matched to your trade and area. Free 1-week trial, no card: https://9amleads.com/portal/#signup',
-      'Your free week of daily leads is ready, [name]: https://9amleads.com/portal/#signup. We\u2019ll match the right lead type for you. Reply with questions.'
+      'Hi [name] — 9amLeads here. Fresh business leads delivered every morning, matched to your trade and area. 14-day free trial, no card: https://9amleads.com/portal/#signup',
+      'Your free 14 days of daily leads is ready, [name]: https://9amleads.com/portal/#signup. We\u2019ll match the right lead type for you. Reply with questions.',
+      'Reminder [name]: free 14-day business-leads trial — first batch tomorrow 9am. https://9amleads.com/portal/#signup'
     ],
     social: [
-      'Fresh business leads, delivered every morning at 9am. 📈 Moving, probate, planning, new business or tenders \u2014 matched to your trade. Free week: https://9amleads.com/portal/#signup #businessleads',
-      'Stop paying per lead. Get your own daily allocation instead \u2014 free 1-week trial: https://9amleads.com/portal/#signup #leads #growth',
-      'Your competitors get their leads at 9am. Get yours too \u2014 https://9amleads.com/portal/#signup #smallbusiness #ukbusiness'
+      'Fresh business leads, delivered every morning at 9am. 📈 Moving, probate, planning, new business or tenders — matched to your trade. 14 days free: https://9amleads.com/portal/#signup #businessleads',
+      'Stop paying per lead. Get your own daily allocation instead — 14-day free trial: https://9amleads.com/portal/#signup #leads #growth',
+      'Your competitors get their leads at 9am. Get yours too \u2192 https://9amleads.com/portal/#signup #smallbusiness #ukbusiness',
+      'More customers without spending on ads. Fresh leads every morning \u2192 https://9amleads.com/portal/#signup 📈'
     ],
     followup: [
-      { day: 'Day 0', action: 'Call using the script \u2014 match their lead type and start the free trial.' },
+      { day: 'Day 0', action: 'Call using the script — match their lead type and start the free trial.' },
       { day: 'Day 1', action: 'Email #1 or first SMS if no trial. Confirm 9am batch if trialed.' },
       { day: 'Day 3', action: 'Follow up with email #2 or second SMS.' },
       { day: 'Day 7', action: 'Call: how did the first week of leads look?' },
-      { day: 'Day 14', action: 'Final check \u2014 keep the leads going?' }
+      { day: 'Day 12', action: 'Email #3 — trial ending, don\u2019t lose the daily leads.' },
+      { day: 'Day 14', action: 'Final check — keep the leads going?' }
     ]
   }
 ];
