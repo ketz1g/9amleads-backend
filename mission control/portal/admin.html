@@ -325,7 +325,7 @@ function openDeliveryPreview() {
           var needsDoor = cx.product === 'moving' || cx.product === 'probate';
           var badge = '';
           if (needsDoor) {
-            badge = l.has_door_number ? '<span style="background:#dcfce7;color:#15803d;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">DOOR ✓</span>' : (l.paf_candidate ? '<span style="background:#fef3c7;color:#b45309;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">+DOOR AT DELIVERY (PAF)</span>' : '<span style="background:#fee2e2;color:#b91c1c;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">NO DOOR</span>');
+            badge = l.has_door_number ? '<span style="background:#dcfce7;color:#15803d;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">DOOR ✓</span>' : (l.paf_failed ? '<span style="background:#fee2e2;color:#b91c1c;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">NO DOOR · REPLACED</span>' : (l.paf_candidate ? '<span style="background:#fef3c7;color:#b45309;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">+DOOR AT DELIVERY (PAF)</span>' : '<span style="background:#fee2e2;color:#b91c1c;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">NO DOOR</span>'));
           }
           html += '<div style="font-size:12px;color:#334155;padding-left:12px;border-left:3px solid #0ea5e9;margin-bottom:4px">' + (dispAddr || '-') + badge + (l.url ? ' <a href="' + l.url + '" target="_blank" style="color:#2563eb">link</a>' : '') + '</div>';
         });

@@ -6833,13 +6833,14 @@ async function deliveryPreviewForCustomer(cust) {
     var pc = c.postcode || '';
     var hasDoor = hasUsablePremiseAddress(addr, pc);
     var pafCandidate = false;
-    if (!hasDoor) {
+    var pafFailed = !!c.paf_failed;
+    if (!hasDoor && !pafFailed) {
       // PAF-relaxed: a full postcode + street name means the paid PAF pass will add
       // the door number at delivery (drops it only if PAF can't confirm it).
       var pcFull = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim());
       pafCandidate = pcFull && hasStreetName(addr);
     }
-    return { address: c.address || c.fullAddress || '', postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate };
+    return { address: c.address || c.fullAddress || '', postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed };
   });
   return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: out.length, leads: out, error: out.length < limit ? 'supply low in ' + areas.join(', ') : '' };
 }
