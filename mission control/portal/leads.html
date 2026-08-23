@@ -108,6 +108,40 @@ footer a{color:var(--accent);text-decoration:underline}
 
 <div style="font-size:11px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6"><b>ℹ️ Quiet days:</b> On days when fewer fresh leads are available in your exact postcode areas, we send you the leads <b>closest to your chosen postcodes</b> so you still get your full daily count. You are never sent the same opportunity twice.</div>
 
+<!-- Tips & shortcuts (dismissible) -->
+<div id="leads-tips" style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:11px;color:#1e3a5f;line-height:1.8">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+<strong style="font-size:12px;color:#0c4a6e"><i class="fas fa-lightbulb" style="margin-right:5px"></i> Tips &amp; shortcuts</strong>
+<button onclick="document.getElementById('leads-tips').style.display='none';try{localStorage.setItem('leads_tips_hidden','1');}catch(e){}" style="background:none;border:none;color:#0369a1;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✕ Hide</button>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:4px 16px">
+<div>✅ <b>Print &amp; Post in one go:</b> tick the checkboxes on multiple leads, then click <b>Print &amp; Post</b> below to send flyers or letters to them all in one batch.</div>
+<div>🤖 <b>Auto Print &amp; Post:</b> set it up once and we automatically post your chosen flyer/letter to every new matching lead. <a href="/portal/auto.html" style="color:#0369a1;font-weight:700">Set up →</a></div>
+<div>📈 <b>Track outcomes:</b> mark each lead <b>Contacted / Quoted / Won</b> so you can see what converts.</div>
+<div>🔗 <b>Verify sources:</b> click the source link on any lead to see exactly where it came from.</div>
+<div>⏰ <b>Be early:</b> opportunities are prioritised from the last 24 hours — contact early for the best response.</div>
+<div>📤 <b>Export or CRM:</b> download to CSV or connect a webhook from your <a href="/portal/dashboard.html" style="color:#0369a1;font-weight:700">dashboard</a>.</div>
+</div>
+</div>
+<style>.htip{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:#e2e8f0;color:#475569;font-size:10px;font-weight:700;cursor:help;margin-left:4px;vertical-align:middle;flex-shrink:0}</style>
+<script>
+function helpTip(text){ return '<span class="htip" onclick="event.stopPropagation();showHelp(this,\'' + String(text).replace(/'/g,"\\'").replace(/"/g,'&quot;') + '\')" title="' + String(text).replace(/"/g,'&quot;') + '">?</span>'; }
+function showHelp(el, text){
+  try { var e2 = document.getElementById('htip-pop'); if (e2) e2.remove(); } catch(e) {}
+  var pop = document.createElement('div'); pop.id = 'htip-pop';
+  pop.style.cssText = 'position:fixed;z-index:9999;background:#0f172a;color:#e2e8f0;font-size:11px;line-height:1.55;padding:10px 14px;border-radius:10px;max-width:270px;box-shadow:0 8px 30px rgba(0,0,0,.28)';
+  pop.textContent = text; document.body.appendChild(pop);
+  try {
+    var r = el.getBoundingClientRect();
+    var left = Math.min(r.left, window.innerWidth - 290); if (left < 8) left = 8;
+    var top = r.bottom + 6;
+    if (top + 100 > window.innerHeight) top = Math.max(8, r.top - 100);
+    pop.style.left = left + 'px'; pop.style.top = top + 'px';
+  } catch(e) { pop.style.left = '16px'; pop.style.top = '80px'; }
+  document.addEventListener('click', function h(){ try { pop.remove(); } catch(e2) {} document.removeEventListener('click', h); }, { once: true });
+}
+</script>
+
 <div class="search-bar">
 <input type="text" id="search-input" placeholder="Search by address, postcode, company or area..." onkeyup="filterLeads()">
 <select id="status-filter" onchange="filterLeads()">
@@ -139,6 +173,7 @@ footer a{color:var(--accent);text-decoration:underline}
 <button class="btn-ghost" onclick="bulkSelectVisible()"><i class="fas fa-check-double"></i> Select all in view</button>
 <button class="btn-ghost" onclick="bulkClear()"><i class="fas fa-times"></i> Clear</button>
 <button class="btn-white" onclick="bulkOpenMail()"><i class="fas fa-mail-bulk"></i> Print &amp; Post Selected</button>
+<span id="bulk-htip"></span>
 </div>
 
 <footer><p>&copy; 2026 9amLeads &middot; <a href="/privacy.html">Privacy</a> &middot; <a href="/terms.html">Terms</a></p></footer>
@@ -414,9 +449,9 @@ function mailBtn(leadId, d){
    // If already posted, show a "Post Again" button (for a follow-up letter after a
   // few weeks). keeps the posted date visible via the badge above.
   if (d && d.post_status === 'posted') {
-    return '<button onclick="sendPrintPost(\''+leadId+'\')" title="Send a follow-up letter or flyer to this lead" class="mail-btn"><i class="fas fa-redo-alt"></i> Post Again</button>';
+    return '<button onclick="sendPrintPost(\''+leadId+'\')" title="Send a follow-up letter or flyer to this lead" class="mail-btn"><i class="fas fa-redo-alt"></i> Post Again</button>' + helpTip('This lead was already posted. Click "Post Again" to send a follow-up letter or flyer. Track it on Live Post Tracking.');
   }
-  return '<button onclick="sendPrintPost(\''+leadId+'\')" title="Print &amp; post a letter or flyer to this lead" class="mail-btn"><i class="fas fa-mail-bulk"></i> Print &amp; Post</button>';
+  return '<button onclick="sendPrintPost(\''+leadId+'\')" title="Print &amp; post a letter or flyer to this lead" class="mail-btn"><i class="fas fa-mail-bulk"></i> Print &amp; Post</button>' + helpTip('We print your flyer or letter, address it and post it to this lead for you. Pick a template or upload your own on the Print & Post page. You\u2019ll get proof of posting + live status.');
 }
 var selectedLeads = [];
 function toggleLeadSel(leadId, checked) {
@@ -823,6 +858,8 @@ var _token = '';
   if (!token) { window.location.href = '/portal/'; return; }
   _token = token;
   document.addEventListener('keydown', closeOnEsc);
+  try { if (localStorage.getItem('leads_tips_hidden') === '1') { var lt = document.getElementById('leads-tips'); if (lt) lt.style.display = 'none'; } } catch(e) {}
+  try { var bht = document.getElementById('bulk-htip'); if (bht) bht.innerHTML = helpTip('Tick the box on multiple leads, then click "Print &amp; Post Selected" to send flyers or letters to them all in one batch. You can also click "Select all in view" to grab everything shown.'); } catch(e) {}
   try { trackEvent('lead_viewed', {}); } catch(e) {}
   var x = new XMLHttpRequest();
   x.open('GET', '/api/leads', true);
