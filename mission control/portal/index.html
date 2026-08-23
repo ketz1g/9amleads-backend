@@ -267,6 +267,7 @@ function updateMovingTypeLabel() {
 <label>Where do you work? <span class="ml" id="s-area-label">(add 5 postcode areas — e.g. HA, EN, SW, B, CM)</span></label>
 <div id="s-postcode-tags" class="tags"></div>
 <div id="s-signup-overlap-note" style="display:none;margin-top:8px;padding:8px 12px;border-radius:6px;font-size:11px;line-height:1.5"></div>
+<div id="s-competition-note" style="display:none;margin-top:8px;padding:10px 14px;border-radius:8px;background:#fff7ed;border:1px solid #fed7aa;font-size:12px;line-height:1.6;color:#7c2d12"></div>
 <div id="s-postcode-wrapper">
 <div class="quick-areas">
 <button type="button" class="qa" onclick="addQuickArea('AB')">AB</button>
@@ -611,6 +612,34 @@ function renderSignupPostcodes() {
   if (countySel) countySel.style.display = isCountyBased() ? 'block' : 'none';
   if (postcodeWrap) postcodeWrap.style.display = isCountyBased() ? 'none' : 'block';
   applyAllUKState();
+  updateCompetitionNote();
+}
+
+// Honest lead-sharing disclosure: shows the customer how many other businesses
+// currently receive the same leads for their chosen product + areas (tenders are
+// shared UK-wide). Fetched live so it always reflects the current customer count.
+function updateCompetitionNote() {
+  var note = document.getElementById('s-competition-note');
+  if (!note) return;
+  var prod = getSelectedLeadTypes()[0];
+  if (!prod) { note.style.display = 'none'; return; }
+  var areas = signupPostcodes.concat(specCounties).filter(function(a){ return !/all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
+  var allUk = signupPostcodes.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
+  if (prod === 'tenders' && !allUk) return; // tenders is always UK-wide; show once areas are set or all-uk
+  if (areas.length === 0 && !allUk && prod !== 'tenders') return;
+  var q = new URLSearchParams();
+  q.set('product', prod);
+  if (allUk || prod === 'tenders') q.set('areas', 'all-uk');
+  else q.set('areas', areas.join(','));
+  fetch('/api/signup/competition?' + q.toString())
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d && d.success && d.message) {
+        note.innerHTML = '<b>Before you sign up:</b> ' + d.message;
+        note.style.display = 'block';
+      } else { note.style.display = 'none'; }
+    })
+    .catch(function(){ note.style.display = 'none'; });
 }
 
 // ===== FILTER SYSTEM =====

@@ -6822,6 +6822,60 @@ app.post('/api/check-availability', async (req, res) => {
   }
 });
 
+// GET /api/signup/competition — honest lead-sharing disclosure for the signup form.
+// Counts how many OTHER active businesses currently receive the same leads for the
+// chosen product + areas, so a customer knows up-front how much competition they
+// have. Tenders are shared UK-wide (every supplier sees the same notices); area
+// products are shared within overlapping areas.
+app.get('/api/signup/competition', (req, res) => {
+  try {
+    var product = String((req.query && req.query.product) || '').toLowerCase().trim();
+    var rawAreas = (req.query && req.query.areas) || '';
+    var areas = String(rawAreas).split(',').map(function(a){ return a.trim().toLowerCase().replace(/[\s-]+/g,'-'); }).filter(Boolean);
+    if (!product || !['moving','probate','planning','newbusiness','tenders'].includes(product)) return res.status(400).json({ error: 'Valid product required' });
+    var dbC = getDb();
+    var now = new Date();
+    var custs = (dbC.customers || []).filter(function(c) {
+      if (String(c.product || '').toLowerCase() !== product) return false;
+      if (c.plan === 'cancelled') return false;
+      if (c.leads_paused) return false;
+      var te = c.trial_ends ? new Date(c.trial_ends) : null;
+      if (c.plan === 'free_trial' && te && now > te) return false;
+      return true;
+    });
+    var totalActive = custs.length;
+    var inArea = totalActive;
+    if (product !== 'tenders' && areas.length) {
+      // Count customers whose target areas overlap the chosen areas.
+      var mapFor = function(c) {
+        var a = [];
+        try { a = JSON.parse(c.target_areas || '[]'); } catch(e) { a = []; }
+        if (!a.length) { try { var cfg = JSON.parse(c.product_config || '{}'); a = (cfg[product] && cfg[product].target_areas) ? JSON.parse(cfg[product].target_areas) : []; } catch(e2) {} }
+        return a.map(function(x){ return String(x).toLowerCase().replace(/[\s-]+/g,'-'); });
+      };
+      inArea = custs.filter(function(c) {
+        var ca = mapFor(c);
+        if (!ca.length) return false;
+        return ca.some(function(x) { return areas.indexOf(x) !== -1; });
+      }).length;
+    }
+    var shared = product === 'tenders';
+    var message;
+    if (product === 'tenders') {
+      message = totalActive === 0
+        ? 'You will be the first ' + 'business receiving these tender opportunities UK-wide.'
+        : 'Tenders are shared UK-wide — ' + totalActive + ' other business' + (totalActive === 1 ? '' : 'es') + ' currently receive the same opportunities. Whoever responds first with the strongest bid wins.';
+    } else if (inArea === 0) {
+      message = 'No other businesses currently receive these leads in your chosen areas — you have the first pick.';
+    } else {
+      message = inArea + ' other business' + (inArea === 1 ? '' : 'es') + ' currently receive these leads in your chosen areas. We deliver fresh leads daily, and whoever contacts them first typically wins the work.';
+    }
+    res.json({ success: true, product: product, shared: shared, total_active: totalActive, in_area: inArea, message: message });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // POST /api/waiting-list — join waiting list for unavailable packages
 app.post('/api/waiting-list', async (req, res) => {
   try {
