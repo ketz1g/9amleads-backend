@@ -6812,6 +6812,15 @@ app.post('/api/admin/paf-postscrape', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/preverify — manually run the pre-delivery verification now (enriches
+// the exact leads each moving customer is about to receive, before 9am).
+app.post('/api/admin/preverify', adminAuth, async (req, res) => {
+  try {
+    var r = await preVerifyMovingLeads();
+    res.json({ success: true, result: r });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/quiet-areas — manually run the quiet-area check now (flags chosen
 // areas with no delivered leads for QUIET_AREA_DAYS and notifies the customer).
 app.post('/api/admin/quiet-areas', adminAuth, (req, res) => {
@@ -7064,6 +7073,71 @@ async function runMovingPafPostScrape() {
   else fs.writeFileSync(file, JSON.stringify(arr, null, 2));
   console.log('[PAF-POSTSCRAPE] Enriched ' + enriched + ', failed ' + failed + ' of ' + need.length + ' door-less moving leads');
   return { enriched: enriched, failed: failed };
+}
+
+// ===== PRE-DELIVERY VERIFICATION (08:30) =====
+// Runs BEFORE the 9am delivery so every moving lead a customer is about to receive
+// already has its door number + full address in the pool. For each active moving
+// customer it computes the exact daily selection, PAF-verifies any door-less lead
+// in that selection, and writes the verified address back into the pool. The 9am
+// delivery then just sends already-numbered leads (its gate becomes a safety net).
+async function preVerifyMovingLeads() {
+  if (!(process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') || !process.env.POSTCODER_API_KEY) {
+    console.log('[PREVERIFY] Postcoder disabled — skipping'); return { ok: false };
+  }
+  var dbv = getDb();
+  var movingCusts = (dbv.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !c.leads_paused && c.product === 'moving'; });
+  var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
+  var raw = null;
+  try { raw = JSON.parse(fs.readFileSync(poolFile, 'utf-8')); } catch(e) { console.log('[PREVERIFY] pool unreadable'); return { ok: false }; }
+  var arr = [];
+  var container = null;
+  if (Array.isArray(raw)) arr = raw;
+  else if (raw && typeof raw === 'object') { container = raw; Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push({ _k: k, _i: x }); }); }); }
+  if (!arr.length) return { ok: false };
+  var pcDeliver = require('./rightmove_scraper_v2');
+  var reserve = parseInt(process.env.POSTCODER_DELIVERY_RESERVE || '60', 10);
+  var targetUrls = {};
+  for (var i = 0; i < movingCusts.length; i++) {
+    try {
+      var pv = await deliveryPreviewForCustomer(movingCusts[i]);
+      (pv.leads || []).forEach(function(l) { if (!l.has_door_number && l.paf_candidate && l.url) targetUrls[l.url] = true; });
+    } catch(e) {}
+  }
+  var urls = Object.keys(targetUrls);
+  var enriched = 0, failed = 0;
+  for (var u = 0; u < urls.length; u++) {
+    try {
+      var b = require('./postcoder_budget');
+      var used = b.usage ? b.usage() : 0;
+      var tot = b.getDailyBudget ? b.getDailyBudget() : 0;
+      if (tot > 0 && used >= tot - reserve) { console.log('[PREVERIFY] Budget reserve reached (' + used + '/' + tot + ') — stopping'); break; }
+    } catch(be) {}
+    var idx = -1;
+    for (var fi2 = 0; fi2 < arr.length; fi2++) { if ((arr[fi2]._i || arr[fi2]).url === urls[u]) { idx = fi2; break; } }
+    if (idx === -1) continue;
+    var l = arr[idx]._i || arr[idx];
+    var pc = String(l.postcode || '').toUpperCase().trim();
+    var addr = l.fullAddress || l.address || '';
+    try {
+      var full = await pcDeliver.lookupPostcoderAddress(pc, addr, l.doorNumberHint || '');
+      if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.lookupPostcoderAddress(pc, addr, l.doorNumberHint || ''); }
+      if (full && !full.rateLimited && hasUsablePremiseAddress(full.fullAddress || full.address1 || addr, full.postcode || pc)) {
+        l.address = full.fullAddress || full.address1 || addr;
+        l.fullAddress = full.fullAddress || l.address || addr;
+        l.street = full.street || l.street || '';
+        l.buildingNumber = full.buildingNumber || l.buildingNumber || '';
+        l.postcode = (full.postcode || pc).toUpperCase();
+        l.udprn = full.udprn || l.udprn || '';
+        l.paf_done = true; l.paf_failed = false;
+        enriched++;
+      } else { l.paf_done = true; l.paf_failed = true; failed++; }
+    } catch(pe) { l.paf_done = true; l.paf_failed = true; failed++; }
+    if (u < urls.length - 1) await new Promise(function(r) { setTimeout(r, 250); });
+  }
+  fs.writeFileSync(poolFile, JSON.stringify(container || arr, null, 2));
+  console.log('[PREVERIFY] Pre-verified ' + urls.length + ' customer leads: ' + enriched + ' door numbers added, ' + failed + ' flagged for replacement');
+  return { ok: true, done: urls.length, enriched: enriched, failed: failed };
 }
 
 // ===== QUIET-AREA ALERTS =====
@@ -9656,6 +9730,12 @@ cron.schedule('15 7 * * *', async () => {
 }, { timezone: 'Europe/London' });
 cron.schedule('0 8 * * *', async () => {
   try { await runMovingPafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 08:00 error: ' + e.message); }
+}, { timezone: 'Europe/London' });
+// PRE-DELIVERY VERIFICATION (08:30): before the 9am delivery, verify the EXACT
+// leads each moving customer is about to receive have door numbers + full addresses
+// in the pool, PAF-enriching any that don't. The 9am job then just sends them.
+cron.schedule('30 8 * * 1-5', async () => {
+  try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 08:30 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
 cron.schedule('0 18 * * *', async () => {
   try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-18-CRON] ' + e.message); }
