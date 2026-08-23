@@ -7916,10 +7916,10 @@ function getTrialMetrics(customer) {
   var out = { received: -1, viewed: -1, contacted: -1, quoted: -1, won: -1 };
   try {
     if (!customer || !customer.id) return out;
-    out.received = (db.prepare('SELECT COUNT(*) AS c FROM leads WHERE customer_id = ?').get(customer.id) || {}).c || 0;
-    out.contacted = (db.prepare("SELECT COUNT(*) AS c FROM leads WHERE customer_id = ? AND status IN ('contacted','quoted','won')").get(customer.id) || {}).c || 0;
-    out.quoted = (db.prepare("SELECT COUNT(*) AS c FROM leads WHERE customer_id = ? AND status = 'quoted'").get(customer.id) || {}).c || 0;
-    out.won = (db.prepare("SELECT COUNT(*) AS c FROM leads WHERE customer_id = ? AND status = 'won'").get(customer.id) || {}).c || 0;
+    out.received = (db.prepare('SELECT COUNT(*) as count FROM leads WHERE customer_id = ?').get(customer.id) || {}).count || 0;
+    out.contacted = (db.prepare("SELECT COUNT(*) as count FROM leads WHERE customer_id = ? AND status IN ('contacted','quoted','won')").get(customer.id) || {}).count || 0;
+    out.quoted = (db.prepare("SELECT COUNT(*) as count FROM leads WHERE customer_id = ? AND status = 'quoted'").get(customer.id) || {}).count || 0;
+    out.won = (db.prepare("SELECT COUNT(*) as count FROM leads WHERE customer_id = ? AND status = 'won'").get(customer.id) || {}).count || 0;
   } catch(e) {}
   return out;
 }
@@ -20592,10 +20592,10 @@ app.get('/api/admin/analytics', adminAuth, (req, res) => {
       // Average leads delivered during trial (all leads for the account)
       var rec = 0, con = 0;
       try {
-        var r1 = db.prepare('SELECT COUNT(*) AS c FROM leads WHERE customer_id = ?').get(c.id);
-        rec = (r1 && r1.c) || 0;
-        var r2 = db.prepare("SELECT COUNT(*) AS c FROM leads WHERE customer_id = ? AND status IN ('contacted','quoted','won')").get(c.id);
-        con = (r2 && r2.c) || 0;
+        var r1 = db.prepare('SELECT COUNT(*) as count FROM leads WHERE customer_id = ?').get(c.id);
+        rec = (r1 && r1.count) || 0;
+        var r2 = db.prepare("SELECT COUNT(*) as count FROM leads WHERE customer_id = ? AND status IN ('contacted','quoted','won')").get(c.id);
+        con = (r2 && r2.count) || 0;
       } catch(le) {}
       if (isTrial || isPaid) { trialStats.receivedTotal += rec; trialStats.contactedTotal += con; }
       if (inWindow && isTrial) { byProduct[p].receivedTotal += rec; byProduct[p].contactedTotal += con; }
