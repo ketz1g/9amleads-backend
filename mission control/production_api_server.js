@@ -6843,7 +6843,7 @@ app.get('/api/admin/quiet-areas-report', adminAuth, (req, res) => {
     var since = new Date(Date.now() - days * 86400000).toISOString();
     var rows = [];
     (dbq.customers || []).forEach(function(c) {
-      if (!c.plan || c.plan === 'cancelled' || c.leads_paused) return;
+      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
       var areas = [];
       try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) { areas = []; }
       if (!areas.length) { try { var pcq = JSON.parse(c.product_config || '{}'); areas = JSON.parse((pcq[c.product] || {}).target_areas || '[]'); } catch(e) { areas = []; } }
@@ -7153,7 +7153,7 @@ async function preVerifyMovingLeads() {
     console.log('[PREVERIFY] Postcoder disabled — skipping'); return { ok: false };
   }
   var dbv = getDb();
-  var movingCusts = (dbv.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !c.leads_paused && c.product === 'moving'; });
+  var movingCusts = (dbv.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && c.product === 'moving'; });
   var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
   var raw = null;
   try { raw = JSON.parse(fs.readFileSync(poolFile, 'utf-8')); } catch(e) { console.log('[PREVERIFY] pool unreadable'); return { ok: false }; }
@@ -7220,6 +7220,12 @@ async function preVerifyMovingLeads() {
 function isPostcodeAreaTarget(s) {
   return /^[A-Z]{1,2}([0-9]|$)/i.test(String(s || '').trim());
 }
+// leads_paused can be stored as boolean true, number 1, or STRING "0"/"1". Treat
+// only true/1/'1' as paused — "0" is NOT paused (this bug silently skipped customers).
+function isLeadsPaused(c) {
+  var v = c && c.leads_paused;
+  return v === true || v === 1 || v === '1' || v === 'true' || v === 'TRUE' || v === 'yes';
+}
 // Robust property identity key: street name + house number + postcode. Same physical
 // property scraped by different providers/runs often has different full-address
 // strings ("1 Langdale Road, London" vs "1 Langdale Road, Greenwich, London"), so
@@ -7247,7 +7253,7 @@ function checkQuietAreas() {
     var since = new Date(Date.now() - days * 86400000).toISOString();
     var alerted = [];
     (dbq.customers || []).forEach(function(c) {
-      if (!c.plan || c.plan === 'cancelled' || c.leads_paused) return;
+      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
       var areas = [];
       try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) { areas = []; }
       if (!areas.length) { try { var pcq = JSON.parse(c.product_config || '{}'); areas = JSON.parse((pcq[c.product] || {}).target_areas || '[]'); } catch(e) { areas = []; } }
@@ -7304,7 +7310,7 @@ app.get('/api/admin/readiness', adminAuth, async (req, res) => {
     var dbR = getDb();
     var custs = (dbR.customers || []).filter(function(c) {
       if (c.plan === 'cancelled') return false;
-      if (c.leads_paused) return false;
+      if (isLeadsPaused(c)) return false;
       var te = c.trial_ends ? new Date(c.trial_ends) : null;
       if (c.plan === 'free_trial' && te && new Date() > te) return false;
       return true;
@@ -8454,7 +8460,7 @@ app.get('/api/signup/competition-areas', (req, res) => {
     var custs = (dbA.customers || []).filter(function(c) {
       if (String(c.product || '').toLowerCase() !== product) return false;
       if (c.plan === 'cancelled') return false;
-      if (c.leads_paused) return false;
+      if (isLeadsPaused(c)) return false;
       var te = c.trial_ends ? new Date(c.trial_ends) : null;
       if (c.plan === 'free_trial' && te && now > te) return false;
       return true;
@@ -8521,7 +8527,7 @@ app.get('/api/signup/competition', (req, res) => {
     var custs = (dbC.customers || []).filter(function(c) {
       if (String(c.product || '').toLowerCase() !== product) return false;
       if (c.plan === 'cancelled') return false;
-      if (c.leads_paused) return false;
+      if (isLeadsPaused(c)) return false;
       var te = c.trial_ends ? new Date(c.trial_ends) : null;
       if (c.plan === 'free_trial' && te && now > te) return false;
       return true;
@@ -10003,7 +10009,7 @@ cron.schedule('0 10 * * 2', async () => {
     var cutoff7 = new Date(now - 7 * 86400000).toISOString();
     var cutoff14 = new Date(now - 14 * 86400000).toISOString();
     var custs = (ahDb.customers || []).filter(function(c) {
-      if (c.plan === 'cancelled' || c.leads_paused) return false;
+      if (c.plan === 'cancelled' || isLeadsPaused(c)) return false;
       if (!c.created_at || c.created_at > cutoff14) return false; // only customers 2+ weeks in
       if (String(c.email || '').indexOf('test.') === 0) return false;
       return true;
@@ -10079,7 +10085,7 @@ async function resendFailedEmails() {
 cron.schedule('45 7 * * 1-5', async () => {
   try {
     var rdDb = getDb();
-    var rdCusts = (rdDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !c.leads_paused; });
+    var rdCusts = (rdDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c); });
     var rdShort = [];
     for (var rdi = 0; rdi < rdCusts.length; rdi++) {
       try {
@@ -11986,7 +11992,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
       // PAYMENT GATE: a customer whose subscription payment failed (leads_paused)
       // stops receiving leads until they recover payment (invoice.paid / re-subscribe).
-      if (cust.leads_paused) continue;
+      if (isLeadsPaused(cust)) continue;
       if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: [], stage: 'start' };
       
       // Use per-product limits based on lead type and coverage area.
