@@ -7105,7 +7105,18 @@ async function runMovingPafPostScrape() {
         await new Promise(function(r) { setTimeout(r, 30000); });
         full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint);
       }
-      if (full && !full.rateLimited) {
+      var numOk = full && !full.rateLimited && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0);
+      // PHOTO READER: if PAF can't pin a number and the listing has a photo, read the
+      // house number from the photo, then retry PAF with that hint (mirrors delivery).
+      if (!numOk && !hint && l.photo) {
+        try { hint = await pcDeliver.readDoorNumberFromPhoto(l.photo); } catch(e) {}
+        if (hint) {
+          full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint);
+          if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint); }
+          numOk = full && !full.rateLimited && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0);
+        }
+      }
+      if (numOk) {
         var nAddr = full.fullAddress || full.address1 || '';
         if (hasUsablePremiseAddress(nAddr || addr0, full.postcode || pc0)) {
           l.address = nAddr || addr0;
@@ -9946,11 +9957,11 @@ cron.schedule('*/10 * * * *', async () => {
 }, { timezone: 'Europe/London' });
 
 
-// STALE-POOL MONITOR: 08:15 UK — if any product's fresh (48h) supply has dropped
-// dangerously low (a sign the scrapes have been failing for days), auto-scrape it
-// and alert the founder. Catches silent multi-day scrape failures before customers
-// shortfall.
-cron.schedule('15 8 * * 1-5', async () => {
+// STALE-POOL MONITOR: 07:45 UK (after the 6am scrape, 75min before delivery) — if any
+// product's fresh (48h) supply has dropped dangerously low (a sign the scrapes have
+// been failing), auto-scrape it and alert the founder. Catches silent multi-day scrape
+// failures early enough to re-scrape well before 9am (not at 08:15, which left no time).
+cron.schedule('45 7 * * 1-5', async () => {
   try {
     var sp = getPoolSupply();
     var spThresholds = { moving: 60, probate: 20, newbusiness: 60, planning: 20, tenders: 10 };
@@ -9970,7 +9981,7 @@ cron.schedule('15 8 * * 1-5', async () => {
           spReq.on('error', function(){}); spReq.write(spBody); spReq.end();
         } catch(se) {}
       });
-      sendAdminAlert('⚠ Low lead supply — auto-scraping', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">The 08:15 monitor found low fresh supply (possible multi-day scrape failure):<br><ul style="margin:4px 0;padding-left:18px">' + spLow.map(function(l){ return '<li>' + l + '</li>'; }).join('') + '</ul><br>An automatic re-scrape has been triggered for each. The 09:00 delivery should be fine once they refresh.</div>');
+      sendAdminAlert('⚠ Low lead supply — auto-scraping', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">The 07:45 monitor found low fresh supply (possible multi-day scrape failure):<br><ul style="margin:4px 0;padding-left:18px">' + spLow.map(function(l){ return '<li>' + l + '</li>'; }).join('') + '</ul><br>An automatic re-scrape has been triggered for each. There is plenty of time before the 09:00 delivery.</div>');
     } else {
       console.log('[STALE-POOL] All products have healthy supply');
     }
