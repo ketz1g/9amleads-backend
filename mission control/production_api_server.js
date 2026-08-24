@@ -7298,6 +7298,12 @@ async function runProbatePafPostScrape() {
     var l = e._i || e;
     if (l.paf_done && !l.paf_failed) return;
     if ((l.paf_attempts || 0) >= 2) return;
+    // PRE-PROBATE / EARLY-ESTATE EXCLUSION: death/funeral notices are NOT confirmed
+    // probate. They are "Early Estate Opportunity" leads for house-clearance /
+    // removals / auction / probate-buyers — never to be PAF-verified or delivered as
+    // confirmed probate. Skip them entirely (no Postcoder credits spent).
+    var lSrc = String(l.source || '').toLowerCase();
+    if (lSrc === 'early-estate' || lSrc === 'funeral-notices' || lSrc === 'funeral' || l.preProbate) { l.paf_done = true; l.paf_failed = true; return; }
     var addr = l.fullAddress || l.deceasedAddress || l.address || '';
     var pc = cleanUkPostcode(l.postcode || '').toUpperCase();
     // Scraper bug: some addresses are stored as Gazette postcode URLs. Rebuild from
@@ -7321,8 +7327,7 @@ async function runProbatePafPostScrape() {
   var enriched = 0, failed = 0;
   for (var pi = 0; pi < need.length; pi++) {
     var e = need[pi]; var l = e._i || e;
-    try {
-      var b = require('./postcoder_budget');
+    try {      var b = require('./postcoder_budget');
       var used = b.usage ? b.usage() : 0;
       var tot = b.getDailyBudget ? b.getDailyBudget() : 0;
       if (tot > 0 && used >= tot - reserve) { console.log('[PAF-PROBATE] Budget reserve reached — stopping'); break; }
@@ -8042,6 +8047,20 @@ app.post('/api/admin/funeral-scrape', adminAuth, async (req, res) => {
     var pf = path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate.file);
     var poolF = [];
     try { poolF = JSON.parse(fs.readFileSync(pf, 'utf-8')); if (!Array.isArray(poolF)) poolF = []; } catch(e) { poolF = []; }
+    // CLEAN LEGACY FUNERAL JUNK: old funeral-notice leads (fake "BS1 1AA" postcodes,
+    // name-as-address) were added before the early-estate redesign. Remove them from
+    // the confirmed-probate pool so they can never be delivered as probate. They are
+    // superseded by the properly-tagged early-estate scraper (which runs separately).
+    var beforePool = poolF.length;
+    poolF = poolF.filter(function(pl) {
+      var ps = String(pl.source || '').toLowerCase();
+      if (ps === 'funeral-notices' || ps === 'funeral' || ps === 'early-estate' || pl.preProbate) return false;
+      // Also drop the old fake-address pattern (deceased name used as the address
+      // with a synthetic "<area>1 1AA" postcode).
+      if (pl.postcode && /^[A-Z]{1,3}1\s?1AA$/i.test(String(pl.postcode).trim())) return false;
+      return true;
+    });
+    if (poolF.length !== beforePool) console.log('[FUNERAL-SCRAPE] removed ' + (beforePool - poolF.length) + ' legacy funeral/early-estate leads from probate pool');
     var seenF = {}; poolF.forEach(function(l) { var k = String(l.deceasedName || l.name || '').toLowerCase().replace(/[^a-z]/g, '') + '|' + String(l.county || '').toLowerCase(); if (k.length > 3) seenF[k] = 1; });
     var added = 0;
     leads.forEach(function(l) {
@@ -12140,6 +12159,15 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // Zoopla dropped as a source (no house numbers/full postcodes in list mode).
       // Exclude any Zoopla-sourced pool entries so they can never be delivered.
       arr = arr.filter(function(l) { return !/zoopla/i.test(String(l.source || '')); });
+      // PRE-PROBATE / EARLY-ESTATE EXCLUSION: death/funeral notices are NOT confirmed
+      // probate. They are "Early Estate Opportunity" leads for house-clearance /
+      // removals / auction / probate-buyers — never delivered as confirmed probate.
+      // Tagged source=early-estate (was funeral-notices) + preProbate=true.
+      arr = arr.filter(function(l) {
+        var ls = String(l.source || '').toLowerCase();
+        if (ls === 'early-estate' || ls === 'funeral-notices' || ls === 'funeral' || l.preProbate) return false;
+        return true;
+      });
       // Exclude new-build unit-code addresses (e.g. "L-001226, ...") - not real mail addresses.
       arr = arr.filter(function(l) { return !hasBadUnitCode(l.address || l.fullAddress || ''); });
       // EXACT-DATA GUARANTEE: never deliver placeholder/mock pool entries (e.g. a

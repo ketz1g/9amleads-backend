@@ -52,10 +52,42 @@ function parseNoticeJsonLd(url) {
     if (!ld) { resolve(null); return; }
     try {
       const j = JSON.parse(ld[1]);
+      const name = String(j.name || '').trim();
+      const body = String(j.articleBody || '');
+      // EXTRACT THE REAL POSTCODE + STREET ADDRESS from the notice body. The funeral
+      // director's "All enquiries to <firm>, <street>, <town>, <postcode>" block is
+      // the only reliably mailable address on the page. This gives us a genuine
+      // full postcode + street (not the old fake "BS1 1AA" guess).
+      let postcode = '';
+      const pcMatch = body.match(/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i);
+      if (pcMatch) {
+        const pcRaw = pcMatch[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
+        postcode = pcRaw.slice(0, pcRaw.length - 3) + ' ' + pcRaw.slice(-3);
+      }
+      // Full funeral-director address: the sentence after "All enquiries to" (or
+      // "Enquiries to") up to the phone number. Includes firm + street + town + postcode.
+      let enquiriesAddr = '';
+      const enqMatch = body.match(/(?:All\s+)?[Ee]nquiries?\s+to\s+([^.\n]*?)(?:\b(Tel|Phone|Mob)[:.]?\s*[\d\s\-()+]{6,})?[.\n]?$/i);
+      if (enqMatch) enquiriesAddr = enqMatch[1].trim();
+      if (!enquiriesAddr) {
+        // fallback: grab the last ~3 lines containing the postcode
+        const lines = body.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+        for (var li = lines.length - 1; li >= 0; li--) {
+          if (/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i.test(lines[li])) {
+            enquiriesAddr = lines.slice(Math.max(0, li - 2), li + 1).join(', ').replace(/\b(Tel|Phone|Mob)[:.]?\s*[\d\s\-()+]{6,}/ig, '').replace(/,\s*,/g, ',').trim();
+            break;
+          }
+        }
+      }
+      // Funeral director firm name is the JSON-LD author (the organiser).
+      const funeralDirector = (j.author && j.author.name) ? String(j.author.name).trim() : '';
       resolve({
-        name: String(j.name || '').trim(),
+        name: name,
         datePublished: j.datePublished || '',
-        funeralDirector: (j.author && j.author.name) ? String(j.author.name).trim() : ''
+        funeralDirector: funeralDirector,
+        postcode: postcode,
+        enquiriesAddress: enquiriesAddr,
+        articleBody: body
       });
     } catch (e) { resolve(null); }
   });
@@ -82,13 +114,22 @@ async function collectFuneralLeads(params) {
           var info = await parseNoticeJsonLd('https://funeral-notices.co.uk' + links[l]);
           if (!info || !info.name) continue;
           var idMatch = links[l].match(/\/(\d+)$/);
+          var leadUrl = 'https://funeral-notices.co.uk' + links[l];
+          // EARLY ESTATE OPPORTUNITY (PRE-PROBATE): death notices are NOT confirmed
+          // probate. They are tagged source=early-estate and must NEVER be delivered
+          // as confirmed probate (the delivery filters this source out of probate).
+          // When the notice gives the funeral director's real street+postcode, the
+          // lead has a mailable address (good for house-clearance/removals/auction
+          // buyers); otherwise we keep the town/area but no fake postcode.
+          var pc = info.postcode || '';
+          var addr = info.enquiriesAddress || (info.name + ', ' + county);
           results.push({
             id: 'FN_' + (idMatch ? idMatch[1] : Date.now() + '_' + l) + '_' + slug,
             name: info.name,
             deceasedName: info.name,
-            deceasedAddress: info.name + ', ' + county,
-            address: info.name + ', ' + county,
-            postcode: area + '1 1AA',
+            deceasedAddress: addr,
+            address: addr,
+            postcode: pc,
             county: slug,
             town: county,
             grantDate: info.datePublished || today,
@@ -98,8 +139,9 @@ async function collectFuneralLeads(params) {
             updateDate: today,
             estateValue: 0,
             funeralDirector: info.funeralDirector,
-            source: 'funeral-notices',
-            url: 'https://funeral-notices.co.uk' + links[l]
+            preProbate: true,
+            source: 'early-estate',
+            url: leadUrl
           });
         } catch (e) { /* skip bad notice */ }
       }
