@@ -20253,23 +20253,24 @@ function runDeliveryTestReport() {
         var TEST_CAP = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
         testCusts.forEach(function(c) { c.leads_per_day = TEST_CAP[c.product] || 1; });
         saveDb();
-        // CLEAN-SLATE TEST: clear today's delivered leads for test accounts so each
-        // 15-min run delivers EXACTLY the promised count as a fresh batch. Without
-        // this, accumulated leads from earlier runs make the report show OVER and
-        // the founder can't verify "no more no less" per run. Only test-account
-        // leads are cleared — real customers are untouched.
+        // CLEAN-SLATE TEST: remove ALL of today's test-account leads (delivered AND
+        // pending) so each 15-min run starts from a clean slate and delivers EXACTLY
+        // the promised count. A stale pending lead (delivered=0 from a prior run)
+        // would otherwise be picked up as the "primary lead", get delivered_at set
+        // THIS run, and make the report overcount (OVER 6/5) even though the email
+        // batch was correctly capped at 5. Real customers are never touched.
         var testIds = {};
         testCusts.forEach(function(c) { testIds[c.id] = true; });
         var clearedCount = 0;
-        db.leads = (db.leads || []).map(function(l) {
-          if (l.customer_id && testIds[l.customer_id] && l.delivered && l.delivered_at && l.delivered_at.indexOf(date) === 0) {
-            l.delivered = 0; l.delivered_at = ''; clearedCount++;
+        db.leads = (db.leads || []).filter(function(l) {
+          if (l.customer_id && testIds[l.customer_id] && l.delivered_at && l.delivered_at.indexOf(date) === 0) {
+            clearedCount++; return false; // drop today's test-account leads entirely
           }
-          return l;
+          return true;
         });
         testCusts.forEach(function(c) { c.last_email_date = ''; });
         saveDb();
-        console.log('[TEST] cleared ' + clearedCount + ' test-account delivered leads (clean-slate run)');
+        console.log('[TEST] cleared ' + clearedCount + ' test-account leads (clean-slate run)');
         // Mark the run start timestamp — leads delivered_at >= this are THIS run's
         // fresh deliveries (each run re-delivers the full quota under force).
         var runStart = new Date();
