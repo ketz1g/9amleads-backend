@@ -259,15 +259,15 @@ function updateMovingTypeLabel() {
 <div class="form-group">
 <label>Your Plan</label>
 <div class="grid-2" id="s-plan-container">
-<label class="plan-opt plan-sel" id="plan-free_trial"><input type="radio" name="plan" value="free_trial" checked onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Free Trial</div><div class="plan-d">Up to 5 leads/day · 7-day trial · 5 postcode areas · any 1 type</div></div><div class="plan-p">Free</div></label>
-<label class="plan-opt" id="plan-starter"><input type="radio" name="plan" value="starter" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Starter</div><div class="plan-d">Up to 5 leads/day · any 1 lead type · 5 postcode areas</div></div><div class="plan-p">£25<span class="pw">/wk</span></div></label>
+<label class="plan-opt plan-sel" id="plan-free_trial"><input type="radio" name="plan" value="free_trial" checked onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Free Trial</div><div class="plan-d">Up to 5 leads/day · 7-day trial · 3-5 postcode areas · any 1 type</div></div><div class="plan-p">Free</div></label>
+<label class="plan-opt" id="plan-starter"><input type="radio" name="plan" value="starter" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Starter</div><div class="plan-d">Up to 5 leads/day · any 1 lead type · 3-5 postcode areas</div></div><div class="plan-p">£25<span class="pw">/wk</span></div></label>
 <label class="plan-opt" id="plan-pro"><input type="radio" name="plan" value="pro" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Pro</div><div class="plan-d">Up to 10 leads/day · any types · unlimited areas</div></div><div class="plan-p">£49<span class="pw">/wk</span></div></label>
 <label class="plan-opt" id="plan-enterprise"><input type="radio" name="plan" value="enterprise" onchange="updatePostcodeLimit()"><div class="plan-i"><div class="plan-n">Enterprise</div><div class="plan-d">Up to 15 leads/day · any types · All UK unlimited</div></div><div class="plan-p">£99<span class="pw">/wk</span></div></label>
 </div>
 </div>
 
 <div class="form-group">
-<label>Where do you work? <span class="ml" id="s-area-label">(add 5 postcode areas — e.g. HA, EN, SW, B, CM)</span></label>
+<label>Where do you work? <span class="ml" id="s-area-label">(choose at least 3 postcode areas — e.g. HA, EN, SW, B, CM)</span></label>
 <div id="s-postcode-tags" class="tags"></div>
 <div id="s-signup-overlap-note" style="display:none;margin-top:8px;padding:8px 12px;border-radius:6px;font-size:11px;line-height:1.5"></div>
 <div id="s-competition-note" style="display:none;margin-top:8px;padding:10px 14px;border-radius:8px;background:#fff7ed;border:1px solid #fed7aa;font-size:12px;line-height:1.6;color:#7c2d12"></div>
@@ -586,7 +586,7 @@ function getPostcodeAreaLimit() {
    // Pro / Enterprise: unlimited postcode areas (and counties/areas) — matches the
    // backend POSTCODE_LIMITS (pro/enterprise = 999) and the plan cards.
    if (p === 'pro' || p === 'enterprise') return 999;
-   // Free Trial / Starter: moving & new business are capped at 5 postcode areas
+   // Free Trial / Starter: moving & new business are capped at 3-5 postcode areas
    // (configurable via window.__postcodeAreaCap); specialist county-based products
    // (planning/probate/tenders) need at least 3 counties/areas.
    var hardCap = parseInt(window.__postcodeAreaCap || '5', 10);
@@ -602,7 +602,7 @@ function updatePostcodeLimit() {
    var areaLabel = document.getElementById('s-area-label');
    if (areaLabel) {
      if (limit >= 999) areaLabel.textContent = isCountyBased() ? '(unlimited counties/areas — add as many as you need)' : '(unlimited postcode areas — add the areas you cover or choose All UK)';
-     else areaLabel.textContent = isCountyBased() ? '(select at least 3 counties/areas)' : '(pick exactly 5 postcode areas — e.g. HA, EN, SW, B, CM)';
+     else areaLabel.textContent = isCountyBased() ? '(select at least 3 counties/areas)' : '(choose at least 3 postcode areas — e.g. HA, EN, SW, B, CM)';
    }
    renderSignupPostcodes();
    onLeadTypeChange();
@@ -1128,14 +1128,13 @@ var pLimit = getPostcodeAreaLimit();
   if (selectedCoverage === 'postcode' && targetAreas.length > pLimit && pLimit < 999) {
     document.getElementById('signup-error').textContent = 'Your ' + planVal + ' plan allows up to ' + pLimit + ' postcode areas. You selected ' + targetAreas.length + '. Upgrade to Pro or Enterprise for unlimited areas.'; document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
   }
-  // MOVING: the promise is an exact daily count across the chosen areas, so
-  // postcode customers MUST pick the full 5 areas (free trial & starter are capped
-  // at exactly 5). Other products: at least 3 areas.
+  // ALL products: minimum 3 areas/postcodes (choose up to the plan limit — no
+  // strict "exactly 5"). Moving free/starter caps at 5, others at 3 minimum.
   if (selectedCoverage === 'postcode' && pLimit < 999) {
     var curProd = typeof product === 'string' ? product : (document.getElementById('s-product') ? document.getElementById('s-product').value : 'moving');
-    var needAreas = curProd === 'moving' ? pLimit : 3;
+    var needAreas = 3; // minimum for everyone
     if (targetAreas.length < needAreas) {
-      document.getElementById('signup-error').textContent = curProd === 'moving' ? 'Please add exactly ' + pLimit + ' postcode areas (you selected ' + targetAreas.length + '). More areas = more daily leads delivered.' : 'Please add at least 3 postcode areas (you selected ' + targetAreas.length + ').';
+      document.getElementById('signup-error').textContent = 'Please add at least 3 postcode areas (you selected ' + targetAreas.length + '). You can choose up to ' + pLimit + '. More areas = more daily leads delivered.';
       document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
     }
   }
