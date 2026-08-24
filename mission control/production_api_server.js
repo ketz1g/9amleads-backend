@@ -13320,6 +13320,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // every lead has a verified door number. If supply genuinely runs out, we
       // deliver what exists (never over-deliver, never fabricate).
       try {
+        var _fillLookupsC = 0; // per-customer fill PAF cap (prevents delivery stalls)
         var finalShort = Math.max(0, totalDailyLimit - custLeads.length);
         if (finalShort > 0 && (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1')) {
           for (var fp = 0; fp < products.length && custLeads.length < totalDailyLimit; fp++) {
@@ -13361,6 +13362,16 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 if (fl.url && !/^\s*\d+[A-Za-z]?[\s,]/i.test(fAddr)) {
                   try { var fdDetail = await pcDeliver.fetchPropertyDetail(fl.url); if (fdDetail && fdDetail.fullAddress) { fld.address = fdDetail.fullAddress; fld.fullAddress = fdDetail.fullAddress; if (fdDetail.postcode) fld.postcode = fdDetail.postcode; } } catch(fde) {}
                 }
+                // FILL CAP: cap the number of slow PAF lookups per customer so a hard
+                // customer can NEVER block the whole delivery (which stalled today and
+                // left later customers with no email). Deliver what's available once
+                // the cap is reached — reliability over chasing the exact count.
+                var fillLookups = (typeof _fillLookupsC === 'undefined' ? 0 : _fillLookupsC);
+                if (fillLookups >= parseInt(process.env.EXACT_COUNT_FILL_CAP || '15', 10)) {
+                  console.log('[FILL-CAP] ' + cust.email + ' hit fill cap — delivering ' + custLeads.length + '/' + totalDailyLimit);
+                  break;
+                }
+                _fillLookupsC = fillLookups + 1;
                 var fenr = await pcDeliver.enrichMovingLeadsPostcoder([fld]);
                 // Accept a lead if it has a valid postcode + address (deliverable).
                 // A confirmed buildingNumber is preferred but not required — the
