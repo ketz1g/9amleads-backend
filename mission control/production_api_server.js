@@ -13762,7 +13762,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver)');
           custLeads = custLeads.slice(0, totalDailyLimit);
         }
-        for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
+        for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); if (testOnly && req.body && req.body.run_id) custLeads[li].delivery_run_id = req.body.run_id; }
         saveDb();
         delivered += custLeads.length;
         // GUARANTEE CHECK: never silently deliver less than promised. Log (and
@@ -20286,37 +20286,21 @@ function runDeliveryTestReport() {
         var TEST_CAP = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
         testCusts.forEach(function(c) { c.leads_per_day = TEST_CAP[c.product] || 1; });
         saveDb();
-        // CLEAN-SLATE TEST: delete ALL test-account leads (delivered AND pending)
-        // so each 15-min run starts from a truly empty slate. Pending leads from
-        // earlier runs (delivered=0) accumulate and get re-picked as the "primary
-        // lead" or top-up source, inflating the delivered count (OVER 6/5) even
-        // though the email batch was capped. Deleting every test-account lead each
-        // run guarantees the delivery starts empty and can only create the EXACT
-        // promised count. Real customers are never touched.
-        var testIds = {};
-        testCusts.forEach(function(c) { testIds[c.id] = true; });
-        var clearedCount = 0;
-        db.leads = (db.leads || []).filter(function(l) {
-          if (l.customer_id && testIds[l.customer_id]) {
-            clearedCount++; return false; // drop every test-account lead
-          }
-          return true;
-        });
-        testCusts.forEach(function(c) { c.last_email_date = ''; });
-        saveDb();
-        console.log('[TEST] cleared ' + clearedCount + ' test-account leads (clean-slate run)');
-        // Mark the run start timestamp — leads delivered_at >= this are THIS run's
-        // fresh deliveries (each run re-delivers the full quota under force).
+        // UNIQUE RUN ID: every lead delivered by THIS test run is tagged with
+        // delivery_run_id, so the report measures exactly this run's deliveries
+        // with no ambiguity (no timestamp/customer_id matching races, no clean-slate
+        // deletion that could wipe data mid-run). Each lead is counted once.
+        var runId = 'test-' + date + '-' + Date.now().toString(36);
+        // Mark the run start timestamp (also kept for the report's timing info).
         var runStart = new Date();
         // run the real delivery on test accounts (force + test_only, emails enabled)
-        var delivRes = await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true });
+        var delivRes = await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true, run_id: runId });
         // 3) build the report from leads delivered THIS run. Each 30-min test run
         // re-delivers the FULL quota (force), so this run's leads = those with
         // delivered_at >= runStart. This is accurate because forceFull re-delivers
         // fresh leads every run (the exact-count cap keeps each EMAIL at exactly
         // the promised count — no more, no less).
         var PLAN = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
-        var runStartIso = runStart.toISOString();
         var lines = [];
         var issues = [];
         var dbAfter = getDb();
@@ -20324,10 +20308,12 @@ function runDeliveryTestReport() {
           var c = testCusts[i];
           var areas = []; try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) {}
           var promised = PLAN[c.product] || 5;
-          // THIS RUN'S leads = delivered_at >= runStart (each run re-delivers under force).
-          // Also track TODAY'S total so weekly-capped products (planning/tenders, whose
-          // daily cap = ceil(weekly/5)) show 0 this run once their day cap is reached —
-          // that is CORRECT, not a shortfall.
+          // THIS RUN'S leads = those tagged with THIS run's unique delivery_run_id.
+          // Each lead is counted exactly once — no timestamp races, no shared-DB
+          // mutation confusion. Weekly-capped products (planning/tenders) deliver
+          // up to their daily cap; if a run correctly delivers 0 because today's
+          // cap was already reached earlier, the report shows today's cumulative
+          // total so "no more no less" is judged against the DAILY promise.
           var thisRun = [];
           var todayTotal = [];
           (dbAfter.leads || []).forEach(function(l) {
@@ -20335,7 +20321,7 @@ function runDeliveryTestReport() {
             if (l.delivered_at.indexOf(date) !== 0) return; // not delivered today
             try { var dd = JSON.parse(l.data || '{}'); if (dd.rejected) return; } catch(e) {}
             todayTotal.push(l);
-            if (l.delivered_at >= runStartIso) thisRun.push(l);
+            if (l.delivery_run_id === runId) thisRun.push(l);
           });
           var leads = thisRun.map(function(l) {
             var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
