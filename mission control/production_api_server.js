@@ -19110,14 +19110,25 @@ function buildStannpRecipientFromLead(parsed) {
 app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
   try {
     var lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(req.body.lead_id, req.user.id);
+    // ROBUST FALLBACK: if the exact id+customer match fails but the lead exists and
+    // belongs to this customer (matched by email), still allow it. This covers edge
+    // cases where a token carries a stale/differently-cased customer id.
+    if (!lead && req.body.lead_id) {
+      try {
+        var byId = db.prepare('SELECT * FROM leads WHERE id = ?').get(req.body.lead_id);
+        if (byId) {
+          var ownerCust = db.prepare('SELECT id, email FROM customers WHERE id = ?').get(byId.customer_id);
+          if (ownerCust && String(ownerCust.email || '').toLowerCase() === String(req.user.email || '').toLowerCase()) {
+            lead = byId;
+            console.log('[SEND-LEAD] fallback matched by email: lead ' + req.body.lead_id + ' -> customer ' + ownerCust.id);
+          } else {
+            console.log('[SEND-LEAD] lead exists but owner mismatch: leadCust=' + byId.customer_id + ' user=' + req.user.id + ' (' + req.user.email + ')');
+          }
+        }
+      } catch(fbErr) { console.log('[SEND-LEAD] fallback lookup error:', fbErr.message); }
+    }
     if (!lead) {
       console.log('[SEND-LEAD] LEAD NOT FOUND: lead_id=' + req.body.lead_id + ' user_id=' + req.user.id + ' email=' + (req.user.email || '') + ' body=' + JSON.stringify(req.body).substring(0, 200));
-      // Diagnostic: count leads for this user + show whether the lead exists at all
-      try {
-        var allUserLeads = db.prepare('SELECT id, customer_id, product FROM leads WHERE customer_id = ?').all(req.user.id);
-        var leadAnywhere = db.prepare('SELECT id, customer_id, product FROM leads WHERE id = ?').all(req.body.lead_id);
-        console.log('[SEND-LEAD] user lead count=' + allUserLeads.length + ' leadExistsAnywhere=' + (leadAnywhere.length ? JSON.stringify(leadAnywhere[0]) : 'NO'));
-      } catch(e2) {}
       return res.status(404).json({ error: 'Lead not found' });
     }
     var template = req.body.template_id || '';
