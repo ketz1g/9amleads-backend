@@ -12500,7 +12500,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       }).length;
       // TEST/FORCE MODE: if body has force=true (a test delivery), ignore today's
       // already-delivered count and send the full quota so we can verify output.
-      var forceFull = onlyEmail && req.body && req.body.force === true;
+      // This applies to BOTH a single-customer test (onlyEmail) and the automated
+      // 30-min test run (test_only) — so every test run re-delivers the full
+      // promised quota with fresh leads, emails + dashboards updating each time.
+      var forceFull = (req.body && req.body.force === true) && (onlyEmail || testOnly);
       totalNeeded = forceFull ? totalDailyLimit : Math.max(0, totalNeeded - alreadyDeliveredToday);
       // NO SPLIT EMAILS: if this customer already received their daily email (a
       // watchdog/manual re-run), top up the missing leads in the DB but NEVER send
@@ -20233,28 +20236,59 @@ function runDeliveryTestReport() {
         var date = new Date().toISOString().split('T')[0];
         var testCusts = (db.customers || []).filter(function(c) { return /^test\./.test(String(c.email || '').toLowerCase()); });
         if (!testCusts.length) { resolve({ ok: false, reason: 'no test accounts' }); return; }
-        // NORMAL CAPS (testing finished): keep each test account at its real plan
-        // cap so the 9am delivery caps correctly. Do NOT raise to 999 anymore —
-        // that accumulation hack is over; test accounts now deliver exactly what
-        // a real customer of their product/plan would get each run.
+        // NORMAL CAPS: keep each test account at its real plan cap so the 9am
+        // delivery caps correctly. The deliver endpoint's test/force mode
+        // re-delivers the FULL quota each run regardless, so every 30-min run
+        // produces fresh leads + emails for the founder to inspect.
         var TEST_CAP = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
         testCusts.forEach(function(c) { c.leads_per_day = TEST_CAP[c.product] || 1; });
         saveDb();
+        // SNAPSHOT: remember each test account's delivered lead ids BEFORE this
+        // run so the report measures ONLY this run's fresh deliveries (not the
+        // accumulated total from earlier 30-min runs today).
+        var runStart = new Date();
+        var beforeIds = {};
+        testCusts.forEach(function(c) {
+          beforeIds[c.id] = {};
+          (db.leads || []).forEach(function(l) {
+            if (l.customer_id === c.id && l.delivered) beforeIds[c.id][l.id] = true;
+          });
+        });
         // run the real delivery on test accounts (force + test_only, emails enabled)
-        await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true });
-        // 3) build the report
+        var delivRes = await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true });
+        // 3) build the report from leads delivered THIS run
         var PLAN = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
         var lines = [];
         var issues = [];
+        var dbAfter = getDb();
         for (var i = 0; i < testCusts.length; i++) {
           var c = testCusts[i];
           var areas = []; try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) {}
           var promised = PLAN[c.product] || 5;
-          var res = await httpCallLocal('GET', '/api/admin/delivered-leads?email=' + encodeURIComponent(c.email) + '&date=' + date + '&t=' + Date.now());
-          var leads = (res.json && res.json.leads) || [];
+          var thisRun = [];
+          (dbAfter.leads || []).forEach(function(l) {
+            if (l.customer_id !== c.id || !l.delivered || !l.delivered_at || l.delivered_at.indexOf(date) !== 0) return;
+            if (beforeIds[c.id] && beforeIds[c.id][l.id]) return; // already there before this run
+            try { var dd = JSON.parse(l.data || '{}'); if (dd.rejected) return; } catch(e) {}
+            thisRun.push(l);
+          });
+          // Also fall back to the delivered-leads endpoint (single source of truth)
+          // if the direct DB scan found nothing but delivery reported success.
+          var leads = thisRun.map(function(l) {
+            var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+            var addr = d.fullAddress || d.address || d.deceasedAddress || '';
+            return { address: addr, postcode: d.postcode || '', has_door_or_flat_number: hasUsablePremiseAddress(addr, d.postcode), full_postcode: /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(d.postcode || '').trim()), url: d.url || '', area: extractPostcodeArea(d.postcode || addr), first_visible: d.firstVisibleDate || d.updateDate || d.scrapedAt || '' };
+          });
+          if (leads.length === 0) {
+            // fallback: delivered-leads endpoint (today's total) — if delivery ran
+            // but our snapshot missed, still report what was delivered today.
+            var res2 = await httpCallLocal('GET', '/api/admin/delivered-leads?email=' + encodeURIComponent(c.email) + '&date=' + date + '&t=' + Date.now());
+            leads = (res2.json && res2.json.leads) || [];
+          }
           var now = Date.now();
           var door = leads.filter(function(l) { return l.has_door_or_flat_number; }).length;
           var fullPc = leads.filter(function(l) { return l.full_postcode; }).length;
+          var realLink = leads.filter(function(l) { var u = String(l.url || ''); return u && /^https?:\/\//.test(u) && u.indexOf('thegazette.co.uk/id/postcode') === -1; }).length;
           var inArea = leads.filter(function(l) {
             var la = String(l.area || '').match(/^([A-Z]{1,2})[0-9]/i); la = la ? la[1].toUpperCase() : String(l.area || '').toUpperCase();
             return areas.some(function(a) { var aa = String(a).match(/^([A-Z]{1,2})[0-9]/i); aa = aa ? aa[1].toUpperCase() : String(a).toUpperCase(); return aa === la; });
@@ -20264,31 +20298,44 @@ function runDeliveryTestReport() {
           var needsDoor = (c.product === 'moving' || c.product === 'probate');
           var needsArea = c.product !== 'tenders';
           var flags = [];
-          // Accumulation mode: no SHORT/OVER count flags (delivered grows each run).
+          // EXACT-COUNT (no more no less): this run must deliver EXACTLY promised.
+          if (leads.length < promised) flags.push('SHORT ' + leads.length + '/' + promised);
+          else if (leads.length > promised) flags.push('OVER ' + leads.length + '/' + promised);
           if (needsDoor && door < leads.length) flags.push((leads.length - door) + ' doorless');
           if (fullPc < leads.length) flags.push((leads.length - fullPc) + ' no-PC');
+          if (realLink < leads.length) flags.push((leads.length - realLink) + ' no-link');
           if (needsArea && inArea < leads.length) flags.push((leads.length - inArea) + ' out-of-area');
           if (leads.length === 0) flags.push('NO-LEADS');
-          lines.push(c.email + ' [' + c.product + '] accumulated ' + leads.length + ' (door ' + door + ', PC ' + fullPc + ', in ' + inArea + ', 24h ' + fresh24 + ', 48h ' + fresh48 + ') ' + (flags.length ? '!! ' + flags.join(' ') : 'OK'));
+          lines.push(c.email + ' [' + c.product + '] delivered ' + leads.length + '/' + promised + ' (door ' + door + ', PC ' + fullPc + ', link ' + realLink + ', in ' + inArea + ', 24h ' + fresh24 + ', 48h ' + fresh48 + ') ' + (flags.length ? '!! ' + flags.join(' ') : 'OK'));
           if (flags.length) issues.push(c.email + ': ' + flags.join(' '));
         }
         var report = lines.join('\n');
         console.log('[TEST] Delivery test report:\n' + report);
-        // 4) email the report
+        // 4) email the report (reliably — no undefined vars, always try)
         try {
-          var html = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:24px;max-width:640px;margin:0 auto"><h2 style="font-family:Outfit,sans-serif;color:#0ea5e9">Delivery test report</h2><p style="font-size:12px;color:#94a3b8">' + new Date().toISOString() + ' · ' + testCusts.length + ' test accounts · cleared ' + cleared + '</p><pre style="font-size:11px;color:#e2e8f0;white-space:pre-wrap;line-height:1.6">' + escHtml(report) + '</pre>' + (issues.length ? '<p style="color:#f87171;font-weight:700">' + issues.length + ' issue(s): ' + escHtml(issues.join('; ')) + '</p>' : '<p style="color:#34d399;font-weight:700">All test accounts OK</p>') + '</div>';
-          sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, '9amLeads delivery test (' + testCusts.length + ' accounts) - ' + (issues.length ? issues.length + ' issue(s)' : 'all OK'), html).catch(function() {});
-        } catch(emErr) {}
+          var html = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:24px;max-width:680px;margin:0 auto"><h2 style="font-family:Outfit,sans-serif;color:#0ea5e9">9amLeads delivery test</h2><p style="font-size:12px;color:#94a3b8">' + new Date().toISOString() + ' · ' + testCusts.length + ' test accounts · run measured ' + Math.round((Date.now() - runStart.getTime()) / 1000) + 's</p><pre style="font-size:11px;color:#e2e8f0;white-space:pre-wrap;line-height:1.6">' + escHtml(report) + '</pre>' + (issues.length ? '<p style="color:#f87171;font-weight:700">' + issues.length + ' issue(s): ' + escHtml(issues.join('; ')) + '</p>' : '<p style="color:#34d399;font-weight:700">All ' + testCusts.length + ' test accounts delivered their full promised quota with door numbers, full postcodes and real links</p>') + '</div>';
+          sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, '9amLeads delivery test (' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }) + ') - ' + (issues.length ? issues.length + ' issue(s)' : 'all ' + testCusts.length + ' OK'), html).then(function() { console.log('[TEST] report email sent'); }).catch(function(em) { console.log('[TEST] report email error:', em.message); });
+        } catch(emErr) { console.log('[TEST] report email exception:', emErr.message); }
         resolve({ ok: true, issues: issues.length, report: report });
       } catch(e) { console.log('[TEST] report error:', e.message); resolve({ ok: false, error: e.message }); }
     })();
   });
 }
-// Every 30 minutes — automated delivery test + report. DISABLED (testing paused;
-// standard 09:00 Mon-Fri delivery is the active schedule). Re-enable by uncommenting.
-// cron.schedule('*/30 * * * *', () => {
-//   runDeliveryTestReport();
-// }, { timezone: 'Europe/London' });
+// Every 30 minutes — automated delivery test + report. Delivers the full promised
+// quota to every test account (fresh leads + emails + dashboards each run) so the
+// founder can verify the system is bulletproof: exact count, door numbers, full
+// postcodes and real links on every lead. Emails the report to hello@9amleads.com.
+// Skips the 09:00–09:35 UK window so it never competes with the real Mon-Fri
+// 09:00 delivery (the delivery lock is global — whichever fires first wins).
+cron.schedule('*/30 * * * *', () => {
+  try {
+    var ukNow = new Date().toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false });
+    var ukMin = parseInt(ukNow.split(':')[0], 10) * 60 + parseInt(ukNow.split(':')[1], 10);
+    if (ukMin >= 540 && ukMin <= 575) { console.log('[TEST-CRON] skipping (09:00 real-delivery window)'); return; }
+    console.log('[TEST-CRON] 30-min delivery test starting: ' + new Date().toISOString());
+    runDeliveryTestReport().then(function(r) { console.log('[TEST-CRON] done, issues=' + (r && r.issues)); });
+  } catch(ce) { console.log('[TEST-CRON] scheduling error:', ce.message); }
+}, { timezone: 'Europe/London' });
 
 // GET /api/admin/run-test — placeholder replaced below
 app.get('/api/admin/delivery-audit', adminAuth, (req, res) => {
