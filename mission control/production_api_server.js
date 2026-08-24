@@ -13720,7 +13720,10 @@ _deliverDiag[cust.email].products = products;
         // lead must never reach the mailbox or the delivered ledger.
         if (custLeads.length > totalDailyLimit) {
           console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver) prod=' + cust.product + ' plan=' + cust.plan + ' cov=' + primCoverage + ' lpd=' + cust.leads_per_day);
+          if (_deliverDiag[cust.email]) _deliverDiag[cust.email].final_cap = custLeads.length + '->' + totalDailyLimit;
           custLeads = custLeads.slice(0, totalDailyLimit);
+        } else {
+          if (_deliverDiag[cust.email]) _deliverDiag[cust.email].final_len = custLeads.length + ' limit=' + totalDailyLimit;
         }
         // NO SPLIT EMAILS: if this customer already got their daily email, only
         // mark the top-up leads as delivered — don't send a second email.
