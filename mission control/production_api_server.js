@@ -7007,7 +7007,19 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       pafCandidate = pcFull && hasStreetName(addr);
     }
     var leadArea = extractPostcodeArea(pc || addr);
-    var inArea = areas.some(function(a) { return extractPostcodeArea(a) === leadArea; });
+    var inArea = false;
+    if (/all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas || []).join(' '))) {
+      inArea = true;
+    } else if (areas.some(function(a) { return !/^[A-Z]{1,3}$/i.test(a); })) {
+      // Customer chose county/region names (e.g. "bristol", "oxfordshire") — match the
+      // lead's postcode area against the county map (mirrors the delivery fallback).
+      for (var _ci = 0; _ci < areas.length; _ci++) {
+        var _cLower = String(areas[_ci] || '').toLowerCase().replace(/[\s-]+/g, '-');
+        if ((COUNTY_POSTCODE_MAP[_cLower] || []).indexOf(leadArea) !== -1) { inArea = true; break; }
+      }
+    } else {
+      inArea = areas.some(function(a) { return extractPostcodeArea(a) === leadArea; });
+    }
     return { address: c.address || c.fullAddress || c.deceasedAddress || '', postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed, in_area: inArea };
   });
   var fallbackCount = out.filter(function(o) { return !o.in_area; }).length;
