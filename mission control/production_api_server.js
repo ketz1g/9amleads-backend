@@ -20246,21 +20246,18 @@ function runDeliveryTestReport() {
         var TEST_CAP = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
         testCusts.forEach(function(c) { c.leads_per_day = TEST_CAP[c.product] || 1; });
         saveDb();
-        // SNAPSHOT: remember each test account's delivered lead ids BEFORE this
-        // run so the report measures ONLY this run's fresh deliveries (not the
-        // accumulated total from earlier 30-min runs today).
+        // Mark the run start timestamp — leads delivered_at >= this are THIS run's
+        // fresh deliveries (each run re-delivers the full quota under force).
         var runStart = new Date();
-        var beforeIds = {};
-        testCusts.forEach(function(c) {
-          beforeIds[c.id] = {};
-          (db.leads || []).forEach(function(l) {
-            if (l.customer_id === c.id && l.delivered) beforeIds[c.id][l.id] = true;
-          });
-        });
         // run the real delivery on test accounts (force + test_only, emails enabled)
         var delivRes = await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true });
-        // 3) build the report from leads delivered THIS run
+        // 3) build the report from leads delivered THIS run. Each 30-min test run
+        // re-delivers the FULL quota (force), so this run's leads = those with
+        // delivered_at >= runStart. This is accurate because forceFull re-delivers
+        // fresh leads every run (the exact-count cap keeps each EMAIL at exactly
+        // the promised count — no more, no less).
         var PLAN = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
+        var runStartIso = runStart.toISOString();
         var lines = [];
         var issues = [];
         var dbAfter = getDb();
@@ -20270,8 +20267,8 @@ function runDeliveryTestReport() {
           var promised = PLAN[c.product] || 5;
           var thisRun = [];
           (dbAfter.leads || []).forEach(function(l) {
-            if (l.customer_id !== c.id || !l.delivered || !l.delivered_at || l.delivered_at.indexOf(date) !== 0) return;
-            if (beforeIds[c.id] && beforeIds[c.id][l.id]) return; // already there before this run
+            if (l.customer_id !== c.id || !l.delivered || !l.delivered_at) return;
+            if (l.delivered_at < runStartIso) return; // delivered in an earlier run
             try { var dd = JSON.parse(l.data || '{}'); if (dd.rejected) return; } catch(e) {}
             thisRun.push(l);
           });
