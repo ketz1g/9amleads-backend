@@ -12225,6 +12225,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // stops receiving leads until they recover payment (invoice.paid / re-subscribe).
       if (isLeadsPaused(cust)) continue;
       if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: [], stage: 'start' };
+_deliverDiag[cust.email].totalDailyLimit = totalDailyLimit;
+_deliverDiag[cust.email].products = products;
       
       // Use per-product limits based on lead type and coverage area.
       // getPlanLimit() (LEAD_TYPE_RULES) is the single source of truth and always
@@ -13717,7 +13719,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         // before delivered is marked. "No more no less" is the #1 promise; a 6th
         // lead must never reach the mailbox or the delivered ledger.
         if (custLeads.length > totalDailyLimit) {
-          console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver)');
+          console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver) prod=' + cust.product + ' plan=' + cust.plan + ' cov=' + primCoverage + ' lpd=' + cust.leads_per_day);
           custLeads = custLeads.slice(0, totalDailyLimit);
         }
         // NO SPLIT EMAILS: if this customer already got their daily email, only
