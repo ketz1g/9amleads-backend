@@ -8073,6 +8073,68 @@ app.post('/api/admin/funeral-scrape', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/pnp-scrape - ingest Public Notice Portal "Probate and Trustee"
+// notices (from the custom PNP Apify actor). These are CONFIRMED probate leads
+// (local-newspaper Section 27-style notices) — merged into the probate pool as a
+// first-class source, deduplicated against Gazette records. This is the second
+// supply source (The Gazette + PNP). Accepts the actor's output array directly.
+app.post('/api/admin/pnp-scrape', adminAuth, async (req, res) => {
+  try {
+    var pnpLeads = (req.body && req.body.leads) || null;
+    if (!pnpLeads && req.body && Array.isArray(req.body)) pnpLeads = req.body;
+    if (!pnpLeads || !Array.isArray(pnpLeads) || pnpLeads.length === 0) {
+      return res.status(400).json({ error: 'Send { leads: [...] } from the PNP Apify actor' });
+    }
+    var pf = path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate.file);
+    var poolP = [];
+    try { poolP = JSON.parse(fs.readFileSync(pf, 'utf-8')); if (!Array.isArray(poolP)) poolP = []; } catch(e) { poolP = []; }
+    var nowIso = new Date().toISOString();
+    var seenP = {};
+    poolP.forEach(function(l) {
+      var k = String(l.deceasedName || l.name || '').toLowerCase().replace(/[^a-z]/g, '') + '|' + cleanUkPostcode(l.postcode || '').toUpperCase() + '|' + String(l.noticeId || l.url || '').toLowerCase();
+      if (k.length > 3) seenP[k] = 1;
+    });
+    var added = 0, dupes = 0;
+    pnpLeads.forEach(function(pl) {
+      var name = String(pl.deceasedName || pl.name || '').trim();
+      var pc = cleanUkPostcode(pl.deceasedPostcode || pl.postcode || '').toUpperCase();
+      var addr = String(pl.deceasedAddress || pl.address || '').trim();
+      var noticeId = String(pl.noticeId || pl.noticeUrl || pl.url || '').trim();
+      if (!name && !addr) return;
+      // Dedup by name+postcode, then by notice URL/id. Gazette overlap is caught by
+      // the shared name+postcode key.
+      var k = name.toLowerCase().replace(/[^a-z]/g, '') + '|' + pc + '|' + noticeId.toLowerCase();
+      if (k.length > 3 && seenP[k]) { dupes++; return; }
+      seenP[k] = 1;
+      poolP.push({
+        id: 'PNP_' + (noticeId.replace(/[^A-Za-z0-9]/g, '').slice(-24) || Date.now()),
+        name: name || 'Unknown',
+        deceasedName: name,
+        deceasedAddress: addr || (name + ', ' + (pl.region || '')),
+        address: addr || (name + ', ' + (pl.region || '')),
+        postcode: pc,
+        town: pl.region || '',
+        county: pl.region || '',
+        grantDate: pl.publishedDate || nowIso,
+        publishedDate: pl.publishedDate || nowIso,
+        claimDeadline: pl.claimDeadline || '',
+        executorName: pl.executorName || '',
+        solicitor: pl.solicitorName || '',
+        scrapedAt: nowIso,
+        firstVisibleDate: pl.publishedDate || nowIso,
+        updateDate: nowIso,
+        estateValue: 0,
+        noticeId: noticeId,
+        source: 'pnp',
+        url: pl.noticeUrl || pl.url || ''
+      });
+      added++;
+    });
+    fs.writeFileSync(pf, JSON.stringify(poolP, null, 2));
+    res.json({ success: true, received: pnpLeads.length, added: added, duplicates: dupes, pool_total: poolP.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/otm-scrape - direct OnTheMarket scrape (NO Apify credits).
 // Scrapes the given areas (or all active moving customers' areas), gets the full
 // postcode from each detail page (free), and appends fresh leads to the moving
