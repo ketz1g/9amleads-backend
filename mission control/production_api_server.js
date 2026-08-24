@@ -20225,6 +20225,21 @@ app.post('/api/admin/run-test', adminAuth, (req, res) => {
   runDeliveryTestReport().then(function(r) { res.json({ success: true, result: r }); });
 });
 
+// POST /api/admin/update-filters — set a customer's lead filters (biz_field2) by email.
+app.post('/api/admin/update-filters', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase();
+    var biz = (req.body && req.body.biz_field2) || '{}';
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var db = getDb();
+    var c = (db.customers || []).find(function(x) { return String(x.email || '').toLowerCase() === email; });
+    if (!c) return res.status(404).json({ error: 'Customer not found' });
+    c.biz_field2 = JSON.stringify(biz);
+    saveDb();
+    res.json({ success: true, email: email, biz_field2: c.biz_field2 });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== AUTOMATED BLOG CONTENT GENERATION (OpenAI) =====
 var BLOG_CATEGORIES = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads (Companies House)', planning: 'planning permission leads', tenders: 'public sector tender opportunities', general: 'UK business leads' };
 var INDEXNOW_KEY = 'eff5ce1d06f4a9203c8710870a9bf024';
