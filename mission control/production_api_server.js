@@ -5600,7 +5600,7 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     return !(l.release_at && l.release_at > nowIso);
   });
 
-  res.json(visible
+    res.json(visible
     .filter(function(l) { return leadHasUsableAddress(l, customer ? customer.product : l.product); })
     .map(l => {
     const parsed = JSON.parse(l.data || '{}');
@@ -5609,7 +5609,13 @@ app.get('/api/leads', authMiddleware, (req, res) => {
       if (parsed.fullAddress) parsed.fullAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.fullAddress)));
     }
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
-    return { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
+    // DIAGNOSTIC: expose the raw lead id + customer_id so the direct-mail payment
+    // path can be debugged against the exact ids the dashboard hands to send-lead.
+    var dRow = { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
+    if (l.id && l.id.toString().indexOf('17de6e99') !== -1) {
+      dRow._diag = { lead_id: l.id, customer_id: l.customer_id, session_customer_id: customer ? customer.id : null, has_data: !!l.data, postcode: parsed.postcode };
+    }
+    return dRow;
   }));
 });
 
@@ -19130,6 +19136,13 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
     }
     if (!lead) {
       console.log('[SEND-LEAD] LEAD NOT FOUND: lead_id=' + req.body.lead_id + ' user_id=' + req.user.id + ' email=' + (req.user.email || '') + ' body=' + JSON.stringify(req.body).substring(0, 200));
+      // PERSIST diagnostic so it can be read back via /api/admin/dm-logs.
+      try {
+        var plog = db.prepare('INSERT INTO direct_mail_provider_logs (id, customer_id, campaign_id, provider, endpoint, success, error_message, request_body, response_body, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)');
+        var plogId = uuidv4();
+        var reqD = JSON.stringify({ lead_id: req.body.lead_id, user_id: req.user.id, email: req.user.email, body: req.body }).substring(0, 500);
+        plog.run(plogId, req.user.id || '', '', '9amleads-internal', 'send-lead-lookup', 0, 'LEAD NOT FOUND', reqD, '', new Date().toISOString());
+      } catch(plErr) { console.log('[SEND-LEAD] persist diag error:', plErr.message); }
       return res.status(404).json({ error: 'Lead not found' });
     }
     var template = req.body.template_id || '';
