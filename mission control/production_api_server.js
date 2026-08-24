@@ -6880,6 +6880,41 @@ app.post('/api/admin/paf-postscrape', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/enrich-moving — re-run the FREE Rightmove detail-page enrich on the
+// door-less moving pool (captures numbered addresses at source, no PAF cost). This is
+// the main lever for moving supply — detail pages usually carry the house number.
+app.post('/api/admin/enrich-moving', adminAuth, async (req, res) => {
+  try {
+    var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
+    var raw = null; try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) { return res.status(500).json({ error: 'pool unreadable' }); }
+    var arr = Array.isArray(raw) ? raw : (function(){ var a=[]; if(raw&&typeof raw==='object') Object.keys(raw).forEach(function(k){ if(k.indexOf('_')!==0 && Array.isArray(raw[k])) a=a.concat(raw[k]); }); return a; })();
+    var need = arr.filter(function(l) {
+      var addr = l.fullAddress || l.address || '';
+      var pc = cleanUkPostcode(l.postcode || '');
+      return !hasUsablePremiseAddress(addr, pc) && l.url && /^https?:\/\//.test(l.url);
+    });
+    var cap = parseInt(process.env.MOVING_ENRICH_MAX || '500', 10);
+    var toEnrich = need.slice(0, cap);
+    if (!toEnrich.length) return res.json({ success: true, attempted: 0, added: 0, note: 'no door-less leads with URLs' });
+    var rmScraper = require('./rightmove_scraper_v2');
+    var enriched = await rmScraper.enrichMovingLeads(toEnrich, 3);
+    var added = 0;
+    (enriched || []).forEach(function(en, idx) {
+      var src = toEnrich[idx]; if (!src || !en) return;
+      var enAddr = en.fullAddress || en.address || '';
+      var enPc = cleanUkPostcode(en.postcode || src.postcode || '');
+      if (hasUsablePremiseAddress(enAddr, enPc)) {
+        src.address = enAddr; src.fullAddress = enAddr || src.fullAddress; src.postcode = enPc;
+        src.paf_done = true; src.paf_failed = false;
+        added++;
+      }
+    });
+    fs.writeFileSync(file, JSON.stringify(raw, null, 2));
+    console.log('[ENRICH-MOVING] attempted ' + toEnrich.length + ', added ' + added + ' door numbers');
+    res.json({ success: true, attempted: toEnrich.length, added: added });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/paf-probate — manually run the post-scrape PAF enrichment on the
 // probate pool (adds door numbers to door-less probate leads so probate customers
 // get mailable addresses).
