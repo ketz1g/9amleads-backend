@@ -4547,6 +4547,7 @@ app.post('/api/admin/add-test-lead', adminAuth, (req, res) => {
       street: (req.body && req.body.street) || '',
       buildingNumber: (req.body && req.body.building_number) || '',
       city: (req.body && req.body.city) || '',
+      bedrooms: (req.body && req.body.bedrooms) || '3',
       name: (req.body && req.body.name) || '',
       company: (req.body && req.body.name) || '',
       source: (req.body && req.body.source) || 'self-test',
