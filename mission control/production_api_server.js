@@ -17621,6 +17621,11 @@ function cleanLetterBodyForPrint(text) {
     // Drop the marketing preamble ABOVE the product list (only when a product
     // heading exists — a normal business letter is kept whole).
     if (startIdx >= 0 && j < startIdx) continue;
+    // STOP at the 9amLeads marketing FOOTER ("MORE THAN JUST LEADS ... START YOUR
+    // 1-WEEK FREE TRIAL ... www.9amleads.com ... The 9amLeads Team"). The letter
+    // should end after the last product section (PUBLIC SECTOR & GOVERNMENT
+    // TENDERS), not carry 9amLeads self-promotion.
+    if (/^(MORE THAN JUST LEADS|START YOUR|BE FIRST|See how 9amLeads|The principle is|Rather than waiting|9amLeads gives you|www\.9amleads|Kind regards,|The 9amLeads Team|Fresh opportunities delivered|Hyper-local postcode|Real & verified|No competition leads|Track contacts|Professional marketing|Flyers & letters printed|Proof of posting)/i.test(line)) break;
     // Drop unmerged placeholder tokens like "00000  /  0000" and "[name]" etc.
     if (/^\s*\d{3,}\s*\/\s*\d{3,}\s*$/.test(line)) continue;
     if (/^\[[a-z_]+\]$/i.test(line)) continue;
