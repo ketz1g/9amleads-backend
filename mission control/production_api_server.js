@@ -4527,8 +4527,11 @@ app.post('/api/admin/add-test-lead', adminAuth, (req, res) => {
       city: (req.body && req.body.city) || '',
       name: (req.body && req.body.name) || '',
       company: (req.body && req.body.name) || '',
-      source: 'self-test',
-      url: (req.body && req.body.url) || 'https://www.rightmove.co.uk/'
+      source: (req.body && req.body.source) || 'self-test',
+      url: (req.body && req.body.url) || 'https://www.rightmove.co.uk/',
+      firstVisibleDate: nowIso,
+      updateDate: nowIso,
+      scrapedAt: nowIso
     };
     dbL.leads.push({ id: uuidv4(), customer_id: cust.id, product: 'moving', data: JSON.stringify(data), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: today + 'T09:00:00.000Z' });
     saveDb();
