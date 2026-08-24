@@ -13400,6 +13400,24 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 console.log('[QUALITY-REVIEW] ' + cust.email + ': final ' + custLeads.length + '/' + totalNeeded + ' validated moving leads');
               } catch(qvErr) { console.log('[QUALITY-REVIEW] error for ' + cust.email + ': ' + qvErr.message); }
             }
+            // FINAL HARD GATE: a doorless lead is NEVER emailed. Right before the
+            // email is composed, re-verify every lead has a real door number + full
+            // postcode (covers any that slipped past the earlier gate via the
+            // exact-count fill). Anything that fails is dropped — the email only
+            // ever contains mailable addresses for Print & Post.
+            if (custLeads && custLeads.length) {
+              var _gateLen = custLeads.length;
+              custLeads = custLeads.filter(function(l) {
+                var ld = null; try { ld = JSON.parse(l.data || '{}'); } catch(e) { ld = null; }
+                if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '' };
+                var gAddr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
+                var gPc = ld.postcode || '';
+                if (!gAddr || !gPc) return false;
+                if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(gPc.trim())) return false;
+                return hasPremiseNumber(gAddr, gPc);
+              });
+              if (custLeads.length !== _gateLen) console.log('[FINAL-GATE] dropped ' + (_gateLen - custLeads.length) + ' doorless lead(s) for ' + cust.email + ' (now ' + custLeads.length + ')');
+            }
             // TOWN BACKFILL: append a town/area to any moving lead that has door
             // number + street + full postcode but no town, using the cached
             // Postcoder town for the postcode (free, cache-first). Print & Post
