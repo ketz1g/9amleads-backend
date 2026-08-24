@@ -6767,7 +6767,11 @@ app.get('/api/admin/delivered-leads', adminAuth, (req, res) => {
     var db3 = getDb();
     var cust = (db3.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
-    var leads = (db3.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(date) === 0; });
+    var leads = (db3.leads || []).filter(function(l) {
+      if (l.customer_id !== cust.id || !l.delivered || !l.delivered_at || l.delivered_at.indexOf(date) !== 0) return false;
+      try { var dd = JSON.parse(l.data || '{}'); if (dd.rejected) return false; } catch(e) {}
+      return true;
+    });
     var rows = leads.map(function(l) {
       var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
       var addr = d.fullAddress || d.address || d.deceasedAddress || '';
