@@ -19110,7 +19110,16 @@ function buildStannpRecipientFromLead(parsed) {
 app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
   try {
     var lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(req.body.lead_id, req.user.id);
-    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    if (!lead) {
+      console.log('[SEND-LEAD] LEAD NOT FOUND: lead_id=' + req.body.lead_id + ' user_id=' + req.user.id + ' email=' + (req.user.email || '') + ' body=' + JSON.stringify(req.body).substring(0, 200));
+      // Diagnostic: count leads for this user + show whether the lead exists at all
+      try {
+        var allUserLeads = db.prepare('SELECT id, customer_id, product FROM leads WHERE customer_id = ?').all(req.user.id);
+        var leadAnywhere = db.prepare('SELECT id, customer_id, product FROM leads WHERE id = ?').all(req.body.lead_id);
+        console.log('[SEND-LEAD] user lead count=' + allUserLeads.length + ' leadExistsAnywhere=' + (leadAnywhere.length ? JSON.stringify(leadAnywhere[0]) : 'NO'));
+      } catch(e2) {}
+      return res.status(404).json({ error: 'Lead not found' });
+    }
     var template = req.body.template_id || '';
     var mailType = req.body.mail_type || 'letter'; // letter | flyer | flyer_plus_letter
     var formatId = req.body.format || ''; // e.g. flyer_a5_portrait, flyer_a5_enveloped
