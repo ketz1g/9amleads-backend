@@ -21907,10 +21907,13 @@ function syncCustomers(product) {
             // lead is a deceased PERSON). The scraper filters these too, but this
             // belt-and-braces guard also cleans any firm leads already in the pool.
             try {
-              var _firmRe = /\b(LTD|LIMITED|LLP|PLC|SERVICES|SOLICITORS|SOLICITOR|COMPANY|GROUP|ASSOCIATES|PARTNERSHIP|STAIRLIFTS|FLOORING|SUPPLIES|ORGANICS|LEGAL|LAW)\b/i;
+              var _firmRe = /\b(LTD|LIMITED|LLP|PLC|SERVICES|SOLICITORS|SOLICITOR|COMPANY|GROUP|ASSOCIATES|PARTNERSHIP|STAIRLIFTS|FLOORING|SUPPLIES|ORGANICS|LEGAL|LAW|TRUSTEES?|ASSOCIATION|CHARITY|TRUST|PARTNERS)\b/i;
+              var _noticeTitleRe = /^(?:NOTICES?\s+(?:UNDER|OF|IN)?|APPOINTMENT\s+OF|OTHER\s+NOTICES?|CROWN\s+OFFICE|DECLARATION\s+OF|NOTICE\s+IS\s+HEREBY|IN\s+THE\s+MATTER\s+OF|PETITIONS?\s+TO\s+(?:WIND|DISSOLVE))/i;
               leads = (leads || []).filter(function(pl) {
-                var pn = String(pl.name || pl.deceasedName || '');
-                return !pn || !_firmRe.test(pn);
+                var pn = String(pl.name || pl.deceasedName || '').trim();
+                if (!pn) return true;
+                if (_noticeTitleRe.test(pn)) return false;
+                return !_firmRe.test(pn);
               });
             } catch(pfe) { console.log('[SCRAPER] Probate prune error:', pfe.message); }
             console.log('[SCRAPER] Probate raw scrape: ' + (leads ? leads.length : 0) + ' leads');
@@ -21971,10 +21974,13 @@ function syncCustomers(product) {
         // removed on the next scrape rather than lingering for 48h.
         if (product === 'probate') {
           try {
-            var _firmReP = /\b(LTD|LIMITED|LLP|PLC|SERVICES|SOLICITORS|SOLICITOR|COMPANY|GROUP|ASSOCIATES|PARTNERSHIP|STAIRLIFTS|FLOORING|SUPPLIES|ORGANICS|LEGAL|LAW)\b/i;
+            var _firmReP = /\b(LTD|LIMITED|LLP|PLC|SERVICES|SOLICITORS|SOLICITOR|COMPANY|GROUP|ASSOCIATES|PARTNERSHIP|STAIRLIFTS|FLOORING|SUPPLIES|ORGANICS|LEGAL|LAW|TRUSTEES?|ASSOCIATION|CHARITY|TRUST|PARTNERS)\b/i;
+            var _noticeTitleReP = /^(?:NOTICES?\s+(?:UNDER|OF|IN)?|APPOINTMENT\s+OF|OTHER\s+NOTICES?|CROWN\s+OFFICE|DECLARATION\s+OF|NOTICE\s+IS\s+HEREBY|IN\s+THE\s+MATTER\s+OF|PETITIONS?\s+TO\s+(?:WIND|DISSOLVE))/i;
             merged = merged.filter(function(pl) {
-              var pn = String(pl.name || pl.deceasedName || '');
-              return !pn || !_firmReP.test(pn);
+              var pn = String(pl.name || pl.deceasedName || '').trim();
+              if (!pn) return true;
+              if (_noticeTitleReP.test(pn)) return false;
+              return !_firmReP.test(pn);
             });
           } catch(fpe) { console.log('[SCRAPER] Probate pool firm-prune error:', fpe.message); }
         }

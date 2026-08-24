@@ -472,14 +472,20 @@ async function enrichGazetteLeads(leads, limit) {
       enriched.push(beyond);
     }
     // FILTER NON-DECEASED NOTICES: the Apify Gazette actor + HTML feed can include
-    // company / solicitor notices (e.g. "JMW Solicitors", "ORGANICS XL LTD") that
-    // are NOT deceased-estate probate leads. A probate lead must have a personal
-    // deceased name (title + first + last name) — a firm name is not a person.
-    // Drop anything whose name contains LTD/LIMITED/SOLICITORS/LLP/SERVICES etc.
-    var firmRe = /\b(LTD|LIMITED|LLP|PLC|SERVICES|SOLICITORS|SOLICITOR|COMPANY|GROUP|ASSOCIATES|PARTNERSHIP|STAIRLIFTS|FLOORING|SUPPLIES|ORGANICS|LEGAL|LAW)\b/i;
+    // company / solicitor notices (e.g. "JMW Solicitors", "ORGANICS XL LTD") and
+    // generic notice-category entries ("Notices under the Trustee Act 1925",
+    // "Appointment of Liquidators", "Other Notices", "Crown Office") that are NOT
+    // deceased-estate probate leads. A probate lead must be a deceased PERSON —
+    // firm names, organisations and notice titles are dropped.
+    var firmRe = /\b(LTD|LIMITED|LLP|PLC|SERVICES|SOLICITORS|SOLICITOR|COMPANY|GROUP|ASSOCIATES|PARTNERSHIP|STAIRLIFTS|FLOORING|SUPPLIES|ORGANICS|LEGAL|LAW|TRUSTEES?|ASSOCIATION|CHARITY|TRUST|PARTNERS)\b/i;
+    var noticeTitleRe = /^(?:NOTICES?\s+(?:UNDER|OF|IN)?|APPOINTMENT\s+OF|OTHER\s+NOTICES?|CROWN\s+OFFICE|DECLARATION\s+OF|NOTICE\s+IS\s+HEREBY|IN\s+THE\s+MATTER\s+OF|PETITIONS?\s+TO\s+(?:WIND|DISSOLVE))/i;
     enriched = enriched.filter(function(l) {
-      var n = String(l.name || l.deceasedName || '');
+      var n = String(l.name || l.deceasedName || '').trim();
       if (!n) return true; // keep unnamed (rare) — enrichment/PAF may still fill it
+      if (noticeTitleRe.test(n)) {
+        console.log('[PROBATE] filtered notice-title entry: ' + n);
+        return false;
+      }
       if (firmRe.test(n)) {
         console.log('[PROBATE] filtered non-deceased notice: ' + n);
         return false;
