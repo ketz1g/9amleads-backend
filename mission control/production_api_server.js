@@ -1540,18 +1540,11 @@ class StannpProvider extends DirectMailProvider {
           doc.on('data', buffers.push.bind(buffers));
           doc.on('end', function() { resolve({ buffer: Buffer.concat(buffers), pages: pageCount }); });
           var bodyFont = unicodeFont ? 'uni' : 'Helvetica';
-          // SENDER return address — top-right (top-left stays clear for the window).
-          var headerL = [];
-          if (senderObj.name) headerL.push(senderObj.name);
-          if (senderObj.address) headerL.push(senderObj.address);
-          var dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-          var rx = 595 - margin - 260; // right-aligned block width 260pt
-          if (headerL.length) doc.font(bodyFont).fontSize(Math.min(fontSize, 10)).text(headerL.join('\n'), rx, margin, { width: 260, lineBreak: true, align: 'right' });
-          doc.font(bodyFont).fontSize(8).text(dateStr, rx, margin + (headerL.length ? headerL.length * 12 + 4 : 0), { width: 260, lineBreak: true, align: 'right' });
-          // Divider (below the header, spans the page)
-          doc.moveTo(margin, margin + 46).lineTo(595 - margin, margin + 46).lineWidth(1).strokeColor('#0ea5e9').stroke();
-          // Body — starts below the header, top-left clear for the window
-          doc.font(bodyFont).fontSize(fontSize).text(text, margin, margin + 56, { width: 595 - margin * 2, lineBreak: true, align: 'left', lineGap: lineGap });
+          // NO sender/date header + divider: Stannp prints the recipient address
+          // in its own envelope window, so the printed letter is just the body.
+          // (Keeps the top clear for the window and avoids duplicating the name/
+          // address that was appearing twice.)
+          doc.font(bodyFont).fontSize(fontSize).text(text, margin, margin, { width: 595 - margin * 2, lineBreak: true, align: 'left', lineGap: lineGap });
           doc.end();
         } catch(e) { reject(e); }
       });
@@ -17661,17 +17654,12 @@ function buildCleanLetterHtml(templateBody, senderName, senderAddr) {
   var printBody = cleanLetterBodyForPrint(templateBody || '')
     .replace(/\b0{4,}\s*\/\s*0{3,}\b/g, '') // "00000 / 0000" token residue
     .replace(/\[?[a-zA-Z_]+(?:_[a-zA-Z_]+)*\]?/g, function(tok) { return /^\[[a-z_]+\]$/.test(tok) ? '' : tok; });
-  var todayLine = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  // NO sender name/address/date header: Stannp prints the RECIPIENT address in its
+  // envelope window itself, so the letter is just the clean body content. Keeping
+  // a header here duplicated the name/address on the printed letter.
   var letterHtml =
     '<html><body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#1e293b">' +
-    '<table width="100%" cellpadding="0" cellspacing="0"><tr>' +
-    '<td width="50%" valign="top" style="font-size:10px;color:#334155">' +
-    (senderName ? senderName + '<br>' : '') + (senderAddr || '') +
-    '</td>' +
-    '<td width="50%" align="right" valign="top" style="font-size:10px;color:#334155">' + todayLine + '</td>' +
-    '</tr></table>' +
-    '<div style="border-top:2px solid #0ea5e9;margin:24px 0 20px"></div>' +
-    '<div style="font-size:11px;line-height:1.7;white-space:pre-wrap">' + (printBody || '').split('\n').join('<br>') + '</div>' +
+    '<div style="font-size:11px;line-height:1.7;white-space:pre-wrap;padding-top:10px">' + (printBody || '').split('\n').join('<br>') + '</div>' +
     '</body></html>';
   return { html: letterHtml, body: printBody };
 }
@@ -20799,10 +20787,8 @@ app.get('/api/admin/letter-preview', adminAuth, async (req, res) => {
       doc.on('data', buffers.push.bind(buffers));
       var done = new Promise(function(resolve, reject) { doc.on('end', resolve); doc.on('error', reject); });
       var bodyFont = unicodeFont ? 'uni' : 'Helvetica';
-      doc.font(bodyFont).fontSize(10).text([senderName, senderAddr].filter(Boolean).join('\n'), 595 - 50 - 260, 50, { width: 260, align: 'right' });
-      doc.font(bodyFont).fontSize(8).text(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), 595 - 50 - 260, 80, { width: 260, align: 'right' });
-      doc.moveTo(50, 96).lineTo(595 - 50, 96).lineWidth(1).strokeColor('#0ea5e9').stroke();
-      doc.font(bodyFont).fontSize(10).text(clean.body, 50, 106, { width: 595 - 100, lineBreak: true, align: 'left' });
+      // No sender header/divider — Stannp prints the recipient address itself.
+      doc.font(bodyFont).fontSize(10).text(clean.body, 50, 50, { width: 595 - 100, lineBreak: true, align: 'left' });
       doc.end();
       await done;
       var buf = Buffer.concat(buffers);
