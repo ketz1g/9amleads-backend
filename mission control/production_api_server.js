@@ -719,6 +719,26 @@ var REGION_NEIGHBOUR_AREAS = {
 function expandedAreaFallback(areas) {
   var result = [];
   var map = {};
+  // COUNTY-BASED CUSTOMERS (probate/planning/tenders use county names like "Kent",
+  // "Greater London"): national supply for these products is thin (~27 probate
+  // grants/day UK-wide), so when the exact county has no fresh lead the customer
+  // would get NOTHING. Expand to cover ALL UK postcode areas (via the county map)
+  // so they still receive their full promised count from the best available lead.
+  var usesCounties = (areas || []).some(function(a) { return !/^[A-Z]{1,3}$/i.test(String(a).trim()); });
+  if (usesCounties) {
+    (areas || []).forEach(function(a) {
+      var c = String(a).toLowerCase().replace(/[\s-]+/g, '-');
+      (COUNTY_POSTCODE_MAP[c] || []).forEach(function(pc) { if (!map[pc]) { map[pc] = 1; result.push(pc); } });
+    });
+    // ALSO include every other county's postcode areas as a broad fallback, so an
+    // empty chosen county (e.g. "Devon" with no fresh grant today) still yields a
+    // deliverable probate lead from the national pool. Kept LAST in the order so
+    // exact-county leads are always preferred.
+    Object.keys(COUNTY_POSTCODE_MAP).forEach(function(k) {
+      (COUNTY_POSTCODE_MAP[k] || []).forEach(function(pc) { if (!map[pc]) { map[pc] = 1; result.push(pc); } });
+    });
+    return result;
+  }
   (areas || []).forEach(function(a) {
     var c = extractPostcodeArea(a);
     if (!c || map[c]) return;
