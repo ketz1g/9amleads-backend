@@ -5304,11 +5304,20 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     const thisWeek = (function(){ var d = new Date(); d.setDate(d.getDate() - (d.getDay() || 7) + 1); return d.toISOString().split('T')[0]; })();
     const thisMonth = today.substring(0, 7);
 
-    const leadsToday = leads.filter(l => l.delivered && l.delivered_at && l.delivered_at.startsWith(today));
-    const leadsWeek = leads.filter(l => l.delivered && l.delivered_at && l.delivered_at >= thisWeek);
-    const leadsMonth = leads.filter(l => l.delivered && l.delivered_at && l.delivered_at.startsWith(thisMonth));
-    const deliveredToday = leads.filter(l => l.delivered && l.delivered_at && l.delivered_at.startsWith(today));
-    const deliveredThisMonth = leads.filter(l => l.delivered && l.delivered_at && l.delivered_at.startsWith(thisMonth));
+    // Never count rejected leads (hidden in My Leads) in the KPIs — rejected leads
+    // still carry delivered=1, so without this filter the Today/Week/Month counters
+    // over-count after a reject/replace.
+    function isLiveLead(l) {
+      if (!l.delivered) return false;
+      try { var d = JSON.parse(l.data || '{}'); if (d.rejected) return false; } catch(e) {}
+      return true;
+    }
+
+    const leadsToday = leads.filter(l => isLiveLead(l) && l.delivered_at && l.delivered_at.startsWith(today));
+    const leadsWeek = leads.filter(l => isLiveLead(l) && l.delivered_at && l.delivered_at >= thisWeek);
+    const leadsMonth = leads.filter(l => isLiveLead(l) && l.delivered_at && l.delivered_at.startsWith(thisMonth));
+    const deliveredToday = leads.filter(l => isLiveLead(l) && l.delivered_at && l.delivered_at.startsWith(today));
+    const deliveredThisMonth = leads.filter(l => isLiveLead(l) && l.delivered_at && l.delivered_at.startsWith(thisMonth));
     const contacted = leads.filter(l => l.lead_status === 'contacted' || l.lead_status === 'interested' || l.lead_status === 'quoted' || l.lead_status === 'won');
     const replied = leads.filter(l => l.lead_status === 'interested' || l.lead_status === 'quoted' || l.lead_status === 'won');
     const quoted = leads.filter(l => l.lead_status === 'quoted' || l.lead_status === 'won');
