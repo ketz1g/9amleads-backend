@@ -20760,6 +20760,21 @@ app.get('/api/admin/customer-templates', adminAuth, (req, res) => {
     res.json({ success: true, email: em, customer_id: cust.id, default_template_id: settings ? settings.default_template_id : '', templates: tpls });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// POST /api/admin/cancel-letter — cancel a Stannp letter order (admin). Used to
+// remove stale orders that were created before the letter-layout fixes so they
+// don't print with the old content. Uses the server's STANNP_API_KEY.
+app.post('/api/admin/cancel-letter', adminAuth, async (req, res) => {
+  try {
+    var letterId = String(req.body.letter_id || req.body.id || '').trim();
+    if (!letterId) return res.status(400).json({ error: 'letter_id required' });
+    var provider = getDirectMailProvider();
+    if (!provider || typeof provider.stannpRequest !== 'function') return res.status(400).json({ error: 'Stannp provider not available' });
+    // Stannp cancel endpoint: POST /letters/cancel with the letter id.
+    var result = await provider.stannpRequest('/letters/cancel', { id: letterId });
+    res.json({ success: !!(result && result.success !== false), letter_id: letterId, result: result });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/letter-preview?email=X&template_id=Y — generate the EXACT A4
 // letter PDF (via pdfkit) that Stannp would print, WITHOUT sending to Stannp or
 // charging anything. Free way to verify the letter content + layout before paying.
