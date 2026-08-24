@@ -20276,6 +20276,15 @@ cron.schedule('*/30 * * * *', () => {
   runDeliveryTestReport();
 }, { timezone: 'Europe/London' });
 
+// GET /api/admin/run-test — placeholder replaced below
+app.get('/api/admin/delivery-audit', adminAuth, (req, res) => {
+  try {
+    var db = getDb();
+    var aud = (db.delivery_audit || []).slice(-20).reverse();
+    res.json({ success: true, runs: aud });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/run-test — run the automated delivery test + email the report now.
 app.post('/api/admin/run-test', adminAuth, (req, res) => {
   runDeliveryTestReport().then(function(r) { res.json({ success: true, result: r }); });
