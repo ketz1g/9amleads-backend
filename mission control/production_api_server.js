@@ -1658,6 +1658,7 @@ async sendMailpiece(mailType, recipient, files, format) {
         }
       }
       var res = await this.stannpRequest('/letters/create', letterParams);
+      console.log('[STANNP] letter/create ' + recipient.email + ' mailType=' + mailType + ' sentAsFile=' + (!!letterParams.file) + ' hasPages=' + (!!letterParams.pages) + ' rcptName=' + (recipient.name || '') + ' rcptAddr=' + (recipient.address_line1 || '') + ' res=' + (res && res.success ? 'ok id=' + (res.data && res.data.id) : 'FAIL ' + (res && res.error)));
       if (res.success && res.data && res.data.id) {
         letterResult = { success: true, provider_campaign_id: String(res.data.id), cost: res.data.cost, status: res.data.status || 'processing', message: 'Letter sent to Stannp', raw: res };
       } else {
