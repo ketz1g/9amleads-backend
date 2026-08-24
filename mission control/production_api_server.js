@@ -16957,12 +16957,12 @@ function generateLeadEmailHTML(customer, leads) {
 
   // QUICK WIN TIPS — product-specific conversion advice (kept short, actionable)
   var quickTipsMap = {
-    moving: '⏱️ Contact homeowners within the hour — the first removal company to call usually wins the move.',
-    probate: '🤝 Contact executors within 48 hours, with empathy — the first firm to reach out wins most instructions.',
-    newbusiness: '💼 Contact new companies within the first fortnight — there\'s no incumbent supplier yet, so first contact usually wins.',
-    planning: '🏗️ Quote while the application is being decided — homeowners ready to build are comparing builders now.',
+    moving: '🖨️ Print &amp; Post a letter or flyer within days — a printed letter on the kitchen table is what wins the move.',
+    probate: '✉️ Print &amp; Post a compassionate letter to the executor — the firm that reaches them first with a warm letter wins the instruction.',
+    newbusiness: '📮 Send a letter or flyer to new companies early — with no incumbent supplier, your mail arrives first.',
+    planning: '🏠 Print &amp; Post a letter to planning applicants while the application is being decided — homeowners ready to build act on the first professional contact.',
     tenders: '📋 Bid on 2–3 well-matched tenders a week and answer every quality question fully — completeness wins.',
-    general: '📈 Contact every lead the same day — speed beats everything when a prospect is fresh.'
+    general: '📮 Use Print &amp; Post to mail every lead promptly — printed mail reaches prospects before anyone else does.'
   };
   body += '<tr><td style="background:#ffffff;padding:0 28px 6px">' +
     '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:13px 16px;font-size:12px;color:#92400e;line-height:1.6">' +
