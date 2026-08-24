@@ -20141,6 +20141,90 @@ function checkBlogQueueLow() {
   }
 }
 
+// ===== AUTOMATED DELIVERY TEST (30-min) =====
+// Runs the REAL delivery against the test.* accounts every 30 min using today's pool,
+// builds a report (count, door-complete, full postcode, in-area, freshness) and emails
+// it to the founder so scaling issues surface before they reach real customers.
+function httpCallLocal(method, path, body) {
+  return new Promise(function(resolve) {
+    try {
+      var http = require('http');
+      var data = body ? JSON.stringify(body) : null;
+      var req = http.request({ hostname: 'localhost', port: PORT, path: path, method: method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (process.env.ADMIN_PASSWORD || 'Wemovehomes321!'), ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {}) } }, function(r) {
+        var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() { try { resolve({ status: r.statusCode, json: JSON.parse(b) }); } catch(e) { resolve({ status: r.statusCode, raw: b }); } });
+      });
+      req.on('error', function() { resolve({ status: 0, raw: 'req error' }); });
+      if (data) req.write(data); req.end();
+    } catch(e) { resolve({ status: 0, raw: e.message }); }
+  });
+}
+function runDeliveryTestReport() {
+  return new Promise(function(resolve) {
+    (async () => {
+      try {
+        var db = getDb();
+        var date = new Date().toISOString().split('T')[0];
+        var testCusts = (db.customers || []).filter(function(c) { return /^test\./.test(String(c.email || '').toLowerCase()); });
+        if (!testCusts.length) { resolve({ ok: false, reason: 'no test accounts' }); return; }
+        // 1) clear today's test-account leads so the delivery re-selects fresh from today's pool
+        var cleared = 0;
+        testCusts.forEach(function(c) { db.leads = (db.leads || []).filter(function(l) { if (l.customer_id === c.id && (l.created_at || '').startsWith(date)) { cleared++; return false; } return true; }); });
+        saveDb();
+        // 2) run the real delivery on test accounts (force + test_only)
+        await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true });
+        // 3) build the report
+        var PLAN = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
+        var lines = [];
+        var issues = [];
+        for (var i = 0; i < testCusts.length; i++) {
+          var c = testCusts[i];
+          var areas = []; try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) {}
+          var promised = PLAN[c.product] || 5;
+          var res = await httpCallLocal('GET', '/api/admin/delivered-leads?email=' + encodeURIComponent(c.email) + '&date=' + date + '&t=' + Date.now());
+          var leads = (res.json && res.json.leads) || [];
+          var now = Date.now();
+          var door = leads.filter(function(l) { return l.has_door_or_flat_number; }).length;
+          var fullPc = leads.filter(function(l) { return l.full_postcode; }).length;
+          var inArea = leads.filter(function(l) {
+            var la = String(l.area || '').match(/^([A-Z]{1,2})[0-9]/i); la = la ? la[1].toUpperCase() : String(l.area || '').toUpperCase();
+            return areas.some(function(a) { var aa = String(a).match(/^([A-Z]{1,2})[0-9]/i); aa = aa ? aa[1].toUpperCase() : String(a).toUpperCase(); return aa === la; });
+          }).length;
+          var fresh24 = leads.filter(function(l) { var t = new Date(l.first_visible).getTime(); return t && (now - t) < 24*3600000; }).length;
+          var fresh48 = leads.filter(function(l) { var t = new Date(l.first_visible).getTime(); return t && (now - t) >= 24*3600000 && (now - t) < 48*3600000; }).length;
+          var short = promised - leads.length;
+          var needsDoor = (c.product === 'moving' || c.product === 'probate');
+          var needsArea = c.product !== 'tenders';
+          var flags = [];
+          if (short > 0) flags.push('SHORT ' + short);
+          if (needsDoor && door < leads.length) flags.push((leads.length - door) + ' doorless');
+          if (fullPc < leads.length) flags.push((leads.length - fullPc) + ' no-PC');
+          if (needsArea && inArea < leads.length) flags.push((leads.length - inArea) + ' out-of-area');
+          if (leads.length === 0) flags.push('NO-LEADS');
+          lines.push(c.email + ' [' + c.product + '] promised ' + promised + ' got ' + leads.length + ' (door ' + door + ', PC ' + fullPc + ', in ' + inArea + ', 24h ' + fresh24 + ', 48h ' + fresh48 + ') ' + (flags.length ? '!! ' + flags.join(' ') : 'OK'));
+          if (flags.length) issues.push(c.email + ': ' + flags.join(' '));
+        }
+        var report = lines.join('\n');
+        console.log('[TEST] Delivery test report:\n' + report);
+        // 4) email the report
+        try {
+          var html = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:24px;max-width:640px;margin:0 auto"><h2 style="font-family:Outfit,sans-serif;color:#0ea5e9">Delivery test report</h2><p style="font-size:12px;color:#94a3b8">' + new Date().toISOString() + ' · ' + testCusts.length + ' test accounts · cleared ' + cleared + '</p><pre style="font-size:11px;color:#e2e8f0;white-space:pre-wrap;line-height:1.6">' + escHtml(report) + '</pre>' + (issues.length ? '<p style="color:#f87171;font-weight:700">' + issues.length + ' issue(s): ' + escHtml(issues.join('; ')) + '</p>' : '<p style="color:#34d399;font-weight:700">All test accounts OK</p>') + '</div>';
+          sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, '9amLeads delivery test (' + testCusts.length + ' accounts) - ' + (issues.length ? issues.length + ' issue(s)' : 'all OK'), html).catch(function() {});
+        } catch(emErr) {}
+        resolve({ ok: true, issues: issues.length, report: report });
+      } catch(e) { console.log('[TEST] report error:', e.message); resolve({ ok: false, error: e.message }); }
+    })();
+  });
+}
+// Every 30 minutes — automated delivery test + report
+cron.schedule('*/30 * * * *', () => {
+  runDeliveryTestReport();
+}, { timezone: 'Europe/London' });
+
+// POST /api/admin/run-test — run the automated delivery test + email the report now.
+app.post('/api/admin/run-test', adminAuth, (req, res) => {
+  runDeliveryTestReport().then(function(r) { res.json({ success: true, result: r }); });
+});
+
 // ===== AUTOMATED BLOG CONTENT GENERATION (OpenAI) =====
 var BLOG_CATEGORIES = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads (Companies House)', planning: 'planning permission leads', tenders: 'public sector tender opportunities', general: 'UK business leads' };
 var INDEXNOW_KEY = 'eff5ce1d06f4a9203c8710870a9bf024';
