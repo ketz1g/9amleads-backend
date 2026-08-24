@@ -1523,6 +1523,11 @@ class StannpProvider extends DirectMailProvider {
       .replace(/[ \t]+\n/g, '\n')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
+    // STRIP the recipient address block + marketing preamble: Stannp prints the
+    // recipient address itself in the envelope window, so the letter must not
+    // repeat it (was showing duplicated + missing the door number) and should
+    // start at the real product/services content.
+    text = cleanLetterBodyForPrint(text);
     var senderObj = (recipient && recipient.sender) || {};
     var renderAt = function(fontSize, lineGap, margin) {
       return new Promise(function(resolve, reject) {
@@ -17548,6 +17553,46 @@ var PRINT_POST_PRICES = {
 // Clean markdown / paste artifacts out of cover-letter text so the printed or
 // downloaded letter matches exactly what the customer wrote. AI copywriters
 // often return markdown (**bold**, * bullets) that should NOT appear in a letter.
+// STRIP stray ADDRESS BLOCKS + the marketing PREAMBLE from a printed letter so the
+// letter always starts at the real content (the product/services list). Stannp
+// prints the RECIPIENT address itself in the envelope window, so the letter must
+// NOT repeat the name/address block (which was showing duplicated + missing the
+// door number). Also drop the "Dear <name>, / GET FRESH... / MORE THAN JUST LEADS"
+// intro so the page isn't overloaded and starts cleanly.
+function cleanLetterBodyForPrint(text) {
+  var s = String(text || '');
+  if (!s) return '';
+  var lines = s.split('\n').map(function(l){ return l.trim(); });
+  var out = [];
+  var afterProductStart = false;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (!line) { if (out.length) out.push(''); continue; }
+    var up = line.toUpperCase();
+    // START POINT: once we hit the product/services list heading, keep everything
+    // from here on (skip the greeting/address/marketing preamble above it).
+    if (!afterProductStart && /^(PLANNING|MOVING|PROBATE|NEW BUSINESS|PUBLIC SECTOR|OUR SERVICES|WHAT WE|HOW WE|WHY CHOOSE|ABOUT US|OUR PRODUCTS|5 TYPES|MORE THAN)/i.test(line)) {
+      afterProductStart = true;
+    }
+    if (!afterProductStart) {
+      // Skip the address/recipient block: name-only line followed by street/town/
+      // postcode lines, and any line that is ONLY a postcode or a UK town.
+      if (/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(line)) continue;
+      if (/^[A-Z][a-z]+$/.test(line) && i + 1 < lines.length && lines[i+1] && !/[A-Za-z]{6,}/.test(lines[i+1]) === false) continue;
+      if (/^(Dear|GET FRESH|Hi |Hello|To the|5 TYPES|MORE THAN|Your|Best|Yours|With|Regards|Sincerely|At |We'd|We would|Every|Instead|9amLeads gives)/i.test(line)) continue;
+      continue; // drop all preamble lines before the product list
+    }
+    // Once past the start point, drop any lingering address-y lines / signatures
+    // that are just a name + postcode.
+    if (/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(line)) continue;
+    if (/^MORE THAN JUST LEADS$/i.test(line)) continue;
+    if (/^9amLeads gives you/i.test(line)) continue;
+    out.push(line);
+  }
+  var joined = out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  return joined;
+}
+
 function cleanMailText(text) {
   if (!text) return '';
   var s = String(text);
