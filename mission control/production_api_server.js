@@ -18069,7 +18069,7 @@ async function sendDmCampaignInner(campaignId, customerId) {
         var senderName = (bizP && bizP.company_name) || (bizP && bizP.contact_name) || '9amLeads';
         var senderAddr = '';
         if (bizP) {
-          senderAddr = (bizP.address_line1 ? bizP.address_line1 : '') + (bizP.city ? ', ' + bizP.city : '') + (bizP.postcode ? ' ' + bizP.postcode : '');
+          senderAddr = [bizP.address_line1, bizP.address_line2, bizP.city, bizP.postcode].filter(Boolean).join(', ');
         }
         rcptWithPages.sender = { name: senderName, address: senderAddr };
         var todayLine = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -18086,7 +18086,7 @@ async function sendDmCampaignInner(campaignId, customerId) {
           '</body></html>';
         rcptWithPages.pages = letterHtml
           .replace(/\[name\]/gi, rcpt.name || '')
-          .replace(/\[address\]/gi, (rcpt.address_line1 || '') + ' ' + (rcpt.city || '') + ' ' + (rcpt.postcode || ''))
+          .replace(/\[address\]/gi, [rcpt.address_line1, rcpt.address_line2, rcpt.city, rcpt.postcode].filter(Boolean).join(', '))
           .replace(/\[company\]/gi, rcpt.company || rcpt.name || '');
         // The clean letter BODY (no sender/date) for the A4 PDF layout.
         rcptWithPages.letter_body = cleanMailText(templateBody || '');
@@ -19032,10 +19032,24 @@ function buildStannpRecipientFromLead(parsed) {
       var last = parts[parts.length - 1].toUpperCase().replace(/\s+/g, '');
       if (last.indexOf(pc) !== -1 || pc.indexOf(last) !== -1) parts.pop();
     }
-    return { line1: parts[0] || '', city: parts.length >= 3 ? parts[parts.length - 2] : (parts[1] || '') };
+    // CITY: the LAST non-postcode part is the town/city (e.g. "Flat 12, Rose Court,
+    // London Road, Reading" -> "Reading"). The second-to-last is usually a street.
+    var city = parts.length ? parts[parts.length - 1] : '';
+    return { line1: parts[0] || '', city: city };
   }
   var spl = splitAddress(parsed.address || parsed.fullAddress || '');
-  var address_line1 = parsed.address_line1 || ((parsed.building_number ? parsed.building_number + ' ' : '') + (parsed.street || '')).trim() || spl.line1;
+  var bldAddr = ((parsed.building_number ? parsed.building_number + ' ' : '') + (parsed.street || '')).trim();
+  var address_line1 = parsed.address_line1 || bldAddr || spl.line1;
+  // BUILDING-NUMBER FIX: the stored address_line1 / street may omit the door number
+  // while the FULL address string carries it ("4 Farmborough Close"). Always prefer
+  // the most COMPLETE line — the one starting with a house/flat number or the full
+  // split line — so Stannp's envelope window prints the correct address (a missing
+  // "4" makes the letter undeliverable). Never pick a bare street over a numbered one.
+  function _hasNum(s) { return /^\s*\d{1,5}[A-Za-z]?(?:[\/\-]\s*\d{1,4})?\b/.test(s) || /^\s*(flat|unit|apt|maisonette|suite)\b/i.test(s); }
+  if (spl.line1 && _hasNum(spl.line1)) {
+    if (!_hasNum(address_line1) || address_line1.trim().toLowerCase() === spl.line1.trim().toLowerCase()) address_line1 = spl.line1;
+  }
+  if (address_line1 && !_hasNum(address_line1) && bldAddr && _hasNum(bldAddr)) address_line1 = bldAddr;
   var postcode = parsed.postcode || '';
   var city = parsed.city || parsed.town || spl.city;
   // TOWN FALLBACK: if the address has no town/area, derive it from the postcode
