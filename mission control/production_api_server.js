@@ -13699,6 +13699,16 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             console.log('[DELIVERY] Final PAF pass: ' + cust.email + ' confirmed ' + custLeads.length + '/' + totalDailyLimit + ' moving leads');
           } catch(pafErr) { console.log('[DELIVERY] Final PAF pass outer error:', pafErr.message); }
         }
+        // BULLETPROOF FINAL HARD-CAP: under NO circumstances may a customer receive
+        // more than their promised daily quota in one email/batch. Every top-up,
+        // fill, quality-review, PAF and guarantee pass above can re-grow custLeads,
+        // so clamp to EXACTLY totalDailyLimit here — before the email is built and
+        // before delivered is marked. "No more no less" is the #1 promise; a 6th
+        // lead must never reach the mailbox or the delivered ledger.
+        if (custLeads.length > totalDailyLimit) {
+          console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver)');
+          custLeads = custLeads.slice(0, totalDailyLimit);
+        }
         // NO SPLIT EMAILS: if this customer already got their daily email, only
         // mark the top-up leads as delivered — don't send a second email.
         // (In test/force mode we DO send the email so we can verify output.)
@@ -13740,6 +13750,16 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
             var crmReq2 = require('https').request(cust.crm_webhook_url, { method:'POST', headers:{ 'Content-Type':'application/json', 'Content-Length':Buffer.byteLength(crmPayload2) } });
             crmReq2.write(crmPayload2); crmReq2.end();
           } catch(ce) { console.log('[DELIVERY] CRM webhook failed:', cust.email); }
+        }
+        // BULLETPROOF FINAL HARD-CAP: under NO circumstances may a customer receive
+        // more than their promised daily quota in one email/batch. Every top-up,
+        // fill, quality-review and guarantee pass above can re-grow custLeads, so
+        // clamp to EXACTLY totalDailyLimit immediately before marking delivered +
+        // emailing. "No more no less" is the #1 promise — a 6th lead must never
+        // reach the mailbox or the delivered ledger.
+        if (custLeads.length > totalDailyLimit) {
+          console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver)');
+          custLeads = custLeads.slice(0, totalDailyLimit);
         }
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); }
         saveDb();
