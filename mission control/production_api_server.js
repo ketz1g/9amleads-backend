@@ -20709,7 +20709,21 @@ cron.schedule('*/15 * * * *', () => {
   } catch(ce) { console.log('[TEST-CRON] scheduling error:', ce.message); }
 }, { timezone: 'Europe/London' });
 
-// GET /api/admin/test-report — view the latest 30-min delivery-test reports.
+// GET /api/admin/customer-templates?email=X — dump a customer's letter templates so
+// the exact ai_generated_text that flows into the Stannp letter can be inspected.
+app.get('/api/admin/customer-templates', adminAuth, (req, res) => {
+  try {
+    var em = String(req.query.email || '').toLowerCase();
+    var dbT = getDb();
+    var cust = (dbT.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === em; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var tpls = (dbT.direct_mail_templates || []).filter(function(t) { return t.customer_id === cust.id; }).map(function(t) {
+      return { id: t.id, name: t.name, template_type: t.template_type, ai_generated_text: t.ai_generated_text || '', created_at: t.created_at };
+    });
+    var settings = (dbT.direct_mail_automation_settings || []).find(function(s) { return s.customer_id === cust.id; });
+    res.json({ success: true, email: em, customer_id: cust.id, default_template_id: settings ? settings.default_template_id : '', templates: tpls });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 app.get('/api/admin/test-report', adminAuth, (req, res) => {
   try {
     var dbT = getDb();
