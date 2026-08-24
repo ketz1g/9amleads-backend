@@ -20300,13 +20300,20 @@ function runDeliveryTestReport() {
           var fresh48 = leads.filter(function(l) { var t = new Date(l.first_visible).getTime(); return t && (now - t) >= 24*3600000 && (now - t) < 48*3600000; }).length;
           var needsDoor = (c.product === 'moving' || c.product === 'probate');
           var needsArea = c.product !== 'tenders';
+          // REAL-DATA LINK: only moving/probate leads must carry a real source URL
+          // (Rightmove/OTM/Gazette notice). New-business (Companies House) and
+          // tenders leads legitimately have no property link — they're companies/
+          // opportunities, so a missing link is NOT a failure for those products.
+          var needsLink = (c.product === 'moving' || c.product === 'probate');
+          // Full postcode matters for mailable products; tenders are opportunities.
+          var needsPC = (c.product === 'moving' || c.product === 'probate' || c.product === 'planning');
           var flags = [];
           // EXACT-COUNT (no more no less): this run must deliver EXACTLY promised.
           if (leads.length < promised) flags.push('SHORT ' + leads.length + '/' + promised);
           else if (leads.length > promised) flags.push('OVER ' + leads.length + '/' + promised);
           if (needsDoor && door < leads.length) flags.push((leads.length - door) + ' doorless');
-          if (fullPc < leads.length) flags.push((leads.length - fullPc) + ' no-PC');
-          if (realLink < leads.length) flags.push((leads.length - realLink) + ' no-link');
+          if (needsPC && fullPc < leads.length) flags.push((leads.length - fullPc) + ' no-PC');
+          if (needsLink && realLink < leads.length) flags.push((leads.length - realLink) + ' no-link');
           if (needsArea && inArea < leads.length) flags.push((leads.length - inArea) + ' out-of-area');
           if (leads.length === 0) flags.push('NO-LEADS');
           lines.push(c.email + ' [' + c.product + '] delivered ' + leads.length + '/' + promised + ' (door ' + door + ', PC ' + fullPc + ', link ' + realLink + ', in ' + inArea + ', 24h ' + fresh24 + ', 48h ' + fresh48 + ') ' + (flags.length ? '!! ' + flags.join(' ') : 'OK'));
@@ -21895,6 +21902,17 @@ function syncCustomers(product) {
             // fall back to the paid Apify Gazette actor if the free scrape returns 0
             // (the free path can be blocked from some datacenter IPs).
             leads = await probateScraper.collectProbateLeads({ maxItems: 100, useApifyFirst: false });
+            // PRUNE NON-DECEASED NOTICES that slipped through (company/solicitor
+            // notices from the Apify actor/feed are NOT probate leads — a probate
+            // lead is a deceased PERSON). The scraper filters these too, but this
+            // belt-and-braces guard also cleans any firm leads already in the pool.
+            try {
+              var _firmRe = /\b(LTD|LIMITED|LLP|PLC|SERVICES|SOLICITORS|SOLICITOR|COMPANY|GROUP|ASSOCIATES|PARTNERSHIP|STAIRLIFTS|FLOORING|SUPPLIES|ORGANICS|LEGAL|LAW)\b/i;
+              leads = (leads || []).filter(function(pl) {
+                var pn = String(pl.name || pl.deceasedName || '');
+                return !pn || !_firmRe.test(pn);
+              });
+            } catch(pfe) { console.log('[SCRAPER] Probate prune error:', pfe.message); }
             console.log('[SCRAPER] Probate raw scrape: ' + (leads ? leads.length : 0) + ' leads');
             try { lastScrape.probate_raw = (leads ? leads.length : 0); lastScrape.probate_at = new Date().toISOString(); lastScrape.probate_apify = (leads && leads[0] && leads[0].source) || ''; fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape, null, 2)); } catch(e2) {}
             if (leads && leads.length > 0) {
@@ -21947,6 +21965,19 @@ function syncCustomers(product) {
           var k = l.id || l.title || l.address || '';
           if (k && !seenIds.has(k) && isPoolLeadFresh(l)) { seenIds.add(k); merged.push(l); }
         });
+        // PROBATE FIRM PRUNE: never let company/solicitor notices sit in the probate
+        // pool (they are not deceased-person leads and can never be a valid probate
+        // delivery). Applied to the merged pool so already-stored firm leads are
+        // removed on the next scrape rather than lingering for 48h.
+        if (product === 'probate') {
+          try {
+            var _firmReP = /\b(LTD|LIMITED|LLP|PLC|SERVICES|SOLICITORS|SOLICITOR|COMPANY|GROUP|ASSOCIATES|PARTNERSHIP|STAIRLIFTS|FLOORING|SUPPLIES|ORGANICS|LEGAL|LAW)\b/i;
+            merged = merged.filter(function(pl) {
+              var pn = String(pl.name || pl.deceasedName || '');
+              return !pn || !_firmReP.test(pn);
+            });
+          } catch(fpe) { console.log('[SCRAPER] Probate pool firm-prune error:', fpe.message); }
+        }
         leads = merged.filter(isPoolLeadFresh).slice(0, 5000);
         // CENTRAL PROPERTY STORE: record each property id once and preserve its
         // first_seen_at across runs (never reset when a property reappears). Attach

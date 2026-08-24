@@ -408,7 +408,7 @@ function resolveProbatePostcode(addressText) {
 }
 
 async function enrichGazetteLeads(leads, limit) {
-  const enriched = [];
+  let enriched = [];
   // Enrich in small batches with delays to avoid Gazette rate-limiting (the
   // search page already includes most deceased addresses + postcodes, so
   // enrichment is a bonus that fills gaps rather than a hard requirement).
@@ -453,12 +453,39 @@ async function enrichGazetteLeads(leads, limit) {
       if (lead.postcode && lead.fullAddress && lead.fullAddress.toLowerCase().indexOf(lead.postcode.toLowerCase()) === -1) {
         lead.fullAddress = lead.fullAddress + ', ' + lead.postcode;
       }
+      // REAL-DATA LINK: every Gazette lead must carry its notice URL (the founder
+      // requires a real source link on every delivered lead). Map noticeUrl -> url.
+      if (!lead.url && lead.noticeUrl) lead.url = lead.noticeUrl;
+      if (!lead.url && noticeId && /^\d+$/.test(noticeId)) lead.url = 'https://www.thegazette.co.uk/notice/' + noticeId;
       enriched.push(lead);
       // small delay between detail fetches (politeness + avoids throttling)
       if (i % 3 === 2) await new Promise(r => setTimeout(r, 300));
     }
     // Append any leads beyond the enrich cap unchanged (address already captured).
-    for (let j = max; j < leads.length; j++) enriched.push(leads[j]);
+    for (let j = max; j < leads.length; j++) {
+      var beyond = leads[j];
+      if (!beyond.url && beyond.noticeUrl) beyond.url = beyond.noticeUrl;
+      if (!beyond.url) {
+        var bid = String(beyond.id || '').replace('GAZ_', '');
+        if (/^\d+$/.test(bid)) beyond.url = 'https://www.thegazette.co.uk/notice/' + bid;
+      }
+      enriched.push(beyond);
+    }
+    // FILTER NON-DECEASED NOTICES: the Apify Gazette actor + HTML feed can include
+    // company / solicitor notices (e.g. "JMW Solicitors", "ORGANICS XL LTD") that
+    // are NOT deceased-estate probate leads. A probate lead must have a personal
+    // deceased name (title + first + last name) — a firm name is not a person.
+    // Drop anything whose name contains LTD/LIMITED/SOLICITORS/LLP/SERVICES etc.
+    var firmRe = /\b(LTD|LIMITED|LLP|PLC|SERVICES|SOLICITORS|SOLICITOR|COMPANY|GROUP|ASSOCIATES|PARTNERSHIP|STAIRLIFTS|FLOORING|SUPPLIES|ORGANICS|LEGAL|LAW)\b/i;
+    enriched = enriched.filter(function(l) {
+      var n = String(l.name || l.deceasedName || '');
+      if (!n) return true; // keep unnamed (rare) — enrichment/PAF may still fill it
+      if (firmRe.test(n)) {
+        console.log('[PROBATE] filtered non-deceased notice: ' + n);
+        return false;
+      }
+      return true;
+    });
     console.log('    Enriched ' + enriched.length + ' Gazette notices with addresses + postcodes');
     return enriched;
   })();
