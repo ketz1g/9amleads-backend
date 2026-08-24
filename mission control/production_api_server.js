@@ -7284,7 +7284,14 @@ async function runProbatePafPostScrape() {
     // the cleaned postcode so the lead is resolvable (postcode lookup returns the address).
     if (/thegazette\.co\.uk|^https?:\/\//.test(addr) && pc) { addr = pc; l.address = pc; l.fullAddress = pc; l.deceasedAddress = pc; l.postcode = pc; }
     if (hasUsablePremiseAddress(addr, pc)) { l.paf_done = true; return; }
-    if (!hasStreetName(addr) && !/[A-Za-z]{3,}/.test(addr.replace(/[0-9]/g,''))) return; // no street/town → not resolvable
+    // FUNERAL-NOTICE JUNK GUARD: the funeral-notices source builds fake leads where
+    // the "address" is just the deceased's NAME + county (e.g. "Raymond 'John' AINGER,
+    // Bristol") with a synthetic postcode ("BS1 1AA"). These have no street, so PAF
+    // can never add a door number — and attempting them burns paid Postcoder credits.
+    // Require a real street name (or a numbered premise) instead of the old
+    // "3+ consecutive letters" fallback, which matched person names and let these
+    // junk leads into the paid lookup queue.
+    if (!hasStreetName(addr) && !/^\s*\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s/.test(addr)) { l.paf_done = true; l.paf_failed = true; return; }
     var d = pickFreshDate(l) || '';
     if (d && d < cut48) return;
     need.push(e);

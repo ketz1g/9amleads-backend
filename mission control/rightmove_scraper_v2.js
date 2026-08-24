@@ -9,60 +9,64 @@ function _usageInc(field, n) {
   try { require('./scraper_usage').inc(field, n); } catch(e) {}
 }
 
-// Full-UK coverage: Rightmove's 12 official regions cover the ENTIRE UK
-// (England's 9 regions + Scotland, Wales, Northern Ireland). These are the
-// reliable REGION^ identifiers that resolve correctly (verified HTTP 200).
-// The daily scrape hits every region so customers anywhere in the UK get
-// fresh leads in their postcode area every morning.
+// Full-UK coverage: each entry is a RIGHTMOVE CITY REGION identifier that
+// resolves to a real city's property search (verified HTTP 200, 2026-08-24).
+// NOTE: the old "UK official region" ids (87486-87497) were WRONG — they all
+// resolve to small London/Dundee neighbourhoods (87492=Battersea, 87493=Belgravia,
+// 87488=Ethiebeaton Dundee, etc.), so any customer area relying on them got ZERO
+// in-area supply. These city ids come from Rightmove's own city pages
+// (/property-for-sale/<City>.html) and return genuinely local listings.
 const LOCATIONS = [
   // Baseline page depth. Deeper scraping is done via a dedicated background worker
   // (see scrape scheduling) so the daily scrape completes within the request timeout.
-  { id: 'REGION%5E87490', name: 'Greater London', pages: 5 },
-  { id: 'REGION%5E87486', name: 'North East England', pages: 3 },
-  { id: 'REGION%5E87487', name: 'North West England', pages: 4 },
-  { id: 'REGION%5E87488', name: 'Yorkshire and The Humber', pages: 3 },
-  { id: 'REGION%5E87489', name: 'East Midlands', pages: 3 },
-  { id: 'REGION%5E87491', name: 'West Midlands', pages: 4 },
-  { id: 'REGION%5E87495', name: 'East of England', pages: 5 },
-  { id: 'REGION%5E87496', name: 'South East England', pages: 5 },
-  { id: 'REGION%5E87497', name: 'South West England', pages: 4 },
-  { id: 'REGION%5E87492', name: 'Scotland', pages: 5 },
-  { id: 'REGION%5E87493', name: 'Wales', pages: 3 },
-  { id: 'REGION%5E87494', name: 'Northern Ireland', pages: 2 },
+  { id: 'REGION%5E87490', name: 'London', pages: 5 },
+  { id: 'REGION%5E904', name: 'Manchester', pages: 4 },
+  { id: 'REGION%5E813', name: 'Liverpool', pages: 4 },
+  { id: 'REGION%5E162', name: 'Birmingham', pages: 4 },
+  { id: 'REGION%5E787', name: 'Leeds', pages: 3 },
+  { id: 'REGION%5E1195', name: 'Sheffield', pages: 3 },
+  { id: 'REGION%5E550', name: 'Glasgow', pages: 5 },
+  { id: 'REGION%5E475', name: 'Edinburgh', pages: 5 },
+  { id: 'REGION%5E984', name: 'Newcastle upon Tyne', pages: 3 },
+  { id: 'REGION%5E219', name: 'Bristol', pages: 4 },
+  { id: 'REGION%5E281', name: 'Cardiff', pages: 3 },
+  { id: 'REGION%5E133', name: 'Belfast', pages: 2 },
+  { id: 'REGION%5E1019', name: 'Nottingham', pages: 3 },
+  { id: 'REGION%5E1231', name: 'Southampton', pages: 4 },
 ];
 
-// Maps a UK postcode AREA code (e.g. "B", "HA", "NW") to the official Rightmove
-// REGION identifier that covers it. Every UK postcode area is mapped so customers
-// anywhere in the country get their chosen areas scraped. (Full-UK regions are
-// 87486-87497; London is 87490.)
+// Maps a UK postcode AREA code (e.g. "B", "HA", "NW") to the RIGHTMOVE CITY
+// REGION identifier that actually returns listings in that area. Every UK
+// postcode area is mapped so customers anywhere in the country get their chosen
+// areas scraped. Ids verified against Rightmove city pages 2026-08-24.
 const AREA_TO_REGIONS = {
-  // LONDON + HOME COUNTIES -> Greater London / South East
+  // LONDON + HOME COUNTIES -> London / nearest city
   'E': [87490], 'EC': [87490], 'N': [87490], 'NW': [87490], 'SE': [87490], 'SW': [87490], 'W': [87490], 'WC': [87490],
-  'EN': [87490], 'HA': [87490], 'BR': [87490], 'CR': [87490], 'DA': [87490], 'KT': [87496], 'RM': [87490],
-  'SM': [87490], 'TW': [87490], 'UB': [87490], 'IG': [87490], 'WD': [87490], 'SL': [87496], 'GU': [87496], 'RG': [87496],
-  'AL': [87495], 'SG': [87495], 'CM': [87495], 'SS': [87495], 'CO': [87495], 'HP': [87496], 'LU': [87495], 'MK': [87496],
-  'TN': [87496], 'ME': [87496], 'CT': [87496], 'BN': [87496], 'RH': [87496], 'SO': [87496], 'PO': [87496], 'SP': [87496], 'OX': [87496],
+  'EN': [93950], 'HA': [599], 'BR': [225], 'CR': [391], 'DA': [407], 'KT': [746], 'RM': [1138],
+  'SM': [87490], 'TW': [87490], 'UB': [87490], 'IG': [674], 'WD': [1408], 'SL': [1217], 'GU': [580], 'RG': [1114],
+  'AL': [1244], 'SG': [1263], 'CM': [307], 'SS': [1232], 'CO': [347], 'HP': [637], 'LU': [876], 'MK': [940],
+  'TN': [1366], 'ME': [897], 'CT': [279], 'BN': [93554], 'RH': [580], 'SO': [1231], 'PO': [1089], 'SP': [1165], 'OX': [1036],
   // SOUTH WEST
-  'BA': [87497], 'BS': [87497], 'GL': [87497], 'SN': [87497], 'TA': [87497], 'DT': [87497], 'BH': [87497],
-  'EX': [87497], 'PL': [87497], 'TQ': [87497], 'TR': [87497],
+  'BA': [116], 'BS': [219], 'GL': [556], 'SN': [1306], 'TA': [1317], 'DT': [194], 'BH': [194],
+  'EX': [494], 'PL': [1073], 'TQ': [1350], 'TR': [1365],
   // WEST MIDLANDS
-  'B': [87491], 'CV': [87491], 'DY': [87491], 'HR': [87491], 'ST': [87491], 'SY': [87491], 'TF': [87491], 'WR': [87491], 'WS': [87491], 'WV': [87491],
+  'B': [162], 'CV': [368], 'DY': [443], 'HR': [162], 'ST': [1271], 'SY': [162], 'TF': [1476], 'WR': [162], 'WS': [1392], 'WV': [1476],
   // EAST MIDLANDS
-  'DE': [87489], 'DN': [87489], 'LE': [87489], 'LN': [87489], 'NG': [87489], 'NN': [87489], 'PE': [87489],
+  'DE': [418], 'DN': [430], 'LE': [789], 'LN': [804], 'NG': [1019], 'NN': [1014], 'PE': [1061],
   // EAST OF ENGLAND
-  'CB': [87495], 'IP': [87495], 'NR': [87495], 'PE': [87495],
+  'CB': [274], 'IP': [689], 'NR': [1018], 'PE': [1061],
   // NORTH WEST
-  'M': [87487], 'L': [87487], 'BL': [87487], 'CH': [87487], 'CW': [87487], 'FY': [87487], 'LA': [87487], 'OL': [87487], 'PR': [87487], 'SK': [87487], 'WA': [87487], 'WN': [87487], 'BB': [87487],
+  'M': [904], 'L': [813], 'BL': [182], 'CH': [313], 'CW': [313], 'FY': [168], 'LA': [1097], 'OL': [1025], 'PR': [1097], 'SK': [1268], 'WA': [1403], 'WN': [1452], 'BB': [167],
   // YORKSHIRE & HUMBER
-  'HD': [87488], 'HG': [87488], 'HU': [87488], 'HX': [87488], 'LS': [87488], 'S': [87488], 'WF': [87488], 'YO': [87488], 'BD': [87488],
+  'HD': [664], 'HG': [598], 'HU': [665], 'HX': [664], 'LS': [787], 'S': [1195], 'WF': [1386], 'YO': [1498], 'BD': [198],
   // NORTH EAST
-  'DH': [87486], 'DL': [87486], 'NE': [87486], 'SR': [87486], 'TS': [87486],
+  'DH': [460], 'DL': [406], 'NE': [984], 'SR': [1295], 'TS': [933],
   // SCOTLAND
-  'AB': [87492], 'DD': [87492], 'DG': [87492], 'EH': [87492], 'FK': [87492], 'G': [87492], 'HS': [87492], 'IV': [87492], 'KA': [87492], 'KW': [87492], 'KY': [87492], 'ML': [87492], 'PA': [87492], 'PH': [87492], 'TD': [87492], 'ZE': [87492],
+  'AB': [4], 'DD': [452], 'DG': [448], 'EH': [475], 'FK': [501], 'G': [550], 'HS': [687], 'IV': [687], 'KA': [740], 'KW': [687], 'KY': [754], 'ML': [958], 'PA': [1040], 'PH': [1060], 'TD': [540], 'ZE': [687],
   // WALES
-  'CF': [87493], 'LD': [87493], 'LL': [87493], 'NP': [87493], 'SA': [87493], 'SY': [87493],
+  'CF': [281], 'LD': [824], 'LL': [824], 'NP': [991], 'SA': [1305], 'SY': [162],
   // NORTHERN IRELAND
-  'BT': [87494],
+  'BT': [133],
 };
 
 function fetchRightmovePage(locationId, locationName, pageIndex) {

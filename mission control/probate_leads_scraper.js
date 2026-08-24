@@ -205,59 +205,157 @@ function fetchGazetteHTML(maxItems, pageNum) {
 
 // Fetch a single Gazette notice detail page and extract the deceased's
 // structured address (street, locality, postcode, region). Free, reliable.
+// Strategy: try the fast linked-data JSON endpoint first (returns decomposed
+// streetAddress/locality/postalCode). If it yields no street (some notices only
+// expose the address as a single vcard:adr string, and the JSON can be
+// rate-limited/empty), FALL BACK to the notice's HTML detail page which always
+// contains an "Address of Deceased" / "Person Address Details" dd — parse that
+// full string and split it into street + locality + postcode. This guarantees
+// every probate lead gets a real street so the PAF pass can add a door number.
 function fetchGazetteDetail(noticeId) {
   return new Promise((resolve) => {
-    // Use the Gazette's structured linked-data JSON endpoint (much faster and more
-    // reliable than parsing the HTML detail page). Returns familyName, firstName,
-    // full address (street/locality/postcode/region), claim deadline, solicitor etc.
+    // Fast path: linked-data JSON (decomposed streetAddress/locality/postalCode).
     const req = https.request({ hostname: 'www.thegazette.co.uk', path: '/notice/' + noticeId + '/data.json?view=linked-data&_metadata=all', method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36', 'Accept-Language': 'en-GB,en;q=0.9' }, timeout: 15000 }, (res) => {
       let body = '';
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
-        if (res.statusCode !== 200) { resolve(null); return; }
-        try {
-          const j = JSON.parse(body);
-          const pt = (j.result && j.result.primaryTopic) || {};
-          const isAbout = pt.isAbout || {};
-          const estateOf = isAbout.hasEstateOf || {};
-          const addr = estateOf.hasAddress || {};
-          const streetAddress = addr.streetAddress || '';
-          const locality = addr.locality || '';
-          const region = addr.region || '';
-          // Apify sometimes captures the Gazette postcode LINK url (e.g.
-          // "https://www.thegazette.co.uk/id/postcode/M231LF") instead of the text.
-          // Extract the real code and normalise to a valid UK postcode.
-          let rawPc = String(addr.postalCode || addr.postcode || '');
-          const pcUrlMatch = rawPc.match(/\/postcode\/([A-Z0-9]+)/i);
-          if (pcUrlMatch) rawPc = pcUrlMatch[1];
-          const cleanPc = rawPc.toUpperCase().replace(/[^A-Z0-9]/g, '');
-          const postcode = /^[A-Z]{1,2}[0-9][A-Z0-9]?[0-9][A-Z]{2}$/.test(cleanPc) ? (cleanPc.slice(0, cleanPc.length - 3) + ' ' + cleanPc.slice(-3)) : rawPc;
-          const fullName = [estateOf.firstName, estateOf.familyName].filter(Boolean).join(' ');
-          const deceasedName = [estateOf.title, estateOf.firstName, estateOf.familyName].filter(Boolean).join(' ').trim() || fullName;
-          const fullAddress = [streetAddress, locality, region, postcode].filter(Boolean).join(', ');
-          const claimDeadline = isAbout.hasClaimDeadline || '';
-          // Solicitor / executor extraction from the notice text fields if present
-          let solicitor = '';
-          let executorName = '';
-          const tt = (pt.tt || '').toString() || '';
-          const noticeText = typeof tt === 'string' ? tt.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-          const solMatch = noticeText.match(/(?:solicitor[s]?[:\s]+|solicitors?\s+(?:for|of)\s+)([A-Z][A-Za-z'& ]{3,60})/);
-          if (solMatch) solicitor = solMatch[1].trim();
-          const execMatch = noticeText.match(/(?:executor[s]?|personal representatives?|administrator[s]?)[:\s]+([A-Z][A-Za-z'& .]{3,60})/);
-          if (execMatch) executorName = execMatch[1].trim();
-          resolve({
-            deceasedAddress: fullAddress,
-            locality: locality || '',
-            postcode: postcode || '',
-            region: region || '',
-            deceasedName: deceasedName || '',
-            dateOfDeath: estateOf.dateOfDeath || '',
-            solicitor: solicitor,
-            executorName: executorName,
-            claimDeadline: claimDeadline,
-            noticeText: noticeText.substring(0, 400)
-          });
-        } catch(e) { resolve(null); }
+        let detail = null;
+        if (res.statusCode === 200) {
+          try { detail = parseGazetteLinkedData(body); } catch(e) { detail = null; }
+        }
+        if (detail && detail.street) {
+          resolve(detail); return;
+        }
+        // Slow fallback: fetch the notice HTML page and parse the deceased
+        // address block. More reliable than the JSON (which omits the street on
+        // many notices and can be rate-limited).
+        fetchGazetteDetailHTML(noticeId).then(function(htmlDetail) {
+          if (htmlDetail) { resolve(htmlDetail); return; }
+          resolve(detail); // whatever the JSON gave (may be null)
+        });
+      });
+    });
+    req.on('error', () => {
+      // JSON endpoint unreachable — go straight to the HTML fallback.
+      fetchGazetteDetailHTML(noticeId).then(function(htmlDetail) { resolve(htmlDetail); });
+    });
+    req.setTimeout(15000, () => { req.destroy(); fetchGazetteDetailHTML(noticeId).then(function(htmlDetail) { resolve(htmlDetail); }); });
+    req.end();
+  });
+}
+
+// Parse the Gazette's linked-data JSON into a detail object (street/locality/
+// postcode/name/dateOfDeath). Handles BOTH the decomposed address shape
+// (streetAddress + locality + region + postalCode) and the single-string shape
+// (vcard:adr / adr / fullAddress) so no notice is left street-less.
+function parseGazetteLinkedData(body) {
+  const j = JSON.parse(body);
+  const pt = (j.result && j.result.primaryTopic) || {};
+  const isAbout = pt.isAbout || {};
+  const estateOf = isAbout.hasEstateOf || {};
+  const addr = estateOf.hasAddress || {};
+  const streetAddress = String(addr.streetAddress || addr.street || addr.addressLine1 || '').trim();
+  const locality = String(addr.locality || addr.town || addr.addressLocality || '').trim();
+  const region = String(addr.region || addr.county || addr.addressRegion || '').trim();
+  // Postcode may be stored as a plain code OR as a Gazette URL link
+  // ("https://www.thegazette.co.uk/id/postcode/M231LF"). Normalise either way.
+  let rawPc = String(addr.postalCode || addr.postcode || addr['vcard:postal-code'] || '');
+  const pcUrlMatch = rawPc.match(/\/postcode\/([A-Z0-9]+)/i);
+  if (pcUrlMatch) rawPc = pcUrlMatch[1];
+  const cleanPc = rawPc.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const postcode = /^[A-Z]{1,2}[0-9][A-Z0-9]?[0-9][A-Z]{2}$/.test(cleanPc) ? (cleanPc.slice(0, cleanPc.length - 3) + ' ' + cleanPc.slice(-3)) : rawPc;
+  // Single-string address fallbacks (some notices store the whole address as one
+  // vcard:adr value instead of decomposed fields).
+  let fullString = String(addr.adr || addr['vcard:adr'] || addr.fullAddress || addr.value || '').trim();
+  if (fullString && fullString.indexOf('/id/') === -1) {
+    if (!streetAddress || !postcode) {
+      const pcIn = (fullString.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0];
+      if (pcIn && !postcode) { const pcRaw = pcIn.toUpperCase().replace(/[^A-Z0-9]/g, ''); fullString = fullString.replace(pcIn, pcRaw.slice(0, pcRaw.length - 3) + ' ' + pcRaw.slice(-3)); }
+    }
+  }
+  const fullName = [estateOf.firstName, estateOf.familyName].filter(Boolean).join(' ');
+  const deceasedName = [estateOf.title, estateOf.firstName, estateOf.familyName].filter(Boolean).join(' ').trim() || fullName;
+  const claimDeadline = isAbout.hasClaimDeadline || '';
+  let solicitor = '';
+  let executorName = '';
+  const tt = (pt.tt || '').toString() || '';
+  const noticeText = typeof tt === 'string' ? tt.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+  const solMatch = noticeText.match(/(?:solicitor[s]?[:\s]+|solicitors?\s+(?:for|of)\s+)([A-Z][A-Za-z'& ]{3,60})/);
+  if (solMatch) solicitor = solMatch[1].trim();
+  const execMatch = noticeText.match(/(?:executor[s]?|personal representatives?|administrator[s]?)[:\s]+([A-Z][A-Za-z'& .]{3,60})/);
+  if (execMatch) executorName = execMatch[1].trim();
+  // If we ended up with a street (decomposed or single-string), use it. When the
+  // JSON gave ONLY a postcode/name and the street is missing, prefer the HTML
+  // fallback (caller checks `street`).
+  const street = streetAddress || '';
+  const addrStr = fullString || [streetAddress, locality, region, postcode].filter(Boolean).join(', ');
+  return {
+    deceasedAddress: addrStr,
+    fullAddress: addrStr,
+    street: street,
+    locality: locality || '',
+    postcode: postcode || '',
+    region: region || '',
+    deceasedName: deceasedName || '',
+    dateOfDeath: estateOf.dateOfDeath || '',
+    solicitor: solicitor,
+    executorName: executorName,
+    claimDeadline: claimDeadline,
+    noticeText: noticeText.substring(0, 400)
+  };
+}
+
+// Fetch the notice's HTML detail page and extract the deceased address block.
+// The Gazette renders "Address of Deceased" / "Person Address Details" as a dd
+// on every deceased-estates notice (verified 2026-08-24), so this is the most
+// reliable street source when the linked-data JSON omits it.
+function fetchGazetteDetailHTML(noticeId) {
+  return new Promise((resolve) => {
+    const req = https.request({ hostname: 'www.thegazette.co.uk', path: '/notice/' + noticeId + '/data.xml', method: 'GET', headers: { 'Accept': 'text/html,application/xhtml+xml', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36', 'Accept-Language': 'en-GB,en;q=0.9' }, timeout: 15000 }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200 || !body || body.length < 500) { resolve(null); return; }
+        // 1) "Address of Deceased</dt><dd>FULL ADDRESS" (summary block)
+        let m = body.match(/Address of Deceased<\/dt>\s*<dd[^>]*>([^<]+)</);
+        let fullAddress = m ? m[1].trim() : '';
+        // 2) "Person Address Details</dt><dd>FULL ADDRESS"
+        if (!fullAddress) {
+          m = body.match(/Person Address Details<\/dt>\s*<dd[^>]*>([^<]+)</);
+          if (m) fullAddress = m[1].trim();
+        }
+        // 3) vcard:adr attribute value
+        if (!fullAddress) {
+          m = body.match(/vcard:adr[^>]*>([^<]+)</);
+          if (m) fullAddress = m[1].trim();
+        }
+        if (!fullAddress || fullAddress.indexOf('/id/') !== -1) { resolve(null); return; }
+        // Extract a real UK postcode from the address string.
+        const pcRaw = (fullAddress.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0] || '';
+        const cleanPc = pcRaw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const postcode = cleanPc && /^[A-Z]{1,2}[0-9][A-Z0-9]?[0-9][A-Z]{2}$/.test(cleanPc) ? (cleanPc.slice(0, cleanPc.length - 3) + ' ' + cleanPc.slice(-3)) : '';
+        // Deceased name from the RDFa foaf:name span.
+        let deceasedName = '';
+        m = body.match(/property="foaf:name">([^<]+)</) || body.match(/content="([^"]+)"[^>]*property="foaf:name"/);
+        if (m) deceasedName = m[1].trim();
+        // Date of death from the RDFa dateOfDeath span.
+        let dateOfDeath = '';
+        m = body.match(/property="personal-legal:dateOfDeath"[^>]*content="([0-9-]+)"/);
+        if (m) dateOfDeath = m[1];
+        resolve({
+          deceasedAddress: fullAddress,
+          fullAddress: fullAddress,
+          street: fullAddress.split(',')[0].trim() || fullAddress,
+          locality: '',
+          postcode: postcode,
+          region: '',
+          deceasedName: deceasedName,
+          dateOfDeath: dateOfDeath,
+          solicitor: '',
+          executorName: '',
+          claimDeadline: '',
+          noticeText: ''
+        });
       });
     });
     req.on('error', () => resolve(null));
@@ -324,6 +422,8 @@ async function enrichGazetteLeads(leads, limit) {
         const detail = await fetchGazetteDetail(noticeId);
         if (detail) {
           if (detail.deceasedAddress) lead.deceasedAddress = detail.deceasedAddress;
+          if (detail.fullAddress) lead.fullAddress = detail.fullAddress;
+          if (detail.street) lead.street = detail.street;
           if (detail.postcode) lead.postcode = detail.postcode;
           if (detail.deceasedName) lead.name = detail.deceasedName;
           if (detail.dateOfDeath) lead.dateOfDeath = detail.dateOfDeath;
@@ -332,7 +432,13 @@ async function enrichGazetteLeads(leads, limit) {
           if (detail.noticeText) lead.description = detail.noticeText;
           lead.locality = detail.locality || '';
           lead.region = detail.region || '';
-          lead.fullAddress = (detail.deceasedAddress + ', ' + detail.postcode).trim();
+          // Clear any postcode-URL corruption now (the PAF pass also cleans it, but
+          // better to fix it at the source so the pool never holds a URL address).
+          if (String(lead.deceasedAddress || '').indexOf('thegazette.co.uk') !== -1 && detail.postcode) {
+            lead.deceasedAddress = detail.postcode;
+            lead.address = detail.postcode;
+            lead.fullAddress = detail.postcode;
+          }
         }
       } catch(e) { /* keep raw lead - search page address is enough */ }
       // Ensure a full postcode exists (needed for area matching + display).

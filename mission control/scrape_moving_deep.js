@@ -57,6 +57,32 @@ const AREA_OUTCODE = {
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) { return null; }
 }
+// Force a promise to resolve within ms (prevents a hung Apify call from blocking
+// the whole area loop — the worker was dying after the first area because a
+// subsequent run-sync never resolved).
+function withTimeout(promise, ms, label) {
+  return new Promise(function(resolve) {
+    var done = false;
+    var t = setTimeout(function() {
+      if (done) return;
+      done = true;
+      console.log('[DEEP-SCRAPE] TIMEOUT ' + (label || '') + ' after ' + ms + 'ms — continuing');
+      resolve(null);
+    }, ms);
+    Promise.resolve(promise).then(function(v) {
+      if (done) return;
+      done = true;
+      clearTimeout(t);
+      resolve(v);
+    }).catch(function(e) {
+      if (done) return;
+      done = true;
+      clearTimeout(t);
+      console.log('[DEEP-SCRAPE] ' + (label || '') + ' error: ' + e.message);
+      resolve(null);
+    });
+  });
+}
 // Capture ALL console.log into the log file (incl. the per-area scrape logs).
 var __logLines = [];
 var __origLog = console.log;
@@ -142,33 +168,43 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
     var KNOWN_LOCATION = {
       L: 'REGION%5E813', M: 'REGION%5E904', WA: 'REGION%5E1403', CH: 'REGION%5E313', WN: 'REGION%5E1452',
       IG: 'REGION%5E674', RM: 'REGION%5E1138', DA: 'REGION%5E407', CM: 'REGION%5E307',
-      AL: 'REGION%5E1244', KT: 'REGION%5E746', CR: 'REGION%5E391', PR: 'REGION%5E1097'
+      AL: 'REGION%5E1244', KT: 'REGION%5E746', CR: 'REGION%5E391', PR: 'REGION%5E1097',
+      // SCOTLAND (verified city region ids 2026-08-24 — the old 87492 was Battersea!)
+      G: 'REGION%5E550', EH: 'REGION%5E475', DD: 'REGION%5E452', KY: 'REGION%5E754', FK: 'REGION%5E501',
+      AB: 'REGION%5E4', DG: 'REGION%5E448', IV: 'REGION%5E687', KA: 'REGION%5E740', ML: 'REGION%5E958',
+      PA: 'REGION%5E1040', PH: 'REGION%5E1060', TD: 'REGION%5E540',
+      // YORKSHIRE & HUMBER (verified 2026-08-24 — old 87488 was a Dundee neighbourhood)
+      LS: 'REGION%5E787', S: 'REGION%5E1195', DN: 'REGION%5E430', HU: 'REGION%5E665', WF: 'REGION%5E1386',
+      BD: 'REGION%5E198', HD: 'REGION%5E664', HG: 'REGION%5E598', HX: 'REGION%5E664', YO: 'REGION%5E1498',
+      // WEST MIDLANDS (verified 2026-08-24 — old 87491 was Acton Green, West London)
+      B: 'REGION%5E162', CV: 'REGION%5E368', DY: 'REGION%5E443', WS: 'REGION%5E1392', WV: 'REGION%5E1476',
+      ST: 'REGION%5E1271', WR: 'REGION%5E162', TF: 'REGION%5E1476'
     };
     var locId = KNOWN_LOCATION[areaCode] || null;
     if (!locId) {
       if (outcodeId) locId = 'OUTCODE%5E' + outcodeId;
       else {
-      // Region fallback - the correct Rightmove region for the area. The old
-      // default of 87490 (London) sent Liverpool (L) / Manchester (M) / etc. to
-      // London and produced zero North-West supply. Map every area to its region:
-      //   87490 Greater London, 87491 West Midlands, 87492 Scotland, 87493 Wales,
-      //   87495 East, 87496 South East, 87497 South West, 87489 East Midlands,
-      //   87487 North West, 87488 Yorks & Humber, 87486 North East.
+      // Region fallback - the correct Rightmove CITY region id for the area.
+      // IMPORTANT (2026-08-24): the old "UK region" ids 87486-87497 are WRONG —
+      // they resolve to small London/Dundee neighbourhoods (87492=Battersea,
+      // 87488=Ethiebeaton Dundee, 87491=Acton Green), so Scotland/Yorkshire/Midlands
+      // fell back to them and produced ZERO in-area supply. These city ids are
+      // verified against Rightmove's own city pages.
       var REGION_MAP = {
         'E':'87490','EC':'87490','N':'87490','NW':'87490','SE':'87490','SW':'87490','W':'87490','WC':'87490',
-        'EN':'87490','HA':'87490','BR':'87490','CR':'87490','DA':'87490','KT':'87496','RM':'87490','SM':'87490',
-        'TW':'87490','UB':'87490','IG':'87490','WD':'87490','SL':'87496','GU':'87496','RG':'87496',
-        'AL':'87495','SG':'87495','CM':'87495','SS':'87495','CO':'87495','HP':'87496','LU':'87495','MK':'87496',
-        'TN':'87496','ME':'87496','CT':'87496','BN':'87496','RH':'87496','SO':'87496','PO':'87496','SP':'87496','OX':'87496',
-        'BA':'87497','BS':'87497','GL':'87497','SN':'87497','TA':'87497','DT':'87497','BH':'87497','EX':'87497','PL':'87497','TQ':'87497','TR':'87497',
-        'B':'87491','CV':'87491','DY':'87491','HR':'87491','ST':'87491','SY':'87491','TF':'87491','WR':'87491','WS':'87491','WV':'87491',
-        'DE':'87489','DN':'87489','LE':'87489','LN':'87489','NG':'87489','NN':'87489','PE':'87489',
-        'CB':'87495','IP':'87495','NR':'87495',
-        'M':'87487','L':'87487','BL':'87487','CH':'87487','CW':'87487','FY':'87487','LA':'87487','OL':'87487','PR':'87487','SK':'87487','WA':'87487','WN':'87487','BB':'87487',
-        'HD':'87488','HG':'87488','HU':'87488','HX':'87488','LS':'87488','S':'87488','WF':'87488','YO':'87488','BD':'87488',
-        'DH':'87486','DL':'87486','NE':'87486','SR':'87486','TS':'87486',
-        'AB':'87492','DD':'87492','DG':'87492','EH':'87492','FK':'87492','G':'87492','HS':'87492','IV':'87492','KA':'87492','KW':'87492','KY':'87492','ML':'87492','PA':'87492','PH':'87492','TD':'87492','ZE':'87492',
-        'CF':'87493','LD':'87493','LL':'87493','NP':'87493','SA':'87493','SY':'87493'
+        'EN':'93950','HA':'599','BR':'225','CR':'391','DA':'407','KT':'746','RM':'1138','SM':'87490',
+        'TW':'87490','UB':'87490','IG':'674','WD':'1408','SL':'1217','GU':'580','RG':'1114',
+        'AL':'1244','SG':'1263','CM':'307','SS':'1232','CO':'347','HP':'637','LU':'876','MK':'940',
+        'TN':'1366','ME':'897','CT':'279','BN':'93554','RH':'580','SO':'1231','PO':'1089','SP':'1165','OX':'1036',
+        'BA':'116','BS':'219','GL':'556','SN':'1306','TA':'1317','DT':'194','BH':'194','EX':'494','PL':'1073','TQ':'1350','TR':'1365',
+        'B':'162','CV':'368','DY':'443','HR':'162','ST':'1271','SY':'162','TF':'1476','WR':'162','WS':'1392','WV':'1476',
+        'DE':'418','DN':'430','LE':'789','LN':'804','NG':'1019','NN':'1014','PE':'1061',
+        'CB':'274','IP':'689','NR':'1018',
+        'M':'904','L':'813','BL':'182','OL':'1025','SK':'1268','WA':'1403','WN':'1452','CH':'313','CW':'313','PR':'1097','BB':'167','FY':'168','LA':'1097',
+        'HD':'664','HG':'598','HU':'665','HX':'664','LS':'787','S':'1195','WF':'1386','YO':'1498','BD':'198',
+        'DH':'460','DL':'406','NE':'984','SR':'1295','TS':'933',
+        'AB':'4','DD':'452','DG':'448','EH':'475','FK':'501','G':'550','HS':'687','IV':'687','KA':'740','KW':'687','KY':'754','ML':'958','PA':'1040','PH':'1060','TD':'540','ZE':'687',
+        'CF':'281','LD':'824','LL':'824','NP':'991','SA':'1305','SY':'162'
       };
         var regionId = REGION_MAP[areaCode] || '87490';
         locId = 'REGION%5E' + regionId;
@@ -296,39 +332,64 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
   var allLeads = [];
   var types = wantCommercial ? ['residential', 'commercial'] : ['residential'];
   log('[DEEP-SCRAPE] commercial wanted: ' + wantCommercial + ' (types=' + types.join(',') + ')');
-  for (var i = 0; i < areas.length; i++) {
-    // Try to resolve the exact Rightmove outcode; if it fails, fall back to the
-    // region scrape (which works and returns leads incl. some in the target area).
-    var resolvedId = await resolveOutcodeId(areas[i]);
-    var useId = resolvedId || null;
-    if (!resolvedId) log('[DEEP-SCRAPE] ' + areas[i] + ': no outcode resolved, falling back to region scrape');
-    for (var t = 0; t < types.length; t++) {
-      var leads = await scrapeAreaApify(areas[i], useId, maxProps, types[t]);
-      log('[DEEP-SCRAPE] ' + areas[i] + '[' + types[t] + '] returned ' + (leads ? leads.length : 0) + ' leads');
-      allLeads = allLeads.concat(leads || []);
-      await new Promise(function(r){ setTimeout(r, 500); });
-    }
-  }
-  log('[DEEP-SCRAPE] Scraped ' + allLeads.length + ' total from ' + areas.length + ' areas (residential + commercial via Rightmove)');
-
-  // 3. Merge with existing fresh pool, dedupe, keep fresh (48h; Monday extends
-  //    to Saturday 00:00 so weekend scrapes fill Monday's accounts)
+  // WRITE-POOL HELPER: merge freshly scraped leads into the existing fresh pool
+  // and persist immediately. Running this after EVERY area means a crash or kill
+  // part-way through (observed: worker dies after the first area and the old code
+  // only wrote at the very END, losing everything) still leaves the scraped areas
+  // in the pool for delivery.
   var poolFreshCutoff = require('./freshness').getFreshCutoffIso();
   function isFresh(l) {
     var d = l.scrapedAt || l.firstVisibleDate || l.updateDate || l.incorporationDate || l.publishedDate || l.receivedDate || l.createdAt || l.created_at || '';
     return !!d && d >= poolFreshCutoff;
   }
-  var prevPool = loadJson(POOL_FILE) || [];
-  if (!Array.isArray(prevPool)) prevPool = [];
-  var seen = new Set();
-  var merged = [];
-  allLeads.forEach(function(l) { var k = l.id || l.address || l.postcode || ''; if (k && !seen.has(k)) { seen.add(k); merged.push(l); } });
-  prevPool.forEach(function(l) { var k = l.id || l.address || l.postcode || ''; if (k && !seen.has(k) && isFresh(l)) { seen.add(k); merged.push(l); } });
-  merged = merged.filter(isFresh).slice(0, 6000);
+  function writePoolNow() {
+    try {
+      var prevPool = loadJson(POOL_FILE) || [];
+      if (!Array.isArray(prevPool)) prevPool = [];
+      var seen = new Set();
+      var merged = [];
+      allLeads.forEach(function(l) { var k = l.id || l.address || l.postcode || ''; if (k && !seen.has(k)) { seen.add(k); merged.push(l); } });
+      prevPool.forEach(function(l) { var k = l.id || l.address || l.postcode || ''; if (k && !seen.has(k) && isFresh(l)) { seen.add(k); merged.push(l); } });
+      merged = merged.filter(isFresh).slice(0, 6000);
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.writeFileSync(POOL_FILE, JSON.stringify(merged, null, 2));
+      log('[DEEP-SCRAPE] pool written: ' + merged.length + ' leads');
+      return merged;
+    } catch(wErr) { log('[DEEP-SCRAPE] pool write error: ' + wErr.message); return null; }
+  }
+  for (var i = 0; i < areas.length; i++) {
+    try {
+      // Try to resolve the exact Rightmove outcode; if it fails, fall back to the
+      // region scrape (which works and returns leads incl. some in the target area).
+      var resolvedId = await withTimeout(resolveOutcodeId(areas[i]), 95000, 'typeahead');
+      var useId = resolvedId || null;
+      if (!resolvedId) log('[DEEP-SCRAPE] ' + areas[i] + ': no outcode resolved, falling back to region scrape');
+      for (var t = 0; t < types.length; t++) {
+        // HARD PER-AREA TIMEOUT: an Apify run-sync that hangs must never block the
+        // whole worker (it was dying after the first area). Force-resolve after
+        // 220s so the loop always advances to the next area.
+        var leads = await withTimeout(scrapeAreaApify(areas[i], useId, maxProps, types[t]), 220000, 'area scrape');
+        log('[DEEP-SCRAPE] ' + areas[i] + '[' + types[t] + '] returned ' + (leads ? leads.length : 0) + ' leads');
+        allLeads = allLeads.concat(leads || []);
+        await new Promise(function(r){ setTimeout(r, 800); });
+      }
+    } catch(aErr) {
+      // One bad area must never kill the whole worker (it was dying after the
+      // first area, losing ALL areas' leads). Log + keep going.
+      log('[DEEP-SCRAPE] area ' + areas[i] + ' error: ' + aErr.message);
+    }
+    // Persist after every area so a mid-run crash keeps the completed areas.
+    writePoolNow();
+    // Small delay between areas (politeness + avoids Apify throttling that was
+    // likely killing the worker after the first area).
+    await new Promise(function(r){ setTimeout(r, 800); });
+  }
+  log('[DEEP-SCRAPE] Scraped ' + allLeads.length + ' total from ' + areas.length + ' areas (residential + commercial via Rightmove)');
 
-  // 4. Write pool
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(POOL_FILE, JSON.stringify(merged, null, 2));
+  // 3. Final merge with existing fresh pool, dedupe, keep fresh (48h; Monday extends
+  //    to Saturday 00:00 so weekend scrapes fill Monday's accounts)
+  var merged = writePoolNow() || [];
+  if (!Array.isArray(merged)) merged = [];
 
   // 5. Mark scraped today
   var today = new Date().toISOString().split('T')[0];
@@ -344,3 +405,17 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
   try { fs.writeFileSync(path.join(DATA_DIR, 'deep-scrape.log'), __logLines.join('\n')); } catch(e) {}
   process.exit(0);
 })().catch(function(e) { console.log('[DEEP-SCRAPE] Fatal:', e.message); try { fs.writeFileSync(path.join(DATA_DIR, 'deep-scrape.log'), '[DEEP-SCRAPE] Fatal: ' + e.message); } catch(e2) {} process.exit(1); });
+
+// CRASH GUARDS: the worker runs detached (spawned, stdio ignore, unref'd). If it
+// dies on an uncaught error AFTER scraping a few areas, the old code lost everything
+// because the pool was only written at the very end. The loop now writes the pool
+// after each area, and these handlers ensure a stray unhandled rejection/exception
+// is logged (and the partial pool kept) instead of silently killing the process.
+process.on('unhandledRejection', function(reason) {
+  try { fs.appendFileSync(path.join(DATA_DIR, 'deep-scrape.log'), '[' + new Date().toISOString() + '] [DEEP-SCRAPE] unhandledRejection: ' + (reason && reason.message || reason) + '\n'); } catch(e) {}
+  console.log('[DEEP-SCRAPE] unhandledRejection:', reason);
+});
+process.on('uncaughtException', function(err) {
+  try { fs.appendFileSync(path.join(DATA_DIR, 'deep-scrape.log'), '[' + new Date().toISOString() + '] [DEEP-SCRAPE] uncaughtException: ' + (err && err.stack || err) + '\n'); } catch(e) {}
+  console.log('[DEEP-SCRAPE] uncaughtException:', err && err.message);
+});
