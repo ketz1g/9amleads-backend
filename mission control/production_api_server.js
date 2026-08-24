@@ -12355,6 +12355,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           var wLim = pRule.weekly_est ? (pRule.weekly_est[plan] || pRule.weekly_est.starter || 999) : 999;
           if (wDel >= wLim) return false;
           var dMax = Math.max(1, Math.ceil(wLim / 5));
+          // HONOUR THE CUSTOMER'S DAILY CAP: the weekly-estimate daily cap is an
+          // upper bound, but the customer's actual promised daily count (leads_per_day
+          // / plan limit) is what they signed up for. Never exceed the smaller of the
+          // two — "no more no less" (e.g. a free_trial planning account promised 1/day
+          // must not receive ceil(25/5)=5/day).
+          var custDayCap = parseInt(cust.leads_per_day, 10) || getPlanLimit(prod, plan, (pcfg[prod] && pcfg[prod].coverage) || cust.coverage || 'county') || 1;
+          if (custDayCap > 0 && custDayCap < dMax) dMax = custDayCap;
           var tDelDb = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today) && l.product === prod; }).length;
           var tDelBatch = custLeads.filter(function(l) { return l.product === prod; }).length;
           if (tDelDb + tDelBatch >= dMax) return false;
@@ -20265,25 +20272,34 @@ function runDeliveryTestReport() {
           var c = testCusts[i];
           var areas = []; try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) {}
           var promised = PLAN[c.product] || 5;
+          // THIS RUN'S leads = delivered_at >= runStart (each run re-delivers under force).
+          // Also track TODAY'S total so weekly-capped products (planning/tenders, whose
+          // daily cap = ceil(weekly/5)) show 0 this run once their day cap is reached —
+          // that is CORRECT, not a shortfall.
           var thisRun = [];
+          var todayTotal = [];
           (dbAfter.leads || []).forEach(function(l) {
             if (l.customer_id !== c.id || !l.delivered || !l.delivered_at) return;
-            if (l.delivered_at < runStartIso) return; // delivered in an earlier run
+            if (l.delivered_at.indexOf(date) !== 0) return; // not delivered today
             try { var dd = JSON.parse(l.data || '{}'); if (dd.rejected) return; } catch(e) {}
-            thisRun.push(l);
+            todayTotal.push(l);
+            if (l.delivered_at >= runStartIso) thisRun.push(l);
           });
-          // Also fall back to the delivered-leads endpoint (single source of truth)
-          // if the direct DB scan found nothing but delivery reported success.
           var leads = thisRun.map(function(l) {
             var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
             var addr = d.fullAddress || d.address || d.deceasedAddress || '';
             return { address: addr, postcode: d.postcode || '', has_door_or_flat_number: hasUsablePremiseAddress(addr, d.postcode), full_postcode: /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(d.postcode || '').trim()), url: d.url || '', area: extractPostcodeArea(d.postcode || addr), first_visible: d.firstVisibleDate || d.updateDate || d.scrapedAt || '' };
           });
-          if (leads.length === 0) {
-            // fallback: delivered-leads endpoint (today's total) — if delivery ran
-            // but our snapshot missed, still report what was delivered today.
-            var res2 = await httpCallLocal('GET', '/api/admin/delivered-leads?email=' + encodeURIComponent(c.email) + '&date=' + date + '&t=' + Date.now());
-            leads = (res2.json && res2.json.leads) || [];
+          // For weekly-capped products the run may correctly deliver 0 once today's
+          // cap (ceil(weekly/5)) is reached. In that case report today's cumulative
+          // count so "no more no less" is judged against the DAILY promise.
+          var isWeeklyCapped = (c.product === 'planning' || c.product === 'tenders');
+          if (leads.length === 0 && isWeeklyCapped && todayTotal.length > 0) {
+            leads = todayTotal.map(function(l) {
+              var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+              var addr = d.fullAddress || d.address || d.deceasedAddress || '';
+              return { address: addr, postcode: d.postcode || '', has_door_or_flat_number: hasUsablePremiseAddress(addr, d.postcode), full_postcode: /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(d.postcode || '').trim()), url: d.url || '', area: extractPostcodeArea(d.postcode || addr), first_visible: d.firstVisibleDate || d.updateDate || d.scrapedAt || '' };
+            });
           }
           var now = Date.now();
           var door = leads.filter(function(l) { return l.has_door_or_flat_number; }).length;
