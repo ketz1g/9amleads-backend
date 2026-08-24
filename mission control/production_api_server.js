@@ -20233,10 +20233,12 @@ function runDeliveryTestReport() {
         var date = new Date().toISOString().split('T')[0];
         var testCusts = (db.customers || []).filter(function(c) { return /^test\./.test(String(c.email || '').toLowerCase()); });
         if (!testCusts.length) { resolve({ ok: false, reason: 'no test accounts' }); return; }
-        // ACCUMULATION MODE (testing): raise test accounts' daily cap so every run
-        // delivers FRESH leads that ACCUMULATE (no clearing) — lets the founder check
-        // all delivered leads. Reset to normal caps when testing finishes.
-        testCusts.forEach(function(c) { c.leads_per_day = 999; });
+        // NORMAL CAPS (testing finished): keep each test account at its real plan
+        // cap so the 9am delivery caps correctly. Do NOT raise to 999 anymore —
+        // that accumulation hack is over; test accounts now deliver exactly what
+        // a real customer of their product/plan would get each run.
+        var TEST_CAP = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
+        testCusts.forEach(function(c) { c.leads_per_day = TEST_CAP[c.product] || 1; });
         saveDb();
         // run the real delivery on test accounts (force + test_only, emails enabled)
         await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true });
