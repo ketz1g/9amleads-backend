@@ -16089,9 +16089,10 @@ app.post('/api/direct-mail/setup-payment', authMiddleware, async (req, res) => {
     if (setupIntent && setupIntent.client_secret) {
       res.json({ success: true, client_secret: setupIntent.client_secret, stripe_customer_id: customer.stripe_customer_id });
     } else {
-      res.status(500).json({ error: 'Failed to create SetupIntent' });
+      console.log('[DM-SEND-BULK] checkout session returned no url:', JSON.stringify(session).substring(0, 500));
+      res.status(400).json({ error: session.error?.message || 'Checkout creation failed' });
     }
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.log('[DM-SEND-BULK] error:', e && e.message, e && e.stack ? e.stack.substring(0, 300) : ''); res.status(500).json({ error: (e && e.message) || 'Print & Post could not be started. Please try again.' }); }
 });
 
 // POST /api/direct-mail/auto-card/session — Create a Stripe HOSTED setup session so

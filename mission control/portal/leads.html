@@ -606,7 +606,7 @@ function bulkPay(){
     } else {
       if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-lock"></i> Pay &amp; Send';}
       var errEl=document.getElementById('mp-error');
-      errEl.textContent=(d&&d.error)||'Could not start print & post. Please try again.';
+      errEl.textContent=(d&&(d.error||d.message||d.reason))||'Could not start print &amp; post. Please try again.';
       errEl.style.display='block';
       mpShowStep(1);
     }
@@ -790,7 +790,7 @@ function mpPay(){
     } else {
       if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-lock"></i> Pay &amp; Send';}
       var errEl=document.getElementById('mp-error');
-      errEl.textContent=(d&&d.error)||'Could not start print & post. Please try again.';
+      errEl.textContent=(d&&(d.error||d.message||d.reason))||'Could not start print &amp; post. Please try again.';
       errEl.style.display='block';
       mpShowStep(1);
     }
