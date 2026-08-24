@@ -7008,7 +7008,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     }
     var leadArea = extractPostcodeArea(pc || addr);
     var inArea = areas.some(function(a) { return extractPostcodeArea(a) === leadArea; });
-    return { address: c.address || c.fullAddress || '', postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed, in_area: inArea };
+    return { address: c.address || c.fullAddress || c.deceasedAddress || '', postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed, in_area: inArea };
   });
   var fallbackCount = out.filter(function(o) { return !o.in_area; }).length;
   var fallbackNote = fallbackCount ? (fallbackCount + ' lead' + (fallbackCount > 1 ? 's' : '') + ' from closest postcode' + (fallbackCount > 1 ? 's' : '') + ' (your chosen areas were short this morning)') : '';
