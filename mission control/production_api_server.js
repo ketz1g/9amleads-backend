@@ -12092,6 +12092,15 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     _dbData = null;
     var db = getDb();
     var today = new Date().toISOString().split('T')[0];
+    // WEEKEND GUARD: leads are delivered Mon-Fri ONLY. If this runs on a Saturday or
+    // Sunday (manual trigger, backstop, or a stray cron), skip entirely so no customer
+    // ever receives a weekend lead. The only exception is an explicit forced test.
+    var dayOfWeekN = new Date().getDay(); // 0=Sun, 6=Sat
+    var isForcedTest = !!(req.body && req.body.test_only);
+    if ((dayOfWeekN === 0 || dayOfWeekN === 6) && !isForcedTest) {
+      console.log('[DELIVERY] Weekend (' + dayOfWeekN + ') — skipping delivery (Mon-Fri only)');
+      return res.json({ success: true, skipped: 'weekend', message: 'Leads are delivered Monday-Friday only. No leads were sent.' });
+    }
     // PURGE ORPHAN LEADS: leads whose customer_id no longer exists (deleted
     // accounts) must never be delivered — they'd go to the wrong area and never
     // show in any dashboard. Removes them before the delivery loop.
