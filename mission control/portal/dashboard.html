@@ -134,6 +134,12 @@ footer a{color:var(--accent);text-decoration:underline}
 <div class="card stat"><div class="icon" style="background:#eff6ff;color:var(--accent)">📊</div><div class="num" id="kpi-today">0</div><div class="lbl">Leads Today</div></div>
 <div class="card stat"><div class="icon" style="background:#f0fdf4;color:var(--success)">📅</div><div class="num" id="kpi-week">0</div><div class="lbl">This Week</div></div>
 <div class="card stat"><div class="icon" style="background:#faf5ff;color:#8b5cf6">📈</div><div class="num" id="kpi-month">0</div><div class="lbl">This Month</div></div>
+        </div>
+
+<!-- QUICK TIPS (rotating, helps conversion) -->
+<div class="card" style="margin-bottom:16px">
+<div class="sect-title"><i class="fas fa-lightbulb" style="color:var(--accent)"></i> Quick tips to win more <span style="margin-left:auto;font-size:11px;color:var(--muted)" id="tip-pager">Tip 1 of 5</span></div>
+<div style="font-size:13px;color:var(--text2);line-height:1.7" id="quick-tip">Loading...</div>
 </div>
 
 <!-- TRIAL STATUS (shown during an active 7-day free trial) -->
@@ -1697,6 +1703,27 @@ function ppDownloadCoverLetter(){
 }
 
 // ===== ONBOARDING =====
+var _tipIdx = 0;
+var QUICK_TIPS = [
+  'Contact every new lead the same day — speed beats everything when a prospect is fresh.',
+  '📞 Call before you email. A quick call builds far more trust than an email alone.',
+  '📧 Follow up at day 3 — most jobs are won on the second or third contact, not the first.',
+  '🖨️ Use Print &amp; Post to send a letter or flyer — physical mail gets opened; emails get deleted.',
+  '📍 If an area goes quiet, add a nearby postcode or county for a fuller daily mix.'
+];
+function startQuickTips() {
+  var el = document.getElementById('quick-tip');
+  var pg = document.getElementById('tip-pager');
+  if (!el) return;
+  el.textContent = QUICK_TIPS[0];
+  if (pg) pg.textContent = 'Tip 1 of ' + QUICK_TIPS.length;
+  setInterval(function() {
+    _tipIdx = (_tipIdx + 1) % QUICK_TIPS.length;
+    el.textContent = QUICK_TIPS[_tipIdx];
+    if (pg) pg.textContent = 'Tip ' + (_tipIdx + 1) + ' of ' + QUICK_TIPS.length;
+  }, 8000);
+}
+
 function loadActivity() {
   var todayStr = new Date().toISOString().split('T')[0];
   var weekStart = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0]; // last 7 days (matches top KPIs)
@@ -1900,6 +1927,7 @@ document.querySelectorAll('.modal').forEach(function(m){
   loadActivity();
   loadPrintPostSetup();
   autoPpLoad();
+  startQuickTips();
   autoPpCardReturn();
   // CLIENT-SIDE PAYMENT VERIFICATION: if the customer returned from the Stripe
   // checkout (?dm_payment=success&campaign_id=X), verify the payment with Stripe

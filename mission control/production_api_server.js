@@ -16955,6 +16955,20 @@ function generateLeadEmailHTML(customer, leads) {
     '<a href="' + dashboardUrl + '?page=direct-mail" style="display:inline-block;padding:8px 18px;background:#ffffff;border:1px solid #2563eb;color:#2563eb;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Print &amp; Post</a></div>' +
     '</div></td></tr>';
 
+  // QUICK WIN TIPS — product-specific conversion advice (kept short, actionable)
+  var quickTipsMap = {
+    moving: '⏱️ Contact homeowners within the hour — the first removal company to call usually wins the move.',
+    probate: '🤝 Contact executors within 48 hours, with empathy — the first firm to reach out wins most instructions.',
+    newbusiness: '💼 Contact new companies within the first fortnight — there\'s no incumbent supplier yet, so first contact usually wins.',
+    planning: '🏗️ Quote while the application is being decided — homeowners ready to build are comparing builders now.',
+    tenders: '📋 Bid on 2–3 well-matched tenders a week and answer every quality question fully — completeness wins.',
+    general: '📈 Contact every lead the same day — speed beats everything when a prospect is fresh.'
+  };
+  body += '<tr><td style="background:#ffffff;padding:0 28px 6px">' +
+    '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:13px 16px;font-size:12px;color:#92400e;line-height:1.6">' +
+    '<strong>💡 Quick win:</strong> ' + (quickTipsMap[customer.product] || quickTipsMap.general) +
+    '</div></td></tr>';
+
   // Footer — dark navy (matches header)
   body += '<tr><td style="background-color:#0f172a;background-image:linear-gradient(135deg,#0f172a,#1e293b);padding:22px 30px 20px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid #0ea5e9">';
   body += '<div style="font-family:Outfit,Arial,Helvetica,sans-serif;font-size:17px;font-weight:900;color:#38bdf8;text-align:center;margin-bottom:12px"><span style="display:inline-block;width:26px;height:26px;border-radius:8px;text-align:center;line-height:26px;font-size:13px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;margin-right:6px;vertical-align:middle;font-family:Outfit,Arial,sans-serif">9</span><span style="vertical-align:middle">9amLeads</span></div>';
