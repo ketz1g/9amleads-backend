@@ -1699,17 +1699,23 @@ function ppDownloadCoverLetter(){
 // ===== ONBOARDING =====
 function loadActivity() {
   var todayStr = new Date().toISOString().split('T')[0];
-  var weekStart = (function(){ var w = new Date(); w.setDate(w.getDate() - w.getDay()); return w.toISOString().split('T')[0]; })();
+  var weekStart = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0]; // last 7 days (matches top KPIs)
   var monthStr = todayStr.substring(0, 7);
 
   // Pull leads (from the leads page cache or fresh)
   var leadsList = [];
   var done = 0;
+  function isLiveLead(l){
+    if (!l.delivered) return false;
+    var d = null; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+    if (l.rejected || (d && d.rejected)) return false;
+    return true;
+  }
   function render() {
-    var leads = leadsList;
-    var todayN = leads.filter(function(l){ return (l.created_at||'').startsWith(todayStr); }).length;
-    var weekN = leads.filter(function(l){ return (l.created_at||'') >= weekStart; }).length;
-    var monthN = leads.filter(function(l){ return (l.created_at||'').startsWith(monthStr); }).length;
+    var live = leadsList.filter(isLiveLead);
+    var todayN = live.filter(function(l){ return (l.delivered_at||'').startsWith(todayStr); }).length;
+    var weekN = live.filter(function(l){ return (l.delivered_at||'') >= weekStart; }).length;
+    var monthN = live.filter(function(l){ return (l.delivered_at||'').startsWith(monthStr); }).length;
     document.getElementById('act-leads-today').textContent = todayN;
     document.getElementById('act-leads-week').textContent = weekN;
     document.getElementById('act-leads-month').textContent = monthN;
