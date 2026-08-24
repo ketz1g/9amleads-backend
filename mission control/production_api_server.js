@@ -12210,7 +12210,13 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     var customers = (db.customers || []).filter(function(c) {
       if (!c.plan || c.plan === 'cancelled' || (c.bounced && c.bounced >= 3)) return false;
       if (onlyEmail && String(c.email || '').toLowerCase() !== onlyEmail) return false;
-      if (testOnly && !/^test\./.test(String(c.email || '').toLowerCase())) return false;
+      // TEST-ACCOUNT ISOLATION: test.* accounts ONLY ever receive leads in test_only
+      // mode (the 15-min delivery-test cron / manual run-test). The real 09:00
+      // delivery NEVER sends to test accounts — only real paying customers. This
+      // keeps test data out of the live email + dashboard + Print & Post pipeline.
+      var _isTest = /^test\./.test(String(c.email || '').toLowerCase());
+      if (testOnly) { if (!_isTest) return false; }
+      else { if (_isTest) return false; }
       return true;
     });
     console.log('[DELIVERY] Running for ' + customers.length + ' customer(s)' + (onlyEmail ? ' (filtered to ' + onlyEmail + ')' : ''));
@@ -20456,13 +20462,14 @@ function runDeliveryTestReport() {
     })();
   });
 }
-// Every 15 minutes — automated delivery test + report. Each run delivers EXACTLY
-// the promised quota to every test account (clean-slate fresh leads + emails +
-// dashboards) so the founder can verify the system is bulletproof: exact count,
-// door numbers, full postcodes and real links on every lead. Emails the report
-// to hello@9amleads.com. Skips the 09:00–09:35 UK window so it never competes
-// with the real Mon-Fri 09:00 delivery (the delivery lock is global).
+// Every 15 minutes — automated delivery test + report (TEST ONLY). Gated by
+// TEST_DELIVERY_CRON=true (off by default). Each run delivers EXACTLY the
+// promised quota to every test.* account ONLY (never real customers — the deliver
+// endpoint now isolates test accounts), so the founder can verify the system is
+// bulletproof: exact count, door numbers, full postcodes and real links. Emails
+// the report to hello@9amleads.com. The real Mon-Fri 09:00 delivery is unaffected.
 cron.schedule('*/15 * * * *', () => {
+  if (String(process.env.TEST_DELIVERY_CRON || 'false').toLowerCase() !== 'true') return;
   try {
     var ukNow = new Date().toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false });
     var ukMin = parseInt(ukNow.split(':')[0], 10) * 60 + parseInt(ukNow.split(':')[1], 10);
