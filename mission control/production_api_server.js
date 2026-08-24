@@ -20801,6 +20801,8 @@ app.get('/api/admin/letter-preview', adminAuth, async (req, res) => {
       doc.end();
       await done;
       var buf = Buffer.concat(buffers);
+      // ?text=1 returns the cleaned body as JSON (for quick verification without PDF parsing)
+      if (req.query.text === '1') return res.json({ success: true, senderName: senderName, senderAddr: senderAddr, body: clean.body, bodyLength: clean.body.length, html: clean.html });
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'inline; filename="letter-preview.pdf"');
       res.send(buf);
