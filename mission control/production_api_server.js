@@ -8080,10 +8080,31 @@ app.post('/api/admin/funeral-scrape', adminAuth, async (req, res) => {
 // supply source (The Gazette + PNP). Accepts the actor's output array directly.
 app.post('/api/admin/pnp-scrape', adminAuth, async (req, res) => {
   try {
-    var pnpLeads = (req.body && req.body.leads) || null;
-    if (!pnpLeads && req.body && Array.isArray(req.body)) pnpLeads = req.body;
+    // Accept the PNP Apify actor output in ANY of the common webhook shapes:
+    //   { leads: [...] }                          (9amLeads format)
+    //   [ ... ]                                  (raw dataset array)
+    //   { items: [...] }                          (Apify webhook payload)
+    //   { resource: { defaultDatasetId }, ... }  (Apify webhook - dataset id to fetch)
+    var pnpLeads = null;
+    if (req.body && Array.isArray(req.body)) pnpLeads = req.body;
+    else if (req.body && Array.isArray(req.body.leads)) pnpLeads = req.body.leads;
+    else if (req.body && Array.isArray(req.body.items)) pnpLeads = req.body.items;
+    // If the webhook only gave a dataset id, fetch the items from Apify's API.
+    else if (req.body && req.body.resource && req.body.resource.defaultDatasetId && process.env.APIFY_API_KEY) {
+      try {
+        var dsId = String(req.body.resource.defaultDatasetId);
+        var dsReq = await new Promise(function(resolve) {
+          var httpsR = require('https');
+          var ds = httpsR.request({ hostname: 'api.apify.com', path: '/v2/datasets/' + dsId + '/items?format=json&clean=1', method: 'GET', headers: { 'Authorization': 'Bearer ' + process.env.APIFY_API_KEY } }, function(s) {
+            var b = ''; s.on('data', function(c){ b += c; }); s.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve([]); } });
+          });
+          ds.on('error', function(){ resolve([]); }); ds.end();
+        });
+        if (Array.isArray(dsReq)) pnpLeads = dsReq;
+      } catch(dsErr) { console.log('[PNP] dataset fetch error:', dsErr.message); }
+    }
     if (!pnpLeads || !Array.isArray(pnpLeads) || pnpLeads.length === 0) {
-      return res.status(400).json({ error: 'Send { leads: [...] } from the PNP Apify actor' });
+      return res.status(400).json({ error: 'Send { leads: [...] } / raw array / Apify webhook payload from the PNP actor' });
     }
     var pf = path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate.file);
     var poolP = [];

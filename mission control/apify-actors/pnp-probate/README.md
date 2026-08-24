@@ -44,14 +44,19 @@ The portal is a Next.js app (React Server Components). The notice list is render
    - 18:00 UK (afternoon publications)
 
 ## Handoff to 9amLeads
-Point the actor's **webhook** (or a small integration script) at:
+Point the actor's **webhook** at the ingest endpoint. It accepts the raw Apify webhook payload directly (no custom formatting needed):
 
 ```
 POST https://nineamleads-backend.onrender.com/api/admin/pnp-scrape
 Authorization: Bearer <ADMIN_PASSWORD>
 Content-Type: application/json
-{ "leads": [ <actor dataset items> ] }
 ```
+
+The endpoint accepts all of these payload shapes automatically:
+- Apify webhook default (`{ resource: { defaultDatasetId }, ... }` — it fetches the dataset items from the Apify API using `APIFY_API_KEY`)
+- `{ items: [ ... ] }`
+- `{ leads: [ ... ] }`
+- a raw `[ ... ]` dataset array
 
 The backend merges them into the probate pool (source `pnp`), dedupes against Gazette records by name+postcode, and makes them available to the 09:00 delivery.
 
