@@ -10055,17 +10055,17 @@ cron.schedule('0 13 * * *', async () => {
 // scrape (07:15) and again after the 7:30 watchdog re-trigger (08:00), so the pool
 // holds full numbered addresses BEFORE the 9am delivery. The delivery then skips
 // paid PAF for pre-enriched leads (cost-neutral) and drops paf_failed ones early.
-cron.schedule('45 6 * * *', async () => {
-  try { await runMovingPafPostScrape(); await runProbatePafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 06:45 error: ' + e.message); }
+cron.schedule('15 6 * * *', async () => {
+  try { await runMovingPafPostScrape(); await runProbatePafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 06:15 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
-cron.schedule('0 8 * * *', async () => {
-  try { await runMovingPafPostScrape(); await runProbatePafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 08:00 error: ' + e.message); }
+cron.schedule('0 7 * * *', async () => {
+  try { await runMovingPafPostScrape(); await runProbatePafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 07:00 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
 // PRE-DELIVERY VERIFICATION (08:30): before the 9am delivery, verify the EXACT
 // leads each moving customer is about to receive have door numbers + full addresses
 // in the pool, PAF-enriching any that don't. The 9am job then just sends them.
-cron.schedule('30 8 * * 1-5', async () => {
-  try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 08:30 error: ' + e.message); }
+cron.schedule('15 7 * * 1-5', async () => {
+  try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 07:15 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
 cron.schedule('0 18 * * *', async () => {
   try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-18-CRON] ' + e.message); }
