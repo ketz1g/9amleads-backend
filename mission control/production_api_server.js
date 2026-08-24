@@ -22752,6 +22752,51 @@ app.post('/api/admin/delete-customer', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/backups — list local database backups (hourly snapshots) so a
+// mistakenly deleted customer can be recovered from a pre-deletion backup.
+app.get('/api/admin/backups', adminAuth, (req, res) => {
+  try {
+    var files = [];
+    try { files = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort(); } catch(e) {}
+    res.json({ success: true, dir: BACKUP_DIR, backups: files.map(function(f) {
+      var p = path.join(BACKUP_DIR, f);
+      var st = 0; try { st = fs.statSync(p).size; } catch(e) {}
+      var ct = 0; try { var raw = JSON.parse(fs.readFileSync(p, 'utf-8')); ct = (raw.customers || []).length; } catch(e) {}
+      return { file: f, size: st, customers: ct };
+    }) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/restore-customers — restore specific customers + their leads from a
+// backup file into the live DB (merge, keeps current customers). Body:
+// { backup_file: 'database-....json', emails: ['a@b.com', ...] }
+app.post('/api/admin/restore-customers', adminAuth, (req, res) => {
+  try {
+    var file = String((req.body && req.body.backup_file) || '').replace(/[^\w\-.]/g, '');
+    var emails = (req.body && Array.isArray(req.body.emails)) ? req.body.emails.map(function(e){ return String(e).toLowerCase(); }) : [];
+    if (!file || !emails.length) return res.status(400).json({ error: 'backup_file and emails required' });
+    var p = path.join(BACKUP_DIR, file);
+    if (!fs.existsSync(p)) return res.status(404).json({ error: 'Backup file not found: ' + file });
+    var bk = JSON.parse(fs.readFileSync(p, 'utf-8'));
+    var db = getDb();
+    var restored = 0, skipped = 0;
+    (bk.customers || []).forEach(function(c) {
+      if (emails.indexOf(String(c.email || '').toLowerCase()) === -1) return;
+      if ((db.customers || []).some(function(x) { return x.id === c.id || String(x.email || '').toLowerCase() === String(c.email || '').toLowerCase(); })) { skipped++; return; }
+      db.customers.push(c); restored++;
+    });
+    var ids = (bk.customers || []).filter(function(c) { return emails.indexOf(String(c.email || '').toLowerCase()) !== -1; }).map(function(c) { return c.id; });
+    var leadAdded = 0;
+    (bk.leads || []).forEach(function(l) {
+      if (ids.indexOf(l.customer_id) === -1) return;
+      if ((db.leads || []).some(function(x) { return x.id === l.id; })) return;
+      db.leads.push(l); leadAdded++;
+    });
+    saveDb();
+    res.json({ success: true, restored_customers: restored, skipped: skipped, restored_leads: leadAdded });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/purge-demo — remove demo migration accounts only (keeps real signups)
 app.post('/api/admin/purge-demo', adminAuth, (req, res) => {
   try {
