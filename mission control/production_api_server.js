@@ -3647,12 +3647,12 @@ app.post('/api/auth/signup', async (req, res) => {
       var isPaidUnlimited = (planKey === 'pro' || planKey === 'enterprise');
       var maxAreas = parseInt(process.env.MAX_POSTCODE_AREAS_PER_PLAN || '5', 10);
       var allUk = ukAreas;
-      // MOVING: the promise is an exact daily count spread across the chosen areas,
-      // so a free_trial/starter MOVING customer MUST choose the FULL 5 postcode
-      // areas (fewer breaks the delivery guarantee) — UNLESS they picked All of UK.
+      // MOVING: customers choose at least 3 postcode areas (up to their plan max)
+      // so delivery has enough supply — they can pick as many as they want up to the
+      // plan limit. (Changed from "exactly 5" so 3-5 areas all work.)
       var signupProduct = String(product || '').toLowerCase();
-      if (!isPaidUnlimited && signupProduct === 'moving' && areas.length < maxAreas && !allUk) {
-        return res.status(400).json({ error: 'Please choose exactly ' + maxAreas + ' postcode areas for moving leads (you selected ' + areas.length + ').', too_few_areas: true, max_areas: maxAreas });
+      if (!isPaidUnlimited && signupProduct === 'moving' && areas.length < 3 && !allUk) {
+        return res.status(400).json({ error: 'Please choose at least 3 postcode areas for moving leads (you selected ' + areas.length + '). You can choose up to ' + maxAreas + '.', too_few_areas: true, min_areas: 3 });
       }
       if (!isPaidUnlimited && areas.length > maxAreas) {
         return res.status(400).json({ error: 'Please choose at most ' + maxAreas + ' postcode areas. You selected ' + areas.length + '.', too_many_areas: true, max_areas: maxAreas });
