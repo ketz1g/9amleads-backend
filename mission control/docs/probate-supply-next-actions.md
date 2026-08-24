@@ -27,10 +27,9 @@ Two actions unlock probate at scale. Everything else is already live.
 | # | Step | Details |
 |---|---|---|
 | 1 | Open the draft | `mission control/docs/hmcts-bulk-probate-enquiry.md` |
-| 2 | Find the right contact | Go to the probate records search site (gov.uk probate search / Find-Will) → use its **Contact** route, or email the HMCTS probate / data-access team. The public search won't sell bulk data — the formal enquiry route is needed |
-| 3 | Send the email | Copy the draft, add your name/company, send |
-| 4 | Track the answers | The 7 questions matter most: daily files, **full deceased address included?**, cost model, **commercial redistribution permitted?**, latency (14-day delay?), E&W vs Scotland/NI, application process |
-| 5 | When approved | Share the agreement + sample file with the founder/dev — the `pnp-scrape` pattern is reused to build `POST /api/admin/hmcts-scrape` (same merge + dedup + delivery) |
+| 2 | Send it | Email to **`data.access@justice.gov.uk`** (HMCTS Disclosure Team — the official FOI / data-access address, confirmed on the HMCTS GOV.UK page). If they're not the right team they'll forward it. Add your name/company at the end |
+| 3 | Track the answers | The 7 questions matter most: daily files, **full deceased address included?**, cost model, **commercial redistribution permitted?**, latency (14-day delay?), E&W vs Scotland/NI, application process |
+| 4 | When approved | Share the agreement + sample file with the founder/dev — the `pnp-scrape` pattern is reused to build `POST /api/admin/hmcts-scrape` (same merge + dedup + delivery) |
 
 ---
 

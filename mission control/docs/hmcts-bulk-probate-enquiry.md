@@ -1,6 +1,7 @@
 # HMCTS Bulk Probate Data — Enquiry Draft
 
-**To:** HMCTS / Ministry of Justice (the probate records office)
+**To:** HMCTS Disclosure Team (bulk data access)
+**Email:** `data.access@justice.gov.uk`
 **From:** 9amLeads
 **Subject:** Enquiry — bulk access to probate grant records (England & Wales)
 
