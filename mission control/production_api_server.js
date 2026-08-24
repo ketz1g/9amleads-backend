@@ -13026,10 +13026,20 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // final batch to exactly totalDailyLimit before emailing. Combined with the
       // top-up below, this guarantees the customer gets EXACTLY their promised
       // count in one email — never under, never over.
-      if (custLeads.length > totalDailyLimit) {
-        console.log('[DELIVERY-EXACT] ' + cust.email + ' capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (promised exact count)');
-        custLeads = custLeads.slice(0, totalDailyLimit);
-      }
+        if (custLeads.length > totalDailyLimit) {
+          console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver)');
+          // PERMANENTLY REMOVE the overflow leads from the DB so they can NEVER be
+          // marked delivered, counted in a report, or emailed. "No more no less" is
+          // absolute — an overflow lead is deleted, not just skipped.
+          try {
+            var _overflowIds = custLeads.slice(totalDailyLimit).map(function(ol) { return ol.id; }).filter(Boolean);
+            if (_overflowIds.length) {
+              db.leads = (db.leads || []).filter(function(ol) { return _overflowIds.indexOf(ol.id) === -1; });
+              saveDb();
+            }
+          } catch(ocErr) { console.log('[DELIVERY-FINAL-CAP] overflow delete error:', ocErr.message); }
+          custLeads = custLeads.slice(0, totalDailyLimit);
+        }
       // EXACT-COUNT GUARANTEE: dedup above can only reduce the count (two pool
       // entries can share an address/postcode). If we are now short of the
       // promised total, TOP UP from the fresh scrape pool until we hit the exact
