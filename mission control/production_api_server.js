@@ -10134,6 +10134,7 @@ cron.schedule('0 11 * * 1-5', async () => {
 // Delivery runs Mon-Fri at 09:00 UK time (handles BST/GMT automatically via timezone).
 var __deliveryFireCount = 0;
 var _deliveryLock = false;
+var _testReportLock = false;
 var __lastDeliveryFire = '';
 var __lastDeliveryDate = ''; // YYYY-MM-DD of the most recent delivery fire (daily watchdog)
 // ===== DELIVERY CRON: Mon-Fri 09:00 UK ===== (timezone: Europe/London)
@@ -20229,13 +20230,15 @@ function httpCallLocal(method, path, body) {
   });
 }
 function runDeliveryTestReport() {
+  if (_testReportLock) { console.log('[TEST] Skipping: another delivery test already running'); return Promise.resolve({ ok: false, skipped: true }); }
+  _testReportLock = true;
   return new Promise(function(resolve) {
     (async () => {
       try {
         var db = getDb();
         var date = new Date().toISOString().split('T')[0];
         var testCusts = (db.customers || []).filter(function(c) { return /^test\./.test(String(c.email || '').toLowerCase()); });
-        if (!testCusts.length) { resolve({ ok: false, reason: 'no test accounts' }); return; }
+        if (!testCusts.length) { _testReportLock = false; resolve({ ok: false, reason: 'no test accounts' }); return; }
         // NORMAL CAPS: keep each test account at its real plan cap so the 9am
         // delivery caps correctly. The deliver endpoint's test/force mode
         // re-delivers the FULL quota each run regardless, so every 30-min run
@@ -20311,13 +20314,28 @@ function runDeliveryTestReport() {
         }
         var report = lines.join('\n');
         console.log('[TEST] Delivery test report:\n' + report);
-        // 4) email the report (reliably — no undefined vars, always try)
+        // 3.5) PERSIST the report so it's always inspectable via
+        // GET /api/admin/test-report (even if the email fails). Keep the last 48.
+        try {
+          var repDb = getDb();
+          if (!repDb.test_reports) repDb.test_reports = [];
+          repDb.test_reports.push({ at: new Date().toISOString(), issues: issues.length, report: report });
+          if (repDb.test_reports.length > 48) repDb.test_reports = repDb.test_reports.slice(-48);
+          saveDb();
+        } catch(repErr) { console.log('[TEST] report persist error:', repErr.message); }
+        // 4) email the report (reliably — no undefined vars, always try; failures
+        // go to the failed-email queue so the catch-up cron re-sends them).
         try {
           var html = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:24px;max-width:680px;margin:0 auto"><h2 style="font-family:Outfit,sans-serif;color:#0ea5e9">9amLeads delivery test</h2><p style="font-size:12px;color:#94a3b8">' + new Date().toISOString() + ' · ' + testCusts.length + ' test accounts · run measured ' + Math.round((Date.now() - runStart.getTime()) / 1000) + 's</p><pre style="font-size:11px;color:#e2e8f0;white-space:pre-wrap;line-height:1.6">' + escHtml(report) + '</pre>' + (issues.length ? '<p style="color:#f87171;font-weight:700">' + issues.length + ' issue(s): ' + escHtml(issues.join('; ')) + '</p>' : '<p style="color:#34d399;font-weight:700">All ' + testCusts.length + ' test accounts delivered their full promised quota with door numbers, full postcodes and real links</p>') + '</div>';
-          sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, '9amLeads delivery test (' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }) + ') - ' + (issues.length ? issues.length + ' issue(s)' : 'all ' + testCusts.length + ' OK'), html).then(function() { console.log('[TEST] report email sent'); }).catch(function(em) { console.log('[TEST] report email error:', em.message); });
+          var subj = '9amLeads delivery test (' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }) + ') - ' + (issues.length ? issues.length + ' issue(s)' : 'all ' + testCusts.length + ' OK');
+          sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, subj, html).then(function() { console.log('[TEST] report email sent'); }).catch(function(em) {
+            console.log('[TEST] report email error:', em.message);
+            try { var feDb = getDb(); if (!feDb.failed_emails) feDb.failed_emails = []; feDb.failed_emails.push({ email: 'hello@9amleads.com', name: '9amLeads Owner', subject: subj, html: html, at: new Date().toISOString(), attempts: 1 }); if (feDb.failed_emails.length > 200) feDb.failed_emails.splice(0, feDb.failed_emails.length - 200); saveDb(); } catch(fe) { console.log('[TEST] report failed-email queue error:', fe.message); }
+          });
         } catch(emErr) { console.log('[TEST] report email exception:', emErr.message); }
         resolve({ ok: true, issues: issues.length, report: report });
       } catch(e) { console.log('[TEST] report error:', e.message); resolve({ ok: false, error: e.message }); }
+      _testReportLock = false;
     })();
   });
 }
@@ -20336,6 +20354,15 @@ cron.schedule('*/30 * * * *', () => {
     runDeliveryTestReport().then(function(r) { console.log('[TEST-CRON] done, issues=' + (r && r.issues)); });
   } catch(ce) { console.log('[TEST-CRON] scheduling error:', ce.message); }
 }, { timezone: 'Europe/London' });
+
+// GET /api/admin/test-report — view the latest 30-min delivery-test reports.
+app.get('/api/admin/test-report', adminAuth, (req, res) => {
+  try {
+    var dbT = getDb();
+    var reps = (dbT.test_reports || []).slice(-12).reverse();
+    res.json({ success: true, reports: reps });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // GET /api/admin/run-test — placeholder replaced below
 app.get('/api/admin/delivery-audit', adminAuth, (req, res) => {
