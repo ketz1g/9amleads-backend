@@ -16920,6 +16920,14 @@ function generateLeadEmailHTML(customer, leads) {
     newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often have no website yet. Send your brochure to the registered office with Print &amp; Post, then call or visit once their details go live.', metric: 'Avg. client LTV: 2-5 years' },
     tenders: { emoji: '\uD83D\uDCCB', tip: 'Send a printed capability pack with Print &amp; Post to stand out, and follow up before the deadline. Buyers notice the professional touch.', metric: '' }
   };
+  // PRINT & POST ALL — one-click button right after the daily leads list so the
+  // customer can print & post every lead (bulk) from their leads page.
+  body += '<tr><td style="background:#ffffff;padding:2px 28px 2px">' +
+    '<div style="text-align:center;padding:16px 0">' +
+    '<a href="https://www.9amleads.com/portal/leads.html" style="display:inline-block;padding:15px 36px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">🖨️ Print &amp; Post them all</a>' +
+    '<div style="font-size:11px;color:#64748b;margin-top:9px">Send a letter or flyer to every lead in one click</div>' +
+    '</div></td></tr>';
+
   var insight2 = insightCards2[customer.product] || { emoji: '\uD83D\uDCA1', tip: 'Send a letter or flyer with Print &amp; Post and follow up in person to win the work.', metric: '' };
   body += '<tr><td style="background:#12141e;padding:0 28px 16px"><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px 16px">';
   body += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">' + insight2.emoji + '</span><span style="font-size:12px;font-weight:700;color:#ffffff">' + getLeadTypeRule(customer.product).name + ' Insight</span></div>';
