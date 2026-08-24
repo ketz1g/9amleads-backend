@@ -6787,7 +6787,7 @@ app.get('/api/admin/delivered-leads', adminAuth, (req, res) => {
       var addr = d.fullAddress || d.address || d.deceasedAddress || '';
       var pc = String(d.postcode || '').toUpperCase().replace(/\s+/g, '');
       var pcFull = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(d.postcode || '').trim());
-      return { id: l.id, product: l.product, address: addr, postcode: d.postcode || '', has_door_or_flat_number: hasUsablePremiseAddress(addr, d.postcode), full_postcode: pcFull, url: d.url || '', price: d.price || '', bedrooms: d.bedrooms || 0, property_type: d.propertyType || '', agent: d.agent || '', delivered_at: l.delivered_at || '' };
+      return { id: l.id, product: l.product, address: addr, postcode: d.postcode || '', has_door_or_flat_number: hasUsablePremiseAddress(addr, d.postcode), full_postcode: pcFull, url: d.url || '', price: d.price || '', bedrooms: d.bedrooms || 0, property_type: d.propertyType || '', agent: d.agent || '', delivered_at: l.delivered_at || '', first_visible: d.firstVisibleDate || d.updateDate || d.scrapedAt || '', area: extractPostcodeArea(d.postcode || addr) };
     });
     res.json({ success: true, email: email, product: cust.product, date: date, delivered_total: rows.length, leads: rows });
   } catch(e) { res.status(500).json({ error: e.message }); }
