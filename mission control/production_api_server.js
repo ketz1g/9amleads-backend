@@ -7246,8 +7246,7 @@ async function runProbatePafPostScrape() {
     var addr = l.fullAddress || l.deceasedAddress || l.address || '';
     var pc = String(l.postcode || '').toUpperCase().trim();
     if (hasUsablePremiseAddress(addr, pc)) { l.paf_done = true; return; }
-    if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return;
-    if (!hasStreetName(addr)) return;
+    if (!hasStreetName(addr) && !/[A-Za-z]{3,}/.test(addr.replace(/[0-9]/g,''))) return; // no street/town → not resolvable
     var d = pickFreshDate(l) || '';
     if (d && d < cut48) return;
     need.push(e);
@@ -7268,17 +7267,26 @@ async function runProbatePafPostScrape() {
     var pc0 = String(l.postcode || '').toUpperCase().trim();
     var hint = l.doorNumberHint || '';
     try {
-      var full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint);
-      if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint); }
-      var numOk = full && !full.rateLimited && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0);
+      var full = null;
+      if (/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc0)) {
+        // Full postcode present → postcode lookup (as before)
+        full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint);
+        if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint); }
+      } else {
+        // No full postcode → free-text address search resolves street+town to a full address
+        full = await pcDeliver.searchPostcoderAddress(addr0);
+        if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.searchPostcoderAddress(addr0); }
+      }
+      var numOk = full && !full.rateLimited && hasUsablePremiseAddress((full.fullAddress || full.address1 || full.summary_line || addr0), full.postcode || pc0);
       if (!numOk && !hint && l.photo) {
         try { hint = await pcDeliver.readDoorNumberFromPhoto(l.photo); } catch(e) {}
         if (hint) { full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint); if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint); } numOk = full && !full.rateLimited && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0); }
       }
       if (numOk) {
-        l.address = full.fullAddress || full.address1 || addr0;
-        l.fullAddress = full.fullAddress || l.address || addr0;
-        l.deceasedAddress = full.fullAddress || l.deceasedAddress || addr0;
+        var resolvedAddr = full.fullAddress || full.summary_line || (full.buildingNumber || full.building_name ? (full.buildingNumber || full.building_name) + ' ' + (full.street || '') + ', ' + (full.town || '') : addr0);
+        l.address = resolvedAddr;
+        l.fullAddress = resolvedAddr;
+        l.deceasedAddress = resolvedAddr;
         l.street = full.street || l.street || '';
         l.buildingNumber = full.buildingNumber || l.buildingNumber || '';
         l.postcode = (full.postcode || pc0).toUpperCase();

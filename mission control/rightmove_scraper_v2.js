@@ -573,6 +573,48 @@ function fetchPropertyDetail(propertyUrl) {
   });
 }
 
+// Postcoder FREE-TEXT ADDRESS SEARCH — resolves a partial address (street + town) to a
+// full address + postcode. Used for probate leads whose source only provides a partial
+// address. Same paid lookup + budget guard as lookupPostcoderAddress.
+function searchPostcoderAddress(query) {
+  return new Promise((resolve) => {
+    if (process.env.POSTCODER_ENABLED !== 'true' && process.env.POSTCODER_ENABLED !== '1') return resolve(null);
+    const q = String(query || '').trim();
+    if (!q) return resolve(null);
+    try {
+      const pcBudget = require('./postcoder_budget');
+      if (!pcBudget.canLookup()) return resolve(null);
+    } catch(pe) {}
+    const key = process.env.POSTCODER_API_KEY;
+    if (!key) return resolve(null);
+    const https = require('https');
+    const opts = {
+      hostname: 'ws.postcoder.com',
+      path: '/pcw/' + key + '/address/uk/' + encodeURIComponent(q) + '?format=json&lines=10&page=0',
+      method: 'GET',
+      headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      timeout: 20000
+    };
+    const req = https.get(opts, (res) => {
+      let body = '';
+      res.on('data', (c) => body += c);
+      res.on('end', () => {
+        if (res.statusCode === 429) return resolve({ rateLimited: true });
+        if (res.statusCode !== 200) return resolve(null);
+        try {
+          const arr = JSON.parse(body);
+          if (!Array.isArray(arr) || !arr.length) return resolve(null);
+          // pick the most specific match (has a full postcode + buildingNumber)
+          const best = arr.find(a => a && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(a.postcode||'')) && (a.buildingNumber || a.building_name)) || arr.find(a => a && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(a.postcode||''))) || arr[0];
+          resolve(best || null);
+        } catch(e) { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+  });
+}
+
 // Enrich a batch of list-view leads with full addresses and postcodes
 // by fetching their detail pages (parallel). This runs quickly so we can get
 // real postcodes for area matching BEFORE assignment.
