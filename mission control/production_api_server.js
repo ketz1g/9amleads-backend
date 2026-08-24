@@ -20222,11 +20222,12 @@ function runDeliveryTestReport() {
         var date = new Date().toISOString().split('T')[0];
         var testCusts = (db.customers || []).filter(function(c) { return /^test\./.test(String(c.email || '').toLowerCase()); });
         if (!testCusts.length) { resolve({ ok: false, reason: 'no test accounts' }); return; }
-        // 1) clear today's test-account leads so the delivery re-selects fresh from today's pool
-        var cleared = 0;
-        testCusts.forEach(function(c) { db.leads = (db.leads || []).filter(function(l) { if (l.customer_id === c.id && (l.created_at || '').startsWith(date)) { cleared++; return false; } return true; }); });
+        // ACCUMULATION MODE (testing): raise test accounts' daily cap so every run
+        // delivers FRESH leads that ACCUMULATE (no clearing) — lets the founder check
+        // all delivered leads. Reset to normal caps when testing finishes.
+        testCusts.forEach(function(c) { c.leads_per_day = 999; });
         saveDb();
-        // 2) run the real delivery on test accounts (force + test_only)
+        // run the real delivery on test accounts (force + test_only, emails enabled)
         await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true });
         // 3) build the report
         var PLAN = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
@@ -20247,16 +20248,15 @@ function runDeliveryTestReport() {
           }).length;
           var fresh24 = leads.filter(function(l) { var t = new Date(l.first_visible).getTime(); return t && (now - t) < 24*3600000; }).length;
           var fresh48 = leads.filter(function(l) { var t = new Date(l.first_visible).getTime(); return t && (now - t) >= 24*3600000 && (now - t) < 48*3600000; }).length;
-          var short = promised - leads.length;
           var needsDoor = (c.product === 'moving' || c.product === 'probate');
           var needsArea = c.product !== 'tenders';
           var flags = [];
-          if (short > 0) flags.push('SHORT ' + short);
+          // Accumulation mode: no SHORT/OVER count flags (delivered grows each run).
           if (needsDoor && door < leads.length) flags.push((leads.length - door) + ' doorless');
           if (fullPc < leads.length) flags.push((leads.length - fullPc) + ' no-PC');
           if (needsArea && inArea < leads.length) flags.push((leads.length - inArea) + ' out-of-area');
           if (leads.length === 0) flags.push('NO-LEADS');
-          lines.push(c.email + ' [' + c.product + '] promised ' + promised + ' got ' + leads.length + ' (door ' + door + ', PC ' + fullPc + ', in ' + inArea + ', 24h ' + fresh24 + ', 48h ' + fresh48 + ') ' + (flags.length ? '!! ' + flags.join(' ') : 'OK'));
+          lines.push(c.email + ' [' + c.product + '] accumulated ' + leads.length + ' (door ' + door + ', PC ' + fullPc + ', in ' + inArea + ', 24h ' + fresh24 + ', 48h ' + fresh48 + ') ' + (flags.length ? '!! ' + flags.join(' ') : 'OK'));
           if (flags.length) issues.push(c.email + ': ' + flags.join(' '));
         }
         var report = lines.join('\n');
