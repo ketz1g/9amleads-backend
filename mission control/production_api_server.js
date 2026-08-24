@@ -13864,7 +13864,7 @@ _deliverDiag[cust.email].products = products;
       console.log('[DELIVERY-AUDIT] ' + today + ': ' + delivered + ' leads, ' + errors + ' errors');
     } catch(auditErr) { console.log('[DELIVERY-AUDIT] error:', auditErr.message); }
     _deliveryLock = false;
-    res.json({ success: true, customers_processed: customers.length, leads_delivered: delivered, errors: errors, lastError: lastErr, diag: _deliverDiag || null });
+    res.json({ success: true, customers_processed: customers.length, leads_delivered: delivered, errors: errors, lastError: lastErr, diag: _deliverDiag || null, per_customer: Object.keys(_deliverDiag || {}).reduce(function(acc, ek) { var dv = _deliverDiag[ek]; var m = String((dv && dv.final_len) || '').match(/^(\d+)/); acc[ek] = { delivered: m ? parseInt(m[1], 10) : -1, totalDailyLimit: dv && dv.totalDailyLimit, products: (dv && dv.products) || [] }; return acc; }, {}) });
   } catch(e) { _deliveryLock = false; res.status(500).json({ error: e.message }); }
 });
 
@@ -20366,20 +20366,20 @@ function runDeliveryTestReport() {
             todayTotal.push(l);
             if (l.delivery_run_id === runId) thisRun.push(l);
           });
-          // AUTHORITATIVE COUNT OVERRIDE: the deliver response's diag records the
-          // EXACT number of leads the deliver emailed to this customer (final_len,
-          // after the bulletproof hard-cap). Trust it over the DB scan — the DB scan
-          // can be thrown off by a stale/cached in-memory copy, but the deliver's own
-          // counter is authoritative. If they disagree, slice/notify accordingly.
-          var _diagC = null;
-          try { _diagC = (delivRes && delivRes.json && delivRes.json.diag && delivRes.json.diag[c.email]) || null; } catch(de) {}
-          if (_diagC && _diagC.final_len) {
-            var _m = String(_diagC.final_len).match(/^(\d+)/);
-            var _authCount = _m ? parseInt(_m[1], 10) : -1;
-            if (_authCount >= 0 && _authCount !== thisRun.length) {
-              console.log('[TEST] ' + c.email + ': deliver diag says ' + _authCount + ', DB scan says ' + thisRun.length + ' — trusting deliver diag');
-              thisRun = thisRun.slice(0, _authCount);
-            }
+          // AUTHORITATIVE COUNT OVERRIDE: the deliver response's per_customer map
+          // records the EXACT number of leads the deliver emailed to this customer
+          // (after the bulletproof hard-cap). Trust it over the DB scan — the DB
+          // scan can be thrown off by a stale/cached in-memory copy, but the
+          // deliver's own counter is authoritative. If they disagree, slice the
+          // thisRun leads to the authoritative count.
+          var _authCount = -1;
+          try { var _pc = (delivRes && delivRes.json && delivRes.json.per_customer && delivRes.json.per_customer[c.email]) || null; if (_pc && typeof _pc.delivered === 'number') _authCount = _pc.delivered; } catch(de) {}
+          if (_authCount < 0) {
+            try { var _diagC = (delivRes && delivRes.json && delivRes.json.diag && delivRes.json.diag[c.email]) || null; if (_diagC && _diagC.final_len) { var _m = String(_diagC.final_len).match(/^(\d+)/); if (_m) _authCount = parseInt(_m[1], 10); } } catch(de2) {}
+          }
+          if (_authCount >= 0 && _authCount !== thisRun.length) {
+            console.log('[TEST] ' + c.email + ': deliver says ' + _authCount + ', DB scan says ' + thisRun.length + ' — trusting deliver');
+            thisRun = thisRun.slice(0, _authCount);
           }
           var leads = thisRun.map(function(l) {
             var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
