@@ -1794,11 +1794,23 @@ document.querySelectorAll('.modal').forEach(function(m){
     try {
       var leads = JSON.parse(x.responseText);
       if (!Array.isArray(leads)) return;
+      // KPIs must count DELIVERED, non-rejected leads (matching My Leads) — NOT all
+      // created records. Previously this counted every lead ever created (inflating
+      // "This Week" to the total) and counted rejected/pending leads in "Today".
+      function isLiveLead(l){
+        if (!l.delivered) return false;
+        var d = null; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+        if (l.rejected || (d && d.rejected)) return false;
+        return true;
+      }
+      var live = leads.filter(isLiveLead);
       var today = new Date().toISOString().split('T')[0];
-      var tl = leads.filter(function(l){return (l.created_at||'').startsWith(today);});
-      var ml = leads.filter(function(l){return (l.created_at||'').startsWith(today.substring(0,7));});
+      var wStart = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0]; // last 7 days
+      var tl = live.filter(function(l){ return (l.delivered_at || '').startsWith(today); });
+      var wl = live.filter(function(l){ return (l.delivered_at || '') >= wStart; });
+      var ml = live.filter(function(l){ return (l.delivered_at || '').startsWith(today.substring(0,7)); });
       document.getElementById('kpi-today').textContent = tl.length;
-      document.getElementById('kpi-week').textContent = leads.length;
+      document.getElementById('kpi-week').textContent = wl.length;
       document.getElementById('kpi-month').textContent = ml.length;
     } catch(e) {}
   };
