@@ -10135,6 +10135,7 @@ cron.schedule('0 11 * * 1-5', async () => {
 var __deliveryFireCount = 0;
 var _deliveryLock = false;
 var _testReportLock = false;
+var _testReportLockAt = 0;
 var __lastDeliveryFire = '';
 var __lastDeliveryDate = ''; // YYYY-MM-DD of the most recent delivery fire (daily watchdog)
 // ===== DELIVERY CRON: Mon-Fri 09:00 UK ===== (timezone: Europe/London)
@@ -20257,15 +20258,27 @@ function httpCallLocal(method, path, body) {
   });
 }
 function runDeliveryTestReport() {
-  if (_testReportLock) { console.log('[TEST] Skipping: another delivery test already running'); return Promise.resolve({ ok: false, skipped: true }); }
+  // SELF-HEALING LOCK: if a previous run's lock is still set but is stale (>6 min),
+  // force-clear it — a crashed/hung run must never block the 15-min cron forever
+  // (that's what just happened: a stuck lock skipped every subsequent tick).
+  if (_testReportLock) {
+    if (_testReportLockAt && (Date.now() - _testReportLockAt) > 360000) {
+      console.log('[TEST] WARNING: stale test-report lock detected, force-clearing (locked ' + Math.round((Date.now() - _testReportLockAt) / 1000) + 's)');
+      _testReportLock = false;
+    } else {
+      console.log('[TEST] Skipping: another delivery test already running');
+      return Promise.resolve({ ok: false, skipped: true });
+    }
+  }
   _testReportLock = true;
+  _testReportLockAt = Date.now();
   return new Promise(function(resolve) {
     (async () => {
       try {
         var db = getDb();
         var date = new Date().toISOString().split('T')[0];
         var testCusts = (db.customers || []).filter(function(c) { return /^test\./.test(String(c.email || '').toLowerCase()); });
-        if (!testCusts.length) { _testReportLock = false; resolve({ ok: false, reason: 'no test accounts' }); return; }
+        if (!testCusts.length) { _testReportLock = false; _testReportLockAt = 0; resolve({ ok: false, reason: 'no test accounts' }); return; }
         // NORMAL CAPS: keep each test account at its real plan cap so the 9am
         // delivery caps correctly. The deliver endpoint's test/force mode
         // re-delivers the FULL quota each run regardless, so every 30-min run
@@ -20395,6 +20408,7 @@ function runDeliveryTestReport() {
         resolve({ ok: true, issues: issues.length, report: report });
       } catch(e) { console.log('[TEST] report error:', e.message); resolve({ ok: false, error: e.message }); }
       _testReportLock = false;
+      _testReportLockAt = 0;
     })();
   });
 }
