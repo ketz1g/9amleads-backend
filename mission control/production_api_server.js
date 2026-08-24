@@ -7059,7 +7059,11 @@ async function runMovingPafPostScrape() {
   var need = [];
   arr.forEach(function(e) {
     var l = e._item || e;
-    if (l.paf_done || l.paf_failed) return;
+    // Skip leads already successfully numbered. RETRY paf_failed leads (up to 2
+    // attempts) — an earlier run may have marked them failed only because the daily
+    // Postcoder budget was exhausted, so with fresh budget they may now resolve.
+    if (l.paf_done && !l.paf_failed) return;
+    if ((l.paf_attempts || 0) >= 2) return;
     var addr = l.fullAddress || l.address || '';
     var pc = String(l.postcode || '').toUpperCase().trim();
     if (hasUsablePremiseAddress(addr, pc)) { l.paf_done = true; return; } // already numbered — no paid lookup
@@ -7116,6 +7120,7 @@ async function runMovingPafPostScrape() {
       } else { l.paf_failed = true; failed++; }
     } catch(pe) { l.paf_failed = true; failed++; }
     l.paf_done = true;
+    l.paf_attempts = (l.paf_attempts || 0) + 1;
   }
   if (container) fs.writeFileSync(file, JSON.stringify(container, null, 2));
   else fs.writeFileSync(file, JSON.stringify(arr, null, 2));
