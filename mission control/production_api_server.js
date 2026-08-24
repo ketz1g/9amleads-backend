@@ -13400,12 +13400,20 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 console.log('[QUALITY-REVIEW] ' + cust.email + ': final ' + custLeads.length + '/' + totalNeeded + ' validated moving leads');
               } catch(qvErr) { console.log('[QUALITY-REVIEW] error for ' + cust.email + ': ' + qvErr.message); }
             }
-            // FINAL HARD GATE: a doorless lead is NEVER emailed. Right before the
-            // email is composed, re-verify every lead has a real door number + full
-            // postcode (covers any that slipped past the earlier gate via the
-            // exact-count fill). Anything that fails is dropped — the email only
-            // ever contains mailable addresses for Print & Post.
+            // FINAL HARD GATE: a doorless lead is NEVER emailed, and the exact-count
+            // + dedup guarantees hold even if earlier passes slipped. Right before
+            // the email: (1) dedupe by property identity, (2) drop doorless leads,
+            // (3) hard-cap at the promised count so a re-run can NEVER over-deliver.
             if (custLeads && custLeads.length) {
+              var _seenF = {};
+              custLeads = custLeads.filter(function(l) {
+                var ld = null; try { ld = JSON.parse(l.data || '{}'); } catch(e) { ld = null; }
+                if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '' };
+                var k = propertyIdentityKey(ld.fullAddress || ld.address || ld.deceasedAddress || '', ld.postcode || '');
+                if (k && _seenF[k]) return false;
+                if (k) _seenF[k] = 1;
+                return true;
+              });
               var _gateLen = custLeads.length;
               custLeads = custLeads.filter(function(l) {
                 var ld = null; try { ld = JSON.parse(l.data || '{}'); } catch(e) { ld = null; }
@@ -13417,6 +13425,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
                 return hasPremiseNumber(gAddr, gPc);
               });
               if (custLeads.length !== _gateLen) console.log('[FINAL-GATE] dropped ' + (_gateLen - custLeads.length) + ' doorless lead(s) for ' + cust.email + ' (now ' + custLeads.length + ')');
+              if (custLeads.length > totalNeeded) {
+                console.log('[FINAL-GATE] hard-cap: ' + cust.email + ' at ' + custLeads.length + ' -> ' + totalNeeded + ' (never over-deliver)');
+                custLeads = custLeads.slice(0, totalNeeded);
+              }
             }
             // TOWN BACKFILL: append a town/area to any moving lead that has door
             // number + street + full postcode but no town, using the cached
@@ -16747,16 +16759,16 @@ function generateLeadEmailHTML(customer, leads) {
   body += '</div></div></td></tr>';
 
   // Tips section — Reject & Replace, Print & Post, upload flyer/intro letter
-  body += '<tr><td style="background:#ffffff;padding:0 30px 18px">' +
-    '<div style="background:linear-gradient(135deg,#eff6ff,#eef2ff);border:1px solid #e0e7ff;border-radius:12px;padding:16px 18px">' +
+  body += '<tr><td style="background:#ffffff;padding:0 24px 18px">' +
+    '<div style="background:#eef2ff;border:1px solid #e0e7ff;border-radius:12px;padding:16px 18px">' +
     '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:8px">💡 Make the most of today\'s leads</div>' +
-    '<table role="presentation" cellpadding="0" cellspacing="0" width="100%">' +
-    '<tr><td style="padding:5px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">1.</td>' +
-    '<td style="padding:5px 0;font-size:12px;color:#334155;line-height:1.6;vertical-align:top"><strong>Reject &amp; Replace</strong> &mdash; is a lead wrong or outside your area? Click <strong>Reject &amp; Replace</strong> on it in <a href="' + dashboardUrl + '" style="color:#2563eb">My Leads</a> and we\'ll instantly swap it for a fresh in-area lead.</td></tr>' +
-    '<tr><td style="padding:5px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">2.</td>' +
-    '<td style="padding:5px 0;font-size:12px;color:#334155;line-height:1.6;vertical-align:top"><strong>Print &amp; Post</strong> &mdash; send this lead a physical letter through Royal Mail so your business reaches them in the post, not just their inbox. Use <strong>Print &amp; Post</strong> on the lead, or turn on <strong>Auto-Send</strong> and we mail every new lead for you automatically after the 9am delivery.</td></tr>' +
-    '<tr><td style="padding:5px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">3.</td>' +
-    '<td style="padding:5px 0;font-size:12px;color:#334155;line-height:1.6;vertical-align:top"><strong>Upload your flyer + intro letter</strong> &mdash; add your flyer (front &amp; back) and a short intro letter once in <strong>Print &amp; Post</strong> settings. They\'re used for every mailing, so your business always arrives looking professional.</td></tr>' +
+    '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;max-width:100%;word-break:break-word">' +
+    '<tr><td style="padding:6px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">1.</td>' +
+    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Reject &amp; Replace</strong> &mdash; is a lead wrong or outside your area? Click <strong>Reject &amp; Replace</strong> on it in <a href="' + dashboardUrl + '" style="color:#2563eb">My Leads</a> and we\'ll instantly swap it for a fresh in-area lead.</td></tr>' +
+    '<tr><td style="padding:6px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">2.</td>' +
+    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Print &amp; Post</strong> &mdash; send this lead a physical letter through Royal Mail so your business reaches them in the post, not just their inbox. Use <strong>Print &amp; Post</strong> on the lead, or turn on <strong>Auto-Send</strong> and we mail every new lead for you automatically after the 9am delivery.</td></tr>' +
+    '<tr><td style="padding:6px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">3.</td>' +
+    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Upload your flyer + intro letter</strong> &mdash; add your flyer (front &amp; back) and a short intro letter once in <strong>Print &amp; Post</strong> settings. They\'re used for every mailing, so your business always arrives looking professional.</td></tr>' +
     '</table>' +
     '<div style="margin-top:10px"><a href="' + dashboardUrl + '" style="display:inline-block;margin-right:6px;margin-bottom:6px;padding:8px 18px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Open My Leads</a>' +
     '<a href="' + dashboardUrl + '?page=direct-mail" style="display:inline-block;padding:8px 18px;background:#ffffff;border:1px solid #2563eb;color:#2563eb;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Print &amp; Post</a></div>' +
