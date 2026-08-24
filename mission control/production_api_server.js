@@ -6919,7 +6919,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     else { var backfillCutoff = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < backfillCutoff) continue; }
     if (cust.product === 'moving' && maxBedsF < 99 && (parseInt(l.bedrooms, 10) || 99) > maxBedsF) continue;
     var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
-    var addrKeyP = 'aa:' + String(l.fullAddress || l.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28) + '|' + String(l.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    var addrKeyP = 'aa:' + propertyIdentityKey(l.fullAddress || l.address || '', l.postcode || '');
     if (deliveredKeys[key] || seen[key] || _sharedSeen[key]) continue;
     if (addrKeyP.length > 5 && (seen[addrKeyP] || _sharedSeen[addrKeyP])) continue;
     seen[key] = 1; seen[addrKeyP] = 1;
@@ -6981,7 +6981,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
         var rPcR = repR.postcode || '';
         if (!hasUsablePremiseAddress(rAddrR, rPcR)) continue;
         var rKeyR = repR.url || ('a:' + String(rAddrR).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
-        var rAKeyR = 'aa:' + String(rAddrR).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28) + '|' + String(rPcR).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        var rAKeyR = 'aa:' + propertyIdentityKey(rAddrR, rPcR);
         if (_sharedSeen[rKeyR] || (rAKeyR.length > 5 && _sharedSeen[rAKeyR])) continue;
         selected[rpi] = repR;
         _sharedSeen[rKeyR] = 1; if (rAKeyR.length > 5) _sharedSeen[rAKeyR] = 1;
@@ -7180,6 +7180,20 @@ async function preVerifyMovingLeads() {
 // names ("ALL", "EAST", "KENT") which aren't changeable to a closer postcode.
 function isPostcodeAreaTarget(s) {
   return /^[A-Z]{1,2}([0-9]|$)/i.test(String(s || '').trim());
+}
+// Robust property identity key: street name + house number + postcode. Same physical
+// property scraped by different providers/runs often has different full-address
+// strings ("1 Langdale Road, London" vs "1 Langdale Road, Greenwich, London"), so
+// full-address dedup lets the same home through twice. Street+number+postcode does not.
+function propertyIdentityKey(addr, pc) {
+  var a = String(addr || '').toLowerCase().replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ' ');
+  a = a.replace(/[^a-z0-9\s-]/g, ' ').replace(/\s+/g, ' ').trim();
+  var num = (a.match(/^\s*(flat\s*[0-9]+[a-z]?|unit\s*[0-9]+|[0-9]+[a-z]?)/) || [null, ''])[1] || '';
+  a = a.replace(/^\s*(flat\s*[0-9]+[a-z]?|unit\s*[0-9]+|[0-9]+[a-z]?)\s*,?\s*/, '');
+  var m = a.match(/([a-z0-9'\- ]+?(?:road|street|avenue|lane|close|drive|gardens?|way|place|terrace|grove|court|rise|row|walk|hill|mead|park|villas|mews|yard|wharf|square|parade|crescent|boulevard|highway|route|bank|green|field|fields|common|view|end|gate|well|lodge|mills|house|tower|block|centre|center|apartments|mill))/);
+  var street = m ? m[1].replace(/[^a-z0-9]/g, '') : '';
+  var pcN = String(pc || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return (street || a.replace(/[^a-z0-9]/g, '').slice(0, 18)) + '|' + num.replace(/[^a-z0-9]/g, '') + '|' + pcN;
 }
 function quietAreaAlertedDate(cust, areaCode) {
   try { var m = JSON.parse(cust.area_alerts || '{}'); return m[areaCode] || ''; } catch(e) { return ''; }
@@ -11919,6 +11933,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         var gAddr = String(gdd.fullAddress || gdd.deceasedAddress || gdd.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
         var gRef = String(gdd.reference || gdd.companyNumber || gdd.deceasedName || gdd.tenderNoticeId || '').toLowerCase().trim();
         var gPc = String(gdd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
+        if (gPc) globalDeliveredKeys['gg:' + propertyIdentityKey(gdd.fullAddress || gdd.deceasedAddress || gdd.address || '', gdd.postcode || '')] = true;
         if (gAddr && gPc) globalDeliveredKeys[gAddr + '|' + gPc] = true;
         else if (gRef) globalDeliveredKeys[gRef] = true;
       } catch(e) {}
@@ -12150,16 +12165,16 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // ADDRESS+POSTCODE in-run dedup: the same property scraped by multiple
           // providers/runs has different URLs (e.g. Rightmove RES_BUY vs COM_BUY),
           // so URL alone lets near-identical leads through 2-3x in one run. Collapse
-          // any duplicate property (same normalized address + same postcode).
-          var addrNorm = String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28);
-          var pcNorm = String(dd.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-          var addrKeyRun = addrNorm && pcNorm ? 'aa:' + addrNorm + '|' + pcNorm : '';
+          // any duplicate property via its street+number+postcode identity.
+          var addrKeyRun = 'aa:' + propertyIdentityKey(dd.fullAddress || dd.deceasedAddress || dd.address || '', dd.postcode || '');
           if (addrKeyRun && _inRunSeen && _inRunSeen[addrKeyRun]) return false;
           if (addrKeyRun && _inRunSeen) _inRunSeen[addrKeyRun] = true;
           var aKey = String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
           var rKey = String(dd.reference || dd.companyNumber || dd.deceasedName || dd.tenderNoticeId || '').toLowerCase().trim();
           var pKey = String(dd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
+          var pKeyId = 'gg:' + propertyIdentityKey(dd.fullAddress || dd.deceasedAddress || dd.address || '', dd.postcode || '');
           if (aKey && pKey && (deliveredKeys[aKey + '|' + pKey] || globalDeliveredKeys[aKey + '|' + pKey])) return false;
+          if (pKeyId && (deliveredKeys[pKeyId] || globalDeliveredKeys[pKeyId])) return false;
           if (rKey && (deliveredKeys[rKey] || globalDeliveredKeys[rKey])) return false;
           return true;
         } catch(e) { return true; }
