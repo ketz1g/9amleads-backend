@@ -453,13 +453,21 @@ function saveTemplate(){
     if(d&&d.success){
       toast('Cover letter saved');
       loadTemplates();
+      // Show the letter preview immediately with the saved text (flyers always
+      // show their preview — letters must too, so the box is shown + filled with
+      // exactly what was just saved, never left blank after saving).
+      var lp=document.getElementById('letter-preview-box'); if(lp)lp.style.display='block';
+      var bodyEl=document.getElementById('lp-letter-body'); if(bodyEl)bodyEl.textContent=cleanLetterPreviewText(body.ai_generated_text)||'(letter is empty)';
+      var cEl=document.getElementById('letter-counter');
+      if(cEl){var cl=cleanLetterPreviewText(body.ai_generated_text);cEl.textContent=cl.length+' / 3,200 characters · '+(cl?cl.split(/\s+/).filter(function(w){return w.length>0;}).length:0)+' / 430 words';}
+      checkLetterFit();
       // ALSO save this letter as the setup's active cover letter so it's what
       // actually gets sent (the send reads the setup template text, not a
       // separate saved template). This guarantees the pasted letter is used.
       var fmtId=_selectedFormat||'flyer_a5_portrait';
       var mt = fmtId==='letter_a4' ? 'letter' : (fmtId==='flyer_plus_letter' ? 'flyer_plus_letter' : 'flyer');
       api('POST','/api/direct-mail/setup',{default_mail_type:mt,default_format:fmtId,cover_letter:document.getElementById('t-content').value},function(e2,d2){
-        if(d2&&d2.success){ toast('Cover letter saved as your active letter'); loadLetterPreview(); }
+        if(d2&&d2.success){ toast('Cover letter saved as your active letter'); }
       });
     } else {
       toast('Template error');
