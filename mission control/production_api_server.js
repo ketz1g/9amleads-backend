@@ -13694,7 +13694,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
           // while ensuring all emails go out promptly.
           if (emailQueue.length >= 15) {
             var batchNow = emailQueue.splice(0, emailQueue.length);
-            await             Promise.all(batchNow.map(function(m) { if (testOnly) { console.log('[TEST] email suppressed for ' + m.email + ' (test run)'); return Promise.resolve({ suppressed: true }); } return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) {
+            await             Promise.all(batchNow.map(function(m) { return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) {
               console.log('[DELIVERY] Email failed ' + m.email + ': ' + e.message);
               // SELF-HEAL: queue the failed delivery email so a catch-up cron can
               // re-send it — the customer's leads are in-dashboard but they'd
@@ -13771,7 +13771,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     // customer's daily email goes out even if the batch flush didn't fill to 15.
     if (emailQueue.length > 0) {
       var finalBatch = emailQueue.splice(0, emailQueue.length);
-      await Promise.all(finalBatch.map(function(m) { if (testOnly) { console.log('[TEST] email suppressed for ' + m.email + ' (test run)'); return Promise.resolve({ suppressed: true }); } return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) { console.log('[DELIVERY] Email failed ' + m.email + ': ' + e.message); }); }));
+      await Promise.all(finalBatch.map(function(m) { return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) { console.log('[DELIVERY] Email failed ' + m.email + ': ' + e.message); }); }));
       console.log('[DELIVERY] Flushed final email batch: ' + finalBatch.length);
     }
     saveDb();
