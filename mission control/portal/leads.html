@@ -659,7 +659,8 @@ function sendPrintPost(leadId){
     return;
   }
   _pendingLeadId=leadId;
-  _bulkCount = 0;
+  _pendingLeadIds=[leadId];
+  _bulkCount = 1;
   // Show address in the modal
   var addr='';
   for(var i=0;i<allLeads.length;i++){
@@ -767,10 +768,16 @@ function resolveMailType(t){
 }
 function mpPay(){
   // BULK ROUTE: when in bulk mode (one OR more leads selected via the bulk bar /
-  // ticked checkboxes), always use the bulk endpoint. Previously this only routed
-  // when _bulkCount > 1 — a SINGLE bulk-selected lead fell through to the single-lead
-  // endpoint with an empty _pendingLeadId and returned "Lead not found".
-  if (_bulkCount >= 1 || (_pendingLeadIds && _pendingLeadIds.length > 0)) { bulkPay(); return; }
+  // ticked checkboxes, OR a single lead opened via the Print & Post button which
+  // sets _pendingLeadIds=[id]), always use the bulk endpoint. Previously this only
+  // routed when _bulkCount > 1 — a SINGLE bulk-selected lead fell through to the
+  // single-lead endpoint with an empty _pendingLeadId and returned "Lead not found".
+  if (_pendingLeadIds && _pendingLeadIds.length > 0) { bulkPay(); return; }
+  if (!_pendingLeadId) {
+    var errEl0 = document.getElementById('mp-error');
+    if (errEl0) { errEl0.textContent='No lead selected. Please pick a lead and try again.'; errEl0.style.display='block'; }
+    return;
+  }
   var mailType = _selectedMailType || 'letter_a4';
   var resolved = resolveMailType(mailType);
   var intervals = _repeatMode==='three' ? [0,14,30] : [0];
