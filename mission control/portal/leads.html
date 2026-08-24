@@ -733,8 +733,8 @@ function mpShowStep(step){
   document.getElementById('mp-step-label').textContent = step===1?'Step 1 of 2 · Choose what to send':'Step 2 of 2 · Confirm your schedule';
 }
 function mpContinue(){
-  // Route to bulk flow when sending multiple selected leads
-  if (_bulkCount > 1) { bulkConfirm(); return; }
+  // Route to bulk flow when sending selected leads (one or more)
+  if (_bulkCount >= 1) { bulkConfirm(); return; }
   var mailType = _selectedMailType || 'letter_a4';
   var pricePerItem = mailType==='flyer_a5'?1.99 : mailType==='flyer_a5_enveloped'?2.75 : mailType==='flyer_plus_letter'?2.99 : 1.49;
   var label = mailType==='flyer_a5'?'A5 Leaflet':mailType==='flyer_a5_enveloped'?'A5 Leaflet in Envelope':mailType==='flyer_plus_letter'?'Leaflet + Letter':'A4 Letter';
@@ -757,7 +757,7 @@ function mpContinue(){
   document.getElementById('mp-error').style.display='none';
   mpShowStep(2);
 }
-function mpBack(){ if (_bulkCount > 1) { bulkBack(); return; } mpShowStep(1); }
+function mpBack(){ if (_bulkCount >= 1) { bulkBack(); return; } mpShowStep(1); }
 // Map the internal mail-type token to the backend format id + mail_type.
 function resolveMailType(t){
   if(t==='flyer_a5_enveloped')return {mail_type:'flyer',format:'flyer_a5_enveloped'};
@@ -766,7 +766,11 @@ function resolveMailType(t){
   return {mail_type:t,format:''};
 }
 function mpPay(){
-  if (_bulkCount > 1) { bulkPay(); return; }
+  // BULK ROUTE: when in bulk mode (one OR more leads selected via the bulk bar /
+  // ticked checkboxes), always use the bulk endpoint. Previously this only routed
+  // when _bulkCount > 1 — a SINGLE bulk-selected lead fell through to the single-lead
+  // endpoint with an empty _pendingLeadId and returned "Lead not found".
+  if (_bulkCount >= 1 || (_pendingLeadIds && _pendingLeadIds.length > 0)) { bulkPay(); return; }
   var mailType = _selectedMailType || 'letter_a4';
   var resolved = resolveMailType(mailType);
   var intervals = _repeatMode==='three' ? [0,14,30] : [0];
