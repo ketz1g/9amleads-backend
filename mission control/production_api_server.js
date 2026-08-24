@@ -1571,6 +1571,24 @@ class StannpProvider extends DirectMailProvider {
     return last.buffer;
   }
 
+  // Render a clean A4 letter PDF using Playwright (chromium, already installed).
+  // Used as a fallback when pdfkit isn't available — guarantees Stannp always
+  // receives a proper PDF FILE (its own recipient window is overlaid), never the
+  // HTML `pages` path that injected "00000 / 0000" placeholders and duplicated the
+  // recipient name.
+  async buildA4LetterPdfViaBrowser(html, recipient) {
+    var pw = require('playwright');
+    var browser = await pw.chromium.launch({ headless: true });
+    try {
+      var page = await browser.newPage();
+      await page.setContent('<html><head><style>@page{size:A4;margin:0}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#1e293b}</style></head><body>' + (html || '') + '</body></html>', { waitUntil: 'networkidle' });
+      var pdfBuf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '40px', bottom: '40px', left: '50px', right: '50px' } });
+      return Buffer.from(pdfBuf);
+    } finally {
+      try { await browser.close(); } catch(e) {}
+    }
+  }
+
   // Send a SINGLE mailpiece directly to Stannp (new API).
   // mailType: 'letter' | 'flyer' | 'flyer_plus_letter'
   // files: [{ name, file_data }] — artwork (flyer front/back / letter PDF)
@@ -1624,13 +1642,26 @@ async sendMailpiece(mailType, recipient, files, format) {
         letterParams.file = this.stripDataPrefix(letterFile.file_data);
       } else {
         // Generate a proper A4 PDF letter from the body text so the bottom is
-        // never cut off (raw HTML pages render on a flyer-sized page + clip).
+        // never cut off (raw HTML pages render on a flyer-sized page + clip), and
+        // so Stannp receives a FILE (it renders its own recipient window) rather
+        // than HTML `pages` (which made Stannp inject "00000 / 0000" placeholders
+        // and repeat the recipient name).
         try {
           var letterPdfBuf = await this.buildA4LetterPdf(pageBody, recipient);
           letterParams.file = letterPdfBuf.toString('base64');
         } catch(pdfErr) {
-          console.log('[STANNP] Letter PDF generation failed, falling back to HTML pages:', pdfErr.message);
-          letterParams.pages = pageBody;
+          // pdfkit unavailable — use Playwright (chromium) to render the letter PDF
+          // so Stannp still gets a clean FILE. Only fall back to HTML pages as a
+          // last resort (Stannp mangles HTML pages with its own window overlay).
+          try {
+            console.log('[STANNP] pdfkit failed, rendering letter via Playwright:', pdfErr.message);
+            var pwHtml = recipient.pages || pageBody;
+            var pwBuf = await this.buildA4LetterPdfViaBrowser(pwHtml, recipient);
+            letterParams.file = pwBuf.toString('base64');
+          } catch(pwErr) {
+            console.log('[STANNP] Playwright letter PDF also failed, using HTML pages:', pwErr.message);
+            letterParams.pages = pageBody;
+          }
         }
       }
       var res = await this.stannpRequest('/letters/create', letterParams);

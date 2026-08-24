@@ -1,29 +1,30 @@
-{
-  "name": "9amleads",
-  "version": "2.0.0",
-  "description": "9amLeads — exclusive business leads delivered at 9am daily.",
-  "main": "production_api_server.js",
-  "scripts": {
-    "start": "node production_api_server.js"
-  },
-  "engines": {
-    "node": "20.x || 22.x || 23.x"
-  },
-  "type": "commonjs",
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "express-rate-limit": "^8.5.2",
-    "jsonwebtoken": "^9.0.3",
-    "node-cron": "^4.2.1",
-    "nodemailer": "^8.0.7",
-    "playwright": "^1.59.1",
-    "sharp": "^0.34.5",
-    "uuid": "^14.0.0"
-  },
-  "devDependencies": {
-    "netlify-cli": "^26.1.0"
-  }
+﻿{
+    "name":  "9amleads",
+    "version":  "2.0.0",
+    "description":  "9amLeads â€” exclusive business leads delivered at 9am daily.",
+    "main":  "production_api_server.js",
+    "scripts":  {
+                    "start":  "node production_api_server.js"
+                },
+    "engines":  {
+                    "node":  "20.x || 22.x || 23.x"
+                },
+    "type":  "commonjs",
+    "dependencies":  {
+                         "bcryptjs":  "^3.0.3",
+                         "cors":  "^2.8.6",
+                         "dotenv":  "^17.4.2",
+                         "express":  "^5.2.1",
+                         "express-rate-limit":  "^8.5.2",
+                         "jsonwebtoken":  "^9.0.3",
+                         "node-cron":  "^4.2.1",
+                         "nodemailer":  "^8.0.7",
+                         "playwright":  "^1.59.1",
+                         "sharp":  "^0.34.5",
+                         "uuid":  "^14.0.0",
+                         "pdfkit":  "^0.15.0"
+                     },
+    "devDependencies":  {
+                            "netlify-cli":  "^26.1.0"
+                        }
 }
