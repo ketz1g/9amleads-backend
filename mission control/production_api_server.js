@@ -17561,50 +17561,58 @@ var PRINT_POST_PRICES = {
 // downloaded letter matches exactly what the customer wrote. AI copywriters
 // often return markdown (**bold**, * bullets) that should NOT appear in a letter.
 // STRIP stray ADDRESS BLOCKS + the marketing PREAMBLE from a printed letter so the
-// letter always starts at the real content (the product/services list). Stannp
-// prints the RECIPIENT address itself in the envelope window, so the letter must
-// NOT repeat the name/address block (which was showing duplicated + missing the
-// door number). Also drop the "Dear <name>, / GET FRESH... / MORE THAN JUST LEADS"
-// intro so the page isn't overloaded and starts cleanly.
+// letter starts at the real content. Stannp prints the RECIPIENT address itself in
+// the envelope window, so the letter must NOT repeat the name/address block (which
+// was showing duplicated + missing the door number). It also drops unmerged
+// placeholder tokens ("00000 / 0000"). It is DEFENSIVE: if the letter body has a
+// product/services list heading (PLANNING & CONSTRUCTION etc.), it trims everything
+// above it; if it's a normal business letter with no such heading, it keeps the
+// whole body intact (never empties the letter).
 function cleanLetterBodyForPrint(text) {
   var s = String(text || '');
   if (!s) return '';
   var lines = s.split('\n').map(function(l){ return l.trim(); });
-  var out = [];
-  var afterProductStart = false;
+  // Is this a "5 types / product list" style letter? Look for the section headings.
+  var productHeadingRe = /^(PLANNING & CONSTRUCTION|MOVING & PROPERTY|PROBATE & LEGAL|NEW BUSINESS & B2B|PUBLIC SECTOR & GOVERNMENT TENDERS|PLANNING|MOVING|PROBATE|NEW BUSINESS|PUBLIC SECTOR|OUR SERVICES|WHAT WE|HOW WE|WHY CHOOSE|ABOUT US|OUR PRODUCTS)/i;
+  var startIdx = -1;
   for (var i = 0; i < lines.length; i++) {
-    var line = lines[i];
+    if (productHeadingRe.test(lines[i])) { startIdx = i; break; }
+  }
+  // Address-block line detector: name / street / town / postcode / digits-only lines
+  // that appear as a standalone block (not part of a real sentence).
+  var addrLineRe = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i; // full postcode
+  var nameLineRe = /^[A-Z][a-z]+(?:\s[A-Z][a-z]+){0,2}$/;          // "Ket Mandalia"
+  var townLineRe = /^[A-Z]{2,}(?:\s[A-Z]{2,})*$/;                  // "HARROW"
+  var out = [];
+  for (var j = 0; j < lines.length; j++) {
+    var line = lines[j];
     if (!line) { if (out.length) out.push(''); continue; }
-    var up = line.toUpperCase();
-    // START POINT: once we hit the actual product/services list heading, keep
-    // everything from here on. "5 TYPES OF BUSINESS LEADS" is a header ABOVE the
-    // list and is dropped — the letter starts at PLANNING & CONSTRUCTION.
-    if (!afterProductStart && /^(PLANNING|MOVING|PROBATE|NEW BUSINESS|PUBLIC SECTOR|OUR SERVICES|WHAT WE|HOW WE|WHY CHOOSE|ABOUT US|OUR PRODUCTS)/i.test(line)) {
-      afterProductStart = true;
+    // Drop the marketing preamble ABOVE the product list (only when a product
+    // heading exists — a normal business letter is kept whole).
+    if (startIdx >= 0 && j < startIdx) continue;
+    // Drop unmerged placeholder tokens like "00000  /  0000" and "[name]" etc.
+    if (/^\s*\d{3,}\s*\/\s*\d{3,}\s*$/.test(line)) continue;
+    if (/^\[[a-z_]+\]$/i.test(line)) continue;
+    // Drop full-postcode-only lines (Stannp adds the recipient address itself).
+    if (addrLineRe.test(line)) continue;
+    // Drop a duplicated/standalone name line when it is followed by another name
+    // line or a street-looking line (the address block). Keep it if it is a normal
+    // greeting/sign-off word like "Regards" or the sender's signature.
+    if (nameLineRe.test(line) && j + 1 < lines.length && lines[j+1]) {
+      var nxt = lines[j+1];
+      if ((nameLineRe.test(nxt) || /^[0-9][A-Za-z0-9'.,\/\- ]{2,60}$/.test(nxt) || addrLineRe.test(nxt))) continue;
     }
-    if (!afterProductStart) {
-      // Skip the address/recipient block: name-only line followed by street/town/
-      // postcode lines, and any line that is ONLY a postcode or a UK town.
-      if (/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(line)) continue;
-      if (/^[A-Z][a-z]+$/.test(line) && i + 1 < lines.length && lines[i+1] && !/[A-Za-z]{6,}/.test(lines[i+1]) === false) continue;
-      if (/^(Dear|GET FRESH|Hi |Hello|To the|5 TYPES|MORE THAN|Your|Best|Yours|With|Regards|Sincerely|At |We'd|We would|Every|Instead|9amLeads gives)/i.test(line)) continue;
-      continue; // drop all preamble lines before the product list
-    }
-    // Once past the start point, drop any lingering address-y lines / signatures
-    // that are just a name + postcode.
-    if (/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(line)) continue;
-    if (/^MORE THAN JUST LEADS$/i.test(line)) continue;
-    if (/^9amLeads gives you/i.test(line)) continue;
+    // Drop an ALL-CAPS town line that follows a street-looking line (address block).
+    if (townLineRe.test(line) && j > 0 && /^[0-9][A-Za-z0-9'.,\/\- ]{2,60}$/.test(lines[j-1])) continue;
+    // Drop a standalone numbered-street line (e.g. "4 Farmborough Close") that is
+    // clearly an address remnant, when it is NOT a real body sentence. Addresses
+    // start with a number + short street words and usually contain no verb.
+    if (/^[0-9][A-Za-z0-9'.,\/\- ]{2,60}$/.test(line) && /^(the|a|an|we|i|you|please|call|visit|our|your|get|don't|do\s|is|are|this|that|it|if|when|for|with|to|on|at|by|as|in|of)\b/i.test(line) === false && !/[.;!?]$/.test(line)) continue;
     out.push(line);
   }
   var joined = out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-  // FINAL ADDRESS-BLOCK STRIP: remove any multi-line address block that leaked into
-  // the body (name line + street + town + postcode). Stannp prints the recipient
-  // address in the envelope window, so it must never appear in the letter body.
-  // Pattern: a 3-5 line block ending in a postcode or an all-caps town, starting
-  // with a name (possibly duplicated). Examples:
-  //   "Ket Mandalia\nKet Mandalia\n4 Farmborough Close\nHARROW\nHA1 3YG"
-  //   "John Smith\n10 High Street\nLEEDS"
+  // Final multi-line address-block strip: a 3-5 line block ending in a postcode or
+  // all-caps town (e.g. "Ket Mandalia\nKet Mandalia\n4 Farmborough Close\nHARROW\nHA1 3YG").
   joined = joined.replace(/(?:^|\n)(?:[A-Z][a-zA-Z'.\- ]{1,40}\n){1,2}(?:[A-Za-z0-9'.,\/\- ]{2,60}\n){1,3}(?:[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}|[A-Z]{2,}(?:\s[A-Z]{2,})*)\s*(?=\n|$)/gm, '\n').replace(/\n{3,}/g, '\n\n').trim();
   return joined;
 }
