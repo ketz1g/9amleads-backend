@@ -6953,7 +6953,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     });
     for (var fbi = 0; fbi < fallbackPool.length && selected.length < limit; fbi++) {
       var fl = fallbackPool[fbi];
-      var fAddr = fl.fullAddress || fl.address || '';
+      var fAddr = fl.fullAddress || fl.address || fl.deceasedAddress || '';
       var fPc = fl.postcode || '';
       if (hasUsablePremiseAddress(fAddr, fPc)) {
         var pk2 = String(fPc).toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -6968,21 +6968,21 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       }
     }
   }
-  // PREVIEW REPLACEMENT (moving): leads PAF already failed (NO DOOR · REPLACED) are
-  // swapped at delivery for door-numbered alternatives. Simulate that here so the
-  // preview shows the FINAL deliverable (what customers actually receive), not the
-  // doomed leads.
-  if (cust.product === 'moving') {
+  // PREVIEW REPLACEMENT (property products): leads PAF already failed (NO DOOR ·
+  // REPLACED) are swapped at delivery for door-numbered alternatives. Simulate that
+  // here so the preview shows the FINAL deliverable (what customers actually receive)
+  // for BOTH moving and probate (both need door numbers for Print & Post).
+  if (cust.product === 'moving' || cust.product === 'probate') {
     for (var rpi = 0; rpi < selected.length; rpi++) {
       var curLeadR = selected[rpi];
-      var curAddrR = curLeadR.fullAddress || curLeadR.address || '';
+      var curAddrR = curLeadR.fullAddress || curLeadR.address || curLeadR.deceasedAddress || '';
       var curPcR = curLeadR.postcode || '';
       if (hasUsablePremiseAddress(curAddrR, curPcR)) continue; // has a door — fine
       if (curLeadR.paf_candidate && !curLeadR.paf_failed) continue; // gets a number at delivery — fine
       for (var siR = 0; siR < interleaved.length; siR++) {
         var repR = interleaved[siR];
         if (selected.indexOf(repR) !== -1) continue;
-        var rAddrR = repR.fullAddress || repR.address || '';
+        var rAddrR = repR.fullAddress || repR.address || repR.deceasedAddress || '';
         var rPcR = repR.postcode || '';
         if (!hasUsablePremiseAddress(rAddrR, rPcR)) continue;
         var rKeyR = repR.url || ('a:' + String(rAddrR).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
@@ -6995,7 +6995,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     }
   }
   var out = selected.map(function(c) {
-    var addr = c.fullAddress || c.address || '';
+    var addr = c.fullAddress || c.address || c.deceasedAddress || '';
     var pc = c.postcode || '';
     var hasDoor = hasUsablePremiseAddress(addr, pc);
     var pafCandidate = false;
