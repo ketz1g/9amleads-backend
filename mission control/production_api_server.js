@@ -20298,11 +20298,19 @@ function runDeliveryTestReport() {
         var TEST_CAP = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
         testCusts.forEach(function(c) { c.leads_per_day = TEST_CAP[c.product] || 1; });
         saveDb();
-        // UNIQUE RUN ID: every lead delivered by THIS test run is tagged with
-        // delivery_run_id, so the report measures exactly this run's deliveries
-        // with no ambiguity (no timestamp/customer_id matching races, no clean-slate
-        // deletion that could wipe data mid-run). Each lead is counted once.
+        // CLEAN SLATE + UNIQUE RUN ID: delete ALL test-account leads (delivered AND
+        // pending) so each run starts from a truly empty slate, then tag every lead
+        // this run delivers with a unique delivery_run_id. Together these make the
+        // report 100% reliable: the DB is empty before the run, so everything tagged
+        // with runId IS this run's exact delivery (no accumulation, no races, no
+        // carried-over pending leads inflating counts). Real customers untouched.
+        var _testIds = {};
+        testCusts.forEach(function(c) { _testIds[c.id] = true; });
+        db.leads = (db.leads || []).filter(function(l) { return !(l.customer_id && _testIds[l.customer_id]); });
+        testCusts.forEach(function(c) { c.last_email_date = ''; });
+        saveDb();
         var runId = 'test-' + date + '-' + Date.now().toString(36);
+        console.log('[TEST] clean-slate run ' + runId + ' (' + testCusts.length + ' test accounts, all test leads cleared)');
         // Mark the run start timestamp (also kept for the report's timing info).
         var runStart = new Date();
         // run the real delivery on test accounts (force + test_only, emails enabled)
