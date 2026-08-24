@@ -1529,11 +1529,18 @@ class StannpProvider extends DirectMailProvider {
     // start at the real product/services content.
     text = cleanLetterBodyForPrint(text);
     var senderObj = (recipient && recipient.sender) || {};
-    var renderAt = function(fontSize, lineGap, margin) {
+    // STANNP A4 LETTER WINDOW: Stannp prints the recipient address in an envelope
+    // WINDOW that sits in the TOP of the A4 page (~95-100mm from the top). The
+    // letter body MUST start BELOW that window or it's hidden behind the address
+    // label. A4 = 842pt tall; the window ends around 270pt, so the body starts at
+    // 275pt and shrinks to fit the remaining ~500pt on one page.
+    var WINDOW_BOTTOM = 275;
+    var BODY_TOP = 285;
+    var renderAt = function(fontSize, lineGap) {
       return new Promise(function(resolve, reject) {
         try {
           var buffers = [];
-          var doc = new PDFDocument({ size: 'A4', layout: 'portrait', margin: margin });
+          var doc = new PDFDocument({ size: 'A4', layout: 'portrait', margin: 50 });
           if (unicodeFont) doc.registerFont('uni', fontPath);
           var pageCount = 1;
           doc.on('pageAdded', function() { pageCount++; });
@@ -1542,23 +1549,23 @@ class StannpProvider extends DirectMailProvider {
           var bodyFont = unicodeFont ? 'uni' : 'Helvetica';
           // NO sender/date header + divider: Stannp prints the recipient address
           // in its own envelope window, so the printed letter is just the body.
-          // (Keeps the top clear for the window and avoids duplicating the name/
-          // address that was appearing twice.)
-          doc.font(bodyFont).fontSize(fontSize).text(text, margin, margin, { width: 595 - margin * 2, lineBreak: true, align: 'left', lineGap: lineGap });
+          // Body starts BELOW the window so it's fully visible on the printed page.
+          doc.font(bodyFont).fontSize(fontSize).text(text, 50, BODY_TOP, { width: 595 - 100, lineBreak: true, align: 'left', lineGap: lineGap });
           doc.end();
         } catch(e) { reject(e); }
       });
     };
     var attempts = [
-      { f: 9.5, g: 1, m: 50 },
-      { f: 9,   g: 1, m: 48 },
-      { f: 8.5, g: 0, m: 45 },
-      { f: 8,   g: 0, m: 42 },
-      { f: 7.5, g: 0, m: 40 }
+      { f: 10, g: 2 },
+      { f: 9.5, g: 1.5 },
+      { f: 9,   g: 1 },
+      { f: 8.5, g: 0 },
+      { f: 8,   g: 0 },
+      { f: 7.5, g: 0 }
     ];
     var last = null;
     for (var ai = 0; ai < attempts.length; ai++) {
-      last = await renderAt(attempts[ai].f, attempts[ai].g, attempts[ai].m);
+      last = await renderAt(attempts[ai].f, attempts[ai].g);
       if (last.pages <= 1) return last.buffer;
     }
     return last.buffer;
@@ -1575,7 +1582,7 @@ class StannpProvider extends DirectMailProvider {
     try {
       var page = await browser.newPage();
       await page.setContent('<html><head><style>@page{size:A4;margin:0}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#1e293b}</style></head><body>' + (html || '') + '</body></html>', { waitUntil: 'networkidle' });
-      var pdfBuf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '40px', bottom: '40px', left: '50px', right: '50px' } });
+      var pdfBuf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '130px', bottom: '40px', left: '50px', right: '50px' } });
       return Buffer.from(pdfBuf);
     } finally {
       try { await browser.close(); } catch(e) {}
@@ -17660,7 +17667,7 @@ function buildCleanLetterHtml(templateBody, senderName, senderAddr) {
   // a header here duplicated the name/address on the printed letter.
   var letterHtml =
     '<html><body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#1e293b">' +
-    '<div style="font-size:11px;line-height:1.7;white-space:pre-wrap;padding-top:10px">' + (printBody || '').split('\n').join('<br>') + '</div>' +
+    '<div style="font-size:11px;line-height:1.7;white-space:pre-wrap;padding-top:130px">' + (printBody || '').split('\n').join('<br>') + '</div>' +
     '</body></html>';
   return { html: letterHtml, body: printBody };
 }
@@ -20788,8 +20795,10 @@ app.get('/api/admin/letter-preview', adminAuth, async (req, res) => {
       doc.on('data', buffers.push.bind(buffers));
       var done = new Promise(function(resolve, reject) { doc.on('end', resolve); doc.on('error', reject); });
       var bodyFont = unicodeFont ? 'uni' : 'Helvetica';
-      // No sender header/divider — Stannp prints the recipient address itself.
-      doc.font(bodyFont).fontSize(10).text(clean.body, 50, 50, { width: 595 - 100, lineBreak: true, align: 'left' });
+      // No sender header/divider — Stannp prints the recipient address in its own
+      // envelope window at the TOP of the page, so the body starts BELOW it (285pt)
+      // to stay visible, and is sized to fit one page.
+      doc.font(bodyFont).fontSize(10).text(clean.body, 50, 285, { width: 595 - 100, lineBreak: true, align: 'left' });
       doc.end();
       await done;
       var buf = Buffer.concat(buffers);
