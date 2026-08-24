@@ -6890,6 +6890,9 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   var candidates = [];
   var seen = {};
   var _sharedSeen = sharedSeen || {};
+  // A property lead is only deliverable (Print & Post) with a confirmed door number
+  // AND a full postcode — mirrors the delivery door-number gate exactly.
+  function mailOK(addr, pc) { return hasUsablePremiseAddress(addr, pc) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()); }
   var leadFilters = {};
   try { leadFilters = JSON.parse(cust.biz_field2 || '{}'); } catch(e) { leadFilters = {}; }
   var candCap = Math.max(limit * 4, 30);
@@ -6955,7 +6958,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       var fl = fallbackPool[fbi];
       var fAddr = fl.fullAddress || fl.address || fl.deceasedAddress || '';
       var fPc = fl.postcode || '';
-      if (hasUsablePremiseAddress(fAddr, fPc)) {
+      if (mailOK(fAddr, fPc)) {
         var pk2 = String(fPc).toUpperCase().replace(/[^A-Z0-9]/g, '');
         if (usedPostcode[pk2] || pcSeen2[pk2]) continue;
         var fKey = fl.url || ('a:' + String(fAddr).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
@@ -6977,14 +6980,14 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       var curLeadR = selected[rpi];
       var curAddrR = curLeadR.fullAddress || curLeadR.address || curLeadR.deceasedAddress || '';
       var curPcR = curLeadR.postcode || '';
-      if (hasUsablePremiseAddress(curAddrR, curPcR)) continue; // has a door — fine
+      if (mailOK(curAddrR, curPcR)) continue; // has a door + full postcode — fine
       if (curLeadR.paf_candidate && !curLeadR.paf_failed) continue; // gets a number at delivery — fine
       for (var siR = 0; siR < interleaved.length; siR++) {
         var repR = interleaved[siR];
         if (selected.indexOf(repR) !== -1) continue;
         var rAddrR = repR.fullAddress || repR.address || repR.deceasedAddress || '';
         var rPcR = repR.postcode || '';
-        if (!hasUsablePremiseAddress(rAddrR, rPcR)) continue;
+        if (!mailOK(rAddrR, rPcR)) continue;
         var rKeyR = repR.url || ('a:' + String(rAddrR).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
         var rAKeyR = 'aa:' + propertyIdentityKey(rAddrR, rPcR);
         if (_sharedSeen[rKeyR] || (rAKeyR.length > 5 && _sharedSeen[rAKeyR])) continue;
@@ -6997,10 +7000,10 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   var out = selected.map(function(c) {
     var addr = c.fullAddress || c.address || c.deceasedAddress || '';
     var pc = c.postcode || '';
-    var hasDoor = hasUsablePremiseAddress(addr, pc);
+    var hasDoor = (cust.product === 'moving' || cust.product === 'probate') ? mailOK(addr, pc) : hasUsablePremiseAddress(addr, pc);
     var pafCandidate = false;
     var pafFailed = !!c.paf_failed;
-    if (!hasDoor && !pafFailed) {
+    if (!hasDoor && !pafFailed && (cust.product === 'moving' || cust.product === 'probate')) {
       // PAF-relaxed: a full postcode + street name means the paid PAF pass will add
       // the door number at delivery (drops it only if PAF can't confirm it).
       var pcFull = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim());
